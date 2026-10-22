@@ -1,0 +1,1290 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "vitest-bench",
+  "git": {
+    "sha": "33efd3167ec19b2596f6722c5d52638a08b07845",
+    "dirty": true
+  },
+  "timestamp": "2026-10-22T12:02:57.776Z",
+  "machine": {
+    "glRenderer": null,
+    "softwareGl": null,
+    "browser": null,
+    "cpu": "Apple M2",
+    "cores": 8,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.2",
+    "loadavg": [
+      8.78,
+      6.73,
+      5.99
+    ]
+  },
+  "params": {
+    "filters": [
+      "tests/perf/bench/hit-test.bench.ts"
+    ]
+  },
+  "items": [
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — rect poses, node count (25% query rect) > 100 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — rect poses, node count (25% query rect)",
+        "name": "100 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.026499999999941792,
+          "unit": "ms",
+          "stat": "median of 36591 samples"
+        },
+        "min": {
+          "value": 0.025041999999757536,
+          "unit": "ms",
+          "stat": "min of 36591 samples"
+        },
+        "mean": {
+          "value": 0.02732944172064256,
+          "unit": "ms",
+          "stat": "mean of 36591 samples"
+        },
+        "rme": {
+          "value": 0.19374293268364084,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — rect poses, node count (25% query rect) > 1000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — rect poses, node count (25% query rect)",
+        "name": "1000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.31991699999980483,
+          "unit": "ms",
+          "stat": "median of 3059 samples"
+        },
+        "min": {
+          "value": 0.31495799999993324,
+          "unit": "ms",
+          "stat": "min of 3059 samples"
+        },
+        "mean": {
+          "value": 0.3269065527950318,
+          "unit": "ms",
+          "stat": "mean of 3059 samples"
+        },
+        "rme": {
+          "value": 0.2001350931239943,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — rect poses, node count (25% query rect) > 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — rect poses, node count (25% query rect)",
+        "name": "10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 3.136790999999903,
+          "unit": "ms",
+          "stat": "median of 315 samples"
+        },
+        "min": {
+          "value": 3.0394999999998618,
+          "unit": "ms",
+          "stat": "min of 315 samples"
+        },
+        "mean": {
+          "value": 3.1800540952380767,
+          "unit": "ms",
+          "stat": "mean of 315 samples"
+        },
+        "rme": {
+          "value": 0.40059379350308705,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — rect poses, query-rect size (1000 nodes) > 1% area (16 hits)",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — rect poses, query-rect size (1000 nodes)",
+        "name": "1% area (16 hits)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.020749999999679858,
+          "unit": "ms",
+          "stat": "median of 47507 samples"
+        },
+        "min": {
+          "value": 0.019249999999374268,
+          "unit": "ms",
+          "stat": "min of 47507 samples"
+        },
+        "mean": {
+          "value": 0.021049591533877185,
+          "unit": "ms",
+          "stat": "mean of 47507 samples"
+        },
+        "rme": {
+          "value": 0.17487676573616354,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — rect poses, query-rect size (1000 nodes) > 25% area (289 hits)",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — rect poses, query-rect size (1000 nodes)",
+        "name": "25% area (289 hits)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.31883299999935844,
+          "unit": "ms",
+          "stat": "median of 3073 samples"
+        },
+        "min": {
+          "value": 0.31287499999962165,
+          "unit": "ms",
+          "stat": "min of 3073 samples"
+        },
+        "mean": {
+          "value": 0.3255110074845421,
+          "unit": "ms",
+          "stat": "mean of 3073 samples"
+        },
+        "rme": {
+          "value": 0.20462045792533956,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — rect poses, query-rect size (1000 nodes) > 100% area (1000 hits)",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — rect poses, query-rect size (1000 nodes)",
+        "name": "100% area (1000 hits)"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.1008339999989403,
+          "unit": "ms",
+          "stat": "median of 897 samples"
+        },
+        "min": {
+          "value": 1.067124999999578,
+          "unit": "ms",
+          "stat": "min of 897 samples"
+        },
+        "mean": {
+          "value": 1.115431138238564,
+          "unit": "ms",
+          "stat": "mean of 897 samples"
+        },
+        "rme": {
+          "value": 0.2726551610874403,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, node count (25% query rect) > 100 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — 24-gon silhouettes, node count (25% query rect)",
+        "name": "100 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.028083999999580556,
+          "unit": "ms",
+          "stat": "median of 34595 samples"
+        },
+        "min": {
+          "value": 0.026665999999750056,
+          "unit": "ms",
+          "stat": "min of 34595 samples"
+        },
+        "mean": {
+          "value": 0.02890669001301406,
+          "unit": "ms",
+          "stat": "mean of 34595 samples"
+        },
+        "rme": {
+          "value": 0.1969595364861109,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, node count (25% query rect) > 1000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — 24-gon silhouettes, node count (25% query rect)",
+        "name": "1000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.3454170000004524,
+          "unit": "ms",
+          "stat": "median of 2838 samples"
+        },
+        "min": {
+          "value": 0.3397079999995185,
+          "unit": "ms",
+          "stat": "min of 2838 samples"
+        },
+        "mean": {
+          "value": 0.3524251930937364,
+          "unit": "ms",
+          "stat": "mean of 2838 samples"
+        },
+        "rme": {
+          "value": 0.21234855303368277,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, node count (25% query rect) > 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — 24-gon silhouettes, node count (25% query rect)",
+        "name": "10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 3.442145499999242,
+          "unit": "ms",
+          "stat": "median of 286 samples"
+        },
+        "min": {
+          "value": 3.358125000000655,
+          "unit": "ms",
+          "stat": "min of 286 samples"
+        },
+        "mean": {
+          "value": 3.5011117762237998,
+          "unit": "ms",
+          "stat": "mean of 286 samples"
+        },
+        "rme": {
+          "value": 0.462694929498213,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes) > 1% area (17 hits)",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)",
+        "name": "1% area (17 hits)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.029165999998440384,
+          "unit": "ms",
+          "stat": "median of 33006 samples"
+        },
+        "min": {
+          "value": 0.028333000000202446,
+          "unit": "ms",
+          "stat": "min of 33006 samples"
+        },
+        "mean": {
+          "value": 0.03029799951524446,
+          "unit": "ms",
+          "stat": "mean of 33006 samples"
+        },
+        "rme": {
+          "value": 0.19168247654105514,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes) > 25% area (287 hits)",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)",
+        "name": "25% area (287 hits)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.3388540000005378,
+          "unit": "ms",
+          "stat": "median of 2878 samples"
+        },
+        "min": {
+          "value": 0.33237499999995634,
+          "unit": "ms",
+          "stat": "min of 2878 samples"
+        },
+        "mean": {
+          "value": 0.3474945555941785,
+          "unit": "ms",
+          "stat": "mean of 2878 samples"
+        },
+        "rme": {
+          "value": 0.2624370759951626,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes) > 100% area (1000 hits)",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)",
+        "name": "100% area (1000 hits)"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.0739170000015292,
+          "unit": "ms",
+          "stat": "median of 919 samples"
+        },
+        "min": {
+          "value": 1.0390000000006694,
+          "unit": "ms",
+          "stat": "min of 919 samples"
+        },
+        "mean": {
+          "value": 1.0888818422197715,
+          "unit": "ms",
+          "stat": "mean of 919 samples"
+        },
+        "rme": {
+          "value": 0.2943306691864791,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > aabbOfPose — the per-node fast-reject itself > rect pose",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "aabbOfPose — the per-node fast-reject itself",
+        "name": "rect pose"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.00008399999933317304,
+          "unit": "ms",
+          "stat": "median of 9607401 samples"
+        },
+        "min": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "min of 9607401 samples"
+        },
+        "mean": {
+          "value": 0.00010408642722406844,
+          "unit": "ms",
+          "stat": "mean of 9607401 samples"
+        },
+        "rme": {
+          "value": 0.04801179257322248,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > aabbOfPose — the per-node fast-reject itself > 4-gon pose",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "aabbOfPose — the per-node fast-reject itself",
+        "name": "4-gon pose"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.000583999997616047,
+          "unit": "ms",
+          "stat": "median of 1549995 samples"
+        },
+        "min": {
+          "value": 0.0004579999986162875,
+          "unit": "ms",
+          "stat": "min of 1549995 samples"
+        },
+        "mean": {
+          "value": 0.0006451635895614691,
+          "unit": "ms",
+          "stat": "mean of 1549995 samples"
+        },
+        "rme": {
+          "value": 0.9549422645344524,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > aabbOfPose — the per-node fast-reject itself > 24-gon pose",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "aabbOfPose — the per-node fast-reject itself",
+        "name": "24-gon pose"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.001959000001079403,
+          "unit": "ms",
+          "stat": "median of 488937 samples"
+        },
+        "min": {
+          "value": 0.0018329999984416645,
+          "unit": "ms",
+          "stat": "min of 488937 samples"
+        },
+        "mean": {
+          "value": 0.0020452540327265487,
+          "unit": "ms",
+          "stat": "mean of 488937 samples"
+        },
+        "rme": {
+          "value": 0.17731675908070052,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > aabbOfPose — the per-node fast-reject itself > 256-gon pose",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "aabbOfPose — the per-node fast-reject itself",
+        "name": "256-gon pose"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.016625000000203727,
+          "unit": "ms",
+          "stat": "median of 58617 samples"
+        },
+        "min": {
+          "value": 0.016250000000582077,
+          "unit": "ms",
+          "stat": "min of 58617 samples"
+        },
+        "mean": {
+          "value": 0.01706001833939149,
+          "unit": "ms",
+          "stat": "mean of 58617 samples"
+        },
+        "rme": {
+          "value": 0.17788382086781127,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > pointInPath — per-node kernel, by vertex count > 4-gon",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "pointInPath — per-node kernel, by vertex count",
+        "name": "4-gon"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0006250000005820766,
+          "unit": "ms",
+          "stat": "median of 1578143 samples"
+        },
+        "min": {
+          "value": 0.000499999998282874,
+          "unit": "ms",
+          "stat": "min of 1578143 samples"
+        },
+        "mean": {
+          "value": 0.0006336564417787986,
+          "unit": "ms",
+          "stat": "mean of 1578143 samples"
+        },
+        "rme": {
+          "value": 0.19377133184284198,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > pointInPath — per-node kernel, by vertex count > 24-gon",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "pointInPath — per-node kernel, by vertex count",
+        "name": "24-gon"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0019579999971028883,
+          "unit": "ms",
+          "stat": "median of 485836 samples"
+        },
+        "min": {
+          "value": 0.001790999998775078,
+          "unit": "ms",
+          "stat": "min of 485836 samples"
+        },
+        "mean": {
+          "value": 0.0020583096415239615,
+          "unit": "ms",
+          "stat": "mean of 485836 samples"
+        },
+        "rme": {
+          "value": 3.5541725572248257,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > pointInPath — per-node kernel, by vertex count > 8 cubics (flattened per call)",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "pointInPath — per-node kernel, by vertex count",
+        "name": "8 cubics (flattened per call)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0071250000000873115,
+          "unit": "ms",
+          "stat": "median of 134547 samples"
+        },
+        "min": {
+          "value": 0.006915999998454936,
+          "unit": "ms",
+          "stat": "min of 134547 samples"
+        },
+        "mean": {
+          "value": 0.00743239285156282,
+          "unit": "ms",
+          "stat": "mean of 134547 samples"
+        },
+        "rme": {
+          "value": 0.34224639638372256,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > pointInPath — per-node kernel, by vertex count > 256-gon",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "pointInPath — per-node kernel, by vertex count",
+        "name": "256-gon"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.017542000001412816,
+          "unit": "ms",
+          "stat": "median of 55007 samples"
+        },
+        "min": {
+          "value": 0.017040999999153428,
+          "unit": "ms",
+          "stat": "min of 55007 samples"
+        },
+        "mean": {
+          "value": 0.01817981382369445,
+          "unit": "ms",
+          "stat": "mean of 55007 samples"
+        },
+        "rme": {
+          "value": 0.2604031217927967,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > pointInPath — per-node kernel, by vertex count > 64 cubics (flattened per call)",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "pointInPath — per-node kernel, by vertex count",
+        "name": "64 cubics (flattened per call)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.024958999994851183,
+          "unit": "ms",
+          "stat": "median of 38368 samples"
+        },
+        "min": {
+          "value": 0.024416000000201166,
+          "unit": "ms",
+          "stat": "min of 38368 samples"
+        },
+        "mean": {
+          "value": 0.026063615799620236,
+          "unit": "ms",
+          "stat": "mean of 38368 samples"
+        },
+        "rme": {
+          "value": 0.43345261324937295,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, node count (1% query rect) > indexed, 100 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, node count (1% query rect)",
+        "name": "indexed, 100 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0027090000003227033,
+          "unit": "ms",
+          "stat": "median of 353753 samples"
+        },
+        "min": {
+          "value": 0.0025000000023283064,
+          "unit": "ms",
+          "stat": "min of 353753 samples"
+        },
+        "mean": {
+          "value": 0.0028268374656921706,
+          "unit": "ms",
+          "stat": "mean of 353753 samples"
+        },
+        "rme": {
+          "value": 0.3024319277677486,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, node count (1% query rect) > indexed, 1000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, node count (1% query rect)",
+        "name": "indexed, 1000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.021207999998296145,
+          "unit": "ms",
+          "stat": "median of 45982 samples"
+        },
+        "min": {
+          "value": 0.02074999999604188,
+          "unit": "ms",
+          "stat": "min of 45982 samples"
+        },
+        "mean": {
+          "value": 0.02174770736375493,
+          "unit": "ms",
+          "stat": "mean of 45982 samples"
+        },
+        "rme": {
+          "value": 0.2491720883325001,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, node count (1% query rect) > full walk, 100 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, node count (1% query rect)",
+        "name": "full walk, 100 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.08499999999912689,
+          "unit": "ms",
+          "stat": "median of 11304 samples"
+        },
+        "min": {
+          "value": 0.08383299999695737,
+          "unit": "ms",
+          "stat": "min of 11304 samples"
+        },
+        "mean": {
+          "value": 0.08846480962492227,
+          "unit": "ms",
+          "stat": "mean of 11304 samples"
+        },
+        "rme": {
+          "value": 0.8672443297896383,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, node count (1% query rect) > indexed, 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, node count (1% query rect)",
+        "name": "indexed, 10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.18116599999484606,
+          "unit": "ms",
+          "stat": "median of 5383 samples"
+        },
+        "min": {
+          "value": 0.17762499999662396,
+          "unit": "ms",
+          "stat": "min of 5383 samples"
+        },
+        "mean": {
+          "value": 0.18580314267138695,
+          "unit": "ms",
+          "stat": "mean of 5383 samples"
+        },
+        "rme": {
+          "value": 0.27731788777230093,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, node count (1% query rect) > full walk, 1000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, node count (1% query rect)",
+        "name": "full walk, 1000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.8648339999999735,
+          "unit": "ms",
+          "stat": "median of 1141 samples"
+        },
+        "min": {
+          "value": 0.8414169999959995,
+          "unit": "ms",
+          "stat": "min of 1141 samples"
+        },
+        "mean": {
+          "value": 0.8766500411919697,
+          "unit": "ms",
+          "stat": "mean of 1141 samples"
+        },
+        "rme": {
+          "value": 0.3165280733004313,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, node count (1% query rect) > full walk, 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, node count (1% query rect)",
+        "name": "full walk, 10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 8.87702100000024,
+          "unit": "ms",
+          "stat": "median of 112 samples"
+        },
+        "min": {
+          "value": 8.717875000002095,
+          "unit": "ms",
+          "stat": "min of 112 samples"
+        },
+        "mean": {
+          "value": 9.007821410714053,
+          "unit": "ms",
+          "stat": "mean of 112 samples"
+        },
+        "rme": {
+          "value": 0.6072002093002462,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, 10000 nodes by query-rect size > indexed, 1% area",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, 10000 nodes by query-rect size",
+        "name": "indexed, 1% area"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.18091600000479957,
+          "unit": "ms",
+          "stat": "median of 5353 samples"
+        },
+        "min": {
+          "value": 0.17808299999887822,
+          "unit": "ms",
+          "stat": "min of 5353 samples"
+        },
+        "mean": {
+          "value": 0.186816749299414,
+          "unit": "ms",
+          "stat": "mean of 5353 samples"
+        },
+        "rme": {
+          "value": 0.3133543058808381,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, 10000 nodes by query-rect size > indexed, 25% area",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, 10000 nodes by query-rect size",
+        "name": "indexed, 25% area"
+      },
+      "metrics": {
+        "median": {
+          "value": 3.1087079999997513,
+          "unit": "ms",
+          "stat": "median of 317 samples"
+        },
+        "min": {
+          "value": 3.045749999997497,
+          "unit": "ms",
+          "stat": "min of 317 samples"
+        },
+        "mean": {
+          "value": 3.1624473028393996,
+          "unit": "ms",
+          "stat": "mean of 317 samples"
+        },
+        "rme": {
+          "value": 0.45437307076675504,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, 10000 nodes by query-rect size > full walk, 1% area",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, 10000 nodes by query-rect size",
+        "name": "full walk, 1% area"
+      },
+      "metrics": {
+        "median": {
+          "value": 8.850228999999672,
+          "unit": "ms",
+          "stat": "median of 112 samples"
+        },
+        "min": {
+          "value": 8.738707999997132,
+          "unit": "ms",
+          "stat": "min of 112 samples"
+        },
+        "mean": {
+          "value": 8.94411866071446,
+          "unit": "ms",
+          "stat": "mean of 112 samples"
+        },
+        "rme": {
+          "value": 0.3575515524765658,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, 10000 nodes by query-rect size > full walk, 25% area",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, 10000 nodes by query-rect size",
+        "name": "full walk, 25% area"
+      },
+      "metrics": {
+        "median": {
+          "value": 9.322916499997518,
+          "unit": "ms",
+          "stat": "median of 106 samples"
+        },
+        "min": {
+          "value": 9.076375000004191,
+          "unit": "ms",
+          "stat": "min of 106 samples"
+        },
+        "mean": {
+          "value": 9.450420160377416,
+          "unit": "ms",
+          "stat": "mean of 106 samples"
+        },
+        "rme": {
+          "value": 0.7614252698316002,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, 10000 nodes by query-rect size > full walk, 100% area",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, 10000 nodes by query-rect size",
+        "name": "full walk, 100% area"
+      },
+      "metrics": {
+        "median": {
+          "value": 9.675750000002154,
+          "unit": "ms",
+          "stat": "median of 103 samples"
+        },
+        "min": {
+          "value": 9.478167000001122,
+          "unit": "ms",
+          "stat": "min of 103 samples"
+        },
+        "mean": {
+          "value": 9.763605194174417,
+          "unit": "ms",
+          "stat": "mean of 103 samples"
+        },
+        "rme": {
+          "value": 0.40313593239924594,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, 10000 nodes by query-rect size > indexed, 100% area",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, 10000 nodes by query-rect size",
+        "name": "indexed, 100% area"
+      },
+      "metrics": {
+        "median": {
+          "value": 12.043541999999434,
+          "unit": "ms",
+          "stat": "median of 83 samples"
+        },
+        "min": {
+          "value": 11.661125000005995,
+          "unit": "ms",
+          "stat": "min of 83 samples"
+        },
+        "mean": {
+          "value": 12.063310722891208,
+          "unit": "ms",
+          "stat": "mean of 83 samples"
+        },
+        "rme": {
+          "value": 0.531022034348805,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > point pick — BVH index vs full walk, node count > indexed, 100 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "point pick — BVH index vs full walk, node count",
+        "name": "indexed, 100 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0015830000047571957,
+          "unit": "ms",
+          "stat": "median of 603108 samples"
+        },
+        "min": {
+          "value": 0.0014159999991534278,
+          "unit": "ms",
+          "stat": "min of 603108 samples"
+        },
+        "mean": {
+          "value": 0.001658078695687469,
+          "unit": "ms",
+          "stat": "mean of 603108 samples"
+        },
+        "rme": {
+          "value": 0.38781700898970556,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > point pick — BVH index vs full walk, node count > indexed, 1000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "point pick — BVH index vs full walk, node count",
+        "name": "indexed, 1000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.002958999997645151,
+          "unit": "ms",
+          "stat": "median of 327253 samples"
+        },
+        "min": {
+          "value": 0.0027079999999841675,
+          "unit": "ms",
+          "stat": "min of 327253 samples"
+        },
+        "mean": {
+          "value": 0.003056103577354604,
+          "unit": "ms",
+          "stat": "mean of 327253 samples"
+        },
+        "rme": {
+          "value": 0.176500116829629,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > point pick — BVH index vs full walk, node count > indexed, 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "point pick — BVH index vs full walk, node count",
+        "name": "indexed, 10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.02016600000206381,
+          "unit": "ms",
+          "stat": "median of 48031 samples"
+        },
+        "min": {
+          "value": 0.019874999998137355,
+          "unit": "ms",
+          "stat": "min of 48031 samples"
+        },
+        "mean": {
+          "value": 0.02081996502258249,
+          "unit": "ms",
+          "stat": "mean of 48031 samples"
+        },
+        "rme": {
+          "value": 0.1394842250875038,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > point pick — BVH index vs full walk, node count > full walk, 100 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "point pick — BVH index vs full walk, node count",
+        "name": "full walk, 100 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.15595800000301097,
+          "unit": "ms",
+          "stat": "median of 6184 samples"
+        },
+        "min": {
+          "value": 0.15254100000311155,
+          "unit": "ms",
+          "stat": "min of 6184 samples"
+        },
+        "mean": {
+          "value": 0.1617115803687361,
+          "unit": "ms",
+          "stat": "mean of 6184 samples"
+        },
+        "rme": {
+          "value": 0.3125139670351469,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > point pick — BVH index vs full walk, node count > full walk, 1000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "point pick — BVH index vs full walk, node count",
+        "name": "full walk, 1000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.6585624999970605,
+          "unit": "ms",
+          "stat": "median of 596 samples"
+        },
+        "min": {
+          "value": 1.6220420000026934,
+          "unit": "ms",
+          "stat": "min of 596 samples"
+        },
+        "mean": {
+          "value": 1.6792144127518849,
+          "unit": "ms",
+          "stat": "mean of 596 samples"
+        },
+        "rme": {
+          "value": 0.6731361361293758,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > point pick — BVH index vs full walk, node count > full walk, 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "point pick — BVH index vs full walk, node count",
+        "name": "full walk, 10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 17.426854500001355,
+          "unit": "ms",
+          "stat": "median of 64 samples"
+        },
+        "min": {
+          "value": 17.057166999999026,
+          "unit": "ms",
+          "stat": "min of 64 samples"
+        },
+        "mean": {
+          "value": 17.955883390624884,
+          "unit": "ms",
+          "stat": "mean of 64 samples"
+        },
+        "rme": {
+          "value": 1.8762289716303011,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > pick index — rebuild after one pose change, node count > 100 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "pick index — rebuild after one pose change, node count",
+        "name": "100 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.11891600000308244,
+          "unit": "ms",
+          "stat": "median of 8396 samples"
+        },
+        "min": {
+          "value": 0.11104099999647588,
+          "unit": "ms",
+          "stat": "min of 8396 samples"
+        },
+        "mean": {
+          "value": 0.11911114268695744,
+          "unit": "ms",
+          "stat": "mean of 8396 samples"
+        },
+        "rme": {
+          "value": 0.2137542942317558,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > pick index — rebuild after one pose change, node count > 1000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "pick index — rebuild after one pose change, node count",
+        "name": "1000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.2902919999978621,
+          "unit": "ms",
+          "stat": "median of 765 samples"
+        },
+        "min": {
+          "value": 1.2485000000015134,
+          "unit": "ms",
+          "stat": "min of 765 samples"
+        },
+        "mean": {
+          "value": 1.3080527202614458,
+          "unit": "ms",
+          "stat": "mean of 765 samples"
+        },
+        "rme": {
+          "value": 0.3335451073131656,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > pick index — rebuild after one pose change, node count > 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "pick index — rebuild after one pose change, node count",
+        "name": "10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 14.635874999999942,
+          "unit": "ms",
+          "stat": "median of 68 samples"
+        },
+        "min": {
+          "value": 14.455791000000318,
+          "unit": "ms",
+          "stat": "min of 68 samples"
+        },
+        "mean": {
+          "value": 14.732415397058931,
+          "unit": "ms",
+          "stat": "mean of 68 samples"
+        },
+        "rme": {
+          "value": 0.5494837845007895,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    }
+  ]
+}

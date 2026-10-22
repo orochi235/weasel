@@ -1,0 +1,392 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 perf:bench
+> node tests/perf/bench.mjs --out /Users/mike/.config/onto/work/weasel/tests/perf/recorded/pick-index-2026-10-22/keiei/result.json --raw /Users/mike/.config/onto/work/weasel/tests/perf/recorded/pick-index-2026-10-22/keiei/vitest-bench.json tests/perf/bench/hit-test.bench.ts
+
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (tests/perf/vitest.bench.config.ts:6:26). Use `import.meta.dirname` instead
+  - import "../../scripts/vite-aliases" without a file extension (tests/perf/vitest.bench.config.ts:4:31). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mhitTestArea — rect poses, node count (25% query rect)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea — rect poses, node count (25% query rect)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+  - packages/geom/src/bvh/bvhTree.ts > LEAF_SIZE
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mhitTestArea — rect poses, query-rect size (1000 nodes)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea — rect poses, query-rect size (1000 nodes)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mhitTestArea — 24-gon silhouettes, node count (25% query rect)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea — 24-gon silhouettes, node count (25% query rect)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/canvas/NodeShape.ts > findShapeInk
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+  - packages/geom/src/bvh/bvhTree.ts > LEAF_SIZE
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mhitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/geom/src/polyline.ts > pointInPolygon
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/core/src/canvas/NodeShape.ts > findShapeInk
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2maabbOfPose — the per-node fast-reject itself
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"aabbOfPose — the per-node fast-reject itself"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/canvas/SceneCanvas/poseGeometry.ts > aabbOfPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > AUTO_POSE_DESCRIPTOR
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/core/src/core/geometry/pathPoseDescriptor.ts > pathPoseDescriptor
+  - packages/geom/src/index.ts > boundsOfPath
+  - packages/geom/src/paths/bounds.ts > boundsOfPath
+  - packages/geom/src/paths/corners.ts > resolveCorners
+  - packages/geom/src/commands.ts > forEachSegment
+  - packages/geom/src/commands.ts > PATH_C
+  - packages/geom/src/commands.ts > PATH_Q
+  - packages/geom/src/commands.ts > PATH_Z
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mpointInPath — per-node kernel, by vertex count
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"pointInPath — per-node kernel, by vertex count"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/geom/src/commands.ts > PATH_C
+  - packages/geom/src/index.ts > pointInPath
+  - packages/geom/src/pathHitTest.ts > pointInPath
+  - packages/geom/src/pathSubpaths.ts > closedSubpaths
+  - packages/geom/src/flatten.ts > DEFAULT_FLATTEN_TOLERANCE
+  - packages/geom/src/paths/corners.ts > resolveCorners
+  - packages/geom/src/commands.ts > forEachSegment
+  - packages/geom/src/commands.ts > PATH_Q
+  - packages/geom/src/commands.ts > PATH_Z
+  - packages/geom/src/openFill.ts > fillsOpenSubpaths
+  - packages/geom/src/flatten.ts > flattenCubic
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2marea pick — BVH index vs full walk, node count (1% query rect)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"area pick — BVH index vs full walk, node count (1% query rect)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/core/src/core/scene/composeFrame.ts > composesFrames
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/geom/src/bvh/bvhTree.ts > LEAF_SIZE
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2marea pick — BVH index vs full walk, 10000 nodes by query-rect size
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"area pick — BVH index vs full walk, 10000 nodes by query-rect size"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/geom/src/bvh/bvhTree.ts > LEAF_SIZE
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mpoint pick — BVH index vs full walk, node count
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"point pick — BVH index vs full walk, node count"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/scalar.ts > len2
+  - packages/geom/src/polyline.ts > pointSegmentDist2
+  - packages/geom/src/scalar.ts > dot
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/scene/composeFrame.ts > composesFrames
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > AUTO_POSE_DESCRIPTOR
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
+  - packages/core/src/core/viewport/screenSlop.ts > slopForStrokeHit
+  - packages/geom/src/index.ts > scale
+  - packages/geom/src/affine.ts > scale
+  - packages/core/src/core/viewport/screenSlop.ts > hasSlop
+  - packages/geom/src/index.ts > strokeHitTest
+  - packages/geom/src/pathHitTest.ts > strokeHitTest
+  - packages/geom/src/screenBand.ts > stretchOf
+  - packages/geom/src/screenBand.ts > isSimilarity
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/canvas/NodeShape.ts > findShapeInk
+  - packages/core/src/canvas/SceneCanvas/poseGeometry.ts > poseContainsRotated
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isPathLike
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > pointInPath
+  - packages/geom/src/pathHitTest.ts > pointInPath
+  - packages/core/src/canvas/pickWalk.ts > pickWalk
+  - packages/core/src/canvas/pickWalk.ts > scenePickSource
+  - packages/core/src/canvas/scenePickSource.ts > scenePickSource
+  - packages/core/src/core/scene/nodeGates.ts > nodeGates
+  - packages/core/src/core/scene/annotation.ts > annotationLayerIds
+  - packages/core/src/canvas/derivedPath.ts > scenePaintedPoseOf
+  - packages/core/src/canvas/scenePickReads.ts > sceneShownPathOf
+  - packages/core/src/canvas/derivedPath.ts > sceneDerivedPathOf
+  - packages/core/src/canvas/scenePickReads.ts > sceneParentsOf
+  - packages/core/src/canvas/planeClips.ts > clipCarrier
+  - packages/core/src/canvas/pickIndex/scenePickIndex.ts > indexedCandidates
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemoGeneration
+  - packages/stroke/src/index.ts > markerGeneration
+  - packages/stroke/src/strokeMarkers.ts > markerGeneration
+  - packages/geom/src/bvh/bvhQuery.ts > queryOverlap
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mpick index — rebuild after one pose change, node count
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"pick index — rebuild after one pose change, node count"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > AUTO_POSE_DESCRIPTOR
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickIndex/nodeBroadBox.ts > nodeBroadBox
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/canvas/NodeShape.ts > findShapeInk
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isPathLike
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/hit-test.bench.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 58500[2mms[22m[39m
+   [33m[2m✓[22m[39m hitTestArea — rect poses, node count (25% query rect)[33m 3818[2mms[22m[39m
+     [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     100 nodes    [34m36,978.67[39m  [36m0.0250[39m  [36m0.2145[39m  [36m0.0273[39m  [36m0.0271[39m  [36m0.0364[39m  [36m0.0390[39m  [36m0.1398[39m  [2m±0.19%[22m  [2m  36591[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 3,066.81[39m  [36m0.3150[39m  [36m0.4938[39m  [36m0.3269[39m  [36m0.3296[39m  [36m0.4449[39m  [36m0.4570[39m  [36m0.4740[39m  [2m±0.20%[22m  [2m   3059[22m
+     10000 nodes  [34m   314.85[39m  [36m3.0395[39m  [36m3.7003[39m  [36m3.1801[39m  [36m3.2229[39m  [36m3.6282[39m  [36m3.6508[39m  [36m3.6928[39m  [2m±0.40%[22m  [2m    315[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — rect poses, query-rect size (1000 nodes)[33m 3775[2mms[22m[39m
+     [1mname                 [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     1% area (16 hits)      [34m47,980.19[39m  [36m0.0192[39m  [36m0.2027[39m  [36m0.0210[39m  [36m0.0210[39m  [36m0.0286[39m  [36m0.0292[39m  [36m0.0540[39m  [2m±0.17%[22m  [2m  47507[22m[1m[32m   fastest[39m[22m
+     25% area (289 hits)    [34m 3,080.26[39m  [36m0.3129[39m  [36m0.5440[39m  [36m0.3255[39m  [36m0.3285[39m  [36m0.4439[39m  [36m0.4583[39m  [36m0.4766[39m  [2m±0.20%[22m  [2m   3073[22m
+     100% area (1000 hits)  [34m   897.95[39m  [36m1.0671[39m  [36m1.3870[39m  [36m1.1154[39m  [36m1.1257[39m  [36m1.2824[39m  [36m1.3033[39m  [36m1.3512[39m  [2m±0.27%[22m  [2m    897[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — 24-gon silhouettes, node count (25% query rect)[33m 3848[2mms[22m[39m
+     [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     100 nodes    [34m34,976.01[39m  [36m0.0267[39m  [36m0.2059[39m  [36m0.0289[39m  [36m0.0289[39m  [36m0.0390[39m  [36m0.0409[39m  [36m0.1450[39m  [2m±0.20%[22m  [2m  34595[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 2,845.00[39m  [36m0.3397[39m  [36m0.5319[39m  [36m0.3524[39m  [36m0.3567[39m  [36m0.4760[39m  [36m0.4940[39m  [36m0.5212[39m  [2m±0.21%[22m  [2m   2838[22m
+     10000 nodes  [34m   286.04[39m  [36m3.3581[39m  [36m4.3292[39m  [36m3.5011[39m  [36m3.5473[39m  [36m3.9550[39m  [36m3.9796[39m  [36m4.2300[39m  [2m±0.46%[22m  [2m    286[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)[33m 3771[2mms[22m[39m
+     [1mname                 [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     1% area (17 hits)      [34m33,354.76[39m  [36m0.0283[39m  [36m0.2032[39m  [36m0.0303[39m  [36m0.0302[39m  [36m0.0407[39m  [36m0.0427[39m  [36m0.1498[39m  [2m±0.19%[22m  [2m  33006[22m[1m[32m   fastest[39m[22m
+     25% area (287 hits)    [34m 2,888.40[39m  [36m0.3324[39m  [36m0.8673[39m  [36m0.3475[39m  [36m0.3530[39m  [36m0.4699[39m  [36m0.4875[39m  [36m0.5825[39m  [2m±0.26%[22m  [2m   2878[22m
+     100% area (1000 hits)  [34m   920.11[39m  [36m1.0390[39m  [36m1.3965[39m  [36m1.0889[39m  [36m1.0989[39m  [36m1.2641[39m  [36m1.2856[39m  [36m1.3789[39m  [2m±0.29%[22m  [2m    919[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m aabbOfPose — the per-node fast-reject itself[33m 9204[2mms[22m[39m
+     [1mname        [22m  [1m           hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     rect pose     [34m10,112,192.38[39m  [36m0.0000[39m  [36m0.0504[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0002[39m  [36m0.0002[39m  [36m0.0003[39m  [2m±0.05%[22m  [2m9607401[22m[1m[32m   fastest[39m[22m
+     4-gon pose    [34m 1,647,382.47[39m  [36m0.0005[39m  [36m4.4813[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0009[39m  [36m0.0011[39m  [36m0.0064[39m  [2m±0.95%[22m  [2m1549995[22m
+     24-gon pose   [34m   494,753.69[39m  [36m0.0018[39m  [36m0.2660[39m  [36m0.0020[39m  [36m0.0020[39m  [36m0.0028[39m  [36m0.0029[39m  [36m0.0032[39m  [2m±0.18%[22m  [2m 488937[22m
+     256-gon pose  [34m    59,089.95[39m  [36m0.0163[39m  [36m0.2549[39m  [36m0.0171[39m  [36m0.0167[39m  [36m0.0231[39m  [36m0.0233[39m  [36m0.0369[39m  [2m±0.18%[22m  [2m  58617[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m pointInPath — per-node kernel, by vertex count[33m 6958[2mms[22m[39m
+     [1mname                          [22m  [1m          hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     4-gon                           [34m1,601,627.65[39m  [36m0.0005[39m  [36m 0.1750[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0009[39m  [36m0.0009[39m  [36m0.0010[39m  [2m±0.19%[22m  [2m1578143[22m[1m[32m   fastest[39m[22m
+     24-gon                          [34m  505,293.54[39m  [36m0.0018[39m  [36m12.9661[39m  [36m0.0021[39m  [36m0.0020[39m  [36m0.0027[39m  [36m0.0028[39m  [36m0.0031[39m  [2m±3.55%[22m  [2m 485836[22m
+     8 cubics (flattened per call)   [34m  137,697.09[39m  [36m0.0069[39m  [36m 0.7200[39m  [36m0.0074[39m  [36m0.0072[39m  [36m0.0100[39m  [36m0.0102[39m  [36m0.0422[39m  [2m±0.34%[22m  [2m 134547[22m
+     256-gon                         [34m   55,704.67[39m  [36m0.0170[39m  [36m 0.5692[39m  [36m0.0182[39m  [36m0.0179[39m  [36m0.0243[39m  [36m0.0248[39m  [36m0.0444[39m  [2m±0.26%[22m  [2m  55007[22m
+     64 cubics (flattened per call)  [34m   39,169.04[39m  [36m0.0244[39m  [36m 1.4228[39m  [36m0.0261[39m  [36m0.0255[39m  [36m0.0345[39m  [36m0.0353[39m  [36m0.1921[39m  [2m±0.43%[22m  [2m  38368[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m area pick — BVH index vs full walk, node count (1% query rect)[33m 7686[2mms[22m[39m
+     [1mname                  [22m  [1m        hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed, 100 nodes      [34m360,481.56[39m  [36m0.0025[39m  [36m 0.2963[39m  [36m0.0028[39m  [36m0.0028[39m  [36m 0.0039[39m  [36m 0.0040[39m  [36m 0.0045[39m  [2m±0.30%[22m  [2m 353753[22m[1m[32m   fastest[39m[22m
+     indexed, 1000 nodes     [34m 46,456.53[39m  [36m0.0207[39m  [36m 0.3163[39m  [36m0.0217[39m  [36m0.0213[39m  [36m 0.0292[39m  [36m 0.0295[39m  [36m 0.0500[39m  [2m±0.25%[22m  [2m  45982[22m
+     full walk, 100 nodes    [34m 11,467.24[39m  [36m0.0838[39m  [36m 3.2936[39m  [36m0.0885[39m  [36m0.0872[39m  [36m 0.1097[39m  [36m 0.1184[39m  [36m 0.3041[39m  [2m±0.87%[22m  [2m  11304[22m
+     indexed, 10000 nodes    [34m  5,413.48[39m  [36m0.1776[39m  [36m 0.4851[39m  [36m0.1858[39m  [36m0.1842[39m  [36m 0.2234[39m  [36m 0.3783[39m  [36m 0.4278[39m  [2m±0.28%[22m  [2m   5383[22m
+     full walk, 1000 nodes   [34m  1,143.57[39m  [36m0.8414[39m  [36m 1.2584[39m  [36m0.8767[39m  [36m0.8818[39m  [36m 1.0865[39m  [36m 1.1237[39m  [36m 1.1942[39m  [2m±0.32%[22m  [2m   1141[22m
+     full walk, 10000 nodes  [34m    111.12[39m  [36m8.7179[39m  [36m10.2867[39m  [36m9.0078[39m  [36m9.1558[39m  [36m10.0455[39m  [36m10.1737[39m  [36m10.2641[39m  [2m±0.61%[22m  [2m    112[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m area pick — BVH index vs full walk, 10000 nodes by query-rect size[33m 7584[2mms[22m[39m
+     [1mname                [22m  [1m      hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed, 1% area      [34m5,391.59[39m  [36m 0.1781[39m  [36m 0.5513[39m  [36m 0.1868[39m  [36m 0.1863[39m  [36m 0.2343[39m  [36m 0.3862[39m  [36m 0.4612[39m  [2m±0.31%[22m  [2m   5353[22m[1m[32m   fastest[39m[22m
+     indexed, 25% area     [34m  316.71[39m  [36m 3.0457[39m  [36m 3.7504[39m  [36m 3.1624[39m  [36m 3.1647[39m  [36m 3.6862[39m  [36m 3.7161[39m  [36m 3.7458[39m  [2m±0.45%[22m  [2m    317[22m
+     full walk, 1% area    [34m  111.85[39m  [36m 8.7387[39m  [36m 9.3244[39m  [36m 8.9441[39m  [36m 9.1344[39m  [36m 9.2873[39m  [36m 9.3042[39m  [36m 9.3203[39m  [2m±0.36%[22m  [2m    112[22m
+     full walk, 25% area   [34m  105.97[39m  [36m 9.0764[39m  [36m11.0396[39m  [36m 9.4504[39m  [36m 9.6286[39m  [36m10.6915[39m  [36m10.8641[39m  [36m11.0045[39m  [2m±0.76%[22m  [2m    106[22m
+     full walk, 100% area  [34m  102.46[39m  [36m 9.4782[39m  [36m10.1739[39m  [36m 9.7636[39m  [36m 9.9631[39m  [36m10.1578[39m  [36m10.1659[39m  [36m10.1723[39m  [2m±0.40%[22m  [2m    103[22m
+     indexed, 100% area    [34m 82.9432[39m  [36m11.6611[39m  [36m13.1600[39m  [36m12.0633[39m  [36m12.2538[39m  [36m12.9814[39m  [36m13.0707[39m  [36m13.1421[39m  [2m±0.53%[22m  [2m     83[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m point pick — BVH index vs full walk, node count[33m 8053[2mms[22m[39m
+     [1mname                  [22m  [1m        hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed, 100 nodes      [34m619,908.97[39m  [36m 0.0014[39m  [36m 0.3180[39m  [36m 0.0017[39m  [36m 0.0016[39m  [36m 0.0023[39m  [36m 0.0024[39m  [36m 0.0027[39m  [2m±0.39%[22m  [2m 603108[22m[1m[32m   fastest[39m[22m
+     indexed, 1000 nodes     [34m331,285.14[39m  [36m 0.0027[39m  [36m 0.1944[39m  [36m 0.0031[39m  [36m 0.0030[39m  [36m 0.0042[39m  [36m 0.0043[39m  [36m 0.0048[39m  [2m±0.18%[22m  [2m 327253[22m
+     indexed, 10000 nodes    [34m 48,369.84[39m  [36m 0.0199[39m  [36m 0.2273[39m  [36m 0.0208[39m  [36m 0.0207[39m  [36m 0.0279[39m  [36m 0.0282[39m  [36m 0.0343[39m  [2m±0.14%[22m  [2m  48031[22m
+     full walk, 100 nodes    [34m  6,237.12[39m  [36m 0.1525[39m  [36m 0.4942[39m  [36m 0.1617[39m  [36m 0.1634[39m  [36m 0.2817[39m  [36m 0.3100[39m  [36m 0.3992[39m  [2m±0.31%[22m  [2m   6184[22m
+     full walk, 1000 nodes   [34m    597.40[39m  [36m 1.6220[39m  [36m 4.5872[39m  [36m 1.6792[39m  [36m 1.6797[39m  [36m 1.8377[39m  [36m 1.8975[39m  [36m 3.7292[39m  [2m±0.67%[22m  [2m    596[22m
+     full walk, 10000 nodes  [34m   55.9560[39m  [36m17.0572[39m  [36m23.1248[39m  [36m17.9559[39m  [36m17.7885[39m  [36m22.7857[39m  [36m22.9552[39m  [36m23.0908[39m  [2m±1.88%[22m  [2m     64[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m pick index — rebuild after one pose change, node count[33m 3801[2mms[22m[39m
+     [1mname       [22m  [1m      hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     100 nodes    [34m8,440.68[39m  [36m 0.1110[39m  [36m 0.4152[39m  [36m 0.1191[39m  [36m 0.1199[39m  [36m 0.1438[39m  [36m 0.1491[39m  [36m 0.3013[39m  [2m±0.21%[22m  [2m   8396[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m  765.99[39m  [36m 1.2485[39m  [36m 1.8193[39m  [36m 1.3081[39m  [36m 1.3151[39m  [36m 1.5547[39m  [36m 1.6009[39m  [36m 1.6926[39m  [2m±0.33%[22m  [2m    765[22m
+     10000 nodes  [34m 67.9091[39m  [36m14.4558[39m  [36m16.8569[39m  [36m14.7324[39m  [36m14.7816[39m  [36m16.0602[39m  [36m16.4586[39m  [36m16.7772[39m  [2m±0.55%[22m  [2m     68[22m[1m[90m   slowest[39m[22m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m   Start at [22m 08:02:58
+[2m   Duration [22m 60.47s[2m (tests 97%, transform 2%, environment 1%, import 1%)[22m
+
+JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/results/.vitest-bench-0Z58cJ/vitest-bench.json
+perf result: tests/perf/recorded/pick-index-2026-10-22/keiei/result.json

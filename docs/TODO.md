@@ -488,15 +488,12 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) Area and lasso picks walk every node; the scene has no spatial index.** `walkArea`
-  (`packages/core/src/canvas/deps/hitTestArea.ts`) goes through `pickWalk` over the whole scene
-  and rejects node by node on its bounds, so a marquee costs time linear in node count:
-  `tests/perf/bench/BASELINE.md` has `hitTestArea` at 3.59 ms for 10,000 rect nodes and 5.06 ms
-  for 24-gons (2026-09-29, M1 Max), about a third of a 60 Hz frame on every drag move. A
-  bounding-volume tree kept beside the scene, updated from the ops that move poses, would make
-  that grow with the number of hits instead. Containers, clips, and `inPlane`/`inCopy` regions
-  all have to keep working through it. Noted 2026-10-21 while asking whether WASM would help:
-  this is an algorithm cost, and WASM would only make the same walk a constant factor faster.
+- **(P3) Several hit tests still scan every node or shape linearly.** Marquee, lasso and point picks
+  consult the scene's BVH pick index (`packages/core/src/canvas/pickIndex/`); these do not, and can
+  move onto it: core's `features/text/textHitAt.ts`, `features/measure/measureHit.ts` and
+  `canvas/deps/slice.ts`; `diagram/src/portLayer.ts`, `diagram/src/labelDragLayer.ts`,
+  `labkit/src/loupe/lens/lensHitBoxes.ts`, `findPathSnaps` in `geom/src/snap/pathSnap.ts`, and
+  `boxesOf` in kernel3d's `snap/sources.ts`.
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
