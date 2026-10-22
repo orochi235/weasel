@@ -7,7 +7,7 @@
  * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { applyToPoint, pathIntersectsRect, type Affine } from '@weasel-js/geom';
+import { applyToPoint, boundsOfPath, pathIntersectsRect, type Affine } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -132,27 +132,40 @@ function walkArea(
   descriptor: PoseDescriptor<unknown>,
   query: RegionQueryOptions,
 ): NodeId[] {
-  const regionQuery = (r: SelectRegion): PickQuery<unknown> => ({
+  const src = scenePickSource(scene, { ...opts, index: { descriptor } });
+  return pickWalk<unknown>(src, regionPickQuery(region, mode, descriptor, query)) as NodeId[];
+}
+
+/** The query a marquee or a lasso over `r` asks of each node. */
+export function regionPickQuery(
+  r: SelectRegion,
+  mode: LassoHitMode,
+  descriptor: PoseDescriptor<unknown>,
+  query: RegionQueryOptions,
+): PickQuery<unknown> {
+  return {
     includeContainers: query.includeContainers === true,
-    clipAdmits: (clip, node, pose) => {
+    broad: { box: r.bounds },
+    clipAdmits: (clip, node, pose, derived) => {
       const g = poseDescriptorForNode(descriptor, node);
-      return pathIntersectsRect(clip, visualBoundsViaDescriptor(pose, g))
+      return pathIntersectsRect(clip, derived ? boundsOfPath(derived) : visualBoundsViaDescriptor(pose, g))
         && pathIntersectsRect(clip, r.bounds);
     },
-    hits: (node, pose, _derived, inherited) => {
+    hits: (node, pose, derived, inherited) => {
       // The descriptor sees the node here, so a pose shape whose extent
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
-      const b = regionBoundsOf(node as object, pose, g);
+      // A derived node's pose is a placeholder: its path is the extent and the fallback outline.
+      const b = derived ? boundsOfPath(derived) : regionBoundsOf(node as object, pose, g);
       let ink: boolean | undefined;
       const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited })?.filled !== false;
       return regionTakes(r, mode, asInked(filled, pose), b, () =>
-        asInked(filled, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)), filled);
+        asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived }) ?? derived ?? poseOutline(pose, b)), filled);
     },
-    inPlane: (m) => regionQuery(regionInPlane(r, m)),
-    inCopy: (m) => regionQuery(regionInCopy(r, m)),
-  });
-  return pickWalk<unknown>(scenePickSource(scene, opts), regionQuery(region)) as NodeId[];
+    inPlane: (m) => regionPickQuery(regionInPlane(r, m), mode, descriptor, query),
+    // A copy is tested by every walk, so the query carried into one asks no index.
+    inCopy: (m) => ({ ...regionPickQuery(regionInCopy(r, m), mode, descriptor, query), broad: undefined }),
+  };
 }
 
 /** `r` carried into a plane's world. The map is axis-aligned, so a rect stays

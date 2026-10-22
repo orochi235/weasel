@@ -1,14 +1,21 @@
 /**
  * Area hit-testing against node count and query-rect size.
  *
- * `hitTestArea` is a linear scan with an AABB fast-reject, and for path-shaped
- * poses a per-node silhouette-vs-area polygon kernel that is O(silhouette
- * verts x area verts). So node count is the axis that matters for rect poses,
- * and query-rect size only matters through how many nodes survive the
- * fast-reject and reach the kernel.
+ * `hitTestArea` asks the scene's BVH pick index for the nodes the query's box
+ * can reach, then runs the per-node kernel (O(silhouette verts x area verts)
+ * for path-shaped poses) on those alone. The "full walk" groups run the same
+ * query through `pickWalk` with no index, which visits every node. The index
+ * builds on the second pick to find the scene unchanged, so the first pick of
+ * every bench below walks; vitest's warmup absorbs it.
  */
 import { group } from './group';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
+import { rectRegion } from 'core/geometry/regionHit';
+import { regionPickQuery } from 'canvas/deps/hitTestArea';
+import { pickWalk, scenePickSource } from 'canvas/pickWalk';
+import { scenePickIndex } from 'canvas/pickIndex/scenePickIndex';
+import { scenePointQuery } from 'canvas/SceneCanvas/scenePointQuery';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import type { Scene } from 'core/scene/types';
 import { pointInPath } from '@weasel-js/geom';
@@ -110,6 +117,76 @@ group('pointInPath — per-node kernel, by vertex count', (bench) => {
     const path = curvyPath(curves);
     bench(`${curves} cubics (flattened per call)`, () => {
       pointInPath(path, 10, 10);
+    });
+  }
+});
+
+const areaQuery = (f: number) => regionPickQuery(rectRegion(rectFor(f)), 'intersect', AUTO_POSE_DESCRIPTOR, {});
+
+group('area pick — BVH index vs full walk, node count (1% query rect)', (bench) => {
+  const query = areaQuery(0.1);
+  for (const n of NODE_COUNTS) {
+    const scene = asAny(rectScenes.get(n));
+    bench(`indexed, ${n} nodes`, () => {
+      pickWalk(scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } }), query);
+    });
+    bench(`full walk, ${n} nodes`, () => {
+      pickWalk(scenePickSource(scene), query);
+    });
+  }
+});
+
+group('area pick — BVH index vs full walk, 10000 nodes by query-rect size', (bench) => {
+  const scene = asAny(rectScenes.get(10000));
+  for (const { label, f } of RECTS) {
+    const query = areaQuery(f);
+    bench(`indexed, ${label}`, () => {
+      pickWalk(scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } }), query);
+    });
+    bench(`full walk, ${label}`, () => {
+      pickWalk(scenePickSource(scene), query);
+    });
+  }
+});
+
+group('point pick — BVH index vs full walk, node count', (bench) => {
+  const query = scenePointQuery<unknown>(AUTO_POSE_DESCRIPTOR, true, 4)(SPAN / 2, SPAN / 2, { x: 1, y: 1 });
+  for (const n of NODE_COUNTS) {
+    const scene = asAny(rectScenes.get(n));
+    bench(`indexed, ${n} nodes`, () => {
+      pickWalk(scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } }), query);
+    });
+    bench(`full walk, ${n} nodes`, () => {
+      pickWalk(scenePickSource(scene), query);
+    });
+  }
+});
+
+group('pick index — rebuild after one pose change, node count', (bench) => {
+  for (const n of NODE_COUNTS) {
+    const scene = scatterScene(n, { shape: 'rect' });
+    const [id] = [...scene.renderOrder()];
+    let i = 0;
+    bench(`${n} nodes`, () => {
+      scene.setPose(id, { x: i++ % 100, y: 0, width: 40, height: 40 });
+      // The first pick after a change only records it; the second builds.
+      scenePickIndex(asAny(scene), AUTO_POSE_DESCRIPTOR);
+      scenePickIndex(asAny(scene), AUTO_POSE_DESCRIPTOR);
+    });
+  }
+});
+
+group('area pick after every pose change (25% query rect), 10000 nodes', (bench) => {
+  // An animation's case: the indexed pick walks, since the scene is never still twice.
+  const query = areaQuery(0.5);
+  for (const indexed of [true, false]) {
+    const scene = scatterScene(10000, { shape: 'rect' });
+    const [id] = [...scene.renderOrder()];
+    const src = () => scenePickSource(asAny(scene), indexed ? { index: { descriptor: AUTO_POSE_DESCRIPTOR } } : {});
+    let i = 0;
+    bench(indexed ? 'indexed' : 'full walk', () => {
+      scene.setPose(id, { x: i++ % 100, y: 0, width: 40, height: 40 });
+      pickWalk(src(), query);
     });
   }
 });

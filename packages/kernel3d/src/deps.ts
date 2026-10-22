@@ -21,7 +21,6 @@ import {
   aabbOfPoints,
   add,
   dot,
-  intersectRayAabb,
   intersectRayPlane,
   len,
   normalize,
@@ -35,7 +34,8 @@ import {
 import { cameraEye, type Camera3d } from './camera';
 import { aabbOfPose, type Pose3 } from './pose3';
 import { rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
-import { projectAabbToScreen, type ScreenBox } from './screen';
+import { worldPickIndex } from './pickIndex';
+import { projectAabbToScreen } from './screen';
 import { createSession3d } from './snap/session3d';
 
 import { DEFAULT_UP, boundsOfNode, type Node3d, type World3d } from './world';
@@ -68,26 +68,7 @@ function onPlane(
   return t === null ? null : pointOnRay(ray, t);
 }
 
-function overlaps(a: ScreenBox, b: ScreenBox): boolean {
-  return (
-    a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
-  );
-}
-
-/** The screen box a node covers, or null when it projects to nothing visible. */
-export function screenBoxOf<TData, TLayer extends string>(
-  world: World3d<TData, TLayer>,
-  id: NodeId,
-  viewport: Viewport3d,
-): ScreenBox | null {
-  const node = world.scene.get(id) as Node3d<TData, TLayer> | undefined;
-  if (!node) return null;
-  return projectAabbToScreen(
-    boundsOfNode(world, node),
-    viewProjectionOf(viewport),
-    rectOf(viewport),
-  );
-}
+export { screenBoxOf } from './pickIndex';
 
 /**
  * Nearest node along the ray the screen point names.
@@ -100,40 +81,19 @@ export function createNodeAtPoint<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
 ): NodeAtPointDep {
   return (point, exclude) => {
-    const excluded = exclude ? new Set(exclude) : null;
-    const vp = world.viewport();
-    const ray = rayAt(vp, point);
+    const ray = rayAt(world.viewport(), point);
     if (!ray) return null;
-    let best: NodeId | null = null;
-    let bestT = Infinity;
-    for (const node of world.scene.renderOrderNodes() as readonly Node3d<TData, TLayer>[]) {
-      if (excluded?.has(node.id)) continue;
-      const { min, max } = boundsOfNode(world, node);
-      const t = intersectRayAabb(ray, min, max);
-      if (t !== null && t < bestT) {
-        bestT = t;
-        best = node.id;
-      }
-    }
-    return best;
+    return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null);
   };
 }
 
-/** Marquee: the nodes whose projected box the screen rectangle touches. */
+/** Marquee: the nodes whose projected box the screen rectangle touches, in render order. */
 export function createAreaSelect<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
 ): AreaSelectDep {
   return {
-    hitTestArea(bounds) {
-      const vp = world.viewport();
-      const hits: NodeId[] = [];
-      for (const node of world.scene.renderOrderNodes()) {
-        const box = screenBoxOf(world, node.id, vp);
-        if (box && overlaps(box, bounds)) hits.push(node.id);
-      }
-      return hits;
-    },
+    hitTestArea: (bounds) => worldPickIndex(world).inScreenRect(world.viewport(), bounds),
     getSelection: () => [...selection.get()],
     setSelection: (ids) => selection.set([...ids]),
   };

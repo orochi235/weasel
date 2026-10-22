@@ -1,0 +1,32 @@
+{
+  "/Users/mike/src/weasel/.claude/worktrees/pick-index/tests/perf/recorded/pick-index-2026-10-22/keiei/bench.log": {
+    "size": 31956,
+    "mtime": 1792670638828456013,
+    "inode": 711887931,
+    "sha256": "06a014e531156b62f74423b3cb3060202ef219454e17bf072b39002111a7688a"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/pick-index/tests/perf/recorded/pick-index-2026-10-22/keiei/conditions.txt": {
+    "size": 230,
+    "mtime": 1792670638837987982,
+    "inode": 711887932,
+    "sha256": "1aa1241f5b4a52d2125b0ad00b62ed8f397443735702c0a5444d3b8b5a3f92bf"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/pick-index/tests/perf/recorded/pick-index-2026-10-22/keiei/result.json": {
+    "size": 38910,
+    "mtime": 1792670638827685974,
+    "inode": 711887933,
+    "sha256": "d357e66857358effa654bf5e98d035e49c798df529ac15b32bae8bd757454d98"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/pick-index/tests/perf/recorded/pick-index-2026-10-22/keiei/vitest-bench.json": {
+    "size": 46260,
+    "mtime": 1792670638827007268,
+    "inode": 711887934,
+    "sha256": "ff4cfa93b218a05837c250775cbadfdade6f9d474bcdd34dd9053501d1c978d9"
+  },
+  "/Users/mike/src/weasel/.claude/worktrees/pick-index/tests/perf/recorded/pick-index-2026-10-22/run.sh": {
+    "size": 967,
+    "mtime": 1792670472958732225,
+    "inode": 711861284,
+    "sha256": "309e1ae72907f9e7c1181cdb94df2653addeceb9b83e975c372e13303810a09a"
+  }
+}

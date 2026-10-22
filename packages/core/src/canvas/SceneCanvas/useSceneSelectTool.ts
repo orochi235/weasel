@@ -57,7 +57,8 @@ function cameraOf(v: Pick<PickView, 'scale' | 'x' | 'y'> | null): View | null {
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   /** The adapter the select tool drives, built over `scene` with the same
-   *  `poseDescriptor`. Its world poses are what picking and bounds read. */
+   *  `poseDescriptor`. Its world poses are what bounds read, and equal the
+   *  scene's painted poses, which picking reads. */
   adapter: SceneCanvasAdapter<TData, TLayer, TPose>;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
@@ -159,7 +160,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => moveOptions ?? {}, [moveOptions]);
 
   const wiredHitBody = usePointPick({
-    scene, adapter, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
+    scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
     alphaOf, layerIsPainted, isPointerInteractive,
   });
 
@@ -227,7 +228,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
  *  walk, less whatever `isPointerInteractive` rejects. */
 function usePointPick<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
-  adapter: SceneCanvasAdapter<TData, TLayer, TPose>;
   d: PoseDescriptor<TPose>;
   pickEveryProp: SceneCanvasGeometry['pickEvery'];
   shapePicking: boolean;
@@ -238,7 +238,7 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   isPointerInteractive: ((id: string) => boolean) | undefined;
 }): (wx: number, wy: number, view?: PickView | null) => string[] {
   const {
-    scene, adapter, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
+    scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
     alphaOf, layerIsPainted, isPointerInteractive,
   } = args;
   // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
@@ -259,12 +259,10 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
       const viewAlpha = view?.alphaOf ?? alphaOf;
       const viewLayers = view?.layerIsPainted ?? layerIsPainted;
       const camera = cameraOf(asked);
-      // Through the adapter, not `n.pose`: an ephemeral override is the pose
-      // the renderer draws, so it has to be the one picking tests. World, not
-      // local, for the same reason — a framed child is drawn in its parent's
-      // frame, not where its own pose says.
+      // No `getPose`: the scene's painted poses are the adapter's world poses
+      // (`useSceneSelectTool.index.test.tsx`), and they let the index serve the walk.
       const src = scenePickSource<TData, TLayer, TPose>(scene, {
-        getPose: (id) => adapter.getWorldPose(id),
+        index: { descriptor: d as PoseDescriptor<unknown> },
         ...(viewAlpha ? { alphaOf: viewAlpha } : {}),
         ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
         ...(camera ? { camera } : {}),
@@ -272,7 +270,7 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
       const pointQuery = scenePointQuery<TPose>(d as PoseDescriptor<unknown>, shapePicking, pickTolerancePx);
       return pickWalk<TPose>(src, pointQuery(wx, wy, asked?.scale ?? { x: 1, y: 1 }));
     };
-  }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView,
+  }, [scene, pickEveryProp, shapePicking, pickTolerancePx, getView,
       alphaOf, layerIsPainted, d]);
   const wiredHitBody = useMemo(() => {
     if (!isPointerInteractive) return walk;
