@@ -8,7 +8,7 @@
  * own indeterminate presentation.
  */
 import {
-  isSolidPaint, MIXED, numericWeight, resolveScreenLength, SCRIPT_METRICS, scriptMetricsFor, useTextTool,
+  isSolidPaint, MIXED, numericWeight, resolveFill, resolveScreenLength, SCRIPT_METRICS, scriptMetricsFor, useTextTool,
 } from '@weasel-js/core';
 import type { ScreenLength } from '@weasel-js/core';
 import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
@@ -94,8 +94,7 @@ function characterValues(style: RangeStyle): Record<string, unknown> {
     baselineShift: style.baselineShift ?? preset?.shift,
     fontScale: style.fontScale ?? preset?.size,
     fill: solidFill(style.fill),
-    // An unfilled node's range has no `fill` at all; one of its own is `null`.
-    noFill: style.fill == null,
+    noFill: style.fill !== MIXED && resolveFill(style.fill) === null,
   };
 }
 
@@ -120,7 +119,7 @@ function characterMixed(style: RangeStyle): Set<string> {
   // mixed range, rather than a swatch claiming the text is some solid color.
   // The tag is checked as well as the key: a tile paint carries a `color` too.
   const fill = style.fill;
-  if (fill != null && fill !== MIXED && solidFill(fill) === undefined) out.add('fill');
+  if (fill !== MIXED && resolveFill(fill) !== null && solidFill(fill) === undefined) out.add('fill');
   return out;
 }
 
@@ -135,8 +134,9 @@ function pick(style: RangeStyle): Record<string, unknown> {
 }
 
 function solidFill(fill: RangeStyle['fill']): string | undefined {
-  if (fill === undefined || fill === null || fill === MIXED) return undefined;
-  return isSolidPaint(fill.paint) ? fill.paint.color : undefined;
+  if (fill === MIXED) return undefined;
+  const paint = resolveFill(fill)?.paint;
+  return isSolidPaint(paint) ? paint.color : undefined;
 }
 
 function worldSize(v: ScreenLength | typeof MIXED | undefined): number | undefined {

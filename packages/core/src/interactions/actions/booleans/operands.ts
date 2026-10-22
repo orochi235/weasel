@@ -5,6 +5,7 @@
 import type { Affine, Path, Scale2 } from '@weasel-js/geom';
 import { pathUnion } from '@weasel-js/geom/booleans';
 import { textToPath, textToPathsByPaint } from '@weasel-js/text';
+import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { NodeId } from 'core/scene/types';
 import type { PaintedPath } from '../outlines/replaceWithPaths';
@@ -47,14 +48,14 @@ function inkOf(
   frame: Affine | null | undefined,
   scale: number | Scale2 | undefined,
 ): BooleanOperand {
-  const { path, fill } = source;
-  const { stroke } = source;
-  const strokePaint = stroke?.paint;
-  if (!stroke || strokePaint == null) return { path };
+  const { path } = source;
+  const fill = resolveFill(source.fill);
+  const stroke = resolveStroke(source.stroke);
+  if (!stroke) return { path };
   if (strokes === 'ignore' || (strokes === 'unfilled' && fill !== null)) return { path };
   const ribbon = strokeRegion(path, stroke, frame, scale === undefined ? {} : { scale });
   if (ribbon.commands.length === 0) return { path };
-  return { path: fill !== null ? pathUnion(path, ribbon) : ribbon, paint: { fill: fill ?? { paint: strokePaint } } };
+  return { path: fill !== null ? pathUnion(path, ribbon) : ribbon, paint: { fill: fill ?? { paint: stroke.paint } } };
 }
 
 /**
