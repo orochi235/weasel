@@ -1,10 +1,12 @@
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, RefObject } from 'react';
 import { clamp } from '@weasel-js/geom';
-import s from './Slider.module.css';
 import type { SliderGeometry } from './sliderGeometry';
 import { clampOrdered, resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useThumbDrags } from './useThumbDrags';
+
+/** A thumb, picked by its role: its class composes another, so `.${s.thumb}` names two classes and matches nothing. */
+const THUMB = '[role="slider"]';
 
 /** What the presses read: the thumbs and the props that steer them, the geometry and scale that turn a pointer into a value, and the drags they hand off to. */
 export interface SliderPointerArgs<T extends Thumb> {
@@ -55,7 +57,7 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
     const wantsMove = trackClick === 'move-nearest' && thumbs.length > 0;
     if (!props.onAddThumb && !wantsMove) return;
     // If the event originated on a thumb, the thumb's own handler ran first; this is a track click.
-    if ((e.target as HTMLElement).closest(`.${s.thumb}`)) return;
+    if ((e.target as Element).closest(THUMB)) return;
     e.preventDefault();
     const track = trackRef.current;
     const m = geometry.measure(e.clientX, e.clientY);
@@ -82,7 +84,7 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
     next[index] = { ...next[index], value: moved };
     onInput(next);
     // preventDefault above suppresses the focus the press would give; the arrow keys are on the thumb.
-    track.querySelectorAll<HTMLElement>(`.${s.thumb}`)[index]?.focus();
+    track.querySelectorAll<HTMLElement>(THUMB)[index]?.focus();
     drags.beginThumbDrag(track, e, index, next);
   };
 

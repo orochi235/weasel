@@ -110,6 +110,35 @@ test('a press on the band moves the thumb there, and a drag along the rim lands 
   expect(thumb.getAttribute('aria-valuenow')).toBe('16');
 });
 
+test('a press on the band focuses the thumb it moves there', async () => {
+  const { all, thumb } = await mount();
+  const eight = mid(all('[data-slider-tick]')[2]!);
+  const target = hit(eight.x, eight.y)!;
+  expect(target.hasAttribute('data-slider-band')).toBe(true);
+  target.dispatchEvent(new PointerEvent('pointerdown', opts(eight.x, eight.y)));
+  document.dispatchEvent(new PointerEvent('pointerup', opts(eight.x, eight.y)));
+  await frame();
+  expect(thumb.getAttribute('aria-valuenow')).toBe('8');
+  expect(document.activeElement).toBe(thumb);
+});
+
+test('a press on a straight track focuses its thumb too', async () => {
+  function Straight() {
+    const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 10 }]);
+    return <div style={{ width: 300, margin: 40 }}><Slider min={0} max={100} step={1} thumbs={thumbs} onInput={setThumbs} /></div>;
+  }
+  const view = render(<Straight />);
+  await frame();
+  const rail = view.container.querySelector('[data-slider-rail]')!.getBoundingClientRect();
+  const p = { x: rail.left + rail.width / 2, y: rail.top + rail.height / 2 };
+  hit(p.x, p.y)!.dispatchEvent(new PointerEvent('pointerdown', opts(p.x, p.y)));
+  document.dispatchEvent(new PointerEvent('pointerup', opts(p.x, p.y)));
+  await frame();
+  const thumb = screen.getByRole('slider');
+  expect(thumb.getAttribute('aria-valuenow')).toBe('50');
+  expect(document.activeElement).toBe(thumb);
+});
+
 test("the thumb's slop takes a press just off its edge", async () => {
   const { thumb } = await mount();
   const slop = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wzl-slider-thumb-slop'));
