@@ -1,5 +1,6 @@
 import {
   asNodeId,
+  effectSourceFor,
   hasEditablePath,
   modeTriggers,
   type Contribution,
@@ -25,6 +26,14 @@ export interface CanvasModes {
   isolatedGroup: () => string | null;
 }
 
+/** The path Enter opens for `ids`: one selected path, or the path a selected effect hides. */
+export function pathToEdit(scene: DrawScene, ids: readonly string[]): string | null {
+  const [id, ...rest] = ids;
+  if (id === undefined || rest.length > 0) return null;
+  const target = effectSourceFor(scene, asNodeId(id), 'path') ?? id;
+  return (scene.get(asNodeId(target))?.data as { path?: unknown } | undefined)?.path != null ? target : null;
+}
+
 /**
  * A path with anchors is left to the canvas's `enterPathEdit`, which opens it; one without still
  * takes path-edit, as Enter does.
@@ -36,11 +45,7 @@ export function useCanvasModes(
   pathEdit: PathEditHost,
 ): CanvasModes {
   const entry = useLatest({
-    pathToEdit: (): string | null => {
-      const [id, ...rest] = selection.get();
-      if (id === undefined || rest.length > 0) return null;
-      return (scene.get(id)?.data as { path?: unknown } | undefined)?.path != null ? id : null;
-    },
+    pathToEdit: (): string | null => pathToEdit(scene, selection.get()),
     selection: (): readonly string[] => selection.get(),
   });
   const keys = useMemo(() => modalityShortcuts(machine, {

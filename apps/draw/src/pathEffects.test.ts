@@ -3,7 +3,12 @@
  * reload: the scene `App` builds, `toJSON` as `useSessionPersistence` writes
  * it, and `nodeSpecsFromSnapshot` as `loadInitial` reads it back.
  */
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { registerFontOutlines, type OutlineFace } from '@weasel-js/font';
+import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { pathFromD } from '@weasel-js/geom';
+import { loadTextOutlines } from '@weasel-js/text';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import {
   asNodeId, createScene, derivedDepOf, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathEffectParts, rectPath,
   type AddNodeSpec, type NodeId, type SerializedScene, solid,
@@ -168,5 +173,74 @@ describe('a path effect through draw\'s SVG', () => {
       importSvgText(alone, await selectionToSvgString(scene, ['fx']));
       expect(alone.roots).toEqual([]);
     }
+  });
+});
+
+const BARS: OutlineFace = {
+  unitsPerEm: 1000, ascender: 0.8, advanceOf: () => 0.6, kernOf: () => 0, glyphD: () => 'M0 -0.5L0.2 -0.5L0.2 0L0 0Z',
+};
+
+/** A text node and a path, both hidden, and a `textAlong` node laying the text along the path. */
+function withTextAlong() {
+  const words: Spec = {
+    kind: 'leaf', id: asNodeId('t'), layer: 'default', hidden: true,
+    pose: { x: 0, y: 0, width: 300, height: 40 },
+    data: { text: 'Hello', style: { fontFamily: 'bars', fontSize: 30 }, fill: { paint: solid('#000000') } },
+  };
+  const arc: Spec = {
+    kind: 'leaf', id: asNodeId('p'), layer: 'default', hidden: true,
+    pose: { x: 0, y: 100, width: 300, height: 100 },
+    data: { path: pathFromD('M0 200 Q150 100 300 200'), stroke: { paint: solid('#000000'), width: 1 } },
+  };
+  return drawScene([
+    words, arc,
+    {
+      ...pathEffectNode({ kind: 'textAlong', hideSources: true, start: 0.1 }, [asNodeId('t'), asNodeId('p')], 'default', PATH_EFFECT_DERIVATIONS),
+      id: asNodeId('fx'),
+    } as Spec,
+  ]);
+}
+
+const partsOf = liveSteps;
+
+describe('a draw document with text along a path', () => {
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    _resetFontOutlinesForTests();
+    _resetLayoutCacheForTests();
+    registerFontOutlines('bars', {}, new ArrayBuffer(4), { parser: () => BARS });
+    await loadTextOutlines({ text: 'Hello', style: { fontFamily: 'bars', fontSize: 30 } });
+  });
+
+  it('saves and reopens with its sources still hidden and its glyphs where they were', () => {
+    const scene = withTextAlong();
+    expect(partsOf(scene)).toHaveLength(5);
+
+    const saved = JSON.stringify(scene.toJSON(), serializeReplacer);
+    const json = reviveSnapshot(JSON.parse(saved)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const reopened = drawScene(nodeSpecsFromSnapshot(json, DRAW_REGISTRY));
+
+    expect(reopened.isHidden(asNodeId('t'))).toBe(true);
+    expect(reopened.isHidden(asNodeId('p'))).toBe(true);
+    expect(effectsIn(reopened)[0]!.data.pathEffect).toEqual({ kind: 'textAlong', hideSources: true, start: 0.1 });
+    expect(partsOf(reopened)).toEqual(partsOf(scene));
+  });
+
+  it('reopens from its SVG still live, over hidden sources', async () => {
+    const scene = withTextAlong();
+    const reopened = drawScene([]);
+    openSvgText(reopened, await exportOf(scene), 'x.svg');
+
+    const [node] = effectsIn(reopened);
+    expect(node!.data.pathEffect).toEqual({ kind: 'textAlong', hideSources: true, start: 0.1 });
+    const [t, p] = node!.dependsOn as NodeId[];
+    expect(reopened.get(t!)!.data.text).toBe('Hello');
+    expect(reopened.isHidden(t!)).toBe(true);
+    expect(reopened.isHidden(p!)).toBe(true);
+    expect(partsOf(reopened)).toHaveLength(5);
+
+    // Still live: new text lays new glyphs.
+    reopened.update(t!, { data: { ...reopened.get(t!)!.data, text: 'Hel' } });
+    expect(partsOf(reopened)).toHaveLength(3);
   });
 });
