@@ -1,0 +1,67 @@
+.stage {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-6);
+  padding: var(--wzl-space-6);
+}
+
+/* The circle both controls lie along; its middle takes no input of its own. */
+.dial {
+  position: relative;
+  flex: none;
+  width: 260px;
+  height: 260px;
+  outline: 1px dashed var(--wzl-border);
+  outline-offset: -1px;
+  border-radius: 50%;
+}
+
+.order {
+  margin: 0;
+  padding-inline-start: var(--wzl-space-8);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.order > [data-focused] {
+  color: var(--wzl-accent-fg);
+  font-weight: bold;
+}
+
+.log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 520px;
+  overflow: auto;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.log > li {
+  display: grid;
+  grid-template-columns: 6ch 16ch minmax(0, 1fr);
+  column-gap: var(--wzl-space-2);
+  padding-block: 1px;
+}
+
+.log > li[data-claimed] .type {
+  color: var(--wzl-accent-fg);
+}
+
+.at {
+  color: var(--wzl-fg-muted);
+  text-align: end;
+}
+
+.target {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The detail runs on under the target, so the target keeps its column. */
+.detail {
+  grid-column: 3;
+  color: var(--wzl-fg-muted);
+}
