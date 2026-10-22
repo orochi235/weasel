@@ -21,8 +21,7 @@ import { browserDeps } from './scripts/vitest-browser-deps.ts';
 import { selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 
-// Sparkplug code segfaults V8's GC in worker isolates (nodejs/node#62393); workers still crash on
-// 24.22.0 with this set, see docs/TODO.md.
+// Sparkplug code segfaults V8's GC in worker isolates below Node 24.22.0 (nodejs/node#62393).
 // Workers spawned after this inherit the flag; NODE_OPTIONS refuses it.
 v8.setFlagsFromString('--no-sparkplug');
 
@@ -88,6 +87,9 @@ export default defineConfig({
   test: {
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,
+    // A vm worker left to grow toward vitest's default (RAM / workers, ~4 GB on teitou) segfaults V8 on
+    // Node 24.22 under --stress-flush-code every time; recycled at 1 GB it ran 6 of 6 clean (2026-10-22).
+    vmMemoryLimit: '1gb',
     ...(related && { related }),
     projects: [
       {
