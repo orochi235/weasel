@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Point, TrackShape } from '@weasel-js/geom';
+import type { Point, RunAlign, TrackShape } from '@weasel-js/geom';
 
 /** An arc in degrees clockwise from 12 o'clock, sized from the box it is laid in. */
 export interface AlongArc {
@@ -14,14 +14,13 @@ export interface AlongArc {
   inset?: number;
 }
 
-/** Where a control's run sits on a track longer than the run. */
-export type RunAlign = 'start' | 'center' | 'end';
-
 /** What `Along` hands the controls inside it. */
 export interface AlongCtx {
   shape: TrackShape;
   align: RunAlign;
 }
+
+export type { RunAlign };
 
 export const AlongContext = createContext<AlongCtx | null>(null);
 

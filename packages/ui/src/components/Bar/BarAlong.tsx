@@ -1,14 +1,13 @@
 import { useMemo, useRef, type ReactElement } from 'react';
-import { trackRun, trackShapeD, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { placeAlongRun, runLength, trackRun, trackShapeD, type RunPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
-import { placeOnRun } from '../Along/placeOnRun';
+import { placeOnRun, placeStyle } from '../Along/placeOnRun';
 import { sideAtRun } from './barSide';
 import { barItems, barLead, drawBarItem, splitBarItems, type BarItem } from './barItems';
 import type { BarLayoutProps } from './BarLayout';
 import { BarOverflow } from './BarOverflow';
-import { runLength, runPlaces, type RunSpot } from './runPlaces';
 import { BAR_LEAD, BAR_MORE, fitting } from './useBarOverflow';
 import { useItemLengths, useRunGap } from './useItemLengths';
 import { useRunScroll } from './useRunScroll';
@@ -45,10 +44,15 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const order = [...(leading != null ? [BAR_LEAD] : []), ...line.map((item) => item.key), ...(rest.length > 0 ? [BAR_MORE] : [])];
   const orderLengths = order.map((key) => lengths.get(key) ?? 0);
   const total = menu ? 0 : runLength(orderLengths, gap);
-  let spots: RunSpot[] = [];
+  let spots: RunPlace[] = [];
   const scroll = useRunScroll({ root, run, total, spots: () => spots, lengths: orderLengths });
-  spots = alongSpots(orderLengths, gap, run.length, align, menu, scroll.offset);
-  const place = (i: number) => ({ className: s.item!, style: placeOnRun(run, spotG(spots[i]!, run.length)), clipped: menu ? undefined : spots[i]!.clipped, side: sideAtRun(run, spots[i]!.center / run.length) });
+  spots = alongSpots(run, orderLengths, gap, align, menu, scroll.offset);
+  const place = (i: number) => {
+    const spot = spots[i]!;
+    // A zero-length run has no direction to carry items along: they all sit at its one point.
+    const flat = run.length <= 0;
+    return { className: s.item!, style: placeStyle(flat ? run.at(0.5) : spot), clipped: menu ? undefined : spot.clipped, side: sideAtRun(run, flat ? 0.5 : spot.center / run.length) };
+  };
   const first = leading != null ? 1 : 0;
   const scrolls = total > run.length;
 
@@ -73,22 +77,15 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   );
 }
 
-/** Where along the run, 0..1, a spot is drawn: a part-clipped item slides on past the end it overhangs, and one
- *  wholly past an end, which is hidden, waits at that end rather than reaching out beyond the bar's box. */
-function spotG(spot: RunSpot, length: number): number {
-  if (length <= 0) return 0.5;
-  const g = spot.center / length;
-  return spot.clipped === 'past' ? Math.min(1, Math.max(0, g)) : g;
-}
-
 /** The keys of what the bar holds, so its lengths are watched again when that set changes. */
 function drawnKeys(items: readonly BarItem[], lead: boolean): string[] {
   return [...(lead ? [BAR_LEAD] : []), ...items.map((item) => item.key)];
 }
 
-/** Where a curved bar's run falls: as `runPlaces` lays it back by `offset`, except that a `'menu'` run too long for its room, which only the More button and the lead can make, sits centered. */
-function alongSpots(lengths: readonly number[], gap: number, room: number, align: RunAlign, menu: boolean, offset: number) {
-  return runPlaces(lengths, gap, room, align, menu ? Math.max(0, (runLength(lengths, gap) - room) / 2) : offset);
+/** Where a curved bar's items fall on its run: laid back by `offset`, except that a `'menu'` run too long for its room, which only the More button and the lead can make, sits centered. An item wholly past an end waits at it. */
+function alongSpots(run: TrackRun, lengths: readonly number[], gap: number, align: RunAlign, menu: boolean, offset: number): RunPlace[] {
+  const over = menu ? Math.max(0, (runLength(lengths, gap) - run.length) / 2) : offset;
+  return placeAlongRun(run, lengths, { gap, align, offset: over, past: 'hold' });
 }
 
 /** A chevron at each end of a scrolled run that has items past it, pointing out along the run. */

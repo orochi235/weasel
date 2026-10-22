@@ -15,4 +15,4 @@ export { BarActions, type BarActionsProps } from './BarActions';
 export { BarMenu, type BarMenuProps, type BarMenuSources } from './BarMenu';
 export { BarPopover, type BarPopoverProps } from './BarPopover';
 export { renderBarLeaf, type BarLeaf } from './renderBarLeaf';
-export { runPlaces, type RunSpot } from './runPlaces';
+export { runPlaces, type RunSpot } from '@weasel-js/geom';

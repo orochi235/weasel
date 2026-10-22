@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
-import { clamp, type TrackRun } from '@weasel-js/geom';
+import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { useLatest } from '@weasel-js/react';
-import type { RunSpot } from './runPlaces';
 import { BAR_ITEM, BAR_LEAD } from './useBarOverflow';
 
 /** Px a press must travel along the run before it is a scroll rather than a press on an item. */

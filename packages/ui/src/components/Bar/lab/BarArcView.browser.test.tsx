@@ -3,10 +3,9 @@ import '@weasel-js/theme/fonts.css';
 import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
-import { arcShape, trackRun, type Point } from '@weasel-js/geom';
+import { arcShape, runPlaces, trackRun, type Point } from '@weasel-js/geom';
 import { arcInBox } from '../../Along/arcInBox';
 import { renderWithIcons } from '../../../testing/withIcons';
-import { runPlaces } from '../runPlaces';
 import { arcOf, BAR_ARC_DEFAULTS, BAR_ARC_PRESETS, type BarArcConfig } from './barArcConfig';
 import { BarArcView } from './BarArcView';
 

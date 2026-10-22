@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { lineShape, trackRun } from '@weasel-js/geom';
-import { runPlaces, type RunSpot } from './runPlaces';
+import { lineShape, runPlaces, trackRun, type RunSpot } from '@weasel-js/geom';
 import { useRunScroll } from './useRunScroll';
 
 // Five items 20 long with 15 between run to 160 along a run 100 long; jsdom puts every box at (0, 0).

@@ -6,7 +6,7 @@ import { BarMenu } from './BarMenu';
 import { barMenuRoot } from './barMenuRoot';
 import { BarPopover } from './BarPopover';
 import { BarSideContext, type BarSide } from './barSide';
-import type { RunSpot } from './runPlaces';
+import type { RunSpot } from '@weasel-js/geom';
 import { BAR_ITEM } from './useBarOverflow';
 import { barLeafName, type BarCell, type BarLayoutProps, type BarLeafNode, type BarNode } from './BarLayout';
 import s from './Bar.module.css';

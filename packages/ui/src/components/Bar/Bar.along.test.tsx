@@ -1,10 +1,9 @@
 import { afterAll, afterEach, beforeAll, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { arcShape, lineShape, trackRun, type TrackShape } from '@weasel-js/geom';
+import { arcShape, lineShape, runPlaces, trackRun, type TrackShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
 import { Bar } from './Bar';
-import { runPlaces } from './runPlaces';
 
 // jsdom lays nothing out: every element is 40 wide untransformed, and every box 200 by 200 at (0, 0).
 const realRect = Element.prototype.getBoundingClientRect;
