@@ -182,7 +182,8 @@ A is the smallest change and leaves `container` meaning only "has children".
    tree (`isLeaf`), never a kind (2026-10-22). Other names already say "mark" — diagram's `DataMark`
    (what a data node draws besides its rows), snap's `SnapMark`, path editing's `PathEditMark` — and
    the node kind's type takes the bare name, `MarkNode`.
-3. **Whether a child's `'inherit'` reads only groups, or any node with children.** A diagram row
-   taking its box's fill is the case for "any".
+3. **A child's `'inherit'` reads its parent, whatever kind** (2026-10-22): the parent's paint if it
+   has one, the parent's own source if the parent also says `'inherit'`, and none if the parent has
+   none. The child's `'inherit'` is the declaration, so the source needs no rule of its own.
 4. **The clip default** for a node with children and no `clipFromPose`: its own silhouette, as today,
    or nothing.
