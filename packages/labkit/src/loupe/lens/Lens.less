@@ -43,10 +43,36 @@
   pointer-events: none;
 }
 
+// Over the interior, above the hit boxes as the chrome is, so the zoom's band
+// and thumb take their own presses and every other point reaches the body.
+.lk-lens-zoom {
+  // Seven stop labels share a rim 160px across: the slider's label size, a step down.
+  --wzl-font-size-xs: var(--wzl-font-size-2xs);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+// A square body's zoom, straight along its bottom edge, short of the corner handles.
+.lk-lens-zoom__line {
+  position: absolute;
+  left: var(--wzl-space-4);
+  right: var(--wzl-space-4);
+  bottom: var(--wzl-space-1);
+  pointer-events: auto;
+}
+
 // Stood up for the one hit-test that finds what a lens shows (probeUnderLens).
 .lk-lens-layer[data-probe='interior'] .lk-lens-interior,
 .lk-lens-layer[data-probe='interior'] .lk-lens-interior * {
   pointer-events: auto;
+}
+
+// The zoom is the lens's own, not something it shows.
+.lk-lens-layer[data-probe='interior'] .lk-lens-zoom,
+.lk-lens-layer[data-probe='interior'] .lk-lens-zoom * {
+  pointer-events: none;
 }
 
 // A lens shows only what lies inside its rim, which the canvas beneath draws centered on the body's edge: the clip
@@ -110,12 +136,12 @@
   pointer-events: none;
 }
 
-// Readouts sit low in the interior. A round interior is only as wide as its
-// chord there, so they stay inside the circle.
+// Readouts sit high in the interior, clear of the zoom across the bottom. A
+// round interior is only as wide as its chord there, so they stay inside the circle.
 .lk-lens-readouts {
   position: absolute;
   left: 50%;
-  bottom: 4px;
+  top: 4px;
   z-index: 1;
   max-width: calc(100% - 8px);
   transform: translateX(-50%);
@@ -136,7 +162,7 @@
 }
 
 .lk-lens-interior[data-shape='circle'] .lk-lens-readouts {
-  bottom: 14%;
+  top: 14%;
   max-width: 60%;
 }
 

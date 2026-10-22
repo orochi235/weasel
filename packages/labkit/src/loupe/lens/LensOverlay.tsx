@@ -7,7 +7,6 @@ import {
   registerNodeShape,
   SceneCanvas,
   type SceneCanvasApi,
-  sceneToAdapter,
   useTransformFollower,
   type View,
   WeaselProvider,
@@ -28,8 +27,9 @@ import { useSurfaceCanvas, useSurfaceOptional } from '../../surface/useSurfaceTi
 import { createSeamPreview, type SeamPreview, seamAction, seamLayer, seamOf } from './compare';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
+import { LensZoom } from './LensZoom';
 import { HANDLE_SLOP, hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
-import { lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
+import { applyLensOps, lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
 import { type LensColors, lensShapes, RIM_PX } from './lensShapes';
 import type { LensDescribeContext, LensSlotProps, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
@@ -148,6 +148,14 @@ function LensInterior<C>({
         <div className="lk-lens-readouts">{renderReadouts({ ...props, interior })}</div>
       ) : null}
       <LensChrome {...props} {...(onFocus ? { onFocus } : {})} />
+      <LensZoom
+        scene={scene}
+        lensId={lens.lensId}
+        factor={settings.factor}
+        shape={settings.shape}
+        size={props.size}
+        {...(onFocus ? { onFocus } : {})}
+      />
     </div>
   );
 }
@@ -224,10 +232,7 @@ function useLensCanvas<C>(scene: LensScene<C>) {
       delete: createDeleteAction({
         commit: (ids, deps) => commitDeleteToScene(lensClosure(scene, ids) as NodeId[], deps),
       }),
-      'loupe.seam': seamAction(
-        { scene, apply: (ops) => sceneToAdapter(scene).applyOps([...ops], 'lens') },
-        preview,
-      ),
+      'loupe.seam': seamAction({ scene, apply: (ops) => applyLensOps(scene, ops) }, preview),
     }),
     [scene, preview],
   );

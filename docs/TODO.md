@@ -621,7 +621,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
     `curvedGeometry`, not seen) maps a press as wrongly as a scaled one does. The `ui/Along/Lens rim` lab turns
     its controls by their arcs' angles instead, which works.
 
-- **(P3) No `path` track shape.** `TrackShape` has `lineShape` and `arcShape`; a shape over any path
+- **(P3) No `path` track shape.** `TrackShape` has `lineShape`, `arcShape` and `ellipseShape`; a shape over any path
   would build on geom's `measurePath` and `nearestOnPath`, and needs no change to the interface.
 
 - **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
@@ -874,6 +874,12 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P3) Undo after a drag on a lens's rim zoom waits for the lens canvas to have focus** (2026-10-21). The drag
+  leaves focus on the zoom's thumb (`lens/LensZoom.tsx`), and the lens history answers only while its input element
+  has focus, so Cmd+Z does nothing until the body is pressed. Two loose ends from the same work: a square body's
+  zoom labels nearly touch at the default 160 px (`32×` and `64×`, the end label held inside the track), and a
+  `Slider` given a `lineShape` ignores its coordinates, so the square body's zoom is a straight slider placed by
+  `.lk-lens-zoom__line` rather than a line track.
 - **(P2) A popover opened in a magnified Live copy lands off by the lens factor.** react-aria's
   `calculatePosition` places an overlay in client px inside its containing block, and a Live copy is that block
   scaled by `transform: scale(f)`, so the popover's offset from the copy's corner is multiplied by `f`. Measured in
