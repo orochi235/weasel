@@ -67,6 +67,13 @@ export function useChartCommands(scene: ChartScene): void {
   }, { keys: { kind: 'key', key: 's', mods: { mod: true } } });
   const [gridVisible, setGridVisible] = useChartPref('view.gridVisible');
   const [snapToGrid, setSnapToGrid] = useChartPref('view.snapToGrid');
-  useCommand(CHART_ACTIONS.grid, 'Show grid', () => setGridVisible(!gridVisible), { active: () => gridVisible });
-  useCommand(CHART_ACTIONS.snapToGrid, 'Snap to grid', () => setSnapToGrid(!snapToGrid), { active: () => snapToGrid });
+  // Photoshop's View › Show › Grid and View › Snap. Shift turns ; into :, so Snap names both and the physical key.
+  useCommand(CHART_ACTIONS.grid, 'Show grid', () => setGridVisible(!gridVisible), {
+    active: () => gridVisible,
+    keys: { kind: 'key', key: "'", code: 'Quote', mods: { mod: true } },
+  });
+  useCommand(CHART_ACTIONS.snapToGrid, 'Snap to grid', () => setSnapToGrid(!snapToGrid), {
+    active: () => snapToGrid,
+    keys: { kind: 'key', key: [';', ':'], code: 'Semicolon', mods: { mod: true, shift: true } },
+  });
 }
