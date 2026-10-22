@@ -126,6 +126,24 @@ describe('App', () => {
     expect(chartPrefs().get('view.gridVisible')).toBe(false);
   });
 
+  it("flips the grid prefs from Photoshop's keys, Mod+' and Mod+Shift+;, and shows them in View", () => {
+    mount();
+    // jsdom is not an Apple platform, so mod is Ctrl. Shift makes the ; key type ':'.
+    const press = (init: KeyboardEventInit) => {
+      act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { ...init, ctrlKey: true, bubbles: true, cancelable: true })); });
+    };
+    press({ key: "'", code: 'Quote' });
+    expect(chartPrefs().get('view.gridVisible')).toBe(true);
+    press({ key: ':', code: 'Semicolon', shiftKey: true });
+    expect(chartPrefs().get('view.snapToGrid')).toBe(true);
+    press({ key: "'", code: 'Quote' });
+    expect(chartPrefs().get('view.gridVisible')).toBe(false);
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+    const rows = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    const shown = (r: HTMLElement) => [...r.children].slice(1).map((c) => c.textContent).join(' ');
+    expect(rows.slice(0, 2).map(shown)).toEqual(["Show grid Ctrl+'", 'Snap to grid Ctrl+Shift+;']);
+  });
+
   it('opens Preferences from View in pipeline mode', () => {
     mount();
     choose('Mode', 'Pipeline');
