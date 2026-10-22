@@ -1,0 +1,16 @@
+/* A square the arc is inscribed in; the arc itself is drawn faintly so the text's baseline reads against it. */
+.box {
+  position: relative;
+  width: var(--box);
+  height: var(--box);
+  flex: none;
+  border: 1px dashed var(--wzl-border);
+  border-radius: 50%;
+  color: var(--wzl-fg);
+}
+
+.char {
+  white-space: pre;
+  font-size: var(--wzl-font-size-lg, 18px);
+  line-height: 1;
+}
