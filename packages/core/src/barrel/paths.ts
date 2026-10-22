@@ -260,6 +260,7 @@ export {
   derivedPartsOf,
   pathFromParts,
   resolvePartPaint,
+  textAlongParts,
 } from '../core/scene/pathEffects';
 export type {
   BendAlongEffect,
@@ -270,7 +271,9 @@ export type {
   EffectSourceReader,
   PathEffectDerivations,
   PathEffect,
+  PathEffectOptions,
   RepeatAlongEffect,
+  TextAlongEffect,
 } from '../core/scene/pathEffects';
 export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../features/pathEffects';
 

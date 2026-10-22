@@ -19,8 +19,11 @@ export {
   type BendAlongEffect,
   type BlendEffect,
   type PathEffect,
+  type PathEffectOptions,
   type RepeatAlongEffect,
+  type TextAlongEffect,
 } from './effects';
+export { textAlongParts } from './textAlong';
 export type { EffectItem, EffectSource, EffectSourceReader } from './source';
 export { noteFontRead } from '../fontReads';
 export { derivedPartsOf, pathFromParts, resolvePartPaint, type DerivedPart } from '../derivedParts';

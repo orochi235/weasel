@@ -9,10 +9,11 @@ import {
 import { lerpFill, lerpStroke } from '@weasel-js/paint';
 import type { DerivedPart } from '../derivedParts';
 import type { EffectSource } from './source';
+import type { PathEffectOptions } from './textAlong';
 
 /** Steps between two shapes. Its sources are `[from, to]`, or
  *  `[from, to, spine]` to lay the steps along a third path. */
-export interface BlendEffect extends BlendPathsOptions {
+export interface BlendEffect extends BlendPathsOptions, PathEffectOptions {
   kind: 'blend';
   /** How many shapes stand between the two sources, spacing by count. */
   steps: number;

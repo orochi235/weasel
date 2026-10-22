@@ -7,6 +7,7 @@ import type { Fill, Stroke } from '@weasel-js/paint';
 import { isTextData, type TextOutlineSource } from '@weasel-js/text';
 import { findNodeShape } from 'canvas/NodeShape';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
+import { noteFontRead } from 'core/scene/fontReads';
 import type { EffectSource } from 'core/scene/pathEffects/source';
 import type { DerivedDep } from 'core/scene/types';
 import { pathPaintOf } from 'canvas/nodeShapes/nodePaint';
@@ -15,10 +16,14 @@ import { textEffectItems } from './textItems';
 /** `dep` as a path effect's source, or `null` when it has no outline. A text
  *  node's source also carries its grapheme clusters as items. */
 export function readEffectSource(dep: DerivedDep<unknown>): EffectSource | null {
-  const source = readShape(dep);
   const data = dep.node.data;
+  const text = isTextData(data);
+  // A text node's outline is laid out in its face, which may not have landed: without this read, an effect that found
+  // no outline while the face loads would never look again.
+  if (text) noteFontRead();
+  const source = readShape(dep);
   const pose = dep.pose;
-  if (source === null || !isTextData(data) || !isRectPose(pose)) return source;
+  if (source === null || !text || !isRectPose(pose)) return source;
   return { ...source, items: () => textEffectItems(data as TextOutlineSource, pose as PathInWorldPose) };
 }
 
