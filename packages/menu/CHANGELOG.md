@@ -1,5 +1,33 @@
 # @weasel-js/menu
 
+## 1.12.0
+
+### Patch Changes
+
+- dbd6711: Controls can run along a curve. `@weasel-js/geom` adds track shapes (`lineShape`, `arcShape`), reading runs over them
+  (`trackRun`, whose `nearest` can leave the ends open) and their SVG path data (`trackShapeD`). `@weasel-js/ui` adds
+  `Along`, which sizes an arc from its box and hands it to the controls inside; `Slider`, `DetentSlider` and `Bar`
+  follow it, or a `shape` prop. `TrackCtx` gains a required `shape` field — the value span as a shape — so code that
+  builds a `TrackCtx` itself no longer typechecks until it supplies one. `paintGradientTrack` paints straight tracks
+  only. A menu opened under a button can ask to open above it (`placeMenuUnder`'s `above`, `MenuOpenRequest.above`).
+- c2fb65c: Keymaps behind a leader key. `keymapContribution` builds a keymap, whose bindings are live only while
+  it is open, and the leader that opens it: tap the leader for one input, or hold it to keep the keymap
+  open. Escape always closes it; a key it does not bind is ignored, or passed on under the new
+  `gestures.keymapUnbound` kit setting. `<KeymapHint>` lists an open keymap's keys, and `formatShortcut`
+  draws a key inside one as `Loupe ▸ 2`.
+  
+  Bindings can now be rebound or removed by id, on actions and contributions alike:
+  `ActionsRegistry.overrideBindings` and `<SceneCanvas bindingOverrides>`, written as route strings or
+  with the new `key()`, `held()` and `unbound()` helpers. `captureKey` reads the next keystroke for a
+  binding editor.
+  
+  `modeShortcutSpec` now reads through `key()`, so a mode shortcut written `'Space'` or `'Esc'` names
+  the key it says; before, either matched nothing.
+  
+  Additive: `ActionsRegistry` gains `overrideBindings` and `bindingOverrides`, so a hand-written
+  registry must implement them.
+- @weasel-js/quantity@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

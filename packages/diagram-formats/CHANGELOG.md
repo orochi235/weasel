@@ -1,5 +1,52 @@
 # @weasel-js/diagram-formats
 
+## 1.12.0
+
+### Patch Changes
+
+- 24f2495: An absent fill or stroke now means none everywhere, read through `resolveFill` and `resolveStroke`. This breaks three things that used to fill in a default:
+  
+  - **A text node built without a `fill` now draws no glyphs.** Write `fill: { paint: solid('#000') }`, or `DEFAULT_TEXT_FILL`, now exported from `@weasel-js/text` and `@weasel-js/core`. `DEFAULT_TEXT_STYLE.fill` is `null`. The text insert, the sticky note and SVG import write black themselves.
+  - **A derived part with no `fill` or `stroke` no longer takes its node's.** Write `INHERIT` (`'inherit'`) for that; `DerivedPart` allows it, and `resolvePartPaint` is the one reading of a part's paint.
+  - **`diagramShape` drops its `defaultFill` and `defaultStroke` options.** An outline paints what its data names; `diagramScene` already writes the default style onto every node. SVG import writes SVG's initial black onto text that names no fill, and SVG export writes `fill="none"` for text that has none.
+  
+  `setFill` and `setStroke` write None as a record with no `paint` rather than `null`, so a stroke keeps its width and dash; a `paint: null` passed when the gesture starts used to be read as no paint given and painted the default color. The selection panel shows a fill or stroke paint as a paint, None or Mixed, never unset; `nestedPaintValue` is that reading. Booleans, Outline Stroke and the character bar read a fill with no paint as unfilled. Core re-exports `resolveFill`, `resolveStroke`, `INHERIT` and their types.
+- 929736f: `@weasel-js/pdf` draws a group's Porter-Duff `composite` exactly instead of source-over. With a `rasterize` hook, a group whose composite is anything but `source-over` is handed to the hook together with everything the page drew before it, inside the groups it sits in, so the renderer composites it onto its real backdrop; the raster is placed on white paper over the group's bounds, or over the whole page for an operator that clears what the group leaves empty. An isolated group holding such a composite is rasterized whole. The hook's signature is unchanged; without one, a composite is still drawn source-over and reported in `skipped`.
+  
+  `@weasel-js/renderer` exports `leavesUncovered(composite)`, whether an operator leaves the destination as it was wherever the source is empty, and `readsBackdrop(commands)`, whether any group in a list has its own composite.
+- d9fd036: `@weasel-js/pdf` rasterizes a group with effects over the group's bounds grown by how far its effects reach, rather than over the whole page, so a small blurred badge no longer costs a full-page bitmap. An `Effect` can now say how far it reaches with the new optional `reach`, in device pixels; `blur` sets it, and `effectsReach` (`@weasel-js/renderer`) adds up a stack's. An effect without one, such as `vignette`, still covers the whole page. The renderer's retained surfaces use the same bound, and `commandsBounds` takes the scale the commands will be drawn at.
+  
+  `screen`-unit paint inside a rasterized group now lands in the PDF where the vector path puts it, in page points rather than raster pixels. `WeaselRenderer.render` takes `screen` in its options, naming what screen space is when it is not the drawing surface, and `renderSceneToPixels` and a raster session's `render` pass it through as `screen`.
+- Updated dependencies [0996ce6]
+- Updated dependencies [22d571c]
+- Updated dependencies [3716e73]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [400b393]
+- Updated dependencies [40d87f7]
+- Updated dependencies [0510091]
+- Updated dependencies [1cc3d07]
+- Updated dependencies [78f29de]
+- Updated dependencies [92a0f2d]
+- Updated dependencies [c697535]
+- Updated dependencies [d5270fe]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [3aaee5d]
+- Updated dependencies [24f2495]
+- Updated dependencies [953c402]
+- Updated dependencies [929736f]
+- Updated dependencies [d9fd036]
+- Updated dependencies [bb7e6b5]
+- Updated dependencies [f461572]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [92b8df8]
+- Updated dependencies [91a1d84]
+- Updated dependencies [eec50d7]
+  - @weasel-js/core@1.12.0
+  - @weasel-js/diagram@1.12.0
+  - @weasel-js/svg@1.12.0
+  - @weasel-js/pdf@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

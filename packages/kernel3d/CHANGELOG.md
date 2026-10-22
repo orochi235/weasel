@@ -1,5 +1,45 @@
 # @weasel-js/kernel3d
 
+## 1.12.0
+
+### Patch Changes
+
+- c697535: Every binding the kit ships now declares an id, so a binding override names it by that id rather
+  than by its owner and position: `undo.key`, `rect.drag`, `nudge.left.big`, `selection.rotate.handle`,
+  `tool.activate.rect`. The scheme is `<owner>.<role>`, the owner being the action for an action's own
+  binding and the tool or entry for a contribution's (`docs/taxonomy.md`, "binding override"). An
+  override written against a positional id such as `select#3` no longer reaches its binding.
+  
+  An action's `defaultBinding` that was a bare spec is now a one-entry `{ spec, opts: { id } }` array;
+  code reading `defaultBinding` as a spec reads it through `actionBindings`.
+- eec50d7: Views answer what they show: `SceneCanvasApi.aimOf` and `setAim`, and `<CanvasView aim onAimChange>` for a view that holds its aim and derives its camera from it. `<ViewMarker>`, or a contribution's `markers`, draws one view's aim inside another's frame, and dragging the marker moves that view; `actions={null}` turns marker dragging off. kernel3d answers a frustum aim with `aimOf3d`.
+  
+  `CanvasViewProps` is now a union: `aim` cannot be passed together with `view`, `defaultView`, `onViewChange` or `viewBounds`. Code that writes an interface extending `CanvasViewProps` needs a type alias instead. A `Partial<CanvasViewProps>` spread into `<CanvasView>` no longer type-checks, and `Omit<CanvasViewProps, …>` does not distribute over the union; type either over one of the named halves, `CanvasViewCommonProps` with `CameraHeldViewProps` or `AimHeldViewProps`.
+  
+  `SceneCanvasApi` has two new required members, `aimOf` and `setAim`, so a hand-written fake of it needs both.
+- Updated dependencies [dbd6711]
+- Updated dependencies [0996ce6]
+- Updated dependencies [3716e73]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [1cc3d07]
+- Updated dependencies [78f29de]
+- Updated dependencies [92a0f2d]
+- Updated dependencies [c697535]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [94ebd35]
+- Updated dependencies [24f2495]
+- Updated dependencies [d9fd036]
+- Updated dependencies [f461572]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [92b8df8]
+- Updated dependencies [91a1d84]
+- Updated dependencies [eec50d7]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/core@1.12.0
+  - @weasel-js/react@1.12.0
+  - @weasel-js/prefs@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

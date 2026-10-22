@@ -1,5 +1,20 @@
 # @weasel-js/theme
 
+## 1.12.0
+
+### Patch Changes
+
+- 1a72259: New `useColorHex()` in `@weasel-js/theme/react`: turns a `ColorSource` into a hex color under the theme, tones and palette in force, for paint that a canvas draws without the cascade. `useColorCss` answers a theme token as `var(--wzl-…)`, which a scene's paint cannot read; this answers the token's value in the mode in force, so a scene drawn with `{ ref: 'workspace-surface' }` follows a light/dark switch. Additive.
+- Updated dependencies [b571ad6]
+- Updated dependencies [400b393]
+- Updated dependencies [40d87f7]
+- Updated dependencies [78f29de]
+- Updated dependencies [2c52cc5]
+- Updated dependencies [3bf5edb]
+  - @weasel-js/paint@1.12.0
+  - @weasel-js/prefs@1.12.0
+  - @weasel-js/registry@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

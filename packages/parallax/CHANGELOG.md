@@ -1,5 +1,28 @@
 # @weasel-js/parallax
 
+## 1.12.0
+
+### Patch Changes
+
+- Updated dependencies [0996ce6]
+- Updated dependencies [3716e73]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [1cc3d07]
+- Updated dependencies [78f29de]
+- Updated dependencies [92a0f2d]
+- Updated dependencies [c697535]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [24f2495]
+- Updated dependencies [d9fd036]
+- Updated dependencies [f461572]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [92b8df8]
+- Updated dependencies [91a1d84]
+- Updated dependencies [eec50d7]
+  - @weasel-js/core@1.12.0
+  - @weasel-js/registry@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

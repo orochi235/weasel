@@ -1,5 +1,75 @@
 # @weasel-js/diagram
 
+## 1.12.0
+
+### Patch Changes
+
+- 22d571c: The `chain` layout, and the `rack` look built on it, now leave room for group boxes across the line as well as along it. The gap between two levels of hung nodes widens by the inset of a group ending at one and starting at the other, so a box's inset no longer overlaps an outsider hung past it when the inset is wider than `nodeGap`. On a vertical line it also widens for a group's `minWidth`, which before it honored only on a horizontal one. Grouped chain layouts with hung nodes come out slightly taller (or wider) than before.
+- b571ad6: A node's `fill: 'inherit'` or `stroke: 'inherit'` now takes its nearest enclosing container's fill or stroke whole. If that container inherits too, the lookup keeps going up, and at the root it is none. A container's fill and stroke are only a source: the built-in `kit:shape` and `kit:path` painters no longer paint a container's own fill or stroke, and its interior is no longer hit for picking.
+  
+  The scene's draw wrapper passes the resolved paint to painters as `ctx.inherited` on `NodePaintCtx`, and pickers pass it on `NodeInkCtx`. A painter's memo has to key on it: `nodeMemo` takes an extra reference-compared key for this, and the paint stays the same object while its sources are unchanged. **A custom painter that does not read `ctx.inherited` paints an `'inherit'` field as none.** Pass the field and `ctx?.inherited?.fill` to `resolveFill` (or `resolveStroke`) to pick it up. `diagram:shape` reads it. Readers outside a painter can use `inheritedPaintIn(scene, node)` and `withInheritedPaint(data, inherited)`, and `paintAbove(scene, node)` says what inheriting would paint.
+  
+  SVG import turns a `<g>`'s fill and stroke into its container's, and a child that sets none of them gets `'inherit'`. A gradient, or a child faded further than its group, is still copied onto the child. Export writes a container's paint on its `<g>` and leaves the attribute off a child that inherits a solid one.
+  
+  `SelectionPanel` adds an Inherit choice beside None for a node's fill and stroke, showing the paint it would take. `PaintField` and `PaintInput` offer it when given `inherit` (`{ paint, onInherit }`); their `value` may be `'inherit'`, and `onChange` is unchanged.
+- 0510091: `DiagramView` fits again when new specs run past what it shows, while the user has not panned or zoomed it, and `fit()` on the ref fits it on demand, even after they have.
+  
+  A `DiagramOverlay` placed beside its target is kept inside the view when neither side of the target has room for it, rather than overflowing the near side.
+  
+  `diagramScene`'s `nodeStyle`, `groupStyle` and `edgeStyle` may answer `undefined` to keep the default look, and the no-theme defaults are exported as `DEFAULT_NODE_STYLE`, `DEFAULT_GROUP_STYLE` and `DEFAULT_EDGE_STYLE`.
+- c697535: Every binding the kit ships now declares an id, so a binding override names it by that id rather
+  than by its owner and position: `undo.key`, `rect.drag`, `nudge.left.big`, `selection.rotate.handle`,
+  `tool.activate.rect`. The scheme is `<owner>.<role>`, the owner being the action for an action's own
+  binding and the tool or entry for a contribution's (`docs/taxonomy.md`, "binding override"). An
+  override written against a positional id such as `select#3` no longer reaches its binding.
+  
+  An action's `defaultBinding` that was a bare spec is now a one-entry `{ spec, opts: { id } }` array;
+  code reading `defaultBinding` as a spec reads it through `actionBindings`.
+- d5270fe: The `lanes` look now routes a wire around each group box that holds neither of its ends, taking a lane-edge corridor clear of the box and changing height outside it; a wire into or out of a group still crosses that group's boundary to reach its port. A group's box, its title included, now stays inside the lanes its members stand in: each member keeps the group's top and bottom inset clear of the lane edge, so charts with groups come out slightly taller than before.
+- 3aaee5d: `useLiveAudioRunner` no longer remakes its runner when `nodes` is rebuilt in render with the same entries, so `nodes={{ ...audioStageNodes, mine }}` written inline stops re-rendering forever. Adding, dropping or replacing a stage type's node still remakes it.
+- 24f2495: An absent fill or stroke now means none everywhere, read through `resolveFill` and `resolveStroke`. This breaks three things that used to fill in a default:
+  
+  - **A text node built without a `fill` now draws no glyphs.** Write `fill: { paint: solid('#000') }`, or `DEFAULT_TEXT_FILL`, now exported from `@weasel-js/text` and `@weasel-js/core`. `DEFAULT_TEXT_STYLE.fill` is `null`. The text insert, the sticky note and SVG import write black themselves.
+  - **A derived part with no `fill` or `stroke` no longer takes its node's.** Write `INHERIT` (`'inherit'`) for that; `DerivedPart` allows it, and `resolvePartPaint` is the one reading of a part's paint.
+  - **`diagramShape` drops its `defaultFill` and `defaultStroke` options.** An outline paints what its data names; `diagramScene` already writes the default style onto every node. SVG import writes SVG's initial black onto text that names no fill, and SVG export writes `fill="none"` for text that has none.
+  
+  `setFill` and `setStroke` write None as a record with no `paint` rather than `null`, so a stroke keeps its width and dash; a `paint: null` passed when the gesture starts used to be read as no paint given and painted the default color. The selection panel shows a fill or stroke paint as a paint, None or Mixed, never unset; `nestedPaintValue` is that reading. Booleans, Outline Stroke and the character bar read a fill with no paint as unfilled. Core re-exports `resolveFill`, `resolveStroke`, `INHERIT` and their types.
+- f461572: `DiagramView` now draws a node's perimeter port labels. A node's `portLabels` are children of its
+  container and sit outside its box, and a container clips its children to its painter's
+  silhouette, so every one of them was clipped away. `buildBody` now gives the container a `clipFromPose` that clips nothing.
+  
+  Core exports that clip as `clipNothing` (from `@weasel-js/core` and `@weasel-js/core/math`),
+  for any container whose children may draw outside it. Every scene's registry carries it under
+  `CLIP_NOTHING`, so a container using it saves and loads with no registry entry of the consumer's.
+  A symmetry group now uses it too, and still saves under `SYMMETRY_CLIP_KEY`.
+- Updated dependencies [dbd6711]
+- Updated dependencies [0996ce6]
+- Updated dependencies [3716e73]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [1cc3d07]
+- Updated dependencies [78f29de]
+- Updated dependencies [6f601f7]
+- Updated dependencies [92a0f2d]
+- Updated dependencies [c697535]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [94ebd35]
+- Updated dependencies [24f2495]
+- Updated dependencies [d9fd036]
+- Updated dependencies [f461572]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [92b8df8]
+- Updated dependencies [91a1d84]
+- Updated dependencies [eec50d7]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/core@1.12.0
+  - @weasel-js/audio@1.12.0
+  - @weasel-js/react@1.12.0
+  - @weasel-js/animator@1.12.0
+  - @weasel-js/simulation@1.12.0
+  - @weasel-js/font@1.12.0
+  - @weasel-js/icons@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

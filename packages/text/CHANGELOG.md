@@ -1,5 +1,43 @@
 # @weasel-js/text
 
+## 1.12.0
+
+### Patch Changes
+
+- 13e597d: Text can follow a path. `@weasel-js/geom` adds a `'path'` track shape (`pathShape`), a `side` override on `trackRun`,
+  and `placeAlongRun`, which turns item lengths into places along a run, in `RunOrder` `'reading'` or `'track'`.
+  `TrackShape` gains a required `closed` member, so a shape implemented outside geom has to add it.
+  `runPlaces` and `runLength` moved there from `@weasel-js/ui`, which re-exports `runPlaces` by name, so its curved rows
+  come from geom's placement. `measurePath` takes `keepCorners`. `@weasel-js/text` adds `textClusters`, a line's
+  grapheme clusters as outlines with their advances. `@weasel-js/core` adds the `textAlong` path effect; every effect
+  takes `hideSources`, effect sources can carry a list of items, curved text is derived again when a font loads, a
+  hidden source is edited through its effect, and Delete, Cut and Expand now remove an effect's hidden sources with
+  it. A committed in-place text edit is labeled "Edit text" in history.
+  `@weasel-js/path-tools` adds Text Along Path (Alt+Shift+X), Release and Set Path. `useTextEdit` in
+  `@weasel-js/text-dom` gains `onDraft`.
+  
+  <!-- bump-approved: minor: maintainer — 1.12.0 release requested 2026-10-22 -->
+- 24f2495: An absent fill or stroke now means none everywhere, read through `resolveFill` and `resolveStroke`. This breaks three things that used to fill in a default:
+  
+  - **A text node built without a `fill` now draws no glyphs.** Write `fill: { paint: solid('#000') }`, or `DEFAULT_TEXT_FILL`, now exported from `@weasel-js/text` and `@weasel-js/core`. `DEFAULT_TEXT_STYLE.fill` is `null`. The text insert, the sticky note and SVG import write black themselves.
+  - **A derived part with no `fill` or `stroke` no longer takes its node's.** Write `INHERIT` (`'inherit'`) for that; `DerivedPart` allows it, and `resolvePartPaint` is the one reading of a part's paint.
+  - **`diagramShape` drops its `defaultFill` and `defaultStroke` options.** An outline paints what its data names; `diagramScene` already writes the default style onto every node. SVG import writes SVG's initial black onto text that names no fill, and SVG export writes `fill="none"` for text that has none.
+  
+  `setFill` and `setStroke` write None as a record with no `paint` rather than `null`, so a stroke keeps its width and dash; a `paint: null` passed when the gesture starts used to be read as no paint given and painted the default color. The selection panel shows a fill or stroke paint as a paint, None or Mixed, never unset; `nestedPaintValue` is that reading. Booleans, Outline Stroke and the character bar read a fill with no paint as unfilled. Core re-exports `resolveFill`, `resolveStroke`, `INHERIT` and their types.
+- Updated dependencies [dbd6711]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [400b393]
+- Updated dependencies [40d87f7]
+- Updated dependencies [78f29de]
+- Updated dependencies [2c52cc5]
+- Updated dependencies [94ebd35]
+- Updated dependencies [3bf5edb]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/paint@1.12.0
+  - @weasel-js/font@1.12.0
+  - @weasel-js/registry@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

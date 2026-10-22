@@ -1,5 +1,85 @@
 # @weasel-js/svg
 
+## 1.12.0
+
+### Patch Changes
+
+- b571ad6: A node's `fill: 'inherit'` or `stroke: 'inherit'` now takes its nearest enclosing container's fill or stroke whole. If that container inherits too, the lookup keeps going up, and at the root it is none. A container's fill and stroke are only a source: the built-in `kit:shape` and `kit:path` painters no longer paint a container's own fill or stroke, and its interior is no longer hit for picking.
+  
+  The scene's draw wrapper passes the resolved paint to painters as `ctx.inherited` on `NodePaintCtx`, and pickers pass it on `NodeInkCtx`. A painter's memo has to key on it: `nodeMemo` takes an extra reference-compared key for this, and the paint stays the same object while its sources are unchanged. **A custom painter that does not read `ctx.inherited` paints an `'inherit'` field as none.** Pass the field and `ctx?.inherited?.fill` to `resolveFill` (or `resolveStroke`) to pick it up. `diagram:shape` reads it. Readers outside a painter can use `inheritedPaintIn(scene, node)` and `withInheritedPaint(data, inherited)`, and `paintAbove(scene, node)` says what inheriting would paint.
+  
+  SVG import turns a `<g>`'s fill and stroke into its container's, and a child that sets none of them gets `'inherit'`. A gradient, or a child faded further than its group, is still copied onto the child. Export writes a container's paint on its `<g>` and leaves the attribute off a child that inherits a solid one.
+  
+  `SelectionPanel` adds an Inherit choice beside None for a node's fill and stroke, showing the paint it would take. `PaintField` and `PaintInput` offer it when given `inherit` (`{ paint, onInherit }`); their `value` may be `'inherit'`, and `onChange` is unchanged.
+- 78f29de: Lenses in weaselforge. Alt+L opens the Loupe keymap, and `l` adds a lens: a bubble showing the patch
+  of a story under its reticle, magnified, or rendered with a comparison such as the opposite mode, an
+  arg or a DPR, as Swap, Split or Difference. A lens shows a Live second render or, from the dev
+  server, Pixels captured in headless Chromium; Playwright is a new optional peer of
+  `@weasel-js/forge`, and without it a lens offers Live only. Token, Contrast and pixel-grid readouts
+  sit in the lens chrome, and Alt+Slash opens a panel listing every key binding the workshop
+  registers.
+  
+  Everything below is additive.
+  
+  forge: the shell config takes `capture.allowOrigins`, naming what a capture page may load besides
+  the dev server, and `loupe.modeGlobal`, the global an opposite-mode comparison flips. A global
+  declaration may give `opposite(value, globals)`, the value that comparison flips it to.
+  `<TrialHost>` takes a `copy` prop, which makes the host a second copy of a trial's story, under
+  globals of its own. `@weasel-js/forge/shell` exports `followEdits`, and `@weasel-js/forge/frame`
+  exports `mountCapture`, which mounts a capture page.
+  
+  labkit: the loupe entry gains `<LensOverlay>` (whose `renderReadouts` is handed `LensReadoutProps`),
+  `<LensActions>`, the lens scene and its ops, the `LensSource` contract, `createLoupeKeymap`,
+  `probeUnderLens` and `LENS_REST_MS`. A lab has an `overlay` chrome region, rendered over the trials
+  inside the lab surface, and `useLabEntries` reads the ambient entries installed on the lab, its
+  keymaps among them. Each lab surface gains a `'top'` canvas layer for one tenant above `'over'`,
+  made only while a tenant asks for it; a surface owner offers it by publishing `top` and `claimTop`
+  in its `SurfaceCanvases`. `surface.scope()` takes a list of elements as well as one
+  (`SurfaceScope`).
+  
+  Elsewhere: `@weasel-js/core/json` exports `stableStringify` for Node; paint exports `contrastRatio`
+  and `wcagLevels`; svg exports `specificity`, `compareSpecificity` and `splitTopLevel`; an action's
+  `enabled` may return a reason as text (`ActionUnavailable` in routing, re-exported by core), which
+  the command palette shows as written.
+- 24f2495: An absent fill or stroke now means none everywhere, read through `resolveFill` and `resolveStroke`. This breaks three things that used to fill in a default:
+  
+  - **A text node built without a `fill` now draws no glyphs.** Write `fill: { paint: solid('#000') }`, or `DEFAULT_TEXT_FILL`, now exported from `@weasel-js/text` and `@weasel-js/core`. `DEFAULT_TEXT_STYLE.fill` is `null`. The text insert, the sticky note and SVG import write black themselves.
+  - **A derived part with no `fill` or `stroke` no longer takes its node's.** Write `INHERIT` (`'inherit'`) for that; `DerivedPart` allows it, and `resolvePartPaint` is the one reading of a part's paint.
+  - **`diagramShape` drops its `defaultFill` and `defaultStroke` options.** An outline paints what its data names; `diagramScene` already writes the default style onto every node. SVG import writes SVG's initial black onto text that names no fill, and SVG export writes `fill="none"` for text that has none.
+  
+  `setFill` and `setStroke` write None as a record with no `paint` rather than `null`, so a stroke keeps its width and dash; a `paint: null` passed when the gesture starts used to be read as no paint given and painted the default color. The selection panel shows a fill or stroke paint as a paint, None or Mixed, never unset; `nestedPaintValue` is that reading. Booleans, Outline Stroke and the character bar read a fill with no paint as unfilled. Core re-exports `resolveFill`, `resolveStroke`, `INHERIT` and their types.
+- 92b8df8: A node with no `data.fill` now paints no fill. It used to paint gray (`#888`) in the built-in
+  painters and in `svgLeafFromKit`'s export, so a container from Cmd+G drew a gray box behind its
+  members, and a shape inserted without a fill showed up gray. This changes what existing scenes look
+  like: a node that relied on the gray default needs an explicit `fill`. `DEFAULT_SHAPE_FILL` is
+  removed, since nothing falls back to it any more, and `resolveNodeFill` takes no fallback argument.
+  
+  The rect fallback painter no longer matches containers. A container without `clipFromPose` used to
+  take that painter's box as its silhouette and clip its members to it, which cut off the outer half of
+  their strokes, since a group's derived pose leaves stroke width out. A container now paints
+  nothing, even a `data.fill` it declares, and clips nothing; one that should clip says so with
+  `clipFromPose`, and a background behind a group's members is a leaf among them.
+- Updated dependencies [dbd6711]
+- Updated dependencies [0996ce6]
+- Updated dependencies [3716e73]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [1cc3d07]
+- Updated dependencies [78f29de]
+- Updated dependencies [92a0f2d]
+- Updated dependencies [c697535]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [94ebd35]
+- Updated dependencies [24f2495]
+- Updated dependencies [d9fd036]
+- Updated dependencies [f461572]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [92b8df8]
+- Updated dependencies [91a1d84]
+- Updated dependencies [eec50d7]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/core@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes
