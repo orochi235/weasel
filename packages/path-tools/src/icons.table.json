@@ -37,6 +37,11 @@
       "group": "Tools",
       "tags": []
     },
+    "textAlong": {
+      "body": "<path d=\"M1.875 16 Q9.375 7.75 16.875 16\"/><path d=\"M5.375 3.125 H13.375 M9.375 3.125 V8.25\"/>",
+      "group": "Tools",
+      "tags": []
+    },
     "expand": {
       "body": "<circle cx=\"10\" cy=\"10\" r=\"6\" stroke-width=\"1.25\" stroke-dasharray=\"2 1.7\"/><rect x=\"8.5\" y=\"2.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"14.5\" y=\"8.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.5\" y=\"14.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"2.5\" y=\"8.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",

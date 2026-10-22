@@ -8,7 +8,7 @@ import { pathEffectOf, type NodeId, type PathEffect, type Scene } from '@weasel-
 import { SettingsFields } from '../settingsFields';
 
 type Kind = PathEffect['kind'];
-const KINDS: readonly Kind[] = ['blend', 'bendAlong', 'repeatAlong'];
+const KINDS: readonly Kind[] = ['blend', 'bendAlong', 'repeatAlong', 'textAlong'];
 const COUNT: Record<Kind, string> = { blend: 'blends', bendAlong: 'bends', repeatAlong: 'repeats', textAlong: 'texts' };
 
 /** Each field's value where an effect leaves it unset, so a form never shows
@@ -29,6 +29,7 @@ export const PATH_EFFECT_SETTINGS_SCHEMA: PrefGroup = {
     blends: hidden('Selected blends'),
     bends: hidden('Selected bends'),
     repeats: hidden('Selected repeats'),
+    texts: hidden('Selected texts'),
     blend: {
       name: 'Blend',
       as: 'section',
@@ -81,6 +82,35 @@ export const PATH_EFFECT_SETTINGS_SCHEMA: PrefGroup = {
         },
         offset: { kind: 'number', name: 'Offset', description: 'Slide every copy this far along the path.', default: 0, step: 1, control: 'input' },
         orient: { kind: 'boolean', name: 'Orient', description: 'Turn each copy to the path’s heading.', default: true },
+      },
+    },
+    textAlong: {
+      name: 'Text Along Path',
+      as: 'section',
+      showIf: { path: 'texts', above: 0 },
+      children: {
+        align: {
+          kind: 'enum', name: 'Align', description: 'Which part of the text sits at Start.',
+          default: 'start', control: 'toggle',
+          options: [{ value: 'start', label: 'Start' }, { value: 'center', label: 'Center' }, { value: 'end', label: 'End' }],
+        },
+        start: { kind: 'number', name: 'Start', description: 'Where along the path the text starts, as a share of its length.', default: 0, min: 0, max: 1, step: 0.01, control: 'slider' },
+        shift: { kind: 'number', name: 'Shift', description: 'Lift the text off the path by this much.', default: 0, step: 1, control: 'input' },
+        anchor: {
+          kind: 'enum', name: 'Anchor', description: 'Which line of the text runs on the path.',
+          default: 'baseline', control: 'toggle',
+          options: [{ value: 'baseline', label: 'Baseline' }, { value: 'center', label: 'Center' }],
+        },
+        overflow: {
+          kind: 'enum', name: 'Overflow', description: 'Text longer than the path: cut off at its end, or squeezed to fit.',
+          default: 'clip', control: 'toggle',
+          options: [{ value: 'clip', label: 'Clip' }, { value: 'fit', label: 'Fit' }],
+        },
+        side: {
+          kind: 'enum', name: 'Side', description: 'Which side of the path the text stands on: whichever reads upright, or a fixed one.',
+          default: 'auto', control: 'toggle',
+          options: [{ value: 'auto', label: 'Auto' }, { value: 'path', label: 'Path' }, { value: 'flipped', label: 'Flipped' }],
+        },
       },
     },
   },

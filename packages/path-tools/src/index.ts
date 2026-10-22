@@ -73,9 +73,10 @@ export {
   type ConstrainAnchorsParams,
 } from './constraints/anchorConstraints';
 export {
-  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
+  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction, textAlongAction,
   PATH_EFFECTS_GROUP,
 } from './pathEffects/actions';
+export { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
 export { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
 export {
   configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,

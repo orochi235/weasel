@@ -35,6 +35,10 @@ export const TOOLS = {
     <circle cx="4.75" cy="11.43" r="1.9" stroke-width="1.25"/>
     <circle cx="10" cy="8" r="1.9" stroke-width="1.25"/>
     <circle cx="15.25" cy="11.43" r="1.9" stroke-width="1.25"/>`,
+  // Set 0.625 left of center so the stem and bar fill whole pixels at 16px.
+  textAlong: `
+    <path d="M1.875 16 Q9.375 7.75 16.875 16"/>
+    <path d="M5.375 3.125 H13.375 M9.375 3.125 V8.25"/>`,
   expand: `
     <circle cx="10" cy="10" r="6" stroke-width="1.25" stroke-dasharray="2 1.7"/>
     <rect x="8.5" y="2.5" width="3" height="3" fill="currentColor" stroke="none"/>

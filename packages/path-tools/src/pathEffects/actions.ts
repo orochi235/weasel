@@ -1,13 +1,14 @@
 /**
- * The path-effect actions: make a live blend, bend, or repeat from the
- * selection; change one's settings; and expand one into ordinary paths.
+ * The path-effect actions: make a live blend, bend, repeat, or text along a
+ * path from the selection; change one's settings; and expand one into ordinary paths.
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, deleteNode, derivedDepOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
+  commitOps, createSetDataOp, deleteNode, derivedDepOf, hiddenSourcesTakenWith, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
 } from '@weasel-js/core';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
+import { hiddenOps } from './hiding';
 import { icon } from '../icons.gen';
 import { pathEffectSettingsForm } from './settingsForm';
 
@@ -57,6 +58,15 @@ interface CreateSpec {
   between: boolean;
   /** Take a third selected leaf as a source too. */
   third?: boolean;
+  /** The selected leaves as sources, in order, or `null` where they cannot
+   *  be; in selection order when absent. */
+  order?(leaves: readonly AnyNode[]): AnyNode[] | null;
+}
+
+/** The sources `spec` makes from the selection, or `null` when it cannot. */
+function sourcesFor(spec: CreateSpec, deps: ActionDeps | undefined): AnyNode[] | null {
+  const leaves = selectedLeaves(deps);
+  return leaves && spec.order ? spec.order(leaves) : leaves;
 }
 
 function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
@@ -76,7 +86,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
       timing: 'immediate',
       run: (deps, params) => {
         const scene = deps.scene as AnyScene | undefined;
-        const leaves = selectedLeaves(deps);
+        const leaves = sourcesFor(spec, deps);
         if (!scene || !leaves) return;
         const derivations = registeredPathEffects(scene.registry)!;
         const [a, b, c] = leaves as [AnyNode, AnyNode, AnyNode?];
@@ -91,14 +101,17 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
           id: scene.mintId(),
           parent: sameParent ? a.parent : null,
         } as unknown as AnyNode;
-        commitOps(deps, [insertAt(node, index, spec.label)], spec.label);
+        // Hiding a source after the insert, so undo shows it before the effect goes.
+        const hide = effect.hideSources === true ? sources.flatMap((id) => hiddenOps(scene, id, true, spec.label)) : [];
+        commitOps(deps, [insertAt(node, index, spec.label), ...hide], spec.label);
         deps.selection?.set([node.id] as never);
       },
     } satisfies ImmediateInvoker,
     enabled: (deps) => {
       const scene = deps?.scene as AnyScene | undefined;
       if (scene && registeredPathEffects(scene.registry) === null) return ActionDisabledReason.NotApplicable;
-      return selectedLeaves(deps) ? true : ActionDisabledReason.SelectionRequired;
+      if (sourcesFor(spec, deps)) return true;
+      return selectedLeaves(deps) ? ActionDisabledReason.NotApplicable : ActionDisabledReason.SelectionRequired;
     },
   };
 }
@@ -128,6 +141,25 @@ export const bendAlongAction = createEffectAction({
  */
 export const repeatAlongAction = createEffectAction({
   id: 'repeatAlong', label: 'Repeat Along Path', icon: icon('repeatAlong'), kind: 'repeatAlong', key: 'r', code: 'KeyR', between: false,
+});
+
+/** Two leaves, the text one first. */
+function textThenPath(leaves: readonly AnyNode[]): AnyNode[] | null {
+  if (leaves.length !== 2) return null;
+  const [a, b] = leaves as [AnyNode, AnyNode];
+  if (isTextData(a.data) === isTextData(b.data)) return null;
+  return isTextData(a.data) ? [a, b] : [b, a];
+}
+
+/**
+ * A selected text laid along the other selected shape's outline, live: editing
+ * either re-lays it. Takes exactly one text and one shape that is not, in
+ * either order, goes just over the upper of the two, and hides both while it
+ * shows them. Params are `TextAlongEffect`'s.
+ */
+export const textAlongAction = createEffectAction({
+  id: 'textAlong', label: 'Text Along Path', icon: icon('textAlong'), kind: 'textAlong', key: 'x', code: 'KeyX', between: false,
+  order: textThenPath,
 });
 
 const EDIT_LABEL = 'Edit Path Effect';
@@ -183,8 +215,9 @@ const EXPAND_LABEL = 'Expand to Paths';
 
 /**
  * Turn each selected path effect into the ordinary paths it shows, in its
- * slot and in its paint, and select them. Its sources stay; the paths no
- * longer follow them.
+ * slot and in its paint, and select them. Its sources stay, and the paths no
+ * longer follow them — except the sources an effect hid, which go with it
+ * unless another effect still reads them.
  */
 export const expandPathEffectAction: Action & { requires: string[] } = {
   id: 'expandPathEffect',
@@ -219,6 +252,10 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
         });
       }
       if (ops.length === 0) return;
+      // Last, so each delete finds its source's slot after the expansion.
+      for (const id of hiddenSourcesTakenWith(scene, effects.map((e) => e.node.id))) {
+        if (scene.get(id)) ops.push(deleteNode(scene, scene.get(id)!, EXPAND_LABEL));
+      }
       commitOps(deps, ops, EXPAND_LABEL);
       deps.selection?.set(made as never);
     },

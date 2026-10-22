@@ -27,3 +27,38 @@ export function effectSourceFor<TData, TLayer extends string, TPose>(
   if (found === undefined) return null;
   return role === 'text' && !isTextData(found.data) ? null : source!;
 }
+
+/**
+ * The sources a removal of `ids` takes with it: those that a path effect with
+ * `hideSources` in the removal hid, and that nothing staying still derives
+ * from. A source another effect still reads stays, and so does one shown
+ * again since. Transitive, so an effect's hidden effect takes its own too.
+ */
+export function hiddenSourcesTakenWith<TData, TLayer extends string, TPose>(
+  scene: Pick<Scene<TData, TLayer, TPose>, 'get' | 'removalClosure'>,
+  ids: readonly NodeId[],
+): NodeId[] {
+  const going = new Set<NodeId>(scene.removalClosure(ids));
+  const taken: NodeId[] = [];
+  const within = (node: NodeId, root: NodeId): boolean => {
+    for (let at: NodeId | null | undefined = node; at != null; at = scene.get(at)?.parent) if (at === root) return true;
+    return false;
+  };
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const id of [...going]) {
+      const node = scene.get(id);
+      if (pathEffectOf(node)?.hideSources !== true || !Array.isArray(node?.dependsOn)) continue;
+      for (const source of node.dependsOn as readonly NodeId[]) {
+        if (going.has(source) || scene.get(source)?.hidden !== true) continue;
+        const closure = scene.removalClosure([source]);
+        if (!closure.every((n) => going.has(n) || within(n, source))) continue;
+        for (const n of closure) going.add(n);
+        taken.push(source);
+        grew = true;
+      }
+    }
+  }
+  return taken;
+}

@@ -32,8 +32,9 @@ import {
 import { addExtremeAnchorsAction } from './extremes/addExtremes';
 import { resamplePathAction } from './resample/resample';
 import {
-  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
+  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction, textAlongAction,
 } from './pathEffects/actions';
+import { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
 import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
 import { simplifyBrushAction, simplifyBrushToolAction } from './simplifyBrush/simplifyBrush';
 import { smudgeBrushAction } from './smudge/smudgeBrush';
@@ -209,14 +210,15 @@ export const segmentTypePreset: FeaturePreset = {
   actions: [convertSegmentsAction, convertSegmentAtAction],
 };
 
-/** Blend, Bend along, and Repeat along, live, and the actions that edit and
- *  expand them and set or release a blend's spine. The scene must hold
+/** Blend, Bend along, Repeat along, and Text along, live, and the actions
+ *  that edit, expand, and release them, set an along effect's path, and set
+ *  or release a blend's spine. The scene must hold
  *  `withPathEffectsRegistry`'s derivations. */
 export const pathEffectsPreset: FeaturePreset = {
   id: 'pathEffects',
   actions: [
     blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction,
-    setBlendSpineAction, releaseBlendSpineAction,
+    setBlendSpineAction, releaseBlendSpineAction, textAlongAction, releasePathEffectAction, setEffectPathAction,
   ],
 };
 

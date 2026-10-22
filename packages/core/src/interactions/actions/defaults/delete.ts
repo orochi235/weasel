@@ -5,6 +5,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
+import { hiddenSourcesTakenWith } from 'features/pathEffects/effectSources';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
@@ -56,12 +57,12 @@ export interface DeleteActionOptions {
   commit?: (ids: readonly NodeId[], deps: ActionDeps) => void;
 }
 
-/** The default commit: removes `ids` and their dependents as one undo entry,
- *  then empties the selection. */
+/** The default commit: removes `ids`, their dependents, and the sources a
+ *  path effect among them hid, as one undo entry, then empties the selection. */
 export function commitDeleteToScene(ids: readonly NodeId[], deps: ActionDeps): void {
   const { selection, scene, applyOps } = deps;
   if (!selection || !scene) return;
-  const ops = buildDeleteOps(scene, ids, 'Delete');
+  const ops = buildDeleteOps(scene, [...ids, ...hiddenSourcesTakenWith(scene, ids)], 'Delete');
   if (ops.length > 0) {
     if (applyOps) applyOps(ops, 'Delete');
     else scene.applyBatch(ops, 'Delete', defaultCommitAdapter(scene, selection.adapterMethods));

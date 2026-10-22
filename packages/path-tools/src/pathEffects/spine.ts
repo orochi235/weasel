@@ -8,11 +8,11 @@ import {
   commitOps, createSetDependsOnOp, type NodeId, type Op, pathEffectOf, type Scene, type SceneNode as Node,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP } from './actions';
+import { sourcesOf } from './hiding';
+import { closesLoop } from './retarget';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
-
-const sourcesOf = (node: AnyNode): readonly NodeId[] => (Array.isArray(node.dependsOn) ? node.dependsOn : []);
 
 const isBlend = (node: AnyNode | undefined): node is AnyNode =>
   node !== undefined && pathEffectOf(node)?.kind === 'blend' && sourcesOf(node).length >= 2;
@@ -25,11 +25,7 @@ function spineTarget(deps: ActionDeps | undefined): { blend: AnyNode; spine: Any
   if (!scene || nodes.length !== 2) return ActionDisabledReason.SelectionRequired;
   const blend = nodes.find(isBlend);
   const spine = nodes.find((n) => n !== blend);
-  if (!blend || !spine || spine.kind !== 'leaf') return ActionDisabledReason.NotApplicable;
-  const sources = sourcesOf(blend);
-  if (sources.includes(spine.id)) return ActionDisabledReason.NotApplicable;
-  // Whatever derives from the blend would make the blend derive from itself.
-  if (scene.removalClosure([blend.id]).includes(spine.id)) return ActionDisabledReason.NotApplicable;
+  if (!blend || !spine || spine.kind !== 'leaf' || closesLoop(scene, blend, spine)) return ActionDisabledReason.NotApplicable;
   return { blend, spine };
 }
 
