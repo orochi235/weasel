@@ -21,27 +21,42 @@ export function editedData<TData extends DefaultTextData>(
   return next;
 }
 
-/** Where an edit's drafts go: `write` each one through when something derives from the node, `settle` once the edit
- *  commits, and `restore` as it ends — which puts back the data the first draft replaced unless a commit settled it. */
+/** Where an edit's writes go. Each `draft` is written through when something derives from the node; the `commit`
+ *  writes the result; `end` closes the edit, first putting back the data the drafts replaced when no commit came. All
+ *  the writes of one edit fold into one undo entry, so a commit undoes to the text before the first draft, and a
+ *  cancel leaves an entry that changes nothing. */
 export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends string, TPose>(
   sceneRef: { readonly current: Scene<TData, TLayer, TPose> },
   optsRef: { readonly current: UseSceneTextEditOptions<TData> },
-): { write: (id: string, draft: TextEditDraft) => void; settle: () => void; restore: (id: string) => void } {
+): {
+  draft: (id: string, draft: TextEditDraft) => void;
+  commit: (id: string, data: TData) => void;
+  end: (id: string) => void;
+} {
   let from: { id: string; data: TData } | null = null;
+  let session = 0;
+  const write = (id: string, data: TData): void => {
+    const scene = sceneRef.current;
+    scene.batch('Edit text', () => scene.update(asNodeId(id), { data }), { coalesceKey: `text-edit:${id}:${session}` });
+  };
   return {
-    write: (id, draft) => {
+    draft: (id, draft) => {
       const scene = sceneRef.current;
       const nid = asNodeId(id);
       const node = scene.get(nid);
       if (!node || sceneDependentsOf(scene, nid).length === 0) return;
       if (from?.id !== id) from = { id, data: node.data };
-      scene.update(nid, { data: editedData(node.data, draft, optsRef.current) });
+      write(id, editedData(node.data, draft, optsRef.current));
     },
-    settle: () => { from = null; },
-    restore: (id) => {
+    commit: (id, data) => {
+      from = null;
+      write(id, data);
+    },
+    end: (id) => {
       const held = from;
       from = null;
-      if (held?.id === id && sceneRef.current.get(asNodeId(id))) sceneRef.current.update(asNodeId(id), { data: held.data });
+      if (held?.id === id && sceneRef.current.get(asNodeId(id))) write(id, held.data);
+      session++;
     },
   };
 }

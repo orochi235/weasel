@@ -207,10 +207,10 @@ export function useSceneTextEdit<
     fontHold: options.fontHold,
     onStart: (id) => optsRef.current.onStart?.(id),
     onEnd: (id) => {
-      drafts.restore(id);
+      drafts.end(id);
       optsRef.current.onEnd?.(id);
     },
-    onDraft: drafts.write,
+    onDraft: drafts.draft,
     getText: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
       return node ? read.text(node.data) : '';
@@ -239,11 +239,10 @@ export function useSceneTextEdit<
       return node ? read.runs(node.data) : undefined;
     },
     commit: (id, { text, runs, style }) => {
-      drafts.settle();
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
       if (!node) return;
-      sceneRef.current.update(nid, { data: editedData(node.data, { text, runs, style }, optsRef.current) });
+      drafts.commit(id, editedData(node.data, { text, runs, style }, optsRef.current));
     },
   });
 

@@ -145,6 +145,7 @@ export function useTextEdit(
   /** What the overlay read back as when the edit opened, before any input. */
   const openedRef = useRef<string | null>(null);
   const holderRef = useRef<CaretHolder | null>(null);
+  const priorRunsRef = useRef<readonly StyledRun[] | undefined>(undefined); // the node's, as the edit opened
   const [selection, setSelection] = useState<TextEditSelection | null>(null);
   const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
   const [pendingStyle, setPendingStyle] = useState<RunStylePatch>(NO_PENDING);
@@ -222,7 +223,7 @@ export function useTextEdit(
     // Runs are written when the node already had them — or stale styling
     // survives a Cmd-B that turned it off — or when the edit produced
     // styling. A plain-text edit of a plain-text node commits text alone.
-    const { getRuns, setRuns, setText, setStyle, commit: commitAll } = optsRef.current;
+    const { setRuns, setText, setStyle, commit: commitAll } = optsRef.current;
     const read = domToRuns(overlay);
     const style = nodeStyleRef.current;
     // Compared untrimmed: a seeded trailing newline reads back the same at
@@ -231,7 +232,7 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    const { text, runs } = overlayDraft(read, holderRef.current, getRuns?.(id));
+    const { text, runs } = overlayDraft(read, holderRef.current, priorRunsRef.current);
     holdNodeStyle(null);
     if (commitAll) {
       commitAll(id, { text, ...(runs ? { runs } : {}), ...(style ? { style } : {}) });
@@ -347,7 +348,7 @@ export function useTextEdit(
     overlay.setAttribute('contenteditable', 'true');
     overlay.spellcheck = false;
     baseRef.current = style;
-    const initialRuns = optsRef.current.getRuns?.(editingId);
+    const initialRuns = (priorRunsRef.current = optsRef.current.getRuns?.(editingId));
     holderRef.current = seedOverlay(overlay, getText(editingId), initialRuns, style);
     openedRef.current = JSON.stringify(domToRuns(overlay));
     applyOverlayStyle(overlay, style);
@@ -431,8 +432,7 @@ export function useTextEdit(
       onEdited: () => {
         holderRef.current?.edited(overlay);
         place();
-        const { onDraft, getRuns } = optsRef.current;
-        onDraft?.(editingId, overlayDraft(domToRuns(overlay), holderRef.current, getRuns?.(editingId)));
+        optsRef.current.onDraft?.(editingId, overlayDraft(domToRuns(overlay), holderRef.current, priorRunsRef.current));
       },
     });
 

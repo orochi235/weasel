@@ -67,5 +67,9 @@ describe('enterPathEdit', () => {
     it('leaves a double-click on the effect itself to its text', () => {
       expect(invoke({ worldX: 5, worldY: 5 }, 'fx')).not.toHaveBeenCalled();
     });
+
+    it('enters no path edit on a double-click between its glyphs, where nothing is under the pointer', () => {
+      expect(invoke({ worldX: 40, worldY: 45 }, null)).not.toHaveBeenCalled();
+    });
   });
 });

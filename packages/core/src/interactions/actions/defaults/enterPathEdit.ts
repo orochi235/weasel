@@ -43,7 +43,8 @@ export const enterPathEditAction: Action & { requires: string[] } = {
       // The path under the pointer wins: with several selected, the first may not be the one
       // double-clicked.
       const x = params?.worldX, y = params?.worldY;
-      const under = typeof x === 'number' && typeof y === 'number' ? deps.nodeAtPoint?.({ x, y }) : null;
+      const pointed = typeof x === 'number' && typeof y === 'number';
+      const under = pointed ? deps.nodeAtPoint?.({ x, y }) : null;
       if (under && editAnchors.getEditablePath(under)) {
         editAnchors.setEditingId(under);
         return;
@@ -54,8 +55,9 @@ export const enterPathEditAction: Action & { requires: string[] } = {
       // directly — the dep knows whether a node has an editable polygon
       // (pose-as-polygon OR data.path) so this picks up both shapes.
       for (const id of ids) {
-        // An effect hiding its path edits that path, except from a double-click on the effect itself: that is its text's.
-        const target = (id !== under && scene ? effectSourceFor(scene, id, 'path') : null) ?? id;
+        // An effect hiding its path edits that path when entered from the selection. A double-click never does: on the
+        // effect's glyphs it is the text's, and between them it is aimed at nothing.
+        const target = (!pointed && scene ? effectSourceFor(scene, id, 'path') : null) ?? id;
         if (editAnchors.getEditablePath(target)) {
           editAnchors.setEditingId(target);
           return;

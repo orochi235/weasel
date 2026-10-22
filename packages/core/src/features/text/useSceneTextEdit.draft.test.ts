@@ -73,4 +73,42 @@ describe('useSceneTextEdit — drafts', () => {
     act(() => hook.result.current.commit());
     expect(scene.get(LONE)!.data.text).toBe('alone!');
   });
+
+  it('makes a committed edit one undo entry, which undoes to the text before the first draft', () => {
+    const { scene, container, hook } = setup();
+    const before = scene.historyEntries().length;
+    act(() => hook.result.current.startEdit('t'));
+    type(container, '!');
+    type(container, '?');
+    act(() => hook.result.current.commit());
+    expect(scene.historyEntries()).toHaveLength(before + 1);
+    scene.undo();
+    expect(scene.get(T)!.data.text).toBe('hello');
+  });
+
+  it('leaves a canceled edit one entry that changes nothing, so an undo brings no draft back', () => {
+    const { scene, container, hook } = setup();
+    const before = scene.get(T)!.data;
+    const entries = scene.historyEntries().length;
+    act(() => hook.result.current.startEdit('t'));
+    type(container, '!');
+    act(() => hook.result.current.cancelEdit());
+    expect(scene.get(T)!.data).toEqual(before);
+    expect(scene.historyEntries()).toHaveLength(entries + 1);
+    scene.undo();
+    expect(scene.get(T)!.data).toEqual(before);
+  });
+
+  it('keeps two edits of one node apart', () => {
+    const { scene, container, hook } = setup();
+    const before = scene.historyEntries().length;
+    for (const ch of ['!', '?']) {
+      act(() => hook.result.current.startEdit('t'));
+      type(container, ch);
+      act(() => hook.result.current.commit());
+    }
+    expect(scene.historyEntries()).toHaveLength(before + 2);
+    scene.undo();
+    expect(scene.get(T)!.data.text).toBe('hello!');
+  });
 });
