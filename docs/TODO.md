@@ -495,6 +495,14 @@ Priority tags:
   `labkit/src/loupe/lens/lensHitBoxes.ts`, `findPathSnaps` in `geom/src/snap/pathSnap.ts`, and
   `boxesOf` in kernel3d's `snap/sources.ts`.
 
+- **(P3) The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
+  marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
+  8.97 ms at 394b86d43 (medians, keiei, one session, 2026-10-22); the pick-index branch's own full
+  walk is 8.42 ms, so the branch did not cause it. The index hides it for marquees in a still
+  scene, but every pick after a change still walks. Bisect with
+  `tests/perf/recorded/pick-index-2026-10-22/across-commits/run.sh` (edit its commit list); the
+  raw runs are beside it.
+
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
