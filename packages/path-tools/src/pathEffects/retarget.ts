@@ -5,9 +5,10 @@
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  commitOps, createSetDependsOnOp, deleteNode, type NodeId, type Op, pathEffectOf, type Scene, type SceneNode as Node,
+  commitOps, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, isTextData, type NodeId, type Op, pathEffectOf, type Scene,
+  type SceneNode as Node,
 } from '@weasel-js/core';
-import { PATH_EFFECTS_GROUP } from './actions';
+import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
 import { hiddenByOthers, hiddenOps, sourcesOf } from './hiding';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -33,6 +34,8 @@ function pathTarget(deps: ActionDeps | undefined): { effect: AnyNode; path: AnyN
   const effect = nodes.find(isAlong);
   const path = nodes.find((n) => n !== effect);
   if (!effect || !path || path.kind !== 'leaf' || closesLoop(scene, effect, path)) return ActionDisabledReason.NotApplicable;
+  // Text has no outline of its own to lay text along.
+  if (pathEffectOf(effect)?.kind === 'textAlong' && isTextData(path.data)) return ActionDisabledReason.NotApplicable;
   return { effect, path };
 }
 
@@ -40,9 +43,10 @@ const SET_LABEL = 'Set Path';
 
 /**
  * Lay a Bend, Repeat, or Text Along Path effect along another path: select the
- * effect and the path, in either order. Where the effect hides its sources,
- * the new path is hidden and the old one shown again, unless another such
- * effect still reads it.
+ * effect and the path, in either order. With two along effects selected, the
+ * first selected is the one retargeted. A text node cannot be a Text Along
+ * Path's path. Where the effect hides its sources, the new path is hidden and
+ * the old one shown again, unless another such effect still reads it.
  */
 export const setEffectPathAction: Action & { requires: string[] } = {
   id: 'setEffectPath',
@@ -73,20 +77,13 @@ export const setEffectPathAction: Action & { requires: string[] } = {
   },
 };
 
-/** The selected path effects. */
-function selectedEffects(deps: ActionDeps | undefined): AnyNode[] {
-  const scene = deps?.scene as AnyScene | undefined;
-  if (!scene) return [];
-  return (deps?.selection?.get() ?? [])
-    .map((id) => scene.get(id as NodeId))
-    .filter((n): n is AnyNode => n !== undefined && pathEffectOf(n) !== null);
-}
-
 const RELEASE_LABEL = 'Release';
 
 /**
  * Delete each selected path effect and select its sources, shown again where
  * it hid them — unless another effect that hides its sources still reads one.
+ * An effect deleted along the way, one reading a released one, takes the
+ * sources it hid with it.
  */
 export const releasePathEffectAction: Action & { requires: string[] } = {
   id: 'releasePathEffect',
@@ -117,6 +114,7 @@ export const releasePathEffectAction: Action & { requires: string[] } = {
         }
         ops.push(deleteNode(scene, effect, RELEASE_LABEL));
       }
+      ops.push(...hiddenSourceDeleteOps(scene, [...leaving], RELEASE_LABEL, shown));
       commitOps(deps, ops, RELEASE_LABEL);
       deps.selection?.set([...new Set(sources)].filter((id) => scene.get(id) !== undefined) as never);
     },

@@ -19,7 +19,9 @@ export {
 } from '../booleans/action';
 export { createOutlinesAction } from '../outlines/createOutlinesAction';
 export { outlineStrokeAction } from '../outlines/outlineStrokeAction';
-export { commitDeleteToScene, createDeleteAction, deleteAction, type DeleteActionOptions } from './delete';
+export {
+  commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
+} from './delete';
 export { groupAction, ungroupAction } from './group';
 export {
   nudgeAnchorsUpAction, nudgeAnchorsDownAction,

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import {
-  createScene, deleteAction, type NodeId, pathEffectOf, type RectPose, type Scene, withPathEffectsRegistry,
+  clipboardCutAction, createScene, deleteAction, type NodeId, pathEffectOf, type RectPose, type Scene, withPathEffectsRegistry,
 } from '@weasel-js/core';
 import { bendAlongAction, editPathEffectAction, expandPathEffectAction, textAlongAction } from './actions';
 import { releasePathEffectAction, setEffectPathAction } from './retarget';
@@ -102,6 +102,26 @@ describe('Release', () => {
     expect(hidden(scene, 'p')).toBe(true);
   });
 
+  it('takes the hidden sources of an effect it deletes along the way', () => {
+    const { scene, deps, select, selected } = setup(['r', 'p']);
+    run(bendAlongAction, deps);
+    const bend = selected()[0]!;
+    select(['t', bend]);
+    run(textAlongAction, deps);
+    const fx = selected()[0]!;
+    expect(hidden(scene, bend)).toBe(true);
+    select([bend]);
+    run(releasePathEffectAction, deps);
+    expect(scene.get(bend as NodeId)).toBeUndefined();
+    expect(scene.get(fx as NodeId)).toBeUndefined();
+    expect(scene.get('t' as NodeId)).toBeUndefined();
+    expect(selected()).toEqual(['r', 'p']);
+    scene.undo();
+    expect(scene.get(fx as NodeId)).toBeDefined();
+    expect(hidden(scene, 't')).toBe(true);
+    expect(hidden(scene, bend)).toBe(true);
+  });
+
   it('keeps a source hidden that another effect still hides', () => {
     const { scene, deps, select, fx } = textAlong();
     select(['t2', 'p']);
@@ -150,6 +170,12 @@ describe('Set Path', () => {
     select([fx, 't']);
     expect(setEffectPathAction.enabled!(deps)).not.toBe(true);
   });
+
+  it('refuses a text as the path of a text along a path', () => {
+    const { deps, select, fx } = textAlong();
+    select([fx, 't2']);
+    expect(setEffectPathAction.enabled!(deps)).not.toBe(true);
+  });
 });
 
 describe('removing an effect that hides its sources', () => {
@@ -175,6 +201,15 @@ describe('removing an effect that hides its sources', () => {
     expect(scene.roots).toEqual(['p', 't', fx, 'q', 't2', 'r', 's']);
   });
 
+  it('Cut takes hidden sources with it', () => {
+    const { scene, deps, fx } = textAlong();
+    const withClipboard = { ...deps, clipboard: { copy: () => {} } } as unknown as InvocationCtx['deps'];
+    run(clipboardCutAction, withClipboard);
+    expect(scene.get(fx as NodeId)).toBeUndefined();
+    expect(scene.get('t' as NodeId)).toBeUndefined();
+    expect(scene.get('p' as NodeId)).toBeUndefined();
+  });
+
   it('an effect without hideSources leaves its sources', () => {
     const { scene, deps, selected } = setup(['r', 'p']);
     run(bendAlongAction, deps);
@@ -193,5 +228,9 @@ describe('the settings form', () => {
     expect(pathEffectSettingsParams('textAlong.side', 'flipped')).toEqual({ kind: 'textAlong', side: 'flipped' });
     run(editPathEffectAction, deps, { kind: 'textAlong', side: 'flipped' });
     expect(pathEffectOf(scene.get(fx as NodeId))).toMatchObject({ side: 'flipped' });
+    run(editPathEffectAction, deps, { kind: 'textAlong', align: 'center', shift: 4, overflow: 'fit', start: 1.5 });
+    expect(pathEffectOf(scene.get(fx as NodeId))).toMatchObject({ align: 'center', shift: 4, overflow: 'fit', start: 1 });
+    run(editPathEffectAction, deps, { kind: 'textAlong', start: -2, anchor: 'center' });
+    expect(pathEffectOf(scene.get(fx as NodeId))).toMatchObject({ start: 0, anchor: 'center' });
   });
 });

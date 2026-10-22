@@ -79,7 +79,7 @@ export {
 export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {
-  commitDeleteToScene, createDeleteAction, deleteAction, type DeleteActionOptions,
+  commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
 } from '../interactions/actions/defaults/delete';
 export {
   pinchZoomAction,

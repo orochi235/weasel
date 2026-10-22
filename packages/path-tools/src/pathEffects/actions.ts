@@ -5,7 +5,7 @@
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, deleteNode, derivedDepOf, hiddenSourcesTakenWith, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
+  commitOps, createSetDataOp, deleteNode, derivedDepOf, hiddenSourceDeleteOps, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
 } from '@weasel-js/core';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
 import { hiddenOps } from './hiding';
@@ -31,7 +31,7 @@ function selectedLeaves(deps: ActionDeps | undefined): AnyNode[] | null {
 }
 
 /** The selected nodes holding a path effect, of `kind` where given. */
-function selectedEffects(deps: ActionDeps | undefined, ids?: readonly string[], kind?: unknown): AnyNode[] {
+export function selectedEffects(deps: ActionDeps | undefined, ids?: readonly string[], kind?: unknown): AnyNode[] {
   const scene = deps?.scene as AnyScene | undefined;
   if (!scene) return [];
   return (ids ?? deps?.selection?.get() ?? [])
@@ -253,9 +253,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
       }
       if (ops.length === 0) return;
       // Last, so each delete finds its source's slot after the expansion.
-      for (const id of hiddenSourcesTakenWith(scene, effects.map((e) => e.node.id))) {
-        if (scene.get(id)) ops.push(deleteNode(scene, scene.get(id)!, EXPAND_LABEL));
-      }
+      ops.push(...hiddenSourceDeleteOps(scene, effects.map((e) => e.node.id), EXPAND_LABEL));
       commitOps(deps, ops, EXPAND_LABEL);
       deps.selection?.set(made as never);
     },

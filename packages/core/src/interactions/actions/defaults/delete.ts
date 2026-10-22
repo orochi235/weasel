@@ -14,6 +14,28 @@ function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
   return siblings.indexOf(id);
 }
 
+/** Options for {@link buildDeleteOps}. */
+export interface BuildDeleteOptions {
+  /** Also delete the sources a path effect with `hideSources` among `ids` hid,
+   *  where nothing staying reads them — what Delete and Cut do. */
+  takeHiddenSources?: boolean;
+}
+
+/**
+ * Delete ops for the sources a removal of `ids` takes with it (see
+ * `hiddenSourcesTakenWith`), for an action whose own ops remove `ids` some
+ * other way. Append them after those ops: a delete finds its slot as it runs.
+ * Sources in `keep` stay.
+ */
+export function hiddenSourceDeleteOps(
+  scene: Scene<unknown, string, unknown>,
+  ids: readonly NodeId[],
+  label: string,
+  keep?: ReadonlySet<NodeId>,
+): Op[] {
+  return buildDeleteOps(scene, hiddenSourcesTakenWith(scene, ids, keep), label);
+}
+
 /**
  * Delete ops for `ids`, in the order given. Each op captures the node and its
  * host-array index BEFORE any removal, so `invert()` re-inserts at the right
@@ -34,10 +56,12 @@ export function buildDeleteOps(
   scene: Scene<unknown, string, unknown>,
   ids: readonly string[],
   label: string,
+  opts: BuildDeleteOptions = {},
 ): Op[] {
+  const all = opts.takeHiddenSources ? [...ids, ...hiddenSourcesTakenWith(scene, ids as readonly NodeId[])] : ids;
   const covered = new Set<string>();
   const ops: Op[] = [];
-  for (const id of ids) {
+  for (const id of all) {
     const node = scene.get(id as NodeId);
     if (!node) continue;
     if (covered.has(id)) continue;
@@ -62,7 +86,7 @@ export interface DeleteActionOptions {
 export function commitDeleteToScene(ids: readonly NodeId[], deps: ActionDeps): void {
   const { selection, scene, applyOps } = deps;
   if (!selection || !scene) return;
-  const ops = buildDeleteOps(scene, [...ids, ...hiddenSourcesTakenWith(scene, ids)], 'Delete');
+  const ops = buildDeleteOps(scene, ids, 'Delete', { takeHiddenSources: true });
   if (ops.length > 0) {
     if (applyOps) applyOps(ops, 'Delete');
     else scene.applyBatch(ops, 'Delete', defaultCommitAdapter(scene, selection.adapterMethods));

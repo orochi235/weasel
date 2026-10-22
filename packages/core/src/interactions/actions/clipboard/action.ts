@@ -33,7 +33,8 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
 
 /**
  * Static descriptor for the `clipboard.cut` Action (Cmd/Ctrl+X) — copy, then
- * the same batched delete `deleteAction` performs, as one undo entry.
+ * the same batched delete `deleteAction` performs, as one undo entry: the
+ * sources a path effect hid go too.
  */
 export const clipboardCutAction: Action & { requires: string[] } = {
   id: 'clipboard.cut',
@@ -57,7 +58,7 @@ export const clipboardCutAction: Action & { requires: string[] } = {
       // Snapshot before removal — `snapshotSelection` reads live nodes.
       clipboard.copy();
 
-      const ops = buildDeleteOps(scene, ids, 'Cut');
+      const ops = buildDeleteOps(scene, ids, 'Cut', { takeHiddenSources: true });
       if (ops.length > 0) {
         if (applyOps) applyOps(ops, 'Cut');
         else scene.applyBatch(ops, 'Cut', defaultCommitAdapter(scene, selection.adapterMethods));
