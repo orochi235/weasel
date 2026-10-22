@@ -43,8 +43,9 @@ const MIDDLE_FALLBACK = 0.25;
  * between two clusters belongs to the left one. Decoration rules are left out.
  *
  * Throws `TextOutlinesError` as `textToPath` does, except that a color
- * glyph keeps its slot with no `paths`. Only a code point that inks its
- * slot is drawn, so a color cluster's leading code points stay blank too.
+ * glyph, or one drawn by a fallback face with no outlines, keeps its slot
+ * with no `paths`. Only a code point that inks its slot is drawn, so a color
+ * cluster's leading code points stay blank too.
  */
 export function textClusters(data: TextOutlineSource, opts: TextClustersOptions = {}): TextCluster[] {
   const box = { x: 0, y: 0, width: opts.width ?? Infinity, height: 0 };
@@ -71,7 +72,7 @@ export function textClusters(data: TextOutlineSource, opts: TextClustersOptions 
     const parts: PolygonPath[][] = paints.map(() => []);
     for (const g of glyphs) {
       if (g.glyph?.color || !line.cells[g.cell]!.drawsInk) continue;
-      const outline = placedGlyphOutline(g, -left, -line.baselineY, 'textClusters');
+      const outline = placedGlyphOutline(g, -left, -line.baselineY, 'textClusters', true);
       if (outline) parts[paintOf[g.run]!]!.push(outline);
     }
     const paths: TextPaintPath[] = [];

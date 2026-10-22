@@ -14,7 +14,7 @@ import { bidi } from '@weasel-js/bidi';
 import { boundsOfPath } from '@weasel-js/geom';
 import { layoutTextPose, registerBidi } from '@weasel-js/text';
 import { textClusters, type TextCluster } from './textClusters';
-import { TextOutlinesError, type TextOutlineSource } from './textToPath';
+import { textToPath, TextOutlinesError, type TextOutlineSource } from './textToPath';
 
 const INTER = resolve(import.meta.dirname, '../../../assets/fonts/inter');
 
@@ -159,6 +159,29 @@ describe('textClusters', () => {
       expect(cs).toHaveLength(2);
       expect(cs[1].paths).toEqual([]);
       expect(cs[1].advance).toBeGreaterThan(0);
+    } finally {
+      _resetDynamicFontsForTests();
+    }
+  });
+
+  it('a glyph a fallback face with no outlines draws keeps its slot and paints nothing', () => {
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: 20, height: 20, alpha: new Uint8ClampedArray(20 * 20).fill(255), left: 0, top: 20, advance: 22,
+      }),
+    });
+    try {
+      // The Inter subset has no arrow, so the system fallback rasterizes it.
+      const src = text('H→H');
+      expect(() => textToPath(src, { x: 0, y: 0, width: 1e6, height: 0 })).toThrow(TextOutlinesError);
+      const cs = textClusters(src);
+      expect(cs).toHaveLength(3);
+      expect(cs[1].paths).toEqual([]);
+      expect(cs[1].advance).toBeGreaterThan(0);
+      expect(cs[0].paths).toHaveLength(1);
+      expect(cs[2].paths).toHaveLength(1);
     } finally {
       _resetDynamicFontsForTests();
     }

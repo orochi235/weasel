@@ -123,15 +123,15 @@ function emGlyph(d: string): PolygonPath {
 /**
  * The outline of `g`, a glyph that is not a color glyph, with its pen at
  * `(g.x + dx, g.baselineY + dy)`; `null` for a slot with nothing to draw.
- * Throws for `caller` when a fallback face drew it, which the per-run check
- * never saw.
+ * When a fallback face with no outlines drew it, which the per-run check
+ * never saw, throws for `caller` — or, with `blankFallback`, returns `null`.
  */
 export function placedGlyphOutline(
-  g: PlacedGlyph, dx: number, dy: number, caller: string,
+  g: PlacedGlyph, dx: number, dy: number, caller: string, blankFallback = false,
 ): PolygonPath | null {
   const d = faceOutlineD(g);
   if (d === null) {
-    if (glyphQuad(g) !== null) {
+    if (!blankFallback && glyphQuad(g) !== null) {
       const { family, weight, style } = g.resolved.resolved;
       throw new TextOutlinesError('no-outlines', family, weight, style,
         'a fallback face serving some of the text\'s characters has no outlines registered.', caller);
