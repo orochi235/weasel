@@ -8,7 +8,7 @@ import { createPathAnchorAffordances } from './pathAnchors';
 const LINE = pathFromD('M0 0 L100 0');
 const regionIds = (editingId: string | null, selection: string[]) => {
   const [, , anchors] = createPathAnchorAffordances(() => ({ editingId, getPose: (id) => (id === 'p' ? LINE : null) }));
-  return anchors!.regions({ selection } as unknown as ChromeState, undefined as never).map((r) => r.id);
+  return anchors!.regions({ selection } as unknown as ChromeState).map((r) => r.id);
 };
 
 describe('createPathAnchorAffordances', () => {
