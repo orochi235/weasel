@@ -170,6 +170,12 @@ export function bumpNodeMemoGeneration(): void {
   generation++;
 }
 
+/** The generation {@link bumpNodeMemoGeneration} last moved to: a freshness
+ *  key for a cache outside this memo that reads the same ambient state. */
+export function nodeMemoGeneration(): number {
+  return generation;
+}
+
 /**
  * Drop the slots of `node` that were keyed on a pose, keeping the ones that
  * weren't.

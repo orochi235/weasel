@@ -18,19 +18,11 @@
 
 import { invert, type Affine, type Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
-import type { ClipFromPoseFn, CopiesFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
-import { asNodeId } from 'core/scene/types';
-import { annotationLayerIds } from 'core/scene/annotation';
-import { nodeGates } from 'core/scene/nodeGates';
+import type { ClipFromPoseFn, CopiesFromPoseFn, Node } from 'core/scene/types';
 import { inheritedPaintOf, inheritsPaint, type InheritedPaint } from 'core/scene/inheritedPaint';
-import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
-import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
-import type { View } from 'core/viewport/view';
+import { rectToPlane, type PlaneMap } from 'core/viewport/parallax';
 import { clipCarrier } from './planeClips';
 import { reaches } from './pickReach';
-
-/** Shared, never mutated: most scenes are flat and every node returns it. */
-const EMPTY_PARENTS: readonly never[] = [];
 
 /** The subset of a node the walk itself reads. Deliberately structural: a
  *  bare adapter's node satisfies it as readily as a `SceneNode`. */
@@ -80,6 +72,35 @@ export interface PickSource<TPose> {
   /** How the asking view's world maps into a parallax layer's, or null for a
    *  layer that moves with the camera. Omit for a source with no planes. */
   planeOf?(layer: string): PlaneMap | null;
+  /**
+   * The candidates a query with these broad boxes can hit, back-to-front: a
+   * subset of `order()` that drops only nodes no query inside the box could
+   * hit. `broadFor(layer)` is the box for that layer's query: `null` for a
+   * layer it cannot reach, `undefined` for one with no box, which makes this
+   * answer `null` and the walk visit `order()`. Omit for a source with no index.
+   */
+  candidates?(
+    broadFor: (layer: string | undefined) => PickBroad | null | undefined,
+  ): readonly PickCandidate<TPose>[] | null;
+}
+
+/** The box a query cannot hit outside of, for a source's index to look up. */
+export interface PickBroad {
+  /** World box, already grown by the query's own slop. */
+  box: { x: number; y: number; width: number; height: number };
+  /** Screen px per world unit at the asking view (least axis); grows the box
+   *  by the largest `outsetPx` the index holds. Omit for a query whose test
+   *  reads no `outsetPx`. */
+  pxPerWorld?: number;
+}
+
+/** `broad` carried into a plane's world, as `inPlane` carries the query. */
+export function broadInPlane(broad: PickBroad, m: PlaneMap): PickBroad {
+  const box = rectToPlane(m, broad.box);
+  if (broad.pxPerWorld === undefined) return { box };
+  // A plane's pixel is the same on screen, so its world unit holds fewer of them.
+  const k = Math.max(Math.abs(m.scale.x), Math.abs(m.scale.y));
+  return { box, pxPerWorld: broad.pxPerWorld / k };
 }
 
 /** One hit-test question: what region, and what counts as covering it. */
@@ -90,6 +111,9 @@ export interface PickQuery<TPose> {
   /** Default `false`. Every selecting or editing query passes over locked
    *  nodes; one that only samples what is painted can take them back. */
   includeLocked?: boolean;
+  /** Where the query can hit at all, for a source with an index. `inPlane`
+   *  carries it with the query; without it the walk visits every node. */
+  broad?: PickBroad;
   /** Does this node, drawn at this pose, cover the query region? `derived`
    *  is the node's resolved path when it has one — a derived node's pose is a
    *  placeholder, so a region test that reads only the pose answers for the
@@ -194,7 +218,11 @@ export function pickWalk<TPose>(
 
   const order = src.order();
   const copying = order.some((n) => n.kind === 'container' && typeof n.copiesFromPose === 'function');
-  for (const node of order) {
+  const visit = (q.broad !== undefined ? src.candidates?.((layer) => {
+    const query = queryFor(layer);
+    return query === null ? null : query.broad;
+  }) : null) ?? order;
+  for (const node of visit) {
     if (!includeContainers && node.kind === 'container') continue;
     // Transparent to picking: the click belongs to whatever is behind it,
     // which for a label inside a box is the box.
@@ -235,124 +263,5 @@ export interface AdapterPickGates extends ViewPickGates {
   planeOf?: (layer: string) => PlaneMap | null;
 }
 
-export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
-  /** Pose lookup, when the caller holds an adapter that already resolves
-   *  overrides. Defaults to `effectivePose` against the scene's own. */
-  getPose?: (id: string) => TPose;
-  /** The asking view's composed alpha — `alphaFor(id)` times override alpha.
-   *  Defaults to the override alpha alone, which is all a bare scene knows. */
-  alphaOf?: (id: string) => number;
-  /** The asking view's answer to "does this scene layer reach the screen",
-   *  which is `layerVisibility` and `layerOrder` on top of the scene's own
-   *  `visible` flag. Consulted after the scene's flag, never instead of it. */
-  layerIsPainted?: (layer: string) => boolean;
-  /** The asking view's camera. With it, a layer carrying `parallax` is picked
-   *  through its plane; without it, every layer is taken to move with the
-   *  camera. */
-  camera?: View;
-}
-
-export function scenePickSource<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>,
-  opts: ScenePickSourceOptions<TPose> = {},
-): PickSource<TPose> {
-  // Partial scene stand-ins carry only `layers` and `get`, which is all the gates read.
-  const gates = nodeGates(scene as never);
-  const annotations = annotationLayerIds(scene.layers);
-  const { getPose, alphaOf, layerIsPainted } = opts;
-
-  // Resolved once per walk rather than once per candidate. Needs enumeration — a
-  // partial scene stand-in carrying only `read` falls back to reading per node.
-  let faded: Set<string> | null = null;
-  const enumerable = typeof scene.overrides?.ids === 'function';
-  if (!alphaOf && enumerable) {
-    for (const id of scene.overrides.ids()) {
-      const a = scene.overrides.read(id)?.alpha;
-      if (a !== undefined && a <= 0) (faded ??= new Set()).add(id);
-    }
-  }
-  const readAlpha = alphaOf
-    ?? (enumerable
-      ? (faded ? (id: string) => (faded.has(id) ? 0 : 1) : undefined)
-      : (id: string) => scene.overrides.read(asNodeId(id))?.alpha ?? 1);
-
-  // A composing strategy makes a node's own pose local, so picking folds the
-  // parent chain the same way the render walk does: one definition of both.
-  const paintedPoseOf = scenePaintedPoseOf(scene);
-  const poseOf = getPose
-    ? (node: PickCandidate<TPose>) => getPose(node.id)
-    : (node: PickCandidate<TPose>) => paintedPoseOf(node as never);
-
-  // Through `poseOf`, not the document pose: a derived node has to be tested
-  // where the renderer draws its dependencies, which is what an override says.
-  const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
-  const depOf = (id: NodeId): DerivedDep<TPose> | undefined => {
-    const dep = scene.get(id);
-    if (dep === undefined) return undefined;
-    return {
-      node: dep as Node<unknown, string, TPose>,
-      pose: poseOf(dep as never),
-      get path(): Path | null {
-        return resolveDerivedPath(dep as never, depOf, childrenOf);
-      },
-    };
-  };
-
-  const sceneDerivedPath = getPose ? null : sceneDerivedPathOf(scene);
-  const derivedPathOf = (node: PickCandidate<TPose>): Path | null => {
-    const n = node as unknown as Node<TData, TLayer, TPose>;
-    if (!sceneDerivedPath) return n.dependsOn === undefined ? null : resolveDerivedPath(n, depOf, childrenOf);
-    return showsComputedPath(scene, n) ? sceneDerivedPath(n) : null;
-  };
-
-  const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;
-
-  return {
-    ...(planeOf ? { planeOf } : {}),
-    order: () => scene.renderOrderNodes() as unknown as readonly PickCandidate<TPose>[],
-    derivedPathOf,
-    poseOf,
-    parentsOf(node) {
-      let parentId = (node as { parent?: string | null }).parent ?? null;
-      if (parentId === null) return EMPTY_PARENTS;
-      const chain: PickCandidate<TPose>[] = [];
-      const seen = new Set<string>();
-      while (parentId !== null) {
-        if (seen.has(parentId)) break;
-        seen.add(parentId);
-        const parent = scene.get(asNodeId(parentId));
-        if (!parent) break;
-        chain.push(parent as unknown as PickCandidate<TPose>);
-        parentId = parent.parent ?? null;
-      }
-      return chain;
-    },
-    // Absent entirely when nothing is faded, so the walk skips the gate.
-    ...(readAlpha ? { alphaOf: readAlpha } : {}),
-    isLocked: (node: PickCandidate<TPose>) => gates.locked(node.id),
-    isHidden: (node: PickCandidate<TPose>) => gates.hidden(node.id),
-    ...(annotations.size > 0 || layerIsPainted
-      ? {
-        layerIsPainted: (layer: string) =>
-          !annotations.has(layer) && (layerIsPainted === undefined || layerIsPainted(layer)),
-      }
-      : {}),
-  };
-}
-
-/** Each parallax layer's plane map under `camera`, or null when no layer is a
- *  plane — which keeps the per-layer lookup off the walk entirely. */
-export function scenePlaneOf(
-  layers: readonly { id: string; parallax?: ParallaxOpts }[] | undefined,
-  camera: View,
-): ((layer: string) => PlaneMap | null) | null {
-  let maps: Map<string, PlaneMap> | null = null;
-  for (const l of layers ?? []) {
-    if (l.parallax) (maps ??= new Map()).set(l.id, planeMap(camera, l.parallax));
-  }
-  if (maps === null) return null;
-  const found = maps;
-  return (layer) => found.get(layer) ?? null;
-}
-
+export { scenePickSource, scenePlaneOf, type ScenePickSourceOptions } from './scenePickSource';
 export { adapterPickSource } from './adapterPickSource';

@@ -132,7 +132,17 @@ function walkArea(
   descriptor: PoseDescriptor<unknown>,
   query: RegionQueryOptions,
 ): NodeId[] {
-  const regionQuery = (r: SelectRegion): PickQuery<unknown> => ({
+  return pickWalk<unknown>(scenePickSource(scene, opts), regionPickQuery(region, mode, descriptor, query)) as NodeId[];
+}
+
+/** The query a marquee or a lasso over `r` asks of each node. */
+export function regionPickQuery(
+  r: SelectRegion,
+  mode: LassoHitMode,
+  descriptor: PoseDescriptor<unknown>,
+  query: RegionQueryOptions,
+): PickQuery<unknown> {
+  return {
     includeContainers: query.includeContainers === true,
     clipAdmits: (clip, node, pose, derived) => {
       const g = poseDescriptorForNode(descriptor, node);
@@ -150,10 +160,9 @@ function walkArea(
       return regionTakes(r, mode, asInked(filled, pose), b, () =>
         asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived }) ?? derived ?? poseOutline(pose, b)), filled);
     },
-    inPlane: (m) => regionQuery(regionInPlane(r, m)),
-    inCopy: (m) => regionQuery(regionInCopy(r, m)),
-  });
-  return pickWalk<unknown>(scenePickSource(scene, opts), regionQuery(region)) as NodeId[];
+    inPlane: (m) => regionPickQuery(regionInPlane(r, m), mode, descriptor, query),
+    inCopy: (m) => regionPickQuery(regionInCopy(r, m), mode, descriptor, query),
+  };
 }
 
 /** `r` carried into a plane's world. The map is axis-aligned, so a rect stays

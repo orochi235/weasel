@@ -91,8 +91,8 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  Painters that leave it undefined are treated as {@link DEFAULT_INK}: the
    *  whole silhouette interior is grabbable and the outline adds nothing.
    *
-   *  `ctx.scale` carries the view scale so a `{ px }` stroke width resolves to
-   *  world units; without it a screen-pixel width is read as world units. */
+   *  `ctx.scale` carries the view scale; a reach measured on screen, such as
+   *  a `{ px }` stroke's, is reported in `outsetPx`, never in `outset`. */
   ink?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): NodeInk | null;
   /** Optional: a box enclosing every pixel `paint` can put down for this node,
    *  stroke, markers and miter spikes included, in the frame `paint` emits in
@@ -122,7 +122,10 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
 export interface NodeInk {
   /** True when the silhouette's interior is painted, and so grabbable. */
   filled: boolean;
-  /** How far the ink reaches outside the outline, world units. */
+  /** How far the ink reaches outside the outline. World units, independent of
+   *  the view: a reach measured on screen goes in `outsetPx`. Pick indexes box
+   *  nodes once for every zoom, so an `outset` that changes with `scale` goes
+   *  unpicked. */
   outset: number;
   /** How far it reaches inside. */
   inset: number;
@@ -145,8 +148,9 @@ export interface NodeSilhouetteCtx {
 
 /** Per-call context for {@link NodeShapeEntry.ink}. */
 export interface NodeInkCtx {
-  /** View scale, for resolving `{ px }` lengths to world units — the mean of
-   *  the two axes' under non-uniform zoom. */
+  /** View scale, for resolving `{ px }` lengths, which `ink` reports in
+   *  `outsetPx`/`insetPx`, never folded into `outset`. The mean of the two
+   *  axes' under non-uniform zoom. */
   scale?: number;
   /** The smaller axis's scale, where it differs from `scale`. A box bounding
    *  a `{ px }` stroke reads its reach here, where a pixel is the most world. */
