@@ -264,6 +264,16 @@ describe('CharacterOptions — idle', () => {
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByText('Text')).toBeNull();
   });
+
+  it('renders no bar for a null style, so an app does not show an empty strip', () => {
+    renderWithIcons(<CharacterOptions style={null} onPatch={vi.fn()} />);
+    expect(screen.queryByRole('toolbar')).toBeNull();
+  });
+
+  it('keeps the bar for a tenant that is not character styling', () => {
+    renderWithIcons(<CharacterOptions style={null} onPatch={vi.fn()}><button>Loupe</button></CharacterOptions>);
+    expect(screen.getByRole('toolbar')).toBeInTheDocument();
+  });
 });
 
 describe('isCharacterChrome', () => {

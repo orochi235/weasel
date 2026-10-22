@@ -18,7 +18,7 @@ import type { ReactNode } from 'react';
 /** Props for {@link CharacterOptions}. */
 export interface CharacterOptionsProps {
   /** Styling to display. `MIXED` at a key means the sources disagree there.
-   *  Absent or `null` leaves the bar empty — the row is permanent chrome. */
+   *  Absent or `null` renders no bar, unless `children` gives it a tenant. */
   style?: RangeStyle | null;
   /** Apply a styling change. One call per completed edit. */
   onPatch: (patch: RunStylePatch) => void;

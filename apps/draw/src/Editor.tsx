@@ -37,6 +37,7 @@ import { useDocumentState } from './useDocumentState';
 import { useLastTool } from './useLastTool';
 import { useMachineFontOutlines } from './useMachineFontOutlines';
 import { useRightSidebarWidth } from './useRightSidebarWidth';
+import { useHoldContentUnderChrome } from './useHoldContentUnderChrome';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
 
@@ -89,6 +90,9 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   // start.
   const hostRef = useRef<HTMLDivElement | null>(null);
   const textEdit = useTextEditSession(scene, hostRef.current, modality.machine);
+  // The character strip shows only during a text edit, and moves the workspace as it comes and goes.
+  const optionsRef = useRef<HTMLDivElement | null>(null);
+  useHoldContentUnderChrome(optionsRef, setView, textEdit.effectiveStyle != null);
 
   return (
     <ActiveToolContextProvider>
@@ -109,10 +113,9 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
           <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
           <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
           <ContextMenuHost />
-          {/* Permanently reserved, never mounted on demand: the canvas is sized
-              to the workspace, so appearing mid-edit would resize it under the
-              caret. Empty until a text edit is in progress. */}
-          <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
+          <div ref={optionsRef}>
+            <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
+          </div>
           <div className="wd-body">
             <ShowChrome id={FIXED_CHROME.tools.id}>
               <Sidebar side="left" className="wd-sidebar left" ariaLabel={FIXED_CHROME.tools.label}>

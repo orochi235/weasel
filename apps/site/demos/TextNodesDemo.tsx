@@ -106,7 +106,9 @@ export function TextNodesDemo() {
 
   return (
     <div className="ckd-stack">
-      <CharacterOptions className="ckd-strip" style={edit.effectiveStyle} onPatch={edit.applyStyleToSelection} />
+      <div className="ckd-strip-slot">
+        <CharacterOptions className="ckd-strip" style={edit.effectiveStyle} onPatch={edit.applyStyleToSelection} />
+      </div>
       <div className="ckd-canvas-frame" ref={setFrame} onDoubleClick={edit.onDoubleClick}>
         <DemoStage width={W} height={H}>
           <SceneCanvas
