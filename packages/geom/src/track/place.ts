@@ -47,16 +47,25 @@ export function runLength(lengths: readonly number[], gap: number): number {
   return lengths.reduce((sum, length, i) => sum + length + (i > 0 ? gap : 0), 0);
 }
 
-/** The place `distance` along `run`; past either end it carries on straight along that end, tipped as it is there. The
- *  point then moves `shift` along the place's up. */
-export function runStationAt(run: TrackRun, distance: number, shift = 0): TrackPlace {
+/** How {@link runStationAt} carries a place past either end of its run: straight along that end, tipped as it is there
+ *  (`'extend'`), or on along the run's shape itself (`'follow'`), as a shape's `at` reads `open`. */
+export type RunPast = 'extend' | 'follow';
+
+/** The place `distance` along `run`, carried past either end as `past` says (default `'extend'`). The point then moves
+ *  `shift` along the place's up. */
+export function runStationAt(run: TrackRun, distance: number, shift = 0, past: RunPast = 'extend'): TrackPlace {
   const { length } = run;
+  if (past === 'follow' && length > 0) {
+    const place = run.at(distance / length, { open: true });
+    const { point, normal } = place;
+    return { ...place, point: { x: point.x + shift * normal.x, y: point.y + shift * normal.y } };
+  }
   const place = run.at(length === 0 ? 0 : distance / length);
-  const past = distance < 0 ? distance : distance > length ? distance - length : 0;
+  const beyond = distance < 0 ? distance : distance > length ? distance - length : 0;
   const { point, tangent, normal } = place;
   return {
     ...place,
-    point: { x: point.x + past * tangent.x + shift * normal.x, y: point.y + past * tangent.y + shift * normal.y },
+    point: { x: point.x + beyond * tangent.x + shift * normal.x, y: point.y + beyond * tangent.y + shift * normal.y },
   };
 }
 
@@ -75,8 +84,9 @@ export interface PlaceAlongRunOptions {
   /** Carry items on round a closed run past its seam, and count an item past once it is a whole lap on from the first
    *  item's start. Default false. */
   wrap?: boolean;
-  /** Where an item wholly past an end is placed: carried on beyond it (`'extend'`, the default) or held at it. */
-  past?: 'extend' | 'hold';
+  /** Where an item past an end is placed: carried on straight beyond it (`'extend'`, the default), or on along the run's
+   *  own shape (`'follow'`); `'hold'` follows the shape until the item is wholly past, then holds it at that end. */
+  past?: RunPast | 'hold';
   /** `'reading'` (the default) lays item 1 at the run's reading start. `'track'` lays it at the shape's own start and
    *  proceeds in the shape's direction; items still stand as the run reads them. In `'track'` order `align`, `at`,
    *  `offset` and each `center` are measured from the shape's start. */
@@ -99,7 +109,7 @@ export function placeAlongRun(run: TrackRun, lengths: readonly number[], options
     let distance = spot.center;
     if (past === 'hold' && clipped === 'past') distance = clamp(distance, lap?.start ?? 0, lap?.end ?? length);
     if (lap && length > 0) distance = ((distance % length) + length) % length;
-    return { ...runStationAt(run, mirror ? length - distance : distance, shift), center: spot.center, clipped };
+    return { ...runStationAt(run, mirror ? length - distance : distance, shift, past === 'extend' ? 'extend' : 'follow'), center: spot.center, clipped };
   });
 }
 

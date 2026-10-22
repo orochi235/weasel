@@ -12,8 +12,9 @@
   pointer-events: auto;
 }
 
-.item[data-clipped='part'] {
-  opacity: 0.4;
+/* Set from how much of the item lies on the run, so one sliding off an end fades as it goes. */
+.item {
+  opacity: var(--along-shown, 1);
 }
 
 /* No line to stretch along, so a divider takes a line's height. */

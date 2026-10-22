@@ -42,6 +42,36 @@ describe('runStationAt', () => {
     close(runStationAt(run, -20).point, { x: -20, y: 0 });
     close(runStationAt(run, 130).point, { x: 130, y: 0 });
   });
+  test("with 'follow', past an arc's end it carries on round the arc's circle, tipped to it there", () => {
+    // The top quarter, 12 to 3 o'clock, radius 100: a quarter turn past its end is 6 o'clock.
+    const arc = trackRun(arcShape({ center: C, radius: 100, start: 0, end: 90 }), 0, 1, { side: 'path' });
+    const quarter = (Math.PI / 2) * 100;
+    close(runStationAt(arc, 2 * quarter, 0, 'follow').point, { x: 0, y: 100 });
+    close(runStationAt(arc, -quarter, 0, 'follow').point, { x: -100, y: 0 });
+    expect(runStationAt(arc, 2 * quarter, 0, 'follow').angle).toBeCloseTo(180);
+    close(runStationAt(arc, 2 * quarter, 10, 'follow').point, { x: 0, y: 110 });
+  });
+});
+
+describe("placeAlongRun with past: 'follow'", () => {
+  test('lays an item past an arc run’s end on round its circle, not straight along the end', () => {
+    const arc = trackRun(arcShape({ center: C, radius: 100, start: 0, end: 90 }), 0, 1, { side: 'path' });
+    const quarter = (Math.PI / 2) * 100;
+    const places = placeAlongRun(arc, [quarter, quarter], { align: 'start', at: 0, past: 'follow' });
+    expect(places[1]!.clipped).toBe('past');
+    // Its center is an eighth turn past 3 o'clock.
+    close(places[1]!.point, { x: 100 * Math.SQRT1_2, y: 100 * Math.SQRT1_2 });
+  });
+  test("past: 'hold' follows the shape with an item part past the end, then holds it once wholly past", () => {
+    const arc = trackRun(arcShape({ center: C, radius: 100, start: 0, end: 90 }), 0, 1, { side: 'path' });
+    const quarter = (Math.PI / 2) * 100;
+    const places = placeAlongRun(arc, [quarter / 2, quarter, quarter], { align: 'start', at: 0, offset: -quarter / 4, past: 'hold' });
+    expect(places.map((p) => p.clipped)).toEqual(['none', 'part', 'past']);
+    // Laid from a quarter of a quarter in, the middle item's center is a quarter of a quarter past 3 o'clock, round the circle.
+    const turn = (90 + 0.25 * 90) * (Math.PI / 180);
+    close(places[1]!.point, { x: 100 * Math.sin(turn), y: -100 * Math.cos(turn) });
+    close(places[2]!.point, { x: 100, y: 0 });
+  });
 });
 
 describe('placeAlongRun', () => {

@@ -50,8 +50,8 @@ async function mount(name: string, room = 0) {
   await document.fonts.ready;
   await settle();
   const box = document.querySelector<HTMLElement>('[data-lab-box]')!;
-  const { center, sweep, direction, inset, size } = config.arc;
-  const run = trackRun(arcShape(arcInBox(arcOf({ center, sweep, direction, inset }), { width: size, height: size })));
+  const { size, ...arc } = config.arc;
+  const run = trackRun(arcShape(arcInBox(arcOf(arc), { width: size, height: size })));
   /** Px along the run to the element's center. */
   const along = (el: Element) => {
     const b = box.getBoundingClientRect();

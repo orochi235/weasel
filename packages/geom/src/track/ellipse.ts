@@ -1,6 +1,6 @@
 import type { Point } from '../paths/cubicMath';
 import { clamp } from '../scalar';
-import type { TrackNearest, TrackShape, TrackStation } from './shape';
+import type { TrackAtOptions, TrackNearest, TrackShape, TrackStation } from './shape';
 
 /** An axis-aligned elliptical arc track. `start` and `end` are directions seen from the center, in degrees clockwise
  *  from 12 o'clock on a y-down plane, as an arc's are; equal `start` and `end` is the whole ellipse. */
@@ -145,9 +145,20 @@ export function ellipseShape(spec: EllipseTrackSpec): EllipseTrackShape {
   const raw = mod360(sign * (param(spec.end) - e.t0));
   const sweep = raw === 0 ? 360 : raw;
   const { length, lengthTo, offsetAt } = lengthTable(e, sweep);
+  /** The offset `f` of the length along, `f` outside 0..1: a whole ellipse wraps; an arc carries on round its ellipse. */
+  const offsetPast = (f: number): number => {
+    if (raw === 0) return offsetAt(((f % 1) + 1) % 1);
+    let u = f * sweep;
+    for (let i = 0; i < 8; i++) {
+      const v = speed(e, u);
+      if (!(v > 0)) break;
+      u -= (lengthTo(u) - f * length) / v;
+    }
+    return u;
+  };
 
-  const at = (f: number): TrackStation => {
-    const u = offsetAt(clamp(f, 0, 1));
+  const at = (f: number, options?: TrackAtOptions): TrackStation => {
+    const u = options?.open && (f < 0 || f > 1) ? offsetPast(f) : offsetAt(clamp(f, 0, 1));
     const t = (e.t0 + sign * u) * RAD;
     const s = Math.sin(t);
     const c = Math.cos(t);

@@ -1,9 +1,9 @@
-import { useMemo, useRef, type ReactElement } from 'react';
-import { placeAlongRun, runLength, trackRun, trackShapeD, type RunPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
+import { placeAlongRun, runLength, runStationAt, trackRun, trackShapeD, type RunPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
-import { placeOnRun, placeStyle } from '../Along/placeOnRun';
+import { placeStyle } from '../Along/placeOnRun';
 import { sideAtRun } from './barSide';
 import { barItems, barLead, drawBarItem, splitBarItems, type BarItem } from './barItems';
 import type { BarLayoutProps } from './BarLayout';
@@ -51,7 +51,9 @@ export function BarAlong(props: BarAlongProps): ReactElement {
     const spot = spots[i]!;
     // A zero-length run has no direction to carry items along: they all sit at its one point.
     const flat = run.length <= 0;
-    return { className: s.item!, style: placeStyle(flat ? run.at(0.5) : spot), clipped: menu ? undefined : spot.clipped, side: sideAtRun(run, flat ? 0.5 : spot.center / run.length) };
+    const style: CSSProperties = placeStyle(flat ? run.at(0.5) : spot);
+    if (!menu && !flat) Object.assign(style, { '--along-shown': shownOf(spot.center, orderLengths[i] ?? 0, run.length) });
+    return { className: s.item!, style, clipped: menu ? undefined : spot.clipped, side: sideAtRun(run, flat ? 0.5 : spot.center / run.length) };
   };
   const first = leading != null ? 1 : 0;
   const scrolls = total > run.length;
@@ -82,17 +84,28 @@ function drawnKeys(items: readonly BarItem[], lead: boolean): string[] {
   return [...(lead ? [BAR_LEAD] : []), ...items.map((item) => item.key)];
 }
 
-/** Where a curved bar's items fall on its run: laid back by `offset`, except that a `'menu'` run too long for its room, which only the More button and the lead can make, sits centered. An item wholly past an end waits at it. */
+/** Where a curved bar's items fall on its run: laid back by `offset`, except that a `'menu'` run too long for its room, which only the More button and the lead can make, sits centered. An item part past an end carries on along the shape, so a scroll slides it off as it fades; once wholly past, and unseen, it waits at that end. */
 function alongSpots(run: TrackRun, lengths: readonly number[], gap: number, align: RunAlign, menu: boolean, offset: number): RunPlace[] {
   const over = menu ? Math.max(0, (runLength(lengths, gap) - run.length) / 2) : offset;
   return placeAlongRun(run, lengths, { gap, align, offset: over, past: 'hold' });
 }
 
+/** The share of an item `length` long centered at `center` that lies on a run `room` long: its opacity as it slides off. */
+export function shownOf(center: number, length: number, room: number): number {
+  if (length <= 0) return center >= 0 && center <= room ? 1 : 0;
+  const lo = center - length / 2;
+  const on = Math.min(room, lo + length) - Math.max(0, lo);
+  return Math.max(0, Math.min(1, on / length));
+}
+
+/** Px a chevron sits out past its run's end, clear of the item fading there. */
+const MORE_PAST_OUT = 10;
+
 /** A chevron at each end of a scrolled run that has items past it, pointing out along the run. */
 function MorePast({ run, start, end }: { run: TrackRun; start: boolean; end: boolean }): ReactElement {
   // The chevron glyph points down, a quarter turn clockwise from the reading direction `angle` tips to.
   const mark = (at: 'start' | 'end') => {
-    const style = at === 'start' ? placeOnRun(run, 0, 90) : placeOnRun(run, 1, -90);
+    const style = placeStyle(runStationAt(run, at === 'start' ? -MORE_PAST_OUT : run.length + MORE_PAST_OUT, 0, 'follow'), at === 'start' ? 90 : -90);
     return (
       <span className={s.morePast} data-more-past={at} aria-hidden="true" style={style}>
         <Icon name={icon('chevron')} size={14} />

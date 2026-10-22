@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { lineShape, runPlaces, trackRun, type RunSpot } from '@weasel-js/geom';
@@ -52,7 +52,18 @@ function clickReaches(el: HTMLElement): boolean {
   return reached;
 }
 
+/** Runs the frames a glide asks for until it lands. */
+const settle = () => act(() => {
+  vi.advanceTimersByTime(1000);
+});
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'performance'] });
+});
+
 afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
   document.body.replaceChildren();
 });
 
@@ -60,10 +71,33 @@ describe('useRunScroll', () => {
   test('a wheel moves the offset and holds it inside the run', () => {
     const { root, hook } = mount(160);
     const first = wheel(root, 30);
+    settle();
     expect(hook.result.current.offset).toBe(30);
     expect(first.defaultPrevented).toBe(true);
     wheel(root, 100);
+    settle();
     expect(hook.result.current.offset).toBe(60);
+  });
+
+  test('a wheel glides the run to where it sends it rather than jumping there', () => {
+    const { root, hook } = mount(160);
+    wheel(root, 30);
+    expect(hook.result.current.offset).toBe(0);
+    act(() => {
+      vi.advanceTimersByTime(40);
+    });
+    const midway = hook.result.current.offset;
+    expect(midway).toBeGreaterThan(0);
+    expect(midway).toBeLessThan(30);
+    settle();
+    expect(hook.result.current.offset).toBe(30);
+  });
+
+  test('a reader who prefers reduced motion gets the wheel’s move at once', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduced-motion'), addEventListener() {}, removeEventListener() {} }));
+    const { root, hook } = mount(160);
+    wheel(root, 30);
+    expect(hook.result.current.offset).toBe(30);
   });
 
   test('a press that does not travel is a press, not a scroll', () => {
@@ -104,10 +138,26 @@ describe('useRunScroll', () => {
     act(() => {
       hook.result.current.onFocusCapture({ target: items[4]! } as unknown as ReactFocusEvent);
     });
+    settle();
     expect(hook.result.current.offset).toBe(60);
     act(() => {
       hook.result.current.onFocusCapture({ target: items[0]! } as unknown as ReactFocusEvent);
     });
+    settle();
+    expect(hook.result.current.offset).toBe(0);
+  });
+
+  test('focus mid-glide brings an item into view from where the run is going, not where it is drawn', () => {
+    const { items, hook } = mount(160);
+    act(() => {
+      hook.result.current.onFocusCapture({ target: items[4]! } as unknown as ReactFocusEvent);
+      vi.advanceTimersByTime(20);
+    });
+    // Drawn part way to 60, the first item still shows its tail; going to 60, it is wholly off the start.
+    act(() => {
+      hook.result.current.onFocusCapture({ target: items[0]! } as unknown as ReactFocusEvent);
+    });
+    settle();
     expect(hook.result.current.offset).toBe(0);
   });
 

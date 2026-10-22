@@ -1,6 +1,6 @@
 import type { Point } from '../paths/cubicMath';
 import { clamp } from '../scalar';
-import type { TrackShape, TrackStation } from './shape';
+import type { TrackAtOptions, TrackShape, TrackStation } from './shape';
 
 /** An arc track: degrees clockwise from 12 o'clock on a y-down plane. Equal `start` and `end` is a whole circle. */
 export interface ArcTrackSpec {
@@ -26,8 +26,8 @@ export function arcShape(spec: ArcTrackSpec): ArcTrackShape {
   const sweep = raw === 0 ? 360 : raw;
   const length = radius * sweep * RAD;
 
-  const at = (f: number): TrackStation => {
-    const t = clamp(f, 0, 1);
+  const at = (f: number, options?: TrackAtOptions): TrackStation => {
+    const t = options?.open ? f : clamp(f, 0, 1);
     const theta = (start + sign * t * sweep) * RAD;
     const s = Math.sin(theta);
     const c = Math.cos(theta);

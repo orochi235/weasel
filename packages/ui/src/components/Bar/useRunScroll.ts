@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
 import { BAR_ITEM, BAR_LEAD } from './useBarOverflow';
 
 /** Px a press must travel along the run before it is a scroll rather than a press on an item. */
@@ -9,6 +9,12 @@ export const SCROLL_SLOP = 4;
 
 /** Px one line of a line-mode wheel moves the run. */
 const LINE = 16;
+
+/** Ms over which a glide closes all but 1/e of the way to its target. */
+export const GLIDE_MS = 60;
+
+/** Px from its target at which a glide lands on it. */
+const LAND = 0.25;
 
 /** Capture at the press would retarget the release and kill the click on whatever item was pressed. */
 const NO_CAPTURE = { capture: false } as const;
@@ -32,23 +38,51 @@ export interface RunScroll {
 /**
  * The offset a curved bar's items are laid back by along its run when they run past its end: moved by the wheel,
  * by a drag along the run once it travels {@link SCROLL_SLOP} px, and by focus reaching an item past either end.
- * A run whose items fit keeps offset 0 and ignores all three.
+ * A run whose items fit keeps offset 0 and ignores all three. The wheel and focus glide to where they send the run
+ * over about {@link GLIDE_MS} ms, so items slide rather than jump; a drag follows the pointer, and a reader who
+ * prefers reduced motion gets every move at once.
  */
 export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs): RunScroll {
   const max = Math.max(0, total - run.length);
-  const [held, setHeld] = useState(0);
-  const offset = clamp(held, 0, max);
+  const [shown, setShown] = useState(0);
+  const offset = clamp(shown, 0, max);
   const latest = useLatest({ max, run, spots, lengths });
-  // What the handlers last set, ahead of the render it asks for, so two wheel events in one frame both count.
+  const still = usePrefersReducedMotion();
+  // Where the handlers last sent the run, ahead of the render it asks for, so two wheel events in one frame both count.
   const moved = useRef(0);
+  // Where the run is drawn mid-glide, and the frame time the glide last stepped from.
+  const drawn = useRef(0);
+  const last = useRef<number | null>(null);
   const session = useRef<PointerSession | null>(null);
 
+  const show = (at: number): void => {
+    drawn.current = at;
+    setShown(at);
+  };
+  const glide = useVisibleRaf((time, loop) => {
+    const target = clamp(moved.current, 0, latest.current.max);
+    const dt = last.current === null ? 16 : time - last.current;
+    last.current = time;
+    const next = drawn.current + (target - drawn.current) * (1 - Math.exp(-dt / GLIDE_MS));
+    if (Math.abs(target - next) <= LAND) {
+      last.current = null;
+      show(target);
+      return;
+    }
+    show(next);
+    loop.request();
+  }, { target: root, onResume: () => { last.current = null; } });
+
   const now = (): number => clamp(moved.current, 0, latest.current.max);
-  const scrollTo = (next: number): boolean => {
+  const scrollTo = (next: number, how: 'glide' | 'jump' = 'glide'): boolean => {
     const to = clamp(next, 0, latest.current.max);
     if (to === now()) return false;
     moved.current = to;
-    setHeld(to);
+    if (how === 'jump' || still) {
+      glide.cancel();
+      last.current = null;
+      show(to);
+    } else glide.request();
     return true;
   };
   const wheel = useLatest((e: WheelEvent): void => {
@@ -85,7 +119,7 @@ export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs
           /* a pointer already gone: nothing to retarget */
         }
       }
-      if (scrolling) scrollTo(from - travel);
+      if (scrolling) scrollTo(from - travel, 'jump');
     };
     const onEnd = (): void => {
       session.current = null;
@@ -105,8 +139,10 @@ export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs
     const spot = index < 0 ? undefined : where()[index];
     if (spot === undefined) return;
     const half = (sizes[index] ?? 0) / 2;
-    const lo = spot.center - half;
-    const hi = spot.center + half;
+    // The spots are where the run is drawn, which mid-glide lags where it is going.
+    const center = spot.center + drawn.current - now();
+    const lo = center - half;
+    const hi = center + half;
     if (lo < 0) scrollTo(now() + lo);
     else if (hi > along.length) scrollTo(now() + hi - along.length);
   };

@@ -20,7 +20,7 @@ const settle = async () => {
 
 async function mount(config: Partial<LensRimConfig> = {}) {
   await page.viewport(1200, 900);
-  renderWithIcons(<LensRimView config={{ size: 260, turn: 0, actions: 4, overflow: 'scroll', ...config }} />);
+  renderWithIcons(<LensRimView config={{ size: 260, turn: 0, actions: 4, overflow: 'scroll', boxes: false, ...config }} />);
   await document.fonts.ready;
   await settle();
   const lens = document.querySelector<HTMLElement>('[data-lens]')!;

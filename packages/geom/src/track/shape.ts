@@ -26,6 +26,13 @@ export interface TrackNearestOptions {
   about?: number;
 }
 
+/** How `at` treats a fraction past 0 or 1. */
+export interface TrackAtOptions {
+  /** Carry on past the ends rather than clamp: a line and an open path straight along their end, an arc and an ellipse
+   *  round themselves, a closed path round its contour. Default false. */
+  open?: boolean;
+}
+
 /** Which family a track shape belongs to. `'path'` is a shape over a measured `Path` (`pathShape`). */
 export type TrackShapeKind = 'line' | 'arc' | 'ellipse' | 'path';
 
@@ -35,8 +42,8 @@ export interface TrackShape {
   readonly length: number;
   /** True when the track's end meets its start: a whole circle or ellipse, or a path that is one closed contour. */
   readonly closed: boolean;
-  /** The station at fraction `f`, clamped to 0..1. */
-  at(f: number): TrackStation;
+  /** The station at fraction `f`, clamped to 0..1 unless `options.open`. */
+  at(f: number, options?: TrackAtOptions): TrackStation;
   /** The spot on the track nearest `p`. */
   nearest(p: Point, options?: TrackNearestOptions): TrackNearest;
 }
@@ -52,8 +59,8 @@ export function lineShape(from: Point, to: Point): TrackShape {
     kind: 'line',
     length,
     closed: false,
-    at(f) {
-      const t = clamp(f, 0, 1);
+    at(f, options) {
+      const t = options?.open ? f : clamp(f, 0, 1);
       return {
         point: { x: from.x + t * dx, y: from.y + t * dy },
         tangent: { ...tangent },

@@ -21,11 +21,16 @@ export const Lab = story({
     }).label('Layout'),
     arc: f.group({
       center: f.number(D.arc.center).range(0, 359).step(1).suffix('°').label('Centered on'),
+      measure: f.enum(D.arc.measure, ['deg', 'px']).radio().label('Span in'),
       sweep: f.number(D.arc.sweep).range(10, 359).step(1).suffix('°').label('Sweep'),
+      length: f.number(D.arc.length).range(40, 800).step(10).suffix('px').label('Length'),
       direction: f.enum(D.arc.direction, ['cw', 'ccw']).radio().label('Direction'),
       inset: f.number(D.arc.inset).range(0, 80).step(1).suffix('px').label('Inset'),
       size: f.number(D.arc.size).range(160, 420).step(10).suffix('px').label('Box'),
     }).label('Arc'),
+    debug: f.group({
+      boxes: f.boolean(D.debug.boxes).label('Outline each item, its glyph, its spot and its up'),
+    }).label('Debug'),
   }),
   render: ({ config, setConfig }) => <BarArcView config={config as BarArcConfig} onPreset={(p) => loadInto(setConfig, p.config)} />,
 });

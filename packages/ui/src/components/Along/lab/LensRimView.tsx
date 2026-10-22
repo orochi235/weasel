@@ -18,6 +18,8 @@ export interface LensRimConfig {
   turn: number;
   actions: number;
   overflow: 'scroll' | 'menu';
+  /** Outline each rim item, its glyph, its spot and its up. */
+  boxes: boolean;
 }
 
 const ZOOM_STOPS = [1, 2, 4, 8].map((v) => ({ value: v, label: `${v}×` }));
@@ -79,7 +81,7 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
               </div>
               <div className={s.rim} />
             </div>
-            <Along arc={top}>
+            <Along arc={top} className={config.boxes ? lab.boxes : undefined}>
               <Bar label="Lens" schema={actionsSchema(config.actions, 'Lens')} overflow={config.overflow} />
             </Along>
             <Along arc={bottom}>
