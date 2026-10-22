@@ -655,6 +655,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22).
 
+- **(P2) A curved run reads left to right in a right-to-left locale.** `trackRun` (`geom/src/track/run.ts`)
+  derives reading direction from the shape's geometry alone, and nothing in `Along` or `Bar` reads `dir`, so a
+  Hebrew or Arabic curved bar puts item 1 at the left end while the same bar laid out straight starts on the
+  right. Reading order needs an inline direction input, which bears on the `'reading' | 'track'` decision above.
+
 - **(P3) Rows other than `Bar` do not follow an `Along` yet.** `ButtonBar`, `ToggleBar`, segmented
   controls, `SwatchStrip`, `Tabs`/`PageTabs` and `RadioGroup` still lay out on a straight line. They
   follow on what `BarAlong` uses: geom's `placeAlongRun` for where items fall and `useRunScroll` (`Bar/`) for how a
