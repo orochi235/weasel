@@ -8,6 +8,8 @@ import { createEmitter } from '@weasel-js/registry';
 import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
 import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
 import type { PathEditExtension, PathEditMark } from './pathEditExtension';
+import type { NodeId, Scene } from 'core/scene/types';
+import { effectSourceFor } from 'features/pathEffects/effectSources';
 
 /** A world-coord rect. */
 export interface AnchorMarquee {
@@ -89,13 +91,16 @@ const NO_IDS: ReadonlySet<string> = new Set();
 const NO_EXTENSIONS: readonly PathEditExtension[] = [];
 const NO_ANCHORS: ReadonlySet<number> = new Set();
 
-/** Whether `id` names a node `scene` holds and `selection` includes. */
+/** Whether `id` names a node `scene` holds and `selection` includes, or the path a selected effect hides and is edited
+ *  through. */
 export function isSelectedNode(
-  scene: { get(id: never): unknown },
+  scene: Pick<Scene<unknown, string, unknown>, 'get'>,
   selection: { readonly current: readonly string[] },
   id: string,
 ): boolean {
-  return scene.get(id as never) != null && selection.current.includes(id);
+  if (scene.get(id as NodeId) == null) return false;
+  return selection.current.includes(id)
+    || selection.current.some((sel) => effectSourceFor(scene, sel as NodeId, 'path') === id);
 }
 
 export function createPathEditState(source: PathEditSource = {}): PathEditState {

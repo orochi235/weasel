@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createPathEditState } from './pathEditState';
+import { pathFromD } from '@weasel-js/geom';
+import { pathEffectNode } from 'core/scene/pathEffects/derive';
+import { createScene } from 'core/scene/scene';
+import { asNodeId, type RectPose } from 'core/scene/types';
+import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from '../pathEffects';
+import { createPathEditState, isSelectedNode } from './pathEditState';
 
 describe('createPathEditState', () => {
   it('holds an id of its own, and notifies only when it changes', () => {
@@ -181,5 +186,24 @@ describe('path-edit tools', () => {
     state.setTool(null);
     expect(tool).toBeNull();
     expect(state.getTool()).toBeNull();
+  });
+});
+
+describe('isSelectedNode', () => {
+  const sceneWith = (hideSources: boolean) => createScene<unknown, 'main', RectPose>({
+    systemLayers: [{ id: 'main' }],
+    registry: withPathEffectsRegistry(),
+    initial: [
+      { id: asNodeId('t'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 80, height: 20 }, data: { text: 'Hi' } },
+      { id: asNodeId('p'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 50, width: 100, height: 1 }, data: { path: pathFromD('M0 50 L100 50') } },
+      { ...pathEffectNode({ kind: 'textAlong', hideSources }, [asNodeId('t'), asNodeId('p')], 'main', PATH_EFFECT_DERIVATIONS), id: asNodeId('fx') },
+    ],
+  });
+
+  it('counts the path a selected effect hides, so it can be anchor-edited through the effect', () => {
+    expect(isSelectedNode(sceneWith(true), { current: ['fx'] }, 'p')).toBe(true);
+    expect(isSelectedNode(sceneWith(true), { current: ['fx'] }, 't')).toBe(false);
+    expect(isSelectedNode(sceneWith(false), { current: ['fx'] }, 'p')).toBe(false);
+    expect(isSelectedNode(sceneWith(true), { current: [] }, 'p')).toBe(false);
   });
 });

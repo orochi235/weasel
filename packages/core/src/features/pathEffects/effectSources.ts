@@ -13,7 +13,7 @@ import type { NodeId, Scene } from 'core/scene/types';
  * `null` otherwise. The one answer every edit route asks.
  */
 export function effectSourceFor<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>,
+  scene: Pick<Scene<TData, TLayer, TPose>, 'get'>,
   id: NodeId,
   role: 'text' | 'path',
 ): NodeId | null {
