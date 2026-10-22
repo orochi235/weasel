@@ -96,3 +96,39 @@
 .main {
   width: min-content;
 }
+
+/* Debug: every item on a run outlined as placed, its glyph outlined inside it, a dot on the spot it is centered on and
+ * a tick from there to the side it stands up toward. Items are placed absolutely, so the marks sit in their boxes. */
+.boxes :global([data-bar-item]),
+.boxes :global([data-bar-lead]),
+.boxes :global([data-bar-more]) {
+  outline: 1px solid var(--wzl-danger);
+}
+
+.boxes :global([data-bar-item]) :global(svg) {
+  outline: 1px dashed var(--wzl-accent);
+}
+
+.boxes :global([data-bar-item])::after,
+.boxes :global([data-bar-item])::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  pointer-events: none;
+}
+
+.boxes :global([data-bar-item])::after {
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--wzl-danger);
+  transform: translate(-50%, -50%);
+}
+
+.boxes :global([data-bar-item])::before {
+  top: 0;
+  width: 1px;
+  height: 50%;
+  background: var(--wzl-danger);
+}

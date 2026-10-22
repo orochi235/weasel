@@ -62,6 +62,16 @@ describe("placeAlongRun with past: 'follow'", () => {
     // Its center is an eighth turn past 3 o'clock.
     close(places[1]!.point, { x: 100 * Math.SQRT1_2, y: 100 * Math.SQRT1_2 });
   });
+  test("past: 'hold' follows the shape with an item part past the end, then holds it once wholly past", () => {
+    const arc = trackRun(arcShape({ center: C, radius: 100, start: 0, end: 90 }), 0, 1, { side: 'path' });
+    const quarter = (Math.PI / 2) * 100;
+    const places = placeAlongRun(arc, [quarter / 2, quarter, quarter], { align: 'start', at: 0, offset: -quarter / 4, past: 'hold' });
+    expect(places.map((p) => p.clipped)).toEqual(['none', 'part', 'past']);
+    // Laid from a quarter of a quarter in, the middle item's center is a quarter of a quarter past 3 o'clock, round the circle.
+    const turn = (90 + 0.25 * 90) * (Math.PI / 180);
+    close(places[1]!.point, { x: 100 * Math.sin(turn), y: -100 * Math.cos(turn) });
+    close(places[2]!.point, { x: 100, y: 0 });
+  });
 });
 
 describe('placeAlongRun', () => {

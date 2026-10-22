@@ -6,23 +6,23 @@ import { actionLeaf, LAB_ACTIONS } from '../../Along/lab/labActions';
 export interface BarArcConfig {
   items: { actions: number; fields: number; section: boolean; lead: 'none' | 'label' | 'icon' };
   layout: { overflow: 'scroll' | 'menu'; align: RunAlign };
-  arc: { center: number; sweep: number; direction: 'cw' | 'ccw'; inset: number; size: number };
+  arc: { center: number; measure: 'deg' | 'px'; sweep: number; length: number; direction: 'cw' | 'ccw'; inset: number; size: number };
+  debug: { boxes: boolean };
 }
 
 /** Every knob at its default: what the story's schema starts from, and what each preset is laid over. */
 export const BAR_ARC_DEFAULTS: BarArcConfig = {
   items: { actions: 6, fields: 0, section: false, lead: 'none' },
   layout: { overflow: 'scroll', align: 'center' },
-  arc: { center: 0, sweep: 120, direction: 'cw', inset: 18, size: 260 },
+  arc: { center: 0, measure: 'deg', sweep: 120, length: 200, direction: 'cw', inset: 18, size: 260 },
+  debug: { boxes: false },
 };
 
 const FIELDS = ['Gain', 'Gamma', 'Blur', 'Grain'];
-const mod360 = (deg: number): number => ((deg % 360) + 360) % 360;
 
-/** The arc `sweep` degrees long centered on `center`, running `direction` from start to end. */
-export function arcOf({ center, sweep, direction, inset }: Omit<BarArcConfig['arc'], 'size'>): AlongArc {
-  const [a, b] = [mod360(center - sweep / 2), mod360(center + sweep / 2)];
-  return direction === 'cw' ? { start: a, end: b, direction, inset } : { start: b, end: a, direction, inset };
+/** The arc centered on `center`, `sweep` degrees or `length` px long as `measure` says, running `direction` from start to end. */
+export function arcOf({ center, measure, sweep, length, direction, inset }: Omit<BarArcConfig['arc'], 'size'>): AlongArc {
+  return { at: center, span: measure === 'px' ? `${length}px` : `${sweep}deg`, direction, inset };
 }
 
 /** The bar's schema: the first `actions` lab actions, then `fields` number fields, those in a section of their own when asked. */
@@ -55,4 +55,5 @@ export const BAR_ARC_PRESETS: readonly BarArcPreset[] = [
   preset('Right side, start', { 'items.actions': 4, 'items.fields': 1, 'layout.align': 'start', 'arc.center': 90, 'arc.sweep': 160 }),
   preset('Short, align end', { 'items.actions': 2, 'layout.align': 'end', 'arc.center': 300, 'arc.sweep': 100 }),
   preset('Labeled lead', { 'items.actions': 4, 'items.lead': 'label', 'arc.sweep': 150 }),
+  preset('Fixed 200 px, scroll', { 'items.actions': 10, 'arc.measure': 'px', 'arc.length': 200 }),
 ];

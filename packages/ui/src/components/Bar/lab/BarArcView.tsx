@@ -27,8 +27,8 @@ function placedRows(m: BarReading): Readout[] {
  * beside the side the arc's outward normal says it should.
  */
 export function BarArcView({ config, onPreset }: { config: BarArcConfig; onPreset: (preset: BarArcPreset) => void }): ReactElement {
-  const { center, sweep, direction, inset, size } = config.arc;
-  const arc = useMemo(() => arcOf({ center, sweep, direction, inset }), [center, sweep, direction, inset]);
+  const { center, measure, sweep, length, direction, inset, size } = config.arc;
+  const arc = useMemo(() => arcOf({ center, measure, sweep, length, direction, inset }), [center, measure, sweep, length, direction, inset]);
   const shape = useMemo(() => arcShape(arcInBox(arc, { width: size, height: size })), [arc, size]);
   const run = useMemo(() => trackRun(shape), [shape]);
   const reading = useCallback((p: Point) => run.nearest(p, { open: true }).f * run.length, [run]);
@@ -64,7 +64,7 @@ export function BarArcView({ config, onPreset }: { config: BarArcConfig; onPrese
         <div className={`${lab.stack} ${lab.main}`} style={vars}>
           <section className={lab.section} aria-label="Bar">
             <h3 className={lab.sectionTitle}>Along the arc</h3>
-            <div ref={root} className={s.box} data-lab-box>
+            <div ref={root} className={config.debug.boxes ? `${s.box} ${lab.boxes}` : s.box} data-lab-box>
               <Along arc={arc} align={config.layout.align}>
                 <Bar
                   label="Lens"

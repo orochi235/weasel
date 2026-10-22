@@ -1,9 +1,10 @@
 import { afterAll, afterEach, beforeAll, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { arcShape, lineShape, runPlaces, trackRun, type TrackShape } from '@weasel-js/geom';
+import { arcShape, lineShape, runPlaces, runStationAt, trackRun, type TrackShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
 import { Bar } from './Bar';
+import { shownOf } from './BarAlong';
 
 // jsdom lays nothing out: every element is 40 wide untransformed, and every box 200 by 200 at (0, 0).
 const realRect = Element.prototype.getBoundingClientRect;
@@ -133,6 +134,19 @@ describe('Bar along a curve: scroll mode', () => {
   const schema: PrefGroup = { name: 'Tools', children: { ...actions('a', 'b', 'c', 'd').children, more: actions('e', 'f') } };
   const marks = () => Array.from(screen.getByRole('toolbar').querySelectorAll('[data-more-past]')).map((el) => el.getAttribute('data-more-past'));
   const turn = (at: string) => Number.parseFloat((screen.getByRole('toolbar').querySelector(`[data-more-past='${at}']`) as HTMLElement).style.getPropertyValue('--at-angle'));
+  /** The wheel glides the run; this runs its frames until it lands. */
+  const wheel = (deltaY: number) => {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    fireEvent.wheel(screen.getByRole('toolbar'), { deltaY });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+  };
+  /** Where a chevron `out` px past an end of the run sits: on round the arc, clear of the item fading there. */
+  const pastEnd = (out: number) => runStationAt(trackRun(shape), out < 0 ? out : trackRun(shape).length + out, 0, 'follow');
 
   test('items past the end are marked past, dividers included, and a chevron points out of that end', () => {
     render(<Bar schema={schema} shape={shape} label="Tools" />);
@@ -140,29 +154,30 @@ describe('Bar along a curve: scroll mode', () => {
     expect(divider).toHaveAttribute('data-clipped', 'past');
     expect(items().at(-1)).toHaveAttribute('data-clipped', 'past');
     expect(marks()).toEqual(['end']);
-    expect(turn('end')).toBeCloseTo(trackRun(shape).at(1).angle - 90);
+    expect(turn('end')).toBeCloseTo(pastEnd(10).angle - 90);
   });
 
   test('the wheel scrolls the run, moving the chevron to the start', () => {
     render(<Bar schema={schema} shape={shape} label="Tools" />);
-    fireEvent.wheel(screen.getByRole('toolbar'), { deltaY: 1000 });
+    wheel(1000);
     expect(items()[0]).toHaveAttribute('data-clipped', 'past');
     expect(items().at(-1)).toHaveAttribute('data-clipped', 'none');
     expect(marks()).toEqual(['start']);
-    expect(turn('start')).toBeCloseTo(trackRun(shape).at(0).angle + 90);
+    expect(turn('start')).toBeCloseTo(pastEnd(-10).angle + 90);
   });
 
-  test('an item part past an end slides on along that end, rather than stopping there', () => {
+  test('an item part past an end slides on round the arc, fading by how much of it is off the run', () => {
     render(<Bar schema={schema} shape={shape} label="Tools" />);
     // 30 px back, `a` (0..40, no gap in jsdom) spans -30..10: its middle is 10 px before the run's start.
-    fireEvent.wheel(screen.getByRole('toolbar'), { deltaY: 30 });
+    wheel(30);
     const a = items()[0]!;
     expect(a).toHaveAttribute('data-clipped', 'part');
-    const start = trackRun(shape).at(0);
+    const want = runStationAt(trackRun(shape), -10, 0, 'follow');
     const got = placed(a);
-    expect(got.x).toBeCloseTo(start.point.x - 10 * start.tangent.x);
-    expect(got.y).toBeCloseTo(start.point.y - 10 * start.tangent.y);
-    expect(got.angle).toBeCloseTo(start.angle);
+    expect(got.x).toBeCloseTo(want.point.x);
+    expect(got.y).toBeCloseTo(want.point.y);
+    expect(got.angle).toBeCloseTo(want.angle);
+    expect(Number.parseFloat((a as HTMLElement).style.getPropertyValue('--along-shown'))).toBeCloseTo(0.25);
     // Wholly past the end and hidden, `f` waits at the end instead of reaching out past the bar's box.
     const f = items().at(-1)!;
     expect(f).toHaveAttribute('data-clipped', 'past');
@@ -172,7 +187,14 @@ describe('Bar along a curve: scroll mode', () => {
   test('Tab reaching an item past the end brings it into view', () => {
     render(<Bar schema={schema} shape={shape} label="Tools" />);
     const f = screen.getByRole('button', { name: 'f' });
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     act(() => f.focus());
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
     expect(f.closest('[data-bar-item]')).toHaveAttribute('data-clipped', 'none');
   });
 
@@ -180,6 +202,19 @@ describe('Bar along a curve: scroll mode', () => {
     render(<Bar schema={schema} shape={shape} overflow="menu" label="Tools" />);
     expect(marks()).toEqual([]);
     expect(screen.getByRole('toolbar').querySelector(':scope > svg')).toBeNull();
+  });
+});
+
+describe('shownOf', () => {
+  test('is the share of an item lying on the run', () => {
+    expect(shownOf(50, 20, 100)).toBe(1);
+    expect(shownOf(-5, 20, 100)).toBe(0.25);
+    expect(shownOf(105, 20, 100)).toBe(0.25);
+    expect(shownOf(-20, 20, 100)).toBe(0);
+  });
+  test('an item of no length is wholly on or wholly off', () => {
+    expect(shownOf(0, 0, 100)).toBe(1);
+    expect(shownOf(-1, 0, 100)).toBe(0);
   });
 });
 
