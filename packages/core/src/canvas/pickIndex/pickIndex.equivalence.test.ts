@@ -87,7 +87,10 @@ function compare(scene: AnyScene, s: number, seed: number, d: PoseDescriptor<unk
   const tally: Tally = { used: 0, candidates: 0, order: 0, hits: 0 };
   const indexed = counted(scenePickSource(scene, { camera, index: { descriptor: d } }), tally);
   const mismatches: string[] = [];
-  for (const { label, q } of queries(scene, s, seed, d)) {
+  const all = queries(scene, s, seed, d);
+  // The first pick in a scene only records it; the index builds on the second.
+  pickWalk(indexed, all[0].q);
+  for (const { label, q } of all) {
     const want = pickWalk(plain, q);
     const got = pickWalk(indexed, q);
     tally.hits += want.length;

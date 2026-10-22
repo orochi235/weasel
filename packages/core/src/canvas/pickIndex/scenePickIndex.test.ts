@@ -28,12 +28,15 @@ function sceneWith(pose: Box, extra: Record<string, unknown> = {}, composed = fa
   return scene as AnyScene;
 }
 
-/** Both walks: the indexed one must agree with the full one, and is what is returned. */
+/** The indexed walk, twice so the second reads a built index, must agree with the full one. */
 function pick(scene: AnyScene, q: PickQuery<unknown>, d: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR): string[] {
-  const got = pickWalk(scenePickSource(scene, { index: { descriptor: d } }), q);
-  expect(got).toEqual(pickWalk(scenePickSource(scene), q));
-  return got;
+  const want = pickWalk(scenePickSource(scene), q);
+  for (let i = 0; i < 2; i++) expect(pickWalk(scenePickSource(scene, { index: { descriptor: d } }), q)).toEqual(want);
+  return want;
 }
+
+const indexed = (scene: AnyScene, q: PickQuery<unknown>) =>
+  pickWalk(scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } }), q);
 
 const at = (x: number, y: number) => pointPick(AUTO_POSE_DESCRIPTOR, x, y, { x: 1, y: 1 });
 
@@ -117,6 +120,31 @@ describe('scenePickIndex freshness', () => {
     expect(pickIndexBuildCount()).toBe(before + 1);
   });
 
+  it('the first pick after a change walks, and the next one in a still scene builds', () => {
+    const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
+    const before = pickIndexBuildCount();
+    expect(indexed(scene, at(10, 10))).toEqual(['a']);
+    expect(pickIndexBuildCount()).toBe(before);
+    expect(indexed(scene, at(10, 10))).toEqual(['a']);
+    expect(pickIndexBuildCount()).toBe(before + 1);
+    scene.setPose(A, { x: 100, y: 0, width: 20, height: 20 });
+    expect(indexed(scene, at(110, 10))).toEqual(['a']);
+    expect(pickIndexBuildCount()).toBe(before + 1);
+  });
+
+  it('a pick after every change never builds', () => {
+    const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
+    const before = pickIndexBuildCount();
+    for (let i = 0; i < 20; i++) {
+      scene.setPose(A, { x: i * 10, y: 0, width: 20, height: 20 });
+      expect(indexed(scene, at(i * 10 + 5, 5))).toEqual(['a']);
+      scene.overrides.set(A, { alpha: 1 });
+      scene.overrides.commit();
+      expect(indexed(scene, at(i * 10 + 5, 5))).toEqual(['a']);
+    }
+    expect(pickIndexBuildCount()).toBe(before);
+  });
+
   it('a source with a custom getPose gets no candidates', () => {
     const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
     const src = scenePickSource(scene, {
@@ -132,5 +160,29 @@ describe('scenePickIndex freshness', () => {
     expect(src.candidates!(() => undefined)).toBeNull();
     const { broad: _, ...bare } = at(10, 10);
     expect(pickWalk(src, bare)).toEqual(['a']);
+  });
+
+  it('reads candidates out in render order, and walks once they pass half the scene', () => {
+    const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'main' }] }) as AnyScene;
+    // Render order runs against the grid's reading order, so a sort by position would be wrong.
+    for (let i = 99; i >= 0; i--) {
+      const pose = { x: (i % 10) * 30, y: Math.floor(i / 10) * 30, width: 20, height: 20 };
+      scene.add({ id: asNodeId(`n${i}`), kind: 'leaf', layer: 'main', pose, data: null } as never);
+    }
+    const src = scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } });
+    const ids = (box: Box) => {
+      const broadFor = () => ({ box });
+      src.candidates!(broadFor);
+      return src.candidates!(broadFor)?.map((n) => n.id) ?? null;
+    };
+    const rank = (id: string) => scene.renderOrder().indexOf(asNodeId(id));
+    const byRank = (got: string[] | null) => [...got!].sort((a, b) => rank(a) - rank(b));
+    const two = ids({ x: 0, y: 0, width: 40, height: 10 });
+    expect(two).toEqual(['n1', 'n0']);
+    const forty = ids({ x: 0, y: 0, width: 300, height: 100 });
+    expect(forty).toHaveLength(40);
+    expect(forty).toEqual(byRank(forty));
+    expect(ids({ x: 0, y: 0, width: 300, height: 130 })).toHaveLength(50);
+    expect(ids({ x: 0, y: 0, width: 300, height: 160 })).toBeNull();
   });
 });

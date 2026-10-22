@@ -17,6 +17,7 @@ import { mixedScene } from 'canvas/pickIndex/pickIndexFixture';
 import { pickIndexBuildCount } from 'canvas/pickIndex/scenePickIndex';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { scenePointQuery } from './scenePointQuery';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useSceneSelectTool } from './useSceneSelectTool';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -77,6 +78,30 @@ describe('useSceneSelectTool through the pick index', () => {
     expect(result.current.pickEvery(615, 615)).toEqual(at(615, 615));
     expect(result.current.pickEvery(10, 10)).toEqual(['n0']);
     expect(at(615, 615)).toEqual(['n820']);
+    expect(pickIndexBuildCount() - before).toBe(1);
+  });
+
+  it('hover and click pick through the index under a non-default poseDescriptor', () => {
+    // Each node reaches 8 past its painted right edge, into the gap before the next.
+    const d: PoseDescriptor<unknown> = {
+      ...AUTO_POSE_DESCRIPTOR,
+      getBounds: (p) => {
+        const b = AUTO_POSE_DESCRIPTOR.getBounds(p);
+        return { x: b.x, y: b.y, width: b.width + 8, height: b.height };
+      },
+    };
+    const scene = grid();
+    const adapter = sceneToAdapter(scene);
+    const { result } = renderHook(() => useSceneSelectTool({ scene, adapter, poseDescriptor: d, geometry: { picking: 'pose' } }));
+    const full = scenePickSource(scene);
+    const at = (x: number, y: number, g: PoseDescriptor<unknown>) =>
+      pickWalk(full, scenePointQuery(g, false, 4)(x, y, { x: 1, y: 1 }));
+
+    const before = pickIndexBuildCount();
+    for (let i = 0; i < 2; i++) expect(result.current.pickEvery(625, 615)).toEqual(at(625, 615, d));
+    expect(at(625, 615, d)).toEqual(['n820']);
+    expect(at(625, 615, AUTO_POSE_DESCRIPTOR)).toEqual([]);
+    expect(result.current.pickBest(625, 615)).toBe('n820');
     expect(pickIndexBuildCount() - before).toBe(1);
   });
 

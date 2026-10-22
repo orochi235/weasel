@@ -4,7 +4,9 @@
  * `hitTestArea` asks the scene's BVH pick index for the nodes the query's box
  * can reach, then runs the per-node kernel (O(silhouette verts x area verts)
  * for path-shaped poses) on those alone. The "full walk" groups run the same
- * query through `pickWalk` with no index, which visits every node.
+ * query through `pickWalk` with no index, which visits every node. The index
+ * builds on the second pick to find the scene unchanged, so the first pick of
+ * every bench below walks; vitest's warmup absorbs it.
  */
 import { group } from './group';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
@@ -167,7 +169,24 @@ group('pick index — rebuild after one pose change, node count', (bench) => {
     let i = 0;
     bench(`${n} nodes`, () => {
       scene.setPose(id, { x: i++ % 100, y: 0, width: 40, height: 40 });
+      // The first pick after a change only records it; the second builds.
       scenePickIndex(asAny(scene), AUTO_POSE_DESCRIPTOR);
+      scenePickIndex(asAny(scene), AUTO_POSE_DESCRIPTOR);
+    });
+  }
+});
+
+group('area pick after every pose change (25% query rect), 10000 nodes', (bench) => {
+  // An animation's case: the indexed pick walks, since the scene is never still twice.
+  const query = areaQuery(0.5);
+  for (const indexed of [true, false]) {
+    const scene = scatterScene(10000, { shape: 'rect' });
+    const id = scene.renderOrder()[0];
+    const src = () => scenePickSource(asAny(scene), indexed ? { index: { descriptor: AUTO_POSE_DESCRIPTOR } } : {});
+    let i = 0;
+    bench(indexed ? 'indexed' : 'full walk', () => {
+      scene.setPose(id, { x: i++ % 100, y: 0, width: 40, height: 40 });
+      pickWalk(src(), query);
     });
   }
 });

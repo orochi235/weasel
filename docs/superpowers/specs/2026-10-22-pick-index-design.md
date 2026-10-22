@@ -58,9 +58,9 @@ the 3D queries live.
 an area or lasso query, the point grown by its slop for a point query. `PickSource` gains an
 optional `near(layer, box)` returning candidate ids. When both are present, `pickWalk` asks
 `near` once per layer with that layer's query box (`queryFor(layer)` already gives the query in a
-parallax layer's plane), adds the always-test list, sorts the union by render index, and runs
-its existing loop over that list instead of `order()`. When either is absent it walks `order()` as
-today.
+parallax layer's plane), adds the always-test list, reads the union out in render order, and runs
+its existing loop over that list instead of `order()`. When either is absent, or the candidates
+pass half the scene (where the index costs more than the walk), it walks `order()` as today.
 
 **What gets indexed.** One tree per scene layer, since poses on a parallax layer are in that
 layer's plane and the query is carried there per layer. Each node's box is the box `hits` tests
@@ -95,17 +95,20 @@ every pick:
 
 **Order.** A `Map` from id to render index, rebuilt when `renderOrderNodes()` returns a new array.
 
-**Freshness.** The index is rebuilt lazily, on the first query after any input changes. It
-records:
+**Freshness.** A pick keys the index on:
 - `scene.getVersion()`
 - `scene.overrides.getGeneration()`
-- the node-memo generation (`bumpNodeMemoGeneration`)
+- the node-memo generation (`bumpNodeMemoGeneration`), read after the built-in painters register
+- the stroke-marker generation
 - the descriptor identity
 
-It is cached per scene in a `WeakMap`, one entry per descriptor.
-Rebuilding costs roughly one of today's walks plus the tree build, so the worst case (an
-animation, where a pick follows every frame's change) stays near today's cost, and every pick
-after the first in a still scene is cheap. This is a call made in conversation (2026-10-22): an
+It is cached per scene in a `WeakMap`, one entry per descriptor. A pick that finds the key changed
+walks the whole scene and only records the new key; the next pick that finds the same key builds
+the index and uses it. So a scene edited before every pick (an animation, a drag that writes
+overrides each frame) never builds and costs exactly today's walk, and a still scene pays one extra
+walk after each change. Decided 2026-10-22, after a whole rebuild measured 14.6 ms at 10,000 nodes
+against a 9-10 ms walk: building on the first pick made the animation case slower than today.
+Rebuilding whole rather than incrementally is a call made in conversation (2026-10-22): an
 incremental index has to follow overrides, derived poses and ancestor moves under composition,
 and the scene reports changed ids for none of those (`scene.subscribe` carries no ids,
 `onPoseWrite` covers pose writes only).

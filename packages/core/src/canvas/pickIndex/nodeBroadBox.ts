@@ -10,7 +10,7 @@
  */
 import { applyToPoint, boundsOfPath, poseFrameOf, type Path } from '@weasel-js/geom';
 import { findShapeInk } from 'canvas/NodeShape';
-import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'core/geometry/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { regionBoundsOf } from 'core/geometry/regionHit';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
@@ -18,12 +18,6 @@ import { poseDescriptorForNode, type PoseDescriptor } from 'interactions/actions
 
 /** `[minX, minY, maxX, maxY]`, the layout `createBvh(2)` takes. */
 export type Box2 = [number, number, number, number];
-
-export interface NodeBroadBox {
-  box: Box2;
-  /** The ink's reach measured on screen, which no world box can hold. */
-  outsetPx: number;
-}
 
 type Rect = { x: number; y: number; width: number; height: number };
 
@@ -54,27 +48,39 @@ function framedBox(out: Box2, pose: unknown, d: PoseDescriptor<unknown>, by: num
 }
 
 /** Float error in a frame's round trip must not put an accepted point just outside. */
-function pad(b: Box2): Box2 {
+function pad(b: Box2): void {
   const e = 1e-9 * (1 + Math.max(Math.abs(b[0]), Math.abs(b[1]), Math.abs(b[2]), Math.abs(b[3])));
-  return [b[0] - e, b[1] - e, b[2] + e, b[3] + e];
+  b[0] -= e; b[1] -= e; b[2] += e; b[3] += e;
 }
 
+const UNINHERITED = Object.freeze({ scale: 1 });
+
+/** Writes the box into `out` and returns the ink's reach measured on screen,
+ *  which no world box can hold. */
 export function nodeBroadBox(
   node: object,
   pose: unknown,
   derived: Path | null | undefined,
   inherited: InheritedPaint | undefined,
   descriptor: PoseDescriptor<unknown>,
-): NodeBroadBox {
-  const ink = findShapeInk(node as never, pose, { scale: 1, inherited });
+  out: Box2,
+): number {
+  const ink = findShapeInk(node as never, pose, inherited === undefined ? UNINHERITED : { scale: 1, inherited });
   const outset = Math.max(0, ink?.outset ?? 0);
-  const outsetPx = Math.max(0, ink?.outsetPx ?? 0);
-  const box: Box2 = [Infinity, Infinity, -Infinity, -Infinity];
+  out[0] = out[1] = Infinity;
+  out[2] = out[3] = -Infinity;
   if (derived) {
-    grow(box, boundsOfPath(derived), outset);
+    grow(out, boundsOfPath(derived), outset);
   } else {
-    grow(box, regionBoundsOf(node, pose, poseDescriptorForNode(descriptor, node)), outset);
-    framedBox(box, pose, descriptor, outset);
+    const own = poseDescriptorForNode(descriptor, node);
+    if (descriptor === AUTO_POSE_DESCRIPTOR && own === descriptor && isRectPose(pose) && poseFrameOf(pose) === null) {
+      // Both reads come to the pose rect itself.
+      grow(out, pose, outset);
+    } else {
+      grow(out, regionBoundsOf(node, pose, own), outset);
+      framedBox(out, pose, descriptor, outset);
+    }
   }
-  return { box: pad(box), outsetPx };
+  pad(out);
+  return Math.max(0, ink?.outsetPx ?? 0);
 }
