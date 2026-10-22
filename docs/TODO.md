@@ -616,6 +616,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   - A curved bar's menu opens above only for side `'top'`; `'left'` and `'right'` fall back to below,
     because `above` is a boolean where a side is meant.
   - `ReadoutsAlong` has no ResizeObserver, so a font load does not restack its rows.
+  - A run is turned over by its middle alone, so on a run across 3 or 9 o'clock the items toward one end tip
+    past 90° and read upside down: the `ui/Along/Clock sweep` lab shows it at a 90° span (2026-10-21).
+  - The arc controls measure pointers against their box's client rect, so a rotated ancestor (inferred from
+    `curvedGeometry`, not seen) maps a press as wrongly as a scaled one does. The `ui/Along/Lens rim` lab turns
+    its controls by their arcs' angles instead, which works.
 
 - **(P3) No `path` track shape.** `TrackShape` has `lineShape` and `arcShape`; a shape over any path
   would build on geom's `measurePath` and `nearestOnPath`, and needs no change to the interface.
@@ -870,17 +875,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P1) Labs exercising controls along an arc** (agreed 2026-10-21; start once `feat/arc-controls` is on `main`).
-  Each sits beside the code it exercises, as Badge's Compose lab does (a `lab/` directory with sections, presets and
-  saved state), with a browser test per lab. **Track geometry** (geom): an arc edited by handles (center, radius,
-  start, end, direction) and a draggable probe, drawing stations, normals, tip angles, reading direction,
-  flipped/reversed, and the probe's nearest fraction and distance. **Clock sweep**: a slider and a bar centered every
-  30° round the clock on one screen, plus a fine sweep near 3 and 9 o'clock. **Slider on an arc**: every Slider
-  prop on an arc beside a straight twin given the same props and value, with live measured values. **Bar on an
-  arc**: built item lists, `overflow` scroll/menu, `align`, sweep; shows clipping, scroll offset, More's place and
-  each popover's side. **Lens rim**: a round image-filled lens with a top Bar and bottom zoom Slider, rotatable and
-  resizable, with presses through the middle reaching the image and marked. **Input trace**: an event log of
-  pointer, wheel and focus on any of them, and the Tab order.
 - **(P2) A popover opened in a magnified Live copy lands off by the lens factor.** react-aria's
   `calculatePosition` places an overlay in client px inside its containing block, and a Live copy is that block
   scaled by `transform: scale(f)`, so the popover's offset from the copy's corner is multiplied by `f`. Measured in
