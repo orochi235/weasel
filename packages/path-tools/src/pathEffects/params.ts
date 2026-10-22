@@ -3,7 +3,7 @@
  * is the right type, so a slider's number or a toggle's boolean passes and a
  * stray value is ignored rather than written into a document.
  */
-import type { BendAlongEffect, BlendEffect, PathEffect, RepeatAlongEffect } from '@weasel-js/core';
+import type { BendAlongEffect, BlendEffect, PathEffect, RepeatAlongEffect, TextAlongEffect } from '@weasel-js/core';
 
 type Params = Record<string, unknown> | undefined;
 
@@ -47,6 +47,15 @@ export function effectSettings(kind: PathEffect['kind'], params: Params): Partia
         offset: num(p.offset),
         orient: bool(p.orient),
       });
+    case 'textAlong':
+      return defined<Partial<TextAlongEffect>>({
+        align: oneOf(p.align, ['start', 'center', 'end'] as const),
+        start: num(p.start) === undefined ? undefined : Math.min(Math.max(num(p.start)!, 0), 1),
+        shift: num(p.shift),
+        anchor: oneOf(p.anchor, ['baseline', 'center'] as const),
+        overflow: oneOf(p.overflow, ['clip', 'fit'] as const),
+        side: oneOf(p.side, ['auto', 'path', 'flipped'] as const),
+      });
   }
 }
 
@@ -65,4 +74,5 @@ export const EFFECT_DEFAULTS: { [K in PathEffect['kind']]: Extract<PathEffect, {
   blend: { kind: 'blend', steps: 4 },
   bendAlong: { kind: 'bendAlong' },
   repeatAlong: { kind: 'repeatAlong' },
+  textAlong: { kind: 'textAlong', hideSources: true },
 };

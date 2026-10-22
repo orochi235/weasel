@@ -9,7 +9,7 @@ import { SettingsFields } from '../settingsFields';
 
 type Kind = PathEffect['kind'];
 const KINDS: readonly Kind[] = ['blend', 'bendAlong', 'repeatAlong'];
-const COUNT: Record<Kind, string> = { blend: 'blends', bendAlong: 'bends', repeatAlong: 'repeats' };
+const COUNT: Record<Kind, string> = { blend: 'blends', bendAlong: 'bends', repeatAlong: 'repeats', textAlong: 'texts' };
 
 /** Each field's value where an effect leaves it unset, so a form never shows
  *  a default the effect does not paint with. */
@@ -17,6 +17,7 @@ const DEFAULTS: { [K in Kind]: Record<string, unknown> } = {
   blend: { steps: 4, spaceBy: 'count', distance: 10, autoAlign: true, startOffset: 0, rotate: true, orient: false },
   bendAlong: { fit: 'stretch', baseline: 0.5, flip: false, tolerance: 0.5 },
   repeatAlong: { count: 5, align: 'start', offset: 0, orient: true },
+  textAlong: { align: 'start', start: 0, shift: 0, anchor: 'baseline', overflow: 'clip', side: 'auto' },
 };
 
 const hidden = (name: string) => ({ kind: 'number' as const, name, description: '', default: 0, hidden: true });
@@ -89,7 +90,7 @@ export const PATH_EFFECT_SETTINGS_SCHEMA: PrefGroup = {
 export function readPathEffectSettings(deps: ActionDeps): ActionSettingsState {
   const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
   const fields = new SettingsFields();
-  const counts: Record<string, number> = { blends: 0, bends: 0, repeats: 0 };
+  const counts: Record<string, number> = { blends: 0, bends: 0, repeats: 0, texts: 0 };
   for (const id of deps.selection?.get() ?? []) {
     const effect = pathEffectOf(scene?.get(id as NodeId));
     if (!effect) continue;
