@@ -1090,11 +1090,12 @@ only story runner in the repo.
   of the file at 4× throttling settled all 540 cases within 321 ms. The lab has no `storageKey`
   here, so no persisted sidebar width carries between tests or files.
 
-- **(P2) `theme.browser.test.tsx`'s "grows a shape with its text" once saved no typed text.** In
-  Linux CI on 179f2409d (2026-10-21, run 39523286313) `savedBody().row.data.text` stayed `''` past
-  the poll after Escape, so the six typed `M`s presumably went somewhere other than the open editor
-  overlay (inferred; no screenshot survives). Seen once, in a run where 10 other browser tests
-  failed; not reproduced in 158 fleet runs of the test that day. The fleet sweep's failures of this
+- **(P2) `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
+  On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
+  `savedBody().row.data.text` stayed `''` past the poll after Escape, so the six typed `M`s
+  presumably went somewhere other than the open editor overlay (inferred; no screenshot survives).
+  Twice in two Linux runs, so likely Linux-specific rather than a flake; not reproduced in 158
+  fleet runs of the test on 2026-10-21. The fleet sweep's failures of this
   test were a different thing, pixels read from the frame before the repaint, fixed 2026-10-21.
 
 - **(P2) Visual Regression stays red on `main` until six baselines are captured.** Run the
@@ -1212,9 +1213,12 @@ only story runner in the repo.
   `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
   `CutCtrl+X` where it expects `Cut`, `Badge.browser.test.tsx`, `Bar.overflow.browser.test.tsx`
   and `PropertyList.pairs.browser.test.tsx` measure boxes a fraction of a pixel wider, and
-  `retained.browser.test.ts` counts 2 draws where it allows 1. No later run reached that step, so
-  whether they still fail is unknown. The fix is a Linux node (or container) for the `browser`
-  project. (CI's Node 22 leg has a fleet twin since 2026-10-21: `npm run test:fleet:matrix`.)
+  `retained.browser.test.ts` counts 2 draws where it allows 1. All of these failed again in run
+  39761178968 (2026-10-22, at `33efd3167`), beside the theme test above. The same run also failed
+  `laidLines.browser.test.ts`, whose glyphs landed 0.50–0.92 px from the layout. The reading is that
+  Linux headless Chromium snaps glyph advances to whole pixels (inferred from the numbers, not
+  observed), so that file now skips where a probe sees snapped advances. The fix is a Linux node
+  (or container) for the `browser` project. (CI's Node 22 leg has a fleet twin since 2026-10-21: `npm run test:fleet:matrix`.)
 
 - **(P3) Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
   (8 cores, 24 GB, 7–11 GB of swap) failed `packages/forge/src/timeline/timeline.test.tsx` in five
