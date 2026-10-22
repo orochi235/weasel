@@ -1,6 +1,7 @@
 import type { Point } from '../paths/cubicMath';
 import { clamp } from '../scalar';
 import type {
+  TrackAtOptions,
   TrackNearest,
   TrackNearestOptions,
   TrackShape,
@@ -24,7 +25,7 @@ export interface TrackRun extends TrackShape {
   readonly flipped: boolean;
   /** True when reading order runs against the shape's own direction. */
   readonly reversed: boolean;
-  at(g: number): TrackPlace;
+  at(g: number, options?: TrackAtOptions): TrackPlace;
 }
 
 /** Which side of a shape a run's items stand on: `'auto'` whichever is upright, `'path'` the shape's own normal, `'flipped'`
@@ -54,8 +55,8 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
   const hi = Math.max(from, to);
   const toF = (g: number): number => reversed ? to - g * span : from + g * span;
 
-  const at = (g: number): TrackPlace => {
-    const s = shape.at(toF(clamp(g, 0, 1)));
+  const at = (g: number, options?: TrackAtOptions): TrackPlace => {
+    const s = options?.open ? shape.at(toF(g), options) : shape.at(toF(clamp(g, 0, 1)));
     const dir = reading(s.normal);
     const angle = (Math.atan2(dir.y, dir.x) * 180) / Math.PI;
     return {

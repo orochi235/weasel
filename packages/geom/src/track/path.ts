@@ -20,9 +20,13 @@ export function pathShape(path: Path, options: { flattenTolerance?: number } = {
     kind: 'path',
     length,
     closed,
-    at(f) {
-      const { point, tangent } = measure.at(clamp(f, 0, 1) * length, true);
-      return { point, tangent, normal: { x: tangent.y, y: -tangent.x } };
+    at(f, options) {
+      const open = options?.open === true && (f < 0 || f > 1);
+      const g = open && closed ? ((f % 1) + 1) % 1 : clamp(f, 0, 1);
+      const { point, tangent } = measure.at(g * length, true);
+      // An open path past an end carries on straight along it.
+      const past = open && !closed ? (f - g) * length : 0;
+      return { point: { x: point.x + past * tangent.x, y: point.y + past * tangent.y }, tangent, normal: { x: tangent.y, y: -tangent.x } };
     },
     nearest(p: Point, opts) {
       const n = measure.nearest(p);

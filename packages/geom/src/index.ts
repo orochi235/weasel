@@ -15,7 +15,7 @@ export {
   type LineCoords, type QuadraticCoords, type CubicCoords,
 } from './curve';
 export { nearestOnLine, nearestOnQuadratic, nearestOnCubic, nearestOnPath, type CurveNearest, type PathNearest } from './nearest';
-export { lineShape, type TrackShape, type TrackShapeKind, type TrackStation, type TrackNearest, type TrackNearestOptions } from './track/shape';
+export { lineShape, type TrackShape, type TrackShapeKind, type TrackStation, type TrackNearest, type TrackNearestOptions, type TrackAtOptions } from './track/shape';
 export { arcShape, type ArcTrackSpec, type ArcTrackShape } from './track/arc';
 export { ellipseShape, type EllipseTrackSpec, type EllipseTrackShape } from './track/ellipse';
 export { pathShape, type PathTrackShape } from './track/path';
@@ -23,7 +23,7 @@ export { trackRun, type TrackRun, type TrackPlace, type TrackSide, type TrackRun
 export { trackShapeD } from './track/pathData';
 export {
   placeAlongRun, runLength, runPlaces, runStationAt,
-  type PlaceAlongRunOptions, type RunAlign, type RunOrder, type RunPlace, type RunSpot,
+  type PlaceAlongRunOptions, type RunAlign, type RunOrder, type RunPast, type RunPlace, type RunSpot,
 } from './track/place';
 export { PORT_REACH, portControls, portCurvePoints } from './portCurve2';
 export {
