@@ -26,7 +26,7 @@ This directory binds that model to a labkit trial and draws it.
 | `SourceLoupe.tsx` | Painter for any canvas named by `source` |
 | `sourceLens.ts` | That painter's source resolution, box measurement and drawing |
 | `useHostSize.ts` | The host's measured box, for the DOM stage |
-| `lens/` | Lenses as scene objects, their sources and actions ("Lenses" below) |
+| `lens/` | Lenses as scene objects, their sources, actions and rim zoom ("Lenses" below) |
 
 ## Lenses
 
@@ -71,6 +71,13 @@ by `useWheelPassThrough`, which finds what is beneath that way and dispatches a
 copy of the wheel on it; a host's readouts find their element in a lens's copy
 with `'interior'`. `renderReadouts` is handed `LensReadoutProps`, the slot props
 plus the lens's interior element, so a host never queries the overlay's DOM.
+
+Each body carries its zoom (`lens/LensZoom.tsx`), a `Slider` across the bottom of the rim through 6 o'clock,
+with a stop at every factor the zoom keys step through (`FACTOR_STOPS`). Its track follows the body: an arc on a
+round body, `ellipseShape` from `@weasel-js/geom` on a stretched one, a straight slider on a square
+(`zoomTrackOf`). It writes through `setLensOps` as the keys do, inside a `scene.batch` keyed per drag, so a drag is
+one undo entry. It sits in the interior, above the hit boxes as the chrome does, and only its band and thumb take
+presses.
 
 The canvas overrides `delete`: deleting any node of a lens deletes all three
 (`lensClosure`). Core's delete cascades only down from a deleted body, so a

@@ -97,8 +97,14 @@ export const LENS_KEYS: Partial<Record<LensActionId, string>> = {
 export const LOUPE_LEADER = { ...key('Alt+L'), code: 'KeyL' };
 
 const DPR_CYCLE: readonly (readonly number[])[] = [[1], [2], [1, 2]];
-const FACTOR_MIN = 1;
-const FACTOR_MAX = 64;
+/** The least and greatest factor a lens zooms to. */
+export const FACTOR_MIN = 1;
+export const FACTOR_MAX = 64;
+/** The factors the zoom keys step through, and the rim's zoom stops at: every power of two between the two. */
+export const FACTOR_STOPS: readonly number[] = Array.from(
+  { length: Math.log2(FACTOR_MAX / FACTOR_MIN) + 1 },
+  (_, i) => FACTOR_MIN * 2 ** i,
+);
 
 const ANY_MODS = {
   alt: 'optional',

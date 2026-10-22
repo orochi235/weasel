@@ -10,6 +10,7 @@ import {
   effectivePose,
   type Op,
   type RectPose,
+  sceneToAdapter,
 } from '@weasel-js/core';
 import { linePath } from '@weasel-js/geom';
 import {
@@ -233,6 +234,11 @@ export function setLensOps<C>(
     ops.push(createTransformOp({ id: ids.reticle, from: reticle.pose, to, label, coalesceKey }));
   }
   return ops;
+}
+
+/** Applies lens ops to `scene` as one recorded edit, the way the lens canvas writes its own. */
+export function applyLensOps<C>(scene: LensScene<C>, ops: readonly Op[]): void {
+  if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
 }
 
 /** Switches aim. Entering Glass makes the reticle derive from the body; leaving it plants the reticle where it was drawn. */
