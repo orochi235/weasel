@@ -78,6 +78,14 @@ describe('surface assets', () => {
     expect(sidebar().queryByText('Path')).toBeNull();
   });
 
+  it('open what does not fit on the line from a menu, so a long toolbar cannot widen the page', () => {
+    // A proxy: jsdom has no layout, so this checks the mode the bar runs in, not the page's width.
+    renderWithIcons(<App />);
+    for (const name of ['Arrange', 'Pathfinder', 'Path']) {
+      expect(strip().getByRole('toolbar', { name })).toHaveAttribute('data-overflow', 'menu');
+    }
+  });
+
   it('move from the strip to the sidebar, to a menu button, and back to the strip', () => {
     renderWithIcons(<App />);
     act(() => { fireEvent.contextMenu(strip().getByRole('toolbar', { name: 'Path' })); });

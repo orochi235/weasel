@@ -59,7 +59,9 @@ export function SchemaBar({ asset }: { asset: SchemaAsset }) {
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   return (
     <div className={s.slot} onContextMenu={openSwitch}>
-      <Bar schema={asset.schema} label={asset.label} values={values} onChange={onChange} framed="segmented" />
+      <Bar
+        schema={asset.schema} label={asset.label} values={values} onChange={onChange} framed="segmented" overflow="menu"
+      />
     </div>
   );
 }

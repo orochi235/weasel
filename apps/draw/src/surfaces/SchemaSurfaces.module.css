@@ -1,3 +1,4 @@
 .slot {
   display: inline-flex;
+  min-inline-size: 0;
 }
