@@ -43,11 +43,12 @@ interface Cached {
   index: BuiltIndex;
 }
 
-const CACHE = new WeakMap<object, Map<PoseDescriptor<unknown>, Cached>>();
+const CACHE = new WeakMap<object, WeakMap<PoseDescriptor<unknown>, Cached>>();
 
 class BuiltIndex implements ScenePickIndex {
   readonly layers: readonly (string | undefined)[];
-  private order: readonly unknown[] = [];
+  /** The render order `renderIndexOf` ranks into. */
+  order: readonly PickCandidate<unknown>[] = [];
   private rank = new Map<string, number>();
 
   constructor(
@@ -74,7 +75,7 @@ class BuiltIndex implements ScenePickIndex {
   }
 
   /** Re-rank when the scene hands back a new render order array. */
-  rankBy(order: readonly { id: string }[]): void {
+  rankBy(order: readonly PickCandidate<unknown>[]): void {
     if (order === this.order) return;
     this.order = order;
     this.rank = new Map();
@@ -144,10 +145,10 @@ function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltInd
   const memo = nodeMemoGeneration();
   const markers = markerGeneration();
   let perScene = CACHE.get(scene);
-  if (perScene === undefined) CACHE.set(scene, (perScene = new Map()));
+  if (perScene === undefined) CACHE.set(scene, (perScene = new WeakMap()));
   const hit = perScene.get(descriptor);
   if (hit && hit.version === version && hit.overrides === overrides && hit.memo === memo && hit.markers === markers) {
-    hit.index.rankBy(scene.renderOrderNodes());
+    hit.index.rankBy(scene.renderOrderNodes() as unknown as readonly PickCandidate<unknown>[]);
     return hit.index;
   }
   const index = build(scene, descriptor);
@@ -177,6 +178,6 @@ export function indexedCandidates(
     if (i >= 0) ranks.push(i);
   }
   ranks.sort((a, b) => a - b);
-  const order = scene.renderOrderNodes() as unknown as readonly PickCandidate<unknown>[];
+  const order = index.order;
   return ranks.map((i) => order[i]);
 }

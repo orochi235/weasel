@@ -12,6 +12,7 @@ import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { pickWalk, scenePickSource, type PickQuery, type PickSource } from 'canvas/pickWalk';
 import { pointPick, regionPick } from './pickIndexFixture';
 
@@ -54,7 +55,7 @@ function mixedScene(seed: number, composed: boolean): AnyScene {
     const pose: Record<string, unknown> = { x, y, width: 5 + r() * 80, height: 5 + r() * 80 };
     if (i % 2 === 0) pose.rotation = r() * Math.PI * 2;
     if (i % 7 === 3) pose.transform = [1, 0.6, -0.3, 1.4];
-    const data = i % 3 === 0 ? null : { shape: i % 3 === 1 ? 'rect' : 'ellipse', fill: SOLID };
+    const data = i % 3 === 0 ? null : { shape: i % 3 === 1 ? 'rect' : 'ellipse', fill: SOLID, grow: (i % 5) * 15 };
     add({ id: id(`r${i}`), pose, data });
   }
   for (let i = 0; i < 6; i++) {
@@ -145,9 +146,8 @@ const MODES: readonly LassoHitMode[] = ['intersect', 'enclosed', 'centers'];
 
 /** 300 queries at view scale `s`: marquees, lassos and points, half of the
  *  points dropped near a node's box edge, where a box too tight shows first. */
-function queries(scene: AnyScene, s: number, seed: number): { label: string; q: PickQuery<unknown> }[] {
+function queries(scene: AnyScene, s: number, seed: number, d: PoseDescriptor<unknown>): { label: string; q: PickQuery<unknown> }[] {
   const r = rng(seed);
-  const d = AUTO_POSE_DESCRIPTOR;
   const out: { label: string; q: PickQuery<unknown> }[] = [];
   type Box = { x: number; y: number; width: number; height: number };
   const boxed = scene.renderOrderNodes().filter((n) => typeof (n.pose as Partial<Box>).width === 'number');
@@ -190,13 +190,13 @@ function queries(scene: AnyScene, s: number, seed: number): { label: string; q: 
   return out;
 }
 
-function compare(scene: AnyScene, s: number, seed: number) {
+function compare(scene: AnyScene, s: number, seed: number, d: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR) {
   const camera: View = { x: 120, y: -40, scale: { x: s, y: s } };
   const plain = scenePickSource(scene, { camera });
   const tally: Tally = { used: 0, candidates: 0, order: 0, hits: 0 };
-  const indexed = counted(scenePickSource(scene, { camera, index: { descriptor: AUTO_POSE_DESCRIPTOR } }), tally);
+  const indexed = counted(scenePickSource(scene, { camera, index: { descriptor: d } }), tally);
   const mismatches: string[] = [];
-  for (const { label, q } of queries(scene, s, seed)) {
+  for (const { label, q } of queries(scene, s, seed, d)) {
     const want = pickWalk(plain, q);
     const got = pickWalk(indexed, q);
     tally.hits += want.length;
@@ -219,6 +219,27 @@ describe('pick index', () => {
       });
     }
   }
+
+  it('indexed walk returns what the full walk returns through a descriptor that reads each node', () => {
+    // A box stretched rightward by the node's own data, which only `forNode` can see: it moves the center `centers` reads.
+    const d: PoseDescriptor<unknown> = {
+      ...AUTO_POSE_DESCRIPTOR,
+      forNode: (node) => {
+        const grow = ((node as { data?: { grow?: number } | null }).data?.grow) ?? 0;
+        if (grow === 0) return AUTO_POSE_DESCRIPTOR;
+        return {
+          ...AUTO_POSE_DESCRIPTOR,
+          getBounds: (p) => {
+            const b = AUTO_POSE_DESCRIPTOR.getBounds(p);
+            return { x: b.x, y: b.y, width: b.width + 4 * grow, height: b.height };
+          },
+        };
+      },
+    };
+    const { mismatches, tally } = compare(mixedScene(11, false), 1, 77, d);
+    expect(mismatches.slice(0, 5)).toEqual([]);
+    expect(tally.used).toBe(300);
+  });
 
   it('an id the scene does not hold is never a candidate', () => {
     const scene = mixedScene(3, false);

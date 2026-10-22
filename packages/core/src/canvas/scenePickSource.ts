@@ -89,7 +89,8 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 
   const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;
 
-  const index = opts.index;
+  // The index boxes nodes at the scene's painted poses; a custom `getPose` must be shown to agree first.
+  const index = getPose ? undefined : opts.index;
   return {
     ...(planeOf ? { planeOf } : {}),
     ...(index ? {

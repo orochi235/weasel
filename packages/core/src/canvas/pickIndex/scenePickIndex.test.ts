@@ -117,6 +117,15 @@ describe('scenePickIndex freshness', () => {
     expect(pickIndexBuildCount()).toBe(before + 1);
   });
 
+  it('a source with a custom getPose gets no candidates', () => {
+    const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
+    const src = scenePickSource(scene, {
+      getPose: (id) => scene.get(asNodeId(id))!.pose,
+      index: { descriptor: AUTO_POSE_DESCRIPTOR },
+    });
+    expect(src.candidates).toBeUndefined();
+  });
+
   it('a query with no broad box walks everything', () => {
     const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
     const src = scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } });
