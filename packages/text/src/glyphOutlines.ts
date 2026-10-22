@@ -29,16 +29,20 @@ export type TextOutlinesFailure =
   | 'outlines-loading'
   | 'outlines-failed';
 
-/** Thrown by `textToPath` when some run of the text has no outline
- *  geometry. Names the run's requested face. */
+/** Thrown by `textToPath`, `textToPathsByPaint` and `textClusters` when some
+ *  run of the text has no outline geometry. Names the run's requested face and
+ *  the function that was asked. */
 export class TextOutlinesError extends Error {
   readonly reason: TextOutlinesFailure;
   readonly family: string;
   readonly weight: number;
   readonly style: FontStyle;
 
-  constructor(reason: TextOutlinesFailure, family: string, weight: number, style: FontStyle, detail: string) {
-    super(`textToPath: "${family}" ${weight}/${style} — ${detail}`);
+  constructor(
+    reason: TextOutlinesFailure, family: string, weight: number, style: FontStyle, detail: string,
+    caller = 'textToPath',
+  ) {
+    super(`${caller}: "${family}" ${weight}/${style} — ${detail}`);
     this.name = 'TextOutlinesError';
     this.reason = reason;
     this.family = family;
@@ -47,11 +51,11 @@ export class TextOutlinesError extends Error {
   }
 }
 
-/** Throws {@link TextOutlinesError} unless `run`'s face has outlines loaded. */
-export function assertOutlinable(run: ResolvedRun): void {
+/** Throws {@link TextOutlinesError} for `caller` unless `run`'s face has outlines loaded. */
+export function assertOutlinable(run: ResolvedRun, caller: string): void {
   const { fontFamily, fontWeight, fontStyle } = run;
   const fail = (reason: TextOutlinesFailure, detail: string): never => {
-    throw new TextOutlinesError(reason, fontFamily, fontWeight, fontStyle, detail);
+    throw new TextOutlinesError(reason, fontFamily, fontWeight, fontStyle, detail, caller);
   };
   const requested = outlineStatus(fontFamily, fontWeight, fontStyle);
   if (requested === 'idle' || requested === 'loading') {
@@ -119,17 +123,18 @@ function emGlyph(d: string): PolygonPath {
 /**
  * The outline of `g`, a glyph that is not a color glyph, with its pen at
  * `(g.x + dx, g.baselineY + dy)`; `null` for a slot with nothing to draw.
- * Throws when a fallback face drew it, which the per-run check never saw.
+ * Throws for `caller` when a fallback face drew it, which the per-run check
+ * never saw.
  */
 export function placedGlyphOutline(
-  g: PlacedGlyph, dx: number, dy: number,
+  g: PlacedGlyph, dx: number, dy: number, caller: string,
 ): PolygonPath | null {
   const d = faceOutlineD(g);
   if (d === null) {
     if (glyphQuad(g) !== null) {
       const { family, weight, style } = g.resolved.resolved;
       throw new TextOutlinesError('no-outlines', family, weight, style,
-        'a fallback face serving some of the text\'s characters has no outlines registered.');
+        'a fallback face serving some of the text\'s characters has no outlines registered.', caller);
     }
     return null;
   }
@@ -140,10 +145,10 @@ export function placedGlyphOutline(
   return transformPath(emboldenGlyph(emGlyph(d), d, g.resolved), m) as PolygonPath;
 }
 
-/** The `'color-glyph'` {@link TextOutlinesError} for a glyph of `run`. */
-export function colorGlyphError(run: ResolvedRun): TextOutlinesError {
+/** The `'color-glyph'` {@link TextOutlinesError} for a glyph of `run`, thrown by `caller`. */
+export function colorGlyphError(run: ResolvedRun, caller: string): TextOutlinesError {
   return new TextOutlinesError('color-glyph', run.fontFamily, run.fontWeight, run.fontStyle,
-    'the text holds an emoji, which is drawn in its own colors and has no outline.');
+    'the text holds an emoji, which is drawn in its own colors and has no outline.', caller);
 }
 
 /** `parts` as one `'nonzero'` compound path. */

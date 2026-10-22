@@ -24,21 +24,31 @@ export interface TextCluster {
   middle: number;
 }
 
+/** Options for {@link textClusters}. */
+export interface TextClustersOptions extends TextToPathOptions {
+  /** The node's box width, which a `wrap` style wraps at and `align` aligns
+   *  in, as the node's own layout does. Default `Infinity`: one line per
+   *  paragraph. */
+  width?: number;
+}
+
 // Where a face reports no x-height: half of a typical 0.5 em one.
 const MIDDLE_FALLBACK = 0.25;
 
 /**
  * The first laid line of `data` as its grapheme clusters, in visual order,
- * laid at the node's box origin with no pose applied. The slots tile the
+ * laid at the node's box origin with no pose applied; the lines after it are
+ * dropped. The slots tile the
  * line: each cluster's `advance` runs to the next one's `x`, so the kerning
  * between two clusters belongs to the left one. Decoration rules are left out.
  *
  * Throws `TextOutlinesError` as `textToPath` does, except that a color
- * glyph keeps its slot with no `paths`.
+ * glyph keeps its slot with no `paths`. Only a code point that inks its
+ * slot is drawn, so a color cluster's leading code points stay blank too.
  */
-export function textClusters(data: TextOutlineSource, opts: TextToPathOptions = {}): TextCluster[] {
-  const box = { x: 0, y: 0, width: Infinity, height: 0 };
-  const { runs, opts: layoutOpts } = outlineLayoutInput(data, box, opts);
+export function textClusters(data: TextOutlineSource, opts: TextClustersOptions = {}): TextCluster[] {
+  const box = { x: 0, y: 0, width: opts.width ?? Infinity, height: 0 };
+  const { runs, opts: layoutOpts } = outlineLayoutInput(data, box, opts, 'textClusters');
   const line = layoutRuns(runs, layoutOpts).lines[0];
   if (!line || line.cells.length === 0) return [];
   const { paints, paintOf } = paintsOf(runs);
@@ -60,8 +70,8 @@ export function textClusters(data: TextOutlineSource, opts: TextToPathOptions = 
     const right = i + 1 < slots.length ? slots[i + 1]!.left : line.x1;
     const parts: PolygonPath[][] = paints.map(() => []);
     for (const g of glyphs) {
-      if (g.glyph?.color) continue;
-      const outline = placedGlyphOutline(g, -left, -line.baselineY);
+      if (g.glyph?.color || !line.cells[g.cell]!.drawsInk) continue;
+      const outline = placedGlyphOutline(g, -left, -line.baselineY, 'textClusters');
       if (outline) parts[paintOf[g.run]!]!.push(outline);
     }
     const paths: TextPaintPath[] = [];

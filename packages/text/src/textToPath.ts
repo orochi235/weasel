@@ -83,6 +83,7 @@ export function outlineLayoutInput(
   data: TextOutlineSource,
   box: { x: number; y: number; width: number; height: number },
   opts: TextToPathOptions,
+  caller: string,
 ): TextPoseLayoutInput {
   const textPose: TextPose = {
     x: box.x, y: box.y, width: box.width, height: box.height,
@@ -94,7 +95,7 @@ export function outlineLayoutInput(
     stroke: data.stroke,
   };
   const input = textPoseLayoutInput(textPose, opts.scale ?? 1);
-  for (const run of input.runs) assertOutlinable(run);
+  for (const run of input.runs) assertOutlinable(run, caller);
   return input;
 }
 
@@ -118,7 +119,7 @@ function walkOutlines(
   pose: PathInWorldPose,
   opts: TextToPathOptions,
 ): { paints: { fill: Fill | null; stroke?: Stroke }[]; paths: PolygonPath[] } {
-  const { runs, opts: layoutOpts } = outlineLayoutInput(data, pose, opts);
+  const { runs, opts: layoutOpts } = outlineLayoutInput(data, pose, opts, 'textToPath');
   const { paints, paintOf } = paintsOf(runs);
 
   const laid = layoutRuns(runs, layoutOpts);
@@ -130,8 +131,8 @@ function walkOutlines(
   for (const line of laid.lines) {
     for (const g of line.glyphs) {
       // Asked before the quad: an emoji still waiting for its bake has none.
-      if (g.glyph?.color) throw colorGlyphError(runs[g.run]);
-      const glyph = placedGlyphOutline(g, dx, dy);
+      if (g.glyph?.color) throw colorGlyphError(runs[g.run], 'textToPath');
+      const glyph = placedGlyphOutline(g, dx, dy, 'textToPath');
       if (glyph) parts[paintOf[g.run]]!.push(glyph);
     }
     for (const r of lineDecorations(line.glyphs, runs, faceOf, (run) => String(paintOf[run]))) {

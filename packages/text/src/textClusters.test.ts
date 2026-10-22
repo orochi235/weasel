@@ -144,6 +144,57 @@ describe('textClusters', () => {
     }
   });
 
+  it('a multi-code-point color cluster paints none of its code points', () => {
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({ width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance: 22 }),
+      rasterizeColor: () => ({
+        width: 60, height: 60, rgba: new Uint8ClampedArray(60 * 60 * 4).fill(255), left: -6, top: 50, advance: 48,
+      }),
+    });
+    try {
+      // Keycap one: the color glyph sits on U+20E3, and the face has a '1'.
+      const cs = textClusters(text('H1\uFE0F\u20E3'));
+      expect(cs).toHaveLength(2);
+      expect(cs[1].paths).toEqual([]);
+      expect(cs[1].advance).toBeGreaterThan(0);
+    } finally {
+      _resetDynamicFontsForTests();
+    }
+  });
+
+  it('lays out at the given width, so a wrapping style keeps its first wrapped line', () => {
+    const src: TextOutlineSource = {
+      text: 'ab cd', style: { fontFamily: 'outline-inter', fontSize: 100, wrap: true }, fill: INK,
+    };
+    expect(textClusters(src)).toHaveLength(5);
+    const narrow = textClusters(src, { width: 150 });
+    expect(narrow.map((c) => c.paths.length > 0)).toEqual([true, true, false]);
+  });
+
+  it('sizes a small capital and its middle by the glyph\'s own size', () => {
+    const style = { fontFamily: 'outline-inter', fontSize: 100, fontVariantCaps: 'small-caps' as const };
+    const [big, small] = textClusters({ text: 'Xx', style, fill: INK });
+    const ratio = small.middle / big.middle;
+    expect(ratio).toBeLessThan(0.95);
+    const h = (c: TextCluster) => inkBounds(c)[0].height;
+    expect(h(small) / h(big)).toBeCloseTo(ratio, 2);
+  });
+
+  it('keeps a run\'s baseline shift in its ink', () => {
+    const [x] = textClusters({
+      text: 'x', runs: [{ text: 'x', baselineShift: 0.2 }],
+      style: { fontFamily: 'outline-inter', fontSize: 100 }, fill: INK,
+    });
+    const [b] = inkBounds(x);
+    expect(b.y + b.height).toBeCloseTo(-20, 1);
+  });
+
+  it('names itself in the errors it throws', () => {
+    expect(() => textClusters(text('H', 'nowhere'))).toThrow(/^textClusters: /);
+  });
+
   it('throws as textToPath does for a face with no outlines', () => {
     expect(() => textClusters(text('H', 'nowhere'))).toThrow(TextOutlinesError);
   });
