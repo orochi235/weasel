@@ -56,6 +56,7 @@ export function runStationAt(run: TrackRun, distance: number, shift = 0): TrackP
   };
 }
 
+/** How {@link placeAlongRun} lays its items: spacing, alignment, offset, anchor, stand-off, wrap and past-end handling. */
 export interface PlaceAlongRunOptions {
   /** Space between each two items, along the run. Default 0. */
   gap?: number;

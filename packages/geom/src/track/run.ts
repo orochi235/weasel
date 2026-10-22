@@ -31,6 +31,7 @@ export interface TrackRun extends TrackShape {
  *  the other. */
 export type TrackSide = 'auto' | 'path' | 'flipped';
 
+/** How {@link trackRun} reads a shape: which side of it is up, and where that is judged. */
 export interface TrackRunOptions {
   /** Default `'auto'`. */
   side?: TrackSide;
