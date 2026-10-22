@@ -161,14 +161,14 @@ function entry(arr: Float64Array, o: number, d: number, org: ArrayLike<number>, 
   for (let j = 0; j < d; j++) {
     const lo = arr[o + j];
     const hi = arr[o + d + j];
-    const inv = 1 / dir[j];
-    // A denormal component overflows `inv`, and 0 * Infinity is NaN.
-    if (!Number.isFinite(inv)) {
+    // Divides, as `intersectRayAabb` does: a reciprocal rounds differently
+    // and can reject a ray grazing an edge that the exact test accepts.
+    if (dir[j] === 0) {
       if (org[j] < lo || org[j] > hi) return -1;
       continue;
     }
-    const t1 = (lo - org[j]) * inv;
-    const t2 = (hi - org[j]) * inv;
+    const t1 = (lo - org[j]) / dir[j];
+    const t2 = (hi - org[j]) / dir[j];
     if (t1 < t2) { if (t1 > near) near = t1; if (t2 < far) far = t2; }
     else { if (t2 > near) near = t2; if (t1 < far) far = t1; }
     if (near > far) return -1;

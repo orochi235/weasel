@@ -22,7 +22,8 @@ export interface Bvh<K> {
   refit(): void;
   /** Rebuild the hierarchy top-down from the current boxes. */
   rebuild(): void;
-  /** visit returns false to stop. */
+  /** visit returns false to stop. In every query, changing the tree from inside
+   *  a visit (insert, update, remove, refit, rebuild) is undefined. */
   queryBox(box: BoxN, visit: (key: K) => boolean | void): void;
   queryPoint(p: ArrayLike<number>, visit: (key: K) => boolean | void): void;
   /** Leaves in nondecreasing order of box entry distance t (t >= 0, t <= tMax). */

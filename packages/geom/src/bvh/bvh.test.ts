@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { intersectRayAabb } from '../3d/ray3';
 import { bvhMaxDepth, createBvh, type BoxN, type HalfSpace } from './bvh';
 
 /** mulberry32 — a small deterministic PRNG so failures reproduce. */
@@ -292,6 +293,33 @@ describe('createBvh', () => {
     const got: [string, number][] = [];
     tree.raycast([0, -10], [5e-324, 1], (k, t) => { got.push([k, t]); });
     expect(got).toEqual([['a', 10]]);
+  });
+
+  it('raycast takes a ray through a box edge that intersectRayAabb takes', () => {
+    // Aimed at the edge x = 0.7, z = 1.3; a reciprocal slab test rounds this ray out.
+    const origin = { x: 9.125, y: 7.375, z: -5 };
+    const direction = { x: 0.7 - origin.x, y: 0.3 - origin.y, z: 1.3 - origin.z };
+    const min = { x: 0, y: 0, z: 0 };
+    const max = { x: 0.7, y: 0.6, z: 1.3 };
+    expect(intersectRayAabb({ origin, direction }, min, max)).toBe(1);
+    const tree = createBvh<string>(3, [['a', [0, 0, 0, 0.7, 0.6, 1.3]]]);
+    const got: [string, number][] = [];
+    tree.raycast([origin.x, origin.y, origin.z], [direction.x, direction.y, direction.z], (k, t) => { got.push([k, t]); });
+    expect(got).toEqual([['a', 1]]);
+  });
+
+  it('raycast takes a denormal direction component the way intersectRayAabb does', () => {
+    // The origin sits a denormal outside x's slab, so x enters at a finite t.
+    const origin = { x: -1e-310, y: -10, z: 0 };
+    const direction = { x: 5e-324, y: 1, z: 0 };
+    const min = { x: 0, y: 0, z: -1 };
+    const max = { x: 1, y: 3e13, z: 1 };
+    const t = intersectRayAabb({ origin, direction }, min, max);
+    expect(t).not.toBeNull();
+    const tree = createBvh<string>(3, [['a', [0, 0, -1, 1, 3e13, 1]]]);
+    const got: [string, number][] = [];
+    tree.raycast([origin.x, origin.y, origin.z], [direction.x, direction.y, direction.z], (k, ti) => { got.push([k, ti]); });
+    expect(got).toEqual([['a', t]]);
   });
 
   it('inserting an existing key acts as update', () => {
