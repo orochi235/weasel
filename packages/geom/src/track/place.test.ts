@@ -106,4 +106,39 @@ describe('placeAlongRun', () => {
       expect(placeAlongRun(circle, [L / 2, (3 * L) / 4], { align: 'start', at: 0, wrap: true })[1]!.clipped).toBe('part');
     });
   });
+  describe("order: 'track' lays items from the shape's own start", () => {
+    const back = trackRun(lineShape({ x: 100, y: 0 }, C));
+    const opts = { align: 'start', at: 0 } as const;
+    test("the default and 'reading' are the same, reading order", () => {
+      const base = placeAlongRun(back, [10, 20], opts);
+      expect(placeAlongRun(back, [10, 20], { ...opts, order: 'reading' })).toEqual(base);
+      close(base[0]!.point, { x: 5, y: 0 });
+      close(base[1]!.point, { x: 20, y: 0 });
+    });
+    test('on a reversed run item 0 sits at the shape start and items stay upright', () => {
+      expect(back.reversed).toBe(true);
+      const places = placeAlongRun(back, [10, 20], { ...opts, order: 'track' });
+      close(places[0]!.point, { x: 95, y: 0 });
+      close(places[1]!.point, { x: 80, y: 0 });
+      expect(places.map((p) => p.angle)).toEqual([back.at(0.05).angle, back.at(0.2).angle]);
+      expect(places.map((p) => p.angle)).toEqual([0, 0]);
+    });
+    test("past: 'hold' holds at the track's far end", () => {
+      const places = placeAlongRun(back, [60, 60, 60], { ...opts, order: 'track', past: 'hold' });
+      close(places[2]!.point, { x: 0, y: 0 });
+      expect(places.map((p) => p.clipped)).toEqual(['none', 'part', 'past']);
+    });
+    test('on a non-reversed run it equals reading order', () => {
+      expect(run.reversed).toBe(false);
+      expect(placeAlongRun(run, [10, 20], { ...opts, order: 'track' })).toEqual(placeAlongRun(run, [10, 20], opts));
+    });
+    test('on a bottom ccw arc item 0 is the one nearer the shape start', () => {
+      const bottom = trackRun(arcShape({ center: C, radius: 100, start: 90, end: 270 }));
+      expect(bottom.reversed).toBe(true);
+      const start = bottom.shape.at(0).point;
+      const [a, b] = placeAlongRun(bottom, [10, 10], { ...opts, order: 'track' });
+      const d = (p: Point) => Math.hypot(p.x - start.x, p.y - start.y);
+      expect(d(a!.point)).toBeLessThan(d(b!.point));
+    });
+  });
 });

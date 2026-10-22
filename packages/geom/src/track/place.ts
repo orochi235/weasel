@@ -4,6 +4,10 @@ import type { TrackPlace, TrackRun } from './run';
 /** Where a sequence sits along a run: against its reading start, its middle, or its reading end. */
 export type RunAlign = 'start' | 'center' | 'end';
 
+/** The order {@link placeAlongRun} lays items in: along the run's reading order, or from the end where the underlying
+ *  shape's own direction starts. The two differ only on a run that is `reversed`. */
+export type RunOrder = 'reading' | 'track';
+
 /** Where one item of a run falls: its center along the run, and how much of it lies past the run's ends. */
 export interface RunSpot {
   center: number;
@@ -73,6 +77,10 @@ export interface PlaceAlongRunOptions {
   wrap?: boolean;
   /** Where an item wholly past an end is placed: carried on beyond it (`'extend'`, the default) or held at it. */
   past?: 'extend' | 'hold';
+  /** `'reading'` (the default) lays item 1 at the run's reading start. `'track'` lays it at the shape's own start and
+   *  proceeds in the shape's direction; items still stand as the run reads them. In `'track'` order `align`, `at`,
+   *  `offset` and each `center` are measured from the shape's start. */
+  order?: RunOrder;
 }
 
 /** One item laid along a run: where its center falls and the place there. `center` is unwrapped. */
@@ -80,8 +88,9 @@ export interface RunPlace extends RunSpot, TrackPlace {}
 
 /** Items of `lengths` laid end to end along `run`, each centered on its place and tipped to it. */
 export function placeAlongRun(run: TrackRun, lengths: readonly number[], options: PlaceAlongRunOptions = {}): RunPlace[] {
-  const { gap = 0, align = 'center', offset = 0, at, shift = 0, wrap = false, past = 'extend' } = options;
+  const { gap = 0, align = 'center', offset = 0, at, shift = 0, wrap = false, past = 'extend', order = 'reading' } = options;
   const { length } = run;
+  const mirror = order === 'track' && run.reversed;
   const spots = runPlaces(lengths, gap, length, align, offset, at);
   const lap = wrap && run.closed && spots.length > 0 ? wrapWindow(spots[0]!, lengths[0]!, length) : null;
   return spots.map((spot, i) => {
@@ -90,7 +99,7 @@ export function placeAlongRun(run: TrackRun, lengths: readonly number[], options
     let distance = spot.center;
     if (past === 'hold' && clipped === 'past') distance = clamp(distance, lap?.start ?? 0, lap?.end ?? length);
     if (lap && length > 0) distance = ((distance % length) + length) % length;
-    return { ...runStationAt(run, distance, shift), center: spot.center, clipped };
+    return { ...runStationAt(run, mirror ? length - distance : distance, shift), center: spot.center, clipped };
   });
 }
 

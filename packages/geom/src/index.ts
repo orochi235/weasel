@@ -23,7 +23,7 @@ export { trackRun, type TrackRun, type TrackPlace, type TrackSide, type TrackRun
 export { trackShapeD } from './track/pathData';
 export {
   placeAlongRun, runLength, runPlaces, runStationAt,
-  type PlaceAlongRunOptions, type RunAlign, type RunPlace, type RunSpot,
+  type PlaceAlongRunOptions, type RunAlign, type RunOrder, type RunPlace, type RunSpot,
 } from './track/place';
 export { PORT_REACH, portControls, portCurvePoints } from './portCurve2';
 export {
