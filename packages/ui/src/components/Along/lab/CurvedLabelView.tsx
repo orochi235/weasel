@@ -30,13 +30,16 @@ export function CurvedLabel({ text, arc, size, align, name }: { text: string; ar
   const run = useMemo(() => trackRun(arcShape(arcInBox(arc, { width: size, height: size }))), [arc, size]);
 
   useLayoutEffect(() => {
+    const spans = [...(root.current?.children ?? [])] as HTMLElement[];
     const measure = (): void => {
-      const widths = [...(root.current?.children ?? [])].map((el) => (el as HTMLElement).offsetWidth);
+      const widths = spans.map((el) => el.offsetWidth);
       setLengths((prev) => (prev.length === widths.length && prev.every((w, i) => w === widths[i]) ? prev : widths));
     };
     measure();
-    // A web font that lands after the first measure changes every width.
-    void document.fonts?.ready.then(measure);
+    // A web font landing after mount, or any other change to a span's size, changes its width.
+    const watch = new ResizeObserver(measure);
+    for (const el of spans) watch.observe(el);
+    return () => watch.disconnect();
   }, [chars]);
 
   const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align });

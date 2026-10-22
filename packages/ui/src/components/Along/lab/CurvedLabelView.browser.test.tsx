@@ -17,9 +17,9 @@ const settle = async () => {
 const SIZE = 300;
 const TEXT = 'Along the arc';
 
-async function mount() {
+async function mount(text = TEXT) {
   await page.viewport(1200, 900);
-  render(<CurvedLabelView config={{ text: TEXT, size: SIZE, align: 'center' }} />);
+  render(<CurvedLabelView config={{ text, size: SIZE, align: 'center' }} />);
   await document.fonts.ready;
   await settle();
 }
@@ -43,5 +43,19 @@ for (const name of ['top', 'bottom'] as const) {
       expect(Math.hypot(c.x - want.x, c.y - want.y)).toBeLessThanOrEqual(1);
     });
     for (let i = 1; i < centers.length; i++) expect(centers[i]!.x).toBeGreaterThan(centers[i - 1]!.x);
+    // Reading means upright too: a tangent turned past a quarter either way would put the text upside down.
+    for (const p of places) expect(Math.abs(((((p.angle + 180) % 360) + 360) % 360) - 180)).toBeLessThan(90);
+    const meanY = centers.reduce((sum, c) => sum + c.y, 0) / centers.length;
+    const middle = origin.top + origin.height / 2;
+    if (name === 'bottom') expect(meanY).toBeGreaterThan(middle);
+    else expect(meanY).toBeLessThan(middle);
   });
 }
+
+test('a combining sequence and a ZWJ emoji each get one span', async () => {
+  const text = 'e\u0301 \u{1F469}\u200D\u{1F469}\u200D\u{1F467}';
+  await mount(text);
+  const count = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)].length;
+  expect(count).toBe(3);
+  for (const name of ['top', 'bottom']) expect(document.querySelectorAll(`[data-label="${name}"] [data-char]`)).toHaveLength(count);
+});
