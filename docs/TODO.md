@@ -170,6 +170,10 @@ Priority tags:
 - **(P3) Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
 
+- **(P2) Release and Expand treat a source hidden before its effect was made as one the effect hid.** Release
+  shows it and Expand deletes it, because `hideSources` records that the effect hides its sources, not which ones
+  were already hidden (`packages/path-tools/src/pathEffects/retarget.ts`, `actions.ts`).
+
 - **(P3) The `textAlong` items thunk is not memoized.** Every derivation miss, such as each frame of a source
   drag, re-runs `textClusters`.
 
@@ -455,6 +459,14 @@ Priority tags:
 
 ## Text
 
+- **(P2) A canceled in-place edit of a text-along source leaves an undo entry that changes nothing.** Its drafts
+  and the restore fold into one "Edit text" entry, which still clears the redo stack
+  (`packages/core/src/features/text/sceneTextDrafts.ts`).
+
+- **(P2) A style change mid-edit does not reach a text-along curve until the next keystroke.** Cmd-B or the
+  character panel restyles the overlay, but only an input event sends a draft (`onDraft` in
+  `@weasel-js/text-dom`'s `useTextEdit`).
+
 - **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
   1px in Chromium at DPR 1, and the matrix rows of `scripts/measure-overlay-alignment.config.ts`
@@ -627,9 +639,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Selection, actions & UI panels
-
-- **(P2) draw's root scrolls 21px sideways at 1400px wide.** The Path toolbar row overflows; a web app's root
-  never scrolls (CLAUDE.md).
 
 - **(P3) draw's properties panel titles a text-along node "Unknown", and the layers panel shows its id.**
 
