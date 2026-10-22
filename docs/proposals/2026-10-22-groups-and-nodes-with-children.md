@@ -175,8 +175,9 @@ A is the smallest change and leaves `container` meaning only "has children".
 
 ## What you decide
 
-1. **Which option:** A, B1, B2 or B3.
-2. If B2, **the ordinary kind's name**, now that it can have children.
+1. **Which option:** B2 (2026-10-22). Whether a node draws itself is its kind: a group draws nothing,
+   and every other node draws itself. Having children is not a kind; any node may.
+2. **The ordinary kind's name**, now that it can have children.
 3. **Whether a child's `'inherit'` reads only groups, or any node with children.** A diagram row
    taking its box's fill is the case for "any".
 4. **The clip default** for a node with children and no `clipFromPose`: its own silhouette, as today,
