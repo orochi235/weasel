@@ -5,7 +5,7 @@ import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { arcShape, trackRun, type Point } from '@weasel-js/geom';
 import { arcInBox } from '../../Along/arcInBox';
-import { arcOf, SLIDER_ARC_SCHEMA, type SliderArcConfig } from './sliderArcSchema';
+import { arcOf, SLIDER_ARC_DEFAULTS, type SliderArcConfig } from './sliderArcConfig';
 import { SliderArcView } from './SliderArcView';
 
 afterEach(cleanup);
@@ -17,7 +17,7 @@ const settle = async () => {
 
 /** The lab's defaults with `patch`'s groups merged over them. */
 function configWith(patch: { [K in keyof SliderArcConfig]?: Partial<SliderArcConfig[K]> }): SliderArcConfig {
-  const base = SLIDER_ARC_SCHEMA.defaults() as SliderArcConfig;
+  const base = SLIDER_ARC_DEFAULTS;
   return Object.fromEntries(Object.entries(base).map(([k, v]) => [k, { ...v, ...patch[k as keyof SliderArcConfig] }])) as unknown as SliderArcConfig;
 }
 

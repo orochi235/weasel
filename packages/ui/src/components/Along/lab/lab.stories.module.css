@@ -47,9 +47,9 @@
 }
 
 .readouts {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   border-collapse: collapse;
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
 }
 
 .readouts th {

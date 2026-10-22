@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
+import { useLayoutEffect, useState, type RefObject } from 'react';
 import type { Point, TrackShape } from '@weasel-js/geom';
 
 export type Side = 'top' | 'bottom' | 'left' | 'right';
@@ -72,14 +72,16 @@ function offsetOf(els: readonly HTMLElement[], placed: readonly PlacedReading[],
  */
 export function useBarMeasure(root: RefObject<HTMLElement | null>, shape: TrackShape, reading: (p: Point) => number): BarReading {
   const [state, setState] = useState<BarReading>(EMPTY);
-  const update = (): void => {
-    if (!root.current) return;
-    const next = read(root.current, shape, reading);
-    setState((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
-  };
-  useLayoutEffect(update);
-  // The bar lays itself out again after measuring its items, and a popover opens in a portal outside it.
-  useEffect(() => {
+  // Read after every render, and again when the bar lays itself out after measuring its items or a popover opens
+  // in a portal outside it, neither of which renders anything here.
+  useLayoutEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const update = (): void => {
+      const next = read(el, shape, reading);
+      setState((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    };
+    update();
     const mo = new MutationObserver(update);
     mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'data-clipped', 'data-placement', 'aria-expanded', 'data-scrolls'] });
     return () => mo.disconnect();

@@ -1,4 +1,3 @@
-import { f } from '@weasel-js/forge';
 import type { Endless } from '@weasel-js/quantity';
 import type { AlongArc } from '@weasel-js/ui/components/Along';
 import type { SliderProps, SliderStop, Thumb } from '@weasel-js/ui/components/Slider';
@@ -14,43 +13,14 @@ export interface SliderArcConfig {
 
 export type StopSet = 'none' | 'quarters' | 'labeled' | 'uneven';
 
-export const SLIDER_ARC_SCHEMA = f.schema({
-  arc: f.group({
-    start: f.number(240).range(0, 359).step(1).suffix('°').label('Start'),
-    end: f.number(120).range(0, 359).step(1).suffix('°').label('End'),
-    direction: f.enum('ccw', ['cw', 'ccw']).radio().label('Direction'),
-    inset: f.number(24).range(0, 80).step(1).suffix('px').label('Inset'),
-    size: f.number(280).range(160, 420).step(10).suffix('px').label('Box'),
-  }).label('Arc'),
-  values: f.group({
-    min: f.number(0).step(1).label('Min'),
-    max: f.number(100).step(1).label('Max'),
-    step: f.number(1).range(0.01, 50).step(0.01).label('Step'),
-    thumbs: f.number(1).range(1, 3).step(1).label('Thumbs'),
-    constraint: f.enum('free', ['free', 'ordered']).radio().label('Constraint'),
-    link: f.boolean(true).label('Twins share one value'),
-  }).label('Values'),
-  stops: f.group({
-    set: f.enum('labeled', ['none', 'quarters', 'labeled', 'uneven']).label('Stops'),
-    showStops: f.boolean(true).label('Show stops'),
-    stopLabels: f.enum('all', ['all', 'ends', 'none']).radio().label('Stop labels'),
-    snap: f.enum('magnetic', ['magnetic', 'strict']).radio().label('Snap'),
-    spacing: f.enum('linear', ['linear', 'even']).radio().label('Spacing'),
-  }).label('Stops'),
-  behavior: f.group({
-    trackClick: f.enum('default', ['default', 'none', 'move-nearest']).label('Track click'),
-    allowShiftAll: f.boolean(false).label('Shift-drag moves all'),
-    thumbFit: f.enum('inside', ['inside', 'overhang']).radio().label('Thumb fit'),
-    endless: f.enum('none', ['none', 'min', 'max', 'both']).label('Endless'),
-    addRemove: f.boolean(false).label('Add and remove thumbs'),
-  }).label('Behavior'),
-  look: f.group({
-    trackHeight: f.number(8).range(2, 32).step(1).suffix('px').label('Track height'),
-    density: f.enum('default', ['default', 'slim']).radio().label('Density'),
-    readoutPlacement: f.enum('below-thumb', ['none', 'inline-after', 'below-thumb']).label('Readout'),
-    thumbShape: f.enum('round', ['round', 'notched']).radio().label('Thumb'),
-  }).label('Look'),
-});
+/** Every knob at its default: what the story's schema starts from, and what each preset is laid over. */
+export const SLIDER_ARC_DEFAULTS: SliderArcConfig = {
+  arc: { start: 240, end: 120, direction: 'ccw', inset: 24, size: 280 },
+  values: { min: 0, max: 100, step: 1, thumbs: 1, constraint: 'free', link: true },
+  stops: { set: 'labeled', showStops: true, stopLabels: 'all', snap: 'magnetic', spacing: 'linear' },
+  behavior: { trackClick: 'default', allowShiftAll: false, thumbFit: 'inside', endless: 'none', addRemove: false },
+  look: { trackHeight: 8, density: 'default', readoutPlacement: 'below-thumb', thumbShape: 'round' },
+};
 
 /** The stops `set` names, laid over `min..max`. */
 export function stopsOf(set: StopSet, min: number, max: number): (number | SliderStop)[] | undefined {
@@ -107,7 +77,7 @@ export interface SliderArcPreset {
 
 /** Every knob at its default, by dotted path: what each preset starts from, so loading one leaves nothing of the last behind. */
 function defaultsByPath(): Record<string, unknown> {
-  const d = SLIDER_ARC_SCHEMA.defaults() as unknown as Record<string, Record<string, unknown>>;
+  const d = SLIDER_ARC_DEFAULTS as unknown as Record<string, Record<string, unknown>>;
   return Object.fromEntries(Object.entries(d).flatMap(([group, leaves]) => Object.entries(leaves).map(([k, v]) => [`${group}.${k}`, v])));
 }
 const preset = (name: string, config: Record<string, unknown>): SliderArcPreset => ({ name, config: { ...defaultsByPath(), ...config } });

@@ -22,10 +22,14 @@ const STOPS = [0, 25, 50, 75, 100].map((v) => ({ value: v, label: String(v) }));
 function useTabOrder(root: React.RefObject<HTMLElement | null>, tick: unknown): { names: string[]; focused: number } {
   const [order, setOrder] = useState<{ names: string[]; focused: number }>({ names: [], focused: -1 });
   useLayoutEffect(() => {
-    if (!root.current) return;
-    const els = tabOrder(root.current);
-    const next = { names: els.map(describe), focused: els.indexOf(document.activeElement as HTMLElement) };
-    setOrder((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    const el = root.current;
+    if (!el) return;
+    const update = (): void => {
+      const els = tabOrder(el);
+      const next = { names: els.map(describe), focused: els.indexOf(document.activeElement as HTMLElement) };
+      setOrder((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    };
+    update();
   }, [root, tick]);
   return order;
 }

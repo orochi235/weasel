@@ -7,7 +7,7 @@ import { arcShape, trackRun, type Point } from '@weasel-js/geom';
 import { arcInBox } from '../../Along/arcInBox';
 import { renderWithIcons } from '../../../testing/withIcons';
 import { runPlaces } from '../runPlaces';
-import { arcOf, BAR_ARC_PRESETS, BAR_ARC_SCHEMA, type BarArcConfig } from './barArcSchema';
+import { arcOf, BAR_ARC_DEFAULTS, BAR_ARC_PRESETS, type BarArcConfig } from './barArcConfig';
 import { BarArcView } from './BarArcView';
 
 afterEach(cleanup);
@@ -16,7 +16,7 @@ const frame = () => new Promise((r) => requestAnimationFrame(r));
 
 /** A preset's knobs as the story's config, the way `setConfig` writes them. */
 function presetConfig(name: string): BarArcConfig {
-  const config = structuredClone(BAR_ARC_SCHEMA.defaults()) as unknown as Record<string, Record<string, unknown>>;
+  const config = structuredClone(BAR_ARC_DEFAULTS) as unknown as Record<string, Record<string, unknown>>;
   for (const [path, value] of Object.entries(BAR_ARC_PRESETS.find((p) => p.name === name)!.config)) {
     const [group, key] = path.split('.') as [string, string];
     config[group]![key] = value;

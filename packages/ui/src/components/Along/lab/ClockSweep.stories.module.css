@@ -34,7 +34,7 @@
 }
 
 .caption {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
   color: var(--wzl-fg-muted);
 }

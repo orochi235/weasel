@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
+import { useLayoutEffect, useState, type RefObject } from 'react';
 import type { TrackShape } from '@weasel-js/geom';
 
 /** One thumb as the page shows it. */
@@ -49,16 +49,15 @@ function read(root: HTMLElement, shape: TrackShape | null): TwinReading {
  */
 export function useTwinMeasure(root: RefObject<HTMLElement | null>, shape: TrackShape | null): TwinReading {
   const [reading, setReading] = useState<TwinReading>(EMPTY);
-  const update = (): void => {
-    if (!root.current) return;
-    const next = read(root.current, shape);
-    setReading((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
-  };
-  useLayoutEffect(update);
-  // The slider lays itself out again after its own first paint, which renders nothing here.
-  useEffect(() => {
+  // Read after every render, and again whenever the slider lays itself out on its own, which renders nothing here.
+  useLayoutEffect(() => {
     const el = root.current;
     if (!el) return;
+    const update = (): void => {
+      const next = read(el, shape);
+      setReading((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    };
+    update();
     const mo = new MutationObserver(update);
     mo.observe(el, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'aria-valuenow', 'aria-valuetext'] });
     return () => mo.disconnect();

@@ -6,7 +6,7 @@ import { LabActions } from '../../Along/lab/labActions';
 import { Presets } from '../../Along/lab/Presets';
 import { num, Readouts, type Readout } from '../../Along/lab/Readouts';
 import lab from '../../Along/lab/lab.stories.module.css';
-import { arcOf, BAR_ARC_PRESETS, barSchema, type BarArcConfig, type BarArcPreset } from './barArcSchema';
+import { arcOf, BAR_ARC_PRESETS, barSchema, type BarArcConfig, type BarArcPreset } from './barArcConfig';
 import { useBarMeasure, type BarReading } from './useBarMeasure';
 import s from './BarArc.stories.module.css';
 

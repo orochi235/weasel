@@ -1,4 +1,3 @@
-import { f } from '@weasel-js/forge';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import type { AlongArc, RunAlign } from '@weasel-js/ui/components/Along';
 import { actionLeaf, LAB_ACTIONS } from '../../Along/lab/labActions';
@@ -10,25 +9,12 @@ export interface BarArcConfig {
   arc: { center: number; sweep: number; direction: 'cw' | 'ccw'; inset: number; size: number };
 }
 
-export const BAR_ARC_SCHEMA = f.schema({
-  items: f.group({
-    actions: f.number(6).range(0, LAB_ACTIONS.length).step(1).label('Actions'),
-    fields: f.number(0).range(0, 4).step(1).label('Fields'),
-    section: f.boolean(false).label('Fields in a section of their own'),
-    lead: f.enum('none', ['none', 'label', 'icon']).radio().label('Lead'),
-  }).label('Items'),
-  layout: f.group({
-    overflow: f.enum('scroll', ['scroll', 'menu']).radio().label('Overflow'),
-    align: f.enum('center', ['start', 'center', 'end']).radio().label('Align'),
-  }).label('Layout'),
-  arc: f.group({
-    center: f.number(0).range(0, 359).step(1).suffix('°').label('Centered on'),
-    sweep: f.number(120).range(10, 359).step(1).suffix('°').label('Sweep'),
-    direction: f.enum('cw', ['cw', 'ccw']).radio().label('Direction'),
-    inset: f.number(18).range(0, 80).step(1).suffix('px').label('Inset'),
-    size: f.number(260).range(160, 420).step(10).suffix('px').label('Box'),
-  }).label('Arc'),
-});
+/** Every knob at its default: what the story's schema starts from, and what each preset is laid over. */
+export const BAR_ARC_DEFAULTS: BarArcConfig = {
+  items: { actions: 6, fields: 0, section: false, lead: 'none' },
+  layout: { overflow: 'scroll', align: 'center' },
+  arc: { center: 0, sweep: 120, direction: 'cw', inset: 18, size: 260 },
+};
 
 const FIELDS = ['Gain', 'Gamma', 'Blur', 'Grain'];
 const mod360 = (deg: number): number => ((deg % 360) + 360) % 360;
@@ -56,11 +42,9 @@ export interface BarArcPreset {
 }
 
 /** What every preset starts from, so loading one leaves nothing of the last behind. */
-const BASE = {
-  'items.actions': 6, 'items.fields': 0, 'items.section': false, 'items.lead': 'none',
-  'layout.overflow': 'scroll', 'layout.align': 'center',
-  'arc.center': 0, 'arc.sweep': 120, 'arc.direction': 'cw', 'arc.inset': 18, 'arc.size': 260,
-};
+const BASE = Object.fromEntries(
+  Object.entries(BAR_ARC_DEFAULTS).flatMap(([group, leaves]) => Object.entries(leaves as Record<string, unknown>).map(([k, v]) => [`${group}.${k}`, v])),
+);
 const preset = (name: string, config: Record<string, unknown>): BarArcPreset => ({ name, config: { ...BASE, ...config } });
 
 export const BAR_ARC_PRESETS: readonly BarArcPreset[] = [

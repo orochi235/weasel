@@ -5,7 +5,7 @@ import { Slider, type SliderProps, type Thumb } from '@weasel-js/ui/components/S
 import { num, Readouts, type Readout } from '../../Along/lab/Readouts';
 import { Presets } from '../../Along/lab/Presets';
 import lab from '../../Along/lab/lab.stories.module.css';
-import { arcOf, SLIDER_ARC_PRESETS, spreadThumbs, twinProps, type SliderArcConfig, type SliderArcPreset } from './sliderArcSchema';
+import { arcOf, SLIDER_ARC_PRESETS, spreadThumbs, twinProps, type SliderArcConfig, type SliderArcPreset } from './sliderArcConfig';
 import { useTwinMeasure, type TwinReading } from './useTwinMeasure';
 import s from './SliderArc.stories.module.css';
 

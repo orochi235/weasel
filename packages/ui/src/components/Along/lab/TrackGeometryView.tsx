@@ -63,7 +63,7 @@ function readHandles(helpers: CanvasHelpers<HandleNode> | null, pose: (id: Handl
  * them, the blue arrow is the run's reading direction, and the gray chevrons the shape's own.
  */
 export function TrackGeometryView({ config, onConfig }: { config: TrackGeometryConfig; onConfig: (patch: Partial<TrackGeometryConfig>) => void }): ReactElement {
-  const items = useMemo(initialHandles, []);
+  const items = useMemo(() => initialHandles(), []);
   const scene = useScene<HandleNode>({ items });
   const helpersRef = useRef<CanvasHelpers<HandleNode> | null>(null);
   useSyncExternalStore(
