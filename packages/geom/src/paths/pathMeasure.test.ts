@@ -35,6 +35,13 @@ describe('measurePath', () => {
     expect(m.at(100).tangent).toEqual({ x: 0, y: 1 });
   });
 
+  it('smooths across a corner unless told to keep corners', () => {
+    expect(measurePath(elbow)!.at(25, true).tangent.y).toBeGreaterThan(0);
+    const kept = measurePath(elbow, { keepCorners: true })!;
+    expect(kept.at(25, true).tangent).toEqual({ x: 1, y: 0 });
+    expect(kept.at(175, true).tangent).toEqual({ x: 0, y: 1 });
+  });
+
   it('answers a zero-length path at its point', () => {
     const m = measurePath(polylineFromPoints([{ x: 5, y: 5 }, { x: 5, y: 5 }]))!;
     expect(m.nearest({ x: 8, y: 9 })).toMatchObject({ s: 0, dist: 5, point: { x: 5, y: 5 } });

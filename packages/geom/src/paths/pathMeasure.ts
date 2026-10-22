@@ -19,6 +19,9 @@ export interface PathStation {
 export interface MeasurePathOptions {
   /** Curve flattening tolerance, in world units. Default 0.5. */
   flattenTolerance?: number;
+  /** Keep a vertex that turns further than flattening at the tolerance could as a corner: `at`'s `smooth` heading then
+   *  blends only across the vertices flattening made, and a straight edge heads along itself. Default false. */
+  keepCorners?: boolean;
 }
 
 /** The station on a path nearest a point. */
@@ -99,7 +102,7 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
       segments.push({ ax, ay, bx, by, start: total, len, tx, ty, t0x: tx, t0y: ty, t1x: tx, t1y: ty });
       total += len;
     }
-    smoothVertexHeadings(segments, startIndex, pl.closed);
+    smoothVertexHeadings(segments, startIndex, pl.closed, opts.keepCorners ? (opts.flattenTolerance ?? 0.5) : null);
   }
   if (first === undefined) return null;
   const origin = first;
@@ -156,14 +159,16 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
 }
 
 /** Give each interior vertex of one contour the mean heading of the two
- *  segments meeting there; a closed contour's seam is interior too. */
-function smoothVertexHeadings(segments: Segment[], from: number, closed: boolean): void {
+ *  segments meeting there; a closed contour's seam is interior too. Given a
+ *  `cornerTolerance`, a vertex turning further than a flattened curve could is left a corner. */
+function smoothVertexHeadings(segments: Segment[], from: number, closed: boolean, cornerTolerance: number | null): void {
   const n = segments.length - from;
   if (n < 2) return;
   const pairs = closed ? n : n - 1;
   for (let k = 0; k < pairs; k++) {
     const a = segments[from + k]!;
     const b = segments[from + ((k + 1) % n)]!;
+    if (cornerTolerance !== null && isCorner(a, b, cornerTolerance)) continue;
     let x = a.tx + b.tx;
     let y = a.ty + b.ty;
     const l = Math.hypot(x, y);
@@ -174,6 +179,13 @@ function smoothVertexHeadings(segments: Segment[], from: number, closed: boolean
     a.t1x = x; a.t1y = y;
     b.t0x = x; b.t0y = y;
   }
+}
+
+/** Whether `a` turns into `b` by more than twice what a curve flattened to `tolerance` turns between chords that long:
+ *  a chord of length L whose sagitta is the tolerance turns from the next by about 8·tolerance/L. */
+function isCorner(a: Segment, b: Segment, tolerance: number): boolean {
+  const turn = Math.acos(Math.min(1, Math.max(-1, a.tx * b.tx + a.ty * b.ty)));
+  return turn > (16 * tolerance) / Math.min(a.len, b.len);
 }
 
 /** Index of the segment covering arc length `s`: binary search on `start`. */

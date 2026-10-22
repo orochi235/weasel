@@ -12,7 +12,7 @@ export type PathTrackShape = TrackShape & { readonly path: Path };
  * travel, as a line's is: outward on a contour drawn clockwise on screen. `null` for a path with no points.
  */
 export function pathShape(path: Path, options: { flattenTolerance?: number } = {}): PathTrackShape | null {
-  const measure = measurePath(path, options);
+  const measure = measurePath(path, { ...options, keepCorners: true });
   if (!measure) return null;
   const { length, closed } = measure;
 

@@ -50,6 +50,21 @@ describe('pathShape', () => {
       }
     }
   });
+  test("a polygon's straight edge heads along itself; only its corners turn", () => {
+    for (const path of [pathFromD('M0 0 H360 V200 H0 Z'), { kind: 'rect', x: 0, y: 0, width: 360, height: 200 } as const]) {
+      const s = pathShape(path)!;
+      for (const x of [20, 100, 180, 260, 340]) close(s.at(x / s.length).tangent, { x: 1, y: 0 });
+      close(s.at(460 / s.length).tangent, { x: 0, y: 1 });
+    }
+  });
+  test('a curve still turns smoothly between its flattened vertices', () => {
+    const s = pathShape(ellipsePath({ x: 0, y: 0, width: 200, height: 200 }))!;
+    for (const f of [0.1, 0.33, 0.6, 0.85]) {
+      const { point, tangent } = s.at(f);
+      // On a circle the heading is square to the radius.
+      expect(Math.abs(tangent.x * (point.x - 100) + tangent.y * (point.y - 100)) / 100).toBeLessThan(0.01);
+    }
+  });
   test('a compound path runs on across its subpaths', () => {
     const s = pathShape(pathFromD('M0 0 L10 0 M20 0 L30 0'))!;
     expect(s.length).toBe(20);
