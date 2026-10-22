@@ -17,8 +17,9 @@ import { textEffectItems } from './textItems';
 export function readEffectSource(dep: DerivedDep<unknown>): EffectSource | null {
   const source = readShape(dep);
   const data = dep.node.data;
-  if (source === null || !isTextData(data)) return source;
-  return { ...source, items: () => textEffectItems(data as TextOutlineSource, dep.pose as PathInWorldPose) };
+  const pose = dep.pose;
+  if (source === null || !isTextData(data) || !isRectPose(pose)) return source;
+  return { ...source, items: () => textEffectItems(data as TextOutlineSource, pose as PathInWorldPose) };
 }
 
 function readShape(dep: DerivedDep<unknown>): EffectSource | null {

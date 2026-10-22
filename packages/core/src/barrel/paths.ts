@@ -257,7 +257,6 @@ export {
   pathEffectParts,
   registeredPathEffects,
   noteFontRead,
-  withFontReads,
   derivedPartsOf,
   pathFromParts,
   resolvePartPaint,

@@ -3,7 +3,7 @@
  * effect lays, against a face whose glyphs are plain bars.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { registerFontOutlines, loadFontOutlines, glyphGeneration, type OutlineFace } from '@weasel-js/font';
+import { registerFontOutlines, loadFontOutlines, faceGeneration, type OutlineFace } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { boundsOfPath, type PathInWorldPose } from '@weasel-js/geom';
@@ -66,15 +66,15 @@ describe('textEffectItems', () => {
     for (const it of spaces) expect(it.parts).toEqual([]);
   });
 
-  it('outlines still loading answer no items, and the derivation re-runs once they land', async () => {
+  it('outlines still loading answer no items and note a font read, and items appear once they land', async () => {
     registerFontOutlines('late', {}, new ArrayBuffer(4), { parser: () => BARS });
     const src = text('Hi', 'late');
     const read = withFontReads(() => textEffectItems(src, POSE));
     expect(read.value).toEqual([]);
     expect(read.fonts).toBe(true);
-    const before = glyphGeneration();
+    const before = faceGeneration();
     await loadTextOutlines(src);
-    expect(glyphGeneration()).not.toBe(before);
+    expect(faceGeneration()).not.toBe(before);
     expect(textEffectItems(src, POSE)).toHaveLength(2);
   });
 

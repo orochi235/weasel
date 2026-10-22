@@ -22,5 +22,5 @@ export {
   type RepeatAlongEffect,
 } from './effects';
 export type { EffectItem, EffectSource, EffectSourceReader } from './source';
-export { noteFontRead, withFontReads } from '../fontReads';
+export { noteFontRead } from '../fontReads';
 export { derivedPartsOf, pathFromParts, resolvePartPaint, type DerivedPart } from '../derivedParts';

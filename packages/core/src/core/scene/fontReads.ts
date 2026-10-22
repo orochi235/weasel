@@ -4,7 +4,7 @@
  * with nothing in the scene changed. A derivation that noted a read records
  * {@link fontGeneration} and re-derives when it moves.
  */
-import { glyphGeneration } from '@weasel-js/font';
+import { faceGeneration } from '@weasel-js/font';
 
 let noted = false;
 
@@ -26,7 +26,8 @@ export function withFontReads<T>(fn: () => T): { value: T; fonts: boolean } {
   }
 }
 
-/** The glyph generation a font-reading derivation is checked against. */
+/** The face generation a font-reading derivation is checked against: it
+ *  moves when a face lands, not on every glyph bake. */
 export function fontGeneration(): number {
-  return glyphGeneration();
+  return faceGeneration();
 }

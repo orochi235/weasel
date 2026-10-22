@@ -42,9 +42,9 @@ interface Derived {
   poses: unknown[];
   paths: (Path | null)[];
   path: Path | null;
-  /** The glyph generation it was worked out under, or `null` when it read no
+  /** The face generation it was worked out under, or `null` when it read no
    *  glyph outlines. */
-  glyphs: number | null;
+  faces: number | null;
 }
 
 /** The derivations of a path effect whose sources `read` reads. */
@@ -69,7 +69,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
       poses: deps.map((d) => (d === undefined ? undefined : snapshotPose(d.pose))),
       paths: deps.map((d) => d?.path ?? null),
       path: parts === null ? null : pathFromParts(parts),
-      glyphs: fonts ? generation : null,
+      faces: fonts ? generation : null,
     };
     results.set(node, result);
     return result;
@@ -87,7 +87,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
 
 function current(held: Derived, node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): boolean {
   if (held.data !== node.data || held.nodes.length !== deps.length) return false;
-  if (held.glyphs !== null && held.glyphs !== fontGeneration()) return false;
+  if (held.faces !== null && held.faces !== fontGeneration()) return false;
   for (let i = 0; i < deps.length; i++) {
     const d = deps[i];
     if (held.nodes[i] !== d?.node) return false;
@@ -96,7 +96,7 @@ function current(held: Derived, node: { data?: unknown }, deps: readonly (Derive
     if (held.paths[i] !== d.path) return false;
   }
   // A hit is still a read, for the scene memo enclosing this one.
-  if (held.glyphs !== null) noteFontRead();
+  if (held.faces !== null) noteFontRead();
   return true;
 }
 
