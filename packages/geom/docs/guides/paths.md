@@ -354,3 +354,15 @@ filled shape of its own.
 `Z` gathered into one path, and the rest into another. Either side is `null`
 when it has no subpaths. `hasOpenSubpath(path)` answers the yes-or-no version
 of the same question.
+
+## Lay items along a path
+
+`pathShape(path)` turns a path into a `TrackShape` (open or closed), over `measurePath` with its corners kept so a
+heading does not blend across them. `trackRun(shape, from, to, { side })` reads a stretch of it as a run in reading
+order; `side` is `'auto'` (whichever side is upright, the default), `'path'` (the path's own left side) or
+`'flipped'`.
+
+`placeAlongRun(run, lengths, options)` is the one placement primitive: item lengths in, a place for each out (its
+center on the run, tip angle, and how far it is clipped past either end). Rows of controls in ui and core's text
+effect both call it, so a new caller should too. `order: 'reading'` (default) lays items along the run's reading
+order; `'track'` starts at the shape's own start. `runPlaces` and `runLength` are its helpers (2026-10-21).

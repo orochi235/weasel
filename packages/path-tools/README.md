@@ -46,8 +46,28 @@ and an app that imports only some never loads the others:
 | `pathStructurePreset` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
 | `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
 | `cornerShapePreset` | Corner shape: a widget in each corner anchor whose drag sets its radius (`editCorner`), and `setCorners` and `cycleCornerShape` on the selected corners; `CORNER_CONTROLS` and `useCornerControls` are a panel over them |
-| `pathEffectsPreset` | Blend, Bend along, and Repeat along, and the actions that edit and expand them |
+| `pathEffectsPreset` | Blend, Bend along, Repeat along, and Text along, and the actions that edit, release and expand them |
 | `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` bring their own drags |
+
+## Text Along Path
+
+Select a text node and a path and run Text Along Path (Alt+Shift+X): the text's glyphs stand on the path, and follow
+edits to either. It is a path effect like Bend Along, with these options:
+
+| Option | Values |
+|---|---|
+| `align`, `start` | which part of the text sits at `start`, and where on the path that is, as a fraction of its length |
+| `shift`, `anchor` | how far off the path, and whether the baseline or the x-height middle sits on it |
+| `overflow` | `clip` cuts text at the path's end; `fit` squeezes the gaps between glyphs until it fits |
+| `side` | `auto` (whichever reads upright), `path` (the path's own left side), `flipped`. Turning text over keeps it in place; on an open path, letters that fall off are dropped |
+
+Only the text's first laid line follows the path. A color glyph (an emoji) keeps its advance and paints nothing, and
+underline, strikethrough and overline are not drawn. The node's rotation and skew are ignored; its scale is a
+font-size factor.
+
+The sources are hidden while the effect shows them (every effect takes `hideSources`; only Text Along Path sets it
+on create). Release shows them again, as one undo step, and Delete, Cut and Expand take them with the effect.
+Double-clicking the curved text edits the hidden text in place; Enter path edit on the effect edits its path.
 
 The comb, balance lines, constraint marks, and direction arrows are off until
 chrome-caps shows them; the corner widgets show until it hides

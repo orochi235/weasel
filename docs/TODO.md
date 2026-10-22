@@ -148,6 +148,34 @@ Priority tags:
 
 ## Paths & booleans
 
+- **(P3) Decorations along a path for Text Along Path.** Underline, strikethrough and overline are not drawn on
+  curved text (`packages/core/src/core/scene/pathEffects/textAlong.ts`).
+
+- **(P3) Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
+  primitive's, and moving it would change the output of saved documents.
+
+- **(P3) Bend Along and Repeat Along cannot hide their sources on create.** `hideSources` exists on every effect
+  kind, but only Text Along Path's create action sets it (`EFFECT_DEFAULTS` in
+  `packages/path-tools/src/pathEffects/params.ts`).
+
+- **(P2) Cut of an effect with hidden sources deletes them with it.** Whether the clipboard should carry the
+  sources, so a paste is whole, is undecided.
+
+- **(P2) Effects follow an anchor-edit drag only on release, for every effect kind.** The anchor preview stays in
+  the gesture handle and dependents are not re-derived; move drags do follow, through scene overrides.
+
+- **(P3) Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
+  Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is Mike's call.
+
+- **(P3) Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
+  it pressable in that mode; a design call.
+
+- **(P3) The `textAlong` items thunk is not memoized.** Every derivation miss, such as each frame of a source
+  drag, re-runs `textClusters`.
+
+- **(P3) `packages/pdf/src/textOutlines.ts` places glyph outlines its own way.** Fold it onto the shared
+  glyph-outline helper in `@weasel-js/text`.
+
 - **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
   read as letter spacing (`packages/svg/src/glyphShifts.ts`), and so is a `dx` on a `<text>`
   holding only text. `rotate`, list-valued per-glyph `x` / `y`, and a `dx` on a `<text>` that
@@ -354,6 +382,9 @@ Priority tags:
   and the file format waits on that.
 
 ## Rendering & paint
+
+- **(P3) The renderer's outline tier paints the leading code points of a multi-code-point color cluster.**
+  A keycap such as 1️⃣ draws its digit: `paintRuns`' outline tier lacks the `drawsInk` check `textClusters` has.
 
 - **(P2) Readers that still read an `'inherit'` fill or stroke as none** (2026-10-21). Painters, picking,
   drawn bounds, the panel, SVG, the text editor, booleans and WeaselDraw's export resolve it against
@@ -597,10 +628,23 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) draw's root scrolls 21px sideways at 1400px wide.** The Path toolbar row overflows; a web app's root
+  never scrolls (CLAUDE.md).
+
+- **(P3) draw's properties panel titles a text-along node "Unknown", and the layers panel shows its id.**
+
+- **(P3) No curved-label component in ui.** `Along/lab/CurvedLabel` (a story) shows the pattern: DOM spans laid
+  along an `Along` arc with `placeAlongRun`. A public component over it is not built.
+
+- **(P2) Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
+  `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
+  governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
+  bars, so it is waiting on a decision (2026-10-22).
+
 - **(P3) Rows other than `Bar` do not follow an `Along` yet.** `ButtonBar`, `ToggleBar`, segmented
   controls, `SwatchStrip`, `Tabs`/`PageTabs` and `RadioGroup` still lay out on a straight line. They
-  follow on what `BarAlong` uses: `runPlaces` and `useRunScroll` (`Bar/`) for where items fall and how a run
-  scrolls, and `placeOnRun` (`Along/placeOnRun.ts`) for the custom properties that put a part there.
+  follow on what `BarAlong` uses: geom's `placeAlongRun` for where items fall and `useRunScroll` (`Bar/`) for how a
+  run scrolls, and `placeOnRun` (`Along/placeOnRun.ts`) for the custom properties that put a part there.
 
 - **(P3) No gradient painter for a curved track.** `paintGradientTrack` paints straight tracks only and
   draws nothing on a curve; a curved painter strokes the `TrackCtx.shape` run with sampled stops.
@@ -620,9 +664,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   - The arc controls measure pointers against their box's client rect, so a rotated ancestor (inferred from
     `curvedGeometry`, not seen) maps a press as wrongly as a scaled one does. The `ui/Along/Lens rim` lab turns
     its controls by their arcs' angles instead, which works.
-
-- **(P3) No `path` track shape.** `TrackShape` has `lineShape`, `arcShape` and `ellipseShape`; a shape over any path
-  would build on geom's `measurePath` and `nearestOnPath`, and needs no change to the interface.
 
 - **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
   `apps/draw/src/dev/AssetsPage.test.tsx` with a node property schema open: the Export panel's
