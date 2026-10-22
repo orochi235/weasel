@@ -139,17 +139,16 @@ function walkArea(
       return pathIntersectsRect(clip, derived ? boundsOfPath(derived) : visualBoundsViaDescriptor(pose, g))
         && pathIntersectsRect(clip, r.bounds);
     },
-    hits: (node, placeholder, derived, inherited) => {
-      // A derived node's pose is a placeholder; its path is what is painted.
-      const pose = derived ?? placeholder;
+    hits: (node, pose, derived, inherited) => {
       // The descriptor sees the node here, so a pose shape whose extent
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
+      // A derived node's pose is a placeholder: its path is the extent and the fallback outline.
       const b = derived ? boundsOfPath(derived) : regionBoundsOf(node as object, pose, g);
       let ink: boolean | undefined;
       const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited })?.filled !== false;
       return regionTakes(r, mode, asInked(filled, pose), b, () =>
-        asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived }) ?? poseOutline(pose, b)), filled);
+        asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived }) ?? derived ?? poseOutline(pose, b)), filled);
     },
     inPlane: (m) => regionQuery(regionInPlane(r, m)),
     inCopy: (m) => regionQuery(regionInCopy(r, m)),
