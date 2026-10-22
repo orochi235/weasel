@@ -36,9 +36,16 @@ describe('ToolOptionsBar', () => {
     expect(screen.getByRole('button', { name: 'B' })).toBeInTheDocument();
   });
 
-  it('renders as an empty reserved row with no children', () => {
-    render(<ToolOptionsBar />);
-    expect(screen.getByRole('toolbar')).toBeInTheDocument();
+  it('renders nothing with neither a schema nor children, label or not', () => {
+    const { container, rerender } = render(<ToolOptionsBar />);
+    expect(container).toBeEmptyDOMElement();
+    rerender(<ToolOptionsBar label="Text">{null}{false}</ToolOptionsBar>);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders with a schema and no children', () => {
+    render(<ToolOptionsBar label="Text" schema={optionsSchema} values={{}} />);
+    expect(screen.getByRole('toolbar', { name: 'Text' })).toBeInTheDocument();
   });
 });
 

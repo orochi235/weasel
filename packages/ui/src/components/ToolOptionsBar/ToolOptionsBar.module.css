@@ -1,11 +1,9 @@
-/* Horizontal strip reserved above the workspace for contextual tool
-   options. Fixed height so mounting/unmounting content never resizes
-   the workspace beneath it — that's the whole reason this row exists
-   as permanent chrome rather than an on-demand overlay.
+/* Horizontal strip above the workspace for contextual tool options.
+   Fixed height, so the controls inside never change the row's size.
 
    Overflow: when controls exceed the available width, `.controls`
    scrolls horizontally rather than wrapping (which would grow the row
-   and defeat the fixed-height guarantee above) or clipping (which
+   and defeat the fixed height above) or clipping (which
    would hide controls with no way to reach them). A flyout/long-press
    affordance was considered and rejected — grouped, directly visible
    layouts are preferred in this repo. */

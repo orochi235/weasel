@@ -313,6 +313,12 @@ a:hover { text-decoration: underline; }
   min-width: 100%;
 }
 
+/* Holds a strip's height while it renders nothing, as `CharacterOptions` does
+ * outside a text edit, so the canvas under it does not move as an edit opens. */
+.ckd-strip-slot {
+  min-height: var(--wzl-tb-height);
+}
+
 /* Positioning context for absolutely-placed canvas overlays (gradient
  * handles, and anything else that draws on top of the canvas). Sized by
  * the canvas it wraps. */

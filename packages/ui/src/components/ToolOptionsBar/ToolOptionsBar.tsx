@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from 'react';
+import { Children, useRef, type ReactNode } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
@@ -9,8 +9,8 @@ import s from './ToolOptionsBar.module.css';
 export interface ToolOptionsBarProps {
   /**
    * Context label for the row — e.g. the active tool's name. Rendered
-   * before the children and doubles as the toolbar's `aria-label`. Omit
-   * it and the row still renders, just without an accessible name.
+   * before the children and doubles as the toolbar's `aria-label`. A label
+   * alone does not keep the row: it renders only with a `schema` or children.
    *
    * Using `label` for both the visible text and `aria-label` means a
    * screen reader announces it twice when landing on the toolbar.
@@ -44,9 +44,8 @@ export interface ToolOptionsBarProps {
  * slot stays open for a tenant that is not a tool's options at all, such as
  * loupe controls.
  *
- * The row always renders, even empty, because the app reserves its height
- * permanently rather than mounting it on demand — mounting mid-edit would
- * resize the workspace under a canvas that's sized to the page.
+ * With neither a `schema` nor children it renders nothing, so a host's row
+ * collapses while no tool has options to show.
  *
  * `role="toolbar"` without roving tabindex: the ARIA authoring practices
  * expect arrow-key roving focus across a toolbar's items, but a bar of
@@ -60,6 +59,7 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
   // Every label on the line shortens together before the strip scrolls.
   const controls = useRef<HTMLDivElement>(null);
   const fit = useFitScope(controls);
+  if (schema === undefined && Children.toArray(children).length === 0) return null;
   return (
     <div className={cls} role="toolbar" aria-label={label}>
       {label !== undefined && <span className={s.label}>{label}</span>}
