@@ -11,6 +11,6 @@
 
 .char {
   white-space: pre;
-  font-size: var(--wzl-font-size-lg, 18px);
+  font-size: var(--wzl-font-size-lg);
   line-height: 1;
 }
