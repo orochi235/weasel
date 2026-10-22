@@ -41,6 +41,20 @@ function laidGlyphs(n: SvgTextNode): Glyph[] {
 }
 
 let host: HTMLDivElement;
+/**
+ * Whether this Chromium lays glyphs out at whole-pixel advances. Linux headless
+ * Chromium has no subpixel positioning, so its glyphs land up to a pixel from any
+ * fractional layout and the half-pixel check below cannot be made there.
+ */
+let snapsAdvances = false;
+const SNAPPED = 'this Chromium lays glyphs out at whole-pixel advances, so it cannot place one at a fractional x';
+
+function probeSnapping(): boolean {
+  host.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg"><text x="0" y="30" font-family="${FAMILY}" font-size="${SIZE}">iiiiiiii</text></svg>`;
+  const text = host.querySelector('text')!;
+  const xs = Array.from({ length: text.getNumberOfChars() }, (_, i) => text.getExtentOfChar(i).x);
+  return xs.every((x) => Number.isInteger(x));
+}
 
 /** Every inked glyph of the exported `<text>` as Chromium draws it, in source order. */
 function drawnGlyphs(svg: string): Glyph[] {
@@ -66,6 +80,7 @@ beforeAll(async () => {
   document.fonts.add(await face.load());
   await registerFont(FAMILY, {}, metricsUrl, atlasUrl);
   unregisterBidi = registerBidi(bidi);
+  snapsAdvances = probeSnapping();
 });
 
 afterAll(() => {
@@ -95,7 +110,8 @@ describe('an SVG text export written from the layout', () => {
   ];
 
   for (const [name, n] of CASES) {
-    it(`draws every glyph of ${name} where weasel lays it out`, () => {
+    it(`draws every glyph of ${name} where weasel lays it out`, (ctx) => {
+      ctx.skip(snapsAdvances, SNAPPED);
       const drawn = drawnGlyphs(serializeSvg([n], { ...VIEW, textLayout: layoutTextPose }));
       expectSameGlyphs(drawn, laidGlyphs(n));
     });
@@ -115,7 +131,8 @@ describe('an SVG text export written without a layout', () => {
   // that far from its laid-out baseline. What is checked is that each glyph
   // lands at its x and that the lines keep the layout's pitch.
   for (const [name, n] of CASES) {
-    it(`draws the glyphs of ${name} at the layout's x, its lines at its pitch`, () => {
+    it(`draws the glyphs of ${name} at the layout's x, its lines at its pitch`, (ctx) => {
+      ctx.skip(snapsAdvances, SNAPPED);
       const drawn = drawnGlyphs(serializeSvg([n], VIEW));
       const laid = laidGlyphs(n);
       const shift = drawn[0].baseline - laid[0].baseline;
