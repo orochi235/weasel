@@ -7,13 +7,7 @@ import {
   type Affine, type Path, type RunAlign, type RunPlace, type TrackSide,
 } from '@weasel-js/geom';
 import type { DerivedPart } from '../derivedParts';
-import type { EffectItem, EffectSource } from './source';
-
-/** Options every path effect may take. */
-export interface PathEffectOptions {
-  /** Its sources are hidden while it shows them. */
-  hideSources?: boolean;
-}
+import type { EffectItem, EffectSource, PathEffectOptions } from './source';
 
 /**
  * Text (or any shape) laid along a path, item by item. Its sources are `[text, path]`. Only the text's first laid line
@@ -55,12 +49,13 @@ export function textAlongParts(effect: TextAlongEffect, items: readonly EffectIt
   const about = closed ? ((c / L) % 1 + 1) % 1 : clamp01(c / L);
   const run = trackRun(shape, 0, 1, { side: effect.side ?? 'auto', about });
   const places = placeAlongRun(run, lengths, {
-    gap, align: 'center', at: run.reversed ? L - c : c, shift: effect.shift ?? 0, wrap: closed,
+    gap, align: 'center', at: run.reversed ? L - c : c, shift: finiteOr(effect.shift, 0), wrap: closed,
   });
   const center = effect.anchor === 'center';
   const out: DerivedPart[] = [];
   const firstStart = places[0]!.center - lengths[0]! / 2;
   places.forEach((place, i) => {
+    // By center (SVG textPath's rule), not by RunPlace.clipped, which judges by extent.
     if (dropped(place, closed ? firstStart : null, L)) return;
     const item = items[i]!;
     const m = itemFrame(place, item.length, center ? item.middle : 0);
@@ -97,10 +92,14 @@ function roomAt(at: number, L: number, k: number, closed: boolean): number {
   return k === 0 ? L - at : k === 1 ? at : 2 * Math.min(at, L - at);
 }
 
-/** The gap that makes `lengths` fill `room`, or 0 when they fit already. */
+/** The gap that makes `lengths` fill `room`, or 0 when they fit already. Never so negative that an item's step back
+ *  from the one before it (its length plus the gap) goes below zero, so items keep their order in too short a room. */
 function fitGap(lengths: readonly number[], room: number): number {
   const total = runLength(lengths, 0);
-  return total > room && lengths.length > 1 ? (room - total) / (lengths.length - 1) : 0;
+  if (!(total > room) || lengths.length < 2) return 0;
+  let floor = -Infinity;
+  for (let i = 1; i < lengths.length; i++) floor = Math.max(floor, -(lengths[i - 1]! + lengths[i]!) / 2);
+  return Math.max((room - total) / (lengths.length - 1), floor);
 }
 
 /** Item frame to world: its middle on `place`, turned to it, its anchor line `lift` above y = 0 brought onto the path. */
@@ -110,3 +109,4 @@ function itemFrame(place: RunPlace, length: number, lift: number): Affine {
 }
 
 const clamp01 = (v: number): number => (v > 1 ? 1 : v > 0 ? v : 0);
+const finiteOr = (v: number | undefined, d: number): number => (v !== undefined && Number.isFinite(v) ? v : d);

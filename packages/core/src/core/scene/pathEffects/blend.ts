@@ -8,8 +8,7 @@ import {
 } from '@weasel-js/geom';
 import { lerpFill, lerpStroke } from '@weasel-js/paint';
 import type { DerivedPart } from '../derivedParts';
-import type { EffectSource } from './source';
-import type { PathEffectOptions } from './textAlong';
+import type { EffectSource, PathEffectOptions } from './source';
 
 /** Steps between two shapes. Its sources are `[from, to]`, or
  *  `[from, to, spine]` to lay the steps along a third path. */

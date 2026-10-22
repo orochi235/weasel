@@ -9,6 +9,12 @@ import type { Fill, Stroke } from '@weasel-js/paint';
 import type { DerivedPart } from '../derivedParts';
 import type { DerivedDep } from '../types';
 
+/** Options every path effect may take. */
+export interface PathEffectOptions {
+  /** Its sources are hidden while it shows them. */
+  hideSources?: boolean;
+}
+
 /** One rigid piece an effect lays along a path, in its own frame: x from 0 at its leading edge to `length`, y down,
  *  its anchor line (a glyph's baseline) at y = 0. */
 export interface EffectItem {

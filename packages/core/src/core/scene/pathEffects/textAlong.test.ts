@@ -62,6 +62,17 @@ describe('textAlongParts', () => {
     expect(got[14]!.x + 5).toBeCloseTo(100, 9);
   });
 
+  it('fit keeps the order when the room is shorter than one item', () => {
+    const got = lay({ overflow: 'fit', start: 0.95 }, 3);
+    expect(got).toHaveLength(3);
+    for (let i = 1; i < got.length; i++) expect(got[i]!.x).toBeGreaterThanOrEqual(got[i - 1]!.x - 1e-9);
+  });
+
+  it('a NaN shift is no shift', () => {
+    const base = lay({}, 3);
+    lay({ shift: Number.NaN }, 3).forEach((c, i) => expect(c.y).toBeCloseTo(base[i]!.y, 9));
+  });
+
   it('a closed path wraps past its seam', () => {
     const SQUARE = pathFromD('M0 0 H100 V100 H0 Z');
     // 380..420 of 400: two items up the left edge, two along the top.

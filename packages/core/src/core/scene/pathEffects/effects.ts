@@ -8,8 +8,8 @@ import {
 } from '@weasel-js/geom';
 import type { DerivedPart } from '../derivedParts';
 import { blendParts, type BlendEffect } from './blend';
-import type { EffectSource } from './source';
-import { textAlongParts, wholeItem, type PathEffectOptions, type TextAlongEffect } from './textAlong';
+import type { EffectSource, PathEffectOptions } from './source';
+import { textAlongParts, wholeItem, type TextAlongEffect } from './textAlong';
 
 export type { BlendEffect, PathEffectOptions, TextAlongEffect };
 
