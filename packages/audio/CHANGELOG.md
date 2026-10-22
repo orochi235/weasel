@@ -1,5 +1,9 @@
 # @weasel-js/audio
 
+## 1.12.1
+
+No changes in this release.
+
 ## 1.12.0
 
 ### Patch Changes

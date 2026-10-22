@@ -1,5 +1,30 @@
 # @weasel-js/labkit
 
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [8c39126]
+- Updated dependencies [a1b479a]
+  - @weasel-js/geom@1.12.1
+  - @weasel-js/ui@1.12.1
+  - @weasel-js/core@1.12.1
+  - @weasel-js/kernel3d@1.12.1
+  - @weasel-js/animator@1.12.1
+  - @weasel-js/loupe@1.12.1
+  - @weasel-js/routing@1.12.1
+  - @weasel-js/svg@1.12.1
+  - @weasel-js/minimap@1.12.1
+  - @weasel-js/icons@1.12.1
+  - @weasel-js/prefs@1.12.1
+  - @weasel-js/quantity@1.12.1
+  - @weasel-js/react@1.12.1
+  - @weasel-js/registry@1.12.1
+  - @weasel-js/storage@1.12.1
+  - @weasel-js/theme@1.12.1
+
 ## 1.12.0
 
 ### Patch Changes

@@ -1,5 +1,18 @@
 # @weasel-js/kernel3d
 
+## 1.12.1
+
+### Patch Changes
+
+- 8c39126: Picks consult a BVH index kept beside the scene, so a marquee, a lasso or a click visits the nodes near the query instead of every node. `@weasel-js/geom` adds the tree. Three contracts tighten for the index to be sound. `NodeInk.outset` must not depend on the view scale: screen-space reach goes in `outsetPx`. In kernel3d, `world.bounds` must be a function of the node alone. Two picks change behavior: marquee and lasso now test a derived node at its derived path, and the point pick now tests a node carrying an override `path` against that path, which is what the renderer paints, instead of its pose box.
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [8c39126]
+  - @weasel-js/geom@1.12.1
+  - @weasel-js/core@1.12.1
+  - @weasel-js/prefs@1.12.1
+  - @weasel-js/react@1.12.1
+
 ## 1.12.0
 
 ### Patch Changes

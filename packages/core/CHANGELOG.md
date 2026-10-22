@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.12.1
+
+### Patch Changes
+
+- cbb16ca: `kit:shape` paints a container that has a `shape` again, and its interior is grabbable by its fill. The previous release stopped it, so a node that draws itself and has children, such as a skeleton bone with child bones, drew nothing. A container whose `path` is its clip, as an SVG `<g>` imports, still paints nothing of its own.
+- 8c39126: Picks consult a BVH index kept beside the scene, so a marquee, a lasso or a click visits the nodes near the query instead of every node. `@weasel-js/geom` adds the tree. Three contracts tighten for the index to be sound. `NodeInk.outset` must not depend on the view scale: screen-space reach goes in `outsetPx`. In kernel3d, `world.bounds` must be a function of the node alone. Two picks change behavior: marquee and lasso now test a derived node at its derived path, and the point pick now tests a node carrying an override `path` against that path, which is what the renderer paints, instead of its pose box.
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [8c39126]
+  - @weasel-js/geom@1.12.1
+  - @weasel-js/animator@1.12.1
+  - @weasel-js/renderer@1.12.1
+  - @weasel-js/routing@1.12.1
+  - @weasel-js/stroke@1.12.1
+  - @weasel-js/text@1.12.1
+  - @weasel-js/text-dom@1.12.1
+  - @weasel-js/cursor@1.12.1
+  - @weasel-js/font@1.12.1
+  - @weasel-js/gestures@1.12.1
+  - @weasel-js/history@1.12.1
+  - @weasel-js/icons@1.12.1
+  - @weasel-js/modes@1.12.1
+  - @weasel-js/paint@1.12.1
+  - @weasel-js/prefs@1.12.1
+  - @weasel-js/quantity@1.12.1
+  - @weasel-js/react@1.12.1
+  - @weasel-js/registry@1.12.1
+  - @weasel-js/select@1.12.1
+  - @weasel-js/simulation@1.12.1
+
 ## 1.12.0
 
 ### Minor Changes
