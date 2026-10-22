@@ -55,6 +55,17 @@ describe('textAlongParts', () => {
     expect(lay({ align: 'end', start: 0.2 }, 4)).toHaveLength(2);
   });
 
+  it('clip cuts turned-over text at its reading end too, not its start', () => {
+    // Item i is i + 1 tall, so the heights name which items were drawn.
+    const tall = Array.from({ length: 15 }, (_, i): EffectItem => ({
+      length: 10, middle: 0, parts: [{ path: rectPath(0, -(i + 1), 10, i + 1), fill: INK }],
+    }));
+    const drawn = centers(textAlongParts({ ...FX, side: 'flipped' }, tall, LINE));
+    expect(drawn.map((c) => Math.round(c.h))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    // Read from the path's end, as a turned-over run reads.
+    expect(drawn[0]!.x).toBeCloseTo(95, 9);
+  });
+
   it('fit squeezes them in', () => {
     const got = lay({ overflow: 'fit' }, 15);
     expect(got).toHaveLength(15);
