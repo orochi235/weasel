@@ -42,7 +42,7 @@ export interface StubScene {
   childMap: Map<string, NodeId[]>;
   roots: NodeId[];
   appliedBatches: AppliedBatch[];
-  get(id: NodeId): { pose: P; parent: NodeId | null } | undefined;
+  get(id: NodeId): { kind: 'group' | 'mark'; pose: P; parent: NodeId | null } | undefined;
   childrenOf(id: NodeId): readonly NodeId[];
   applyBatch(ops: unknown[], label: string, adapter: unknown): void;
   batch(label: string, fn: () => void): void;
@@ -74,7 +74,8 @@ export function makeScene(
     appliedBatches,
     get(id) {
       if (!p.has(id)) return undefined;
-      return { pose: p.get(id)!, parent: (parents[id] ?? null) as NodeId | null };
+      // A node given a child list is a group, so it takes a drop with no `canDropInto` dep.
+      return { kind: c.has(id) ? 'group' : 'mark', pose: p.get(id)!, parent: (parents[id] ?? null) as NodeId | null };
     },
     childrenOf(id) { return c.get(id) ?? []; },
     applyBatch(ops, label) {
