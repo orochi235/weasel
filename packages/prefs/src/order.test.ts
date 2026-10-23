@@ -48,8 +48,9 @@ describe('orderPrefGroup', () => {
     const odd: PrefGroup = { name: 'T', children: { constructor: pref.group('C', { p: pref.number('P', 1) }), toString: { ...run } } };
     const out = orderPrefGroup(odd, { '': ['toString', 'constructor'] });
     expect(Object.keys(out.children)).toEqual(['toString', 'constructor']);
-    expect(out.children.constructor).toBe(odd.children.constructor);
-    expect((out.children.toString as PrefActions).order).toBeUndefined();
+    const child = (key: string) => out.children[key];
+    expect(child('constructor')).toBe(odd.children['constructor' as string]);
+    expect((child('toString') as PrefActions).order).toBeUndefined();
   });
 
   it('returns the same object when there is nothing to apply', () => {
