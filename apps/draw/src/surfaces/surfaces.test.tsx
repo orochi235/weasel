@@ -111,20 +111,40 @@ describe('surface assets', () => {
     expect(drawPrefs().get('ui.surfaces').path).toEqual({ surface: 'bar', hidden: false });
   });
 
-  it('draw a menu in the stored order, keep it across hiding and showing, and end it with the switch', () => {
-    drawPrefs().set('ui.surfaces', {
-      ...drawPrefs().get('ui.surfaces'),
-      path: { surface: 'menu', order: { '': ['anchors', 'path', 'pathEffects'] } },
-    });
+  const ORDER = { '': ['anchors', 'path', 'pathEffects'] };
+  const setPath = (state: object) => act(() => {
+    const all = drawPrefs().get('ui.surfaces');
+    drawPrefs().set('ui.surfaces', { ...all, path: { ...all.path, ...state } });
+  });
+  const menuItems = () => {
+    click(strip().getByRole('button', { name: 'Path' }));
+    return screen.getAllByRole('menuitem').map((m) => m.textContent);
+  };
+
+  it('draw a menu in the stored order, ending with the switch', () => {
+    setPath({ surface: 'menu', order: ORDER });
     renderWithIcons(<App />);
-    const itemsOf = () => { click(strip().getByRole('button', { name: 'Path' })); return screen.getAllByRole('menuitem').map((m) => m.textContent); };
-    const items = itemsOf();
+    const items = menuItems();
     expect(items.indexOf('Average')).toBeGreaterThan(-1);
     expect(items.indexOf('Average')).toBeLessThan(items.indexOf('Join'));
     expect(items.at(-1)).toMatch(/toolbar|panel/);
-    const before = drawPrefs().get('ui.surfaces').path!.order;
-    act(() => { drawPrefs().set('ui.surfaces', { ...drawPrefs().get('ui.surfaces'), path: { ...drawPrefs().get('ui.surfaces').path, hidden: true } }); });
-    act(() => { drawPrefs().set('ui.surfaces', { ...drawPrefs().get('ui.surfaces'), path: { ...drawPrefs().get('ui.surfaces').path, hidden: false } }); });
-    expect(drawPrefs().get('ui.surfaces').path!.order).toEqual(before);
+  });
+
+  it('draw the stored order again once the asset is hidden and shown', () => {
+    setPath({ surface: 'menu', order: ORDER });
+    renderWithIcons(<App />);
+    setPath({ hidden: true });
+    expect(strip().queryByRole('button', { name: 'Path' })).toBeNull();
+    setPath({ hidden: false });
+    const items = menuItems();
+    expect(items.indexOf('Average')).toBeLessThan(items.indexOf('Join'));
+  });
+
+  it('draw a panel in the stored order', () => {
+    setPath({ surface: 'panel', order: ORDER });
+    renderWithIcons(<App />);
+    const names = sidebar().getAllByRole('button').map((b) => b.textContent);
+    expect(names.indexOf('Average')).toBeGreaterThan(-1);
+    expect(names.indexOf('Average')).toBeLessThan(names.indexOf('Join'));
   });
 });
