@@ -39,7 +39,7 @@ export interface BarReorder {
 }
 
 /** One thing a reorder can move inside a container: its key there, its outermost marked elements, and its middle. */
-interface Unit {
+export interface Unit {
   key: string;
   els: HTMLElement[];
   at: number;
@@ -109,7 +109,7 @@ export function useBarReorder({ root, order, onReorder, measure, keysOf }: BarRe
 }
 
 /** The container a press on `grabbed` reorders and the key it moves there: its own, or with `group` its group's. */
-function grabbedUnit(grabbed: Element, group: boolean): { container: string; key: string } {
+export function grabbedUnit(grabbed: Element, group: boolean): { container: string; key: string } {
   const at = grabbed.getAttribute(BAR_IN) ?? '';
   if (group && at !== '') return { container: at.includes('.') ? at.slice(0, at.lastIndexOf('.')) : '', key: barUnitKey(at) };
   return { container: at, key: grabbed.getAttribute(BAR_UNIT)! };
@@ -127,7 +127,7 @@ function keyIn(container: string, at: string, own: string): string | null {
 }
 
 /** `container`'s units as drawn under `root`, in document order: each key's outermost elements and its middle. */
-function containerUnits(root: HTMLElement, container: string, along: (p: BarPoint) => number): Unit[] {
+export function containerUnits(root: HTMLElement, container: string, along: (p: BarPoint) => number): Unit[] {
   const found = new Map<string, HTMLElement[]>();
   for (const el of root.querySelectorAll<HTMLElement>(`[${BAR_UNIT}]`)) {
     const key = keyIn(container, el.getAttribute(BAR_IN) ?? '', el.getAttribute(BAR_UNIT)!);
@@ -175,7 +175,7 @@ function markDrop(root: HTMLElement, units: readonly Unit[], from: number, to: n
  * `order` with the unit at `from` moved beside `target` in `container`'s list. With `full`, the container's whole
  * list, the move is made in it, so children nothing draws keep their places; else in the drawn `units`.
  */
-function movedInto(order: PrefOrder, container: string, full: readonly string[] | undefined, units: readonly Unit[], from: number, target: { unit: Unit; after: boolean }): PrefOrder {
+export function movedInto(order: PrefOrder, container: string, full: readonly string[] | undefined, units: readonly Unit[], from: number, target: { unit: Unit; after: boolean }): PrefOrder {
   const keys = full ?? units.map((unit) => unit.key);
   const moved = units[from]!.key;
   const at = keys.filter((key) => key !== moved).indexOf(target.unit.key);

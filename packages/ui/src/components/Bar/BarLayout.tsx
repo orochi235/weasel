@@ -9,6 +9,7 @@ import { barItems, barLead, drawBarItem, inBarMenu, splitBarItems } from './barI
 import { BarMarkContext } from './barOrder';
 import { BarOverflow } from './BarOverflow';
 import { useBarReorder } from './useBarReorder';
+import { useBarReorderKeys } from './useBarReorderKeys';
 import { BAR_LEAD, BAR_MORE, useBarOverflow } from './useBarOverflow';
 import s from './Bar.module.css';
 
@@ -140,12 +141,14 @@ function BarLine(props: BarLayoutProps) {
   const { bar, kept } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
   const { line, rest } = splitBarItems(shown, kept);
   const reorder = useBarReorder({ root: bar, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (_, p) => (vertical ? p.clientY : p.clientX) });
+  const keys = useBarReorderKeys({ root: bar, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical });
 
   return (
     <div
       {...rootAttrs}
       ref={bar}
       onPointerDownCapture={reorder.onPointerDownCapture}
+      onKeyDownCapture={keys.onKeyDownCapture}
       className={[s.bar, framed === 'segmented' ? s.segmented : framed && s.framed, className].filter(Boolean).join(' ')}
       data-orientation={orientation}
       data-overflow={menu ? 'menu' : undefined}
@@ -153,6 +156,7 @@ function BarLine(props: BarLayoutProps) {
       aria-label={label}
       aria-orientation={label === undefined ? undefined : orientation}
     >
+      {props.onReorder && <span role="status" className={s.status}>{keys.announcement}</span>}
       {leading && <span className={s.lead} aria-hidden="true" {...{ [BAR_LEAD]: '' }}>{leading}</span>}
       {line.map((item) => drawBarItem(item, vertical, attrs))}
       {rest.length > 0 && (

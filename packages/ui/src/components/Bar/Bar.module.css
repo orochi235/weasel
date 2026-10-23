@@ -327,3 +327,14 @@
 .bar[data-orientation='vertical'] :is(.cell, .unit)[data-bar-drop='after'] {
   box-shadow: 0 2px 0 var(--wzl-accent);
 }
+
+/* The live region a reorder announces in: out of sight, still read. */
+.status {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -10,6 +10,7 @@ import type { BarLayoutProps } from './BarLayout';
 import { BarOverflow } from './BarOverflow';
 import { BAR_ITEM, BAR_LEAD, BAR_MORE, fitting } from './useBarOverflow';
 import { useBarReorder } from './useBarReorder';
+import { useBarReorderKeys } from './useBarReorderKeys';
 import b from './Bar.module.css';
 import s from './BarAlong.module.css';
 
@@ -53,14 +54,16 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   };
   const first = leading != null ? 1 : 0;
   const reorder = useBarReorder({ root, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (el, p) => positionAt(along.band.current ?? el, run, p) });
+  const keys = useBarReorderKeys({ root, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical: false });
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     reorder.onPointerDownCapture(e);
     along.rootProps.onPointerDownCapture(e);
   };
 
   return (
-    <div {...rootAttrs} {...along.rootProps} onPointerDownCapture={onPointerDownCapture} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label}>
+    <div {...rootAttrs} {...along.rootProps} onPointerDownCapture={onPointerDownCapture} onKeyDownCapture={keys.onKeyDownCapture} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label}>
       <RunBand row={along} shape={shape} />
+      {props.onReorder && <span role="status" className={b.status}>{keys.announcement}</span>}
       <AlongContext.Provider value={null}>
         {leading != null && <span className={`${b.lead} ${s.item}`} aria-hidden="true" {...{ [BAR_LEAD]: '' }} style={place(0).style} data-clipped={place(0).clipped}>{leading}</span>}
         {line.map((item, i) => drawBarItem(item, false, attrs, place(first + i)))}
