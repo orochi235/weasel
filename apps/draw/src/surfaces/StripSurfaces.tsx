@@ -8,10 +8,8 @@ import { isSchemaAsset } from './types';
 
 const STRIP_DOCKS: readonly DockSpec[] = [{ id: 'strip', edge: 'top', className: 'wd-dock-strip' }];
 
-const SWITCH_MENUS: DockBar = { id: 'switch-menus', label: 'Switch menus', docks: ['strip'], float: true, render: () => <SwitchMenus /> };
-
 /**
- * The strip's toolbars: every asset that can be a bar or a menu, each drawn as one, plus the switch menus. Each may
+ * The strip's toolbars: every asset that can be a bar or a menu, each drawn as one. Each may
  * float over the workspace. An asset hidden or shown as a panel draws nothing but stays offered, so it keeps its place
  * for when it comes back.
  */
@@ -21,7 +19,7 @@ export function useStripBars(): DockBar[] {
 }
 
 function stripBars(bindings: readonly SurfaceBinding[]): DockBar[] {
-  const bars: DockBar[] = [SWITCH_MENUS];
+  const bars: DockBar[] = [];
   for (const { asset, surface, chrome, order, onReorder } of bindings) {
     if (!isSchemaAsset(asset) || !asset.surfaces.some((s) => s === 'bar' || s === 'menu')) continue;
     bars.push({
@@ -40,12 +38,18 @@ function stripBars(bindings: readonly SurfaceBinding[]): DockBar[] {
   return bars;
 }
 
-/** The strip's toolbars in a dock row along the top of `children`, laid out as `ui.toolbars` holds. */
+/**
+ * The strip's toolbars in a dock row along the top of `children`, laid out as `ui.toolbars` holds, and the switch
+ * actions and menus their context menus open.
+ */
 export function StripDock({ className, children }: { className?: string; children?: ReactNode }) {
   const [layout, setLayout] = usePref('ui.toolbars');
   return (
-    <ToolbarDock docks={STRIP_DOCKS} bars={useStripBars()} layout={layout} onLayoutChange={setLayout} movable className={className}>
-      {children}
-    </ToolbarDock>
+    <>
+      <SwitchMenus />
+      <ToolbarDock docks={STRIP_DOCKS} bars={useStripBars()} layout={layout} onLayoutChange={setLayout} movable className={className}>
+        {children}
+      </ToolbarDock>
+    </>
   );
 }
