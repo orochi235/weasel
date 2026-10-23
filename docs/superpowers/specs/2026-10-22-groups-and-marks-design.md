@@ -33,7 +33,7 @@ All 2026-10-22.
 
    | Action | Default binding | Does |
    |---|---|---|
-   | `select.direct` | `pointerDown` on a body with `mods: { mod: true }`, ranked above `select.pick` | selects the deepest pickable node under the pointer, past every group |
+   | `select.deep` | `pointerDown` on a body with `mods: { mod: true }`, ranked above `select.pick` | selects the deepest pickable node under the pointer, past every group |
    | `group.enter` | `doubleClick` on a body whose node has a group above it outside the entered one | enters the outermost such group |
    | `group.leave` | `key` Escape, and a `pointerDown` outside the entered group | leaves one level |
 
