@@ -5,6 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type RefObject,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -51,6 +52,16 @@ function borderBoxOf(entry: ResizeObserverEntry): { w: number; h: number } {
   return { w: entry.contentRect.width, h: entry.contentRect.height };
 }
 
+/** The box a container lays its children out in, as an observer's `contentRect` gives it. */
+function contentBoxOf(el: Element): { w: number; h: number } {
+  const css = getComputedStyle(el);
+  const px = (v: string) => Number.parseFloat(v) || 0;
+  return {
+    w: el.clientWidth - px(css.paddingLeft) - px(css.paddingRight),
+    h: el.clientHeight - px(css.paddingTop) - px(css.paddingBottom),
+  };
+}
+
 /** A pointerdown on one of these is the child's, not a drag. */
 function isInteractive(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -89,12 +100,18 @@ export function useFloatingPlacement({
 
   const item = useMemo(() => floatingItem(size, snapCorners), [size, snapCorners]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = panelRef.current;
     const parent = containerRef?.current ?? el?.offsetParent ?? el?.parentElement;
     if (!el || !parent) return;
-    // Sizes come off the entry, not the DOM: jsdom reports 0 for every
-    // clientWidth/offsetWidth, and an unmeasured item is withheld from layout.
+    // Measured before the first paint, since the observer's first report lands a frame later and the box has no place
+    // until then. jsdom reports 0 for every DOM size, so there only the observer's entries count.
+    const panel = { w: el.offsetWidth, h: el.offsetHeight };
+    const room = contentBoxOf(parent);
+    if (panel.w > 0 && room.w > 0) {
+      setSize(panel);
+      setContainer(room);
+    }
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.target === parent) {
