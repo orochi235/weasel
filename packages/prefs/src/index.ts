@@ -128,3 +128,4 @@ export {
   type PrefStringControl,
 } from './schema';
 export { mergePrefGroups } from './merge';
+export { orderPrefGroup, resolveOrder, type PrefOrder } from './order';

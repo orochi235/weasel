@@ -42,4 +42,6 @@ export interface PrefAction extends PrefBase<'action', undefined> {
 export interface PrefActions extends PrefBase<'actions', undefined> {
   /** The registry action group whose actions are drawn. */
   group: string;
+  /** Action keys in the order to draw them; one not named goes at the end. */
+  order?: readonly string[];
 }

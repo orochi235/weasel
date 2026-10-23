@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { actionItems, useActionsRegistry, type Action, type ActionItem } from '@weasel-js/core';
 import type { IconRef } from '@weasel-js/icons';
-import type { PrefAction, PrefActions, PrefLeaf } from '@weasel-js/prefs';
+import { resolveOrder, type PrefAction, type PrefActions, type PrefLeaf } from '@weasel-js/prefs';
 
 const NONE: readonly Action[] = Object.freeze([]);
 const noSubscribe = (): (() => void) => () => {};
@@ -39,7 +39,9 @@ export function actionsLeafActions(
   all: readonly Action[],
   { pick, only, icons, labels }: ActionsLeafOptions = {},
 ): PrefAction[] {
-  const items = pick ? pick(all) : all.filter((a) => a.group === leaf.group).flatMap(actionItems);
+  const picked = pick ? pick(all) : all.filter((a) => a.group === leaf.group).flatMap(actionItems);
+  const byKey = new Map(picked.map((item) => [item.key, item]));
+  const items = leaf.order ? resolveOrder([...byKey.keys()], leaf.order, 'end').map((key) => byKey.get(key)!) : picked;
   return items
     .filter((item) => !only || only.includes(item.key) || only.includes(item.action.id))
     .map((item) => {
