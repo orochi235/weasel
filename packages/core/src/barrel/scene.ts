@@ -68,9 +68,9 @@ export { swapOp } from '@weasel-js/history';
 // ─── Adapters: the contracts the interaction layer reads ────────────────────
 export * from '../core/adapters/types';
 
-// ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
+// ─── Scene primitive (kit-owned tree of marks and groups) ──────────────
 export {
-  createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId, SCENE_HISTORY_FORM,
+  createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId, hasChildren, isLeaf, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose,
   CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneSharedUnitScopes, sceneUnitScopes,
 } from '../core/scene';

@@ -99,7 +99,6 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       }
       const node = {
         kind: p.kind, id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent,
-        ...(p.kind === 'group' ? { children: [] } : {}),
       } as Node<TData, TLayer, TPose>;
       state.nodes.set(p.id, node);
       attach(p.id, p.parent, p.index);
@@ -153,7 +152,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
       // Order-independent: every clone carries its own parent and children.
       for (const n of p.nodes) {
-        const clone: Node<TData, TLayer, TPose> = n.kind === 'container'
+        const clone: Node<TData, TLayer, TPose> = n.children
           ? { ...n, children: [...n.children] }
           : { ...n };
         restoreNodeFunctions(clone, keys.get(n.id));

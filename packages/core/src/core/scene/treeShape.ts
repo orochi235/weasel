@@ -5,6 +5,7 @@ export function isLeaf(node: { children?: readonly NodeId[] }): boolean {
   return node.children === undefined || node.children.length === 0;
 }
 
+/** True for a node with at least one child; narrows `children` to present. */
 export function hasChildren<T extends { children?: readonly NodeId[] }>(
   node: T,
 ): node is T & { children: NodeId[] } {

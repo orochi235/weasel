@@ -25,4 +25,12 @@ describe('treeShape', () => {
     const c = scene.add({ kind: 'mark', id: 'c' as never, layer: 'main', pose: POSE, data: {}, parent: m });
     expect(scene.childrenOf(m)).toEqual([c]);
   });
+
+  it('answers an empty group with no children array, and takes its first child', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    const g = scene.add({ kind: 'group', id: 'g' as never, layer: 'main', pose: POSE, data: {} });
+    expect(scene.childrenOf(g)).toEqual([]);
+    const c = scene.add({ kind: 'mark', id: 'c' as never, layer: 'main', pose: POSE, data: {}, parent: g });
+    expect(scene.childrenOf(g)).toEqual([c]);
+  });
 });
