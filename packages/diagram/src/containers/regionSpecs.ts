@@ -66,7 +66,7 @@ export function regionSpecs<TLayer extends string>(
   const style = opts.style ?? DEFAULT_NODE_STYLE;
   const { layout, header } = containerShape(role, axis);
   const region: RegionSpec<TLayer> = {
-    id: opts.id as NodeId, kind: 'group', layer: opts.layer, pose, parent: (opts.parent ?? null) as NodeId | null,
+    id: opts.id as NodeId, kind: 'mark', layer: opts.layer, pose, parent: (opts.parent ?? null) as NodeId | null,
     data: regionData(role, axis, style, opts.fitted === true), layout: CONTAINER_LAYOUTS[layout],
   };
   if (title === null) return [region];

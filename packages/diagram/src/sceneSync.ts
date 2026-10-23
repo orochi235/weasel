@@ -4,13 +4,13 @@
  * reported back, so a consumer keeping the diagram as data can store it.
  * `diagramLayoutOf` reads the same report off a `diagramScene` build.
  */
+import { isBodyOrRegion, isDiagramBody } from './bodyNode';
 import { reconcileSpecs, useLatest, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { useEffect, useRef } from 'react';
 import { diagramContainerOf } from './containers/trait';
 import { diagramEdgeOf, layoutOwnsRoute, samePoints, type DiagramEdge, type EdgeEnd } from './edgeTrait';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
-import { diagramGroupOf } from './group';
 import type { LayoutPorts } from './layout';
 import { readRegions, regionChanges, type ContainerEdit, type RegionStanding } from './regionSync';
 import { isPinned } from './trait';
@@ -59,10 +59,11 @@ function readScene(scene: DiagramScene): Standing {
   const nodes = new Map<string, { x: number; y: number; parent: string | null }>();
   const routes = new Map<string, Route>();
   for (const n of scene.renderOrderNodes()) {
-    if (n.kind === 'group') {
-      if (diagramContainerOf(n) === null) nodes.set(n.id, { x: n.pose.x, y: n.pose.y, parent: n.parent });
+    if (isDiagramBody(n)) {
+      nodes.set(n.id, { x: n.pose.x, y: n.pose.y, parent: n.parent });
       continue;
     }
+    if (diagramContainerOf(n) !== null) continue;
     const edge = diagramEdgeOf(n);
     if (edge !== null) routes.set(n.id, routeOf(edge));
   }
@@ -81,7 +82,7 @@ export function diagramLayoutOf(specs: readonly DiagramSpec[]): { moves: NodeMov
   for (const s of specs) {
     const id = s.id;
     if (id === undefined) continue;
-    if (s.kind === 'group') {
+    if (isBodyOrRegion(s)) {
       const region = diagramContainerOf(s);
       const pinned = isPinned({ id, kind: s.kind, data: s.data });
       if (region !== null) {
@@ -89,7 +90,7 @@ export function diagramLayoutOf(specs: readonly DiagramSpec[]): { moves: NodeMov
           const { x, y, width, height } = s.pose;
           containers.push({ kind: 'box', id, box: { x, y, width, height } });
         }
-      } else if (diagramGroupOf(s) === null && !pinned) moves.push({ id, x: s.pose.x, y: s.pose.y });
+      } else if (!pinned) moves.push({ id, x: s.pose.x, y: s.pose.y });
       continue;
     }
     const edge = diagramEdgeOf(s);

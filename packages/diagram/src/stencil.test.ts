@@ -36,7 +36,7 @@ describe('stencilBuild', () => {
     const [box, text, ...rest] = insertedNodes(ops as never);
     expect(rest).toEqual([]);
     expect(box!.id).toBe(id);
-    expect(box!.kind).toBe('group');
+    expect(box!.kind).toBe('mark');
     expect(box!.data.diagram?.outline).toBe('diamond');
     expect(box!.pose.width).toBeGreaterThanOrEqual(diamond.size.width);
     expect(box!.pose.height).toBeGreaterThanOrEqual(diamond.size.height);
@@ -57,7 +57,7 @@ describe('stencilBuild', () => {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
     const { id, ops } = stencilBuild(byId('decision'), { x: 10, y: 20, width: 0, height: 0 }, { layer: 'main', newId: () => scene.mintId() });
     commitOps({ scene } as unknown as ActionDeps, ops, 'Insert Decision');
-    expect(scene.get(id as never)?.kind).toBe('group');
+    expect(scene.get(id as never)?.kind).toBe('mark');
     expect(scene.childrenOf(id as never)).toHaveLength(1);
     expect(scene.undo()).toBe(true);
     expect(scene.get(id as never)).toBeUndefined();
@@ -122,7 +122,7 @@ describe('useStencilInsert', () => {
     const { scene, dep } = insertDep();
     const id = dep.commit({ x: 0, y: 0, width: 0, height: 0 }, { kind: stencilKind('terminal') } as never);
     expect(id).not.toBeNull();
-    expect(scene.get(id!)?.kind).toBe('group');
+    expect(scene.get(id!)?.kind).toBe('mark');
     expect(scene.historyEntries().map((e) => e.label)).toEqual(['Insert Terminal']);
     expect(scene.undo()).toBe(true);
     expect(scene.get(id!)).toBeUndefined();

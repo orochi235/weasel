@@ -299,7 +299,7 @@ describe('buildBody', () => {
       { kind: 'label', text: 'op' },
       { kind: 'ports', left: [{ id: 'in' }] },
     ]);
-    expect(specs.map((n) => n.kind)).toEqual(['group', 'mark']);
+    expect(specs.map((n) => n.kind)).toEqual(['mark', 'mark']);
   });
 
   it('hands the container the trait its rows imply', () => {
