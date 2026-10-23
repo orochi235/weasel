@@ -1,7 +1,7 @@
 import { DEFAULT_INSET } from 'windease';
 import { dragPlacement, floatingItem } from '../../floating/dragPlacement';
 import { DOCK_BAR, drawnBars, dropAt, locateBar, measureDocks, type DockBox, type DockDropMark, type DockPoint } from './dockDrop';
-import { homeDock, type BarTarget, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
+import { canEnter, homeDock, isVerticalEdge, type BarTarget, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
 
 /** How far across its dock row a docked bar is dragged before it lifts off to float, in pixels. */
 export const TEAR_PX = 24;
@@ -52,8 +52,7 @@ export function floatHere(root: HTMLElement, layer: HTMLElement, id: string, ori
 export function floatWhereDrawn(root: HTMLElement, layer: HTMLElement, layout: ToolbarLayout, docks: readonly DockSpec[], id: string): FloatPlace | null {
   const at = locateBar(layout, id);
   if (!at) return null;
-  const edge = docks.find((d) => d.id === at.dock)?.edge;
-  return floatHere(root, layer, id, edge === 'left' || edge === 'right' ? 'vertical' : 'horizontal');
+  return floatHere(root, layer, id, isVerticalEdge(docks.find((d) => d.id === at.dock)?.edge) ? 'vertical' : 'horizontal');
 }
 
 /** Measures what a drag of `bar` reads: the docks, the row it sits in, and its box in `layer`. */
@@ -71,7 +70,7 @@ export function grabBar(root: HTMLElement, layer: HTMLElement, docks: readonly D
   return {
     boxes,
     drawn: drawnBars(root),
-    empties: docks.some((d) => bar.docks.includes(d.id) && !layout.docks[d.id]?.length) ? null : [],
+    empties: docks.some((d) => canEnter(bar, d) && !layout.docks[d.id]?.length) ? null : [],
     row,
     from: floatHere(root, layer, bar.id, orientation),
     size: { w: r?.width ?? 0, h: r?.height ?? 0 },

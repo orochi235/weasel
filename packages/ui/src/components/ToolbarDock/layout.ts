@@ -21,7 +21,7 @@ export interface DockBar {
   docks: readonly string[];
   /** Whether the bar may float free of every dock. */
   float?: boolean;
-  /** Whether the bar may be turned vertical. */
+  /** Whether the bar may run vertical, which a left or right dock needs of every bar it holds. */
   vertical?: boolean;
   render: (orientation: BarOrientation) => ReactNode;
 }
@@ -43,10 +43,18 @@ export interface ToolbarLayout {
 /** Where a bar goes: a slot in a dock's row, a new row of its own at `row` with `newRow`, or a floating place. */
 export type BarTarget = { dock: string; row: number; index: number; newRow?: boolean } | { float: FloatPlace };
 
+/** Whether a dock on `edge` lays its bars vertically. */
+export const isVerticalEdge = (edge: DockEdge | undefined): boolean => edge === 'left' || edge === 'right';
+
+/** Whether `bar` may sit in `dock`: the bar lists it, and a left or right dock holds only a bar with `vertical`. */
+export function canEnter(bar: DockBar, dock: { id: string; edge: DockEdge }): boolean {
+  return bar.docks.includes(dock.id) && (bar.vertical === true || !isVerticalEdge(dock.edge));
+}
+
 /**
  * Reconciles a stored layout with the docks and bars the app has now. Every bar ends up
  * placed once; unknown ids are dropped, empty rows removed, and a bar that has nowhere
- * valid to sit goes to the end of the last row of its first allowed dock.
+ * valid to sit goes to the end of the last row of its home dock (see {@link homeDock}).
  */
 export function resolveLayout(
   docks: readonly DockSpec[],
@@ -62,7 +70,7 @@ export function resolveLayout(
     for (const row of layout?.docks[d.id] ?? []) {
       const kept = row.filter((id) => {
         const bar = byId.get(id);
-        if (!bar || placed.has(id) || !bar.docks.includes(d.id)) return false;
+        if (!bar || placed.has(id) || !canEnter(bar, d)) return false;
         placed.add(id);
         return true;
       });
@@ -90,11 +98,11 @@ export function resolveLayout(
   return out;
 }
 
-/** The dock a bar goes to when nothing else places it: the first of its own `docks` that exists. */
+/** The dock a bar goes to when nothing else places it: the first of its own `docks` that exists and it may enter. */
 export function homeDock(docks: readonly DockSpec[], bar: DockBar): DockSpec | undefined {
   for (const id of bar.docks) {
     const dock = docks.find((d) => d.id === id);
-    if (dock) return dock;
+    if (dock && canEnter(bar, dock)) return dock;
   }
   return undefined;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { moveBar, resolveLayout, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
+import { canEnter, homeDock, moveBar, resolveLayout, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
 
 const docks: DockSpec[] = [
   { id: 'top', edge: 'top' },
@@ -9,6 +9,7 @@ const bar = (id: string, extra: Partial<DockBar> = {}): DockBar => ({
   id,
   label: id,
   docks: ['top', 'left'],
+  vertical: true,
   render: () => null,
   ...extra,
 });
@@ -93,6 +94,40 @@ describe('resolveLayout', () => {
     const out = resolveLayout(docks, [bar('a', { float: true })], stored);
     expect(out.floating).toEqual({ a: place });
     expect(out.docks).toEqual({ top: [], left: [] });
+  });
+});
+
+describe('a bar that may not run vertical', () => {
+  const flat = (id: string, extra: Partial<DockBar> = {}) => bar(id, { vertical: undefined, ...extra });
+
+  it('may enter only the docks it lists, and a left or right one only with vertical', () => {
+    expect(canEnter(bar('a'), { id: 'left', edge: 'left' })).toBe(true);
+    expect(canEnter(flat('a'), { id: 'left', edge: 'left' })).toBe(false);
+    expect(canEnter(flat('a', { docks: ['side'] }), { id: 'side', edge: 'right' })).toBe(false);
+    expect(canEnter(flat('a'), { id: 'top', edge: 'top' })).toBe(true);
+    expect(canEnter(bar('a'), { id: 'bottom', edge: 'bottom' })).toBe(false);
+  });
+
+  it('is moved out of a left dock a stored layout put it in, to its home dock', () => {
+    const stored: ToolbarLayout = { docks: { top: [['b']], left: [['a', 'v']] }, floating: {} };
+    const out = resolveLayout(docks, [flat('a'), bar('b'), bar('v')], stored);
+    expect(out.docks).toEqual({ top: [['b', 'a']], left: [['v']] });
+  });
+
+  it('skips a left dock it lists first when finding its home dock', () => {
+    const a = flat('a', { docks: ['left', 'top'] });
+    expect(homeDock(docks, a)?.id).toBe('top');
+    expect(resolveLayout(docks, [a], undefined).docks).toEqual({ top: [['a']], left: [] });
+  });
+
+  it('floats, if it may, when every dock it lists runs vertical', () => {
+    const out = resolveLayout(docks, [flat('a', { docks: ['left'], float: true })], undefined);
+    expect(out).toEqual({ docks: { top: [], left: [] }, floating: { a: { x: 0, y: 0, anchor: null, orientation: 'horizontal' } } });
+  });
+
+  it('is still moved into a left dock by moveBar, which checks nothing', () => {
+    const layout: ToolbarLayout = { docks: { top: [['a']], left: [] }, floating: {} };
+    expect(moveBar(layout, 'a', { dock: 'left', row: 0, index: 0 }).docks).toEqual({ top: [], left: [['a']] });
   });
 });
 

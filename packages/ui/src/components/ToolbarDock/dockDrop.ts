@@ -1,5 +1,5 @@
 import { dropIndex } from '../Bar/useBarReorder';
-import { moveBar, type BarTarget, type DockBar, type DockSpec, type ToolbarLayout } from './layout';
+import { canEnter, isVerticalEdge, moveBar, type BarTarget, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 
 /** Marks the element a dock draws round each bar, holding the bar's id. */
 export const DOCK_BAR = 'data-dock-bar';
@@ -17,6 +17,7 @@ interface RowBox {
 /** A dock as measured at a drag's start. */
 export interface DockBox {
   id: string;
+  edge: DockEdge;
   vertical: boolean;
   along: readonly [number, number];
   rows: RowBox[];
@@ -27,8 +28,6 @@ export interface DockPoint {
   clientX: number;
   clientY: number;
 }
-
-const isVertical = (spec: DockSpec | undefined) => spec?.edge === 'left' || spec?.edge === 'right';
 
 /** Whether the element a dock draws round a bar holds anything: a bar drawn as nothing keeps its place but no room. */
 const isDrawn = (slot: Element): boolean => slot.firstChild !== null;
@@ -62,7 +61,8 @@ export function spreadTarget(layout: ToolbarLayout, barId: string, to: BarTarget
 export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): DockBox[] {
   return Array.from(root.querySelectorAll<HTMLElement>('[data-dock]'), (el) => {
     const id = el.getAttribute('data-dock')!;
-    const vertical = isVertical(docks.find((d) => d.id === id));
+    const edge = docks.find((d) => d.id === id)?.edge ?? 'top';
+    const vertical = isVerticalEdge(edge);
     const box = el.getBoundingClientRect();
     const rows = Array.from(el.querySelectorAll<HTMLElement>(':scope > [data-dock-row]'), (row) => {
       const r = row.getBoundingClientRect();
@@ -73,7 +73,7 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
       });
       return vertical ? { start: r.left, end: r.right, bars } : { start: r.top, end: r.bottom, bars };
     });
-    return { id, vertical, along: vertical ? [box.top, box.bottom] : [box.left, box.right], rows } as DockBox;
+    return { id, edge, vertical, along: vertical ? [box.top, box.bottom] : [box.left, box.right], rows } as DockBox;
   });
 }
 
@@ -90,7 +90,7 @@ export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, re
     const last = dock.rows.at(-1);
     if (!first || !last || along < dock.along[0] || along > dock.along[1]) continue;
     if (cross < first.start - Math.max(reach, (first.end - first.start) / 2) || cross > last.end + Math.max(reach, (last.end - last.start) / 2)) continue;
-    if (!bar.docks.includes(dock.id)) return null;
+    if (!canEnter(bar, dock)) return null;
     if (cross < first.start || cross >= last.end) {
       const row = cross < first.start ? 0 : dock.rows.length;
       return { target: { dock: dock.id, row, index: 0, newRow: true }, mark: { dock: dock.id, row } };
@@ -124,23 +124,30 @@ export function locateBar(layout: ToolbarLayout, barId: string): { dock: string;
   return null;
 }
 
+/** The keys that move a bar along its row, back then on, and across rows, back then on, in a dock on `edge`. */
+const keysFor = (edge: DockEdge | undefined) =>
+  isVerticalEdge(edge) ? ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'] : ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+
 /**
- * Where Alt+`key` sends `bar`: one slot along its row for Left and Right; for Up and Down the previous or next row of
- * its dock at the same index, and past its dock's first or last row the previous or next dock it may sit in: the end of
- * that dock's last row going up, of its first row going down. Null where it has nowhere to go.
+ * Where Alt+`key` sends `bar`. In a top or bottom dock: one slot along its row for Left and Right; for Up and Down the
+ * previous or next row of its dock at the same index, and past its dock's first or last row the previous or next dock
+ * it may enter: the end of that dock's last row going back, of its first row going on. A left or right dock turns
+ * this a quarter: Up and Down move along the column, Left and Right across columns and docks. Null where it has
+ * nowhere to go.
  */
 export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, key: string): BarTarget | null {
   const at = locateBar(layout, bar.id);
   if (!at) return null;
   const rows = layout.docks[at.dock]!;
-  if (key === 'ArrowLeft' || key === 'ArrowRight') {
-    const index = at.index + (key === 'ArrowLeft' ? -1 : 1);
+  const [alongBack, alongOn, acrossBack] = keysFor(docks.find((d) => d.id === at.dock)?.edge);
+  if (key === alongBack || key === alongOn) {
+    const index = at.index + (key === alongBack ? -1 : 1);
     return index < 0 || index >= rows[at.row]!.length ? null : { ...at, index };
   }
-  const step = key === 'ArrowUp' ? -1 : 1;
+  const step = key === acrossBack ? -1 : 1;
   const row = rows[at.row + step];
   if (row) return { dock: at.dock, row: at.row + step, index: Math.min(at.index, row.length) };
-  const allowed = docks.filter((d) => bar.docks.includes(d.id)).map((d) => d.id);
+  const allowed = docks.filter((d) => canEnter(bar, d)).map((d) => d.id);
   const dock = allowed[allowed.indexOf(at.dock) + step];
   if (dock === undefined) return null;
   const into = layout.docks[dock] ?? [];
@@ -149,9 +156,10 @@ export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar
 }
 
 /** What the dock announces after a keyboard move: where the bar landed, after `state` where it is given. */
-export function placeWords(layout: ToolbarLayout, bar: DockBar, state?: string): string {
+export function placeWords(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, state?: string): string {
   const at = locateBar(layout, bar.id);
   if (!at) return '';
   const name = state ? `${bar.label} toolbar ${state}` : `${bar.label} toolbar`;
-  return `${name}, row ${at.row + 1}, position ${at.index + 1} of ${layout.docks[at.dock]![at.row]!.length}`;
+  const line = isVerticalEdge(docks.find((d) => d.id === at.dock)?.edge) ? 'column' : 'row';
+  return `${name}, ${line} ${at.row + 1}, position ${at.index + 1} of ${layout.docks[at.dock]![at.row]!.length}`;
 }

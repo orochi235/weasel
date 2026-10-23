@@ -13,11 +13,12 @@ let layouts: ToolbarLayout[] = [];
 
 const docks: DockSpec[] = [{ id: 'top', edge: 'top' }];
 
-const bar = (id: string, label: string, float = false): DockBar => ({
+const bar = (id: string, label: string, float = false, extra: Partial<DockBar> = {}): DockBar => ({
   id,
   label,
   docks: ['top'],
   float,
+  ...extra,
   render: (orientation: BarOrientation) => (
     <BarLayout
       label={label}
@@ -34,12 +35,12 @@ const bars = [bar('file', 'File'), bar('view', 'View'), bar('shape', 'Shape')];
 const floaters = [bar('file', 'File', true), bar('view', 'View', true), bar('shape', 'Shape', true)];
 const STACKED: ToolbarLayout = { docks: { top: [['file', 'view'], ['shape']] }, floating: {} };
 
-function Host({ offered = bars, initial = STACKED }: { offered?: DockBar[]; initial?: ToolbarLayout }) {
+function Host({ offered = bars, initial = STACKED, at = docks }: { offered?: DockBar[]; initial?: ToolbarLayout; at?: DockSpec[] }) {
   const [layout, setLayout] = useState<ToolbarLayout>(initial);
   return (
     <div className={s.frame}>
       <ToolbarDock
-        docks={docks}
+        docks={at}
         bars={offered}
         layout={layout}
         movable
@@ -154,4 +155,26 @@ test('a floating bar dropped on a dock row docks there once', async () => {
   expect(layouts[0]).toEqual({ docks: { top: [['view'], ['shape', 'file']] }, floating: {} });
   expect(floatingBar('file')).toBeNull();
   expect(rowIds()).toEqual([['view'], ['shape', 'file']]);
+});
+
+test('a vertical bar runs down a left dock, a bar that may not is refused there, and the vertical one runs flat again in the top dock', async () => {
+  const sides: DockSpec[] = [{ id: 'top', edge: 'top' }, { id: 'left', edge: 'left' }];
+  const offered = [bar('file', 'File', false, { docks: ['top', 'left'] }), bar('tools', 'Tools', false, { docks: ['top', 'left'], vertical: true })];
+  render(<Host at={sides} offered={offered} initial={{ docks: { top: [['file']], left: [['tools']] }, floating: {} }} />);
+  const tools = screen.getByRole('toolbar', { name: 'Tools' });
+  expect(tools).toHaveAttribute('aria-orientation', 'vertical');
+  expect(tools.getBoundingClientRect().height).toBeGreaterThan(tools.getBoundingClientRect().width);
+
+  const onTools = line(mid(handle('File')), mid(tools));
+  await commands.pointer([to(onTools[0]!), { down: true }, ...onTools.slice(1).map(to)]);
+  expect(document.querySelector('[data-dock="left"]')).toHaveAttribute('data-dock-unavailable');
+  expect(document.querySelector('[data-dock-drop]')).toBeNull();
+  await commands.pointer([{ up: true }]);
+  expect(layouts).toEqual([]);
+
+  const file = document.querySelector('[data-dock-bar="file"]')!.getBoundingClientRect();
+  const pastFile = line(mid(handle('Tools')), { x: file.right - 4, y: file.top + file.height / 2 });
+  await commands.pointer([to(pastFile[0]!), { down: true }, ...pastFile.slice(1).map(to), { up: true }]);
+  expect(layouts).toEqual([{ docks: { top: [['file', 'tools']], left: [] }, floating: {} }]);
+  expect(screen.getByRole('toolbar', { name: 'Tools' })).toHaveAttribute('aria-orientation', 'horizontal');
 });

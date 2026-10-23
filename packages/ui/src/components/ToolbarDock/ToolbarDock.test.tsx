@@ -10,11 +10,12 @@ const docks: DockSpec[] = [
   { id: 'left', edge: 'left' },
 ];
 
-function bar(id: string, label: string, lead?: PrefBarLead): DockBar {
+function bar(id: string, label: string, lead?: PrefBarLead, vertical?: boolean): DockBar {
   return {
     id,
     label,
     docks: ['top', 'left'],
+    vertical,
     render: (orientation: BarOrientation) => (
       <BarLayout
         label={label}
@@ -28,7 +29,7 @@ function bar(id: string, label: string, lead?: PrefBarLead): DockBar {
   };
 }
 
-const bars = [bar('file', 'File', 'label'), bar('view', 'View', 'label'), bar('shape', 'Shape')];
+const bars = [bar('file', 'File', 'label'), bar('view', 'View', 'label'), bar('shape', 'Shape', undefined, true)];
 const layout: ToolbarLayout = { docks: { top: [['file', 'view'], ['shape']] }, floating: {} };
 
 describe('ToolbarDock', () => {
@@ -51,6 +52,13 @@ describe('ToolbarDock', () => {
     render(<ToolbarDock docks={docks} bars={bars} layout={{ docks: { left: [['shape']] }, floating: {} }} />);
     expect(screen.getByRole('toolbar', { name: 'Shape' })).toHaveAttribute('aria-orientation', 'vertical');
     expect(screen.getByRole('toolbar', { name: 'File' })).toHaveAttribute('aria-orientation', 'horizontal');
+  });
+
+  it('draws a bar a layout put in a left dock in its home dock instead, horizontal, when it may not run vertical', () => {
+    const { container } = render(<ToolbarDock docks={docks} bars={bars} layout={{ docks: { left: [['file', 'shape']] }, floating: {} }} />);
+    expect(container.querySelector('[data-dock="top"] [data-dock-bar="file"]')).not.toBeNull();
+    expect(screen.getByRole('toolbar', { name: 'File' })).toHaveAttribute('aria-orientation', 'horizontal');
+    expect(container.querySelector('[data-dock="left"] [data-dock-bar="shape"]')).not.toBeNull();
   });
 
   it('keeps a hidden, unfocusable lead on a bar when the dock is not movable', () => {

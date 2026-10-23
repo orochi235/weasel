@@ -51,6 +51,7 @@ function bar(id: string, extra: Partial<DockBar> = {}, nodes?: readonly BarNode[
     id,
     label,
     docks: ['top', 'left', 'bottom'],
+    vertical: true,
     render: (orientation: BarOrientation) => (
       <BarLayout
         label={label}
@@ -246,10 +247,10 @@ describe('moving a bar from its handle with Alt+arrows', () => {
     expect(document.activeElement).toBe(handle('File'));
   });
 
-  it('moves past the first row into the last row of the previous dock it may sit in, at that row’s end', () => {
+  it('moves past the first column into the last row of the previous dock it may sit in, at that row’s end', () => {
     const onChange = setup(start([['file'], ['view']], [['shape']], []));
     handle('Shape').focus();
-    key(handle('Shape'), 'ArrowUp');
+    key(handle('Shape'), 'ArrowLeft');
     expect(onChange.mock.calls[0]![0].docks).toEqual({ top: [['file'], ['view', 'shape']], left: [], bottom: [] });
     expect(document.activeElement).toBe(handle('Shape'));
   });
@@ -277,6 +278,107 @@ describe('moving a bar from its handle with Alt+arrows', () => {
     key(screen.getByRole('button', { name: 'a' }), 'ArrowRight');
     expect(items).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledTimes(1);
+  });
+});
+
+const flat = bar('flat', { vertical: undefined });
+
+describe('a left dock', () => {
+  const key = (el: Element, k: string) => act(() => void fireEvent.keyDown(el, { key: k, altKey: true }));
+  // A floating bar is placed from what a ResizeObserver reports, which jsdom has none of.
+  const realRO = globalThis.ResizeObserver;
+  beforeAll(() => {
+    globalThis.ResizeObserver = class {
+      constructor(private cb: ResizeObserverCallback) {}
+      observe(target: Element) {
+        this.cb([{ target, contentRect: { width: 100, height: 30 } } as ResizeObserverEntry], this as unknown as ResizeObserver);
+      }
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  });
+  afterAll(() => {
+    globalThis.ResizeObserver = realRO;
+  });
+
+  it('refuses a bar that may not run vertical, marking the dock unavailable for the drag', () => {
+    const onChange = setup(start([['flat', 'file']], [['shape']]), [...bars, flat]);
+    press(handle('Flat'), [50, 15], [[50, 30], [15, 180]]);
+    expect(document.querySelector('[data-dock="left"]')).toHaveAttribute('data-dock-unavailable');
+    expect(document.querySelector('[data-dock="top"]')).not.toHaveAttribute('data-dock-unavailable');
+    expect(document.querySelector('[data-dock-drop]')).toBeNull();
+    release([15, 180]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('drops along a column by y', () => {
+    const onChange = setup(start([], [['file', 'view', 'shape']]));
+    press(handle('File'), [15, 150], [[15, 160], [15, 360]]);
+    expect(wrapper('shape')).toHaveAttribute('data-dock-drop', 'after');
+    release([15, 360]);
+    expect(onChange.mock.calls[0]![0].docks.left).toEqual([['view', 'shape', 'file']]);
+  });
+
+  it('drops across columns by x', () => {
+    const onChange = setup(start([], [['file'], ['view']]));
+    press(handle('File'), [15, 150], [[25, 150], [45, 250]]);
+    release([45, 250]);
+    expect(onChange.mock.calls[0]![0].docks.left).toEqual([['view', 'file']]);
+  });
+
+  it('makes a new column right of the last, within half a column of it', () => {
+    const onChange = setup(start([], [['file', 'view']]));
+    press(handle('File'), [15, 150], [[25, 150], [40, 150]]);
+    expect(document.querySelector('[data-dock="left"] [data-dock-drop="row"]')).not.toBeNull();
+    release([40, 150]);
+    expect(onChange.mock.calls[0]![0].docks.left).toEqual([['view'], ['file']]);
+  });
+
+  it('moves a bar along its column with Alt+Up and Alt+Down, announcing the column', () => {
+    const onChange = setup(start([], [['file', 'view', 'shape']]));
+    key(handle('File'), 'ArrowDown');
+    expect(onChange.mock.calls[0]![0].docks.left).toEqual([['view', 'file', 'shape']]);
+    expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('File toolbar, column 1, position 2 of 3');
+    key(handle('File'), 'ArrowUp');
+    expect(onChange.mock.calls[1]![0].docks.left).toEqual([['file', 'view', 'shape']]);
+  });
+
+  it('moves a bar across columns with Alt+Left and Alt+Right', () => {
+    const onChange = setup(start([], [['file', 'view'], ['shape']]));
+    key(handle('View'), 'ArrowRight');
+    expect(onChange.mock.calls[0]![0].docks.left).toEqual([['file'], ['shape', 'view']]);
+    key(handle('View'), 'ArrowLeft');
+    expect(onChange.mock.calls[1]![0].docks.left).toEqual([['file', 'view'], ['shape']]);
+  });
+
+  it('moves past its last column into the next dock with Alt+Right', () => {
+    const onChange = setup(start([['file']], [['shape']], [['view']]));
+    key(handle('Shape'), 'ArrowRight');
+    expect(onChange.mock.calls[0]![0].docks).toEqual({ top: [['file']], left: [], bottom: [['view', 'shape']] });
+  });
+
+  it('is skipped by Alt+arrows for a bar that may not run vertical', () => {
+    const onChange = setup(start([['file', 'flat']], [['shape']], [['view']]), [...bars, flat]);
+    key(handle('Flat'), 'ArrowDown');
+    expect(onChange.mock.calls[0]![0].docks).toEqual({ top: [['file']], left: [['shape']], bottom: [['view', 'flat']] });
+  });
+
+  it('floats a bar vertical with Alt+Enter, and docks it horizontal in a top dock with Alt+Enter again', () => {
+    const onChange = setup(start([['file']], [['shape']]), [bars[0]!, bar('shape', { float: true })]);
+    key(handle('Shape'), 'Enter');
+    expect(onChange.mock.calls[0]![0].floating.shape).toMatchObject({ orientation: 'vertical' });
+    expect(screen.getByRole('toolbar', { name: 'Shape' })).toHaveAttribute('aria-orientation', 'vertical');
+    key(handle('Shape'), 'Enter');
+    expect(onChange.mock.calls[1]![0].docks.top).toEqual([['file', 'shape']]);
+    expect(screen.getByRole('toolbar', { name: 'Shape' })).toHaveAttribute('aria-orientation', 'horizontal');
+  });
+
+  it('tears a bar off across its column, by x, and floats it vertical', () => {
+    const onChange = setup(start([['file']], [['shape']]), [bars[0]!, bar('shape', { float: true })]);
+    press(handle('Shape'), [15, 150], [[15, 160], [60, 160], [120, 160]]);
+    expect(document.querySelector('[data-dock-floating][data-dock-bar="shape"]')).not.toBeNull();
+    release([120, 160]);
+    expect(onChange.mock.calls[0]![0].floating.shape).toMatchObject({ orientation: 'vertical' });
   });
 });
 

@@ -1,0 +1,28 @@
+/* The dock under test: a fixed box, so its docks have edges to sit along. */
+.frame {
+  inline-size: 880px;
+  max-inline-size: 100%;
+  block-size: 440px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface);
+  overflow: hidden;
+}
+
+.workspace {
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.readout {
+  margin: 0;
+  max-block-size: 440px;
+  overflow: auto;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  white-space: pre;
+}

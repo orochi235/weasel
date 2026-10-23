@@ -5,7 +5,7 @@ import { swallowNextClick } from '../../useReorderDragList';
 import { BAR_LEAD } from '../Bar/useBarOverflow';
 import { DOCK_BAR, drawnBars, drawnLayout, keyTarget, movedLayout, placeWords, spreadTarget, type DockDropMark } from './dockDrop';
 import { floatWhereDrawn, grabBar, homeTarget, measureEmpties, tearStep, type DockGrab } from './dockTear';
-import type { DockBar, DockSpec, FloatPlace, ToolbarLayout } from './layout';
+import { canEnter, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
 
 /**
  * What a drag in progress shows: the bar it lifted, the drawn docks that bar may not enter, where it would drop, and
@@ -113,7 +113,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
       onActivate: () => {
         grab = grabBar(el, into, latest.current.docks, bar, latest.current.layout);
         setHeld(null);
-        const unavailable = new Set(grab.boxes.filter((d) => !bar.docks.includes(d.id)).map((d) => d.id));
+        const unavailable = new Set(grab.boxes.filter((d) => !canEnter(bar, d)).map((d) => d.id));
         setView({ barId, unavailable, drop: null, float: grab.row ? null : grab.from, size: grab.size });
       },
       onMove: (ev) => {
@@ -146,7 +146,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
     if (was.floating[bar.id]) {
       const to = homeTarget(was, specs, bar);
       const next = to && movedLayout(was, bar.id, spreadTarget(was, bar.id, to, drawn));
-      return next && { next, words: placeWords(drawnLayout(next, drawn, bar.id), bar, 'docked') };
+      return next && { next, words: placeWords(drawnLayout(next, drawn, bar.id), specs, bar, 'docked') };
     }
     const place = root.current && layer.current && floatWhereDrawn(root.current, layer.current, was, specs, bar.id);
     const next = place && movedLayout(was, bar.id, { float: place });
@@ -166,7 +166,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
     else {
       const to = keyTarget(drawnLayout(was, drawn, barId), specs, bar, e.key);
       const next = to && movedLayout(was, barId, spreadTarget(was, barId, to, drawn));
-      moved = next && { next, words: placeWords(drawnLayout(next, drawn, barId), bar) };
+      moved = next && { next, words: placeWords(drawnLayout(next, drawn, barId), specs, bar) };
     }
     if (!moved) return;
     refocus.current = barId;
