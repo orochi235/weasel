@@ -13,7 +13,10 @@ export interface DockSpec {
   className?: string;
 }
 
-/** A toolbar the host offers, and the docks it may sit in. */
+/**
+ * A toolbar the host offers, and the docks it may sit in. The bar's own list, not the dock, decides where it may go,
+ * and a left or right dock takes it only with `vertical`.
+ */
 export interface DockBar {
   id: string;
   label: string;

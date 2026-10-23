@@ -59,7 +59,8 @@ const same = (a: DockDropMark | FloatPlace | null, b: DockDropMark | FloatPlace 
  * in `view.unavailable`, and `view.drop` says where it would land. A bar that may float tears off its dock past
  * `TEAR_PX` and floats under the pointer in `view.float`; over a dock it may enter it drops into that dock again. The
  * release calls `onLayoutChange` once, and the click it raises is swallowed; Escape cancels, and a drop where the bar
- * already is calls nothing. Alt+arrows on a focused handle move the bar by a slot, a row, or a dock, and Alt+Enter
+ * already is calls nothing. The move is drawn until `layout` is a new object, which is how a host accepts it; a host
+ * that ignores a move keeps seeing it until its next layout. Alt+arrows on a focused handle move the bar by a slot, a row, or a dock, and Alt+Enter
  * floats it where it is or docks it again; either keeps focus on the handle and sets `announcement`. A bar drawn as
  * nothing is stepped over and keeps its place.
  */

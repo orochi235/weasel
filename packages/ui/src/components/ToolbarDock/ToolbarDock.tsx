@@ -15,7 +15,10 @@ export interface ToolbarDockProps {
   bars: readonly DockBar[];
   /** Where each bar sits. Reconciled with `docks` and `bars`, so a stale or partial layout is fine. */
   layout?: ToolbarLayout;
-  /** Called with the layout a move settles on. */
+  /**
+   * Called once with the layout a move settles on. To accept it, hand back a new `layout` object. The dock keeps
+   * drawing the move until its next `layout`, so a host that ignores one goes on seeing it until then.
+   */
   onLayoutChange?: (layout: ToolbarLayout) => void;
   /** Makes each bar's lead a handle that moves it: dragged, or with Alt+arrows once focused, and Alt+Enter to float or dock a bar with `float`. */
   movable?: boolean;
@@ -27,11 +30,17 @@ export interface ToolbarDockProps {
 const EDGES: readonly DockEdge[] = ['top', 'left', 'right', 'bottom'];
 
 /**
- * Toolbars laid out in docks round a workspace, which fills the middle. Each dock holds rows of bars: a top or
- * bottom dock stacks its rows, and a left or right dock sets them side by side as columns with each bar drawn
- * vertical. Only a bar with `vertical` enters a left or right dock; a layout placing any other there sends it to its
- * home dock, a drag over one shows it unavailable, and Alt+arrows skip it. An edge with no bars takes no room. A bar whose `render` gives null, or draws nothing, takes none either, and keeps
- * its place in the layout.
+ * Toolbars laid out in docks round a workspace, which fills the middle. The host decides where bars may go: it
+ * declares the docks, and each bar lists the docks it may sit in, so a user can only put a bar somewhere the app
+ * offers. Each dock holds rows of bars: a top or bottom dock stacks its rows, and a left or right dock sets them side
+ * by side as columns with each bar drawn vertical. Only a bar with `vertical` enters a left or right dock; a layout
+ * placing any other there sends it to its home dock, a drag over one shows it unavailable, and Alt+arrows skip it. An
+ * edge with no bars takes no room.
+ *
+ * The layout is the user's, so the host keeps it, typically as a user pref; the kit persists nothing. A stored layout
+ * is a hint, reconciled with the docks and bars on offer now (see {@link resolveLayout}). A host passes every bar it
+ * knows, including one it currently hides: a bar whose `render` gives null, or draws nothing, takes no room and keeps
+ * its place in the layout for when it comes back.
  *
  * A bar with `float` may also float over the whole dock, workspace and docks alike: dragged off its dock row, or
  * with Alt+Enter on its handle, and docked again by dropping it on a dock or by Alt+Enter once more. A floating bar
