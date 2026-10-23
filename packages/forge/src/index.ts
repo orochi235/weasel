@@ -1,6 +1,6 @@
 export { f } from '@weasel-js/labkit/config';
 export { defineFrameConfig, defineShellConfig, type ShellConfig } from './config';
-export type { ArgCondition, ArgType } from './csf/argsToSchema';
+export type { ArgCondition, ArgShape, ArgType } from './csf/argsToSchema';
 export type {
   ArgsOf,
   CsfDecorator,
