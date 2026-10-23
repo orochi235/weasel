@@ -1,0 +1,2225 @@
+{
+  "title": "weasel appearance vocabulary",
+  "name": "appearance",
+  "status": "Naming open · nothing built · 2026-10-23",
+  "date": "2026-10-23",
+  "lang": "en",
+  "header": {
+    "heading": "naming the axes a weasel component's look varies along"
+  },
+  "fields": [
+    "math",
+    "publishing",
+    "stage lighting",
+    "software",
+    "plain"
+  ],
+  "roles": [
+    {
+      "key": "stance",
+      "title": "Stance",
+      "was": "stance",
+      "kind": "noun",
+      "description": "what kind of content it holds",
+      "gloss": {
+        "lead": "The class of content a surface holds: a scoped group, an aside, advanced settings, debug output, a preview.",
+        "items": [
+          "Today on containers (panels, frames, callouts, dialogs, sidebar sections), and declared but drawing nothing on Button, Badge and Code.",
+          "The theme decides how each class looks: fill, border, radius, accent.",
+          "Proposed to apply to every component and pass to everything inside a surface that sets it."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "class",
+              "star": true
+            },
+            {
+              "word": "category",
+              "star": false
+            },
+            {
+              "word": "sort",
+              "star": false
+            },
+            {
+              "word": "predicate",
+              "star": false
+            },
+            {
+              "word": "partition",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "publishing",
+          "words": [
+            {
+              "word": "rubric",
+              "star": true
+            },
+            {
+              "word": "genre",
+              "star": false
+            },
+            {
+              "word": "department",
+              "star": false
+            },
+            {
+              "word": "column",
+              "star": false
+            },
+            {
+              "word": "beat",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "linguistics",
+          "words": [
+            {
+              "word": "register",
+              "star": true
+            },
+            {
+              "word": "domain",
+              "star": false
+            },
+            {
+              "word": "aspect",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "archives",
+          "words": [
+            {
+              "word": "classification",
+              "star": false
+            },
+            {
+              "word": "designation",
+              "star": false
+            },
+            {
+              "word": "provenance",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "theater",
+          "words": [
+            {
+              "word": "role",
+              "star": false
+            },
+            {
+              "word": "part",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "software",
+          "words": [
+            {
+              "word": "kind",
+              "star": false
+            },
+            {
+              "word": "purpose",
+              "star": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "severity",
+      "title": "Severity",
+      "was": "status",
+      "kind": "noun",
+      "description": "how serious or how good",
+      "gloss": {
+        "lead": "How much an element matters to the reader right now: information, success, a warning, danger.",
+        "items": [
+          "Said six ways today: three separate <code>status</code> types, Toast's <code>tone</code> (<code>warning</code>, <code>error</code>), labkit Toolbar's <code>variant: 'danger'</code>, and the <code>danger</code>, <code>notice</code> and <code>important</code> stances.",
+          "Independent of what the content is: a debug panel can hold a warning.",
+          "Values on the table: <code>info</code>, <code>success</code>, <code>warn</code>, <code>danger</code>."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "sign",
+              "star": false
+            },
+            {
+              "word": "valence",
+              "star": true
+            },
+            {
+              "word": "grade",
+              "star": false
+            },
+            {
+              "word": "ordinal",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "medicine",
+          "words": [
+            {
+              "word": "triage",
+              "star": true
+            },
+            {
+              "word": "acuity",
+              "star": false
+            },
+            {
+              "word": "prognosis",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "aviation",
+          "words": [
+            {
+              "word": "alert",
+              "star": false
+            },
+            {
+              "word": "caution",
+              "star": false
+            },
+            {
+              "word": "advisory",
+              "star": false
+            },
+            {
+              "word": "condition",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "weather",
+          "words": [
+            {
+              "word": "warning",
+              "star": false
+            },
+            {
+              "word": "threat",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "software",
+          "words": [
+            {
+              "word": "urgency",
+              "star": false
+            },
+            {
+              "word": "priority",
+              "star": false
+            },
+            {
+              "word": "outcome",
+              "star": false
+            },
+            {
+              "word": "health",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "verdict",
+              "star": false
+            },
+            {
+              "word": "signal",
+              "star": false
+            },
+            {
+              "word": "standing",
+              "star": true
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "accompanies",
+          "to": "stance"
+        }
+      ]
+    },
+    {
+      "key": "tone",
+      "title": "Tone",
+      "was": "status (neutral, muted, accent)",
+      "kind": "noun",
+      "description": "how loudly it reads",
+      "gloss": {
+        "lead": "How much an element stands out from its neighbors: plain, held back, or picked out in the accent.",
+        "items": [
+          "Today folded into <code>status</code> as <code>neutral</code>, <code>muted</code> and <code>accent</code>, and into Button's <code>primary</code> and <code>secondary</code>.",
+          "Proposed to say nothing about meaning or exact color: those are severity and tint.",
+          "Open whether it passes to children the way stance does."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "weight",
+              "star": true
+            },
+            {
+              "word": "magnitude",
+              "star": false
+            },
+            {
+              "word": "amplitude",
+              "star": false
+            },
+            {
+              "word": "gain",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "typography",
+          "words": [
+            {
+              "word": "stress",
+              "star": false
+            },
+            {
+              "word": "prominence",
+              "star": true
+            },
+            {
+              "word": "salience",
+              "star": false
+            },
+            {
+              "word": "boldness",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "music",
+          "words": [
+            {
+              "word": "dynamic",
+              "star": true
+            },
+            {
+              "word": "volume",
+              "star": false
+            },
+            {
+              "word": "forte",
+              "star": false
+            },
+            {
+              "word": "loudness",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "stage lighting",
+          "words": [
+            {
+              "word": "intensity",
+              "star": false
+            },
+            {
+              "word": "level",
+              "star": false
+            },
+            {
+              "word": "punch",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "rhetoric",
+          "words": [
+            {
+              "word": "pitch",
+              "star": false
+            },
+            {
+              "word": "voice",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "presence",
+              "star": false
+            },
+            {
+              "word": "rank",
+              "star": false
+            },
+            {
+              "word": "mood",
+              "star": true
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "accompanies",
+          "to": "severity"
+        }
+      ]
+    },
+    {
+      "key": "tint",
+      "title": "Tint",
+      "was": "tone (a palette index or a color)",
+      "kind": "noun",
+      "description": "an exact color",
+      "gloss": {
+        "lead": "A color chosen outright: an index into the theme's palette, or a color value.",
+        "items": [
+          "Today's <code>tone</code> on stance-taking components, Badge's <code>status=\"custom\"</code> with its <code>--badge-edge</code>, and KeyDiagram's per-key <code>tone</code>.",
+          "The escape hatch: it wins over severity and tone.",
+          "A palette index tells peers apart (series one, two, three); a value sets a color the theme does not know."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "vector",
+              "star": false
+            },
+            {
+              "word": "triple",
+              "star": false
+            },
+            {
+              "word": "coordinate",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "painting",
+          "words": [
+            {
+              "word": "pigment",
+              "star": true
+            },
+            {
+              "word": "wash",
+              "star": false
+            },
+            {
+              "word": "glaze",
+              "star": false
+            },
+            {
+              "word": "ink",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "printing",
+          "words": [
+            {
+              "word": "spot color",
+              "star": true
+            },
+            {
+              "word": "pantone",
+              "star": false
+            },
+            {
+              "word": "plate",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "stage lighting",
+          "words": [
+            {
+              "word": "gel",
+              "star": true
+            },
+            {
+              "word": "filter",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "photography",
+          "words": [
+            {
+              "word": "cast",
+              "star": false
+            },
+            {
+              "word": "grade",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "web",
+          "words": [
+            {
+              "word": "fill",
+              "star": false
+            },
+            {
+              "word": "color",
+              "star": false
+            },
+            {
+              "word": "hex",
+              "star": false
+            },
+            {
+              "word": "override",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "dye",
+              "star": false
+            },
+            {
+              "word": "hue",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "overrides",
+          "to": "tone"
+        },
+        {
+          "rel": "overrides",
+          "to": "severity"
+        }
+      ]
+    },
+    {
+      "key": "variant",
+      "title": "Variant",
+      "was": "variant",
+      "kind": "noun",
+      "description": "how it is drawn",
+      "gloss": {
+        "lead": "The drawing treatment a component offers: filled or outlined, boxed or bare, with or without chrome.",
+        "items": [
+          "Button: <code>primary</code>, <code>secondary</code>, <code>ghost</code>, <code>link</code>. Badge: <code>solid</code>, <code>outline</code>, <code>subtle</code>. Segmented rows: <code>default</code>, <code>minimal</code>, <code>flat</code>. Select: <code>field</code>, <code>bare</code>.",
+          "Per component, because what can be drawn differently depends on the component.",
+          "Proposed to carry no meaning and no emphasis: Button's <code>primary</code> is a tone, not a drawing."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "form",
+              "star": false
+            },
+            {
+              "word": "projection",
+              "star": false
+            },
+            {
+              "word": "presentation",
+              "star": false
+            },
+            {
+              "word": "rendering",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "typography",
+          "words": [
+            {
+              "word": "style",
+              "star": false
+            },
+            {
+              "word": "cut",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "painting",
+          "words": [
+            {
+              "word": "treatment",
+              "star": true
+            },
+            {
+              "word": "finish",
+              "star": false
+            },
+            {
+              "word": "technique",
+              "star": false
+            },
+            {
+              "word": "medium",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "fashion",
+          "words": [
+            {
+              "word": "trim",
+              "star": false
+            },
+            {
+              "word": "dress",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "theater",
+          "words": [
+            {
+              "word": "costume",
+              "star": false
+            },
+            {
+              "word": "dressing",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "architecture",
+          "words": [
+            {
+              "word": "cladding",
+              "star": false
+            },
+            {
+              "word": "facade",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "software",
+          "words": [
+            {
+              "word": "appearance",
+              "star": true
+            },
+            {
+              "word": "skin",
+              "star": false
+            },
+            {
+              "word": "fill style",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "garb",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "accompanies",
+          "to": "tone"
+        }
+      ]
+    },
+    {
+      "key": "motif",
+      "title": "Motif",
+      "was": "motif",
+      "kind": "noun",
+      "description": "how a frame draws its heading and edge",
+      "gloss": {
+        "lead": "The way a framed group draws its title and border: a title between rules, a tab, a title bar, a plaque, a notch.",
+        "items": [
+          "On MotifFrame and PropertyGroup: <code>rule()</code>, <code>tab()</code>, <code>titlebar()</code>, <code>stereo()</code>, <code>plaque()</code>, <code>notch()</code>.",
+          "Structure, not color: a motif takes whatever stance, severity and tint the frame has."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "boundary",
+              "star": false
+            },
+            {
+              "word": "envelope",
+              "star": false
+            },
+            {
+              "word": "contour",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "publishing",
+          "words": [
+            {
+              "word": "masthead",
+              "star": false
+            },
+            {
+              "word": "headpiece",
+              "star": true
+            },
+            {
+              "word": "cartouche",
+              "star": true
+            }
+          ]
+        },
+        {
+          "field": "architecture",
+          "words": [
+            {
+              "word": "cornice",
+              "star": false
+            },
+            {
+              "word": "molding",
+              "star": false
+            },
+            {
+              "word": "lintel",
+              "star": false
+            },
+            {
+              "word": "pediment",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "heraldry",
+          "words": [
+            {
+              "word": "bordure",
+              "star": false
+            },
+            {
+              "word": "escutcheon",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "printing",
+          "words": [
+            {
+              "word": "ornament",
+              "star": false
+            },
+            {
+              "word": "flourish",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "sewing",
+          "words": [
+            {
+              "word": "hem",
+              "star": false
+            },
+            {
+              "word": "piping",
+              "star": false
+            },
+            {
+              "word": "binding",
+              "star": true
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "edging",
+              "star": false
+            },
+            {
+              "word": "banner",
+              "star": false
+            },
+            {
+              "word": "trim",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "kind of",
+          "to": "variant"
+        }
+      ]
+    },
+    {
+      "key": "shape",
+      "title": "Shape",
+      "was": "shape",
+      "kind": "noun",
+      "description": "its outline",
+      "gloss": {
+        "lead": "The outline a component is cut to: a pill, a shield, a perforated stamp.",
+        "items": [
+          "Badge's <code>shape</code> and <code>base</code>; its <code>effects</code> layer treatments around that outline.",
+          "Independent of the drawing treatment: an outlined shield and a filled shield are one outline."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "contour",
+              "star": false
+            },
+            {
+              "word": "hull",
+              "star": false
+            },
+            {
+              "word": "region",
+              "star": false
+            },
+            {
+              "word": "curve",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "art",
+          "words": [
+            {
+              "word": "silhouette",
+              "star": true
+            },
+            {
+              "word": "profile",
+              "star": false
+            },
+            {
+              "word": "figure",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "cartography",
+          "words": [
+            {
+              "word": "footprint",
+              "star": true
+            }
+          ]
+        },
+        {
+          "field": "manufacturing",
+          "words": [
+            {
+              "word": "die",
+              "star": true
+            },
+            {
+              "word": "blank",
+              "star": false
+            },
+            {
+              "word": "stamp",
+              "star": false
+            },
+            {
+              "word": "mold",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "sewing",
+          "words": [
+            {
+              "word": "pattern",
+              "star": false
+            },
+            {
+              "word": "template",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "heraldry",
+          "words": [
+            {
+              "word": "field",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "cutout",
+              "star": true
+            },
+            {
+              "word": "body",
+              "star": false
+            },
+            {
+              "word": "mask",
+              "star": false
+            },
+            {
+              "word": "form",
+              "star": false
+            },
+            {
+              "word": "plate",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "accompanies",
+          "to": "variant"
+        }
+      ]
+    },
+    {
+      "key": "size",
+      "title": "Size",
+      "was": "size",
+      "kind": "noun",
+      "description": "how big",
+      "gloss": {
+        "lead": "The step on the kit's scale a component is set at: its height and its type size together.",
+        "items": [
+          "<code>xs</code>, <code>sm</code>, <code>md</code> on Button, Badge, ToggleBar, Code and most controls."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "scale",
+              "star": true
+            },
+            {
+              "word": "magnitude",
+              "star": false
+            },
+            {
+              "word": "order",
+              "star": false
+            },
+            {
+              "word": "step",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "typography",
+          "words": [
+            {
+              "word": "point",
+              "star": false
+            },
+            {
+              "word": "em",
+              "star": false
+            },
+            {
+              "word": "pica",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "clothing",
+          "words": [
+            {
+              "word": "fit",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "music",
+          "words": [
+            {
+              "word": "octave",
+              "star": false
+            },
+            {
+              "word": "register",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "engineering",
+          "words": [
+            {
+              "word": "gauge",
+              "star": true
+            },
+            {
+              "word": "caliber",
+              "star": false
+            },
+            {
+              "word": "bore",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "grade",
+              "star": false
+            },
+            {
+              "word": "bulk",
+              "star": false
+            },
+            {
+              "word": "extent",
+              "star": false
+            },
+            {
+              "word": "dimension",
+              "star": false
+            },
+            {
+              "word": "tier",
+              "star": true
+            },
+            {
+              "word": "rank",
+              "star": false
+            },
+            {
+              "word": "notch",
+              "star": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "density",
+      "title": "Density",
+      "was": "density",
+      "kind": "noun",
+      "description": "how tightly packed",
+      "gloss": {
+        "lead": "How much room a component or a whole interface gives its parts: tight, normal, roomy.",
+        "items": [
+          "Three today: the theme's axis (<code>data-wzl-density</code>), a settings panel's row spacing (<code>tight</code>, <code>normal</code>, <code>roomy</code>), and Slider's track (<code>default</code>, <code>slim</code>), which is thickness rather than room."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "sparsity",
+              "star": false
+            },
+            {
+              "word": "packing",
+              "star": true
+            },
+            {
+              "word": "frequency",
+              "star": false
+            },
+            {
+              "word": "pitch",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "typography",
+          "words": [
+            {
+              "word": "leading",
+              "star": true
+            },
+            {
+              "word": "tracking",
+              "star": false
+            },
+            {
+              "word": "fit",
+              "star": false
+            },
+            {
+              "word": "color",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "textiles",
+          "words": [
+            {
+              "word": "weave",
+              "star": false
+            },
+            {
+              "word": "thread count",
+              "star": false
+            },
+            {
+              "word": "gauge",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "printing",
+          "words": [
+            {
+              "word": "screen",
+              "star": false
+            },
+            {
+              "word": "ruling",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "urban planning",
+          "words": [
+            {
+              "word": "sprawl",
+              "star": false
+            },
+            {
+              "word": "plot ratio",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "room",
+              "star": true
+            },
+            {
+              "word": "breathing room",
+              "star": false
+            },
+            {
+              "word": "compactness",
+              "star": false
+            },
+            {
+              "word": "tightness",
+              "star": false
+            },
+            {
+              "word": "air",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "accompanies",
+          "to": "size"
+        },
+        {
+          "rel": "attribute of",
+          "to": "theme"
+        }
+      ]
+    },
+    {
+      "key": "mode",
+      "title": "Mode",
+      "was": "mode",
+      "kind": "noun",
+      "description": "light or dark",
+      "gloss": {
+        "lead": "Whether the interface is light on dark or dark on light.",
+        "items": [
+          "Set once on a root as <code>data-wzl-mode</code>: <code>light</code>, <code>dark</code>, <code>auto</code>."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "sign",
+              "star": false
+            },
+            {
+              "word": "parity",
+              "star": true
+            },
+            {
+              "word": "orientation",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "photography",
+          "words": [
+            {
+              "word": "exposure",
+              "star": false
+            },
+            {
+              "word": "key",
+              "star": true
+            }
+          ]
+        },
+        {
+          "field": "astronomy",
+          "words": [
+            {
+              "word": "daylight",
+              "star": false
+            },
+            {
+              "word": "night",
+              "star": false
+            },
+            {
+              "word": "phase",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "theater",
+          "words": [
+            {
+              "word": "lighting",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "printing",
+          "words": [
+            {
+              "word": "negative",
+              "star": false
+            },
+            {
+              "word": "reverse",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "cartography",
+          "words": [
+            {
+              "word": "palette",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "scheme",
+              "star": true
+            },
+            {
+              "word": "appearance",
+              "star": false
+            },
+            {
+              "word": "brightness",
+              "star": false
+            },
+            {
+              "word": "ambience",
+              "star": false
+            },
+            {
+              "word": "setting",
+              "star": false
+            },
+            {
+              "word": "time of day",
+              "star": false
+            },
+            {
+              "word": "shade",
+              "star": false
+            },
+            {
+              "word": "lamp",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "attribute of",
+          "to": "theme"
+        }
+      ]
+    },
+    {
+      "key": "theme",
+      "title": "Theme",
+      "was": "theme",
+      "kind": "noun",
+      "description": "the whole token set",
+      "gloss": {
+        "lead": "The complete set of tokens an interface draws from: its colors, type, spacing and stance looks.",
+        "items": [
+          "Set once on a root as <code>data-wzl-theme</code> through <code>applyTheme</code>."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "basis",
+              "star": true
+            },
+            {
+              "word": "space",
+              "star": false
+            },
+            {
+              "word": "model",
+              "star": false
+            },
+            {
+              "word": "embedding",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "fashion",
+          "words": [
+            {
+              "word": "collection",
+              "star": false
+            },
+            {
+              "word": "line",
+              "star": false
+            },
+            {
+              "word": "wardrobe",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "branding",
+          "words": [
+            {
+              "word": "brand",
+              "star": false
+            },
+            {
+              "word": "livery",
+              "star": false
+            },
+            {
+              "word": "identity",
+              "star": false
+            },
+            {
+              "word": "house style",
+              "star": true
+            }
+          ]
+        },
+        {
+          "field": "theater",
+          "words": [
+            {
+              "word": "production",
+              "star": false
+            },
+            {
+              "word": "design",
+              "star": false
+            },
+            {
+              "word": "scenery",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "software",
+          "words": [
+            {
+              "word": "skin",
+              "star": false
+            },
+            {
+              "word": "stylesheet",
+              "star": false
+            },
+            {
+              "word": "preset",
+              "star": false
+            },
+            {
+              "word": "token set",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "style",
+              "star": false
+            },
+            {
+              "word": "decor",
+              "star": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "flavor",
+      "title": "Flavor",
+      "was": "variant (a theme's)",
+      "kind": "noun",
+      "description": "a theme's sub-look",
+      "gloss": {
+        "lead": "One of the looks a single theme ships, chosen inside it.",
+        "items": [
+          "Set as <code>data-wzl-variant</code>, a third meaning of the word variant."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "fiber",
+              "star": true
+            },
+            {
+              "word": "section",
+              "star": false
+            },
+            {
+              "word": "branch",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "fashion",
+          "words": [
+            {
+              "word": "season",
+              "star": false
+            },
+            {
+              "word": "edition",
+              "star": true
+            },
+            {
+              "word": "capsule",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "publishing",
+          "words": [
+            {
+              "word": "imprint",
+              "star": false
+            },
+            {
+              "word": "issue",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "cars",
+          "words": [
+            {
+              "word": "trim",
+              "star": true
+            },
+            {
+              "word": "package",
+              "star": false
+            },
+            {
+              "word": "spec",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "music",
+          "words": [
+            {
+              "word": "mix",
+              "star": false
+            },
+            {
+              "word": "remaster",
+              "star": false
+            },
+            {
+              "word": "take",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "software",
+          "words": [
+            {
+              "word": "profile",
+              "star": false
+            },
+            {
+              "word": "preset",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "version",
+              "star": false
+            },
+            {
+              "word": "cut",
+              "star": false
+            },
+            {
+              "word": "dialect",
+              "star": false
+            },
+            {
+              "word": "variety",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "part of",
+          "to": "theme"
+        }
+      ]
+    },
+    {
+      "key": "polarity",
+      "title": "Polarity",
+      "was": "variant: inverse",
+      "kind": "noun",
+      "description": "flipped light for dark, locally",
+      "gloss": {
+        "lead": "One component drawn in the opposite light from its surroundings: dark keys on a light page.",
+        "items": [
+          "KeyCap's <code>variant=\"inverse\"</code> today.",
+          "Local where mode is global: it reverses whatever mode the page is in."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "sign",
+              "star": false
+            },
+            {
+              "word": "parity",
+              "star": false
+            },
+            {
+              "word": "orientation",
+              "star": false
+            },
+            {
+              "word": "complement",
+              "star": false
+            },
+            {
+              "word": "involution",
+              "star": true
+            }
+          ]
+        },
+        {
+          "field": "photography",
+          "words": [
+            {
+              "word": "negative",
+              "star": true
+            },
+            {
+              "word": "reversal",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "printing",
+          "words": [
+            {
+              "word": "reverse",
+              "star": true
+            },
+            {
+              "word": "knockout",
+              "star": true
+            },
+            {
+              "word": "out",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "electronics",
+          "words": [
+            {
+              "word": "charge",
+              "star": false
+            },
+            {
+              "word": "bias",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "typography",
+          "words": [
+            {
+              "word": "white-on-black",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "textiles",
+          "words": [
+            {
+              "word": "obverse",
+              "star": false
+            },
+            {
+              "word": "face",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "inversion",
+              "star": false
+            },
+            {
+              "word": "flip",
+              "star": false
+            },
+            {
+              "word": "contrast",
+              "star": false
+            },
+            {
+              "word": "duality",
+              "star": false
+            },
+            {
+              "word": "mirror",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "derived from",
+          "to": "mode"
+        }
+      ]
+    },
+    {
+      "key": "arrangement",
+      "title": "Arrangement",
+      "was": "variant (PropertyRow's)",
+      "kind": "noun",
+      "description": "how a row lays out its parts",
+      "gloss": {
+        "lead": "Where a row puts its label and its control, chosen by the kind of control it holds.",
+        "items": [
+          "PropertyRow's <code>variant</code>: <code>default</code>, <code>color</code>, <code>checkbox</code>. Layout, not appearance, filed under the drawing word."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "configuration",
+              "star": true
+            },
+            {
+              "word": "permutation",
+              "star": false
+            },
+            {
+              "word": "topology",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "typography",
+          "words": [
+            {
+              "word": "setting",
+              "star": false
+            },
+            {
+              "word": "composition",
+              "star": false
+            },
+            {
+              "word": "lockup",
+              "star": true
+            }
+          ]
+        },
+        {
+          "field": "architecture",
+          "words": [
+            {
+              "word": "plan",
+              "star": false
+            },
+            {
+              "word": "bay",
+              "star": false
+            },
+            {
+              "word": "module",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "music",
+          "words": [
+            {
+              "word": "voicing",
+              "star": false
+            },
+            {
+              "word": "scoring",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "sports",
+          "words": [
+            {
+              "word": "formation",
+              "star": true
+            },
+            {
+              "word": "lineup",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "software",
+          "words": [
+            {
+              "word": "template",
+              "star": true
+            },
+            {
+              "word": "layout",
+              "star": false
+            },
+            {
+              "word": "recipe",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "pattern",
+              "star": false
+            },
+            {
+              "word": "order",
+              "star": false
+            },
+            {
+              "word": "rig",
+              "star": false
+            },
+            {
+              "word": "grid",
+              "star": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "verbs": [
+    {
+      "key": "cascade",
+      "title": "cascade",
+      "was": "—",
+      "kind": "operation",
+      "description": "pass a setting to everything inside",
+      "gloss": {
+        "lead": "Give every element inside a surface the setting the surface carries, until one sets its own.",
+        "items": [
+          "Proposed for stance, and possibly severity and tone; never for tint, which belongs to the one element that names it.",
+          "Done with CSS custom properties, so it reaches plain HTML and other libraries' components inside the surface."
+        ]
+      },
+      "groups": [
+        {
+          "field": "math",
+          "words": [
+            {
+              "word": "propagate",
+              "star": true
+            },
+            {
+              "word": "broadcast",
+              "star": false
+            },
+            {
+              "word": "distribute",
+              "star": false
+            },
+            {
+              "word": "extend",
+              "star": false
+            },
+            {
+              "word": "lift",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "biology",
+          "words": [
+            {
+              "word": "inherit",
+              "star": true
+            },
+            {
+              "word": "transmit",
+              "star": false
+            },
+            {
+              "word": "descend",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "hydrology",
+          "words": [
+            {
+              "word": "flow",
+              "star": false
+            },
+            {
+              "word": "trickle",
+              "star": false
+            },
+            {
+              "word": "flood",
+              "star": false
+            },
+            {
+              "word": "percolate",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "law",
+          "words": [
+            {
+              "word": "devolve",
+              "star": false
+            },
+            {
+              "word": "bequeath",
+              "star": false
+            },
+            {
+              "word": "delegate",
+              "star": false
+            },
+            {
+              "word": "endow",
+              "star": false
+            }
+          ]
+        },
+        {
+          "field": "plain",
+          "words": [
+            {
+              "word": "spread",
+              "star": true
+            },
+            {
+              "word": "carry",
+              "star": false
+            },
+            {
+              "word": "seep",
+              "star": false
+            },
+            {
+              "word": "imbue",
+              "star": false
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "modifies",
+          "to": "stance"
+        }
+      ],
+      "signature": "cascade(surface)"
+    }
+  ],
+  "sets": [
+    {
+      "role": "stance",
+      "words": {
+        "math": "class",
+        "publishing": "rubric",
+        "stage lighting": null,
+        "software": "kind",
+        "plain": "purpose"
+      }
+    },
+    {
+      "role": "severity",
+      "words": {
+        "math": "valence",
+        "publishing": null,
+        "stage lighting": null,
+        "software": "urgency",
+        "plain": "standing"
+      }
+    },
+    {
+      "role": "tone",
+      "words": {
+        "math": "weight",
+        "publishing": null,
+        "stage lighting": "intensity",
+        "software": null,
+        "plain": "mood"
+      }
+    },
+    {
+      "role": "tint",
+      "words": {
+        "math": "vector",
+        "publishing": null,
+        "stage lighting": "gel",
+        "software": "override",
+        "plain": "dye"
+      }
+    },
+    {
+      "role": "variant",
+      "words": {
+        "math": "rendering",
+        "publishing": null,
+        "stage lighting": null,
+        "software": "appearance",
+        "plain": "garb"
+      }
+    },
+    {
+      "role": "motif",
+      "words": {
+        "math": "boundary",
+        "publishing": "headpiece",
+        "stage lighting": null,
+        "software": null,
+        "plain": "edging"
+      }
+    },
+    {
+      "role": "shape",
+      "words": {
+        "math": "contour",
+        "publishing": null,
+        "stage lighting": null,
+        "software": null,
+        "plain": "cutout"
+      }
+    },
+    {
+      "role": "size",
+      "words": {
+        "math": "scale",
+        "publishing": null,
+        "stage lighting": null,
+        "software": null,
+        "plain": "tier"
+      }
+    },
+    {
+      "role": "density",
+      "words": {
+        "math": "packing",
+        "publishing": null,
+        "stage lighting": null,
+        "software": null,
+        "plain": "room"
+      }
+    },
+    {
+      "role": "mode",
+      "words": {
+        "math": "parity",
+        "publishing": null,
+        "stage lighting": null,
+        "software": null,
+        "plain": "scheme"
+      }
+    },
+    {
+      "role": "theme",
+      "words": {
+        "math": "basis",
+        "publishing": null,
+        "stage lighting": null,
+        "software": "stylesheet",
+        "plain": "style"
+      }
+    },
+    {
+      "role": "flavor",
+      "words": {
+        "math": "fiber",
+        "publishing": "imprint",
+        "stage lighting": null,
+        "software": "profile",
+        "plain": "version"
+      }
+    },
+    {
+      "role": "polarity",
+      "words": {
+        "math": "involution",
+        "publishing": null,
+        "stage lighting": null,
+        "software": null,
+        "plain": "inversion"
+      }
+    },
+    {
+      "role": "arrangement",
+      "words": {
+        "math": "configuration",
+        "publishing": null,
+        "stage lighting": null,
+        "software": "template",
+        "plain": "pattern"
+      }
+    }
+  ],
+  "defaults": {
+    "tone": "tone",
+    "tint": "tint"
+  },
+  "relations": [
+    {
+      "formula": "hue = tint ?? severity ?? stance",
+      "gloss": "an exact color wins; otherwise severity picks the hue, and stance supplies one when neither is set"
+    },
+    {
+      "formula": "loudness = tone",
+      "gloss": "how strongly that hue shows, separately from which hue it is"
+    },
+    {
+      "formula": "drawing = variant × shape × motif",
+      "gloss": "how the component is drawn, independent of its color"
+    },
+    {
+      "formula": "scale = size × density",
+      "gloss": "how big each part is, and how much room sits between them"
+    },
+    {
+      "formula": "look = theme × flavor × mode",
+      "gloss": "set once on a root; polarity reverses mode for one component"
+    },
+    {
+      "formula": "child.stance = cascade(surface).stance",
+      "gloss": "until a child sets its own"
+    }
+  ],
+  "algebra": [],
+  "prose": {
+    "why": {
+      "title": "Why these roles",
+      "body": "<p>One role per question a component's look answers, read from the props in <code>@weasel-js/ui</code>, <code>labkit</code> and <code>theme</code> on 2026-10-23. Today's words cover these unevenly: <code>variant</code> names four of them, <code>status</code> two, and <code>tone</code> two.</p><p>Each role's <em>was</em> line gives the word it has now. Where a role had no word of its own, its key is the name proposed in conversation, so tone and tint open picked.</p>"
+    },
+    "relations": {
+      "title": "How the axes combine",
+      "body": "<p>Color comes from four roles in a fixed order of precedence; drawing, scale and the root-level look are each a product of independent roles.</p><?relations?>"
+    },
+    "sets": {
+      "title": "Consistent sets",
+      "body": "<p>One column per field, so a column reads as a system.</p>"
+    },
+    "terms": {
+      "title": "Roles",
+      "body": ""
+    },
+    "verbs": null,
+    "operations": {
+      "title": "Operations",
+      "body": "<p>What the kit does with a setting, rather than a setting.</p>"
+    },
+    "recommendation": {
+      "title": "Where this stands",
+      "body": "<p>Decided in conversation (2026-10-23): severity is its own axis, apart from stance; tone means how loudly something reads; tint is an exact color and wins over both. Everything else is open, and nothing has been built.</p>"
+    }
+  }
+}
