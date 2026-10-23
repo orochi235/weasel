@@ -1,10 +1,10 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { InputTraceView, type InputTraceConfig } from './InputTraceView';
 
-/** Every pointer, wheel, focus and key event on a curved bar and slider, and the order Tab steps through them. */
-export default meta({ title: 'ui/Along/Input trace', layout: 'fullscreen' });
+export default meta({ title: 'ui/Along', layout: 'fullscreen', tags: ['lab'] });
 
-export const Lab = story({
+/** Every pointer, wheel, focus and key event on a curved bar and slider, and the order Tab steps through them. */
+export const InputTrace = story({
   config: f.schema({
     actions: f.number(10).range(1, 10).step(1).label('Actions'),
     overflow: f.enum('scroll', ['scroll', 'menu']).radio().label('Overflow'),

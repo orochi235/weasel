@@ -2,10 +2,10 @@ import { f, meta, story } from '@weasel-js/forge';
 import { SWATCH_ARC_DEFAULTS as D, type SwatchArcConfig } from './swatchArcConfig';
 import { SwatchArcView } from './SwatchArcView';
 
-/** A swatch strip along an arc, each row a ring of its own, its ring geometry read back off the page. */
-export default meta({ title: 'ui/Along/Swatches on an arc', layout: 'fullscreen' });
+export default meta({ title: 'Primitives/SwatchStrip', layout: 'fullscreen', tags: ['lab'] });
 
-export const Lab = story({
+/** A swatch strip along an arc, each row a ring of its own, its ring geometry read back off the page. */
+export const OnAnArc = story({
   config: f.schema({
     swatches: f.group({
       palettes: f.enum(D.swatches.palettes, ['basic', 'standard', 'both']).radio().label('Palettes'),

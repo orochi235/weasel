@@ -4,7 +4,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm, type PrefsFormProps } from '@weasel-js/ui/components/Prefs';
 
 const meta: Meta<typeof PrefsForm> = {
-  title: 'Primitives/Prefs/Heading control',
+  title: 'Primitives/Prefs',
   component: PrefsForm,
 };
 export default meta;
@@ -53,7 +53,7 @@ function withValue(values: Record<string, unknown>, path: string, value: unknown
 }
 
 /** A leaf marked `heading` is drawn in its section's heading and its panel's title, and has no row beneath. */
-export const Rail: Story = { args: { layout: 'rail' }, render: (args) => <Form {...args} /> };
+export const HeadingInRail: Story = { args: { layout: 'rail' }, render: (args) => <Form {...args} /> };
 
 /** The same in a column's heading. */
-export const Columns: Story = { args: { layout: 'columns' }, render: (args) => <Form {...args} /> };
+export const HeadingInColumns: Story = { args: { layout: 'columns' }, render: (args) => <Form {...args} /> };

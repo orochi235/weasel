@@ -1,10 +1,10 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { TABS_ARC_DEFAULTS as D, TabsArcView, type TabsArcConfig } from './TabsArcView';
 
-/** Tabs and page tabs along an arc: a tab set over the top of a circle with its panel inside, and a page strip under one. */
-export default meta({ title: 'ui/Along/Tabs on an arc', layout: 'fullscreen' });
+export default meta({ title: 'Primitives/Tabs', layout: 'fullscreen', tags: ['lab'] });
 
-export const Lab = story({
+/** Tabs and page tabs along an arc: a tab set over the top of a circle with its panel inside, and a page strip under one. */
+export const OnAnArc = story({
   config: f.schema({
     tabs: f.number(D.tabs).range(1, 8).step(1).label('Tabs'),
     sweep: f.number(D.sweep).range(40, 340).step(5).suffix('°').label('Sweep'),

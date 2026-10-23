@@ -1,10 +1,10 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { ClockSweepView, type ClockSweepConfig } from './ClockSweepView';
 
-/** A bar and a slider on an arc centered on every hour, and finely around 3 and 9 o'clock. */
-export default meta({ title: 'ui/Along/Clock sweep', layout: 'fullscreen' });
+export default meta({ title: 'ui/Along', layout: 'fullscreen', tags: ['lab'] });
 
-export const Lab = story({
+/** A bar and a slider on an arc centered on every hour, and finely around 3 and 9 o'clock. */
+export const ClockSweep = story({
   config: f.schema({
     span: f.number(90).range(20, 300).step(5).suffix('°').label('Arc span'),
     size: f.number(220).range(140, 320).step(10).suffix('px').label('Dial size'),

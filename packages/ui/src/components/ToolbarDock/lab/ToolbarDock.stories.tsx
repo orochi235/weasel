@@ -9,7 +9,7 @@ import lab from '../../Along/lab/lab.stories.module.css';
 import s from './ToolbarDock.stories.module.css';
 
 /** Toolbars in docks round a workspace: drag a handle, Alt+arrows, Alt+Enter, and the layout that settles, read back. */
-export default meta({ title: 'ui/ToolbarDock', layout: 'fullscreen' });
+export default meta({ title: 'ui/ToolbarDock', layout: 'fullscreen', tags: ['lab'] });
 
 interface DockLabConfig {
   dock: { movable: boolean; top: boolean; left: boolean; right: boolean; bottom: boolean };

@@ -1,10 +1,10 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { TrackGeometryView, type TrackGeometryConfig } from './TrackGeometryView';
 
-/** An arc edited by handles on a canvas, and what geom's track functions say about it. */
-export default meta({ title: 'ui/Along/Track geometry', layout: 'fullscreen' });
+export default meta({ title: 'ui/Along', layout: 'fullscreen', tags: ['lab'] });
 
-export const Lab = story({
+/** An arc edited by handles on a canvas, and what geom's track functions say about it. */
+export const TrackGeometry = story({
   config: f.schema({
     direction: f.enum('cw', ['cw', 'ccw']).radio().label('Direction'),
     stations: f.number(7).range(2, 25).step(1).label('Stations'),

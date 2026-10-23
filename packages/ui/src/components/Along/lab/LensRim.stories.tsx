@@ -1,10 +1,10 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { LensRimView, type LensRimConfig } from './LensRimView';
 
-/** A round lens with a Bar along its top rim and its zoom Slider along the bottom; presses in the middle reach the picture. */
-export default meta({ title: 'ui/Along/Lens rim', layout: 'fullscreen' });
+export default meta({ title: 'ui/Along', layout: 'fullscreen', tags: ['lab'] });
 
-export const Lab = story({
+/** A round lens with a Bar along its top rim and its zoom Slider along the bottom; presses in the middle reach the picture. */
+export const LensRim = story({
   config: f.schema({
     size: f.number(260).range(160, 420).step(10).suffix('px').label('Size'),
     turn: f.number(0).range(0, 359).step(1).suffix('°').label('Turn'),

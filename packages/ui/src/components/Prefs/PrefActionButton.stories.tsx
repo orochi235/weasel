@@ -6,7 +6,7 @@ import { PrefActionButton, PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof PrefActionButton> = {
-  title: 'Primitives/Prefs/Action rows',
+  title: 'Primitives/Prefs',
   component: PrefActionButton,
 };
 export default meta;
@@ -41,7 +41,7 @@ const SCHEMA: PrefGroup = pref.group('Document', {
 /** An action leaf is a row reading its icon and label once. The `actions` leaf under Arrange is one row per action
  *  in its group, Group disabled with its reason in a tooltip; Print names an action nothing registered, and says
  *  so. The Stats rows are `readout` leaves: values, with nothing to edit them. */
-export const InAForm: Story = {
+export const ActionRows: Story = {
   render: function InAFormStory() {
     const [values, setValues] = useState<Record<string, unknown>>({ stats: { nodes: 128, grid: true, units: 'mm', color: '#f4efe6' } });
     return (
