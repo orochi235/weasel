@@ -665,9 +665,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   follow on what `BarAlong` uses: geom's `placeAlongRun` for where items fall and `useRunScroll` (`Bar/`) for how a
   run scrolls, and `placeOnRun` (`Along/placeOnRun.ts`) for the custom properties that put a part there.
 
-- **(P3) No gradient painter for a curved track.** `paintGradientTrack` paints straight tracks only and
-  draws nothing on a curve; a curved painter strokes the `TrackCtx.shape` run with sampled stops.
-
 - **(P3) Gaps left in controls along a curve.**
   - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
   - `thicknessOf` in `sliderGeometry.ts` reads `--rp-track-height` as px only, so a rem or `calc()` height
