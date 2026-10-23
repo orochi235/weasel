@@ -658,6 +658,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) Gaps left in controls along a curve.**
   - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
 
+- **(P3) `PageTabs`' lit tab names a panel that does not exist.** React Aria's `Tab` sets `aria-controls` on the
+  selected tab to its `TabPanel`'s id whether one is rendered or not, and `PageTabs` renders none, so a screen
+  reader is pointed at nothing; forge's accessibility panel flags it. Seen in jsdom on a straight strip
+  (2026-10-22): `aria-controls="react-aria-…-tabpanel-a"`, no element with that id. Drop the attribute, or have
+  the caller name the element that shows the page.
+
 - **(P3) A straight `Slider` misreads a press under a rotated ancestor.** `lineGeometry` in
   `sliderGeometry.ts` lays its line across the rail's client rect, which a rotation turns into the bounding box of
   the turned rail: under `rotate(90deg)` a press at three quarters of the rail reads 50 (seen in Chromium,
