@@ -7,6 +7,7 @@ import { barMenuRoot } from './barMenuRoot';
 import { BarPopover } from './BarPopover';
 import { BarSideContext, type BarSide } from './barSide';
 import type { RunSpot } from '@weasel-js/geom';
+import { BAR_IN, BAR_UNIT, barUnitKey } from './barOrder';
 import { BAR_ITEM } from './useBarOverflow';
 import { barLeafName, type BarCell, type BarLayoutProps, type BarLeafNode, type BarNode } from './BarLayout';
 import s from './Bar.module.css';
@@ -20,6 +21,8 @@ export interface BarItem {
   /** A `separator` leaf, drawn as a rule set across whichever line it lands on. */
   rule?: boolean;
   content?: ReactNode;
+  /** The path of the run the item sits in, `''` at the top level. Set only where the bar marks its units. */
+  in?: string;
 }
 
 /**
@@ -27,11 +30,12 @@ export interface BarItem {
  * group that opens. With `popLeaves`, every leaf but an action opens from a button, as a bar with no room beside
  * a field draws it.
  */
-export function barItems(nodes: readonly BarNode[], opts: { popLeaves: boolean; cells: BarLayoutProps['cells']; row: BarLayoutProps['row'] }): BarItem[] {
-  const { popLeaves, cells, row } = opts;
+export function barItems(nodes: readonly BarNode[], opts: { popLeaves: boolean; cells: BarLayoutProps['cells']; row: BarLayoutProps['row']; mark?: boolean }): BarItem[] {
+  const { popLeaves, cells, row, mark } = opts;
   const items: Omit<BarItem, 'key'>[] = [];
 
-  const walk = (list: readonly BarNode[]): void => {
+  const walk = (list: readonly BarNode[], container: string): void => {
+    const into = mark ? { in: container } : {};
     let pending: BarLeafNode[] = [];
     const flush = (): void => {
       const drawn = popLeaves
@@ -42,13 +46,13 @@ export function barItems(nodes: readonly BarNode[], opts: { popLeaves: boolean; 
             return [{ path: node.path, content: <BarPopover label={barLeafName(node.leaf)}>{body}</BarPopover> }];
           })
         : cells(pending);
-      for (const cell of drawn) items.push({ path: cell.path, leaf: true, content: cell.content });
+      for (const cell of drawn) items.push({ path: cell.path, leaf: true, content: cell.content, ...into });
       pending = [];
     };
     for (const node of list) {
       if (node.kind === 'leaf' && node.leaf.kind === 'separator') {
         flush();
-        items.push({ path: node.path, leaf: true, rule: true });
+        items.push({ path: node.path, leaf: true, rule: true, ...into });
         continue;
       }
       if (node.kind === 'leaf') {
@@ -57,27 +61,27 @@ export function barItems(nodes: readonly BarNode[], opts: { popLeaves: boolean; 
       }
       flush();
       if (node.kind === 'cell') {
-        items.push({ path: node.path, leaf: true, content: node.content });
+        items.push({ path: node.path, leaf: true, content: node.content, ...into });
         continue;
       }
       if (node.kind === 'opens') {
-        items.push({ path: node.path, leaf: false, content: <BarPopover label={node.name} icon={resolveIcon(node.icon)}>{node.body()}</BarPopover> });
+        items.push({ path: node.path, leaf: false, content: <BarPopover label={node.name} icon={resolveIcon(node.icon)}>{node.body()}</BarPopover>, ...into });
         continue;
       }
       if (node.kind === 'menu') {
         const menu = (
           <BarMenu label={node.name} icon={resolveIcon(node.group.icon)} description={node.group.description} schema={barMenuRoot(node.group, node.path)} {...node.sources} />
         );
-        items.push({ path: node.path, leaf: false, content: menu });
+        items.push({ path: node.path, leaf: false, content: menu, ...into });
         continue;
       }
       items.push({ divider: true });
-      walk(node.nodes);
+      walk(node.nodes, node.path);
       items.push({ divider: true });
     }
     flush();
   };
-  walk(nodes);
+  walk(nodes, '');
 
   // A divider sets two things apart, so none opens or closes the bar and no two meet.
   const shown: BarItem[] = items
@@ -86,6 +90,9 @@ export function barItems(nodes: readonly BarNode[], opts: { popLeaves: boolean; 
   while (shown.at(-1)?.divider) shown.pop();
   return shown;
 }
+
+/** `item` as drawn in the overflow menu, where a unit cannot be dragged. */
+export const inBarMenu = (item: BarItem): BarItem => (item.in === undefined ? item : { ...item, in: undefined });
 
 /** `items` split where the line ends after `kept` of them, with no divider left at the line's end or the rest's start. */
 export function splitBarItems(items: readonly BarItem[], kept: number): { line: BarItem[]; rest: BarItem[] } {
@@ -116,7 +123,7 @@ export function drawBarItem(item: BarItem, across: boolean, attrs: BarLayoutProp
   return item.divider ? (
     <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.divider)} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} style={place?.style} data-clipped={place?.clipped} />
   ) : (
-    <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.cell)} {...attrs?.(item.path!, item.leaf!)} style={place?.style} data-clipped={place?.clipped}>
+    <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.cell)} {...attrs?.(item.path!, item.leaf!)} {...(item.in !== undefined ? { [BAR_IN]: item.in, [BAR_UNIT]: barUnitKey(item.path!) } : {})} style={place?.style} data-clipped={place?.clipped}>
       {item.rule ? (
         <span className={s.rule} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} />
       ) : place?.side ? (

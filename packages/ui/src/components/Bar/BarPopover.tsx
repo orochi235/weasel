@@ -9,6 +9,7 @@ import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portal
 import { Caret } from '../Caret';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
+import { BarMarkContext } from './barOrder';
 import { BarSideContext } from './barSide';
 import s from './Bar.module.css';
 
@@ -47,7 +48,7 @@ export function BarPopover({ label, icon, children, isDisabled, className, porta
         <RACPopover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.popBody}`} aria-label={label}>
             {/* Context crosses the portal, and a side belongs to the curved bar's line, not to what opens from it. */}
-            <BarSideContext.Provider value={undefined}>{children}</BarSideContext.Provider>
+            <BarSideContext.Provider value={undefined}><BarMarkContext.Provider value={false}>{children}</BarMarkContext.Provider></BarSideContext.Provider>
           </RACDialog>
         </RACPopover>
       )}

@@ -5,7 +5,8 @@ import type { TrackShape } from '@weasel-js/geom';
 import { useTrackShape, type RunAlign } from '../Along/alongContext';
 import type { BarMenuSources } from './BarMenu';
 import { BarAlong } from './BarAlong';
-import { barItems, barLead, drawBarItem, splitBarItems } from './barItems';
+import { barItems, barLead, drawBarItem, inBarMenu, splitBarItems } from './barItems';
+import { BarMarkContext } from './barOrder';
 import { BarOverflow } from './BarOverflow';
 import { BAR_LEAD, BAR_MORE, useBarOverflow } from './useBarOverflow';
 import s from './Bar.module.css';
@@ -98,6 +99,8 @@ export interface BarLayoutProps {
   shape?: TrackShape;
   /** Where a run shorter than its shape sits. Default: the nearest `Along`'s, else `'center'`. */
   align?: RunAlign;
+  /** Mark each item and each `actions` button with `data-bar-unit` and `data-bar-in`, so a reorder gesture can find them. */
+  reorder?: boolean;
   className?: string;
 }
 
@@ -114,8 +117,8 @@ export interface BarLayoutProps {
 export function BarLayout(props: BarLayoutProps) {
   const along = useTrackShape();
   const shape = props.shape ?? along?.shape;
-  if (shape !== undefined && shape.kind !== 'line') return <BarAlong {...props} shape={shape} align={props.align ?? along?.align ?? 'center'} />;
-  return <BarLine {...props} />;
+  const bar = shape !== undefined && shape.kind !== 'line' ? <BarAlong {...props} shape={shape} align={props.align ?? along?.align ?? 'center'} /> : <BarLine {...props} />;
+  return <BarMarkContext.Provider value={props.reorder === true}>{bar}</BarMarkContext.Provider>;
 }
 
 function BarLine(props: BarLayoutProps) {
@@ -123,7 +126,7 @@ function BarLine(props: BarLayoutProps) {
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const vertical = orientation === 'vertical';
   // A vertical bar has no room beside a field, so only a button stays on it.
-  const shown = barItems(nodes, { popLeaves: vertical, cells, row });
+  const shown = barItems(nodes, { popLeaves: vertical, cells, row, mark: props.reorder });
   const leading = barLead(lead, label, icon);
 
   const menu = overflow === 'menu';
@@ -145,7 +148,7 @@ function BarLine(props: BarLayoutProps) {
       {line.map((item) => drawBarItem(item, vertical, attrs))}
       {rest.length > 0 && (
         <span className={s.cell} {...{ [BAR_MORE]: '' }}>
-          <BarOverflow label={overflowLabel}>{rest.map((item) => drawBarItem(item, true, attrs))}</BarOverflow>
+          <BarOverflow label={overflowLabel}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
         </span>
       )}
     </div>

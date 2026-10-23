@@ -4,7 +4,7 @@ import { AlongContext, type RunAlign } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds, useRunRow } from '../Along/useRunRow';
 import { sideAtRun } from './barSide';
-import { barItems, barLead, drawBarItem, splitBarItems, type BarItem } from './barItems';
+import { barItems, barLead, drawBarItem, inBarMenu, splitBarItems, type BarItem } from './barItems';
 import type { BarLayoutProps } from './BarLayout';
 import { BarOverflow } from './BarOverflow';
 import { BAR_ITEM, BAR_LEAD, BAR_MORE, fitting } from './useBarOverflow';
@@ -33,7 +33,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const menu = overflow === 'menu';
   const root = useRef<HTMLDivElement>(null);
   const run = useMemo(() => trackRun(shape), [shape]);
-  const items = barItems(nodes, { popLeaves: true, cells, row });
+  const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.reorder });
   const leading = barLead(props.lead, label, props.icon);
   const lengths = useItemLengths(root, drawnKeys(items, leading != null), barKeyOf);
   const gap = useRunGap(root);
@@ -59,7 +59,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
         {line.map((item, i) => drawBarItem(item, false, attrs, place(first + i)))}
         {rest.length > 0 && (
           <span className={`${b.cell} ${s.item}`} {...{ [BAR_MORE]: '' }} style={place(order.length - 1).style}>
-            <BarOverflow label={overflowLabel} side={place(order.length - 1).side}>{rest.map((item) => drawBarItem(item, true, attrs))}</BarOverflow>
+            <BarOverflow label={overflowLabel} side={place(order.length - 1).side}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
           </span>
         )}
       </AlongContext.Provider>

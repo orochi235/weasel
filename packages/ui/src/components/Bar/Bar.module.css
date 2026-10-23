@@ -287,3 +287,8 @@
   border: 1px solid var(--wzl-border);
   background: var(--wzl-surface);
 }
+
+/* A marked `actions` button's wrapper: it lays out as the bare button would. */
+.unit {
+  display: flex;
+}

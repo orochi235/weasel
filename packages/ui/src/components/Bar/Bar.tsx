@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import type { TrackShape } from '@weasel-js/geom';
-import { applyPrefConditions, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefOrder, type PrefSection } from '@weasel-js/prefs';
 import type { RunAlign } from '../Along/alongContext';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
@@ -68,6 +68,13 @@ export interface BarProps {
   shape?: TrackShape;
   /** Where a run shorter than its shape sits. Default: the nearest `Along`'s, else `'center'`. */
   align?: RunAlign;
+  /** The order to draw in: each group's child keys, and each `actions` leaf's action keys, by container path (`''` is
+   *  the top level). A key it leaves out takes its schema position, an action it leaves out goes at its run's end,
+   *  and an unknown key is dropped. */
+  order?: PrefOrder;
+  /** Given, the bar marks its items and the buttons of its `actions` runs with `data-bar-unit` and `data-bar-in`, for
+   *  a reorder gesture to move; it is called with the order that gesture settles on. */
+  onReorder?: (order: PrefOrder) => void;
   className?: string;
 }
 
@@ -89,7 +96,7 @@ export function Bar(props: BarProps) {
   const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets, settles };
   return (
     <BarLayout
-      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupBody draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
+      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(orderPrefGroup(shown, props.order), '', (group, path) => <GroupBody draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
       orientation={orientation}
       label={label}
       lead={props.lead ?? schema.lead}
@@ -99,6 +106,7 @@ export function Bar(props: BarProps) {
       overflowLabel={props.overflowLabel}
       shape={props.shape}
       align={props.align}
+      reorder={props.onReorder !== undefined}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
       row={(node) => <PropertyList>{leafRow(node, draw)}</PropertyList>}
