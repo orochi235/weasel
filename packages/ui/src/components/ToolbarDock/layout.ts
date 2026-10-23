@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Corner } from 'windease';
 import type { BarOrientation } from '../Bar';
 
+/** Which edge of a ToolbarDock's container a dock runs along; a left or right dock lays its bars vertically. */
 export type DockEdge = 'top' | 'bottom' | 'left' | 'right';
 
 /** A place the host lets toolbars sit. */

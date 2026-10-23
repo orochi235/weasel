@@ -11,6 +11,7 @@ export interface DockBarContextValue {
   onKeyDown?: (e: KeyboardEvent<HTMLElement>) => void;
 }
 
+/** The dock bar a handle sits in; null where a bar draws itself outside a dock, so the handle stays off. */
 export const DockBarContext = createContext<DockBarContextValue | null>(null);
 
 /** A movable bar's handle: the bar it moves, and the attributes and handlers its lead spreads. */
