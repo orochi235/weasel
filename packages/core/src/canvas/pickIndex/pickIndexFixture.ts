@@ -32,9 +32,9 @@ export function regionPick(
   region: SelectRegion,
   mode: LassoHitMode,
   d: PoseDescriptor<unknown>,
-  includeContainers = false,
+  includeGroups = false,
 ): PickQuery<unknown> {
-  return regionPickQuery(region, mode, d, { includeContainers });
+  return regionPickQuery(region, mode, d, { includeGroups });
 }
 
 export function rng(seed: number): () => number {

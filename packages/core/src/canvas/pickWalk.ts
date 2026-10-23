@@ -3,7 +3,7 @@
  * query supplies only the shape test and the clip predicate for its own region.
  *
  * The gates, in the order the walk applies them:
- *   1. containers, when the query does not want them
+ *   1. groups, when the query does not want them
  *   2. the node is painted at all — not hidden in the scene (`nodeGates`),
  *      and on a layer the asking view's `layerVisibility` / `layerOrder` paints
  *   3. painted alpha is above zero
@@ -105,9 +105,9 @@ export function broadInPlane(broad: PickBroad, m: PlaneMap): PickBroad {
 
 /** One hit-test question: what region, and what counts as covering it. */
 export interface PickQuery<TPose> {
-  /** Default `true`. The area walks exclude containers so a marquee does not
-   *  return a container and its children both. */
-  includeContainers?: boolean;
+  /** Default `true`. The area walks exclude groups so a marquee does not
+   *  return a group and its members both. */
+  includeGroups?: boolean;
   /** Default `false`. Every selecting or editing query passes over locked
    *  nodes; one that only samples what is painted can take them back. */
   includeLocked?: boolean;
@@ -169,7 +169,7 @@ export function pickWalk<TPose>(
   src: PickSource<TPose>,
   q: PickQuery<TPose>,
 ): string[] {
-  const includeContainers = q.includeContainers ?? true;
+  const includeGroups = q.includeGroups ?? true;
   const isLocked = q.includeLocked === true ? undefined : src.isLocked;
   const out: string[] = [];
 
@@ -223,7 +223,7 @@ export function pickWalk<TPose>(
     return query === null ? null : query.broad;
   }) : null) ?? order;
   for (const node of visit) {
-    if (!includeContainers && node.kind === 'group') continue;
+    if (!includeGroups && node.kind === 'group') continue;
     // Transparent to picking: the click belongs to whatever is behind it,
     // which for a label inside a box is the box.
     if (node.pickable === false) continue;

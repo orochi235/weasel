@@ -28,7 +28,7 @@ function copiedSquare(copies: readonly Affine[], clip?: RectPose) {
 }
 
 const pickAt = (scene: ReturnType<typeof copiedSquare>, x: number, y: number) =>
-  pickWalk<RectPose>(scenePickSource(scene), { ...pointQuery(x, y, 0), includeContainers: false });
+  pickWalk<RectPose>(scenePickSource(scene), { ...pointQuery(x, y, 0), includeGroups: false });
 
 describe('pickWalk: a container drawing copies', () => {
   it('answers a pick on a copy with the child it copies', () => {

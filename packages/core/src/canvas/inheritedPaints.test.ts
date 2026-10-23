@@ -81,7 +81,7 @@ describe('picking an inheriting node', () => {
   const pickAt = (scene: ReturnType<typeof setup>['scene'], x: number, y: number): string[] =>
     pickWalk(scenePickSource(scene), {
       ...scenePointQuery(AUTO_POSE_DESCRIPTOR, true, 0)(x, y, { x: 1, y: 1 }),
-      includeContainers: false,
+      includeGroups: false,
     });
 
   it('takes a point inside a child filled by inheritance', () => {

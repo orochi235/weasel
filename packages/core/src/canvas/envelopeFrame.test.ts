@@ -144,7 +144,7 @@ describe('a derived container under a rigid strategy', () => {
     const src = scenePickSource(scene);
     // A's center; the displaced reading would put A at (20,40)-(40,50).
     const hit = pickWalk<RectPose>(src, {
-      includeContainers: false,
+      includeGroups: false,
       clipAdmits: () => true,
       hits: (_n, p) => 20 >= p.x && 20 <= p.x + p.width && 25 >= p.y && 25 <= p.y + p.height,
     });

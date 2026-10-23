@@ -52,3 +52,14 @@ describe('inferredNodeRouting', () => {
     expect(r.classify({ kind: 'pen' })).toBe('pen');
   });
 });
+
+describe('inferredNodeRouting — a mark that has children', () => {
+  it('routes by its data, not as a group', () => {
+    const r = createNodeRouting();
+    for (const k of inferredNodeRouting) r.register(k);
+    const mark = { kind: 'mark', children: ['c'] } as never;
+    expect(r.classify({ text: 'hi' }, mark)).toBe('text');
+    expect(r.classify({ color: '#fff' }, mark)).toBe('unknown');
+    expect(r.classify({}, { kind: 'group' } as never)).toBe('group');
+  });
+});

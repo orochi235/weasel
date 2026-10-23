@@ -60,7 +60,7 @@ describe('where a group is hit', () => {
   const pickAt = (scene: TestScene, x: number, y: number): string[] =>
     pickWalk(scenePickSource(scene), {
       ...scenePointQuery(AUTO_POSE_DESCRIPTOR, true, 0)(x, y, { x: 1, y: 1 }),
-      includeContainers: true,
+      includeGroups: true,
     });
 
   it('takes a point in its box with no member under it', () => {

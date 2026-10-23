@@ -44,10 +44,10 @@ export interface AABBBounds {
 
 /** What a region query takes back beyond leaves. */
 export interface RegionQueryOptions {
-  /** Default `false`: a region that takes a container and its children
+  /** Default `false`: a region that takes a group and its members
    *  selects the same ink twice. A bare-adapter consumer, which has nothing
-   *  to fold children back into their container, asks for them. */
-  includeContainers?: boolean;
+   *  to fold members back into their group, asks for them. */
+  includeGroups?: boolean;
 }
 
 
@@ -122,7 +122,7 @@ function asInked<T>(filled: () => boolean, shape: T): T {
   return filled() ? shape : { ...shape, openFill: 'none' };
 }
 
-/** The walk every region query shares: skip containers unless asked, gate on
+/** The walk every region query shares: skip groups unless asked, gate on
  *  the clip, and let `regionTakes` decide each node. */
 function walkArea(
   scene: Scene<unknown, string, unknown>,
@@ -144,7 +144,7 @@ export function regionPickQuery(
   query: RegionQueryOptions,
 ): PickQuery<unknown> {
   return {
-    includeContainers: query.includeContainers === true,
+    includeGroups: query.includeGroups === true,
     broad: { box: r.bounds },
     clipAdmits: (clip, node, pose, derived) => {
       const g = poseDescriptorForNode(descriptor, node);
