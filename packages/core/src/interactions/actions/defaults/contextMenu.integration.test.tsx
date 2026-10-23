@@ -94,7 +94,7 @@ describe('menu.context', () => {
     expect(t.host().current()?.entries.map((e) => e.kind === 'item' && e.label)).toEqual(['Delete']);
   });
 
-  it("selects the group of the node the dispatcher classified, not the last one the picker walked", () => {
+  it('selects the group of the node the dispatcher classified, not the last one the picker walked', () => {
     let box = '' as NodeId;
     let child = '' as NodeId;
     // The picker lists the container last; the classifier collapses a parent

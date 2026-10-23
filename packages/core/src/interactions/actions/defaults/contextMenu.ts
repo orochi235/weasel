@@ -37,10 +37,9 @@ export function menuHitFor(deps: ActionDeps, at?: Point): { hit: MenuHit; select
     const hit = deps.hitAt?.(at);
     if (!hit) return { hit: {} };
     if (hit.bodyTarget === 'empty') return { hit: { bodyTarget: 'empty' } };
-    return {
-      hit: { bodyTarget: 'selected-body', bodyKind: hit.bodyKind },
-      ...(hit.bodyTarget === 'unselected-body' && hit.id !== undefined ? { select: hit.id } : {}),
-    };
+    const target = hit.bodyTarget === 'unselected-body' && hit.id !== undefined ? groupFor(deps, hit.id) : undefined;
+    const bodyKind = (target !== undefined ? deps.kindOfNode?.(target) : undefined) ?? hit.bodyKind;
+    return { hit: { bodyTarget: 'selected-body', bodyKind }, ...(target !== undefined ? { select: target } : {}) };
   }
   if (!deps.selection) return { hit: {} };
   const ids = deps.selection.get();
@@ -75,7 +74,7 @@ export function openContextMenu(
   if (typeof p.clientX === 'number' && typeof p.worldX === 'number') {
     const world = { x: p.worldX, y: p.worldY as number };
     const { hit, select } = menuHitFor(deps, world);
-    if (select) deps.selection?.set([asNodeId(groupFor(deps, select))]);
+    if (select) deps.selection?.set([asNodeId(select)]);
     return host.open({
       hit,
       client: { x: p.clientX, y: p.clientY as number }, world, source: 'pointer',
