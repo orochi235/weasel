@@ -56,7 +56,7 @@ export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): Reac
           <OptionsBar ariaLabel="Snap" items={[{ value: 'grid', label: 'Grid', selected: true, onChange: () => {} }, { value: 'guides', label: 'Guides', selected: false, onChange: () => {} }]} {...common} />
         </Along>
       </div>
-      <p className={s.readout} data-readout="pressed">Pressed: {pressed}</p>
+      <p data-readout="pressed">Pressed: {pressed}</p>
     </div>
   );
 }
