@@ -98,7 +98,6 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
     const into = layer.current;
     const bar = barOf(barId);
     if (!el || !into || !bar || !latest.current.onLayoutChange || drag.current !== null || e.button !== 0) return;
-    setHeld(null);
     const press = { clientX: e.clientX, clientY: e.clientY };
     const torn = { now: false };
     let grab: DockGrab | null = null;
@@ -113,12 +112,16 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
       threshold: latest.current.dragPx,
       onActivate: () => {
         grab = grabBar(el, into, latest.current.docks, bar, latest.current.layout);
+        setHeld(null);
         const unavailable = new Set(grab.boxes.filter((d) => !bar.docks.includes(d.id)).map((d) => d.id));
         setView({ barId, unavailable, drop: null, float: grab.row ? null : grab.from, size: grab.size });
       },
       onMove: (ev) => {
         if (!grab) return;
-        if (!grab.empties.length) grab.empties = measureEmpties(el);
+        if (grab.empties === null) {
+          const drawn = measureEmpties(el);
+          if (drawn.length) grab.empties = drawn;
+        }
         const step = tearStep(grab, bar, press, ev, torn);
         const was = latest.current.layout;
         if (step.drop) next = movedLayout(was, barId, spreadTarget(was, barId, step.drop.target, grab.drawn));
@@ -132,6 +135,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
         swallowNextClick(el);
         if (next) commit(next);
       },
+      onClick: end,
       onCancel: end,
     });
   };

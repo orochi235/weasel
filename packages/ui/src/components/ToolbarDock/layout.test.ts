@@ -81,6 +81,13 @@ describe('resolveLayout', () => {
     expect(out).toEqual({ docks: { top: [['a']], left: [] }, floating: {} });
   });
 
+  it('takes a bar’s first allowed dock in the bar’s own order, not the order the docks are declared in', () => {
+    const bars = [bar('a', { docks: ['left', 'top'] }), bar('b', { docks: ['gone', 'left', 'top'] })];
+    expect(resolveLayout(docks, bars, undefined)).toEqual({ docks: { top: [], left: [['a', 'b']] }, floating: {} });
+    const stored: ToolbarLayout = { docks: {}, floating: { a: place } };
+    expect(resolveLayout(docks, [bar('a', { docks: ['left', 'top'] })], stored).docks).toEqual({ top: [], left: [['a']] });
+  });
+
   it('keeps a floating bar that may still float', () => {
     const stored: ToolbarLayout = { docks: {}, floating: { a: place } };
     const out = resolveLayout(docks, [bar('a', { float: true })], stored);

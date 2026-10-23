@@ -64,7 +64,8 @@ function isInteractive(target: EventTarget | null): boolean {
  * no zone tree, so the node model would be all cost. The drag is threshold-gated and captures the pointer only once
  * it is a drag, so a press on a non-native control inside the box still clicks it. The box follows the pointer
  * while dragging; the release reports the result once, and the box stays where it was dropped until `placement`
- * changes or the next press. Escape puts it back. Persists nothing.
+ * changes or the next press. That hold compares `placement` by identity, so a host passes a stable object, not one
+ * built afresh each render. Escape puts it back. Persists nothing.
  */
 export function useFloatingPlacement({
   panelRef,

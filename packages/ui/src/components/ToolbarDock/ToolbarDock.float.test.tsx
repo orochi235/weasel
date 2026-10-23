@@ -225,15 +225,48 @@ describe('a floating bar', () => {
     expect(onChange.mock.calls[0]![0].floating.file).toEqual({ x: 400, y: 300, anchor: null, orientation: 'horizontal' });
   });
 
-  it('clicks its buttons on a plain press', () => {
+  // jsdom synthesizes no click from a pointerdown/up, so each test fires the click a browser would, after the press
+  // the dock has seen: what can fail is the dock committing, or swallowing that click.
+  it('commits nothing for a plain press on its handle, and lets the click through', () => {
+    const onChange = setup(start([['view']], afloat));
+    const clicked = vi.fn();
+    handle('File').addEventListener('click', clicked);
+    fireEvent.pointerDown(handle('File'), pt(350, 215));
+    release([350, 215]);
+    fireEvent.click(handle('File'));
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('clicks a button on a plain press, committing nothing, even after a plain press on its handle', () => {
     ran.mockClear();
     const onChange = setup(start([['view']], afloat));
+    fireEvent.pointerDown(handle('File'), pt(350, 215));
+    release([350, 215]);
     const go = screen.getByRole('button', { name: 'File go' });
-    fireEvent.pointerDown(go, pt(360, 215));
-    release([360, 215]);
+    fireEvent.pointerDown(go, pt(380, 215));
+    release([380, 215]);
     fireEvent.click(go);
     expect(ran).toHaveBeenCalledWith('file');
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('a plain press on a handle', () => {
+  it('leaves the dock ready for the next drag, of the same bar or another', () => {
+    const onChange = setup(start([['file', 'view', 'shape']]));
+    fireEvent.pointerDown(handle('File'), pt(50, 15));
+    release([50, 15]);
+    press(handle('File'), [50, 15], [[60, 15], [260, 15]]);
+    release([260, 15]);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0]![0].docks.top).toEqual([['view', 'shape', 'file']]);
+    fireEvent.pointerDown(handle('View'), pt(50, 15));
+    release([50, 15]);
+    press(handle('View'), [50, 15], [[60, 15], [160, 15]]);
+    release([160, 15]);
+    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange.mock.calls[1]![0].docks.top).toEqual([['shape', 'view', 'file']]);
   });
 });
 
@@ -252,6 +285,19 @@ describe('Alt+Enter on a handle', () => {
     expect(onChange.mock.calls[1]![0]).toEqual({ docks: { top: [['view'], ['shape', 'file']], bottom: [] }, floating: {} });
     expect(document.activeElement).toBe(handle('File'));
     expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('File toolbar docked, row 2, position 2 of 2');
+  });
+
+  it('docks into the first dock of the bar’s own list, not the first declared', () => {
+    const later = vi.fn<(l: ToolbarLayout) => void>();
+    const bottomFirst = { ...bars[2]!, docks: ['bottom', 'top'] };
+    function Own() {
+      const [layout, setLayout] = useState(start([['view']], { shape: { x: 300, y: 200, anchor: null, orientation: 'horizontal' } }, [['file']]));
+      return <ToolbarDock docks={docks} bars={[bars[0]!, bars[1]!, bottomFirst]} layout={layout} movable onLayoutChange={(n) => (later(n), setLayout(n))} />;
+    }
+    render(<Own />);
+    key(handle('Shape'));
+    expect(later.mock.calls[0]![0].docks).toEqual({ top: [['view']], bottom: [['file', 'shape']] });
+    expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('Shape toolbar docked, row 1, position 2 of 2');
   });
 
   it('is offered, and does anything, only on a bar that may float', () => {

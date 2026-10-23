@@ -22,8 +22,8 @@ interface EmptyBox {
 export interface DockGrab {
   boxes: DockBox[];
   drawn: Set<string>;
-  /** Filled in once the drag has drawn them, a move or two after it began. */
-  empties: EmptyBox[];
+  /** The strips of empty docks the bar may enter; null until the drag has drawn them, a move or two after it began. */
+  empties: EmptyBox[] | null;
   /** The extent across its dock of the row the bar sat in; null for a bar that floats. */
   row: { vertical: boolean; start: number; end: number } | null;
   /** The bar's place in the floating layer at the press. */
@@ -71,7 +71,7 @@ export function grabBar(root: HTMLElement, layer: HTMLElement, docks: readonly D
   return {
     boxes,
     drawn: drawnBars(root),
-    empties: [],
+    empties: docks.some((d) => bar.docks.includes(d.id) && !layout.docks[d.id]?.length) ? null : [],
     row,
     from: floatHere(root, layer, bar.id, orientation),
     size: { w: r?.width ?? 0, h: r?.height ?? 0 },
@@ -99,7 +99,7 @@ function emptyDropAt(empties: readonly EmptyBox[], p: DockPoint): DockTearStep['
  * floating bar keeps following the pointer while it does. `torn` carries the lift from move to move.
  */
 export function tearStep(grab: DockGrab, bar: DockBar, press: DockPoint, p: DockPoint, torn: { now: boolean }): DockTearStep {
-  const drop = dropAt(grab.boxes, bar, p, bar.float ? TEAR_PX : 0) ?? emptyDropAt(grab.empties, p);
+  const drop = dropAt(grab.boxes, bar, p, bar.float ? TEAR_PX : 0) ?? emptyDropAt(grab.empties ?? [], p);
   const row = grab.row;
   if (bar.float && row && !torn.now) {
     const cross = row.vertical ? p.clientX : p.clientY;

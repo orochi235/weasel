@@ -90,9 +90,13 @@ export function resolveLayout(
   return out;
 }
 
-/** The dock a bar goes to when nothing else places it: the first of `docks` it may sit in. */
+/** The dock a bar goes to when nothing else places it: the first of its own `docks` that exists. */
 export function homeDock(docks: readonly DockSpec[], bar: DockBar): DockSpec | undefined {
-  return docks.find((d) => bar.docks.includes(d.id));
+  for (const id of bar.docks) {
+    const dock = docks.find((d) => d.id === id);
+    if (dock) return dock;
+  }
+  return undefined;
 }
 
 /** Takes a bar out of wherever it sits and places it at `to`. Does not check permissions. */
