@@ -655,12 +655,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Hebrew or Arabic curved bar puts item 1 at the left end while the same bar laid out straight starts on the
   right. Reading order needs an inline direction input, which bears on the `'reading' | 'track'` decision above.
 
-- **(P3) `Tabs`/`PageTabs` and `RadioGroup` do not follow an `Along` yet.** They still lay out on a straight line.
-  Each builds on `useRunRow` (`Along/useRunRow.tsx`), which `BarAlong`, `SegmentsAlong` and `SwatchRings` use: it
-  places a component's keyed children along the run with geom's `placeAlongRun`, scrolls an overlong run with
-  `useRunScroll`, and draws the drag band and end chevrons. In flight (2026-10-22): `Tabs`/`PageTabs`, whose
-  drag-reorder measures along the run, and `RadioGroup`, its label as the lead.
-
 - **(P3) Gaps left in controls along a curve.**
   - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
 

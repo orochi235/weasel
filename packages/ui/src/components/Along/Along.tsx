@@ -25,10 +25,12 @@ const NONE: Box = { width: 0, height: 0 };
  *
  * An arc's angles are degrees clockwise from 12 o'clock on a y-down plane; the default arc is the inscribed
  * circle's top half. An arc is given by its ends, or by the direction its middle faces and its span in degrees or
- * px: `{ at: 0, span: '180px' }` keeps a 180 px top arc however large the box grows. The box takes no pointer input, only the controls inside it do, so a press elsewhere
- * reaches whatever lies beneath. Two `Along`s over one box with different arcs put, say, a `Bar` along the top
- * and a `Slider` along the bottom of one circle. `Slider`, `DetentSlider`, `Bar`, `ToggleBar`, `ButtonBar`, `OptionsBar`, `SwatchGrid` and `SwatchStrip` follow the shape; any
- * other control renders as it does outside an `Along`.
+ * px: `{ at: 0, span: '180px' }` keeps a 180 px top arc however large the box grows. The box takes no pointer
+ * input, only the controls inside it do, so a press elsewhere reaches whatever lies beneath. Two `Along`s over one
+ * box with different arcs put, say, a `Bar` along the top and a `Slider` along the bottom of one circle.
+ *
+ * `Slider`, `DetentSlider`, `Bar`, `ToggleBar`, `ButtonBar`, `OptionsBar`, `SwatchGrid`, `SwatchStrip`, `Tabs`,
+ * `PageTabs` and `RadioGroup` follow the shape; any other control renders as it does outside an `Along`.
  */
 export function Along({ arc = TOP_HALF, shape, align = 'center', className, children }: AlongProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
