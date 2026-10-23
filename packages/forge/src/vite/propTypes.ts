@@ -1,6 +1,6 @@
 import { dirname } from 'node:path';
 import type ts from 'typescript';
-import type { ArgType } from '../csf/argsToSchema.ts';
+import type { ArgShape, ArgType } from '../csf/argsToSchema.ts';
 
 /** What a story file's component takes, as argTypes, and the files its props are declared in. */
 export interface PropTable {
@@ -111,7 +111,19 @@ function componentProps(tsm: typeof ts, checker: ts.TypeChecker, source: ts.Sour
   return null;
 }
 
-/** An argType for each prop a control can edit: a boolean, a string, a number, or a union of string literals. */
+/** What reading one story file's props needs at every level of a prop's type. */
+interface Reading {
+  tsm: typeof ts;
+  checker: ts.TypeChecker;
+  at: ts.SourceFile;
+  skipped: (file: string) => boolean;
+  sources: Set<string>;
+}
+
+/**
+ * An argType for each prop a control can edit: a boolean, a string or anything a string may stand for (a
+ * `ReactNode`), a number, a union with string literals in it, or an array, object or union of objects built of those.
+ */
 function propTable(
   tsm: typeof ts,
   checker: ts.TypeChecker,
@@ -120,36 +132,103 @@ function propTable(
   skipped: (file: string) => boolean,
 ): PropTable {
   const argTypes: Record<string, ArgType> = {};
-  const sources = new Set<string>();
+  const reading: Reading = { tsm, checker, at, skipped, sources: new Set() };
   for (const prop of checker.getPropertiesOfType(checker.getApparentType(props))) {
-    const files = (prop.getDeclarations() ?? []).map((declaration) => declaration.getSourceFile().fileName);
+    const files = declaredIn(prop);
     if (files.length > 0 && files.every(skipped)) continue;
-    const argType = controlFor(tsm, checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(prop, at)), () =>
+    const argType = controlFor(reading, checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(prop, at)), () =>
       writtenOrder(tsm, checker, prop),
     );
     if (!argType) continue;
     const description = tsm.displayPartsToString(prop.getDocumentationComment(checker)).replace(/\s+/g, ' ').trim();
     argTypes[prop.getName()] = description ? { ...argType, description } : argType;
-    for (const file of files) if (!/[\\/]node_modules[\\/]/.test(file)) sources.add(file);
+    record(reading, files);
   }
-  return { argTypes, sources: [...sources] };
+  return { argTypes, sources: [...reading.sources] };
 }
 
-function controlFor(tsm: typeof ts, type: ts.Type, written: () => string[] | null): ArgType | null {
-  const { TypeFlags } = tsm;
+const declaredIn = (symbol: ts.Symbol): string[] =>
+  (symbol.getDeclarations() ?? []).map((declaration) => declaration.getSourceFile().fileName);
+
+const IN_PACKAGES = /[\\/]node_modules[\\/]/;
+
+function record({ sources }: Reading, files: readonly string[]): void {
+  for (const file of files) if (!IN_PACKAGES.test(file)) sources.add(file);
+}
+
+function controlFor(reading: Reading, type: ts.Type, written: () => string[] | null): ArgType | null {
+  const { TypeFlags } = reading.tsm;
   const parts = type.isUnion() ? type.types : [type];
-  const every = (flags: ts.TypeFlags) => parts.every((part) => part.flags & flags);
-  if (every(TypeFlags.BooleanLike)) return { control: { type: 'boolean' } };
-  if (type.flags & TypeFlags.String) return { control: { type: 'text' } };
+  if (parts.every((part) => part.flags & TypeFlags.BooleanLike)) return { control: { type: 'boolean' } };
+  if (parts.some((part) => part.flags & TypeFlags.String)) return { control: { type: 'text' } };
   if (type.flags & TypeFlags.Number) return { control: { type: 'number' } };
   // No control type: the options alone make it a select, and a story's own argType may still say radio.
-  if (parts.length > 1 && every(TypeFlags.StringLiteral)) {
-    const options = parts.map((part) => (part as ts.StringLiteralType).value);
+  const options = literalsOf(reading, parts);
+  if (options.length > 1) {
     const order = written();
     const same = order?.length === options.length && options.every((option) => order.includes(option));
     return { options: same ? order : options };
   }
-  return null;
+  const shape = shapeOf(reading, type, 0);
+  return shape && shape.name !== 'enum' && !(shape.name in SCALARS) ? { control: 'object', type: shape } : null;
+}
+
+const SCALARS = { boolean: true, string: true, number: true };
+
+function literalsOf({ tsm }: Reading, parts: readonly ts.Type[]): string[] {
+  return parts.filter((part) => part.flags & tsm.TypeFlags.StringLiteral).map((part) => (part as ts.StringLiteralType).value);
+}
+
+/** Deep enough for a list of objects holding a union of objects; past it, a type is left to the story's own argType. */
+const MAX_DEPTH = 4;
+
+/**
+ * The shape of a value of `type`, made of parts a control can edit; null when a part it needs has none. An object
+ * type declared in a dependency, or one that is callable or open to any key, is opaque: its fields do not say what it
+ * holds.
+ */
+function shapeOf(reading: Reading, type: ts.Type, depth: number): ArgShape | null {
+  const { tsm, checker } = reading;
+  const { TypeFlags } = tsm;
+  if (depth > MAX_DEPTH) return null;
+  const whole = checker.getNonNullableType(type);
+  const parts = whole.isUnion() ? whole.types : [whole];
+  if (parts.length === 0) return null;
+  if (parts.every((part) => part.flags & TypeFlags.BooleanLike)) return { name: 'boolean' };
+  if (parts.some((part) => part.flags & TypeFlags.String)) return { name: 'string' };
+  if (whole.flags & TypeFlags.Number) return { name: 'number' };
+  const literals = literalsOf(reading, parts);
+  if (literals.length === parts.length || literals.length > 1) return { name: 'enum', value: literals };
+  if (parts.length > 1) {
+    const members = parts.map((part) => shapeOf(reading, part, depth + 1));
+    return members.every((member) => member?.name === 'object') ? { name: 'union', value: members as ArgShape[] } : null;
+  }
+  if (checker.isArrayType(whole)) {
+    const [item] = checker.getTypeArguments(whole as ts.TypeReference);
+    const shape = item && shapeOf(reading, item, depth + 1);
+    return shape ? { name: 'array', value: shape } : null;
+  }
+  if (checker.isTupleType(whole)) {
+    const items = checker.getTypeArguments(whole as ts.TypeReference).map((item) => shapeOf(reading, item, depth + 1));
+    const [first] = items;
+    const same = first && items.every((item) => JSON.stringify(item) === JSON.stringify(first));
+    return same ? { name: 'array', value: first } : null;
+  }
+  if (!(whole.flags & (TypeFlags.Object | TypeFlags.Intersection))) return null;
+  if (whole.getCallSignatures().length > 0 || whole.getConstructSignatures().length > 0) return null;
+  if (checker.getIndexInfosOfType(whole).length > 0) return null;
+  const declared = (whole.getSymbol() ?? whole.aliasSymbol)?.getDeclarations() ?? [];
+  if (declared.some((declaration) => IN_PACKAGES.test(declaration.getSourceFile().fileName))) return null;
+  const fields: Record<string, ArgShape> = {};
+  for (const prop of checker.getPropertiesOfType(whole)) {
+    const files = declaredIn(prop);
+    if (files.some((file) => IN_PACKAGES.test(file) || reading.skipped(file))) return null;
+    const field = shapeOf(reading, checker.getTypeOfSymbolAtLocation(prop, reading.at), depth + 1);
+    if (field) fields[prop.getName()] = field;
+    else if (!(prop.flags & tsm.SymbolFlags.Optional)) return null;
+    record(reading, files);
+  }
+  return Object.keys(fields).length > 0 ? { name: 'object', value: fields } : null;
 }
 
 /**
@@ -181,6 +260,8 @@ function writtenOrder(tsm: typeof ts, checker: ts.TypeChecker, prop: ts.Symbol):
       if (alias && rest.length === 0 && tsm.isTypeAliasDeclaration(alias) && !alias.typeParameters) {
         return literals(alias.type);
       }
+      // An interface or class holds no string literal of its own.
+      if (target && target.flags & (tsm.SymbolFlags.Interface | tsm.SymbolFlags.Class)) return [];
     }
     return null;
   };

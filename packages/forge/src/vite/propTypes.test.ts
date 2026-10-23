@@ -36,7 +36,15 @@ export interface ChipProps extends Shared {
   tone?: 'quiet' | 'loud';
   weight?: Weight;
   either?: Exclude<'quiet' | 'loud' | 'off', 'off'>;
+  note?: string | number | { rich: true };
+  fit?: 'cover' | Fitter | 'contain';
+  stops?: { at: number; label?: string }[];
+  bounds?: readonly [number, number];
+  fill?: { kind: 'solid'; color: string } | { kind: 'hatch'; gap?: number; angle?: number } | { kind: 'hatch'; cross?: boolean };
+  table?: Record<string, number>;
+  handle?: { current: () => void };
 }
+interface Fitter { fit(): void }
 type Heavy = 'bold' | 'black';
 type Weight = 'thin' | Heavy | ('loud');
 export const Chip = (_props: ChipProps) => null;
@@ -50,7 +58,7 @@ export class Legacy { constructor(public props: { open: boolean }) {} }
     writeFileSync(at('legacy.stories.ts'), `import { Legacy } from './Chip';\nexport default { component: Legacy };\n`);
     for (const dir of ['node_modules/@types/react', 'node_modules/kit']) mkdirSync(at(dir), { recursive: true });
     writeFileSync(at('node_modules/@types/react/dom.d.ts'), `export interface DomProps { hidden?: boolean }\n`);
-    writeFileSync(at('node_modules/kit/base.d.ts'), `export interface BaseProps { isOpen?: boolean }\n`);
+    writeFileSync(at('node_modules/kit/base.d.ts'), `export interface BaseProps { isOpen?: boolean; box?: Box }\nexport interface Box { w: number }\n`);
     writeFileSync(at('node_modules/kit/plumbing.d.ts'), `export interface Plumbing { slot?: string }\n`);
     writeFileSync(
       at('wrapped.stories.ts'),
@@ -81,8 +89,47 @@ export default { component: Wrapped };
       count: { control: { type: 'number' } },
       disabled: { control: { type: 'boolean' } },
       label: { control: { type: 'text' }, description: 'Shown beside the glyph.' },
+      style: expect.objectContaining({ control: 'object' }),
+      note: expect.any(Object),
+      fit: expect.any(Object),
+      stops: expect.any(Object),
+      bounds: expect.any(Object),
+      fill: expect.any(Object),
     });
     expect(table?.argTypes.size?.options).toHaveLength(2);
+  });
+
+  it('gives a text control to a union a string may stand in, as a ReactNode is', () => {
+    expect(reader.read(at('chip.stories.ts'))?.argTypes.note).toEqual({ control: { type: 'text' } });
+  });
+
+  it("offers a union's string literals, in written order, when its other members have no control", () => {
+    expect(reader.read(at('chip.stories.ts'))?.argTypes.fit).toEqual({ options: ['cover', 'contain'] });
+  });
+
+  it('describes an array, a tuple, an object and a union of objects by their shape', () => {
+    const { style, stops, bounds, fill } = reader.read(at('chip.stories.ts'))?.argTypes ?? {};
+    expect(style).toEqual({ control: 'object', type: { name: 'object', value: { color: { name: 'string' } } } });
+    expect(stops?.type).toEqual({
+      name: 'array',
+      value: { name: 'object', value: { at: { name: 'number' }, label: { name: 'string' } } },
+    });
+    expect(bounds?.type).toEqual({ name: 'array', value: { name: 'number' } });
+    expect(fill?.type).toEqual({
+      name: 'union',
+      value: [
+        { name: 'object', value: { kind: { name: 'enum', value: ['solid'] }, color: { name: 'string' } } },
+        { name: 'object', value: { kind: { name: 'enum', value: ['hatch'] }, gap: { name: 'number' }, angle: { name: 'number' } } },
+        { name: 'object', value: { kind: { name: 'enum', value: ['hatch'] }, cross: { name: 'boolean' } } },
+      ],
+    });
+  });
+
+  it('gives no control to an object open to any key, or one a required field of which has none', () => {
+    const argTypes = reader.read(at('chip.stories.ts'))?.argTypes;
+    expect(argTypes).toBeDefined();
+    expect(argTypes?.table).toBeUndefined();
+    expect(argTypes?.handle).toBeUndefined();
   });
 
   it("lists a union's options in the order the type is written in, through an alias too", () => {
@@ -100,7 +147,7 @@ export default { component: Wrapped };
     expect(reader.read(at('legacy.stories.ts'))?.argTypes).toEqual({ open: { control: { type: 'boolean' } } });
   });
 
-  it("keeps a package's props and drops the ones React's own types declare", () => {
+  it("keeps a package's props, but not one holding the package's own object, and drops the ones React's own types declare", () => {
     const table = reader.read(at('wrapped.stories.ts'));
     expect(Object.keys(table?.argTypes ?? {}).sort()).toEqual(['isOpen', 'own', 'slot']);
     expect(table?.sources).toEqual([at('wrapped.stories.ts')]);
