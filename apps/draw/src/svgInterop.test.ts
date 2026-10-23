@@ -40,7 +40,7 @@ interface PathObjT {
 }
 
 // `sceneToSvgNodes` reads only a node's kind; the leaf itself comes from `objOf`.
-const nodeOf = (kind: 'leaf' | 'container') => ({ kind, data: {}, pose: { x: 0, y: 0, width: 0, height: 0 } });
+const nodeOf = (kind: 'mark' | 'group') => ({ kind, data: {}, pose: { x: 0, y: 0, width: 0, height: 0 } });
 
 function ids(): () => string {
   let n = 0;
@@ -52,7 +52,7 @@ function ids(): () => string {
 // assert on the lowered objects without the dead `svgNodesToObjs` wrapper.
 function leavesOf(nodes: readonly SvgNode[], nextId: () => string) {
   return svgNodesToSceneDrafts(nodes, nextId)
-    .filter((d): d is Extract<SceneDraft, { kind: 'leaf' }> => d.kind === 'leaf')
+    .filter((d): d is Extract<SceneDraft, { kind: 'mark' }> => d.kind === 'mark')
     .map((d) => d.obj);
 }
 
@@ -119,8 +119,8 @@ describe('objToSvgNode', () => {
 describe('svgNodesToSceneDrafts — <g> → scene container drafts', () => {
   // Convenience: split drafts by kind for assertions.
   const split = (drafts: SceneDraft[]) => ({
-    containers: drafts.filter((d) => d.kind === 'container'),
-    leaves: drafts.filter((d): d is Extract<SceneDraft, { kind: 'leaf' }> => d.kind === 'leaf'),
+    containers: drafts.filter((d) => d.kind === 'group'),
+    leaves: drafts.filter((d): d is Extract<SceneDraft, { kind: 'mark' }> => d.kind === 'mark'),
   });
 
   it('importing a <g> with two leaf children yields a container holding two children', () => {
@@ -163,8 +163,8 @@ describe('svgNodesToSceneDrafts — <g> → scene container drafts', () => {
       children: [leaf],
     };
     const drafts = svgNodesToSceneDrafts([g], ids());
-    const containerIdx = drafts.findIndex((d) => d.kind === 'container');
-    const leafIdx = drafts.findIndex((d) => d.kind === 'leaf');
+    const containerIdx = drafts.findIndex((d) => d.kind === 'group');
+    const leafIdx = drafts.findIndex((d) => d.kind === 'mark');
     expect(containerIdx).toBeGreaterThanOrEqual(0);
     expect(leafIdx).toBeGreaterThan(containerIdx);
     // Every child's parent appears earlier in the list.
@@ -208,7 +208,7 @@ describe('svgNodesToSceneDrafts — <g> → scene container drafts', () => {
     };
     const g: SvgGroupNode = { kind: 'group', children: [leaf] };
     const drafts = svgNodesToSceneDrafts([g], ids());
-    const container = drafts.find((d) => d.kind === 'container')!;
+    const container = drafts.find((d) => d.kind === 'group')!;
     expect(container.id).toMatch(/^i\d+$/);
   });
 
@@ -220,7 +220,7 @@ describe('svgNodesToSceneDrafts — <g> → scene container drafts', () => {
     };
     const drafts = svgNodesToSceneDrafts([node], ids());
     expect(drafts).toHaveLength(1);
-    expect(drafts[0].kind).toBe('leaf');
+    expect(drafts[0].kind).toBe('mark');
     expect(drafts[0].parentId).toBeNull();
   });
 });
@@ -241,7 +241,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
     const source: SceneSource = {
       roots: ['c1'],
       childrenOf: (id) => (id === 'c1' ? ['a', 'b'] : []),
-      get: (id) => nodeOf(id === 'c1' ? 'container' : 'leaf'),
+      get: (id) => nodeOf(id === 'c1' ? 'group' : 'mark'),
       objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
     };
     const nodes = sceneToSvgNodes(source);
@@ -262,7 +262,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
     const source: SceneSource = {
       roots: ['a'],
       childrenOf: () => [],
-      get: () => nodeOf('leaf'),
+      get: () => nodeOf('mark'),
       objOf: (id) => (id === 'a' ? (a as never) : undefined),
     };
     const nodes = sceneToSvgNodes(source);
@@ -279,7 +279,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
     const source: SceneSource = {
       roots: ['outer'],
       childrenOf: (id) => (id === 'outer' ? ['inner'] : id === 'inner' ? ['a'] : []),
-      get: (id) => nodeOf(id === 'a' ? 'leaf' : 'container'),
+      get: (id) => nodeOf(id === 'a' ? 'mark' : 'group'),
       objOf: (id) => (id === 'a' ? (a as never) : undefined),
     };
     const nodes = sceneToSvgNodes(source);
@@ -306,7 +306,7 @@ describe('sceneToSvgNodes — hidden layers', () => {
   const sourceWith = (isPainted?: (id: string) => boolean): SceneSource => ({
     roots: ['a', 'c1'],
     childrenOf: (id) => (id === 'c1' ? ['b'] : []),
-    get: (id) => nodeOf(id === 'c1' ? 'container' : 'leaf'),
+    get: (id) => nodeOf(id === 'c1' ? 'group' : 'mark'),
     objOf: (id) => (id === 'a' ? (rect('a', 0) as never)
       : id === 'b' ? (rect('b', 20) as never) : undefined),
     ...(isPainted ? { isPainted } : {}),
@@ -347,7 +347,7 @@ describe('sceneToSvgNodes — optional roots override', () => {
   const source: SceneSource = {
     roots: ['a', 'b'],
     childrenOf: () => [],
-    get: () => nodeOf('leaf'),
+    get: () => nodeOf('mark'),
     objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
   };
 
@@ -385,7 +385,7 @@ describe('container round-trip: drafts → svg → drafts (stable ids)', () => {
     const source: SceneSource = {
       roots: ['c1'],
       childrenOf: (id) => (id === 'c1' ? ['a', 'b'] : []),
-      get: (id) => nodeOf(id === 'c1' ? 'container' : 'leaf'),
+      get: (id) => nodeOf(id === 'c1' ? 'group' : 'mark'),
       objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
     };
 
@@ -396,8 +396,8 @@ describe('container round-trip: drafts → svg → drafts (stable ids)', () => {
     let next = 0;
     const drafts = svgNodesToSceneDrafts(parsed.nodes, () => `re-${next++}`);
 
-    const containers = drafts.filter((d) => d.kind === 'container');
-    const leaves = drafts.filter((d) => d.kind === 'leaf');
+    const containers = drafts.filter((d) => d.kind === 'group');
+    const leaves = drafts.filter((d) => d.kind === 'mark');
     expect(containers).toHaveLength(1);
     expect(containers[0].id).toBe('c1'); // stable id round-trips via wd:group-id
     expect(leaves).toHaveLength(2);
@@ -591,7 +591,7 @@ describe('stroke is a whole Stroke', () => {
       + ' stroke-width="3" stroke-dasharray="4 2" stroke-linecap="round"/></svg>',
     );
     const drafts = svgNodesToSceneDrafts(parsed.nodes, ids());
-    const leaf = drafts.find((d) => d.kind === 'leaf');
+    const leaf = drafts.find((d) => d.kind === 'mark');
     expect(leaf).toBeDefined();
     expect((leaf as { obj: { stroke: unknown } }).obj.stroke).toMatchObject({
       width: 3, dash: [4, 2], cap: 'round',
@@ -604,7 +604,7 @@ describe('stroke is a whole Stroke', () => {
       + '<rect x="0" y="0" width="10" height="10" fill="none" stroke="#00ff00" stroke-width="3"/></svg>',
     );
     const drafts = svgNodesToSceneDrafts(parsed.nodes, ids());
-    const leaf = drafts.find((d) => d.kind === 'leaf') as { obj: { stroke: Stroke } };
+    const leaf = drafts.find((d) => d.kind === 'mark') as { obj: { stroke: Stroke } };
     expect(leaf.obj.stroke).toEqual({ paint: { color: '#00ff00' }, width: 3 });
   });
 });
@@ -648,8 +648,8 @@ describe('svgNodesToSceneDrafts — what the kit import gives it', () => {
       + ' orient="auto"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>'
       + '<line x1="0" y1="0" x2="50" y2="0" stroke="#000" marker-end="url(#tri)"/></svg>';
     const parsed = parseSvg(svg);
-    const leaf = svgNodesToSceneDrafts(parsed, ids()).find((d) => d.kind === 'leaf')!;
-    if (leaf.kind !== 'leaf' || !('path' in leaf.obj)) throw new Error('expected a path leaf');
+    const leaf = svgNodesToSceneDrafts(parsed, ids()).find((d) => d.kind === 'mark')!;
+    if (leaf.kind !== 'mark' || !('path' in leaf.obj)) throw new Error('expected a path leaf');
     const key = resolveStroke(leaf.obj.stroke)?.markerEnd;
     expect(key).toBe(parsed.markers![0].id);
     expect(getMarker(key as string)).toBeDefined();
@@ -683,8 +683,8 @@ describe('images', () => {
       roots: ['g'],
       childrenOf: (id) => (id === 'g' ? ['im'] : []),
       get: (id) => (id === 'g'
-        ? { kind: 'container', data: {}, pose: { x: 0, y: 0, width: 5, height: 5 } }
-        : { kind: 'leaf', data: {}, pose: { x: 0, y: 0, width: 5, height: 5 } }),
+        ? { kind: 'group', data: {}, pose: { x: 0, y: 0, width: 5, height: 5 } }
+        : { kind: 'mark', data: {}, pose: { x: 0, y: 0, width: 5, height: 5 } }),
       objOf: (id) => (id === 'im' ? img : undefined),
     };
     const [g] = sceneToSvgNodes(source) as SvgGroupNode[];

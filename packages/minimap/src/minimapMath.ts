@@ -88,7 +88,7 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
   let maxY = -Infinity;
   let any = false;
   for (const node of scene.nodes.values()) {
-    if (node.kind !== 'leaf') continue;
+    if (node.kind !== 'mark') continue;
     const b = poseDescriptorForNode(descriptor, node).getBounds(poseOf(scene, node));
     if (!Number.isFinite(b.x + b.y + b.width + b.height)) continue;
     if (b.x < minX) minX = b.x;

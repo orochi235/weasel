@@ -60,7 +60,7 @@ export type PageMessage =
 /** One child row of the scene tree. `nodeId` absent asks for the top level. */
 export interface DevtoolsNodeSummary {
   id: string;
-  kind: 'leaf' | 'container';
+  kind: 'mark' | 'group';
   layer: string;
   childCount: number;
   hidden: boolean;

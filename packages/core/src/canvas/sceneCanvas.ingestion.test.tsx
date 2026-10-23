@@ -205,7 +205,7 @@ describe('SceneCanvasApi.ingest', () => {
     });
 
     const node = scene.get(scene.roots[0])!;
-    expect(node.kind).toBe('leaf');
+    expect(node.kind).toBe('mark');
     // The stubbed embed seam reports the file's own MIME; the SVG handler
     // must have forced image/svg+xml regardless.
     expect((node.data as D).image!.src).toMatch(/^data:image\/svg\+xml/);
@@ -235,11 +235,11 @@ describe('SceneCanvasApi.ingest', () => {
     // Multi-root file → one wrapper container holding the rect leaf and the
     // <g> container (which holds the inner rect leaf).
     const wrapper = scene.get(scene.roots[0])!;
-    expect(wrapper.kind).toBe('container');
+    expect(wrapper.kind).toBe('group');
     const children = scene.childrenOf(scene.roots[0]).map((id) => scene.get(id)!);
     expect(children).toHaveLength(2);
-    const leaf = children.find((n) => n.kind === 'leaf')!;
-    const group = children.find((n) => n.kind === 'container')!;
+    const leaf = children.find((n) => n.kind === 'mark')!;
+    const group = children.find((n) => n.kind === 'group')!;
     expect(leaf).toBeDefined();
     expect(group).toBeDefined();
     const leafData = leaf.data as { path?: { kind: string }; fill?: { paint?: { color?: string } } };
@@ -279,7 +279,7 @@ describe('SceneCanvasApi.ingest', () => {
 
     const text = buildWeaselClipboardText([
       {
-        kind: 'leaf', id: 'src-1', layer: 'main', parent: null,
+        kind: 'mark', id: 'src-1', layer: 'main', parent: null,
         pose: { x: 10, y: 10, width: 20, height: 20 }, data: {},
       },
     ]);
@@ -310,7 +310,7 @@ describe('SceneCanvasApi.ingest', () => {
 
     const text = buildWeaselClipboardText([
       {
-        kind: 'leaf', id: 'src-1', layer: 'main', parent: null,
+        kind: 'mark', id: 'src-1', layer: 'main', parent: null,
         pose: { x: 10, y: 10, width: 20, height: 20 }, data: {},
       },
     ]);
@@ -357,7 +357,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
 
   const NODE_TEXT = buildWeaselClipboardText([
     {
-      kind: 'leaf', id: 'src-1', layer: 'main', parent: null,
+      kind: 'mark', id: 'src-1', layer: 'main', parent: null,
       pose: { x: 10, y: 10, width: 20, height: 20 }, data: {},
     },
   ]);

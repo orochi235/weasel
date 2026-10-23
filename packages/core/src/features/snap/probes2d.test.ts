@@ -10,7 +10,7 @@ const ID = asNodeId('r');
 function strokedRect(): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    id: ID, kind: 'leaf', layer: 'main',
+    id: ID, kind: 'mark', layer: 'main',
     data: { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#000' }, width: 10 } },
     pose: { x: 10, y: 20, width: 100, height: 50 },
   });

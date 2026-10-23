@@ -25,7 +25,7 @@ const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
 /** A scene of path nodes, as the path source reads one. */
 function pathScene(paths: Record<string, string>): AnyScene {
   const nodes = new Map(Object.entries(paths).map(([id, d]) => [
-    asNodeId(id), { id: asNodeId(id), kind: 'leaf' as const, layer: 'default', parent: null, pose: pathFromD(d), data: {} },
+    asNodeId(id), { id: asNodeId(id), kind: 'mark' as const, layer: 'default', parent: null, pose: pathFromD(d), data: {} },
   ]));
   return { nodes, layers: [{ id: 'default' }], getVersion: () => 1 } as unknown as AnyScene;
 }

@@ -11,7 +11,7 @@ const B = asNodeId('b');
 function makeScene() {
   const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
   const add = (id: string) =>
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { ...POSE }, data: { label: id } });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { ...POSE }, data: { label: id } });
   const adapter = { setPose: (id: string, pose: unknown) => { scene.setPose(asNodeId(id), pose as typeof POSE); } };
   const depths = () => [scene.history.undoDepth(), scene.history.redoDepth()];
   // What throws: a kit op and an external op that each refuse once armed.

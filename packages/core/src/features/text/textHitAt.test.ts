@@ -49,8 +49,8 @@ async function curved(hideSources: boolean, face = BARS) {
     systemLayers: [{ id: 'main' }],
     registry: withPathEffectsRegistry(),
     initial: [
-      { id: T, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 400, height: 120 }, data: TEXT, hidden: hideSources },
-      { id: P, kind: 'leaf', layer: 'main', pose: { x: 0, y: 300, width: 400, height: 1 }, data: { path: pathFromD('M0 300 L400 300') }, hidden: hideSources },
+      { id: T, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 400, height: 120 }, data: TEXT, hidden: hideSources },
+      { id: P, kind: 'mark', layer: 'main', pose: { x: 0, y: 300, width: 400, height: 1 }, data: { path: pathFromD('M0 300 L400 300') }, hidden: hideSources },
       { ...pathEffectNode({ kind: 'textAlong', hideSources }, [T, P], 'main', PATH_EFFECT_DERIVATIONS), id: FX },
     ],
   });

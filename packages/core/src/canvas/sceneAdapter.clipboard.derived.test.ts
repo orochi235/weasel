@@ -32,14 +32,14 @@ const ROW = { childPoses: () => [] } as unknown as LayoutStrategy<RectPose>;
 /** `a` and `b`, an edge between them, and a label that follows the edge. */
 function makeScene(registry: Parameters<typeof createScene<D, 'main', RectPose>>[0]['registry'] = {}) {
   const scene: S = createScene<D, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: rect(0), data: { label: 'a' } });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: rect(100), data: { label: 'b' } });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: rect(0), data: { label: 'a' } });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: rect(100), data: { label: 'b' } });
   const edge = scene.add({
-    kind: 'leaf', layer: 'main', pose: rect(0), data: { label: 'edge' },
+    kind: 'mark', layer: 'main', pose: rect(0), data: { label: 'edge' },
     dependsOn: [a, b], derivePath: between,
   });
   const label = scene.add({
-    kind: 'leaf', layer: 'main', pose: rect(0), data: { label: 'label' },
+    kind: 'mark', layer: 'main', pose: rect(0), data: { label: 'label' },
     dependsOn: [edge], derivePose: beside as never,
   });
   return { scene, a, b, edge, label };
@@ -119,8 +119,8 @@ describe('pasting across the wire format', () => {
 describe('pasting a layout container', () => {
   function withRow(registry: Parameters<typeof makeScene>[0] = {}) {
     const scene: S = createScene<D, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry });
-    const row = scene.add({ kind: 'container', layer: 'main', pose: rect(0), data: { label: 'row' } });
-    scene.add({ kind: 'leaf', layer: 'main', pose: rect(0), data: { label: 'kid' }, parent: row });
+    const row = scene.add({ kind: 'group', layer: 'main', pose: rect(0), data: { label: 'row' } });
+    scene.add({ kind: 'mark', layer: 'main', pose: rect(0), data: { label: 'kid' }, parent: row });
     // Attached directly: these tests are about what a copy carries, not about arranging.
     (scene.get(row) as { layout?: LayoutStrategy<RectPose> }).layout = ROW;
     return { scene, row };
@@ -149,7 +149,7 @@ describe('pasting a container that declares a unit scope', () => {
   it('carries the scope to the copy, across the wire too', () => {
     const scene: S = createScene<D, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const units = { system: { base: 'mm', units: { mm: 1 } }, scale: 0.5 };
-    const box = scene.add({ kind: 'container', layer: 'main', pose: rect(0), data: { label: 'box' }, units });
+    const box = scene.add({ kind: 'group', layer: 'main', pose: rect(0), data: { label: 'box' }, units });
     const pasted = paste(scene, overTheWire(copy(scene, [box]))).byLabel.get('box') as N & { units?: unknown };
     expect(pasted.units).toEqual(units);
   });

@@ -34,7 +34,7 @@ group('scene.add — leaf, by tree depth', (bench) => {
     const { scene, parent } = chainAt(depth);
     bench(`depth ${depth}`, () => {
       scene.add({
-        kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 },
+        kind: 'mark', layer: 'main', pose: POSE, data: { n: 0 },
         ...(parent !== null ? { parent } : {}),
       });
     });
@@ -47,7 +47,7 @@ group('scene.add + scene.remove — round trip, by tree depth', (bench) => {
     const { scene, parent } = chainAt(depth);
     bench(`depth ${depth}`, () => {
       const id = scene.add({
-        kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 },
+        kind: 'mark', layer: 'main', pose: POSE, data: { n: 0 },
         ...(parent !== null ? { parent } : {}),
       });
       scene.remove(id);
@@ -59,7 +59,7 @@ group('scene.setPose — by tree depth', (bench) => {
   for (const depth of DEPTHS) {
     const { scene, parent } = chainAt(depth);
     const id = scene.add({
-      kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 },
+      kind: 'mark', layer: 'main', pose: POSE, data: { n: 0 },
       ...(parent !== null ? { parent } : {}),
     });
     let i = 0;
@@ -76,7 +76,7 @@ group('scene.setPose — by tree depth', (bench) => {
  */
 group('per-frame pose write — one node, three paths', (bench) => {
   const scene = emptyScene(60);
-  const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 } });
+  const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { n: 0 } });
 
   let i = 0;
   bench('setPose, fresh object — records a step', () => {
@@ -100,7 +100,7 @@ group('per-frame pose write — one node, three paths', (bench) => {
 group('per-frame pose write — setPose, untracked', (bench) => {
   // The document write a simulation makes: same `setPose`, nothing recorded.
   const scene = emptyScene(60);
-  const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 } });
+  const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { n: 0 } });
   let i = 0;
   bench('setPose inside untracked — records nothing', () => {
     scene.untracked(() => scene.setPose(id, { x: i++, y: 0, width: 3, height: 4 }));

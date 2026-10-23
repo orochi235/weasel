@@ -18,9 +18,9 @@ const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: 
 /** A dragged leaf and two bystanders the drag does not touch. */
 function fixture(deps: Record<string, unknown> = {}) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const dragged = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(0, 0) });
-  const near = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(50, 0) });
-  const far = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(90, 0) });
+  const dragged = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
+  const near = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(50, 0) });
+  const far = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(90, 0) });
   const ctx = (dx?: number): InvocationCtx => ({
     world: { x: dx ?? 0, y: 0 },
     screen: { x: 0, y: 0 },
@@ -113,10 +113,10 @@ describe('BehaviorResult.opaque', () => {
 
   it('adds to the siblings a layout drop reflows', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const target = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(100, 100, 200, 200) });
-    const sibling = scene.add({ kind: 'leaf', layer: 'main', parent: target, data: {}, pose: box(110, 110) });
-    const dragged = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(0, 0) });
-    const other = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(0, 50) });
+    const target = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(100, 100, 200, 200) });
+    const sibling = scene.add({ kind: 'mark', layer: 'main', parent: target, data: {}, pose: box(110, 110) });
+    const dragged = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
+    const other = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 50) });
     const slot = box(120, 130);
     const layout = {
       snap: { pickTarget: (targets: unknown[]) => targets[0] ?? null },

@@ -8,8 +8,8 @@ const STROKED = { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00'
 
 function fixture() {
   const s = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = s.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: STROKED });
-  const b = s.add({ kind: 'leaf', layer: 'main', pose: { x: 200, y: 0, width: 100, height: 100 }, data: {} });
+  const a = s.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: STROKED });
+  const b = s.add({ kind: 'mark', layer: 'main', pose: { x: 200, y: 0, width: 100, height: 100 }, data: {} });
   return { scene: s as unknown as Scene<unknown, string, unknown>, a: a as string, b: b as string };
 }
 

@@ -18,9 +18,9 @@ export function MoveSnapDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'binA' as never, kind: 'container', layer: 'default', pose: BIN_A, data: { color: '#e8efe4' } },
-      { id: 'binB' as never, kind: 'container', layer: 'default', pose: BIN_B, data: { color: '#efe9e4' } },
-      { id: 'token' as never, kind: 'leaf', layer: 'default', pose: { x: 210, y: 40, width: 40, height: 40 }, data: { color: '#7fb069' } },
+      { id: 'binA' as never, kind: 'group', layer: 'default', pose: BIN_A, data: { color: '#e8efe4' } },
+      { id: 'binB' as never, kind: 'group', layer: 'default', pose: BIN_B, data: { color: '#efe9e4' } },
+      { id: 'token' as never, kind: 'mark', layer: 'default', pose: { x: 210, y: 40, width: 40, height: 40 }, data: { color: '#7fb069' } },
     ],
   });
   const selection = useSelection();

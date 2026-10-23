@@ -187,7 +187,7 @@ function sceneOf(schema: PrefSection, over: SchemaRoot | undefined): PreviewScen
     if (shown && shown.leaf.default !== undefined) node = setAtPath(node, shown.path.split('.'), shown.leaf.default) as typeof node;
   }
   const scene: PreviewScene = createScene({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: NODE, kind: 'leaf', layer: 'default', pose: node.pose ?? {}, data: node.data ?? {} });
+  scene.add({ id: NODE, kind: 'mark', layer: 'default', pose: node.pose ?? {}, data: node.data ?? {} });
   return scene;
 }
 

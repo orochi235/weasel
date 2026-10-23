@@ -12,7 +12,7 @@ type TestScene = Scene<unknown, 'default', RectPose>;
 
 const line = (id: string, y: number) => ({
   id: id as NodeId,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: 0, y, width: 200, height: 0 },
   data: { path: { kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 200, 0]), fillRule: 'nonzero' }, stroke: { paint: { color: '#000' }, width: 1 } },
@@ -20,7 +20,7 @@ const line = (id: string, y: number) => ({
 
 const text = (id: string) => ({
   id: id as NodeId,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: 0, y: 0, width: 100, height: 20 },
   data: { text: 'Hi', style: { fontSize: 16 } },
@@ -28,7 +28,7 @@ const text = (id: string) => ({
 
 const box = (id: string) => ({
   id: id as NodeId,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: 0, y: 0, width: 20, height: 20 },
   data: { path: rectPath(0, 0, 20, 20), fill: { paint: { color: '#f00' } } },

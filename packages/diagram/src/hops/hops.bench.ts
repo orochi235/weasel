@@ -31,14 +31,14 @@ function build(seed: number): BenchScene {
   for (let k = 0; k < SHAPES; k++) {
     const x = (k % cols) * PITCH + Math.round(rand() * 60);
     const y = Math.floor(k / cols) * PITCH + Math.round(rand() * 60);
-    nodes.push({ id: `s${k}`, kind: 'leaf', layer: 'main', pose: { x, y, width: 60, height: 40 }, data: { diagram: {} } });
+    nodes.push({ id: `s${k}`, kind: 'mark', layer: 'main', pose: { x, y, width: 60, height: 40 }, data: { diagram: {} } });
   }
   for (let k = 0; k < CONNECTORS; k++) {
     const a = Math.floor(rand() * SHAPES);
     const step = [1, cols, cols + 1, cols - 1, 2][Math.floor(rand() * 5)]!;
     const b = (a + step) % SHAPES;
     nodes.push({
-      id: `e${k}`, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      id: `e${k}`, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
       data: { diagram: { from: {}, to: {}, router: k % 2 === 0 ? 'orthogonal' : 'straight' } },
       dependsOn: [`s${a}`, `s${b}`], derivePath: EDGE_DERIVE_PATH,
     });

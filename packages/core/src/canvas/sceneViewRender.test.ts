@@ -66,13 +66,13 @@ function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
     s.add({
-      kind: 'leaf',
+      kind: 'mark',
       data: { color: '#f00' },
       layer: 'main',
       pose: { x: 10, y: 20, width: 30, height: 40 },
     });
     s.add({
-      kind: 'leaf',
+      kind: 'mark',
       data: { color: '#0f0' },
       layer: 'main',
       pose: { x: 50, y: 60, width: 70, height: 80 },
@@ -201,21 +201,21 @@ function makeNestedScene(): {
   let auxId = '';
   s.batch('seed', () => {
     containerId = s.add({
-      kind: 'container',
+      kind: 'group',
       data: { color: '#ccc' },
       layer: 'main',
       pose: { x: 100, y: 100, width: 200, height: 200 },
       clipFromPose: (p: P) => ({ kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height }),
     });
     childId = s.add({
-      kind: 'leaf',
+      kind: 'mark',
       data: { color: '#f00' },
       layer: 'main',
       parent: containerId as never,
       pose: { x: 110, y: 110, width: 20, height: 20 },
     });
     auxId = s.add({
-      kind: 'leaf',
+      kind: 'mark',
       data: { color: '#00f' },
       layer: 'aux',
       pose: { x: 5, y: 5, width: 5, height: 5 },
@@ -308,7 +308,7 @@ describe('buildSceneViewCommands — scene-tree fidelity', () => {
 function makeOneNodeScene(pose: P): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
-    s.add({ kind: 'leaf', data: { color: '#f00' }, layer: 'main', pose });
+    s.add({ kind: 'mark', data: { color: '#f00' }, layer: 'main', pose });
   });
   return s;
 }

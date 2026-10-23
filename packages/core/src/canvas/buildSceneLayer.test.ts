@@ -13,8 +13,8 @@ describe('buildSceneLayer hierarchical path', () => {
     const scene = createScene<{ label: string }, 'bg', typeof POSE>({
       systemLayers: [{ id: 'bg' }],
     });
-    const bed = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' } });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'plant' }, parent: bed });
+    const bed = scene.add({ kind: 'group', layer: 'bg', pose: POSE, data: { label: 'bed' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'plant' }, parent: bed });
     const adapter = sceneToAdapter(scene);
     const layer = buildSceneLayer(
       { drawOne: (_node, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } }] },
@@ -40,7 +40,7 @@ describe('buildSceneLayer hierarchical path', () => {
     const scene = createScene<{ label: string }, 'bg', typeof POSE>({
       systemLayers: [{ id: 'bg' }],
     });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'node' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'node' } });
     const adapter = sceneToAdapter(scene);
 
     const TRANSFORMED_POSE = { x: 99, y: 88, width: 10, height: 10 };
@@ -74,7 +74,7 @@ describe('buildSceneLayer postProcess', () => {
       systemLayers: layers.map((id) => ({ id })),
     });
     for (const layer of layers) {
-      scene.add({ kind: 'leaf', layer, pose: POSE, data: { label: `node-${layer}` } });
+      scene.add({ kind: 'mark', layer, pose: POSE, data: { label: `node-${layer}` } });
     }
     return sceneToAdapter(scene);
   }

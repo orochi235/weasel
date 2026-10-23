@@ -43,7 +43,7 @@ const edgeData = (extra: object = {}) => ({ diagram: { from: {}, to: {}, router:
 
 function addEdge(s: S, from: NodeId, to: NodeId, extra: object = {}): NodeId {
   return s.add({
-    kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
+    kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
     data: edgeData(extra), dependsOn: [from, to], derivePath: EDGE_DERIVE_PATH as never,
   });
 }
@@ -65,8 +65,8 @@ const close = (a: Vec2, b: Vec2) => Math.abs(a.x - b.x) < 1e-3 && Math.abs(a.y -
 describe('a live run\'s eased routes', () => {
   it('leave by the face the run will commit, not the one the document holds', () => {
     const s = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const a = s.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
-    const b = s.add({ kind: 'leaf', layer: 'main', pose: box(200, 30), data: { diagram: {} } });
+    const a = s.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
+    const b = s.add({ kind: 'mark', layer: 'main', pose: box(200, 30), data: { diagram: {} } });
     // Laid out left to right by an earlier run.
     const e = addEdge(s, a, b, { from: { port: 'e', laidOut: 'e' }, to: { port: 'w', laidOut: 'w' } });
     const { clock, handle } = live(s, 'layered');
@@ -81,11 +81,11 @@ describe('a live run\'s eased routes', () => {
 
   it('meet a group\'s box where its members are drawn this frame', () => {
     const s = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const a = s.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
-    const b = s.add({ kind: 'leaf', layer: 'main', pose: box(300, 10), data: { diagram: {} } });
-    const c = s.add({ kind: 'leaf', layer: 'main', pose: box(260, 200), data: { diagram: {} } });
+    const a = s.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
+    const b = s.add({ kind: 'mark', layer: 'main', pose: box(300, 10), data: { diagram: {} } });
+    const c = s.add({ kind: 'mark', layer: 'main', pose: box(260, 200), data: { diagram: {} } });
     const g = s.add({
-      kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
+      kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
       data: { diagram: { group: { inset: 12 } } }, dependsOn: [b, c], derivePose: GROUP_DERIVE_POSE as never,
     });
     const e = addEdge(s, a, g);
@@ -105,9 +105,9 @@ describe('a live run\'s eased routes', () => {
 
   it('ease a laid-out bend out of a force run', () => {
     const s = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const a = s.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
-    const b = s.add({ kind: 'leaf', layer: 'main', pose: box(200, 30), data: { diagram: {} } });
-    const c = s.add({ kind: 'leaf', layer: 'main', pose: box(60, 180), data: { diagram: {} } });
+    const a = s.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
+    const b = s.add({ kind: 'mark', layer: 'main', pose: box(200, 30), data: { diagram: {} } });
+    const c = s.add({ kind: 'mark', layer: 'main', pose: box(60, 180), data: { diagram: {} } });
     addEdge(s, a, b);
     addEdge(s, b, c);
     const long = addEdge(s, a, c);

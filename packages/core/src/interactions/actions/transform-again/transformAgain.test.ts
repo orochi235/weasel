@@ -18,7 +18,7 @@ const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: 
 
 function setup(poses: RectPose[] = [box(0, 0)]) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const ids = poses.map((pose) => scene.add({ kind: 'leaf', layer: 'main', data: {}, pose }) as string);
+  const ids = poses.map((pose) => scene.add({ kind: 'mark', layer: 'main', data: {}, pose }) as string);
   let current: string[] = [...ids];
   const selection = {
     get: () => current,

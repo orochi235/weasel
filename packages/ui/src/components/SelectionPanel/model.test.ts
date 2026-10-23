@@ -66,10 +66,10 @@ const entries: NodePropertiesEntry[] = [
 ];
 
 const leaf = (id: string, data: unknown, pose = { x: 0, y: 0 }) =>
-  ({ id, kind: 'leaf', layer: 'default', pose, data, parent: null }) as never;
+  ({ id, kind: 'mark', layer: 'default', pose, data, parent: null }) as never;
 
 describe('classifyKind', () => {
-  const container = { ...(leaf('c', {}) as object), kind: 'container' } as never;
+  const container = { ...(leaf('c', {}) as object), kind: 'group' } as never;
 
   it('classifies by the first routing entry that matches, unknown otherwise', () => {
     expect(classifyKind(leaf('a', { kind: 'rect' }), routing)).toBe('rect');
@@ -82,7 +82,7 @@ describe('classifyKind', () => {
   });
 
   it('hands each entry the node beside its data', () => {
-    const byKind: NodeRoutingEntry = { name: 'leafy', matches: (_d, node) => node?.kind === 'leaf' };
+    const byKind: NodeRoutingEntry = { name: 'leafy', matches: (_d, node) => node?.kind === 'mark' };
     expect(classifyKind(leaf('b', {}), [byKind])).toBe('leafy');
   });
 });

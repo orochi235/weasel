@@ -78,7 +78,7 @@ const GROUND: Shape[] = [
 // layers under planes.
 type LayerId = 'hills' | 'trees';
 const leaf = (id: string, layer: LayerId, pose: Pose, path: Path, color: string, parent?: string) =>
-  ({ id: asNodeId(id), kind: 'leaf' as const, layer, pose, parent: parent ? asNodeId(parent) : null, data: { path, fill: { paint: solid(color) } } });
+  ({ id: asNodeId(id), kind: 'mark' as const, layer, pose, parent: parent ? asNodeId(parent) : null, data: { path, fill: { paint: solid(color) } } });
 
 // A half-sine bump across the top of the box, flat along the bottom.
 const hill = (id: string, x: number, y: number, w: number, h: number, color: string) => {
@@ -94,7 +94,7 @@ const TRUNK_COLOR = '#5a3a1f';
 const tree = (id: string, x: number, y: number, w: number, h: number) => {
   const fh = h * 0.75, tw = w * 0.25;
   return [
-    { id: asNodeId(id), kind: 'container' as const, layer: 'trees' as const, pose: { x, y, width: w, height: h }, parent: null, data: { fill: null } },
+    { id: asNodeId(id), kind: 'group' as const, layer: 'trees' as const, pose: { x, y, width: w, height: h }, parent: null, data: { fill: null } },
     leaf(`${id}-foliage`, 'trees', { x, y, width: w, height: fh },
       polygonFromPoints([{ x: w / 2, y: 0 }, { x: w, y: fh }, { x: 0, y: fh }]), '#3d5a3d', id),
     leaf(`${id}-trunk`, 'trees', { x: x + (w - tw) / 2, y: y + fh, width: tw, height: h - fh },

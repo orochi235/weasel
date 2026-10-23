@@ -40,10 +40,10 @@ function ctx(
 /** Two anchors and an edge deriving the line between them. */
 function fixture() {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
-  const b = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 200, y: 0, width: 10, height: 10 } });
+  const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
+  const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 200, y: 0, width: 10, height: 10 } });
   const edge = scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     data: {},
     pose: { x: 0, y: 0, width: 0, height: 0 },

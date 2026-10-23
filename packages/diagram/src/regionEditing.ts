@@ -38,7 +38,7 @@ export function laneResizeReports(scene: AnyScene, resize: LaneResize): { lanes:
     const { x, y, width, height } = pose;
     if (region !== null) {
       if (region.role === 'container' && region.fitted !== true) boxes.push({ kind: 'box', id, box: { x, y, width, height } });
-    } else if (node.kind === 'container' && dataKeyReader(node) !== null) moves.push({ id, x, y });
+    } else if (node.kind === 'group' && dataKeyReader(node) !== null) moves.push({ id, x, y });
   }
   return { lanes: { kind: 'lanes', pool: pool.id, lanes }, moves, boxes };
 }

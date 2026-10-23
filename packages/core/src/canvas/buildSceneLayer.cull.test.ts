@@ -31,11 +31,11 @@ const testPaintBounds = (node: TestNode, p: Pose) => {
 
 function layerFor(cull: boolean | undefined, withBounds = false) {
   const scene = createScene<{ stroke?: number }, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
-  const inside = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 50, y: 50, width: 20, height: 20 }, data: {} });
-  const far = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 5000, y: 50, width: 20, height: 20 }, data: {} });
+  const inside = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 50, y: 50, width: 20, height: 20 }, data: {} });
+  const far = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 5000, y: 50, width: 20, height: 20 }, data: {} });
   // Its box stops 10 units right of the screen; only its stroke reaches in.
   const edge = scene.add({
-    kind: 'leaf', layer: 'bg', pose: { x: 410, y: 50, width: 20, height: 20 }, data: { stroke: 8 },
+    kind: 'mark', layer: 'bg', pose: { x: 410, y: 50, width: 20, height: 20 }, data: { stroke: 8 },
   });
   const drawOne = vi.fn((node: TestNode, p: Pose): DrawCommand[] => [{
         kind: 'path',
@@ -89,10 +89,10 @@ describe('buildSceneLayer — cull', () => {
     // Both span x 405..415 upright, clear of the 400-wide view; turned a
     // quarter about its center, the second spans x 310..510.
     const tall = scene.add({
-      kind: 'leaf', layer: 'bg', pose: { x: 405, y: 100, width: 10, height: 200 }, data: {},
+      kind: 'mark', layer: 'bg', pose: { x: 405, y: 100, width: 10, height: 200 }, data: {},
     });
     const turned = scene.add({
-      kind: 'leaf', layer: 'bg',
+      kind: 'mark', layer: 'bg',
       pose: { x: 405, y: 100, width: 10, height: 200, rotation: Math.PI / 2 } as Pose, data: {},
     });
     layer.draw(null, VIEW, DIMS);
@@ -108,7 +108,7 @@ describe('buildSceneLayer — cull', () => {
 
   it('paints a node its paint bounds cannot place', () => {
     const scene = createScene<Record<string, never>, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
-    const far = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 5000, y: 50, width: 20, height: 20 }, data: {} });
+    const far = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 5000, y: 50, width: 20, height: 20 }, data: {} });
     const drawOne = vi.fn((): DrawCommand[] => []);
     const layer = buildSceneLayer<TestNode, Pose>(
       { cull: true, drawOne, paintBounds: () => null },

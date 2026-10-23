@@ -16,17 +16,17 @@ export function graphOf(
 ): Graph {
   const entries: { node: GraphNodeLike; pose: Rect }[] = [];
   ids.forEach((id, i) => entries.push({
-    node: { id, kind: 'leaf', data: { diagram: {} } },
+    node: { id, kind: 'mark', data: { diagram: {} } },
     pose: { x: i, y: i, width: 100, height: 40 },
   }));
   for (const [id, members] of Object.entries(groups)) {
     entries.push({
-      node: { id, kind: 'leaf', data: { diagram: { group: { inset } } }, dependsOn: members },
+      node: { id, kind: 'mark', data: { diagram: { group: { inset } } }, dependsOn: members },
       pose: DEGENERATE,
     });
   }
   edges.forEach(([from, to], i) => entries.push({
-    node: { id: `e${i}`, kind: 'leaf', data: { diagram: { from: {}, to: {} } }, dependsOn: [from, to] },
+    node: { id: `e${i}`, kind: 'mark', data: { diagram: { from: {}, to: {} } }, dependsOn: [from, to] },
     pose: DEGENERATE,
   }));
   return buildGraph<Rect>(() => entries);

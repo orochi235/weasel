@@ -17,8 +17,8 @@ function makeScene() {
   const scene = createScene<TData, TLayer, typeof POSE>({
     systemLayers: [{ id: 'bg' }],
   });
-  const aId = scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'a' } });
-  const bId = scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'b' } });
+  const aId = scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'a' } });
+  const bId = scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'b' } });
   const adapter = sceneToAdapter(scene);
   return { scene, adapter, aId, bId };
 }
@@ -112,8 +112,8 @@ describe('SceneCanvas isPointerInteractive', () => {
 
   it('reports a click on a rejected node as a miss and still reports its neighbor', () => {
     const scene = createScene<TData, TLayer, typeof POSE>({ systemLayers: [{ id: 'bg' }] });
-    const aId = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
-    const bId = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 20, y: 0, width: 10, height: 10 }, data: { label: 'b' } });
+    const aId = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    const bId = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 20, y: 0, width: 10, height: 10 }, data: { label: 'b' } });
     const onClick = vi.fn();
     const { container } = render(
       <SceneCanvas
@@ -136,8 +136,8 @@ describe('SceneCanvas isPointerInteractive', () => {
 
   function setup(rejected: (ids: { a: string; b: string }) => string, bPose = { x: 20, y: 0, width: 10, height: 10 }) {
     const scene = createScene<TData, TLayer, typeof POSE>({ systemLayers: [{ id: 'bg' }] });
-    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
-    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: bPose, data: { label: 'b' } });
+    const a = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'bg', pose: bPose, data: { label: 'b' } });
     const out = rejected({ a, b });
     const { container } = render(
       <SceneCanvas

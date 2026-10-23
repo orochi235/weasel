@@ -67,7 +67,7 @@ export function symmetryGroupSpec<TLayer extends string>(
   opts: SymmetryGroupOptions<TLayer>,
 ): AddNodeSpec<SymmetryGroupData, TLayer, SymmetryPose> {
   return {
-    kind: 'container',
+    kind: 'group',
     layer: opts.layer,
     pose: poseAtCenter(opts.center),
     data: { symmetry: { ...DEFAULT_SYMMETRY, ...opts.symmetry } },
@@ -84,7 +84,7 @@ export function symmetryGroupSpec<TLayer extends string>(
 export function isSymmetryGroup(scene: Scene<unknown, string, unknown>, id: NodeId | string | null | undefined): boolean {
   if (id == null) return false;
   const node = scene.get(id as NodeId);
-  return node?.kind === 'container' && node.copiesFromPose === symmetryCopies;
+  return node?.kind === 'group' && node.copiesFromPose === symmetryCopies;
 }
 
 /** The nearest symmetry group holding `id`, or `id` itself when it is one. */

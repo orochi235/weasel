@@ -24,10 +24,10 @@ const box = (x: number, y: number, w = 20, h = 20): RectPose => ({ x, y, width: 
 function setup() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const C = scene.add({
-    kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 100, 100),
+    kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 100, 100),
     layout: freeform<RectPose>(),
   });
-  const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, parent: C, pose: box(10, 10) });
+  const a = scene.add({ kind: 'mark', layer: 'main', data: {}, parent: C, pose: box(10, 10) });
   return { scene, C, a };
 }
 
@@ -76,11 +76,11 @@ describe('moveAction: dropping a child outside its layout container', () => {
       composition: RECT_POSE_COMPOSITION,
     });
     const C = scene.add({
-      kind: 'container', layer: 'main', data: {}, pose: box(50, 50, 100, 100),
+      kind: 'group', layer: 'main', data: {}, pose: box(50, 50, 100, 100),
       layout: freeform<RectPose>(),
     });
     // Local to C: world (60, 60).
-    const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, parent: C, pose: box(10, 10) });
+    const a = scene.add({ kind: 'mark', layer: 'main', data: {}, parent: C, pose: box(10, 10) });
     drag(scene, [a], 300, 0);
     expect(scene.get(a)!.parent).toBeNull();
     expect(scene.get(a)!.pose).toEqual(box(360, 60));
@@ -88,7 +88,7 @@ describe('moveAction: dropping a child outside its layout container', () => {
 
   it('lands it in a plain container under the drop', () => {
     const { scene, a } = setup();
-    const P = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(250, 0, 100, 100) });
+    const P = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(250, 0, 100, 100) });
     drag(scene, [a], 300, 0);
     expect(scene.get(a)!.parent).toBe(P);
   });
@@ -103,10 +103,10 @@ describe('moveAction: dropping a child outside its layout container', () => {
   it('stays in its container when its own layout has no slot for it there', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const S = scene.add({
-      kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 100, 100),
+      kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 100, 100),
       layout: snapPoint<RectPose>({ pattern: 'corners' }),
     });
-    const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, parent: S, pose: box(0, 0) });
+    const a = scene.add({ kind: 'mark', layer: 'main', data: {}, parent: S, pose: box(0, 0) });
     drag(scene, [a], 30, 30);
     expect(scene.get(a)!.parent).toBe(S);
   });

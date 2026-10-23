@@ -13,7 +13,7 @@ type Pose = { x: number; y: number; width: number; height: number };
 
 function fixture(opts?: SpacingHintsOptions) {
   const scene = createScene<object, 'default', Pose>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
-  const rect = (x: number) => scene.add({ kind: 'leaf', layer: 'default', pose: { x, y: 0, width: 10, height: 10 }, data: {} });
+  const rect = (x: number) => scene.add({ kind: 'mark', layer: 'default', pose: { x, y: 0, width: 10, height: 10 }, data: {} });
   const a = rect(0);
   const b = rect(30);
   const moving = rect(62);

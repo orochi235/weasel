@@ -9,7 +9,7 @@ import { insertAction } from './action';
 function start(into: string | null) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const group = scene.add({
-    kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+    kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
     copiesFromPose: () => [translate(100, 0)],
   });
   const ctx: InvocationCtx = {

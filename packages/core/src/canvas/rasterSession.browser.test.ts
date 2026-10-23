@@ -19,7 +19,7 @@ const drawOne = (node: { data: Box }, p: RectPose): DrawCommand[] => [{
 
 function sceneOf(boxes: Array<RectPose & Box>) {
   const scene = createScene<Box, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  for (const { color, ...pose } of boxes) scene.add({ kind: 'leaf', layer: 'main', pose, data: { color } });
+  for (const { color, ...pose } of boxes) scene.add({ kind: 'mark', layer: 'main', pose, data: { color } });
   return scene;
 }
 

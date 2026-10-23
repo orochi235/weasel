@@ -145,7 +145,7 @@ describe('edgeDerivePath', () => {
   const box = (x: number, y: number): RectPose => ({ x, y, width: 40, height: 40 });
   const dep = (pose: RectPose, data: unknown = { diagram: {} }): DerivedDep<RectPose> =>
     ({
-      node: { id: asNodeId(`n${pose.x},${pose.y}`), kind: 'leaf', layer: 'main', parent: null, pose, data } as never,
+      node: { id: asNodeId(`n${pose.x},${pose.y}`), kind: 'mark', layer: 'main', parent: null, pose, data } as never,
       pose,
       path: null,
     });
@@ -270,10 +270,10 @@ describe('withDiagramRegistry', () => {
   it('registers the edge router so an edge round-trips through toJSON', () => {
     const registry = withDiagramRegistry<RectPose>();
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 90, y: 0, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 90, y: 0, width: 10, height: 10 }, data: {} });
     const edge = scene.add({
-      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
       data: { diagram: { from: {}, to: {} } },
       dependsOn: [a, b],
       derivePath: registry.derivePath![DIAGRAM_EDGE],

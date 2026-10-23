@@ -22,7 +22,7 @@ function renderText(...styles: (Record<string, unknown> | undefined)[]) {
   styles.forEach((style, i) => {
     scene.add({
       id: asNodeId(ids[i]),
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: { x: 0, y: 0, width: 100, height: 40 },
       data: { text: 'hi', ...(style ? { style } : {}) },

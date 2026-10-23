@@ -48,8 +48,8 @@ function setup(
   commitWith?: (finished: boolean) => void,
 ) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: box(50, 0), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: box(50, 0), data: {} });
   const clock = makeClock();
   const onCommit = vi.fn();
   const { result, unmount } = renderHook(() => usePoseRun<RectPose>({
@@ -230,7 +230,7 @@ describe('a node another gesture owns', () => {
 describe('usePoseRun — abandoned renders', () => {
   it('steps with the committed options, not an abandoned render\'s', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
+    scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
     const clock = makeClock();
     const stepA = vi.fn((): PoseRunStep<RectPose> => ({ poses: new Map(), done: true }));
     const stepB = vi.fn((): PoseRunStep<RectPose> => ({ poses: new Map(), done: true }));

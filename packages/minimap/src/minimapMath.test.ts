@@ -45,10 +45,10 @@ describe('computeFitView — a derived pose', () => {
       registry: { derivePose: { 'test:shift': derive } },
     });
     const a = scene.add({
-      kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' },
+      kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' },
     });
     scene.add({
-      kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'd' },
+      kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'd' },
       dependsOn: [a], derivePose: derive,
     });
     return scene;
@@ -79,7 +79,7 @@ describe('computeFitView — fit="scene"', () => {
   it('one-node scene centers the node in the minimap', () => {
     const scene = makeScene();
     scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'bg',
       pose: { x: 10, y: 20, width: 40, height: 40 },
       data: { label: 'a' },
@@ -97,8 +97,8 @@ describe('computeFitView — fit="scene"', () => {
 
   it('many-node scene fits the union AABB', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 90, y: 40, width: 10, height: 10 }, data: { label: 'b' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 90, y: 40, width: 10, height: 10 }, data: { label: 'b' } });
     // Union: { x: 0, y: 0, width: 100, height: 50 }
     const dims = { width: 200, height: 200 };
     const view = computeFitView(scene, dims, 'scene', identityPoseBounds);
@@ -112,7 +112,7 @@ describe('computeFitView — fit="scene"', () => {
   it('asymmetric scene picks the tighter-axis scale (wider than tall)', () => {
     const scene = makeScene();
     // 1000 wide x 100 tall, into a 200x200 minimap with padding=8 → avail 184x184.
-    scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1000, height: 100 }, data: { label: 'a' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1000, height: 100 }, data: { label: 'a' } });
     const dims = { width: 200, height: 200 };
     const view = computeFitView(scene, dims, 'scene', identityPoseBounds);
     // x-axis is tighter: 184/1000 < 184/100, so the chosen uniform scale
@@ -123,7 +123,7 @@ describe('computeFitView — fit="scene"', () => {
 
   it('asymmetric scene picks the tighter-axis scale (taller than wide)', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 1000 }, data: { label: 'a' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 1000 }, data: { label: 'a' } });
     const dims = { width: 200, height: 200 };
     const view = computeFitView(scene, dims, 'scene', identityPoseBounds);
     expect(view.scale.x).toBeCloseTo(184 / 1000, 6);
@@ -133,13 +133,13 @@ describe('computeFitView — fit="scene"', () => {
   it('ignores container nodes when unioning leaf poses', () => {
     const scene = makeScene();
     const c = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'bg',
       pose: { x: -1000, y: -1000, width: 2000, height: 2000 },
       data: { label: 'c' },
     });
     scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'bg',
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { label: 'child' },
@@ -280,17 +280,17 @@ describe('computeFitView — a leaf with a non-finite pose', () => {
 
   it('fits the leaves that have bounds and ignores the one that does not', () => {
     const alone = makeScene();
-    alone.add({ kind: 'leaf', layer: 'bg', pose: good, data: { label: 'a' } });
+    alone.add({ kind: 'mark', layer: 'bg', pose: good, data: { label: 'a' } });
     const mixed = makeScene();
-    mixed.add({ kind: 'leaf', layer: 'bg', pose: good, data: { label: 'a' } });
-    mixed.add({ kind: 'leaf', layer: 'bg', pose: { ...good, x: NaN, y: 5000 }, data: { label: 'b' } });
+    mixed.add({ kind: 'mark', layer: 'bg', pose: good, data: { label: 'a' } });
+    mixed.add({ kind: 'mark', layer: 'bg', pose: { ...good, x: NaN, y: 5000 }, data: { label: 'b' } });
     expect(computeFitView(mixed, dims, 'scene', identityPoseBounds))
       .toEqual(computeFitView(alone, dims, 'scene', identityPoseBounds));
   });
 
   it('falls back when no leaf has finite bounds', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'bg', pose: { ...good, width: Infinity }, data: { label: 'a' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { ...good, width: Infinity }, data: { label: 'a' } });
     expect(computeFitView(scene, dims, 'scene', identityPoseBounds)).toEqual(FALLBACK_FIT_VIEW);
   });
 });
@@ -373,7 +373,7 @@ describe('computeIndicatorCommand', () => {
 
 it('frames circles through the descriptor', () => {
   const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ kind: 'leaf', layer: 'main', pose: circle(50, 50, 50), data: {} });
+  scene.add({ kind: 'mark', layer: 'main', pose: circle(50, 50, 50), data: {} });
   const view = computeFitView(scene, { width: 100, height: 100 }, 'scene', CIRCLE_POSE_DESCRIPTOR);
   expect(view.scale.x).toBeCloseTo(84 / 100, 6);
   expect(view.x + 100 / (2 * view.scale.x)).toBeCloseTo(50, 6);
@@ -384,7 +384,7 @@ describe('computeFitView — fit="live"', () => {
   function overridden(): S {
     const scene = makeScene();
     const a = scene.add({
-      kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'a' },
+      kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'a' },
     });
     scene.overrides.set(a, { pose: { x: 900, y: 0, width: 100, height: 100 } });
     return scene;

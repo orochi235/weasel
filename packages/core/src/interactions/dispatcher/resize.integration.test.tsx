@@ -159,7 +159,7 @@ describe('resizeAction integration via gesture dispatcher', () => {
   it('drag on handle pointerdown→move→up resizes selected node', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const idA = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       data: { kind: 'rect' },
       pose: { x: 0, y: 0, width: 100, height: 100 },
@@ -190,7 +190,7 @@ describe('resizeAction integration via gesture dispatcher', () => {
   it('drag on open canvas (no affordance) leaves node unchanged', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const idA = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       data: { kind: 'rect' },
       pose: { x: 0, y: 0, width: 100, height: 100 },
@@ -219,7 +219,7 @@ describe('resizeAction integration via gesture dispatcher', () => {
   it('pointercancel during handle drag restores original pose', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const idA = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       data: { kind: 'rect' },
       pose: { x: 5, y: 5, width: 80, height: 60 },
@@ -246,7 +246,7 @@ describe('resizeAction integration via gesture dispatcher', () => {
   it('drag on handle with empty selection is a no-op', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const idA = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       data: { kind: 'rect' },
       pose: { x: 0, y: 0, width: 100, height: 100 },

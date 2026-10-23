@@ -31,8 +31,8 @@ function triangleScene(): Scene<unknown, string, unknown> {
     coords: Float32Array.of(0, 0, 100, 0, 0, 100),
     fillRule: 'nonzero' as const,
   };
-  const nodes = new Map<string, { id: string; kind: 'leaf'; pose: unknown; data: unknown }>();
-  nodes.set('t', { id: 't', kind: 'leaf', pose: tri, data: null });
+  const nodes = new Map<string, { id: string; kind: 'mark'; pose: unknown; data: unknown }>();
+  nodes.set('t', { id: 't', kind: 'mark', pose: tri, data: null });
   return {
     layers: [{ id: 'default' }],
     renderOrder: () => ['t'] as NodeId[],
@@ -60,8 +60,8 @@ describe('hitTestArea — silhouette awareness', () => {
   it('skips a pose without finite numeric bounds (historical hitTestAABB behavior)', () => {
     // A custom pose that is neither path-like nor a plain x/y/w/h rect has no
     // resolvable AABB; the old hitTestAABB skipped it rather than selecting it.
-    const nodes = new Map<string, { id: string; kind: 'leaf'; pose: unknown; data: unknown }>();
-    nodes.set('m', { id: 'm', kind: 'leaf', pose: { label: 'no-bounds' }, data: null });
+    const nodes = new Map<string, { id: string; kind: 'mark'; pose: unknown; data: unknown }>();
+    nodes.set('m', { id: 'm', kind: 'mark', pose: { label: 'no-bounds' }, data: null });
     const scene = {
       layers: [{ id: 'default' }],
       renderOrder: () => ['m'] as NodeId[],
@@ -84,10 +84,10 @@ describe('hitTestArea — geometry held on node.data', () => {
   /** Same right triangle as above, but as `data.path` under a rect pose.
    *  `pathInPoseFrame` maps the path's own [0,0,100,100] box onto the pose. */
   function dataTriangleScene(): Scene<unknown, string, unknown> {
-    const nodes = new Map<string, { id: string; kind: 'leaf'; pose: unknown; data: unknown }>();
+    const nodes = new Map<string, { id: string; kind: 'mark'; pose: unknown; data: unknown }>();
     nodes.set('t', {
       id: 't',
-      kind: 'leaf',
+      kind: 'mark',
       pose: { x: 0, y: 0, width: 100, height: 100 },
       data: {
         path: {
@@ -117,10 +117,10 @@ describe('hitTestArea — geometry held on node.data', () => {
   });
 
   it('keeps AABB-overlap-is-a-hit for a node no painter matches', () => {
-    const nodes = new Map<string, { id: string; kind: 'leaf'; pose: unknown; data: unknown }>();
+    const nodes = new Map<string, { id: string; kind: 'mark'; pose: unknown; data: unknown }>();
     nodes.set('p', {
       id: 'p',
-      kind: 'leaf',
+      kind: 'mark',
       pose: { x: 0, y: 0, width: 100, height: 100 },
       data: { unpaintable: true },
     });
@@ -156,7 +156,7 @@ describe('hitTestArea — the memoized AABB tracks the scene', () => {
     const scene = createScene<{ label: string }, 'main', PolygonPath>({
       systemLayers: [{ id: 'main' }],
     });
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: square(0, 0), data: { label: 'a' } });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: square(0, 0), data: { label: 'a' } });
     return { scene, api: scene, id };
   }
 
@@ -211,7 +211,7 @@ describe('hitTestArea — rotation and overrides', () => {
       systemLayers: [{ id: 'default' }],
       initial: [{
         id: 'r' as NodeId,
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 0, y: 0, width: 100, height: 20, rotation: Math.PI / 4 },
         data: null,
@@ -239,7 +239,7 @@ describe('hitTestArea — rotation and overrides', () => {
       systemLayers: [{ id: 'default' }],
       initial: [{
         id: 'o' as NodeId,
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: null,
@@ -255,7 +255,7 @@ describe('hitTestArea — rotation and overrides', () => {
 describe('hitTestArea — non-rect poses', () => {
   it('fast-rejects and admits circles through a descriptor', () => {
     const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: circle(10, 10, 5), data: {} });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: circle(10, 10, 5), data: {} });
     const s = scene;
     expect(hitTestArea(s, { x: 0, y: 0, width: 20, height: 20 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([id]);
     expect(hitTestArea(s, { x: 30, y: 30, width: 5, height: 5 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([]);
@@ -274,7 +274,7 @@ describe('hitTestLassoPolygon', () => {
     return createScene<unknown, string, unknown>({
       systemLayers: [{ id: 'default' }],
       initial: nodes.map((n) => ({
-        id: n.id as NodeId, kind: 'leaf' as const, layer: 'default', pose: n.pose, data: n.data ?? null,
+        id: n.id as NodeId, kind: 'mark' as const, layer: 'default', pose: n.pose, data: n.data ?? null,
       })),
     });
   }
@@ -350,7 +350,7 @@ describe('intersect flattens curves', () => {
   };
   const lobeScene = () => createScene<unknown, string, unknown>({
     systemLayers: [{ id: 'default' }],
-    initial: [{ id: 'lobe' as NodeId, kind: 'leaf' as const, layer: 'default', pose: lobe, data: null }],
+    initial: [{ id: 'lobe' as NodeId, kind: 'mark' as const, layer: 'default', pose: lobe, data: null }],
   });
   const probe = [{ x: 95, y: 115 }, { x: 99, y: 115 }, { x: 97, y: 125 }];
 
@@ -382,7 +382,7 @@ describe('intersect reads an open subpath by whether it fills', () => {
   };
   const sceneOf = (pose: unknown, data: unknown = null) => createScene<unknown, string, unknown>({
     systemLayers: [{ id: 'default' }],
-    initial: [{ id: 'vee' as NodeId, kind: 'leaf' as const, layer: 'default', pose, data }],
+    initial: [{ id: 'vee' as NodeId, kind: 'mark' as const, layer: 'default', pose, data }],
   });
   const veeScene = () => sceneOf(vee);
   const between = [{ x: 45, y: -5 }, { x: 55, y: -5 }, { x: 50, y: 10 }];
@@ -437,7 +437,7 @@ describe('intersect reads a closed outline by whether it is filled', () => {
   const box = { x: 0, y: 0, width: 100, height: 100 };
   const sceneOf = (pose: unknown, data: unknown) => createScene<unknown, string, unknown>({
     systemLayers: [{ id: 'default' }],
-    initial: [{ id: 'sq' as NodeId, kind: 'leaf' as const, layer: 'default', pose, data }],
+    initial: [{ id: 'sq' as NodeId, kind: 'mark' as const, layer: 'default', pose, data }],
   });
   const inside = { x: 40, y: 40, width: 20, height: 20 };
   const insideLasso = [{ x: 40, y: 40 }, { x: 60, y: 40 }, { x: 50, y: 60 }];

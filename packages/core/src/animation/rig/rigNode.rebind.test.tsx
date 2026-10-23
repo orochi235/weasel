@@ -21,9 +21,9 @@ const BOX: RectPose = { x: 100, y: 50, width: 100, height: 100 };
 /** A rig node with one skinned sleeve, a mounted `useRigNode`, and an animator the test steps. */
 function mounted() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const node = scene.add({ kind: 'container', layer: 'main', pose: BOX, data: { skeleton: ARM } });
+  const node = scene.add({ kind: 'group', layer: 'main', pose: BOX, data: { skeleton: ARM } });
   const sleeve = scene.add({
-    kind: 'leaf', layer: 'main', parent: node, pose: { x: 100, y: 95, width: 100, height: 10 },
+    kind: 'mark', layer: 'main', parent: node, pose: { x: 100, y: 95, width: 100, height: 10 },
     data: { path: { kind: 'rect', x: 100, y: 95, width: 100, height: 10 }, skin: { upper: [1, 0, 0, 1], lower: [0, 1, 1, 0] } },
   });
   let now = 0;

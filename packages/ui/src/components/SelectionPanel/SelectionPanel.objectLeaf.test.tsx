@@ -59,7 +59,7 @@ describe('SelectionPanel — object leaf', () => {
     const scene = createScene<StrokeData, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
     scene.add({
       id: asNodeId('p'),
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { kind: 'path', stroke },
@@ -328,7 +328,7 @@ describe('SelectionPanel — object leaf', () => {
         const scene = sceneWithStroke(strokeOfWidth(2, dashForStrokeStyle('dashed', 2)));
         scene.add({
           id: asNodeId('q'),
-          kind: 'leaf',
+          kind: 'mark',
           layer: 'default',
           pose: { x: 0, y: 0, width: 10, height: 10 },
           data: { kind: 'path', stroke: strokeOfWidth(4, dashForStrokeStyle('dashed', 4)) },

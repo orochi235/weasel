@@ -30,7 +30,7 @@ export type Shape = Bounds & { rotation?: number; data?: object };
 /** A scene of top-level rects, and their ids in order. */
 export function sceneOf(shapes: readonly Shape[] = []): { scene: AnyScene; ids: string[] } {
   const scene = createScene<object, 'default', Bounds>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
-  const ids = shapes.map(({ data, ...pose }) => scene.add({ kind: 'leaf', layer: 'default', pose, data: data ?? {} }) as string);
+  const ids = shapes.map(({ data, ...pose }) => scene.add({ kind: 'mark', layer: 'default', pose, data: data ?? {} }) as string);
   return { scene: scene as unknown as AnyScene, ids };
 }
 

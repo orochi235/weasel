@@ -200,7 +200,7 @@ export function useInsertDepSource(
           if (built === null) return null;
           return {
             id,
-            ops: [createInsertOp({ node: { id, kind: 'leaf', layer, parent, pose: local(built.pose ?? pose), data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
+            ops: [createInsertOp({ node: { id, kind: 'mark', layer, parent, pose: local(built.pose ?? pose), data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
           };
         }
 
@@ -255,7 +255,7 @@ export function useInsertDepSource(
         if (min) data = { ...(data as object), minSize: min };
         return {
           id,
-          ops: [createInsertOp({ node: { id, kind: 'leaf', layer, parent, pose: local(pose), data } as unknown as { id: string }, label: `Insert ${kind}` })],
+          ops: [createInsertOp({ node: { id, kind: 'mark', layer, parent, pose: local(pose), data } as unknown as { id: string }, label: `Insert ${kind}` })],
         };
     };
     return {

@@ -46,7 +46,7 @@ function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
     s.add({
-      kind: 'leaf',
+      kind: 'mark',
       data: { kind: 'rect' },
       layer: 'main' as L,
       pose: { x: 0, y: 0, width: 50, height: 50 } as P,
@@ -269,7 +269,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
       const scene = makeScene();
       scene.batch('seed', () => {
         scene.add({
-          kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+          kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
           pose: { x: 100, y: 0, width: 50, height: 50 } as P,
         });
       });

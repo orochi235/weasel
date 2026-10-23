@@ -58,7 +58,7 @@ function mountWith(preset: BaseFeature) {
   let id!: NodeId;
   scene.batch('seed', () => {
     id = scene.add({
-      kind: 'leaf', data: { kind: 'rect' }, layer: 'main',
+      kind: 'mark', data: { kind: 'rect' }, layer: 'main',
       pose: { x: 0, y: 0, width: 50, height: 50, rotation: 0 },
     });
   });

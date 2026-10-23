@@ -18,7 +18,7 @@ function makeScene(nodes: Record<string, { pose: RectPose; stroke?: boolean }>) 
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   for (const [id, n] of Object.entries(nodes)) {
     scene.add({
-      id: asNodeId(id), kind: 'leaf', layer: 'main', pose: n.pose,
+      id: asNodeId(id), kind: 'mark', layer: 'main', pose: n.pose,
       data: { shape: 'rect', ...(n.stroke ? { stroke: STROKE } : {}) },
     });
   }

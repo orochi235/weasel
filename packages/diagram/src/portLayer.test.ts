@@ -11,7 +11,7 @@ interface Rect { x: number; y: number; width: number; height: number }
 function sceneWith(): Scene<Data, 'main', Rect> {
   const scene = createScene<Data, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    id: 'a' as never, kind: 'leaf', layer: 'main',
+    id: 'a' as never, kind: 'mark', layer: 'main',
     pose: { x: 0, y: 0, width: 100, height: 40 }, data: { diagram: {} },
   });
   return scene;
@@ -89,7 +89,7 @@ describe('portLayer and the scene\'s gates', () => {
   it('draws and hits no port on a node inside a hidden container', () => {
     const scene = sceneWith();
     scene.add({
-      id: 'g' as never, kind: 'container', layer: 'main',
+      id: 'g' as never, kind: 'group', layer: 'main',
       pose: { x: 0, y: 0, width: 100, height: 40 }, data: {},
     });
     scene.move('a' as never, 'g' as never);

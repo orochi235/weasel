@@ -68,7 +68,7 @@ beforeEach(() => {
   scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   // Under the marker's press point in the PiP (world 200, 80): a select tool
   // that saw the press would select it.
-  node = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 180, y: 60, width: 40, height: 40 }, data: { kind: 'rect' } });
+  node = scene.add({ kind: 'mark', layer: 'main', pose: { x: 180, y: 60, width: 40, height: 40 }, data: { kind: 'rect' } });
   onViewChange = vi.fn<(next: View) => void>();
   api = createRef<SceneCanvasApi>();
   pip = createRef<CanvasViewCamera>();

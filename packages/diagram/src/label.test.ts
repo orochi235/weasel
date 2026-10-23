@@ -11,7 +11,7 @@ const box = (x: number, y: number, w = 20, h = 8): RectPose => ({ x, y, width: w
 
 /** A dependency carrying a path, the way an edge reaches its label. */
 const edgeDep = (path: Path | null): DerivedDep<RectPose> => ({
-  node: { id: asNodeId('e'), kind: 'leaf', layer: 'main', parent: null, pose: box(0, 0), data: {} } as never,
+  node: { id: asNodeId('e'), kind: 'mark', layer: 'main', parent: null, pose: box(0, 0), data: {} } as never,
   pose: box(0, 0),
   path,
 });
@@ -109,9 +109,9 @@ describe('registry', () => {
       systemLayers: [{ id: 'main' }],
       registry: withDiagramRegistry<RectPose>(),
     });
-    const edge = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
+    const edge = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
     const label = scene.add({
-      kind: 'leaf', layer: 'main', pose: box(0, 0),
+      kind: 'mark', layer: 'main', pose: box(0, 0),
       data: { diagram: { label: { at: 'mid' } } },
       dependsOn: [edge],
       derivePose: LABEL_DERIVE_POSE as never,

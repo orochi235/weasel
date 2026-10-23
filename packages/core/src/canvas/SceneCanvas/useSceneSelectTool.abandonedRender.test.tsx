@@ -21,7 +21,7 @@ describe('useSceneSelectTool after an abandoned render', () => {
     function Probe({ getView }: { getView: () => View }) {
       const scene = useScene<unknown, 'back', Pose>({
         systemLayers: [{ id: 'back', parallax: { pan: 0.25 } }],
-        initial: [{ id: asNodeId('hill'), kind: 'leaf', layer: 'back', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} }],
+        initial: [{ id: asNodeId('hill'), kind: 'mark', layer: 'back', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} }],
       });
       const adapter = useSceneAdapter(scene);
       boundsOf = useSceneSelectTool({ scene, adapter, getView }).boundsOf;

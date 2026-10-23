@@ -112,7 +112,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   }), [animator, size]);
 
   const insertCard = (card: Card) => {
-    scene.add({ id: asNodeId(card.id), kind: 'leaf', layer: 'default', pose: card, data: card });
+    scene.add({ id: asNodeId(card.id), kind: 'mark', layer: 'default', pose: card, data: card });
   };
 
   const tweenTo = (id: string, x: number, y: number) => {
@@ -321,7 +321,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
     systemLayers: [{ id: 'default' }],
     initial: [{
       id: asNodeId('block'),
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: { x: 60, y: 60, width: FLICK_BLOCK, height: FLICK_BLOCK },
       data: { color: '#7fb069' },

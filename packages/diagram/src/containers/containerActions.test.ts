@@ -15,7 +15,7 @@ function pool() {
   const built = containerBuild(CONTAINER_STENCILS[1]!, { x: 0, y: 0, width: 480, height: 240 }, { layer: 'main', newId: () => `n${n++}` });
   commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
   const [first, second] = lanesOf(scene as never, built.id) as unknown as [string, string];
-  scene.add({ id: 'm' as NodeId, kind: 'leaf', layer: 'main', parent: second as NodeId, pose: { x: 100, y: 150, width: 40, height: 20 }, data: {} });
+  scene.add({ id: 'm' as NodeId, kind: 'mark', layer: 'main', parent: second as NodeId, pose: { x: 100, y: 150, width: 40, height: 20 }, data: {} });
   return { scene, poolId: built.id, first, second };
 }
 

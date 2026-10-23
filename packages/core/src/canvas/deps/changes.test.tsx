@@ -23,11 +23,11 @@ describe('useDepChangeNotices', () => {
 
   it('says so when the scene changes, and stops when it unmounts', () => {
     const { scene, heard, unmount } = setup();
-    act(() => { scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} }); });
+    act(() => { scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} }); });
     expect(heard).toHaveBeenCalled();
     unmount();
     heard.mockClear();
-    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
     expect(heard).not.toHaveBeenCalled();
   });
 

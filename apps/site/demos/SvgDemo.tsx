@@ -78,7 +78,7 @@ function sceneFromSvg(source: string) {
   return {
     parsed,
     json: {
-      version: 1 as const,
+      version: 2 as const,
       systemLayers: [{ id: 'default' as const }],
       nodes: drafts.map((d) => ({
         id: d.id,

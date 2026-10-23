@@ -56,11 +56,11 @@ function mount(a: Partial<P> = {}, props: Record<string, unknown> = {}) {
   let behind!: NodeId;
   scene.batch('seed', () => {
     behind = scene.add({
-      kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
       pose: { x: 90, y: 0, width: 60, height: 60, rotation: 0 },
     });
     id = scene.add({
-      kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
       pose: { x: 0, y: 0, width: 100, height: 60, rotation: 0, ...a },
     });
   });
@@ -155,7 +155,7 @@ describe('edge handles are one decision, keyed on the hit radius', () => {
   function square(side: number, hitRadius: number, paintSize: number) {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({
-      kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
       pose: { x: 0, y: 0, width: side, height: side, rotation: 0 },
     });
     const seen: { selection: SelectionApi | null; views: ViewRegistry | null } = { selection: null, views: null };

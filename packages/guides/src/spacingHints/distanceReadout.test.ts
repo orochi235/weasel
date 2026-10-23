@@ -6,9 +6,9 @@ type Pose = { x: number; y: number; width: number; height: number };
 
 function fixture(opts?: Parameters<typeof distanceReadout>[0]) {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main', visible: true, locked: false }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 30, y: 0, width: 10, height: 10 }, data: {} });
-  const c = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 30, y: 40, width: 10, height: 10 }, data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 30, y: 0, width: 10, height: 10 }, data: {} });
+  const c = scene.add({ kind: 'mark', layer: 'main', pose: { x: 30, y: 40, width: 10, height: 10 }, data: {} });
   let selected: NodeId[] = [a];
   const nodeAtPoint = vi.fn((p: { x: number; y: number }, exclude?: Iterable<NodeId>) => {
     const ex = new Set(exclude);

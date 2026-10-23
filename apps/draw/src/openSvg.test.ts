@@ -7,7 +7,7 @@ import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
 function sceneWithOneShape() {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
   scene.add({
-    kind: 'leaf', layer: 'default', id: asNodeId('old'),
+    kind: 'mark', layer: 'default', id: asNodeId('old'),
     pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
   });
@@ -24,7 +24,7 @@ describe('openSvgText', () => {
     openSvgText(scene, svg(TWO), 'art.svg');
     expect(scene.get(asNodeId('old'))).toBeUndefined();
     expect(scene.roots).toHaveLength(2);
-    expect(scene.get(scene.roots[0])!.kind).toBe('container');
+    expect(scene.get(scene.roots[0])!.kind).toBe('group');
     expect(scene.childrenOf(scene.roots[0])).toHaveLength(1);
     expect(scene.historyEntries().at(-1)!.label).toBe('Open');
 
@@ -67,13 +67,13 @@ describe('a clipped group', () => {
   it('opens as a container holding its clip', () => {
     const scene = sceneWithOneShape();
     openSvgText(scene, svg(CLIPPED), 'a.svg');
-    expect(scene.get(scene.roots[0])).toMatchObject({ kind: 'container', data: clip });
+    expect(scene.get(scene.roots[0])).toMatchObject({ kind: 'group', data: clip });
   });
 
   it('imports as a container holding its clip', () => {
     const scene = sceneWithOneShape();
     importSvgText(scene, svg(CLIPPED));
-    expect(scene.get(scene.roots[1])).toMatchObject({ kind: 'container', data: clip });
+    expect(scene.get(scene.roots[1])).toMatchObject({ kind: 'group', data: clip });
   });
 });
 

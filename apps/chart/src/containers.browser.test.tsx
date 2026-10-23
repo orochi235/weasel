@@ -41,7 +41,7 @@ const saved = (): Saved[] => {
 };
 const role = (r: string) => saved().filter((n) => n.data.diagram?.container?.role === r);
 /** Stencil bodies: containers with an outline and no container role. */
-const bodies = () => saved().filter((n) => n.kind === 'container' && n.data.diagram?.outline && !n.data.diagram.container);
+const bodies = () => saved().filter((n) => n.kind === 'group' && n.data.diagram?.outline && !n.data.diagram.container);
 const byId = (id: string) => saved().find((n) => n.id === id)!;
 const lanesInOrder = () => role('lane').sort((a, b) => a.pose.y - b.pose.y);
 

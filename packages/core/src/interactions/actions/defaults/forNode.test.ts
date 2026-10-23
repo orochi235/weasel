@@ -31,7 +31,7 @@ const DESCRIPTOR: PoseDescriptor<Pose, PosedNode> = { ...rect, forNode: (node) =
 
 function setup() {
   const scene = createScene<{ own: boolean }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-  const id = scene.add({ kind: 'leaf', layer: 'main', data: { own: true }, pose: { x: 10, y: 10, width: 40, height: 20 } });
+  const id = scene.add({ kind: 'mark', layer: 'main', data: { own: true }, pose: { x: 10, y: 10, width: 40, height: 20 } });
   let selected: NodeId[] = [id];
   const selection = {
     get: () => selected,

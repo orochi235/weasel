@@ -28,7 +28,7 @@ function setup(commit: 'batch' | 'applyBatch') {
     setSelection: (ids) => { scene.setSelection(ids); },
     getWorldPath: (id) => {
       const node = scene.get(asNodeId(id));
-      if (!node || node.kind !== 'leaf' || !node.data.path) return undefined;
+      if (!node || node.kind !== 'mark' || !node.data.path) return undefined;
       return pathInWorld(node.data.path, node.pose);
     },
     compareZ: (a, b) => {
@@ -39,7 +39,7 @@ function setup(commit: 'batch' | 'applyBatch') {
       const b = boundsOfPath(path);
       return {
         id: `b-${nextId++}`,
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
         data: { path, fill: '#888' },
@@ -51,7 +51,7 @@ function setup(commit: 'batch' | 'applyBatch') {
     getChildren: defaultCommitAdapter(scene).getChildren,
     setChildOrder: defaultCommitAdapter(scene).setChildOrder,
     insertNode: (node, index?: number) => {
-      const n = node as { id: string; kind: 'leaf'; layer: Layer; pose: Pose; data: Data };
+      const n = node as { id: string; kind: 'mark'; layer: Layer; pose: Pose; data: Data };
       scene.add({
         id: asNodeId(n.id),
         kind: n.kind,
@@ -84,8 +84,8 @@ function setup(commit: 'batch' | 'applyBatch') {
 describe.each(['batch', 'applyBatch'] as const)('undo over a boolean op (%s commit)', (commit) => {
   it('restores the operand nodes', () => {
     const { scene, adapter, select } = setup(commit);
-    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 60, height: 60 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 60, height: 60 } as Path } });
-    scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'default', pose: { x: 40, y: 40, width: 60, height: 60 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 60, height: 60 } as Path } });
+    scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 60, height: 60 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 60, height: 60 } as Path } });
+    scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'default', pose: { x: 40, y: 40, width: 60, height: 60 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 60, height: 60 } as Path } });
     select(['a', 'b']);
 
     expect(applyBooleanOp(adapter, 'union').kind).toBe('applied');
@@ -98,8 +98,8 @@ describe.each(['batch', 'applyBatch'] as const)('undo over a boolean op (%s comm
 
   it('restores the selection that produced it', () => {
     const { scene, adapter, sel, select } = setup(commit);
-    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 60, height: 60 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 60, height: 60 } as Path } });
-    scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'default', pose: { x: 40, y: 40, width: 60, height: 60 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 60, height: 60 } as Path } });
+    scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 60, height: 60 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 60, height: 60 } as Path } });
+    scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'default', pose: { x: 40, y: 40, width: 60, height: 60 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 60, height: 60 } as Path } });
     select(['a', 'b']);
 
     applyBooleanOp(adapter, 'union');

@@ -84,7 +84,7 @@ describe('measurements through <SceneCanvas>', () => {
       const made = createScene<{ kind?: string }, 'main' | 'notes', Pose>({
         systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
       });
-      made.add({ kind: 'leaf', layer: 'main', data: { kind: 'box' }, pose: { x: 300, y: 300, width: 20, height: 20 } });
+      made.add({ kind: 'mark', layer: 'main', data: { kind: 'box' }, pose: { x: 300, y: 300, width: 20, height: 20 } });
       return made;
     });
     scene = s;

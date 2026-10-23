@@ -12,7 +12,7 @@ type Pose = { x: number; y: number; width: number; height: number };
 interface Item {
   id: string;
   layer: string;
-  kind?: 'container';
+  kind?: 'group';
   pose: Pose;
   dependsOn?: string[];
   derivePath?: (node: unknown, deps: readonly ({ pose: Pose } | undefined)[]) => Path | null;

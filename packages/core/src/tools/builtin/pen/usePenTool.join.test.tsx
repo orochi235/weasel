@@ -164,10 +164,10 @@ describe('usePenTool', () => {
     function realScene(): AnyScene {
       const scene = createScene<Leaf, 'default', RectPose & { rotation?: number }>({ systemLayers: [{ id: 'default' }] });
       // A: a pose-local path under a plain translation.
-      scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 40, y: 40, width: 100, height: 0 }, data: { path: poly('M 0 0 L 100 0'), fill: null, stroke: 'red' } });
+      scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 40, y: 40, width: 100, height: 0 }, data: { path: poly('M 0 0 L 100 0'), fill: null, stroke: 'red' } });
       // B: the same local path under a quarter turn about its AABB center
       // (350, 300), which puts it on world (350, 250)..(350, 350).
-      scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'default', pose: { x: 300, y: 300, width: 100, height: 0, rotation: Math.PI / 2 }, data: { path: poly('M 0 0 L 100 0'), fill: null, stroke: 'blue' } });
+      scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'default', pose: { x: 300, y: 300, width: 100, height: 0, rotation: Math.PI / 2 }, data: { path: poly('M 0 0 L 100 0'), fill: null, stroke: 'blue' } });
       return scene as unknown as AnyScene;
     }
 

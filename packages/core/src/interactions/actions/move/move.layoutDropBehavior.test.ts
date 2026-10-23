@@ -26,9 +26,9 @@ type Hooks = Pick<LayoutStrategy<RectPose>, 'commitDrop' | 'releaseDrop'>;
 /** A container holding the dragged `kid` and a sibling its drop displaces. */
 function fixture(hooks: Partial<Hooks>, more: { behaviors?: MoveBehavior<unknown>[]; reflow?: ReflowTransition<unknown>; deps?: object } = {}) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: T, kind: 'container', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
-  scene.add({ id: KID, kind: 'leaf', layer: 'main', parent: T, data: {}, pose: HOME });
-  scene.add({ id: SIB, kind: 'leaf', layer: 'main', parent: T, data: {}, pose: box(150, 110) });
+  scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
+  scene.add({ id: KID, kind: 'mark', layer: 'main', parent: T, data: {}, pose: HOME });
+  scene.add({ id: SIB, kind: 'mark', layer: 'main', parent: T, data: {}, pose: box(150, 110) });
   const layout = {
     snap: { pickTarget: (targets: unknown[]) => targets[0] ?? null },
     childPoses: () => new Map(),

@@ -28,7 +28,7 @@ export type WorldLayer = 'tiles' | 'entities' | 'player';
 
 export interface WorldNodeSpec {
   id: NodeId;
-  kind: 'leaf' | 'container';
+  kind: 'mark' | 'group';
   layer: WorldLayer;
   pose: RectPose;
   data: WorldData;
@@ -38,7 +38,7 @@ export interface WorldNodeSpec {
 
 const leaf = (id: string, layer: WorldLayer, pose: RectPose, data: WorldData): WorldNodeSpec => ({
   id: asNodeId(id),
-  kind: 'leaf',
+  kind: 'mark',
   layer,
   pose,
   data,
@@ -153,7 +153,7 @@ export function boneNodes(): WorldNodeSpec[] {
   );
   return PLAYER_SKELETON.joints.map((j) => ({
     id: boneId(j.name),
-    kind: hasChild.has(j.name) ? ('container' as const) : ('leaf' as const),
+    kind: hasChild.has(j.name) ? ('group' as const) : ('mark' as const),
     layer: 'player' as const,
     pose: { x: 0, y: 0, width: BONE_LENGTH[j.name], height: BONE_WIDTH[j.name], rotation: 0 },
     data: {

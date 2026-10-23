@@ -36,7 +36,7 @@ describe('sceneToAdapter', () => {
     });
     const node = adapter.commitInsert!({ x: 1, y: 2, width: 10, height: 20 });
     expect(scene.nodes.has('fixture-0' as never)).toBe(false);
-    expect(node).toMatchObject({ kind: 'leaf', id: 'fixture-0', layer: 'bg' });
+    expect(node).toMatchObject({ kind: 'mark', id: 'fixture-0', layer: 'bg' });
     expect(node!.pose).toEqual({ x: 1, y: 2, width: 10, height: 20 });
     // The InsertOp path is what actually adds — exercise it.
     adapter.insertNode!(node!);
@@ -48,11 +48,11 @@ describe('sceneToAdapter', () => {
     // multi-delete relies on the index to restore paint order instead of
     // appending. Insert `c` at index 1 → it must land between a and b.
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
-    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
+    const a = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
     const adapter = sceneToAdapter(scene);
     adapter.insertNode!(
-      { kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' }, id: 'c', parent: null } as never,
+      { kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' }, id: 'c', parent: null } as never,
       1,
     );
     expect(adapter.getNodes().map((n) => n.id)).toEqual([a, 'c', b]);
@@ -60,8 +60,8 @@ describe('sceneToAdapter', () => {
 
   it('getNodes returns nodes in render order, hidden layers filtered', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
-    const b = scene.add({ kind: 'leaf', layer: 'fg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
+    const a = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'fg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
     const adapter = sceneToAdapter(scene);
     expect(adapter.getNodes().map((n) => n.id)).toEqual([a, b]);
     scene.setLayerVisible('bg', false);
@@ -70,7 +70,7 @@ describe('sceneToAdapter', () => {
 
   it('getPose / setPose round-trip and record undo', () => {
     const scene = makeScene();
-    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } });
+    const id = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } });
     const adapter = sceneToAdapter(scene);
     expect(adapter.getPose(id)).toEqual({ x: 0, y: 0, width: 1, height: 1 });
     adapter.setPose(id, { x: 5, y: 5, width: 2, height: 2 });
@@ -81,8 +81,8 @@ describe('sceneToAdapter', () => {
 
   it('getParent / setParent reparent through scene.move', () => {
     const scene = makeScene();
-    const parent = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'p' } });
-    const child = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
+    const parent = scene.add({ kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'p' } });
+    const child = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
     const adapter = sceneToAdapter(scene);
     expect(adapter.getParent!(child)).toBeNull();
     adapter.setParent!(child, parent);
@@ -93,9 +93,9 @@ describe('sceneToAdapter', () => {
 
   it('getChildren returns container children', () => {
     const scene = makeScene();
-    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c1' }, parent: p });
-    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c2' }, parent: p });
+    const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c2' }, parent: p });
     const adapter = sceneToAdapter(scene);
     expect(adapter.getChildren!(p)).toEqual([c1, c2]);
     expect(adapter.getChildren!(c1)).toEqual([]);
@@ -103,17 +103,17 @@ describe('sceneToAdapter', () => {
 
   it('getChildren(null) returns root siblings (added for reorder ops)', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
-    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
-    const c = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
+    const a = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
+    const c = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
     const adapter = sceneToAdapter(scene);
     expect(adapter.getChildren!(null)).toEqual([a, b, c]);
   });
 
   it('hitTestLasso routes through polygon helpers per mode', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
-    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 20, y: 0, width: 10, height: 10 }, data: { label: 'b' } });
+    const a = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 20, y: 0, width: 10, height: 10 }, data: { label: 'b' } });
     const adapter = sceneToAdapter(scene);
     // Polygon enclosing only A.
     const poly = [{ x: -5, y: -5 }, { x: 15, y: -5 }, { x: 15, y: 15 }, { x: -5, y: 15 }];
@@ -134,7 +134,7 @@ describe('sceneToAdapter', () => {
       // 11 units clear of it; its bounding box still overlaps the triangle.
       const scene = createScene<Data, 'bg', Pose & { rotation?: number }>({ systemLayers: [{ id: 'bg' }] });
       scene.add({
-        kind: 'leaf', layer: 'bg', data: { label: 'r' },
+        kind: 'mark', layer: 'bg', data: { label: 'r' },
         pose: { x: 60, y: 107, width: 100, height: 6, rotation: -Math.PI / 4 },
       });
       expect(sceneToAdapter(scene).hitTestLasso!(TRIANGLE, 'intersect')).toEqual([]);
@@ -145,7 +145,7 @@ describe('sceneToAdapter', () => {
       // top-left corner, which the turned bar leaves empty.
       const scene = createScene<Data, 'bg', Pose & { rotation?: number }>({ systemLayers: [{ id: 'bg' }] });
       scene.add({
-        kind: 'leaf', layer: 'bg', data: { label: 'r' },
+        kind: 'mark', layer: 'bg', data: { label: 'r' },
         pose: { x: 60, y: 107, width: 100, height: 6, rotation: -Math.PI / 4 },
       });
       expect(sceneToAdapter(scene).hitTestArea!({ x: 76, y: 76, width: 10, height: 10 })).toEqual([]);
@@ -154,11 +154,11 @@ describe('sceneToAdapter', () => {
     it('returns containers, as its marquee does', () => {
       const scene = makeScene();
       const box = scene.add({
-        kind: 'container', layer: 'bg', data: { label: 'box' },
+        kind: 'group', layer: 'bg', data: { label: 'box' },
         pose: { x: 0, y: 0, width: 50, height: 50 },
       });
       const child = scene.add({
-        kind: 'leaf', layer: 'bg', parent: box, data: { label: 'child' },
+        kind: 'mark', layer: 'bg', parent: box, data: { label: 'child' },
         pose: { x: 10, y: 10, width: 10, height: 10 },
       });
       const adapter = sceneToAdapter(scene);
@@ -170,12 +170,12 @@ describe('sceneToAdapter', () => {
       // The clip shows the child's left end; the lasso reaches only its right.
       const scene = makeScene();
       const bed = scene.add({
-        kind: 'container', layer: 'bg', data: { label: 'bed' },
+        kind: 'group', layer: 'bg', data: { label: 'bed' },
         pose: { x: 0, y: 0, width: 100, height: 10 },
         clipFromPose: () => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }),
       });
       const wide = scene.add({
-        kind: 'leaf', layer: 'bg', parent: bed, data: { label: 'wide' },
+        kind: 'mark', layer: 'bg', parent: bed, data: { label: 'wide' },
         pose: { x: 0, y: 0, width: 100, height: 10 },
       });
       const rightEnd = [{ x: 80, y: -5 }, { x: 105, y: -5 }, { x: 105, y: 15 }, { x: 80, y: 15 }];
@@ -185,9 +185,9 @@ describe('sceneToAdapter', () => {
 
   it('setChildOrder reorders root siblings via scene.batch (single undo entry)', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
-    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
-    const c = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
+    const a = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
+    const c = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
     const adapter = sceneToAdapter(scene);
     // Bring 'a' to the front by writing the new order [b, c, a].
     adapter.setChildOrder!(null, [b, c, a]);
@@ -199,9 +199,9 @@ describe('sceneToAdapter', () => {
 
   it('setChildOrder reorders container children', () => {
     const scene = makeScene();
-    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c1' }, parent: p });
-    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c2' }, parent: p });
+    const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c2' }, parent: p });
     const adapter = sceneToAdapter(scene);
     adapter.setChildOrder!(p, [c2, c1]);
     expect(adapter.getChildren!(p)).toEqual([c2, c1]);
@@ -220,7 +220,7 @@ describe('sceneToAdapter', () => {
 
   it('applyOps records the batch as a single undo entry', () => {
     const scene = makeScene();
-    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } });
+    const id = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } });
     const adapter = sceneToAdapter(scene);
     const before = scene.canUndo();
     expect(before).toBe(true); // from add
@@ -252,19 +252,19 @@ describe('sceneToAdapter', () => {
       systemLayers: [{ id: 'bg' }],
     });
     const bed = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'bg',
       pose: { x: 0, y: 0, width: 100, height: 100 },
       data: { label: 'bed' },
       clipFromPose: () => ({ kind: 'rect', x: 25, y: 25, width: 50, height: 50 }),
     });
     scene.add({
-      kind: 'leaf', layer: 'bg', parent: bed,
+      kind: 'mark', layer: 'bg', parent: bed,
       pose: { x: 5, y: 5, width: 10, height: 10 },
       data: { label: 'corner' },
     });
     scene.add({
-      kind: 'leaf', layer: 'bg', parent: bed,
+      kind: 'mark', layer: 'bg', parent: bed,
       pose: { x: 40, y: 40, width: 10, height: 10 },
       data: { label: 'center' },
     });
@@ -280,18 +280,18 @@ describe('sceneToAdapter', () => {
       systemLayers: [{ id: 'bg' }],
     });
     const bed = scene.add({
-      kind: 'container', layer: 'bg',
+      kind: 'group', layer: 'bg',
       pose: { x: 0, y: 0, width: 100, height: 100 },
       data: { label: 'bed' },
       clipFromPose: () => ({ kind: 'rect', x: 25, y: 25, width: 50, height: 50 }),
     });
     scene.add({
-      kind: 'leaf', layer: 'bg', parent: bed,
+      kind: 'mark', layer: 'bg', parent: bed,
       pose: { x: 5, y: 5, width: 10, height: 10 },
       data: { label: 'corner' },
     });
     scene.add({
-      kind: 'leaf', layer: 'bg', parent: bed,
+      kind: 'mark', layer: 'bg', parent: bed,
       pose: { x: 40, y: 40, width: 10, height: 10 },
       data: { label: 'center' },
     });
@@ -309,14 +309,14 @@ describe('sceneToAdapter', () => {
     });
     let callCount = 0;
     const bed = scene.add({
-      kind: 'container', layer: 'bg',
+      kind: 'group', layer: 'bg',
       pose: { x: 0, y: 0, width: 100, height: 100 },
       data: { label: 'bed' },
       clipFromPose: () => { callCount++; return { kind: 'rect', x: 25, y: 25, width: 50, height: 50 }; },
     });
     for (let i = 0; i < 5; i++) {
       scene.add({
-        kind: 'leaf', layer: 'bg', parent: bed,
+        kind: 'mark', layer: 'bg', parent: bed,
         pose: { x: i * 10, y: 30, width: 5, height: 5 },
         data: { label: `p${i}` },
       });
@@ -343,7 +343,7 @@ describe('I3: walkClipAware gates containers on ancestor clips', () => {
     });
     // region: 200×200 with a narrow clip at (50..100, 50..100)
     const region = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'bg',
       pose: { x: 0, y: 0, width: 200, height: 200 },
       data: { label: 'region' },
@@ -351,7 +351,7 @@ describe('I3: walkClipAware gates containers on ancestor clips', () => {
     });
     // bed: entirely inside the region's AABB but outside the clip.
     const bed = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'bg',
       pose: { x: 0, y: 0, width: 30, height: 30 },
       data: { label: 'bed' },
@@ -359,7 +359,7 @@ describe('I3: walkClipAware gates containers on ancestor clips', () => {
     });
     // leaf: inside the bed, also outside the region clip.
     const leaf = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'bg',
       pose: { x: 5, y: 5, width: 10, height: 10 },
       data: { label: 'leaf' },
@@ -386,7 +386,7 @@ describe('I3: walkClipAware gates containers on ancestor clips', () => {
       systemLayers: [{ id: 'bg' }],
     });
     const region = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'bg',
       pose: { x: 0, y: 0, width: 200, height: 200 },
       data: { label: 'region' },
@@ -394,14 +394,14 @@ describe('I3: walkClipAware gates containers on ancestor clips', () => {
     });
     // bed: inside the region clip (60..120, 60..120).
     const bed = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'bg',
       pose: { x: 60, y: 60, width: 60, height: 60 },
       data: { label: 'bed' },
       parent: region,
     });
     const leaf = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'bg',
       pose: { x: 65, y: 65, width: 10, height: 10 },
       data: { label: 'leaf' },
@@ -422,7 +422,7 @@ describe('I3: walkClipAware gates containers on ancestor clips', () => {
 
 /** Adapter-shaped snapshot item, as captured from a scene node. */
 interface SnapItem {
-  kind: 'leaf' | 'container';
+  kind: 'mark' | 'group';
   id: string;
   layer: string;
   parent: string | null;
@@ -434,12 +434,12 @@ interface SnapItem {
 describe('clipboard seam', () => {
   it('snapshotSelection captures a leaf as a deep copy (mutation does not touch the scene)', () => {
     const scene = makeScene();
-    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 10, y: 20, width: 30, height: 40 }, data: { label: 'a' } });
+    const id = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 10, y: 20, width: 30, height: 40 }, data: { label: 'a' } });
     const adapter = sceneToAdapter(scene);
     const snap = adapter.snapshotSelection!([id]);
     const items = snap.items as SnapItem[];
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ kind: 'leaf', id, layer: 'bg', parent: null });
+    expect(items[0]).toMatchObject({ kind: 'mark', id, layer: 'bg', parent: null });
     expect(items[0].pose).toEqual({ x: 10, y: 20, width: 30, height: 40 });
     expect(items[0].data).toEqual({ label: 'a' });
     // Copies, not references into the scene.
@@ -453,9 +453,9 @@ describe('clipboard seam', () => {
 
   it('snapshotSelection captures a container subtree parents-first and dedupes selected descendants', () => {
     const scene = makeScene();
-    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 10, y: 10, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
-    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 20, y: 20, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
+    const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 10, y: 10, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 20, y: 20, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
     const adapter = sceneToAdapter(scene);
     // c1 listed alongside its selected ancestor p (and before it) — the
     // ancestor wins; c1 must not appear twice in the snapshot.
@@ -472,9 +472,9 @@ describe('clipboard seam', () => {
 
   it('commitPaste mints fresh ids, remaps parents/children, translates the whole subtree, and does not insert', () => {
     const scene = makeScene();
-    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 15, y: 15, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
-    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 30, y: 30, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
+    const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 15, y: 15, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 30, y: 30, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
     const adapter = sceneToAdapter(scene);
     const snap = adapter.snapshotSelection!([p]);
     const nodeCountBefore = scene.nodes.size;
@@ -489,7 +489,7 @@ describe('clipboard seam', () => {
 
     // Parents-before-children; internal parent refs remapped onto fresh ids.
     const [np, nc1, nc2] = created;
-    expect(np.kind).toBe('container');
+    expect(np.kind).toBe('group');
     expect(np.parent).toBeNull();
     expect(nc1.parent).toBe(np.id);
     expect(nc2.parent).toBe(np.id);
@@ -509,8 +509,8 @@ describe('clipboard seam', () => {
 
   it('commitPaste turns items whose parent is outside the snapshot into roots', () => {
     const scene = makeScene();
-    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 10, y: 10, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 10, y: 10, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
     const adapter = sceneToAdapter(scene);
     // Snapshot the child alone: its captured parent (p) is not in the snapshot.
     const snap = adapter.snapshotSelection!([c1]);
@@ -523,8 +523,8 @@ describe('clipboard seam', () => {
 
   it('commitPaste uses ctx.dropPoint as the cluster origin, ignoring the offset', () => {
     const scene = makeScene();
-    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 12, y: 12, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 12, y: 12, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
     void c1;
     const adapter = sceneToAdapter(scene);
     const snap = adapter.snapshotSelection!([p]);
@@ -541,7 +541,7 @@ describe('clipboard seam', () => {
 
   it('commitPaste translates a non-rect pose in its own fields, adding none', () => {
     const scene = createScene<Data, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
-    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: circle(5, 6, 7), data: { label: 'dot' } });
+    const id = scene.add({ kind: 'mark', layer: 'bg', pose: circle(5, 6, 7), data: { label: 'dot' } });
     const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     const snap = adapter.snapshotSelection!([id]);
     const created = adapter.commitPaste!(snap, { dx: 12, dy: 12 }) as unknown as Array<{
@@ -561,12 +561,12 @@ describe('clipboard seam', () => {
     const snap = {
       items: [
         {
-          kind: 'container', id: 'p', layer: 'bg', parent: null,
+          kind: 'group', id: 'p', layer: 'bg', parent: null,
           pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'p' },
           children: ['ghost', 'c'],
         },
         {
-          kind: 'leaf', id: 'c', layer: 'bg', parent: 'p',
+          kind: 'mark', id: 'c', layer: 'bg', parent: 'p',
           pose: { x: 1, y: 1, width: 2, height: 2 }, data: { label: 'c' },
         },
       ],
@@ -586,9 +586,9 @@ describe('clipboard seam', () => {
 
   it('round-trips copy → paste through useClipboardOps: subtree inserted, one undo entry, selection = new ids', () => {
     const scene = makeScene();
-    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 15, y: 15, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
-    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 30, y: 30, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
+    const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 15, y: 15, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 30, y: 30, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
     let selection: string[] = [p];
     const adapter = sceneToAdapter(scene, {
       selection: { get: () => selection, set: (ids) => { selection = [...ids]; } },
@@ -607,7 +607,7 @@ describe('clipboard seam', () => {
     expect(scene.nodes.size).toBe(nodeCountBefore + 3);
     const newIds = [...scene.nodes.keys()].filter((id) => !idsBefore.has(id));
     expect(newIds).toHaveLength(3);
-    const newContainer = newIds.map((id) => scene.get(id)!).find((n) => n.kind === 'container')!;
+    const newContainer = newIds.map((id) => scene.get(id)!).find((n) => n.kind === 'group')!;
     expect(newContainer).toBeDefined();
     expect(scene.childrenOf(newContainer.id)).toHaveLength(2);
     for (const cid of scene.childrenOf(newContainer.id)) {
@@ -631,7 +631,7 @@ describe('clipboard seam', () => {
 describe('sceneToAdapter — non-rect poses', () => {
   it('area-selects and pastes circles through the descriptor', () => {
     const scene = createScene<object, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
-    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: circle(10, 10, 5), data: {} });
+    const id = scene.add({ kind: 'mark', layer: 'bg', pose: circle(10, 10, 5), data: {} });
     const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     expect(adapter.hitTestArea!({ x: 0, y: 0, width: 20, height: 20 })).toEqual([id]);
     const pasted = adapter.commitPaste(adapter.snapshotSelection([id]), { dx: 7, dy: 0 });
@@ -640,8 +640,8 @@ describe('sceneToAdapter — non-rect poses', () => {
 
   it('cascades a container move to circle children', () => {
     const scene = createScene<object, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
-    const box = scene.add({ kind: 'container', layer: 'bg', pose: circle(50, 50, 50), data: {} });
-    const kid = scene.add({ kind: 'leaf', layer: 'bg', parent: box, pose: circle(40, 40, 5), data: {} });
+    const box = scene.add({ kind: 'group', layer: 'bg', pose: circle(50, 50, 50), data: {} });
+    const kid = scene.add({ kind: 'mark', layer: 'bg', parent: box, pose: circle(40, 40, 5), data: {} });
     const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     adapter.setPose(box, circle(60, 50, 50));
     expect(scene.get(kid)!.pose).toEqual(circle(50, 40, 5));
@@ -651,8 +651,8 @@ describe('sceneToAdapter — non-rect poses', () => {
 describe('sceneToAdapter — setLayout', () => {
   it('applies a setLayout op as one undo step with the arrangement it causes', () => {
     const scene = createScene<object, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
-    const box = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 40, height: 40 }, data: {} });
-    const kid = scene.add({ kind: 'leaf', layer: 'bg', parent: box, pose: { x: 5, y: 5, width: 1, height: 1 }, data: {} });
+    const box = scene.add({ kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 40, height: 40 }, data: {} });
+    const kid = scene.add({ kind: 'mark', layer: 'bg', parent: box, pose: { x: 5, y: 5, width: 1, height: 1 }, data: {} });
     const fill: LayoutStrategy<Pose> = {
       snap: { pickTarget: () => null },
       childPoses: (c, children) => new Map(children.map((ch) => [ch.id, { ...c.bounds }])),

@@ -38,7 +38,7 @@ const frames = async (n: number) => { await act(async () => { for (let i = 0; i 
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
-    s.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
+    s.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
   });
   return s;
 }

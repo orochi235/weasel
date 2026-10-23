@@ -33,7 +33,7 @@ const AMBIENT = [diagramOffPage().contribution];
  */
 function makeScene(): OffPageScene {
   const box = (id: string, x: number) => ({
-    id, kind: 'leaf', layer: 'main', pose: { x, y: 60, width: 40, height: 30 }, data: { diagram: {}, fill: { paint: { color: '#101010' } } },
+    id, kind: 'mark', layer: 'main', pose: { x, y: 60, width: 40, height: 30 }, data: { diagram: {}, fill: { paint: { color: '#101010' } } },
   });
   return createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
@@ -42,7 +42,7 @@ function makeScene(): OffPageScene {
     initial: [
       box('a', 20), box('b', 420),
       {
-        id: 'ab', kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+        id: 'ab', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
         data: { diagram: { from: {}, to: {} }, stroke: { paint: { color: '#ffffff' }, width: 2 } },
         dependsOn: ['a', 'b'], derivePath: EDGE_DERIVE_PATH,
       },

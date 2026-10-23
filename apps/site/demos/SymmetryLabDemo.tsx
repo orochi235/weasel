@@ -46,7 +46,7 @@ function pathLeaf(id: string, d: string, color: string) {
   const path = pathFromD(d);
   const { x, y, width, height } = boundsOfPath(path);
   return {
-    id: asNodeId(id), kind: 'leaf' as const, layer: 'default' as const, parent: asNodeId(GROUP_ID),
+    id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const, parent: asNodeId(GROUP_ID),
     pose: { x, y, width, height }, data: { path, fill: { paint: solid(color) } },
   };
 }
@@ -60,7 +60,7 @@ function createLabScene() {
       { ...symmetryGroupSpec({ id: asNodeId(GROUP_ID), layer: 'default', center: CENTER, symmetry: { kind: 'kaleidoscope', count: 6, angle: 0 } }) } as never,
       pathLeaf(PETAL_ID, 'M350 240 C385 205 435 205 470 240 C435 275 385 275 350 240 Z', '#7fb069'),
       {
-        id: asNodeId('dot'), kind: 'leaf', layer: 'default', parent: asNodeId(GROUP_ID),
+        id: asNodeId('dot'), kind: 'mark', layer: 'default', parent: asNodeId(GROUP_ID),
         pose: dot, data: { path: ellipsePath(dot), fill: { paint: solid('#d4a574') } },
       },
     ],

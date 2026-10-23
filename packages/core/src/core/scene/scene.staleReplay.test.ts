@@ -11,9 +11,9 @@ const G = asNodeId('g');
 
 function makeScene() {
   const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
-  const spec = (id: string, kind: 'leaf' | 'container' = 'leaf') =>
+  const spec = (id: string, kind: 'mark' | 'group' = 'mark') =>
     ({ id: asNodeId(id), kind, layer: 'default' as const, pose: { ...POSE }, data: { label: id } });
-  const add = (id: string, kind: 'leaf' | 'container' = 'leaf') => scene.add(spec(id, kind));
+  const add = (id: string, kind: 'mark' | 'group' = 'mark') => scene.add(spec(id, kind));
   const adapter = { setPose: (id: string, pose: unknown) => { scene.setPose(asNodeId(id), pose as typeof POSE); } };
   const depths = () => [scene.history.undoDepth(), scene.history.redoDepth()];
   return { scene, spec, add, adapter, depths };
@@ -118,7 +118,7 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
 
   it('skips a move into a container that is gone', () => {
     const { scene, add } = makeScene();
-    add('g', 'container');
+    add('g', 'group');
     add('a');
     scene.move(A, G);
     scene.undo();
@@ -131,7 +131,7 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
 
   it('does not undo an add out from under children an untracked edit gave it', () => {
     const { scene, spec, add } = makeScene();
-    add('g', 'container');
+    add('g', 'group');
     scene.untracked(() => scene.add({ ...spec('a'), parent: G }));
 
     scene.undo();

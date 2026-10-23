@@ -6,7 +6,7 @@ const RED: PaintedFill = { paint: { kind: 'solid', color: '#f00' } };
 const BLUE: PaintedFill = { paint: { kind: 'solid', color: '#00f' } };
 const LINE: PaintedStroke = { paint: { kind: 'solid', color: '#000' }, width: 2 };
 
-const group = (data: object) => ({ kind: 'container', data });
+const group = (data: object) => ({ kind: 'group', data });
 
 describe('inheritsPaint', () => {
   it('is true only for a node whose fill or stroke is the inherit marker', () => {
@@ -34,7 +34,7 @@ describe('inheritedPaintOf', () => {
 
   it('skips an ancestor that is not a container', () => {
     const node = { data: { fill: INHERIT } };
-    expect(inheritedPaintOf(node, [{ kind: 'leaf', data: { fill: RED } }, group({ fill: BLUE })]).fill)
+    expect(inheritedPaintOf(node, [{ kind: 'mark', data: { fill: RED } }, group({ fill: BLUE })]).fill)
       .toBe(BLUE);
   });
 

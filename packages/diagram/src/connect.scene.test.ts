@@ -13,7 +13,7 @@ function sceneWithTwo(): Scene<Data, 'main', Rect> {
   const scene = createScene<Data, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
   for (const [id, x] of [['a', 0], ['b', 300]] as const) {
     scene.add({
-      id: id as never, kind: 'leaf', layer: 'main',
+      id: id as never, kind: 'mark', layer: 'main',
       pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} },
     });
   }
@@ -60,7 +60,7 @@ describe('commitEdgeToScene', () => {
     });
     for (const [id, x] of [['a', 0], ['b', 300]] as const) {
       scene.add({
-        id: id as never, kind: 'leaf', layer: 'wires',
+        id: id as never, kind: 'mark', layer: 'wires',
         pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} },
       });
     }
@@ -85,7 +85,7 @@ describe('commitEdgeToScene', () => {
     });
     for (const [id, x] of [['a', 0], ['b', 300]] as const) {
       scene.add({
-        id: id as never, kind: 'leaf', layer: 'main',
+        id: id as never, kind: 'mark', layer: 'main',
         pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} },
       });
     }

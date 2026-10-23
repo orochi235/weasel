@@ -120,10 +120,10 @@ describe('slots as a scene layout', () => {
   it('re-spaces the row on insert and delete, each as one undo step', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const G = scene.add({
-      kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 300, height: 100 },
+      kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 300, height: 100 },
       layout: slots<RectPose>({ arrangement: rowSlots() }),
     });
-    const leaf = (pose: RectPose) => scene.add({ kind: 'leaf', layer: 'main', data: {}, pose, parent: G as NodeId });
+    const leaf = (pose: RectPose) => scene.add({ kind: 'mark', layer: 'main', data: {}, pose, parent: G as NodeId });
     const a = leaf(box(10));
     expect(scene.get(a)!.pose).toEqual(box(150));
     const b = leaf(box(290));

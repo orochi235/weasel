@@ -26,7 +26,7 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 
 const pathNode = (id: string, path: PolygonPath, color: string) => ({
   id: asNodeId(id),
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: boundsOfPath(path),
   data: { path, fill: { paint: solid(color) }, stroke: { paint: solid('#2b2f36'), width: 2 } },

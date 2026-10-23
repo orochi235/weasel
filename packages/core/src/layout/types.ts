@@ -129,7 +129,7 @@ export interface LayoutDragged<TPose> {
  * How a container arranges its children, and what happens when one is dragged
  * into or around it.
  *
- * Declared on a container node (`ContainerNode.layout`). `childPoses` is the
+ * Declared on a container node (`GroupNode.layout`). `childPoses` is the
  * resting arrangement, which the scene re-applies whenever the container's
  * children or size change or a child is moved, `getDropTargets` enumerates where a drag could
  * land, `reflowPoses` is the live preview once a target is picked, and

@@ -21,8 +21,8 @@ const ARM: Skeleton = {
 /** The arm bound to two bone rects, and an animator whose frames the test steps. */
 function rigged() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' as const }] });
-  const upper = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 95, width: 50, height: 10 }, data: {} });
-  const lower = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 150, y: 95, width: 50, height: 10 }, data: {} });
+  const upper = scene.add({ kind: 'mark', layer: 'main', pose: { x: 100, y: 95, width: 50, height: 10 }, data: {} });
+  const lower = scene.add({ kind: 'mark', layer: 'main', pose: { x: 150, y: 95, width: 50, height: 10 }, data: {} });
   const rig = bindRig({ scene, skeleton: ARM, bindings: { upper, lower } });
 
   let now = 0;

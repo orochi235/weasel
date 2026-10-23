@@ -13,7 +13,7 @@ export const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // fallback should register their own painter at `'high'` priority and let
   // this one never fire (or unregister it explicitly).
   id: 'kit:rect-fallback',
-  matches: (node) => node.kind !== 'container' && paintsPose(node.pose),
+  matches: (node) => node.kind !== 'group' && paintsPose(node.pose),
   paint: (node, pose, ctx) => {
     const d = node.data as { fill?: Fill | Inherit | null } | null;
     const p = pose;

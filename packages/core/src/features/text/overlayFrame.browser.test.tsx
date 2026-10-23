@@ -37,7 +37,7 @@ function Editor({ scene, container }: { scene: TextScene; container: HTMLElement
 async function overlayRect(pose: RectPose): Promise<DOMRect> {
   const scene: TextScene = createScene<DefaultTextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    id: ID, kind: 'leaf', layer: 'main', pose,
+    id: ID, kind: 'mark', layer: 'main', pose,
     data: { text: 'H', style: { fontSize: 16, lineHeight: 1.2, wrap: true } },
   });
   host = document.createElement('div');

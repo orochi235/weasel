@@ -33,8 +33,8 @@ describe('selectAllAction (behavior)', () => {
       systemLayers: [{ id: 'base' as const }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
-    scene.add({ kind: 'leaf', id: asNodeId('shown'), layer: 'base', data: { v: 1 }, pose: { x: 0 } });
-    scene.add({ kind: 'leaf', id: asNodeId('hidden'), layer: 'fx', data: { v: 2 }, pose: { x: 0 } });
+    scene.add({ kind: 'mark', id: asNodeId('shown'), layer: 'base', data: { v: 1 }, pose: { x: 0 } });
+    scene.add({ kind: 'mark', id: asNodeId('hidden'), layer: 'fx', data: { v: 2 }, pose: { x: 0 } });
     return scene;
   };
 
@@ -50,8 +50,8 @@ describe('selectAllAction (behavior)', () => {
 
   it('skips a hidden or locked node, and what sits under one', () => {
     const scene = sceneWithHiddenLayer();
-    const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'base', data: { v: 3 }, pose: { x: 0 } });
-    scene.add({ kind: 'leaf', id: asNodeId('kid'), layer: 'base', data: { v: 4 }, pose: { x: 0 }, parent: box });
+    const box = scene.add({ kind: 'group', id: asNodeId('box'), layer: 'base', data: { v: 3 }, pose: { x: 0 } });
+    scene.add({ kind: 'mark', id: asNodeId('kid'), layer: 'base', data: { v: 4 }, pose: { x: 0 }, parent: box });
     scene.setHidden(box, true);
     scene.setLocked(asNodeId('hidden'), true);
     expect(run(scene)).toEqual(['shown']);
@@ -67,8 +67,8 @@ describe('selectAllAction (behavior)', () => {
 
   it('skips a child whose container sits on a locked layer', () => {
     const scene = sceneWithHiddenLayer();
-    const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'base', data: { v: 3 }, pose: { x: 0 } });
-    scene.add({ kind: 'leaf', id: asNodeId('kid'), layer: 'fx', data: { v: 4 }, pose: { x: 0 }, parent: box });
+    const box = scene.add({ kind: 'group', id: asNodeId('box'), layer: 'base', data: { v: 3 }, pose: { x: 0 } });
+    scene.add({ kind: 'mark', id: asNodeId('kid'), layer: 'fx', data: { v: 4 }, pose: { x: 0 }, parent: box });
     scene.setLayerLocked('base', true);
     expect(run(scene)).toEqual(['hidden']);
   });
@@ -87,8 +87,8 @@ describe('selectAllAction — the asking view', () => {
       systemLayers: [{ id: 'base' as const }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
-    scene.add({ kind: 'leaf', id: asNodeId('shown'), layer: 'base', data: { v: 1 }, pose: { x: 0 } });
-    scene.add({ kind: 'leaf', id: asNodeId('elsewhere'), layer: 'fx', data: { v: 2 }, pose: { x: 0 } });
+    scene.add({ kind: 'mark', id: asNodeId('shown'), layer: 'base', data: { v: 1 }, pose: { x: 0 } });
+    scene.add({ kind: 'mark', id: asNodeId('elsewhere'), layer: 'fx', data: { v: 2 }, pose: { x: 0 } });
 
     const picked: string[][] = [];
     (selectAllAction.invoker as { run(deps: never, params: never): void }).run(

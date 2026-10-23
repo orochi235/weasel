@@ -67,7 +67,7 @@ describe('SceneCanvas', () => {
     // Presses 12px left of the top-left corner and drags it out by 20px.
     function dragNearCorner(handleHitRadius?: number): Pose {
       const scene = createScene<{ kind: 'rect' }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-      const id = scene.add({ kind: 'leaf', layer: 'main', pose: START, data: { kind: 'rect' } });
+      const id = scene.add({ kind: 'mark', layer: 'main', pose: START, data: { kind: 'rect' } });
       scene.setSelection([id]);
       const { container, unmount } = render(
         <SceneCanvas
@@ -97,7 +97,7 @@ describe('SceneCanvas', () => {
     const START: Pose = { x: 100, y: 100, width: 80, height: 60 };
     function dragNearCorner(handlePx: number, handleHitRadius?: number): Pose {
       const scene = createScene<{ kind: 'rect' }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-      const id = scene.add({ kind: 'leaf', layer: 'main', pose: START, data: { kind: 'rect' } });
+      const id = scene.add({ kind: 'mark', layer: 'main', pose: START, data: { kind: 'rect' } });
       scene.setSelection([id]);
       const { container, unmount } = render(
         <KitSettingsProvider value={{ targets: { handlePx } }}>
@@ -136,7 +136,7 @@ describe('SceneCanvas defaults', () => {
     it('emits a filled rect using node.data.fill', () => {
       const node = {
         id: 'a',
-        kind: 'leaf' as const,
+        kind: 'mark' as const,
         layer: 'default',
         pose: { x: 1, y: 2, width: 3, height: 4 },
         data: { fill: { paint: { color: '#abc' } } },
@@ -154,7 +154,7 @@ describe('SceneCanvas defaults', () => {
 
     it('paints no fill when data has no fill', () => {
       const node = {
-        id: 'a', kind: 'leaf' as const, layer: 'default',
+        id: 'a', kind: 'mark' as const, layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: {}, parent: null,
       };
@@ -164,7 +164,7 @@ describe('SceneCanvas defaults', () => {
 
     it('paints no fill when data is null', () => {
       const node = {
-        id: 'a', kind: 'leaf' as const, layer: 'default',
+        id: 'a', kind: 'mark' as const, layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: null as never, parent: null,
       };

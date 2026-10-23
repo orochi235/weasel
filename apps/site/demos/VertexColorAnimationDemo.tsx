@@ -34,7 +34,7 @@ function wave(id: string, y: number) {
   const path = pathFromD(d);
   const { x, y: top, width, height } = boundsOfPath(path);
   return {
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     id: asNodeId(id),
     layer: 'default' as const,
     pose: { x, y: top, width, height },

@@ -175,7 +175,7 @@ describe('the bone nodes as the canvas composes them', () => {
     expect(specs.filter((n) => n.parent === undefined).map((n) => n.id)).toEqual([boneId('hip')]);
     // A container with no `clipFromPose` clips its descendants to its own
     // silhouette, which for a bone is a box a few units wide.
-    for (const n of specs.filter((s) => s.kind === 'container')) {
+    for (const n of specs.filter((s) => s.kind === 'group')) {
       expect(n.clipFromPose?.(), `${n.id} clip`).toBeNull();
     }
   });

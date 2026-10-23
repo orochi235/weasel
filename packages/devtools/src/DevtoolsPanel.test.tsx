@@ -63,8 +63,8 @@ describe('DevtoolsPanel', () => {
   it('lists the top level of the scene, each row with its kind, layer and child count', async () => {
     mount();
     const group = await waitFor(() => row('group'));
-    expect(group.textContent).toMatch(/container\s*main\s*1/);
-    expect(row('solo').textContent).toMatch(/leaf\s*main/);
+    expect(group.textContent).toMatch(/group\s*main\s*1/);
+    expect(row('solo').textContent).toMatch(/mark\s*main/);
   });
 
   it('asks for a branch only when it is opened', async () => {

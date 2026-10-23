@@ -119,7 +119,7 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
     // that left and came back did not depart.
     const left = heldMoves(nodes, departures, false);
     departures = new Map();
-    const touched = new Set([...changed].filter((id) => nodes.get(id)?.kind === 'container'));
+    const touched = new Set([...changed].filter((id) => nodes.get(id)?.kind === 'group'));
     if (landed.size === 0 && touched.size === 0) return [];
     const poses = handler(landed, touched, left);
     if (poses === null) throw new SceneArrivalRefused(landed);

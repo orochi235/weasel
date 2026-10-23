@@ -49,7 +49,7 @@ export function pathLeaf(id: string, path: PolygonPath, color: string, extra: Re
   const b = boundsOfPath(path);
   return {
     id: asNodeId(id),
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as const,
     pose: { x: b.x, y: b.y, width: b.width, height: b.height } as RectPose,
     data: { path, fill: { paint: solid(color) }, ...extra },

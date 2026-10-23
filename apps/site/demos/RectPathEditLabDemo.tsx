@@ -33,7 +33,7 @@ const FIRST = asNodeId('rect-1');
 
 const rect = (id: string, x: number, y: number, width: number, height: number, color: string, rotation?: number) => ({
   id: asNodeId(id),
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x, y, width, height, ...(rotation ? { rotation } : {}) },
   data: { path: rectPath(0, 0, width, height), fill: { paint: solid(color) } },

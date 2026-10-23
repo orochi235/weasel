@@ -51,7 +51,7 @@ function setup(props: Record<string, unknown> = {}) {
   const at: Record<string, [number, number]> = { a: [100, 100], b: [200, 100], c: [100, 200] };
   for (const id of [A, B, C]) {
     const [x, y] = at[id];
-    scene.add({ id, kind: 'leaf', layer: 'main', pose: { x, y, width: 40, height: 40 }, data: { path: square(), fill: '#000' } });
+    scene.add({ id, kind: 'mark', layer: 'main', pose: { x, y, width: 40, height: 40 }, data: { path: square(), fill: '#000' } });
   }
   scene.setSelection([A]);
   const grabbed = {} as {

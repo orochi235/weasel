@@ -23,7 +23,7 @@ function setup(path: Path) {
   const datas = new Map<string, { path: Path }>([['n', { path }]]);
   const scene = {
     get: (id: string) => poses.has(id)
-      ? { pose: poses.get(id), data: datas.get(id), kind: 'leaf', layer: 'default', parent: null }
+      ? { pose: poses.get(id), data: datas.get(id), kind: 'mark', layer: 'default', parent: null }
       : undefined,
     setPose: (id: string, p: unknown) => poses.set(id, p),
     renderOrder: () => ['n'], childrenOf: () => [], roots: ['n'],

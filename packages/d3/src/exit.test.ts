@@ -176,7 +176,7 @@ describe('d3Bind exit transitions', () => {
       scene.current.remove('a' as never);
       scene.current.add({
         id: 'a' as never,
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'graph',
         pose: { x: 7, y: 0, width: 10, height: 10 },
         data: {},
@@ -201,7 +201,7 @@ describe('d3Bind exit transitions', () => {
     expect(() => act(() => clock.advance(100))).not.toThrow();
     act(() => void scene.current.add({
       id: 'a' as never,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'graph',
       pose: { x: 7, y: 0, width: 10, height: 10 },
       data: {},

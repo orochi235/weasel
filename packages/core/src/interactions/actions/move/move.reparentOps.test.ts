@@ -25,9 +25,9 @@ const refusing: LayoutStrategy<RectPose> = {
 
 function makeScene(layout?: LayoutStrategy<RectPose>): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
+  scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.add({
-    id: T, kind: 'container', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 },
+    id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 },
     ...(layout ? { layout } : {}),
   });
   return scene as unknown as Scene<unknown, string, unknown>;
@@ -106,7 +106,7 @@ describe('moveAction — reparentOnDrop commits as ops', () => {
     };
     const scene = makeScene(refusesB);
     scene.move(A, T);
-    scene.add({ id: B, kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 20, width: 10, height: 10 } });
+    scene.add({ id: B, kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 20, width: 10, height: 10 } });
     const before = scene.get(A)!.pose;
     const onGestureEnd = vi.fn();
     drop(scene, { onGestureEnd }, {}, [A, B]);

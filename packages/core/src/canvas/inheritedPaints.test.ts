@@ -20,8 +20,8 @@ type Data = { shape?: string; path?: unknown; fill?: unknown; stroke?: unknown }
 
 function setup(childData: Data, groupData: Data = { fill: RED, stroke: LINE }) {
   const scene = createScene<Data, 'main'>({ systemLayers: [{ id: 'main' }] });
-  const group = scene.add({ kind: 'container', id: asNodeId('g'), layer: 'main', pose: BOX, data: groupData });
-  scene.add({ kind: 'leaf', id: asNodeId('c'), parent: group, layer: 'main', pose: BOX, data: childData });
+  const group = scene.add({ kind: 'group', id: asNodeId('g'), layer: 'main', pose: BOX, data: groupData });
+  scene.add({ kind: 'mark', id: asNodeId('c'), parent: group, layer: 'main', pose: BOX, data: childData });
   return { scene, group };
 }
 

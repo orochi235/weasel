@@ -43,7 +43,7 @@ function live(planner: LayoutPlanner, onError?: (error: unknown) => void) {
 /** A long edge `a -> c`, which `layered` routes around the middle rank. */
 function addLong(s: ReturnType<typeof live>) {
   return s.scene.add({
-    kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
+    kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
     data: { diagram: { from: {}, to: {} } },
     dependsOn: [s.a, s.c],
   });
@@ -147,7 +147,7 @@ describe('useLiveLayout with a LayoutPlanner', () => {
     act(() => { s.handle().start(); });
     await d.answer();
     act(() => { s.clock.frames(2); });
-    act(() => { s.scene.add({ kind: 'leaf', layer: 'main', pose: box(400, 400), data: { diagram: {} } }); });
+    act(() => { s.scene.add({ kind: 'mark', layer: 'main', pose: box(400, 400), data: { diagram: {} } }); });
     expect(d.asked).toHaveLength(2);
     expect(d.asked[1]!.nodes).toHaveLength(4);
     await d.answer();

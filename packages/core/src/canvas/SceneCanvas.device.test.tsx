@@ -62,7 +62,7 @@ function Harness({
     systemLayers: [{ id: 'main' }],
     initial: [{
       id: asNodeId('a'),
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pose: { x: 0, y: 0, width: 50, height: 50 },
       data: { color: '#f00' },

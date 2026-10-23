@@ -20,7 +20,7 @@ function concreteScene(): Scene<MyData, MyLayer, MyPose> {
   return createScene<MyData, MyLayer, MyPose>({
     systemLayers: [{ id: 'back' }, { id: 'front' }],
     initial: [{
-      kind: 'container',
+      kind: 'group',
       layer: 'back',
       pose: { x: 0, y: 0, width: 10, height: 10, tilt: 0 },
       data: { label: 'box' },
@@ -41,7 +41,7 @@ describe('Scene variance', () => {
 
   it('still rejects a pose callback that cannot take the scene\'s pose', () => {
     const spec: AddNodeSpec<MyData, MyLayer, MyPose> = {
-      kind: 'container',
+      kind: 'group',
       layer: 'front',
       pose: { x: 0, y: 0, width: 1, height: 1, tilt: 0 },
       data: { label: 'x' },

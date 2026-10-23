@@ -21,9 +21,9 @@ const properties: NodePropertiesEntry[] = [{
 /** `inside` sits in a millimeter sub-assembly, `outside` at the root. */
 function assembly() {
   const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('g'), kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'group' }, units: MM });
-  scene.add({ id: asNodeId('inside'), kind: 'leaf', layer: 'default', parent: asNodeId('g'), pose: { x: 0.5, y: 3, width: 1, height: 1 }, data: { kind: 'rect' } });
-  scene.add({ id: asNodeId('outside'), kind: 'leaf', layer: 'default', pose: { x: 2, y: 3, width: 1, height: 1 }, data: { kind: 'rect' } });
+  scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'group' }, units: MM });
+  scene.add({ id: asNodeId('inside'), kind: 'mark', layer: 'default', parent: asNodeId('g'), pose: { x: 0.5, y: 3, width: 1, height: 1 }, data: { kind: 'rect' } });
+  scene.add({ id: asNodeId('outside'), kind: 'mark', layer: 'default', pose: { x: 2, y: 3, width: 1, height: 1 }, data: { kind: 'rect' } });
   return scene;
 }
 

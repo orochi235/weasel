@@ -28,7 +28,7 @@ function setup(deps: Record<string, unknown> = {}) {
   const scene = createScene<{ kind: string }, 'main', Pose>({
     systemLayers: [{ id: 'main', visible: true, locked: false }],
   });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
   const clock = makeClock();
   const { result } = renderHook(() => useAnimator(clock));
   const animator = result.current;

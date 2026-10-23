@@ -203,7 +203,7 @@ export interface SvgKitTreeNode {
   /** The kit's `SceneNode.hidden`: written with `display="none"`, which
    *  `parseSvg(…, { keepHidden: true })` reads back as `hidden`. */
   hidden?: boolean;
-  /** A container's copies, as the kit's `ContainerNode.copiesFromPose`
+  /** A container's copies, as the kit's `GroupNode.copiesFromPose`
    *  draws them: each is written as a transformed group of its children. */
   copiesFromPose?(pose: SvgKitPose, node: never): readonly Matrix[] | null;
 }
@@ -248,7 +248,7 @@ export function svgNodesFromKit<TId extends string>(
     return out && node?.hidden === true ? { ...out, hidden: true } : out;
   };
   const lower = (id: TId, node: SvgKitTreeNode, up: UpPaint): SvgNode | null => {
-    if (node.kind === 'container') {
+    if (node.kind === 'group') {
       const own = node.data as SvgKitLeafData | null;
       const below: UpPaint = {
         fill: own?.fill === INHERIT ? up.fill : resolveFill(own?.fill),

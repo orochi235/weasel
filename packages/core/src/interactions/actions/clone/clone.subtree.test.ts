@@ -15,9 +15,9 @@ const ORIGINALS = new Set<NodeId>([G, A, B]);
 
 function makeScene(): Scene<unknown, string, unknown> {
   const scene = createScene<{ tag: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: G, kind: 'container', layer: 'main', data: { tag: 'g' }, pose: { x: 0, y: 0, width: 60, height: 20 }, dependsOn: 'children' });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', parent: G, data: { tag: 'a' }, pose: { x: 0, y: 0, width: 20, height: 20 } });
-  scene.add({ id: B, kind: 'leaf', layer: 'main', parent: G, data: { tag: 'b' }, pose: { x: 40, y: 0, width: 20, height: 20 } });
+  scene.add({ id: G, kind: 'group', layer: 'main', data: { tag: 'g' }, pose: { x: 0, y: 0, width: 60, height: 20 }, dependsOn: 'children' });
+  scene.add({ id: A, kind: 'mark', layer: 'main', parent: G, data: { tag: 'a' }, pose: { x: 0, y: 0, width: 20, height: 20 } });
+  scene.add({ id: B, kind: 'mark', layer: 'main', parent: G, data: { tag: 'b' }, pose: { x: 40, y: 0, width: 20, height: 20 } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 
@@ -55,7 +55,7 @@ describe('cloneAction on a container', () => {
     const newRoots = scene.roots.filter((id) => id !== G);
     expect(newRoots).toHaveLength(1);
     const copy = scene.get(newRoots[0])!;
-    expect(copy.kind).toBe('container');
+    expect(copy.kind).toBe('group');
     expect(copy.dependsOn).toBe('children');
 
     const kids = scene.childrenOf(newRoots[0]).map((id) => scene.get(id)!);

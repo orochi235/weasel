@@ -35,7 +35,7 @@ function live(kind: (typeof KINDS)[number]): unknown[] {
 describe('<MinimapCanvas> renderer lifetime', () => {
   it('deletes its programs, buffers and textures on unmount', () => {
     const scene = createScene<unknown, 'main', P>({ systemLayers: [{ id: 'main' }] });
-    scene.add({ kind: 'leaf', data: {}, layer: 'main', pose: { x: 10, y: 20, width: 30, height: 40 } });
+    scene.add({ kind: 'mark', data: {}, layer: 'main', pose: { x: 10, y: 20, width: 30, height: 40 } });
     const { unmount } = render(
       <MinimapCanvas
         scene={scene} mainView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}

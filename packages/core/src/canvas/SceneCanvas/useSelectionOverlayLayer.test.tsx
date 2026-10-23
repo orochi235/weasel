@@ -31,7 +31,7 @@ describe('useSelectionOverlayLayer', () => {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const pose = { x: 0, y: 0, width: 100, height: 100 };
     scene.add({
-      id: asNodeId('a'), kind: 'leaf', layer: 'main', pose,
+      id: asNodeId('a'), kind: 'mark', layer: 'main', pose,
       data: { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00' }, width: 10 } },
     } as never);
     const slot = {

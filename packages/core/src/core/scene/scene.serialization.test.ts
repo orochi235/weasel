@@ -9,14 +9,14 @@ describe('scene.toJSON', () => {
     const scene = createScene<Data, 'structures' | 'plantings'>({
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
     });
-    const a = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    const b = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const a = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     const json = scene.toJSON();
-    expect(json.version).toBe(1);
+    expect(json.version).toBe(2);
     expect(json.systemLayers.map((l) => l.id)).toEqual(['structures', 'plantings']);
     expect(json.nodes).toHaveLength(2);
-    expect(json.nodes[0]).toMatchObject({ id: a, kind: 'leaf', layer: 'structures', pose: POSE });
-    expect(json.nodes[1]).toMatchObject({ id: b, kind: 'leaf', layer: 'structures', pose: POSE });
+    expect(json.nodes[0]).toMatchObject({ id: a, kind: 'mark', layer: 'structures', pose: POSE });
+    expect(json.nodes[1]).toMatchObject({ id: b, kind: 'mark', layer: 'structures', pose: POSE });
     expect(json.nodes[0].parent).toBeUndefined();
   });
 
@@ -24,8 +24,8 @@ describe('scene.toJSON', () => {
     const scene = createScene<Data, 'structures' | 'plantings'>({
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
     });
-    const bed = scene.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const plant = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
+    const bed = scene.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
     const json = scene.toJSON();
     const plantNode = json.nodes.find((n) => n.id === plant)!;
     expect(plantNode.parent).toBe(bed);
@@ -50,9 +50,9 @@ describe('scene.toJSON', () => {
     const scene = createScene<Data, 'structures' | 'plantings'>({
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
     });
-    const a = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    const b = scene.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'b' } });
-    const c = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
+    const a = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'b' } });
+    const c = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'c' } });
     const json = scene.toJSON();
     expect(json.nodes.map((n) => n.id)).toEqual([a, b, c]);
   });
@@ -61,18 +61,18 @@ describe('scene.toJSON', () => {
     const scene = createScene<Data, 'structures' | 'plantings'>({
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
     });
-    const bed = scene.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const p1 = scene.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p1' }, parent: bed });
-    const s1 = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 's1' }, parent: bed });
-    const top = scene.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'top' } });
-    const last = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'last' } });
+    const bed = scene.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const p1 = scene.add({ kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'p1' }, parent: bed });
+    const s1 = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 's1' }, parent: bed });
+    const top = scene.add({ kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'top' } });
+    const last = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'last' } });
     const order = scene.renderOrder();
 
     scene.loadState(scene.toJSON());
 
     expect(scene.roots).toEqual([bed, top, last]);
     const bedNode = scene.get(bed)!;
-    expect(bedNode.kind === 'container' && bedNode.children).toEqual([p1, s1]);
+    expect(bedNode.kind === 'group' && bedNode.children).toEqual([p1, s1]);
     expect(scene.renderOrder()).toEqual(order);
   });
 
@@ -83,7 +83,7 @@ describe('scene.toJSON', () => {
       registry: { clipFromPose: { 'ellipse': factory } },
     });
     const bed = scene.add({
-      kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' },
+      kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' },
       clipFromPose: factory,
     });
     const json = scene.toJSON();
@@ -97,7 +97,7 @@ describe('scene.toJSON', () => {
       registry: {},
     });
     scene.add({
-      kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' },
+      kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' },
       clipFromPose: () => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }),
     });
     expect(() => scene.toJSON()).toThrow(/no matching registry key/);
@@ -107,7 +107,7 @@ describe('scene.toJSON', () => {
     const scene = createScene<Data, 'structures' | 'plantings'>({
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
     });
-    const bed = scene.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const bed = scene.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
     const json = scene.toJSON();
     const bedNode = json.nodes.find((n) => n.id === bed)!;
     expect(bedNode.clipFromPoseKey).toBeUndefined();
@@ -117,8 +117,8 @@ describe('scene.toJSON', () => {
 describe('sceneFromJSON', () => {
   it('reconstructs a flat scene from JSON', () => {
     const original = makeScene();
-    const a = original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const a = original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     const json = original.toJSON();
     const restored = sceneFromJSON(json, {});
     expect([...restored.roots]).toContain(asNodeId(a));
@@ -127,8 +127,8 @@ describe('sceneFromJSON', () => {
 
   it('reconstructs parent/child relationships', () => {
     const original = makeScene();
-    const bed = original.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const plant = original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
+    const bed = original.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
     const json = original.toJSON();
     const restored = sceneFromJSON(json, {});
     expect(restored.get(asNodeId(plant))?.parent).toBe(asNodeId(bed));
@@ -154,7 +154,7 @@ describe('sceneFromJSON', () => {
       registry: { clipFromPose: { 'ellipse': factory } },
     });
     const bed = original.add({
-      kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' },
+      kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' },
       clipFromPose: factory,
     });
     const json = original.toJSON();
@@ -162,18 +162,18 @@ describe('sceneFromJSON', () => {
       registry: { clipFromPose: { 'ellipse': factory } },
     });
     const restoredBed = restored.get(asNodeId(bed));
-    expect(restoredBed?.kind).toBe('container');
+    expect(restoredBed?.kind).toBe('group');
     expect((restoredBed as { clipFromPose?: unknown }).clipFromPose).toBe(factory);
   });
 
   it('a loaded container keeps its clipFromPose through remove and undo', () => {
     const factory = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
     const json: SerializedScene<Data, 'structures', typeof POSE> = {
-      version: 1,
+      version: 2,
       systemLayers: [{ id: 'structures' }],
       nodes: [{
         id: 'bed',
-        kind: 'container',
+        kind: 'group',
         layer: 'structures',
         pose: POSE,
         data: { label: 'bed' },
@@ -189,17 +189,17 @@ describe('sceneFromJSON', () => {
   });
 
   it('throws on unknown version', () => {
-    const json = { version: 2, systemLayers: [{ id: 'structures' as const }], nodes: [] };
+    const json = { version: 3, systemLayers: [{ id: 'structures' as const }], nodes: [] };
     expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version/);
   });
 
   it('throws on unknown clipFromPoseKey', () => {
     const json: SerializedScene<Data, 'structures', typeof POSE> = {
-      version: 1,
+      version: 2,
       systemLayers: [{ id: 'structures' }],
       nodes: [{
         id: 'bed',
-        kind: 'container',
+        kind: 'group',
         layer: 'structures',
         pose: POSE,
         data: { label: 'bed' },
@@ -211,11 +211,11 @@ describe('sceneFromJSON', () => {
 
   it('accepts a higher-layer child subtree in JSON (renders above its parent)', () => {
     const json: SerializedScene<Data, 'structures' | 'plantings', typeof POSE> = {
-      version: 1,
+      version: 2,
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
       nodes: [
-        { id: 'bed', kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } },
-        { id: 'plant', kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: 'bed' },
+        { id: 'bed', kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } },
+        { id: 'plant', kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: 'bed' },
       ],
     };
     const scene = sceneFromJSON(json, {});
@@ -224,9 +224,9 @@ describe('sceneFromJSON', () => {
 
   it('full round-trip: toJSON → sceneFromJSON → toJSON produces equivalent output', () => {
     const original = makeScene();
-    const bed = original.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p1' }, parent: bed });
-    original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p2' }, parent: bed });
+    const bed = original.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p1' }, parent: bed });
+    original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p2' }, parent: bed });
     original.setLayerVisible('plantings', false);
     const json1 = original.toJSON();
     const restored = sceneFromJSON(json1, {});
@@ -241,8 +241,8 @@ describe('Scene.loadState', () => {
 
   function sceneWithTwoNodes() {
     const s = createScene<D, 'main'>({ systemLayers: LAYERS });
-    s.add({ kind: 'leaf', layer: 'main', pose: { x: 1, y: 2, width: 3, height: 4 }, data: { kind: 'a', color: 'red' } });
-    s.add({ kind: 'leaf', layer: 'main', pose: { x: 5, y: 6, width: 7, height: 8 }, data: { kind: 'b', color: 'blue' } });
+    s.add({ kind: 'mark', layer: 'main', pose: { x: 1, y: 2, width: 3, height: 4 }, data: { kind: 'a', color: 'red' } });
+    s.add({ kind: 'mark', layer: 'main', pose: { x: 5, y: 6, width: 7, height: 8 }, data: { kind: 'b', color: 'blue' } });
     return s;
   }
 
@@ -295,13 +295,13 @@ describe('Scene.loadState', () => {
 
   it('throws on an unsupported version', () => {
     const dst = createScene<D, 'main'>({ systemLayers: LAYERS });
-    expect(() => dst.loadState({ version: 2, systemLayers: LAYERS, nodes: [] } as never)).toThrow(/version/);
+    expect(() => dst.loadState({ version: 3, systemLayers: LAYERS, nodes: [] } as never)).toThrow(/version/);
   });
 
   it('restores a parented snapshot in place over a populated scene', () => {
     const src = createScene<D, 'main'>({ systemLayers: LAYERS });
-    const bedId = src.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'bed', color: 'brown' } });
-    src.add({ kind: 'leaf', layer: 'main', parent: bedId, pose: { x: 1, y: 1, width: 2, height: 2 }, data: { kind: 'plant', color: 'green' } });
+    const bedId = src.add({ kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'bed', color: 'brown' } });
+    src.add({ kind: 'mark', layer: 'main', parent: bedId, pose: { x: 1, y: 1, width: 2, height: 2 }, data: { kind: 'plant', color: 'green' } });
     const json = src.toJSON();
 
     const dst = sceneWithTwoNodes(); // pre-populated with different, flat content
@@ -310,7 +310,7 @@ describe('Scene.loadState', () => {
     expect(dst.toJSON()).toEqual(json);
     expect([...dst.roots]).toEqual([bedId]);
     const bed = dst.get(bedId);
-    expect(bed?.kind).toBe('container');
+    expect(bed?.kind).toBe('group');
     const children = (bed as { children: readonly string[] }).children;
     expect(children.length).toBe(1);
     expect(dst.get(children[0] as NodeId)?.parent).toBe(bedId);
@@ -356,7 +356,7 @@ describe('user layers survive a round-trip', () => {
   it('a snapshot written before layer kind was serialized loads as system layers', () => {
     const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
     scene.loadState({
-      version: 1,
+      version: 2,
       systemLayers: [{ id: 'base' }, { id: 'fx', visible: false }],
       nodes: [],
     });

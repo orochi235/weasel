@@ -5,7 +5,7 @@ const at = (x: number) => ({ ...POSE, x });
 
 function setup() {
   const s = makeScene();
-  const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+  const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
   return { s, id, before: s.historyEntries().length };
 }
 

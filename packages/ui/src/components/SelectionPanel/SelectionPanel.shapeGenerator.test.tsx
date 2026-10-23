@@ -22,7 +22,7 @@ function mount(withGenerator = true) {
   const path = starPath({ x: 50, y: 50 }, 50, 4, 25, 0);
   scene.add({
     id: asNodeId('s'),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 0, y: 0, width: 100, height: 100 },
     data: { path, ...(withGenerator ? { generator: { kind: 'star', points: 4, innerRadiusRatio: 0.5, rotation: 0 } } : {}) },

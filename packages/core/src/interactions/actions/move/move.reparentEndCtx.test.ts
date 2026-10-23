@@ -16,8 +16,8 @@ const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
 function makeScene(): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
-  scene.add({ id: T, kind: 'container', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 } });
+  scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
+  scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 

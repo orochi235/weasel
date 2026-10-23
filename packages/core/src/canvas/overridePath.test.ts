@@ -28,11 +28,11 @@ const BENT_POSE: RectPose = { x: 0, y: -80, width: 70, height: 100 };
 function makeScene() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
-    kind: 'leaf', layer: 'main', pose: REST,
+    kind: 'mark', layer: 'main', pose: REST,
     data: { path: { kind: 'rect', x: 0, y: 0, width: 100, height: 20 }, fill: { paint: { color: '#f00' } } },
   });
   const plain = scene.add({
-    kind: 'leaf', layer: 'main', pose: { x: 200, y: 0, width: 10, height: 10 },
+    kind: 'mark', layer: 'main', pose: { x: 200, y: 0, width: 10, height: 10 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
   });
   return { scene, id, plain };

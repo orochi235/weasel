@@ -38,7 +38,7 @@ const centerOf = (cmd: DrawCommand) => {
 function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, width: 4 }, given?: RectPose) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const pose = given ?? (path === LINE ? { x: 0, y: 0, width: 100, height: 0 } : { x: 0, y: -45, width: 100, height: 45 });
-  const line = scene.add({ kind: 'leaf', layer: 'main', pose, data: { path, stroke } });
+  const line = scene.add({ kind: 'mark', layer: 'main', pose, data: { path, stroke } });
   const { result } = renderHook(() => useGirthTool());
   const deps = { scene, view: { get: () => VIEW, set: () => {} } } as unknown as ActionDeps;
   const actionOf = (id: string): Action => (result.current.actions ?? []).find((x) => x.id === id)!;

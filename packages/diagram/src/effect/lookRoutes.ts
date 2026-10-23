@@ -53,7 +53,7 @@ export function wireEnds(specs: readonly DiagramSpec[], edge: string): [Vec2, Ve
   const [from, to] = (spec?.dependsOn ?? []) as readonly string[];
   const point = (node: string | undefined, port: string | undefined) => {
     const n = node === undefined || port === undefined ? undefined : specs.find((s) => s.id === node);
-    return n === undefined ? undefined : portOf({ id: node!, kind: n.kind ?? 'leaf', data: n.data }, n.pose, port!)?.point;
+    return n === undefined ? undefined : portOf({ id: node!, kind: n.kind ?? 'mark', data: n.data }, n.pose, port!)?.point;
   };
   const a = point(from, trait?.from?.port);
   const b = point(to, trait?.to?.port);

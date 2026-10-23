@@ -11,8 +11,8 @@ const STYLE = { stroke: '#0e9f8e', conflictStroke: '#e5484d' };
 /** A square and a triangle whose anchor 0 is held on the square's bottom edge, at `y` below it. */
 function setup(y: number) {
   const scene = createScene<Record<string, unknown>, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
-  const square = scene.add({ kind: 'leaf', layer: 'main', pose: poly([0, 0], [100, 0], [100, 100], [0, 100]), data: {} });
-  const triangle = scene.add({ kind: 'leaf', layer: 'main', pose: poly([40, y], [40, -50], [10, -50]), data: {} });
+  const square = scene.add({ kind: 'mark', layer: 'main', pose: poly([0, 0], [100, 0], [100, 100], [0, 100]), data: {} });
+  const triangle = scene.add({ kind: 'mark', layer: 'main', pose: poly([40, y], [40, -50], [10, -50]), data: {} });
   const link = scene.add(constraintLinkNode<unknown>({
     layer: 'main', nodes: [triangle, square], constraint: { kind: 'onPath', anchor: 0, segment: [3, 4] },
   }) as never);

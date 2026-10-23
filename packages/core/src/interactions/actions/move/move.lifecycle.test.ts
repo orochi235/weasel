@@ -28,8 +28,8 @@ function setup(selected: 'a' | 'ab' = 'a') {
   const scene = createScene<{ kind: string }, 'main', Pose>({
     systemLayers: [{ id: 'main', visible: true, locked: false }],
   });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 50, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 50, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
   const ids = selected === 'a' ? [a] : [a, b];
   // The adds above are undo entries of their own; count from here.
   const recorded = () => scene.historyEntries().length - 2;

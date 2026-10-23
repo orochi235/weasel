@@ -32,14 +32,14 @@ function ctx(scene: S, ids: string[], drag?: typeof DRAG): InvocationCtx {
 describe('moveAction with snapToContainer — a derived node with no slot of its own', () => {
   it('lands with the drop, and undo restores its authored pose', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const target = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(200, 0, 200, 200) });
-    const leaf = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(0, 0) });
+    const target = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(200, 0, 200, 200) });
+    const leaf = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
     // Authored at a placeholder; drawn as the union of its children.
     const envelope = scene.add({
-      kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 1, 1),
+      kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 1, 1),
       dependsOn: 'children', derivePose: unionOfChildren,
     });
-    const inside = scene.add({ kind: 'leaf', parent: envelope, layer: 'main', data: {}, pose: box(10, 60) });
+    const inside = scene.add({ kind: 'mark', parent: envelope, layer: 'main', data: {}, pose: box(10, 60) });
     const opts: BindingOpts = {
       behaviors: [
         snapToContainer<RectPose>({

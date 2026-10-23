@@ -12,11 +12,11 @@ import { useSceneSelectTool } from './useSceneSelectTool';
 
 const initial: UseSceneOptions<object, 'default', RectPose>['initial'] = [
   {
-    id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 },
+    id: asNodeId('n'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 },
     data: { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#000' }, width: 10 } },
   },
   {
-    id: asNodeId('px'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 },
+    id: asNodeId('px'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 },
     data: { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#000' }, width: { px: 8 } } },
   },
 ];

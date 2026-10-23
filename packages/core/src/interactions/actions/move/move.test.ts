@@ -516,8 +516,8 @@ describe('moveAction — reparentOnDrop', () => {
 
   it('off (default) — preserves translate-only commit even when nodeAtPoint hits something', () => {
     const scene = buildScene();
-    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-    const targetId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 100, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const movingId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const targetId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 100, y: 100, width: 10, height: 10 }, data: { kind: 'rect' } });
     const nodeAtPoint: NodeAtPointDep = () => targetId;
 
     runDrag(scene, [movingId], { x: 105, y: 105 }, { x: 105, y: 105 }, undefined, nodeAtPoint);
@@ -530,10 +530,10 @@ describe('moveAction — reparentOnDrop', () => {
 
   it('top — drops onto a container, reparents under it at the end of children, world position preserved', () => {
     const scene = buildScene();
-    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const movingId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
     // Container at world (50, 50). Existing child at local (5, 5) → world (55, 55).
-    const containerId = scene.add({ kind: 'container', layer: 'main', pose: { x: 50, y: 50, width: 100, height: 100 }, data: { kind: 'group' } });
-    const existingChildId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 5, y: 5, width: 10, height: 10 }, data: { kind: 'rect' }, parent: containerId });
+    const containerId = scene.add({ kind: 'group', layer: 'main', pose: { x: 50, y: 50, width: 100, height: 100 }, data: { kind: 'group' } });
+    const existingChildId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 5, y: 5, width: 10, height: 10 }, data: { kind: 'rect' }, parent: containerId });
     const nodeAtPoint: NodeAtPointDep = () => containerId;
 
     runDrag(
@@ -555,11 +555,11 @@ describe('moveAction — reparentOnDrop', () => {
 
   it('above — drops onto a leaf sibling, lands at sibling index + 1 with same parent', () => {
     const scene = buildScene();
-    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const movingId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
     // Three top-level siblings; drop onto the middle one.
-    const aId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 50, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-    const bId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-    const cId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 150, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const aId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 50, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const bId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const cId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 150, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
 
     const nodeAtPoint: NodeAtPointDep = () => bId;
 
@@ -580,7 +580,7 @@ describe('moveAction — reparentOnDrop', () => {
 
   it('top — drop on empty canvas (nodeAtPoint returns null) skips reparent, translate-only', () => {
     const scene = buildScene();
-    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const movingId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
     const nodeAtPoint: NodeAtPointDep = () => null;
 
     runDrag(scene, [movingId], { x: 50, y: 50 }, { x: 50, y: 50 }, { params: { reparentOnDrop: 'top' } }, nodeAtPoint);
@@ -594,8 +594,8 @@ describe('moveAction — reparentOnDrop', () => {
     // Moving container with a child. Both must be excluded from the hit
     // candidate set, otherwise we'd cheerfully reparent the container
     // into itself or under its own descendant.
-    const movingId = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'group' } });
-    const childId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 10, y: 10, width: 10, height: 10 }, data: { kind: 'rect' }, parent: movingId });
+    const movingId = scene.add({ kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'group' } });
+    const childId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 10, y: 10, width: 10, height: 10 }, data: { kind: 'rect' }, parent: movingId });
 
     const calls: Array<{ excluded: NodeId[] }> = [];
     const nodeAtPoint: NodeAtPointDep = (_point, exclude) => {
@@ -617,8 +617,8 @@ describe('moveAction — reparentOnDrop', () => {
       ],
       composition: LOCAL_PC,
     });
-    const movingId = scene.add({ kind: 'leaf', layer: 'a', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-    const targetId = scene.add({ kind: 'container', layer: 'b', pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'group' } });
+    const movingId = scene.add({ kind: 'mark', layer: 'a', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const targetId = scene.add({ kind: 'group', layer: 'b', pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'group' } });
     const nodeAtPoint: NodeAtPointDep = () => asNodeId(targetId);
 
     runDrag(
@@ -644,8 +644,8 @@ describe('moveAction — reparentOnDrop', () => {
   // the invoker and reparent-on-drop silently no-ops).
   it('reparentOnDrop fires when deps are built via buildDepsFromRequires (nodeAtPoint declared)', () => {
     const scene = buildScene();
-    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-    const containerId = scene.add({ kind: 'container', layer: 'main', pose: { x: 50, y: 50, width: 100, height: 100 }, data: { kind: 'group' } });
+    const movingId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const containerId = scene.add({ kind: 'group', layer: 'main', pose: { x: 50, y: 50, width: 100, height: 100 }, data: { kind: 'group' } });
     const selection = { get: () => [movingId] as NodeId[] };
     const nodeAtPoint: NodeAtPointDep = () => asNodeId(containerId);
 

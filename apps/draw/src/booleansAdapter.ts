@@ -18,7 +18,7 @@ import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer,
 /** A text leaf as the kit's outline extraction reads it. */
 export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {
   const node = scene.get(asNodeId(id));
-  if (!node || node.kind !== 'leaf') return undefined;
+  if (!node || node.kind !== 'mark') return undefined;
   const { text, runs, style, verticalAlign, path, fill, stroke } = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
   if (text === undefined || path) return undefined;
   return { data: { text, runs, style, verticalAlign, fill, stroke }, pose: node.pose };
@@ -27,14 +27,14 @@ export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | und
 /** A path leaf's geometry in world space. */
 export function worldPathOf(scene: DrawScene, id: string): Path | undefined {
   const node = scene.get(asNodeId(id));
-  if (!node || node.kind !== 'leaf' || !node.data.path) return undefined;
+  if (!node || node.kind !== 'mark' || !node.data.path) return undefined;
   return pathInWorld(node.data.path, node.pose);
 }
 
 /** The paint a path leaf wears. */
 export function pathPaintAt(scene: DrawScene, id: string): PathPaint | undefined {
   const node = scene.get(asNodeId(id));
-  if (!node || node.kind !== 'leaf' || !node.data.path) return undefined;
+  if (!node || node.kind !== 'mark' || !node.data.path) return undefined;
   return pathPaintOf(node.data);
 }
 
@@ -66,9 +66,9 @@ export function drawBooleansAdapter(
       // session's.
       let id: string;
       do id = `b-${idCounter++}`; while (scene.get(asNodeId(id)));
-      const node: { id: string; kind: 'leaf'; layer: WeaselDrawLayer; pose: WeaselDrawPose; data: WeaselDrawData; parent: NodeId | null } = {
+      const node: { id: string; kind: 'mark'; layer: WeaselDrawLayer; pose: WeaselDrawPose; data: WeaselDrawData; parent: NodeId | null } = {
         id,
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
         data: {

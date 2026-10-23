@@ -15,7 +15,7 @@ interface StubScene {
   overrides: PoseOverrides<unknown>;
   composition: typeof IDENTITY_POSE_COMPOSITION;
   batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }>;
-  get(id: NodeId): { pose: unknown; kind: 'leaf'; layer: string; data: unknown; parent: null } | undefined;
+  get(id: NodeId): { pose: unknown; kind: 'mark'; layer: string; data: unknown; parent: null } | undefined;
   applyBatch(ops: unknown[], label: string, adapter: unknown): void;
 }
 
@@ -32,7 +32,7 @@ function makeStubScene(initial: Record<string, { pose: unknown }>): StubScene {
     composition: IDENTITY_POSE_COMPOSITION,
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
-      return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };
+      return { pose: poses.get(id), kind: 'mark' as const, layer: 'main', data: {}, parent: null };
     },
     // The commit path now emits transform ops through `commitOps` →
     // `scene.applyBatch` (no consumer `applyOps`). Mirror the real scene:

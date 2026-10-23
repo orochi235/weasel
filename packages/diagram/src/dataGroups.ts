@@ -150,7 +150,7 @@ export function groupSpecs(
     const { x, y, width, height } = boxes.get(g.group.id)!;
     specs.push({
       id: g.group.id as never,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pose: { x, y, width, height },
       data: {
@@ -176,7 +176,7 @@ export function groupSpecs(
     const anchor: DiagramAnchor = { at: { u: 0, v: 0 }, offset: { x: g.pad, y: g.pad } };
     specs.push({
       id: groupLabelIdOf(g.group.id) as never,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pickable: false,
       pose: { x: x + g.pad, y: y + g.pad, width: g.title.width, height: g.title.height },

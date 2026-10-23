@@ -16,7 +16,7 @@ describe('<SceneCanvas poseTransition>', () => {
   it('hands the scene its writes while the prop is set, and stops when it is not', () => {
     const scene = createScene<object, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],
-      initial: [{ id: A, kind: 'leaf', layer: 'main', pose: at(0), data: {} }],
+      initial: [{ id: A, kind: 'mark', layer: 'main', pose: at(0), data: {} }],
     });
     const settle = vi.fn();
     const transition: ReflowTransition<RectPose> = { glide: vi.fn(), settle, stop: vi.fn(), poseOf: () => undefined };

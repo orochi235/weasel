@@ -38,7 +38,7 @@ const POLICIES: { value: FontFallbackPolicy; label: string }[] = [
 interface NodeData { text: string; style: TextStyle; fill: Fill }
 
 const NODES = ROWS.map((r, i) => ({
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   id: asNodeId(r.family),
   pose: { x: 16, y: 12 + i * ROW, width: W - 32, height: 44 },

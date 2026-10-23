@@ -49,7 +49,7 @@ describe('SelectionPanel — paint leaf', () => {
     const scene = createScene<PaintData, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
     scene.add({
       id: asNodeId('t'),
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { kind: 'text', style: { fill } },
@@ -121,7 +121,7 @@ describe('SelectionPanel — paint leaf', () => {
     for (const [id, color] of [['a', '#ff0000ff'], ['b', '#00ff00ff']] as const) {
       scene.add({
         id: asNodeId(id),
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { kind: 'text', style: { fill: { kind: 'solid', color } } },

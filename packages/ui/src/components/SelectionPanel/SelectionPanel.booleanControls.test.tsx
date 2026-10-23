@@ -67,7 +67,7 @@ describe('SelectionPanel — boolean controls', () => {
     for (const id of ids) {
       scene.add({
         id: asNodeId(id),
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { kind: 'text', ...data },
@@ -203,7 +203,7 @@ describe('SelectionPanel — flags inside an object leaf', () => {
     const scene = createScene<StyleData, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
     scene.add({
       id: asNodeId('t1'),
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { kind: 'text', ...(style ? { style } : {}) },

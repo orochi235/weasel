@@ -26,7 +26,7 @@ const FX = asNodeId('fx');
 type Spec = AddNodeSpec<unknown, 'main', RectPose>;
 
 const leaf = (id: string, pose: RectPose, color: string, parent?: string): Spec => ({
-  id: asNodeId(id), kind: 'leaf', layer: 'main', pose,
+  id: asNodeId(id), kind: 'mark', layer: 'main', pose,
   data: { path: rectPath(0, 0, pose.width, pose.height), fill: { paint: { color } } },
   ...(parent ? { parent: asNodeId(parent) } : {}),
 });
@@ -45,7 +45,7 @@ function framed(composition: PoseComposition<RectPose> = RIGID_POSE_COMPOSITION)
     registry: withPathEffectsRegistry(),
     composition,
     initial: [
-      { id: G, kind: 'container', layer: 'main', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
+      { id: G, kind: 'group', layer: 'main', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
       leaf('a', { x: 0, y: 0, width: 20, height: 10 }, '#ff0000', 'g'),
       blend('g'),
       leaf('b', { x: 80, y: 40, width: 20, height: 10 }, '#0000ff', 'g'),
@@ -171,7 +171,7 @@ describe('an effect whose source is an effect in another frame', () => {
 
   it('reads it in its own frame, from inside a second container', () => {
     const scene = framed();
-    scene.add({ id: H, kind: 'container', layer: 'main', pose: { x: 500, y: 40, width: 50, height: 50 }, data: {} });
+    scene.add({ id: H, kind: 'group', layer: 'main', pose: { x: 500, y: 40, width: 50, height: 50 }, data: {} });
     scene.add(leaf('c', { x: -500, y: -40, width: 4, height: 4 }, '#00ff00', 'h'));
     scene.add(along('h'));
     const local = effectivePose(scene, scene.get(FX2)!);

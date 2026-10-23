@@ -12,10 +12,10 @@ import type { Op } from 'core/ops/types';
 
 interface StubScene {
   poses: Map<string, unknown>;
-  nodes: Map<string, { pose: unknown; kind: 'leaf' | 'container'; layer: string; data: unknown; parent: NodeId | null }>;
+  nodes: Map<string, { pose: unknown; kind: 'mark' | 'group'; layer: string; data: unknown; parent: NodeId | null }>;
   addLog: AddNodeSpec<unknown, string, unknown>[];
   applyBatchLog: Array<{ ops: Op[]; label: string }>;
-  get(id: NodeId): { pose: unknown; kind: 'leaf'; layer: string; data: unknown; parent: NodeId | null } | undefined;
+  get(id: NodeId): { pose: unknown; kind: 'mark'; layer: string; data: unknown; parent: NodeId | null } | undefined;
   setPose(id: NodeId, pose: unknown): void;
   add(spec: AddNodeSpec<unknown, string, unknown>): NodeId;
   remove(id: NodeId): void;
@@ -33,13 +33,13 @@ interface StubScene {
 }
 
 function makeStubScene(
-  initial: Record<string, { pose: unknown; data?: unknown; layer?: string; kind?: 'leaf' | 'container' }> = {},
+  initial: Record<string, { pose: unknown; data?: unknown; layer?: string; kind?: 'mark' | 'group' }> = {},
 ): StubScene {
   const poses = new Map<string, unknown>();
-  const nodes = new Map<string, { pose: unknown; kind: 'leaf' | 'container'; layer: string; data: unknown; parent: NodeId | null }>();
+  const nodes = new Map<string, { pose: unknown; kind: 'mark' | 'group'; layer: string; data: unknown; parent: NodeId | null }>();
   for (const [id, v] of Object.entries(initial)) {
     poses.set(id, v.pose);
-    nodes.set(id, { pose: v.pose, kind: v.kind ?? 'leaf', layer: v.layer ?? 'main', data: v.data ?? {}, parent: null });
+    nodes.set(id, { pose: v.pose, kind: v.kind ?? 'mark', layer: v.layer ?? 'main', data: v.data ?? {}, parent: null });
   }
   const addLog: AddNodeSpec<unknown, string, unknown>[] = [];
   const applyBatchLog: Array<{ ops: Op[]; label: string }> = [];
@@ -56,7 +56,7 @@ function makeStubScene(
     get(id: NodeId) {
       const n = nodes.get(id);
       if (!n) return undefined;
-      return n as { pose: unknown; kind: 'leaf'; layer: string; data: unknown; parent: NodeId | null };
+      return n as { pose: unknown; kind: 'mark'; layer: string; data: unknown; parent: NodeId | null };
     },
     setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
     add(spec) {
@@ -202,7 +202,7 @@ describe('cloneAction descriptor', () => {
     // Pose should be translated by (15, 25) from origin (10, 20).
     expect(added.pose).toEqual(expect.objectContaining({ x: 25, y: 45 }));
     // Kind and layer preserved.
-    expect(added.kind).toBe('leaf');
+    expect(added.kind).toBe('mark');
     expect(added.layer).toBe('main');
   });
 
@@ -297,7 +297,7 @@ describe('cloneAction descriptor', () => {
     // parent, and pose translated by the drag delta.
     const n0 = (ops[0].args as { node: { id: string; kind: string; layer: string; pose: unknown; parent: NodeId | null } }).node;
     expect(n0.id).toBeTruthy();
-    expect(n0.kind).toBe('leaf');
+    expect(n0.kind).toBe('mark');
     expect(n0.layer).toBe('main');
     expect(n0.parent).toBe(null);
     expect(n0.pose).toEqual(expect.objectContaining({ x: 25, y: 45 }));

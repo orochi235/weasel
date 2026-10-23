@@ -9,7 +9,7 @@ function setup(dev = true) {
   const scene = createScene<{ label: string }, string>({ systemLayers: [{ id: 'main' }] });
   const ring = createTraceRing<DevtoolsHistoryRecord>(200, dev);
   const stop = recordHistory(scene.history, ring);
-  const add = (label: string) => scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label } });
+  const add = (label: string) => scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label } });
   return { scene, ring, stop, add };
 }
 

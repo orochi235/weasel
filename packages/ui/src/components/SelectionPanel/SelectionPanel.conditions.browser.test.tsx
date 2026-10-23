@@ -14,7 +14,7 @@ const num = (name: string, extra: Record<string, unknown> = {}): PrefLeaf =>
 
 it('dims the label of a disabled row below that of the row beside it', () => {
   const scene = createScene<{ locked: boolean }, 'default', { x: number; y: number; width: number; height: number }>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { locked: true } });
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { locked: true } });
   const members: PrefSection['members'] = {
     'data.radius': num('Radius', { enableIf: { path: 'data.locked', is: false } }),
     'data.inset': num('Inset'),

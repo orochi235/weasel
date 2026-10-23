@@ -50,7 +50,7 @@ describe('SelectionPanel — valueAt', () => {
     for (const r of rows) {
       scene.add({
         id: asNodeId(r.id),
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { kind: 'span', a: r.a, b: r.b },

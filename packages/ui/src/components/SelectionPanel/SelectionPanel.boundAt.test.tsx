@@ -25,7 +25,7 @@ const properties: NodePropertiesEntry[] = [
 function scene(floors: Record<string, { width: number; floor?: number }>) {
   const s = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
   for (const [id, { width, floor }] of Object.entries(floors)) {
-    s.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width, height: 10 }, data: { kind: 'rect', ...(floor === undefined ? {} : { floor }) } });
+    s.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width, height: 10 }, data: { kind: 'rect', ...(floor === undefined ? {} : { floor }) } });
   }
   return s;
 }
@@ -101,7 +101,7 @@ function strokeScene(nodes: Record<string, { width: number; floor?: number }>) {
   const s = createScene<StrokeData, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
   for (const [id, { width, floor }] of Object.entries(nodes)) {
     s.add({
-      id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
+      id: asNodeId(id), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { kind: 'rect', stroke: { width, cap: 'butt' }, ...(floor === undefined ? {} : { floor }) },
     });
   }

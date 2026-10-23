@@ -24,7 +24,7 @@ const INITIAL = (() => {
       const height = 28 + ((i * 11) % 22);
       out.push({
         id: asNodeId(`r${i}`),
-        kind: 'leaf' as const,
+        kind: 'mark' as const,
         layer: 'default' as const,
         parent: null,
         pose: { x, y, width, height },

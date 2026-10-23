@@ -212,7 +212,7 @@ describe('useLiveLayout', () => {
     for (const stopped of [false, true]) {
       const s = live('layered');
       const long = s.scene.add({
-        kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
+        kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
         data: { diagram: { from: {}, to: {} } },
         dependsOn: [s.a, s.c],
       });
@@ -243,7 +243,7 @@ describe('useLiveLayout', () => {
     // document still held and slid out of the box the gesture was carrying.
     const { scene: s, b, clock, handle } = live('layered');
     const label = s.add({
-      kind: 'leaf', layer: 'main', parent: b, pose: box(204, 34, 10, 6), data: {},
+      kind: 'mark', layer: 'main', parent: b, pose: box(204, 34, 10, 6), data: {},
     });
     act(() => { handle().start(); });
     act(() => { clock.frames(1); });
@@ -270,7 +270,7 @@ describe('useLiveLayout', () => {
     act(() => { handle().start(); });
     act(() => { clock.frames(3); });
     act(() => {
-      s.add({ kind: 'leaf', layer: 'main', pose: box(400, 400), data: { diagram: {} } });
+      s.add({ kind: 'mark', layer: 'main', pose: box(400, 400), data: { diagram: {} } });
     });
     // Without the re-heat the run would have finished on frame 4.
     act(() => { clock.frames(1); });
@@ -280,7 +280,7 @@ describe('useLiveLayout', () => {
   it('eases a long edge\'s route along with the nodes, and shows the document\'s once it arrives', () => {
     const s = live('layered');
     const long = s.scene.add({
-      kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
+      kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
       data: { diagram: { from: {}, to: {}, router: 'straight' } },
       dependsOn: [s.a, s.c],
       derivePath: EDGE_DERIVE_PATH as never,

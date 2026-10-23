@@ -43,8 +43,8 @@ describe('enterPathEdit', () => {
       systemLayers: [{ id: 'main' }],
       registry: withPathEffectsRegistry(),
       initial: [
-        { id: asNodeId('t'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 20 }, data: { text: 'Hi' } },
-        { id: asNodeId('p'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 1 }, data: { path: pathFromD('M0 50 L50 50') } },
+        { id: asNodeId('t'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 20 }, data: { text: 'Hi' } },
+        { id: asNodeId('p'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 1 }, data: { path: pathFromD('M0 50 L50 50') } },
         { ...pathEffectNode({ kind: 'textAlong', hideSources: true }, [asNodeId('t'), asNodeId('p')], 'main', PATH_EFFECT_DERIVATIONS), id: asNodeId('fx') },
       ],
     });

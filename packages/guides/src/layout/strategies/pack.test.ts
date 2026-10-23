@@ -74,10 +74,10 @@ describe('pack as a scene layout', () => {
   it('flows inserts and closes the gap a delete leaves', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const G = scene.add({
-      kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100 },
+      kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100 },
       layout: pack<RectPose>(),
     });
-    const leaf = (pose: RectPose) => scene.add({ kind: 'leaf', layer: 'main', data: {}, pose, parent: G as NodeId });
+    const leaf = (pose: RectPose) => scene.add({ kind: 'mark', layer: 'main', data: {}, pose, parent: G as NodeId });
     const a = leaf({ x: 0, y: 0, width: 60, height: 20 });
     const b = leaf({ x: 0, y: 50, width: 60, height: 10 });
     expect(scene.get(b)!.pose).toEqual({ x: 0, y: 20, width: 60, height: 10 });

@@ -14,7 +14,7 @@ afterEach(cleanup);
 
 it('draws a checkbox as a box, not across the row', () => {
   const scene = createScene<{ grid: boolean }, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: { grid: true } });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { grid: true } });
   const members: PrefSection['members'] = {
     'data.grid': { kind: 'boolean', name: 'Grid', description: '', default: true, control: 'checkbox' } as PrefLeaf,
   };

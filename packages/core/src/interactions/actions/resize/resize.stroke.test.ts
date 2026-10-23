@@ -16,7 +16,7 @@ const STROKE = { paint: { kind: 'solid', color: '#000' }, width: 10 } as const;
 
 function makeScene(stroke: unknown = STROKE): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: ID, kind: 'leaf', layer: 'main', data: { shape: 'rect', stroke }, pose: { x: 0, y: 0, width: 100, height: 100 } });
+  scene.add({ id: ID, kind: 'mark', layer: 'main', data: { shape: 'rect', stroke }, pose: { x: 0, y: 0, width: 100, height: 100 } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 

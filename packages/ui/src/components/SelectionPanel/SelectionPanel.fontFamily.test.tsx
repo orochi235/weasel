@@ -73,7 +73,7 @@ function renderPanel(rows: { id: string; style: TextData['style'] }[]) {
   for (const r of rows) {
     scene.add({
       id: asNodeId(r.id),
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { kind: 'text', style: r.style },

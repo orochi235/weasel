@@ -34,7 +34,7 @@ for (const mode of ['light', 'dark']) {
   it(`sets a field in a panel section apart from the panel, in ${mode} mode`, () => {
     document.documentElement.setAttribute('data-wzl-mode', mode);
     const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
-    scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: {} });
+    scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
     render(<SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing} />);
     const panel = screen.getByText('Edge').closest('section')!;
     expect(fillOf(screen.getByRole('textbox'), panel)).not.toBe(getComputedStyle(panel).backgroundColor);

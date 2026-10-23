@@ -2,6 +2,9 @@ export { createScene, sceneFromJSON } from './scene';
 export { sceneSelectionStore } from './sceneSelection';
 export { useScene } from './useScene';
 export { asNodeId } from './types';
+export { hasChildren, isLeaf } from './treeShape';
+export { nodeKindOf } from './serialization';
+export type { V1Classifier } from './serialization';
 export { SCENE_HISTORY_FORM } from './historyForm';
 export type { SerializedSceneHistory } from './historyForm';
 export type {
@@ -13,11 +16,11 @@ export type {
   DerivePathFn,
   DerivePoseFn,
   AddNodeSpec,
-  ContainerNode,
+  GroupNode,
   LayerRecord,
   LayoutFrame,
   LayoutMove,
-  LeafNode,
+  MarkNode,
   Node,
   NodeId,
   PoseOverride,
@@ -34,7 +37,9 @@ export type {
   SceneRegistry,
   SerializedNode,
   SerializedLayer,
+  SerializedNodeV1,
   SerializedScene,
+  SerializedSceneV1,
   SystemLayerRecord,
   SystemLayerSpec,
   UserLayerRecord,

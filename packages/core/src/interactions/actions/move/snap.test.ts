@@ -77,7 +77,7 @@ function rig(sources: readonly SnapSource[], build: (scene: AnyScene) => string[
 }
 
 const rect = (x: number, y: number, size = 10) => (scene: AnyScene) =>
-  [scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x, y, width: size, height: size } }) as string];
+  [scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x, y, width: size, height: size } }) as string];
 
 const near = (a: Point, b: Point) => {
   expect(a.x).toBeCloseTo(b.x, 9);
@@ -87,8 +87,8 @@ const near = (a: Point, b: Point) => {
 describe('a move snapping through the snap session', () => {
   it('lands its own path anchor on another node\'s anchor within 6px', () => {
     const r = rig([pathSnapSource()], (scene) => [
-      scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: pathFromD('M0 0 L20 0 L20 20 Z') }) as string,
-      scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: pathFromD('M100 0 L120 0 L120 20 Z') }) as string,
+      scene.add({ kind: 'mark', layer: 'main', data: {}, pose: pathFromD('M0 0 L20 0 L20 20 Z') }) as string,
+      scene.add({ kind: 'mark', layer: 'main', data: {}, pose: pathFromD('M100 0 L120 0 L120 20 Z') }) as string,
     ]);
     // The press is 1.4 from a's anchor at (0, 0); the drag puts it at (97, 2), 3.6 from b's.
     const h = r.press({ x: 1, y: 1 });
@@ -174,7 +174,7 @@ describe('a move snapping through the snap session', () => {
   it('still runs a container dwell behavior after the snap', () => {
     const r = rig([alignX(500)], (scene) => [
       ...rect(0, 0, 20)(scene),
-      scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 200, y: 0, width: 200, height: 200 } }) as string,
+      scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 200, y: 0, width: 200, height: 200 } }) as string,
     ]);
     const box = r.ids[1];
     const target: SnapTarget<unknown> = { parentId: box, slotPose: { x: 210, y: 10, width: 20, height: 20 } };

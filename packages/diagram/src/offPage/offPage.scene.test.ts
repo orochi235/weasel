@@ -17,10 +17,10 @@ const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: '#111111
 const PAGES = { pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }] };
 
 const box = (id: string, x: number, y = 20) =>
-  ({ id: id as never, kind: 'leaf' as const, layer: 'main' as const, pose: { x, y, width: 40, height: 30 }, data: { diagram: {} } });
+  ({ id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x, y, width: 40, height: 30 }, data: { diagram: {} } });
 
 const connector = (id: string, from: string, to: string, extra: Partial<DiagramEdge> = {}) => ({
-  id: id as never, kind: 'leaf' as const, layer: 'main' as const, pose: { x: 0, y: 0, width: 0, height: 0 },
+  id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x: 0, y: 0, width: 0, height: 0 },
   data: { diagram: { from: {}, to: {}, ...extra } },
   dependsOn: [from as never, to as never],
   derivePath: EDGE_DERIVE_PATH,

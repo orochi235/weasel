@@ -21,7 +21,7 @@ describe('built-in shape painters', () => {
     const mine = { id: 'mine', matches: () => true, paint: () => [] } as never;
     const dispose = shapes.registerNodeShape(mine, { priority: 'high' });
     expect(shapes.getNodeShapes()[0]).toBe(mine);
-    expect(shapes.findNodeShape({ id: 'n', kind: 'leaf', layer: 'l', pose: {}, data: {} } as never)).toBe(mine);
+    expect(shapes.findNodeShape({ id: 'n', kind: 'mark', layer: 'l', pose: {}, data: {} } as never)).toBe(mine);
     dispose();
   }, COLD_IMPORT_MS);
 });

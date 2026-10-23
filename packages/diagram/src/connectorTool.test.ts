@@ -7,7 +7,7 @@ import type { DiagramNodeLike } from './trait';
 
 interface Rect { x: number; y: number; width: number; height: number }
 
-const node = (id: string): DiagramNodeLike => ({ id, kind: 'leaf', data: { diagram: {} } });
+const node = (id: string): DiagramNodeLike => ({ id, kind: 'mark', data: { diagram: {} } });
 const PARTICIPANTS = () => [
   { node: node('a'), pose: { x: 0, y: 0, width: 100, height: 40 } as Rect },
   { node: node('b'), pose: { x: 300, y: 0, width: 100, height: 40 } as Rect },

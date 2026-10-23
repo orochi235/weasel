@@ -107,7 +107,7 @@ function buildScene(config: StrokeConfig): Scene<StrokeData, 'default', RectPose
     systemLayers: [{ id: 'default' }],
     initial: [
       {
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 40, y: 110, width: 384, height: 140 },
         data: { path: ZIGZAG, fill: null, stroke: strokeFromConfig(config) },

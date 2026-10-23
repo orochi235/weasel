@@ -7,7 +7,7 @@ const POSE = { x: 0, y: 0, width: 10, height: 10 };
 function makeScene() {
   const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
   const add = (id: string) =>
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { ...POSE }, data: { label: id } });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { ...POSE }, data: { label: id } });
   return { scene, add };
 }
 
@@ -58,7 +58,7 @@ describe('Scene — loadState', () => {
   it('drops a selected id the loaded document puts on a locked layer', () => {
     const scene = createScene<{ label: string }, 'base' | 'art'>({ systemLayers: [{ id: 'base' }, { id: 'art' }] });
     const add = (id: string, layer: 'base' | 'art') =>
-      scene.add({ id: asNodeId(id), kind: 'leaf', layer, pose: { ...POSE }, data: { label: id } });
+      scene.add({ id: asNodeId(id), kind: 'mark', layer, pose: { ...POSE }, data: { label: id } });
     add('free', 'base');
     add('art', 'art');
     scene.setLayerLocked('art', true);

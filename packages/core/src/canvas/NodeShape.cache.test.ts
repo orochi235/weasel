@@ -31,7 +31,7 @@ afterEach(() => {
  *  same object, new field references. */
 function makeNode(data: unknown, pose: RectPose): Node<unknown, string, RectPose> {
   return {
-    id: asNodeId('n'), kind: 'leaf', layer: 'main', pose, data,
+    id: asNodeId('n'), kind: 'mark', layer: 'main', pose, data,
   } as unknown as Node<unknown, string, RectPose>;
 }
 

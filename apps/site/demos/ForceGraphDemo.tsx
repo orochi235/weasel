@@ -40,7 +40,7 @@ const PAN_ON_DRAG = [dragPanContribution()];
 
 const leafOf = (n: GraphNode, radius: number) => ({
   id: n.id as never,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'graph' as const,
   pose: { x: n.x - radius, y: n.y - radius, width: radius * 2, height: radius * 2 },
   data: { group: n.group },

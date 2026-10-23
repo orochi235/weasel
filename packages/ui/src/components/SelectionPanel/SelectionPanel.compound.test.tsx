@@ -17,7 +17,7 @@ const flag = { kind: 'boolean', name: 'Flag', description: '', default: true, co
 function setup(leaves: Record<string, PrefLeaf>, nodes: Record<string, Record<string, unknown>>) {
   const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
   for (const [id, data] of Object.entries(nodes)) {
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
   }
   const properties: NodePropertiesEntry[] = [
     { name: 'thing', schema: { name: 'Properties', members: { all: { name: 'All', members: leaves } } } },

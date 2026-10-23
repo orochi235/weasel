@@ -49,7 +49,7 @@ describe('openContextMenu', () => {
 describe('keyboardAnchor', () => {
   it('is the center of the selection bounds', () => {
     const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'leaf', data: {}, layer: 'main', pose: { x: 10, y: 20, width: 100, height: 40 } });
+    const id = scene.add({ kind: 'mark', data: {}, layer: 'main', pose: { x: 10, y: 20, width: 100, height: 40 } });
     expect(keyboardAnchor({ scene, selection: { get: () => [id] } } as never)).toEqual({ x: 60, y: 40 });
   });
   it('is the center of the view with nothing selected', () => {

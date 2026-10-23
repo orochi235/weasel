@@ -26,7 +26,7 @@ function viewport(camera = createCamera({ distance: 12, pitch: 0.4, yaw: 0.3, ta
 function worldOf(poses: readonly Pose3[], vp: Viewport3d = viewport()): { world: W; ids: NodeId[] } {
   const scene: Scene3d<object, 'solids'> = createScene<object, 'solids', Pose3>({
     systemLayers: [{ id: 'solids' }],
-    initial: poses.map((pose) => ({ kind: 'leaf' as const, layer: 'solids' as const, pose, data: {} })),
+    initial: poses.map((pose) => ({ kind: 'mark' as const, layer: 'solids' as const, pose, data: {} })),
   });
   return { world: { scene, viewport: () => vp }, ids: [...scene.renderOrder()] };
 }

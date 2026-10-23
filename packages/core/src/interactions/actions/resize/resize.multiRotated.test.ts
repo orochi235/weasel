@@ -15,9 +15,9 @@ const T = asNodeId('turned');
 
 function makeScene(): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: U, kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100 } });
+  scene.add({ id: U, kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100 } });
   // A quarter turn about (120, 50): drawn 20 wide and 40 tall, x 110 to 130.
-  scene.add({ id: T, kind: 'leaf', layer: 'main', data: {}, pose: { x: 100, y: 40, width: 40, height: 20, rotation: Math.PI / 2 } });
+  scene.add({ id: T, kind: 'mark', layer: 'main', data: {}, pose: { x: 100, y: 40, width: 40, height: 20, rotation: Math.PI / 2 } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 

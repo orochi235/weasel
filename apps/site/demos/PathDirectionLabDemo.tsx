@@ -51,7 +51,7 @@ const WAVE = 'M360 220 C390 140 420 140 450 200 C470 240 500 240 520 180';
 function pathNode(id: string, d: string, data: object) {
   const path = pathFromD(d);
   const { x, y, width, height } = boundsOfPath(path);
-  return { kind: 'leaf' as const, id: asNodeId(id), layer: 'default' as const, pose: { x, y, width, height }, data: { path, ...data } };
+  return { kind: 'mark' as const, id: asNodeId(id), layer: 'default' as const, pose: { x, y, width, height }, data: { path, ...data } };
 }
 
 const createLabScene = () =>

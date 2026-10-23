@@ -49,7 +49,7 @@ function onScreen(size: { width: number; height: number }) {
   const specs = diagramScene(drawn.data, drawn.scene);
   const t = viewToTransform(fitDiagram(specs, size, { anchor: 'start' })!);
   const at = (x: number, y: number) => ({ x: t.panX + x * t.zoom.x, y: t.panY + y * t.zoom.y });
-  const stage = (id: string) => specs.find((s) => s.kind === 'container' && s.id === id)!;
+  const stage = (id: string) => specs.find((s) => s.kind === 'group' && s.id === id)!;
   return { at, stage };
 }
 

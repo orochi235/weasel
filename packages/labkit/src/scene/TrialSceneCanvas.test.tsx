@@ -26,7 +26,7 @@ const create = () =>
     systemLayers: [{ id: 'main' }],
     initial: [
       {
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'main',
         data: { kind: 'rect' },
         pose: { x: 0, y: 0, width: 10, height: 10 },
@@ -76,7 +76,7 @@ async function mount(which = instrument) {
 const addOne = () =>
   act(() => {
     live.scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       data: { kind: 'rect' },
       pose: { x: 20, y: 0, width: 10, height: 10 },

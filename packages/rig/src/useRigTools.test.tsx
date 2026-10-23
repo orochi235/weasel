@@ -18,9 +18,9 @@ const ARM: Skeleton = { joints: [{ name: 'root', parent: null, bind: { x: 10, y:
 function sceneWithRig() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const box = { x: 100, y: 100, width: 200, height: 100 };
-  const rig = scene.add({ kind: 'container', layer: 'main', pose: box, data: { skeleton: ARM } });
-  const sleeve = scene.add({ kind: 'leaf', layer: 'main', parent: rig, pose: box, data: {} });
-  const loose = scene.add({ kind: 'leaf', layer: 'main', pose: box, data: { label: 'loose' } });
+  const rig = scene.add({ kind: 'group', layer: 'main', pose: box, data: { skeleton: ARM } });
+  const sleeve = scene.add({ kind: 'mark', layer: 'main', parent: rig, pose: box, data: {} });
+  const loose = scene.add({ kind: 'mark', layer: 'main', pose: box, data: { label: 'loose' } });
   return { scene, rig, sleeve, loose };
 }
 

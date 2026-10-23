@@ -19,7 +19,7 @@ const GRAY = [0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1];
 function strokedScene() {
   const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: POSE,
     data: { path: PATH, stroke: { ...strokeOf('#fff', 4), vertexColors: RAINBOW } },
@@ -95,7 +95,7 @@ describe('animated vertex colors on default-painted nodes', () => {
   it('paints a path node\'s fill vertex colors from its data, and animates them', () => {
     const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pose: POSE,
       data: { path: pathFromD('M0 0 L100 0 L50 40 Z'), fill: { paint: solid('#fff') }, vertexColors: RAINBOW },
@@ -112,7 +112,7 @@ describe('animated vertex colors on default-painted nodes', () => {
   it('animates the stroke of a built-in shape node', () => {
     const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pose: POSE,
       data: { shape: 'rect', stroke: strokeOf('#fff', 2) },

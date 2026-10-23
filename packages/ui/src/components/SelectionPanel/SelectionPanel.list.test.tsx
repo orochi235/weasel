@@ -16,7 +16,7 @@ const counts: PrefLeaf = {
 
 function setup(held: unknown[], renderers?: Record<string, PropertyRenderer>) {
   const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', counts: held } });
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', counts: held } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: { 'data.counts': counts } } }];
   renderWithIcons(<SelectionPanel scene={scene} selection={{ current: ['a'] } as unknown as SelectionApi} properties={properties} routing={routing} renderers={renderers} />);
 }

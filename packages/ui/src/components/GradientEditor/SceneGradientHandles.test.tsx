@@ -52,7 +52,7 @@ type Layer = 'main';
 
 function sceneWith(pose: RectPose, data: Data): ReturnType<typeof createScene<Data, Layer>> {
   const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'main', pose, data });
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'main', pose, data });
   return scene;
 }
 

@@ -33,7 +33,7 @@ function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; draft
 function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
   const sceneIdOf = new Map(drafts.map((d) => [d.id, scene.mintId()]));
   const derivations = registeredPathEffects(scene.registry);
-  const leaves = new Set(drafts.filter((d) => d.kind === 'leaf').map((d) => d.id));
+  const leaves = new Set(drafts.filter((d) => d.kind === 'mark').map((d) => d.id));
   const live = (d: SceneDraft) => derivations !== null && d.kind === 'effect' && d.dependsOn.every((s) => leaves.has(s));
   const skipped = new Set<string>();
   const parents = new Set(drafts.map((d) => d.parentId));
@@ -54,9 +54,9 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
       continue;
     }
     if (draft.kind === 'effect' && !parents.has(draft.id)) continue;
-    const node = draft.kind === 'leaf'
-      ? { kind: 'leaf' as const, ...leafOfObj(draft.obj) }
-      : { kind: 'container' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
+    const node = draft.kind === 'mark'
+      ? { kind: 'mark' as const, ...leafOfObj(draft.obj) }
+      : { kind: 'group' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
     scene.add({ ...node, layer: 'default', ...at });
   }
 }

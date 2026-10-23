@@ -10,11 +10,11 @@ const RED = { kind: 'solid', color: '#f00' } as const;
 function setup() {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 20, height: 20 },
+    id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 20, height: 20 },
     data: { shape: 'rect', stroke: { paint: RED, width: 10 } },
   } as never);
   scene.add({
-    id: asNodeId('b'), kind: 'leaf', layer: 'main', pose: { x: 50, y: 0, width: 20, height: 20 },
+    id: asNodeId('b'), kind: 'mark', layer: 'main', pose: { x: 50, y: 0, width: 20, height: 20 },
     data: { shape: 'rect', stroke: { paint: RED, width: { px: 4 } } },
   } as never);
   const moved: Record<string, RectPose> = {};

@@ -43,7 +43,7 @@ export function inheritedPaintOf(
   let stroke: PaintedStroke | null = null;
   for (const a of ancestors) {
     if (!wantFill && !wantStroke) break;
-    if (a.kind !== 'container') continue;
+    if (a.kind !== 'group') continue;
     const ad = a.data as PaintData;
     if (wantFill && ad?.fill !== INHERIT) {
       fill = resolveFill(ad?.fill);

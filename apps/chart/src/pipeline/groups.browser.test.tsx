@@ -47,7 +47,7 @@ async function openCanvas() {
   const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
   const r = canvas.getBoundingClientRect();
   const built = editorScene(DOC);
-  const boxes = diagramScene(built.data, built.scene).filter((s) => s.kind === 'container').map((s) => s.pose as RectPose);
+  const boxes = diagramScene(built.data, built.scene).filter((s) => s.kind === 'group').map((s) => s.pose as RectPose);
   const left = Math.min(...boxes.map((b) => b.x));
   const top = Math.min(...boxes.map((b) => b.y));
   const bounds = { x: left, y: top, width: Math.max(...boxes.map((b) => b.x + b.width)) - left, height: Math.max(...boxes.map((b) => b.y + b.height)) - top };

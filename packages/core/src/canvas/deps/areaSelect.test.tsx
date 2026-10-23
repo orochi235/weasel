@@ -7,9 +7,9 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 function makeScene(): Scene<unknown, string, unknown> {
-  const nodes = new Map<string, { id: string; kind: 'leaf'; pose: { x: number; y: number; width: number; height: number }; data: unknown }>();
-  nodes.set('a', { id: 'a', kind: 'leaf', pose: { x: 0, y: 0, width: 10, height: 10 }, data: null });
-  nodes.set('b', { id: 'b', kind: 'leaf', pose: { x: 100, y: 100, width: 10, height: 10 }, data: null });
+  const nodes = new Map<string, { id: string; kind: 'mark'; pose: { x: number; y: number; width: number; height: number }; data: unknown }>();
+  nodes.set('a', { id: 'a', kind: 'mark', pose: { x: 0, y: 0, width: 10, height: 10 }, data: null });
+  nodes.set('b', { id: 'b', kind: 'mark', pose: { x: 100, y: 100, width: 10, height: 10 }, data: null });
   return {
     layers: [{ id: 'default' }],
     renderOrder: () => ['a', 'b'] as NodeId[],

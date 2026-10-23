@@ -28,13 +28,13 @@ export function PanZoomDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'screen-pin' as never, kind: 'leaf', layer: 'default',
+      { id: 'screen-pin' as never, kind: 'mark', layer: 'default',
         pose: { x: 130, y: 110, width: 120, height: 90 }, data: { color: '#7fb069', pin: 'screen' } },
-      { id: 'world-pin' as never, kind: 'leaf', layer: 'default',
+      { id: 'world-pin' as never, kind: 'mark', layer: 'default',
         pose: { x: 290, y: 110, width: 120, height: 90 }, data: { color: '#a48bd4', pin: 'world' } },
-      { id: 'far-a' as never, kind: 'leaf', layer: 'default',
+      { id: 'far-a' as never, kind: 'mark', layer: 'default',
         pose: { x: -180, y: -120, width: 80, height: 60 }, data: { color: '#d4a574', pin: 'none' } },
-      { id: 'far-b' as never, kind: 'leaf', layer: 'default',
+      { id: 'far-b' as never, kind: 'mark', layer: 'default',
         pose: { x: 560, y: 360, width: 80, height: 60 }, data: { color: '#f0e0a8', pin: 'none' } },
     ],
   });

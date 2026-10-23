@@ -13,8 +13,8 @@ interface P { x: number; y: number; width: number; height: number }
 
 function fixture() {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  const box = scene.add({ kind: 'container', layer: 'main', data: { color: '#eee' }, pose: { x: 0, y: 0, width: 200, height: 200 } });
-  const leaf = scene.add({ kind: 'leaf', layer: 'main', data: { color: '#f00' }, pose: { x: 10, y: 10, width: 20, height: 20 } });
+  const box = scene.add({ kind: 'group', layer: 'main', data: { color: '#eee' }, pose: { x: 0, y: 0, width: 200, height: 200 } });
+  const leaf = scene.add({ kind: 'mark', layer: 'main', data: { color: '#f00' }, pose: { x: 10, y: 10, width: 20, height: 20 } });
   return { scene, box, leaf };
 }
 
@@ -48,7 +48,7 @@ describe('moveGestureAdapter', () => {
   it('insertNode keeps a node unpickable', () => {
     const { scene } = fixture();
     const label = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       data: { color: '#00f' },
       pose: { x: 0, y: 0, width: 5, height: 5 },
@@ -106,7 +106,7 @@ describe('moveAction — a behavior that deletes the dragged node', () => {
   it('brings the node\'s dependents back on undo', () => {
     const { scene, leaf } = fixture();
     const edge = scene.add({
-      kind: 'leaf', layer: 'main', data: { color: '#00f' }, pose: { x: 0, y: 0, width: 1, height: 1 }, dependsOn: [leaf],
+      kind: 'mark', layer: 'main', data: { color: '#00f' }, pose: { x: 0, y: 0, width: 1, height: 1 }, dependsOn: [leaf],
     });
     const base = {
       world: { x: 0, y: 0 },
@@ -137,7 +137,7 @@ describe('moveGestureAdapter sibling order', () => {
   it('restores a deleted node to its original slot on undo', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const ids = ['a', 'b', 'c'].map((color) =>
-      scene.add({ kind: 'leaf', layer: 'main', data: { color }, pose: { x: 0, y: 0, width: 1, height: 1 } }),
+      scene.add({ kind: 'mark', layer: 'main', data: { color }, pose: { x: 0, y: 0, width: 1, height: 1 } }),
     );
     const a = moveGestureAdapter<P>(scene);
     const middle = a.getNode(ids[1] as string)!;
@@ -152,7 +152,7 @@ describe('moveGestureAdapter sibling order', () => {
   it('reads and rewrites root sibling order', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const ids = ['a', 'b', 'c'].map((color) =>
-      scene.add({ kind: 'leaf', layer: 'main', data: { color }, pose: { x: 0, y: 0, width: 1, height: 1 } }),
+      scene.add({ kind: 'mark', layer: 'main', data: { color }, pose: { x: 0, y: 0, width: 1, height: 1 } }),
     );
     const a = moveGestureAdapter<P>(scene);
     expect(a.getChildren(null)).toEqual(ids);

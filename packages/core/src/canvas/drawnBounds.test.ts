@@ -10,11 +10,11 @@ import { drawnBoundsScene } from './derivedPath';
 const RED = { kind: 'solid', color: '#f00' } as const;
 const stroke = (s: Partial<Stroke> = {}): Stroke => ({ paint: RED, width: 10, ...s });
 
-function sceneWith(nodes: { id: string; data: unknown; pose: RectPose; parent?: string; kind?: 'leaf' | 'container' }[]) {
+function sceneWith(nodes: { id: string; data: unknown; pose: RectPose; parent?: string; kind?: 'mark' | 'group' }[]) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   for (const n of nodes) {
     scene.add({
-      id: asNodeId(n.id), kind: n.kind ?? 'leaf', layer: 'main', data: n.data, pose: n.pose,
+      id: asNodeId(n.id), kind: n.kind ?? 'mark', layer: 'main', data: n.data, pose: n.pose,
       ...(n.parent ? { parent: asNodeId(n.parent) } : {}),
     } as never);
   }
@@ -81,7 +81,7 @@ describe('drawnBoundsOf', () => {
 
   it('boxes a group around its members as drawn', () => {
     const scene = sceneWith([
-      { id: 'g', kind: 'container', data: {}, pose: { x: 0, y: 0, width: 200, height: 100 } },
+      { id: 'g', kind: 'group', data: {}, pose: { x: 0, y: 0, width: 200, height: 100 } },
       { id: 'a', parent: 'g', data: { shape: 'rect', stroke: stroke() }, pose: BOX },
       { id: 'b', parent: 'g', data: { shape: 'rect' }, pose: { x: 100, y: 0, width: 100, height: 100 } },
     ]);
@@ -133,10 +133,10 @@ describe('drawnBoundsOf a node showing a derived path', () => {
   /** Two anchors far from the origin, and an edge between them whose own pose is a 0x0 placeholder at the origin. */
   function edgeScene(data: unknown) {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 300, y: 200, width: 10, height: 10 } });
-    const b = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 500, y: 260, width: 10, height: 10 } });
+    const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 300, y: 200, width: 10, height: 10 } });
+    const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 500, y: 260, width: 10, height: 10 } });
     const edge = scene.add({
-      kind: 'leaf', layer: 'main', data, pose: { x: 0, y: 0, width: 0, height: 0 }, dependsOn: [a, b],
+      kind: 'mark', layer: 'main', data, pose: { x: 0, y: 0, width: 0, height: 0 }, dependsOn: [a, b],
       derivePath: (_n, deps): Path | null => {
         const [from, to] = [deps[0]?.pose, deps[1]?.pose];
         return from && to ? polylineFromPoints([{ x: from.x, y: from.y }, { x: to.x, y: to.y }]) : null;

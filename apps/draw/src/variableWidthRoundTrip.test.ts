@@ -18,7 +18,7 @@ describe('a variable-width stroke in a saved document', () => {
     const parsed = parseSvg(svg, { namespaces: SWILL_NAMESPACES });
     let n = 0;
     const leaves = svgNodesToSceneDrafts(parsed, () => `n${n++}`)
-      .filter((d): d is Extract<SceneDraft, { kind: 'leaf' }> => d.kind === 'leaf');
+      .filter((d): d is Extract<SceneDraft, { kind: 'mark' }> => d.kind === 'mark');
     expect(leaves).toHaveLength(1);
     const back = leaves[0].obj as PathObj;
     expect(back.tool).toBe('pen');

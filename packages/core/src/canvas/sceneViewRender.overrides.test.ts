@@ -11,7 +11,7 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function setup() {
   const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-  const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
+  const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'a' } });
   return { scene, id };
 }
 
@@ -64,7 +64,7 @@ describe('buildSceneViewCommands — overrides', () => {
       systemLayers: [{ id: 'main' }],
     });
     const id = scene.add({
-      kind: 'leaf', layer: 'main', pose: POSE,
+      kind: 'mark', layer: 'main', pose: POSE,
       data: { text: 'Hello', style: { fontFamily: 'sans-serif', fontSize: 20 } },
     });
     const textX = (): number | undefined => {

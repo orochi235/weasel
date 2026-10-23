@@ -1,5 +1,5 @@
 /**
- * The container trait: what makes a core `ContainerNode` a diagram container,
+ * The container trait: what makes a core `GroupNode` a diagram container,
  * a pool, or one of a pool's lanes, and where its header is.
  *
  * A container's title is a text child in its header, named

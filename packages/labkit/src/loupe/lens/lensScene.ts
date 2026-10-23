@@ -110,7 +110,7 @@ export function addLensOps<C>(
   const ids = idsFor(lensId);
   const merged = { ...LENS_DEFAULTS, ...settings } as LensSettings<C>;
   const label = 'add lens';
-  const base = { layer: 'lenses', kind: 'leaf' } as const;
+  const base = { layer: 'lenses', kind: 'mark' } as const;
   const body = patchAt({ x: 0, y: 0, width: BODY_SIZE, height: BODY_SIZE }, 1, at.body);
   return [
     createInsertOp({

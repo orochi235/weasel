@@ -25,7 +25,7 @@ const session = createRasterSession();
 function render(x: number, fontSize: number): RasterImage {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    kind: 'leaf', layer: 'main',
+    kind: 'mark', layer: 'main',
     pose: { x, y: 4, width: 40, height: fontSize * 1.2 },
     data: {
       text: 'H',

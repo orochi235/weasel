@@ -68,7 +68,7 @@ describe('a drawn star or polygon', () => {
 
   it('becomes plain geometry when its path is edited', () => {
     const node = commit(STAR);
-    const nodes = new Map([['n', { ...node, kind: 'leaf' }]]);
+    const nodes = new Map([['n', { ...node, kind: 'mark' }]]);
     const scene = { layers: [{ id: 'default' }], renderOrder: () => ['n'], get: (id: NodeId) => nodes.get(id as string) } as unknown as Scene<unknown, string, unknown>;
     const sel = { current: ['n'], set: () => {} } as unknown as SelectionApi;
     let reg!: DepRegistry;

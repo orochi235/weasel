@@ -27,7 +27,7 @@ function mount() {
   }
   const scene = createScene<Record<string, unknown>, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const path = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]);
-  const id = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { path } });
+  const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { path } });
   scene.setSelection([id]);
   render(<SceneCanvas features={['draw']} scene={scene} width={200} height={200}><Grab /></SceneCanvas>);
   const editAnchors = () => deps.get('editAnchors') as { setSelectedAnchors(next: number[]): void };

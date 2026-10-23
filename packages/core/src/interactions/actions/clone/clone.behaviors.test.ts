@@ -10,7 +10,7 @@ const MODS = { alt: true, ctrl: false, meta: false, shift: false };
 
 function fixture(behavior: CloneBehavior<RectPose>) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
+  const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
   let selected: NodeId[] = [a];
   const selection = { get: () => selected, set: (ids: NodeId[]) => { selected = ids; } };
   const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { selection, scene } };

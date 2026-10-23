@@ -201,7 +201,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     ...(composes ? { composePose: composition.compose } : {}),
     ...(cascade ? { setPose: (id: string, pose: TPose) => cascade.setPose(asNodeId(id), pose) } : {}),
     poseTarget(id, descriptor) {
-      if (cascade === null || scene.get(asNodeId(id))?.kind !== 'container') {
+      if (cascade === null || scene.get(asNodeId(id))?.kind !== 'group') {
         return scenePoseTarget(scene, id, descriptor ?? d);
       }
       // Its descendants hold poses of their own: a commit moves them, and they are shown beside it.
@@ -255,7 +255,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             const layer = (options.insertLayer ?? ('default' as TLayer));
             const id = created.id === undefined ? scene.mintId() : asNodeId(created.id);
             return {
-              kind: 'leaf',
+              kind: 'mark',
               id,
               layer,
               pose: created.pose,

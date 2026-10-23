@@ -77,7 +77,7 @@ export function constraintLinkNode<TPose = RectPose>(
 ): AddNodeSpec<ConstraintLinkData, string, TPose> {
   registerConstraintLinkShape();
   return {
-    kind: 'leaf',
+    kind: 'mark',
     layer: opts.layer,
     pose: opts.pose ?? ({ x: 0, y: 0, width: 0, height: 0 } as TPose),
     data: { constraintLink: opts.constraint },

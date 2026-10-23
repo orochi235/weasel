@@ -21,11 +21,11 @@ const box = (x: number, y = 0, w = 50, h = 50): RectPose => ({ x, y, width: w, h
 function setup() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const G = scene.add({
-    kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 150, 50),
+    kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 150, 50),
     layout: tileGrid<RectPose>({ cols: 3, rows: 1 }),
   });
   const leaf = (pose: RectPose, parent: NodeId | null = G) =>
-    scene.add({ kind: 'leaf', layer: 'main', data: {}, pose, parent });
+    scene.add({ kind: 'mark', layer: 'main', data: {}, pose, parent });
   return { scene, G, leaf };
 }
 

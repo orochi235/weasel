@@ -56,7 +56,7 @@ export function edgeLabelSpec<TLayer extends string>(
   const style = opts.style ?? LABEL_STYLE;
   return {
     id: `${edgeId}/label` as never,
-    kind: 'leaf',
+    kind: 'mark',
     layer: opts.layer,
     pickable: false,
     pose: { x: 0, y: 0, ...labelSize(text, style, opts.measure) },

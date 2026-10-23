@@ -31,7 +31,7 @@ const EDGE = { color: '#14100b' };
 interface Solid { rgb: readonly [number, number, number] }
 
 const solidAt = (pose: Pose3, rgb: Solid['rgb']) =>
-  ({ kind: 'leaf' as const, layer: 'solids' as const, pose, data: { rgb } });
+  ({ kind: 'mark' as const, layer: 'solids' as const, pose, data: { rgb } });
 
 const SOLIDS = [
   solidAt(pose3({ x: -2.2, y: 0.5, z: 0 }), [224, 108, 79]),

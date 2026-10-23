@@ -13,11 +13,11 @@ type Sc = Scene<unknown, 'main', Rect>;
 function load(): Sc {
   const scene = createScene<unknown, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
   for (const [id, x] of [['a', 0], ['b', 300], ['c', 600]] as const) {
-    scene.add({ id: id as never, kind: 'leaf', layer: 'main', pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} } });
+    scene.add({ id: id as never, kind: 'mark', layer: 'main', pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} } });
   }
   for (const [id, from, to] of [['ab', 'a', 'b'], ['bc', 'b', 'c']] as const) {
     scene.add({
-      id: id as never, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      id: id as never, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
       data: { diagram: { from: { nodeId: from }, to: { nodeId: to }, router: 'straight' } },
       dependsOn: [from as never, to as never], derivePath: EDGE_DERIVE_PATH as never,
     });

@@ -31,7 +31,7 @@ const UNIT_CIRCLE = ellipsePath({ x: 0, y: 0, width: 1, height: 1 });
 const R = 90;
 const circle = (id: string, cx: number, cy: number, color: string) => ({
   id: asNodeId(id),
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: cx - R, y: cy - R, width: R * 2, height: R * 2 },
   data: { path: UNIT_CIRCLE, fill: { paint: solid(color) } },
