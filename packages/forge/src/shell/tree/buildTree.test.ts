@@ -51,6 +51,21 @@ describe('buildTree', () => {
   });
 });
 
+describe('hoistLoneStories', () => {
+  it('lists a component whose one story restates its name as that story, under the component name', () => {
+    const [kit] = buildTree([
+      entry('Kit/Heading control', 'Heading Control'),
+      entry('Kit/Button', 'Button'),
+      entry('Kit/Button', 'Ghost'),
+    ]);
+    const children = kit?.kind === 'folder' ? kit.children : [];
+    expect(children.map((n) => (n.kind === 'story' ? `story ${n.label}` : `folder ${n.label}`))).toEqual([
+      'folder Button',
+      'story Heading control',
+    ]);
+  });
+});
+
 describe('filterTree', () => {
   const tree = buildTree([entry('Kit/Button', 'Primary'), entry('Kit/Button', 'Ghost'), entry('Kit/Slider', 'Default')]);
 

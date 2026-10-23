@@ -69,6 +69,20 @@ describe('filterComponents', () => {
 });
 
 describe('componentNodes', () => {
+  it('lists a component whose one story restates its name as that story, tagged as the component', () => {
+    const nodes = componentNodes(
+      buildComponents([
+        entry('labkit/Heading control', 'Heading Control', LABKIT),
+        entry('ui/Button', 'Button', UI),
+        entry('ui/Button', 'Ghost', UI),
+      ]),
+    );
+    expect(nodes.map((n) => (n.kind === 'story' ? `story ${n.label} ${n.tag}` : `folder ${n.label}`))).toEqual([
+      'folder Button',
+      'story Heading control labkit',
+    ]);
+  });
+
   /** Folders as `label/`, stories as their row label, nested as arrays. */
   const shape = (nodes: readonly TreeNode[]): unknown[] =>
     nodes.map((node) =>

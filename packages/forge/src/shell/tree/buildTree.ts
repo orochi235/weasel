@@ -1,4 +1,5 @@
 import { indexEntries } from '../../story/indexPages';
+import { restatesTitle } from '../breadcrumb';
 import { isGallery } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
 
@@ -41,6 +42,21 @@ export function foldGalleries(nodes: TreeNode[]): TreeNode[] {
 }
 
 /**
+ * `nodes` with every component holding one story, whose name only restates the component's, replaced by that story
+ * under the component's name: a file titled `…/Heading control` exporting `HeadingControl` lists once, not twice.
+ */
+export function hoistLoneStories(nodes: TreeNode[]): TreeNode[] {
+  return nodes.map((node) => {
+    if (node.kind !== 'folder') return node;
+    const [only] = node.children;
+    if (node.children.length === 1 && only?.kind === 'story' && restatesTitle(node.path, only.entry.name)) {
+      return { kind: 'story', entry: only.entry, label: node.label, tag: node.tag ?? only.tag };
+    }
+    return { ...node, children: hoistLoneStories(node.children) };
+  });
+}
+
+/**
  * Story titles as nested folders, split on `/`; the last segment is the component, which carries its index page and
  * holds its subfolders, then its stories.
  */
@@ -64,7 +80,7 @@ export function buildTree(index: readonly IndexEntry[]): TreeNode[] {
     }
     siblings.push({ kind: 'story', entry });
   }
-  return sortFolder(root);
+  return hoistLoneStories(sortFolder(root));
 }
 
 /**

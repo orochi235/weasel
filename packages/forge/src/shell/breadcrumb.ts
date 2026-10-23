@@ -4,12 +4,21 @@ export interface Crumb {
   readonly path: string | null;
 }
 
+const bare = (label: string): string => label.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+
+/** Whether a story's name only restates its component's: `HeadingControl` under `…/Heading control`. */
+export function restatesTitle(title: string, name: string): boolean {
+  return bare(title.slice(title.lastIndexOf('/') + 1)) === bare(name);
+}
+
 /** A story's place step by step: each title segment, then the story's name. An `index` segment adds nothing the
- *  one before it does not already say, so it is left out. */
+ *  one before it does not already say, so it is left out, and so is a name that restates the last segment, which
+ *  then stands for the story. */
 export function crumbs(title: string, name: string): Crumb[] {
   const segments = title.split('/');
   const steps: Crumb[] = segments.map((label, i) => ({ label, path: segments.slice(0, i + 1).join('/') }));
-  steps.push({ label: name, path: null });
+  if (restatesTitle(title, name)) steps[steps.length - 1] = { label: segments[segments.length - 1], path: null };
+  else steps.push({ label: name, path: null });
   return steps.filter((step, i) => i === 0 || step.label.toLowerCase() !== 'index');
 }
 

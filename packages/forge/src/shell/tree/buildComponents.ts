@@ -1,7 +1,7 @@
 import { indexEntries } from '../../story/indexPages';
 import type { Libraries } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
-import { foldGalleries, type TreeNode } from './buildTree';
+import { foldGalleries, hoistLoneStories, type TreeNode } from './buildTree';
 
 type Folder = Extract<TreeNode, { kind: 'folder' }>;
 
@@ -115,7 +115,8 @@ function parentOf(row: ComponentRow, byPath: ReadonlyMap<string, ComponentRow>):
  * folder carrying its index page and holding its stories. A component whose
  * title extends another's, `Prefs/Action rows` beside `Prefs`, is a folder inside
  * that one, ahead of its stories as in the tree. A folder a gallery's label opened,
- * holding only that gallery, is folded into it.
+ * holding only that gallery, is folded into it. A component whose one story restates its
+ * name is that story.
  */
 export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
   const root: TreeNode[] = [];
@@ -158,7 +159,7 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
       ...row.entries.map((entry) => ({ kind: 'story', entry }) as const),
     ];
   }
-  return foldGalleries(root);
+  return hoistLoneStories(foldGalleries(root));
 }
 
 /** Every library present in `index`, alphabetically. */

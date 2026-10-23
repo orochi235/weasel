@@ -19,4 +19,14 @@ describe('breadcrumb', () => {
       { label: 'Grid', path: null },
     ]);
   });
+
+  it('lets the last segment stand for a story whose name only restates it', () => {
+    expect(breadcrumb('labkit/ControlPanel/Heading control', 'Heading Control')).toBe(
+      'labkit > ControlPanel > Heading control',
+    );
+    expect(crumbs('labkit/Heading control', 'Heading Control')).toEqual([
+      { label: 'labkit', path: 'labkit' },
+      { label: 'Heading control', path: null },
+    ]);
+  });
 });
