@@ -27,7 +27,8 @@ const EDGES: readonly DockEdge[] = ['top', 'left', 'right', 'bottom'];
 /**
  * Toolbars laid out in docks round a workspace, which fills the middle. Each dock holds rows of bars: a top or
  * bottom dock stacks its rows, and a left or right dock sets them side by side with each bar drawn vertical. An
- * edge with no bars takes no room.
+ * edge with no bars takes no room. A bar whose `render` gives null, or draws nothing, takes none either, and keeps
+ * its place in the layout.
  */
 export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = false, className, children }: ToolbarDockProps) {
   const resolved = useMemo(() => resolveLayout(docks, bars, layout), [docks, bars, layout]);
@@ -53,11 +54,12 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
                     <DockRow key={i} index={i} dock={dock.id} view={view}>
                       {row.map((id) => {
                         const bar = byId.get(id);
-                        if (!bar) return null;
+                        const drawn = bar?.render(orientation);
+                        if (drawn == null || drawn === false) return null;
                         const value = { barId: id, label: bar.label, movable, ...(movable ? move.handlers(id) : {}) };
                         return (
                           <div key={id} className={s.slot} {...{ [DOCK_BAR]: id }} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
-                            <DockBarContext.Provider value={value}>{bar.render(orientation)}</DockBarContext.Provider>
+                            <DockBarContext.Provider value={value}>{drawn}</DockBarContext.Provider>
                           </div>
                         );
                       })}

@@ -11,7 +11,7 @@ import {
   useStandardActions,
 } from '@weasel-js/core';
 import { CommandBar, type CommandBarProps } from './CommandBar';
-import { StripSurfaces } from './surfaces/StripSurfaces';
+import { StripDock } from './surfaces/StripSurfaces';
 import {
   preferencesAction,
   releaseCompoundAction,
@@ -73,9 +73,7 @@ const noop = () => {};
 
 const storyScene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
 
-const baseArgs: CommandBarProps = {
-  surfaces: <StripSurfaces />,
-};
+const baseArgs: CommandBarProps = {};
 
 const withActions = (selected: number, compound = false) => (Story: ComponentType) => (
   <ActionsProvider>
@@ -91,6 +89,13 @@ const meta: Meta<typeof CommandBar> = {
   title: 'draw/CommandBar',
   component: CommandBar,
   parameters: { layout: 'fullscreen' },
+  // The strip's toolbars sit in their own dock row under the command bar, as in the app.
+  render: (args) => (
+    <>
+      <CommandBar {...args} />
+      <StripDock />
+    </>
+  ),
 };
 export default meta;
 

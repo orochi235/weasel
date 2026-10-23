@@ -15,6 +15,7 @@ import {
 } from '@weasel-js/prefs';
 import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
+import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RegistryEnumFilter } from './registry/types';
 import { panelsToSurfaces } from './surfaces/prefsMigration';
 import type { SurfacesValue } from './surfaces/types';
@@ -54,6 +55,13 @@ const SURFACES_PREF = {
   description: 'Where each one is shown, and whether its panel is hidden or collapsed.',
   block: true,
   default: {} as SurfacesValue,
+} as const satisfies WeaselDrawPrefData;
+
+const TOOLBARS_PREF = {
+  kind: 'data',
+  name: 'Toolbar layout',
+  description: 'Which row each toolbar sits in, and in what order.',
+  default: { docks: {}, floating: {} } as ToolbarLayout,
 } as const satisfies WeaselDrawPrefData;
 
 const LAST_TOOL = {
@@ -96,6 +104,7 @@ export const PREFS = {
           max: 200,
         },
         surfaces: SURFACES_PREF,
+        toolbars: TOOLBARS_PREF,
         showAnnotations: {
           kind: 'boolean',
           name: 'Show annotations in Layers',

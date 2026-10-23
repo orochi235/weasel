@@ -32,6 +32,7 @@ import { PreferencesModal } from './PreferencesModal';
 import { toolEnumSources } from './registry/toolEnumSource';
 import { RightSidebar } from './RightSidebar';
 import { FIXED_CHROME, ShowChrome } from './surfaces/chrome';
+import { StripDock } from './surfaces/StripSurfaces';
 import { Toolbar } from './Toolbar';
 import { useDocumentState } from './useDocumentState';
 import { useLastTool } from './useLastTool';
@@ -53,8 +54,8 @@ export interface EditorProps {
   modality: UseModalityReturn;
 }
 
-/** The editor's chrome around the workspace: the command bar led by the menu bar, the tool-options strip, the two
- *  sidebars, and the status bar. */
+/** The editor's chrome around the workspace: the command bar led by the menu bar, the toolbar dock under it, the
+ *  tool-options strip, the two sidebars, and the status bar. */
 export function Editor({ scene, selection, modality }: EditorProps): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
   useLastTool(tools);
@@ -113,89 +114,93 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
           <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
           <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
           <ContextMenuHost />
-          <div ref={optionsRef}>
-            <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
-          </div>
-          <div className="wd-body">
-            <ShowChrome id={FIXED_CHROME.tools.id}>
-              <Sidebar side="left" className="wd-sidebar left" ariaLabel={FIXED_CHROME.tools.label}>
-                {tools && (
-                  <ToolPalette
-                    tools={tools}
-                    include={isCoreTool}
-                    stacks={CORE_TOOL_STACKS}
-                    orientation="vertical"
-                    lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
-                    modeRegistry={modality.machine.registry}
+          <StripDock className="wd-dock">
+            <div className="wd-dock-main">
+              <div ref={optionsRef}>
+                <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
+              </div>
+              <div className="wd-body">
+                <ShowChrome id={FIXED_CHROME.tools.id}>
+                  <Sidebar side="left" className="wd-sidebar left" ariaLabel={FIXED_CHROME.tools.label}>
+                    {tools && (
+                      <ToolPalette
+                        tools={tools}
+                        include={isCoreTool}
+                        stacks={CORE_TOOL_STACKS}
+                        orientation="vertical"
+                        lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+                        modeRegistry={modality.machine.registry}
+                      />
+                    )}
+                    <ActiveSwatches />
+                  </Sidebar>
+                </ShowChrome>
+                <ShowChrome id={FIXED_CHROME.pathTools.id}>
+                  <Sidebar side="left" className="wd-sidebar left path" ariaLabel={FIXED_CHROME.pathTools.label}>
+                    {tools && (
+                      <ToolPalette
+                        tools={tools}
+                        include={RESHAPE_TOOLS}
+                        ariaLabel={FIXED_CHROME.pathTools.label}
+                        groupOrder={PATH_TOOL_GROUPS}
+                        stacks={PATH_TOOL_STACKS}
+                        orientation="vertical"
+                        lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+                        modeRegistry={modality.machine.registry}
+                      />
+                    )}
+                  </Sidebar>
+                </ShowChrome>
+                <Workspace
+                  scene={scene}
+                  selection={selection}
+                  measurements={measurements}
+                  modality={modality}
+                  hostRef={hostRef}
+                  textEdit={textEdit}
+                  view={view}
+                  onViewChange={setView}
+                  paperSize={doc.paperSize}
+                  backgroundColor={doc.backgroundColor}
+                  onToolsCreated={setTools}
+                  onCanvas={attachCanvas}
+                  openPrefs={openPrefs}
+                  openPalette={openPalette}
+                />
+                <ResizeHandle
+                  value={rightSidebar.width}
+                  min={rightSidebar.min}
+                  max={rightSidebar.max}
+                  invert
+                  onInput={rightSidebar.onInput}
+                  onChange={rightSidebar.onChange}
+                  ariaLabel="Resize properties sidebar"
+                />
+                <Sidebar
+                  side="right"
+                  className="wd-sidebar right"
+                  ariaLabel="Properties"
+                  // Width lives in a custom property so app.css keeps ownership of the
+                  // clamp; only the number crosses the boundary.
+                  style={{ '--wd-right-width': `${rightSidebar.width}px` } as CSSProperties}
+                >
+                  <RightSidebar
+                    scene={scene}
+                    selection={selection}
+                    measurements={measurements}
+                    filename={doc.filename}
+                    setFilename={doc.setFilename}
+                    backgroundColor={doc.backgroundColor}
+                    setBackgroundColor={doc.setBackgroundColor}
+                    paperSize={doc.paperSize}
+                    setPaperSize={doc.setPaperSize}
+                    docSelected={doc.docSelected}
+                    setDocSelected={doc.setDocSelected}
                   />
-                )}
-                <ActiveSwatches />
-              </Sidebar>
-            </ShowChrome>
-            <ShowChrome id={FIXED_CHROME.pathTools.id}>
-              <Sidebar side="left" className="wd-sidebar left path" ariaLabel={FIXED_CHROME.pathTools.label}>
-                {tools && (
-                  <ToolPalette
-                    tools={tools}
-                    include={RESHAPE_TOOLS}
-                    ariaLabel={FIXED_CHROME.pathTools.label}
-                    groupOrder={PATH_TOOL_GROUPS}
-                    stacks={PATH_TOOL_STACKS}
-                    orientation="vertical"
-                    lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
-                    modeRegistry={modality.machine.registry}
-                  />
-                )}
-              </Sidebar>
-            </ShowChrome>
-            <Workspace
-              scene={scene}
-              selection={selection}
-              measurements={measurements}
-              modality={modality}
-              hostRef={hostRef}
-              textEdit={textEdit}
-              view={view}
-              onViewChange={setView}
-              paperSize={doc.paperSize}
-              backgroundColor={doc.backgroundColor}
-              onToolsCreated={setTools}
-              onCanvas={attachCanvas}
-              openPrefs={openPrefs}
-              openPalette={openPalette}
-            />
-            <ResizeHandle
-              value={rightSidebar.width}
-              min={rightSidebar.min}
-              max={rightSidebar.max}
-              invert
-              onInput={rightSidebar.onInput}
-              onChange={rightSidebar.onChange}
-              ariaLabel="Resize properties sidebar"
-            />
-            <Sidebar
-              side="right"
-              className="wd-sidebar right"
-              ariaLabel="Properties"
-              // Width lives in a custom property so app.css keeps ownership of the
-              // clamp; only the number crosses the boundary.
-              style={{ '--wd-right-width': `${rightSidebar.width}px` } as CSSProperties}
-            >
-              <RightSidebar
-                scene={scene}
-                selection={selection}
-                measurements={measurements}
-                filename={doc.filename}
-                setFilename={doc.setFilename}
-                backgroundColor={doc.backgroundColor}
-                setBackgroundColor={doc.setBackgroundColor}
-                paperSize={doc.paperSize}
-                setPaperSize={doc.setPaperSize}
-                docSelected={doc.docSelected}
-                setDocSelected={doc.setDocSelected}
-              />
-            </Sidebar>
-          </div>
+                </Sidebar>
+              </div>
+            </div>
+          </StripDock>
           <ShowChrome id={FIXED_CHROME.statusBar.id}>
             <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
           </ShowChrome>

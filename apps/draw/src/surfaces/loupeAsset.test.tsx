@@ -7,7 +7,7 @@ import { CommandBar } from '../CommandBar';
 import { LoupeProvider } from '../LoupeProvider';
 import { drawPrefs } from '../prefs';
 import { RightSidebar } from '../RightSidebar';
-import { StripSurfaces } from './StripSurfaces';
+import { StripDock } from './StripSurfaces';
 import type { SidebarHost } from './types';
 import { renderWithIcons } from '../testIcons';
 
@@ -44,7 +44,8 @@ function App() {
     <ActionsProvider>
       <LoupeProvider canvasRef={{ current: null }} ready source={[]}>
         <div data-testid="strip">
-          <CommandBar surfaces={<StripSurfaces />} />
+          <CommandBar />
+          <StripDock />
         </div>
         <div data-testid="sidebar">
           <RightSidebar {...({} as SidebarHost)} />

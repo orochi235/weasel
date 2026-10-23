@@ -3,7 +3,7 @@ import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { swallowNextClick } from '../../useReorderDragList';
 import { BAR_LEAD } from '../Bar/useBarOverflow';
-import { DOCK_BAR, dropAt, keyTarget, measureDocks, movedLayout, placeWords, type DockBox, type DockDropMark } from './dockDrop';
+import { DOCK_BAR, drawnBars, drawnLayout, dropAt, keyTarget, measureDocks, movedLayout, placeWords, spreadTarget, type DockBox, type DockDropMark } from './dockDrop';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 
 /** What a drag in progress shows: the bar it lifted, the drawn docks that bar may not enter, and where it would drop. */
@@ -47,7 +47,8 @@ const sameMark = (a: DockDropMark | null, b: DockDropMark | null) => JSON.string
  * Moving bars by their handles. Dragged past the threshold, a handle lifts its bar: docks it may not enter are listed
  * in `view.unavailable`, and `view.drop` says where it would land. The release calls `onLayoutChange` once, and the
  * click it raises is swallowed; Escape cancels, and a drop where the bar already is calls nothing. Alt+arrows on a
- * focused handle move the bar by a slot, a row, or a dock, keep focus on the handle, and set `announcement`.
+ * focused handle move the bar by a slot, a row, or a dock, keep focus on the handle, and set `announcement`. A bar
+ * drawn as nothing is stepped over and keeps its place.
  */
 export function useDockDrag({ root, docks, bars, layout, onLayoutChange }: DockDragArgs): DockDrag {
   const dragPx = useKitSetting('gestures.dragPx');
@@ -76,6 +77,7 @@ export function useDockDrag({ root, docks, bars, layout, onLayoutChange }: DockD
     const bar = barOf(barId);
     if (!el || !bar || !latest.current.onLayoutChange || drag.current !== null || e.button !== 0) return;
     let boxes: DockBox[] = [];
+    let drawn = new Set<string>();
     let next: ToolbarLayout | null = null;
     const end = (): void => {
       drag.current = null;
@@ -87,12 +89,14 @@ export function useDockDrag({ root, docks, bars, layout, onLayoutChange }: DockD
       threshold: latest.current.dragPx,
       onActivate: () => {
         boxes = measureDocks(el, latest.current.docks);
+        drawn = drawnBars(el);
         const unavailable = new Set(boxes.filter((d) => !bar.docks.includes(d.id)).map((d) => d.id));
         setView({ barId, unavailable, drop: null });
       },
       onMove: (ev) => {
         const drop = dropAt(boxes, bar, ev);
-        next = drop && movedLayout(latest.current.layout, barId, drop.target);
+        const was = latest.current.layout;
+        next = drop && movedLayout(was, barId, spreadTarget(was, barId, drop.target, drawn));
         const mark = next ? drop!.mark : null;
         setView((v) => (v === null || sameMark(v.drop, mark) ? v : { ...v, drop: mark }));
       },
@@ -112,11 +116,12 @@ export function useDockDrag({ root, docks, bars, layout, onLayoutChange }: DockD
     if (!bar || !done || !e.altKey || e.ctrlKey || e.metaKey || !ARROWS.has(e.key)) return;
     e.preventDefault();
     e.stopPropagation();
-    const to = keyTarget(was, specs, bar, e.key);
-    const next = to && movedLayout(was, barId, to);
+    const drawn = root.current ? drawnBars(root.current) : new Set(latest.current.bars.map((b) => b.id));
+    const to = keyTarget(drawnLayout(was, drawn, barId), specs, bar, e.key);
+    const next = to && movedLayout(was, barId, spreadTarget(was, barId, to, drawn));
     if (!next) return;
     refocus.current = barId;
-    setAnnouncement(placeWords(next, bar));
+    setAnnouncement(placeWords(drawnLayout(next, drawn, barId), bar));
     done(next);
   };
 

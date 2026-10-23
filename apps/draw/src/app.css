@@ -11,6 +11,26 @@
   min-height: 0;
 }
 
+/* --- Toolbar dock: the strip's toolbars in a row under the action bar, round
+   the tool-options strip, the sidebars and the workspace ----------------- */
+.wd-dock {
+  flex: 1;
+  height: auto;
+}
+
+.wd-dock [data-dock='strip'] {
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+  background: var(--wzl-surface);
+  border-bottom: 1px solid var(--wzl-border);
+  font-size: 11px;
+}
+
+.wd-dock-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 /* --- Menu bar: the first group of the action bar's row ---------------- */
 .wd-menubar {
   flex-shrink: 0;

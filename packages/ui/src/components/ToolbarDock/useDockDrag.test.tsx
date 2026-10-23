@@ -280,6 +280,37 @@ describe('moving a bar from its handle with Alt+arrows', () => {
   });
 });
 
+describe('a bar drawn as nothing', () => {
+  function Nothing() {
+    return null;
+  }
+  const ghost = bar('ghost', { render: () => null });
+  const nil = bar('nil', { render: () => <Nothing /> });
+  const offered = [...bars, ghost, nil];
+  const row = [['file', 'ghost', 'view', 'nil', 'shape']];
+
+  it('gets no slot when its render is null, and an empty one when what it renders draws nothing', () => {
+    setup(start(row), offered);
+    expect(document.querySelector('[data-dock-bar="ghost"]')).toBeNull();
+    expect(document.querySelector('[data-dock-bar="nil"]')).toBeEmptyDOMElement();
+  });
+
+  it('keeps its place while a drag reorders the bars drawn round it', () => {
+    const onChange = setup(start(row), offered);
+    press(handle('File'), [50, 15], [[60, 15], [160, 15]]);
+    expect(wrapper('shape')).toHaveAttribute('data-dock-drop', 'before');
+    release([160, 15]);
+    expect(onChange.mock.calls[0]![0].docks.top).toEqual([['ghost', 'view', 'nil', 'file', 'shape']]);
+  });
+
+  it('is stepped over by Alt+arrows, and left out of what a move announces', () => {
+    const onChange = setup(start(row), offered);
+    act(() => void fireEvent.keyDown(handle('File'), { key: 'ArrowRight', altKey: true }));
+    expect(onChange.mock.calls[0]![0].docks.top).toEqual([['ghost', 'view', 'nil', 'file', 'shape']]);
+    expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('File toolbar, row 1, position 2 of 3');
+  });
+});
+
 describe('a bar nested inside a docked bar', () => {
   it('draws no handle of its own', () => {
     const nested: BarNode = {

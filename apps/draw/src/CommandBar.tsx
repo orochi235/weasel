@@ -3,7 +3,7 @@
  *  Every editing command (history, clipboard, group, create outlines) is a kit action, rendered by
  *  the kit's `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills,
  *  glyphs included. Arrange, Pathfinder, and Path are surface assets, drawn in the
- *  `surfaces` slot when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
+ *  toolbar dock below this row (`StripDock`) when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
  *  Preferences are actions too (`appCommands`), as are Record and Play
  *  (`recording`) and Open, Import and Save (`fileCommands`), so a button's shortcut is the
  *  binding that fires it. The Debug menu's rows are `debug.open`'s variants, one per dev page. */
@@ -21,8 +21,6 @@ export interface CommandBarProps {
   menus?: ReactNode;
   /** What the Corner shape controls read; without it they are left out. */
   corners?: CornerShapeProps;
-  /** The surface assets drawn in the strip, after the view toggles. */
-  surfaces?: ReactNode;
 }
 
 const FILE_BAR = pref.group('', {
@@ -44,7 +42,6 @@ export function CommandBar(p: CommandBarProps) {
       </div>
       {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
       <KitActionBar group="view" />
-      {p.surfaces}
       <PathCommands />
       {p.corners && <CornerShape {...p.corners} />}
       <KitActionBar group="text" />

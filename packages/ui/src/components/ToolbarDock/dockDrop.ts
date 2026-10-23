@@ -30,6 +30,31 @@ export interface DockPoint {
 
 const isVertical = (spec: DockSpec | undefined) => spec?.edge === 'left' || spec?.edge === 'right';
 
+/** The ids of the bars under `root` that draw something. A bar drawn as nothing keeps its place in the layout. */
+export function drawnBars(root: HTMLElement): Set<string> {
+  return new Set(Array.from(root.querySelectorAll(`[${DOCK_BAR}]`)).filter((el) => el.firstChild).map((el) => el.getAttribute(DOCK_BAR)!));
+}
+
+/** `layout` with only the bars in `drawn`, and `barId`, left in its rows; rows left empty stay, so row indices hold. */
+export function drawnLayout(layout: ToolbarLayout, drawn: ReadonlySet<string>, barId: string): ToolbarLayout {
+  const docks: ToolbarLayout['docks'] = {};
+  for (const [dock, rows] of Object.entries(layout.docks)) docks[dock] = rows.map((r) => r.filter((id) => id === barId || drawn.has(id)));
+  return { docks, floating: layout.floating };
+}
+
+/**
+ * `to`, a slot counted among the drawn bars of its row, as a slot among all of them: before the drawn bar it names,
+ * or after the last drawn bar, so bars drawn as nothing keep their places.
+ */
+export function spreadTarget(layout: ToolbarLayout, barId: string, to: BarTarget, drawn: ReadonlySet<string>): BarTarget {
+  if ('float' in to || to.newRow) return to;
+  const row = (layout.docks[to.dock]?.[to.row] ?? []).filter((id) => id !== barId);
+  const shown = row.filter((id) => drawn.has(id));
+  if (!shown.length) return to;
+  const beside = shown[to.index];
+  return { ...to, index: beside === undefined ? row.indexOf(shown.at(-1)!) + 1 : row.indexOf(beside) };
+}
+
 /** The boxes of every dock drawn under `root`, and of its rows and bars. */
 export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): DockBox[] {
   return Array.from(root.querySelectorAll<HTMLElement>('[data-dock]'), (el) => {
@@ -38,7 +63,8 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
     const box = el.getBoundingClientRect();
     const rows = Array.from(el.querySelectorAll<HTMLElement>(':scope > [data-dock-row]'), (row) => {
       const r = row.getBoundingClientRect();
-      const bars = Array.from(row.querySelectorAll<HTMLElement>(`:scope > [${DOCK_BAR}]`), (bar) => {
+      const drawn = Array.from(row.querySelectorAll<HTMLElement>(`:scope > [${DOCK_BAR}]`)).filter((bar) => bar.firstChild);
+      const bars = drawn.map((bar) => {
         const b = bar.getBoundingClientRect();
         return { id: bar.getAttribute(DOCK_BAR)!, at: vertical ? b.top + b.height / 2 : b.left + b.width / 2 };
       });

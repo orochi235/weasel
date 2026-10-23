@@ -5,7 +5,7 @@ import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { CommandBar } from '../CommandBar';
 import { drawPrefs } from '../prefs';
 import { RightSidebar } from '../RightSidebar';
-import { StripSurfaces } from './StripSurfaces';
+import { StripDock } from './StripSurfaces';
 import type { SidebarHost } from './types';
 import { renderWithIcons } from '../testIcons';
 
@@ -47,7 +47,8 @@ function App() {
     <ActionsProvider>
       {ACTIONS.map((a) => <Register key={a.id} a={a} />)}
       <div data-testid="strip">
-        <CommandBar surfaces={<StripSurfaces />} />
+        <CommandBar />
+          <StripDock />
       </div>
       <div data-testid="sidebar">
         <RightSidebar {...({} as SidebarHost)} />

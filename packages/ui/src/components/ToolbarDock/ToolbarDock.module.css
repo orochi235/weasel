@@ -86,8 +86,14 @@
   min-height: 0;
 }
 
-/* A bar that folds what does not fit into a menu takes the room its row has, so its slot has to as well. */
-.slot:has(> [data-overflow='menu']) {
+/* A bar whose content draws nothing takes no room, nor a gap in its row. */
+.slot:empty {
+  display: none;
+}
+
+/* A bar that folds what does not fit into a menu takes the room its row has, so its slot has to as well, even where
+   the host wraps the bar in an element of its own. */
+.slot:has([data-overflow='menu']) {
   flex: 1 1 auto;
 }
 
