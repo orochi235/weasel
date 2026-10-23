@@ -29,6 +29,15 @@ All 2026-10-22.
    path edit, through `doubleClickTarget.ts`). Cmd-click stops extending the selection, which today
    it does as Shift does (`pressDecision.ts`, `isExtend = mods.shift || mods.meta`); Shift alone
    extends.
+8. **Each is an action, bound by the select tool** (2026-10-22), so a consumer can rebind it:
+
+   | Action | Default binding | Does |
+   |---|---|---|
+   | `select.direct` | `pointerDown` on a body with `mods: { mod: true }`, ranked above `select.pick` | selects the deepest pickable node under the pointer, past every group |
+   | `group.enter` | `doubleClick` on a body whose node has a group above it outside the entered one | enters the outermost such group |
+   | `group.leave` | `key` Escape, and a `pointerDown` outside the entered group | leaves one level |
+
+   A plain press stays `select.pick`, which resolves to the outermost group (decision 6).
 
 Rejected (2026-10-22), so nobody re-proposes them: a `group: true` flag on `container` (keeps
 "container" meaning only "has children"); three kinds `leaf | container | group` (keeps a second split
