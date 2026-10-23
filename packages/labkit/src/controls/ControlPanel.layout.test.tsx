@@ -71,7 +71,10 @@ describe('<ControlPanel> packing', () => {
             name: 'Mode',
             description: '',
             default: 'a',
-            options: ['a', 'b', 'c'],
+            options: [
+              { value: 'a', label: 'A' },
+              { value: 'b', label: 'B' },
+            ],
             control: 'toggle',
           },
           notes: {
