@@ -1,5 +1,8 @@
-import { useRef, type CSSProperties, type KeyboardEvent, type ReactElement } from 'react';
-import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
+import { useRef, type CSSProperties, type ReactElement } from 'react';
+import type { RunAlign, TrackShape } from '@weasel-js/geom';
+import { useTrackShape } from '../Along/alongContext';
+import { SwatchButton, swatchesIn, swatchKeyDown, useSwatchApply } from './SwatchButton';
+import { SwatchRings } from './SwatchRings';
 import s from './SwatchGrid.module.css';
 
 /** One swatch. `value: null` is the "no paint" swatch. */
@@ -22,12 +25,13 @@ export interface SwatchGridProps {
   onAltChange?: (value: string | null) => void;
   /** Swatches per row; also the step for ArrowUp/ArrowDown. Default 6. */
   columns?: number;
+  /** A track shape to lay the rows along. A curved one lays each row on a ring of its own, row k shifted k rows in
+   *  toward the shape's center of curvature; a line keeps the grid. Default: the nearest `Along`'s shape, else none. */
+  shape?: TrackShape;
+  /** Where a ring shorter than its run sits. Default: the nearest `Along`'s, else `'center'`. */
+  align?: RunAlign;
   'aria-label'?: string;
   className?: string;
-}
-
-function nameOf(o: SwatchGridOption): string {
-  return o.label ?? o.value ?? 'None';
 }
 
 /**
@@ -38,49 +42,38 @@ function nameOf(o: SwatchGridOption): string {
  * The grid applies nothing itself. `onChange` and `onAltChange` hand the
  * color to the app, which decides what "apply" means: set its active paint,
  * write the selection through `useOngoingAction`'s `commit`, or both.
+ *
+ * Given a curved shape, or inside an `Along`, each row lies on a ring of its
+ * own, row k shifted k rows in toward the shape's center of curvature, the
+ * way a color wheel's rim reads. The arrows keep their grid steps.
  */
 export function SwatchGrid(props: SwatchGridProps): ReactElement {
+  const along = useTrackShape();
+  const shape = props.shape ?? along?.shape;
+  if (shape !== undefined && shape.kind !== 'line') {
+    const { options, value, columns = 6, onChange, onAltChange, className } = props;
+    return (
+      <SwatchRings
+        shape={shape}
+        align={props.align ?? along?.align ?? 'center'}
+        onChange={onChange}
+        onAltChange={onAltChange}
+        groups={[{ key: 'grid', label: props['aria-label'], options, value, columns, className }]}
+      />
+    );
+  }
+  return <SwatchGridLine {...props} />;
+}
+
+function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const { options, value, className } = props;
-  const record = useRecordRecentColor();
-  const onChange = (v: string | null): void => {
-    props.onChange(v);
-    if (v !== null) record(v);
-  };
-  const onAltChange = props.onAltChange && ((v: string | null): void => {
-    props.onAltChange?.(v);
-    if (v !== null) record(v);
-  });
+  const apply = useSwatchApply(props.onChange, props.onAltChange);
   const columns = props.columns ?? 6;
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const current = value === undefined ? -1 : options.findIndex((o) => o.value === value);
   const tabStop = current >= 0 ? current : 0;
-
-  const focusAt = (i: number): void => {
-    rootRef.current?.querySelectorAll<HTMLElement>('button')[i]?.focus();
-  };
-
-  const onKeyDown = (i: number) => (e: KeyboardEvent<HTMLButtonElement>): void => {
-    const last = options.length - 1;
-    let next = -1;
-    switch (e.key) {
-      case 'ArrowLeft': next = Math.max(0, i - 1); break;
-      case 'ArrowRight': next = Math.min(last, i + 1); break;
-      case 'ArrowUp': next = i - columns >= 0 ? i - columns : i; break;
-      case 'ArrowDown': next = i + columns <= last ? i + columns : i; break;
-      case 'Home': next = 0; break;
-      case 'End': next = last; break;
-      case 'Enter':
-        if (e.shiftKey && onAltChange) {
-          e.preventDefault();
-          onAltChange(options[i].value);
-        }
-        return;
-      default: return;
-    }
-    e.preventDefault();
-    if (next !== i) focusAt(next);
-  };
+  const swatches = () => swatchesIn(rootRef.current);
 
   return (
     <div
@@ -90,29 +83,16 @@ export function SwatchGrid(props: SwatchGridProps): ReactElement {
       aria-label={props['aria-label']}
       style={{ '--columns': columns } as CSSProperties}
     >
-      {options.map((o, i) => {
-        const name = nameOf(o);
-        return (
-          <button
-            key={o.value ?? `none-${i}`}
-            type="button"
-            className={s.swatch}
-            aria-label={name}
-            title={name}
-            tabIndex={i === tabStop ? 0 : -1}
-            aria-current={i === current ? 'true' : undefined}
-            {...(o.value === null
-              ? { 'data-none': '' }
-              : { style: { '--swatch': o.value } as CSSProperties })}
-            onClick={(e) => {
-              if (e.shiftKey && onAltChange) onAltChange(o.value);
-              else onChange(o.value);
-            }}
-            onContextMenu={onAltChange ? (e) => { e.preventDefault(); onAltChange(o.value); } : undefined}
-            onKeyDown={onKeyDown(i)}
-          />
-        );
-      })}
+      {options.map((o, i) => (
+        <SwatchButton
+          key={o.value ?? `none-${i}`}
+          option={o}
+          tabStop={i === tabStop}
+          current={i === current}
+          apply={apply}
+          onKeyDown={swatchKeyDown(i, options, columns, apply, swatches)}
+        />
+      ))}
     </div>
   );
 }

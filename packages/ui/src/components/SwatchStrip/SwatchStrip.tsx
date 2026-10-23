@@ -1,6 +1,9 @@
 import { useId, useState, type ReactElement } from 'react';
 import { getAlpha01 } from '@weasel-js/core';
+import type { RunAlign, TrackShape } from '@weasel-js/geom';
+import { useTrackShape } from '../Along/alongContext';
 import { SwatchGrid, type SwatchGridOption } from '../SwatchGrid';
+import { SwatchRings, type SwatchRingGroup } from '../SwatchGrid/SwatchRings';
 import { Select } from '../Select';
 import {
   RecentColorsProvider,
@@ -36,6 +39,12 @@ export interface SwatchStripProps {
   /** Swatches per row, for the recent row and any palette that sets none.
    *  Default 10. */
   columns?: number;
+  /** A track shape to lay the rows along, as on {@link SwatchGrid}: the recent rows on the outermost rings, the
+   *  palette's rows further in, each section's heading or palette picker first on its first ring. Default: the
+   *  nearest `Along`'s shape, else none. */
+  shape?: TrackShape;
+  /** Where a ring shorter than its run sits. Default: the nearest `Along`'s, else `'center'`. */
+  align?: RunAlign;
   'aria-label'?: string;
   className?: string;
 }
@@ -85,7 +94,35 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
   const currentIn = (options: readonly SwatchGridOption[]): string | null | undefined =>
     value === undefined ? undefined : options.find((o) => same(o.value, value))?.value;
 
-  const grids = (
+  const along = useTrackShape();
+  const shape = props.shape ?? along?.shape;
+  const curved = shape !== undefined && shape.kind !== 'line' ? shape : undefined;
+
+  // On a ring the picker's own name says the palette, so its label is only heard: a visible one would stand out of the ring.
+  const paletteLead = shown && (palettes.length > 1 ? (
+    <Select<string>
+      {...(curved ? { 'aria-label': 'Palette' } : { label: 'Palette' })}
+      orientation="row"
+      options={palettes.map((p) => ({ value: p.id, label: p.name }))}
+      selectedKey={shown.id}
+      onSelectionChange={choosePalette}
+    />
+  ) : (
+    <div className={s.heading}>{shown.name}</div>
+  ));
+
+  const rings: SwatchRingGroup[] = [];
+  if (store) {
+    rings.push({
+      key: 'recent', label: 'Recent colors', options: recentOptions, value: currentIn(recentOptions), columns,
+      lead: <div className={s.heading}>Recent</div>, empty: <p className={s.empty}>No recent colors</p>,
+    });
+  }
+  if (shown) rings.push({ key: `palette:${shown.id}`, label: shown.name, options: shown.colors, value: currentIn(shown.colors), columns: shown.columns ?? columns, lead: paletteLead });
+
+  const grids = curved ? (
+    <SwatchRings shape={curved} align={props.align ?? along?.align ?? 'center'} groups={rings} onChange={onChange} onAltChange={onAltChange} />
+  ) : (
     <>
       {store && (
         <section className={s.section} aria-labelledby={recentHeading}>
@@ -106,17 +143,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
       )}
       {shown && (
         <section className={s.section}>
-          {palettes.length > 1 ? (
-            <Select<string>
-              label="Palette"
-              orientation="row"
-              options={palettes.map((p) => ({ value: p.id, label: p.name }))}
-              selectedKey={shown.id}
-              onSelectionChange={choosePalette}
-            />
-          ) : (
-            <div className={s.heading}>{shown.name}</div>
-          )}
+          {paletteLead}
           <SwatchGrid
             key={shown.id}
             aria-label={shown.name}
@@ -133,7 +160,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
 
   return (
     <div
-      className={[s.root, className].filter(Boolean).join(' ')}
+      className={[curved ? s.rings : s.root, className].filter(Boolean).join(' ')}
       role="group"
       aria-label={props['aria-label'] ?? 'Swatches'}
     >

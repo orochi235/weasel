@@ -1,0 +1,9 @@
+/* The box the strip's Along fills, its inscribed circle drawn as a guide. */
+.box {
+  position: relative;
+  width: var(--box);
+  height: var(--box);
+  outline: 1px dashed var(--wzl-border);
+  outline-offset: -1px;
+  border-radius: 50%;
+}
