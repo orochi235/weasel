@@ -670,6 +670,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
     because `above` is a boolean where a side is meant.
   - `ReadoutsAlong` has no ResizeObserver, so a font load does not restack its rows.
 
+- **(P3) A straight `Slider` misreads a press under a rotated ancestor.** `lineGeometry` in
+  `sliderGeometry.ts` lays its line across the rail's client rect, which a rotation turns into the bounding box of
+  the turned rail: under `rotate(90deg)` a press at three quarters of the rail reads 50 (seen in Chromium,
+  2026-10-22). A scale is fine. The curved geometry maps pointers through `boxPoint` in `Along/boxPoint.ts`, which
+  needs an SVG drawn across the box; the rail is HTML.
+
 - **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
   `apps/draw/src/dev/AssetsPage.test.tsx` with a node property schema open: the Export panel's
   highlighted literal (`pre[data-testid=schema-literal]`) is about 3,300 elements and 130 ms of a
