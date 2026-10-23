@@ -74,6 +74,7 @@ export default defineConfig({
         'react/jsx-runtime',
         'react-dom',
         'react-aria-components',
+        'windease',
         /^@weasel-js\//,
       ],
       output: {
