@@ -22,9 +22,9 @@ import type { DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
 import type { EditAnchorsDep, FinishedEditFrame } from './editAnchorsDep';
 import type { SnapDep } from './snapDep';
 import type { EnteredGroupDep } from 'canvas/deps/enteredGroup';
-export type { EnteredGroupDep };
 import type { TransformFollower, TransformPreviewNode } from './transformFinish';
 
+export type { EnteredGroupDep };
 export type { EditAnchorsDep, FinishedEditFrame, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
 
@@ -214,8 +214,9 @@ declare module '@weasel-js/routing' {
     /** Kit selection state — ids of currently selected nodes. */
     selection: SelectionApi;
     /** The group the user has entered, or null — session state beside the
-     *  selection, not scene data and not undoable. */
-    enteredGroup: EnteredGroupDep;
+     *  selection, not scene data and not undoable. Optional: absent means
+     *  inside no group. */
+    enteredGroup?: EnteredGroupDep;
     /** Current viewport — camera position + scale. */
     view: ViewApi;
     /**
