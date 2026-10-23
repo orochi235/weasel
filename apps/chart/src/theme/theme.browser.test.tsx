@@ -24,6 +24,8 @@ afterEach(() => {
 
 const { paper, blueprint } = DIAGRAM_THEMES as Record<string, (typeof DIAGRAM_THEMES)[string]>;
 
+const savedNodes = (): { data: unknown }[] => (JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as { nodes: { data: unknown }[] }).nodes;
+
 /** Drops a Process stencil centered on world (400, 300), as a drag from the Shapes panel does. */
 async function dropProcess(canvas: HTMLCanvasElement, host: HTMLElement): Promise<void> {
   const dt = new DataTransfer();
@@ -32,7 +34,7 @@ async function dropProcess(canvas: HTMLCanvasElement, host: HTMLElement): Promis
   for (const type of ['dragenter', 'dragover', 'drop']) {
     canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
   }
-  await expect.poll(() => (localStorage.getItem(CHART_SCENE_KEY) ?? '').includes('"group"')).toBe(true);
+  await expect.poll(() => savedNodes().some(isDiagramBody)).toBe(true);
 }
 
 /** Clicks through menu rows by name; a theme's row is a checkbox item, held while its theme is on. */
@@ -85,7 +87,7 @@ describe('Format › Theme › Edit Theme…', () => {
     await expect.poll(() => localStorage.getItem(CHART_SCENE_KEY) ?? '').not.toContain('Paper (edited)');
     // The undo before the drag takes back the shape, so the drag was one entry.
     await menu('Edit', /^Undo/);
-    await expect.poll(() => (localStorage.getItem(CHART_SCENE_KEY) ?? '').includes('"group"')).toBe(false);
+    await expect.poll(() => savedNodes().some(isDiagramBody)).toBe(false);
   });
 });
 
