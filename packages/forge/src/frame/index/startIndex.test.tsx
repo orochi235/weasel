@@ -144,7 +144,7 @@ describe('startIndex', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const { shell, received } = start();
     await init(shell);
-    fireEvent.click(within(screen.getByRole('region', { name: 'Primary' })).getByRole('button', { name: 'Open' }));
+    fireEvent.click(within(screen.getByRole('heading', { name: 'Primary' })).getByRole('link', { name: 'Primary' }));
     await flush();
     expect(received.at(-1)).toEqual({ type: 'open', id: 'kit-button--primary' });
   });

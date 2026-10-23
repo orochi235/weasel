@@ -20,6 +20,8 @@ export interface StartIndexOptions {
   gallery?: boolean;
   /** The ids of the stories tagged `gallery`. */
   galleries?: readonly string[];
+  /** The ids of the stories tagged `lab`. */
+  labs?: readonly string[];
   /** In file order. */
   stories: readonly LoadedStory[];
   descriptions: Readonly<Record<string, string>>;
@@ -76,6 +78,7 @@ export function startIndex(options: StartIndexOptions): () => void {
       descriptions: options.descriptions,
       gallery: options.gallery ?? false,
       galleries: options.galleries ?? [],
+      labs: options.labs ?? [],
       globals,
       decorators: setup.decorators ?? [],
       open: (id) => send({ type: 'open', id }),

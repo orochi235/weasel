@@ -1,6 +1,5 @@
 // The components' own entries, not the barrel: the barrel would bring every weasel-ui component into each frame.
 import { Badge } from '@weasel-js/ui/components/Badge';
-import { Button } from '@weasel-js/ui/components/Button';
 import {
   createContext,
   type MouseEvent,
@@ -19,6 +18,8 @@ import { StoryHost } from '../StoryHost';
 import { useNearViewport } from '../useNearViewport';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
+import { Description } from './Description';
+import { LabBadge } from './LabBadge';
 import { LibraryBadge } from './LibraryBadge';
 import num from '@weasel-js/theme/numeric.module.css';
 
@@ -35,6 +36,8 @@ export interface IndexEnv {
   gallery?: boolean;
   /** The ids of the stories tagged `gallery`. */
   galleries?: readonly string[];
+  /** The ids of the stories tagged `lab`: whole screens, which the page links to but does not embed. */
+  labs?: readonly string[];
   /** The component's place in the component graph; absent until the graph arrives, and for a gallery. */
   dependencies?: ComponentDeps;
   globals: Globals;
@@ -135,14 +138,23 @@ function GalleryBadge() {
   );
 }
 
-function DependencyList({ label, titles, empty }: { label: string; titles: readonly string[]; empty: string }) {
+/** A link to `id` in the workshop. A plain click opens it in place; a modified one is left to the browser. */
+function OpenLink({ id, className, children }: { id: string; className: string; children: ReactNode }) {
   const env = useEnv();
-  const labelId = useId();
-  const follow = (event: MouseEvent, id: string) => {
+  const follow = (event: MouseEvent) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     env.open(id);
   };
+  return (
+    <a className={className} href={`#/${encodeURIComponent(id)}`} onClick={follow}>
+      {children}
+    </a>
+  );
+}
+
+function DependencyList({ label, titles, empty }: { label: string; titles: readonly string[]; empty: string }) {
+  const labelId = useId();
   return (
     <div className="fg-index-deps__row">
       <dt id={labelId} className="fg-index-deps__label">
@@ -155,13 +167,12 @@ function DependencyList({ label, titles, empty }: { label: string; titles: reado
           <ul className="fg-index-deps__list" aria-labelledby={labelId}>
             {titles.map((title) => {
               const cut = title.lastIndexOf('/') + 1;
-              const id = indexId(title);
               return (
                 <li key={title}>
-                  <a className="fg-index-deps__link" href={`#/${encodeURIComponent(id)}`} onClick={(event) => follow(event, id)}>
+                  <OpenLink className="fg-index-deps__link" id={indexId(title)}>
                     <span className="fg-index-deps__prefix">{title.slice(0, cut)}</span>
                     {title.slice(cut)}
-                  </a>
+                  </OpenLink>
                 </li>
               );
             })}
@@ -224,30 +235,36 @@ function StorySection({ story, variants }: { story: LoadedStory; variants: boole
   const headingId = useId();
   const description = env.descriptions[story.id];
   const gallery = !env.gallery && env.galleries?.includes(story.id);
+  const lab = env.labs?.includes(story.id) ?? false;
   return (
     <section className="fg-index-story" aria-labelledby={headingId}>
-      <header className="fg-index-story__head">
-        <h2 id={headingId} className="fg-index-story__name">
-          {story.name}
-        </h2>
-        {gallery ? <GalleryBadge /> : null}
-        <Button variant="secondary" size="sm" onClick={() => env.open(story.id)}>
-          Open
-        </Button>
-      </header>
-      {description ? <p className="fg-index-story__description">{description}</p> : null}
-      <IndexStory story={story} />
+      <div className="fg-index-story__main">
+        <div className="fg-index-story__text">
+          <header className="fg-index-story__head">
+            <h2 id={headingId} className="fg-index-story__name">
+              <OpenLink className="fg-index-story__link" id={story.id}>
+                {story.name}
+              </OpenLink>
+            </h2>
+            {gallery ? <GalleryBadge /> : null}
+            {lab ? <LabBadge /> : null}
+          </header>
+          {description ? <Description text={description} className="fg-index-story__description" /> : null}
+        </div>
+        {lab ? null : <IndexStory story={story} />}
+      </div>
       {variants ? <IndexVariants story={story} /> : null}
     </section>
   );
 }
 
-/** Which of `stories` show their variants: the first of each set of controls. Stories of one CSF file share their
- *  meta's controls, and the same rows under every story would only repeat. */
-function firstOfEachControlSet(stories: readonly LoadedStory[]): Set<string> {
+/** Which of `stories` show their variants: the first of each set of controls, leaving out labs. Stories of one CSF
+ *  file share their meta's controls, and the same rows under every story would only repeat. */
+function firstOfEachControlSet(stories: readonly LoadedStory[], labs: readonly string[]): Set<string> {
   const seen = new Set<string>();
   const shown = new Set<string>();
   for (const story of stories) {
+    if (labs.includes(story.id)) continue;
     const key = JSON.stringify(variantRows(story.config));
     if (seen.has(key)) continue;
     seen.add(key);
@@ -260,7 +277,7 @@ function firstOfEachControlSet(stories: readonly LoadedStory[]): Set<string> {
  *  each set of controls. */
 export function DefaultIndex() {
   const env = useEnv();
-  const withVariants = useMemo(() => firstOfEachControlSet(env.stories), [env.stories]);
+  const withVariants = useMemo(() => firstOfEachControlSet(env.stories, env.labs ?? []), [env.stories, env.labs]);
   const segments = env.title.split('/');
   const name = segments.pop();
   const { library } = env;
@@ -278,7 +295,7 @@ export function DefaultIndex() {
           <h1 className="fg-index__title">{name}</h1>
           {env.gallery ? <GalleryBadge /> : null}
         </div>
-        {env.description ? <p className="fg-index__description">{env.description}</p> : null}
+        {env.description ? <Description text={env.description} className="fg-index__description" /> : null}
         <IndexHistory />
         <IndexDependencies />
       </header>
