@@ -93,7 +93,7 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(document.querySelector('.panel-here')).not.toBeNull();
   });
 
-  it.each(['Rail', 'Columns'])('PrefsHeading %s', async (name) => {
+  it.each(['HeadingInRail', 'HeadingInColumns'])('PrefsHeading %s', async (name) => {
     const mod = (await import('./Prefs/PrefsHeading.stories')) as unknown as Record<string, Story>;
     draw(mod[name], { className: 'form-here' });
     expect(document.querySelector('.form-here')).not.toBeNull();
