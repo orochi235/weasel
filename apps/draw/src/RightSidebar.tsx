@@ -12,11 +12,11 @@ export type RightSidebarProps = SidebarHost;
 export function RightSidebar(host: RightSidebarProps): ReactElement {
   return (
     <>
-      {useSurfaces().map(({ asset, surface, chrome }) => {
+      {useSurfaces().map(({ asset, surface, chrome, order }) => {
         if (surface !== 'panel' || chrome.hidden) return null;
         return asset.render
           ? <Fragment key={asset.id}>{asset.render(host, chrome)}</Fragment>
-          : <SchemaPanel key={asset.id} asset={asset} chrome={chrome} />;
+          : <SchemaPanel key={asset.id} asset={asset} chrome={chrome} order={order} />;
       })}
       {DevtoolsSidebarPanel && (
         <Suspense fallback={null}>

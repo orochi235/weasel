@@ -8,10 +8,10 @@ export function StripSurfaces() {
   return (
     <>
       <SwitchMenus />
-      {useSurfaces().map(({ asset, surface, chrome }) => {
+      {useSurfaces().map(({ asset, surface, chrome, order, onReorder }) => {
         if (!isSchemaAsset(asset) || chrome.hidden) return null;
-        if (surface === 'bar') return <SchemaBar key={asset.id} asset={asset} />;
-        if (surface === 'menu') return <SchemaMenu key={asset.id} asset={asset} />;
+        if (surface === 'bar') return <SchemaBar key={asset.id} asset={asset} order={order} onReorder={onReorder} />;
+        if (surface === 'menu') return <SchemaMenu key={asset.id} asset={asset} order={order} />;
         return null;
       })}
     </>

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { orderPrefGroup, type PrefGroup, type PrefOrder } from '@weasel-js/prefs';
 import { Bar, BarMenu } from '@weasel-js/ui/components/Bar';
 import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
 import { resolveIcon } from '@weasel-js/ui/components/Icon';
@@ -37,9 +37,10 @@ function nest(values: Readonly<Record<string, unknown>> | undefined): Record<str
 }
 
 /** A schema asset drawn as a right-sidebar panel, its header offering the other surfaces. */
-export function SchemaPanel({ asset, chrome }: { asset: SchemaAsset; chrome: PanelChrome }) {
+export function SchemaPanel({ asset, chrome, order }: { asset: SchemaAsset; chrome: PanelChrome; order?: PrefOrder }) {
   const { values, onChange } = useAssetBinding(asset);
   const tree = useMemo(() => nest(values), [values]);
+  const schema = useMemo(() => orderPrefGroup(asset.schema, order), [asset.schema, order]);
   return (
     <SidebarPanel
       title={asset.label}
@@ -48,19 +49,20 @@ export function SchemaPanel({ asset, chrome }: { asset: SchemaAsset; chrome: Pan
       onHide={chrome.onHide}
       actions={<SurfaceSwitchButton asset={asset} current="panel" />}
     >
-      <PrefsForm schema={asset.schema} layout="list" values={tree} onChange={onChange ?? ignore} />
+      <PrefsForm schema={schema} layout="list" values={tree} onChange={onChange ?? ignore} />
     </SidebarPanel>
   );
 }
 
 /** A schema asset drawn as a labeled bar in the command strip; its context menu offers the other surfaces. */
-export function SchemaBar({ asset }: { asset: SchemaAsset }) {
+export function SchemaBar({ asset, order, onReorder }: { asset: SchemaAsset; order?: PrefOrder; onReorder?: (order: PrefOrder) => void }) {
   const { values, onChange } = useAssetBinding(asset);
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   return (
     <div className={s.slot} onContextMenu={openSwitch}>
       <Bar
         schema={asset.schema} label={asset.label} values={values} onChange={onChange} framed="segmented" overflow="menu"
+        {...(order ? { order } : {})} {...(onReorder ? { onReorder } : {})}
       />
     </div>
   );
@@ -68,15 +70,15 @@ export function SchemaBar({ asset }: { asset: SchemaAsset }) {
 
 /** A schema asset drawn as a menu button in the command strip, the other surfaces offered at the menu's end and
  *  from the button's context menu. */
-export function SchemaMenu({ asset }: { asset: SchemaAsset }) {
+export function SchemaMenu({ asset, order }: { asset: SchemaAsset; order?: PrefOrder }) {
   const { values, onChange } = useAssetBinding(asset);
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   const schema = useMemo(
-    (): PrefGroup => ({
-      ...asset.schema,
-      children: { ...asset.schema.children, [SWITCH_KEY]: switchSchema(asset, 'menu') },
-    }),
-    [asset],
+    (): PrefGroup => {
+      const ordered = orderPrefGroup(asset.schema, order);
+      return { ...ordered, children: { ...ordered.children, [SWITCH_KEY]: switchSchema(asset, 'menu') } };
+    },
+    [asset, order],
   );
   return (
     <div className={s.slot} onContextMenu={openSwitch}>

@@ -2,6 +2,7 @@
 // inline switch, chevron, and ×, the View menu, and the Preferences dialog edit the same map.
 
 import { useCallback } from 'react';
+import type { PrefOrder } from '@weasel-js/prefs';
 import type { AppCommands } from '../appCommands';
 import { drawPrefs, removeOnceStored, usePref, whenWritable } from '../prefs';
 import { SURFACE_ASSETS } from './assets';
@@ -18,6 +19,9 @@ export interface SurfaceBinding {
   asset: SurfaceAsset;
   surface: SurfaceKind;
   chrome: PanelChrome;
+  /** The stored order of the asset's items, if the user has set one. */
+  order: PrefOrder | undefined;
+  onReorder: (order: PrefOrder) => void;
 }
 
 /** Every asset in `assets`, in order, bound to its persisted chrome. */
@@ -35,6 +39,8 @@ export function useSurfaces(assets: readonly SurfaceAsset[] = SURFACE_ASSETS): S
     return {
       asset,
       surface: surfaceOf(asset, state),
+      order: state.order,
+      onReorder: (order) => patch(id, (p) => ({ ...p, order })),
       chrome: {
         hidden: !!state.hidden,
         collapsed: !!state.collapsed,

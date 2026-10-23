@@ -93,6 +93,17 @@ describe('useSurfaces', () => {
     expect(path.surface).toBe('panel');
     expect(path.chrome).toMatchObject({ hidden: false, collapsed: true });
   });
+
+  it('writes a reorder to ui.surfaces[id].order and leaves surface, hidden and collapsed alone', () => {
+    drawPrefs().set('ui.surfaces', { path: { surface: 'menu', hidden: true, collapsed: true } });
+    const { result } = renderHook(() => useSurfaces());
+    const pathOf = () => result.current.find((b) => b.asset.id === 'path')!;
+    act(() => { pathOf().onReorder({ '': ['anchors', 'path'] }); });
+    expect(drawPrefs().get('ui.surfaces').path).toEqual({
+      surface: 'menu', hidden: true, collapsed: true, order: { '': ['anchors', 'path'] },
+    });
+    expect(pathOf().order).toEqual({ '': ['anchors', 'path'] });
+  });
 });
 
 describe('migrateLegacyPanelFlags', () => {

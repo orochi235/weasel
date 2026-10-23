@@ -110,4 +110,21 @@ describe('surface assets', () => {
     expect(strip().getByRole('toolbar', { name: 'Path' })).toBeDefined();
     expect(drawPrefs().get('ui.surfaces').path).toEqual({ surface: 'bar', hidden: false });
   });
+
+  it('draw a menu in the stored order, keep it across hiding and showing, and end it with the switch', () => {
+    drawPrefs().set('ui.surfaces', {
+      ...drawPrefs().get('ui.surfaces'),
+      path: { surface: 'menu', order: { '': ['anchors', 'path', 'pathEffects'] } },
+    });
+    renderWithIcons(<App />);
+    const itemsOf = () => { click(strip().getByRole('button', { name: 'Path' })); return screen.getAllByRole('menuitem').map((m) => m.textContent); };
+    const items = itemsOf();
+    expect(items.indexOf('Average')).toBeGreaterThan(-1);
+    expect(items.indexOf('Average')).toBeLessThan(items.indexOf('Join'));
+    expect(items.at(-1)).toMatch(/toolbar|panel/);
+    const before = drawPrefs().get('ui.surfaces').path!.order;
+    act(() => { drawPrefs().set('ui.surfaces', { ...drawPrefs().get('ui.surfaces'), path: { ...drawPrefs().get('ui.surfaces').path, hidden: true } }); });
+    act(() => { drawPrefs().set('ui.surfaces', { ...drawPrefs().get('ui.surfaces'), path: { ...drawPrefs().get('ui.surfaces').path, hidden: false } }); });
+    expect(drawPrefs().get('ui.surfaces').path!.order).toEqual(before);
+  });
 });

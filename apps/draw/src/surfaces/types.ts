@@ -1,5 +1,5 @@
 import type { Measurements, SelectionApi } from '@weasel-js/core';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefOrder } from '@weasel-js/prefs';
 import type { ReactNode } from 'react';
 import type { DrawScene } from '../drawDocument';
 import type { PaperSizeKey } from '../paperSizes';
@@ -13,6 +13,8 @@ export interface SurfaceState {
   surface?: SurfaceKind;
   hidden?: boolean;
   collapsed?: boolean;
+  /** The order of the asset's items and groups, keyed by container path, as `orderPrefGroup` reads it. */
+  order?: PrefOrder;
 }
 
 export type SurfacesValue = Record<string, SurfaceState>;
