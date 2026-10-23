@@ -48,3 +48,41 @@
     repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%)
       50% / var(--wzl-checker-size) var(--wzl-checker-size);
 }
+
+/* On a curved shape: every row a ring of its own, which `useRunRow` lays its items along. */
+.rings {
+  --swatch-size: 20px;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ringGroup {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ring {
+  composes: root from '../Along/runRow.module.css';
+  column-gap: var(--wzl-space-2);
+}
+
+.ring > .swatch {
+  inline-size: var(--swatch-size);
+  block-size: var(--swatch-size);
+}
+
+/* A grid swatch goes relative to lift its focus ring; one on a ring stays where it was placed. */
+.ring > .swatch:focus-visible {
+  position: absolute;
+}
+
+/* A ring's drag band is a pitch wide, so it never takes a press meant for the ring beside it. */
+.ring > svg > path {
+  stroke-width: calc(var(--swatch-size) + var(--wzl-space-2));
+}
+
+.ringExtra {
+  white-space: nowrap;
+}

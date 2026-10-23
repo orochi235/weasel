@@ -5,6 +5,13 @@
   min-inline-size: 0;
 }
 
+/* On a curved shape the rings lie over the shape's box, and only the swatches take input. */
+.rings {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .section {
   display: flex;
   flex-direction: column;
