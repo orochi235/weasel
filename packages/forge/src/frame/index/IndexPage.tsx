@@ -18,6 +18,7 @@ import { StoryHost } from '../StoryHost';
 import { useNearViewport } from '../useNearViewport';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
+import { Description } from './Description';
 import { LabBadge } from './LabBadge';
 import { LibraryBadge } from './LibraryBadge';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -248,7 +249,7 @@ function StorySection({ story, variants }: { story: LoadedStory; variants: boole
             {gallery ? <GalleryBadge /> : null}
             {lab ? <LabBadge /> : null}
           </header>
-          {description ? <p className="fg-index-story__description">{description}</p> : null}
+          {description ? <Description text={description} className="fg-index-story__description" /> : null}
         </div>
         {lab ? null : <IndexStory story={story} />}
       </div>
@@ -294,7 +295,7 @@ export function DefaultIndex() {
           <h1 className="fg-index__title">{name}</h1>
           {env.gallery ? <GalleryBadge /> : null}
         </div>
-        {env.description ? <p className="fg-index__description">{env.description}</p> : null}
+        {env.description ? <Description text={env.description} className="fg-index__description" /> : null}
         <IndexHistory />
         <IndexDependencies />
       </header>

@@ -1,5 +1,6 @@
 import num from '@weasel-js/theme/numeric.module.css';
 import type { Dossier, DossierArg } from './dossier';
+import { Description } from '../../frame/index/Description';
 
 /** A value as the dossier prints it: quoted strings, `—` for nothing. */
 function printed(value: unknown): string {
@@ -57,9 +58,9 @@ export function StoryDossier({ dossier }: { dossier: Dossier }) {
     <div className="fg-info">
       {dossier.description || dossier.componentDescription ? (
         <section className="fg-info__section" aria-label="Docs">
-          {dossier.description ? <p className="fg-info__doc">{dossier.description}</p> : null}
+          {dossier.description ? <Description text={dossier.description} className="fg-info__doc" /> : null}
           {dossier.componentDescription ? (
-            <p className="fg-info__doc fg-info__doc--component">{dossier.componentDescription}</p>
+            <Description text={dossier.componentDescription} className="fg-info__doc fg-info__doc--component" />
           ) : null}
         </section>
       ) : null}

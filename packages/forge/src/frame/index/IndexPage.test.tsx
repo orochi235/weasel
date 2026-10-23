@@ -77,6 +77,18 @@ describe('IndexPage', () => {
     expect(env.open).toHaveBeenCalledWith('ui-dialog--basic');
   });
 
+  it('draws the component’s and each story’s description as inline markdown', () => {
+    render(
+      <IndexPage
+        env={envOf({ description: 'A *modal* surface.', descriptions: { 'ui-dialog--basic': 'Opens on `open`.' } })}
+        render={null}
+      />,
+    );
+    expect(document.querySelector('.fg-index__description em')?.textContent).toBe('modal');
+    const section = screen.getByRole('region', { name: 'Basic' });
+    expect(section.querySelector('.fg-index-story__description code')?.textContent).toBe('open');
+  });
+
   it('says when a list is empty', () => {
     render(<IndexPage env={envOf({ dependencies: DEPS })} render={null} />);
     expect(screen.getByText('No listed component uses it.')).toBeTruthy();
