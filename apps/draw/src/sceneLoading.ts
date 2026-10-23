@@ -4,6 +4,7 @@ import {
   rectPath,
   SCENE_HISTORY_FORM,
   type SerializedScene,
+  type SerializedSceneV1,
   type SerializedSceneHistory,
   solid,
   strokeOf
@@ -30,14 +31,16 @@ export function loadInitial(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, Weas
 }
 
 function parseScene(raw: string): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
-  const json = JSON.parse(raw) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
-  if (json?.version !== 1 || !Array.isArray(json.nodes)) throw new Error('Not a saved drawing');
+  const json = JSON.parse(raw) as
+    | SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>
+    | SerializedSceneV1<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+  if ((json?.version !== 1 && json?.version !== 2) || !Array.isArray(json.nodes)) throw new Error('Not a saved drawing');
   return nodeSpecsFromSnapshot(json, DRAW_REGISTRY);
 }
 
 function starterScene(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
   return [{
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as WeaselDrawLayer,
     pose: { x: 80, y: 80, width: 160, height: 100 },
     data: {
