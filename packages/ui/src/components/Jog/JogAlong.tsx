@@ -30,7 +30,7 @@ export function JogAlong({ parts, shape, align, className }: { parts: JogParts; 
   const at = (key: PartKey) => spots[order.indexOf(key)]!;
   const scrubs = parts.scrub !== null;
   const [lo, hi] = scrubs ? scrubStretch(run, at('scrub').center, scrubLength) : [0, 0];
-  const scrubShape = useMemo(() => (scrubs ? trackSlice(shape, lo, hi) : undefined), [shape, scrubs, lo, hi]);
+  const scrubShape = useSlice(scrubs ? shape : undefined, lo, hi);
 
   const part = (key: PartKey, node: ReactNode) => (
     <span className={s.item} {...{ [BAR_ITEM]: key }} style={placeStyle(run.length > 0 ? at(key) : run.at(0.5))}>
@@ -50,6 +50,11 @@ export function JogAlong({ parts, shape, align, className }: { parts: JogParts; 
       </AlongContext.Provider>
     </div>
   );
+}
+
+/** The stretch `lo..hi` of `shape`, one identity while those hold, so the scrubber does not re-measure every render. */
+function useSlice(shape: TrackShape | undefined, lo: number, hi: number): TrackShape | undefined {
+  return useMemo(() => (shape ? trackSlice(shape, lo, hi) : undefined), [shape, lo, hi]);
 }
 
 /** The shape fractions, low then high, of a stretch `length` long centered `center` along `run`. Rounded, so a re-render
