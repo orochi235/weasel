@@ -1,4 +1,4 @@
-import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel-js/labkit/config';
+import { type ConfigNode, type ConfigSchema, type ConfigShape, f, ObjectNode, UnionNode } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { iconFromData } from '@weasel-js/ui/components/Icon';
 import { portSafePart } from './portSafe';
@@ -11,10 +11,23 @@ export type ArgCondition = ({ arg: string } | { global: string }) & {
   neq?: unknown;
 };
 
+/**
+ * Storybook's `SBType`, as far as forge reads it: the shape of an arg's value. A control is built from the parts of
+ * an array, an object or a union, and a union of objects that each pin one field to a string is edited as a choice
+ * of that string, with the chosen object's own fields under it.
+ */
+export type ArgShape =
+  | { name: 'boolean' | 'string' | 'number' }
+  | { name: 'enum'; value: readonly string[] }
+  | { name: 'array'; value: ArgShape }
+  | { name: 'object'; value: Readonly<Record<string, ArgShape>> }
+  | { name: 'union'; value: readonly ArgShape[] };
+
 /** A CSF `argTypes` entry, as far as forge reads it. */
 export interface ArgType {
   name?: string;
   description?: string;
+  type?: ArgShape;
   control?:
     | string
     | false
@@ -71,6 +84,85 @@ function inferred(value: unknown): Leaf | null {
   }
 }
 
+type ObjectShape = Extract<ArgShape, { name: 'object' }>;
+
+/**
+ * A union's members by the string each pins one field to, with that field: the first field every member pins.
+ * Members pinning the same string are one variant, holding the fields of each.
+ */
+function variantsOf(members: readonly ArgShape[]): { tag: string; variants: Map<string, ObjectShape> } | null {
+  const objects = members.filter((m): m is ObjectShape => m.name === 'object');
+  if (objects.length !== members.length || objects.length === 0) return null;
+  const pinned = (m: ObjectShape, key: string) => {
+    const field = m.value[key];
+    return field?.name === 'enum' && field.value.length === 1 ? field.value[0] : undefined;
+  };
+  const tag = Object.keys(objects[0]!.value).find((key) => objects.every((m) => pinned(m, key) !== undefined));
+  if (tag === undefined) return null;
+  const variants = new Map<string, ObjectShape>();
+  for (const member of objects) {
+    const name = pinned(member, tag)!;
+    const held = variants.get(name)?.value ?? {};
+    const added = Object.entries(member.value).filter(([key]) => !(key in held));
+    variants.set(name, { name: 'object', value: { ...held, ...Object.fromEntries(added) } });
+  }
+  return { tag, variants };
+}
+
+function fieldsOf(shape: ObjectShape, value: unknown, omit?: string): Record<string, Leaf> | null {
+  const held = isPlainObject(value) ? value : {};
+  const fields: Record<string, Leaf> = {};
+  for (const [key, field] of Object.entries(shape.value)) {
+    if (key === omit) continue;
+    const leaf = shaped(field, held[key]);
+    if (leaf) fields[key] = leaf;
+  }
+  return Object.keys(fields).length > 0 ? fields : null;
+}
+
+/** A leaf editing a value of `shape`, starting at `value`; null for a shape no control can edit. */
+function shaped(shape: ArgShape, value: unknown): Leaf | null {
+  switch (shape.name) {
+    case 'boolean':
+      return f.boolean(value as boolean);
+    case 'string':
+      return f.string(value as string);
+    case 'number':
+      return f.number(value as number);
+    case 'enum':
+      return shape.value.length > 0 ? f.enum(value as string, shape.value) : null;
+    case 'array': {
+      const item = shaped(shape.value, undefined);
+      return item ? (f.list(Array.isArray(value) ? value : [], item) as unknown as Leaf) : null;
+    }
+    case 'object': {
+      const fields = fieldsOf(shape, value);
+      if (!fields) return null;
+      const node = f.object(fields);
+      return new ObjectNode(isPlainObject(value) ? value : node.default, node.annotations, node.options) as unknown as Leaf;
+    }
+    case 'union': {
+      const union = variantsOf(shape.value);
+      if (!union) return null;
+      const { tag, variants } = union;
+      const held = isPlainObject(value) ? value[tag] : undefined;
+      const nodes = Object.fromEntries(
+        [...variants].map(([name, member]) => [name, f.object(fieldsOf(member, held === name ? value : undefined, tag) ?? {})]),
+      );
+      const node = f.union(tag, nodes);
+      const start = typeof held === 'string' && variants.has(held) ? value : node.default;
+      return new UnionNode(start, node.annotations, node.options) as unknown as Leaf;
+    }
+    default:
+      return null;
+  }
+}
+
+/** A leaf for an object-valued arg: from its argType's shape where one is given and editable, else a JSON leaf. */
+function structured(argType: ArgType, value: unknown): Leaf | null {
+  return (argType.type ? shaped(argType.type, value) : null) ?? inferred(value);
+}
+
 function bounded(node: ReturnType<typeof f.number>, control: Control) {
   let out = node;
   if (control.min !== undefined && control.max !== undefined) out = out.range(control.min, control.max);
@@ -101,7 +193,7 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
     case 'radio':
     case 'inline-radio':
     case undefined: {
-      if (!options) return control.type === undefined && has ? inferred(value) : null;
+      if (!options) return control.type === undefined && has ? structured(argType, value) : null;
       const { icons } = control;
       const node = f.enum(
         def<string>(),
@@ -113,7 +205,7 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
       return control.type === 'radio' || control.type === 'inline-radio' ? node.radio() : node;
     }
     case 'object':
-      return has ? f.custom('json', value) : null;
+      return has ? (argType.type ? shaped(argType.type, value) : null) ?? f.custom('json', value) : null;
     default:
       return has ? inferred(value) : null;
   }

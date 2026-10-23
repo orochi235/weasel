@@ -2,7 +2,7 @@ import { openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
 import { indexId, isIndexId } from '../story/indexPages';
 import { TITLE_LIBRARIES } from '../story/library';
-import { isGallery } from '../story/tags';
+import { isGallery, taggedIds } from '../story/tags';
 import { indexRenderOf, loadStories } from '../story/load';
 import type { LoadedStory } from '../story/types';
 import { type FrameSetup, reportImportFault, startFrame } from './FrameController';
@@ -106,7 +106,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
         // The project's library table is the shell config's, which a frame document does not load.
         library: TITLE_LIBRARIES.of({ file: entries[0]?.file ?? '', title }),
         gallery: entries.every(isGallery),
-        galleries: entries.filter(isGallery).map((e) => e.id),
+        ...taggedIds(entries),
         stories,
         descriptions: Object.fromEntries(entries.flatMap((e) => (e.description ? [[e.id, e.description]] : []))),
         render: mods.map(indexRenderOf).find((render) => render !== null) ?? null,

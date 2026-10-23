@@ -117,6 +117,56 @@ describe('argsToSchema', () => {
     expect(shape(leaf({ keys }, { keys: { control: 'object' } }, 'keys'))).toEqual({ kind: 'json', default: keys });
   });
 
+  describe('an object arg whose argType gives its shape', () => {
+    const at = { name: 'number' } as const;
+    const tick = { name: 'object', value: { at, label: { name: 'string' } } } as const;
+
+    it('edits an object field by field, keeping the arg whole', () => {
+      const node = leaf({ tick: { at: 2, extra: 1 } }, { tick: { control: 'object', type: tick } }, 'tick');
+      expect(node?.kind).toBe('object');
+      expect(node?.default).toEqual({ at: 2, extra: 1 });
+      expect(Object.keys((node?.annotations as { children: object }).children)).toEqual(['at', 'label']);
+    });
+
+    it('edits an array entry by entry', () => {
+      const ticks = [{ at: 1 }, { at: 2 }];
+      const node = leaf({ ticks }, { ticks: { type: { name: 'array', value: tick } } }, 'ticks');
+      expect(node?.kind).toBe('list');
+      expect(node?.default).toEqual(ticks);
+      expect((node?.annotations as { item: { kind: string } }).item.kind).toBe('object');
+    });
+
+    const display = {
+      name: 'union',
+      value: [
+        { name: 'object', value: { kind: { name: 'enum', value: ['fraction'] }, mixed: { name: 'boolean' } } },
+        { name: 'object', value: { kind: { name: 'enum', value: ['fraction'] }, of: { name: 'enum', value: ['π', 'e'] } } },
+        { name: 'object', value: { kind: { name: 'enum', value: ['decimal'] }, places: at } },
+      ],
+    } as const;
+    const variants = (node: ConfigNode<unknown> | undefined) =>
+      (node?.annotations as { tag: string; variants: Record<string, { children: object }> });
+
+    it('edits a union of objects as a choice of the field each pins, one variant per string', () => {
+      const node = leaf({ display: { kind: 'decimal', places: 2 } }, { display: { control: 'object', type: display } }, 'display');
+      expect(node?.kind).toBe('union');
+      expect(node?.default).toEqual({ kind: 'decimal', places: 2 });
+      const { tag, variants: byName } = variants(node);
+      expect(tag).toBe('kind');
+      expect(Object.keys(byName)).toEqual(['fraction', 'decimal']);
+      expect(Object.keys(byName.fraction!.children)).toEqual(['mixed', 'of']);
+    });
+
+    it('starts a union at its first variant when the arg names none of them', () => {
+      expect(leaf({ display: { kind: 'roman' } }, { display: { type: display } }, 'display')?.default).toEqual({ kind: 'fraction' });
+    });
+
+    it('falls back to a json leaf for a shape no control edits', () => {
+      const loose = { name: 'union', value: [{ name: 'number' }, { name: 'string' }] } as const;
+      expect(shape(leaf({ box: { w: 1 } }, { box: { control: 'object', type: loose } }, 'box'))).toEqual({ kind: 'json', default: { w: 1 } });
+    });
+  });
+
   it('hides a leaf with control: false or a disabled table row', () => {
     expect(shape(leaf({ n: 2 }, { n: { control: false } }, 'n'))).toEqual({ kind: 'number', default: 2, hidden: true });
     expect(shape(leaf({ c: 'x' }, { c: { table: { disable: true } } }, 'c'))).toEqual({ kind: 'string', default: 'x', hidden: true });

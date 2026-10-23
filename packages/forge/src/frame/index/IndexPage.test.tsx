@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { f } from '@weasel-js/labkit/config';
 import { describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
@@ -63,6 +64,31 @@ describe('IndexPage', () => {
     expect(within(usedBy).getByRole('link').textContent).toBe('draw/CommandBar');
   });
 
+  it('links each story’s title to the story, with no separate button', () => {
+    const env = envOf();
+    render(<IndexPage env={env} render={null} />);
+    const section = screen.getByRole('region', { name: 'Basic' });
+    const link = within(within(section).getByRole('heading', { name: 'Basic' })).getByRole('link', { name: 'Basic' });
+    expect(link.getAttribute('href')).toBe('#/ui-dialog--basic');
+    expect(within(section).queryByRole('button')).toBeNull();
+    fireEvent.click(link, { metaKey: true });
+    expect(env.open).not.toHaveBeenCalled();
+    fireEvent.click(link);
+    expect(env.open).toHaveBeenCalledWith('ui-dialog--basic');
+  });
+
+  it('draws the component’s and each story’s description as inline markdown', () => {
+    render(
+      <IndexPage
+        env={envOf({ description: 'A *modal* surface.', descriptions: { 'ui-dialog--basic': 'Opens on `open`.' } })}
+        render={null}
+      />,
+    );
+    expect(document.querySelector('.fg-index__description em')?.textContent).toBe('modal');
+    const section = screen.getByRole('region', { name: 'Basic' });
+    expect(section.querySelector('.fg-index-story__description code')?.textContent).toBe('open');
+  });
+
   it('says when a list is empty', () => {
     render(<IndexPage env={envOf({ dependencies: DEPS })} render={null} />);
     expect(screen.getByText('No listed component uses it.')).toBeTruthy();
@@ -84,6 +110,29 @@ describe('IndexPage', () => {
     render(<IndexPage env={envOf({ galleries: ['ui-dialog--basic'] })} render={null} />);
     const section = screen.getByRole('region', { name: 'Basic' });
     expect(within(section).getByText('Gallery')).toBeTruthy();
+  });
+
+  it('links a lab story and marks it, embedding no example and leaving the variants to the next story', () => {
+    const config = f.schema({ dense: f.boolean(false) });
+    const withLab = loadNativeModule(
+      {
+        default: meta({ title: 'ui/Arc' }),
+        Screen: story({ config, render: () => <p>whole screen</p> }),
+        Plain: story({ config, render: () => <p>specimen</p> }),
+      },
+      'ui/Arc',
+    );
+    const [lab, plain] = withLab;
+    render(<IndexPage env={envOf({ title: 'ui/Arc', stories: withLab, labs: [lab?.id ?? ''] })} render={null} />);
+    const labSection = screen.getByRole('region', { name: 'Screen' });
+    expect(within(labSection).getByRole('link', { name: 'Screen' }).getAttribute('href')).toBe(`#/${lab?.id}`);
+    expect(within(labSection).getByText('Lab')).toBeTruthy();
+    expect(labSection.querySelector('.fg-index-cell')).toBeNull();
+    expect(within(labSection).queryByRole('region', { name: 'Dense' })).toBeNull();
+    const plainSection = screen.getByRole('region', { name: plain?.name ?? '' });
+    expect(within(plainSection).queryByText('Lab')).toBeNull();
+    expect(plainSection.querySelector('.fg-index-story__main > .fg-index-cell')).not.toBeNull();
+    expect(within(plainSection).getByRole('region', { name: 'Dense' })).toBeTruthy();
   });
 
   it('heads the path with the package as a badge, in place of a first segment naming it', () => {

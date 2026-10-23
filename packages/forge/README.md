@@ -311,10 +311,25 @@ const meta: Meta = { title: 'ui/Icons/Gallery', tags: ['gallery'] };
 export const AllPermutations: Story = { tags: ['gallery'], render: … };
 ```
 
-A gallery row carries a grid mark in the sidebar and a Gallery badge on its
-index page. A component every one of whose stories is a gallery is left out of
-the dependency lists entirely, so a catalog that imports everything does not
-appear as a user of everything.
+Galleries list in the sidebar's Gallery view rather than under Components or
+Tree, and carry a Gallery badge on their index page. A component every one of
+whose stories is a gallery is left out of the dependency lists entirely, so a
+catalog that imports everything does not appear as a user of everything.
+
+## Labs
+
+A story file that is a whole screen for exercising a component, rather than a
+specimen of it, tags its meta `lab`, the same way. A full-screen layout is not
+the signal: a sidebar's specimen fills the frame too.
+
+```ts
+const meta: Meta = { title: 'ui/Bar on an arc', tags: ['lab'] };
+```
+
+On an index page a lab story keeps its title link and description but embeds
+no example and no variants, so a lab with many controls does not fill the page
+with copies of itself. Its rows in the sidebar, and its index page entries,
+carry a Lab badge, so a reader knows opening one opens a screen.
 
 ## Story tests
 

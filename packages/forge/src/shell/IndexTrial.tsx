@@ -20,6 +20,8 @@ export interface IndexBundle {
   tags?: readonly string[];
   /** The ids of the stories tagged `gallery`. */
   galleries: readonly string[];
+  /** The ids of the stories tagged `lab`. */
+  labs: readonly string[];
   stories: readonly LoadedStory[];
   descriptions: Readonly<Record<string, string>>;
   render: IndexRender | null;
@@ -52,6 +54,7 @@ export function IndexTrial({ bundle, setup, config }: IndexTrialProps) {
       descriptions: bundle.descriptions,
       gallery,
       galleries: bundle.galleries,
+      labs: bundle.labs,
       ...(dependencies ? { dependencies } : {}),
       globals,
       decorators: setup.decorators ?? [],

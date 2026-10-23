@@ -4,7 +4,7 @@ import { DisclosureMark } from '@weasel-js/ui/components/Disclosure';
 import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
-import { isGallery } from '../../story/tags';
+import { isGallery, isLab } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
 import { onRevealInTree } from '../treeReveal';
@@ -12,6 +12,7 @@ import { useRoute } from '../useRoute';
 import { buildTree, filterTree, type TreeNode } from './buildTree';
 import { buildComponents, componentNodes, filterComponents, librariesIn } from './buildComponents';
 import { LibrariesContext } from '../../story/library';
+import { LabBadge } from '../../frame/index/LabBadge';
 import { LibraryBadge as PackageBadge } from '../../frame/index/LibraryBadge';
 
 /** Which shape the sidebar lists the index in. */
@@ -51,6 +52,16 @@ function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
 /** A component's package, as the sidebar tags its rows. */
 function LibraryBadge({ library }: { library: string }) {
   return <PackageBadge library={library} className="fg-tree__tag" />;
+}
+
+/** What follows a row's label: a Lab badge on a whole screen, then the package. */
+function RowTags({ lab, library }: { lab: boolean; library: string | undefined }) {
+  return (
+    <>
+      {lab ? <LabBadge className="fg-tree__lab" /> : null}
+      {library ? <LibraryBadge library={library} /> : null}
+    </>
+  );
 }
 
 /** The indexed stories as a filterable tree; opening one runs it in the focused trial, or with Shift in another. */
@@ -291,7 +302,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
                 <DisclosureMark open={open} />
               </span>
               <span className="fg-tree__label">{node.label}</span>
-              {node.tag ? <LibraryBadge library={node.tag} /> : null}
+              <RowTags lab={!!node.index && isLab(node.index)} library={node.tag} />
             </div>
             {open ? (
               <div role="group" className="fg-tree__group">
@@ -317,7 +328,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           }}
         >
           <span className="fg-tree__label">{node.label ?? entry.name}</span>
-          {node.tag ? <LibraryBadge library={node.tag} /> : null}
+          <RowTags lab={isLab(entry)} library={node.tag} />
         </a>
       );
     });
