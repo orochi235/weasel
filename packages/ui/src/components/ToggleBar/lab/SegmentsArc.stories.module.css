@@ -1,0 +1,19 @@
+.page {
+  padding: var(--wzl-space-8);
+  font-family: var(--wzl-font-ui);
+  color: var(--wzl-fg);
+}
+
+/* The box the Alongs fill, its inscribed circle drawn as a guide. */
+.box {
+  position: relative;
+  width: var(--box);
+  height: var(--box);
+  outline: 1px dashed var(--wzl-border);
+  outline-offset: -1px;
+  border-radius: 50%;
+}
+
+.readout {
+  font-variant-numeric: tabular-nums;
+}

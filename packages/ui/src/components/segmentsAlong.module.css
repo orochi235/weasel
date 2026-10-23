@@ -1,0 +1,91 @@
+/* A segmented row laid along a track shape, as `useRunRow` lays any row. The well and the lit segments are SVG
+   strokes along the run; `--_h` is the well's thickness and the padding its rim, read back for the stroke ends. */
+.root {
+  composes: root from './Along/runRow.module.css';
+  --_h: var(--tb-h, var(--wzl-control-h));
+  padding: var(--wzl-space-1);
+  column-gap: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.root[data-size='sm'] {
+  --_h: calc(var(--wzl-font-size-sm) * 1.4 + 2px);
+  padding: 1px;
+}
+
+/* Without a well the segments are boxes of their own, so they stand apart. */
+.root:not([data-variant='default']) {
+  padding: 0;
+  column-gap: var(--wzl-space-1);
+}
+
+/* `.segment` sets `position: relative` at the specificity `onRun` sets `absolute`. */
+.root > [data-segment] {
+  position: absolute;
+}
+
+.root[data-variant='default'] > [data-segment] {
+  block-size: calc(var(--_h) - 2 * var(--wzl-space-1));
+}
+
+.root[data-variant='default'][data-size='sm'] > [data-segment] {
+  block-size: calc(var(--_h) - 2px);
+}
+
+.root[data-variant='flat'] > [data-segment] {
+  block-size: var(--_h);
+  margin: 0;
+}
+
+/* The lit stroke is behind the label, so the label takes the colors it would on a lit segment. */
+.root[data-variant='default'] > [data-state='on'] {
+  --wzl-fg: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+}
+
+.root[data-variant='default'] > [data-state='mixed'] {
+  --wzl-fg-muted: var(--wzl-fg);
+}
+
+.well {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* The straight well's top-to-bottom shade, at its midpoint. */
+.wellTrack {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.12);
+  stroke-width: var(--_h);
+  stroke-linecap: round;
+}
+
+.wellRim {
+  fill: none;
+  stroke: white;
+  stroke-width: calc(var(--_h) - 2 * var(--wzl-space-1));
+  stroke-linecap: round;
+}
+
+.root[data-size='sm'] .wellRim {
+  stroke-width: calc(var(--_h) - 2px);
+}
+
+.lit,
+.mixed {
+  fill: none;
+  stroke-width: var(--_h);
+}
+
+.lit {
+  stroke: var(--wzl-accent);
+}
+
+.mixed {
+  stroke: color-mix(in srgb, var(--wzl-accent) 22%, transparent);
+}

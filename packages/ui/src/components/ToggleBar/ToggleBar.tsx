@@ -1,5 +1,6 @@
-import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
+import { SegmentedRow, segmentClassName, segmentPlaceProps, type SegmentState } from '../segmentedRow';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -122,35 +123,25 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   // squeezed or will not fit where it sits.
   const fit = useFitScope(roving.rootRef);
 
-  const style: CSSProperties | undefined = height !== undefined
-    ? ({ ['--tb-h' as string]: `${height}px` } as CSSProperties)
-    : undefined;
-
-  const rootCls = [
-    s.root,
-    size && s[`size_${size}`],
-    variant && s[`variant_${variant}`],
-    className,
-  ].filter(Boolean).join(' ');
-
   return (
-    <div
-      ref={roving.rootRef}
-      onKeyDown={roving.onKeyDown}
-      className={rootCls}
+    <SegmentedRow
+      roving={roving}
       role={mode === 'multiple' ? 'group' : 'radiogroup'}
-      aria-label={ariaLabel}
-      style={style}
-    >
-      <FitScope value={fit}>
-        {items.map((item, i) => {
-          const selected = isSelected(item.value);
-          const mixed = isMixed(item.value);
-          const cls = [s.segment, selected && s.segmentSelected, mixed && s.segmentMixed]
-            .filter(Boolean)
-            .join(' ');
-          return (
-            <SegmentTooltip key={item.value} content={segmentTooltipContent(item)} disabled={item.disabled}>
+      ariaLabel={ariaLabel}
+      className={className}
+      height={height}
+      size={size}
+      variant={variant}
+      wrap={(segments) => <FitScope value={fit}>{segments}</FitScope>}
+      segments={items.map((item, i) => {
+        const selected = isSelected(item.value);
+        const mixed = isMixed(item.value);
+        const state: SegmentState = selected ? 'on' : mixed ? 'mixed' : 'off';
+        return {
+          key: String(item.value),
+          state,
+          draw: (place) => (
+            <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled}>
               <button
                 type="button"
                 role={mode === 'multiple' ? undefined : 'radio'}
@@ -158,15 +149,16 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
                 aria-pressed={mode === 'multiple' ? (mixed ? 'mixed' : selected) : undefined}
                 aria-label={item.ariaLabel}
                 disabled={item.disabled}
-                className={cls}
+                className={segmentClassName(state, place)}
+                {...segmentPlaceProps(place)}
                 onClick={handleClick(i)}
               >
                 {item.label}
               </button>
             </SegmentTooltip>
-          );
-        })}
-      </FitScope>
-    </div>
+          ),
+        };
+      })}
+    />
   );
 }

@@ -1,5 +1,6 @@
-import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
+import { SegmentedRow, segmentClassName, segmentPlaceProps } from '../segmentedRow';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
@@ -49,39 +50,33 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
 
   const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, onActivate: fire });
 
-  const style: CSSProperties | undefined = height !== undefined
-    ? ({ ['--tb-h' as string]: `${height}px` } as CSSProperties)
-    : undefined;
-
-  const rootCls = [
-    s.root,
-    size && s[`size_${size}`],
-    variant && s[`variant_${variant}`],
-    className,
-  ].filter(Boolean).join(' ');
-
   return (
-    <div
-      ref={roving.rootRef}
-      onKeyDown={roving.onKeyDown}
-      className={rootCls}
+    <SegmentedRow
+      roving={roving}
       role="toolbar"
-      aria-label={ariaLabel}
-      style={style}
-    >
-      {items.map((item, i) => (
-        <SegmentTooltip key={item.value} content={segmentTooltipContent(item)} disabled={item.disabled}>
-          <button
-            type="button"
-            aria-label={item.ariaLabel}
-            disabled={item.disabled}
-            className={s.segment}
-            onClick={() => fire(i)}
-          >
-            {item.label}
-          </button>
-        </SegmentTooltip>
-      ))}
-    </div>
+      ariaLabel={ariaLabel}
+      className={className}
+      height={height}
+      size={size}
+      variant={variant}
+      segments={items.map((item, i) => ({
+        key: String(item.value),
+        state: 'off' as const,
+        draw: (place) => (
+          <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled}>
+            <button
+              type="button"
+              aria-label={item.ariaLabel}
+              disabled={item.disabled}
+              className={segmentClassName('off', place)}
+              {...segmentPlaceProps(place)}
+              onClick={() => fire(i)}
+            >
+              {item.label}
+            </button>
+          </SegmentTooltip>
+        ),
+      }))}
+    />
   );
 }

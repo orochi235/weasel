@@ -1,5 +1,6 @@
-import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
+import { SegmentedRow, segmentClassName, segmentPlaceProps } from '../segmentedRow';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 
 /**
@@ -50,42 +51,35 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
 
   const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, onActivate: toggle });
 
-  const style: CSSProperties | undefined = height !== undefined
-    ? ({ ['--tb-h' as string]: `${height}px` } as CSSProperties)
-    : undefined;
-
-  const rootCls = [
-    s.root,
-    size && s[`size_${size}`],
-    variant && s[`variant_${variant}`],
-    className,
-  ].filter(Boolean).join(' ');
-
   return (
-    <div
-      ref={roving.rootRef}
-      onKeyDown={roving.onKeyDown}
-      className={rootCls}
+    <SegmentedRow
+      roving={roving}
       role="group"
-      aria-label={ariaLabel}
-      style={style}
-    >
-      {items.map((item, i) => {
-        const cls = `${s.segment}${item.selected ? ` ${s.segmentSelected}` : ''}`;
-        return (
-          <button
-            key={item.value}
-            type="button"
-            aria-pressed={item.selected}
-            aria-label={item.ariaLabel}
-            disabled={item.disabled}
-            className={cls}
-            onClick={() => toggle(i)}
-          >
-            {item.label}
-          </button>
-        );
+      ariaLabel={ariaLabel}
+      className={className}
+      height={height}
+      size={size}
+      variant={variant}
+      segments={items.map((item, i) => {
+        const state = item.selected ? ('on' as const) : ('off' as const);
+        return {
+          key: String(item.value),
+          state,
+          draw: (place) => (
+            <button
+              type="button"
+              aria-pressed={item.selected}
+              aria-label={item.ariaLabel}
+              disabled={item.disabled}
+              className={segmentClassName(state, place)}
+              {...segmentPlaceProps(place)}
+              onClick={() => toggle(i)}
+            >
+              {item.label}
+            </button>
+          ),
+        };
       })}
-    </div>
+    />
   );
 }
