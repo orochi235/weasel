@@ -136,6 +136,7 @@ export type { ActionParams, ActionTuning, TunedBinding } from './interactions/ac
 export { bindingId, overriddenBindings, resolveBindingOverrides } from './interactions/actions/bindingOverrides';
 export type { BindingOverrides, ResolvedBindingOverrides } from './interactions/actions/bindingOverrides';
 export { roleReader, keysHeld } from './interactions/actions/modifierRoles';
+export { modifiersOf } from './interactions/dispatcher/inputFacts';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from './interactions/actions/modifierRoles';
 
 export type {

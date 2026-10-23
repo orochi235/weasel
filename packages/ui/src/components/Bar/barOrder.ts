@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { PrefOrder } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefGroup, type PrefLeaf, type PrefOrder } from '@weasel-js/prefs';
 
 /** Marks a bar's DOM unit a reorder can move, with the unit's key inside its container. */
 export const BAR_UNIT = 'data-bar-unit';
@@ -25,4 +25,11 @@ export function movedOrder(order: PrefOrder, container: string, keys: readonly s
   const [moved] = next.splice(from, 1);
   next.splice(to, 0, moved!);
   return { ...order, [container]: next };
+}
+
+/** The child keys of the group at `container` in `group`, in its order; undefined where no group sits there. */
+export function childKeysAt(group: PrefGroup, container: string): string[] | undefined {
+  let at: PrefGroup | PrefLeaf | undefined = group;
+  for (const key of container === '' ? [] : container.split('.')) at = at === undefined || isPrefLeaf(at) ? undefined : at.children[key];
+  return at === undefined || isPrefLeaf(at) ? undefined : Object.keys(at.children);
 }

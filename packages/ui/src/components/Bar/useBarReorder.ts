@@ -1,8 +1,8 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { keysHeld, modifiersOf, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { isApplePlatform } from '@weasel-js/gestures';
 import type { PrefOrder } from '@weasel-js/prefs';
 import { useKitSetting, useLatest } from '@weasel-js/react';
-import { modHeld } from '../../modHeld';
 import { swallowNextClick } from '../../useReorderDragList';
 import { BAR_IN, BAR_UNIT, barUnitKey, movedOrder } from './barOrder';
 
@@ -28,6 +28,9 @@ export interface BarReorderArgs {
   /** How far along the bar's line `at` lies, `el` being the bar's root: x or y for a straight bar, the distance
    *  along the run for a curved one. */
   measure: (el: HTMLElement, at: BarPoint) => number;
+  /** Every child key of the container at a path, in its drawn order, hidden and overflowed children included; undefined
+   *  for a container it cannot list, whose drawn units are then the whole list. */
+  keysOf?: (container: string) => readonly string[] | undefined;
 }
 
 /** The handler a bar's root takes so a Cmd-drag (Ctrl-drag off Apple platforms) reorders it. */
@@ -49,16 +52,16 @@ interface Unit {
  * `onReorder` once with the container's whole list in its new order, and the click it raises is swallowed. Escape
  * cancels. A plain press, and a Cmd-press released short of the threshold, is left to the item as a click.
  */
-export function useBarReorder({ root, order, onReorder, measure }: BarReorderArgs): BarReorder {
+export function useBarReorder({ root, order, onReorder, measure, keysOf }: BarReorderArgs): BarReorder {
   const dragPx = useKitSetting('gestures.dragPx');
-  const latest = useLatest({ order, onReorder, measure, dragPx });
+  const latest = useLatest({ order, onReorder, measure, keysOf, dragPx });
   const drag = useRef<ThresholdDragHandle | null>(null);
 
   useEffect(() => () => drag.current?.cancel(), []);
 
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     const el = root.current;
-    if (latest.current.onReorder === undefined || el === null || drag.current !== null || e.button !== 0 || !modHeld(e)) return;
+    if (latest.current.onReorder === undefined || el === null || drag.current !== null || e.button !== 0 || !keysHeld(['mod'], modifiersOf(e), isApplePlatform())) return;
     const grabbed = (e.target as Element).closest?.(`[${BAR_UNIT}]`);
     if (!grabbed || !el.contains(grabbed)) return;
     const { container, key } = grabbedUnit(grabbed, e.shiftKey);
@@ -91,8 +94,11 @@ export function useBarReorder({ root, order, onReorder, measure }: BarReorderArg
       onCommit: () => {
         end();
         swallowNextClick(el);
-        const { order: was, onReorder: done } = latest.current;
-        if (from >= 0 && to !== from && done) done(movedOrder(was ?? {}, container, units.map((unit) => unit.key), from, to));
+        const { order: was = {}, onReorder: done, keysOf: listOf } = latest.current;
+        const target = dropTarget(units, from, to);
+        if (target === undefined || !done) return;
+        const next = movedInto(was, container, listOf?.(container), units, from, target);
+        if (next !== was) done(next);
       },
       onClick: end,
       onCancel: end,
@@ -147,13 +153,32 @@ function dropIndex(units: readonly Unit[], from: number, p: number): number {
   return units.filter((unit, i) => i !== from && (backward ? unit.at > p : unit.at < p)).length;
 }
 
+/** The sibling the unit at `from` lands beside at `to`, and on which side; undefined where it lands where it is. */
+function dropTarget(units: readonly Unit[], from: number, to: number): { unit: Unit; after: boolean } | undefined {
+  if (from < 0 || to === from) return undefined;
+  const others = units.filter((_, i) => i !== from);
+  const after = to > from;
+  const unit = after ? others[to - 1] : others[to];
+  return unit && { unit, after };
+}
+
 /** Marks the sibling the unit at `from` lands beside at `to`, or none where it lands where it is. */
 function markDrop(root: HTMLElement, units: readonly Unit[], from: number, to: number): void {
   for (const mark of root.querySelectorAll(`[${BAR_DROP}]`)) mark.removeAttribute(BAR_DROP);
-  if (to === from) return;
-  const others = units.filter((_, i) => i !== from);
-  const after = to > from;
-  const target = after ? others[to - 1] : others[to];
-  const el = after ? target?.els.at(-1) : target?.els[0];
-  el?.setAttribute(BAR_DROP, after ? 'after' : 'before');
+  const target = dropTarget(units, from, to);
+  if (target === undefined) return;
+  const el = target.after ? target.unit.els.at(-1) : target.unit.els[0];
+  el?.setAttribute(BAR_DROP, target.after ? 'after' : 'before');
+}
+
+/**
+ * `order` with the unit at `from` moved beside `target` in `container`'s list. With `full`, the container's whole
+ * list, the move is made in it, so children nothing draws keep their places; else in the drawn `units`.
+ */
+function movedInto(order: PrefOrder, container: string, full: readonly string[] | undefined, units: readonly Unit[], from: number, target: { unit: Unit; after: boolean }): PrefOrder {
+  const keys = full ?? units.map((unit) => unit.key);
+  const moved = units[from]!.key;
+  const at = keys.filter((key) => key !== moved).indexOf(target.unit.key);
+  if (at < 0) return order;
+  return movedOrder(order, container, keys, keys.indexOf(moved), at + (target.after ? 1 : 0));
 }

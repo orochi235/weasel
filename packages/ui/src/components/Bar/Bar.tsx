@@ -16,6 +16,7 @@ import { renderCells, type LeafCell } from '../SelectionPanel/cells';
 import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/renderContext';
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation, type BarOverflowMode } from './BarLayout';
+import { childKeysAt } from './barOrder';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
 
 /** Props for {@link Bar}. */
@@ -108,6 +109,7 @@ export function Bar(props: BarProps) {
       align={props.align}
       order={props.order}
       onReorder={props.onReorder}
+      keysOf={(container) => childKeysAt(orderPrefGroup(schema, props.order), container)}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
       row={(node) => <PropertyList>{leafRow(node, draw)}</PropertyList>}

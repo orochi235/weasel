@@ -1,10 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Bar } from './Bar';
+import { BAR_IN, BAR_UNIT } from './barOrder';
+import { useBarReorder } from './useBarReorder';
 
 // jsdom lays nothing out: every marked unit is 40 px wide, side by side along x in document order, so a top-level
 // cell and the buttons inside it stand at successive slots. Every other box is empty at the origin.
@@ -37,7 +39,7 @@ const reg = (id: string, group: string): Action => ({ id, label: id, group, invo
 
 const host = (node: ReactNode) => (
   <ActionsProvider>
-    {['a', 'b', 'c', 'p', 'q'].map((n) => (
+    {['a', 'b', 'c', 'd', 'p', 'q'].map((n) => (
       <Register key={n} action={reg(`x.${n}`, 'x')} />
     ))}
     <Register action={reg('front', 'arrange')} />
@@ -159,5 +161,47 @@ describe('useBarReorder on a straight bar', () => {
     fireEvent.pointerMove(document, { ...at(110), ...MOD });
     expect(capture).toHaveBeenCalledWith(1);
     fireEvent.pointerUp(document, { ...at(110), buttons: 0 });
+  });
+});
+
+describe('useBarReorder keeps the places of children it does not draw', () => {
+  it('a child hidden by a condition, or hidden outright, stays where it was', () => {
+    const schema: PrefGroup = {
+      name: 'Tools',
+      children: {
+        a: act('a'),
+        b: act('b'),
+        c: { ...act('c'), showIf: { path: 'on' } } as PrefLeaf,
+        d: act('d'),
+        on: { kind: 'boolean', name: 'On', description: '', default: false, hidden: true } as PrefLeaf,
+      },
+    };
+    const onReorder = vi.fn();
+    render(host(<Bar schema={schema} values={{ on: false }} onReorder={onReorder} />));
+    expect(screen.queryByRole('button', { name: 'c' })).toBeNull();
+    // Drawn: a 0..40, b 40..80, d 80..120.
+    drag(button('a'), 20, [60, 110]);
+    expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'c', 'd', 'a', 'on'] });
+  });
+
+  it('a child in the overflow menu, which keysOf lists, stays where it was', () => {
+    const onReorder = vi.fn();
+    // Drawn: a, b and d on the line; c sits in the overflow menu, unmarked.
+    function Line() {
+      const root = useRef<HTMLDivElement>(null);
+      const { onPointerDownCapture } = useBarReorder({ root, order: undefined, onReorder, measure: (_, p) => p.clientX, keysOf: (c) => (c === '' ? ['a', 'b', 'c', 'd'] : undefined) });
+      return (
+        <div ref={root} onPointerDownCapture={onPointerDownCapture}>
+          {['a', 'b', 'd'].map((key) => (
+            <button key={key} type="button" {...{ [BAR_IN]: '', [BAR_UNIT]: key }}>
+              {key}
+            </button>
+          ))}
+        </div>
+      );
+    }
+    render(<Line />);
+    drag(button('d'), 100, [60, 10]);
+    expect(onReorder).toHaveBeenCalledWith({ '': ['d', 'a', 'b', 'c'] });
   });
 });

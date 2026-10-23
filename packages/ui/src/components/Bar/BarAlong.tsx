@@ -52,7 +52,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
     return { ...spot, className: s.item!, side: sideAtRun(run, spot.at) };
   };
   const first = leading != null ? 1 : 0;
-  const reorder = useBarReorder({ root, order: props.order, onReorder: props.onReorder, measure: (el, p) => positionAt(along.band.current ?? el, run, p) });
+  const reorder = useBarReorder({ root, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (el, p) => positionAt(along.band.current ?? el, run, p) });
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     reorder.onPointerDownCapture(e);
     along.rootProps.onPointerDownCapture(e);

@@ -307,6 +307,28 @@ describe('startThresholdDrag origin', () => {
     container.remove();
   });
 
+  it.each([
+    ['ends', () => fireUp(DRAG_THRESHOLD_PX + 1, 0)],
+    ['is canceled', null],
+  ] as const)("with captureAt 'threshold', releases the capture it took when the drag %s", (_, finish) => {
+    const { container, start } = makeOriginStart();
+    const handle = startThresholdDrag(start, { origin: container, captureAt: 'threshold', onMove: () => {}, onCommit: () => {} });
+    fireMove(DRAG_THRESHOLD_PX + 1, 0);
+    expect(container.releasePointerCapture).not.toHaveBeenCalled();
+    if (finish) finish();
+    else handle.cancel();
+    expect(container.releasePointerCapture).toHaveBeenCalledWith(1);
+    container.remove();
+  });
+
+  it("with captureAt 'threshold', releases nothing for a press that never became a drag", () => {
+    const { container, start } = makeOriginStart();
+    startThresholdDrag(start, { origin: container, captureAt: 'threshold', onMove: () => {}, onCommit: () => {} });
+    fireUp(0, 0);
+    expect(container.releasePointerCapture).not.toHaveBeenCalled();
+    container.remove();
+  });
+
   it('survives the pressed element being removed mid-drag', () => {
     const { container, child, start } = makeOriginStart();
     const onCommit = vi.fn();

@@ -105,6 +105,9 @@ export interface BarLayoutProps {
   /** Given, each item and each `actions` button is marked with `data-bar-unit` and `data-bar-in`, and a Cmd-drag
    *  (Ctrl-drag off Apple platforms) moves one among its container's, calling this with the order it settles on. */
   onReorder?: (order: PrefOrder) => void;
+  /** Every child key of the container at a path, hidden and overflowed children included, so a reorder keeps the
+   *  places of children the bar does not draw. Unset, or undefined for a path, the drawn units are the whole list. */
+  keysOf?: (container: string) => readonly string[] | undefined;
   className?: string;
 }
 
@@ -136,7 +139,7 @@ function BarLine(props: BarLayoutProps) {
   const menu = overflow === 'menu';
   const { bar, kept } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
   const { line, rest } = splitBarItems(shown, kept);
-  const reorder = useBarReorder({ root: bar, order: props.order, onReorder: props.onReorder, measure: (_, p) => (vertical ? p.clientY : p.clientX) });
+  const reorder = useBarReorder({ root: bar, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (_, p) => (vertical ? p.clientY : p.clientX) });
 
   return (
     <div

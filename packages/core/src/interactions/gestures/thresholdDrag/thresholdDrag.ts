@@ -42,6 +42,17 @@ export function startThresholdDrag(
 ): ThresholdDragHandle {
   const start = { clientX: e.clientX, clientY: e.clientY };
   let activated = false;
+  const origin = opts.origin ?? (e.currentTarget as Element);
+  const late = opts.captureAt === 'threshold';
+  // The session releases only a capture it took itself, so one taken at the threshold is released here.
+  const releaseLate = () => {
+    if (!late || !activated) return;
+    try {
+      origin.releasePointerCapture?.(e.pointerId);
+    } catch {
+      /* already gone */
+    }
+  };
 
   const maybeActivate = (ev: PointerEvent) => {
     if (activated) return;
@@ -57,8 +68,6 @@ export function startThresholdDrag(
     opts.onActivate?.(ev);
   };
 
-  const origin = opts.origin ?? (e.currentTarget as Element);
-  const late = opts.captureAt === 'threshold';
   const keys: EventTarget = origin.ownerDocument.defaultView ?? origin.ownerDocument;
   // Window capture, and stopped there: the Escape that ends a drag must not also close the dialog the drag is in.
   const onKey = (ev: Event) => {
@@ -77,11 +86,13 @@ export function startThresholdDrag(
     },
     onEnd: (ev) => {
       unlisten();
+      releaseLate();
       if (activated) opts.onCommit(ev);
       else opts.onClick?.(ev);
     },
     onCancel: () => {
       unlisten();
+      releaseLate();
       opts.onCancel?.();
     },
   }, { capture: !late });
