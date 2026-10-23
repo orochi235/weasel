@@ -87,3 +87,9 @@
   font-size: var(--wzl-font-size-sm);
   white-space: nowrap;
 }
+
+/* A strip laid along a track shape: no strip to draw, only the tabs on the run. */
+.along .tab {
+  white-space: nowrap;
+  user-select: none;
+}

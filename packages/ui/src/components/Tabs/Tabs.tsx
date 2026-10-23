@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react';
+import { createContext, useContext, useMemo, type ReactNode, type Ref } from 'react';
 import {
   Tabs as RACTabs,
   TabList as RACTabList,
@@ -8,8 +8,16 @@ import {
   type TabListProps as RACTabListProps,
   type TabProps as RACTabProps,
   type TabPanelProps as RACTabPanelProps,
+  TabListStateContext,
 } from 'react-aria-components';
+import { useTrackShape } from '../Along/alongContext';
+import { createRunSlots, slotClass, useRunSlot, type RunSlots } from '../Along/runSlots';
+import { TabListAlong } from './TabListAlong';
 import s from './Tabs.module.css';
+
+/** The channel a tab list laid along a run hands its tabs their places on. A component that lays tabs along a run
+ *  itself, like `PageTabs`, provides a held one above its `Tabs`, and the tab list inside joins it. */
+export const TabSlotsContext = createContext<RunSlots | null>(null);
 
 /** Props for {@link Tabs}, on top of React Aria's `Tabs` props. */
 export type TabsProps = Omit<RACTabsProps, 'className' | 'children'> & {
@@ -22,10 +30,14 @@ export type TabsProps = Omit<RACTabsProps, 'className' | 'children'> & {
  * Holds a {@link TabList} and one {@link TabPanel} per tab.
  */
 export function Tabs({ children, className, ...rest }: TabsProps) {
+  const outer = useContext(TabSlotsContext);
+  const own = useMemo(() => createRunSlots(), []);
   return (
-    <RACTabs {...rest} className={[s.tabs, className].filter(Boolean).join(' ')}>
-      {children}
-    </RACTabs>
+    <TabSlotsContext.Provider value={outer?.held ? outer : own}>
+      <RACTabs {...rest} className={[s.tabs, className].filter(Boolean).join(' ')}>
+        {children}
+      </RACTabs>
+    </TabSlotsContext.Provider>
   );
 }
 
@@ -35,8 +47,20 @@ export type TabListProps<T extends object> = Omit<RACTabListProps<T>, 'className
   ref?: Ref<HTMLDivElement>;
 };
 
-/** The row of tab buttons inside a {@link Tabs}. */
+/**
+ * The row of tab buttons inside a {@link Tabs}. Inside an `Along` with a curved shape its tabs lie along the shape in
+ * reading order, each tipped to its spot, and the rule under them follows it on the inside of the bend; such tabs need
+ * an `id`.
+ */
 export function TabList<T extends object>({ className, ...rest }: TabListProps<T>) {
+  const along = useTrackShape();
+  const slots = useContext(TabSlotsContext);
+  // React Aria renders a tab list twice: once to collect its tabs, with no state, and once for real.
+  const real = useContext(TabListStateContext) !== null;
+  if (slots?.held) return <RACTabList<T> {...rest} className={[s.list, s.joined, className].filter(Boolean).join(' ')} />;
+  if (real && slots !== null && along !== null && along.shape.kind !== 'line') {
+    return <TabListAlong {...(rest as TabListProps<object>)} className={className} shape={along.shape} align={along.align} slots={slots} />;
+  }
   return <RACTabList<T> {...rest} className={[s.list, className].filter(Boolean).join(' ')} />;
 }
 
@@ -48,8 +72,17 @@ export type TabProps = Omit<RACTabProps, 'className' | 'children'> & {
 
 /** One tab button. Its `id` selects the {@link TabPanel} it reveals. */
 export function Tab({ children, className, ...rest }: TabProps) {
+  const slot = useRunSlot(TabSlotsContext, rest.id === undefined ? undefined : String(rest.id));
+  if (slot === undefined) {
+    return (
+      <RACTab {...rest} className={[s.tab, className].filter(Boolean).join(' ')}>
+        {children}
+      </RACTab>
+    );
+  }
+  const { className: _, style, ...at } = slot;
   return (
-    <RACTab {...rest} className={[s.tab, className].filter(Boolean).join(' ')}>
+    <RACTab {...rest} {...at} className={slotClass(slot, [s.tab, className].filter(Boolean).join(' '))} style={{ ...(typeof rest.style === 'object' ? rest.style : null), ...style }}>
       {children}
     </RACTab>
   );
@@ -65,7 +98,7 @@ export type TabPanelProps = Omit<RACTabPanelProps, 'className' | 'children'> & {
 export function TabPanel({ children, className, ...rest }: TabPanelProps) {
   return (
     <RACTabPanel {...rest} className={[s.panel, className].filter(Boolean).join(' ')}>
-      {children}
+      <TabSlotsContext.Provider value={null}>{children}</TabSlotsContext.Provider>
     </RACTabPanel>
   );
 }

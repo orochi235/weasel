@@ -1,0 +1,34 @@
+/* The box an arc's Along fills, its inscribed circle drawn as a guide. */
+.box {
+  position: relative;
+  width: var(--box);
+  height: var(--box);
+  flex: none;
+  outline: 1px dashed var(--wzl-border);
+  outline-offset: -1px;
+  border-radius: 50%;
+  margin: var(--wzl-space-6);
+  font-family: var(--wzl-font-ui);
+}
+
+/* A tab's panel, in the middle of the circle its tabs run round. */
+.panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 50%;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: var(--wzl-font-size-sm);
+}
+
+/* The page the page tabs below it switch between. */
+.page {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--wzl-font-size-lg);
+  color: var(--wzl-fg-muted);
+}

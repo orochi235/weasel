@@ -41,6 +41,15 @@ export interface UseReorderDragListOptions {
   groupSelector?: string;
   /** Which way the rows run: `'y'`, a column, by default; `'x'` for a row of tabs. */
   axis?: 'x' | 'y';
+  /** Measures the rows and the pointer along a line of the list's own instead of `axis`, such as a curve the rows lie
+   *  along: where each row starts on it and how long it is, and how far along it the pointer is. */
+  line?: ReorderLine;
+}
+
+/** A line rows are laid along, measured as {@link UseReorderDragListOptions.line} reads it. */
+export interface ReorderLine {
+  row(el: HTMLElement): { start: number; length: number };
+  pointer(client: { clientX: number; clientY: number }): number;
 }
 
 /** Modifier keys held when a press began. */
@@ -122,6 +131,17 @@ function unlockedSegment(items: readonly ReorderItem[], sourceIndex: number): [n
   return [lo, hi];
 }
 
+/** The screen's own axis as a {@link ReorderLine}: x across a row of tabs, else y down a column. */
+function screenLine(across: boolean): ReorderLine {
+  return {
+    row: (el) => {
+      const r = el.getBoundingClientRect();
+      return across ? { start: r.left, length: r.width } : { start: r.top, length: r.height };
+    },
+    pointer: (client) => (across ? client.clientX : client.clientY),
+  };
+}
+
 function rowElements(
   container: HTMLElement,
   { rowSelector, groupSelector }: Pick<UseReorderDragListOptions, 'rowSelector' | 'groupSelector'>,
@@ -195,17 +215,16 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   useEffect(() => () => { dragRef.current?.cancel(); }, []);
 
   const computeTargetIndex = useCallback((client: { clientX: number; clientY: number }, sourceIndex: number): number => {
-    const across = optsRef.current.axis === 'x';
+    const line = optsRef.current.line ?? screenLine(optsRef.current.axis === 'x');
     const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
     const c = containerRef.current;
     if (!c) return lo;
     const rows = rowElements(c, optsRef.current);
     const flat: DropRow[] = rows.map((row, i) => {
-      const r = row.getBoundingClientRect();
-      const [top, height] = across ? [r.left, r.width] : [r.top, r.height];
+      const { start: top, length: height } = line.row(row);
       return { id: String(i), parentId: null, level: 1, index: i, branch: false, expanded: false, childCount: 0, top, height };
     });
-    const raw = resolveDrop(flat, { x: 0, y: across ? client.clientX : client.clientY }).target.index;
+    const raw = resolveDrop(flat, { x: 0, y: line.pointer(client) }).target.index;
     return Math.max(lo, Math.min(raw, hi));
   }, [optsRef]);
 

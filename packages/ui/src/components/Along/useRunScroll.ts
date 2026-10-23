@@ -3,7 +3,7 @@ import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
 import { boxPoint } from './boxPoint';
-import type { RunKeyOf } from './useItemLengths';
+import type { RunItemsOf, RunKeyOf } from './useItemLengths';
 
 /** Px a press must travel along the run before it is a scroll rather than a press on an item. */
 export const SCROLL_SLOP = 4;
@@ -25,6 +25,8 @@ export interface RunScrollArgs {
   root: RefObject<HTMLElement | null>;
   /** Which of the root's children lie on the run, in run order: those it reads a key off. */
   keyOf: RunKeyOf;
+  /** Where under the root the items are found. Default: its own children. */
+  itemsOf?: RunItemsOf;
   /** The band drawn across the root's box while the run scrolls, which pointers are measured through; else the root. */
   frame?: RefObject<SVGSVGElement | null>;
   run: TrackRun;
@@ -47,11 +49,11 @@ export interface RunScroll {
  * over about {@link GLIDE_MS} ms, so items slide rather than jump; a drag follows the pointer, and a reader who
  * prefers reduced motion gets every move at once.
  */
-export function useRunScroll({ root, keyOf, frame, run, total, spots, lengths }: RunScrollArgs): RunScroll {
+export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, lengths }: RunScrollArgs): RunScroll {
   const max = Math.max(0, total - run.length);
   const [shown, setShown] = useState(0);
   const offset = clamp(shown, 0, max);
-  const latest = useLatest({ max, run, spots, lengths, keyOf });
+  const latest = useLatest({ max, run, spots, lengths, keyOf, itemsOf });
   const still = usePrefersReducedMotion();
   // Where the handlers last sent the run, ahead of the render it asks for, so two wheel events in one frame both count.
   const moved = useRef(0);
@@ -139,9 +141,9 @@ export function useRunScroll({ root, keyOf, frame, run, total, spots, lengths }:
 
   const onFocusCapture = (e: ReactFocusEvent): void => {
     const el = root.current;
-    const { max: most, run: along, spots: where, lengths: sizes, keyOf: keyed } = latest.current;
+    const { max: most, run: along, spots: where, lengths: sizes, keyOf: keyed, itemsOf: found } = latest.current;
     if (most <= 0 || el === null) return;
-    const index = runIndex(el, keyed, e.target as Node);
+    const index = runIndex(el, keyed, e.target as Node, found);
     const spot = index < 0 ? undefined : where()[index];
     if (spot === undefined) return;
     const half = (sizes[index] ?? 0) / 2;
@@ -160,7 +162,7 @@ export function useRunScroll({ root, keyOf, frame, run, total, spots, lengths }:
  * How far along `run` the pointer is, in px, `run`'s coordinates being the box `frame` fills: past either end, carried
  * on along the end's tangent, so a drag that leaves the run keeps scrolling it.
  */
-function positionAt(frame: Element, run: TrackRun, e: { clientX: number; clientY: number }): number {
+export function positionAt(frame: Element, run: TrackRun, e: { clientX: number; clientY: number }): number {
   const p = boxPoint(frame, e.clientX, e.clientY);
   const { f } = run.nearest(p);
   const beyond = (g: 0 | 1): number => {
@@ -172,9 +174,9 @@ function positionAt(frame: Element, run: TrackRun, e: { clientX: number; clientY
   return f * run.length;
 }
 
-/** Where along the run the item holding `target` falls: its index among `root`'s children `keyOf` reads a key off, or -1. */
-function runIndex(root: HTMLElement, keyOf: RunKeyOf, target: Node): number {
-  const items = Array.from(root.children).filter((child) => keyOf(child) !== null);
+/** Where along the run the item holding `target` falls: its index among `root`'s items `keyOf` reads a key off, or -1. */
+function runIndex(root: HTMLElement, keyOf: RunKeyOf, target: Node, itemsOf?: RunItemsOf): number {
+  const items = Array.from(itemsOf ? itemsOf(root) : root.children).filter((child) => keyOf(child) !== null);
   return items.findIndex((item) => item.contains(target));
 }
 

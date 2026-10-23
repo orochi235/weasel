@@ -1,10 +1,8 @@
-import { pageName } from '@weasel-js/core';
-import { useCallback, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
-import type { Key } from 'react-aria-components';
-import { useReorderDragList } from '../../useReorderDragList';
-import { DragGhost } from '../DragGhost';
-import { Tab, TabList, Tabs } from '../Tabs';
-import { RenameField } from './RenameField';
+import type { MouseEvent, ReactNode } from 'react';
+import { useTrackShape } from '../Along/alongContext';
+import { TabList, Tabs } from '../Tabs';
+import { PageTabsAlong } from './PageTabsAlong';
+import { NONE, usePageTabs } from './usePageTabs';
 import s from './PageTabs.module.css';
 
 /** What a page needs to be shown as a tab. */
@@ -35,122 +33,35 @@ export interface PageTabsProps<P extends PageTabItem> {
   className?: string;
 }
 
-/** Two presses on one tab this close together are a double press. */
-const DOUBLE_PRESS_MS = 500;
-/** Lit when no page is current: a key no tab has, so React Aria does not light the first. */
-const NONE = '\u0000none';
-
-const ARROW_STEP: Partial<Record<string, -1 | 1>> = { ArrowLeft: -1, ArrowRight: 1 };
-
 /**
  * A strip of tabs over a document's pages: press one to go to its page, press
  * twice to rename it, drag or Alt+arrow to reorder, and + to add one. Built on {@link Tabs},
- * with no panels: what a tab shows is the caller's to show.
+ * with no panels: what a tab shows is the caller's to show. Inside an `Along` with a curved
+ * shape the tabs lie along it, the + button last, and a drag measures along the run.
  */
 export function PageTabs<P extends PageTabItem>(props: PageTabsProps<P>): ReactNode {
-  const { pages, current, onSelect, onRename, onMove, onAdd, onTabContextMenu } = props;
-  const labelOf = props.labelOf ?? pageName;
-  const [editing, setEditing] = useState<string | null>(null);
-  const lastPress = useRef<{ id: string; at: number } | null>(null);
-  /** The tab React Aria selected during the press under way, which the press must not report again. */
-  const selectedByPress = useRef<string | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
+  const along = useTrackShape();
+  if (along !== null && along.shape.kind !== 'line') return <PageTabsAlong {...props} shape={along.shape} align={along.align} />;
+  return <PageTabsLine {...props} />;
+}
 
-  const onPress = useCallback((id: string) => {
-    const prev = lastPress.current;
-    const now = performance.now();
-    lastPress.current = { id, at: now };
-    if (onRename && prev?.id === id && now - prev.at < DOUBLE_PRESS_MS) {
-      lastPress.current = null;
-      setEditing(id);
-      return;
-    }
-    if (selectedByPress.current !== id) onSelect(id);
-    selectedByPress.current = null;
-  }, [onRename, onSelect]);
-
-  const items = pages.map((p, i) => ({ id: p.id, label: labelOf(p, i) }));
-  const drag = useReorderDragList({
-    items,
-    selectedIds: [],
-    axis: 'x',
-    rowSelector: '[role="tab"]',
-    // A strip without onMove still runs the drag session, for its presses, but nothing crosses this threshold.
-    ...(onMove ? {} : { threshold: Number.POSITIVE_INFINITY }),
-    onReorder: (ids, target) => {
-      const id = ids[0]!;
-      const from = items.findIndex((it) => it.id === id);
-      onMove?.(id, target > from ? target - 1 : target);
-    },
-    onPress,
-  });
-  const bindContainer = drag.containerProps.ref;
-  const bindList = useCallback((el: HTMLDivElement | null) => {
-    listRef.current = el;
-    bindContainer(el);
-  }, [bindContainer]);
-  const { draggedIds, targetIndex, ghost } = drag.state;
-
-  const commit = (id: string, name: string | null) => {
-    setEditing(null);
-    if (name !== null) onRename?.(id, name);
-  };
-  // React Aria selects on a pointer's press and on the keyboard; the drag's `onPress` reports the
-  // rest, a press on the lit tab.
-  const onSelectionChange = (key: Key | null) => {
-    if (key === null || key === current || key === NONE) return;
-    selectedByPress.current = String(key);
-    onSelect(String(key));
-  };
-
-  // Captured ahead of the tab list, which would take Alt+arrow as a plain arrow and move focus.
-  const onKeyDownCapture = (e: KeyboardEvent) => {
-    const by = e.altKey && onMove ? ARROW_STEP[e.key] : undefined;
-    const tab = (e.target as Element).closest('[role="tab"]');
-    const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
-    if (by === undefined || at < 0 || pages[at] === undefined) return;
-    e.preventDefault();
-    e.stopPropagation();
-    drag.nudge(pages[at].id, at, by);
-  };
-
+function PageTabsLine<P extends PageTabItem>(props: PageTabsProps<P>): ReactNode {
+  const parts = usePageTabs(props);
   return (
     <div
       className={[s.strip, props.className].filter(Boolean).join(' ')}
-      onPointerDownCapture={() => { selectedByPress.current = null; }}
-      onKeyDownCapture={onKeyDownCapture}
+      onPointerDownCapture={parts.onPointerDownCapture}
+      onKeyDownCapture={parts.onKeyDownCapture}
     >
-      <Tabs className={s.tabs} selectedKey={current ?? NONE} onSelectionChange={onSelectionChange}>
-        <TabList aria-label={props['aria-label'] ?? 'Pages'} className={s.list} ref={bindList}>
-          {pages.map((page, i) => {
-            const cls = [s.tab];
-            if (draggedIds?.includes(page.id)) cls.push(s.dragging);
-            if (targetIndex === i && !draggedIds?.includes(page.id)) cls.push(s.dropBefore);
-            if (targetIndex === pages.length && i === pages.length - 1) cls.push(s.dropAfter);
-            return (
-              <Tab
-                key={page.id}
-                id={page.id}
-                className={cls.join(' ')}
-                onPointerDown={(e) => { if (e.button === 0 && editing !== page.id) drag.rowProps(page.id, i).onPointerDown(e); }}
-                onContextMenu={(e) => onTabContextMenu?.(page.id, e)}
-              >
-                {editing === page.id
-                  ? <RenameField initial={page.name ?? labelOf(page, i)} onDone={(name) => commit(page.id, name)} />
-                  : labelOf(page, i)}
-              </Tab>
-            );
-          })}
+      <Tabs className={s.tabs} selectedKey={props.current ?? NONE} onSelectionChange={parts.onSelectionChange}>
+        <TabList aria-label={props['aria-label'] ?? 'Pages'} className={s.list} ref={parts.bindList}>
+          {parts.tabs}
         </TabList>
       </Tabs>
-      {onAdd && (
-        <button type="button" className={s.add} aria-label="Add page" title="Add page" onClick={onAdd}>+</button>
+      {props.onAdd && (
+        <button type="button" className={s.add} aria-label="Add page" title="Add page" onClick={props.onAdd}>+</button>
       )}
-      {ghost && listRef.current && (
-        <DragGhost at={ghost} from={listRef.current}>
-          <span className={s.ghost}>{items.find((it) => ghost.ids.includes(it.id))?.label}</span>
-        </DragGhost>
-      )}
+      {parts.ghost}
     </div>
   );
 }
