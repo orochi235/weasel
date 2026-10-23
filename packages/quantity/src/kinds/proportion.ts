@@ -73,6 +73,14 @@ export function nearestFraction(x: number, maxDenominator: number): [number, num
 }
 
 /**
+ * `nearestFraction` with the denominator budget divided by the value's size, so a fraction never carries more
+ * precision than a reader can take in: 749.8 is `750`, not `15746/21`, while values under 1 keep all of it.
+ */
+export function readableFraction(x: number, maxDenominator: number): [number, number] {
+  return nearestFraction(x, Math.max(1, Math.floor(maxDenominator / Math.max(1, Math.abs(x)))));
+}
+
+/**
  * A constant a fraction can count in: `π`, so 3π/4 shows as `3π/4` rather
  * than `2.356`. `names` are what may be typed for it besides the symbol.
  */
@@ -93,7 +101,7 @@ export const CONSTANTS = {
 
 /** How a `fraction` display picks and writes its fraction. */
 export type FractionOptions = {
-  /** Default 64. */
+  /** Largest denominator for a value under 1, default 64; a larger value gets proportionally fewer. */
   maxDenominator?: number;
   /**
    * `inline` (default) writes `1/12`. `diagonal` writes `¹⁄₁₂` — superscript
@@ -142,7 +150,7 @@ function constantOf(d: FractionDisplay): NamedConstant | undefined {
  *  and the constant they count in. */
 function fractionPieces(value: number, d: FractionDisplay) {
   const constant = constantOf(d);
-  const [n, den] = nearestFraction(constant ? value / constant.value : value, d.maxDenominator ?? 64);
+  const [n, den] = readableFraction(constant ? value / constant.value : value, d.maxDenominator ?? 64);
   const negative = n < 0;
   const abs = Math.abs(n);
   const whole = d.mixed || den === 1 ? Math.floor(abs / den) : 0;
@@ -237,7 +245,7 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
 /** A value as a ratio `a:b` — 1/12 shows `1:12`, spoken `1 to 12`. */
 export type RatioDisplay = {
   kind: 'ratio';
-  /** Largest second term. Default 64. */
+  /** Largest second term for a value under 1, default 64; a larger value gets proportionally fewer. */
   maxDenominator?: number;
 };
 
@@ -251,7 +259,7 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
   kind: 'ratio',
   format: (value, d) => {
     if (!Number.isFinite(value)) return [{ type: 'number', value: String(value) }];
-    const [n, den] = nearestFraction(value, d.maxDenominator ?? 64);
+    const [n, den] = readableFraction(value, d.maxDenominator ?? 64);
     return [
       { type: 'antecedent', value: String(n).replace(/^-/, MINUS_SIGN) },
       { type: 'literal', value: ':' },
@@ -260,7 +268,7 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
   },
   speak: (value, d) => {
     if (!Number.isFinite(value)) return String(value);
-    const [n, den] = nearestFraction(value, d.maxDenominator ?? 64);
+    const [n, den] = readableFraction(value, d.maxDenominator ?? 64);
     return spokenSign(`${String(n).replace(/^-/, MINUS_SIGN)} to ${den}`);
   },
   parse: (text) => {
