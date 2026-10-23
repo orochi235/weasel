@@ -92,8 +92,10 @@ export interface BarLayoutProps {
    * cell on the line, which a framed bar scrolls. `'menu'` keeps the cells
    * that fit, in order from the first, and opens the rest from a button at
    * the end of the line, one under another in the forms they have on it. A
-   * bar set to `'menu'` takes all the room its host has along the line, so
-   * that it can tell when a cell fits again. Default `'scroll'`.
+   * bar set to `'menu'` asks for its natural length, its lead and every cell,
+   * and sits at that length in a row sized to its content; it folds cells
+   * into the menu only once squeezed shorter, and takes them back as room
+   * returns. It does not stretch to fill its host. Default `'scroll'`.
    */
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */

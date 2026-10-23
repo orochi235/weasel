@@ -57,8 +57,10 @@ export interface BarProps {
    *  whose buttons sit almost touching, so a run of actions reads as one control. */
   framed?: boolean | 'segmented';
   /** What happens to cells the line has no room for: `'scroll'` keeps them all on it, and `'menu'` opens the
-   *  ones past its end from a button there, taking all the room the host has along the line. Default: what
-   *  `schema` says in its own `overflow`, else `'scroll'`. */
+   *  ones past its end from a button there. A `'menu'` bar asks for its natural length, its lead and every cell,
+   *  sits at that length in a row sized to its content, folds cells into the menu only once squeezed shorter,
+   *  and takes them back as room returns; it does not stretch to fill its host. Default: what `schema` says in
+   *  its own `overflow`, else `'scroll'`. */
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;

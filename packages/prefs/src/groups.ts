@@ -23,8 +23,10 @@ export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'fragment' | 'b
 /**
  * What a group or a section drawn `as: 'bar'` does with cells its line has no
  * room for: `scroll` keeps them all on it, and `menu` opens the ones past its
- * end from a button there. A bar set to `menu` takes all the room its host
- * has along the line, which is why it is asked for and not the default.
+ * end from a button there. A bar set to `menu` asks for its natural length,
+ * its lead and every cell, sits at that length where its row is sized to its
+ * content, opens the menu only once squeezed shorter, and takes cells back as
+ * room returns.
  */
 export type PrefBarOverflow = 'scroll' | 'menu';
 

@@ -8,6 +8,8 @@ Where bars sit is a controlled `layout` value: the dock reconciles whatever it i
 
 A dock bar drawn as a `BarMenu` gets a handle too: a grip before its button, named and moved the same way.
 
-A `Bar` with `overflow="menu"` now asks for the length that holds every item rather than taking all the room its
-host has. In a row sized to its content it gets that length, opens the menu only once the row squeezes it shorter,
-and takes its items back as room returns. In a block container it still fills no more than the container's width.
+A `Bar` with `overflow="menu"` now asks for its natural length, its lead and every item, instead of taking all the
+room its host has. In a row sized to its content it sits at that length, opens the menu only once the row squeezes it
+shorter, and takes its items back as room returns. A `'menu'` bar in a block container, or stretched in a flex
+column, used to fill the container's width; it now takes its natural length capped at the container, so a framed
+bar's strip can end short of the container.
