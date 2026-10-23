@@ -45,6 +45,21 @@ describe('snapshot — scene snapshot to node specs', () => {
     expect(nodeSpecsFromSnapshot(json).map((s) => s.kind)).toEqual(['group', 'mark']);
   });
 
+  it('hands a version 1 container to the classifier it is given', () => {
+    const json: SerializedSceneV1<Data, Layer, Pose> = {
+      version: 1,
+      systemLayers: [{ id: 'default' }],
+      nodes: [
+        { id: 'c', kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} },
+        { id: 'l', kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} },
+      ],
+    };
+    const seen: string[] = [];
+    const specs = nodeSpecsFromSnapshot(json, {}, undefined, { classifyV1: (n) => { seen.push(n.id); return 'mark'; } });
+    expect(specs.map((s) => s.kind)).toEqual(['mark', 'mark']);
+    expect(seen).toEqual(['c']);
+  });
+
   it('revives typed arrays inside node data', () => {
     const json: SerializedScene<Data, Layer, Pose> = {
       version: 2,

@@ -15,9 +15,16 @@ describe('draw scene loading', () => {
     expect(loadInitial()).toEqual([]);
   });
 
-  it('loads a saved drawing of either save version', () => {
-    localStorage.setItem(LS_KEY, JSON.stringify({ version: 2, nodes: [] }));
-    expect(loadInitial()).toEqual([]);
+  it('loads a version 1 drawing with its containers as groups and its leaves as marks', () => {
+    const node = (id: string, kind: string) => ({ id, kind, layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    localStorage.setItem(LS_KEY, JSON.stringify({ version: 1, nodes: [node('c', 'container'), node('l', 'leaf')] }));
+    expect(loadInitial().map((s) => s.kind)).toEqual(['group', 'mark']);
+  });
+
+  it('loads a version 2 drawing as saved', () => {
+    const node = (id: string, kind: string) => ({ id, kind, layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    localStorage.setItem(LS_KEY, JSON.stringify({ version: 2, nodes: [node('g', 'group'), node('m', 'mark')] }));
+    expect(loadInitial().map((s) => s.kind)).toEqual(['group', 'mark']);
   });
 
   it('removes an undo snapshot it cannot use', () => {

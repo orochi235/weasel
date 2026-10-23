@@ -113,9 +113,9 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
   type Entry = { n: Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>; kind: 'mark' | 'group' };
   let entries: Entry[];
   if (json.version === 1) {
-    entries = json.nodes.map((n) => ({ n, kind: kindFromV1(n, opts.classifyV1) }));
+    entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(1, n, opts.classifyV1) }));
   } else if (json.version === 2) {
-    entries = json.nodes.map((n) => ({ n, kind: n.kind }));
+    entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(2, n) }));
   } else {
     throw new Error(`Scene: unsupported version ${String(Reflect.get(json, 'version'))}; versions 1 and 2 are supported`);
   }
@@ -154,10 +154,14 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
   });
 }
 
-function kindFromV1<TData, TLayer extends string, TPose>(
-  n: SerializedNodeV1<TData, TLayer, TPose>,
-  classify: V1Classifier<TData, TLayer, TPose> | undefined,
+/** The kind a saved node loads as: its own on version 2; on version 1 a `leaf` is a
+ *  mark and a `container` goes to `classify`, or is a group without one. */
+export function nodeKindOf<TData, TLayer extends string, TPose>(
+  version: 1 | 2,
+  n: SerializedNode<TData, TLayer, TPose> | SerializedNodeV1<TData, TLayer, TPose>,
+  classify?: V1Classifier<TData, TLayer, TPose>,
 ): 'mark' | 'group' {
+  if (version === 2) return (n as SerializedNode<TData, TLayer, TPose>).kind;
   if (n.kind === 'leaf') return 'mark';
-  return classify ? classify(n) : 'group';
+  return classify ? classify(n as SerializedNodeV1<TData, TLayer, TPose>) : 'group';
 }

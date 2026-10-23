@@ -3,6 +3,8 @@ export { sceneSelectionStore } from './sceneSelection';
 export { useScene } from './useScene';
 export { asNodeId } from './types';
 export { hasChildren, isLeaf } from './treeShape';
+export { nodeKindOf } from './serialization';
+export type { V1Classifier } from './serialization';
 export { SCENE_HISTORY_FORM } from './historyForm';
 export type { SerializedSceneHistory } from './historyForm';
 export type {

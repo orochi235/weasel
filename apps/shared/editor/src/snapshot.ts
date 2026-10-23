@@ -5,8 +5,8 @@
 // encoding; loads read the tags back, and also the untagged shapes older saves
 // wrote, which is why the walk here is our own.
 
-import type { AddNodeSpec, SceneRegistry, SerializedScene, SerializedSceneV1 } from '@weasel-js/core';
-import { asNodeId } from '@weasel-js/core';
+import type { AddNodeSpec, SceneRegistry, SerializedScene, SerializedSceneV1, V1Classifier } from '@weasel-js/core';
+import { asNodeId, nodeKindOf } from '@weasel-js/core';
 import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
 
 /** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip. */
@@ -55,23 +55,25 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
 
 /** Rebuild the full node list from a persisted scene snapshot, shaped for
  *  `useScene`'s `initial` option. Preserves every node's `kind`, `layer`, and
- *  `parent`, so containers (Cmd+G groups) and nesting survive a reload — the
+ *  `parent`, so groups (Cmd+G) and nesting survive a reload — the
  *  old leaf-only path dropped both. `toJSON()` emits nodes in tree preorder
  *  (parents before children), so a sequential `add` finds each
  *  node's parent already present.
  *
- *  A node's `dependsOn`, its derivations, and a container's layout come back
+ *  A node's `dependsOn`, its derivations, and a group's layout come back
  *  too, each looked up by its key in `registry`: a key `registry` lacks leaves
  *  the node as authored. So do the pickable, hidden, and locked flags.
- *  Container clip-paths (`clipFromPoseKey`) are not restored.
- *  `revive` rewrites each node's data on the way in; the default revives typed arrays only. */
+ *  Group clip-paths (`clipFromPoseKey`) are not restored.
+ *  `revive` rewrites each node's data on the way in; the default revives typed arrays only.
+ *  A version 1 snapshot's containers are groups unless `classifyV1` says otherwise. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
   revive: <T>(node: T) => T = reviveTypedArrays,
+  opts: { classifyV1?: V1Classifier<TData, TLayer, TPose> } = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   return json.nodes.map((n) => {
-    const kind = n.kind === 'leaf' || n.kind === 'mark' ? 'mark' : 'group';
+    const kind = nodeKindOf(json.version, n, opts.classifyV1);
     const derivePath = n.derivePathKey === undefined ? undefined : registry.derivePath?.[n.derivePathKey];
     const derivePose = n.derivePoseKey === undefined ? undefined : registry.derivePose?.[n.derivePoseKey];
     const layout = n.layoutKey === undefined ? undefined : registry.layout?.[n.layoutKey];
