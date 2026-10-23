@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { icon } from '../../icons.gen';
 import { Bar } from './Bar';
 import { renderWithIcons } from '../../testing/withIcons';
@@ -130,6 +130,16 @@ describe('Bar', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('stands a separator across the line it sits on', () => {
+    const rule = { kind: 'separator', name: '', description: '', default: undefined } as PrefLeaf;
+    const ruled: PrefGroup = { name: 'Tools', children: { a: { kind: 'action', name: 'a', description: '', default: undefined, action: 'edit.a' } as PrefLeaf, rule } };
+    const { unmount } = renderWithIcons(<Bar schema={ruled} label="Tools" />);
+    expect(screen.getByRole('separator')).toHaveAttribute('aria-orientation', 'vertical');
+    unmount();
+    renderWithIcons(<Bar schema={ruled} orientation="vertical" label="Tools" />);
+    expect(screen.getByRole('separator')).toHaveAttribute('aria-orientation', 'horizontal');
   });
 
   it('opens every field from a button when vertical, and keeps actions on the bar', () => {

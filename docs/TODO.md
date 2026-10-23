@@ -674,7 +674,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
     is misread.
   - `Along` measures its box with the client rect, so a CSS scale on an ancestor shrinks its arc.
   - `BarSideContext` leaks through portals into popovers nested in a curved bar's popover.
-  - A separator on a curved bar keeps `aria-orientation="horizontal"`.
   - A curved bar's menu opens above only for side `'top'`; `'left'` and `'right'` fall back to below,
     because `above` is a boolean where a side is meant.
   - `ReadoutsAlong` has no ResizeObserver, so a font load does not restack its rows.

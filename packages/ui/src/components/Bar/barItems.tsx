@@ -17,6 +17,8 @@ export interface BarItem {
   divider?: boolean;
   path?: string;
   leaf?: boolean;
+  /** A `separator` leaf, drawn as a rule set across whichever line it lands on. */
+  rule?: boolean;
   content?: ReactNode;
 }
 
@@ -46,8 +48,7 @@ export function barItems(nodes: readonly BarNode[], opts: { popLeaves: boolean; 
     for (const node of list) {
       if (node.kind === 'leaf' && node.leaf.kind === 'separator') {
         flush();
-        const rule = <span className={s.rule} role="separator" aria-orientation={popLeaves ? 'horizontal' : 'vertical'} />;
-        items.push({ path: node.path, leaf: true, content: rule });
+        items.push({ path: node.path, leaf: true, rule: true });
         continue;
       }
       if (node.kind === 'leaf') {
@@ -109,14 +110,20 @@ export interface BarItemPlace {
   side?: BarSide;
 }
 
-/** An item as its element, a divider set `across` the line when the line runs down; `place` sets it along a curve. */
+/** An item as its element, a divider or rule set `across` the line when the line runs down; `place` sets it along a curve. */
 export function drawBarItem(item: BarItem, across: boolean, attrs: BarLayoutProps['attrs'], place?: BarItemPlace): ReactElement {
   const own = (base: string | undefined): string | undefined => (place ? `${base} ${place.className}` : base);
   return item.divider ? (
     <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.divider)} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} style={place?.style} data-clipped={place?.clipped} />
   ) : (
     <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.cell)} {...attrs?.(item.path!, item.leaf!)} style={place?.style} data-clipped={place?.clipped}>
-      {place?.side ? <BarSideContext.Provider value={place.side}>{item.content}</BarSideContext.Provider> : item.content}
+      {item.rule ? (
+        <span className={s.rule} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} />
+      ) : place?.side ? (
+        <BarSideContext.Provider value={place.side}>{item.content}</BarSideContext.Provider>
+      ) : (
+        item.content
+      )}
     </span>
   );
 }

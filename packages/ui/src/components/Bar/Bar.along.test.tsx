@@ -51,6 +51,13 @@ describe('Bar along a curve', () => {
     expect(screen.getByRole('spinbutton', { name: 'Width' })).toBeInTheDocument();
   });
 
+  test('a separator on the line stands across the run', () => {
+    const rule: PrefLeaf = { kind: 'separator', name: '', description: '', default: undefined } as PrefLeaf;
+    const schema: PrefGroup = { name: 'Tools', children: { a: action('a'), rule, b: action('b') } };
+    render(<Bar schema={schema} shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })} label="Tools" />);
+    expect(screen.getByRole('separator')).toHaveAttribute('aria-orientation', 'vertical');
+  });
+
   test("a lone item sits at the run's middle, tipped", () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 0, end: 90 });
     render(<Bar schema={actions('Undo')} shape={shape} label="Tools" />);
