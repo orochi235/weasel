@@ -22,6 +22,7 @@ export { pathShape, type PathTrackShape } from './track/path';
 export { trackRun, type TrackRun, type TrackPlace, type TrackSide, type TrackRunOptions } from './track/run';
 export { trackShapeD } from './track/pathData';
 export { bendSide, shiftTrack } from './track/shift';
+export { trackSlice } from './track/slice';
 export {
   placeAlongRun, runLength, runPlaces, runStationAt,
   type PlaceAlongRunOptions, type RunAlign, type RunOrder, type RunPast, type RunPlace, type RunSpot,

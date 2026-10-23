@@ -655,9 +655,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Hebrew or Arabic curved bar puts item 1 at the left end while the same bar laid out straight starts on the
   right. Reading order needs an inline direction input, which bears on the `'reading' | 'track'` decision above.
 
-- **(P3) Gaps left in controls along a curve.**
-  - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
-
 - **(P3) A straight `Slider` misreads a press under a rotated ancestor.** `lineGeometry` in
   `sliderGeometry.ts` lays its line across the rail's client rect, which a rotation turns into the bounding box of
   the turned rail: under `rotate(90deg)` a press at three quarters of the rail reads 50 (seen in Chromium,

@@ -1,0 +1,10 @@
+/* A dial: the Jog lies along its rim. */
+.dial {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  margin: 48px;
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: 50%;
+  background: var(--wzl-surface);
+}
