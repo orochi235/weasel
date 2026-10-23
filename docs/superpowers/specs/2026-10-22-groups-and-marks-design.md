@@ -19,6 +19,16 @@ All 2026-10-22.
 4. **A child's `'inherit'` fill or stroke reads its parent, whatever the parent's kind:** the parent's
    paint if it has one, the parent's own source if it also says `'inherit'`, and none if it has none.
 5. **A node clips its children only when it declares a clip.** No clip is the default.
+6. **A group is selected and behaves as one item.** A press on any member of a group selects the
+   group, the outermost one when groups nest, and it moves, transforms, copies and deletes as one.
+   This holds for every group: Cmd+G, SVG `<g>`, symmetry, draw's outlines.
+7. **Two ways in to a member:** double-click a group's member to enter that group, after which a
+   press selects among its children and a further double-click goes one level deeper; Cmd-click
+   (Ctrl-click off macOS) selects the deepest pickable node under the pointer directly. Inside an
+   entered group, double-click on a member that is not a group does what it does today (text edit,
+   path edit, through `doubleClickTarget.ts`). Cmd-click stops extending the selection, which today
+   it does as Shift does (`pressDecision.ts`, `isExtend = mods.shift || mods.meta`); Shift alone
+   extends.
 
 Rejected (2026-10-22), so nobody re-proposes them: a `group: true` flag on `container` (keeps
 "container" meaning only "has children"); three kinds `leaf | container | group` (keeps a second split
@@ -66,7 +76,9 @@ Every branch on `kind === 'container'` today goes to one of these columns. The s
 | Ungroup dissolves it (`interactions/actions/defaults/group.ts`) | kind | groups only. A mark is never dissolved. |
 | Cmd+G creates it (`group.ts`) | kind | creates a group |
 | Paints its own fill and stroke (`shapePainter`, `pathPainter`, `rectFallbackPainter`, `diagram:outline`) | kind | a group never paints, whatever its data; a mark paints through its painter. No painter checks kind any more; the walk doesn't call a painter for a group. |
-| Its own interior is hit (`NodeShape.ts`, `CONTAINER_INK` in `nodePaint.ts`, `adapterPointQuery.ts`, `ownClipOf` in `pickWalk.ts`) | kind | a group is hit anywhere in its box, as an unclipped container is today, and a child still beats it (`pickTopMostHit`), so clicking a group's empty space selects it. A mark is hit by its painter's ink; a painter with no `ink` counts as filled, which keeps an unfilled diagram lane hittable across its interior (`diagram:outline` has none). |
+| Its own interior is hit (`NodeShape.ts`, `CONTAINER_INK` in `nodePaint.ts`, `adapterPointQuery.ts`, `ownClipOf` in `pickWalk.ts`) | kind | a group is hit through its members, and anywhere in its box, as an unclipped container is today. A mark is hit by its painter's ink; a painter with no `ink` counts as filled, which keeps an unfilled diagram lane hittable across its interior (`diagram:outline` has none). |
+| Which node a press selects (`pickTopMostHit`, `pressDecision.ts`, the select tool) | kind | the outermost group above the hit node that is not the entered group or above it (decision 6); a mark is selected itself, and so is a mark's part only when the part is pickable |
+| Entering a group (new) | kind | double-click on a group's member enters it (decision 7). The entered group is session state beside the selection, not scene data and not undoable. Escape, or a press outside it, leaves it one level. |
 | Marquee and lasso skip it (`canvas/deps/hitTestArea.ts`, `includeContainers`) | kind | groups skipped by default (rename the option to say groups) |
 | Drawn bounds (`drawnBounds.ts`) | kind | a group's are its children's; a mark's are its own ink united with its children's |
 | Property panel route (`defaultNodeRouting.ts`, `name: 'group'`) | kind | groups only |
@@ -141,6 +153,8 @@ kernel3d reads a flat render order and boxes each node from its own pose; it nev
   dissolved by Ungroup, and routes as itself in the property panel.
 - **Anti-goal:** a mark's behavior changing because it gained or lost a child, beyond the "children"
   column. A box with no rows and a box with rows are the same kind of thing.
+- **Goal:** a group behaves as one item until it is entered, everywhere a node can be pressed:
+  canvas, and the press half of every tool that selects.
 - **Anti-goal:** a second notion of "group" anywhere (a flag, a data field, a routing name that
   disagrees with the kind).
 - **Non-goal:** 3D containers in kernel3d.
@@ -149,11 +163,14 @@ kernel3d reads a flat render order and boxes each node from its own pose; it nev
 
 These keep today's behavior; the maintainer can overturn any of them (2026-10-22):
 
-- A group is hit across its box and selected by clicking its empty space, as today.
 - An unfilled diagram lane stays hittable across its interior, through `diagram:outline`'s default ink.
 - Without `canDropInto`, only groups take drops.
 
 ## Left to the builder
+
+- Where the entered group lives (a selection-adjacent store or dep), how it is shown (a frame or
+  dimming outside it), and whether the layers panel selects members directly (it should: a row is
+  already one node).
 
 - The declared outline clip's field name and shape.
 - The classifier's signature on the version 1 loader.
