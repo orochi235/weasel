@@ -236,6 +236,7 @@ describe('LiveCopies', () => {
       title: 'Test/Live',
       library: 'test',
       galleries: [],
+      labs: [],
       stories: [],
       descriptions: {},
       render: ({ globals }) => <output data-testid="index-mode">{String(globals.mode)}</output>,

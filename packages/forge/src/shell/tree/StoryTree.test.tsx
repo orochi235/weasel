@@ -563,3 +563,39 @@ describe('StoryTree galleries', () => {
     expect(screen.getByRole('treeitem', { name: 'Everything' })).toBeTruthy();
   });
 });
+
+describe('StoryTree labs', () => {
+  const sweep: IndexEntry = { ...entry('Kit/Arc', 'Sweep'), tags: ['lab'] };
+  const spokes: IndexEntry = { ...entry('Kit/Arc', 'Spokes'), tags: ['lab'] };
+  const tagged = [primary, ghost, sweep, spokes];
+  const chrome: LabContribution[] = [
+    { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={tagged} /> },
+  ];
+  function LabHarness() {
+    const { instruments } = useStoryRegistry([...tagged, ...indexEntries(tagged)], { frameUrl: '/frame.html' });
+    return (
+      <Lab
+        instruments={instruments}
+        defaultInstrument={primary.id}
+        labChrome={chrome}
+        addTrial={false}
+        storageKey="tree-labs"
+        storage={createMemoryAdapter()}
+      />
+    );
+  }
+
+  it('marks a lab, and each of its stories, with a Lab badge', async () => {
+    renderWithIcons(<LabHarness />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    const arc = screen.getByRole('treeitem', { name: 'Arc' });
+    const button = screen.getByRole('treeitem', { name: 'Button' });
+    const badge = (row: HTMLElement) => row.querySelector(':scope > .fg-tree__item > .fg-tree__lab');
+    expect(badge(arc)?.textContent).toBe('Lab');
+    expect(badge(button)).toBeNull();
+    if (arc.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(arc));
+    expect(within(arc).getByRole('treeitem', { name: /^Sweep/ }).querySelector('.fg-tree__lab')?.textContent).toBe('Lab');
+    if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(button));
+    expect(item(button, 'Primary').querySelector('.fg-tree__lab')).toBeNull();
+  });
+});

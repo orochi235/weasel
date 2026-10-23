@@ -41,7 +41,7 @@ export { meta, story } from './story/define';
 export type { Span as TimelineSpan, SpanOverride, TimelineSpec } from './timeline/clock';
 export { type StoryTimeline, usePlayhead, useTimeline } from './timeline/context';
 export type { Library } from './story/library';
-export { GALLERY_TAG } from './story/tags';
+export { GALLERY_TAG, LAB_TAG } from './story/tags';
 export type {
   ComponentDeps,
   ComponentHistory,

@@ -235,8 +235,13 @@
   margin-inline-start: auto;
 }
 
-.fg-tree__tag {
+.fg-tree__tag,
+.fg-tree__lab {
   --badge-font-size: var(--wzl-font-size-2xs);
+}
+
+.fg-tree__lab {
+  flex: none;
 }
 
 .fg-tree__libraries {

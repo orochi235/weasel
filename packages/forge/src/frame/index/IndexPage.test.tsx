@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { f } from '@weasel-js/labkit/config';
 import { describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
@@ -97,6 +98,29 @@ describe('IndexPage', () => {
     render(<IndexPage env={envOf({ galleries: ['ui-dialog--basic'] })} render={null} />);
     const section = screen.getByRole('region', { name: 'Basic' });
     expect(within(section).getByText('Gallery')).toBeTruthy();
+  });
+
+  it('links a lab story and marks it, embedding no example and leaving the variants to the next story', () => {
+    const config = f.schema({ dense: f.boolean(false) });
+    const withLab = loadNativeModule(
+      {
+        default: meta({ title: 'ui/Arc' }),
+        Screen: story({ config, render: () => <p>whole screen</p> }),
+        Plain: story({ config, render: () => <p>specimen</p> }),
+      },
+      'ui/Arc',
+    );
+    const [lab, plain] = withLab;
+    render(<IndexPage env={envOf({ title: 'ui/Arc', stories: withLab, labs: [lab?.id ?? ''] })} render={null} />);
+    const labSection = screen.getByRole('region', { name: 'Screen' });
+    expect(within(labSection).getByRole('link', { name: 'Screen' }).getAttribute('href')).toBe(`#/${lab?.id}`);
+    expect(within(labSection).getByText('Lab')).toBeTruthy();
+    expect(labSection.querySelector('.fg-index-cell')).toBeNull();
+    expect(within(labSection).queryByRole('region', { name: 'Dense' })).toBeNull();
+    const plainSection = screen.getByRole('region', { name: plain?.name ?? '' });
+    expect(within(plainSection).queryByText('Lab')).toBeNull();
+    expect(plainSection.querySelector('.fg-index-story__main > .fg-index-cell')).not.toBeNull();
+    expect(within(plainSection).getByRole('region', { name: 'Dense' })).toBeTruthy();
   });
 
   it('heads the path with the package as a badge, in place of a first segment naming it', () => {

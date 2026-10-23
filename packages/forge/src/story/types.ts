@@ -34,8 +34,8 @@ export interface MetaSpec {
   isolate?: string;
   /** The component's own index page, in place of the generated one. A CSF file sets `parameters.forge.index`. */
   index?: IndexRender;
-  /** As CSF's meta `tags`; `'gallery'` marks a catalog or showcase rather than one component. Read from the source,
-   *  so each must be a string literal. */
+  /** As CSF's meta `tags`; `'gallery'` marks a catalog or showcase rather than one component, and `'lab'` a whole
+   *  screen for exercising one rather than a specimen of it. Read from the source, so each must be a string literal. */
   tags?: readonly string[];
   /** Gives every story in the file a playhead and a transport, unless the story declares its own. */
   timeline?: TimelineSpec | ((config: Record<string, unknown>) => TimelineSpec);
