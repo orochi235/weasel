@@ -313,6 +313,52 @@ Branch `feat/groups-marks-3`, from `main` after Arc 2.
   selects deep, and Cmd-click no longer extends the selection (Shift does). Then fleet and
   postbuild, and merge Arc 3.
 
+### Task 11a: Isolation becomes a way of showing the entered group
+
+Isolation mode and the entered group were the same idea built twice, and `group.enter` took
+isolation's only way in. Ruled: unify (2026-10-23). The entered group is the one notion of being
+inside a group; isolation is a presentation of it, not a mode.
+
+**Files:**
+- Modify: `packages/core/src/canvas/deps/enteredGroup.ts`, `packages/core/src/canvas/SceneCanvas/useScenePicking.ts`,
+  `pointerProps.ts`, `canvasPassThrough.ts` (prop `enteredGroup`, prop `isolatedGroup` removed),
+  `packages/core/src/canvas/doubleClickTarget.ts`, `packages/core/src/features/modes/modeTriggers.ts` (docs),
+  `enterGroup.ts`, `enterTextEdit.ts`, `enterPathEdit.ts` (eligibility no longer names `isolation`),
+  `packages/core/src/features/selection/enteredGroupFrame.ts`
+- Create: `packages/core/src/features/selection/enteredGroupScope.ts` (dim and lock outside the entered group)
+- Modify: `packages/modes/src/presets/default.ts` (remove `ISOLATION`), `packages/modes/src/scopingLayer.ts` (docs)
+- Modify: `apps/draw/src/modality/{modeScope,useCanvasModes,useModality}.ts`, `apps/draw/src/Workspace.tsx`,
+  the breadcrumb and workspace tint in `apps/draw/src/modality/chrome/`
+
+**Interfaces:**
+- Produces: `<SceneCanvas enteredGroup={dep}>`, consumer-owned as `selection` is; without it the
+  canvas makes its own. `useEnteredGroup(scene)` and `EnteredGroupDep` are public.
+- Produces: `createEnteredGroupScope({ entered, scene, dimAlpha? })` →
+  `{ alphaFor(id), isPointerInteractive(id), subscribe(fn), getVersion() }`: everything outside the
+  entered group's subtree dims and stops taking hits; with nothing entered, every node is lit and live.
+- Removes: `ISOLATION` from `@weasel-js/modes`, `<SceneCanvas isolatedGroup>`, draw's `isolatedGroupOf`.
+
+**Also fixed here (Task 11 review):**
+- Leaving on an outside press is its own rebindable binding, not code inside `select.pick` / `select.deep`.
+- The frame's color is a theme token, overridable.
+- The frame and the leave check read the group's box through one function.
+- Escape: an open mode (text edit, path edit, a strict mode) takes Escape before `group.leave` does.
+
+- [ ] **Step 1:** Write the tests:
+  - Draw: double-click a member, and everything outside the group dims, can't be pressed, the
+    workspace is tinted, and the breadcrumb names the group. Escape leaves one level; the
+    breadcrumb's exit leaves every level.
+  - A press inside the entered group selects the member (the bug isolation had).
+  - Double-click a path inside an entered group opens path edit, and the group stays entered;
+    Escape closes path edit first, then a second Escape leaves the group.
+  - Escape while editing text inside an entered group ends the text edit and leaves the group entered.
+  - A consumer rebinds the outside-press leave to nothing, and an outside press then keeps the group.
+  - `createEnteredGroupScope` unit tests: nested groups, nothing entered, the group deleted.
+- [ ] **Step 2:** Run them. Expected: FAIL.
+- [ ] **Step 3:** Implement.
+- [ ] **Step 4:** Run them, plus Task 11's browser test on the fleet. Expected: PASS.
+- [ ] **Step 5:** Commit. The Task 11 changeset prose also says `ISOLATION` and `isolatedGroup` are gone.
+
 ## Arc 4: declared clips, draw's loader, SVG export
 
 Branch `feat/groups-marks-4`, from `main` after Arc 3.
