@@ -75,6 +75,18 @@ describe('BandEditor range-end ticks', () => {
     expect(shownTicks(container)).toEqual([]);
   });
 
+  test('runs every tick, ends included, down to the band strip, with its label where it was', () => {
+    const { container } = render(editor({}));
+    const ruler = container.querySelector('[data-band-ruler]')!.getBoundingClientRect();
+    const strip = container.querySelector('[data-band-index]')!.getBoundingClientRect();
+    const ticks = [...container.querySelectorAll<HTMLElement>('[data-tick-at], [data-range-end]')];
+    expect(ticks.length).toBe(TICKS.length + 2);
+    for (const tick of ticks) {
+      expect(tick.getBoundingClientRect().bottom).toBeCloseTo(strip.top, 1);
+      expect(ruler.bottom - tick.firstElementChild!.getBoundingClientRect().bottom).toBeCloseTo(9, 1);
+    }
+  });
+
   test('draws no end ticks, and hides nothing, when the range is fixed', () => {
     const { container } = render(editor({ rescalable: false }));
     expect(endLabels(container)).toEqual([]);

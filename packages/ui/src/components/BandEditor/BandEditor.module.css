@@ -5,7 +5,8 @@
   touch-action: none;
   display: flex;
   flex-direction: column;
-  gap: var(--wzl-space-1);
+  --be-gap: var(--wzl-space-1);
+  gap: var(--be-gap);
 }
 
 .label {
@@ -15,7 +16,9 @@
 
 /* The ruler carries the ticks and is the split affordance: a click anywhere
  * on it divides the band underneath. The band strip below owns selection and
- * body drags, so neither gesture has to guess which the pointer meant. */
+ * body drags, so neither gesture has to guess which the pointer meant. Ticks
+ * reach down across the gap to the strip, but take no pointer, so the hit
+ * area stays the ruler's own box. */
 .ruler {
   position: relative;
   height: var(--be-ruler-height, 22px);
@@ -25,9 +28,9 @@
 .tick {
   position: absolute;
   left: var(--be-at);
-  bottom: 0;
+  bottom: calc(-1 * var(--be-gap));
   width: 1px;
-  height: 6px;
+  height: calc(6px + var(--be-gap));
   background: var(--wzl-fg-subtle);
   pointer-events: none;
 }
@@ -35,7 +38,7 @@
 .tickLabel {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   position: absolute;
-  bottom: 9px;
+  bottom: calc(9px + var(--be-gap));
   left: 50%;
   transform: translateX(-50%);
   font-weight: var(--wzl-font-weight-medium);
