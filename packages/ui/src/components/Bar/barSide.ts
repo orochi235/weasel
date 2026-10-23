@@ -1,8 +1,9 @@
 import { createContext } from 'react';
 import type { Point, TrackRun } from '@weasel-js/geom';
+import type { MenuSide } from '@weasel-js/menu';
 
 /** The side of its button a bar's popover or menu opens on. */
-export type BarSide = 'top' | 'bottom' | 'left' | 'right';
+export type BarSide = MenuSide;
 
 /** The compass side nearest `outward`; a tie between axes goes to top/bottom. */
 export function sideOf(outward: Point): BarSide {

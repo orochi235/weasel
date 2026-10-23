@@ -662,13 +662,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) Gaps left in controls along a curve.**
   - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
-  - `thicknessOf` in `sliderGeometry.ts` reads `--rp-track-height` as px only, so a rem or `calc()` height
-    is misread.
-  - `BarSideContext` leaks through portals into popovers nested in a curved bar's popover.
-  - A separator on a curved bar keeps `aria-orientation="horizontal"`.
-  - A curved bar's menu opens above only for side `'top'`; `'left'` and `'right'` fall back to below,
-    because `above` is a boolean where a side is meant.
-  - `ReadoutsAlong` has no ResizeObserver, so a font load does not restack its rows.
 
 - **(P3) A straight `Slider` misreads a press under a rotated ancestor.** `lineGeometry` in
   `sliderGeometry.ts` lays its line across the rail's client rect, which a rotation turns into the bounding box of

@@ -57,10 +57,13 @@ function acrossAt(run: TrackRun, g: number, p: Point): number {
   return Math.abs((p.x - point.x) * normal.x + (p.y - point.y) * normal.y);
 }
 
-/** A band's thickness: the track height it inherits, else the stylesheet's 24px default. Read from the custom
- *  property rather than `stroke-width`, which reads as its initial 1px wherever the stylesheet has not applied. */
+/** A band's thickness: the track height it inherits, else 24px. A custom property computes to the text it was given, so
+ *  a px height is read there and any other from the stroke width it sets, which is 1px wherever the stylesheet is absent. */
 function thicknessOf(band: SVGElement | null): number {
-  const w = band ? Number.parseFloat(getComputedStyle(band).getPropertyValue('--rp-track-height')) : Number.NaN;
+  if (!band) return 24;
+  const style = getComputedStyle(band);
+  const height = style.getPropertyValue('--rp-track-height').trim();
+  const w = /^[\d.]+px$/.test(height) ? Number.parseFloat(height) : height ? Number.parseFloat(style.strokeWidth) : Number.NaN;
   return w > 0 ? w : 24;
 }
 

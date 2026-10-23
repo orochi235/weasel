@@ -4,6 +4,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { ActionsProvider, useCommand } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { BarMenu } from './BarMenu';
+import { BarSideContext } from './barSide';
 
 afterEach(cleanup);
 
@@ -18,6 +19,25 @@ function Command() {
 }
 
 describe('BarMenu', () => {
+  it('opens beside its button on the side a curved bar gives it', async () => {
+    // jsdom lays nothing out: the button is a 40 by 20 box at (100, 100), and the menu 0 by 0.
+    const rect = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = () => ({ x: 100, y: 100, left: 100, top: 100, right: 140, bottom: 120, width: 40, height: 20, toJSON: () => {} }) as DOMRect;
+    try {
+      await renderSettled(
+        <ActionsProvider>
+          <Command />
+          <BarSideContext.Provider value="right"><BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen /></BarSideContext.Provider>
+        </ActionsProvider>,
+      );
+      const menu = screen.getByRole('menu');
+      expect(menu.style.left).toBe('140px');
+      expect(menu.style.top).toBe('100px');
+    } finally {
+      Element.prototype.getBoundingClientRect = rect;
+    }
+  });
+
   it('opens on mount with defaultOpen', async () => {
     await renderSettled(<ActionsProvider><Command /><BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen /></ActionsProvider>);
     expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();

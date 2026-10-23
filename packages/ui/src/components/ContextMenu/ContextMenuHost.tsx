@@ -100,7 +100,7 @@ function Panels({ controller, open, close, takeFocus, labelledBy, inside, releas
   );
   useDismiss(isInside, close);
 
-  const root = useMemo(() => (open.under ? { client: open.client, under: open.under, ...(open.above ? { above: true } : {}) } : { client: open.client }), [open]);
+  const root = useMemo(() => (open.under ? { client: open.client, under: open.under, ...(open.side ? { side: open.side } : {}) } : { client: open.client }), [open]);
   const focusable = takeFocus || (typeof document !== 'undefined' && document.activeElement?.id.startsWith(`${idBase}-panel-`) === true);
   const rowId = (level: number) => `${idBase}-${level}-${stack[level]}`;
   const rowRect = (level: number): Rect | null => {

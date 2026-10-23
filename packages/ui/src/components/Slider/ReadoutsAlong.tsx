@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { useLatest } from '@weasel-js/core';
 import on from '../Along/onRun.module.css';
 import s from './Slider.module.css';
 import { GAP, staggerRows } from './staggerRows';
@@ -11,8 +12,9 @@ export function ReadoutsAlong({ readouts, place, length }: {
 }): ReactElement {
   const ref = useRef<HTMLDivElement | null>(null);
 
-  // Row depends on rendered text widths, so it is measured and written after layout, every render.
-  useLayoutEffect(() => {
+  // Row depends on rendered text widths, so it is measured and written after layout, every render, and again whenever a
+  // readout's size changes without one.
+  const restack = useLatest(() => {
     const items = [...(ref.current?.children ?? [])] as HTMLElement[];
     const spans = items.map((el, i) => {
       const mid = readouts[i]!.g * length;
@@ -21,6 +23,13 @@ export function ReadoutsAlong({ readouts, place, length }: {
     });
     staggerRows(spans, GAP).forEach((row, i) => items[i]!.style.setProperty('--row', String(row)));
   });
+  useLayoutEffect(() => restack.current());
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => restack.current());
+    for (const el of ref.current?.children ?? []) observer.observe(el);
+    return () => observer.disconnect();
+  }, [readouts.length, restack]);
 
   return (
     <div ref={ref} className={s.readoutsAlong}>

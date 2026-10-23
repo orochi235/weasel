@@ -1,4 +1,4 @@
-import type { MenuEntry, Rect } from '@weasel-js/menu';
+import type { MenuEntry, MenuSide, Rect } from '@weasel-js/menu';
 import { mergeMenuDefs, pickMenu } from './pickMenu';
 import { resolveMenu, type MenuSources } from './resolveMenu';
 import type { MenuDef, MenuHit, OwnedMenuDef } from './types';
@@ -12,8 +12,9 @@ export interface MenuOpenRequest {
   client: Point;
   /** Viewport rect of the button the menu hangs from: placed below it, or above when below does not fit. */
   under?: Rect;
-  /** With `under`: opens above the button when it fits there, below when it does not. The canvas HUD menu host places below only and ignores it. */
-  above?: boolean;
+  /** With `under`: the side of the button it opens on when it fits there, flipping to the opposite side when it does not.
+   *  Default below. The canvas HUD menu host places below only and ignores it. */
+  side?: MenuSide;
   /** World point, passed to `enabled` and to every item. */
   world?: Point;
   params?: Record<string, unknown>;
@@ -26,8 +27,8 @@ export interface OpenMenu {
   entries: readonly MenuEntry[];
   client: Point;
   under?: Rect;
-  /** `MenuOpenRequest.above`, carried to the renderer. */
-  above?: boolean;
+  /** `MenuOpenRequest.side`, carried to the renderer. */
+  side?: MenuSide;
   world?: Point;
   source: 'pointer' | 'keyboard';
 }
@@ -85,7 +86,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
       open = {
         seq: ++seq, entries, client: req.client, world: req.world,
         ...(req.under ? { under: req.under } : {}),
-        ...(req.above ? { above: true } : {}),
+        ...(req.side ? { side: req.side } : {}),
         source: req.source ?? 'pointer',
       };
       emit();
