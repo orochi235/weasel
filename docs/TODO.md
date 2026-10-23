@@ -1258,13 +1258,19 @@ only story runner in the repo.
   its `lab/` import by path because ui does not export them; removing those needs a published
   subpath.
 
-- **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once it is shown to do nothing.** It went in
-  (2026-10-19) for a worker SIGSEGV taken to be nodejs/node#62393, but every crash report since has a
-  different signature (a jump to address 0 under `PromiseConstructor`), and that one was the vm
-  workers outgrowing their heap: `vmMemoryLimit: '1gb'` fixed it (2026-10-22). Two reports from
-  10-15 and 10-17 (fault `0x89` in `MarkingWorklists::~Local`) are the only ones the flag might
-  have answered. Before removing it, run the jsdom projects under `--stress-flush-code` on teitou
-  without it a few times, as the `fix/vitest-worker-segfault` experiment did.
+- **(P3) Find what a long-lived vitest vm worker builds up that crashes V8, and drop
+  `--no-sparkplug` if it does nothing.** Fleet runs on teitou died partway from a worker SIGSEGV: a
+  jump to address 0 under `PromiseConstructor` while another worker ran a full GC. Under
+  `--stress-flush-code` on teitou it crashed 3 of 3 runs at vitest's default memory limit and 0 of 6
+  with `vmMemoryLimit: '1gb'` (2026-10-22). It is not a leak: one worker running 319 `weasel-ui`
+  files held a flat ~200 MB of live heap and ~1.9 GB RSS. vitest compares the limit with `heapUsed`
+  read without a GC (median ~300 MB), so the default (RAM / workers, 3–5 GB) never recycles a
+  worker, and 1 GB replaces each about once a run. The crash therefore tracks worker age rather than
+  heap size; what accumulates, and why only teitou crashed, is unknown. `--no-sparkplug` went in
+  (2026-10-19) for nodejs/node#62393, whose `0xe` signature none of these reports has; two from
+  10-15 and 10-17 (fault `0x89` in `MarkingWorklists::~Local`) are the only ones it might have
+  answered. Before removing it, run the jsdom projects on teitou without it a few times and check
+  `~/Library/Logs/DiagnosticReports/node-*.ips` there for new reports.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no

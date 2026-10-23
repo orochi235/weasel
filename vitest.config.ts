@@ -87,8 +87,8 @@ export default defineConfig({
   test: {
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,
-    // A vm worker left to grow toward vitest's default (RAM / workers, ~4 GB on teitou) segfaults V8 on
-    // Node 24.22 under --stress-flush-code every time; recycled at 1 GB it ran 6 of 6 clean (2026-10-22).
+    // vitest's default (RAM / workers) never recycles a vm worker, and one that lives the whole run
+    // segfaults V8 on Node 24.22; at 1 GB each is replaced about once (2026-10-22, see docs/TODO.md).
     vmMemoryLimit: '1gb',
     ...(related && { related }),
     projects: [
