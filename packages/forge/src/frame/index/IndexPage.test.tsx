@@ -63,6 +63,19 @@ describe('IndexPage', () => {
     expect(within(usedBy).getByRole('link').textContent).toBe('draw/CommandBar');
   });
 
+  it('links each story’s title to the story, with no separate button', () => {
+    const env = envOf();
+    render(<IndexPage env={env} render={null} />);
+    const section = screen.getByRole('region', { name: 'Basic' });
+    const link = within(within(section).getByRole('heading', { name: 'Basic' })).getByRole('link', { name: 'Basic' });
+    expect(link.getAttribute('href')).toBe('#/ui-dialog--basic');
+    expect(within(section).queryByRole('button')).toBeNull();
+    fireEvent.click(link, { metaKey: true });
+    expect(env.open).not.toHaveBeenCalled();
+    fireEvent.click(link);
+    expect(env.open).toHaveBeenCalledWith('ui-dialog--basic');
+  });
+
   it('says when a list is empty', () => {
     render(<IndexPage env={envOf({ dependencies: DEPS })} render={null} />);
     expect(screen.getByText('No listed component uses it.')).toBeTruthy();

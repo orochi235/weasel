@@ -6,7 +6,7 @@ import { page } from 'vitest/browser';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
 import type { LoadedStory } from '../../story/types';
-import { type IndexEnv, IndexEnvContext, IndexStory } from './IndexPage';
+import { type IndexEnv, IndexEnvContext, IndexPage, IndexStory } from './IndexPage';
 
 // A cell's box is layout, which jsdom does not compute.
 
@@ -86,4 +86,44 @@ test('a cell mounts a viewport ahead inside a scrolling pane, and one far down t
   await expect.poll(() => document.querySelector('[data-story="ahead"]')).not.toBeNull();
   await new Promise((done) => setTimeout(done, 300));
   expect(rendered).not.toContain('far');
+});
+
+function storyRow(width: number) {
+  const stories = loadNativeModule(
+    {
+      default: meta({ title: 'ui/Row' }),
+      Basic: story({ render: () => <div className="specimen" style={{ width: 240, height: 40 }} /> }),
+    },
+    'ui/Row',
+  );
+  const env: IndexEnv = {
+    title: 'ui/Row',
+    stories,
+    descriptions: { [(stories[0] as LoadedStory).id]: 'What the story shows.' },
+    globals: {},
+    decorators: [],
+    open: () => {},
+    onError: () => {},
+  };
+  const { container } = render(
+    <div style={{ width }}>
+      <IndexPage env={env} render={null} />
+    </div>,
+  );
+  const text = (container.querySelector('.fg-index-story__text') as HTMLElement).getBoundingClientRect();
+  const example = (container.querySelector('.fg-index-story__main > .fg-index-cell') as HTMLElement).getBoundingClientRect();
+  return { text, example };
+}
+
+test('a story’s example sits to the right of its title and description when there is room', async () => {
+  await page.viewport(1200, 800);
+  const { text, example } = storyRow(1000);
+  expect(example.left).toBeGreaterThanOrEqual(text.right);
+  expect(Math.abs(example.top - text.top)).toBeLessThanOrEqual(1);
+});
+
+test('in a narrow frame a story’s example wraps under its text instead of squeezing beside it', async () => {
+  await page.viewport(1200, 800);
+  const { text, example } = storyRow(420);
+  expect(example.top).toBeGreaterThanOrEqual(text.bottom);
 });

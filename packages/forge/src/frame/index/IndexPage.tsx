@@ -1,6 +1,5 @@
 // The components' own entries, not the barrel: the barrel would bring every weasel-ui component into each frame.
 import { Badge } from '@weasel-js/ui/components/Badge';
-import { Button } from '@weasel-js/ui/components/Button';
 import {
   createContext,
   type MouseEvent,
@@ -135,14 +134,23 @@ function GalleryBadge() {
   );
 }
 
-function DependencyList({ label, titles, empty }: { label: string; titles: readonly string[]; empty: string }) {
+/** A link to `id` in the workshop. A plain click opens it in place; a modified one is left to the browser. */
+function OpenLink({ id, className, children }: { id: string; className: string; children: ReactNode }) {
   const env = useEnv();
-  const labelId = useId();
-  const follow = (event: MouseEvent, id: string) => {
+  const follow = (event: MouseEvent) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     env.open(id);
   };
+  return (
+    <a className={className} href={`#/${encodeURIComponent(id)}`} onClick={follow}>
+      {children}
+    </a>
+  );
+}
+
+function DependencyList({ label, titles, empty }: { label: string; titles: readonly string[]; empty: string }) {
+  const labelId = useId();
   return (
     <div className="fg-index-deps__row">
       <dt id={labelId} className="fg-index-deps__label">
@@ -155,13 +163,12 @@ function DependencyList({ label, titles, empty }: { label: string; titles: reado
           <ul className="fg-index-deps__list" aria-labelledby={labelId}>
             {titles.map((title) => {
               const cut = title.lastIndexOf('/') + 1;
-              const id = indexId(title);
               return (
                 <li key={title}>
-                  <a className="fg-index-deps__link" href={`#/${encodeURIComponent(id)}`} onClick={(event) => follow(event, id)}>
+                  <OpenLink className="fg-index-deps__link" id={indexId(title)}>
                     <span className="fg-index-deps__prefix">{title.slice(0, cut)}</span>
                     {title.slice(cut)}
-                  </a>
+                  </OpenLink>
                 </li>
               );
             })}
@@ -226,17 +233,20 @@ function StorySection({ story, variants }: { story: LoadedStory; variants: boole
   const gallery = !env.gallery && env.galleries?.includes(story.id);
   return (
     <section className="fg-index-story" aria-labelledby={headingId}>
-      <header className="fg-index-story__head">
-        <h2 id={headingId} className="fg-index-story__name">
-          {story.name}
-        </h2>
-        {gallery ? <GalleryBadge /> : null}
-        <Button variant="secondary" size="sm" onClick={() => env.open(story.id)}>
-          Open
-        </Button>
-      </header>
-      {description ? <p className="fg-index-story__description">{description}</p> : null}
-      <IndexStory story={story} />
+      <div className="fg-index-story__main">
+        <div className="fg-index-story__text">
+          <header className="fg-index-story__head">
+            <h2 id={headingId} className="fg-index-story__name">
+              <OpenLink className="fg-index-story__link" id={story.id}>
+                {story.name}
+              </OpenLink>
+            </h2>
+            {gallery ? <GalleryBadge /> : null}
+          </header>
+          {description ? <p className="fg-index-story__description">{description}</p> : null}
+        </div>
+        <IndexStory story={story} />
+      </div>
       {variants ? <IndexVariants story={story} /> : null}
     </section>
   );
