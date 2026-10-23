@@ -46,13 +46,13 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
   const registry = useActionsRegistry();
   const resolveMenu = useBarMenuResolver();
   const trigger = useMenuTrigger();
-  const above = useContext(BarSideContext) === 'top';
+  const side = useContext(BarSideContext);
 
   // `defaultOpen` holds until the menu has opened once or the reader has touched it.
   const pending = useRef(defaultOpen === true);
 
   const resolve = () => resolveMenu(schema, { values, onChange, over });
-  const showQuiet = useLatest(() => trigger.show(resolve(), 'pointer', true, above));
+  const showQuiet = useLatest(() => trigger.show(resolve(), 'pointer', true, side));
 
   // An action registered after this mounts can be what makes the menu non-empty, so a shut default retries on each change.
   useEffect(() => {
@@ -78,7 +78,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
           onPointerDown={trigger.press}
           onClick={(e) => {
             pending.current = false;
-            trigger.click(e, resolve, above);
+            trigger.click(e, resolve, side);
           }}
         >
           {icon}
