@@ -10,6 +10,7 @@ import { useEffect, useMemo } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { NodeId, Scene } from 'core/scene/types';
 
+/** The group a press resolves inside of, held beside the selection; `<SceneCanvas enteredGroup>` takes one. */
 export interface EnteredGroupApi {
   get(): NodeId | null;
   enter(id: NodeId): void;
@@ -32,6 +33,7 @@ export function reachableInGroup(
 
 type SceneReads = Pick<Scene<unknown, string, unknown>, 'get' | 'ancestorsOf' | 'subscribe'>;
 
+/** An entered-group store over `scene`, with nothing entered. */
 export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
   let chain: NodeId[] = [];
   let announced: NodeId | null = null;

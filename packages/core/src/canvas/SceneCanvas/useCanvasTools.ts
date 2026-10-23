@@ -82,7 +82,7 @@ export function useCanvasTools(args: {
   internal: ToolsApi;
   takeover: ToolsApi | null;
 } {
-  const { select, groupEntry, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, ambient, initialActiveTool, modes, onToolsCreated } = args;
+  const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, ambient, initialActiveTool, modes, onToolsCreated } = args;
 
   const takeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
   const registry = useBuiltinTools({
@@ -99,6 +99,7 @@ export function useCanvasTools(args: {
   const pressFeedback = feedbackOpt === true ? defaultPressFeedback : feedbackOpt || null;
   const defaultMarkerDrag = useMemo(() => createViewMarkerContribution(), []);
   const markerDrag = args.actions === null ? null : defaultMarkerDrag;
+  const groupEntry = args.actions === null ? null : args.groupEntry;
   const mergedAmbient = useMemo(
     () => [
       ...presetContributions(enabled), ...(groupEntry ? [groupEntry] : []), ...(ambient ?? []),
