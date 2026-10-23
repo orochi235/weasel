@@ -5,7 +5,7 @@ import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import s from './Along.stories.module.css';
 
 /** A control laid along an arc of its box: move the arc, change its reach, or run it the other way. */
-export default meta({ title: 'ui/Along', component: Along });
+export default meta({ title: 'ui/Along' });
 
 const ITEMS = ['Left', 'Center', 'Right', 'Justify'].map((label) => ({ value: label.toLowerCase(), label }));
 
@@ -20,7 +20,7 @@ interface AlongConfig {
 }
 
 function AlongDemo({ config: c }: { config: AlongConfig }) {
-  const [value, setValue] = useState('left');
+  const [value, setValue] = useState<string | null>('left');
   const arc: AlongArc = { at: c.at, span: `${c.span}${c.unit}`, direction: c.direction, inset: c.inset };
   return (
     <div className={s.box} style={{ '--box': `${c.size}px` } as CSSProperties}>
