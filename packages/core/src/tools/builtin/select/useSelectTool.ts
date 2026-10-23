@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { pickWalk, adapterPickSource, scenePlaneOf } from 'canvas/pickWalk';
 import type { View } from 'core/viewport/view';
@@ -13,6 +13,7 @@ import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { pressTarget } from '../pressTarget';
 import { pressDecision } from './pressDecision';
+import { createSelectDeepAction } from '../../../interactions/actions/defaults/selectDeep';
 import { adapterPointQuery } from './adapterPointQuery';
 import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -169,6 +170,17 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   const optionsRef = useLatest(options);
   const adapterRef = useLatest(adapter);
 
+  // The node under a point, before any group above it is considered.
+  const pickHit = useCallback((
+    worldX: number, worldY: number, alt: boolean, sel: readonly string[],
+  ): string | null => {
+    const opts = optionsRef.current;
+    if (opts.pickBest) return opts.pickBest(worldX, worldY, alt, sel);
+    const ids = pickEveryRef.current(worldX, worldY);
+    if (ids.length === 0) return null;
+    return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
+  }, [optionsRef, pickEveryRef, adapterRef]);
+
   /**
    * `select.pick` — classifies the press and updates the node selection.
    *
@@ -196,13 +208,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const opts = optionsRef.current;
 
         const sel = selection.get();
-        const hit = opts.pickBest
-          ? opts.pickBest(p.worldX, p.worldY, mods.alt, sel)
-          : (() => {
-              const ids = pickEveryRef.current(p.worldX, p.worldY);
-              if (ids.length === 0) return null;
-              return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
-            })();
+        const hit = pickHit(p.worldX, p.worldY, mods.alt, sel);
 
         if (hit === null) {
           pressRef.current = { deferredClickId: null };
@@ -219,7 +225,13 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         pressRef.current = { deferredClickId: press.deferred };
       },
     },
-  }), [optionsRef, pickEveryRef, adapterRef]);
+  }), [optionsRef, adapterRef, pickHit]);
+
+  const deepAction = useMemo(() => createSelectDeepAction({
+    pickHit,
+    extendLocked: () => optionsRef.current.extendClickLocked?.() === true,
+    settled: () => { pressRef.current = { deferredClickId: null }; },
+  }), [pickHit, optionsRef]);
 
   /**
    * `select.collapseDeferred` — the release half of the deferred multi-click.
@@ -275,7 +287,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           icon: icon('select'),
           group: 'select',
         },
-        actions: [pickAction, collapseDeferredAction],
+        actions: [pickAction, deepAction, collapseDeferredAction],
       });
 
       return {
@@ -287,6 +299,17 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         // bindings owned by the selection (`selectionContributions.ts`), so
         // they run under any tool that leaves the gesture unclaimed.
         bindings: [
+          // Cmd-press selects the node itself, past every group. It outranks
+          // `select.pick` because a required modifier counts in specificity.
+          {
+            spec: {
+              kind: 'pointerDown' as const,
+              target: { kindOf: onBody },
+              mods: { mod: true, shift: 'optional' as const },
+            },
+            actionId: 'select.deep',
+            opts: { id: 'select.deep' },
+          },
           // Every press that landed on the scene rather than on chrome. It
           // classifies the press and applies the selection change, and it does
           // not consume the gesture — the same press goes on to open a drag or
@@ -341,6 +364,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         ],
       };
     },
-    [pickAction, collapseDeferredAction],
+    [pickAction, deepAction, collapseDeferredAction],
   );
 }

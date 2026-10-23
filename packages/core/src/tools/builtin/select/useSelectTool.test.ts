@@ -313,11 +313,17 @@ describe('useSelectTool — press and drag bindings do not collide', () => {
   });
 
   it('a modified press still reaches select.pick', () => {
-    for (const mod of ['shiftKey', 'metaKey', 'altKey', 'ctrlKey'] as const) {
+    for (const mod of ['shiftKey', 'metaKey', 'altKey'] as const) {
       const ev = { ...pressEvent('unselected-body'), [mod]: true };
       const matches = matchSorted(ev, selectBindings(), false);
       expect(matches.map((m) => m.binding.actionId)).toEqual(['select.pick']);
     }
+  });
+
+  it('the platform mod key routes to select.deep, ahead of select.pick', () => {
+    const ev = { ...pressEvent('unselected-body'), ctrlKey: true };
+    const matches = matchSorted(ev, selectBindings(), false);
+    expect(matches.map((m) => m.binding.actionId)).toEqual(['select.deep', 'select.pick']);
   });
 });
 
