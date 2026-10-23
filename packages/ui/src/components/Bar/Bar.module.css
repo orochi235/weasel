@@ -145,6 +145,18 @@
   white-space: nowrap;
 }
 
+/* A lead that moves its bar in a dock. */
+.lead[role='button'] {
+  gap: var(--wzl-space-1);
+  cursor: grab;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.lead[role='button']:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
 /* A label after its control, as a switch and a checkbox have it. */
 .after {
   flex: none;

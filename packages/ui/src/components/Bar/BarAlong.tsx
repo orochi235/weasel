@@ -11,6 +11,7 @@ import { BarOverflow } from './BarOverflow';
 import { BAR_ITEM, BAR_LEAD, BAR_MORE, fitting } from './useBarOverflow';
 import { useBarReorder } from './useBarReorder';
 import { useBarReorderKeys } from './useBarReorderKeys';
+import { useBarLead } from './barLeadHandle';
 import b from './Bar.module.css';
 import s from './BarAlong.module.css';
 
@@ -37,7 +38,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const run = useMemo(() => trackRun(shape), [shape]);
   const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.onReorder !== undefined });
-  const leading = barLead(props.lead, label, props.icon);
+  const leading = useBarLead(barLead(props.lead, label, props.icon));
   const lengths = useItemLengths(root, drawnKeys(items, leading != null), barKeyOf);
   const gap = useRunGap(root);
 
@@ -65,7 +66,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
       <RunBand row={along} shape={shape} />
       {props.onReorder && <span role="status" className={b.status}>{keys.announcement}</span>}
       <AlongContext.Provider value={null}>
-        {leading != null && <span className={`${b.lead} ${s.item}`} aria-hidden="true" {...{ [BAR_LEAD]: '' }} style={place(0).style} data-clipped={place(0).clipped}>{leading}</span>}
+        {leading != null && <span className={`${b.lead} ${s.item}`} {...leading.attrs} style={place(0).style} data-clipped={place(0).clipped}>{leading.content}</span>}
         {line.map((item, i) => drawBarItem(item, false, attrs, place(first + i)))}
         {rest.length > 0 && (
           <span className={`${b.cell} ${s.item}`} {...{ [BAR_MORE]: '' }} style={place(order.length - 1).style}>

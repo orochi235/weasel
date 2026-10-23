@@ -14,7 +14,7 @@
   margin-block: 0;
 }
 
-/* The lead names the bar and has nothing to press. */
-.item[data-bar-lead] {
+/* The lead names the bar and has nothing to press, unless it is the bar's handle. */
+.item[data-bar-lead]:not([role='button']) {
   pointer-events: none;
 }

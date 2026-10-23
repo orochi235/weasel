@@ -1,0 +1,74 @@
+/* Docks round a workspace. An edge with no bars draws nothing, so its track collapses. */
+.root {
+  display: grid;
+  grid-template:
+    'top top top' auto
+    'left main right' minmax(0, 1fr)
+    'bottom bottom bottom' auto
+    / auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.top {
+  grid-area: top;
+}
+
+.bottom {
+  grid-area: bottom;
+}
+
+.left {
+  grid-area: left;
+}
+
+.right {
+  grid-area: right;
+}
+
+.top,
+.bottom {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.left,
+.right {
+  display: flex;
+  min-height: 0;
+}
+
+.main {
+  grid-area: main;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.dock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.left > .dock,
+.right > .dock {
+  flex-direction: row;
+  min-height: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  min-width: 0;
+}
+
+.left .row,
+.right .row {
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 0;
+}

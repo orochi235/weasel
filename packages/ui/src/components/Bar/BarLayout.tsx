@@ -10,7 +10,8 @@ import { BarMarkContext } from './barOrder';
 import { BarOverflow } from './BarOverflow';
 import { useBarReorder } from './useBarReorder';
 import { useBarReorderKeys } from './useBarReorderKeys';
-import { BAR_LEAD, BAR_MORE, useBarOverflow } from './useBarOverflow';
+import { BAR_MORE, useBarOverflow } from './useBarOverflow';
+import { useBarLead } from './barLeadHandle';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
@@ -135,7 +136,7 @@ function BarLine(props: BarLayoutProps) {
   const vertical = orientation === 'vertical';
   // A vertical bar has no room beside a field, so only a button stays on it.
   const shown = barItems(nodes, { popLeaves: vertical, cells, row, mark: props.onReorder !== undefined });
-  const leading = barLead(lead, label, icon);
+  const leading = useBarLead(barLead(lead, label, icon));
 
   const menu = overflow === 'menu';
   const { bar, kept } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
@@ -157,7 +158,7 @@ function BarLine(props: BarLayoutProps) {
       aria-orientation={label === undefined ? undefined : orientation}
     >
       {props.onReorder && <span role="status" className={s.status}>{keys.announcement}</span>}
-      {leading && <span className={s.lead} aria-hidden="true" {...{ [BAR_LEAD]: '' }}>{leading}</span>}
+      {leading && <span className={s.lead} {...leading.attrs}>{leading.content}</span>}
       {line.map((item) => drawBarItem(item, vertical, attrs))}
       {rest.length > 0 && (
         <span className={s.cell} {...{ [BAR_MORE]: '' }}>
