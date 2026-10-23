@@ -16,7 +16,7 @@ function thickness(height: string): number {
   svg.append(face);
   root.append(svg);
   document.body.append(root);
-  const geo = curvedGeometry(trackRun(lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })), () => root, () => face);
+  const geo = curvedGeometry(trackRun(lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })), () => face);
   return geo.measure(50, 0)!.thickness;
 }
 
