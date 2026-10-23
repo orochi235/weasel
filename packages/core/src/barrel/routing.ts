@@ -36,7 +36,7 @@ export type { ActionParams, ActionTuning, TunedBinding } from '@weasel-js/routin
 export { bindingId, resolveBindingOverrides } from '@weasel-js/routing';
 export type { BindingOverrides, ResolvedBindingOverrides } from '@weasel-js/routing';
 export { tuneAction } from '@weasel-js/routing';
-export { roleReader, keysHeld, modifiersOf } from '@weasel-js/routing';
+export { roleReader, keysHeld, modifierStateOf } from '@weasel-js/routing';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
 export type { ActionParamSchema, ActionTunings } from '../interactions/actions/actionParamSchema';
 export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';

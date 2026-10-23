@@ -1,5 +1,6 @@
 /** What the dispatcher reads straight off an input event. */
 import type { Carried } from '../actions/action';
+import type { ModifierState } from '../../vocabulary';
 import type { InputEvent } from './matcher';
 
 /**
@@ -11,9 +12,9 @@ import type { InputEvent } from './matcher';
  * and the inspector. This is for the cases where the modifier is data rather
  * than a route.
  */
-export function modifiersOf(e: {
+export function modifierStateOf(e: {
   altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean;
-}): { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean } {
+}): ModifierState {
   return { alt: e.altKey, ctrl: e.ctrlKey, meta: e.metaKey, shift: e.shiftKey };
 }
 
@@ -73,7 +74,7 @@ export function immediateParams(
         affordance: event.affordance,
         // The press point too: an action that places geometry at the click wants it.
         ...(event.kind === 'click' ? { pressX: event.pressX, pressY: event.pressY } : {}),
-        mods: modifiersOf(event),
+        mods: modifierStateOf(event),
         ...resolved,
       };
     // Only a `stage: 'press'` pointerdown reaches an immediate invoker: the
@@ -85,7 +86,7 @@ export function immediateParams(
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
         bodyKind: event.bodyKind,
-        mods: modifiersOf(event),
+        mods: modifierStateOf(event),
         ...resolved,
       };
     case 'pointerdown':
@@ -94,7 +95,7 @@ export function immediateParams(
         worldX: event.x, worldY: event.y,
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
-        mods: modifiersOf(event),
+        mods: modifierStateOf(event),
         ...resolved,
       };
     case 'hover':
@@ -103,7 +104,7 @@ export function immediateParams(
         clientX: event.clientX, clientY: event.clientY,
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
-        mods: modifiersOf(event),
+        mods: modifierStateOf(event),
         held: event.held === true,
         ...resolved,
       };
@@ -115,7 +116,7 @@ export function immediateParams(
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
         bodyKind: event.bodyKind,
-        mods: modifiersOf(event),
+        mods: modifierStateOf(event),
         ...resolved,
       };
     case 'drop':

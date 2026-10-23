@@ -1,7 +1,7 @@
 import { routesForSpec } from '../../tools/routing/reflection/registry';
 import type { DispatcherContext } from './dispatcherApi';
 import type { DispatchRecord, DroppedCandidate, RankedCandidate, RecordCandidate } from './dispatchRecord';
-import { modifiersOf, worldPointOf } from './inputFacts';
+import { modifierStateOf, worldPointOf } from './inputFacts';
 import { specificity, type InputEvent, type MatchResult } from './matcher';
 import { describeEligible, namesView, placedBy, type Ranking, type Walked } from './ranking';
 
@@ -63,7 +63,7 @@ export function buildDispatchRecord(
     input: {
       eventKind: event.kind,
       ...(eventKey !== undefined ? { key: eventKey } : {}),
-      modifiers: modifiersOf(event),
+      modifiers: modifierStateOf(event),
       viewId: view,
       ...(world !== undefined ? { world } : {}),
       ...(r.ruleCtx !== undefined ? { mode: r.ruleCtx.mode } : {}),

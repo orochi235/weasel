@@ -1,5 +1,5 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { keysHeld, modifiersOf, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { keysHeld, modifierStateOf, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import type { PrefOrder } from '@weasel-js/prefs';
 import { useKitSetting, useLatest } from '@weasel-js/react';
@@ -61,7 +61,7 @@ export function useBarReorder({ root, order, onReorder, measure, keysOf }: BarRe
 
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     const el = root.current;
-    if (latest.current.onReorder === undefined || el === null || drag.current !== null || e.button !== 0 || !keysHeld(['mod'], modifiersOf(e), isApplePlatform())) return;
+    if (latest.current.onReorder === undefined || el === null || drag.current !== null || e.button !== 0 || !keysHeld(['mod'], modifierStateOf(e), isApplePlatform())) return;
     const grabbed = (e.target as Element).closest?.(`[${BAR_UNIT}]`);
     if (!grabbed || !el.contains(grabbed)) return;
     const { container, key } = grabbedUnit(grabbed, e.shiftKey);
