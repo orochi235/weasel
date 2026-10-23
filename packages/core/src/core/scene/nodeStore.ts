@@ -105,10 +105,7 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
   function siblingsOf(parent: NodeId | null): NodeId[] {
     if (parent === null) return state.roots;
     const p = requireNode(parent);
-    if (p.kind !== 'container') {
-      throw new Error(`Scene: parent "${parent}" is not a container`);
-    }
-    return p.children;
+    return (p.children ??= []);
   }
 
   function detach(id: NodeId): { parent: NodeId | null; index: number } {
@@ -132,7 +129,7 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
 
   function descendants(id: NodeId, out: NodeId[]): void {
     const n = state.nodes.get(id);
-    if (!n || n.kind !== 'container') return;
+    if (!n?.children) return;
     for (const c of n.children) {
       out.push(c);
       descendants(c, out);
@@ -195,7 +192,7 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     for (const field of fnFields) {
       const fn = (spec as unknown as Record<string, unknown>)[field.spec.field] as NodeFn | undefined;
       if (fn === undefined) continue;
-      if (field.spec.containersOnly && spec.kind !== 'container') continue;
+      if (field.spec.groupsOnly && spec.kind !== 'group') continue;
       field.write(node, fn);
       attached.set(field, fn);
     }

@@ -25,7 +25,7 @@ export function createTreeReads<TData, TLayer extends string, TPose>(
 
     childrenOf(id) {
       const n = nodes.get(id);
-      return n && n.kind === 'container' ? n.children : [];
+      return n?.children ?? [];
     },
 
     ancestorsOf(id) {

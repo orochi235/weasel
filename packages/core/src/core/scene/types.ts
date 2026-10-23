@@ -23,7 +23,7 @@ export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, Se
  * # SceneNode — the thing in the scene
  *
  * Everything the user sees on the canvas — a shape, a group, an annotation,
- * a tile — is a node. Containers and leaves are both nodes; the kit has no
+ * a tile — is a node. Marks and groups are both nodes; the kit has no
  * other concept of "scene element."
  *
  * Every node carries three independent slots, plus its tree position:
@@ -108,23 +108,10 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  the node falls back to its authored `pose`. `setPose` on a derived node
    *  still writes that authored pose; it is simply not what anything reads. */
   derivePose?: DerivePoseFn<TPose, TData, TLayer>;
-}
-
-/** A node with no children — a shape, a label, an image. */
-export interface LeafNode<TData, TLayer extends string, TPose = RectPose>
-  extends NodeBase<TData, TLayer, TPose> {
-  kind: 'leaf';
-}
-
-/** A node with an ordered list of children. This is the real group: what
- *  Cmd+G creates, what SVG `<g>` round-trips to. A container has its own pose,
- *  which its children's poses are relative to, and may optionally clip them. */
-export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
-  extends NodeBase<TData, TLayer, TPose> {
-  kind: 'container';
-  children: NodeId[];
+  /** Ordered child ids. Absent until the node gets its first child. */
+  children?: NodeId[];
   /** Optional clip-path source. Re-evaluated each render. Returning `null`
-   *  means "no clip for this container right now"; an empty / zero-area path
+   *  means "no clip for this node right now"; an empty / zero-area path
    *  means "clip everything out" (children render nowhere). */
   clipFromPose?: ClipFromPoseFn<TPose>;
   /** Draws the whole subtree again under each affine it returns, on top of
@@ -134,7 +121,7 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  A copy is a copy of the clipped content — the clip travels with it.
    *  Re-evaluated each render; `null` or `[]` draws no copies. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
-  /** How this container arranges its children. Whenever the container's
+  /** How this node arranges its children. Whenever the node's
    *  child set or order changes, its bounds change size, or a child's pose is
    *  written, the scene hands the change to the strategy — `depart` for children that left it,
    *  `arrive` for children that joined it, `childPoses` otherwise — and records the poses it writes in the same
@@ -143,20 +130,34 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
   layout?: LayoutStrategy<TPose>;
   /** The units its children are shown, typed and snapped in (their poses stay
    *  in world units), and what one base unit is worth in the enclosing scope's.
-   *  It covers the children, not the container; `sceneUnitScopes` reads the chain. */
+   *  It covers the children, not the node; `sceneUnitScopes` reads the chain. */
   units?: UnitScope;
 }
 
-/** A node in the scene tree: either a leaf or a container. Re-exported
+/** A node that is drawn and picked as one thing — a shape, a label, an image.
+ *  It may still hold children, which are what it is made of. */
+export interface MarkNode<TData, TLayer extends string, TPose = RectPose>
+  extends NodeBase<TData, TLayer, TPose> {
+  kind: 'mark';
+}
+
+/** A node the user gathers things into: what Cmd+G creates, what SVG `<g>`
+ *  round-trips to. An emptied group is still a group. */
+export interface GroupNode<TData, TLayer extends string, TPose = RectPose>
+  extends NodeBase<TData, TLayer, TPose> {
+  kind: 'group';
+}
+
+/** A node in the scene tree: either a mark or a group. Re-exported
  *  publicly as `SceneNode`, to avoid colliding with the DOM's `Node`. */
 export type Node<TData, TLayer extends string, TPose = RectPose> =
-  | LeafNode<TData, TLayer, TPose>
-  | ContainerNode<TData, TLayer, TPose>;
+  | MarkNode<TData, TLayer, TPose>
+  | GroupNode<TData, TLayer, TPose>;
 
 /** What `Scene.add` needs to mint a node. Everything except the id is
  *  required; the id is generated unless one is supplied. */
 export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
-  kind: 'leaf' | 'container';
+  kind: 'mark' | 'group';
   layer: TLayer;
   pose: TPose;
   data: TData;
@@ -170,10 +171,9 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   hidden?: boolean;
   /** Mirrors `SceneNode.locked`. */
   locked?: boolean;
-  /** Only meaningful when `kind === 'container'`. Attach a clip-path function
-   *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
+  /** Attach a clip-path function to the node; ignored for marks. Mirrors `SceneNode.clipFromPose`. */
   clipFromPose?: ClipFromPoseFn<TPose>;
-  /** Mirrors `ContainerNode.copiesFromPose`; ignored for leaves. */
+  /** Mirrors `SceneNode.copiesFromPose`; ignored for marks. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.dependsOn`. */
   dependsOn?: readonly NodeId[] | 'children';
@@ -182,9 +182,9 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   derivePath?: DerivePathFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.derivePose`, on the same terms as `derivePath`. */
   derivePose?: DerivePoseFn<TPose, TData, TLayer>;
-  /** Mirrors `ContainerNode.layout`; ignored for leaves. */
+  /** Mirrors `SceneNode.layout`; ignored for marks. */
   layout?: LayoutStrategy<TPose>;
-  /** Mirrors `ContainerNode.units`; ignored for leaves. */
+  /** Mirrors `SceneNode.units`; ignored for marks. */
   units?: UnitScope;
 }
 
