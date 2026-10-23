@@ -5,16 +5,11 @@
 .lk-control-panel {
   padding: 0;
   // Two columns while each gets --lk-control-column-min, one below that. A
-  // track's floor sits just under half the width, so a third never fits.
+  // track's floor sits just under half the width, so a third never fits; 11px
+  // clears half of the widest column gap a density sets (20px).
   --wzl-prop-columns: repeat(
     auto-fill,
-    minmax(
-      max(
-        var(--lk-control-column-min, 6rem),
-        calc((100% - var(--wzl-prop-column-gap, 16px)) / 2 - 1px)
-      ),
-      1fr
-    )
+    minmax(max(var(--lk-control-column-min, 6rem), calc(50% - 11px)), 1fr)
   );
 }
 
