@@ -13,6 +13,7 @@ import {
   resolveStroke,
   transformPath,
   type Fill,
+  type Inherit,
   type NodeShapeEntry,
   type Path,
   type PoseDescriptor,
@@ -83,13 +84,13 @@ export function markShape<TPose>(
   return {
     id: 'diagram:mark',
     matches: (node) => diagramMarkOf(node) !== null,
-    paint: (node, pose) => {
+    paint: (node, pose, ctx) => {
       const mark = diagramMarkOf(node);
       if (mark === null) return [];
       const box = geometry.getBounds(pose);
-      const d = node.data as { fill?: Fill | null; stroke?: Stroke | null };
-      const declaredFill = resolveFill(d.fill);
-      const declaredStroke = resolveStroke(d.stroke);
+      const d = node.data as { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null };
+      const declaredFill = resolveFill(d.fill, ctx?.inherited?.fill);
+      const declaredStroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
       const fill = declaredFill && commandFill(declaredFill, box);
       const stroke = declaredStroke && commandStroke(declaredStroke, box);
       return [{

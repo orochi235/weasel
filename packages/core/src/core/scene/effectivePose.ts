@@ -11,6 +11,7 @@ import type { PoseComposition } from './composeFrame';
 import { carryDepPath, depFrameRebase, pathAsPainted } from './depFrame';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
+import { inheritedPaintIn, type InheritedPaint } from './inheritedPaint';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
 import type { Path } from '@weasel-js/geom';
 import type { DerivedDep, DerivePathFn, DerivePoseFn, Node, NodeId, PoseOverrides } from './types';
@@ -204,6 +205,10 @@ class RebasedDep<TPose> implements DerivedDep<TPose> {
     const path = this.dep.path;
     return path === null ? null : carryDepPath(path, this.dep.pose, this.pose);
   }
+
+  get inherited(): InheritedPaint | undefined {
+    return this.dep.inherited;
+  }
 }
 
 function depIn<TPose>(
@@ -246,6 +251,11 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
       (depId) => source.childrenOf(depId),
       PATH_SLOT[reading],
     );
+  }
+
+  get inherited(): InheritedPaint | undefined {
+    const { source } = this;
+    return inheritedPaintIn({ get: (id: NodeId) => source.get(id) }, this.posed);
   }
 }
 

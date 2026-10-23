@@ -12,6 +12,7 @@ import { asNodeId } from 'core/scene/types';
 import { definesFrame, derivedDepOf, effectivePose } from 'core/scene/effectivePose';
 import { composesFrames, composeWorldPose, type PoseAdapter } from 'core/scene/composeFrame';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
+import { inheritedPaintIn, type InheritedPaint } from 'core/scene/inheritedPaint';
 import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
 import { carryBoxPath, carryPathBy, pathAsPainted } from 'core/scene/depFrame';
 import type { SceneViewDrawOne } from './NodeShape';
@@ -108,6 +109,7 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
     slot,
     shown: sceneOverridePathOf(scene, toPose) as (node: unknown) => Path | undefined,
     childrenOf: (id: NodeId) => scene.childrenOf(id),
+    scene: scene as never,
     lookup: (id: NodeId) => {
       const node = scene.get(id);
       return node === undefined ? undefined : new SlotDep(node, ctx);
@@ -125,6 +127,8 @@ interface SlotLookup<TPose> {
   shown: (node: unknown) => Path | undefined;
   childrenOf: (id: NodeId) => readonly NodeId[];
   lookup: (id: NodeId) => DerivedDep<TPose> | undefined;
+  /** Where a node's `'inherit'` paint is looked up. */
+  scene: { get(id: NodeId): Node<unknown, string, TPose> | undefined };
 }
 
 /** A class, not an object literal with a `get path()` — see `SceneDep` in
@@ -144,6 +148,10 @@ class SlotDep<TPose> implements DerivedDep<TPose> {
     return resolveDerivedPath(
       this.node as never, this.ctx.lookup, this.ctx.childrenOf, this.ctx.slot,
     );
+  }
+
+  get inherited(): InheritedPaint | undefined {
+    return inheritedPaintIn(this.ctx.scene, this.node);
   }
 }
 
