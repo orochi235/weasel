@@ -7,6 +7,7 @@ import { screenToWorld } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
 import { asNodeId } from 'core/scene/types';
 import type { Point } from '@weasel-js/geom';
+import { pressTarget } from 'tools/builtin/pressTarget';
 
 /** World center of the selection's bounds, else of the visible canvas. */
 export function keyboardAnchor(deps: ActionDeps): Point | null {
@@ -46,6 +47,18 @@ export function menuHitFor(deps: ActionDeps, at?: Point): { hit: MenuHit; select
   return { hit: { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind: ids.length === 1 ? deps.kindOfNode?.(ids[0]!) : undefined } };
 }
 
+/** The node a right-click selects: the press target for `id`, as a left press would pick. */
+function groupFor(deps: ActionDeps, id: string): string {
+  const scene = deps.scene;
+  if (!scene) return id;
+  const node = (n: string) => scene.get(asNodeId(n));
+  return pressTarget(
+    { getParent: (n) => node(n)?.parent ?? null, getNode: node },
+    id,
+    deps.enteredGroup?.get() ?? null,
+  );
+}
+
 /**
  * Open the menu for a right-click, or for Shift+F10 when `params` carry no client point. Reads
  * only `menuHost`, `view` and `worldToClient` on a surface without a scene; `selection`, `scene`,
@@ -62,7 +75,7 @@ export function openContextMenu(
   if (typeof p.clientX === 'number' && typeof p.worldX === 'number') {
     const world = { x: p.worldX, y: p.worldY as number };
     const { hit, select } = menuHitFor(deps, world);
-    if (select) deps.selection?.set([asNodeId(select)]);
+    if (select) deps.selection?.set([asNodeId(groupFor(deps, select))]);
     return host.open({
       hit,
       client: { x: p.clientX, y: p.clientY as number }, world, source: 'pointer',
@@ -89,7 +102,7 @@ export const contextMenuAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: 'F10', mods: { shift: true }, phase: [...INITIAL] }, opts: { id: 'menu.context.key' } },
     { spec: { kind: 'key', key: 'ContextMenu', phase: [...INITIAL] }, opts: { id: 'menu.context.menuKey' } },
   ],
-  requires: ['menuHost', 'selection', 'scene', 'poseDescriptor', 'view', 'worldToClient', 'hitAt', 'kindOfNode'],
+  requires: ['menuHost', 'selection', 'scene', 'poseDescriptor', 'view', 'worldToClient', 'hitAt', 'kindOfNode', 'enteredGroup'],
   // Disabled when no menu would open, so the dispatcher leaves the press, click and drag to whatever else is bound.
   enabled: (deps, at) => (deps?.menuHost?.has({ hit: menuHitFor(deps, at).hit, client: { x: 0, y: 0 }, world: at })
     ? true

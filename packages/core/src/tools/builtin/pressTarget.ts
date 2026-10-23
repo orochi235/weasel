@@ -7,7 +7,8 @@ export interface PressTargetTree {
 /**
  * The node a press on `hitId` selects: the outermost group above it that is
  * below `entered`, or `hitId` itself when there is none. With nothing entered
- * the walk runs to the root; a press inside the entered group stops at it, so
+ * the walk runs to the root, and it does too when `entered` is not an
+ * ancestor of the hit; a press inside the entered group stops at it, so
  * its direct members are what gets selected.
  */
 export function pressTarget(

@@ -12,7 +12,9 @@ import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool } from './useSelectTool';
 import { asNodeId } from 'core/scene/types';
 import { pickTopMostHit } from '../pickTopMostHit';
-import type { Action, ActionDeps } from '@weasel-js/routing';
+import { scenePoseFrame } from 'interactions/actions/poseFrame';
+import { moveAction } from 'interactions/actions/move/action';
+import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 
 type Pose = { x: number; y: number; width: number; height: number };
 type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
@@ -36,9 +38,11 @@ function harness(
     const scene = useScene<unknown, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
     const sel = useSelection({ mode: 'multi' });
     const adapter = sceneToAdapter(scene, { selection: sel });
-    return { tool: useSelectTool(adapter as never, {} as never), sel };
+    return { tool: useSelectTool(adapter as never, {} as never), sel, scene };
   });
   return {
+    scene: () => result.current.scene,
+    sel: () => result.current.sel,
     press(x: number, y: number, mods: Partial<Mods> = {}) {
       const tool = result.current.tool as { actions?: readonly Action[] };
       const invoker = tool.actions?.find((a) => a.id === 'select.pick')?.invoker;
@@ -135,6 +139,33 @@ describe('select.pick on groups', () => {
     h.press(5, 5);
     h.press(6, 6);
     expect(h.selection()).toEqual(['g']);
+  });
+});
+
+describe('dragging a member of a group', () => {
+  it('moves the group, and the member rides along', () => {
+    const h = harness([group('g', box(0)), mark('m', box(0, 0, 20, 20), 'g')]);
+    h.press(5, 5);
+    const base = {
+      world: { x: 5, y: 5 },
+      modifiers: NO_MODS,
+      deps: { selection: h.sel(), scene: h.scene() },
+    };
+    const inv = moveAction.invoker;
+    if (!inv || inv.timing !== 'ongoing') throw new Error('expected ongoing invoker');
+    const handle = inv.start(base as unknown as InvocationCtx, undefined);
+    const moved = {
+      ...base,
+      drag: { start: { x: 5, y: 5 }, current: { x: 15, y: 12 }, delta: { x: 10, y: 7 } },
+    } as unknown as InvocationCtx;
+    act(() => {
+      handle.onMove!(moved);
+      handle.onEnd!(moved, 'commit');
+    });
+    const scene = h.scene();
+    expect(scene.get(asNodeId('g'))?.pose).toMatchObject({ x: 10, y: 7 });
+    expect(scene.get(asNodeId('m'))?.pose).toMatchObject({ x: 10, y: 7 });
+    expect(scenePoseFrame(scene).world(asNodeId('m'))).toMatchObject({ x: 10, y: 7 });
   });
 });
 

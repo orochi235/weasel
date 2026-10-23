@@ -94,7 +94,7 @@ describe('menu.context', () => {
     expect(t.host().current()?.entries.map((e) => e.kind === 'item' && e.label)).toEqual(['Delete']);
   });
 
-  it('selects the node the dispatcher classified, not the last one the picker walked', () => {
+  it("selects the group of the node the dispatcher classified, not the last one the picker walked", () => {
     let box = '' as NodeId;
     let child = '' as NodeId;
     // The picker lists the container last; the classifier collapses a parent
@@ -105,7 +105,7 @@ describe('menu.context', () => {
       child = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', parent: box, pose: { x: 40, y: 220, width: 30, height: 30 } });
     }, pickEvery);
     t.rightClick(55, 235);
-    expect(t.selection().get()).toEqual([child]);
+    expect(t.selection().get()).toEqual([box]);
     expect(t.host().current()).not.toBeNull();
   });
 
