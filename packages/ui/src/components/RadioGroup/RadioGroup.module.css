@@ -72,3 +72,42 @@
 .radio[data-selected] .dot::after {
   transform: scale(1);
 }
+
+/* A radio group laid along a track shape: its label and radios are placed on the run. */
+.along {
+  composes: root from '../Along/runRow.module.css';
+  column-gap: var(--wzl-space-6);
+}
+
+.along > .alongGroup {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.along .radio {
+  position: absolute;
+}
+
+/* The label names the group and has nothing to press. */
+.along .lead {
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* The description and error, hung from a spot one row in from the run's middle: `--hang` 1 hangs them below the spot
+ * and -1 stands them on it, in their own tipped frame. */
+.hint {
+  composes: onRun from '../Along/onRun.module.css';
+}
+
+/* Outranks `.onRun`'s transform, which loads in no fixed order. */
+.along .hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  inline-size: max-content;
+  text-align: center;
+  transform: var(--on-run) translateY(calc(var(--hang) * 50%));
+}

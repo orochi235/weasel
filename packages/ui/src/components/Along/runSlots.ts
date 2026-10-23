@@ -64,7 +64,11 @@ const NO_SLOTS = { subscribe: () => () => {}, current: () => null };
  */
 export function useRunSlot(context: Context<RunSlots | null>, key: string | undefined): RunSlotProps | undefined {
   const slots = useContext(context) ?? NO_SLOTS;
-  const places = useSyncExternalStore(slots.subscribe, slots.current, slots.current);
+  return slotOf(useSyncExternalStore(slots.subscribe, slots.current, slots.current), key);
+}
+
+/** The props for `key` among `places` as a channel publishes them; a host reads its own parts' with it. */
+export function slotOf(places: ReadonlyMap<string, RunSlotProps> | null, key: string | undefined): RunSlotProps | undefined {
   if (places === null || key === undefined) return undefined;
   return places.get(key) ?? { [RUN_SLOT]: key };
 }
