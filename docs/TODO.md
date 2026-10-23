@@ -663,9 +663,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   the selected fill stroked along the run; `Tabs`/`PageTabs`, whose drag-reorder measures along the run;
   `RadioGroup`, its label as the lead; then `SwatchStrip`, whose layout on an arc is undecided.
 
-- **(P3) Gaps left in controls along a curve.**
-  - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
-
 - **(P3) A straight `Slider` misreads a press under a rotated ancestor.** `lineGeometry` in
   `sliderGeometry.ts` lays its line across the rail's client rect, which a rotation turns into the bounding box of
   the turned rail: under `rotate(90deg)` a press at three quarters of the rail reads 50 (seen in Chromium,
