@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
-import { createEnteredGroup, useEnteredGroupDepSource } from './enteredGroup';
+import { createEnteredGroup, useEnteredGroup, useEnteredGroupDepSource } from './enteredGroup';
 
 const POSE: RectPose = { x: 0, y: 0, width: 10, height: 10 };
 
@@ -90,7 +90,7 @@ describe('useEnteredGroupDepSource', () => {
     const { scene, inner } = build();
     let reg!: DepRegistry;
     function Wire() {
-      useEnteredGroupDepSource(scene);
+      useEnteredGroupDepSource(useEnteredGroup(scene));
       reg = useDepRegistry();
       return null;
     }

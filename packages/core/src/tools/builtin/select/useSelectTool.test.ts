@@ -301,9 +301,11 @@ describe('useSelectTool — press and drag bindings do not collide', () => {
     },
   );
 
-  // Nothing to pick there, so the press is left to a binding a tier below.
-  it('the eager press on empty matches nothing of the tool’s', () => {
-    expect(matchSorted(pressEvent('empty'), selectBindings(), false)).toEqual([]);
+  // Nothing to pick there, so the press is left to a binding a tier below. The one binding it
+  // matches, `group.leave`, declines unless a group is entered and the press is outside it.
+  it('the eager press on empty matches only group.leave', () => {
+    const matches = matchSorted(pressEvent('empty'), selectBindings(), false);
+    expect(matches.map((m) => m.binding.actionId)).toEqual(['group.leave']);
   });
 
   it('with no body class at all, the press still reaches select.pick', () => {

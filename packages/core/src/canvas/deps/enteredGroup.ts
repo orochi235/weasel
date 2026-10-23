@@ -66,8 +66,12 @@ export function createEnteredGroup(scene: SceneReads): EnteredGroupDep {
   };
 }
 
-export function useEnteredGroupDepSource(scene: SceneReads): void {
-  const dep = useMemo(() => createEnteredGroup(scene), [scene]);
+/** One entered-group store for the life of the scene. */
+export function useEnteredGroup(scene: SceneReads): EnteredGroupDep {
+  return useMemo(() => createEnteredGroup(scene), [scene]);
+}
+
+export function useEnteredGroupDepSource(dep: EnteredGroupDep): void {
   useDepSource('enteredGroup', () => dep);
   const registry = useDepRegistry();
   useEffect(() => dep.subscribe(() => registry.changed?.()), [dep, registry]);

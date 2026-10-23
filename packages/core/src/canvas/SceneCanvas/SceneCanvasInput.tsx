@@ -47,7 +47,7 @@ export interface SceneCanvasInputProps {
   selection: SelectionApi;
   descriptor: PoseDescriptor<unknown>;
   picking: Pick<
-    Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'doubleClickNames' | 'viewLayerGate' | 'alphaOf'
+    Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'doubleClickNames' | 'viewLayerGate' | 'alphaOf' | 'enteredGroup'
   > & { adapter: BridgeAdapter };
   /** The node a hit resolves to, for the `onClick` / `onDoubleClick` observers. */
   nodeAtPointRef: MutableRefObject<NodeAtPoint | undefined>;
@@ -100,7 +100,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   usePointerPublisher(canvas.elementRef, canvas.apiRef);
   useSceneStandardActions({
     props, viewOn: p.viewOn,
-    selection, scene, adapter: picking.adapter, standardActions: p.tools.standardActions,
+    selection, enteredGroup: picking.enteredGroup, scene, adapter: picking.adapter, standardActions: p.tools.standardActions,
     currentViewRef: viewState.viewRef, onViewChange: viewState.setViewFromInput,
     poseDescriptor: p.descriptor, dispatcher: p.dispatcher,
     pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf,

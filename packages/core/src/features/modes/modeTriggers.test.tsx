@@ -54,7 +54,7 @@ const square = (x: number): P => ({ x, y: 0, width: 30, height: 30 });
 const triangle = () => pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath;
 
 function setup(handlers: ModeTriggerHandlers, isolatedGroup?: () => string | null) {
-  const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+  const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: isolatedGroup ? 'isolation' : 'normal' });
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: asNodeId('p'), kind: 'mark', layer: 'main', pose: square(0), data: { path: triangle() } });
   scene.add({ id: asNodeId('t'), kind: 'mark', layer: 'main', pose: square(40), data: { text: 'hi' } });
@@ -101,13 +101,13 @@ describe('modeTriggers on a canvas', () => {
     expect(enter).not.toHaveBeenCalled();
   });
 
-  it('enters isolation on the outermost group above a double-clicked member', () => {
+  it('leaves a double-click on a grouped member to the select tool, which enters the group', () => {
     const enter = vi.fn();
     setup({ enter }).doubleClick(135);
-    expect(enter).toHaveBeenCalledExactlyOnceWith('isolation', 'outer');
+    expect(enter).not.toHaveBeenCalled();
   });
 
-  it('drills one group further in from the isolated group', () => {
+  it('drills one group further in from the isolated group, in isolation mode', () => {
     const enter = vi.fn();
     setup({ enter }, () => 'outer').doubleClick(135);
     expect(enter).toHaveBeenCalledExactlyOnceWith('isolation', 'inner');

@@ -8,12 +8,13 @@ import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../../overlayBinding';
 import type { Action } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { pressTarget } from '../pressTarget';
 import { pressDecision } from './pressDecision';
-import { createSelectDeepAction } from '../../../interactions/actions/defaults/selectDeep';
+import { leaveGroupsOutside } from '../../../interactions/actions/defaults/enterGroup';
+import { createCollapseDeferredAction } from './collapseDeferred';
+import { GROUP_BINDINGS, useGroupActions } from './useGroupActions';
 import { adapterPointQuery } from './adapterPointQuery';
 import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -181,6 +182,13 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
   }, [optionsRef, pickEveryRef, adapterRef]);
 
+  const extendLocked = useCallback(() => optionsRef.current.extendClickLocked?.() === true, [optionsRef]);
+  const settled = useCallback(() => { pressRef.current = { deferredClickId: null }; }, []);
+  const { boxOf, deepAction, enterAction, leaveAction } = useGroupActions({
+    adapterRef, descriptor: d, pickHit,
+    extendLocked, settled,
+  });
+
   /**
    * `select.pick` — classifies the press and updates the node selection.
    *
@@ -207,6 +215,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const mods = p.mods ?? { alt: false, ctrl: false, meta: false, shift: false };
         const opts = optionsRef.current;
 
+        if (deps.enteredGroup) leaveGroupsOutside(deps.enteredGroup, boxOf, { x: p.worldX, y: p.worldY });
         const sel = selection.get();
         const hit = pickHit(p.worldX, p.worldY, mods.alt, sel);
 
@@ -225,52 +234,10 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         pressRef.current = { deferredClickId: press.deferred };
       },
     },
-  }), [optionsRef, adapterRef, pickHit]);
+  }), [optionsRef, adapterRef, pickHit, boxOf]);
 
-  const deepAction = useMemo(() => createSelectDeepAction({
-    pickHit,
-    extendLocked: () => optionsRef.current.extendClickLocked?.() === true,
-    settled: () => { pressRef.current = { deferredClickId: null }; },
-  }), [pickHit, optionsRef]);
 
-  /**
-   * `select.collapseDeferred` — the release half of the deferred multi-click.
-   *
-   * Pressing an already-selected node inside a multi-selection leaves the
-   * selection alone so the press can start a drag of the whole set. If the
-   * gesture ends without a drag, this collapses to the clicked node.
-   */
-  const collapseDeferredAction = useMemo<Action>(() => ({
-    id: 'select.collapseDeferred',
-    label: 'Select — collapse deferred click',
-    eligible: { capability: 'creates-selection' },
-    requires: ['selection'],
-    // Declining when there is nothing deferred is what keeps this binding
-    // from swallowing every click on a node. It is bound at ACTIVE scope, so
-    // without the gate it would outrank ambient click bindings like
-    // `selectAnchor` and silently break anchor selection.
-    enabled: () =>
-      pressRef.current.deferredClickId !== null
-        ? true
-        : ActionDisabledReason.NotApplicable,
-    invoker: {
-      timing: 'immediate' as const,
-      run: (deps, params) => {
-        const deferred = pressRef.current.deferredClickId;
-        pressRef.current = { deferredClickId: null };
-        if (deferred === null) return;
-        const selection = deps.selection;
-        if (!selection) return;
-        const p = params as {
-          mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
-        } | undefined;
-        selection.applyClick(
-          deferred as NodeId,
-          p?.mods ?? { alt: false, ctrl: false, meta: false, shift: false },
-        );
-      },
-    },
-  }), []);
+  const collapseDeferredAction = useMemo(() => createCollapseDeferredAction(pressRef), []);
 
   return useMemo(
     () => {
@@ -287,7 +254,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           icon: icon('select'),
           group: 'select',
         },
-        actions: [pickAction, deepAction, collapseDeferredAction],
+        actions: [pickAction, deepAction, collapseDeferredAction, enterAction, leaveAction],
       });
 
       return {
@@ -346,6 +313,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             actionId: 'select.collapseDeferred',
             opts: { id: 'select.collapseDeferred' },
           },
+          ...GROUP_BINDINGS,
           // Empty drag → marquee. `onEmptyCanvas` rather than a bare `'empty'`
           // target: the ambient bindings that own the handles rank below this
           // active one, so `'empty'` took drags that start on them.
@@ -364,6 +332,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         ],
       };
     },
-    [pickAction, deepAction, collapseDeferredAction],
+    [pickAction, deepAction, collapseDeferredAction, enterAction, leaveAction],
   );
 }

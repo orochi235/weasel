@@ -2,6 +2,7 @@ import { useMemo, type RefObject } from 'react';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { useLatest } from '@weasel-js/react';
 import { doubleClickTarget } from '../doubleClickTarget';
+import { useEnteredGroup } from '../deps/enteredGroup';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -75,14 +76,15 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
   });
 
   const isolatedGroup = useLatest(args.props.isolatedGroup);
+  const enteredGroup = useEnteredGroup(scene);
   const doubleClickNames = useMemo(() => kindOfNode && ((hitId: string) => doubleClickTarget(hitId, {
     parentOf: (id) => scene.get(asNodeId(id))?.parent ?? null,
     kindOf: kindOfNode,
-    scope: isolatedGroup.current?.() ?? null,
-  })), [scene, kindOfNode, isolatedGroup]);
+    scope: isolatedGroup.current?.() ?? enteredGroup.get(),
+  })), [scene, kindOfNode, isolatedGroup, enteredGroup]);
 
   return {
-    ...selectTool, adapter, kindOfNode, doubleClickNames, getNodeAtPoint, viewLayerGate,
+    ...selectTool, adapter, kindOfNode, doubleClickNames, getNodeAtPoint, viewLayerGate, enteredGroup,
     /** The composed paint alpha, only when the consumer fades anything. */
     alphaOf: alphaFor ? composedAlphaFor : undefined,
   };

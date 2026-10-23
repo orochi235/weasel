@@ -37,6 +37,7 @@ import {
   useTextEditDepSource,
   useViewDepSource,
 } from '../deps';
+import type { EnteredGroupDep } from '../deps/enteredGroup';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings, useBindingOverrides } from './useActionTunings';
@@ -55,6 +56,8 @@ export interface SceneStandardActionsInputs {
   /** Whether the `view` preset is on; without it the viewport actions are off. */
   viewOn: boolean;
   selection: SelectionApi;
+  /** The group a press resolves inside of, shared with the picking that names double-clicks. */
+  enteredGroup: EnteredGroupDep;
   scene: Scene<unknown, string, unknown>;
   adapter: BridgeAdapter;
   /** The standard actions this canvas registers: its presets' and the ones
@@ -105,7 +108,7 @@ export interface SceneStandardActionsInputs {
  */
 export function useSceneStandardActions(inputs: SceneStandardActionsInputs): void {
   const {
-    props, viewOn, selection, scene, adapter, standardActions, currentViewRef,
+    props, viewOn, selection, enteredGroup, scene, adapter, standardActions, currentViewRef,
     onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, alphaOf, viewAnimation,
     editAnchorsExternalState, snap, canvasRef, canvasApiRef, ingestionClipboard,
   } = inputs;
@@ -168,7 +171,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
-  useEnteredGroupDepSource(scene);
+  useEnteredGroupDepSource(enteredGroup);
   useInsertDepSource(scene, adapter, props.insertNodeFactories, props.insertPaint);
   usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(
