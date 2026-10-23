@@ -34,6 +34,7 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id), kind: 'mark' as const, layer: 'main', data: {}, parent: null };
     },
+    childrenOf: (): readonly NodeId[] => [],
     setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
     batch<T>(_label: string, fn: () => T): T { return fn(); },
     // The commit path now emits transform ops through `commitOps` →
