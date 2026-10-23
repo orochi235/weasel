@@ -7,6 +7,7 @@ import { Slider, type SliderProps, type TrackCtx } from './index';
 // jsdom lays nothing out: a thumb is 10 by 20 here and 10 wide untransformed, everything else 200 by 200 at (0, 0).
 const realRect = Element.prototype.getBoundingClientRect;
 const realOffset = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!;
+const realOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!;
 beforeAll(() => {
   Element.prototype.getBoundingClientRect = function box(this: Element) {
     const [width, height] = this.getAttribute('role') === 'slider' ? [10, 20] : [200, 200];
@@ -14,12 +15,17 @@ beforeAll(() => {
   };
   Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
     configurable: true,
-    get(this: HTMLElement) { return this.getAttribute('role') === 'slider' ? 10 : 0; },
+    get(this: HTMLElement) { return this.getAttribute('role') === 'slider' ? 10 : 200; },
+  });
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get(this: HTMLElement) { return this.getAttribute('role') === 'slider' ? 20 : 200; },
   });
 });
 afterAll(() => {
   Element.prototype.getBoundingClientRect = realRect;
   Object.defineProperty(HTMLElement.prototype, 'offsetWidth', realOffset);
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realOffsetHeight);
 });
 
 const top = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 });

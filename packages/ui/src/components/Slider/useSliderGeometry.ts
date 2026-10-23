@@ -12,14 +12,14 @@ export interface SliderGeometryArgs {
   /** The first thumb's untransformed width in px. */
   thumbLength: number;
   rail: () => HTMLElement | null;
-  root: () => HTMLElement | null;
-  band: () => SVGElement | null;
+  /** On a curve, the band's face: what pointers are measured through. */
+  band: () => SVGGraphicsElement | null;
 }
 
 /** The slider's geometry, one identity per shape, fit and thumb length, and on a curve the value span it runs over. */
 export function useSliderGeometry(args: SliderGeometryArgs): { geometry: SliderGeometry; run: TrackRun | null } {
   const { shape, thumbFit, thumbLength } = args;
-  const [els] = useState(() => ({ rail: args.rail, root: args.root, band: args.band }));
+  const [els] = useState(() => ({ rail: args.rail, band: args.band }));
   const [line] = useState(() => lineGeometry(els.rail));
   const curve = shape && shape.kind !== 'line' ? shape : undefined;
   const run = useMemo(() => {
@@ -29,7 +29,7 @@ export function useSliderGeometry(args: SliderGeometryArgs): { geometry: SliderG
     const i = Math.min(0.5, thumbLength / 2 / curve.length);
     return trackRun(curve, i, 1 - i);
   }, [curve, thumbFit, thumbLength]);
-  const geometry = useMemo(() => (run ? curvedGeometry(run, els.root, els.band) : line), [run, els, line]);
+  const geometry = useMemo(() => (run ? curvedGeometry(run, els.band) : line), [run, els, line]);
   return { geometry, run };
 }
 

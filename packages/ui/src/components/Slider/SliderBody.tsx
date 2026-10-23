@@ -58,7 +58,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   const shape = props.shape ?? along?.shape;
   const { geometry, run } = useSliderGeometry({
     shape, thumbFit: props.thumbFit ?? 'inside', thumbLength,
-    rail: () => railRef.current, root: () => trackRef.current, band: () => bandRef.current,
+    rail: () => railRef.current, band: () => bandRef.current,
   });
   const scale = useScale(span, strict, step);
   const { valueToFraction, valueAt } = scale;

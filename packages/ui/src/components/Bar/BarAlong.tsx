@@ -30,6 +30,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const menu = overflow === 'menu';
   const root = useRef<HTMLDivElement>(null);
+  const band = useRef<SVGSVGElement>(null);
   const run = useMemo(() => trackRun(shape), [shape]);
   const items = barItems(nodes, { popLeaves: true, cells, row });
   const leading = barLead(props.lead, label, props.icon);
@@ -45,7 +46,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const orderLengths = order.map((key) => lengths.get(key) ?? 0);
   const total = menu ? 0 : runLength(orderLengths, gap);
   let spots: RunPlace[] = [];
-  const scroll = useRunScroll({ root, run, total, spots: () => spots, lengths: orderLengths });
+  const scroll = useRunScroll({ root, frame: band, run, total, spots: () => spots, lengths: orderLengths });
   spots = alongSpots(run, orderLengths, gap, align, menu, scroll.offset);
   const place = (i: number) => {
     const spot = spots[i]!;
@@ -61,7 +62,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   return (
     <div {...rootAttrs} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} data-scrolls={scrolls ? '' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label} onPointerDownCapture={scroll.onPointerDownCapture} onFocusCapture={scroll.onFocusCapture}>
       {scrolls && (
-        <svg className={s.band} aria-hidden="true">
+        <svg className={s.band} aria-hidden="true" ref={band}>
           <path className={s.bandPath} d={trackShapeD(shape)} />
         </svg>
       )}

@@ -672,7 +672,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
   - `thicknessOf` in `sliderGeometry.ts` reads `--rp-track-height` as px only, so a rem or `calc()` height
     is misread.
-  - `Along` measures its box with the client rect, so a CSS scale on an ancestor shrinks its arc.
   - `BarSideContext` leaks through portals into popovers nested in a curved bar's popover.
   - A separator on a curved bar keeps `aria-orientation="horizontal"`.
   - A curved bar's menu opens above only for side `'top'`; `'left'` and `'right'` fall back to below,
@@ -680,9 +679,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   - `ReadoutsAlong` has no ResizeObserver, so a font load does not restack its rows.
   - A run is turned over by its middle alone, so on a run across 3 or 9 o'clock the items toward one end tip
     past 90° and read upside down: the `ui/Along/Clock sweep` lab shows it at a 90° span (2026-10-21).
-  - The arc controls measure pointers against their box's client rect, so a rotated ancestor (inferred from
-    `curvedGeometry`, not seen) maps a press as wrongly as a scaled one does. The `ui/Along/Lens rim` lab turns
-    its controls by their arcs' angles instead, which works.
 
 - **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
   `apps/draw/src/dev/AssetsPage.test.tsx` with a node property schema open: the Export panel's

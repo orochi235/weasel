@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { boxPoint } from '../Along/boxPoint';
 import { placeOnRun } from '../Along/placeOnRun';
 import { lineShape, trackRun, type Point, type TrackRun } from '@weasel-js/geom';
 
@@ -63,18 +64,18 @@ function thicknessOf(band: SVGElement | null): number {
   return w > 0 ? w : 24;
 }
 
-/** A geometry along `run`, in the coordinates of `root`'s box: parts are tipped to the run, pointers projected onto it. */
-export function curvedGeometry(run: TrackRun, root: () => HTMLElement | null, band: () => SVGElement | null): SliderGeometry {
+/** A geometry along `run`, in the coordinates of the box `band` is drawn across: parts are tipped to the run, pointers
+ *  projected onto it. */
+export function curvedGeometry(run: TrackRun, band: () => SVGGraphicsElement | null): SliderGeometry {
   return {
     curved: true,
     place: (g) => placeOnRun(run, g),
     measure: (clientX, clientY) => {
-      const el = root();
+      const el = band();
       if (!el) return null;
-      const { left, top } = el.getBoundingClientRect();
-      const p = { x: clientX - left, y: clientY - top };
+      const p = boxPoint(el, clientX, clientY);
       const { f: g, dist } = run.nearest(p);
-      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: run.length, thickness: thicknessOf(band()) };
+      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: run.length, thickness: thicknessOf(el) };
     },
   };
 }

@@ -4,20 +4,24 @@ import { arcShape, lineShape, runPlaces, runStationAt, trackRun, type TrackShape
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
 import { Bar } from './Bar';
+import alongStyles from '../Along/Along.module.css';
 import { shownOf } from './BarAlong';
 
-// jsdom lays nothing out: every element is 40 wide untransformed, and every box 200 by 200 at (0, 0).
+// jsdom lays nothing out: an Along is 200 by 200 untransformed and every other element 40 wide; every box is 200 by
+// 200 at (0, 0).
 const realRect = Element.prototype.getBoundingClientRect;
-const realOffset = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!;
+const realOffset = ['offsetWidth', 'offsetHeight'].map((k) => [k, Object.getOwnPropertyDescriptor(HTMLElement.prototype, k)!] as const);
+const isAlong = (el: HTMLElement) => el.classList.contains(alongStyles.along!);
 beforeAll(() => {
   Element.prototype.getBoundingClientRect = function box() {
     return { x: 0, y: 0, left: 0, top: 0, right: 200, bottom: 200, width: 200, height: 200, toJSON: () => {} } as DOMRect;
   };
-  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get: () => 40 });
+  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get(this: HTMLElement) { return isAlong(this) ? 200 : 40; } });
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get(this: HTMLElement) { return isAlong(this) ? 200 : 0; } });
 });
 afterAll(() => {
   Element.prototype.getBoundingClientRect = realRect;
-  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', realOffset);
+  for (const [k, d] of realOffset) Object.defineProperty(HTMLElement.prototype, k, d);
 });
 afterEach(cleanup);
 

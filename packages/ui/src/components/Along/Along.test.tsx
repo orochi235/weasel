@@ -2,15 +2,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { Along, useTrackShape, type AlongCtx } from './index';
 
-// jsdom lays nothing out: every box is `size` square, and a test can switch it.
+// jsdom lays nothing out: every box is `size` square untransformed, and a test can switch it.
 let size = 200;
-const real = Element.prototype.getBoundingClientRect;
+const real = ['offsetWidth', 'offsetHeight'].map((k) => [k, Object.getOwnPropertyDescriptor(HTMLElement.prototype, k)!] as const);
 beforeAll(() => {
-  Element.prototype.getBoundingClientRect = function box() {
-    return { x: 0, y: 0, left: 0, top: 0, right: size, bottom: size, width: size, height: size, toJSON: () => {} } as DOMRect;
-  };
+  for (const [k] of real) Object.defineProperty(HTMLElement.prototype, k, { configurable: true, get: () => size });
 });
-afterAll(() => { Element.prototype.getBoundingClientRect = real; });
+afterAll(() => { for (const [k, d] of real) Object.defineProperty(HTMLElement.prototype, k, d); });
 
 describe('Along', () => {
   it('hands its descendants an arc sized from its own box', () => {

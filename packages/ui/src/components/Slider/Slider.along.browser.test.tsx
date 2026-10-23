@@ -11,10 +11,10 @@ afterEach(cleanup);
 const STOPS = [2, 4, 8, 16].map((v) => ({ value: v, label: `${v}×` }));
 const RADIUS = 104;
 
-function Lens({ size = 240, underlay = false, ...props }: { size?: number; underlay?: boolean } & Partial<SliderProps>) {
+function Lens({ size = 240, underlay = false, transform, ...props }: { size?: number; underlay?: boolean; transform?: string } & Partial<SliderProps>) {
   const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 4 }]);
   return (
-    <div data-box style={{ position: 'relative', width: size, height: size, margin: 40 }}>
+    <div data-box style={{ position: 'relative', width: size, height: size, margin: 40, transform }}>
       {underlay && <button type="button" style={{ position: 'absolute', inset: 0 }}>under</button>}
       <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }}>
         <Slider min={2} max={16} stops={STOPS} spacing="even" snap="strict" thumbs={thumbs} onInput={setThumbs} {...props} />
@@ -175,3 +175,22 @@ test("a readout below the thumb clears the stop label beside it", async () => {
   const readoutInner = dist(r, c) - readout.offsetHeight / 2;
   expect(readoutInner).toBeGreaterThanOrEqual(labelOuter - 0.5);
 });
+
+for (const [name, transform, scale] of [
+  ['scaled down', 'scale(0.5)', 0.5],
+  ['scaled up', 'scale(1.5)', 1.5],
+  ['rotated', 'rotate(90deg)', 1],
+  ['rotated and scaled', 'rotate(-35deg) scale(0.75)', 0.75],
+] as const) {
+  test(`under a ${name} ancestor the ticks sit on the rim and a press on one moves the thumb to it`, async () => {
+    const { box, all, thumb } = await mount({ transform });
+    const c = circleCenter(box);
+    const ticks = all('[data-slider-tick]');
+    for (const el of ticks) expect(Math.abs(dist(mid(el), c) - RADIUS * scale)).toBeLessThanOrEqual(1);
+    const eight = mid(ticks[2]!);
+    hit(eight.x, eight.y)!.dispatchEvent(new PointerEvent('pointerdown', opts(eight.x, eight.y)));
+    document.dispatchEvent(new PointerEvent('pointerup', opts(eight.x, eight.y)));
+    await frame();
+    expect(thumb.getAttribute('aria-valuenow')).toBe('8');
+  });
+}

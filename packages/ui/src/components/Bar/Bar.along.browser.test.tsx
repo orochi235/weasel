@@ -46,6 +46,7 @@ interface LensProps {
   slider?: boolean;
   underlay?: boolean;
   density?: 'compact';
+  transform?: string;
 }
 
 function Register({ action }: { action: Action }) {
@@ -53,13 +54,13 @@ function Register({ action }: { action: Action }) {
   return null;
 }
 
-function Lens({ size = 240, top = 40, arc = TOP, schema = SIX, overflow, slider = false, underlay = false, density }: LensProps) {
+function Lens({ size = 240, top = 40, arc = TOP, schema = SIX, overflow, slider = false, underlay = false, density, transform }: LensProps) {
   const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 4 }]);
   return (
     <ActionsProvider>
       {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
       <button type="button">Before</button>
-      <div data-box data-wzl-density={density} style={{ position: 'relative', width: size, height: size, margin: `${top}px 40px 40px` }}>
+      <div data-box data-wzl-density={density} style={{ position: 'relative', width: size, height: size, margin: `${top}px 40px 40px`, transform }}>
         {underlay && <button type="button" style={{ position: 'absolute', inset: 0 }}>Image</button>}
         <Along arc={arc}>
           <Bar label="Lens" schema={schema} values={VALUES} overflow={overflow} />
@@ -129,10 +130,10 @@ const angleOf = (el: Element) => {
 };
 const to = (x: number, y: number) => ({ to: [x, y] as [number, number] });
 /** A real mouse dragged from `fromDeg` to `toDeg` along the circle, in steps a degree or so apart. */
-const dragAlong = async (c: Pt, fromDeg: number, toDeg: number) => {
+const dragAlong = async (c: Pt, fromDeg: number, toDeg: number, radius = RADIUS) => {
   const steps = Math.ceil(Math.abs(toDeg - fromDeg));
-  const path = Array.from({ length: steps }, (_, i) => to(...onCircle(c, fromDeg + ((toDeg - fromDeg) * (i + 1)) / steps)));
-  await commands.pointer([to(...onCircle(c, fromDeg)), { down: true }, ...path, { up: true }]);
+  const path = Array.from({ length: steps }, (_, i) => to(...onCircle(c, fromDeg + ((toDeg - fromDeg) * (i + 1)) / steps, radius)));
+  await commands.pointer([to(...onCircle(c, fromDeg, radius)), { down: true }, ...path, { up: true }]);
 };
 const pressAt = (p: Pt) => commands.pointer([to(p.x, p.y), { down: true }, { up: true }]);
 
@@ -291,3 +292,26 @@ test('resizing the box moves the actions onto the new rim', async () => {
     .poll(() => Math.max(...items().map((el) => Math.abs(dist(mid(el), centerOf(box)) - 142))))
     .toBeLessThanOrEqual(1);
 });
+
+for (const [name, transform, turn, scale] of [
+  ['scaled', 'scale(0.75)', 0, 0.75],
+  ['rotated', 'rotate(90deg)', 90, 1],
+  ['rotated and scaled', 'rotate(-35deg) scale(1.25)', -35, 1.25],
+] as const) {
+  test(`under a ${name} ancestor the items sit on the rim and a drag along the band scrolls as far as it went`, async () => {
+    const { box } = await mount({ arc: SHORT, transform });
+    const c = centerOf(box);
+    const radius = RADIUS * scale;
+    const third = () => wrap(bearing(mid(items()[2]!), c) - turn);
+    expect(Math.abs(dist(mid(items()[2]!), c) - radius)).toBeLessThanOrEqual(1);
+    const gapDeg = Array.from({ length: 201 }, (_, i) => -25 + i / 4).find((deg) => {
+      const hit = document.elementFromPoint(...onCircle(c, deg + turn, radius));
+      return hit?.parentElement?.parentElement === bar();
+    });
+    expect(gapDeg).toBeDefined();
+    const before = third();
+    await dragAlong(c, gapDeg! + turn, gapDeg! + turn - 25, radius);
+    await settle();
+    expect(Math.abs(third() - before + 25), `third ${before} → ${third()}`).toBeLessThanOrEqual(1);
+  });
+}

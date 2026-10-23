@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type P
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
+import { boxPoint } from '../Along/boxPoint';
 import { BAR_ITEM, BAR_LEAD } from './useBarOverflow';
 
 /** Px a press must travel along the run before it is a scroll rather than a press on an item. */
@@ -22,6 +23,8 @@ const NO_CAPTURE = { capture: false } as const;
 /** What {@link useRunScroll} reads: the bar's root, its run, how long its items lie end to end, and where each falls now. */
 export interface RunScrollArgs {
   root: RefObject<HTMLElement | null>;
+  /** The band drawn across the root's box while the run scrolls, which pointers are measured through; else the root. */
+  frame?: RefObject<SVGSVGElement | null>;
   run: TrackRun;
   total: number;
   spots: () => readonly RunSpot[];
@@ -42,7 +45,7 @@ export interface RunScroll {
  * over about {@link GLIDE_MS} ms, so items slide rather than jump; a drag follows the pointer, and a reader who
  * prefers reduced motion gets every move at once.
  */
-export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs): RunScroll {
+export function useRunScroll({ root, frame, run, total, spots, lengths }: RunScrollArgs): RunScroll {
   const max = Math.max(0, total - run.length);
   const [shown, setShown] = useState(0);
   const offset = clamp(shown, 0, max);
@@ -105,11 +108,12 @@ export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs
     const el = root.current;
     if (latest.current.max <= 0 || el === null || e.button !== 0 || !el.contains(e.target as Node)) return;
     session.current?.cancel();
-    const s0 = positionAt(el, latest.current.run, e);
+    const across = frame?.current ?? el;
+    const s0 = positionAt(across, latest.current.run, e);
     const from = now();
     let scrolling = false;
     const onMove = (ev: PointerEvent): void => {
-      const travel = positionAt(el, latest.current.run, ev) - s0;
+      const travel = positionAt(across, latest.current.run, ev) - s0;
       if (!scrolling && Math.abs(travel) > SCROLL_SLOP) {
         scrolling = true;
         // Once it is a drag the root takes the pointer, so the release lands off the item and its press cancels.
@@ -151,12 +155,11 @@ export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs
 }
 
 /**
- * How far along `run` the pointer is, in px, `run`'s coordinates being `el`'s box: past either end, carried on
- * along the end's tangent, so a drag that leaves the run keeps scrolling it.
+ * How far along `run` the pointer is, in px, `run`'s coordinates being the box `frame` fills: past either end, carried
+ * on along the end's tangent, so a drag that leaves the run keeps scrolling it.
  */
-function positionAt(el: HTMLElement, run: TrackRun, e: { clientX: number; clientY: number }): number {
-  const box = el.getBoundingClientRect();
-  const p = { x: e.clientX - box.left, y: e.clientY - box.top };
+function positionAt(frame: Element, run: TrackRun, e: { clientX: number; clientY: number }): number {
+  const p = boxPoint(frame, e.clientX, e.clientY);
   const { f } = run.nearest(p);
   const beyond = (g: 0 | 1): number => {
     const { point, tangent } = run.at(g);

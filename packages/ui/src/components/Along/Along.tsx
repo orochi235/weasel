@@ -32,7 +32,7 @@ const NONE: Box = { width: 0, height: 0 };
  */
 export function Along({ arc = TOP_HALF, shape, align = 'center', className, children }: AlongProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
-  const box = useBoxes(() => [ref.current], 1)[0] ?? NONE;
+  const box = useBoxes(() => [ref.current], 1, { untransformed: true })[0] ?? NONE;
   const { width, height } = box;
   const { start, end, at, span, direction, radius, center, inset } = arc;
   const cx = center?.x;
