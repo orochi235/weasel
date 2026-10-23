@@ -25,7 +25,7 @@ export interface ModeEntry {
  * A mode: an app-level editing context that narrows which tools are usable and
  * how the workspace looks. Tools live inside modes; a tool is never "in" one.
  *
- * `kind` picks the lifecycle. A `soft` mode (path-edit, isolation, text-edit)
+ * `kind` picks the lifecycle. A `soft` mode (path-edit, text-edit)
  * is a scoped context with no commit ceremony — every edit inside it is
  * independently undoable and `exit` is non-destructive. A `strict` mode
  * (free-transform, crop) is a transaction: the whole session collapses to one

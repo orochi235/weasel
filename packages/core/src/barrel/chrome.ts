@@ -14,6 +14,12 @@ export type {
   SelectionStore,
 } from '../core/selection/useSelection';
 
+// ─── The entered group: the group a press resolves inside of ────────────────
+export { createEnteredGroup, useEnteredGroup } from '../canvas/deps/enteredGroup';
+export type { EnteredGroupDep } from '../canvas/deps/enteredGroup';
+export { createEnteredGroupScope } from '../features/selection/enteredGroupScope';
+export type { EnteredGroupScope } from '../features/selection/enteredGroupScope';
+
 // --- Selection ambient context --------------------------------------------
 export {
   SelectionContextProvider,

@@ -71,7 +71,7 @@ describe('modality shortcuts', () => {
 
   it('Meta+Escape discards a soft mode', () => {
     const t = setup();
-    act(() => t.machine.enterMode('isolation', { targetId: 'a' }));
+    act(() => t.machine.enterMode('path-edit', { targetId: 'a' }));
     const discard = vi.spyOn(t.machine, 'discardMode');
     t.key('Escape', { metaKey: true });
     expect(discard).toHaveBeenCalledOnce();
@@ -179,11 +179,11 @@ describe('entering path-edit from the keyboard', () => {
 
   it('an entry key pressed inside another mode leaves that mode alone', () => {
     const t = setupPath(() => ID);
-    act(() => t.machine.enterMode('isolation', { targetId: 'g' }));
+    act(() => t.machine.enterMode('text-edit', { targetId: 't' }));
     t.key('Enter');
     t.key('c');
     t.key('t', { metaKey: true });
-    expect(t.machine.registry.current().id).toBe('isolation');
+    expect(t.machine.registry.current().id).toBe('text-edit');
     expect(t.editingId() || null).toBeNull();
   });
 });

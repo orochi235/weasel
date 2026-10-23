@@ -201,7 +201,7 @@ export const PREFS = {
     },
     modes: {
       name: 'Modes',
-      description: 'Path edit, isolation, and the other modes you work inside.',
+      description: 'Path edit, text edit, and the other modes you work inside.',
       children: {
         undo: {
           kind: 'enum',

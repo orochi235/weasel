@@ -283,7 +283,6 @@ describe('mode-gated defaults', () => {
     ['text-edit', false],
     ['crop', false],
     ['free-transform', true],
-    ['isolation', true],
   ] as const)('transform chrome in %s mode follows the capability, not a mode id', (mode, shown) => {
     const c = baseCtx({ selection: [NID('n1')], focused: true, mode });
     const isVisible = resolveVisibility(undefined, c);

@@ -5,8 +5,8 @@ import type { ModeRegistry } from './registry';
 export interface CreateScopingDimOptions {
   registry: ModeRegistry;
   /** Returns the set of node ids that are *in* scope for the current mode.
-   *  The app computes this — typically: selection-only for path-edit,
-   *  isolated subtree for isolation, empty for non-scoping modes. */
+   *  The app computes this — typically: the edited path for path-edit,
+   *  empty for non-scoping modes. */
   getTargetIds: () => ReadonlySet<string>;
   /** Alpha for out-of-scope nodes. Default 0.3 (spec). */
   dimAlpha?: number;

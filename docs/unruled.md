@@ -76,7 +76,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-14: Shift on a control handle drag keeps its angle; the handle shrinks onto its anchor
   but does not flip through it. Retract and Symmetric have no default shortcut.
 - 2026-10-18: `ModeDefinition.entry.targets` names the routing kinds a `'double-click-target'`
-  entry takes (`PATH_EDIT` `['path']`, `ISOLATION` `['group']`, `TEXT_EDIT` none), and core's
+  entry takes (`PATH_EDIT` `['path']`, `TEXT_EDIT` none), and core's
   `modeTriggers(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
   double-click itself (pen, spiro, slice finishing) now wins where draw's `onDoubleClick` observer
   used to enter path-edit alongside it.
@@ -88,12 +88,15 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   default when `routing` is unset) leads with `groupNodeRouting`, which routes a container as
   `'group'` where it was `'unknown'`. `defaultNodeRouting` stays the shape-kind table; a consumer
   spreads `groupNodeRouting` ahead of it.
-- 2026-10-18: A double-click on a grouped member names its outermost group, stopping below
-  `<SceneCanvas isolatedGroup>`, so repeated double-clicks drill in a group at a time (ruled
-  2026-10-18: a double-click on a group isolates it). Unruled around it: the isolated group
-  reaches the kit as that new prop, since the mode registry holds no target; only a node routed
-  `'group'` is named, so a container routed otherwise is passed over; the `onDoubleClick` observer
-  still reports the node hit, not the group named.
+- 2026-10-18: A double-click on a grouped member names its outermost group inside the entered
+  group, so repeated double-clicks drill in a group at a time. Only a node routed `'group'` is
+  named, so a container routed otherwise is passed over; the `onDoubleClick` observer still reports
+  the node hit, not the group named.
+- 2026-10-23: Nodes outside the entered group take no hits in every `<SceneCanvas>`, whether or
+  not the consumer dims them, so a press outside the group's box lands on empty canvas: it leaves
+  the group (`group.leave.press`) and selects nothing. A double-click there leaves on its first
+  press, and its second reaches the node under it. The entered-group frame reads
+  `--wzl-entered-group`, which no theme sets.
 - 2026-10-18: Whether a single click on a grouped member selects the group is still open. A single
   click is unchanged and picks the member.
 - 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
@@ -540,11 +543,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## draw
 
-- 2026-10-11: A double-click on a path inside an isolated group leaves isolation for path edit. Since
-  2026-10-18 only a path in no further group does; inside a nested group the double-click isolates
-  that group.
-- 2026-10-18: Isolation lights and unlocks the isolated group's contents, not only the group node,
-  so its members can be clicked.
+- 2026-10-23: Inside an entered group every tool and command works as outside one, page edits
+  included, where isolation mode allowed none. The breadcrumb's Exit leaves every entered group at
+  once; Escape leaves one.
 - 2026-10-12: Open replaces the document and Import appends, and Open adopts the file's background
   color. The grid is off by default.
 - 2026-10-13: `App.tsx` is split into `Editor`, `Workspace`, and hooks, and two dev pages were

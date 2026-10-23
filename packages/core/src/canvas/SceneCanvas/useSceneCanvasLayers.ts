@@ -51,7 +51,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   poseDescriptor: PoseDescriptor<TPose>;
   alphaFor: ((id: string) => number) | undefined;
   colorOverrides: ColorOverrideRegistry | undefined;
-  boundsOf: (id: string) => Bounds | null; enteredGroup: EnteredGroupDep;
+  boundsOf: (id: string) => Bounds | null; enteredGroup: EnteredGroupDep; frameColor: () => string;
   planeOfNode: (id: string, view: View) => PlaneMap | null;
   /** `<SceneCanvas poseTransition>`, whose ghosts of removed nodes this draws. */
   poseTransition: PoseTransitionSeat<TPose> | null | undefined;
@@ -141,7 +141,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     resizeHandles,
   );
 
-  const enteredFrameLayer = useEnteredGroupFrameLayer(args.enteredGroup, args.boundsOf);
+  const enteredFrameLayer = useEnteredGroupFrameLayer(args.enteredGroup, args.boundsOf, args.frameColor);
   const layers = useMemo<CanvasLayers>(() => ({
     ...builtLayersOf(merged),
     scene: sceneLayers,

@@ -1,6 +1,5 @@
 import type { Action } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-import type { EnteredGroupDep } from 'canvas/deps/enteredGroup';
 
 type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
 
@@ -10,8 +9,6 @@ export interface SelectDeepOptions {
   pickHit: (worldX: number, worldY: number, alt: boolean, selection: readonly string[]) => string | null;
   /** True when an extend press must leave the selection alone. */
   extendLocked: () => boolean;
-  /** Leaves the entered groups the press landed outside of. */
-  leaveOutside: (entered: EnteredGroupDep, worldX: number, worldY: number) => void;
   /** Called once the press is handled, so a deferral left by an earlier press cannot fire on release. */
   settled: () => void;
 }
@@ -26,7 +23,7 @@ export function createSelectDeepAction(opts: SelectDeepOptions): Action {
     id: 'select.deep',
     label: 'Select — pick past groups',
     eligible: { capability: 'creates-selection' },
-    requires: ['selection', 'enteredGroup'],
+    requires: ['selection'],
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
@@ -34,11 +31,10 @@ export function createSelectDeepAction(opts: SelectDeepOptions): Action {
         const selection = deps.selection;
         if (!selection || p?.worldX === undefined || p.worldY === undefined) return;
         const shift = p.mods?.shift === true;
-        if (deps.enteredGroup) opts.leaveOutside(deps.enteredGroup, p.worldX, p.worldY);
         const hit = opts.pickHit(p.worldX, p.worldY, p.mods?.alt === true, selection.get());
         opts.settled();
         if (hit === null || (shift && opts.extendLocked())) return;
-        selection.applyClick(hit as NodeId, { alt: false, ctrl: false, meta: false, shift });
+        selection.applyClick(hit as NodeId, { ctrl: false, meta: false, shift });
       },
     },
   };

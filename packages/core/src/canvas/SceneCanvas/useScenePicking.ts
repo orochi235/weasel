@@ -3,6 +3,7 @@ import { asNodeId, type Scene } from 'core/scene/types';
 import { useLatest } from '@weasel-js/react';
 import { doubleClickTarget } from '../doubleClickTarget';
 import { useEnteredGroup } from '../deps/enteredGroup';
+import { createEnteredGroupScope } from 'features/selection/enteredGroupScope';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -17,7 +18,7 @@ import { useViewLayerGate } from '../useViewLayerGate';
 
 type PickingProps<TData, TLayer extends string, TPose> = Pick<
   SceneCanvasProps<TData, TLayer, TPose>,
-  'geometry' | 'alphaFor' | 'layerVisibility' | 'layerOrder' | 'isPointerInteractive' | 'isolatedGroup'
+  'geometry' | 'alphaFor' | 'layerVisibility' | 'layerOrder' | 'isPointerInteractive' | 'enteredGroup'
 >;
 
 /**
@@ -44,6 +45,15 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     () => composeAlphaFor(scene, alphaFor),
     [scene, alphaFor],
   );
+  const ownEntered = useEnteredGroup(scene);
+  const enteredGroup = args.props.enteredGroup ?? ownEntered;
+  // A press resolves inside the entered group, so nothing outside it takes a hit.
+  const consumerInteractive = useLatest(isPointerInteractive);
+  const pointerInteractive = useMemo(() => {
+    const scope = createEnteredGroupScope({ entered: enteredGroup, scene });
+    return (id: string) => scope.isPointerInteractive(id) && consumerInteractive.current?.(id) !== false;
+  }, [enteredGroup, scene, consumerInteractive]);
+
   const surfaceViewRegistry = useOptionalViewRegistry();
   const viewLayerGate = useViewLayerGate(
     layerVisibility, layerOrder, () => surfaceViewRegistry?.surface()?.layers() ?? [],
@@ -67,7 +77,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     // that once per walk instead of once per candidate.
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
-    ...(isPointerInteractive ? { isPointerInteractive } : {}),
+    isPointerInteractive: pointerInteractive,
     selectTool: args.selectTool,
   });
 
@@ -75,13 +85,11 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     pickBest: selectTool.pickBest, nodes: adapter, kindOf,
   });
 
-  const isolatedGroup = useLatest(args.props.isolatedGroup);
-  const enteredGroup = useEnteredGroup(scene);
   const doubleClickNames = useMemo(() => kindOfNode && ((hitId: string) => doubleClickTarget(hitId, {
     parentOf: (id) => scene.get(asNodeId(id))?.parent ?? null,
     kindOf: kindOfNode,
-    scope: isolatedGroup.current?.() ?? enteredGroup.get(),
-  })), [scene, kindOfNode, isolatedGroup, enteredGroup]);
+    scope: enteredGroup.get(),
+  })), [scene, kindOfNode, enteredGroup]);
 
   return {
     ...selectTool, adapter, kindOfNode, doubleClickNames, getNodeAtPoint, viewLayerGate, enteredGroup,

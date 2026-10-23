@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { matchSorted, type ScopedBinding } from '@weasel-js/routing';
+import { actionBindings, matchSorted, type ScopedBinding } from '@weasel-js/routing';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { useScene } from 'core/scene/useScene';
@@ -116,8 +116,8 @@ describe('group.enter', () => {
     expect(harness(NESTED).canEnter(500, 500)).toBe(false);
   });
 
-  it('is not eligible in isolation mode, whose own double-click drills in', () => {
-    expect(harness([]).action('group.enter').eligible).toEqual({ capability: 'creates-selection', mode: { not: 'isolation' } });
+  it('is eligible wherever the selection can be set', () => {
+    expect(harness([]).action('group.enter').eligible).toEqual({ capability: 'creates-selection' });
   });
 
   it('declares every dep it reads', () => {
@@ -164,12 +164,11 @@ describe('group.leave', () => {
     expect(h.entered.get()).toBeNull();
   });
 
-  it('select.pick on a node outside the entered group leaves it and selects that node', () => {
+  it('select.pick leaves the entered group as it is: leaving is group.leave\'s, on its own binding', () => {
     const h = harness(NESTED);
     h.entered.enter(asNodeId('outer'));
     h.pick(105, 105);
-    expect(h.entered.get()).toBeNull();
-    expect(h.selection()).toEqual(['free']);
+    expect(h.entered.get()).toBe('outer');
   });
 
   it('declares every dep it reads', () => {
@@ -208,7 +207,7 @@ describe('bindings', () => {
 
   it('Escape ranks group.leave above the escape action that clears the selection', () => {
     const h = harness([]);
-    const esc: ScopedBinding[] = (escapeAction.defaultBinding ?? []).map((binding) => ({
+    const esc: ScopedBinding[] = actionBindings(escapeAction).map((binding) => ({
       binding: { ...binding, actionId: 'escape' } as ScopedBinding['binding'], scope: 'ambient' as const, ownerId: 'edit',
     }));
     const event = { kind: 'key' as const, key: 'Escape', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };

@@ -41,6 +41,32 @@ describe('workspaceTintLayer', () => {
     expect(fall!.fill).toMatchObject({ paint: { from: { x: 0, y: 0 }, to: { x: 0, y: 100 }, opacity: 0.3 } });
   });
 
+  it('paints the fallback visual in a mode with no tint, and the mode\'s own over it', () => {
+    const registry = createModeRegistry({ modes: MODES, initial: 'plain' });
+    let on = true;
+    const layer = workspaceTintLayer({ registry, fallback: { visual: () => (on ? { tint: '#8b5cf6', intensity: 0.2 } : null), subscribe: () => () => {} } });
+    expect(draw(layer)[0]!.fill).toMatchObject({ paint: { kind: 'solid', color: '#8b5cf6', opacity: 0.2 } });
+    registry.setMode('wash');
+    expect(draw(layer)[0]!.fill).toMatchObject({ paint: { color: '#ff0000' } });
+    registry.setMode('plain');
+    on = false;
+    expect(draw(layer)).toEqual([]);
+  });
+
+  it('repaints on the fallback\'s changes as well as the registry\'s', () => {
+    const registry = createModeRegistry({ modes: MODES, initial: 'plain' });
+    const offFallback = vi.fn();
+    const subscribe = vi.fn(() => offFallback);
+    const layer = workspaceTintLayer({ registry, fallback: { visual: () => null, subscribe } });
+    const repaint = vi.fn();
+    const off = layer.subscribe!(repaint);
+    expect(subscribe).toHaveBeenCalledWith(repaint);
+    registry.setMode('wash');
+    expect(repaint).toHaveBeenCalled();
+    off();
+    expect(offFallback).toHaveBeenCalled();
+  });
+
   it('lets the caller override every mode intensity', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'wash' });
     const [cmd] = draw(workspaceTintLayer({ registry, intensity: 0.4 }));

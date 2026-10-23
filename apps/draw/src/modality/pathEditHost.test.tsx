@@ -113,14 +113,6 @@ describe('path editing owned by the mode machine', () => {
     expect(node.pose).toMatchObject({ x: 0, y: 0, width: 20, height: 10 });
     expect(Array.from(t.editAnchors().getEditablePath(A)!.coords)).toEqual([0, 0, 10, 0, 20, 10, 0, 10]);
   });
-
-  it('leaves isolation for the path the canvas opens', () => {
-    const t = setup();
-    act(() => t.machine.enterMode('isolation', { targetId: 'g' }));
-    t.trigger('enterPathEdit');
-    expect(t.machine.registry.current().id).toBe('path-edit');
-    expect(t.machine.getActiveTargetId()).toBe(A);
-  });
 });
 
 describe('modePathEdit', () => {
@@ -136,10 +128,10 @@ describe('modePathEdit', () => {
   it('names no path in another mode, and closing one there leaves that mode alone', () => {
     const m = machine();
     const host = modePathEdit(m, () => true);
-    m.enterMode('isolation', { targetId: 'g' });
+    m.enterMode('text-edit', { targetId: 't' });
     expect(host.editingId()).toBeNull();
     host.setEditingId(null);
-    expect(m.registry.current().id).toBe('isolation');
+    expect(m.registry.current().id).toBe('text-edit');
   });
 
   it('opening the path already open changes nothing', () => {

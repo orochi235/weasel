@@ -16,7 +16,7 @@ import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type React from 'react';
-import { forwardRef, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useMemo, useRef } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { Canvas } from './Canvas';
 import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
@@ -44,6 +44,8 @@ import { useNodeKinds } from './SceneCanvas/useNodeKinds';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
+import { chromeColorOf } from './accentColor';
+import { ENTERED_FRAME_COLOR, ENTERED_FRAME_TOKEN } from 'features/selection/enteredGroupFrame';
 export { SCENE_CANVAS_FEATURES, type Feature } from './SceneCanvas/features';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export { defaultDrawOne } from './defaultDrawOne';
@@ -92,9 +94,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const actionsRegistry = useActionsRegistry();
   const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
 
+  const frameColor = useCallback(
+    () => chromeColorOf(internalCanvasRef.current, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR), [],
+  );
   const layered = useSceneCanvasLayers({
     layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
-    enteredGroup: picking.enteredGroup, alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
+    enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
     poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
     boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts,

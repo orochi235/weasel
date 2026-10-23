@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { createModeRegistry, DEFAULT_MODES, type ModeRegistry } from '@weasel-js/modes';
+import { createModeRegistry, DEFAULT_MODES, NORMAL, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
 import { modeShortcuts, type ModeShortcutHandlers } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
@@ -28,9 +28,11 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const ID = asNodeId('a');
+/** A soft mode that still lets a drag marquee, so a gesture can be in flight when Escape lands. */
+const WORKING: ModeDefinition = { ...NORMAL, id: 'working', label: 'Working', exit: { shortcut: 'Escape' } };
 
 function setup(initial: string, handlers: ModeShortcutHandlers, { wireMode = true } = {}) {
-  const registry: ModeRegistry = createModeRegistry({ modes: DEFAULT_MODES, initial });
+  const registry: ModeRegistry = createModeRegistry({ modes: [...DEFAULT_MODES, WORKING], initial });
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
@@ -70,7 +72,7 @@ describe('mode shortcuts', () => {
 
   it('yield to cancelling a gesture in flight', () => {
     const exit = vi.fn();
-    const t = setup('isolation', { exit });
+    const t = setup('working', { exit });
     t.pointer('pointerdown', 40, 40);
     t.pointer('pointermove', 55, 55);
     t.key('Escape');

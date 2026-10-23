@@ -44,7 +44,7 @@ describe('evaluate — Selector keys', () => {
     expect(evaluate({ mode: 'path-edit' }, baseCtx())).toBe(false);
   });
   it('mode { in: [...] }', () => {
-    expect(evaluate({ mode: { in: ['normal', 'isolation'] } }, baseCtx())).toBe(true);
+    expect(evaluate({ mode: { in: ['normal', 'crop'] } }, baseCtx())).toBe(true);
     expect(evaluate({ mode: { in: ['path-edit', 'text-edit'] } }, baseCtx())).toBe(false);
   });
   it('mode { not: x }', () => {

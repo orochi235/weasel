@@ -1,5 +1,5 @@
 import type { Rect } from '@weasel-js/geom';
-import type { ModeDecorations, ModeRegistry } from '@weasel-js/modes';
+import type { ModeDecorations, ModeRegistry, WorkspaceVisual } from '@weasel-js/modes';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
@@ -14,6 +14,8 @@ export interface WorkspaceTintLayerOptions {
   page?: () => Rect | null;
   /** Opacity for every mode's tint, in place of its `workspace.intensity`. */
   intensity?: number;
+  /** A tint for when the mode has none, such as the entered group's, with what announces a change to it. */
+  fallback?: { visual: () => WorkspaceVisual | null; subscribe: (fn: () => void) => () => void };
   id?: string;
   label?: string;
 }
@@ -21,8 +23,8 @@ export interface WorkspaceTintLayerOptions {
 const DEFAULT_INTENSITY = 0.12;
 
 /**
- * A screen-space layer painting the active mode's `WorkspaceVisual`: nothing in
- * a mode without a tint, otherwise a wash at the mode's intensity, bottom-up or
+ * A screen-space layer painting the active mode's `WorkspaceVisual`, or the
+ * `fallback`'s in a mode without one: nothing when neither has a tint, otherwise a wash at the mode's intensity, bottom-up or
  * top-down when the mode names a gradient. It subscribes to the registry, so a
  * mode switch repaints it.
  */
@@ -32,11 +34,16 @@ export function workspaceTintLayer(opts: WorkspaceTintLayerOptions): RenderLayer
     id: opts.id ?? 'mode-tint',
     label: opts.label ?? 'Mode tint',
     space: 'screen',
-    subscribe: registry.subscribe,
+    subscribe: (repaint) => {
+      const offMode = registry.subscribe(repaint);
+      const offFallback = opts.fallback?.subscribe(repaint);
+      return () => { offMode(); offFallback?.(); };
+    },
     draw: (_data, view, dims) => {
-      const ws = registry.current().workspace;
+      const own = registry.current().workspace;
+      const ws = own?.tint && own.tint !== 'transparent' ? own : opts.fallback?.visual() ?? undefined;
       const tint = ws?.tint;
-      if (!tint || tint === 'transparent') return [];
+      if (!ws || !tint || tint === 'transparent') return [];
       const opacity = opts.intensity ?? ws.intensity ?? DEFAULT_INTENSITY;
       const { width: W, height: H } = dims;
 

@@ -1,6 +1,6 @@
 /**
- * What a double-click names: the outermost group above the hit, inside the group isolation is
- * working in, so each double-click drills one level further in. Single picks are untouched.
+ * What a double-click names: the outermost group above the hit, inside the entered group, so each
+ * double-click drills one level further in. Single picks are untouched.
  */
 import { describe, expect, it } from 'vitest';
 import { buildClassifyTarget } from './affordanceAt';
@@ -26,7 +26,7 @@ describe('doubleClickTarget', () => {
     expect(doubleClickTarget('inner', tree())).toBe('outer');
   });
 
-  it('names the outermost group inside the isolated one, one level further in', () => {
+  it('names the outermost group inside the entered one, one level further in', () => {
     expect(doubleClickTarget('leaf', tree('outer'))).toBe('inner');
     expect(doubleClickTarget('leaf', tree('inner'))).toBe('leaf');
     expect(doubleClickTarget('sibling', tree('outer'))).toBe('sibling');
@@ -42,7 +42,7 @@ describe('doubleClickTarget', () => {
     expect(doubleClickTarget('outer', tree('outer'))).toBe('outer');
   });
 
-  it('walks to the root from a hit outside the isolated group', () => {
+  it('walks to the root from a hit outside the entered group', () => {
     expect(doubleClickTarget('leaf', tree('elsewhere'))).toBe('outer');
   });
 });

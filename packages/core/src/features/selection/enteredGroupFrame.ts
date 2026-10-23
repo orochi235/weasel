@@ -6,12 +6,12 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import type { EnteredGroupDep } from 'canvas/deps/enteredGroup';
 import { rectPathFor } from './handleCommands';
 
-/** How the frame around the entered group is drawn. */
-export const ENTERED_FRAME_STROKE = {
-  paint: { kind: 'solid' as const, color: '#a48bd4' },
-  width: 1,
-  dash: [6, 4],
-};
+/** The theme token the frame reads its color from, set on the canvas or any element above it. */
+export const ENTERED_FRAME_TOKEN = '--wzl-entered-group';
+/** The frame's color where nothing sets {@link ENTERED_FRAME_TOKEN}. */
+export const ENTERED_FRAME_COLOR = '#a48bd4';
+const FRAME_WIDTH = 1;
+const FRAME_DASH = [6, 4];
 
 /**
  * The frame around the group a canvas is working inside: one dashed outline on the group's
@@ -21,6 +21,8 @@ export function createEnteredGroupFrameLayer(opts: {
   entered: EnteredGroupDep;
   /** The box to frame, in world units. */
   boundsOf: (id: string) => Bounds | null;
+  /** The frame's color, read at each paint. Default {@link ENTERED_FRAME_COLOR}. */
+  color?: () => string;
 }): RenderLayer<unknown> {
   return {
     id: 'entered-group-frame',
@@ -35,7 +37,11 @@ export function createEnteredGroupFrameLayer(opts: {
       return [{
         kind: 'path',
         path: rectPathFor(x, y, b.width * view.scale.x, b.height * view.scale.y),
-        stroke: ENTERED_FRAME_STROKE,
+        stroke: {
+          paint: { kind: 'solid', color: opts.color?.() ?? ENTERED_FRAME_COLOR },
+          width: FRAME_WIDTH,
+          dash: FRAME_DASH,
+        },
       }];
     },
   };
@@ -44,6 +50,7 @@ export function createEnteredGroupFrameLayer(opts: {
 export function useEnteredGroupFrameLayer(
   entered: EnteredGroupDep,
   boundsOf: (id: string) => Bounds | null,
+  color: () => string,
 ): RenderLayer<unknown> {
-  return useMemo(() => createEnteredGroupFrameLayer({ entered, boundsOf }), [entered, boundsOf]);
+  return useMemo(() => createEnteredGroupFrameLayer({ entered, boundsOf, color }), [entered, boundsOf, color]);
 }

@@ -1,6 +1,7 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { EnteredGroupDep } from 'canvas/deps/enteredGroup';
+import type { NodeId } from 'core/scene/types';
 import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
 
 type Point = { x: number; y: number };
@@ -55,8 +56,7 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
   return {
     id: 'group.enter',
     label: 'Enter group',
-    // Isolation drills in by double-click on its own, through the mode triggers.
-    eligible: { capability: 'creates-selection', mode: { not: 'isolation' } },
+    eligible: { capability: 'creates-selection' },
     requires: ['enteredGroup'],
     enabled: (deps, at) => (targetAt(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
     invoker: {
@@ -64,7 +64,7 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
       run: (deps, params) => {
         const x = params?.worldX, y = params?.worldY;
         const target = typeof x === 'number' && typeof y === 'number' ? targetAt(deps, { x, y }) : null;
-        if (target !== null) deps.enteredGroup?.enter(target);
+        if (target !== null) deps.enteredGroup?.enter(target as NodeId);
       },
     },
   };

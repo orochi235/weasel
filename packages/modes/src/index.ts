@@ -2,7 +2,7 @@ export { ALL_TAGS, IMPLICIT_TAGS, capabilitiesAllowed, isCapabilityTag } from '.
 export type { CapabilityTag } from './capabilities';
 export { eligibleForMode, modeLabel } from './modeDefinition';
 export type { ModeDefinition, ModeEntry, WorkspaceVisual } from './modeDefinition';
-export { DEFAULT_MODES, byId, NORMAL, PATH_EDIT, ISOLATION, FREE_TRANSFORM, TEXT_EDIT, CROP } from './presets/default';
+export { DEFAULT_MODES, byId, NORMAL, PATH_EDIT, FREE_TRANSFORM, TEXT_EDIT, CROP } from './presets/default';
 export { activeModeOf, createModeRegistry, getActiveModeFor } from './registry';
 export type { ModeRegistry, CreateModeRegistryOptions, ActiveMode } from './registry';
 export { createModeDecorations } from './decorations';

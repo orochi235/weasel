@@ -12,7 +12,6 @@ import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { pressTarget } from '../pressTarget';
 import { pressDecision } from './pressDecision';
-import { leaveGroupsOutside } from '../../../interactions/actions/defaults/enterGroup';
 import { createCollapseDeferredAction } from './collapseDeferred';
 import { GROUP_BINDINGS, useGroupActions } from './useGroupActions';
 import { adapterPointQuery } from './adapterPointQuery';
@@ -98,6 +97,10 @@ export interface UseSelectToolOptions<TPose> {
    * clicking a different node exits edit mode as usual.
    */
   extendClickLocked?: () => boolean;
+  /** Where a group's box is, in world units, which a press outside the entered group leaves it
+   *  by. `<SceneCanvas>` passes the box its entered-group frame is drawn on. Default: the pose's
+   *  visual bounds. */
+  boxOf?: (id: string) => Bounds | null;
 }
 
 /** Intersection of the move + area-select adapter interfaces.
@@ -184,8 +187,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
   const extendLocked = useCallback(() => optionsRef.current.extendClickLocked?.() === true, [optionsRef]);
   const settled = useCallback(() => { pressRef.current = { deferredClickId: null }; }, []);
-  const { boxOf, deepAction, enterAction, leaveAction } = useGroupActions({
-    adapterRef, descriptor: d, pickHit,
+  const { deepAction, enterAction, leaveAction } = useGroupActions({
+    adapterRef, descriptor: d, pickHit, boxOf: options.boxOf,
     extendLocked, settled,
   });
 
@@ -215,7 +218,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const mods = p.mods ?? { alt: false, ctrl: false, meta: false, shift: false };
         const opts = optionsRef.current;
 
-        if (deps.enteredGroup) leaveGroupsOutside(deps.enteredGroup, boxOf, { x: p.worldX, y: p.worldY });
         const sel = selection.get();
         const hit = pickHit(p.worldX, p.worldY, mods.alt, sel);
 
@@ -234,7 +236,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         pressRef.current = { deferredClickId: press.deferred };
       },
     },
-  }), [optionsRef, adapterRef, pickHit, boxOf]);
+  }), [optionsRef, adapterRef, pickHit]);
 
 
   const collapseDeferredAction = useMemo(() => createCollapseDeferredAction(pressRef), []);

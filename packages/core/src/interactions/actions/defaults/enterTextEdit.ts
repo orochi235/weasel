@@ -12,7 +12,7 @@ import type { Action } from '@weasel-js/routing';
 export const enterTextEditAction: Action & { requires: string[] } = {
   id: 'enterTextEdit',
   label: 'Enter text edit',
-  eligible: { mode: { in: ['normal', 'isolation'] } },
+  eligible: { mode: 'normal' },
   requires: ['textEdit', 'selection'],
   invoker: {
     timing: 'immediate',

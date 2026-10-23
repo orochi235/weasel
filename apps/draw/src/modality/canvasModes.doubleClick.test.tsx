@@ -1,14 +1,14 @@
 /**
  * Which mode a double-click on the canvas enters in draw, through a real `<SceneCanvas>` wired the
- * way Workspace wires it: `useCanvasModes`, the machine's path-edit host, and the scoping dim's
- * `isPointerInteractive`, which the canvas's hit-test honors.
+ * way Workspace wires it: `useCanvasModes`, the machine's path-edit host, the scoping dim's
+ * `isPointerInteractive`, which the canvas's hit-test honors, and the entered group.
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, type ReactElement } from 'react';
 import { createScopingDim, DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, solid, useSelection, type PolygonPath } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createEnteredGroup, createScene, hasEditablePath, pathFromD, solid, useSelection, type EnteredGroupDep, type PolygonPath } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
 import { modeScopeIds } from './modeScope';
@@ -33,7 +33,7 @@ const square = (x: number) => ({ x, y: 0, width: 30, height: 30 });
  *  one child is `deep`. */
 const AT = { anchored: 0, anchorless: 40, text: 80, member: 120, deep: 160, empty: 200 } as const;
 
-function Harness({ machine }: { machine: ModeMachine }): ReactElement {
+function Harness({ machine, into }: { machine: ModeMachine; into: (entered: EnteredGroupDep) => void }): ReactElement {
   const [scene] = useState(() => {
     const s = createScene({ systemLayers: [{ id: 'main' }] });
     const leaf = (id: string, x: number, data: unknown) =>
@@ -61,14 +61,16 @@ function Harness({ machine }: { machine: ModeMachine }): ReactElement {
   const [pathEdit] = useState(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))));
   const [dim] = useState(() => createScopingDim({
     registry: machine.registry,
-    getTargetIds: () => modeScopeIds(machine, scene),
+    getTargetIds: () => modeScopeIds(machine),
   }));
+  const [entered] = useState(() => createEnteredGroup(scene));
+  into(entered);
   const modes = useCanvasModes(machine, scene, selection, pathEdit);
   return (
     <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={240} height={60}
       ambient={modes.ambient}
       isPointerInteractive={dim.isPointerInteractive}
-      isolatedGroup={modes.isolatedGroup}
+      enteredGroup={entered}
       modes={machine.registry}
       pathEdit={modes.pathEdit} />
   );
@@ -76,7 +78,8 @@ function Harness({ machine }: { machine: ModeMachine }): ReactElement {
 
 function setup() {
   const machine = createModeMachine({ modes: DEFAULT_MODES, history: fakeHistory() as never });
-  render(<Harness machine={machine} />);
+  let entered!: EnteredGroupDep;
+  render(<Harness machine={machine} into={(e) => { entered = e; }} />);
   const doubleClick = (x: number) => {
     const canvas = document.querySelector('canvas')!;
     const press = (type: string) =>
@@ -84,7 +87,7 @@ function setup() {
     act(() => { press('pointerdown'); press('pointerup'); press('pointerdown'); press('pointerup'); });
   };
   const state = () => ({ mode: machine.registry.current().id, target: machine.getActiveTargetId() });
-  return { machine, doubleClick, state };
+  return { machine, doubleClick, state, entered: () => entered.get() };
 }
 
 describe('double-click mode entry in draw', () => {
@@ -106,32 +109,35 @@ describe('double-click mode entry in draw', () => {
     expect(t.state()).toEqual({ mode: 'normal', target: null });
   });
 
-  it('a grouped path names its group: isolation on the group', () => {
+  it('a grouped path enters its group, in no mode', () => {
     const t = setup();
     t.doubleClick(AT.member);
-    expect(t.state()).toEqual({ mode: 'isolation', target: 'group' });
+    expect(t.state()).toEqual({ mode: 'normal', target: null });
+    expect(t.entered()).toBe('group');
   });
 
-  it('a path two groups deep names the outermost group first', () => {
+  it('a path two groups deep enters the outermost group first', () => {
     const t = setup();
     t.doubleClick(AT.deep);
-    expect(t.state()).toEqual({ mode: 'isolation', target: 'group' });
+    expect(t.entered()).toBe('group');
   });
 
-  it('inside the isolated group, a double-click names the next group in', () => {
+  it('inside the entered group, a double-click enters the next group in, then edits the path', () => {
     const t = setup();
     t.doubleClick(AT.deep);
     t.doubleClick(AT.deep);
-    expect(t.state()).toEqual({ mode: 'isolation', target: 'inner' });
+    expect(t.entered()).toBe('inner');
     t.doubleClick(AT.deep);
     expect(t.state()).toEqual({ mode: 'path-edit', target: 'deep' });
+    expect(t.entered()).toBe('inner');
   });
 
-  it('inside the isolated group, a path in no further group leaves isolation for path-edit', () => {
+  it('inside the entered group, a path in no further group opens path-edit and keeps the group', () => {
     const t = setup();
     t.doubleClick(AT.member);
     t.doubleClick(AT.member);
     expect(t.state()).toEqual({ mode: 'path-edit', target: 'member' });
+    expect(t.entered()).toBe('group');
   });
 
   it('empty canvas enters no mode', () => {
@@ -154,10 +160,11 @@ describe('double-click mode entry in draw', () => {
     expect(t.state()).toEqual({ mode: 'path-edit', target: 'anchored' });
   });
 
-  it('a path with no anchors that isolation dims enters nothing', () => {
+  it('a double-click outside the entered group leaves it on the first press, and the second reaches the path', () => {
     const t = setup();
-    act(() => t.machine.enterMode('isolation', { targetId: 'group' }));
+    t.doubleClick(AT.member);
     t.doubleClick(AT.anchorless);
-    expect(t.state()).toEqual({ mode: 'isolation', target: 'group' });
+    expect(t.entered()).toBeNull();
+    expect(t.state()).toEqual({ mode: 'path-edit', target: 'anchorless' });
   });
 });

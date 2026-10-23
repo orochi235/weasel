@@ -130,7 +130,7 @@ describe('select.deep binding', () => {
   it('declares every dep it reads', () => {
     const deep = (harness([]).tool() as { actions?: readonly (Action & { requires?: string[] })[] })
       .actions?.find((a) => a.id === 'select.deep');
-    expect(deep?.requires).toEqual(['selection', 'enteredGroup']);
+    expect(deep?.requires).toEqual(['selection']);
   });
 
   it('wins a Cmd-press over select.pick, with or without Shift', () => {

@@ -114,7 +114,7 @@ export function createLabelDragAction(opts: LabelDragOptions = {}): Action {
     label: 'Move label',
     group: 'diagram',
     requires: ['scene'],
-    eligible: { mode: { in: ['normal', 'isolation'] } },
+    eligible: { mode: 'normal' },
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {
