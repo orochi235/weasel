@@ -70,8 +70,9 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, keysOf }: 
     }
     const keys = enabled ? (vertical ? 'Alt+ArrowUp Alt+ArrowDown' : 'Alt+ArrowLeft Alt+ArrowRight') : null;
     for (const unit of el.querySelectorAll<HTMLElement>(`[${BAR_UNIT}]`)) {
-      if (keys === null) focusableOf(unit).removeAttribute('aria-keyshortcuts');
-      else focusableOf(unit).setAttribute('aria-keyshortcuts', keys);
+      const control = focusableOf(unit);
+      if (keys === null || entersText(control)) control.removeAttribute('aria-keyshortcuts');
+      else control.setAttribute('aria-keyshortcuts', keys);
     }
   });
 

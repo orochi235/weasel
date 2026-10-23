@@ -118,6 +118,12 @@ describe('Alt+arrow reordering', () => {
     expect(button('a')).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
   });
 
+  it('names no shortcuts on a text-entry control, where Alt+arrows move by word', () => {
+    render(host(<Bar schema={withNumber} onReorder={() => {}} />));
+    expect(screen.getByRole('spinbutton')).not.toHaveAttribute('aria-keyshortcuts');
+    expect(button('a')).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight');
+  });
+
   it('draws no announcer and no shortcuts without onReorder', () => {
     render(host(<Bar schema={flat} />));
     expect(document.querySelector('[data-bar-announce]')).toBeNull();

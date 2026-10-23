@@ -33,6 +33,8 @@ export function resolveOrder(
 
 const join = (path: string, key: string): string => (path ? `${path}.${key}` : key);
 
+const storedAt = (order: PrefOrder, path: string): readonly string[] | undefined => (Object.hasOwn(order, path) ? order[path] : undefined);
+
 /**
  * `group` with its children, and each nested group's, reordered by `order`,
  * and each `actions` leaf given its `order`. Nothing is added or dropped, and
@@ -42,7 +44,7 @@ const join = (path: string, key: string): string => (path ? `${path}.${key}` : k
 export function orderPrefGroup(group: PrefGroup, order: PrefOrder | undefined, path = ''): PrefGroup {
   if (!order) return group;
   const keys = Object.keys(group.children);
-  const sorted = resolveOrder(keys, order[path], 'schema');
+  const sorted = resolveOrder(keys, storedAt(order, path), 'schema');
   let changed = sorted.some((key, i) => key !== keys[i]);
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const key of sorted) {
@@ -56,7 +58,7 @@ export function orderPrefGroup(group: PrefGroup, order: PrefOrder | undefined, p
 
 function orderChild(child: PrefLeaf | PrefGroup, order: PrefOrder, path: string): PrefLeaf | PrefGroup {
   if (!isPrefLeaf(child)) return orderPrefGroup(child, order, path);
-  const stored = order[path];
+  const stored = storedAt(order, path);
   if (child.kind !== 'actions' || !stored) return child;
   return { ...(child as PrefActions), order: stored };
 }
