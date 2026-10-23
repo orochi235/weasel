@@ -92,11 +92,16 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   group, so repeated double-clicks drill in a group at a time. Only a node routed `'group'` is
   named, so a container routed otherwise is passed over; the `onDoubleClick` observer still reports
   the node hit, not the group named.
-- 2026-10-23: Nodes outside the entered group take no hits in every `<SceneCanvas>`, whether or
-  not the consumer dims them, so a press outside the group's box lands on empty canvas: it leaves
-  the group (`group.leave.press`) and selects nothing. A double-click there leaves on its first
-  press, and its second reaches the node under it. The entered-group frame reads
-  `--wzl-entered-group`, which no theme sets.
+- 2026-10-23: While a group is entered, only what is inside it is reachable, in every
+  `<SceneCanvas>` whether or not the consumer dims the rest: presses, marquee, lasso and Select
+  All pass over everything else, and over the entered group itself, whose empty box is empty
+  canvas. Under the select tool a press outside the group's box, with any modifiers, leaves every
+  group the box does not hold (`group.leave.press`) and selects nothing; a double-click there
+  leaves on its first press, and its second reaches the node under it. Under any other tool the
+  press is the tool's: a Rect drag outside the group draws into it. Double-click entry and Escape
+  work under every tool. What is drawn or pasted lands in the entered group, unless a symmetry
+  group is active, which takes it first. The frame's color is the `--wzl-entered-group` hook,
+  which no theme sets.
 - 2026-10-18: Whether a single click on a grouped member selects the group is still open. A single
   click is unchanged and picks the member.
 - 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)

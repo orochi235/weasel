@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
-import { createEnteredGroup, useEnteredGroup, useEnteredGroupDepSource } from './enteredGroup';
+import { createEnteredGroup, useEnteredGroup, useEnteredGroupApiSource } from './enteredGroup';
 
 const POSE: RectPose = { x: 0, y: 0, width: 10, height: 10 };
 
@@ -32,6 +32,19 @@ describe('createEnteredGroup', () => {
     expect(e.get()).toBeNull();
     e.leave();
     expect(e.get()).toBeNull();
+  });
+
+  it('leaves every level at once, and announces it once', () => {
+    const { scene, inner } = build();
+    const e = createEnteredGroup(scene);
+    e.enter(inner);
+    const fn = vi.fn();
+    e.subscribe(fn);
+    e.leaveAll();
+    expect(e.get()).toBeNull();
+    expect(fn).toHaveBeenCalledTimes(1);
+    e.leaveAll();
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('ignores an id that is not a group in the scene', () => {
@@ -85,12 +98,12 @@ describe('createEnteredGroup', () => {
   });
 });
 
-describe('useEnteredGroupDepSource', () => {
+describe('useEnteredGroupApiSource', () => {
   it('publishes one store for the life of the scene as the enteredGroup dep', () => {
     const { scene, inner } = build();
     let reg!: DepRegistry;
     function Wire() {
-      useEnteredGroupDepSource(useEnteredGroup(scene));
+      useEnteredGroupApiSource(useEnteredGroup(scene));
       reg = useDepRegistry();
       return null;
     }

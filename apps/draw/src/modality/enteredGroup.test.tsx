@@ -35,6 +35,7 @@ const outline = () => pathFromD('M 0 0 L 30 0 L 30 30 L 0 30 Z') as PolygonPath;
 const AT = { a: 0, deep: 40, txt: 80, f: 150 } as const;
 
 interface Live {
+  scene: DrawScene;
   modality: UseModalityReturn;
   group: DrawEnteredGroup;
   selection: SelectionApi;
@@ -67,12 +68,12 @@ function Harness({ into }: { into: (live: Live) => void }): ReactElement {
   const groupLabel = useEnteredGroupLabel(group, scene);
   const textEdit = useTextEditSession(scene, host, machine);
   const alphaFor = canvasAlphaFor(modality.scopingDim.alphaFor, group.scope, textEdit.editingId);
-  into({ modality, group, selection, textEdit, alphaFor });
+  into({ scene, modality, group, selection, textEdit, alphaFor });
   return (
     <>
       <ModeBreadcrumb
         mode={machine.registry.byId(modeId)} targetLabel={null}
-        group={groupLabel === null ? null : { label: groupLabel, onExit: group.leaveAll }}
+        group={groupLabel === null ? null : { label: groupLabel, onExit: group.entered.leaveAll }}
         onExit={() => machine.exitMode()} onCommit={() => machine.commitMode()} onCancel={() => machine.cancelMode()} />
       <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={200} height={40}
         ambient={modes.ambient} modes={machine.registry} pathEdit={modes.pathEdit}
@@ -118,6 +119,13 @@ describe('the entered group in draw', () => {
     expect(tint.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 40 })).not.toEqual([]);
     expect(screen.getByText('Group')).toBeTruthy();
     expect(screen.getByText('Logo')).toBeTruthy();
+  });
+
+  it('the breadcrumb follows a rename of the entered group', () => {
+    const t = setup();
+    t.doubleClick(AT.a);
+    act(() => { t.live().scene.update(asNodeId('g'), { data: { label: 'Badge' } as never }); });
+    expect(screen.getByText('Badge')).toBeTruthy();
   });
 
   it('a press inside the entered group selects the member pressed', () => {

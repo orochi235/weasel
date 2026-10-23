@@ -12,7 +12,7 @@ beforeEach(() => act(() => drawPrefs().reset()));
 
 const newScene = (): DrawScene => createScene({ systemLayers: [{ id: 'default' }], registry: DRAW_REGISTRY });
 const groups = (scene: DrawScene) => scene.renderOrderNodes().filter((n) => isSymmetryGroup(scene as never, n.id));
-const insertInto = (r: { current: ReturnType<typeof useSymmetry> }) => r.current.contribution.deps!.insertInto!()!.get();
+const insertInto = (r: { current: ReturnType<typeof useSymmetry> }) => r.current.contribution.deps!.insertInto!(() => undefined)!.get();
 
 describe('useSymmetry', () => {
   it('starts off, drawing into nothing', () => {

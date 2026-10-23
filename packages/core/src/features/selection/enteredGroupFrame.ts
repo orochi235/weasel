@@ -3,7 +3,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import type { EnteredGroupDep } from 'canvas/deps/enteredGroup';
+import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import { rectPathFor } from './handleCommands';
 
 /** The theme token the frame reads its color from, set on the canvas or any element above it. */
@@ -18,17 +18,23 @@ const FRAME_DASH = [6, 4];
  * box, in the selection chrome's own screen space, repainting when the entered group changes.
  */
 export function createEnteredGroupFrameLayer(opts: {
-  entered: EnteredGroupDep;
+  entered: EnteredGroupApi;
   /** The box to frame, in world units. */
   boundsOf: (id: string) => Bounds | null;
   /** The frame's color, read at each paint. Default {@link ENTERED_FRAME_COLOR}. */
   color?: () => string;
+  /** Hears that `color` may answer differently: a theme or mode switch. */
+  colorChanged?: (fn: () => void) => () => void;
 }): RenderLayer<unknown> {
   return {
     id: 'entered-group-frame',
     label: 'Entered group',
     space: 'screen',
-    subscribe: (repaint) => opts.entered.subscribe(repaint),
+    subscribe: (repaint) => {
+      const offGroup = opts.entered.subscribe(repaint);
+      const offColor = opts.colorChanged?.(repaint);
+      return () => { offGroup(); offColor?.(); };
+    },
     draw: (_data, view) => {
       const id = opts.entered.get();
       const b = id === null ? null : opts.boundsOf(id);
@@ -48,9 +54,12 @@ export function createEnteredGroupFrameLayer(opts: {
 }
 
 export function useEnteredGroupFrameLayer(
-  entered: EnteredGroupDep,
+  entered: EnteredGroupApi,
   boundsOf: (id: string) => Bounds | null,
-  color: () => string,
+  color: { read: () => string; changed: (fn: () => void) => () => void },
 ): RenderLayer<unknown> {
-  return useMemo(() => createEnteredGroupFrameLayer({ entered, boundsOf, color }), [entered, boundsOf, color]);
+  return useMemo(
+    () => createEnteredGroupFrameLayer({ entered, boundsOf, color: color.read, colorChanged: color.changed }),
+    [entered, boundsOf, color],
+  );
 }

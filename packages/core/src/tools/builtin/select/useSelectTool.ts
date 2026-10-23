@@ -13,7 +13,8 @@ import { pickTopMostHit } from '../pickTopMostHit';
 import { pressTarget } from '../pressTarget';
 import { pressDecision } from './pressDecision';
 import { createCollapseDeferredAction } from './collapseDeferred';
-import { GROUP_BINDINGS, useGroupActions } from './useGroupActions';
+import { GROUP_LEAVE_PRESS_BINDING } from './groupEntry';
+import { createSelectDeepAction } from '../../../interactions/actions/defaults/selectDeep';
 import { adapterPointQuery } from './adapterPointQuery';
 import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -97,10 +98,6 @@ export interface UseSelectToolOptions<TPose> {
    * clicking a different node exits edit mode as usual.
    */
   extendClickLocked?: () => boolean;
-  /** Where a group's box is, in world units, which a press outside the entered group leaves it
-   *  by. `<SceneCanvas>` passes the box its entered-group frame is drawn on. Default: the pose's
-   *  visual bounds. */
-  boxOf?: (id: string) => Bounds | null;
 }
 
 /** Intersection of the move + area-select adapter interfaces.
@@ -187,10 +184,10 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
   const extendLocked = useCallback(() => optionsRef.current.extendClickLocked?.() === true, [optionsRef]);
   const settled = useCallback(() => { pressRef.current = { deferredClickId: null }; }, []);
-  const { deepAction, enterAction, leaveAction } = useGroupActions({
-    adapterRef, descriptor: d, pickHit, boxOf: options.boxOf,
-    extendLocked, settled,
-  });
+  const deepAction = useMemo(
+    () => createSelectDeepAction({ pickHit, extendLocked, settled }),
+    [pickHit, extendLocked, settled],
+  );
 
   /**
    * `select.pick` — classifies the press and updates the node selection.
@@ -256,7 +253,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           icon: icon('select'),
           group: 'select',
         },
-        actions: [pickAction, deepAction, collapseDeferredAction, enterAction, leaveAction],
+        actions: [pickAction, deepAction, collapseDeferredAction],
       });
 
       return {
@@ -315,7 +312,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             actionId: 'select.collapseDeferred',
             opts: { id: 'select.collapseDeferred' },
           },
-          ...GROUP_BINDINGS,
+          GROUP_LEAVE_PRESS_BINDING,
           // Empty drag → marquee. `onEmptyCanvas` rather than a bare `'empty'`
           // target: the ambient bindings that own the handles rank below this
           // active one, so `'empty'` took drags that start on them.
@@ -334,6 +331,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         ],
       };
     },
-    [pickAction, deepAction, collapseDeferredAction, enterAction, leaveAction],
+    [pickAction, deepAction, collapseDeferredAction],
   );
 }

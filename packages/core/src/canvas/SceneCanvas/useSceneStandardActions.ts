@@ -24,7 +24,7 @@ import {
   useDepChangeNotices,
   useDispatcherDepSource,
   useEditAnchorsDepSource,
-  useEnteredGroupDepSource,
+  useEnteredGroupApiSource,
   useIngestionDepSource,
   useInsertDepSource,
   useLassoSelectDepSource,
@@ -37,7 +37,7 @@ import {
   useTextEditDepSource,
   useViewDepSource,
 } from '../deps';
-import type { EnteredGroupDep } from '../deps/enteredGroup';
+import type { EnteredGroupApi } from '../deps/enteredGroup';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings, useBindingOverrides } from './useActionTunings';
@@ -57,7 +57,7 @@ export interface SceneStandardActionsInputs {
   viewOn: boolean;
   selection: SelectionApi;
   /** The group a press resolves inside of, shared with the picking that names double-clicks. */
-  enteredGroup: EnteredGroupDep;
+  enteredGroup: EnteredGroupApi;
   scene: Scene<unknown, string, unknown>;
   adapter: BridgeAdapter;
   /** The standard actions this canvas registers: its presets' and the ones
@@ -79,6 +79,8 @@ export interface SceneStandardActionsInputs {
   /** The composed paint alpha, when the consumer fades anything, so a region
    *  select passes over what is painted at zero. */
   alphaOf?: (id: string) => number;
+  /** Whether a node takes hits: what a region select may take, as a press may. */
+  reachable?: (id: string) => boolean;
   /** The canvas's camera runner, published on the `view` dep so
    *  `viewport.zoom`'s discrete branches can animate. */
   viewAnimation: ViewAnimationApi;
@@ -109,7 +111,7 @@ export interface SceneStandardActionsInputs {
 export function useSceneStandardActions(inputs: SceneStandardActionsInputs): void {
   const {
     props, viewOn, selection, enteredGroup, scene, adapter, standardActions, currentViewRef,
-    onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, alphaOf, viewAnimation,
+    onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, alphaOf, reachable, viewAnimation,
     editAnchorsExternalState, snap, canvasRef, canvasApiRef, ingestionClipboard,
   } = inputs;
   const { tune, viewport, ingestion } = props;
@@ -168,10 +170,10 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf);
+  useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
-  useEnteredGroupDepSource(enteredGroup);
+  useEnteredGroupApiSource(enteredGroup);
   useInsertDepSource(scene, adapter, props.insertNodeFactories, props.insertPaint);
   usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(
@@ -191,7 +193,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   usePreviewPathsDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard);
-  useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf);
+  useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);
   useDispatcherDepSource(dispatcher);

@@ -128,7 +128,7 @@ A new mode joins the stock preset (see `2026-05-24-modality-design.md`):
 - **Kind:** soft.
 - **Allows:** same capabilities as `normal`. The mode's job is scoping, not tool restriction.
 - **Scoping:** yes — only the symbol's subtree is selectable and undimmed. The main `root` tree dims to 30%, including the instance that triggered entry.
-- **Tint:** indigo or magenta. Pick at implementation time; should differentiate from `path-edit` (blue) and `isolation` (violet).
+- **Tint:** indigo or magenta. Pick at implementation time; should differentiate from `path-edit` (blue) and the entered group's workspace tint (violet, `#8b5cf6` in WeaselDraw).
 - **Entry:** double-click an instance; or `E` with an instance selected; or `Symbols Panel > Edit Symbol`.
 - **Exit:** `⎋` suspend (journal cached by symbolId) / `⌘⎋` discard.
 - **Journal target:** the symbol's id. Re-entering the same symbol resumes the journal (subject to the standard staleness check — if other ops touched the symbol's subtree in the interim, the cached journal is dropped).

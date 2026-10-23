@@ -128,7 +128,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     id: 'weasel-symmetry',
     eligibility: { claimed: true },
     deps: {
-      insertInto: () => ({ get: () => ctrl.active() }),
+      insertInto: (below) => ({ get: () => ctrl.active() ?? below()?.get() ?? null }),
       pathSymmetry: () => ({ transforms: (pathId: string) => editSymmetries(scene, symmetryGroupOf(scene, pathId)) }),
     },
     actions: [action, grabHandle],

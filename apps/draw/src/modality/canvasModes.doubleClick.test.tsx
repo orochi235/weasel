@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, type ReactElement } from 'react';
 import { createScopingDim, DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createEnteredGroup, createScene, hasEditablePath, pathFromD, solid, useSelection, type EnteredGroupDep, type PolygonPath } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createEnteredGroup, createScene, hasEditablePath, pathFromD, solid, useSelection, type EnteredGroupApi, type PolygonPath } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
 import { modeScopeIds } from './modeScope';
@@ -33,7 +33,7 @@ const square = (x: number) => ({ x, y: 0, width: 30, height: 30 });
  *  one child is `deep`. */
 const AT = { anchored: 0, anchorless: 40, text: 80, member: 120, deep: 160, empty: 200 } as const;
 
-function Harness({ machine, into }: { machine: ModeMachine; into: (entered: EnteredGroupDep) => void }): ReactElement {
+function Harness({ machine, into }: { machine: ModeMachine; into: (entered: EnteredGroupApi) => void }): ReactElement {
   const [scene] = useState(() => {
     const s = createScene({ systemLayers: [{ id: 'main' }] });
     const leaf = (id: string, x: number, data: unknown) =>
@@ -78,7 +78,7 @@ function Harness({ machine, into }: { machine: ModeMachine; into: (entered: Ente
 
 function setup() {
   const machine = createModeMachine({ modes: DEFAULT_MODES, history: fakeHistory() as never });
-  let entered!: EnteredGroupDep;
+  let entered!: EnteredGroupApi;
   render(<Harness machine={machine} into={(e) => { entered = e; }} />);
   const doubleClick = (x: number) => {
     const canvas = document.querySelector('canvas')!;

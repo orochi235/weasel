@@ -93,6 +93,11 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const symmetry = useSymmetry(scene, page);
   const group = useDrawEnteredGroup(scene);
   const groupLabel = useEnteredGroupLabel(group, scene);
+  const leaveAll = group.entered.leaveAll;
+  const groupCrumb = useMemo(
+    () => (groupLabel === null ? null : { label: groupLabel, onExit: leaveAll }),
+    [groupLabel, leaveAll],
+  );
   // The mode tint covers the workspace around the page, not the page itself.
   // Bolder than the modes' own 0.12 so it reads through the stripes.
   const workspaceTint = useMemo(() => workspaceTintLayer({
@@ -168,7 +173,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
       <ModeBreadcrumb
         mode={machine.registry.byId(modeId)}
         targetLabel={targetLabel}
-        group={groupLabel === null ? null : { label: groupLabel, onExit: group.leaveAll }}
+        group={groupCrumb}
         onExit={() => machine.exitMode()}
         onCommit={() => machine.commitMode()}
         onCancel={() => machine.cancelMode()}

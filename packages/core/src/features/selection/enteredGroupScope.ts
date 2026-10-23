@@ -1,42 +1,32 @@
+import { OUT_OF_SCOPE_ALPHA, type NodeScope } from '@weasel-js/modes';
 import { createEmitter } from '@weasel-js/registry';
-import type { EnteredGroupDep } from 'canvas/deps/enteredGroup';
-import type { NodeId, Scene } from 'core/scene/types';
-
-/** How a canvas treats each node while a group is entered. */
-export interface EnteredGroupScope {
-  /** 1 inside the entered group, `dimAlpha` outside it, 1 everywhere with nothing entered. */
-  alphaFor(id: string): number;
-  /** Whether the node takes hits: only the entered group and what is inside it does. */
-  isPointerInteractive(id: string): boolean;
-  subscribe(fn: () => void): () => void;
-  /** Bumps each time the entered group changes. */
-  getVersion(): number;
-}
+import { reachableInGroup, type EnteredGroupApi } from 'canvas/deps/enteredGroup';
+import type { Scene } from 'core/scene/types';
 
 /**
- * The entered group as a scope: everything outside its subtree dims and stops taking hits.
- * Compose `alphaFor` into `<SceneCanvas alphaFor>` and the scope into `redrawOn` to show it.
+ * The entered group as a scope: everything outside its subtree dims and stops taking hits, and
+ * so does the group itself, whose empty box is empty canvas while it is entered. With nothing
+ * entered every node is lit and live. Compose `alphaFor` into `<SceneCanvas alphaFor>` and the
+ * scope into `redrawOn` to show it.
  */
 export function createEnteredGroupScope(opts: {
-  entered: EnteredGroupDep;
+  entered: EnteredGroupApi;
   scene: Pick<Scene<unknown, string, unknown>, 'ancestorsOf'>;
-  /** Alpha for a node outside the entered group. Default 0.3. */
+  /** Alpha for a node outside the entered group. Default `OUT_OF_SCOPE_ALPHA`. */
   dimAlpha?: number;
-}): EnteredGroupScope {
+}): NodeScope {
   const { entered, scene } = opts;
-  const dim = opts.dimAlpha ?? 0.3;
+  const dim = opts.dimAlpha ?? OUT_OF_SCOPE_ALPHA;
   const listeners = createEmitter();
   let version = 0;
   let stop: (() => void) | null = null;
 
-  const inside = (id: string): boolean => {
-    const group = entered.get();
-    return group === null || id === group || scene.ancestorsOf(id as NodeId).includes(group);
-  };
-
   return {
-    alphaFor: (id) => (inside(id) ? 1 : dim),
-    isPointerInteractive: inside,
+    alphaFor: (id) => {
+      const group = entered.get();
+      return id === group || reachableInGroup(scene, group, id) ? 1 : dim;
+    },
+    isPointerInteractive: (id) => reachableInGroup(scene, entered.get(), id),
     getVersion: () => version,
     subscribe(fn) {
       if (stop === null) stop = entered.subscribe(() => { version++; listeners.emit(); });

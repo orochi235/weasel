@@ -1,6 +1,6 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { EnteredGroupDep } from 'canvas/deps/enteredGroup';
+import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { NodeId } from 'core/scene/types';
 import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
 
@@ -27,7 +27,7 @@ const inside = (b: Box, p: Point) =>
  * inside the entered group's box stays in it, and so does one on a group with no box to read.
  */
 export function leaveGroupsOutside(
-  entered: EnteredGroupDep,
+  entered: EnteredGroupApi,
   boxOf: LeaveGroupOptions['boxOf'],
   p: Point,
 ): void {

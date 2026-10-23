@@ -30,12 +30,16 @@ describe('createEnteredGroupScope', () => {
   it('dims everything outside the entered group and takes it out of hits', () => {
     const { scope, entered, outer, sibling, inner, deep, free } = build();
     entered.enter(outer);
-    for (const id of [outer, sibling, inner, deep]) {
-      expect(scope.alphaFor(id)).toBe(1);
-      expect(scope.isPointerInteractive(id)).toBe(true);
-    }
+    for (const id of [outer, sibling, inner, deep]) expect(scope.alphaFor(id)).toBe(1);
+    for (const id of [sibling, inner, deep]) expect(scope.isPointerInteractive(id)).toBe(true);
     expect(scope.alphaFor(free)).toBe(0.3);
     expect(scope.isPointerInteractive(free)).toBe(false);
+  });
+
+  it('takes the entered group itself out of hits: its empty box is empty canvas inside it', () => {
+    const { scope, entered, outer } = build();
+    entered.enter(outer);
+    expect(scope.isPointerInteractive(outer)).toBe(false);
   });
 
   it('scopes to the inner group of a nested pair, dimming the outer group and its other members', () => {

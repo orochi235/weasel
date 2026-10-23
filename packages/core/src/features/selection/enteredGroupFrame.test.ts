@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PathDrawCommand } from '@weasel-js/renderer';
-import type { EnteredGroupDep } from 'canvas/deps/enteredGroup';
+import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import { createEnteredGroupFrameLayer, ENTERED_FRAME_COLOR } from './enteredGroupFrame';
 
 const DIMS = { width: 200, height: 200 };
 const VIEW = { x: 10, y: 20, scale: { x: 2, y: 2 } };
 
-function entered(id: string | null): EnteredGroupDep {
-  return { get: () => id as never, enter: () => {}, leave: () => {}, subscribe: () => () => {} };
+function entered(id: string | null): EnteredGroupApi {
+  return { get: () => id as never, enter: () => {}, leave: () => {}, leaveAll: () => {}, subscribe: () => () => {} };
 }
 
 describe('createEnteredGroupFrameLayer', () => {
@@ -53,5 +53,16 @@ describe('createEnteredGroupFrameLayer', () => {
     expect(paintOf(themed.draw({}, VIEW, DIMS))).toEqual({ kind: 'solid', color: '#abcdef' });
     const bare = createEnteredGroupFrameLayer({ entered: entered('g'), boundsOf });
     expect(paintOf(bare.draw({}, VIEW, DIMS))).toEqual({ kind: 'solid', color: ENTERED_FRAME_COLOR });
+  });
+
+  it('repaints when its color may have changed, as well as when the group does', () => {
+    const offColor = vi.fn();
+    const colorChanged = vi.fn(() => offColor);
+    const layer = createEnteredGroupFrameLayer({ entered: entered('g'), boundsOf: () => null, colorChanged });
+    const repaint = () => {};
+    const off = layer.subscribe!(repaint);
+    expect(colorChanged).toHaveBeenCalledWith(repaint);
+    off();
+    expect(offColor).toHaveBeenCalled();
   });
 });

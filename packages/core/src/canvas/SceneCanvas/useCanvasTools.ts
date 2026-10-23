@@ -59,6 +59,8 @@ export function useEnabledFeatures(
 export function useCanvasTools(args: {
   /** The canvas's select tool, which is built from its scene and pickers. */
   select: Tool;
+  /** The canvas's group entry and leave, or null where the select preset is off. */
+  groupEntry: Contribution | null;
   enabled: EnabledPresets;
   tools: Props['tools'];
   defaultTools: Props['defaultTools'];
@@ -80,7 +82,7 @@ export function useCanvasTools(args: {
   internal: ToolsApi;
   takeover: ToolsApi | null;
 } {
-  const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, ambient, initialActiveTool, modes, onToolsCreated } = args;
+  const { select, groupEntry, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, ambient, initialActiveTool, modes, onToolsCreated } = args;
 
   const takeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
   const registry = useBuiltinTools({
@@ -99,10 +101,10 @@ export function useCanvasTools(args: {
   const markerDrag = args.actions === null ? null : defaultMarkerDrag;
   const mergedAmbient = useMemo(
     () => [
-      ...presetContributions(enabled), ...(ambient ?? []),
+      ...presetContributions(enabled), ...(groupEntry ? [groupEntry] : []), ...(ambient ?? []),
       ...(pressFeedback ? [pressFeedback] : []), ...(markerDrag ? [markerDrag] : []),
     ],
-    [enabled, ambient, pressFeedback, markerDrag],
+    [enabled, groupEntry, ambient, pressFeedback, markerDrag],
   );
 
   const internal = useTools({

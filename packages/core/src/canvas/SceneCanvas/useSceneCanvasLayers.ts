@@ -28,7 +28,7 @@ import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
 import { drawnBoundsScene } from '../derivedPath';
 import { useEnteredGroupFrameLayer } from 'features/selection/enteredGroupFrame';
-import type { EnteredGroupDep } from '../deps/enteredGroup';
+import type { EnteredGroupApi } from '../deps/enteredGroup';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
 import { createSnapReadoutLayer } from 'features/snap/readoutLayer';
 import type { SnapReadoutStyle } from 'features/snap/types';
@@ -51,7 +51,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   poseDescriptor: PoseDescriptor<TPose>;
   alphaFor: ((id: string) => number) | undefined;
   colorOverrides: ColorOverrideRegistry | undefined;
-  boundsOf: (id: string) => Bounds | null; enteredGroup: EnteredGroupDep; frameColor: () => string;
+  boundsOf: (id: string) => Bounds | null; enteredGroup: EnteredGroupApi; frameColor: { read: () => string; changed: (fn: () => void) => () => void };
   planeOfNode: (id: string, view: View) => PlaneMap | null;
   /** `<SceneCanvas poseTransition>`, whose ghosts of removed nodes this draws. */
   poseTransition: PoseTransitionSeat<TPose> | null | undefined;

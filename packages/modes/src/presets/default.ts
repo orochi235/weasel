@@ -80,7 +80,7 @@ export const CROP: ModeDefinition = {
   cancel: { shortcut: 'Escape' },
 };
 
-/** The five modes this package ships, ready to hand to `createModeRegistry`. */
+/** The modes this package ships, ready to hand to `createModeRegistry`. */
 export const DEFAULT_MODES: readonly ModeDefinition[] = [
   NORMAL,
   PATH_EDIT,

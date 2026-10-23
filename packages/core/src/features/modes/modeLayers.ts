@@ -14,7 +14,7 @@ export interface WorkspaceTintLayerOptions {
   page?: () => Rect | null;
   /** Opacity for every mode's tint, in place of its `workspace.intensity`. */
   intensity?: number;
-  /** A tint for when the mode has none, such as the entered group's, with what announces a change to it. */
+  /** The tint shown in a mode with none of its own, and what announces a change to it. */
   fallback?: { visual: () => WorkspaceVisual | null; subscribe: (fn: () => void) => () => void };
   id?: string;
   label?: string;
@@ -23,10 +23,9 @@ export interface WorkspaceTintLayerOptions {
 const DEFAULT_INTENSITY = 0.12;
 
 /**
- * A screen-space layer painting the active mode's `WorkspaceVisual`, or the
- * `fallback`'s in a mode without one: nothing when neither has a tint, otherwise a wash at the mode's intensity, bottom-up or
- * top-down when the mode names a gradient. It subscribes to the registry, so a
- * mode switch repaints it.
+ * A screen-space layer painting the active mode's `WorkspaceVisual`, or the `fallback`'s in a
+ * mode without one: a wash at `intensity`, else that visual's own, bottom-up or top-down when it
+ * names a gradient.
  */
 export function workspaceTintLayer(opts: WorkspaceTintLayerOptions): RenderLayer<unknown> {
   const { registry } = opts;

@@ -332,7 +332,7 @@ inside a group; isolation is a presentation of it, not a mode.
 
 **Interfaces:**
 - Produces: `<SceneCanvas enteredGroup={dep}>`, consumer-owned as `selection` is; without it the
-  canvas makes its own. `useEnteredGroup(scene)` and `EnteredGroupDep` are public.
+  canvas makes its own. `useEnteredGroup(scene)` and `EnteredGroupApi` are public.
 - Produces: `createEnteredGroupScope({ entered, scene, dimAlpha? })` →
   `{ alphaFor(id), isPointerInteractive(id), subscribe(fn), getVersion() }`: everything outside the
   entered group's subtree dims and stops taking hits; with nothing entered, every node is lit and live.

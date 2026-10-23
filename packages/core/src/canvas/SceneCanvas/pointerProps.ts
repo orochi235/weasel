@@ -1,4 +1,4 @@
-import type { EnteredGroupDep } from '../deps/enteredGroup';
+import type { EnteredGroupApi } from '../deps/enteredGroup';
 
 /** Minimal hit descriptor passed to `onDoubleClick`. Contains the fields
  *  modality dispatch needs; extends as the kit's `Hit` type evolves. */
@@ -20,7 +20,7 @@ export interface SceneCanvasPointerProps {
    * from. Nodes outside it take no hits. Pass one from `useEnteredGroup(scene)` to read or drive it
    * from outside the canvas, as `selection` is passed; without it the canvas keeps its own.
    */
-  enteredGroup?: EnteredGroupDep;
+  enteredGroup?: EnteredGroupApi;
 
   /**
    * Called when the user double-clicks the canvas, with the hit node (id + kind) at that

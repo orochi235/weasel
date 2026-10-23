@@ -10,17 +10,29 @@ import { useEffect, useMemo } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { NodeId, Scene } from 'core/scene/types';
 
-export interface EnteredGroupDep {
+export interface EnteredGroupApi {
   get(): NodeId | null;
   enter(id: NodeId): void;
   /** Moves to the nearest group above the current one, or to none. */
   leave(): void;
+  /** Leaves every entered group at once. */
+  leaveAll(): void;
   subscribe(fn: () => void): () => void;
+}
+
+/** Whether `id` is reachable while `group` is entered: inside it, and not the group itself. With
+ *  nothing entered every node is. Picking, region selects and select-all all ask this. */
+export function reachableInGroup(
+  scene: Pick<Scene<unknown, string, unknown>, 'ancestorsOf'>,
+  group: NodeId | null,
+  id: string,
+): boolean {
+  return group === null || scene.ancestorsOf(id as NodeId).includes(group);
 }
 
 type SceneReads = Pick<Scene<unknown, string, unknown>, 'get' | 'ancestorsOf' | 'subscribe'>;
 
-export function createEnteredGroup(scene: SceneReads): EnteredGroupDep {
+export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
   let chain: NodeId[] = [];
   let announced: NodeId | null = null;
   const listeners = new Set<() => void>();
@@ -52,6 +64,11 @@ export function createEnteredGroup(scene: SceneReads): EnteredGroupDep {
       chain = groupsFrom(here).slice(1);
       announce();
     },
+    leaveAll() {
+      if (get() === null) return;
+      chain = [];
+      announce();
+    },
     subscribe(fn) {
       if (listeners.size === 0) {
         announced = get();
@@ -67,12 +84,15 @@ export function createEnteredGroup(scene: SceneReads): EnteredGroupDep {
 }
 
 /** One entered-group store for the life of the scene. */
-export function useEnteredGroup(scene: SceneReads): EnteredGroupDep {
+export function useEnteredGroup(scene: SceneReads): EnteredGroupApi {
   return useMemo(() => createEnteredGroup(scene), [scene]);
 }
 
-export function useEnteredGroupDepSource(dep: EnteredGroupDep): void {
+export function useEnteredGroupApiSource(dep: EnteredGroupApi): void {
   useDepSource('enteredGroup', () => dep);
+  // What is drawn or pasted while a group is entered lands in it, unless a source
+  // registered under this one, such as a symmetry group, names a container.
+  useDepSource('insertInto', (below) => ({ get: () => below()?.get() ?? dep.get() }));
   const registry = useDepRegistry();
   useEffect(() => dep.subscribe(() => registry.changed?.()), [dep, registry]);
 }

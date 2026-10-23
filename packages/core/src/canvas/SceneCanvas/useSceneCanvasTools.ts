@@ -1,4 +1,4 @@
-import type { Tool } from '../../tools/overlayBinding';
+import type { Contribution, Tool } from '../../tools/overlayBinding';
 import type { EnabledPresets, FeatureBindingOptions, PresetSource } from './features';
 import type { SceneCanvasProps } from './props';
 import { useCanvasTools, useFeatureBindings } from './useCanvasTools';
@@ -20,10 +20,13 @@ export function useSceneCanvasTools(args: {
   move: unknown;
   enabled: EnabledPresets;
   presetSource: PresetSource;
+  /** Entering and leaving groups, installed with the `select` preset. */
+  groupEntry: Contribution;
 }) {
   const { props, select, enabled } = args;
   const { tools, internal, takeover } = useCanvasTools({
     select,
+    groupEntry: enabled.has('select') ? args.groupEntry : null,
     enabled,
     tools: props.tools,
     defaultTools: props.defaultTools,

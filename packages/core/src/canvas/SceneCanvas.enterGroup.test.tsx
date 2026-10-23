@@ -13,7 +13,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { BindingOverrides } from '@weasel-js/routing';
-import { createEnteredGroup, type EnteredGroupDep } from './deps/enteredGroup';
+import { createEnteredGroup, type EnteredGroupApi } from './deps/enteredGroup';
 import { SceneCanvas } from './SceneCanvas';
 
 beforeAll(() => {
@@ -29,7 +29,7 @@ type P = { x: number; y: number; width: number; height: number };
 const box = (x: number, w = 30): P => ({ x, y: 0, width: w, height: 30 });
 const triangle = () => pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath;
 
-function setup(opts: { entered?: (scene: never) => EnteredGroupDep; overrides?: BindingOverrides } = {}) {
+function setup(opts: { entered?: (scene: never) => EnteredGroupApi; overrides?: BindingOverrides } = {}) {
   const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
   const enter = vi.fn();
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
@@ -50,9 +50,9 @@ function setup(opts: { entered?: (scene: never) => EnteredGroupDep; overrides?: 
   }
   const { container } = render(<Canvas />);
   const canvas = container.querySelector('canvas')!;
-  const press = (x: number) => act(() => {
+  const press = (x: number, mods: PointerEventInit = {}) => act(() => {
     for (const type of ['pointerdown', 'pointerup']) {
-      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: 15, pointerId: 1, button: 0, buttons: 1 }));
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: 15, pointerId: 1, button: 0, buttons: 1, ...mods }));
     }
   });
   const doubleClick = (x: number) => { press(x); press(x); };
@@ -117,6 +117,21 @@ describe('entering a group on a canvas', () => {
     t.press(165);
     expect(t.entered!.get()).toBe('g');
     t.escape();
+    expect(t.entered!.get()).toBeNull();
+  });
+
+  it.each([
+    ['Shift', { shiftKey: true }],
+    ['Cmd', { metaKey: true }],
+    ['Ctrl', { ctrlKey: true }],
+    ['Alt', { altKey: true }],
+  ] as const)('a %s-press outside the group leaves it as a plain press does', (_name, mods) => {
+    const t = setup({ entered: (scene) => createEnteredGroup(scene) });
+    t.doubleClick(15);
+    t.press(200, mods);
+    expect(t.entered!.get()).toBeNull();
+    t.doubleClick(15);
+    t.press(165, mods);
     expect(t.entered!.get()).toBeNull();
   });
 });

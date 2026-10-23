@@ -34,6 +34,7 @@ import {
 } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
+import { insertSite } from './deps/insertSite';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
 import { cascadingSetPose, containerCascade } from './poseCascade';
@@ -130,6 +131,8 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   selection?: SceneAdapterSelection;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
+  /** The container a paste lands in, read at each paste: `<SceneCanvas>` passes the `insertInto` dep's. */
+  pasteInto?: () => string | null;
 }
 
 /** Derive the adapter for a scene. Reads go straight to the scene; writes are
@@ -171,7 +174,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     worldPoseOf: (id) => adapter.getWorldPose(id),
     frameAtOrAbove: (id) => frameAtOrAbove(adapter, id),
     poseBounds,
-    translate,
+    translate, ...(options.pasteInto ? { landing: () => insertSite(scene as never, options.pasteInto!()) } : {}),
   };
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {

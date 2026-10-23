@@ -16,7 +16,7 @@ import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type React from 'react';
-import { forwardRef, useCallback, useMemo, useRef } from 'react';
+import { forwardRef, useMemo, useRef } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { Canvas } from './Canvas';
 import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
@@ -40,11 +40,12 @@ import { useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
 import { useDevtoolsOverride } from '../devtools/useDevtoolsRoot';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
+import { useGroupEntryContribution } from 'tools/builtin/select/groupEntry';
 import { useNodeKinds } from './SceneCanvas/useNodeKinds';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
-import { chromeColorOf } from './accentColor';
+import { chromeColorOf, watchThemeOf } from './accentColor';
 import { ENTERED_FRAME_COLOR, ENTERED_FRAME_TOKEN } from 'features/selection/enteredGroupFrame';
 export { SCENE_CANVAS_FEATURES, type Feature } from './SceneCanvas/features';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
@@ -85,18 +86,20 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const picking = useScenePicking({ scene, selection, descriptor, props, viewRef, selectTool: selectToolWithDefaults, kinds });
   const { adapter, boundsOf, planeOfNode } = picking;
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
+  const groupEntry = useGroupEntryContribution({ pickHit: picking.pickBest, tree: adapter, boxOf: boundsOf });
   const tools = useSceneCanvasTools({
     props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions,
-    enabled, presetSource: props.presetSource,
+    enabled, presetSource: props.presetSource, groupEntry,
   });
 
   // The wrapper's `<InputScope>` provides it.
   const actionsRegistry = useActionsRegistry();
   const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
 
-  const frameColor = useCallback(
-    () => chromeColorOf(internalCanvasRef.current, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR), [],
-  );
+  const frameColor = useMemo(() => ({
+    read: () => chromeColorOf(internalCanvasRef.current, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR),
+    changed: (fn: () => void) => watchThemeOf(() => internalCanvasRef.current, fn),
+  }), []);
   const layered = useSceneCanvasLayers({
     layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,

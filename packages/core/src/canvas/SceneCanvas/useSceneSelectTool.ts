@@ -201,8 +201,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,
-    // The box the entered-group frame is drawn on, so a press leaves by the frame it can see.
-    boxOf: wiredBoundsOf,
     ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
   });

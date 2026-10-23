@@ -17,6 +17,9 @@ import { pickWalk } from 'canvas/pickWalk';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { createEnteredGroup } from 'canvas/deps/enteredGroup';
 import { escapeAction } from '../../../interactions/actions/defaults/escape';
+import { enterPathEditAction } from '../../../interactions/actions/defaults/enterPathEdit';
+import { visualBoundsViaDescriptor } from 'core/geometry/poseDescriptor';
+import { createGroupEntryContribution } from './groupEntry';
 import { useSelectTool } from './useSelectTool';
 import { adapterPointQuery } from './adapterPointQuery';
 
@@ -38,17 +41,24 @@ function harness(initial: UseSceneOptions<unknown, 'default', Pose>['initial']) 
     const scene = useScene<unknown, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
     const sel = useSelection({ mode: 'multi' });
     const adapter = sceneToAdapter(scene, { selection: sel });
-    const options = {
-      pickEvery: (x: number, y: number) =>
-        pickWalk(scenePickSource(scene), adapterPointQuery(AUTO_POSE_DESCRIPTOR, false)(x, y, 0)),
-    };
-    return { tool: useSelectTool(adapter as never, options as never), sel, scene };
+    const pickEvery = (x: number, y: number) =>
+      pickWalk(scenePickSource(scene), adapterPointQuery(AUTO_POSE_DESCRIPTOR, false)(x, y, 0));
+    const entry = createGroupEntryContribution({
+      pickHit: (x, y) => pickEvery(x, y).at(-1) ?? null,
+      tree: adapter,
+      boxOf: (id) => {
+        const pose = scene.get(asNodeId(id))?.pose;
+        return pose ? visualBoundsViaDescriptor(pose, AUTO_POSE_DESCRIPTOR) : null;
+      },
+    });
+    return { tool: useSelectTool(adapter as never, { pickEvery } as never), entry, sel, scene };
   });
   const entered = createEnteredGroup(result.current.scene);
   const extra: Record<string, unknown> = {};
   const deps = () => ({ selection: result.current.sel, enteredGroup: entered, ...extra }) as unknown as ActionDeps;
   const action = (id: string) => {
-    const a = (result.current.tool as { actions?: readonly Action[] }).actions?.find((x) => x.id === id);
+    const a = [...((result.current.tool as { actions?: readonly Action[] }).actions ?? []), ...(result.current.entry.actions ?? [])]
+      .find((x) => x.id === id);
     if (!a) throw new Error(`${id} missing`);
     return a;
   };
@@ -67,6 +77,7 @@ function harness(initial: UseSceneOptions<unknown, 'default', Pose>['initial']) 
     scene: () => result.current.scene,
     selection: () => [...result.current.sel.current],
     tool: () => result.current.tool,
+    entry: () => result.current.entry,
     canEnter: (x: number, y: number) => action('group.enter').enabled?.(deps(), { x, y }) === true,
     enter: (x: number, y: number) => run('group.enter', { x, y }),
     pick: (x: number, y: number) => run('select.pick', { x, y }),
@@ -189,29 +200,30 @@ describe('undo while a group is entered', () => {
 });
 
 describe('bindings', () => {
-  const scoped = (h: ReturnType<typeof harness>): ScopedBinding[] =>
-    (h.tool() as unknown as { bindings: ScopedBinding['binding'][] }).bindings
-      .map((binding) => ({ binding, scope: 'active' as const, ownerId: 'select' }));
+  const scoped = (h: ReturnType<typeof harness>): ScopedBinding[] => [
+    ...(h.tool() as unknown as { bindings: ScopedBinding['binding'][] }).bindings
+      .map((binding) => ({ binding, scope: 'active' as const, ownerId: 'select' })),
+    ...(h.entry().bindings ?? []).map((binding) => ({ binding: binding as ScopedBinding['binding'], scope: 'ambient' as const, ownerId: 'group.entry' })),
+  ];
   const pointer = { x: 0, y: 0, clientX: 0, clientY: 0, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 
-  it('a double-click on a body ranks group.enter above an ambient body double-click', () => {
+  it('a double-click on a body ranks group.enter above enterPathEdit, both ambient', () => {
     const h = harness([]);
-    const ambient: ScopedBinding = {
-      binding: { spec: { kind: 'doubleClick', target: 'unselected-body' }, actionId: 'enterPathEdit', opts: { id: 'enterPathEdit.doubleClick' } } as ScopedBinding['binding'],
-      scope: 'ambient' as const, ownerId: 'paths',
-    };
+    const paths: ScopedBinding[] = actionBindings(enterPathEditAction).map((binding) => ({
+      binding: { ...binding, actionId: 'enterPathEdit' } as ScopedBinding['binding'], scope: 'ambient' as const, ownerId: null,
+    }));
     const event = { kind: 'doubleclick' as const, ...pointer, bodyTarget: 'unselected-body' as const, stage: 'press' as const };
-    const ranked = matchSorted(event as never, [ambient, ...scoped(h)], true);
+    const ranked = matchSorted(event as never, [...paths, ...scoped(h)], true);
     expect(ranked[0]?.binding.actionId).toBe('group.enter');
   });
 
-  it('Escape ranks group.leave above the escape action that clears the selection', () => {
+  it('Escape ranks group.leave above the escape action: an entry\'s bindings assemble ahead of an action\'s own', () => {
     const h = harness([]);
     const esc: ScopedBinding[] = actionBindings(escapeAction).map((binding) => ({
       binding: { ...binding, actionId: 'escape' } as ScopedBinding['binding'], scope: 'ambient' as const, ownerId: 'edit',
     }));
     const event = { kind: 'key' as const, key: 'Escape', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
-    const ranked = matchSorted(event as never, [...esc, ...scoped(h)], true);
+    const ranked = matchSorted(event as never, [...scoped(h), ...esc], true);
     expect(ranked[0]?.binding.actionId).toBe('group.leave');
   });
 });
