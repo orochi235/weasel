@@ -31,7 +31,7 @@ export const placeAction: Action & { requires: string[] } = inPlane({
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
-  requires: ['insert', 'insertInto', 'selection', 'snap', 'textEdit', 'scene'],
+  requires: ['insert', 'insertInto', 'canDropInto', 'selection', 'snap', 'textEdit', 'scene'],
   invoker: {
     timing: 'immediate',
     run(deps: ActionDeps, params?: Record<string, unknown>): void {
