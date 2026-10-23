@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactElement, type ReactNode, type RefObject } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { trackRun, type RunAlign, type TrackShape } from '@weasel-js/geom';
 import { AlongContext } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
@@ -114,7 +114,7 @@ function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rin
         tabStop={i === tabStop}
         current={i === current}
         apply={apply}
-        onKeyDown={swatchKeyDown(i, options, columns, apply, swatches)}
+        onKeyDown={ringKeyDown(i, columns, swatches, swatchKeyDown(i, options, columns, apply, swatches))}
         className={place.className}
         style={place.style}
         data={{ 'data-ring-item': String(i), 'data-clipped': place.clipped }}
@@ -143,6 +143,57 @@ function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rin
       })}
     </div>
   );
+}
+
+/** The way each arrow points on screen, y down. */
+const ARROWS: Partial<Record<string, { x: number; y: number }>> = {
+  ArrowLeft: { x: -1, y: 0 },
+  ArrowRight: { x: 1, y: 0 },
+  ArrowUp: { x: 0, y: -1 },
+  ArrowDown: { x: 0, y: 1 },
+};
+
+/** How nearly a step must point the arrow's way to take it: within about 70 degrees. */
+const MIN_ALIGN = 0.35;
+
+/** Where an arrow moves focus from swatch `i` on rings: whichever of its neighbors along the ring or on the next ring
+ *  in or out lies most nearly the arrow's way on screen, so Down goes down on a bottom arc and Left goes in on a right
+ *  one. -1 where none lies that way. */
+export function ringStep(arrow: { x: number; y: number }, i: number, columns: number, centers: readonly ({ x: number; y: number } | undefined)[]): number {
+  const from = centers[i];
+  if (from === undefined) return -1;
+  let best = -1;
+  let bestAlign = MIN_ALIGN;
+  for (const j of [i - 1, i + 1, i - columns, i + columns]) {
+    const to = centers[j];
+    if (to === undefined) continue;
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const len = Math.hypot(dx, dy);
+    if (len === 0) continue;
+    const align = (dx * arrow.x + dy * arrow.y) / len;
+    if (align > bestAlign) {
+      best = j;
+      bestAlign = align;
+    }
+  }
+  return best;
+}
+
+/** The key handler of swatch `i` on rings: arrows move by {@link ringStep}, every other key as `fallback` takes it. */
+function ringKeyDown(i: number, columns: number, swatches: () => HTMLElement[], fallback: (e: KeyboardEvent<HTMLButtonElement>) => void) {
+  return (e: KeyboardEvent<HTMLButtonElement>): void => {
+    const arrow = ARROWS[e.key];
+    if (arrow === undefined) return fallback(e);
+    e.preventDefault();
+    const all = swatches();
+    const centers = all.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    const next = ringStep(arrow, i, columns, centers);
+    if (next >= 0) all[next]?.focus();
+  };
 }
 
 const ringKeyOf = (child: Element): string | null => child.getAttribute('data-ring-item');

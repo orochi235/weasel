@@ -56,7 +56,7 @@ export function SwatchArcView({ config }: { config: SwatchArcConfig }): ReactEle
           </div>
         </section>
         <p className={lab.note}>
-          Each row is a ring of its own. Left and Right move along a ring, Up and Down between rings. A ring too long for
+          Each row is a ring of its own. Each arrow moves to the neighbor that lies its way on screen, along a ring or across to the next. A ring too long for
           the arc scrolls along itself; rows past where the arc bends too tight share the last ring that fits.
         </p>
       </div>

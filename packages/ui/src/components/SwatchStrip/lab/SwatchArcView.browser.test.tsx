@@ -91,6 +91,22 @@ test('the arrows rove along a ring and across to the next one in', async () => {
   expect(rings()[2]!.radiusSpread).toBeLessThan(1);
 });
 
+test('on a bottom arc Down moves down the screen, out to the ring below', async () => {
+  await mount({ center: 180, direction: 'cw' });
+  const basic = screen.getByRole('group', { name: 'Basic' });
+  const swatches = [...basic.querySelectorAll<HTMLElement>('[data-swatch]')];
+  const y = (el: Element) => el.getBoundingClientRect().top;
+  swatches[13]!.focus();
+  await userEvent.keyboard('{ArrowDown}');
+  const below = document.activeElement as HTMLElement;
+  expect(below.closest('[data-ring]')).not.toBe(swatches[13]!.closest('[data-ring]'));
+  expect(y(below)).toBeGreaterThan(y(swatches[13]!));
+  await userEvent.keyboard('{ArrowUp}');
+  expect(document.activeElement).toBe(swatches[13]);
+  await userEvent.keyboard('{ArrowRight}');
+  expect((document.activeElement as HTMLElement).getBoundingClientRect().left).toBeGreaterThan(swatches[13]!.getBoundingClientRect().left);
+});
+
 test('rows past where the arc bends too tight share the last ring that fits, which scrolls', async () => {
   const { spec, rings } = await mount({ size: 300 }, { palettes: 'standard', recent: 0 });
   const read = rings();

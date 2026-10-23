@@ -45,7 +45,8 @@ export interface SwatchGridProps {
  *
  * Given a curved shape, or inside an `Along`, each row lies on a ring of its
  * own, row k shifted k rows in toward the shape's center of curvature, the
- * way a color wheel's rim reads. The arrows keep their grid steps.
+ * way a color wheel's rim reads. There each arrow moves to the neighbor
+ * along the ring or on the next ring in or out that lies its way on screen.
  */
 export function SwatchGrid(props: SwatchGridProps): ReactElement {
   const along = useTrackShape();

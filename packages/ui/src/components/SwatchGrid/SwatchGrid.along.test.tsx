@@ -6,6 +6,7 @@ import { createRecentColorsStore } from '../RecentColors';
 import { SwatchStrip } from '../SwatchStrip';
 import type { SwatchPalette } from '../SwatchStrip';
 import { SwatchGrid, type SwatchGridOption } from './SwatchGrid';
+import { ringStep } from './SwatchRings';
 
 // jsdom lays nothing out and applies no stylesheet: a swatch is 20 square, anything else 40 wide, and rings have no gap.
 const realOffset = ['offsetWidth', 'offsetHeight'].map((k) => [k, Object.getOwnPropertyDescriptor(HTMLElement.prototype, k)!] as const);
@@ -67,19 +68,14 @@ describe('SwatchGrid along a curve', () => {
     expect((screen.getAllByRole('button')[0] as HTMLElement).style.getPropertyValue('--at-x')).toBe('');
   });
 
-  test('the arrows move along a ring and between rings by the grid steps', () => {
+  test('Home and End still reach the first and last swatch', () => {
     render(<SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise']} />);
     const b = (i: number) => screen.getByRole('button', { name: `c${i}` });
-    b(0).focus();
-    fireEvent.keyDown(b(0), { key: 'ArrowRight' });
-    expect(b(1)).toHaveFocus();
-    fireEvent.keyDown(b(1), { key: 'ArrowDown' });
-    expect(b(4)).toHaveFocus();
-    expect(ring(1)).toContain(b(4));
-    fireEvent.keyDown(b(4), { key: 'ArrowUp' });
-    expect(b(1)).toHaveFocus();
+    b(1).focus();
     fireEvent.keyDown(b(1), { key: 'End' });
     expect(b(5)).toHaveFocus();
+    fireEvent.keyDown(b(5), { key: 'Home' });
+    expect(b(0)).toHaveFocus();
   });
 
   test('one tab stop, on the current swatch', () => {
@@ -128,5 +124,37 @@ describe('SwatchStrip along a curve', () => {
     expect(within(recent).getByText('No recent colors').closest('[data-ring-item]')).toHaveAttribute('data-ring-item', 'empty');
     const lead = screen.getByRole('group', { name: 'Warm' }).querySelector('[data-ring-item="lead"]')!;
     expect(within(lead as HTMLElement).getByRole('button', { name: /Palette/ })).toBeInTheDocument();
+  });
+});
+
+describe('ringStep', () => {
+  // Two rings of three, ring 1 inside ring 0: on a top arc inside is down the screen, on a bottom arc up it.
+  const top = [{ x: 0, y: 0 }, { x: 10, y: -2 }, { x: 20, y: 0 }, { x: 2, y: 10 }, { x: 10, y: 8 }, { x: 18, y: 10 }];
+  const bottom = top.map(({ x, y }) => ({ x, y: -y }));
+  const right = top.map(({ x, y }) => ({ x: -y, y: x }));
+  const step = (key: { x: number; y: number }, i: number, centers: typeof top) => ringStep(key, i, 3, centers);
+  const [L, R, U, D] = [{ x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }];
+
+  test('on a top arc Down goes in and Right along', () => {
+    expect(step(D, 1, top)).toBe(4);
+    expect(step(U, 4, top)).toBe(1);
+    expect(step(R, 1, top)).toBe(2);
+    expect(step(L, 1, top)).toBe(0);
+  });
+
+  test('on a bottom arc Down goes out, not in', () => {
+    expect(step(D, 4, bottom)).toBe(1);
+    expect(step(U, 1, bottom)).toBe(4);
+    expect(step(R, 1, bottom)).toBe(2);
+  });
+
+  test('down a right-hand arc Left goes in and Down along', () => {
+    expect(step(L, 1, right)).toBe(4);
+    expect(step(D, 1, right)).toBe(2);
+  });
+
+  test('an arrow with no neighbor its way stays put', () => {
+    expect(step(U, 1, top)).toBe(-1);
+    expect(step(L, 0, top)).toBe(-1);
   });
 });
