@@ -22,7 +22,7 @@ const VIEW = { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), set: () => {}
 function setup() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
-    kind: 'leaf', layer: 'main', pose: { x: 100, y: 100, width: 40, height: 40 },
+    kind: 'mark', layer: 'main', pose: { x: 100, y: 100, width: 40, height: 40 },
     data: {
       path: polygonFromPoints([{ x: 100, y: 100 }, { x: 140, y: 100 }, { x: 140, y: 140 }, { x: 100, y: 140 }]),
       skin: { a: [1, 0, 0, 1], b: [0, 1, 1, 0] },

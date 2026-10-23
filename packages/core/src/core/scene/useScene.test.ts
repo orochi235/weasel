@@ -17,7 +17,7 @@ describe('useScene — trivial overload', () => {
     expect(scene.layers[0].kind).toBe('system');
     expect(scene.roots).toHaveLength(2);
     const a = scene.get(asNodeId('a'));
-    expect(a?.kind).toBe('leaf');
+    expect(a?.kind).toBe('mark');
     expect(a?.layer).toBe('default');
     // pose === data === item (by reference)
     expect(a?.pose).toBe(A);
@@ -62,7 +62,7 @@ describe('useScene — trivial overload', () => {
     const scene = result.current;
     let id: string = '';
     act(() => {
-      id = scene.add({ kind: 'leaf', layer: 'default', pose: A, data: A });
+      id = scene.add({ kind: 'mark', layer: 'default', pose: A, data: A });
     });
     expect(id).toBe('g0');
   });
@@ -87,7 +87,7 @@ describe('useScene — full overload still works', () => {
       useScene<{ label: string }, 'a' | 'b'>({
         systemLayers: [{ id: 'a' }, { id: 'b' }],
         initial: [
-          { kind: 'leaf', layer: 'a', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } },
+          { kind: 'mark', layer: 'a', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } },
         ],
         ops: { 'app:bump': { apply: () => { bumps++; }, revert: () => { bumps--; } } },
       }),
@@ -120,7 +120,7 @@ describe('useScene — subscribe option', () => {
       renders++;
       return useScene<{ fill: string }, 'default', Rect>({
         systemLayers: [{ id: 'default' }],
-        initial: [{ kind: 'leaf', layer: 'default', pose: A, data: { fill: '#f00' }, id: asNodeId('a') }],
+        initial: [{ kind: 'mark', layer: 'default', pose: A, data: { fill: '#f00' }, id: asNodeId('a') }],
         subscribe: false,
       });
     });

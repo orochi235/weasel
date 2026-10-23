@@ -6,7 +6,7 @@ import type { DiagramNodeLike } from './trait';
 
 interface Rect { x: number; y: number; width: number; height: number; rotation?: number }
 
-const node = (data: unknown, id = 'n1'): DiagramNodeLike => ({ id, kind: 'leaf', data });
+const node = (data: unknown, id = 'n1'): DiagramNodeLike => ({ id, kind: 'mark', data });
 
 /** 100 wide, 40 tall, at the origin. */
 const POSE: Rect = { x: 0, y: 0, width: 100, height: 40 };

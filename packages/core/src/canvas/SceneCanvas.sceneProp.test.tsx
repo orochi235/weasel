@@ -17,7 +17,7 @@ beforeAll(() => {
 
 function sceneAt(x: number): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  s.add({ id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: { x, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+  s.add({ id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
   return s;
 }
 

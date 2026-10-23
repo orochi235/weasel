@@ -42,7 +42,7 @@ it('dims a hidden row and a hidden group of a form once each, and sets the badge
 
 it('dims a hidden row and a hidden section of a selection panel once each', () => {
   const scene = createScene<Record<string, unknown>, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: {}, data: { on: false } });
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: {}, data: { on: false } });
   const members: PrefSection['members'] = {
     'data.size': num('Size', { showIf: { path: 'data.on' } }),
     'data.plain': num('Plain'),

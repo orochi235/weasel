@@ -41,7 +41,8 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   view?: View,
   ctx?: NodePaintCtx,
 ): DrawCommand[] {
-  const painter = findNodeShape(node);
+  // A group is structure: it never paints, whatever its data holds.
+  const painter = node.kind === 'group' ? undefined : findNodeShape(node);
   const paintCtx = !view || ctx?.pixelScale !== undefined
     ? ctx
     : ctx ? { ...ctx, pixelScale: pixelScaleOf(view) } : viewOnlyCtx(view);
@@ -61,7 +62,7 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
       { fontFamily: 'sans-serif', fontSize: 11 },
     );
     // A container's children would cover a label drawn with the container.
-    return [...primary, node.kind === 'container' ? overChildren([label]) : label];
+    return [...primary, node.kind === 'group' ? overChildren([label]) : label];
   }
 
   // Rotation and per-node alpha are applied OUTSIDE this function, by `wrapNodeOutput` in

@@ -59,7 +59,7 @@ function randomScene(r: Rand, n: number): TestScene {
     if (roll < 0.01) data.odd = 'nan';
     else if (roll < 0.02) data.odd = 'inf';
     else if (roll < 0.03) data.odd = 'inverted';
-    initial.push({ kind: 'leaf' as const, layer: 'solids' as const, pose: randomPose(r), data });
+    initial.push({ kind: 'mark' as const, layer: 'solids' as const, pose: randomPose(r), data });
   }
   return createScene<TestData, TestLayer, Pose3>({ systemLayers: [{ id: 'solids' }], initial });
 }
@@ -125,7 +125,7 @@ function scanArea(world: World3d<TestData, TestLayer>, b: ScreenBox): NodeId[] {
 function boxWorld(boxes: readonly Aabb[]): { world: World3d<TestData, TestLayer>; ids: NodeId[] } {
   const scene = createScene<TestData, TestLayer, Pose3>({
     systemLayers: [{ id: 'solids' }],
-    initial: boxes.map(() => ({ kind: 'leaf' as const, layer: 'solids' as const, pose: pose3({ x: 0, y: 0, z: 0 }), data: {} })),
+    initial: boxes.map(() => ({ kind: 'mark' as const, layer: 'solids' as const, pose: pose3({ x: 0, y: 0, z: 0 }), data: {} })),
   });
   const ids = [...scene.renderOrder()];
   const byId = new Map(ids.map((id, i) => [id, boxes[i]!]));
@@ -194,7 +194,7 @@ describe('worldPickIndex', () => {
       const id = ids[Math.floor(r() * ids.length)]!;
       if (round % 3 === 0) scene.setPose(id, randomPose(r));
       else if (round % 3 === 1) scene.remove(id);
-      else scene.add({ kind: 'leaf', layer: 'solids', pose: randomPose(r), data: {} });
+      else scene.add({ kind: 'mark', layer: 'solids', pose: randomPose(r), data: {} });
       for (let q = 0; q < 20; q++) {
         const point = randomPoint(r);
         expect(atPoint(point)).toBe(scanNearest(world, point));
@@ -209,9 +209,9 @@ describe('worldPickIndex', () => {
     const scene = createScene<TestData, TestLayer, Pose3>({
       systemLayers: [{ id: 'solids' }],
       initial: [
-        { kind: 'leaf', layer: 'solids', pose: box, data: {} },
-        { kind: 'leaf', layer: 'solids', pose: box, data: {} },
-        { kind: 'leaf', layer: 'solids', pose: box, data: {} },
+        { kind: 'mark', layer: 'solids', pose: box, data: {} },
+        { kind: 'mark', layer: 'solids', pose: box, data: {} },
+        { kind: 'mark', layer: 'solids', pose: box, data: {} },
       ],
     });
     const vp: Viewport3d = { camera: createCamera({ distance: 10 }), width: WIDTH, height: HEIGHT };

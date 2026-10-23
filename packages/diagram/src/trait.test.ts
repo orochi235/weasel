@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { dataKeyReader, diagramNodeOf, type DiagramNodeLike } from './trait';
 
-const node = (data: unknown, id = 'n1'): DiagramNodeLike => ({ id, kind: 'leaf', data });
+const node = (data: unknown, id = 'n1'): DiagramNodeLike => ({ id, kind: 'mark', data });
 
 describe('dataKeyReader', () => {
   it('reads an edge as no participant at all', () => {

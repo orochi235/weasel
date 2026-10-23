@@ -12,7 +12,8 @@ function startAt(world: { x: number; y: number }, scale = { x: 1, y: 1 }) {
     overrides: createPoseOverrides<unknown>(() => ({})),
     composition: IDENTITY_POSE_COMPOSITION,
     layers: [],
-    get: () => ({ pose, kind: 'leaf' as const, layer: 'main', data: {}, parent: null }),
+    get: () => ({ pose, kind: 'mark' as const, layer: 'main', data: {}, parent: null }),
+    childrenOf: () => [],
     applyBatch: () => {},
   };
   const view = { get: () => ({ x: 0, y: 0, scale }), set: () => {} };

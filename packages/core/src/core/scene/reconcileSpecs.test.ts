@@ -7,7 +7,7 @@ type D = { label?: string };
 type Spec = AddNodeSpec<D, 'main', RectPose>;
 const id = asNodeId;
 const box = (k: string, x: number, extra: Partial<Spec> = {}): Spec => ({
-  id: id(k), kind: 'leaf', layer: 'main', pose: { x, y: 0, width: 10, height: 10 }, data: {}, ...extra,
+  id: id(k), kind: 'mark', layer: 'main', pose: { x, y: 0, width: 10, height: 10 }, data: {}, ...extra,
 });
 const sceneOf = (specs: Spec[]) =>
   createScene<D, 'main', RectPose>({ systemLayers: [{ id: 'main' }], initial: specs });
@@ -40,9 +40,9 @@ describe('reconcileSpecs', () => {
   });
 
   it('moves a container without moving its unchanged child', () => {
-    const prev: Spec[] = [box('g', 0, { kind: 'container' }), box('t', 2, { parent: id('g') })];
+    const prev: Spec[] = [box('g', 0, { kind: 'group' }), box('t', 2, { parent: id('g') })];
     const scene = sceneOf(prev);
-    reconcileSpecs(scene, prev, [box('g', 50, { kind: 'container' }), box('t', 2, { parent: id('g') })]);
+    reconcileSpecs(scene, prev, [box('g', 50, { kind: 'group' }), box('t', 2, { parent: id('g') })]);
     expect(scene.get(id('g'))!.pose.x).toBe(50);
     expect(scene.get(id('t'))!.pose.x).toBe(2);
   });
@@ -50,8 +50,8 @@ describe('reconcileSpecs', () => {
   it('re-adds a node whose kind changed, with what its removal took', () => {
     const prev: Spec[] = [box('a', 0), box('e', 0, { dependsOn: [id('a')] })];
     const scene = sceneOf(prev);
-    reconcileSpecs(scene, prev, [box('a', 0, { kind: 'container' }), box('e', 0, { dependsOn: [id('a')] })]);
-    expect(scene.get(id('a'))!.kind).toBe('container');
+    reconcileSpecs(scene, prev, [box('a', 0, { kind: 'group' }), box('e', 0, { dependsOn: [id('a')] })]);
+    expect(scene.get(id('a'))!.kind).toBe('group');
     expect(scene.get(id('e'))).toBeDefined();
   });
 
@@ -73,7 +73,7 @@ describe('reconcileSpecs', () => {
     const prev: Spec[] = [box('a', 0), box('b', 0), box('c', 0)];
     const scene = sceneOf(prev);
     scene.setSelection([id('c'), id('a'), id('b')]);
-    reconcileSpecs(scene, prev, [box('a', 0, { kind: 'container' }), box('c', 0)]);
+    reconcileSpecs(scene, prev, [box('a', 0, { kind: 'group' }), box('c', 0)]);
     expect(scene.getSelection()).toEqual([id('c'), id('a')]);
   });
 });

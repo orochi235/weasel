@@ -41,7 +41,7 @@ describe('createScene — construction', () => {
     const s = createScene<Data, Layer>({
       systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
       initial: [
-        { kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } },
+        { kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } },
       ],
     });
     expect(s.roots).toHaveLength(1);
@@ -52,8 +52,8 @@ describe('createScene — construction', () => {
     const scene = createScene<{ label: string }, 'structures' | 'plantings', typeof POSE>({
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
       initial: [
-        { id: asNodeId('bed'), kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } },
-        { id: asNodeId('plant'), kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: asNodeId('bed') },
+        { id: asNodeId('bed'), kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } },
+        { id: asNodeId('plant'), kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: asNodeId('bed') },
       ],
     });
     expect(scene.get(asNodeId('plant'))?.layer).toBe('plantings');
@@ -66,7 +66,7 @@ describe('createScene — construction', () => {
       initial: [
         {
           id: asNodeId('bed'),
-          kind: 'container',
+          kind: 'group',
           layer: 'structures',
           pose: POSE,
           data: { label: 'bed' },
@@ -75,7 +75,7 @@ describe('createScene — construction', () => {
       ],
     });
     const node = scene.get(asNodeId('bed'));
-    expect(node?.kind).toBe('container');
+    expect(node?.kind).toBe('group');
     expect(typeof (node as { clipFromPose?: unknown }).clipFromPose).toBe('function');
   });
 });

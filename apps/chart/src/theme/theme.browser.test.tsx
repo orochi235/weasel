@@ -1,7 +1,7 @@
 /** Format › Theme in a real browser: the page and a shape repaint in the theme's colors, and one undo puts them back. */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { DIAGRAM_THEMES } from '@weasel-js/diagram';
+import { DIAGRAM_THEMES, isDiagramBody } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_SCENE_KEY } from '../chartPersistence';
@@ -24,6 +24,8 @@ afterEach(() => {
 
 const { paper, blueprint } = DIAGRAM_THEMES as Record<string, (typeof DIAGRAM_THEMES)[string]>;
 
+const savedNodes = (): { data: unknown }[] => (JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as { nodes: { data: unknown }[] }).nodes;
+
 /** Drops a Process stencil centered on world (400, 300), as a drag from the Shapes panel does. */
 async function dropProcess(canvas: HTMLCanvasElement, host: HTMLElement): Promise<void> {
   const dt = new DataTransfer();
@@ -32,7 +34,7 @@ async function dropProcess(canvas: HTMLCanvasElement, host: HTMLElement): Promis
   for (const type of ['dragenter', 'dragover', 'drop']) {
     canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
   }
-  await expect.poll(() => (localStorage.getItem(CHART_SCENE_KEY) ?? '').includes('"container"')).toBe(true);
+  await expect.poll(() => savedNodes().some(isDiagramBody)).toBe(true);
 }
 
 /** Clicks through menu rows by name; a theme's row is a checkbox item, held while its theme is on. */
@@ -85,7 +87,7 @@ describe('Format › Theme › Edit Theme…', () => {
     await expect.poll(() => localStorage.getItem(CHART_SCENE_KEY) ?? '').not.toContain('Paper (edited)');
     // The undo before the drag takes back the shape, so the drag was one entry.
     await menu('Edit', /^Undo/);
-    await expect.poll(() => (localStorage.getItem(CHART_SCENE_KEY) ?? '').includes('"container"')).toBe(false);
+    await expect.poll(() => savedNodes().some(isDiagramBody)).toBe(false);
   });
 });
 
@@ -96,7 +98,7 @@ function savedBody(): { body: Box; row: { pose: Box; data: { text?: string } } }
   const nodes = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as {
     nodes: { id: string; kind: string; parent?: string | null; pose: Box; data: { text?: string } }[];
   }).nodes;
-  const body = nodes.find((n) => n.kind === 'container')!;
+  const body = nodes.find(isDiagramBody)!;
   return { body: body.pose, row: nodes.find((n) => n.parent === body.id)! };
 }
 

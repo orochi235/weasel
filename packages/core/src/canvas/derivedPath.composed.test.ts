@@ -18,11 +18,11 @@ const rect = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 
  *  two are painted at (100, 100) and (200, 100). */
 function makeFramedEdgeScene(composition: PoseComposition<RectPose> = RECT_POSE_COMPOSITION) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition });
-  const box = scene.add({ kind: 'container', layer: 'main', pose: rect(100, 100), data: {} });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: rect(0, 0), data: {}, parent: box });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: rect(100, 0), data: {}, parent: box });
+  const box = scene.add({ kind: 'group', layer: 'main', pose: rect(100, 100), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: rect(0, 0), data: {}, parent: box });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: rect(100, 0), data: {}, parent: box });
   const edge = scene.add({
-    kind: 'leaf', layer: 'main', pose: rect(0, 0), data: {},
+    kind: 'mark', layer: 'main', pose: rect(0, 0), data: {},
     dependsOn: [a, b],
     derivePath: (_node: Node<unknown, string, RectPose>, deps: readonly (DerivedDep<RectPose> | undefined)[]) => {
       const from = deps[0]?.pose;

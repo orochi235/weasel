@@ -21,7 +21,7 @@ export const DIAGRAM_TRAIT_KEY = 'diagram';
  *  reads a pose. */
 export interface DiagramNodeLike {
   id: string;
-  kind: 'leaf' | 'container';
+  kind: 'mark' | 'group';
   data: unknown;
 }
 

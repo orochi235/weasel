@@ -38,8 +38,8 @@ describe('a textAlong node over text whose outlines are loading', () => {
       systemLayers: [{ id: 'main' }],
       registry: withPathEffectsRegistry(),
       initial: [
-        { id: T, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 400, height: 120 }, data: TEXT },
-        { id: P, kind: 'leaf', layer: 'main', pose: { x: 0, y: 200, width: 400, height: 1 }, data: { path: pathFromD('M0 200 L400 200') } },
+        { id: T, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 400, height: 120 }, data: TEXT },
+        { id: P, kind: 'mark', layer: 'main', pose: { x: 0, y: 200, width: 400, height: 1 }, data: { path: pathFromD('M0 200 L400 200') } },
         { ...pathEffectNode({ kind: 'textAlong' }, [T, P], 'main', PATH_EFFECT_DERIVATIONS), id: FX },
       ],
     });

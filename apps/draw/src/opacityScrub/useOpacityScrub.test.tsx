@@ -53,7 +53,7 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
     const scene = useScene<D, L, P>({
       systemLayers: [{ id: 'main' }],
       initial: [{
-        id: ID, kind: 'leaf', layer: 'main',
+        id: ID, kind: 'mark', layer: 'main',
         pose: { x: 0, y: 0, width: 50, height: 50 },
         data,
       }],

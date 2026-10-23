@@ -1,13 +1,19 @@
 import type { NodeId } from 'core/scene/types';
+import { admitsChild } from '../admitsChild';
+import type { CanDropIntoDep } from '../layoutDeps';
 
-/** What finding an insert's container reads of a scene. A `Scene` satisfies it. */
-interface ContainerReader {
+/** What finding an insert's parent reads of a scene. A `Scene` satisfies it. */
+interface ParentReader {
   get(id: NodeId): { kind: string } | undefined;
 }
 
-/** The container an insert lands in: the one the `insertInto` dep's `into`
- *  names, or null, the top of the tree, when it names no container. */
-export function insertParent(scene: ContainerReader | undefined, into: string | null | undefined): NodeId | null {
-  if (into == null || !scene) return null;
-  return scene.get(into as NodeId)?.kind === 'container' ? (into as NodeId) : null;
+/** The node an insert lands in: the one the `insertInto` dep's `into` names when
+ *  it exists and admits the insert, or null, the top of the tree. */
+export function insertParent(
+  scene: ParentReader | undefined,
+  into: string | null | undefined,
+  canDropInto?: CanDropIntoDep,
+): NodeId | null {
+  if (into == null || !scene || scene.get(into as NodeId) === undefined) return null;
+  return admitsChild(scene, into as NodeId, [], canDropInto) ? (into as NodeId) : null;
 }

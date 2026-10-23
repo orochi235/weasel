@@ -14,7 +14,7 @@ import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/c
  * Build `getChildren`/`isContainer` accessors from a flat `id -> direct
  * children` map. Ids present as keys are containers; everything else is a
  * leaf. Mirrors how a real caller wires `scene.childrenOf` /
- * `scene.get(id)?.kind === 'container'`.
+ * `scene.get(id)?.kind === 'group'`.
  */
 function makeContainerTree(children: Record<string, string[]>): {
   getChildren: (id: string) => readonly string[];

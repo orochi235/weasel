@@ -3,6 +3,7 @@ import { createScene } from '@weasel-js/core';
 import { DIAGRAM_THEMES } from './theme/themes';
 import { DEFAULT_NODE_STYLE, diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
 import { withDiagramRegistry } from './edge';
+import { isDiagramBody } from './bodyNode';
 import type { DiagramNode } from './types';
 import { createSpecLabelPlacer } from './labels/specLabels';
 import type { DiagramLabel } from './labelTrait';
@@ -17,7 +18,7 @@ const DATA: DiagramData = {
 };
 
 const containers = (specs: ReturnType<typeof diagramScene>) =>
-  specs.filter((s) => s.kind === 'container');
+  specs.filter((s) => isDiagramBody(s));
 
 describe('diagramScene', () => {
   it('makes one container per node, carrying the data id', () => {

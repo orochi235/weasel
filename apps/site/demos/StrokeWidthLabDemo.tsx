@@ -48,7 +48,7 @@ function handwriting(y: number): Path {
 const strokeNode = (path: Path, color: string, stroke: Partial<Stroke>) => {
   const b = boundsOfPath(path);
   return {
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as const,
     pose: { x: b.x, y: b.y, width: b.width, height: b.height },
     data: { path, fill: null, stroke: { paint: solid(color), width: 8, cap: 'round' as const, join: 'round' as const, ...stroke } },
@@ -80,7 +80,7 @@ function outlineLayer(scene: Scene<Data, 'default', RectPose>): RenderLayer<unkn
     label: 'strokeToPath outline',
     draw: () => scene.renderOrderNodes().flatMap((node) => {
       const { path, stroke } = node.data ?? {};
-      if (node.kind !== 'leaf' || !path || !stroke) return [];
+      if (node.kind !== 'mark' || !path || !stroke) return [];
       return [{
         kind: 'path' as const,
         path: strokeToPath(pathInWorld(path, node.pose), stroke),
@@ -111,7 +111,7 @@ function useStyleControls(scene: Scene<Data, 'default', RectPose>, style: Style)
       for (const id of scene.getSelection()) {
         const node = scene.get(id);
         const stroke = node?.data?.stroke;
-        if (node?.kind !== 'leaf' || !stroke) continue;
+        if (node?.kind !== 'mark' || !stroke) continue;
         const next = { ...stroke, ...patch };
         if (next.nib === undefined) delete next.nib;
         scene.update(id, { data: { ...node.data, stroke: next } });

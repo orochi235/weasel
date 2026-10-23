@@ -93,12 +93,11 @@ export function runLayoutPass<TPose>(
   const queue: NodeId[] = [...new Set<NodeId>([...arrivals.keys(), ...changed])];
   const passes = new Map<NodeId, number>();
   const write = (id: NodeId, pose: TPose): void => {
-    const node = source.get(id)!;
     const before = poseOf(id);
     if (samePoseValue(before, pose)) return;
     out.set(id, pose);
     // A container its own `depart` or `arrive` resized is arranged already.
-    if (id !== current && node.kind === 'container' && layoutOf(id) !== null
+    if (id !== current && layoutOf(id) !== null
       && resized(frame, id, before, pose)) queue.push(id);
   };
   let current: NodeId | null = null;

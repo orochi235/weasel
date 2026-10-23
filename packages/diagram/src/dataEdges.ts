@@ -88,7 +88,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
     const split = ctx.splits?.get(id);
     specs.push({
       id: id as never,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pickable: false,
       pose: { x: 0, y: 0, width: 0, height: 0 },

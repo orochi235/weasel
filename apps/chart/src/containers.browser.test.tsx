@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
+import { isDiagramBody } from '@weasel-js/diagram';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
 import { STENCIL_MIME } from './stencilDrop';
@@ -40,8 +41,7 @@ const saved = (): Saved[] => {
   return raw ? (JSON.parse(raw) as { nodes: Saved[] }).nodes : [];
 };
 const role = (r: string) => saved().filter((n) => n.data.diagram?.container?.role === r);
-/** Stencil bodies: containers with an outline and no container role. */
-const bodies = () => saved().filter((n) => n.kind === 'container' && n.data.diagram?.outline && !n.data.diagram.container);
+const bodies = () => saved().filter(isDiagramBody);
 const byId = (id: string) => saved().find((n) => n.id === id)!;
 const lanesInOrder = () => role('lane').sort((a, b) => a.pose.y - b.pose.y);
 

@@ -201,7 +201,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     ...(composes ? { composePose: composition.compose } : {}),
     ...(cascade ? { setPose: (id: string, pose: TPose) => cascade.setPose(asNodeId(id), pose) } : {}),
     poseTarget(id, descriptor) {
-      if (cascade === null || scene.get(asNodeId(id))?.kind !== 'container') {
+      if (cascade === null || scene.get(asNodeId(id))?.kind !== 'group') {
         return scenePoseTarget(scene, id, descriptor ?? d);
       }
       // Its descendants hold poses of their own: a commit moves them, and they are shown beside it.
@@ -222,7 +222,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     },
     getSelection,
     setSelection,
-    // The live marquee's and lasso's own hit-tests. Containers come back:
+    // The live marquee's and lasso's own hit-tests. Groups come back:
     // this adapter's consumer has nothing to fold children into them.
     hitTestArea(rect: Bounds, view?: RegionPickView) {
       return hitTestArea(
@@ -230,7 +230,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         rect,
         pickOptsFor(view),
         d as PoseDescriptor<unknown>,
-        { includeContainers: true },
+        { includeGroups: true },
       );
     },
     hitTestLasso(polygon, mode: LassoHitMode, view?: RegionPickView) {
@@ -240,7 +240,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         mode,
         pickOptsFor(view),
         d as PoseDescriptor<unknown>,
-        { includeContainers: true },
+        { includeGroups: true },
       );
     },
     // A pure factory: it constructs a Node spec but does NOT touch the scene.
@@ -255,7 +255,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             const layer = (options.insertLayer ?? ('default' as TLayer));
             const id = created.id === undefined ? scene.mintId() : asNodeId(created.id);
             return {
-              kind: 'leaf',
+              kind: 'mark',
               id,
               layer,
               pose: created.pose,

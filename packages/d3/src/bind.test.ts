@@ -244,9 +244,9 @@ describe('d3Bind — the diff is scoped to the target layer', () => {
     const scene = result.current;
     const pose = { x: 0, y: 0, width: 10, height: 10 };
     act(() => {
-      scene.add({ id: asNodeId('elsewhere'), kind: 'leaf', layer: 'other', pose, data: { label: 'E' } });
-      scene.add({ id: asNodeId('box'), kind: 'container', layer: 'graph', pose, data: { label: 'C' } });
-      scene.add({ id: asNodeId('stale'), kind: 'leaf', layer: 'graph', pose, data: { label: 'S' } });
+      scene.add({ id: asNodeId('elsewhere'), kind: 'mark', layer: 'other', pose, data: { label: 'E' } });
+      scene.add({ id: asNodeId('box'), kind: 'group', layer: 'graph', pose, data: { label: 'C' } });
+      scene.add({ id: asNodeId('stale'), kind: 'mark', layer: 'graph', pose, data: { label: 'S' } });
     });
 
     act(() => {

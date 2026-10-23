@@ -16,9 +16,9 @@ interface P { x: number; y: number; width: number; height: number }
 describe('moveAction — layout drop of a container', () => {
   it('moves the children by where the layout put the container', () => {
     const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
-    const box = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
-    const group = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 40, height: 40 } });
-    const child = scene.add({ kind: 'leaf', layer: 'main', parent: group, data: {}, pose: { x: 5, y: 5, width: 10, height: 10 } });
+    const box = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
+    const group = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 40, height: 40 } });
+    const child = scene.add({ kind: 'mark', layer: 'main', parent: group, data: {}, pose: { x: 5, y: 5, width: 10, height: 10 } });
     const slot: P = { x: 120, y: 130, width: 40, height: 40 };
     const layout = {
       snap: { pickTarget: (targets: unknown[]) => targets[0] ?? null },

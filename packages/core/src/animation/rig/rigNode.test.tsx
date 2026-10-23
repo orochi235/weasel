@@ -22,17 +22,17 @@ const BOX: RectPose = { x: 100, y: 50, width: 100, height: 100 };
 
 function rigScene(pose: RectPose = BOX) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const rig = scene.add({ kind: 'container', layer: 'main', pose, data: { skeleton: ARM } });
+  const rig = scene.add({ kind: 'group', layer: 'main', pose, data: { skeleton: ARM } });
   const sleeve = scene.add({
-    kind: 'leaf', layer: 'main', parent: rig, pose: { x: 100, y: 95, width: 100, height: 10 },
+    kind: 'mark', layer: 'main', parent: rig, pose: { x: 100, y: 95, width: 100, height: 10 },
     data: { path: { kind: 'rect', x: 100, y: 95, width: 100, height: 10 }, skin: SLEEVE },
   });
-  const inner = scene.add({ kind: 'container', layer: 'main', parent: rig, pose: BOX, data: {} });
+  const inner = scene.add({ kind: 'group', layer: 'main', parent: rig, pose: BOX, data: {} });
   const hand = scene.add({
-    kind: 'leaf', layer: 'main', parent: inner, pose: { x: 190, y: 90, width: 20, height: 20 }, data: { joint: 'lower' },
+    kind: 'mark', layer: 'main', parent: inner, pose: { x: 190, y: 90, width: 20, height: 20 }, data: { joint: 'lower' },
   });
   const cuff = scene.add({
-    kind: 'leaf', layer: 'main', parent: rig, pose: { x: 180, y: 90, width: 5, height: 20 }, data: { joint: 'lower' },
+    kind: 'mark', layer: 'main', parent: rig, pose: { x: 180, y: 90, width: 5, height: 20 }, data: { joint: 'lower' },
   });
   return { scene, rig, sleeve, hand, cuff };
 }
@@ -100,7 +100,7 @@ describe('useRigNode', () => {
   it('keeps its rig through an edit elsewhere, and binds again when what it read changes', () => {
     const { scene, rig, sleeve } = rigScene();
     const { seen } = mount(scene, rig);
-    act(() => { scene.add({ kind: 'leaf', layer: 'main', pose: BOX, data: {} }); });
+    act(() => { scene.add({ kind: 'mark', layer: 'main', pose: BOX, data: {} }); });
     expect(seen[seen.length - 1]).toBe(seen[0]);
     act(() => { scene.update(sleeve, { data: { ...scene.get(sleeve)!.data, skin: { upper: [1, 1, 1, 1] } } }); });
     expect(seen[seen.length - 1]).not.toBe(seen[0]);

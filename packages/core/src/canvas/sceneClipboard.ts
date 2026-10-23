@@ -13,6 +13,7 @@
 import type { ClipboardSnapshot, PasteCtx, PasteOmission } from 'core/adapters/types';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
+import { hasChildren } from 'core/scene/treeShape';
 import { definesFrame } from 'core/scene/effectivePose';
 import {
   NODE_FN_FIELDS, createNodeFnFields, fnFieldsOfNode, fnKeysOf, type FnBearingNode,
@@ -80,13 +81,13 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
       parent: n.parent,
       pose: copyField(poseFor(n, isRoot)),
       data: copyField(n.data),
-      ...(n.kind === 'container' ? { children: [...n.children] } : {}),
+      ...(n.children !== undefined ? { children: [...n.children] } : {}),
       ...statedFields(n),
       ...(n.dependsOn !== undefined ? { dependsOn: copyField(n.dependsOn) } : {}),
       ...fnFieldsOfNode(n),
       ...fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey'),
     } as Node<TData, TLayer, TPose>);
-    if (n.kind === 'container') {
+    if (hasChildren(n)) {
       for (const cid of scene.childrenOf(asNodeId(id))) capture(cid);
     }
   };
@@ -117,7 +118,6 @@ function restoredFnFields<TData, TLayer extends string, TPose>(
   const out: Record<string, unknown> = {};
   const registry = scene.registry as Record<string, Record<string, unknown> | undefined>;
   for (const spec of NODE_FN_FIELDS) {
-    if (spec.containersOnly && item.kind !== 'container') continue;
     const key = item[spec.jsonKey];
     const registered = typeof key === 'string' ? registry[spec.field]?.[key] : undefined;
     const fn = registered ?? (isLive(item[spec.field]) ? item[spec.field] : undefined);
@@ -229,7 +229,7 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
       : env.translate(copyField(item.pose), dx, dy, item),
     data: copyField(item.data),
     ...statedFields(item),
-    ...(item.kind === 'container'
+    ...(item.children !== undefined
       ? { children: item.children.filter((c) => idMap.has(c)).map((c) => idMap.get(c)!) }
       : {}),
     ...(item.dependsOn === 'children'

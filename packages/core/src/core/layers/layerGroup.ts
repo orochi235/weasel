@@ -17,7 +17,7 @@ import type { Dims } from './render';
  * separated in the render order is drawn as one bracket per run, with a
  * warning.
  *
- * This is a render-stack bracket, not a scene `ContainerNode`.
+ * This is a render-stack bracket, not a scene `GroupNode`.
  */
 export interface LayerGroup {
   /** Names the group in warnings; not a layer id and never drawn. */

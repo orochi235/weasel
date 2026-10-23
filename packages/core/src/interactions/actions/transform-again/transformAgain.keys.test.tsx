@@ -22,7 +22,7 @@ const ID = asNodeId('a');
 
 function setup() {
   const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: ID, kind: 'leaf', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
+  scene.add({ id: ID, kind: 'mark', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
   render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />);
   const key = (key: string, init: KeyboardEventInit = {}) => act(() => {

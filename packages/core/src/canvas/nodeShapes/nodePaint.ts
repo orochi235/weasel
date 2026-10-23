@@ -13,9 +13,6 @@ import type { InheritedPaint } from 'core/scene/inheritedPaint';
 // memo, so the kind set is ambient state that memo cannot see change.
 paintDrawKindRegistry.subscribe(bumpNodeMemoGeneration);
 
-/** How a container's silhouette is inked: not at all, since it paints nothing. */
-export const CONTAINER_INK: Readonly<NodeInk> = Object.freeze({ filled: false, outset: 0, inset: 0 });
-
 /** Per-side grab reach for a resolved stroke: world units for what the
  *  renderer builds in world, screen pixels for what it builds on screen — a
  *  `{ px }` width, and each head by its own size's units. */

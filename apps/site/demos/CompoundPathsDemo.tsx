@@ -158,7 +158,7 @@ export function CompoundPathsDemo() {
   const scene = useScene<ShapeData, 'default', Path>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL.map((s) => ({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: s.pose,
       data: { fill: s.fill, stroke: s.stroke, label: s.label },

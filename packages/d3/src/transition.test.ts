@@ -599,7 +599,7 @@ describe('d3Bind transition — node removed mid-flight', () => {
       s.scene.current.remove('a' as never);
       s.scene.current.add({
         id: 'a' as never,
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'graph',
         pose: { x: 7, y: 0, width: 10, height: 10 },
         data: {},

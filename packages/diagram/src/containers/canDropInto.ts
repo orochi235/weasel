@@ -3,7 +3,7 @@ import { diagramLabelOf } from '../labelTrait';
 import { dataKeyReader } from '../trait';
 import { bodyBox, diagramContainerOf, type ContainerRole } from './trait';
 
-type SceneLike = { get(id: never): { id: string; kind: 'leaf' | 'container'; data: unknown } | undefined };
+type SceneLike = { get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown } | undefined };
 
 /**
  * The `canDropInto` dep for a diagram scene. A container or a lane takes
@@ -38,7 +38,7 @@ export function diagramCanDropInto(scene: SceneLike): (parent: string, ids: read
 export interface DropParentScene {
   readonly roots: readonly string[];
   childrenOf(id: never): readonly string[];
-  get(id: never): { id: string; kind: 'leaf' | 'container'; data: unknown; pose: unknown } | undefined;
+  get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; pose: unknown } | undefined;
 }
 
 /**
@@ -56,7 +56,7 @@ export function diagramDropParentAt(
   const walk = (ids: readonly string[]): void => {
     for (const id of ids) {
       const node = scene.get(id as never);
-      if (node === undefined || node.kind !== 'container') continue;
+      if (node === undefined) continue;
       const trait = diagramContainerOf(node);
       const b = bodyBox(node.pose as { x: number; y: number; width: number; height: number }, trait?.header);
       const inside = point.x >= b.x && point.x < b.x + b.width && point.y >= b.y && point.y < b.y + b.height;

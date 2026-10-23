@@ -35,8 +35,8 @@ function setup(declare = true, menus: unknown[] = defs, seed?: Seed, pickEvery?:
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const ids = {} as Record<'a' | 'b', NodeId>;
   scene.batch('seed', () => {
-    ids.a = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 10, y: 10, width: 50, height: 50 } });
-    ids.b = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 200, y: 100, width: 80, height: 60 } });
+    ids.a = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 10, y: 10, width: 50, height: 50 } });
+    ids.b = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 200, y: 100, width: 80, height: 60 } });
     seed?.(scene);
   });
   let host: MenuHost | null = null;
@@ -101,8 +101,8 @@ describe('menu.context', () => {
     // under its own child, so the two disagree about what is on top.
     const pickEvery = (x: number, y: number) => (x >= 20 && x <= 100 && y >= 200 && y <= 280 ? [child, box] : []);
     const t = setup(true, defs, (scene) => {
-      box = scene.add({ kind: 'container', data: { kind: 'group' }, layer: 'main', pose: { x: 20, y: 200, width: 80, height: 80 } });
-      child = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', parent: box, pose: { x: 40, y: 220, width: 30, height: 30 } });
+      box = scene.add({ kind: 'group', data: { kind: 'group' }, layer: 'main', pose: { x: 20, y: 200, width: 80, height: 80 } });
+      child = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', parent: box, pose: { x: 40, y: 220, width: 30, height: 30 } });
     }, pickEvery);
     t.rightClick(55, 235);
     expect(t.selection().get()).toEqual([child]);

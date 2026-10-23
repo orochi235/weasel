@@ -22,7 +22,7 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DARK = { paint: { color: '#101010' } };
 
 const box = (id: string, x: number, y: number, width = 100, height = 60) =>
-  ({ id: id as never, kind: 'leaf' as const, layer: 'main' as const, pose: { x, y, width, height }, data: { diagram: {}, fill: DARK } });
+  ({ id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x, y, width, height }, data: { diagram: {}, fill: DARK } });
 
 /**
  * a and b side by side, joined along y = 180. The wall starts below the line;
@@ -36,7 +36,7 @@ function makeScene(): AvoidScene {
     initial: [
       box('a', 0, 150), box('b', 400, 150), box('wall', 200, 280, 60, 120),
       {
-        id: 'ab' as never, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+        id: 'ab' as never, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
         data: { diagram: { from: {}, to: {}, router: 'avoid', route: [] }, stroke: { paint: { color: '#ffffff' }, width: 2 } },
         dependsOn: ['a' as never, 'b' as never], derivePath: EDGE_DERIVE_PATH,
       },

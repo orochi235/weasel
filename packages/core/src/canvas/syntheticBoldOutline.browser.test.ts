@@ -44,7 +44,7 @@ function renderText(fontWeight: number, fontFamily: string): RasterImage {
     systemLayers: [{ id: 'main' }],
   });
   scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: { ...POSE },
     data: {
@@ -70,7 +70,7 @@ function renderOutline(fontWeight: number): RasterImage {
     systemLayers: [{ id: 'main' }],
   });
   scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: { ...SOURCE },
     data: { cmd },

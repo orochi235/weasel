@@ -142,7 +142,7 @@ describe('picking a point mark', () => {
   const pose: WorldRect = { x: 50, y: 50, width: 0, height: 0 };
   const node = {
     id: 'p',
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'marks',
     pose,
     data: { target: 't', kind: 'point' },

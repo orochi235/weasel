@@ -64,8 +64,8 @@ type P = { x: number; y: number; width: number; height: number };
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
-    s.add({ kind: 'leaf', data: { color: '#f00' }, layer: 'main', pose: { x: 10, y: 20, width: 30, height: 40 } });
-    s.add({ kind: 'leaf', data: { color: '#0f0' }, layer: 'main', pose: { x: 50, y: 60, width: 70, height: 80 } });
+    s.add({ kind: 'mark', data: { color: '#f00' }, layer: 'main', pose: { x: 10, y: 20, width: 30, height: 40 } });
+    s.add({ kind: 'mark', data: { color: '#0f0' }, layer: 'main', pose: { x: 50, y: 60, width: 70, height: 80 } });
   });
   return s;
 }
@@ -128,7 +128,7 @@ describe('<SceneViewCanvas>', () => {
     await act(async () => {
       scene.batch('add-one', () => {
         scene.add({
-          kind: 'leaf',
+          kind: 'mark',
           data: { color: '#00f' },
           layer: 'main',
           pose: { x: 1, y: 1, width: 2, height: 2 },
@@ -469,7 +469,7 @@ describe('<SceneViewCanvas> scrolled out of view', () => {
 
       await act(async () => {
         setIntersecting(false);
-        scene.add({ kind: 'leaf', data: { color: '#00f' }, layer: 'main', pose: { x: 1, y: 1, width: 2, height: 2 } });
+        scene.add({ kind: 'mark', data: { color: '#00f' }, layer: 'main', pose: { x: 1, y: 1, width: 2, height: 2 } });
       });
       await act(frame);
       expect(renderMock.mock.calls.length).toBe(before);

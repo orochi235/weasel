@@ -80,7 +80,7 @@ describe('portsOnOutline', () => {
 
 describe('portsOf — on the outline', () => {
   const node = (outline: string) =>
-    ({ id: 'n', kind: 'leaf' as const, data: { diagram: { outline } } });
+    ({ id: 'n', kind: 'mark' as const, data: { diagram: { outline } } });
 
   it("puts a parallelogram's west port on its sloped edge, not beside it", () => {
     const ports = portsOf(node('parallelogram'), BOX);
@@ -97,7 +97,7 @@ describe('portsOf — on the outline', () => {
   });
 
   it('leaves a participant with no outline on its bounds', () => {
-    const ports = portsOf({ id: 'n', kind: 'leaf', data: { diagram: {} } }, BOX);
+    const ports = portsOf({ id: 'n', kind: 'mark', data: { diagram: {} } }, BOX);
     expect(ports.find((p) => p.id === 'w')!.point).toEqual({ x: 0, y: 20 });
   });
 });

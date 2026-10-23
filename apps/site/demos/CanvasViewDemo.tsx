@@ -24,7 +24,7 @@ export function makeRandomScene() {
   for (let i = 0; i < 12; i++) {
     items.push({
       id: `n${i}` as never,
-      kind: 'leaf' as const,
+      kind: 'mark' as const,
       layer: 'default' as LayerId,
       pose: {
         x: Math.random() * 1000 - 200,

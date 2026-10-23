@@ -14,7 +14,7 @@ const POSE: Pose = { x: 10, y: 20, width: 100, height: 40 };
 const TALL = { text: 'A\nB\nA\nB', style: { fontFamily: 'inter', fontSize: 16, lineHeight: 1.25 } };
 
 function node(data: unknown): Node<unknown, 'default', Pose> {
-  return { id: 'n', kind: 'leaf', layer: 'default', pose: POSE, data, parent: null } as Node<unknown, 'default', Pose>;
+  return { id: 'n', kind: 'mark', layer: 'default', pose: POSE, data, parent: null } as Node<unknown, 'default', Pose>;
 }
 
 const paint = (data: unknown): DrawCommand[] => {

@@ -87,7 +87,7 @@ afterEach(() => {
 
 async function mount(): Promise<Shot> {
   sceneRef = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  sceneRef.add({ id: ID, kind: 'leaf', layer: 'main', data: {}, pose: POSE });
+  sceneRef.add({ id: ID, kind: 'mark', layer: 'main', data: {}, pose: POSE });
   host = document.createElement('div');
   Object.assign(host.style, {
     position: 'fixed', left: '0px', top: '0px', width: `${W}px`, height: `${H}px`, background: '#000',

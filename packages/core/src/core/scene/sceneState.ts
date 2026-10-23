@@ -53,7 +53,7 @@ export function createSceneState<TData, TLayer extends string, TPose>(
     isHidden: (id) => locks.isHidden(id),
     layoutOf(id) {
       const node = state.nodes.get(id);
-      return node?.kind === 'container' ? (node.layout ?? null) : null;
+      return node?.layout ?? null;
     },
     toJSON: () => serializeScene(state, fnFields, docValues.toJSON()),
   };

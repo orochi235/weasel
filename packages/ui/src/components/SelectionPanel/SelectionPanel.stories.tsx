@@ -29,7 +29,7 @@ const POSE: RectPose = { x: 40, y: 24, width: 220, height: 140 };
 
 function sceneWith(data: Data) {
   const scene = createScene<Data, 'default', RectPose>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: POSE, data });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: POSE, data });
   return scene;
 }
 

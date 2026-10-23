@@ -11,8 +11,8 @@ const poly = (...pts: [number, number][]) => polygonFromPoints(pts.map(([x, y]) 
 
 function setup() {
   const scene = createScene<Record<string, unknown>, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: poly([0, 0], [10, 0], [10, 10]), data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: poly([20, 0], [30, 0], [30, 10]), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: poly([0, 0], [10, 0], [10, 10]), data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: poly([20, 0], [30, 0], [30, 10]), data: {} });
   return { scene: scene as unknown as Scene<unknown, string, unknown>, a, b };
 }
 

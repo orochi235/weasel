@@ -198,7 +198,7 @@ function sceneSourceOf<TLayer extends string>(
     },
     objOf: (id) => {
       const node = scene.get(id as never);
-      if (!node || node.kind !== 'leaf') return undefined;
+      if (!node || node.kind !== 'mark') return undefined;
       if (pathEffectOf(node) !== null) return effectToObj(scene, id);
       return leafToObj(id, withInheritedPaint(node.data, inheritedPaintIn(scene, node)), poseOf(id)!) ?? undefined;
     },

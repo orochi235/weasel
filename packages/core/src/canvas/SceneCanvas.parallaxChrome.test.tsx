@@ -27,15 +27,15 @@ function chromeBounds(id: string, parallax: { pan: number }) {
     systemLayers: [{ id: 'trees', parallax }, { id: 'main' }],
   });
   const tree = scene.add({
-    id: asNodeId('tree'), kind: 'container', layer: 'trees',
+    id: asNodeId('tree'), kind: 'group', layer: 'trees',
     pose: { x: 400, y: 300, width: 30, height: 50 }, data: { fill: null },
   });
   scene.add({
-    id: asNodeId('trunk'), kind: 'leaf', layer: 'trees', parent: tree,
+    id: asNodeId('trunk'), kind: 'mark', layer: 'trees', parent: tree,
     pose: { x: 410, y: 330, width: 10, height: 20 }, data: {},
   });
   scene.add({
-    id: asNodeId('bush'), kind: 'leaf', layer: 'trees',
+    id: asNodeId('bush'), kind: 'mark', layer: 'trees',
     pose: { x: 100, y: 300, width: 40, height: 20 }, data: {},
   });
   let helpers: Helpers | null = null;

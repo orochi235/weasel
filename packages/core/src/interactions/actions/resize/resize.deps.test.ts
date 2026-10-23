@@ -34,8 +34,9 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
     composition: IDENTITY_POSE_COMPOSITION,
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
-      return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };
+      return { pose: poses.get(id), kind: 'mark' as const, layer: 'main', data: {}, parent: null };
     },
+    childrenOf: (): readonly NodeId[] => [],
     setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
     batch<T>(_label: string, fn: () => T): T { return fn(); },
     // Mirrors the real no-journal scene.applyBatch: apply each op against the

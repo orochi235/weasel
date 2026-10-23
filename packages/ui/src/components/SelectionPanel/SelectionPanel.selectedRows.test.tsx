@@ -45,7 +45,7 @@ const selection = { current: [asNodeId('n')] };
 
 function panel(selected?: readonly string[], onSelect?: (path: string, how: PrefSelectHow) => void) {
   const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: { stroke: {} } });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { stroke: {} } });
   const view = (now?: readonly string[]) => (
     <SelectionPanel scene={scene} selection={selection} properties={properties} routing={routing} selected={now} onSelect={onSelect} />
   );

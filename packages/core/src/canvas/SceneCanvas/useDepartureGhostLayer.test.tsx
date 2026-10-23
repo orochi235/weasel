@@ -33,8 +33,8 @@ function removal(node: N, pose: RectPose, children: PoseRemoval<RectPose, N>['ch
 describe('useDepartureGhostLayer', () => {
   it("draws each ghost through the scene slot's drawOne, at its pose and opacity, its descendants with it", () => {
     const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const g = { id: asNodeId('g'), kind: 'container', layer: 'main', pose: at(0), data: null, parent: null, children: [] } as unknown as N;
-    const k = { id: asNodeId('k'), kind: 'leaf', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: null, parent: null, children: [] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
     const ghost = removal(g, at(30), [{ node: k, pose: at(4), children: [] }]);
     const { result } = renderHook(() => useDepartureGhostLayer({
       scene, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(30), alpha: 0.25 }]),
@@ -47,9 +47,9 @@ describe('useDepartureGhostLayer', () => {
 
   it('composes a ghost into the frame of a parent still in the scene, and its descendants into its own', () => {
     const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RECT_POSE_COMPOSITION });
-    const p = scene.add({ kind: 'container', layer: 'main', pose: at(100), data: null });
-    const g = { id: asNodeId('g'), kind: 'container', layer: 'main', pose: at(0), data: null, parent: p, children: [] } as unknown as N;
-    const k = { id: asNodeId('k'), kind: 'leaf', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const p = scene.add({ kind: 'group', layer: 'main', pose: at(100), data: null });
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: null, parent: p, children: [] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
     const ghost = removal(g, at(30), [{ node: k, pose: at(4), children: [] }]);
     const { result } = renderHook(() => useDepartureGhostLayer({
       scene, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(30), alpha: 1 }]),

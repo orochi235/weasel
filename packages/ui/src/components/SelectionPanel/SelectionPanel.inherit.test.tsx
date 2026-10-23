@@ -16,9 +16,9 @@ describe('SelectionPanel — Inherit', () => {
   function sceneOf(group: Data, ...children: Data[]) {
     const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    scene.add({ id: asNodeId('g'), kind: 'container', layer: 'default', pose, data: group });
+    scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose, data: group });
     children.forEach((data, i) => scene.add({
-      id: asNodeId(`n${i}`), parent: asNodeId('g'), kind: 'leaf', layer: 'default', pose, data: { path: PATH, ...data },
+      id: asNodeId(`n${i}`), parent: asNodeId('g'), kind: 'mark', layer: 'default', pose, data: { path: PATH, ...data },
     }));
     return scene;
   }

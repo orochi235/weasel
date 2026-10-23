@@ -25,7 +25,7 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
   let nextId = 0;
   const add = (id: string, data: Data) => {
     const b = data.path ? boundsOfPath(data.path) : { x: 0, y: 0, width: 10, height: 10 };
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: b, data });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: b, data });
   };
   const adapter: CreateOutlinesAdapter = {
     ...defaultCommitAdapter(scene),
@@ -34,23 +34,23 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
     getTextSource: () => undefined,
     getWorldPath: (id) => {
       const n = scene.get(asNodeId(id));
-      return n?.kind === 'leaf' ? n.data.path : undefined;
+      return n?.kind === 'mark' ? n.data.path : undefined;
     },
     getPaint: (id) => {
       const n = scene.get(asNodeId(id));
-      return n?.kind === 'leaf' && n.data.path ? pathPaintOf(n.data) : undefined;
+      return n?.kind === 'mark' && n.data.path ? pathPaintOf(n.data) : undefined;
     },
     createPathNode: (path, _sourceId, { fill, stroke, parent }) => {
       const b = boundsOfPath(path);
       return {
-        id: `p-${nextId++}`, kind: 'leaf', layer: 'default', parent,
+        id: `p-${nextId++}`, kind: 'mark', layer: 'default', parent,
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
         data: { path, fill, stroke },
       } as { id: string };
     },
     ...(containers ? {
       createContainerNode: (_sourceId: NodeId, { parent, bounds }: { parent: string | null; bounds: Rect }) =>
-        ({ id: `g-${nextId++}`, kind: 'container', layer: 'default', parent, pose: bounds, data: {} }) as { id: string },
+        ({ id: `g-${nextId++}`, kind: 'group', layer: 'default', parent, pose: bounds, data: {} }) as { id: string },
     } : {}),
     applyOps: (ops, label) => {
       scene.applyBatch(ops, label ?? 'Outline Stroke', { ...defaultCommitAdapter(scene), ...adapter });

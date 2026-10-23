@@ -12,7 +12,7 @@ function setup(policy: Partial<ResizePolicy<unknown>>) {
   const scene = createScene<{ kind: string }, 'main', Pose>({
     systemLayers: [{ id: 'main', visible: true, locked: false }],
   });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'rect' } });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'rect' } });
   const recorded = () => scene.historyEntries().length - 1;
   const base = {
     world: { x: 100, y: 100 },

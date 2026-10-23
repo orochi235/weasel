@@ -71,7 +71,7 @@ function collectRects(cmds: DrawCommand[]): Array<{ x: number; y: number }> {
 describe('preview-ghost layer answers for the view it is drawn for', () => {
   it('ghosts view A\'s drag in A and view B\'s in B', () => {
     const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
 
     const inA: GesturePreviewSource = {
       previewIds: () => [a],

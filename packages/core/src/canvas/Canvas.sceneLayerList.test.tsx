@@ -68,7 +68,7 @@ const nextFrame = () => act(async () => {
 
 function mount(): Scene<D, L, P> {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'base' }] });
-  scene.add({ kind: 'leaf', id: asNodeId('a'), layer: 'base', data: { color: BASE }, pose: { x: 0, y: 0, width: 10, height: 10 } });
+  scene.add({ kind: 'mark', id: asNodeId('a'), layer: 'base', data: { color: BASE }, pose: { x: 0, y: 0, width: 10, height: 10 } });
   render(<SceneCanvas features={['draw']} scene={scene} width={300} height={200} layers={LAYERS} />);
   return scene;
 }
@@ -81,7 +81,7 @@ describe('<SceneCanvas> scene layers changed after mount', () => {
 
     act(() => {
       scene.addLayer({ id: 'fx', name: 'Effects' });
-      scene.add({ kind: 'leaf', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 20, y: 0, width: 10, height: 10 } });
+      scene.add({ kind: 'mark', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 20, y: 0, width: 10, height: 10 } });
     });
     // One frame: the canvas hears of the change from the adapter, not from a paint.
     await nextFrame();
@@ -92,7 +92,7 @@ describe('<SceneCanvas> scene layers changed after mount', () => {
     const scene = mount();
     act(() => {
       scene.addLayer({ id: 'fx', name: 'Effects' });
-      scene.add({ kind: 'leaf', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 20, y: 0, width: 10, height: 10 } });
+      scene.add({ kind: 'mark', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 20, y: 0, width: 10, height: 10 } });
     });
     await nextFrame();
     act(() => { scene.removeLayer('fx'); });

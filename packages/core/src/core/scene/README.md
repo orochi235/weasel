@@ -3,8 +3,8 @@
 Hierarchy math: composing local poses into world space, walking children, and
 hit-testing through nesting.
 
-> **Naming.** "Group" here means a structural `ContainerNode`
-> (`kind: 'container'`) — the real Cmd+G group that round-trips to SVG `<g>`.
+> **Naming.** "Group" here means a structural `GroupNode`
+> (`kind: 'group'`) — the real Cmd+G group that round-trips to SVG `<g>`.
 > It is *not* a saved selection. See `docs/taxonomy.md`.
 
 ## The central fact

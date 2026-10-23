@@ -10,13 +10,13 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function sceneOf() {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: asNodeId('g'), kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100 } } as never);
+  scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100 } } as never);
   scene.add({
-    id: asNodeId('a'), kind: 'leaf', layer: 'main', parent: asNodeId('g'),
+    id: asNodeId('a'), kind: 'mark', layer: 'main', parent: asNodeId('g'),
     data: { shape: 'rect', stroke: { paint: RED, width: 10 } }, pose: { x: 0, y: 0, width: 100, height: 100 },
   } as never);
   scene.add({
-    id: asNodeId('px'), kind: 'leaf', layer: 'main',
+    id: asNodeId('px'), kind: 'mark', layer: 'main',
     data: { shape: 'rect', stroke: { paint: RED, width: { px: 8 } } }, pose: { x: 0, y: 0, width: 100, height: 100 },
   } as never);
   return scene;
@@ -59,7 +59,7 @@ describe('selection chrome on the drawn box', () => {
     const resolve = composeSelectionPose<RectPose>({
       getStoredPose: (id) => scene.get(asNodeId(id))!.pose,
       getChildren: (id) => scene.childrenOf(asNodeId(id)),
-      isContainer: (id) => scene.get(asNodeId(id))?.kind === 'container',
+      isContainer: (id) => scene.get(asNodeId(id))?.kind === 'group',
       scene,
     });
     expect(resolve('g')).toEqual({ x: -5, y: -5, width: 110, height: 110 });
@@ -73,7 +73,7 @@ describe('selection chrome on the drawn box', () => {
       getSelection: () => [asNodeId('g')],
       getPose: (id) => scene.get(asNodeId(id))!.pose,
       getChildren: (id) => scene.childrenOf(asNodeId(id)),
-      isContainer: (id) => scene.get(asNodeId(id))?.kind === 'container',
+      isContainer: (id) => scene.get(asNodeId(id))?.kind === 'group',
       scene,
       handles: false,
       outline: { paint: RED, width: 0, pad: 0 },

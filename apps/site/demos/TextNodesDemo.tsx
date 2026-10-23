@@ -20,7 +20,7 @@ interface NodeData {
 const INK = solid('#1c1c1c');
 
 const leaf = (id: string, pose: { x: number; y: number; width: number; height: number; rotation?: number }, data: NodeData) => ({
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   id: asNodeId(id),
   pose,

@@ -23,7 +23,7 @@ export interface HierarchicalAdapter<TNode, TPose> {
 }
 
 /** A clip on the chain, with the layer whose world it is drawn in, or the
- *  transform of a copy a container draws — see `ContainerNode.copiesFromPose`. */
+ *  transform of a copy a container draws — see `GroupNode.copiesFromPose`. */
 type ChainEntry = { path: Path; layer: string } | { copy: Affine };
 
 /** Wrap `cmds` in one nested group per chain entry, so the renderer intersects
@@ -117,7 +117,7 @@ export function buildSceneTree<
       bucket && (copied || !culled?.(node, pose, v)) ? drawOne(node, pose, v) : [],
     );
 
-    // Extend the clip chain with this node's own clip when it is a container.
+    // Extend the clip chain with this node's own clip when it is a group or sets one.
     let ownClips = ancestorClips;
     let ownClip: ChainEntry | null = null;
     const maybeContainer = node as {
@@ -125,7 +125,7 @@ export function buildSceneTree<
       clipFromPose?: (pose: TPose) => unknown;
       copiesFromPose?: (pose: TPose, node: unknown) => readonly Affine[] | null;
     };
-    if (maybeContainer.kind === 'container') {
+    if (maybeContainer.kind === 'group' || typeof maybeContainer.clipFromPose === 'function') {
       let clip: unknown;
       if (typeof maybeContainer.clipFromPose === 'function') {
         // Explicit per-node clip wins — no fallback to the painter silhouette.

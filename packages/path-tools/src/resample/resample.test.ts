@@ -6,7 +6,7 @@ import { resamplePathAction } from './resample';
 
 /** One selected node storing a 100-unit square as its pose. */
 function setup() {
-  const node = { id: asNodeId('a'), kind: 'leaf', layer: 'main', parent: null, data: {},
+  const node = { id: asNodeId('a'), kind: 'mark', layer: 'main', parent: null, data: {},
     pose: new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build() };
   const scene = {
     get: (id: string) => (id === 'a' ? node : undefined),

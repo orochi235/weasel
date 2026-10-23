@@ -14,7 +14,7 @@ describe('useSessionPersistence', () => {
     const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
     renderHook(() => useSessionPersistence(scene, { sceneKey: 'test:scene', historyKey: 'test:history' }));
     vi.advanceTimersByTime(300);
-    expect(JSON.parse(localStorage.getItem('test:scene')!)).toMatchObject({ version: 1, nodes: [] });
+    expect(JSON.parse(localStorage.getItem('test:scene')!)).toMatchObject({ version: 2, nodes: [] });
     expect(localStorage.getItem('test:history')).not.toBeNull();
   });
 
@@ -25,6 +25,6 @@ describe('useSessionPersistence', () => {
     vi.advanceTimersByTime(100);
     expect(localStorage.getItem('test:scene')).toBeNull();
     unmount();
-    expect(JSON.parse(localStorage.getItem('test:scene')!)).toMatchObject({ version: 1, nodes: [] });
+    expect(JSON.parse(localStorage.getItem('test:scene')!)).toMatchObject({ version: 2, nodes: [] });
   });
 });

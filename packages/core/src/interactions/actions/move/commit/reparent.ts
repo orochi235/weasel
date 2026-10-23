@@ -40,15 +40,15 @@ export function resolveDropTarget(
   const hitNode = session.scene.get(hit);
   if (!hitNode) return null;
 
-  // Containers act as drop-INTO targets; leaves act as drop-NEXT-TO
-  // targets (parent = leaf's parent). When the leaf has no parent
+  // A node that admits the drop is a drop-INTO target; any other is a
+  // drop-NEXT-TO target (parent = its parent). When it has no parent
   // (top-level under a layer), `newParent === null` and the moved
   // subtree lands at the layer root.
-  if (hitNode.kind === 'container' && session.admits(hit)) {
+  if (session.admits(hit)) {
     return { newParent: hit, newLayer: hitNode.layer, hitSibling: null };
   }
-  // A container `canDropInto` refuses is a sibling to land beside, inside
-  // the nearest container around it that admits the drop.
+  // A node that refuses the drop is a sibling to land beside, inside
+  // the nearest ancestor that admits it.
   let newParent = hitNode.parent;
   let hitSibling: NodeId = hit;
   while (newParent !== null && !session.admits(newParent)) {

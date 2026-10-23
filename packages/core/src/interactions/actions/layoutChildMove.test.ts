@@ -35,10 +35,10 @@ function load() {
   return createScene<object, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: [
-      { id: id('c'), kind: 'container', layer: 'main', parent: null, data: {}, pose: { x: 0, y: 0, width: 100, height: 40 }, layout: stack },
-      { id: id('a'), kind: 'leaf', layer: 'main', parent: id('c'), data: {}, pose: at(0, 0) },
-      { id: id('b'), kind: 'leaf', layer: 'main', parent: id('c'), data: {}, pose: at(0, 20) },
-      { id: id('free'), kind: 'leaf', layer: 'main', parent: null, data: {}, pose: at(300, 0) },
+      { id: id('c'), kind: 'group', layer: 'main', parent: null, data: {}, pose: { x: 0, y: 0, width: 100, height: 40 }, layout: stack },
+      { id: id('a'), kind: 'mark', layer: 'main', parent: id('c'), data: {}, pose: at(0, 0) },
+      { id: id('b'), kind: 'mark', layer: 'main', parent: id('c'), data: {}, pose: at(0, 20) },
+      { id: id('free'), kind: 'mark', layer: 'main', parent: null, data: {}, pose: at(300, 0) },
     ],
   });
 }

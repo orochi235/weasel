@@ -2,6 +2,7 @@
  * What `DiagramView` installs for `onEditContainer`: the container actions
  * with every commit swapped for a report, and the header double-click.
  */
+import { isDiagramBody } from './bodyNode';
 import type { Contribution, NodeId, RenderLayer, Scene } from '@weasel-js/core';
 import { diagramContainers, laneResizeFrame, type LaneResize } from './containers/containerActions';
 import { editContainerTitleAction, editContainerTitleBinding } from './containers/containerTitle';
@@ -10,7 +11,6 @@ import { diagramContainerOf } from './containers/trait';
 import { DEFAULT_LANE_SIZE } from './dataTypes';
 import { laneList, type ContainerEdit } from './regionSync';
 import type { NodeMove } from './sceneSync';
-import { dataKeyReader } from './trait';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -38,7 +38,7 @@ export function laneResizeReports(scene: AnyScene, resize: LaneResize): { lanes:
     const { x, y, width, height } = pose;
     if (region !== null) {
       if (region.role === 'container' && region.fitted !== true) boxes.push({ kind: 'box', id, box: { x, y, width, height } });
-    } else if (node.kind === 'container' && dataKeyReader(node) !== null) moves.push({ id, x, y });
+    } else if (isDiagramBody(node)) moves.push({ id, x, y });
   }
   return { lanes: { kind: 'lanes', pool: pool.id, lanes }, moves, boxes };
 }

@@ -18,7 +18,7 @@ const members: Record<string, PrefLeaf> = {
 
 function setup(section: Partial<PrefSection> = {}) {
   const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { size: 3, turn: 1 }, data: { kind: 'thing' } });
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { size: 3, turn: 1 }, data: { kind: 'thing' } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members, ...section } }];
   return render(<SelectionPanel scene={scene} selection={{ current: ['a'] } as unknown as SelectionApi} properties={properties} routing={routing} />);
 }

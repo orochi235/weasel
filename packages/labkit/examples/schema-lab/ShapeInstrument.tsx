@@ -37,7 +37,7 @@ export function buildScene(): Scene<ShapeData, 'default', RectPose> {
     systemLayers: [{ id: 'default' }],
     initial: [
       {
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 120, y: 90, width: 260, height: 180 },
         data: { shape: 'rect', fill: FILL, stroke: STROKE },

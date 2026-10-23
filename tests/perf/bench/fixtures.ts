@@ -122,7 +122,7 @@ export function containerChain(scene: BenchScene, depth: number): NodeId | null 
   let parent: NodeId | null = null;
   for (let d = 0; d < depth; d++) {
     parent = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'main',
       pose: { x: 0, y: 0, width: 1000, height: 1000 },
       data: { n: d },
@@ -141,7 +141,7 @@ export function fillLeaves(
 ): void {
   for (let i = 0; i < count; i++) {
     scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pose: pose(i),
       data: { n: i },
@@ -168,7 +168,7 @@ export function scatterScene(
     const pose = shape === 'rect'
       ? { x, y, width: 40, height: 40 }
       : polygonPath(sides, 20, x, y, seed + i);
-    scene.add({ kind: 'leaf', layer: 'main', pose, data: { n: i } });
+    scene.add({ kind: 'mark', layer: 'main', pose, data: { n: i } });
   }
   return scene;
 }
@@ -200,7 +200,7 @@ export function layeredScene(count: number, layers: number): LayeredScene {
   });
   for (let n = 0; n < count; n++) {
     scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: `L${n % layers}`,
       pose: { x: n, y: n, width: 10, height: 10 },
       data: { n },
@@ -316,7 +316,7 @@ export function diagramScene(
   const boxes: NodeId[] = [];
   for (let i = 0; i < nodes; i++) {
     boxes.push(scene.add({
-      kind: 'leaf', layer: 'main', data: { n: i },
+      kind: 'mark', layer: 'main', data: { n: i },
       pose: { x: rnd() * span, y: rnd() * span, width: 120, height: 48 },
     }));
   }
@@ -325,7 +325,7 @@ export function diagramScene(
     const from = boxes[Math.floor(rnd() * nodes)];
     const to = boxes[Math.floor(rnd() * nodes)];
     edgeIds.push(scene.add({
-      kind: 'leaf', layer: 'main', data: { n: nodes + i },
+      kind: 'mark', layer: 'main', data: { n: nodes + i },
       pose: { x: 0, y: 0, width: 0, height: 0 },
       dependsOn: [from, to],
       derivePath: benchConnect,

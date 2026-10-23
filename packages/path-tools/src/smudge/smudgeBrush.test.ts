@@ -7,7 +7,7 @@ import { DEFAULT_SMUDGE_RADIUS_PX, smudgeBrushAction } from './smudgeBrush';
 
 /** One node storing its polygon as the pose, selected, at a view scale of `zoom`. */
 function setup(d: string, zoom = 1) {
-  const node = { id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: pathFromD(d), data: {}, parent: null };
+  const node = { id: asNodeId('a'), kind: 'mark', layer: 'main', pose: pathFromD(d), data: {}, parent: null };
   const scene = { get: (id: NodeId) => (id === node.id ? node : undefined), childrenOf: () => [] };
   const selection = { get: () => ['a'], set: vi.fn() };
   const view = { get: () => ({ scale: { x: zoom, y: zoom } }) };

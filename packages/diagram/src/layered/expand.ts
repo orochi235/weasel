@@ -97,7 +97,7 @@ export function portPlaces(node: GraphNode | undefined, port: string | undefined
   if (node === undefined || port === undefined) return MIDDLE;
   const { bounds } = node;
   const trait = { ...(node.ports !== undefined ? { ports: node.ports } : {}), ...(node.outline !== undefined ? { outline: node.outline } : {}) };
-  const sites = portSitesOf({ id: node.id, kind: 'leaf', data: null }, bounds, port, { read: () => trait });
+  const sites = portSitesOf({ id: node.id, kind: 'mark', data: null }, bounds, port, { read: () => trait });
   const size = extent(bounds, axes.cross);
   if (sites.length === 0 || size <= 0) return MIDDLE;
   const low = axes.cross === 'x' ? bounds.x : bounds.y;

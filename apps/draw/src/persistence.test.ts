@@ -155,9 +155,9 @@ describe('persistence — legacy string paint migration', () => {
   type Pose = { x: number; y: number; width: number; height: number };
 
   const sceneOf = (data: Data): SerializedScene<Data, Layer, Pose> => ({
-    version: 1,
+    version: 2,
     systemLayers: [{ id: 'default' }],
-    nodes: [{ id: 'a', kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data }],
+    nodes: [{ id: 'a', kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data }],
   });
   const dataOf = (data: Data): Data => nodeSpecsFromSnapshot(sceneOf(data))[0].data as Data;
 
@@ -292,10 +292,10 @@ describe('persistence — a group reopens tracking its members', () => {
       });
     const scene = make();
     const g = scene.add({
-      kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
       dependsOn: 'children', derivePose: DRAW_REGISTRY.derivePose!['kit:unionOfChildren'],
     });
-    const a = scene.add({ kind: 'leaf', layer: 'default', pose: { x: 10, y: 10, width: 20, height: 20 }, data: {}, parent: g });
+    const a = scene.add({ kind: 'mark', layer: 'default', pose: { x: 10, y: 10, width: 20, height: 20 }, data: {}, parent: g });
 
     const json = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
     const reopened = make(nodeSpecsFromSnapshot(json, DRAW_REGISTRY));

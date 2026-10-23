@@ -26,7 +26,7 @@ beforeAll(() => {
 function makeScene() {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS });
   scene.add({
-    id: asNodeId('box'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
+    id: asNodeId('box'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: rectPath(0, 0, 10, 10), fill: { paint: solid('#ff0000') }, label: 'Box' },
   });
   scene.add(measureNode(asNodeId('m1'), ANNOTATION_LAYER, { x: 0, y: 0 }, { x: 30, y: 40 }) as never);

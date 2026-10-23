@@ -56,7 +56,7 @@ export function LayoutDemo() {
   const tiles = scene.childrenOf(G).length;
   const addTile = () => {
     scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       parent: G,
       pose: { x: 285, y: 225, width: 30, height: 30 },

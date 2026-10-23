@@ -42,7 +42,7 @@ const FIRST_ANCHORS: ReadonlySet<number> = new Set([2]);
 function pathNode(id: string, path: PolygonPath, color: string, vertexColors?: number[]) {
   const { x, y, width, height } = boundsOfPath(path);
   return {
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     id: asNodeId(id),
     layer: 'default' as const,
     pose: { x, y, width, height },

@@ -27,14 +27,14 @@ describe('useSceneSelectTool — non-rect poses', () => {
   it('reports a circle’s bounds', () => {
     const { result } = harness();
     let id = '';
-    act(() => { id = result.current.scene.add({ kind: 'leaf', layer: 'default', pose: circle(10, 10, 5), data: {} }); });
+    act(() => { id = result.current.scene.add({ kind: 'mark', layer: 'default', pose: circle(10, 10, 5), data: {} }); });
     expect(result.current.tool.boundsOf(id)).toEqual({ x: 5, y: 5, width: 10, height: 10 });
   });
 
   it('picks a circle inside its bounds', () => {
     const { result } = harness();
     let id = '';
-    act(() => { id = result.current.scene.add({ kind: 'leaf', layer: 'default', pose: circle(10, 10, 5), data: {} }); });
+    act(() => { id = result.current.scene.add({ kind: 'mark', layer: 'default', pose: circle(10, 10, 5), data: {} }); });
     expect(result.current.tool.pickEvery(10, 10)).toEqual([id]);
   });
 });

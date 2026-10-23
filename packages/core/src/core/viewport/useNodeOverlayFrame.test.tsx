@@ -34,13 +34,13 @@ function container(width = 800, height = 600): HTMLDivElement {
 }
 
 function sceneWith(
-  nodes: readonly { id: string; pose: RectPose; parent?: string; kind?: 'leaf' | 'container' }[],
+  nodes: readonly { id: string; pose: RectPose; parent?: string; kind?: 'mark' | 'group' }[],
 ): ReturnType<typeof createScene<Data, Layer>> {
   const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
   for (const n of nodes) {
     scene.add({
       id: asNodeId(n.id),
-      kind: n.kind ?? 'leaf',
+      kind: n.kind ?? 'mark',
       layer: 'main',
       pose: n.pose,
       data: { label: n.id },
@@ -141,7 +141,7 @@ describe('useNodeOverlayFrame', () => {
 
   it('composes ancestor poses into the box', () => {
     const scene = sceneWith([
-      { id: 'g', kind: 'container', pose: { x: 100, y: 200, width: 400, height: 400 } },
+      { id: 'g', kind: 'group', pose: { x: 100, y: 200, width: 400, height: 400 } },
       { id: 'a', pose: { x: 10, y: 20, width: 30, height: 40 }, parent: 'g' },
     ]);
     const frame = frameFor(scene, 'a');

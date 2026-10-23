@@ -51,7 +51,7 @@ function mintBox(scene: TestScene) {
   return ({ center, width, depth }: Footprint) => {
     const height = (width + depth) / 2;
     return scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'solids',
       pose: pose3(
         { x: center.x, y: height / 2, z: center.z },
@@ -91,7 +91,7 @@ describe('createNodeAtPoint', () => {
     const sphere = idsOf(scene)[1];
     // Past the sphere on the center ray, and last in render order.
     const behind = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'solids',
       pose: pose3(add(target, scale(sub(target, cameraEye(vp.camera)), 2))),
       data: {},
@@ -404,7 +404,7 @@ describe('createPoseDescriptor', () => {
     // Stretched along x: as a sphere it sweeps a cube of side 2, as a box a
     // slab a quarter as tall. Uniform scale would make the two agree.
     const id = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'solids',
       pose: pose3({ x: 0, y: 0.5, z: 0 }, { x: 2, y: 0.5, z: 0.5 }),
       data: { round: true },

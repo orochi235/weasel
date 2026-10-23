@@ -12,11 +12,11 @@ function source(
 }
 
 const participant = (id: string, data: unknown = { diagram: {} }): GraphNodeLike =>
-  ({ id, kind: 'leaf', data });
+  ({ id, kind: 'mark', data });
 
 const edge = (id: string, from: string, to: string): GraphNodeLike => ({
   id,
-  kind: 'leaf',
+  kind: 'mark',
   data: { diagram: { from: {}, to: {} } },
   dependsOn: [from, to],
 });
@@ -36,7 +36,7 @@ describe('buildGraph', () => {
   it('leaves out a node with no diagram trait', () => {
     const graph = buildGraph(source([
       { node: participant('a'), pose: box(0, 0) },
-      { node: { id: 'note', kind: 'leaf', data: { text: 'hi' } }, pose: box(0, 0) },
+      { node: { id: 'note', kind: 'mark', data: { text: 'hi' } }, pose: box(0, 0) },
     ]));
     expect(graph.nodes.map((n) => n.id)).toEqual(['a']);
   });

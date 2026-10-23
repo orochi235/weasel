@@ -27,8 +27,8 @@ const B = asNodeId('b');
 
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  s.add({ id: A, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-  s.add({ id: B, kind: 'leaf', layer: 'main', pose: { x: 20, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+  s.add({ id: A, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+  s.add({ id: B, kind: 'mark', layer: 'main', pose: { x: 20, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
   s.history.clear();
   return s;
 }

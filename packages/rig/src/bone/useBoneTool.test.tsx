@@ -22,9 +22,9 @@ const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
 function setup(settings?: KitSettingsOverrides) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const rig = scene.add({ kind: 'container', layer: 'main', pose: { x: 100, y: 100, width: 200, height: 100 }, data: { label: 'arm' } });
+  const rig = scene.add({ kind: 'group', layer: 'main', pose: { x: 100, y: 100, width: 200, height: 100 }, data: { label: 'arm' } });
   const sleeve = scene.add({
-    kind: 'leaf', layer: 'main', parent: rig, pose: { x: 100, y: 100, width: 10, height: 10 },
+    kind: 'mark', layer: 'main', parent: rig, pose: { x: 100, y: 100, width: 10, height: 10 },
     data: { skin: { joint: [1, 0], joint2: [0, 1] } },
   });
   let target: NodeId | null = rig;

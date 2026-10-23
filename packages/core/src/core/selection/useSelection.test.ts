@@ -297,7 +297,7 @@ describe('useSelection range', () => {
   it('walks a scene in the order it paints when handed no order', () => {
     const scene = createScene<object, 'main'>({ systemLayers: [{ id: 'main' }] });
     const box = { x: 0, y: 0, width: 1, height: 1 };
-    const ids = [0, 1, 2, 3].map(() => scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box }));
+    const ids = [0, 1, 2, 3].map(() => scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box }));
     const { result } = renderHook(() => useSelection({ scene, mode: 'multi', extend: 'meta', range: 'shift' }));
     act(() => result.current.applyClick(ids[3]!, NO_MODS));
     act(() => result.current.applyClick(ids[1]!, SHIFT));

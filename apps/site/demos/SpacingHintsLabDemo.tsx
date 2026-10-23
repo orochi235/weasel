@@ -31,7 +31,7 @@ export const STRAY_ID = asNodeId('stray');
 
 const shape = (id: string, x: number, y: number, color: string) => ({
   id: asNodeId(id),
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x, y, width: 80, height: 80 },
   data: { fill: { paint: solid(color) } },

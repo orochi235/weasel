@@ -12,7 +12,7 @@ import { restoreFn, type FnBearingNode, type NodeFnField } from './nodeFnFields'
 import { statedFields } from './statedFields';
 import type { createNodeStore } from './nodeStore';
 import type {
-  ContainerNode, LayerRecord, LeafNode, Node, NodeId, RegisteredOp, UserLayerRecord,
+  LayerRecord, Node, NodeId, RegisteredOp, UserLayerRecord,
 } from './types';
 
 /**
@@ -87,7 +87,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   }
 
   registerKitOp<{
-    id: NodeId; kind: 'leaf' | 'container'; layer: TLayer; pose: TPose; data: TData;
+    id: NodeId; kind: 'mark' | 'group'; layer: TLayer; pose: TPose; data: TData;
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
     pickable?: boolean; hidden?: boolean; locked?: boolean;
@@ -97,9 +97,9 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       if (state.nodes.has(p.id)) {
         throw new Error(`Scene: id collision on "${p.id}"`);
       }
-      const node: Node<TData, TLayer, TPose> = p.kind === 'container'
-        ? ({ kind: 'container', id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent, children: [] } as ContainerNode<TData, TLayer, TPose>)
-        : ({ kind: 'leaf', id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent } as LeafNode<TData, TLayer, TPose>);
+      const node = {
+        kind: p.kind, id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent,
+      } as Node<TData, TLayer, TPose>;
       state.nodes.set(p.id, node);
       attach(p.id, p.parent, p.index);
       if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
@@ -152,7 +152,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
       // Order-independent: every clone carries its own parent and children.
       for (const n of p.nodes) {
-        const clone: Node<TData, TLayer, TPose> = n.kind === 'container'
+        const clone: Node<TData, TLayer, TPose> = n.children
           ? { ...n, children: [...n.children] }
           : { ...n };
         restoreNodeFunctions(clone, keys.get(n.id));

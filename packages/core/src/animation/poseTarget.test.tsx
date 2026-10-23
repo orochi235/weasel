@@ -24,7 +24,7 @@ function setup(pose: Pose = { x: 0, y: 0, width: 10, height: 10 }) {
     act(() => { for (const cb of cbs.splice(0)) cb(t); });
   };
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
   const shown = (id: NodeId = a) => effectivePose(scene, scene.get(id)!);
   return { animator: (): Animator => result.current, frame, scene, a, shown };
 }
@@ -92,7 +92,7 @@ describe('scenePoseTarget', () => {
     const { scene } = setup();
     expect(scenePoseTarget(scene, 'nope')).toBeUndefined();
     const paths = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
-    const p = paths.add({ kind: 'leaf', layer: 'main', pose: { kind: 'polygon', points: [] }, data: {} });
+    const p = paths.add({ kind: 'mark', layer: 'main', pose: { kind: 'polygon', points: [] }, data: {} });
     expect(scenePoseTarget(paths, p)).toBeUndefined();
   });
 

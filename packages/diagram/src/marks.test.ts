@@ -26,7 +26,7 @@ describe('marks', () => {
   });
 
   it('does not read a mark as a diagram participant', () => {
-    expect(dataKeyReader({ id: 'a/mark:0', kind: 'leaf', data: drawn.data })).toBeNull();
+    expect(dataKeyReader({ id: 'a/mark:0', kind: 'mark', data: drawn.data })).toBeNull();
   });
 
   it('stretches the unit path over the box it is painted in', () => {

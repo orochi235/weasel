@@ -17,18 +17,18 @@ describe('unionOfChildrenVia', () => {
       registry: { derivePose: { [UNION_OF_CHILDREN]: union } },
     });
     const g = scene.add({
-      kind: 'container', layer: 'main', pose: circle(0, 0, 0), data: {},
+      kind: 'group', layer: 'main', pose: circle(0, 0, 0), data: {},
       dependsOn: 'children', derivePose: union,
     });
-    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: circle(0, 0, 10), data: {} });
-    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: circle(40, 0, 10), data: {} });
+    scene.add({ kind: 'mark', parent: g, layer: 'main', pose: circle(0, 0, 10), data: {} });
+    scene.add({ kind: 'mark', parent: g, layer: 'main', pose: circle(40, 0, 10), data: {} });
     expect(effectivePose(scene, scene.get(g)!)).toEqual(circle(20, 0, 10));
   });
 
   it('returns null for an emptied container', () => {
     const union = unionOfChildrenVia(CIRCLE_POSE_DESCRIPTOR);
     const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' as const }] });
-    const g = scene.add({ kind: 'container', layer: 'main', pose: circle(0, 0, 0), data: {} });
+    const g = scene.add({ kind: 'group', layer: 'main', pose: circle(0, 0, 0), data: {} });
     expect(union(scene.get(g)!, [])).toBeNull();
   });
 });

@@ -29,7 +29,7 @@ function setup(pose: Path) {
     act(() => { for (const cb of cbs.splice(0)) cb(t); });
   };
   const scene = createScene<object, 'main', Path>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
   const adapter = sceneToAdapter(scene) as unknown as PoseAnimationAdapter<Path>;
   const shown = () => effectivePose(scene, scene.get(a)!);
   /** The first x of the pose on screen. */

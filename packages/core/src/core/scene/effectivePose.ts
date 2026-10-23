@@ -37,7 +37,7 @@ const PATH_SLOT: Record<Reading, string | undefined> = {
  *  it without importing the full generic shape. */
 export interface PosedNode<TPose> {
   id: NodeId;
-  kind?: 'leaf' | 'container';
+  kind?: 'mark' | 'group';
   pose: TPose;
   /** Read only by the memo, which keys on its reference alongside the pose. */
   data?: unknown;

@@ -238,7 +238,7 @@ describe('bodyTrait', () => {
 
   it('resolves through portsOf like any other trait', () => {
     const trait = bodyTrait(spec([{ kind: 'ports', left: [{ id: 'in' }], height: 40 }]), BOUNDS, measure);
-    const ports = portsOf({ id: 'op', kind: 'container', data: { diagram: trait } }, BOUNDS);
+    const ports = portsOf({ id: 'op', kind: 'group', data: { diagram: trait } }, BOUNDS);
     expect(ports.find((p) => p.id === 'in')!.point).toEqual({ x: 0, y: 20 });
   });
 });
@@ -272,7 +272,7 @@ describe('buildBody', () => {
     const { pose, specs } = body();
     const boxes = layoutBody(spec([{ kind: 'label', text: 'step' }]), pose, measure);
     expect(specs[1]).toMatchObject({
-      kind: 'leaf', parent: 'step', data: { text: 'step' },
+      kind: 'mark', parent: 'step', data: { text: 'step' },
       pose: { x: boxes[0]!.x, y: boxes[0]!.y, width: boxes[0]!.width, height: boxes[0]!.height },
     });
   });
@@ -299,7 +299,7 @@ describe('buildBody', () => {
       { kind: 'label', text: 'op' },
       { kind: 'ports', left: [{ id: 'in' }] },
     ]);
-    expect(specs.map((n) => n.kind)).toEqual(['container', 'leaf']);
+    expect(specs.map((n) => n.kind)).toEqual(['mark', 'mark']);
   });
 
   it('hands the container the trait its rows imply', () => {
@@ -376,7 +376,7 @@ describe('buildBody — row port labels', () => {
       portLabel: (text) => ({ text }),
     });
     expect(specs.map((n) => (n.data as { text: string }).text)).toEqual(['', 'in', 'out']);
-    expect(specs[1]).toMatchObject({ kind: 'leaf', parent: 'op' });
+    expect(specs[1]).toMatchObject({ kind: 'mark', parent: 'op' });
   });
 
   it('places each label at the box layoutRowPorts gives it', () => {

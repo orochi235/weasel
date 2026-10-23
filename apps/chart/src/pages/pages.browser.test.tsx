@@ -7,6 +7,7 @@ import { page, userEvent } from 'vitest/browser';
 import { PAGES_DOC_KEY, fitViewToBounds, layoutPages, type PagesDoc } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
+import { isDiagramBody } from '@weasel-js/diagram';
 import { CHART_PAGE } from '../chartDocument';
 import { CHART_SCENE_KEY } from '../chartPersistence';
 import { chartPrefs } from '../prefs';
@@ -27,10 +28,10 @@ afterEach(() => {
   localStorage.clear();
 });
 
-interface Saved { nodes: { kind: string; pose: { x: number } }[]; doc?: Record<string, unknown> }
+interface Saved { nodes: { kind: string; data: unknown; pose: { x: number } }[]; doc?: Record<string, unknown> }
 const saved = (): Saved => JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as Saved;
 const pageIds = () => (saved().doc?.[PAGES_DOC_KEY] as PagesDoc | undefined)?.pages.map((p) => p.id);
-const bodyX = () => saved().nodes.find((n) => n.kind === 'container')?.pose.x;
+const bodyX = () => saved().nodes.find(isDiagramBody)?.pose.x;
 const tabs = () => [...document.querySelectorAll<HTMLElement>('[role="tab"]')];
 const lit = () => tabs().findIndex((t) => t.getAttribute('aria-selected') === 'true');
 

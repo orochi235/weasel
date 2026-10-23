@@ -11,7 +11,7 @@ const A = asNodeId('a');
 function setup() {
   const scene = createScene<null, 'l', RectPose>({
     systemLayers: [{ id: 'l' }],
-    initial: [{ id: A, kind: 'leaf', layer: 'l', pose: at(0), data: null }],
+    initial: [{ id: A, kind: 'mark', layer: 'l', pose: at(0), data: null }],
   });
   const seen: PoseWrite<RectPose>[][] = [];
   const removed: PoseRemoval<RectPose>[][] = [];
@@ -62,13 +62,13 @@ describe('Scene.onPoseWrite', () => {
 
   it('reports an added node with no from, and leaves out one written back or removed', () => {
     const { scene, seen, removed } = setup();
-    const b = scene.add({ kind: 'leaf', layer: 'l', pose: at(20), data: null });
+    const b = scene.add({ kind: 'mark', layer: 'l', pose: at(20), data: null });
     scene.batch('there and back', () => { scene.setPose(A, at(4)); scene.setPose(A, at(0)); });
     scene.batch('come and go', () => {
-      const c = scene.add({ kind: 'leaf', layer: 'l', pose: at(30), data: null });
+      const c = scene.add({ kind: 'mark', layer: 'l', pose: at(30), data: null });
       scene.remove(c);
     });
-    expect(seen).toEqual([[{ id: b, from: undefined, to: at(20), origin: 'call', label: 'add leaf' }]]);
+    expect(seen).toEqual([[{ id: b, from: undefined, to: at(20), origin: 'call', label: 'add mark' }]]);
     expect(removed).toEqual([]);
   });
 
@@ -84,8 +84,8 @@ describe('Scene.onPoseWrite', () => {
 
   it('reports a removed container once, carrying its descendants beneath it', () => {
     const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
-    const g = scene.add({ kind: 'container', layer: 'l', pose: at(0), data: null });
-    const k = scene.add({ kind: 'leaf', layer: 'l', parent: g, pose: at(4), data: null });
+    const g = scene.add({ kind: 'group', layer: 'l', pose: at(0), data: null });
+    const k = scene.add({ kind: 'mark', layer: 'l', parent: g, pose: at(4), data: null });
     const removed: PoseRemoval<RectPose>[] = [];
     scene.onPoseWrite((_w, r) => removed.push(...r));
     scene.remove(g);
@@ -97,8 +97,8 @@ describe('Scene.onPoseWrite', () => {
     const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
     let g!: NodeId;
     scene.batch('make', () => {
-      g = scene.add({ kind: 'container', layer: 'l', pose: at(0), data: null });
-      scene.add({ kind: 'leaf', layer: 'l', parent: g, pose: at(4), data: null });
+      g = scene.add({ kind: 'group', layer: 'l', pose: at(0), data: null });
+      scene.add({ kind: 'mark', layer: 'l', parent: g, pose: at(4), data: null });
     });
     const removed: PoseRemoval<RectPose>[] = [];
     scene.onPoseWrite((_w, r) => removed.push(...r));
@@ -110,7 +110,7 @@ describe('Scene.onPoseWrite', () => {
     const { scene, seen, removed } = setup();
     scene.batch('swap', () => {
       scene.remove(A);
-      scene.add({ id: A, kind: 'leaf', layer: 'l', pose: at(6), data: null });
+      scene.add({ id: A, kind: 'mark', layer: 'l', pose: at(6), data: null });
     });
     expect(removed).toEqual([]);
     expect(seen).toEqual([[expect.objectContaining({ id: A, from: at(0), to: at(6) })]]);
@@ -136,12 +136,12 @@ describe('Scene.onPoseWrite', () => {
     const C = asNodeId('C');
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
-      initial: [{ id: C, kind: 'container', layer: 'l', pose: { x: 0, y: 0, width: 9, height: 90 }, data: null, layout: stack }],
+      initial: [{ id: C, kind: 'group', layer: 'l', pose: { x: 0, y: 0, width: 9, height: 90 }, data: null, layout: stack }],
     });
-    const k = scene.add({ kind: 'leaf', layer: 'l', parent: C, pose: at(50, 50), data: null });
+    const k = scene.add({ kind: 'mark', layer: 'l', parent: C, pose: at(50, 50), data: null });
     const seen: PoseWrite<RectPose>[] = [];
     scene.onPoseWrite((w) => seen.push(...w));
-    scene.add({ kind: 'leaf', layer: 'l', parent: C, pose: at(50, 50), data: null });
+    scene.add({ kind: 'mark', layer: 'l', parent: C, pose: at(50, 50), data: null });
     expect(seen.find((w) => w.id === k)).toMatchObject({ from: { y: 0 }, to: { y: 5 }, origin: 'layout' });
   });
 
@@ -154,7 +154,7 @@ describe('Scene.onPoseWrite', () => {
   it('reports before the scene notifies its subscribers, and stops when unsubscribed', () => {
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
-      initial: [{ id: A, kind: 'leaf', layer: 'l', pose: at(0), data: null }],
+      initial: [{ id: A, kind: 'mark', layer: 'l', pose: at(0), data: null }],
     });
     const order: string[] = [];
     scene.subscribe(() => order.push('notify'));

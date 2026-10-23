@@ -32,7 +32,7 @@ describe('a clipped <g>', () => {
   it('drafts a container carrying the clip, boxed by it', () => {
     let n = 0;
     const [group, leaf] = svgNodesToKitDrafts(parseSvg(CLIPPED), () => `n${n++}`);
-    if (group.kind !== 'container') throw new Error('expected a container');
+    if (group.kind !== 'group') throw new Error('expected a container');
     expect(group.data).toEqual({ path: { kind: 'rect', x: 10, y: 10, width: 20, height: 40 }, fill: null });
     expect(group.pose).toEqual({ x: 10, y: 10, width: 20, height: 40 });
     expect(leaf.pose).toMatchObject({ x: 0, y: 0, width: 100, height: 100 });
@@ -45,13 +45,13 @@ describe('a clipped <g>', () => {
       () => `n${n++}`,
     );
     expect(group).toEqual({
-      kind: 'container', id: 'n0', parentId: null, pose: { x: 0, y: 0, width: 100, height: 100 }, data: {},
+      kind: 'group', id: 'n0', parentId: null, pose: { x: 0, y: 0, width: 100, height: 100 }, data: {},
     });
   });
 
   it('unpacks to a container that paints nothing and whose silhouette, the clip the scene reads, is the clip', async () => {
     const [group] = await unpacked(CLIPPED);
-    expect(group.kind).toBe('container');
+    expect(group.kind).toBe('group');
     expect(group.data.fill).toBeNull();
     expect(group.data.stroke).toBeUndefined();
     // Centered on the drop point: the clip's 20 x 40 box, not the child's 100 x 100.
@@ -63,9 +63,9 @@ describe('a clipped <g>', () => {
   it('writes a container holding a clip back as a clipped group', () => {
     const clip: Path = { kind: 'rect', x: 0, y: 0, width: 2, height: 4 };
     const nodes: Record<string, { kind: string; data: unknown; pose: { x: number; y: number; width: number; height: number } }> = {
-      g: { kind: 'container', data: { path: clip, fill: null }, pose: { x: 10, y: 10, width: 20, height: 40 } },
+      g: { kind: 'group', data: { path: clip, fill: null }, pose: { x: 10, y: 10, width: 20, height: 40 } },
       a: { kind: 'path', data: { path: { kind: 'rect', x: 0, y: 0, width: 100, height: 100 } }, pose: { x: 0, y: 0, width: 100, height: 100 } },
-      plain: { kind: 'container', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 } },
+      plain: { kind: 'group', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 } },
     };
     const tree: SvgKitTree = {
       roots: ['g', 'plain'],

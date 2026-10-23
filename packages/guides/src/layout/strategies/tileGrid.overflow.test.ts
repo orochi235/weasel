@@ -26,22 +26,22 @@ const rect = (x: number, y: number, width = 50, height = 50): RectPose => ({ x, 
  *  and a loose root node `x` at (300,300). */
 function setup(opts: Partial<TileGridOptions<RectPose>>, held = 4) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const G = scene.add({ kind: 'container', id: 'G' as NodeId, layer: 'main', data: {}, pose: rect(0, 0, 100, 100) });
+  const G = scene.add({ kind: 'group', id: 'G' as NodeId, layer: 'main', data: {}, pose: rect(0, 0, 100, 100) });
   const byColumn = opts.flow === 'column';
   for (let i = 0; i < held; i++) {
     const along = i % 2;
     const line = Math.floor(i / 2);
     const [col, row] = byColumn ? [line, along] : [along, line];
-    scene.add({ kind: 'leaf', id: `k${i}` as NodeId, parent: G, layer: 'main', data: {}, pose: rect(col * 50, row * 50) });
+    scene.add({ kind: 'mark', id: `k${i}` as NodeId, parent: G, layer: 'main', data: {}, pose: rect(col * 50, row * 50) });
   }
-  const x = scene.add({ kind: 'leaf', id: 'x' as NodeId, layer: 'main', data: {}, pose: rect(300, 300) });
+  const x = scene.add({ kind: 'mark', id: 'x' as NodeId, layer: 'main', data: {}, pose: rect(300, 300) });
   const grid = tileGrid<RectPose>({ cols: 2, rows: 2, ...opts });
   scene.setLayout(G, grid);
   const adapter = defaultCommitAdapter(scene as never);
   const layout: LayoutDep = { getLayout: (id) => (id === 'G' ? (grid as never) : null) };
 
   const insert = () => scene.applyBatch([createInsertOp({
-    node: { kind: 'leaf', id: 'n' as NodeId, layer: 'main', data: {}, pose: rect(20, 20), parent: G },
+    node: { kind: 'mark', id: 'n' as NodeId, layer: 'main', data: {}, pose: rect(20, 20), parent: G },
   })], 'Insert', adapter);
   const reparent = () => scene.applyBatch(
     [createReparentOp({ id: 'x', fromParentId: null, toParentId: 'G' })], 'Reparent', adapter,
@@ -170,7 +170,7 @@ describe('tileGrid overflow — grow', () => {
     // 2×2 over 100×100 with a 10 gap → 45×45 cells at 0 and 55.
     for (let i = 0; i < 4; i++) {
       s.scene.applyBatch([createInsertOp({
-        node: { kind: 'leaf', id: `g${i}` as NodeId, layer: 'main', data: {}, pose: rect(0, 0), parent: 'G' as NodeId },
+        node: { kind: 'mark', id: `g${i}` as NodeId, layer: 'main', data: {}, pose: rect(0, 0), parent: 'G' as NodeId },
       })], 'Insert', defaultCommitAdapter(s.scene as never));
     }
     s.reparent();
@@ -205,7 +205,7 @@ describe('tileGrid overflow — grow', () => {
     // 2×2 over 100×100 with a 10 gap: 45×45 cells, grown to three rows.
     for (let i = 0; i < 5; i++) {
       s.scene.applyBatch([createInsertOp({
-        node: { kind: 'leaf', id: `g${i}` as NodeId, layer: 'main', data: {}, pose: rect(0, 0), parent: 'G' as NodeId },
+        node: { kind: 'mark', id: `g${i}` as NodeId, layer: 'main', data: {}, pose: rect(0, 0), parent: 'G' as NodeId },
       })], 'Insert', defaultCommitAdapter(s.scene as never));
     }
     expect(s.pose('G')).toEqual(rect(0, 0, 100, 155));

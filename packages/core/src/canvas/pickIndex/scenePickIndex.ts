@@ -140,7 +140,7 @@ class BuiltIndex implements ScenePickIndex {
 }
 
 function hasCopyingAncestor(parents: Order): boolean {
-  return parents.some((p) => p.kind === 'container' && typeof p.copiesFromPose === 'function');
+  return parents.some((p) => typeof p.copiesFromPose === 'function');
 }
 
 function build(scene: AnyScene, descriptor: PoseDescriptor<unknown>, order: Order): BuiltIndex {

@@ -22,14 +22,14 @@ beforeAll(() => {
 });
 
 const BOX = { x: 0, y: 0, width: 10, height: 10 };
-const NODES: Record<string, { kind: 'leaf' | 'container'; pose: P; data: D }> = {
-  pathData: { kind: 'leaf', pose: BOX, data: { path: { kind: 'rect', ...BOX } } },
-  pathPose: { kind: 'leaf', pose: { kind: 'rect', ...BOX }, data: { kind: 'rect' } },
-  rect: { kind: 'leaf', pose: BOX, data: { kind: 'rect' } },
-  text: { kind: 'leaf', pose: BOX, data: { text: 'hi' } },
-  image: { kind: 'leaf', pose: BOX, data: { image: { src: 'a.png' } } },
-  card: { kind: 'leaf', pose: BOX, data: { card: true } },
-  group: { kind: 'container', pose: BOX, data: {} },
+const NODES: Record<string, { kind: 'mark' | 'group'; pose: P; data: D }> = {
+  pathData: { kind: 'mark', pose: BOX, data: { path: { kind: 'rect', ...BOX } } },
+  pathPose: { kind: 'mark', pose: { kind: 'rect', ...BOX }, data: { kind: 'rect' } },
+  rect: { kind: 'mark', pose: BOX, data: { kind: 'rect' } },
+  text: { kind: 'mark', pose: BOX, data: { text: 'hi' } },
+  image: { kind: 'mark', pose: BOX, data: { image: { src: 'a.png' } } },
+  card: { kind: 'mark', pose: BOX, data: { card: true } },
+  group: { kind: 'group', pose: BOX, data: {} },
 };
 const IDS = Object.keys(NODES).map(asNodeId);
 
@@ -109,7 +109,7 @@ describe('the published selection kinds on one canvas', () => {
   });
 
   it('give way to describeKind outright, without changing the routing kind', () => {
-    const { table } = answers({ describeKind: (n) => (n.kind === 'container' ? undefined : 'thing') });
+    const { table } = answers({ describeKind: (n) => (n.kind === 'group' ? undefined : 'thing') });
     expect(table.group).toEqual({ label: undefined, routing: 'group' });
     expect(table.pathData).toEqual({ label: 'thing', routing: 'path' });
     expect(table.rect).toEqual({ label: 'thing', routing: 'unknown' });

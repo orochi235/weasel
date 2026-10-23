@@ -11,7 +11,7 @@ import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/r
 function node<TData>(data: TData): Node<TData, 'default', { x: number; y: number; width: number; height: number }> {
   return {
     id: 'n',
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 0, y: 0, width: 0, height: 0 },
     data,

@@ -9,7 +9,7 @@ const POSE: RectPose = { x: 0, y: 0, width: 10, height: 10 };
 function makeScene() {
   const scene = createScene<{ label: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const leaf = (label: string, extra: object = {}) =>
-    scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label }, ...extra });
+    scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label }, ...extra });
   const a = leaf('a');
   const b = leaf('b');
   const edge = leaf('edge', { dependsOn: [a, b], derivePath: () => null });

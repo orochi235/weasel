@@ -435,7 +435,7 @@ describe('SceneCanvas views prop', () => {
 
   it('follows a selection change the surface owns, with no parent re-render', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    scene.add({ id: 'a' as NodeId, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    scene.add({ id: 'a' as NodeId, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
     let seen: Record<string, unknown> | undefined;
     const probe: RenderLayer<unknown> = {
       id: 'probe',

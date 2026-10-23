@@ -14,7 +14,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { icon } from '../../../icons.gen';
 
 /**
- * Creates a structural `ContainerNode` and reparents the current selection
+ * Creates a structural `GroupNode` and reparents the current selection
  * under it as a single undoable batch.
  *
  * Grouping never moves a member on screen. The container takes the world
@@ -83,7 +83,7 @@ export const groupAction: Action & { requires: string[] } = {
         createInsertOp<Node<unknown, string, unknown>>({
           node: {
             id: containerId,
-            kind: 'container',
+            kind: 'group',
             layer,
             pose: pose as unknown,
             data: {} as unknown,
@@ -119,9 +119,9 @@ export const groupAction: Action & { requires: string[] } = {
 };
 
 /**
- * Dissolves each selected container by reparenting its children up to the
+ * Dissolves each selected group by reparenting its children up to the
  * container's own parent (preserving z-order) and removing the now-empty
- * container, as a single undoable batch. Selected non-container nodes are
+ * container, as a single undoable batch. Selected marks, children or not, are
  * ignored. The freed children become the new selection, and nothing moves on
  * screen.
  */
@@ -143,7 +143,7 @@ export const ungroupAction: Action & { requires: string[] } = {
       const ids = selection.get();
       if (ids.length === 0) return;
 
-      const containers = ids.filter((id) => scene.get(id as NodeId)?.kind === 'container');
+      const containers = ids.filter((id) => scene.get(id as NodeId)?.kind === 'group');
       if (containers.length === 0) return;
 
       const frame = scenePoseFrame(scene);
@@ -153,7 +153,7 @@ export const ungroupAction: Action & { requires: string[] } = {
         const freed: NodeId[] = [];
         for (const containerId of containers) {
           const container = scene.get(containerId as NodeId);
-          if (!container || container.kind !== 'container') continue;
+          if (!container || container.kind !== 'group') continue;
 
           const parent = container.parent ?? null;
           const baseIndex =
@@ -185,7 +185,7 @@ export const ungroupAction: Action & { requires: string[] } = {
   enabled: (deps) => {
     const selection = deps?.selection;
     const scene = deps?.scene;
-    const any = selection?.get().some((id) => scene?.get(id as NodeId)?.kind === 'container');
+    const any = selection?.get().some((id) => scene?.get(id as NodeId)?.kind === 'group');
     return any ? true : ActionDisabledReason.NotApplicable;
   },
 };

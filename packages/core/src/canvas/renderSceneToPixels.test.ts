@@ -10,7 +10,7 @@ import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 interface RectPose { x: number; y: number; width: number; height: number; rotation?: number }
 
 function leaf(id: string, pose: RectPose, data: unknown): Node<unknown, 'default', RectPose> {
-  return { id, kind: 'leaf', layer: 'default', parent: null, pose, data } as unknown as Node<unknown, 'default', RectPose>;
+  return { id, kind: 'mark', layer: 'default', parent: null, pose, data } as unknown as Node<unknown, 'default', RectPose>;
 }
 
 /** Flat single-layer stand-in: every node is a root, nothing nests. The render

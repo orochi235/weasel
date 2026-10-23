@@ -76,7 +76,7 @@ export function offPageTagSpec<TLayer extends string>(
 ): AddNodeSpec<unknown, TLayer, RectPose> {
   return {
     id: offPageTagId(edgeId, end) as never,
-    kind: 'leaf',
+    kind: 'mark',
     layer: look.layer,
     pose: { x: 0, y: 0, ...offPageTagSize(text, look) },
     data: offPageTagData(edgeId, end, text, look),

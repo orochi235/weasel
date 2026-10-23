@@ -29,9 +29,9 @@ function counted(source: SnapSource, tally: Tally): SnapSource {
 describe('snap sources over a crowded row', () => {
   const COUNT = 2000;
   const scene = createScene<object, 'default', Bounds>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
-  for (let i = 0; i < COUNT; i++) scene.add({ kind: 'leaf', layer: 'default', pose: { x: i * 20, y: 0, width: 10, height: 10 }, data: {} });
+  for (let i = 0; i < COUNT; i++) scene.add({ kind: 'mark', layer: 'default', pose: { x: i * 20, y: 0, width: 10, height: 10 }, data: {} });
   const box: Bounds = { x: 20012, y: 0, width: 6, height: 10 };
-  const moving = scene.add({ kind: 'leaf', layer: 'default', pose: box, data: {} });
+  const moving = scene.add({ kind: 'mark', layer: 'default', pose: box, data: {} });
 
   // Measuring the row is the quadratic part; a frame that re-measured it
   // would make a drag cost the whole scene every pointer move.

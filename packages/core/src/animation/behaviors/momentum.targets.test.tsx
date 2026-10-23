@@ -30,7 +30,7 @@ function flick(opts: Partial<MomentumOptions> = {}, vx = 1250, vy = 0) {
   const clock = makeClock();
   const { result } = renderHook(() => useAnimator(clock));
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: at(0), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: at(0), data: {} });
   const adapter = moveGestureAdapter(scene, (ops, label, self) => scene.applyBatch(ops, label, self));
   const beh = momentum<RectPose>({ animator: result.current, threshold: 0, friction: 0.5, now: clock.now, ...opts });
   const ctxFor = (origin: RectPose, current: RectPose): GestureContext<RectPose> => ({

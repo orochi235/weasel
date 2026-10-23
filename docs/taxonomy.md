@@ -847,11 +847,13 @@ answer every reader asks — see `packages/core/src/core/scene/nodeGates.ts`. Se
 
 These are distinct concepts; keep them separate.
 
-- **Group** = a structural `ContainerNode` (`kind: 'container'`, `children`). The
-  real "group" (Cmd+G): the `group`/`ungroup` actions create/dissolve a container
-  and reparent the selection under it. Persistent, id-bearing, selectable as a
-  unit, and the native round-trip for SVG `<g>`. Dragging a container moves its
-  descendants (the move action cascades `childrenOf`).
+- **Group** = a structural `GroupNode` (`kind: 'group'`). The real "group"
+  (Cmd+G): the `group`/`ungroup` actions create/dissolve a group and reparent
+  the selection under it. Persistent, id-bearing, selectable as a unit, and the
+  native round-trip for SVG `<g>`. Dragging a group moves its descendants (the
+  move action cascades `childrenOf`). The other kind is a **mark**
+  (`kind: 'mark'`, `MarkNode`): a thing that draws itself. Any node may have
+  `children`; `isLeaf(node)` and `hasChildren(node)` ask whether it does.
 - **Selection** = the transient, immutable set of currently-active ids (the
   [`SelectionApi`](#selection): `get()` / `set()`). "Operate on these N as a unit"
   with no persistence and no id — it is *not* a scene entity. The scene holds the

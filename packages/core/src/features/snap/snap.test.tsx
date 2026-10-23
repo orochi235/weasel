@@ -45,7 +45,7 @@ function mount(
   children: ReactNode, props: Record<string, unknown>, paths: readonly string[] = [], settings: KitSettingsOverrides = {},
 ) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  for (const d of paths) scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: pathFromD(d) } as never);
+  for (const d of paths) scene.add({ kind: 'mark', layer: 'main', data: {}, pose: pathFromD(d) } as never);
   const got: { snap?: SnapDep } = {};
   render(
     <KitSettingsProvider value={settings}>

@@ -18,7 +18,7 @@ function session(texts: Record<string, string>) {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
   for (const [id, text] of Object.entries(texts)) {
     scene.add({
-      kind: 'leaf', layer: 'default', id: asNodeId(id),
+      kind: 'mark', layer: 'default', id: asNodeId(id),
       pose: { x: 0, y: 0, width: 100, height: 40 },
       data: { text },
     });

@@ -31,9 +31,9 @@ function makeScene(composition?: typeof TRANSLATE) {
     systemLayers: [{ id: 'l' }],
     ...(composition ? { composition } : {}),
     initial: [
-      { id: id('C'), kind: 'container', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 200 }, data: null, layout: stack() },
-      { id: id('K'), kind: 'container', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 10 }, data: null, parent: id('C') },
-      { id: id('m'), kind: 'leaf', layer: 'l', pose: composition ? { x: 3, y: 4, width: 2, height: 2 } : { x: 103, y: 104, width: 2, height: 2 }, data: null, parent: id('K') },
+      { id: id('C'), kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 200 }, data: null, layout: stack() },
+      { id: id('K'), kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 10 }, data: null, parent: id('C') },
+      { id: id('m'), kind: 'mark', layer: 'l', pose: composition ? { x: 3, y: 4, width: 2, height: 2 } : { x: 103, y: 104, width: 2, height: 2 }, data: null, parent: id('K') },
     ],
   });
 }
@@ -41,7 +41,7 @@ function makeScene(composition?: typeof TRANSLATE) {
 describe('layout pass descendant carry', () => {
   it('moves a laid-out container\'s children with it under absolute poses, in the same step', () => {
     const scene = makeScene();
-    scene.add({ id: id('a'), kind: 'leaf', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: id('C'), index: 0 });
+    scene.add({ id: id('a'), kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: id('C'), index: 0 });
     expect(scene.get(id('K'))!.pose.y).toBe(110);
     expect(scene.get(id('m'))!.pose).toMatchObject({ x: 103, y: 114 });
     scene.undo();
@@ -50,7 +50,7 @@ describe('layout pass descendant carry', () => {
 
   it('leaves children a composing frame already carries alone', () => {
     const scene = makeScene(TRANSLATE);
-    scene.add({ id: id('a'), kind: 'leaf', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: id('C'), index: 0 });
+    scene.add({ id: id('a'), kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: id('C'), index: 0 });
     expect(scene.get(id('K'))!.pose.y).toBe(10);
     expect(scene.get(id('m'))!.pose).toMatchObject({ x: 3, y: 4 });
   });

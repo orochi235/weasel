@@ -18,7 +18,7 @@ const size: PrefLeaf = { kind: 'number', name: 'Size', description: '', default:
 function setup(nodes: Record<string, Record<string, unknown>>) {
   const scene = createScene<Data, Layer, Record<string, number>>({ systemLayers: [{ id: 'default' }] });
   for (const [id, pose] of Object.entries(nodes)) {
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: pose as Record<string, number>, data: { kind: 'thing' } });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: pose as Record<string, number>, data: { kind: 'thing' } });
   }
   const properties: NodePropertiesEntry[] = [
     { name: 'thing', schema: { name: 'Properties', members: { 'pose.turn': turn, 'pose.size': size } } },
@@ -79,7 +79,7 @@ describe('a field of an object leaf whose absent value is its default', () => {
   function setupBox(nodes: Record<string, Record<string, unknown>>) {
     const scene = createScene<Data, Layer, Record<string, number>>({ systemLayers: [{ id: 'default' }] });
     for (const [id, data] of Object.entries(nodes)) {
-      scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', ...data } });
+      scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', ...data } });
     }
     const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: { 'data.box': box } } }];
     render(<SelectionPanel scene={scene} selection={selectionOf(Object.keys(nodes))} properties={properties} routing={routing} />);

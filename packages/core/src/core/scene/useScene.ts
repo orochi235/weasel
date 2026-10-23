@@ -46,7 +46,7 @@ function buildScene(options: unknown): Scene<unknown, string, unknown> {
     historyLimit: options.historyLimit,
     generateId: options.generateId,
     initial: options.items.map((item) => ({
-      kind: 'leaf',
+      kind: 'mark',
       layer: DEFAULT_LAYER,
       pose: item,
       data: item,

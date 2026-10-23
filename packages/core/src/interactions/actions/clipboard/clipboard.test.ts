@@ -10,9 +10,9 @@ import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 
 function makeStubScene(ids: string[]) {
-  const nodes = new Map<string, { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: null }>();
+  const nodes = new Map<string, { id: NodeId; kind: 'mark'; layer: string; pose: unknown; data: unknown; parent: null }>();
   for (const id of ids) {
-    nodes.set(id, { id: asNodeId(id), kind: 'leaf', layer: 'main', pose: {}, data: {}, parent: null });
+    nodes.set(id, { id: asNodeId(id), kind: 'mark', layer: 'main', pose: {}, data: {}, parent: null });
   }
   const applyBatchLog: Array<{ ops: Op[]; label: string }> = [];
   return {

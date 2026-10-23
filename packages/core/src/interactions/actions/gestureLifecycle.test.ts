@@ -47,8 +47,8 @@ describe('commitGestureOps — whether the commit landed', () => {
   /** A loose leaf beside a container whose arrivals `arrive` decides. */
   function target(arrive: 'takes' | 'refuses', applyOps?: (ops: Op[], label: string) => void) {
     const scene = createScene<unknown, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-    scene.add({ kind: 'container', id: asNodeId('box'), layer: 'main', pose: POSE, data: null });
-    scene.add({ kind: 'leaf', id: asNodeId('loose'), layer: 'main', pose: POSE, data: null });
+    scene.add({ kind: 'group', id: asNodeId('box'), layer: 'main', pose: POSE, data: null });
+    scene.add({ kind: 'mark', id: asNodeId('loose'), layer: 'main', pose: POSE, data: null });
     scene.setArrivalHandler(() => (arrive === 'refuses' ? null : new Map()));
     return { scene, at: { scene: scene as never, applyOps, adapter: moveGestureAdapter(scene) } };
   }

@@ -27,7 +27,7 @@ function makeScene(): Scene<Data, Layer> {
 }
 
 function addNode(scene: Scene<Data, Layer>, label: string): NodeId {
-  return scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label } });
+  return scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label } });
 }
 
 /** An op that mutates through the scene's own public methods — the shape that
@@ -37,7 +37,7 @@ function addNodeOp(scene: Scene<Data, Layer>, id: NodeId, label: string): Op {
   return {
     label: `add ${label}`,
     apply: () => {
-      scene.add({ id, kind: 'leaf', layer: 'main', pose: POSE, data: { label } });
+      scene.add({ id, kind: 'mark', layer: 'main', pose: POSE, data: { label } });
     },
     invert: () => ({
       label: `remove ${label}`,

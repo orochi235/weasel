@@ -19,13 +19,13 @@ function edgeScene(
     systemLayers: [{ id: 'default' }],
     initial: [
       ...(parent ? [{
-        id: parent, kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+        id: parent, kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
         clipFromPose: () => ({ kind: 'rect', x: 0, y: 490, width: 150, height: 30 }),
       }] : []),
-      { id: 'a' as NodeId, kind: 'leaf', layer: 'default', pose: box(0, 500), data: {} },
-      { id: 'b' as NodeId, kind: 'leaf', layer: 'default', pose: box(200, 500), data: {} },
+      { id: 'a' as NodeId, kind: 'mark', layer: 'default', pose: box(0, 500), data: {} },
+      { id: 'b' as NodeId, kind: 'mark', layer: 'default', pose: box(200, 500), data: {} },
       {
-        id: 'edge' as NodeId, kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 },
+        id: 'edge' as NodeId, kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 },
         data: {}, ...(parent ? { parent } : {}), dependsOn: ['a' as NodeId, 'b' as NodeId],
         derivePath: (_n: unknown, deps: readonly ({ pose: P } | undefined)[]) => {
           const [from, to] = [deps[0]?.pose, deps[1]?.pose];

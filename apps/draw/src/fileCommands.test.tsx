@@ -35,7 +35,7 @@ function seededScene(): DrawScene {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
   for (const id of ['a', 'b']) {
     scene.add({
-      kind: 'leaf', layer: 'default', id: asNodeId(id),
+      kind: 'mark', layer: 'default', id: asNodeId(id),
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
     });

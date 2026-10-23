@@ -8,7 +8,7 @@ const POSE = { x: 0, y: 0, width: 10, height: 10 };
 
 function makeScene() {
   const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-  const id: NodeId = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
+  const id: NodeId = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'a' } });
   return { scene, id };
 }
 
@@ -68,8 +68,8 @@ describe('Scene.overrides', () => {
 describe('Scene.overrides — lifecycle', () => {
   it('clears the override of a removed node, and of its descendants', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-    const parent = scene.add({ kind: 'container', layer: 'main', pose: POSE, data: { label: 'p' } });
-    const child = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'c' }, parent });
+    const parent = scene.add({ kind: 'group', layer: 'main', pose: POSE, data: { label: 'p' } });
+    const child = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'c' }, parent });
 
     scene.overrides.set(parent, { pose: { x: 1, y: 1, width: 10, height: 10 } });
     scene.overrides.set(child, { pose: { x: 2, y: 2, width: 10, height: 10 } });

@@ -18,10 +18,10 @@ function lockedScene() {
   const scene = createScene<Data, Layer>({
     systemLayers: [{ id: 'base' }, { id: 'art' }],
   });
-  const free = scene.add({ kind: 'leaf', id: asNodeId('free'), layer: 'base', pose: POSE, data: { label: 'free' } });
-  const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'art', pose: POSE, data: { label: 'box' } });
-  const kid = scene.add({ kind: 'leaf', id: asNodeId('kid'), layer: 'art', pose: POSE, data: { label: 'kid' }, parent: box });
-  const art = scene.add({ kind: 'leaf', id: asNodeId('art'), layer: 'art', pose: POSE, data: { label: 'art' } });
+  const free = scene.add({ kind: 'mark', id: asNodeId('free'), layer: 'base', pose: POSE, data: { label: 'free' } });
+  const box = scene.add({ kind: 'group', id: asNodeId('box'), layer: 'art', pose: POSE, data: { label: 'box' } });
+  const kid = scene.add({ kind: 'mark', id: asNodeId('kid'), layer: 'art', pose: POSE, data: { label: 'kid' }, parent: box });
+  const art = scene.add({ kind: 'mark', id: asNodeId('art'), layer: 'art', pose: POSE, data: { label: 'art' } });
   scene.setLayerLocked('art', true);
   return { scene, free, box, kid, art };
 }
@@ -35,8 +35,8 @@ describe('Scene — isLocked', () => {
 
   it('a child inherits its container lock even on an unlocked layer', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }, { id: 'art' }] });
-    const box = scene.add({ kind: 'container', layer: 'base', pose: POSE, data: { label: 'box' } });
-    const kid = scene.add({ kind: 'leaf', layer: 'art', pose: POSE, data: { label: 'kid' }, parent: box });
+    const box = scene.add({ kind: 'group', layer: 'base', pose: POSE, data: { label: 'box' } });
+    const kid = scene.add({ kind: 'mark', layer: 'art', pose: POSE, data: { label: 'kid' }, parent: box });
     scene.setLayerLocked('base', true);
     expect(scene.isLocked(kid)).toBe(true);
   });
@@ -63,8 +63,8 @@ describe('Scene — mutation guard', () => {
       ['move', () => scene.move(kid, null)],
       ['move into a locked container', () => scene.move(free, box)],
       ['reorder', () => scene.reorder(kid, 0)],
-      ['add onto a locked layer', () => scene.add({ kind: 'leaf', layer: 'art', pose: POSE, data: { label: 'n' } })],
-      ['add under a locked container', () => scene.add({ kind: 'leaf', layer: 'art', pose: POSE, data: { label: 'n' }, parent: box })],
+      ['add onto a locked layer', () => scene.add({ kind: 'mark', layer: 'art', pose: POSE, data: { label: 'n' } })],
+      ['add under a locked container', () => scene.add({ kind: 'mark', layer: 'art', pose: POSE, data: { label: 'n' }, parent: box })],
     ];
     for (const [name, attempt] of attempts) {
       expect(attempt, name).toThrow(/locked/);
@@ -79,8 +79,8 @@ describe('Scene — mutation guard', () => {
 
   it('refuses a removal whose cascade reaches a locked dependent', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }, { id: 'art' }] });
-    const a = scene.add({ kind: 'leaf', layer: 'base', pose: POSE, data: { label: 'a' } });
-    const edge = scene.add({ kind: 'leaf', layer: 'art', pose: POSE, data: { label: 'e' }, dependsOn: [a] });
+    const a = scene.add({ kind: 'mark', layer: 'base', pose: POSE, data: { label: 'a' } });
+    const edge = scene.add({ kind: 'mark', layer: 'art', pose: POSE, data: { label: 'e' }, dependsOn: [a] });
     scene.setLayerLocked('art', true);
     expect(() => scene.remove(a)).toThrow(/locked/);
     expect(scene.get(a)).toBeDefined();
@@ -99,7 +99,7 @@ describe('Scene — mutation guard', () => {
   it('leaves the other layer operations alone', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }] });
     scene.addLayer({ id: 'art', name: 'Art', locked: true });
-    scene.add({ kind: 'leaf', layer: 'base', pose: POSE, data: { label: 'b' } });
+    scene.add({ kind: 'mark', layer: 'base', pose: POSE, data: { label: 'b' } });
     scene.setLayerVisible('art', false);
     scene.renameLayer('art', 'Ink');
     scene.moveLayer('art', 0);
@@ -109,7 +109,7 @@ describe('Scene — mutation guard', () => {
   it('removeLayer takes a locked layer and its nodes as one step', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }] });
     scene.addLayer({ id: 'art', name: 'Art' });
-    const n = scene.add({ kind: 'leaf', layer: 'art', pose: POSE, data: { label: 'n' } });
+    const n = scene.add({ kind: 'mark', layer: 'art', pose: POSE, data: { label: 'n' } });
     scene.setLayerLocked('art', true);
     scene.removeLayer('art');
     expect(scene.get(n)).toBeUndefined();
@@ -132,7 +132,7 @@ describe('Scene — mutation guard', () => {
   it('construction and loadState place nodes on a locked layer', () => {
     const scene = createScene<Data, Layer>({
       systemLayers: [{ id: 'base', locked: true }],
-      initial: [{ kind: 'leaf', id: asNodeId('n'), layer: 'base', pose: POSE, data: { label: 'n' } }],
+      initial: [{ kind: 'mark', id: asNodeId('n'), layer: 'base', pose: POSE, data: { label: 'n' } }],
     });
     expect(scene.get(asNodeId('n'))).toBeDefined();
     scene.loadState(scene.toJSON());
@@ -181,8 +181,8 @@ describe('Scene — selection', () => {
 
   it('locking a layer drops its nodes from the selection; undo puts them back', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }, { id: 'art' }] });
-    const free = scene.add({ kind: 'leaf', layer: 'base', pose: POSE, data: { label: 'f' } });
-    const art = scene.add({ kind: 'leaf', layer: 'art', pose: POSE, data: { label: 'a' } });
+    const free = scene.add({ kind: 'mark', layer: 'base', pose: POSE, data: { label: 'f' } });
+    const art = scene.add({ kind: 'mark', layer: 'art', pose: POSE, data: { label: 'a' } });
     scene.setSelection([free, art]);
     scene.setLayerLocked('art', true);
     expect(scene.getSelection()).toEqual([free]);

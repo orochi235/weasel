@@ -31,7 +31,7 @@ afterAll(() => session.dispose());
 function render(fontWeight: number, paint: 'fill' | 'stroke'): RasterImage {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: { ...POSE },
     data: {

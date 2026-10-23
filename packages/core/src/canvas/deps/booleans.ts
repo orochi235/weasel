@@ -80,7 +80,7 @@ export function useBooleansAdapterSource(
         const data = paint ? { ...rest, ...paint, path: stored.path } : { ...(leaf.node.data as object), path: stored.path };
         return {
           id: sceneRef.current.mintId(),
-          kind: 'leaf',
+          kind: 'mark',
           layer: leaf.node.layer,
           parent: leaf.node.parent ?? null,
           pose: leaf.frame.local(sourceId, stored.pose),

@@ -193,8 +193,8 @@ describe('renderer — a gradient stroke that came from SVG import', () => {
     const { nodes } = parseSvg(SVG);
     let seq = 0;
     const drafts = svgNodesToKitDrafts(nodes, () => `n${++seq}`);
-    const leaf = drafts.find((d) => d.kind === 'leaf');
-    if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
+    const leaf = drafts.find((d) => d.kind === 'mark');
+    if (leaf?.kind !== 'mark') throw new Error('expected a leaf draft');
     const node = { id: leaf.id, pose: leaf.pose, data: leaf.data } as unknown as Node<unknown, string, unknown>;
     const painter = findNodeShape(node)?.paint;
     if (!painter) throw new Error('no painter matched the imported leaf');

@@ -36,7 +36,7 @@ const ID = asNodeId('a');
 
 function mount(props: Record<string, unknown> = {}) {
   const scene = createScene<{ kind: 'rect' }, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: ID, kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
+  scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
   return render(<SceneCanvas features={['draw']} scene={scene} width={64} height={64} {...props} />);
 }

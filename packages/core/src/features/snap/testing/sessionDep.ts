@@ -38,7 +38,7 @@ export function lineSource(at: Point, dir: Point): SnapSource {
 /** A scene holding one leaf per path, on layer `main`, posed as the path. */
 export function sceneOfPaths(paths: readonly PolygonPath[]): AnyScene {
   const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
-  for (const pose of paths) scene.add({ kind: 'leaf', layer: 'main', data: {}, pose } as never);
+  for (const pose of paths) scene.add({ kind: 'mark', layer: 'main', data: {}, pose } as never);
   return scene;
 }
 

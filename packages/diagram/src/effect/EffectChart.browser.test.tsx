@@ -4,6 +4,7 @@ import { cleanup, render, waitFor } from '@testing-library/react';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { fitDiagram } from '../DiagramView';
+import { isDiagramBody } from '../bodyNode';
 import { diagramScene } from '../fromData';
 import { portsOf } from '../ports';
 import { EffectChart } from './EffectChart';
@@ -49,7 +50,7 @@ function onScreen(size: { width: number; height: number }) {
   const specs = diagramScene(drawn.data, drawn.scene);
   const t = viewToTransform(fitDiagram(specs, size, { anchor: 'start' })!);
   const at = (x: number, y: number) => ({ x: t.panX + x * t.zoom.x, y: t.panY + y * t.zoom.y });
-  const stage = (id: string) => specs.find((s) => s.kind === 'container' && s.id === id)!;
+  const stage = (id: string) => specs.find((s) => isDiagramBody(s) && s.id === id)!;
   return { at, stage };
 }
 

@@ -29,7 +29,7 @@ export function ViewportDemo() {
 
   const scene = useScene<Data, Layer, Pose>({
     systemLayers: [{ id: 'scene' }],
-    initial: NODES.map((n) => ({ ...n, id: n.id as never, kind: 'leaf' as const, layer: 'scene' })),
+    initial: NODES.map((n) => ({ ...n, id: n.id as never, kind: 'mark' as const, layer: 'scene' })),
   });
 
   const inertiaConfig = inertiaOn

@@ -10,6 +10,7 @@ import { useRef } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
+import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { insertParent } from 'interactions/actions/insert/parent';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -141,8 +142,9 @@ function boxKindData(
 function insertSite(
   sc: Scene<unknown, string, unknown>,
   into: string | null | undefined,
+  canDropInto?: CanDropIntoDep,
 ): { parent: NodeId | null; layer: string; local: (world: unknown) => unknown } {
-  const parentId = insertParent(sc, into);
+  const parentId = insertParent(sc, into, canDropInto);
   if (parentId === null) {
     return { parent: null, layer: (sc.layers[0]?.id ?? 'default') as string, local: (p) => p };
   }
@@ -178,7 +180,7 @@ export function useInsertDepSource(
     const sc = sceneRef.current;
     const ad = adapterRef.current;
 
-    const site = () => insertSite(sc, registry.get('insertInto')?.get());
+    const site = () => insertSite(sc, registry.get('insertInto')?.get(), registry.get('canDropInto'));
     const build: NonNullable<InsertDep['build']> = (bounds, extras) => {
         const kind = extras.kind;
         const { parent, layer, local } = site();
@@ -200,7 +202,7 @@ export function useInsertDepSource(
           if (built === null) return null;
           return {
             id,
-            ops: [createInsertOp({ node: { id, kind: 'leaf', layer, parent, pose: local(built.pose ?? pose), data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
+            ops: [createInsertOp({ node: { id, kind: 'mark', layer, parent, pose: local(built.pose ?? pose), data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
           };
         }
 
@@ -255,7 +257,7 @@ export function useInsertDepSource(
         if (min) data = { ...(data as object), minSize: min };
         return {
           id,
-          ops: [createInsertOp({ node: { id, kind: 'leaf', layer, parent, pose: local(pose), data } as unknown as { id: string }, label: `Insert ${kind}` })],
+          ops: [createInsertOp({ node: { id, kind: 'mark', layer, parent, pose: local(pose), data } as unknown as { id: string }, label: `Insert ${kind}` })],
         };
     };
     return {

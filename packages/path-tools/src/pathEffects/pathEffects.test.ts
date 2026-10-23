@@ -11,7 +11,7 @@ type TestScene = Scene<unknown, 'default', RectPose>;
 
 const box = (id: string, x: number, color: string, rotation?: number) => ({
   id: id as NodeId,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x, y: 0, width: 20, height: 20, ...(rotation === undefined ? {} : { rotation }) },
   data: { path: rectPath(0, 0, 20, 20), fill: { paint: { color } } },
@@ -19,7 +19,7 @@ const box = (id: string, x: number, color: string, rotation?: number) => ({
 
 const spine = {
   id: 'spine' as NodeId,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: 0, y: 100, width: 200, height: 0 },
   data: { path: { kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 200, 0]), fillRule: 'nonzero' }, stroke: { paint: { color: '#000' }, width: 1 } },
@@ -261,7 +261,7 @@ describe('in a scene whose containers compose frames', () => {
       registry: withPathEffectsRegistry(),
       composition: RIGID_POSE_COMPOSITION,
       initial: [
-        { id: 'g' as NodeId, kind: 'container', layer: 'default', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
+        { id: 'g' as NodeId, kind: 'group', layer: 'default', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
         { ...box('a', 0, '#ff0000'), pose: { x: 0, y: 0, width: 20, height: 10 }, parent: 'g' as NodeId },
         { ...box('b', 95, '#0000ff'), pose: { x: 95, y: 100, width: 10, height: 20 } },
         { ...box('c', 80, '#00ff00'), pose: { x: 80, y: 40, width: 20, height: 10 }, parent: 'g' as NodeId },

@@ -6,7 +6,7 @@ import type { Port } from './types';
 
 interface Rect { x: number; y: number; width: number; height: number }
 
-const node = (data: unknown, id: string): DiagramNodeLike => ({ id, kind: 'leaf', data });
+const node = (data: unknown, id: string): DiagramNodeLike => ({ id, kind: 'mark', data });
 
 /** Two 100×40 participants, 200 apart on the x axis. */
 const PARTICIPANTS = () => [

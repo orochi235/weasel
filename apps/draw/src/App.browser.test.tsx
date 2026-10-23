@@ -87,9 +87,9 @@ const key = (k: string): void => {
 /** Replaces the starter rect with a text node in the same box. */
 function seedText(): void {
   localStorage.setItem(LS_KEY, JSON.stringify({
-    version: 1,
+    version: 2,
     nodes: [{
-      id: 'starter-1', kind: 'leaf', layer: 'default', parent: null,
+      id: 'starter-1', kind: 'mark', layer: 'default', parent: null,
       pose: { x: 80, y: 80, width: 160, height: 100 },
       data: { text: 'Hello', style: { fontSize: 48 } },
     }],

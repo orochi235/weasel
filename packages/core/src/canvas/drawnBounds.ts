@@ -47,8 +47,9 @@ export interface DrawnBoundsOptions {
  * The box of `id` drawn at `pose`, stroke included, in the frame the pose is
  * drawn in: a turned node's box comes back turned with it. A node with no
  * stroke, a painter that declares no {@link NodeShapeEntry.drawnBounds}, or
- * `includeStroke: false` answers `framedBounds` unchanged. A container's box
- * reaches as far as its members' boxes do. A node showing a derived path is
+ * `includeStroke: false` answers `framedBounds` unchanged. A group's box
+ * reaches as far as its members' boxes do; a mark's, as far as its own ink and its
+ * children's do. A node showing a derived path is
  * boxed around that path, and its placeholder pose plays no part.
  */
 export function drawnBoundsOf(
@@ -75,10 +76,18 @@ export function inkExtentsOf(
   if (!node) return NO_INK_EXTENTS;
   const own = framedBounds(pose, descriptorFor(scene, id, opts));
   const unframed = { x: own.x, y: own.y, width: own.width, height: own.height };
-  const members = node.kind === 'container' ? scene.childrenOf?.(id) ?? [] : [];
-  if (members.length > 0) return membersExtents(scene, members, own, opts);
+  const members = scene.childrenOf?.(id) ?? [];
+  const reached = members.length > 0 ? membersExtents(scene, members, own, opts) : NO_INK_EXTENTS;
+  if (node.kind === 'group' && members.length > 0) return reached;
   const drawn = findShapeDrawnBounds(node, pose, withInherited(scene, node, inkCtx(opts.scale, own)));
-  return drawn === null ? NO_INK_EXTENTS : inkExtentsBetween(normalized(unframed), drawn);
+  if (drawn === null) return reached;
+  const ink = inkExtentsBetween(normalized(unframed), drawn);
+  return {
+    left: Math.max(ink.left, reached.left),
+    top: Math.max(ink.top, reached.top),
+    right: Math.max(ink.right, reached.right),
+    bottom: Math.max(ink.bottom, reached.bottom),
+  };
 }
 
 /** The box of a node drawn along `path`: the path's own, grown by the stroke
@@ -93,7 +102,7 @@ function derivedBoundsOf(scene: DrawnBoundsScene, id: NodeId, pose: unknown, pat
   return drawn === null ? own : unionBounds([own, drawn]) ?? own;
 }
 
-/** A container's extents: its members' drawn boxes, taken into its own frame,
+/** A parent's member extents: its members' drawn boxes, taken into its own frame,
  *  past its own box. */
 function membersExtents(
   scene: DrawnBoundsScene,

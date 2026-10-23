@@ -13,9 +13,9 @@ const MOVED = { x: 5, y: 5, width: 10, height: 10 };
 
 function tree() {
   const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }, { id: 'top' }] });
-  const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'base', pose: POSE, data: { label: 'box' } });
-  const kid = scene.add({ kind: 'leaf', id: asNodeId('kid'), layer: 'top', pose: POSE, data: { label: 'kid' }, parent: box });
-  const free = scene.add({ kind: 'leaf', id: asNodeId('free'), layer: 'base', pose: POSE, data: { label: 'free' } });
+  const box = scene.add({ kind: 'group', id: asNodeId('box'), layer: 'base', pose: POSE, data: { label: 'box' } });
+  const kid = scene.add({ kind: 'mark', id: asNodeId('kid'), layer: 'top', pose: POSE, data: { label: 'kid' }, parent: box });
+  const free = scene.add({ kind: 'mark', id: asNodeId('free'), layer: 'base', pose: POSE, data: { label: 'free' } });
   return { scene, box, kid, free };
 }
 
@@ -118,7 +118,7 @@ describe('Scene — node flags in a snapshot', () => {
 
   it('add takes the flags from the spec, and a removal restores them', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }] });
-    const n = scene.add({ kind: 'leaf', layer: 'base', pose: POSE, data: { label: 'n' }, hidden: true });
+    const n = scene.add({ kind: 'mark', layer: 'base', pose: POSE, data: { label: 'n' }, hidden: true });
     expect(scene.isHidden(n)).toBe(true);
     scene.remove(n);
     scene.undo();

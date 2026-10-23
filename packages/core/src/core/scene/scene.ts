@@ -13,7 +13,7 @@ import { createSceneRecording } from './sceneRecording';
 import { createSceneSelection } from './sceneSelection';
 import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
-import { layerFromSerialized, specsFromSerialized } from './serialization';
+import { layerFromSerialized, specsFromSerialized, type V1Classifier } from './serialization';
 import { resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from './composeFrame';
 import {
@@ -25,6 +25,7 @@ import {
   type Scene,
   type SceneRegistry,
   type SerializedScene,
+  type SerializedSceneV1,
   type UseSceneOptions,
 } from './types';
 
@@ -180,8 +181,9 @@ function buildScene<TData, TLayer extends string, TPose>(
  *  keys, or invalid scene shape (cross-layer subtrees, unknown layer ids).
  *  The scene starts with empty history. */
 export function sceneFromJSON<TData, TLayer extends string, TPose>(
-  json: SerializedScene<TData, TLayer, TPose>,
+  json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   options: {
+    classifyV1?: V1Classifier<TData, TLayer, TPose>;
     registry?: SceneRegistry<TPose, TData, TLayer>;
     historyLimit?: number;
     coalesceWindowMs?: number;
@@ -194,7 +196,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
   return buildScene(
     options,
     json.systemLayers.map(layerFromSerialized),
-    (registry) => specsFromSerialized(json, registry),
+    (registry) => specsFromSerialized(json, registry, { classifyV1: options.classifyV1 }),
     json.doc,
   );
 }

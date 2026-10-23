@@ -47,7 +47,7 @@ function setup() {
   };
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
   scene.add({
-    kind: 'leaf', layer: 'default', id: asNodeId('a'),
+    kind: 'mark', layer: 'default', id: asNodeId('a'),
     pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
   });

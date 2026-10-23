@@ -431,11 +431,11 @@ describe('useSceneTextEdit — a derived pose', () => {
         registry: { derivePose: { 'test:shift': derive } },
         initial: [
           {
-            id: asNodeId('anchor'), kind: 'leaf', layer: 'main',
+            id: asNodeId('anchor'), kind: 'mark', layer: 'main',
             pose: { x: 0, y: 0, width: 10, height: 10 }, data: {},
           },
           {
-            id: asNodeId('label'), kind: 'leaf', layer: 'main',
+            id: asNodeId('label'), kind: 'mark', layer: 'main',
             pose: { x: 0, y: 0, width: 200, height: 40 },
             data: { text: 'hello', style: { fontSize: 16 } },
             dependsOn: [asNodeId('anchor')], derivePose: derive,

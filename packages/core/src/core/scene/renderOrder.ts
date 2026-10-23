@@ -2,6 +2,7 @@
  * A scene's render order: its nodes layer-major, each layer in tree preorder,
  * cached until the structure changes.
  */
+import { hasChildren } from './treeShape';
 import type { Node, NodeId } from './types';
 
 /** What the walks read of a scene's state. */
@@ -85,7 +86,7 @@ export function createRenderOrder<TData, TLayer extends string, TPose>(
       const node = state.nodes.get(id);
       if (!node) continue;
       if (node.layer === only) out.push(id);
-      if (node.kind === 'container') {
+      if (hasChildren(node)) {
         for (let i = node.children.length - 1; i >= 0; i--) {
           stack.push(node.children[i]);
         }
@@ -103,7 +104,7 @@ export function createRenderOrder<TData, TLayer extends string, TPose>(
       const node = state.nodes.get(id);
       if (!node) continue;
       if (node.layer === only) out.push(node);
-      if (node.kind === 'container') {
+      if (hasChildren(node)) {
         for (let i = node.children.length - 1; i >= 0; i--) {
           stack.push(node.children[i]);
         }
@@ -123,7 +124,7 @@ export function createRenderOrder<TData, TLayer extends string, TPose>(
       if (!node) continue;
       const bucket = buckets[state.layerIndex.get(node.layer) ?? -1];
       if (bucket) bucket.push(id);
-      if (node.kind === 'container') {
+      if (hasChildren(node)) {
         for (let i = node.children.length - 1; i >= 0; i--) {
           stack.push(node.children[i]);
         }
@@ -145,7 +146,7 @@ export function createRenderOrder<TData, TLayer extends string, TPose>(
       if (!node) continue;
       const bucket = buckets[state.layerIndex.get(node.layer) ?? -1];
       if (bucket) bucket.push(node);
-      if (node.kind === 'container') {
+      if (hasChildren(node)) {
         for (let i = node.children.length - 1; i >= 0; i--) {
           stack.push(node.children[i]);
         }

@@ -124,8 +124,8 @@ describe('moveAction integration via gesture dispatcher', () => {
   it('drag pointerdown→move→up translates selected nodes by delta', () => {
     // Build scene with two nodes at (0,0) and (100,0).
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const idA = scene.add({ kind: 'leaf', layer: 'main', data: { kind: 'rect' }, pose: { x: 0, y: 0, width: 50, height: 50 } });
-    const idB = scene.add({ kind: 'leaf', layer: 'main', data: { kind: 'rect' }, pose: { x: 100, y: 0, width: 50, height: 50 } });
+    const idA = scene.add({ kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 0, y: 0, width: 50, height: 50 } });
+    const idB = scene.add({ kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 100, y: 0, width: 50, height: 50 } });
 
     const selection = makeSelection([idA, idB]);
     const Harness = buildHarness(scene, selection);
@@ -149,7 +149,7 @@ describe('moveAction integration via gesture dispatcher', () => {
 
   it('drag cancelled mid-gesture restores original poses (verify cancel path)', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const idA = scene.add({ kind: 'leaf', layer: 'main', data: { kind: 'rect' }, pose: { x: 5, y: 5, width: 50, height: 50 } });
+    const idA = scene.add({ kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 5, y: 5, width: 50, height: 50 } });
 
     const selection = makeSelection([idA]);
     const Harness = buildHarness(scene, selection);
@@ -169,7 +169,7 @@ describe('moveAction integration via gesture dispatcher', () => {
 
   it('drag with empty selection is a no-op (no scene mutation)', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const idA = scene.add({ kind: 'leaf', layer: 'main', data: { kind: 'rect' }, pose: { x: 10, y: 10, width: 50, height: 50 } });
+    const idA = scene.add({ kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 10, y: 10, width: 50, height: 50 } });
 
     const selection = makeSelection([]); // empty
     const Harness = buildHarness(scene, selection);

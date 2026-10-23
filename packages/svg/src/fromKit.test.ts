@@ -208,9 +208,9 @@ describe('svgNodesFromKit', () => {
     roots: ['g', 'c'],
     childrenOf: (id) => (id === 'g' ? ['a', 'b'] : []),
     get: (id) => {
-      if (id === 'g') return { kind: 'container', data: {}, pose: BOX };
+      if (id === 'g') return { kind: 'group', data: {}, pose: BOX };
       const x = id === 'a' ? 0 : id === 'b' ? 20 : 40;
-      return { kind: 'leaf', data: { path: { kind: 'rect', x, y: 0, width: 10, height: 10 } }, pose: { x, y: 0, width: 10, height: 10 } };
+      return { kind: 'mark', data: { path: { kind: 'rect', x, y: 0, width: 10, height: 10 } }, pose: { x, y: 0, width: 10, height: 10 } };
     },
   };
 
@@ -262,11 +262,11 @@ describe('svgNodesFromKit', () => {
     const drafts = svgNodesToKitDrafts(parsed, () => `n${n++}`);
     const scene = createScene<Record<string, unknown>, 'default'>({ systemLayers: [{ id: 'default' }] });
     scene.loadState({
-      version: 1,
+      version: 2,
       systemLayers: [{ id: 'default' }],
       nodes: drafts.map((d) => ({
         id: d.id, kind: d.kind, layer: 'default', pose: d.pose,
-        data: d.kind === 'leaf' ? d.data : {},
+        data: d.kind === 'mark' ? d.data : {},
         ...(d.parentId ? { parent: d.parentId } : {}),
       })),
     } as never);
@@ -283,7 +283,7 @@ describe('svgImageFromKit', () => {
       opacity: 0.5, rotation: Math.PI / 4,
     }])).nodes;
     const [d] = svgNodesToKitDrafts(original, () => 'i');
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     const back = svgImageFromKit(
       d.data.image as Parameters<typeof svgImageFromKit>[0], d.pose,
     );
@@ -298,7 +298,7 @@ describe('svgImageFromKit', () => {
       + '<text transform="scale(4 1)" fill="#000" x="0" y="10" font-size="10" data-weasel-width="40" data-weasel-height="12">Hi</text></svg>',
     ).nodes;
     const [image, text] = svgNodesToKitDrafts(original, () => 'i');
-    if (image.kind !== 'leaf' || text.kind !== 'leaf') throw new Error('expected leaves');
+    if (image.kind !== 'mark' || text.kind !== 'mark') throw new Error('expected leaves');
     expect(svgLeafFromKit(image.data, image.pose)).toEqual(original[0]);
     expect(svgLeafFromKit(text.data, text.pose)).toEqual(original[1]);
   });

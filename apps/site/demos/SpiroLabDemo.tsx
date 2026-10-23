@@ -35,7 +35,7 @@ function spiroNode(id: string, contour: SpiroContour, color: string) {
   const { x, y, width, height } = boundsOfPath(path);
   return {
     id: asNodeId(id),
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as const,
     pose: { x, y, width, height },
     data: {

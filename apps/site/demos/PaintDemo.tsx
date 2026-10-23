@@ -69,7 +69,7 @@ function Swatch({ path, paint }: { path: Path; paint: SwatchPaint }) {
   const scene = useScene<SwatchPaint & { path: Path }, 'default'>({
     systemLayers: [{ id: 'default' }],
     initial: [{
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       id: asNodeId('swatch'),
       pose: { x: 14, y: 14, width: 112, height: 72 },

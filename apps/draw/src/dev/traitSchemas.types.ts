@@ -68,7 +68,7 @@ export interface SceneNodeVariant {
 }
 
 export interface SceneNodeSchema {
-  /** The discriminator field's possible values, e.g. `['leaf', 'container']`. */
+  /** The discriminator field's possible values, e.g. `['mark', 'group']`. */
   readonly kinds: readonly string[];
   readonly variants: readonly SceneNodeVariant[];
   readonly source: SourceRef;

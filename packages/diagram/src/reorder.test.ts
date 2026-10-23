@@ -143,8 +143,8 @@ describe('createReorderAction sliding the others', () => {
   function column() {
     const scene = createScene<unknown, 'main', ReturnType<typeof box>>({ systemLayers: [{ id: 'main' }] });
     const spans = { a: [0, 40], b: [50, 20], c: [80, 40] } as const;
-    for (const [id, [y, h]] of Object.entries(spans)) scene.add({ id: id as never, kind: 'leaf', layer: 'main', pose: box(0, y, 100, h), data: {} });
-    scene.add({ id: 'a.title' as never, kind: 'leaf', layer: 'main', pose: box(10, 5, 50, 10), data: {} });
+    for (const [id, [y, h]] of Object.entries(spans)) scene.add({ id: id as never, kind: 'mark', layer: 'main', pose: box(0, y, 100, h), data: {} });
+    scene.add({ id: 'a.title' as never, kind: 'mark', layer: 'main', pose: box(10, 5, 50, 10), data: {} });
     const slots = sequenceSlots('y', Object.entries(spans).map(([id, [y, h]]) => ({
       id, bounds: box(0, y, 100, h), ...(id === 'a' ? { carries: ['a', 'a.title'] } : {}),
     })));
@@ -187,7 +187,7 @@ describe('createReorderAction sliding the others', () => {
     handle.onEnd!(at(45), 'commit');
     expect(commit.mock.calls[0]![0]).toEqual({ id: 'a', from: 0, to: 2, order: ['b', 'a', 'c'] });
     expect(scene.overrides.read('b' as never)?.pose?.y).toBe(0);
-    scene.add({ id: 'd' as never, kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
+    scene.add({ id: 'd' as never, kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
     expect(scene.overrides.has('b' as never)).toBe(false);
   });
 

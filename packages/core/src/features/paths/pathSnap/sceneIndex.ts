@@ -36,7 +36,7 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
     const paths: Path[] = [];
     const extra: PathSnapTarget[] = [];
     for (const node of scene.nodes.values()) {
-      if (node.kind !== 'leaf' || notes.has(node.layer) || gates.hidden(node.id)) continue;
+      if (node.kind !== 'mark' || notes.has(node.layer) || gates.hidden(node.id)) continue;
       const g = nodeSnapGeometry(node);
       if (!g) continue;
       for (const p of g.points) extra.push({ ...p, paths: [paths.length] });

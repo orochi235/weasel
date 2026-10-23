@@ -31,7 +31,7 @@ const SHAPES: Record<string, Path> = {
 
 function renderCommands(cmds: DrawCommand[]): RasterImage {
   const scene = createScene<{ cmd: DrawCommand }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  for (const cmd of cmds) scene.add({ kind: 'leaf', layer: 'main', pose: { ...SOURCE }, data: { cmd } });
+  for (const cmd of cmds) scene.add({ kind: 'mark', layer: 'main', pose: { ...SOURCE }, data: { cmd } });
   return renderSceneToPixels({
     scene, sourceRect: SOURCE, scale: SCALE, background: '#000000',
     drawOne: (node) => [node.data.cmd],

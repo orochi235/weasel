@@ -40,7 +40,7 @@ const ANNOTATIONS: Layer = 'annotations';
 
 const shape = (id: string, x: number, y: number, width: number, height: number, color: string) => ({
   id: asNodeId(id),
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x, y, width, height },
   data: { fill: { paint: solid(color) } },

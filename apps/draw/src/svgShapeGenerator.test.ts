@@ -16,7 +16,7 @@ const PAGE = { filename: 'page', paperSize: 'letter', paperWidth: 200, paperHeig
 const STAR: ShapeGenerator = { kind: 'star', points: 6, innerRadiusRatio: 0.4, rotation: 0.25 };
 
 function sceneOf(data: Record<string, unknown>) {
-  const node = { id: 's', kind: 'leaf', layer: 'default', parent: null, pose: { x: 20, y: 30, width: 100, height: 100, rotation: 0.5 }, data };
+  const node = { id: 's', kind: 'mark', layer: 'default', parent: null, pose: { x: 20, y: 30, width: 100, height: 100, rotation: 0.5 }, data };
   return {
     roots: ['s'],
     composition: IDENTITY_POSE_COMPOSITION,
@@ -28,7 +28,7 @@ function sceneOf(data: Record<string, unknown>) {
 async function roundTrip(svg: string) {
   let n = 0;
   const drafts = svgNodesToSceneDrafts(parseSvg(svg, { namespaces: SWILL_NAMESPACES }), () => `n${n++}`);
-  if (drafts[0]?.kind !== 'leaf') throw new Error('expected a leaf');
+  if (drafts[0]?.kind !== 'mark') throw new Error('expected a leaf');
   return leafOfObj(drafts[0].obj);
 }
 

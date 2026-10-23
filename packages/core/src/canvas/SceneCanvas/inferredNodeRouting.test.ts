@@ -38,9 +38,9 @@ describe('inferredNodeRouting', () => {
     for (const table of [inferredNodeRouting, [groupNodeRouting, ...defaultNodeRouting]]) {
       const r = createNodeRouting();
       for (const k of table) r.register(k);
-      expect(r.classify({}, { kind: 'container' })).toBe('group');
-      expect(r.classify({ text: 'hi' }, { kind: 'container' })).toBe('group');
-      expect(r.classify({}, { kind: 'leaf' })).toBe('unknown');
+      expect(r.classify({}, { kind: 'group' })).toBe('group');
+      expect(r.classify({ text: 'hi' }, { kind: 'group' })).toBe('group');
+      expect(r.classify({}, { kind: 'mark' })).toBe('unknown');
       expect(r.classify({})).toBe('unknown');
     }
   });
@@ -50,5 +50,16 @@ describe('inferredNodeRouting', () => {
     for (const k of defaultNodeRouting) r.register(k);
     expect(r.classify({ kind: 'rect' })).toBe('rect');
     expect(r.classify({ kind: 'pen' })).toBe('pen');
+  });
+});
+
+describe('inferredNodeRouting — a mark that has children', () => {
+  it('routes by its data, not as a group', () => {
+    const r = createNodeRouting();
+    for (const k of inferredNodeRouting) r.register(k);
+    const mark = { kind: 'mark', children: ['c'] } as never;
+    expect(r.classify({ text: 'hi' }, mark)).toBe('text');
+    expect(r.classify({ color: '#fff' }, mark)).toBe('unknown');
+    expect(r.classify({}, { kind: 'group' } as never)).toBe('group');
   });
 });

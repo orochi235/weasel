@@ -37,7 +37,7 @@ function grid(): AnyScene {
   const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'main' }] });
   for (let i = 0; i < 1000; i++) {
     scene.add({
-      id: asNodeId(`n${i}`), kind: 'leaf', layer: 'main', data: null,
+      id: asNodeId(`n${i}`), kind: 'mark', layer: 'main', data: null,
       pose: { x: (i % 40) * 30, y: Math.floor(i / 40) * 30, width: 20, height: 20 },
     } as never);
   }
@@ -110,7 +110,7 @@ describe('useSceneSelectTool through the pick index', () => {
     // and took the whole pose box for a triangle.
     const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'main' }] }) as AnyScene;
     const A = asNodeId('a');
-    scene.add({ id: A, kind: 'leaf', layer: 'main', data: null, pose: { x: 500, y: 500, width: 20, height: 20 } } as never);
+    scene.add({ id: A, kind: 'mark', layer: 'main', data: null, pose: { x: 500, y: 500, width: 20, height: 20 } } as never);
     const triangle: Path = {
       kind: 'polygon', commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_Z),
       coords: Float32Array.of(0, 0, 100, 0, 0, 100), fillRule: 'nonzero',
@@ -129,7 +129,7 @@ describe('useSceneSelectTool through the pick index', () => {
     const full = scenePickSource(scene);
     const rect = { x: 100, y: 100, width: 75, height: 50 };
     const tri = [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 0, y: 200 }];
-    const each = { includeContainers: true };
+    const each = { includeGroups: true };
 
     const before = pickIndexBuildCount();
     const marquee = adapter.hitTestArea!(rect);

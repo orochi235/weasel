@@ -58,14 +58,14 @@ export function makeFrameFixture(
   });
   scene.add({
     id: FRAME_FIXTURE_IDS.group,
-    kind: 'container',
+    kind: 'group',
     layer: 'main',
     data: { label: 'group' },
     pose: { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2 },
   });
   scene.add({
     id: FRAME_FIXTURE_IDS.upright,
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     parent: FRAME_FIXTURE_IDS.group,
     data: { label: 'upright' },
@@ -73,7 +73,7 @@ export function makeFrameFixture(
   });
   scene.add({
     id: FRAME_FIXTURE_IDS.turned,
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     parent: FRAME_FIXTURE_IDS.group,
     data: { label: 'turned' },

@@ -33,7 +33,7 @@ function run(
   const scene = createScene<{ kind: string }, 'main', Pose>({
     systemLayers: [{ id: 'main', visible: true, locked: false }],
   }) as unknown as AnyScene;
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: { kind: 'rect' } });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose, data: { kind: 'rect' } });
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
     begin: (req) => createSnapSession2dForTests({

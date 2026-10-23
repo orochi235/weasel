@@ -64,14 +64,14 @@ interface PanelItem {
 // path-pose hit-tester picks them up without a custom pickEvery.
 const INITIAL_NODES = [
   {
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as const,
     id: asNodeId('rect'),
     pose: RECT_INPUT,
     data: { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
   },
   {
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as const,
     id: asNodeId('circle'),
     pose: CIRCLE_INPUT,
@@ -142,7 +142,7 @@ function InteractivePanel() {
         if (!path) return;
         pendingPathsRef.current.delete(node.id);
         sceneRef.current.add({
-          kind: 'leaf',
+          kind: 'mark',
           layer: 'default',
           id: asNodeId(node.id),
           pose: path,
@@ -176,14 +176,14 @@ function InteractivePanel() {
     }
     // Re-add initial nodes
     scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       id: asNodeId('rect'),
       pose: RECT_INPUT,
       data: { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
     });
     scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       id: asNodeId('circle'),
       pose: CIRCLE_INPUT,

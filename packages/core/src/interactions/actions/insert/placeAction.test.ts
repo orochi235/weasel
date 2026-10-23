@@ -69,7 +69,7 @@ describe('placeAction', () => {
 
   it('tells the snap session the container the node lands in', () => {
     const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
-    const g = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
+    const g = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
     const told: Array<string | undefined> = [];
     const spy = { id: 'spy', roles: ['pointer'], *collect(q: { parent?: string }) { told.push(q.parent); } };
     const snap: SnapDep = sessionDep(scene as never, [spy as never]);

@@ -28,7 +28,7 @@ export interface EditableShape {
 /** Whether `node` is a leaf whose only geometry is its rect pose, drawn by
  *  the kit's rect fallback. */
 function drawsPoseAlone(node: EditableShape): boolean {
-  if (node.kind !== 'leaf' || (node.data as { path?: unknown } | null)?.path != null) return false;
+  if (node.kind !== 'mark' || (node.data as { path?: unknown } | null)?.path != null) return false;
   return findNodeShape(node as never) === RECT_FALLBACK_PAINTER;
 }
 

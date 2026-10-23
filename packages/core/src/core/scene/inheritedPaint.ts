@@ -25,9 +25,9 @@ export function inheritsPaint(node: { data?: unknown }): boolean {
 const LAST = new WeakMap<object, InheritedPaint>();
 
 /**
- * {@link InheritedPaint} for `node`, given its ancestors innermost first. Only
- * containers are sources; one whose own field is `'inherit'` passes the
- * question on to the next, and running out of containers is none.
+ * {@link InheritedPaint} for `node`, given its ancestors innermost first. Any
+ * ancestor is a source, mark or group; one whose own field is `'inherit'`
+ * passes the question on to the next, and running out of ancestors is none.
  *
  * Hands back the object it returned last time for `node` while both values
  * are the same references, so a memo can key on it.
@@ -43,7 +43,6 @@ export function inheritedPaintOf(
   let stroke: PaintedStroke | null = null;
   for (const a of ancestors) {
     if (!wantFill && !wantStroke) break;
-    if (a.kind !== 'container') continue;
     const ad = a.data as PaintData;
     if (wantFill && ad?.fill !== INHERIT) {
       fill = resolveFill(ad?.fill);

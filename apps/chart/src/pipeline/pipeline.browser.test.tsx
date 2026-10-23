@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { fitViewToBounds, viewToTransform, type RectPose } from '@weasel-js/core';
-import { diagramScene } from '@weasel-js/diagram';
+import { diagramGroupOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
 import {
   AT_COLOR, EFFECT_MIN_SCALE, IMAGE_STAGE_TYPES, editorScene, mainChain, previewRowId, setLookRoute, stageFromType, wireEnds,
   type EffectDoc,
@@ -196,7 +196,7 @@ describe('WeaselChart pipeline mode', () => {
       const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
       const r = canvas.getBoundingClientRect();
       const opened = editorScene(RUN_DOC);
-      const boxes = diagramScene(opened.data, opened.scene).filter((s) => s.kind === 'container').map((s) => s.pose as RectPose);
+      const boxes = diagramScene(opened.data, opened.scene).filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
       const left = Math.min(...boxes.map((b) => b.x));
       const top = Math.min(...boxes.map((b) => b.y));
       const bounds = {

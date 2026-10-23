@@ -53,7 +53,7 @@ function paste(fill: (dt: DataTransfer) => void): ClipboardEvent {
 
 const NODE_TEXT = buildWeaselClipboardText([
   {
-    kind: 'leaf', id: 'src-1', layer: 'main', parent: null,
+    kind: 'mark', id: 'src-1', layer: 'main', parent: null,
     pose: { x: 10, y: 10, width: 20, height: 20 }, data: {},
   },
 ]);

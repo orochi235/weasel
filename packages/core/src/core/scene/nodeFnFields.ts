@@ -9,12 +9,12 @@
 import type { NodeId, SceneRegistry } from './types';
 
 /** A node's function field, opaque here: the table moves these around by
- *  reference and never calls one. A container's `layout` is an object rather
+ *  reference and never calls one. A node's `layout` is an object rather
  *  than a function, and rides the same table for the same reason. */
 export type NodeFn = ((...args: never[]) => unknown) | object;
 
 /** A node as this module reads it — a bag with the function fields on it. */
-export type FnBearingNode = { id: NodeId; kind: 'leaf' | 'container' } & {
+export type FnBearingNode = { id: NodeId; kind: 'mark' | 'group' } & {
   [K in NodeFnFieldName]?: NodeFn;
 };
 
@@ -29,8 +29,6 @@ export interface NodeFnFieldSpec {
   readonly opKey: string;
   /** Its key in a `SerializedNode`. */
   readonly jsonKey: string;
-  /** True for a field only a `ContainerNode` can carry. */
-  readonly containersOnly: boolean;
   /** What a node loses when its key is not in the registry, for the warning. */
   readonly lost: string;
 }
@@ -40,35 +38,30 @@ export const NODE_FN_FIELDS: readonly NodeFnFieldSpec[] = [
     field: 'clipFromPose',
     opKey: 'clipKey',
     jsonKey: 'clipFromPoseKey',
-    containersOnly: true,
     lost: 'clip',
   },
   {
     field: 'copiesFromPose',
     opKey: 'copiesKey',
     jsonKey: 'copiesFromPoseKey',
-    containersOnly: true,
     lost: 'copies',
   },
   {
     field: 'derivePath',
     opKey: 'derivePathKey',
     jsonKey: 'derivePathKey',
-    containersOnly: false,
     lost: 'derived path',
   },
   {
     field: 'derivePose',
     opKey: 'derivePoseKey',
     jsonKey: 'derivePoseKey',
-    containersOnly: false,
     lost: 'derived pose',
   },
   {
     field: 'layout',
     opKey: 'layoutKey',
     jsonKey: 'layoutKey',
-    containersOnly: true,
     lost: 'layout',
   },
 ];
@@ -80,10 +73,9 @@ export interface NodeFnField {
   keyOf(fn: NodeFn): string | undefined;
   /** `registry key → fn`, for restoring one. */
   fnOf(key: string): NodeFn | undefined;
-  /** The function on `node`, or `undefined` — including when the field is
-   *  container-only and `node` is a leaf. */
+  /** The function on `node`, or `undefined`. */
   read(node: FnBearingNode): NodeFn | undefined;
-  /** Attach `fn` to `node`, ignoring a container-only field on a leaf. */
+  /** Attach `fn` to `node`. */
   write(node: FnBearingNode, fn: NodeFn): void;
 }
 
@@ -96,15 +88,12 @@ export function createNodeFnFields<TPose>(
     const table = registry[spec.field] as Readonly<Record<string, NodeFn>> | undefined;
     const reverse = new Map<NodeFn, string>();
     if (table) for (const [key, fn] of Object.entries(table)) reverse.set(fn, key);
-    const applies = (node: FnBearingNode): boolean =>
-      !spec.containersOnly || node.kind === 'container';
     return {
       spec,
       keyOf: (fn) => reverse.get(fn),
       fnOf: (key) => table?.[key],
-      read: (node) => (applies(node) ? node[spec.field] : undefined),
+      read: (node) => node[spec.field],
       write: (node, fn) => {
-        if (!applies(node)) return;
         node[spec.field] = fn;
         onWrite?.(spec.field, node);
       },
@@ -162,16 +151,15 @@ export function fnKeysOf(
 /**
  * The function fields to carry from a live node into an `AddNodeSpec`. An
  * insert that drops them brings an edge back as a static path that never
- * follows its endpoints again, and a clipped container back with nothing
+ * follows its endpoints again, and a clipped group back with nothing
  * clipped.
  */
-export function fnFieldsOfNode<T extends { kind: 'leaf' | 'container' }>(
+export function fnFieldsOfNode<T extends { kind: 'mark' | 'group' }>(
   node: T,
 ): Partial<Pick<T, Extract<NodeFnFieldName, keyof T>>> {
   const src = node as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   for (const spec of NODE_FN_FIELDS) {
-    if (spec.containersOnly && node.kind !== 'container') continue;
     const fn = src[spec.field];
     if (fn !== undefined) out[spec.field] = fn;
   }

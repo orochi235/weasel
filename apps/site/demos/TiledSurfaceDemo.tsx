@@ -68,14 +68,14 @@ function ring(pose: Pose): Path {
 }
 
 const paneScene = (fill: string): SerializedScene<NodeData, string, Pose> => ({
-  version: 1,
+  version: 2,
   systemLayers: [{ id: 'default' }],
   nodes: [
-    { id: 'box', kind: 'leaf', layer: 'default',
+    { id: 'box', kind: 'mark', layer: 'default',
       pose: { x: 40, y: 40, width: 100, height: 80 }, data: { fill: { paint: { color: fill } } } },
-    { id: 'mark', kind: 'leaf', layer: 'default',
+    { id: 'mark', kind: 'mark', layer: 'default',
       pose: { x: 180, y: 150, width: 60, height: 60 }, data: { fill: { paint: { color: '#c0392b' } } } },
-    { id: 'ring', kind: 'leaf', layer: 'default',
+    { id: 'ring', kind: 'mark', layer: 'default',
       pose: { x: 40, y: 180, width: 100, height: 100 },
       data: { fill: { paint: { color: '#6b4c9a' } }, ring: true } },
   ],

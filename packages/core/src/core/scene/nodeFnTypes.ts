@@ -1,6 +1,6 @@
 import type { Affine, Path } from '@weasel-js/geom';
 import type { InheritedPaint } from './inheritedPaint';
-import type { ContainerNode, Node } from './types';
+import type { Node } from './types';
 
 /**
  * One dependency, as a derivation reads it: the node itself and the pose it is
@@ -48,15 +48,15 @@ export type DerivePoseFn<TPose, TData = unknown, TLayer extends string = string>
   deps: readonly (DerivedDep<TPose, TData, TLayer> | undefined)[],
 ) => TPose | null>;
 
-/** A container's clip, from its pose: the type of `ContainerNode.clipFromPose`
+/** A container's clip, from its pose: the type of `clipFromPose`
  *  and of each entry in `SceneRegistry.clipFromPose`. */
 export type ClipFromPoseFn<TPose> = Bivariant<(pose: TPose) => Path | null>;
 
 /** The extra times a container draws its children: the type of
- *  `ContainerNode.copiesFromPose` and of each entry in
+ *  `copiesFromPose` and of each entry in
  *  `SceneRegistry.copiesFromPose`. Each affine is in world coordinates and
  *  carries the children, as drawn, to one copy. */
 export type CopiesFromPoseFn<TPose, TData = unknown, TLayer extends string = string> = Bivariant<(
   pose: TPose,
-  node: ContainerNode<TData, TLayer, TPose>,
+  node: Node<TData, TLayer, TPose>,
 ) => readonly Affine[] | null>;

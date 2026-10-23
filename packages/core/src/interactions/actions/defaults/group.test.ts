@@ -71,8 +71,8 @@ function makeSelection(ids: NodeId[]) {
 describe('groupAction.run', () => {
   it('wraps a same-layer 2-node selection in a container holding both ids in order, with the union AABB pose', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
 
     (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
@@ -81,15 +81,15 @@ describe('groupAction.run', () => {
     expect(sel).toHaveLength(1);
     const containerId = sel[0]!;
     const container = scene.get(containerId)!;
-    expect(container.kind).toBe('container');
+    expect(container.kind).toBe('group');
     expect(scene.childrenOf(containerId)).toEqual([a, b]);
     expect(container.pose).toEqual({ x: 0, y: 0, width: 30, height: 40 });
   });
 
   it('re-derives the container bounds when a member moves afterwards', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
 
     (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
@@ -103,8 +103,8 @@ describe('groupAction.run', () => {
 
   it('leaves member poses unchanged (absolute-pose model)', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
 
     (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
@@ -115,7 +115,7 @@ describe('groupAction.run', () => {
 
   it('no-ops on an empty selection (no nodes added)', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const before = scene.nodes.size;
     const selection = makeSelection([]);
 
@@ -127,14 +127,14 @@ describe('groupAction.run', () => {
 
   it('produces exactly one undo entry (single batch) without applyOps', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
 
     (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
 
     const containerId = selection.get()[0]!;
-    expect(scene.get(containerId)!.kind).toBe('container');
+    expect(scene.get(containerId)!.kind).toBe('group');
 
     // One undo collapses the whole group operation (container removed, children
     // reparented back to root).
@@ -148,8 +148,8 @@ describe('groupAction.run', () => {
 describe('groupAction.run — applyOps routing', () => {
   it('routes commit through the consumer applyOps hook once with insert + reparent ops + "Group" label, and still sets selection', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
@@ -167,7 +167,7 @@ describe('groupAction.run — applyOps routing', () => {
       node: { id: string; kind: string; layer: string; pose: unknown; parent: NodeId | null };
     }).node;
     expect(containerNode.id).toBeTruthy();
-    expect(containerNode.kind).toBe('container');
+    expect(containerNode.kind).toBe('group');
     expect(containerNode.layer).toBe('main');
     expect(containerNode.parent).toBe(null);
     expect(containerNode.pose).toEqual({ x: 0, y: 0, width: 30, height: 40 });
@@ -194,7 +194,7 @@ describe('groupAction.run — applyOps routing', () => {
 
   it('does not call applyOps on an empty selection', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([]);
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
@@ -207,8 +207,8 @@ describe('groupAction.run — applyOps routing', () => {
 describe('ungroupAction.run', () => {
   it('dissolves a container, reparenting its children to the container parent and selecting them', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
 
     // First group the two nodes, then ungroup the resulting container.
@@ -226,20 +226,20 @@ describe('ungroupAction.run', () => {
 
   it('no-ops on a selected leaf (non-container)', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a]);
 
     (ungroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
 
     expect(scene.get(a)).toBeDefined();
-    expect(scene.get(a)!.kind).toBe('leaf');
+    expect(scene.get(a)!.kind).toBe('mark');
   });
 
   it('reparents a nested container and leaf up to the dissolved container parent', () => {
     const scene = makeScene();
     // Build container A holding leaf `a` and a nested container B (holding leaf `b`).
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
 
     // Group b into container B, then group a + B into container A.
     let selection = makeSelection([b]);
@@ -258,7 +258,7 @@ describe('ungroupAction.run', () => {
     expect(scene.get(a)!.parent).toBe(null);
     expect(scene.get(containerB)!.parent).toBe(null);
     // B itself is untouched: still a container still holding b.
-    expect(scene.get(containerB)!.kind).toBe('container');
+    expect(scene.get(containerB)!.kind).toBe('group');
     expect(scene.childrenOf(containerB)).toEqual([b]);
     expect(selection.get()).toEqual([a, containerB]);
   });
@@ -268,9 +268,9 @@ describe('groupAction.run — undo restores paint order', () => {
   it('returns a grouped node to its original root slot, not the end', () => {
     const scene = makeScene();
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
-    const c = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
+    const c = scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
     const selection = makeSelection([b]);
 
     (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
@@ -282,10 +282,10 @@ describe('groupAction.run — undo restores paint order', () => {
   it('returns a node grouped out of a container to its original child slot', () => {
     const scene = makeScene();
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const box = scene.add({ kind: 'container', layer: 'main', pose, data: {} });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: box });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: box });
-    const c = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: box });
+    const box = scene.add({ kind: 'group', layer: 'main', pose, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose, data: {}, parent: box });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose, data: {}, parent: box });
+    const c = scene.add({ kind: 'mark', layer: 'main', pose, data: {}, parent: box });
     const selection = makeSelection([b]);
 
     (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
@@ -299,7 +299,7 @@ describe('groupAction.run — undo restores document order for a multi-node grou
   function fiveRoots() {
     const scene = makeScene();
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const mk = () => scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+    const mk = () => scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
     const [a, b, c, d, e] = [mk(), mk(), mk(), mk(), mk()];
     return { scene, a: a!, b: b!, c: c!, d: d!, e: e! };
   }
@@ -349,8 +349,8 @@ describe('groupAction — non-rect poses', () => {
       systemLayers: [{ id: 'main' }],
       registry: { derivePose: { [UNION_OF_CHILDREN]: union } },
     });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: circle(0, 0, 10), data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: circle(40, 0, 10), data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: circle(0, 0, 10), data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: circle(40, 0, 10), data: {} });
     const selection = makeSelection([a, b]);
     (groupAction.invoker as ImmediateInvoker).run(
       { scene, selection, poseDescriptor: CIRCLE_POSE_DESCRIPTOR } as never,
@@ -365,8 +365,8 @@ describe('groupAction — non-rect poses', () => {
 describe('ungroupAction enabled', () => {
   it('needs a container in the selection', () => {
     const scene = makeScene();
-    const leaf = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
-    const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    const leaf = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    const box = scene.add({ kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
     expect(ungroupAction.enabled?.(stubDeps({ scene, selection: makeSelection([leaf]) }))).toBe('not-applicable');
     expect(ungroupAction.enabled?.(stubDeps({ scene, selection: makeSelection([leaf, box]) }))).toBe(true);
   });

@@ -22,8 +22,8 @@ function drawn(hideSources: boolean, selection: readonly NodeId[]): DrawCommand[
     systemLayers: [{ id: 'main' }],
     registry: withPathEffectsRegistry(),
     initial: [
-      { id: T, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 80, height: 20 }, data: TEXT, hidden: hideSources },
-      { id: P, kind: 'leaf', layer: 'main', pose: { x: 0, y: 100, width: 100, height: 1 }, data: { path: pathFromD('M0 100 L100 100') }, hidden: hideSources },
+      { id: T, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 80, height: 20 }, data: TEXT, hidden: hideSources },
+      { id: P, kind: 'mark', layer: 'main', pose: { x: 0, y: 100, width: 100, height: 1 }, data: { path: pathFromD('M0 100 L100 100') }, hidden: hideSources },
       { ...pathEffectNode({ kind: 'textAlong', hideSources }, [T, P], 'main', PATH_EFFECT_DERIVATIONS), id: FX },
     ],
   });

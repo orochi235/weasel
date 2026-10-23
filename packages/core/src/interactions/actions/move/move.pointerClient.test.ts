@@ -13,7 +13,7 @@ const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
 function fixture() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
+  const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
   const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { selection: { get: () => [a] as NodeId[] }, scene } };
   const seen: PointerState[] = [];
   const spy: MoveBehavior<unknown> = {

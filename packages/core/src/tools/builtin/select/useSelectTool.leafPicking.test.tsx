@@ -58,7 +58,7 @@ function harness(
 // comfortably outside the ellipse; (50, 50) is inside both.
 const ELLIPSE = [{
   id: asNodeId('e'),
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: 0, y: 0, width: 100, height: 100 },
   data: { shape: 'ellipse', fill: { paint: { color: '#000' } } },
@@ -89,7 +89,7 @@ describe('useSelectTool leafPicking', () => {
     // unreachable.
     const h = harness([{
       id: asNodeId('r'),
-      kind: 'leaf' as const,
+      kind: 'mark' as const,
       layer: 'default' as const,
       pose: { x: 0, y: 0, width: 100, height: 100 },
       data: { color: '#abc' },
@@ -104,7 +104,7 @@ describe('useSelectTool leafPicking', () => {
     const h = harness([
       {
         id: asNodeId('under'),
-        kind: 'leaf' as const,
+        kind: 'mark' as const,
         layer: 'default' as const,
         pose: { x: 0, y: 0, width: 20, height: 20 },
         data: { color: '#abc' },

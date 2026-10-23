@@ -20,9 +20,9 @@ const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 }
 /** `gliding` shown 20 short of its document pose by a reflow still running. */
 function fixture(gliding: NodeId, selected: NodeId[]) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: A, kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 30, height: 30 } });
-  scene.add({ id: KID, kind: 'leaf', layer: 'main', parent: A, data: {}, pose: box(10, 10) });
-  scene.add({ id: T, kind: 'container', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 } });
+  scene.add({ id: A, kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 30, height: 30 } });
+  scene.add({ id: KID, kind: 'mark', layer: 'main', parent: A, data: {}, pose: box(10, 10) });
+  scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 } });
   const home = scene.get(gliding)!.pose;
   const shown: RectPose = { ...home, x: home.x - 20 };
   const glide = scene.overrides.hold();

@@ -55,8 +55,8 @@ const FX = '#ff0000';
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'base' }] });
   s.addLayer({ id: 'fx', name: 'Effects' });
-  s.add({ kind: 'leaf', id: asNodeId('a'), layer: 'base', data: { color: BASE }, pose: { x: 0, y: 20, width: 50, height: 50 } });
-  s.add({ kind: 'leaf', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 100, y: 20, width: 50, height: 50 } });
+  s.add({ kind: 'mark', id: asNodeId('a'), layer: 'base', data: { color: BASE }, pose: { x: 0, y: 20, width: 50, height: 50 } });
+  s.add({ kind: 'mark', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 100, y: 20, width: 50, height: 50 } });
   return s;
 }
 

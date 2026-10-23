@@ -7,7 +7,7 @@ import { sceneParticipants } from './portLayer';
 import { createSetRouterAction, SET_ROUTER_ACTION_IDS } from './routerCommands';
 
 const box = (id: string, x: number, y: number) =>
-  ({ id: id as never, kind: 'leaf' as const, layer: 'main' as const, pose: { x, y, width: 100, height: 60 }, data: { diagram: {} } });
+  ({ id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x, y, width: 100, height: 60 }, data: { diagram: {} } });
 
 function load(router: string) {
   const scene = createScene<unknown, 'main', RectPose>({
@@ -16,7 +16,7 @@ function load(router: string) {
     initial: [
       box('a', 0, 0), box('b', 400, 0), box('wall', 200, 0),
       {
-        id: 'ab' as never, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+        id: 'ab' as never, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
         data: { diagram: { from: {}, to: {}, router } }, dependsOn: ['a' as never, 'b' as never], derivePath: EDGE_DERIVE_PATH,
       },
     ] as never,

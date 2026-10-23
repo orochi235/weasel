@@ -26,9 +26,9 @@ const poly = (...pts: [number, number][]) => polygonFromPoints(pts.map(([x, y]) 
  */
 function setup() {
   const scene = createScene<Data, 'main' | 'notes', unknown>({ systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }] });
-  const square = scene.add({ kind: 'leaf', layer: 'main', pose: poly([0, 0], [100, 0], [100, 100], [0, 100]), data: {} });
+  const square = scene.add({ kind: 'mark', layer: 'main', pose: poly([0, 0], [100, 0], [100, 100], [0, 100]), data: {} });
   const triangle = scene.add({
-    kind: 'leaf', layer: 'main', pose: poly([40, 0], [40, -50], [10, -50]),
+    kind: 'mark', layer: 'main', pose: poly([40, 0], [40, -50], [10, -50]),
     data: { constraints: [{ kind: 'vertical', segment: [0, 1] }] },
   });
   const link = scene.add(constraintLinkNode<unknown>({

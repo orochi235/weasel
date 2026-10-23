@@ -6,14 +6,14 @@ import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 
-interface StubNode { id: NodeId; kind: 'leaf' | 'container'; layer: string; pose: { x: number; y: number }; data: unknown; parent: NodeId | null }
+interface StubNode { id: NodeId; kind: 'mark' | 'group'; layer: string; pose: { x: number; y: number }; data: unknown; parent: NodeId | null }
 
-function makeScene(spec: Array<[string, { parent?: string | null; kind?: 'leaf' | 'container'; x?: number; y?: number }]>) {
+function makeScene(spec: Array<[string, { parent?: string | null; kind?: 'mark' | 'group'; x?: number; y?: number }]>) {
   const nodes = new Map<string, StubNode>();
   for (const [id, v] of spec) {
     nodes.set(id, {
       id: asNodeId(id),
-      kind: v.kind ?? 'leaf',
+      kind: v.kind ?? 'mark',
       layer: 'main',
       pose: { x: v.x ?? 0, y: v.y ?? 0 },
       data: { tag: id },
@@ -68,7 +68,7 @@ describe('duplicateAction', () => {
   it('duplicates a container WITH its subtree, parented to the new copy', () => {
     // The whole point of the fix: a duplicated group must not come out empty.
     const scene = makeScene([
-      ['g', { kind: 'container' }],
+      ['g', { kind: 'group' }],
       ['a', { parent: 'g', x: 10, y: 10 }],
       ['b', { parent: 'g', x: 20, y: 20 }],
     ]);
@@ -80,7 +80,7 @@ describe('duplicateAction', () => {
     const copies = inserted(committed);
     expect(copies).toHaveLength(3);
     // Pre-order: the parent's insert precedes its children's.
-    expect(copies[0].kind).toBe('container');
+    expect(copies[0].kind).toBe('group');
     expect(copies[1].parent).toBe(copies[0].id);
     expect(copies[2].parent).toBe(copies[0].id);
     // Absolute poses: every node moves.
@@ -91,7 +91,7 @@ describe('duplicateAction', () => {
     // Local poses: a child is relative, so offsetting the root already carries
     // it. Offsetting again would double the nudge.
     const scene = makeScene([
-      ['g', { kind: 'container' }],
+      ['g', { kind: 'group' }],
       ['a', { parent: 'g', x: 10, y: 10 }],
     ]);
     scene.composition = RECT_POSE_COMPOSITION;
@@ -107,7 +107,7 @@ describe('duplicateAction', () => {
 
   it('does not double-copy a child selected alongside its container', () => {
     const scene = makeScene([
-      ['g', { kind: 'container' }],
+      ['g', { kind: 'group' }],
       ['a', { parent: 'g' }],
     ]);
     let committed: Op[] = [];

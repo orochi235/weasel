@@ -14,21 +14,21 @@ const pointQuery = adapterPointQuery<RectPose>(AUTO_POSE_DESCRIPTOR as never, fa
 function copiedSquare(copies: readonly Affine[], clip?: RectPose) {
   const scene = createScene<{ kind: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const group = scene.add({
-    kind: 'container', layer: 'main', id: asNodeId('g'),
+    kind: 'group', layer: 'main', id: asNodeId('g'),
     pose: { x: 0, y: 0, width: 0, height: 0 }, data: { kind: 'group' },
     copiesFromPose: () => copies,
     // Without one, a container clips to its own pose rect, which is empty here.
     clipFromPose: () => (clip ? { kind: 'rect' as const, ...clip } : null),
   });
   scene.add({
-    kind: 'leaf', layer: 'main', id: asNodeId('sq'), parent: group,
+    kind: 'mark', layer: 'main', id: asNodeId('sq'), parent: group,
     pose: { x: 10, y: 10, width: 10, height: 10 }, data: { kind: 'rect' },
   });
   return scene;
 }
 
 const pickAt = (scene: ReturnType<typeof copiedSquare>, x: number, y: number) =>
-  pickWalk<RectPose>(scenePickSource(scene), { ...pointQuery(x, y, 0), includeContainers: false });
+  pickWalk<RectPose>(scenePickSource(scene), { ...pointQuery(x, y, 0), includeGroups: false });
 
 describe('pickWalk: a container drawing copies', () => {
   it('answers a pick on a copy with the child it copies', () => {
@@ -49,13 +49,13 @@ describe('pickWalk: a container drawing copies', () => {
   it('reaches through nested copies', () => {
     const scene = copiedSquare([translate(100, 0)]);
     const inner = scene.add({
-      kind: 'container', layer: 'main', id: asNodeId('inner'), parent: asNodeId('g'),
+      kind: 'group', layer: 'main', id: asNodeId('inner'), parent: asNodeId('g'),
       pose: { x: 0, y: 0, width: 0, height: 0 }, data: { kind: 'group' },
       clipFromPose: () => null,
       copiesFromPose: () => [translate(0, 100)],
     });
     scene.add({
-      kind: 'leaf', layer: 'main', id: asNodeId('dot'), parent: inner,
+      kind: 'mark', layer: 'main', id: asNodeId('dot'), parent: inner,
       pose: { x: 40, y: 40, width: 4, height: 4 }, data: { kind: 'rect' },
     });
     expect(pickAt(scene, 142, 142)).toEqual(['dot']);

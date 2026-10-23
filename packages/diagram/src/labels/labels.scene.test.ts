@@ -9,11 +9,11 @@ import { installLabelPlacement } from './install';
 type LabelScene = Scene<unknown, 'main', RectPose>;
 
 const box = (id: string, x: number, y: number, width = 100, height = 60) =>
-  ({ id: id as never, kind: 'leaf' as const, layer: 'main' as const, pose: { x, y, width, height }, data: { diagram: {} } });
+  ({ id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x, y, width, height }, data: { diagram: {} } });
 
 const connector = (id: string, from: string, to: string) => ({
   id: id as never,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'main' as const,
   pose: { x: 0, y: 0, width: 0, height: 0 },
   data: { diagram: { from: { port: 'e' }, to: { port: 'w' }, router: 'straight' } },

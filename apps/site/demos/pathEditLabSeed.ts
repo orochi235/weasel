@@ -25,7 +25,7 @@ export function createPathLabScene(d: string | Path, fill?: string) {
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [{
-      kind: 'leaf',
+      kind: 'mark',
       id: EDITED_ID,
       layer: 'default',
       pose: { x, y, width, height },

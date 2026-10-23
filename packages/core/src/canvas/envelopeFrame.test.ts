@@ -44,12 +44,12 @@ type Composition = PoseComposition<RectPose>;
 function envelopeAtRoot(composition: Composition = RIGID_POSE_COMPOSITION): S {
   const scene = createScene<{ label: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition });
   scene.add({
-    id: ids.envelope, kind: 'container', layer: 'main', data: { label: 'env' },
+    id: ids.envelope, kind: 'group', layer: 'main', data: { label: 'env' },
     pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 },
     dependsOn: 'children', derivePose: unionOfChildren,
   });
-  scene.add({ id: ids.a, kind: 'leaf', layer: 'main', parent: ids.envelope, data: { label: 'a' }, pose: A });
-  scene.add({ id: ids.b, kind: 'leaf', layer: 'main', parent: ids.envelope, data: { label: 'b' }, pose: B });
+  scene.add({ id: ids.a, kind: 'mark', layer: 'main', parent: ids.envelope, data: { label: 'a' }, pose: A });
+  scene.add({ id: ids.b, kind: 'mark', layer: 'main', parent: ids.envelope, data: { label: 'b' }, pose: B });
   return scene;
 }
 
@@ -61,20 +61,20 @@ function envelopesInFrame(): S {
     composition: RIGID_POSE_COMPOSITION,
   });
   scene.add({
-    id: ids.frame, kind: 'container', layer: 'main', data: { label: 'frame' },
+    id: ids.frame, kind: 'group', layer: 'main', data: { label: 'frame' },
     pose: { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2 },
   });
   scene.add({
-    id: ids.envelope, kind: 'container', layer: 'main', parent: ids.frame, data: { label: 'env' },
+    id: ids.envelope, kind: 'group', layer: 'main', parent: ids.frame, data: { label: 'env' },
     pose: { x: 0, y: 0, width: 1, height: 1 },
     dependsOn: 'children', derivePose: unionOfChildren,
   });
   scene.add({
-    id: ids.inner, kind: 'container', layer: 'main', parent: ids.envelope, data: { label: 'inner' },
+    id: ids.inner, kind: 'group', layer: 'main', parent: ids.envelope, data: { label: 'inner' },
     pose: { x: 0, y: 0, width: 1, height: 1 },
     dependsOn: 'children', derivePose: unionOfChildren,
   });
-  scene.add({ id: ids.a, kind: 'leaf', layer: 'main', parent: ids.inner, data: { label: 'a' }, pose: A });
+  scene.add({ id: ids.a, kind: 'mark', layer: 'main', parent: ids.inner, data: { label: 'a' }, pose: A });
   return scene;
 }
 
@@ -144,7 +144,7 @@ describe('a derived container under a rigid strategy', () => {
     const src = scenePickSource(scene);
     // A's center; the displaced reading would put A at (20,40)-(40,50).
     const hit = pickWalk<RectPose>(src, {
-      includeContainers: false,
+      includeGroups: false,
       clipAdmits: () => true,
       hits: (_n, p) => 20 >= p.x && 20 <= p.x + p.width && 25 >= p.y && 25 <= p.y + p.height,
     });

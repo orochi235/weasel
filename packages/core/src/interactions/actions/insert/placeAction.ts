@@ -31,7 +31,7 @@ export const placeAction: Action & { requires: string[] } = inPlane({
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
-  requires: ['insert', 'insertInto', 'selection', 'snap', 'textEdit', 'scene'],
+  requires: ['insert', 'insertInto', 'canDropInto', 'selection', 'snap', 'textEdit', 'scene'],
   invoker: {
     timing: 'immediate',
     run(deps: ActionDeps, params?: Record<string, unknown>): void {
@@ -47,7 +47,7 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       if (!(size.width > 0 && size.height > 0)) return;
 
       deps.selection?.clear();
-      const parent = insertParent(deps.scene, deps.insertInto?.get());
+      const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto);
       const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
       const mods = snapMods({ modifiers: (params?.['mods'] as ModifierState | undefined) ?? NO_KEYS });
       const at = snap ? snap.at({ x, y }, mods).point : { x, y };

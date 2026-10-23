@@ -19,7 +19,7 @@ function numbered() {
     generateId: () => asNodeId(`srv-${n++}`),
   });
   const leaf = (x: number) =>
-    scene.add({ kind: 'leaf', layer: 'main', pose: { x, y: 0, width: 10, height: 10 }, data: { label: 'n' } });
+    scene.add({ kind: 'mark', layer: 'main', pose: { x, y: 0, width: 10, height: 10 }, data: { label: 'n' } });
   return { scene, a: leaf(0), b: leaf(20) };
 }
 
@@ -31,7 +31,7 @@ describe('scene.mintId', () => {
     const { scene, a, b } = numbered();
     expect([a, b]).toEqual(['srv-0', 'srv-1']);
     expect(scene.mintId()).toBe('srv-2');
-    expect(scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } })).toBe('srv-3');
+    expect(scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } })).toBe('srv-3');
   });
 
   it('gives distinct ids by default', () => {
