@@ -1,0 +1,9 @@
+/* The box Along fills, drawn as a circle so the arc's place in it shows. */
+.box {
+  position: relative;
+  width: var(--box);
+  height: var(--box);
+  margin: 48px;
+  border: 1px dashed var(--wzl-border-strong);
+  border-radius: 50%;
+}

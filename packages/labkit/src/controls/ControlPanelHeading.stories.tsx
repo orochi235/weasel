@@ -4,7 +4,7 @@ import { ControlPanel } from '@weasel-js/labkit/controls';
 import { useState } from 'react';
 
 const meta: Meta<typeof ControlPanel> = {
-  title: 'labkit/Controls/ControlPanel/Heading control',
+  title: 'labkit/Controls/ControlPanel',
   component: ControlPanel,
   parameters: { layout: 'padded' },
 };

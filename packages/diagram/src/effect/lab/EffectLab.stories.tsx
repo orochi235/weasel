@@ -10,7 +10,7 @@ registerCanvasFont('sans-serif');
 
 const GROUND = { color: '#0e151b' } as const;
 
-export default meta({ title: 'diagram/EffectChart lab', layout: 'fullscreen' });
+export default meta({ title: 'diagram/EffectChart', layout: 'fullscreen', tags: ['lab'] });
 
 interface LabConfig {
   sample: string;

@@ -17,7 +17,7 @@ interface StoryArgs {
 }
 
 const meta: Meta<StoryArgs> = {
-  title: 'ui/Foundations/Keycaps/Keyboard layouts',
+  title: 'ui/Foundations/Keycaps/KeyDiagram',
   component: KeyDiagram,
   args: { legend: 'auto', font: 'oswald', wrap: true },
   argTypes: {

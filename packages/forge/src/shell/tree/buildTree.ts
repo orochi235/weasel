@@ -43,7 +43,7 @@ export function foldGalleries(nodes: TreeNode[]): TreeNode[] {
 
 /**
  * `nodes` with every component holding one story, whose name only restates the component's, replaced by that story
- * under the component's name: a file titled `…/Heading control` exporting `HeadingControl` lists once, not twice.
+ * under the component's name: a file titled `…/KeyDiagram` exporting `KeyDiagram` lists once, not twice.
  */
 export function hoistLoneStories(nodes: TreeNode[]): TreeNode[] {
   return nodes.map((node) => {

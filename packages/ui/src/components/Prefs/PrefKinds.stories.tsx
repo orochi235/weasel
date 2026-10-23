@@ -5,7 +5,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefControl, PrefsForm, type PrefsFormProps } from '@weasel-js/ui/components/Prefs';
 
 const meta: Meta<typeof PrefsForm> = {
-  title: 'Primitives/Prefs/Compound kinds',
+  title: 'Primitives/Prefs',
   component: PrefsForm,
 };
 export default meta;

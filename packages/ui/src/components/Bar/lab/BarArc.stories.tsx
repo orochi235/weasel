@@ -4,10 +4,10 @@ import { loadInto } from '../../Along/lab/Presets';
 import { BAR_ARC_DEFAULTS as D, type BarArcConfig } from './barArcConfig';
 import { BarArcView } from './BarArcView';
 
-/** A bar along an arc: built item lists, scroll and menu overflow, align and sweep, read back off the page. */
-export default meta({ title: 'ui/Along/Bar on an arc', layout: 'fullscreen' });
+export default meta({ title: 'ui/Bar/Bar', layout: 'fullscreen', tags: ['lab'] });
 
-export const Lab = story({
+/** A bar along an arc: built item lists, scroll and menu overflow, align and sweep, read back off the page. */
+export const OnAnArc = story({
   config: f.schema({
     items: f.group({
       actions: f.number(D.items.actions).range(0, LAB_ACTIONS.length).step(1).label('Actions'),

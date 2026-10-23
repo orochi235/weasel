@@ -3,10 +3,10 @@ import { loadInto } from '../../Along/lab/Presets';
 import { SLIDER_ARC_DEFAULTS as D, type SliderArcConfig } from './sliderArcConfig';
 import { SliderArcView } from './SliderArcView';
 
-/** Every Slider prop on an arc, beside a straight twin given the same props and value. */
-export default meta({ title: 'ui/Along/Slider on an arc', layout: 'fullscreen' });
+export default meta({ title: 'ui/Foundations/Slider', layout: 'fullscreen', tags: ['lab'] });
 
-export const Lab = story({
+/** Every Slider prop on an arc, beside a straight twin given the same props and value. */
+export const OnAnArc = story({
   config: f.schema({
     arc: f.group({
       start: f.number(D.arc.start).range(0, 359).step(1).suffix('°').label('Start'),
