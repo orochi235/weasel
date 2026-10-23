@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { IconRef } from '@weasel-js/icons';
-import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf, type PrefOrder } from '@weasel-js/prefs';
 import type { TrackShape } from '@weasel-js/geom';
 import { useTrackShape, type RunAlign } from '../Along/alongContext';
 import type { BarMenuSources } from './BarMenu';
@@ -8,6 +8,7 @@ import { BarAlong } from './BarAlong';
 import { barItems, barLead, drawBarItem, inBarMenu, splitBarItems } from './barItems';
 import { BarMarkContext } from './barOrder';
 import { BarOverflow } from './BarOverflow';
+import { useBarReorder } from './useBarReorder';
 import { BAR_LEAD, BAR_MORE, useBarOverflow } from './useBarOverflow';
 import s from './Bar.module.css';
 
@@ -99,8 +100,11 @@ export interface BarLayoutProps {
   shape?: TrackShape;
   /** Where a run shorter than its shape sits. Default: the nearest `Along`'s, else `'center'`. */
   align?: RunAlign;
-  /** Mark each item and each `actions` button with `data-bar-unit` and `data-bar-in`, so a reorder gesture can find them. */
-  reorder?: boolean;
+  /** The order the nodes are drawn in, which a reorder starts from. */
+  order?: PrefOrder;
+  /** Given, each item and each `actions` button is marked with `data-bar-unit` and `data-bar-in`, and a Cmd-drag
+   *  (Ctrl-drag off Apple platforms) moves one among its container's, calling this with the order it settles on. */
+  onReorder?: (order: PrefOrder) => void;
   className?: string;
 }
 
@@ -118,7 +122,7 @@ export function BarLayout(props: BarLayoutProps) {
   const along = useTrackShape();
   const shape = props.shape ?? along?.shape;
   const bar = shape !== undefined && shape.kind !== 'line' ? <BarAlong {...props} shape={shape} align={props.align ?? along?.align ?? 'center'} /> : <BarLine {...props} />;
-  return <BarMarkContext.Provider value={props.reorder === true}>{bar}</BarMarkContext.Provider>;
+  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{bar}</BarMarkContext.Provider>;
 }
 
 function BarLine(props: BarLayoutProps) {
@@ -126,17 +130,19 @@ function BarLine(props: BarLayoutProps) {
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const vertical = orientation === 'vertical';
   // A vertical bar has no room beside a field, so only a button stays on it.
-  const shown = barItems(nodes, { popLeaves: vertical, cells, row, mark: props.reorder });
+  const shown = barItems(nodes, { popLeaves: vertical, cells, row, mark: props.onReorder !== undefined });
   const leading = barLead(lead, label, icon);
 
   const menu = overflow === 'menu';
   const { bar, kept } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
   const { line, rest } = splitBarItems(shown, kept);
+  const reorder = useBarReorder({ root: bar, order: props.order, onReorder: props.onReorder, measure: (_, p) => (vertical ? p.clientY : p.clientX) });
 
   return (
     <div
       {...rootAttrs}
       ref={bar}
+      onPointerDownCapture={reorder.onPointerDownCapture}
       className={[s.bar, framed === 'segmented' ? s.segmented : framed && s.framed, className].filter(Boolean).join(' ')}
       data-orientation={orientation}
       data-overflow={menu ? 'menu' : undefined}

@@ -1,13 +1,15 @@
-import { useMemo, useRef, type ReactElement } from 'react';
+import { useMemo, useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { trackRun, type TrackShape } from '@weasel-js/geom';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds, useRunRow } from '../Along/useRunRow';
+import { positionAt } from '../Along/useRunScroll';
 import { sideAtRun } from './barSide';
 import { barItems, barLead, drawBarItem, inBarMenu, splitBarItems, type BarItem } from './barItems';
 import type { BarLayoutProps } from './BarLayout';
 import { BarOverflow } from './BarOverflow';
 import { BAR_ITEM, BAR_LEAD, BAR_MORE, fitting } from './useBarOverflow';
+import { useBarReorder } from './useBarReorder';
 import b from './Bar.module.css';
 import s from './BarAlong.module.css';
 
@@ -33,7 +35,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const menu = overflow === 'menu';
   const root = useRef<HTMLDivElement>(null);
   const run = useMemo(() => trackRun(shape), [shape]);
-  const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.reorder });
+  const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.onReorder !== undefined });
   const leading = barLead(props.lead, label, props.icon);
   const lengths = useItemLengths(root, drawnKeys(items, leading != null), barKeyOf);
   const gap = useRunGap(root);
@@ -50,9 +52,14 @@ export function BarAlong(props: BarAlongProps): ReactElement {
     return { ...spot, className: s.item!, side: sideAtRun(run, spot.at) };
   };
   const first = leading != null ? 1 : 0;
+  const reorder = useBarReorder({ root, order: props.order, onReorder: props.onReorder, measure: (el, p) => positionAt(along.band.current ?? el, run, p) });
+  const onPointerDownCapture = (e: ReactPointerEvent): void => {
+    reorder.onPointerDownCapture(e);
+    along.rootProps.onPointerDownCapture(e);
+  };
 
   return (
-    <div {...rootAttrs} {...along.rootProps} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label}>
+    <div {...rootAttrs} {...along.rootProps} onPointerDownCapture={onPointerDownCapture} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label}>
       <RunBand row={along} shape={shape} />
       <AlongContext.Provider value={null}>
         {leading != null && <span className={`${b.lead} ${s.item}`} aria-hidden="true" {...{ [BAR_LEAD]: '' }} style={place(0).style} data-clipped={place(0).clipped}>{leading}</span>}

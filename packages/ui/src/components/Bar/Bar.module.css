@@ -292,3 +292,38 @@
 .unit {
   display: flex;
 }
+
+/* A unit a reorder is dragging. Along a curve the item already fades by how much of it is on the run. */
+.cell[data-bar-dragging] {
+  opacity: calc(0.5 * var(--along-shown, 1));
+}
+
+.unit[data-bar-dragging] {
+  opacity: 0.5;
+}
+
+/* Where the dragged unit would land: a bar on that side of the unit it lands beside, drawn outside its box so nothing
+   moves. Along a curve each item is turned to the run, so its own inline sides are the run's. */
+:is(.cell, .unit)[data-bar-drop='before'] {
+  box-shadow: -2px 0 0 var(--wzl-accent);
+}
+
+:is(.cell, .unit)[data-bar-drop='after'] {
+  box-shadow: 2px 0 0 var(--wzl-accent);
+}
+
+.bar:dir(rtl) :is(.cell, .unit)[data-bar-drop='before'] {
+  box-shadow: 2px 0 0 var(--wzl-accent);
+}
+
+.bar:dir(rtl) :is(.cell, .unit)[data-bar-drop='after'] {
+  box-shadow: -2px 0 0 var(--wzl-accent);
+}
+
+.bar[data-orientation='vertical'] :is(.cell, .unit)[data-bar-drop='before'] {
+  box-shadow: 0 -2px 0 var(--wzl-accent);
+}
+
+.bar[data-orientation='vertical'] :is(.cell, .unit)[data-bar-drop='after'] {
+  box-shadow: 0 2px 0 var(--wzl-accent);
+}

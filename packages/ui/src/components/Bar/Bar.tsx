@@ -106,7 +106,8 @@ export function Bar(props: BarProps) {
       overflowLabel={props.overflowLabel}
       shape={props.shape}
       align={props.align}
-      reorder={props.onReorder !== undefined}
+      order={props.order}
+      onReorder={props.onReorder}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
       row={(node) => <PropertyList>{leafRow(node, draw)}</PropertyList>}

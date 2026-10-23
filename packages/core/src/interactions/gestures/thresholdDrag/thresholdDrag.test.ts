@@ -294,6 +294,19 @@ describe('startThresholdDrag origin', () => {
     container.remove();
   });
 
+  it("with captureAt 'threshold', captures on `origin` only once the press is a drag", () => {
+    const { container, start } = makeOriginStart();
+    const onActivate = vi.fn(() => {
+      expect(container.setPointerCapture).toHaveBeenCalledWith(1);
+    });
+    startThresholdDrag(start, { origin: container, captureAt: 'threshold', onActivate, onMove: () => {}, onCommit: () => {} });
+    expect(container.setPointerCapture).not.toHaveBeenCalled();
+    fireMove(DRAG_THRESHOLD_PX + 1, 0);
+    expect(onActivate).toHaveBeenCalledTimes(1);
+    fireUp(DRAG_THRESHOLD_PX + 1, 0);
+    container.remove();
+  });
+
   it('survives the pressed element being removed mid-drag', () => {
     const { container, child, start } = makeOriginStart();
     const onCommit = vi.fn();

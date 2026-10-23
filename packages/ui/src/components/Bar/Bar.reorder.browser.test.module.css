@@ -1,0 +1,12 @@
+/* A box the curved bar's shape coordinates are laid out in. */
+.box {
+  position: relative;
+  inline-size: 240px;
+  block-size: 240px;
+  margin: var(--wzl-space-6);
+}
+
+/* Holds the straight bar clear of the viewport's edge. */
+.line {
+  margin: var(--wzl-space-6);
+}

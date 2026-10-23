@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type P
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
+import { modHeld } from '../../modHeld';
 import { boxPoint } from './boxPoint';
 import type { RunItemsOf, RunKeyOf } from './useItemLengths';
 
@@ -44,7 +45,8 @@ export interface RunScroll {
 
 /**
  * The offset a curved run's items are laid back by along its run when they run past its end: moved by the wheel,
- * by a drag along the run once it travels {@link SCROLL_SLOP} px, and by focus reaching an item past either end.
+ * by a drag along the run once it travels {@link SCROLL_SLOP} px (a press with Cmd, or Ctrl off Apple platforms, is left
+ * to a reorder), and by focus reaching an item past either end.
  * A run whose items fit keeps offset 0 and ignores all three. The wheel and focus glide to where they send the run
  * over about {@link GLIDE_MS} ms, so items slide rather than jump; a drag follows the pointer, and a reader who
  * prefers reduced motion gets every move at once.
@@ -110,7 +112,7 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
 
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     const el = root.current;
-    if (latest.current.max <= 0 || el === null || e.button !== 0 || !el.contains(e.target as Node)) return;
+    if (latest.current.max <= 0 || el === null || e.button !== 0 || modHeld(e) || !el.contains(e.target as Node)) return;
     session.current?.cancel();
     const across = frame?.current ?? el;
     const s0 = positionAt(across, latest.current.run, e);

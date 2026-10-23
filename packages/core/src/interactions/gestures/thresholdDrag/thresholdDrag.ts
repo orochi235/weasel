@@ -15,6 +15,9 @@ export interface ThresholdDragOptions {
   /** Element the session opens on. Defaults to `e.currentTarget`; a list must
    *  pass its container, since a grabbed row unmounting drops capture. */
   origin?: Element;
+  /** When the origin captures the pointer: at the press (the default), or only once the press is a drag. Capture at
+   *  the press retargets the release, so the click a press below the threshold means lands off what was pressed. */
+  captureAt?: 'press' | 'threshold';
   onActivate?: (e: PointerEvent) => void;
   onMove: (e: PointerEvent) => void;
   onCommit: (e: PointerEvent) => void;
@@ -44,10 +47,18 @@ export function startThresholdDrag(
     if (activated) return;
     if (!pastDragThreshold(start, ev, opts.threshold)) return;
     activated = true;
+    if (late) {
+      try {
+        origin.setPointerCapture?.(ev.pointerId);
+      } catch {
+        /* a pointer already gone: nothing to retarget */
+      }
+    }
     opts.onActivate?.(ev);
   };
 
   const origin = opts.origin ?? (e.currentTarget as Element);
+  const late = opts.captureAt === 'threshold';
   const keys: EventTarget = origin.ownerDocument.defaultView ?? origin.ownerDocument;
   // Window capture, and stopped there: the Escape that ends a drag must not also close the dialog the drag is in.
   const onKey = (ev: Event) => {
@@ -73,7 +84,7 @@ export function startThresholdDrag(
       unlisten();
       opts.onCancel?.();
     },
-  });
+  }, { capture: !late });
 
   return {
     isDragging: () => activated,

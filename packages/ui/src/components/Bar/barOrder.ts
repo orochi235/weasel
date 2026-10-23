@@ -16,8 +16,11 @@ export const useBarMarks = (): boolean => useContext(BarMarkContext);
 /** The last segment of `path`: a unit's key inside its container. */
 export const barUnitKey = (path: string): string => path.slice(path.lastIndexOf('.') + 1);
 
-/** `order` with `container`'s list set to `keys`, the entry at index `from` moved to index `to`. */
+/** `order` with `container`'s list set to `keys`, the entry at index `from` moved to index `to`; `order` itself where
+ *  either index is not one of `keys`'. */
 export function movedOrder(order: PrefOrder, container: string, keys: readonly string[], from: number, to: number): PrefOrder {
+  const within = (i: number): boolean => Number.isInteger(i) && i >= 0 && i < keys.length;
+  if (!within(from) || !within(to)) return order;
   const next = [...keys];
   const [moved] = next.splice(from, 1);
   next.splice(to, 0, moved!);

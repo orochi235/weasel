@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { arcShape, lineShape, runPlaces, runStationAt, trackRun, type TrackShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
+import { isApplePlatform } from '@weasel-js/gestures';
 import { Bar } from './Bar';
 import alongStyles from '../Along/Along.module.css';
 
@@ -263,6 +264,25 @@ describe('Bar along a curve: dragging the run', () => {
       vi.advanceTimersByTime(100);
     });
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(items()[0]).not.toHaveAttribute('data-clipped', 'none');
+  });
+
+  test('a Cmd-press does not scroll the run, and a plain drag still does', () => {
+    const mod = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
+    render(<Bar schema={fields} values={values} shape={shape} label="Tools" onReorder={() => {}} />);
+    const trigger = screen.getByRole('button', { name: 'n2' });
+    const at = (g: number) => {
+      const { point } = run.at(g);
+      return { pointerId: 1, button: 0, pointerType: 'mouse', pressure: 0.5, clientX: point.x, clientY: point.y };
+    };
+    const drag = (mods: object) => {
+      fireEvent.pointerDown(trigger, { ...at(0.5), buttons: 1, ...mods });
+      fireEvent.pointerMove(document, { ...at(0.3), buttons: 1, ...mods });
+      fireEvent.pointerUp(document, { ...at(0.3), buttons: 0, ...mods });
+    };
+    drag(mod);
+    expect(items()[0]).toHaveAttribute('data-clipped', 'none');
+    drag({});
     expect(items()[0]).not.toHaveAttribute('data-clipped', 'none');
   });
 });
