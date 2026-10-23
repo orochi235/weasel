@@ -24,6 +24,7 @@ import {
   useDepChangeNotices,
   useDispatcherDepSource,
   useEditAnchorsDepSource,
+  useEnteredGroupDepSource,
   useIngestionDepSource,
   useInsertDepSource,
   useLassoSelectDepSource,
@@ -167,6 +168,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
+  useEnteredGroupDepSource(scene);
   useInsertDepSource(scene, adapter, props.insertNodeFactories, props.insertPaint);
   usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(

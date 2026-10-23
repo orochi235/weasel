@@ -33,3 +33,4 @@ export { usePoseDescriptorDepSource } from './poseDescriptor';
 export { useLayoutDepSource } from './layout';
 export { useGeometryProjection } from './geometryProjection';
 export { useIngestionDepSource } from './ingestion';
+export { createEnteredGroup, useEnteredGroupDepSource, type EnteredGroupDep } from './enteredGroup';
