@@ -1,10 +1,14 @@
-import { createContext, useContext, type HTMLAttributes } from 'react';
+import { createContext, useContext, type HTMLAttributes, type KeyboardEvent, type PointerEvent } from 'react';
 
 /** What a dock tells the bar it draws: which bar it is, what it is called, and whether it may be moved. */
 export interface DockBarContextValue {
   barId: string;
   label: string;
   movable: boolean;
+  /** What the handle does with a press: drag the bar. */
+  onPointerDown?: (e: PointerEvent<HTMLElement>) => void;
+  /** What the handle does with a key: Alt+arrows move the bar. */
+  onKeyDown?: (e: KeyboardEvent<HTMLElement>) => void;
 }
 
 export const DockBarContext = createContext<DockBarContextValue | null>(null);
@@ -23,6 +27,13 @@ export function useDockHandle(): DockHandle | null {
   if (!bar?.movable) return null;
   return {
     barId: bar.barId,
-    props: { role: 'button', tabIndex: 0, 'aria-label': `Move ${bar.label} toolbar`, 'aria-keyshortcuts': KEYS },
+    props: {
+      role: 'button',
+      tabIndex: 0,
+      'aria-label': `Move ${bar.label} toolbar`,
+      'aria-keyshortcuts': KEYS,
+      onPointerDown: bar.onPointerDown,
+      onKeyDown: bar.onKeyDown,
+    },
   };
 }

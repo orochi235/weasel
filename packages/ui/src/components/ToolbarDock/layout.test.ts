@@ -104,6 +104,11 @@ describe('moveBar', () => {
     expect(moveBar(layout, 'b', { dock: 'top', row: 2, index: 0 }).docks.top).toEqual([['a'], ['c'], ['b']]);
   });
 
+  it('inserts a new row at the row index when asked for one', () => {
+    expect(moveBar(layout, 'b', { dock: 'top', row: 0, index: 0, newRow: true }).docks.top).toEqual([['b'], ['a'], ['c']]);
+    expect(moveBar(layout, 'a', { dock: 'top', row: 1, index: 0, newRow: true }).docks.top).toEqual([['b'], ['a'], ['c']]);
+  });
+
   it('appends to a row when the index is past its end', () => {
     expect(moveBar(layout, 'a', { dock: 'top', row: 1, index: 9 }).docks.top).toEqual([['b'], ['c', 'a']]);
   });

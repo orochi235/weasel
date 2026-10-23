@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardE
 import type { PrefOrder } from '@weasel-js/prefs';
 import { useLatest } from '@weasel-js/react';
 import { BAR_IN, BAR_UNIT } from './barOrder';
+import { BAR_LEAD } from './useBarOverflow';
 import { containerUnits, grabbedUnit, movedInto } from './useBarReorder';
 
 /** What {@link useBarReorderKeys} reads. */
@@ -80,7 +81,8 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, keysOf }: 
     const back = e.key === (vertical ? 'ArrowUp' : 'ArrowLeft');
     if (done === undefined || el === null || !e.altKey || e.ctrlKey || e.metaKey || (!back && e.key !== (vertical ? 'ArrowDown' : 'ArrowRight'))) return;
     const target = e.target as Element;
-    if (entersText(target)) return;
+    // A dock's handle answers to Alt+arrows itself, moving the whole bar.
+    if (entersText(target) || target.closest?.(`[${BAR_LEAD}]`)) return;
     const grabbed = target.closest?.(`[${BAR_UNIT}]`);
     if (!grabbed || !el.contains(grabbed)) return;
     const { container, key } = grabbedUnit(grabbed, e.shiftKey);

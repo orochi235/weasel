@@ -1,5 +1,6 @@
 /* Docks round a workspace. An edge with no bars draws nothing, so its track collapses. */
 .root {
+  position: relative;
   display: grid;
   grid-template:
     'top top top' auto
@@ -71,4 +72,84 @@
   flex-direction: column;
   align-items: stretch;
   min-height: 0;
+}
+
+/* What the dock draws round each bar, so a drag can mark it. */
+.slot {
+  display: flex;
+  min-width: 0;
+}
+
+.left .slot,
+.right .slot {
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* A bar that folds what does not fit into a menu takes the room its row has, so its slot has to as well. */
+.slot:has(> [data-overflow='menu']) {
+  flex: 1 1 auto;
+}
+
+/* A bar a drag has lifted. */
+.slot[data-dock-dragging] {
+  opacity: 0.5;
+}
+
+/* Where the lifted bar would land: a bar on that side of the bar it lands beside, drawn outside its box so nothing
+   moves. */
+.slot[data-dock-drop='before'] {
+  box-shadow: -2px 0 0 var(--wzl-accent);
+}
+
+.slot[data-dock-drop='after'] {
+  box-shadow: 2px 0 0 var(--wzl-accent);
+}
+
+.slot:dir(rtl)[data-dock-drop='before'] {
+  box-shadow: 2px 0 0 var(--wzl-accent);
+}
+
+.slot:dir(rtl)[data-dock-drop='after'] {
+  box-shadow: -2px 0 0 var(--wzl-accent);
+}
+
+.left .slot[data-dock-drop='before'],
+.right .slot[data-dock-drop='before'] {
+  box-shadow: 0 -2px 0 var(--wzl-accent);
+}
+
+.left .slot[data-dock-drop='after'],
+.right .slot[data-dock-drop='after'] {
+  box-shadow: 0 2px 0 var(--wzl-accent);
+}
+
+/* A new row the lifted bar would make: a 2px line between rows, taking no room. */
+.newRow {
+  flex: none;
+  block-size: 0;
+  box-shadow: 0 0 0 1px var(--wzl-accent);
+}
+
+.left .newRow,
+.right .newRow {
+  block-size: auto;
+  inline-size: 0;
+}
+
+/* A dock the lifted bar may not enter. */
+.dock[data-dock-unavailable] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* The live region a keyboard move announces in: out of sight, still read. */
+.status {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

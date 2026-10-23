@@ -36,7 +36,8 @@ export interface ToolbarLayout {
   floating: Record<string, FloatPlace>;
 }
 
-export type BarTarget = { dock: string; row: number; index: number } | { float: FloatPlace };
+/** Where a bar goes: a slot in a dock's row, a new row of its own at `row` with `newRow`, or a floating place. */
+export type BarTarget = { dock: string; row: number; index: number; newRow?: boolean } | { float: FloatPlace };
 
 /**
  * Reconciles a stored layout with the docks and bars the app has now. Every bar ends up
@@ -96,7 +97,8 @@ export function moveBar(layout: ToolbarLayout, barId: string, to: BarTarget): To
     out.floating[barId] = { ...to.float };
   } else {
     const rows = (out.docks[to.dock] ??= []);
-    if (to.row >= rows.length) rows.push([barId]);
+    if (to.newRow) rows.splice(Math.max(0, to.row), 0, [barId]);
+    else if (to.row >= rows.length) rows.push([barId]);
     else rows[Math.max(0, to.row)].splice(Math.max(0, to.index), 0, barId);
   }
   for (const [dock, rows] of Object.entries(out.docks)) out.docks[dock] = rows.filter((r) => r.length);

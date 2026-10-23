@@ -1,0 +1,6 @@
+/* A workspace the docks sit round, held clear of the viewport's edge. */
+.frame {
+  inline-size: 700px;
+  block-size: 400px;
+  margin: var(--wzl-space-6);
+}

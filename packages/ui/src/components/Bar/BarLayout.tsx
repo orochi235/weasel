@@ -12,6 +12,7 @@ import { useBarReorder } from './useBarReorder';
 import { useBarReorderKeys } from './useBarReorderKeys';
 import { BAR_MORE, useBarOverflow } from './useBarOverflow';
 import { useBarLead } from './barLeadHandle';
+import { DockBarContext } from '../ToolbarDock/dockContext';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
@@ -157,14 +158,16 @@ function BarLine(props: BarLayoutProps) {
       aria-label={label}
       aria-orientation={label === undefined ? undefined : orientation}
     >
-      {props.onReorder && <span role="status" className={s.status}>{keys.announcement}</span>}
-      {leading && <span className={s.lead} {...leading.attrs}>{leading.content}</span>}
-      {line.map((item) => drawBarItem(item, vertical, attrs))}
-      {rest.length > 0 && (
-        <span className={s.cell} {...{ [BAR_MORE]: '' }}>
-          <BarOverflow label={overflowLabel}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
-        </span>
-      )}
+      <DockBarContext.Provider value={null}>
+        {props.onReorder && <span role="status" className={s.status}>{keys.announcement}</span>}
+        {leading && <span className={s.lead} {...leading.attrs}>{leading.content}</span>}
+        {line.map((item) => drawBarItem(item, vertical, attrs))}
+        {rest.length > 0 && (
+          <span className={s.cell} {...{ [BAR_MORE]: '' }}>
+            <BarOverflow label={overflowLabel}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
+          </span>
+        )}
+      </DockBarContext.Provider>
     </div>
   );
 }

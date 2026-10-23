@@ -150,6 +150,8 @@
   gap: var(--wzl-space-1);
   cursor: grab;
   border-radius: var(--wzl-radius-sm);
+  user-select: none;
+  touch-action: none;
 }
 
 .lead[role='button']:focus-visible {

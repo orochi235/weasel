@@ -12,6 +12,7 @@ import { BAR_ITEM, BAR_LEAD, BAR_MORE, fitting } from './useBarOverflow';
 import { useBarReorder } from './useBarReorder';
 import { useBarReorderKeys } from './useBarReorderKeys';
 import { useBarLead } from './barLeadHandle';
+import { DockBarContext } from '../ToolbarDock/dockContext';
 import b from './Bar.module.css';
 import s from './BarAlong.module.css';
 
@@ -58,6 +59,8 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const keys = useBarReorderKeys({ root, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical: false });
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     reorder.onPointerDownCapture(e);
+    // A press on a dock's handle moves the bar, so it does not also scroll the run.
+    if (leading?.handle && (e.target as Element).closest?.(`[${BAR_LEAD}]`)) return;
     along.rootProps.onPointerDownCapture(e);
   };
 
@@ -65,15 +68,17 @@ export function BarAlong(props: BarAlongProps): ReactElement {
     <div {...rootAttrs} {...along.rootProps} onPointerDownCapture={onPointerDownCapture} onKeyDownCapture={keys.onKeyDownCapture} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label}>
       <RunBand row={along} shape={shape} />
       {props.onReorder && <span role="status" className={b.status}>{keys.announcement}</span>}
-      <AlongContext.Provider value={null}>
-        {leading != null && <span className={`${b.lead} ${s.item}`} {...leading.attrs} style={place(0).style} data-clipped={place(0).clipped}>{leading.content}</span>}
-        {line.map((item, i) => drawBarItem(item, false, attrs, place(first + i)))}
-        {rest.length > 0 && (
-          <span className={`${b.cell} ${s.item}`} {...{ [BAR_MORE]: '' }} style={place(order.length - 1).style}>
-            <BarOverflow label={overflowLabel} side={place(order.length - 1).side}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
-          </span>
-        )}
-      </AlongContext.Provider>
+      <DockBarContext.Provider value={null}>
+        <AlongContext.Provider value={null}>
+          {leading != null && <span className={`${b.lead} ${s.item}`} {...leading.attrs} style={place(0).style} data-clipped={place(0).clipped}>{leading.content}</span>}
+          {line.map((item, i) => drawBarItem(item, false, attrs, place(first + i)))}
+          {rest.length > 0 && (
+            <span className={`${b.cell} ${s.item}`} {...{ [BAR_MORE]: '' }} style={place(order.length - 1).style}>
+              <BarOverflow label={overflowLabel} side={place(order.length - 1).side}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
+            </span>
+          )}
+        </AlongContext.Provider>
+      </DockBarContext.Provider>
       <RunEnds row={along} run={run} />
     </div>
   );
