@@ -64,7 +64,12 @@ describe('Alt+arrow reordering', () => {
     render(host(<Held schema={flat} onReorder={() => {}} />));
     button('a').focus();
     alt(button('a'), 'ArrowRight');
-    expect(screen.getByRole('status')).toHaveTextContent('a, 2 of 3');
+    const say = document.querySelector('[data-bar-announce]');
+    expect(say).toHaveTextContent('a, 2 of 3');
+    expect(say).toHaveAttribute('aria-live', 'polite');
+    expect(say).toHaveAttribute('aria-atomic', 'true');
+    // A role of status would collide with an app's own status bar.
+    expect(say).not.toHaveAttribute('role');
   });
 
   it('does nothing and says nothing at either end', () => {
@@ -73,7 +78,7 @@ describe('Alt+arrow reordering', () => {
     alt(button('a'), 'ArrowLeft');
     alt(button('c'), 'ArrowRight');
     expect(onReorder).not.toHaveBeenCalled();
-    expect(screen.getByRole('status')).toHaveTextContent('');
+    expect(document.querySelector('[data-bar-announce]')).toHaveTextContent('');
   });
 
   it('leaves Alt+Arrow alone inside a number input', () => {
@@ -113,9 +118,9 @@ describe('Alt+arrow reordering', () => {
     expect(button('a')).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
   });
 
-  it('draws no status and no shortcuts without onReorder', () => {
+  it('draws no announcer and no shortcuts without onReorder', () => {
     render(host(<Bar schema={flat} />));
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(document.querySelector('[data-bar-announce]')).toBeNull();
     expect(button('a')).not.toHaveAttribute('aria-keyshortcuts');
   });
 

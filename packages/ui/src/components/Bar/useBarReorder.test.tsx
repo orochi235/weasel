@@ -25,7 +25,7 @@ afterAll(() => {
 });
 afterEach(cleanup);
 
-const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
+const MOD: Record<string, boolean> = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 const act = (name: string): PrefLeaf => ({ kind: 'action', name, description: '', default: undefined, action: `x.${name}` }) as PrefLeaf;
 

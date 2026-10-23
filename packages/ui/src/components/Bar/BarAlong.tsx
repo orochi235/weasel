@@ -67,7 +67,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   return (
     <div {...rootAttrs} {...along.rootProps} onPointerDownCapture={onPointerDownCapture} onKeyDownCapture={keys.onKeyDownCapture} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label}>
       <RunBand row={along} shape={shape} />
-      {props.onReorder && <span role="status" className={b.status}>{keys.announcement}</span>}
+      {props.onReorder && <span aria-live="polite" aria-atomic="true" data-bar-announce="" className={b.status}>{keys.announcement}</span>}
       <DockBarContext.Provider value={null}>
         <AlongContext.Provider value={null}>
           {leading != null && <span className={`${b.lead} ${s.item}`} {...leading.attrs} style={place(0).style} data-clipped={place(0).clipped}>{leading.content}</span>}

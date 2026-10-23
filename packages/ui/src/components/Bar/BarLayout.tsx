@@ -159,7 +159,7 @@ function BarLine(props: BarLayoutProps) {
       aria-orientation={label === undefined ? undefined : orientation}
     >
       <DockBarContext.Provider value={null}>
-        {props.onReorder && <span role="status" className={s.status}>{keys.announcement}</span>}
+        {props.onReorder && <span aria-live="polite" aria-atomic="true" data-bar-announce="" className={s.status}>{keys.announcement}</span>}
         {leading && <span className={s.lead} {...leading.attrs}>{leading.content}</span>}
         {line.map((item) => drawBarItem(item, vertical, attrs))}
         {rest.length > 0 && (
