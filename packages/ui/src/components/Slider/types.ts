@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { TrackShape } from '@weasel-js/geom';
+import type { TrackRun, TrackShape } from '@weasel-js/geom';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
 
 /**
@@ -62,13 +62,14 @@ export type BoundsCtx = {
  * through `fractionToPosition`: under `thumbFit: 'inside'` the span stops half
  * a thumb short of each end of the track.
  *
- * `shape` is the value span as a shape in the painted layer's px, in reading
+ * `shape` is the value span as a run in the painted layer's px, in reading
  * order: `shape.at(valueToFraction(v))` is where a thumb at `v` sits, on a
- * line or a curve. On a curve `trackWidth` is the run's length, and
+ * line or a curve. On a curve its `shape`, `from` and `to` place the span on
+ * the whole band, which runs past it under `thumbFit: 'inside'`. On a curve `trackWidth` is the run's length, and
  * `fractionToPosition` means nothing; a painter there draws through `shape`.
  */
 export type TrackCtx = {
-  shape: TrackShape;
+  shape: TrackRun;
   trackWidth: number;
   valueToFraction: (v: number) => number;
   fractionToPosition: (f: number) => string;

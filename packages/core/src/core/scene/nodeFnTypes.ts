@@ -1,4 +1,5 @@
 import type { Affine, Path } from '@weasel-js/geom';
+import type { InheritedPaint } from './inheritedPaint';
 import type { ContainerNode, Node } from './types';
 
 /**
@@ -20,6 +21,10 @@ export interface DerivedDep<TPose, TData = unknown, TLayer extends string = stri
    *  it to place something *along* a dependency: a label on a routed edge.
    *  Resolved on first read and memoized on the dependency. */
   readonly path: Path | null;
+  /** What its `'inherit'` fill and stroke take from its containers, or
+   *  `undefined` when it inherits nothing. A dependency built by hand rather
+   *  than by the scene may leave it out, and then inherits nothing. */
+  readonly inherited?: InheritedPaint;
 }
 
 /** `F` with its parameters checked bivariantly, as a method's are, so that a

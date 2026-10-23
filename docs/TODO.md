@@ -391,13 +391,8 @@ Priority tags:
   A keycap such as 1️⃣ draws its digit: `paintRuns`' outline tier lacks the `drawsInk` check `textClusters` has.
 
 - **(P2) Readers that still read an `'inherit'` fill or stroke as none** (2026-10-21). Painters, picking,
-  drawn bounds, the panel, SVG, the text editor, booleans and WeaselDraw's export resolve it against
-  the node's containers. These do not yet:
-  - a path effect's source (`features/pathEffects/readSource.ts`): `readEffectSource` gets a
-    `DerivedDep` and no scene, so an inheriting source lends its effect no paint;
-  - every registered painter that does not read `ctx.inherited` (`diagram:shape` does); and
-    `diagram:shape` still paints a diagram container's own fill, where the kit's painters paint no
-    container's — whether a diagram node with children counts as a group is open (2026-10-21);
+  drawn bounds, path effects, the panel, SVG, the text editor, booleans and WeaselDraw's export resolve
+  it against the node's containers. These do not yet:
   - the drag ghost (`usePreviewGhostLayer`) resolves against the scene's container, so a container's
     fill edited mid-gesture reaches its members only when the gesture commits;
   - the headless cull (`defaultPaintBounds`) gives up on a node with an inherited stroke, since it
@@ -665,9 +660,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   follow on what `BarAlong` uses: geom's `placeAlongRun` for where items fall and `useRunScroll` (`Bar/`) for how a
   run scrolls, and `placeOnRun` (`Along/placeOnRun.ts`) for the custom properties that put a part there.
 
-- **(P3) No gradient painter for a curved track.** `paintGradientTrack` paints straight tracks only and
-  draws nothing on a curve; a curved painter strokes the `TrackCtx.shape` run with sampled stops.
-
 - **(P3) Gaps left in controls along a curve.**
   - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
   - `thicknessOf` in `sliderGeometry.ts` reads `--rp-track-height` as px only, so a rem or `calc()` height
@@ -677,8 +669,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   - A curved bar's menu opens above only for side `'top'`; `'left'` and `'right'` fall back to below,
     because `above` is a boolean where a side is meant.
   - `ReadoutsAlong` has no ResizeObserver, so a font load does not restack its rows.
-  - A run is turned over by its middle alone, so on a run across 3 or 9 o'clock the items toward one end tip
-    past 90° and read upside down: the `ui/Along/Clock sweep` lab shows it at a 90° span (2026-10-21).
 
 - **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
   `apps/draw/src/dev/AssetsPage.test.tsx` with a node property schema open: the Export panel's

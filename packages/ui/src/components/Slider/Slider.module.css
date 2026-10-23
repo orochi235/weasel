@@ -312,7 +312,7 @@
 
 /* Down the run's normal, past the band: outside the circle on a bottom arc. */
 .curved .stopLabel {
-  transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + 0.5lh));
+  transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + 0.5lh)) var(--upright);
 }
 
 .readoutsAlong {
@@ -332,5 +332,5 @@
 
 /* Below the stop labels' line, one row per step of --row. */
 .readoutsAlong > .readoutAlong {
-  transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + (var(--row, 0) + 1.5) * 1lh));
+  transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + (var(--row, 0) + 1.5) * 1lh)) var(--upright);
 }

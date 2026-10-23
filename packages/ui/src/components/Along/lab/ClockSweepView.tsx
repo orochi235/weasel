@@ -84,7 +84,8 @@ export function fineAngles(mid: number, range: number, step: number): number[] {
 /**
  * A bar and a slider centered on every hour of the clock, and finely either side of 3 and 9 o'clock, where an arc's
  * middle passes from pointing up to pointing down and `trackRun` turns its items over. Each dial's caption is
- * `trackRun`'s verdict on its arc; the items themselves show what the controls did with it.
+ * `trackRun`'s verdict on its arc; the items themselves show what the controls did with it, each item that reads
+ * turned upright on its own where the run would stand it upside down.
  */
 export function ClockSweepView({ config }: { config: ClockSweepConfig }): ReactElement {
   const hours = Array.from({ length: 12 }, (_, i) => i * 30);

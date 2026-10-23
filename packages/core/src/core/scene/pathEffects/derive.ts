@@ -41,6 +41,7 @@ interface Derived {
   depData: unknown[];
   poses: unknown[];
   paths: (Path | null)[];
+  inherited: unknown[];
   path: Path | null;
   /** The face generation it was worked out under, or `null` when it read no
    *  glyph outlines. */
@@ -68,6 +69,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
       depData: deps.map((d) => d?.node.data),
       poses: deps.map((d) => (d === undefined ? undefined : snapshotPose(d.pose))),
       paths: deps.map((d) => d?.path ?? null),
+      inherited: deps.map((d) => d?.inherited),
       path: parts === null ? null : pathFromParts(parts),
       faces: fonts ? generation : null,
     };
@@ -93,7 +95,7 @@ function current(held: Derived, node: { data?: unknown }, deps: readonly (Derive
     if (held.nodes[i] !== d?.node) return false;
     if (d === undefined) continue;
     if (held.depData[i] !== d.node.data || !samePoseValue(held.poses[i], d.pose)) return false;
-    if (held.paths[i] !== d.path) return false;
+    if (held.paths[i] !== d.path || held.inherited[i] !== d.inherited) return false;
   }
   // A hit is still a read, for the scene memo enclosing this one.
   if (held.faces !== null) noteFontRead();
