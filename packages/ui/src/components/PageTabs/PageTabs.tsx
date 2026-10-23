@@ -29,6 +29,9 @@ export interface PageTabsProps<P extends PageTabItem> {
   onTabContextMenu?(id: string, e: MouseEvent): void;
   /** A tab's text. Default: the page's name, else "Page" and its place. */
   labelOf?(page: P, index: number): string;
+  /** The id of the element that shows the current page, which the lit tab names as what it controls. Absent, no
+   *  tab names one. */
+  panelId?: string;
   'aria-label'?: string;
   className?: string;
 }

@@ -53,6 +53,12 @@ const client = (d: number) => {
 };
 
 describe('PageTabs along a curve', () => {
+  test('names panelId on the lit tab alone, as a straight strip does', async () => {
+    setup({ panelId: 'canvas' });
+    await act(async () => {});
+    expect(screen.getAllByRole('tab').map((t) => t.getAttribute('aria-controls'))).toEqual(['canvas', null, null]);
+  });
+
   test('lays its tabs along the run, the + button last', () => {
     setup();
     const ds = [...screen.getAllByRole('tab'), add()].map(along);

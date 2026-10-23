@@ -16,12 +16,29 @@ function setup(props: Partial<PageTabsProps<{ id: string; name?: string }>> = {}
 }
 
 const tab = (name: string) => screen.getByRole('tab', { name });
+/** The panel name is set right after the list changes, a microtask on. */
+const settled = () => act(async () => {});
 const press = (el: HTMLElement) => {
   fireEvent.pointerDown(el, { pointerId: 1, button: 0, clientX: 5, clientY: 5 });
   fireEvent.pointerUp(document, { pointerId: 1, button: 0, clientX: 5, clientY: 5 });
 };
 
 describe('PageTabs', () => {
+  it('names no panel by default, since it draws none', async () => {
+    setup();
+    await settled();
+    expect(screen.getAllByRole('tab').map((t) => t.getAttribute('aria-controls'))).toEqual([null, null, null]);
+  });
+
+  it('names panelId on the lit tab alone, and moves it with the lit tab', async () => {
+    const { view, ...handlers } = setup({ panelId: 'canvas' });
+    await settled();
+    expect(screen.getAllByRole('tab').map((t) => t.getAttribute('aria-controls'))).toEqual(['canvas', null, null]);
+    view.rerender(<PageTabs aria-label="Pages" pages={PAGES} current="c" panelId="canvas" {...handlers} />);
+    await settled();
+    expect(screen.getAllByRole('tab').map((t) => t.getAttribute('aria-controls'))).toEqual([null, null, 'canvas']);
+  });
+
   it('labels each page by its name, or its place when it has none, and lights the current one', () => {
     setup({ current: 'b' });
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Cover', 'Page 2', 'Page 3']);

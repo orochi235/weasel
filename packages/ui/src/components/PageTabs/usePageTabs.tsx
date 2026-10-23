@@ -1,5 +1,5 @@
 import { pageName } from '@weasel-js/core';
-import { useCallback, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import type { Key } from 'react-aria-components';
 import { useReorderDragList, type ReorderDragHandlers, type ReorderLine } from '../../useReorderDragList';
 import { DragGhost } from '../DragGhost';
@@ -38,6 +38,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
   /** The tab React Aria selected during the press under way, which the press must not report again. */
   const selectedByPress = useRef<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  usePanelNamed(listRef, props.panelId);
 
   const onPress = useCallback((id: string) => {
     const prev = lastPress.current;
@@ -133,4 +134,28 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
       )
       : null,
   };
+}
+
+/**
+ * Points the lit tab's `aria-controls` at `panelId`, or no tab's at anything without one. React Aria names its own
+ * panel's id on the lit tab whether a panel is drawn or not, takes no override, and fills its tabs in on renders of its
+ * own, so the list is watched and set right after each change.
+ */
+function usePanelNamed(list: { current: HTMLElement | null }, panelId: string | undefined): void {
+  useLayoutEffect(() => {
+    const el = list.current;
+    if (el === null) return;
+    const apply = (): void => {
+      for (const tab of el.querySelectorAll('[role="tab"]')) {
+        const want = panelId !== undefined && tab.getAttribute('aria-selected') === 'true' ? panelId : null;
+        if (tab.getAttribute('aria-controls') === want) continue;
+        if (want === null) tab.removeAttribute('aria-controls');
+        else tab.setAttribute('aria-controls', want);
+      }
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(el, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-controls', 'aria-selected'] });
+    return () => observer.disconnect();
+  }, [list, panelId]);
 }
