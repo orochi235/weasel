@@ -90,7 +90,7 @@ function jogParts(props: JogProps): JogParts {
         disabled={at <= 0}
         onClick={() => onStep(-1)}
       >
-        <Icon name={icon('stepBack')} size={14} />
+        <Icon name={icon('stepBack')} size={16} />
       </Button>
     ),
     play: (
@@ -102,7 +102,7 @@ function jogParts(props: JogProps): JogParts {
         disabled={count < 2}
         onClick={() => onPlay(!playing)}
       >
-        {playing ? <Icon name={icon('pause')} size={14} /> : <Icon name={icon('play')} size={14} />}
+        {playing ? <Icon name={icon('pause')} size={16} /> : <Icon name={icon('play')} size={16} />}
       </Button>
     ),
     next: (
@@ -114,7 +114,7 @@ function jogParts(props: JogProps): JogParts {
         disabled={at >= last}
         onClick={() => onStep(1)}
       >
-        <Icon name={icon('stepForward')} size={14} />
+        <Icon name={icon('stepForward')} size={16} />
       </Button>
     ),
     scrub:
