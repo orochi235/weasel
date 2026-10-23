@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { renderWithIcons as render } from '../../testing/withIcons';
 import { arcShape, lineShape, type ArcTrackSpec } from '@weasel-js/geom';
 import { createRecentColorsStore } from '../RecentColors';
 import { SwatchStrip } from '../SwatchStrip';

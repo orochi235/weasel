@@ -1,9 +1,10 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
+import { renderWithIcons } from '../../../testing/withIcons';
 import { arcInBox } from '../../Along/arcInBox';
 import { SWATCH_ARC_DEFAULTS, swatchArcOf, type SwatchArcConfig } from './swatchArcConfig';
 import { readRings } from './useRingReading';
@@ -27,7 +28,7 @@ async function settle() {
 async function mount(arc: Partial<SwatchArcConfig['arc']> = {}, swatches: Partial<SwatchArcConfig['swatches']> = {}) {
   await page.viewport(1400, 1000);
   const config = { arc: { ...SWATCH_ARC_DEFAULTS.arc, ...arc }, swatches: { ...SWATCH_ARC_DEFAULTS.swatches, ...swatches } };
-  render(<SwatchArcView config={config} />);
+  renderWithIcons(<SwatchArcView config={config} />);
   await document.fonts.ready;
   await settle();
   const { size, ...rest } = config.arc;
