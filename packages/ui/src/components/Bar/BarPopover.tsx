@@ -46,7 +46,8 @@ export function BarPopover({ label, icon, children, isDisabled, className, porta
       {ready && provide(
         <RACPopover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.popBody}`} aria-label={label}>
-            {children}
+            {/* Context crosses the portal, and a side belongs to the curved bar's line, not to what opens from it. */}
+            <BarSideContext.Provider value={undefined}>{children}</BarSideContext.Provider>
           </RACDialog>
         </RACPopover>
       )}
