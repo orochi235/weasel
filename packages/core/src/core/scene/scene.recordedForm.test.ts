@@ -295,7 +295,7 @@ describe('Scene — what an applyBatch entry holds', () => {
     scene.setPose(B, at(140));
     const snapshot = scene.serializeHistory();
     expect(snapshot.undoStack.map((e) => e.forwardOps.map((op) => op.name))).toEqual([['kit:setPose'], ['kit:setPose']]);
-    expect(snapshot.form).toBe(2);
+    expect(snapshot.form).toBe(3);
   });
 
   it('serializes an op that wrote no scene state as itself', () => {

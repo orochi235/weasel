@@ -395,7 +395,7 @@ describe('scene container layout', () => {
     scene.onReflow(spy);
     const id = scene.add({ kind: 'mark', layer: 'l', pose: LOOSE, data: null });
     scene.setPose(id, { ...LOOSE, x: 3 });
-    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['add leaf', 'setPose']);
+    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['add mark', 'setPose']);
     expect(spy).not.toHaveBeenCalled();
   });
 

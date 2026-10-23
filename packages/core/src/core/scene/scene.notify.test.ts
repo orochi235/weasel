@@ -241,7 +241,7 @@ describe('Scene — a bare edit of a laid-out container', () => {
     expect(heard(scene, () => scene.move(B, C)).calls).toBe(1);
     expect(heard(scene, () => scene.remove(A)).calls).toBe(1);
     expect(heard(scene, () => scene.setLayout(C, null)).calls).toBe(1);
-    expect(labels(scene)).toEqual(['add leaf', 'add leaf', 'reorder', 'setPose', 'move', 'move', 'remove', 'setLayout']);
+    expect(labels(scene)).toEqual(['add mark', 'add mark', 'reorder', 'setPose', 'move', 'move', 'remove', 'setLayout']);
     expect(scene.get(B)!.pose.width).toBe(80);
   });
 

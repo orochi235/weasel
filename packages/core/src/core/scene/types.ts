@@ -347,7 +347,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   setDependsOn(id: NodeId, dependsOn: readonly NodeId[] | 'children' | undefined): void;
   /** Give container `id` a different layout — a strategy, its key in
    *  `SceneRegistry.layout`, or `null` for none — and re-arrange its children
-   *  under it, as one undoable step. Throws for a leaf, or a key the registry
+   *  under it, as one undoable step. Throws for a mark, or a key the registry
    *  does not hold. A registered layout is recorded by its key, so a
    *  serialized history restores it; an unregistered one lives only as long
    *  as the session.
@@ -360,7 +360,6 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  Siblings are reindexed. Recorded as one undoable step.
    *
    *  Rejected (throws) when:
-   *  - `parent` exists but is a **leaf**, not a container;
    *  - the move would form a **cycle** — `parent` is `id` itself or one of
    *    `id`'s own descendants;
    *  - it would drop `id` **below its new parent's layer** (child may not
@@ -477,8 +476,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   canUndo(): boolean;
   canRedo(): boolean;
   batch<T>(label: string, fn: () => T, options?: import('./recorder').SceneBatchOptions): T;
-  /** The layout container `id` declares, or `null` for a leaf or a
-   *  container that declares none. */
+  /** The layout group `id` declares, or `null` for a mark or a group with none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
   /** Declare the unit scope of container `id`, or clear it with `null`. */
   setUnits(id: NodeId, units: UnitScope | null): void;

@@ -68,7 +68,7 @@ describe('Scene.onPoseWrite', () => {
       const c = scene.add({ kind: 'mark', layer: 'l', pose: at(30), data: null });
       scene.remove(c);
     });
-    expect(seen).toEqual([[{ id: b, from: undefined, to: at(20), origin: 'call', label: 'add leaf' }]]);
+    expect(seen).toEqual([[{ id: b, from: undefined, to: at(20), origin: 'call', label: 'add mark' }]]);
     expect(removed).toEqual([]);
   });
 

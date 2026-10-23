@@ -73,7 +73,7 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
 
   /** Check that `spec` can be placed, and answer with the `kit:add` payload
    *  that places it. Throws on an id collision, an unknown or locked layer,
-   *  a parent that is not a container or is locked, and a layer below the
+   *  a locked parent, and a layer below the
    *  parent's. */
   function addPayload(spec: AddNodeSpec<TData, TLayer, TPose>) {
     const id = spec.id ?? env.generateId();

@@ -34,12 +34,11 @@ describe('add / remove / move', () => {
     expect(b).toBe('g1');
   });
 
-  it('rejects parent that is not a container', () => {
+  it('accepts a mark as a parent', () => {
     const s = makeScene();
-    const leaf = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    expect(() =>
-      s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' }, parent: leaf }),
-    ).toThrow(/not a container/);
+    const mark = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const child = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' }, parent: mark });
+    expect(s.childrenOf(mark)).toEqual([child]);
   });
 
   it('parents children under containers and tracks them in render order', () => {
