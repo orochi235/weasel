@@ -40,7 +40,7 @@ function pickAt(compose: boolean, pt: { x: number; y: number }): string[] {
   const scene = compose ? makeFrameFixture() : makeFrameFixture(UNCOMPOSED);
   const src = scenePickSource<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
   return pickWalk<RectPose>(src, {
-    includeContainers: false,
+    includeGroups: false,
     // The fixture's container clips its children; this test is about where a
     // node is, not about clipping, so admit everything.
     clipAdmits: () => true,

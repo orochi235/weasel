@@ -40,6 +40,7 @@ function makeStubScene(initial: Record<string, Pose>) {
       if (!poses.has(id as string)) return undefined;
       return { pose: poses.get(id as string) };
     },
+    childrenOf: (): readonly NodeId[] => [],
     setPose(id: string, pose: Pose) {
       poses.set(id as string, pose);
     },

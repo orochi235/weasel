@@ -129,7 +129,7 @@ describe('useSceneSelectTool through the pick index', () => {
     const full = scenePickSource(scene);
     const rect = { x: 100, y: 100, width: 75, height: 50 };
     const tri = [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 0, y: 200 }];
-    const each = { includeContainers: true };
+    const each = { includeGroups: true };
 
     const before = pickIndexBuildCount();
     const marquee = adapter.hitTestArea!(rect);

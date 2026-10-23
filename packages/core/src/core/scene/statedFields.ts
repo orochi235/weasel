@@ -11,5 +11,5 @@ export const statedFields = (n: Stated): Omit<Stated, 'kind'> => ({
   ...(n.pickable !== undefined ? { pickable: n.pickable } : {}),
   ...(n.hidden === true ? { hidden: true } : {}),
   ...(n.locked === true ? { locked: true } : {}),
-  ...(n.kind === 'group' && n.units !== undefined ? { units: n.units } : {}),
+  ...(n.units !== undefined ? { units: n.units } : {}),
 });

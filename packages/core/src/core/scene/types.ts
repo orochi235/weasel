@@ -173,9 +173,9 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   hidden?: boolean;
   /** Mirrors `SceneNode.locked`. */
   locked?: boolean;
-  /** Attach a clip-path function to the node; ignored for marks. Mirrors `SceneNode.clipFromPose`. */
+  /** Attach a clip-path function to the node; mirrors `SceneNode.clipFromPose`. */
   clipFromPose?: ClipFromPoseFn<TPose>;
-  /** Mirrors `SceneNode.copiesFromPose`; ignored for marks. */
+  /** Mirrors `SceneNode.copiesFromPose`. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.dependsOn`. */
   dependsOn?: readonly NodeId[] | 'children';
@@ -184,9 +184,9 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   derivePath?: DerivePathFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.derivePose`, on the same terms as `derivePath`. */
   derivePose?: DerivePoseFn<TPose, TData, TLayer>;
-  /** Mirrors `SceneNode.layout`; ignored for marks. */
+  /** Mirrors `SceneNode.layout`. */
   layout?: LayoutStrategy<TPose>;
-  /** Mirrors `SceneNode.units`; ignored for marks. */
+  /** Mirrors `SceneNode.units`. */
   units?: UnitScope;
 }
 
@@ -208,15 +208,15 @@ export interface RegisteredOp<P> {
  *  Passed to `createScene({ ..., registry })` and `sceneFromJSON(json, { registry })`.
  *  Each function-field type has its own keyed map. */
 export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = string> {
-  /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
+  /** Maps registry keys to `clipFromPose` factory functions for nodes. */
   clipFromPose?: Readonly<Record<string, ClipFromPoseFn<TPose>>>;
-  /** Maps registry keys to `copiesFromPose` functions for container nodes. */
+  /** Maps registry keys to `copiesFromPose` functions for nodes. */
   copiesFromPose?: Readonly<Record<string, CopiesFromPoseFn<TPose, TData, TLayer>>>;
   /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
   derivePath?: Readonly<Record<string, DerivePathFn<TPose, TData, TLayer>>>;
   /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */
   derivePose?: Readonly<Record<string, DerivePoseFn<TPose, TData, TLayer>>>;
-  /** Maps registry keys to container layout strategies. */
+  /** Maps registry keys to layout strategies. */
   layout?: Readonly<Record<string, LayoutStrategy<TPose>>>;
   // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
   // plus its entry here; the field name is the registry key by construction.

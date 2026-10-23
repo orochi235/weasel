@@ -71,7 +71,7 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
   const pose = sizeToBody(at, measureBody(spec, opts.measure));
   const trait = bodyTrait(spec, pose, opts.measure);
   const specs: BodyNodeSpec<TData, TLayer, TPose>[] = [{
-    kind: 'group',
+    kind: 'mark',
     layer: opts.layer,
     pose,
     data: opts.body(trait, pose),

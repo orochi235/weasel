@@ -119,9 +119,9 @@ export const groupAction: Action & { requires: string[] } = {
 };
 
 /**
- * Dissolves each selected container by reparenting its children up to the
+ * Dissolves each selected group by reparenting its children up to the
  * container's own parent (preserving z-order) and removing the now-empty
- * container, as a single undoable batch. Selected non-container nodes are
+ * container, as a single undoable batch. Selected marks, children or not, are
  * ignored. The freed children become the new selection, and nothing moves on
  * screen.
  */

@@ -10,7 +10,7 @@ import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER, derivedDrawnBounds } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
-import { CONTAINER_INK, inkReach, pathPaintOf, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, pathPaintOf, withAnimatedVertexColors } from './nodePaint';
 import { resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
 import { strokedPoseBox } from './strokedBounds';
@@ -28,8 +28,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized: a pure function of `(data, pose)`, and `pathInPoseFrame`
   // allocates on every call but the identity (`kind: 'rect'`) branch. See
   // PAINT_SLOT.
-  // As `kit:shape`, a container paints nothing of its own.
-  paint: (node, pose, ctx) => node.kind === 'group' ? [] : ctx?.derivedPath != null
+  paint: (node, pose, ctx) => ctx?.derivedPath != null
     // A pose override's path stands in for `data.path`, already where it is drawn.
     ? DERIVED_PAINTER.paint(node, pose, ctx)
     : withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
@@ -56,7 +55,6 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     return pathInPoseFrame(d.path, pose);
   },
   ink: (node, _pose, ctx) => {
-    if (node.kind === 'group') return CONTAINER_INK;
     const { fill, stroke } = pathPaintOf(node.data as PathData, ctx?.inherited);
     return { filled: fill !== null, ...inkReach(stroke ?? null, ctx?.scale) };
   },

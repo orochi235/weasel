@@ -13,6 +13,7 @@ function startAt(world: { x: number; y: number }, scale = { x: 1, y: 1 }) {
     composition: IDENTITY_POSE_COMPOSITION,
     layers: [],
     get: () => ({ pose, kind: 'mark' as const, layer: 'main', data: {}, parent: null }),
+    childrenOf: () => [],
     applyBatch: () => {},
   };
   const view = { get: () => ({ x: 0, y: 0, scale }), set: () => {} };

@@ -41,7 +41,8 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   view?: View,
   ctx?: NodePaintCtx,
 ): DrawCommand[] {
-  const painter = findNodeShape(node);
+  // A group is structure: it never paints, whatever its data holds.
+  const painter = node.kind === 'group' ? undefined : findNodeShape(node);
   const paintCtx = !view || ctx?.pixelScale !== undefined
     ? ctx
     : ctx ? { ...ctx, pixelScale: pixelScaleOf(view) } : viewOnlyCtx(view);

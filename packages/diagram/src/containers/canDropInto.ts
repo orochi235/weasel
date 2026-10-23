@@ -56,7 +56,7 @@ export function diagramDropParentAt(
   const walk = (ids: readonly string[]): void => {
     for (const id of ids) {
       const node = scene.get(id as never);
-      if (node === undefined || node.kind !== 'group') continue;
+      if (node === undefined) continue;
       const trait = diagramContainerOf(node);
       const b = bodyBox(node.pose as { x: number; y: number; width: number; height: number }, trait?.header);
       const inside = point.x >= b.x && point.x < b.x + b.width && point.y >= b.y && point.y < b.y + b.height;

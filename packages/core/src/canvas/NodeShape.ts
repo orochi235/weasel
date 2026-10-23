@@ -220,6 +220,8 @@ export function shapeCoversPoint<TData, TPose>(
   y: number,
   opts: ShapeCoversPointOptions = {},
 ): boolean {
+  // A group paints nothing, so its interior is its box, which the caller's pre-filter tested.
+  if (node.kind === 'group') return true;
   const sil = findShapeSilhouette(node, pose, { derivedPath: opts.derivedPath });
   if (sil === null) return true;
   const ink = findShapeInk(node, pose, { scale: opts.scale, inherited: opts.inherited }) ?? DEFAULT_INK;

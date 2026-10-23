@@ -32,10 +32,10 @@ describe('inheritedPaintOf', () => {
     expect(inheritedPaintOf(node, [group({ fill: INHERIT }), group({ fill: BLUE })]).fill).toBe(BLUE);
   });
 
-  it('skips an ancestor that is not a container', () => {
+  it('takes a mark ancestor’s fill like a group’s', () => {
     const node = { data: { fill: INHERIT } };
     expect(inheritedPaintOf(node, [{ kind: 'mark', data: { fill: RED } }, group({ fill: BLUE })]).fill)
-      .toBe(BLUE);
+      .toBe(RED);
   });
 
   it('is none at the root, and under a container with none', () => {

@@ -52,10 +52,10 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
     setPose(id, pose) {
       const node = requireNode(id);
       refuse(id, 'set the pose of');
-      const resizes = node.kind === 'group' && resized(layoutFrame, id, node.pose, pose);
+      const resizes = node.layout !== undefined && resized(layoutFrame, id, node.pose, pose);
       // A container with a layout owns where its children go, however one is moved.
       const parent = node.parent === null ? undefined : requireNode(node.parent);
-      const arranger = parent?.kind === 'group' && parent.layout !== undefined ? parent.id : null;
+      const arranger = parent?.layout !== undefined ? parent.id : null;
       edit('setPose', resizes || arranger !== null, () => {
         if (resizes) noteChange(id);
         noteChange(arranger);
@@ -98,7 +98,6 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
 
     setLayout(id, layout) {
       const node = requireNode(id);
-      if (node.kind !== 'group') throw new Error(`Scene: "${id}" is not a container`);
       refuse(id, 'set the layout of');
       let to: LayoutStrategy<TPose> | null;
       if (typeof layout === 'string') {
@@ -126,7 +125,6 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
 
     setUnits(id, units) {
       const node = requireNode(id);
-      if (node.kind !== 'group') throw new Error(`Scene: "${id}" is not a container`);
       refuse(id, 'set the units of');
       record('kit:setUnits', { id, from: node.units, to: units ?? undefined }, 'setUnits');
     },

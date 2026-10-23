@@ -4,7 +4,7 @@ import { fitDiagram } from './DiagramView';
 import type { DiagramSpec } from './fromData';
 
 const wide = [
-  { id: 'a', kind: 'group', pose: { x: 0, y: 0, width: 2000, height: 100 } },
+  { id: 'a', kind: 'mark', data: { diagram: {} }, pose: { x: 0, y: 0, width: 2000, height: 100 } },
 ] as unknown as DiagramSpec[];
 const size = { width: 360, height: 600 };
 
@@ -29,7 +29,7 @@ describe('fitDiagram', () => {
 
   it('does not raise a diagram that already fits above the floor', () => {
     const small = [
-      { id: 'a', kind: 'group', pose: { x: 0, y: 0, width: 100, height: 100 } },
+      { id: 'a', kind: 'mark', data: { diagram: {} }, pose: { x: 0, y: 0, width: 100, height: 100 } },
     ] as unknown as DiagramSpec[];
     expect(fitDiagram(small, size, { minScale: 0.75 })!.scale).toEqual({ x: 1, y: 1 });
   });
@@ -41,7 +41,7 @@ describe('fitDiagram', () => {
 
   it('raises a small diagram up to maxScale', () => {
     const small = [
-      { id: 'a', kind: 'group', pose: { x: 0, y: 0, width: 100, height: 100 } },
+      { id: 'a', kind: 'mark', data: { diagram: {} }, pose: { x: 0, y: 0, width: 100, height: 100 } },
     ] as unknown as DiagramSpec[];
     expect(fitDiagram(small, size, { maxScale: 2 })!.scale).toEqual({ x: 2, y: 2 });
   });

@@ -7,6 +7,7 @@ import type { PoseComposition } from 'core/scene/composePose';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { CanDropIntoDep, LayoutDep, NodeAtPointDep } from '../depSchema';
+import { admitsChild } from '../admitsChild';
 import type { GeometryProjection } from '../geometryProjection';
 import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
@@ -61,7 +62,7 @@ export interface MoveSession {
   readonly geometryProjection?: GeometryProjection;
   readonly lifecycle: GestureLifecycle;
   readonly nodeAtPoint: NodeAtPointDep | undefined;
-  /** Whether a container admits the dragged roots; every one does when absent. */
+  /** Whether a node admits the dragged roots; with no `canDropInto`, a group does and a mark does not. */
   readonly admits: (parent: NodeId) => boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
@@ -95,10 +96,10 @@ export interface MoveGesture {
 function admitsOf(
   canDropInto: CanDropIntoDep | undefined,
   ids: readonly NodeId[],
+  scene: { get(id: NodeId): { kind: string } | undefined },
 ): (parent: NodeId) => boolean {
-  if (canDropInto === undefined) return () => true;
   const roots = ids as readonly string[];
-  return (parent) => canDropInto(parent as string, roots);
+  return (parent) => admitsChild(scene, parent, roots, canDropInto);
 }
 
 /** Capture a drag at press. Null when there is nothing to move. Runs each
@@ -177,7 +178,7 @@ export function beginMove(
     geometryProjection,
     lifecycle,
     nodeAtPoint: ctx.deps.nodeAtPoint,
-    admits: admitsOf(ctx.deps.canDropInto, ids),
+    admits: admitsOf(ctx.deps.canDropInto, ids, scene),
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     dragThresholdPx,
     snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }),

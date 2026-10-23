@@ -456,10 +456,12 @@ describe('scene container layout', () => {
       expect(scene.historyIndex()).toBe(depth);
     });
 
-    it('refuses a leaf', () => {
+    it('stores the layout on a mark', () => {
       const scene = makeScene();
       add(scene, 'a');
-      expect(() => scene.setLayout(asNodeId('a'), stack())).toThrow(/not a container/);
+      const layout = stack();
+      scene.setLayout(asNodeId('a'), layout);
+      expect(scene.layoutOf(asNodeId('a'))).toBe(layout);
     });
 
     it('names a registered layout by key, and a restored history undoes to it', () => {

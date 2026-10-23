@@ -67,9 +67,13 @@ describe('a node’s inherit takes its container’s paint', () => {
     expect(pathCommands(buildSceneViewCommands(scene, VIEW, defaultDrawOne))).toHaveLength(1);
   });
 
-  it('paints a container that has a shape, as a bone with child bones does', () => {
+  it('paints a mark that has a shape and a child, but not a group that has one', () => {
     const { scene } = setup({ shape: 'rect', fill: INHERIT }, { shape: 'rect', fill: RED });
-    expect(pathCommands(buildSceneViewCommands(scene, VIEW, defaultDrawOne))).toHaveLength(2);
+    expect(pathCommands(buildSceneViewCommands(scene, VIEW, defaultDrawOne))).toHaveLength(1);
+    const marked = createScene<Data, 'main'>({ systemLayers: [{ id: 'main' }] });
+    const mark = marked.add({ kind: 'mark', id: asNodeId('m'), layer: 'main', pose: BOX, data: { shape: 'rect', fill: RED } });
+    marked.add({ kind: 'mark', id: asNodeId('c'), parent: mark, layer: 'main', pose: BOX, data: { shape: 'rect', fill: INHERIT } });
+    expect(pathCommands(buildSceneViewCommands(marked, VIEW, defaultDrawOne))).toHaveLength(2);
   });
 });
 
@@ -77,7 +81,7 @@ describe('picking an inheriting node', () => {
   const pickAt = (scene: ReturnType<typeof setup>['scene'], x: number, y: number): string[] =>
     pickWalk(scenePickSource(scene), {
       ...scenePointQuery(AUTO_POSE_DESCRIPTOR, true, 0)(x, y, { x: 1, y: 1 }),
-      includeContainers: false,
+      includeGroups: false,
     });
 
   it('takes a point inside a child filled by inheritance', () => {

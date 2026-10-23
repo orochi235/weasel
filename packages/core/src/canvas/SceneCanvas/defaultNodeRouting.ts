@@ -6,7 +6,7 @@ function isObj(d: unknown): d is Record<string, unknown> {
   return typeof d === 'object' && d !== null;
 }
 
-/** Routes a container node as `'group'`, whatever its data holds. `inferredNodeRouting` leads
+/** Routes a group node as `'group'`, whatever its data holds. `inferredNodeRouting` leads
  *  with it; spread it ahead of `defaultNodeRouting`, which is the shape-kind table alone. */
 export const groupNodeRouting: NodeRoutingEntry = {
   name: 'group',

@@ -81,7 +81,7 @@ export function beginInsert(
     selection.clear();
   }
 
-  const parent = insertParent(ctx.deps.scene, ctx.deps.insertInto?.get());
+  const parent = insertParent(ctx.deps.scene, ctx.deps.insertInto?.get(), ctx.deps.canDropInto);
   const constrain = () => (insertKind(resolveParams(opts?.params)) === 'line' ? { step: SNAP_ANGLE_STEP } : undefined);
   const snap = spanSnap(ctx.deps.snap, constrain, parent === null ? {} : { parent });
   const behaviors = (opts?.behaviors ?? []) as InsertBehavior<unknown>[];

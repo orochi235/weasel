@@ -143,17 +143,16 @@ const boneColor = (name: string): string =>
  *  what turns that into world. `syncScene` writes eleven local poses a frame
  *  and never resolves a matrix.
  *
- *  A bone with children has to be a container to have any, and a container
- *  with no `clipFromPose` clips its descendants to its own silhouette — which
- *  for a bone is a box a few units wide. `() => null` is how a frame says it
- *  groups without clipping. */
+ *  A node with no `clipFromPose` clips its children to its own silhouette —
+ *  for a bone, a box a few units wide — so a bone with children takes
+ *  `() => null`, which says it carries them without clipping. */
 export function boneNodes(): WorldNodeSpec[] {
   const hasChild = new Set(
     PLAYER_SKELETON.joints.map((j) => j.parent).filter((p): p is string => p != null),
   );
   return PLAYER_SKELETON.joints.map((j) => ({
     id: boneId(j.name),
-    kind: hasChild.has(j.name) ? ('group' as const) : ('mark' as const),
+    kind: 'mark' as const,
     layer: 'player' as const,
     pose: { x: 0, y: 0, width: BONE_LENGTH[j.name], height: BONE_WIDTH[j.name], rotation: 0 },
     data: {

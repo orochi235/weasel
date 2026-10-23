@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { DIAGRAM_THEMES, themeEdgeStroke } from '@weasel-js/diagram';
+import { DIAGRAM_THEMES, isDiagramBody, themeEdgeStroke } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_SCENE_KEY } from './chartPersistence';
@@ -38,7 +38,7 @@ function saved(): SavedNode[] {
   const raw = localStorage.getItem(CHART_SCENE_KEY);
   return raw ? (JSON.parse(raw) as { nodes: SavedNode[] }).nodes : [];
 }
-const bodies = () => saved().filter((n) => n.kind === 'group');
+const bodies = () => saved().filter(isDiagramBody);
 const poseOf = (id: string) => saved().find((n) => n.id === id)!.pose!;
 const edges = () => saved().filter((n) => {
   const d = n.data.diagram as { from?: unknown } | undefined;
@@ -220,8 +220,8 @@ describe('WeaselChart chart mode', () => {
       canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
     }
     await expect.poll(() => bodies().length).toBe(1);
-    const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; pose: { x: number; y: number; width: number; height: number } }[] })
-      .nodes.find((n) => n.kind === 'group')!.pose;
+    const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; data: unknown; pose: { x: number; y: number; width: number; height: number } }[] })
+      .nodes.find(isDiagramBody)!.pose;
     // A pointer event's client point is whole pixels, about a world unit at this zoom.
     expect(Math.abs(pose.x + pose.width / 2 - 400)).toBeLessThan(2);
     expect(Math.abs(pose.y + pose.height / 2 - 300)).toBeLessThan(2);
