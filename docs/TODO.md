@@ -670,8 +670,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) Gaps left in controls along a curve.**
   - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
-  - `thicknessOf` in `sliderGeometry.ts` reads `--rp-track-height` as px only, so a rem or `calc()` height
-    is misread.
   - `Along` measures its box with the client rect, so a CSS scale on an ancestor shrinks its arc.
   - A run is turned over by its middle alone, so on a run across 3 or 9 o'clock the items toward one end tip
     past 90° and read upside down: the `ui/Along/Clock sweep` lab shows it at a 90° span (2026-10-21).
