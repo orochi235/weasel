@@ -11,6 +11,7 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
+import { pressTarget } from '../pressTarget';
 import { pressDecision } from './pressDecision';
 import { adapterPointQuery } from './adapterPointQuery';
 import { onBody, onEmptyCanvas } from './selectionContributions';
@@ -180,7 +181,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     id: 'select.pick',
     label: 'Select — pick under pointer',
     eligible: { capability: 'creates-selection' },
-    requires: ['selection'],
+    requires: ['selection', 'enteredGroup'],
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
@@ -195,7 +196,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const opts = optionsRef.current;
 
         const sel = selection.get();
-        const top = opts.pickBest
+        const hit = opts.pickBest
           ? opts.pickBest(p.worldX, p.worldY, mods.alt, sel)
           : (() => {
               const ids = pickEveryRef.current(p.worldX, p.worldY);
@@ -203,10 +204,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
               return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
             })();
 
-        if (top === null) {
+        if (hit === null) {
           pressRef.current = { deferredClickId: null };
           return;
         }
+        const top = pressTarget(adapterRef.current, hit, deps.enteredGroup?.get() ?? null);
 
         // See `extendClickLocked`. An option rather than `Action.enabled`
         // because it only applies to *extend* presses, and `enabled` is
