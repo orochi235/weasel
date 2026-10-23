@@ -261,22 +261,17 @@ export const NotchedThumbs: Story = {
 
 const ZOOM_STOPS = [2, 4, 8, 16].map((v) => ({ value: v, label: `${v}×` }));
 
-function ZoomAlongALensRimStory() {
+type CurvedStoryArgs = Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onInput' | 'renderTrack'>;
+
+/** What each curved story draws fixes its min and max, so their controls are hidden there. */
+const FIXED_DOMAIN = { min: { table: { disable: true } }, max: { table: { disable: true } } } as never;
+
+function ZoomAlongALensRimStory({ args }: { args: CurvedStoryArgs }) {
   const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 4 }]);
   return (
     <div className={st.lens}>
       <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }}>
-        <Slider
-          min={2}
-          max={16}
-          stops={ZOOM_STOPS}
-          spacing="even"
-          snap="strict"
-          readoutPlacement="below-thumb"
-          renderReadout={(t) => `${t.value}×`}
-          thumbs={thumbs}
-          onInput={setThumbs}
-        />
+        <Slider {...args} renderReadout={(t) => `${t.value}×`} thumbs={thumbs} onInput={setThumbs} />
       </Along>
     </div>
   );
@@ -284,16 +279,18 @@ function ZoomAlongALensRimStory() {
 
 /** A lens's zoom along its bottom rim: detents at 2×, 4×, 8× and 16×, the labels hanging outside the circle. */
 export const ZoomAlongALensRim: Story = {
-  render: () => <ZoomAlongALensRimStory />,
+  args: { min: 2, max: 16, stops: ZOOM_STOPS, spacing: 'even', snap: 'strict', readoutPlacement: 'below-thumb' },
+  argTypes: FIXED_DOMAIN,
+  render: (args) => <ZoomAlongALensRimStory args={args} />,
 };
 
-function HueAlongADialStory() {
+function HueAlongADialStory({ args }: { args: CurvedStoryArgs }) {
   const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 0.2 }, { value: 0.65 }]);
   const hue = paintGradientTrack({ gradient: (t) => oklchToHex(0.7, 0.18, t * 360), samples: 24, activeRange: [thumbs[0]!.value, thumbs[1]!.value] });
   return (
     <div className={st.lens}>
       <Along arc={{ start: 225, end: 135, inset: 16 }}>
-        <Slider min={0} max={1} step={0.01} constraint="ordered" trackHeight={14} renderTrack={hue} thumbs={thumbs} onInput={setThumbs} />
+        <Slider {...args} renderTrack={hue} thumbs={thumbs} onInput={setThumbs} />
       </Along>
     </div>
   );
@@ -301,7 +298,9 @@ function HueAlongADialStory() {
 
 /** A hue ramp round three quarters of a dial, hatched outside the two thumbs. */
 export const HueAlongADial: Story = {
-  render: () => <HueAlongADialStory />,
+  args: { min: 0, max: 1, step: 0.01, constraint: 'ordered', trackHeight: 14 },
+  argTypes: FIXED_DOMAIN,
+  render: (args) => <HueAlongADialStory args={args} />,
 };
 
 function evenlySpacedThumbs(n: number, min: number, max: number): Thumb[] {
