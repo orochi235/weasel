@@ -22,8 +22,8 @@ function fixture(view?: unknown) {
     systemLayers: [{ id: 'main' }],
     composition: RIGID_POSE_COMPOSITION,
   });
-  const c = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 200, 200, Math.PI / 2) });
-  const s = scene.add({ kind: 'leaf', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
+  const c = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 200, 200, Math.PI / 2) });
+  const s = scene.add({ kind: 'mark', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
   const seen: { origin: RectPose; current: RectPose; back: RectPose; live: RectPose; plane: unknown }[] = [];
   const spy: MoveBehavior<RectPose> = {
     onMove: (ctx) => {

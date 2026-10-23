@@ -22,12 +22,12 @@ function fixture(coalesceWindowMs?: number) {
     systemLayers: [{ id: 'main' }],
     ...(coalesceWindowMs === undefined ? {} : { coalesceWindowMs }),
   });
-  const add = (kind: 'leaf' | 'container', x: number, parent?: NodeId): NodeId =>
+  const add = (kind: 'mark' | 'group', x: number, parent?: NodeId): NodeId =>
     scene.add({ kind, layer: 'main', data: {}, pose: at(x), ...(parent ? { parent } : {}) });
-  const a = add('container', 0);
-  const b = add('container', 100, a);
-  const c = add('container', 200, b);
-  const leaf = add('leaf', 300, c);
+  const a = add('group', 0);
+  const b = add('group', 100, a);
+  const c = add('group', 200, b);
+  const leaf = add('mark', 300, c);
   const adapter = sceneToAdapter(scene);
   const xs = (): number[] => [a, b, c, leaf].map((id) => scene.get(id)!.pose.x);
   const move = (id: NodeId, from: number, to: number): Op =>

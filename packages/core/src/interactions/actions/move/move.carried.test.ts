@@ -20,15 +20,15 @@ const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: 
  *  second frame with a leaf of its own. `free` sits outside all of it. */
 function fixture(composition: PoseComposition<RectPose> = RIGID_POSE_COMPOSITION) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition });
-  const add = (kind: 'leaf' | 'container', pose: RectPose, parent?: NodeId, more: object = {}): NodeId =>
+  const add = (kind: 'mark' | 'group', pose: RectPose, parent?: NodeId, more: object = {}): NodeId =>
     scene.add({ kind, layer: 'main', data: {}, pose, ...(parent ? { parent } : {}), ...more });
-  const frame = add('container', box(0, 0, 400, 400));
-  const leaf = add('leaf', box(10, 10), frame);
-  const envelope = add('container', box(0, 0, 1, 1), frame, { dependsOn: 'children', derivePose: unionOfChildren });
-  const inEnvelope = add('leaf', box(50, 50), envelope);
-  const inner = add('container', box(100, 100, 100, 100), envelope);
-  const inInner = add('leaf', box(5, 5), inner);
-  const free = add('leaf', box(900, 900));
+  const frame = add('group', box(0, 0, 400, 400));
+  const leaf = add('mark', box(10, 10), frame);
+  const envelope = add('group', box(0, 0, 1, 1), frame, { dependsOn: 'children', derivePose: unionOfChildren });
+  const inEnvelope = add('mark', box(50, 50), envelope);
+  const inner = add('group', box(100, 100, 100, 100), envelope);
+  const inInner = add('mark', box(5, 5), inner);
+  const free = add('mark', box(900, 900));
   return {
     scene: scene as unknown as Scene<unknown, string, unknown>,
     ids: { frame, leaf, envelope, inEnvelope, inner, inInner, free },

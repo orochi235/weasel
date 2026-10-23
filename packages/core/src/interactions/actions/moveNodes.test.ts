@@ -22,9 +22,9 @@ const selectionOf = (ids: readonly string[]) => ({ get: () => ids } as unknown a
 /** A container holding a leaf, both stored as world poses, and a leaf outside it. */
 function absolute(): { scene: AnyScene; group: NodeId; child: NodeId; free: NodeId } {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const group = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(0, 100, 60, 60) });
-  const child = scene.add({ kind: 'leaf', parent: group, layer: 'main', data: {}, pose: box(10, 110) });
-  const free = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(200, 0) });
+  const group = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 100, 60, 60) });
+  const child = scene.add({ kind: 'mark', parent: group, layer: 'main', data: {}, pose: box(10, 110) });
+  const free = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(200, 0) });
   return { scene: scene as unknown as AnyScene, group, child, free };
 }
 
@@ -72,7 +72,7 @@ describe('moveNodes', () => {
     const { scene, group } = absolute();
     let added: NodeId | null = null;
     scene.batch('Drop', () => {
-      added = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(0, 0) });
+      added = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
       moveNodes(depsOf(scene), [added], { dx: 5, dy: 5 });
       moveNodes(depsOf(scene), [group], { dx: 5, dy: 5 });
     });

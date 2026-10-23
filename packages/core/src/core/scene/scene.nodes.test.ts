@@ -6,8 +6,8 @@ import { POSE, makeScene, type Data, type Layer } from './testing/makeScene';
 describe('add / remove / move', () => {
   it('add returns an id and inserts the node at the end of its parent', () => {
     const s = makeScene();
-    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     expect(s.roots).toEqual([a, b]);
     expect(s.get(a)?.data.label).toBe('a');
   });
@@ -15,10 +15,10 @@ describe('add / remove / move', () => {
   it('respects explicit id; throws on collision', () => {
     const s = makeScene();
     const id = asNodeId('explicit-1');
-    s.add({ id, kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.add({ id, kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     expect(s.get(id)).toBeDefined();
     expect(() =>
-      s.add({ id, kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'dup' } }),
+      s.add({ id, kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'dup' } }),
     ).toThrow(/collision/);
   });
 
@@ -28,24 +28,24 @@ describe('add / remove / move', () => {
       systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
       generateId: () => asNodeId(`g${n++}`),
     });
-    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     expect(a).toBe('g0');
     expect(b).toBe('g1');
   });
 
   it('rejects parent that is not a container', () => {
     const s = makeScene();
-    const leaf = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const leaf = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     expect(() =>
-      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' }, parent: leaf }),
+      s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' }, parent: leaf }),
     ).toThrow(/not a container/);
   });
 
   it('parents children under containers and tracks them in render order', () => {
     const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const tomato = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'tomato' }, parent: bed });
+    const bed = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const tomato = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'tomato' }, parent: bed });
     expect(s.childrenOf(bed)).toEqual([tomato]);
     expect(s.ancestorsOf(tomato)).toEqual([bed]);
     // Render order: structures pass yields bed then tomato.
@@ -55,9 +55,9 @@ describe('add / remove / move', () => {
 
   it('remove deletes the subtree and is undoable', () => {
     const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const t1 = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 't1' }, parent: bed });
-    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 't2' }, parent: bed });
+    const bed = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const t1 = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 't1' }, parent: bed });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 't2' }, parent: bed });
     s.remove(bed);
     expect(s.get(bed)).toBeUndefined();
     expect(s.get(t1)).toBeUndefined();
@@ -70,10 +70,10 @@ describe('add / remove / move', () => {
 
   it('move reparents and reindexes; cycle is rejected', () => {
     const s = makeScene();
-    const a = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    const b = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'b' } });
-    const inner = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'inner' }, parent: a });
-    const child = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' }, parent: a });
+    const a = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const inner = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'inner' }, parent: a });
+    const child = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'c' }, parent: a });
     s.move(child, b);
     expect(s.childrenOf(a)).toEqual([inner]);
     expect(s.childrenOf(b)).toEqual([child]);
@@ -83,9 +83,9 @@ describe('add / remove / move', () => {
 
   it('rejects move() onto a parent on a HIGHER layer (child would render below parent)', () => {
     const s = makeScene();
-    const bed1 = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed1' } });
-    const bed2 = s.add({ kind: 'container', layer: 'plantings',  pose: POSE, data: { label: 'bed2' } });
-    const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed1 });
+    const bed1 = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed1' } });
+    const bed2 = s.add({ kind: 'group', layer: 'plantings',  pose: POSE, data: { label: 'bed2' } });
+    const plant = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed1 });
     // plant is on 'structures' (below 'plantings'); reparenting under bed2 would
     // make it render beneath its parent → rejected.
     expect(() => s.move(plant, bed2)).toThrow(/may not render below its parent/);
@@ -93,34 +93,34 @@ describe('add / remove / move', () => {
 
   it('allows move() onto a parent on a LOWER layer (child renders above parent)', () => {
     const s = makeScene();
-    const bed1 = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed1' } });
-    const bed2 = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed2' } });
-    const plant = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: bed1 });
+    const bed1 = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed1' } });
+    const bed2 = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed2' } });
+    const plant = s.add({ kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: bed1 });
     s.move(plant, bed2);
     expect(s.childrenOf(bed2)).toEqual([plant]);
   });
 
   it('allows move(id, null) regardless of layer', () => {
     const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
+    const bed = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
     s.move(plant, null);
     expect(s.childrenOf(bed)).toEqual([]);
   });
 
   it('reorder shifts within current parent', () => {
     const s = makeScene();
-    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
-    const c = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const c = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'c' } });
     s.reorder(c, 0);
     expect(s.roots).toEqual([c, a, b]);
   });
 
   it('accepts a child added on a higher layer than its parent', () => {
     const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const plant = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: bed });
+    const bed = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = s.add({ kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: bed });
     expect(s.get(plant)?.layer).toBe('plantings');
     expect(s.childrenOf(bed)).toEqual([plant]);
   });
@@ -128,7 +128,7 @@ describe('add / remove / move', () => {
 
 describe('incarnation', () => {
   const add = (scene: ReturnType<typeof makeScene>, id: string, layer: Layer = 'structures') =>
-    scene.add({ id: asNodeId(id), kind: 'container', layer, pose: POSE, data: { label: id } });
+    scene.add({ id: asNodeId(id), kind: 'group', layer, pose: POSE, data: { label: id } });
 
   it('holds across every edit to a node that stays in the scene', () => {
     const scene = makeScene();
@@ -180,7 +180,7 @@ describe('removeMany', () => {
     const scene = createScene<Data, 'structures', typeof POSE>({
       systemLayers: [{ id: 'structures' }],
     });
-    const leaf = { kind: 'leaf', layer: 'structures', pose: POSE, data: { label: '' } } as const;
+    const leaf = { kind: 'mark', layer: 'structures', pose: POSE, data: { label: '' } } as const;
     return { scene, leaf };
   }
 
@@ -199,7 +199,7 @@ describe('removeMany', () => {
 
   it('absorbs an id another id in the list already takes', () => {
     const { scene, leaf } = makeScene();
-    const box = scene.add({ ...leaf, kind: 'container' });
+    const box = scene.add({ ...leaf, kind: 'group' });
     const child = scene.add({ ...leaf, parent: box });
 
     expect(() => scene.removeMany([box, child])).not.toThrow();
@@ -223,7 +223,7 @@ describe('removeMany', () => {
 
   it('takes the enclosing batch\'s label, not its own', () => {
     const { scene, leaf } = makeScene();
-    scene.add({ ...leaf, kind: 'container' });
+    scene.add({ ...leaf, kind: 'group' });
     scene.add(leaf);
     scene.batch('New document', () => {
       scene.removeMany([...scene.renderOrder()]);

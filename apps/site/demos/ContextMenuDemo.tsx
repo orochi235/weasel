@@ -12,7 +12,7 @@ interface NodeData { path: Path; fill: Fill }
 interface Pose { x: number; y: number; width: number; height: number }
 
 const rect = (id: string, pose: Pose, color: string) => ({
-  id: id as NodeId, kind: 'leaf' as const, layer: 'default' as const, pose,
+  id: id as NodeId, kind: 'mark' as const, layer: 'default' as const, pose,
   data: { path: rectPath(0, 0, pose.width, pose.height), fill: { paint: solid(color) } },
 });
 

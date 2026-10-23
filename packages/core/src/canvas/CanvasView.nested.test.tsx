@@ -47,7 +47,7 @@ beforeAll(() => {
 function makeScene() {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const rect = (x: number, y: number) => scene.add({
-    kind: 'leaf', layer: 'main', pose: { x, y, width: 10, height: 10 }, data: { kind: 'rect' },
+    kind: 'mark', layer: 'main', pose: { x, y, width: 10, height: 10 }, data: { kind: 'rect' },
   });
   return { scene, inInset: rect(2010, 10), inPanel: rect(1075, 75), underAll: rect(175, 75) };
 }

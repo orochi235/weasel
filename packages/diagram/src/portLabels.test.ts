@@ -82,7 +82,7 @@ describe('port labels on a built body', () => {
 
   it('carries a port\'s label onto the resolved port', () => {
     const trait = bodyTrait(spec({ portLabels: { n: 'top' } }), BOUNDS, measure);
-    const ports = portsOf({ id: 'n', kind: 'container', data: { diagram: trait } }, BOUNDS);
+    const ports = portsOf({ id: 'n', kind: 'group', data: { diagram: trait } }, BOUNDS);
     expect(ports.find((p) => p.id === 'n')!.label).toBe('top');
     expect('label' in ports.find((p) => p.id === 's')!).toBe(false);
   });
@@ -117,19 +117,19 @@ describe('a node\'s margin under layout', () => {
       margin: { top: 5, right: 30, bottom: 12, left: 7 },
       ports: [{ id: 'p', at: { u: 0.2, v: 0.2 }, sites: [{ u: 0.8, v: 1 }] }, { id: 'q', at: COMPASS.e }],
     });
-    const before = portsOf({ id: 'a', kind: 'leaf', data: null }, n.bounds, {
+    const before = portsOf({ id: 'a', kind: 'mark', data: null }, n.bounds, {
       read: () => ({ ports: n.ports!, outline: n.outline! }),
     });
     const foot = footprintNode(n);
     expect(foot.bounds).toEqual({ x: 3, y: -5, width: 87, height: 47 });
-    const after = portsOf({ id: 'a', kind: 'leaf', data: null }, foot.bounds, { read: () => ({ ports: foot.ports! }) });
+    const after = portsOf({ id: 'a', kind: 'mark', data: null }, foot.bounds, { read: () => ({ ports: foot.ports! }) });
     for (const [i, p] of before.entries()) {
       expect(after[i]!.point.x).toBeCloseTo(p.point.x);
       expect(after[i]!.point.y).toBeCloseTo(p.point.y);
       expect(after[i]!.normal).toEqual(p.normal);
     }
     const sites = (bounds: typeof n.bounds, read: () => object) =>
-      portSitesOf({ id: 'a', kind: 'leaf', data: null }, bounds, 'p', { read: read as never });
+      portSitesOf({ id: 'a', kind: 'mark', data: null }, bounds, 'p', { read: read as never });
     const was = sites(n.bounds, () => ({ ports: n.ports!, outline: n.outline! }));
     const now = sites(foot.bounds, () => ({ ports: foot.ports! }));
     expect(now).toHaveLength(2);

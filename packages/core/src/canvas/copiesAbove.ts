@@ -17,7 +17,7 @@ export function copiesWithin<TData, TLayer extends string, TPose>(
   let all: Affine[] = [[1, 0, 0, 1, 0, 0]];
   for (const aid of [container, ...scene.ancestorsOf(container)].reverse()) {
     const a = scene.get(aid);
-    if (a?.kind !== 'container' || !a.copiesFromPose) continue;
+    if (a?.kind !== 'group' || !a.copiesFromPose) continue;
     const copies = a.copiesFromPose(poseOf(a), a) ?? [];
     if (copies.length === 0) continue;
     // A copy at an outer level carries everything inside it, inner copies included.

@@ -29,8 +29,8 @@ function setup() {
     act(() => { for (const cb of cbs.splice(0)) cb(t); });
   };
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const box = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-  const hand = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 190, y: 95, width: 20, height: 10 }, data: {} });
+  const box = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+  const hand = scene.add({ kind: 'mark', layer: 'main', pose: { x: 190, y: 95, width: 20, height: 10 }, data: {} });
   const rig = bindRig({ scene, skeleton: ARM, bindings: { lower: hand } });
   return { animator: () => result.current, frame, scene, box, hand, rig };
 }

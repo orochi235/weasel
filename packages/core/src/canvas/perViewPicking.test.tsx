@@ -29,7 +29,7 @@ beforeAll(() => {
 describe('pick tolerance converts against the camera the point came from', () => {
   it('a 4px slop is 4 world units at scale 1 and 0.5 at scale 8', () => {
     const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
-    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
 
     const { result } = renderHook(() => {
       const adapter = useSceneAdapter(scene);

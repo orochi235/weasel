@@ -41,7 +41,7 @@ export function diagramShape<TPose>(
   opts: DiagramShapeOptions<TPose> = {},
 ): NodeShapeEntry<unknown, TPose> {
   const geometry = opts.geometry ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const outlineOf = (node: { id: string; kind: 'leaf' | 'container'; data: unknown }) =>
+  const outlineOf = (node: { id: string; kind: 'mark' | 'group'; data: unknown }) =>
     diagramNodeOf(node, opts.read)?.outline ?? laneOutlineOf(node);
 
   return {

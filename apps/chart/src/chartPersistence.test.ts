@@ -18,7 +18,7 @@ function twoBodiesAndAnEdge() {
     return built.id;
   });
   const edge = scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'shapes',
     pose: { x: 0, y: 0, width: 0, height: 0 },
     data: { diagram: { from: {}, to: {}, router: 'orthogonal' }, stroke: { paint: { color: '#7ba7c7' }, width: 2 } },

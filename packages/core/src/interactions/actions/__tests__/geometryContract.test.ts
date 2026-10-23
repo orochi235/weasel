@@ -86,7 +86,7 @@ interface StubScene {
   overrides: PoseOverrides<unknown>;
   composition: typeof IDENTITY_POSE_COMPOSITION;
   datas: Map<string, DrawData>;
-  get(id: NodeId): { pose: AABBPose; data: DrawData; kind: 'leaf'; layer: string; parent: null } | undefined;
+  get(id: NodeId): { pose: AABBPose; data: DrawData; kind: 'mark'; layer: string; parent: null } | undefined;
   setPose(id: NodeId, pose: AABBPose): void;
   renderOrder(): NodeId[];
   childrenOf(): NodeId[];
@@ -108,7 +108,7 @@ function makeStubScene(node: TestNode): StubScene {
       return {
         pose: poses.get(id as string)!,
         data: datas.get(id as string)!,
-        kind: 'leaf' as const,
+        kind: 'mark' as const,
         layer: 'default',
         parent: null,
       };

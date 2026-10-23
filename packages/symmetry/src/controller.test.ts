@@ -16,7 +16,7 @@ function setup() {
   const sym = createSymmetry(scene as never);
   const group = sym.create({ center: { x: 100, y: 0 }, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS } });
   const leaf = scene.add({
-    kind: 'leaf', layer: 'main', parent: group, id: asNodeId('sq'),
+    kind: 'mark', layer: 'main', parent: group, id: asNodeId('sq'),
     pose: { x: 120, y: 10, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
   });
   return { scene, sym, group, leaf };
@@ -24,7 +24,7 @@ function setup() {
 
 const copiesOf = (scene: ReturnType<typeof setup>['scene'], id: NodeId) => {
   const node = scene.get(id)!;
-  return node.kind === 'container' ? node.copiesFromPose?.(node.pose, node as never) ?? [] : [];
+  return node.kind === 'group' ? node.copiesFromPose?.(node.pose, node as never) ?? [] : [];
 };
 
 describe('createSymmetry', () => {
@@ -70,7 +70,7 @@ describe('createSymmetry', () => {
     const { scene, group } = setup();
     const back = sceneFromJSON(scene.toJSON(), { registry: symmetryRegistry as SceneRegistry<RectPose> });
     const node = back.get(group)!;
-    expect(node.kind === 'container' && node.copiesFromPose).toBe(symmetryCopies);
+    expect(node.kind === 'group' && node.copiesFromPose).toBe(symmetryCopies);
     expect(isSymmetryGroup(back as never, group)).toBe(true);
   });
 });
@@ -120,7 +120,7 @@ describe('bake', () => {
   it('copies a text leaf, mirrored the way the live copy drew it', () => {
     const { scene, sym, group } = setup();
     scene.add({
-      kind: 'leaf', layer: 'main', parent: group, id: asNodeId('label'),
+      kind: 'mark', layer: 'main', parent: group, id: asNodeId('label'),
       pose: { x: 0, y: 0, width: 5, height: 5 }, data: { text: 'hi' },
     });
     const out = sym.bake(group)!;
@@ -146,7 +146,7 @@ describe('bake', () => {
   it('reports a leaf whose pose is not a box and keeps it', () => {
     const { scene, sym, group } = setup();
     const odd = scene.add({
-      kind: 'leaf', layer: 'main', parent: group, pose: { cx: 0 } as never, data: {},
+      kind: 'mark', layer: 'main', parent: group, pose: { cx: 0 } as never, data: {},
     });
     const out = sym.bake(group)!;
     expect(out.skipped).toEqual([odd]);
@@ -165,7 +165,7 @@ describe('in a scene that composes frames', () => {
     const group = sym.create({ center: { x: 100, y: 0 }, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS } });
     // Stored in the group's frame: (20, 10) from its center is (120, 10) in the world.
     const leaf = scene.add({
-      kind: 'leaf', layer: 'main', parent: group, id: asNodeId('sq'),
+      kind: 'mark', layer: 'main', parent: group, id: asNodeId('sq'),
       pose: { x: 20, y: 10, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
     });
     return { scene, sym, group, leaf };
@@ -209,7 +209,7 @@ describe('the guide\'s angle knob', () => {
   it('sits past the farthest of the group\'s contents along the axis, clear of every shape', () => {
     const { scene, sym, group } = setup();
     scene.add({
-      kind: 'leaf', layer: 'main', parent: group, id: asNodeId('petal'),
+      kind: 'mark', layer: 'main', parent: group, id: asNodeId('petal'),
       pose: { x: 100, y: 60, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
     });
     const guide = guideOf(sym);

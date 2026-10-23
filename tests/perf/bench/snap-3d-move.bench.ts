@@ -27,7 +27,7 @@ function frames(n: number, spacing: number): () => void {
   const scene = createScene<object, 'solids', Pose3>({
     systemLayers: [{ id: 'solids' }],
     initial: Array.from({ length: n }, (_, i) => ({
-      kind: 'leaf' as const,
+      kind: 'mark' as const,
       layer: 'solids' as const,
       pose: pose3({ x: (i % side) * spacing, y: 0.5, z: Math.floor(i / side) * spacing }),
       data: {},

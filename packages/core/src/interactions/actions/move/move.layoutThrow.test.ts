@@ -16,8 +16,8 @@ interface P { x: number; y: number; width: number; height: number }
 describe('moveAction — a layout pass that throws', () => {
   it("commits the last frame that held as a plain move, not as that frame's drop", () => {
     const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
-    const box = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
-    const leaf = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 40, height: 40 } });
+    const box = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
+    const leaf = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 40, height: 40 } });
     const slot: P = { x: 120, y: 130, width: 40, height: 40 };
     let calls = 0;
     const layout = {

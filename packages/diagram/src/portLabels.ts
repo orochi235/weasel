@@ -63,7 +63,7 @@ export function portLabelsOf(
   size: (text: string) => { width: number; height: number },
 ): PortLabelPlacement[] {
   const out: PortLabelPlacement[] = [];
-  for (const port of portsOf({ id: '', kind: 'container', data: null }, bounds, { read: () => trait })) {
+  for (const port of portsOf({ id: '', kind: 'group', data: null }, bounds, { read: () => trait })) {
     if (port.label === undefined) continue;
     const labeled = port as Port & { label: string };
     out.push({ port: labeled, box: portLabelBox(labeled, size(labeled.label)) });

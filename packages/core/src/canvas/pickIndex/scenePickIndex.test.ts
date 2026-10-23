@@ -24,7 +24,7 @@ function sceneWith(pose: Box, extra: Record<string, unknown> = {}, composed = fa
     systemLayers: [{ id: 'main' }],
     ...(composed ? { composition: RIGID_POSE_COMPOSITION as never } : {}),
   });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', pose, data: null, ...extra } as never);
+  scene.add({ id: A, kind: 'mark', layer: 'main', pose, data: null, ...extra } as never);
   return scene as AnyScene;
 }
 
@@ -88,7 +88,7 @@ describe('scenePickIndex freshness', () => {
 
   it('follows a reparent under a translated container when poses compose', () => {
     const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 }, {}, true);
-    scene.add({ id: asNodeId('g'), kind: 'container', layer: 'main', pose: { x: 400, y: 0, width: 0, height: 0 }, data: null, clipFromPose: () => null } as never);
+    scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', pose: { x: 400, y: 0, width: 0, height: 0 }, data: null, clipFromPose: () => null } as never);
     expect(pick(scene, at(10, 10))).toEqual(['a']);
     scene.move(A, asNodeId('g'));
     expect(pick(scene, at(410, 10))).toEqual(['a']);
@@ -167,7 +167,7 @@ describe('scenePickIndex freshness', () => {
     // Render order runs against the grid's reading order, so a sort by position would be wrong.
     for (let i = 99; i >= 0; i--) {
       const pose = { x: (i % 10) * 30, y: Math.floor(i / 10) * 30, width: 20, height: 20 };
-      scene.add({ id: asNodeId(`n${i}`), kind: 'leaf', layer: 'main', pose, data: null } as never);
+      scene.add({ id: asNodeId(`n${i}`), kind: 'mark', layer: 'main', pose, data: null } as never);
     }
     const src = scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } });
     const ids = (box: Box) => {

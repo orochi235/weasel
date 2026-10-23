@@ -18,7 +18,7 @@ function RowFacts({ row }: { row: DevtoolsNodeSummary }): ReactElement {
     <span className={s.facts}>
       <span className={s.kind}>{row.kind}</span>
       <span className={s.layer}>{row.layer}</span>
-      {row.kind === 'container' && <span className={s.count}>{row.childCount}</span>}
+      {row.kind === 'group' && <span className={s.count}>{row.childCount}</span>}
       {flags(row).map((f) => <span key={f} className={s.flag}>{f}</span>)}
     </span>
   );
@@ -31,7 +31,7 @@ function toNodes(levels: ReadonlyMap<string, readonly DevtoolsNodeSummary[]>, pa
     label: <span data-node-id={row.id}>{row.id}</span>,
     trailing: <RowFacts row={row} />,
     muted: row.hidden,
-    ...(row.kind === 'container' && row.childCount > 0 ? { children: toNodes(levels, row.id) } : {}),
+    ...(row.kind === 'group' && row.childCount > 0 ? { children: toNodes(levels, row.id) } : {}),
   }));
 }
 

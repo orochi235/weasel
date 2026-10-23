@@ -43,7 +43,7 @@ interface TextData { text: string; style: object; fill: Fill }
 function renderNode(fill: Paint, scale: number): RasterImage {
   const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    kind: 'leaf', layer: 'main', pose: POSE,
+    kind: 'mark', layer: 'main', pose: POSE,
     data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: { paint: fill } },
   });
   return renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: scale, y: scale } });
@@ -51,7 +51,7 @@ function renderNode(fill: Paint, scale: number): RasterImage {
 
 function renderCommands(commands: DrawCommand[], scale = 1): RasterImage {
   const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: null });
+  scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: null });
   return renderSceneToPixels({
     scene,
     drawOne: (() => commands) as never,
@@ -147,7 +147,7 @@ describe('a gradient on decorated text', () => {
   it('paints the underline with the ramp too', () => {
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
-      kind: 'leaf', layer: 'main', pose: POSE,
+      kind: 'mark', layer: 'main', pose: POSE,
       data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: { paint: GRADIENT } },
     });
     const img = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: 1, y: 1 } });
@@ -355,7 +355,7 @@ describe('a registered paint kind on text', () => {
   it('paints the underline with the kind too', () => {
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
-      kind: 'leaf', layer: 'main', pose: POSE,
+      kind: 'mark', layer: 'main', pose: POSE,
       data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: { paint: SPLIT } },
     });
     const img = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: 1, y: 1 } });
@@ -433,7 +433,7 @@ void main() { outColor = texture(u_source, v_uv).bgra; }
 `);
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
-      kind: 'leaf', layer: 'main', pose: POSE,
+      kind: 'mark', layer: 'main', pose: POSE,
       data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: { paint: SPLIT } },
     });
     const plain = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: SDF_SCALE, y: SDF_SCALE } });

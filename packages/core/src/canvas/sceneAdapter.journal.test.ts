@@ -24,7 +24,7 @@ function makeSceneWithJournal(getJournal: () => Journal | null) {
       systemLayers: [{ id: 'default' }],
       initial: [
         {
-          kind: 'leaf',
+          kind: 'mark',
           layer: 'default',
           pose: INITIAL_POSE,
           data: { label: 'node-a' },
@@ -116,7 +116,7 @@ describe('useScene journal routing via scene.applyBatch', () => {
       useScene<{ label: string }, 'default', Pose>({
         systemLayers: [{ id: 'default' }],
         initial: [
-          { kind: 'leaf', layer: 'default', pose: INITIAL_POSE, data: { label: 'node-a' }, id: asNodeId('node-a') },
+          { kind: 'mark', layer: 'default', pose: INITIAL_POSE, data: { label: 'node-a' }, id: asNodeId('node-a') },
         ],
       }),
     );

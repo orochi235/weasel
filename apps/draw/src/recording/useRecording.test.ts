@@ -11,7 +11,7 @@ describe('a recording baseline', () => {
     const recorded = newScene();
     const path = pathFromD('M0 0 L10 0 L10 10 Z');
     recorded.add({
-      kind: 'leaf', layer: 'default', id: asNodeId('tri'),
+      kind: 'mark', layer: 'default', id: asNodeId('tri'),
       pose: { x: 0, y: 0, width: 10, height: 10 }, data: { path },
     });
     const view = { x: 7, y: 8, scale: { x: 2, y: 2 } };
@@ -20,7 +20,7 @@ describe('a recording baseline', () => {
 
     const replayed = newScene();
     replayed.add({
-      kind: 'leaf', layer: 'default', id: asNodeId('stale'),
+      kind: 'mark', layer: 'default', id: asNodeId('stale'),
       pose: { x: 0, y: 0, width: 1, height: 1 }, data: {},
     });
     const setView = vi.fn();

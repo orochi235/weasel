@@ -13,7 +13,7 @@ import type { DiagramNode } from './types';
  *  structurally rather than imported so a consumer whose scene is typed
  *  differently can still spread one. */
 export interface BodyNodeSpec<TData, TLayer extends string, TPose> {
-  kind: 'container' | 'leaf';
+  kind: 'group' | 'mark';
   layer: TLayer;
   pose: TPose;
   data: TData;
@@ -71,7 +71,7 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
   const pose = sizeToBody(at, measureBody(spec, opts.measure));
   const trait = bodyTrait(spec, pose, opts.measure);
   const specs: BodyNodeSpec<TData, TLayer, TPose>[] = [{
-    kind: 'container',
+    kind: 'group',
     layer: opts.layer,
     pose,
     data: opts.body(trait, pose),
@@ -81,7 +81,7 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
 
   const leaf = (box: Bounds, data: TData, rowId?: string): void => {
     specs.push({
-      kind: 'leaf',
+      kind: 'mark',
       layer: opts.layer,
       pose: { ...pose, x: box.x, y: box.y, width: box.width, height: box.height },
       data,

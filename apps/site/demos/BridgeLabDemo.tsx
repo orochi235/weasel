@@ -28,7 +28,7 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 function openPath(id: string, path: PolygonPath, color: string) {
   return {
     id: asNodeId(id),
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as const,
     pose: boundsOfPath(path),
     data: { path, stroke: { paint: solid(color), width: 3 } },

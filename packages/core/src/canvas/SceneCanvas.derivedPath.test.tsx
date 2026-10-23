@@ -90,10 +90,10 @@ const EXPECTED = linePath({ x: 0, y: 0 }, { x: 100, y: 0 });
 /** Two anchors and an edge deriving a line between them. */
 function makeEdgeScene() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: pose(0), data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: pose(100), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: pose(0), data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: pose(100), data: {} });
   const edge = scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: pose(0),
     data: {},
@@ -169,7 +169,7 @@ describe('<SceneCanvas> installs the scene wiring', () => {
   it('paints its animator\'s vertex-color overrides through the scene layers', () => {
     const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pose: pose(0),
       data: { path: linePath({ x: 0, y: 0 }, { x: 10, y: 0 }), stroke: strokeOf('#fff', 2) } as unknown as Data,

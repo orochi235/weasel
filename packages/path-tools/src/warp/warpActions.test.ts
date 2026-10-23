@@ -22,7 +22,7 @@ function makeScene(x = 0, y = 0): S {
   return createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: [{
-      id: asNodeId('a'), kind: 'leaf', layer: 'main',
+      id: asNodeId('a'), kind: 'mark', layer: 'main',
       pose: { x, y, width: 100, height: 100 },
       data: { path },
     }],
@@ -108,7 +108,7 @@ describe('distort', () => {
     const square = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
     const scene = createScene<unknown, 'main', unknown>({
       systemLayers: [{ id: 'main' }],
-      initial: [{ id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: square, data: {} }],
+      initial: [{ id: asNodeId('a'), kind: 'mark', layer: 'main', pose: square, data: {} }],
     }) as unknown as S;
     dragControl(scene, 'distort', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 125, y: 110 });
     const node = scene.get(asNodeId('a'))!;
@@ -139,7 +139,7 @@ describe('distort', () => {
     const scene = createScene<unknown, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],
       initial: [{
-        id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 },
+        id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 },
         data: { path: new PathBuilder().moveTo(0, 0).lineTo(100, 100).build() },
       }],
     }) as unknown as S;
@@ -189,7 +189,7 @@ describe('paths warped together', () => {
   function pairScene(): S {
     const path = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
     const leaf = (id: string, x: number) => ({
-      id: asNodeId(id), kind: 'leaf' as const, layer: 'main' as const, pose: { x, y: 0, width: 100, height: 100 }, data: { path },
+      id: asNodeId(id), kind: 'mark' as const, layer: 'main' as const, pose: { x, y: 0, width: 100, height: 100 }, data: { path },
     });
     return createScene<unknown, 'main', RectPose>({
       systemLayers: [{ id: 'main' }], initial: [leaf('a', 0), leaf('b', 150)],

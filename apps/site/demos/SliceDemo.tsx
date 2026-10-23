@@ -21,7 +21,7 @@ const leaf = (id: string, path: Path, color: string) => {
   const { x, y, width, height } = boundsOfPath(path);
   return {
     id: asNodeId(id),
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as const,
     parent: null,
     pose: { x, y, width, height },

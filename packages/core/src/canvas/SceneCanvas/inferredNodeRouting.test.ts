@@ -38,9 +38,9 @@ describe('inferredNodeRouting', () => {
     for (const table of [inferredNodeRouting, [groupNodeRouting, ...defaultNodeRouting]]) {
       const r = createNodeRouting();
       for (const k of table) r.register(k);
-      expect(r.classify({}, { kind: 'container' })).toBe('group');
-      expect(r.classify({ text: 'hi' }, { kind: 'container' })).toBe('group');
-      expect(r.classify({}, { kind: 'leaf' })).toBe('unknown');
+      expect(r.classify({}, { kind: 'group' })).toBe('group');
+      expect(r.classify({ text: 'hi' }, { kind: 'group' })).toBe('group');
+      expect(r.classify({}, { kind: 'mark' })).toBe('unknown');
       expect(r.classify({})).toBe('unknown');
     }
   });

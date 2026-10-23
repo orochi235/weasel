@@ -31,8 +31,8 @@ function commitAdapter(scene: Scene<Data, 'main', Pose>) {
 
 function fixture(options: { coalesceWindowMs?: number } = {}) {
   const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }], ...options });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', data: { label: 'a' }, pose: at(0) });
-  scene.add({ id: B, kind: 'leaf', layer: 'main', data: { label: 'b' }, pose: at(100) });
+  scene.add({ id: A, kind: 'mark', layer: 'main', data: { label: 'a' }, pose: at(0) });
+  scene.add({ id: B, kind: 'mark', layer: 'main', data: { label: 'b' }, pose: at(100) });
   scene.history.clear();
   const adapter = commitAdapter(scene);
   const move = (id: string, from: number, to: number): Op => createTransformOp<Pose>({ id, from: at(from), to: at(to) });

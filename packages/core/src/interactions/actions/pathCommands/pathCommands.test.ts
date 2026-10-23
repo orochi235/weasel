@@ -7,7 +7,7 @@ import { asNodeId, type NodeId } from 'core/scene/types';
 import { simplifyPathAction, offsetPathAction } from './simplifyOffset';
 import { joinPathsAction, snipAtCrossingsAction } from './cutJoin';
 
-interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
+interface StubNode { id: NodeId; kind: 'mark'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
 
 type Stored = { pose: unknown; data: unknown };
 
@@ -16,7 +16,7 @@ function setup(paths: Record<string, PolygonPath | Stored>, selected: string[], 
   const nodes = new Map<string, StubNode>();
   for (const [id, path] of Object.entries(paths)) {
     const stored = 'kind' in path ? { pose: path, data: { tag: id, skin: [1], constraints: [{ kind: 'fixed', anchor: 0 }] } } : path;
-    nodes.set(id, { id: asNodeId(id), kind: 'leaf', layer: 'main', ...stored, parent: null });
+    nodes.set(id, { id: asNodeId(id), kind: 'mark', layer: 'main', ...stored, parent: null });
   }
   let minted = 0;
   const scene = {

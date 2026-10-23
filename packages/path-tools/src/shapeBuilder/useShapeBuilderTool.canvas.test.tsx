@@ -27,8 +27,8 @@ function mount() {
   const scene = createScene<{ kind: string }, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const ids: NodeId[] = [];
   scene.batch('seed', () => {
-    ids.push(scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 } }));
-    ids.push(scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 50, y: 0, width: 100, height: 100 } }));
+    ids.push(scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 } }));
+    ids.push(scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 50, y: 0, width: 100, height: 100 } }));
   });
   const applyOps = vi.fn();
   const pathOf = (id: string): Path | undefined => {

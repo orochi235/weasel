@@ -30,7 +30,7 @@ afterEach(() => {
 interface Saved { nodes: { kind: string; pose: { x: number } }[]; doc?: Record<string, unknown> }
 const saved = (): Saved => JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as Saved;
 const pageIds = () => (saved().doc?.[PAGES_DOC_KEY] as PagesDoc | undefined)?.pages.map((p) => p.id);
-const bodyX = () => saved().nodes.find((n) => n.kind === 'container')?.pose.x;
+const bodyX = () => saved().nodes.find((n) => n.kind === 'group')?.pose.x;
 const tabs = () => [...document.querySelectorAll<HTMLElement>('[role="tab"]')];
 const lit = () => tabs().findIndex((t) => t.getAttribute('aria-selected') === 'true');
 

@@ -66,12 +66,12 @@ export function regionSpecs<TLayer extends string>(
   const style = opts.style ?? DEFAULT_NODE_STYLE;
   const { layout, header } = containerShape(role, axis);
   const region: RegionSpec<TLayer> = {
-    id: opts.id as NodeId, kind: 'container', layer: opts.layer, pose, parent: (opts.parent ?? null) as NodeId | null,
+    id: opts.id as NodeId, kind: 'group', layer: opts.layer, pose, parent: (opts.parent ?? null) as NodeId | null,
     data: regionData(role, axis, style, opts.fitted === true), layout: CONTAINER_LAYOUTS[layout],
   };
   if (title === null) return [region];
   return [region, {
-    id: titleIdOf(opts.id) as NodeId, kind: 'leaf', layer: opts.layer, parent: opts.id as NodeId, pickable: false,
+    id: titleIdOf(opts.id) as NodeId, kind: 'mark', layer: opts.layer, parent: opts.id as NodeId, pickable: false,
     pose: titlePose(pose, header), data: titleData(title, style, opts.fontFamily),
   }];
 }

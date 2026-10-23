@@ -17,7 +17,7 @@ const SKEW = [1, 0, 0.8, 1] as const;
 
 function makeScene(pose: RectPose) {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: ID, kind: 'leaf', layer: 'main', data: {}, pose });
+  scene.add({ id: ID, kind: 'mark', layer: 'main', data: {}, pose });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 

@@ -22,7 +22,7 @@ function pressAt(x: number, y: number): readonly string[] {
   const { result } = renderHook(() => {
     const scene = useScene<unknown, 'sky', Pose>({
       systemLayers: [{ id: 'sky', parallax: { pan: 1, zoom: 0 } }],
-      initial: [{ id: asNodeId('sun'), kind: 'leaf', layer: 'sky', pose: { x: 40, y: 40, width: 20, height: 20 }, data: {} }],
+      initial: [{ id: asNodeId('sun'), kind: 'mark', layer: 'sky', pose: { x: 40, y: 40, width: 20, height: 20 }, data: {} }],
     });
     const sel = useSelection({ mode: 'single' });
     const adapter = useSceneAdapter(scene, { selection: sel });

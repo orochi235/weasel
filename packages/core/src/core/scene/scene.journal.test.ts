@@ -8,7 +8,7 @@ const A = asNodeId('a');
 
 function makeScene() {
   const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: A, kind: 'leaf', layer: 'default', pose: { ...POSE }, data: { label: 'a' } });
+  scene.add({ id: A, kind: 'mark', layer: 'default', pose: { ...POSE }, data: { label: 'a' } });
   scene.history.clear();
   const adapter = { setPose: (id: string, pose: unknown) => { scene.setPose(asNodeId(id), pose as typeof POSE); } };
   const move = (from: number, to: number) =>

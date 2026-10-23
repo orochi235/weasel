@@ -374,7 +374,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
         seen: seenFrom(config, target?.positionDependsOn ?? []),
       };
       const node = sceneFor(init.target).add({
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'marks',
         pose: fracToWorld(frac, target?.content ?? NO_CONTENT),
         data,

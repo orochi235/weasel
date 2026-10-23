@@ -19,8 +19,8 @@ const ARM: Skeleton = {
 /** Bone rects laid over the bind pose: each 50 long, 10 wide, from its joint along +x. */
 function armScene() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-  const upper = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 95, width: 50, height: 10 }, data: {} });
-  const lower = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 150, y: 95, width: 50, height: 10 }, data: {} });
+  const upper = scene.add({ kind: 'mark', layer: 'main', pose: { x: 100, y: 95, width: 50, height: 10 }, data: {} });
+  const lower = scene.add({ kind: 'mark', layer: 'main', pose: { x: 150, y: 95, width: 50, height: 10 }, data: {} });
   return { scene, upper, lower };
 }
 
@@ -79,7 +79,7 @@ describe('bindRig', () => {
 
   it('binds several nodes to one joint', () => {
     const { scene, upper } = armScene();
-    const badge = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 120, y: 90, width: 4, height: 4 }, data: {} });
+    const badge = scene.add({ kind: 'mark', layer: 'main', pose: { x: 120, y: 90, width: 4, height: 4 }, data: {} });
     const rig = bindRig({ scene, skeleton: ARM, bindings: { upper: [upper, badge] } });
     rig.pose({ upper: { x: 10 } });
     close(where(scene, badge), { x: 130, y: 90, width: 4, height: 4 });

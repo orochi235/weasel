@@ -12,7 +12,7 @@ import { pickIndexBuildCount } from './scenePickIndex';
 
 it('the second pick in a still scene builds, even when the first registered the painters', () => {
   const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'main' }] }) as Scene<unknown, string, unknown>;
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 20, height: 20 }, data: null } as never);
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 20, height: 20 }, data: null } as never);
   const src = scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } });
   const q = pointPick(AUTO_POSE_DESCRIPTOR, 10, 10, { x: 1, y: 1 });
   expect(pickWalk(src, q)).toEqual(['a']);

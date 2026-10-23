@@ -36,7 +36,7 @@ const close = (a: Affine, b: Affine) => a.every((v, i) => Math.abs(v - b[i]) < 1
 function sceneWith(copies: readonly Affine[]) {
   const scene = createScene<Data, 'fg', Pose>({ systemLayers: [{ id: 'fg' }] });
   const group = scene.add({
-    kind: 'container', layer: 'fg', pose: POSE, data: { label: 'group' },
+    kind: 'group', layer: 'fg', pose: POSE, data: { label: 'group' },
     copiesFromPose: () => copies,
   });
   return { scene, group };
@@ -47,8 +47,8 @@ describe('buildSceneTree: a container drawing copies', () => {
     const shift = translate(100, 0);
     const flip = scale(-1, 1);
     const { scene, group } = sceneWith([shift, flip]);
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: group });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'b' }, parent: group });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: group });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'b' }, parent: group });
     const out = painted(buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW));
     expect(out.map((p) => p.label)).toEqual(['group', 'a', 'b', 'a', 'b', 'a', 'b']);
     const id: Affine = [1, 0, 0, 1, 0, 0];
@@ -68,10 +68,10 @@ describe('buildSceneTree: a container drawing copies', () => {
     const inner = translate(0, 50);
     const { scene, group } = sceneWith([outer]);
     const sub = scene.add({
-      kind: 'container', layer: 'fg', pose: POSE, data: { label: 'sub' }, parent: group,
+      kind: 'group', layer: 'fg', pose: POSE, data: { label: 'sub' }, parent: group,
       copiesFromPose: () => [inner],
     });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: sub });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: sub });
     const out = painted(buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW))
       .filter((p) => p.label === 'a');
     expect(out).toHaveLength(4);
@@ -83,11 +83,11 @@ describe('buildSceneTree: a container drawing copies', () => {
     const shift = translate(100, 0);
     const scene = createScene<Data, 'fg', Pose>({ systemLayers: [{ id: 'fg' }] });
     const group = scene.add({
-      kind: 'container', layer: 'fg', pose: POSE, data: { label: 'group' },
+      kind: 'group', layer: 'fg', pose: POSE, data: { label: 'group' },
       clipFromPose: () => ({ kind: 'rect', x: 0, y: 0, width: 5, height: 5 }),
       copiesFromPose: () => [shift],
     });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: group });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: group });
     const tree = buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW);
     const copy = painted(tree).filter((p) => p.label === 'a' && close(p.m, shift));
     expect(copy).toHaveLength(1);
@@ -98,15 +98,15 @@ describe('buildSceneTree: a container drawing copies', () => {
     const shift = translate(100, 0);
     const scene = createScene<Data, 'fg', Pose>({ systemLayers: [{ id: 'fg' }] });
     const frame = scene.add({
-      kind: 'container', layer: 'fg', pose: POSE, data: { label: 'frame' },
+      kind: 'group', layer: 'fg', pose: POSE, data: { label: 'frame' },
       clipFromPose: () => ({ kind: 'rect', x: 0, y: 0, width: 50, height: 50 }),
     });
     const group = scene.add({
-      kind: 'container', layer: 'fg', pose: POSE, data: { label: 'group' }, parent: frame,
+      kind: 'group', layer: 'fg', pose: POSE, data: { label: 'group' }, parent: frame,
       clipFromPose: () => null,
       copiesFromPose: () => [shift],
     });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: group });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: group });
     const tree = buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW);
     // The frame's clip group must enclose the transform, not sit inside it.
     const findCopy = (c: DrawCommand, clipAbove: boolean): boolean => {
@@ -120,9 +120,9 @@ describe('buildSceneTree: a container drawing copies', () => {
   it('draws no copies when the function answers null', () => {
     const scene = createScene<Data, 'fg', Pose>({ systemLayers: [{ id: 'fg' }] });
     const group = scene.add({
-      kind: 'container', layer: 'fg', pose: POSE, data: { label: 'group' }, copiesFromPose: () => null,
+      kind: 'group', layer: 'fg', pose: POSE, data: { label: 'group' }, copiesFromPose: () => null,
     });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: group });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'a' }, parent: group });
     const out = painted(buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW));
     expect(out.map((p) => p.label)).toEqual(['group', 'a']);
   });

@@ -69,7 +69,7 @@ export interface DiagramNode {
    *  itself is never laid out — it derives its pose from its members — but an
    *  edge can attach to it like any participant. */
   group?: DiagramGroup;
-  /** Present on a container, a pool, or a lane: a `ContainerNode` holding
+  /** Present on a container, a pool, or a lane: a `GroupNode` holding
    *  members (`containers/trait.ts`). */
   container?: DiagramContainer;
   /** How far past its bounds something drawn with it reaches, on each side —

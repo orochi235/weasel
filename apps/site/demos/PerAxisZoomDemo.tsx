@@ -21,7 +21,7 @@ export function PerAxisZoomDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'image' as never, kind: 'leaf', layer: 'default',
+      { id: 'image' as never, kind: 'mark', layer: 'default',
         pose: { x: 0, y: 0, width: 400, height: 200 },
         data: { color: '#7fb069' } },
     ],

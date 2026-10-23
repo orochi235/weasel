@@ -43,7 +43,7 @@ export function resolveLayoutExits(
       for (const id of parentId === null ? scene.roots : scene.childrenOf(parentId)) {
         if (excluded.has(id)) continue;
         const node = scene.get(id);
-        if (!node || node.kind !== 'container') continue;
+        if (!node || node.kind !== 'group') continue;
         if (node.layer === layer && depth >= bestDepth
           && layoutDep.getLayout(id as string) === null && holds(id, null) && session.admits(id)) {
           best = id;

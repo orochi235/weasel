@@ -4,12 +4,12 @@ import { ActionDisabledReason, type ImmediateInvoker, type InvocationCtx } from 
 import { asNodeId, type NodeId, type Op } from '@weasel-js/core';
 import { bridgePathsAction, DEFAULT_BRIDGE_TENSION } from './bridge';
 
-interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
+interface StubNode { id: NodeId; kind: 'mark'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
 
 /** A scene whose nodes store their polygon as the pose. */
 function setup(nodes: Record<string, { pose: unknown; data: unknown }>, selected: string[], extra: Record<string, unknown> = {}) {
   const byId = new Map<string, StubNode>();
-  for (const [id, n] of Object.entries(nodes)) byId.set(id, { id: asNodeId(id), kind: 'leaf', layer: 'main', parent: null, ...n });
+  for (const [id, n] of Object.entries(nodes)) byId.set(id, { id: asNodeId(id), kind: 'mark', layer: 'main', parent: null, ...n });
   const scene = {
     get: (id: NodeId) => byId.get(id),
     childrenOf: () => [],

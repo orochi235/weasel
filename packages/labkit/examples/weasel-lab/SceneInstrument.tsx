@@ -31,19 +31,19 @@ const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 
 export const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   {
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 40, y: 40, width: 80, height: 60 },
     data: { fill: { paint: solid('#7fb069') } },
   },
   {
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 180, y: 120, width: 100, height: 80 },
     data: { fill: { paint: solid('#d4a574') } },
   },
   {
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 340, y: 60, width: 70, height: 70 },
     data: { fill: { paint: solid('#a48bd4') } },

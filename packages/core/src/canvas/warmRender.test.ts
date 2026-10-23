@@ -62,8 +62,8 @@ function sceneArgs() {
   const scene = createScene<null, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: [
-      { id: asNodeId('box'), kind: 'container', layer: 'main', pose, data: null },
-      { id: asNodeId('art'), kind: 'leaf', layer: 'main', pose, data: null, parent: asNodeId('box') },
+      { id: asNodeId('box'), kind: 'group', layer: 'main', pose, data: null },
+      { id: asNodeId('art'), kind: 'mark', layer: 'main', pose, data: null, parent: asNodeId('box') },
     ],
   });
   return {

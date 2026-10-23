@@ -18,7 +18,7 @@ describe('the demos\' scene documents', () => {
     const filled = document.nodes.filter((node) => (node.data as { fill?: unknown } | null)?.fill != null);
 
     for (const node of filled) {
-      if (node.kind === 'container') {
+      if (node.kind === 'group') {
         it(`${file}: container ${node.id} declares no fill, which a container never paints`, () => {
           expect(node.data).not.toHaveProperty('fill');
         });

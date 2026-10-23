@@ -43,7 +43,7 @@ export function footprintNode(node: GraphNode): GraphNode {
   const specs = node.ports ?? DEFAULT_PORTS;
   const trait = { ports: specs, ...(node.outline !== undefined ? { outline: node.outline } : {}) };
   const ports = specs.map((spec): PortSpec => {
-    const [at, ...sites] = portSitesOf({ id: node.id, kind: 'leaf', data: null }, b, spec.id, { read: () => trait });
+    const [at, ...sites] = portSitesOf({ id: node.id, kind: 'mark', data: null }, b, spec.id, { read: () => trait });
     if (at === undefined) return spec;
     return {
       ...spec,

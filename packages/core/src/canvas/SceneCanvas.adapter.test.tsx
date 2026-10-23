@@ -32,8 +32,8 @@ function makeScene(framed = false): Scene<D, L, P> {
     systemLayers: [{ id: 'main' }],
     ...(framed ? { composition: RECT_POSE_COMPOSITION } : {}),
   });
-  s.add({ id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'rect' } });
-  s.add({ id: asNodeId('kid'), kind: 'leaf', layer: 'main', parent: asNodeId('box'), pose: { x: 10, y: 10, width: 5, height: 5 }, data: { kind: 'rect' } });
+  s.add({ id: asNodeId('box'), kind: 'group', layer: 'main', pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'rect' } });
+  s.add({ id: asNodeId('kid'), kind: 'mark', layer: 'main', parent: asNodeId('box'), pose: { x: 10, y: 10, width: 5, height: 5 }, data: { kind: 'rect' } });
   s.history.clear();
   return s;
 }

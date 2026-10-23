@@ -19,7 +19,7 @@ const W = 520, H = 340;
 
 const note = (id: string, x: number, y: number, text: string, color?: string) => ({
   id: asNodeId(id),
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   parent: null,
   pose: { x, y, width: 150, height: 150 },

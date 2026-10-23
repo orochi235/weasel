@@ -7,7 +7,7 @@ function setup(data: WeaselDrawData) {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: [{ id: 'default' }],
   });
-  scene.add({ id: asNodeId('src'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data });
+  scene.add({ id: asNodeId('src'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data });
   scene.setSelection([asNodeId('src')]);
   const adapter = drawOutlinesAdapter(scene, {
     getSelection: () => [...scene.getSelection()],
@@ -25,7 +25,7 @@ describe('drawOutlinesAdapter', () => {
     });
     const result = applyOutlineStroke(adapter);
     const [group] = result.kind === 'applied' ? result.resultIds : [];
-    expect(scene.get(asNodeId(group!))!.kind).toBe('container');
+    expect(scene.get(asNodeId(group!))!.kind).toBe('group');
     expect(dataOf(scene, group!)).toEqual({ label: 'Welcome' });
     const parts = [...scene.childrenOf(asNodeId(group!))];
     expect(parts).toHaveLength(2);

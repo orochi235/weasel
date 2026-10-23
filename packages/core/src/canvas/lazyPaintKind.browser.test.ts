@@ -38,7 +38,7 @@ const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [{
 
 function render(): RasterImage {
   const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 64, height: 48 }, data: null });
+  scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 64, height: 48 }, data: null });
   return renderSceneToPixels({
     scene,
     drawOne: drawOne as never,

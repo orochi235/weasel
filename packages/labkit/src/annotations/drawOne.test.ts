@@ -10,7 +10,7 @@ const VIEW = { x: 0, y: 0, zoom: 1 } as unknown as View;
 const node = (data: Partial<AnnotationData>, pose: WorldRect) =>
   ({
     id: 'n1',
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'marks',
     pose,
     data: { target: 'flat', kind: 'rect', ...data } as AnnotationData,

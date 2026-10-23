@@ -11,7 +11,7 @@ type TestScene = Scene<unknown, 'default', RectPose>;
 
 const box = (id: string, x: number) => ({
   id: id as NodeId,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x, y: 0, width: 20, height: 20 },
   data: { path: rectPath(0, 0, 20, 20), fill: { paint: { color: '#f00' } } },
@@ -20,7 +20,7 @@ const box = (id: string, x: number) => ({
 /** A horizontal line `y` down, from x 0 to 200. */
 const line = (id: string, y: number) => ({
   id: id as NodeId,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: 0, y, width: 200, height: 0 },
   data: { path: { kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 200, 0]), fillRule: 'nonzero' }, stroke: { paint: { color: '#000' }, width: 1 } },

@@ -25,7 +25,7 @@ describe('createSetDependsOnOp', () => {
 
   it('retargets a scene node through its mutators, as one undo step', () => {
     const leaf = (id: string) => ({
-      id: asNodeId(id), kind: 'leaf' as const, layer: 'default' as const,
+      id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const,
       pose: { x: 0, y: 0, width: 1, height: 1 }, data: {},
     });
     const scene = createScene<unknown, 'default', { x: number; y: number; width: number; height: number }>({

@@ -63,7 +63,7 @@ interface StubScene {
   overrides: PoseOverrides<unknown>;
   composition: typeof IDENTITY_POSE_COMPOSITION;
   datas: Map<string, WeaselDrawData>;
-  get(id: string): { pose: WeaselDrawPose; data: WeaselDrawData; kind: 'leaf'; layer: string; parent: null } | undefined;
+  get(id: string): { pose: WeaselDrawPose; data: WeaselDrawData; kind: 'mark'; layer: string; parent: null } | undefined;
   setPose(id: string, pose: WeaselDrawPose): void;
   renderOrder(): string[];
   childrenOf(): string[];
@@ -87,7 +87,7 @@ function makeStubScene(node: DrawNode): StubScene {
     roots: [node.id],
     get(id) {
       if (!poses.has(id)) return undefined;
-      return { pose: poses.get(id)!, data: datas.get(id)!, kind: 'leaf', layer: 'default', parent: null };
+      return { pose: poses.get(id)!, data: datas.get(id)!, kind: 'mark', layer: 'default', parent: null };
     },
     setPose(id, pose) { poses.set(id, pose); },
     renderOrder: () => [node.id],

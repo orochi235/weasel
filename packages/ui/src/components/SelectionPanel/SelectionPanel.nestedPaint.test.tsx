@@ -46,7 +46,7 @@ describe('SelectionPanel — a paint nested in an object', () => {
     const scene = createScene<ShapeData, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
     nodes.forEach((data, i) => scene.add({
       id: asNodeId(`n${i}`),
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { kind: 'path', ...data },

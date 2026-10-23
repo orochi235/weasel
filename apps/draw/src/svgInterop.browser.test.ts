@@ -22,7 +22,7 @@ function slowPaintScene(id: string, ms: number) {
     };
   }));
   const rect = {
-    id: 'a', kind: 'leaf', layer: 'default', parent: null,
+    id: 'a', kind: 'mark', layer: 'default', parent: null,
     pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: asPaint({ kind: id }) } },
   };

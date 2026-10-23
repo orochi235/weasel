@@ -21,12 +21,12 @@ type Pose = RectPose & { rotation?: number };
 function setup() {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
   const group = scene.add({
-    kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 },
+    kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 },
     dependsOn: 'children', derivePose: unionOfChildren,
   });
-  const a = scene.add({ kind: 'leaf', layer: 'main', parent: group, data: {}, pose: { x: 0, y: 0, width: 20, height: 20 } });
-  const b = scene.add({ kind: 'leaf', layer: 'main', parent: group, data: {}, pose: { x: 60, y: 40, width: 20, height: 20 } });
-  const lone = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 200, y: 0, width: 20, height: 20 } });
+  const a = scene.add({ kind: 'mark', layer: 'main', parent: group, data: {}, pose: { x: 0, y: 0, width: 20, height: 20 } });
+  const b = scene.add({ kind: 'mark', layer: 'main', parent: group, data: {}, pose: { x: 60, y: 40, width: 20, height: 20 } });
+  const lone = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 200, y: 0, width: 20, height: 20 } });
   let selected: NodeId[] = [group];
   const selection = {
     get: () => selected,
@@ -64,15 +64,15 @@ describe('shapeSources', () => {
   it('reaches past a dependency that derives its path, rather than writing it', () => {
     const { scene, a, b } = setup();
     const wire = scene.add({
-      kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 0, height: 0 },
+      kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 0, height: 0 },
       dependsOn: [a, b], derivePath: () => null,
     });
     const label = scene.add({
-      kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 },
+      kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 },
       dependsOn: [wire], derivePose: () => null,
     });
     const box = scene.add({
-      kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 },
+      kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 },
       dependsOn: [a, b, label], derivePose: () => null,
     });
     expect(shapeSources(scene as never, [box])).toEqual([a, b]);
@@ -136,7 +136,7 @@ describe('a selected group moves and mirrors as one thing', () => {
 
   it('distribute carries the children by the group\'s own shift', () => {
     const { scene, group, a, b, lone, run, poseOf, select } = setup();
-    const left = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: -100, y: 0, width: 20, height: 20 } });
+    const left = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: -100, y: 0, width: 20, height: 20 } });
     select([left, group, lone]);
     // Centers sit at -90, 40, and 210; the middle one belongs at 60.
     run(distributeHorizontalAction);

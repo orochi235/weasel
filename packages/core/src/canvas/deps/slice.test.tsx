@@ -29,7 +29,7 @@ const across = [{ x: -10, y: 50 }, { x: 110, y: 50 }];
 function makeScene(): S {
   const scene = createScene<Data, Layer, RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    id: asNodeId('sq'), kind: 'leaf', layer: 'main',
+    id: asNodeId('sq'), kind: 'mark', layer: 'main',
     pose: { x: 0, y: 0, width: 100, height: 100 },
     data: { path: rectPath(0, 0, 100, 100), fill: 'red' },
   });
@@ -37,7 +37,7 @@ function makeScene(): S {
 }
 
 const leaves = (scene: S) =>
-  [...scene.renderOrder()].map((id) => scene.get(id)!).filter((n) => n.kind === 'leaf');
+  [...scene.renderOrder()].map((id) => scene.get(id)!).filter((n) => n.kind === 'mark');
 
 function mount(scene: S, opts: {
   override?: SliceDep;
@@ -137,9 +137,9 @@ describe('the default slice dep', () => {
       systemLayers: [{ id: 'main' }],
       composition: RECT_POSE_COMPOSITION,
     });
-    const g = scene.add({ id: asNodeId('g'), kind: 'container', layer: 'main', pose: { x: 200, y: 200, width: 100, height: 100 }, data: {} });
+    const g = scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', pose: { x: 200, y: 200, width: 100, height: 100 }, data: {} });
     scene.add({
-      id: asNodeId('kid'), kind: 'leaf', layer: 'main', parent: g,
+      id: asNodeId('kid'), kind: 'mark', layer: 'main', parent: g,
       pose: { x: 0, y: 0, width: 100, height: 100 },
       data: { path: rectPath(0, 0, 100, 100) },
     });
@@ -160,7 +160,7 @@ describe('the default slice dep', () => {
 
     function single(pose: RectPose, path: Path = rectPath(0, 0, 100, 100)): S {
       const scene = createScene<Data, Layer, RectPose>({ systemLayers: [{ id: 'main' }] });
-      scene.add({ id: asNodeId('sq'), kind: 'leaf', layer: 'main', pose, data: { path } });
+      scene.add({ id: asNodeId('sq'), kind: 'mark', layer: 'main', pose, data: { path } });
       return scene;
     }
     const drawn = (pose: RectPose, path: Path) => boundsOfPath(pathInWorld(path, pose));
@@ -238,11 +238,11 @@ describe('the default slice dep', () => {
         composition: RIGID_POSE_COMPOSITION,
       });
       const g = scene.add({
-        id: asNodeId('g'), kind: 'container', layer: 'main',
+        id: asNodeId('g'), kind: 'group', layer: 'main',
         pose: { x: 200, y: 200, width: 100, height: 100, rotation: quarter }, data: {},
       });
       scene.add({
-        id: asNodeId('kid'), kind: 'leaf', layer: 'main', parent: g,
+        id: asNodeId('kid'), kind: 'mark', layer: 'main', parent: g,
         pose: { x: 0, y: 0, width: 100, height: 100 },
         data: { path: rectPath(0, 0, 100, 100) },
       });
@@ -273,7 +273,7 @@ describe('the default slice dep', () => {
       };
       const scene = createScene<Data, Layer, RectPose>({ systemLayers: [{ id: 'main' }] });
       scene.add({
-        id: asNodeId('c'), kind: 'leaf', layer: 'main',
+        id: asNodeId('c'), kind: 'mark', layer: 'main',
         pose: { cx: 50, cy: 50, hw: 50, hh: 50, turn: quarter } as unknown as RectPose,
         data: { path: rectPath(0, 0, 100, 100) },
       });

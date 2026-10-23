@@ -30,8 +30,8 @@ function opAdapter(scene: ReturnType<typeof createScene<unknown, 'base', Pose>>)
 
 function setup(handler: SceneArrivalHandler<Pose>) {
   const scene = createScene<unknown, 'base', Pose>({ systemLayers: [{ id: 'base' }] });
-  const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'base', pose: POSE, data: null });
-  const loose = scene.add({ kind: 'leaf', id: asNodeId('loose'), layer: 'base', pose: POSE, data: null });
+  const box = scene.add({ kind: 'group', id: asNodeId('box'), layer: 'base', pose: POSE, data: null });
+  const loose = scene.add({ kind: 'mark', id: asNodeId('loose'), layer: 'base', pose: POSE, data: null });
   const spy = vi.fn(handler);
   scene.setArrivalHandler(spy);
   const adapter = opAdapter(scene);
@@ -39,7 +39,7 @@ function setup(handler: SceneArrivalHandler<Pose>) {
 }
 
 const leaf = (id: string, parent: string | null) => ({
-  kind: 'leaf' as const, id: asNodeId(id), layer: 'base' as const, pose: POSE, data: null, parent: parent === null ? null : asNodeId(parent),
+  kind: 'mark' as const, id: asNodeId(id), layer: 'base' as const, pose: POSE, data: null, parent: parent === null ? null : asNodeId(parent),
 });
 
 const placeAll: SceneArrivalHandler<Pose> = (arrivals) => {
@@ -171,7 +171,7 @@ describe('Scene — arrival handler', () => {
 
   it('a removed handler no longer runs, and a stale disposer leaves its successor', () => {
     const scene = createScene<unknown, 'base', Pose>({ systemLayers: [{ id: 'base' }] });
-    scene.add({ kind: 'container', id: asNodeId('box'), layer: 'base', pose: POSE, data: null });
+    scene.add({ kind: 'group', id: asNodeId('box'), layer: 'base', pose: POSE, data: null });
     const first = vi.fn(placeAll);
     const second = vi.fn(placeAll);
     const disposeFirst = scene.setArrivalHandler(first);

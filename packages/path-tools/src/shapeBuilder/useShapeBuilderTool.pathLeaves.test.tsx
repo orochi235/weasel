@@ -17,7 +17,7 @@ beforeAll(() => {
 });
 
 const box = (x: number, color: string) => ({
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'main' as const,
   pose: { x, y: 0, width: 100, height: 100 },
   data: { path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } as Path, fill: { paint: { color } } },

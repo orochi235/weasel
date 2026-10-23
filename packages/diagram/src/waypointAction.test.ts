@@ -18,12 +18,12 @@ type Mods = Partial<typeof KEYS>;
 const KEYS = { alt: false, shift: false, meta: false, ctrl: false };
 
 const shape = (id: string, x: number, y: number) => ({
-  node: { id, kind: 'leaf', data: { diagram: {} } } as GraphNodeLike,
+  node: { id, kind: 'mark', data: { diagram: {} } } as GraphNodeLike,
   pose: { x, y, width: 100, height: 40 } as Rect,
 });
 
 const edge = (id: string, to: string, diagram: Record<string, unknown>) => ({
-  node: { id, kind: 'leaf', dependsOn: ['A', to], data: { diagram: { from: { port: 'e' }, to: { port: 'w' }, ...diagram }, stroke: 1 } } as GraphNodeLike,
+  node: { id, kind: 'mark', dependsOn: ['A', to], data: { diagram: { from: { port: 'e' }, to: { port: 'w' }, ...diagram }, stroke: 1 } } as GraphNodeLike,
   pose: { x: 0, y: 0, width: 0, height: 0 } as Rect,
 });
 
@@ -237,8 +237,8 @@ describe('createRouteEditAction', () => {
 
   it('the edited edge and shape anchors offer nothing', () => {
     const scene = emptyScene();
-    scene.add({ kind: 'leaf', layer: 'main', id: asNodeId('Z'), data: {}, pose: pathFromD('M150 150 L160 160') } as never);
-    scene.add({ kind: 'leaf', layer: 'main', id: asNodeId('ab'), data: {}, pose: pathFromD('M250 250 L260 260') } as never);
+    scene.add({ kind: 'mark', layer: 'main', id: asNodeId('Z'), data: {}, pose: pathFromD('M150 150 L160 160') } as never);
+    scene.add({ kind: 'mark', layer: 'main', id: asNodeId('ab'), data: {}, pose: pathFromD('M250 250 L260 260') } as never);
     const pathSnap: SnapSource = { ...pathSnapSource({ only: ['anchor'] }), gestures: ['point'] };
     expect(pathSnap.id).toBe('path-snap');
     expect(dragTo('ab', VERTEX, { x: 152, y: 152 }, { waypoints: ONE_BEND, snap: canvasSnap([pathSnap], { scene }) }))

@@ -45,7 +45,7 @@ function setup() {
   const scene = createScene<{ kind: 'rect' }, 'main', { x: number; y: number; width: number; height: number }>(
     { systemLayers: [{ id: 'main' }] },
   );
-  scene.add({ id: ID, kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
+  scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
   render(
     <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
@@ -125,7 +125,7 @@ describe('entering path-edit from the keyboard', () => {
     const scene = createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>(
       { systemLayers: [{ id: 'main' }] },
     );
-    scene.add({ id: ID, kind: 'leaf', data: { path: pathFromD('M 0 0 L 10 0 L 10 10') as PolygonPath }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
+    scene.add({ id: ID, kind: 'mark', data: { path: pathFromD('M 0 0 L 10 0 L 10 10') as PolygonPath }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
     scene.setSelection([ID]);
     render(
       <DepRegistryProvider>

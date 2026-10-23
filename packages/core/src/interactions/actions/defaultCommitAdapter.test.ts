@@ -12,13 +12,13 @@ function fixture() {
     systemLayers: [{ id: 'main' }, { id: 'overlay' }],
   });
   const box = scene.add({
-    kind: 'container',
+    kind: 'group',
     layer: 'main',
     data: { color: '#eee' },
     pose: { x: 0, y: 0, width: 200, height: 200 },
   });
   const leaf = scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     data: { color: '#f00' },
     pose: { x: 10, y: 10, width: 20, height: 20 },
@@ -89,7 +89,7 @@ describe('defaultCommitAdapter', () => {
   it('insertNode keeps a node unpickable', () => {
     const { scene } = fixture();
     const label = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       data: { color: '#00f' },
       pose: { x: 0, y: 0, width: 5, height: 5 },

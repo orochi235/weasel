@@ -13,7 +13,7 @@ const SKELETON: Skeleton = {
 describe('useRig', () => {
   it('keeps one rig across renders and drops its overrides on unmount', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const bindings = { root: id };
     const seen: Rig[] = [];
     function Probe() {

@@ -17,7 +17,7 @@ const DATA: DiagramData = {
 };
 
 const containers = (specs: ReturnType<typeof diagramScene>) =>
-  specs.filter((s) => s.kind === 'container');
+  specs.filter((s) => s.kind === 'group');
 
 describe('diagramScene', () => {
   it('makes one container per node, carrying the data id', () => {

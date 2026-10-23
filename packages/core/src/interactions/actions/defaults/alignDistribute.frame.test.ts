@@ -30,7 +30,7 @@ function makeScene(withThird: boolean) {
   if (withThird) {
     scene.add({
       id: third,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main' as FrameFixtureLayer,
       parent: group,
       data: { label: 'third' } as FrameFixtureData,

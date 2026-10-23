@@ -28,14 +28,14 @@ function build(scene: Scene, id: string, at: RectPose): string {
 
 function shape(scene: Scene, id: string, at: RectPose, parent?: string): void {
   scene.add({
-    id: id as NodeId, kind: 'leaf', layer: 'main', pose: at, data: { diagram: { outline: 'rect' } },
+    id: id as NodeId, kind: 'mark', layer: 'main', pose: at, data: { diagram: { outline: 'rect' } },
     ...(parent ? { parent: parent as NodeId } : {}),
   });
 }
 
 function edge(scene: Scene, id: string, from: string, to: string, waypoints: Vec2[]): void {
   scene.add({
-    id: id as NodeId, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+    id: id as NodeId, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
     data: { diagram: { from: {}, to: {}, waypoints } }, dependsOn: [from as NodeId, to as NodeId], derivePath: EDGE_DERIVE_PATH as never,
   });
 }

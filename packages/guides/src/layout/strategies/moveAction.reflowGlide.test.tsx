@@ -44,9 +44,9 @@ function setup(composition?: PoseComposition<RectPose>) {
     systemLayers: [{ id: 'main' }],
     ...(composition ? { composition } : {}),
   });
-  const C = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 100, 100) });
-  const a = scene.add({ kind: 'leaf', parent: C, layer: 'main', data: {}, pose: box(0) });
-  const b = scene.add({ kind: 'leaf', parent: C, layer: 'main', data: {}, pose: box(50) });
+  const C = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 100, 100) });
+  const a = scene.add({ kind: 'mark', parent: C, layer: 'main', data: {}, pose: box(0) });
+  const b = scene.add({ kind: 'mark', parent: C, layer: 'main', data: {}, pose: box(50) });
   const reflow = createReflowTransition(scene, result.current, { ms: 100, easing: linear });
   const grid = tileGrid<RectPose>({ cols: 2, rows: 1 });
   const layout: LayoutDep = {
@@ -119,7 +119,7 @@ describe('moveAction under a reflow transition', () => {
 
   it('starts the glide in the frame of the container the child landed in', () => {
     const { scene, a, frame, ctx, where, layout } = setup(RECT_POSE_COMPOSITION);
-    const D = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(200, 0, 100, 100) });
+    const D = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(200, 0, 100, 100) });
     const grid = layout.getLayout(scene.get(a)!.parent as string);
     layout.getLayout = (id) => (id === D || id === scene.get(a)?.parent ? grid : null);
     const h = (moveAction.invoker as OngoingInvoker).start(ctx(), {}) as OngoingHandle;

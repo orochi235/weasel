@@ -31,7 +31,7 @@ export function drawOutlinesAdapter(
       const standsIn = parent === (source?.parent ?? null);
       return {
         id: mintId(),
-        kind: 'leaf',
+        kind: 'mark',
         layer: source?.layer ?? 'default',
         parent,
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
@@ -41,7 +41,7 @@ export function drawOutlinesAdapter(
     // The kit `group` action's container: an envelope tracking its members.
     createContainerNode: (sourceId, { parent, bounds }) => ({
       id: mintId(),
-      kind: 'container',
+      kind: 'group',
       layer: scene.get(sourceId)?.layer ?? 'default',
       parent,
       pose: bounds,

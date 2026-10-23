@@ -15,7 +15,7 @@ afterEach(() => { cleanup(); });
 
 const FREE = { suspend: false, constrain: false };
 const scene = createScene({ systemLayers: [{ id: 'main' }] }) as unknown as Scene<unknown, string, unknown>;
-const box = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 10, y: 20, width: 10, height: 10 } } as never) as string;
+const box = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 10, y: 20, width: 10, height: 10 } } as never) as string;
 
 function snapDepOf(session: Omit<SnapSessionSources, 'scene' | 'boxes'>): SnapDep {
   let reg!: DepRegistry;

@@ -21,10 +21,10 @@ const KEYS = { alt: false, shift: false, meta: false, ctrl: false };
 function load(): Sc {
   const scene = createScene<unknown, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
   for (const [id, x] of [['a', 0], ['b', 300]] as const) {
-    scene.add({ id: id as never, kind: 'leaf', layer: 'main', pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} } });
+    scene.add({ id: id as never, kind: 'mark', layer: 'main', pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} } });
   }
   scene.add({
-    id: 'ab' as never, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+    id: 'ab' as never, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
     data: { diagram: { from: { nodeId: 'a' }, to: { nodeId: 'b' }, router: 'straight' } },
     dependsOn: ['a' as never, 'b' as never], derivePath: EDGE_DERIVE_PATH as never,
   });

@@ -1,7 +1,7 @@
 import { resolveScoped, type PerAxis, type PlaneValue, type UnitScope } from '@weasel-js/core';
 
 /** How a grid reads the unit scopes a scene's containers declare
- *  (`ContainerNode.units`). */
+ *  (`GroupNode.units`). */
 export interface GridScopes {
   /** The scene's outermost scope, as `sceneUnitScopes` is handed it. The grid's
    *  `spacing` is read in its system, in place of `unitSystem`. */

@@ -7,7 +7,7 @@ interface Pose { x: number; y: number; width: number; height: number; }
 function setup() {
   const scene = createScene<{ label: string }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
-    kind: 'leaf', layer: 'main', data: { label: 'caption' },
+    kind: 'mark', layer: 'main', data: { label: 'caption' },
     pose: { x: 0, y: 0, width: 10, height: 10 }, pickable: false,
   });
   return { scene, id, adapter: sceneToAdapter(scene) };

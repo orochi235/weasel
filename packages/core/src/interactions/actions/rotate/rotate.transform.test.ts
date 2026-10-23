@@ -22,7 +22,7 @@ function drawnCorners(p: RectPose): [number, number][] {
 
 function turn(delta: number): RectPose {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: ID, kind: 'leaf', layer: 'main', data: {}, pose: POSE });
+  scene.add({ id: ID, kind: 'mark', layer: 'main', data: {}, pose: POSE });
   const ctxAt = (angle: number) => ({
     world: { x: CENTER.x + 100 * Math.cos(angle), y: CENTER.y + 100 * Math.sin(angle) },
     screen: { x: 0, y: 0 },

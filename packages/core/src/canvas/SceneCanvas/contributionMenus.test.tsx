@@ -58,7 +58,7 @@ describe('contributed menus', () => {
 
   it('reach a bare canvas, which makes its own menu host, and open on a right-click', () => {
     const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
-    scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 10, y: 10, width: 100, height: 100 } });
+    scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 10, y: 10, width: 100, height: 100 } });
     const onBody = {
       ...contrib,
       menus: [{ id: 'body', when: { bodyTarget: ['selected-body', 'empty'] }, menu: pref.group('', { cut: pref.action('cut') }) }],

@@ -9,11 +9,11 @@ export const box = (x: number, y: number, w = 40, h = 20): RectPose => ({ x, y, 
 /** Three boxes and two edges, scattered. */
 export function scene() {
   const s = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-  const a = s.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
-  const b = s.add({ kind: 'container', layer: 'main', pose: box(200, 30), data: { diagram: {} } });
-  const c = s.add({ kind: 'leaf', layer: 'main', pose: box(60, 180), data: { diagram: {} } });
+  const a = s.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
+  const b = s.add({ kind: 'group', layer: 'main', pose: box(200, 30), data: { diagram: {} } });
+  const c = s.add({ kind: 'mark', layer: 'main', pose: box(60, 180), data: { diagram: {} } });
   const edge = (from: NodeId, to: NodeId) => s.add({
-    kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
+    kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
     data: { diagram: { from: {}, to: {} } },
     dependsOn: [from, to],
   });

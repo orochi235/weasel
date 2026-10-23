@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 const rect = (id: string, x: number) => ({
-  id: asNodeId(id), kind: 'leaf' as const, layer: 'default' as const, pose: { x, y: 20, width: 40, height: 40 }, data: {},
+  id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const, pose: { x, y: 20, width: 40, height: 40 }, data: {},
 });
 
 describe('distanceReadout on a SceneCanvas', () => {

@@ -12,7 +12,7 @@ import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routi
  * — `{ fill }` or `{ stroke }`.
  */
 
-interface FakeNode<TData> { id: NodeId; kind: 'leaf'; pose: unknown; data: TData }
+interface FakeNode<TData> { id: NodeId; kind: 'mark'; pose: unknown; data: TData }
 
 export interface FakeScene<TData> {
   get(id: NodeId): FakeNode<TData> | null;
@@ -42,7 +42,7 @@ export interface FakeSelection {
 export function makeScene<TData extends object>(nodes: Record<string, TData>): FakeScene<TData> {
   const current: Record<string, FakeNode<TData>> = {};
   for (const [id, d] of Object.entries(nodes)) {
-    current[id] = { id: asNodeId(id), kind: 'leaf', pose: {}, data: { ...d } };
+    current[id] = { id: asNodeId(id), kind: 'mark', pose: {}, data: { ...d } };
   }
   const updates: Array<{ id: string; data: unknown }> = [];
   const batches: string[] = [];

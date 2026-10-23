@@ -26,7 +26,7 @@ export function adapterPointQuery<TPose>(
   const pointQuery = (px: number, py: number, t: number): PickQuery<TPose> => ({
     hits: (node, pose, derived, inherited) => {
       const b = derived ? boundsOfPath(derived) : poseDescriptorForNode(d, node).getBounds(pose);
-      if (node.kind !== 'container') {
+      if (node.kind !== 'group') {
         const slop = preciseLeaves || derived ? t : 0;
         if (!(px >= b.x - slop && px <= b.x + b.width + slop
               && py >= b.y - slop && py <= b.y + b.height + slop)) {

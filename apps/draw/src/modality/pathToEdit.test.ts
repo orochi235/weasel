@@ -11,8 +11,8 @@ function scene(hideSources: boolean): DrawScene {
     systemLayers: [{ id: 'default' }],
     registry: withPathEffectsRegistry(),
     initial: [
-      { id: asNodeId('t'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 80, height: 20 }, data: { text: 'Hi' } },
-      { id: asNodeId('p'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 50, width: 100, height: 1 }, data: { path: pathFromD('M0 50 L100 50') } },
+      { id: asNodeId('t'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 80, height: 20 }, data: { text: 'Hi' } },
+      { id: asNodeId('p'), kind: 'mark', layer: 'default', pose: { x: 0, y: 50, width: 100, height: 1 }, data: { path: pathFromD('M0 50 L100 50') } },
       { ...pathEffectNode({ kind: 'textAlong', ...(hideSources ? { hideSources } : {}) }, [asNodeId('t'), asNodeId('p')], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('fx') },
     ],
   } as never) as unknown as DrawScene;

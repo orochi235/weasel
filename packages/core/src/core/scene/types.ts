@@ -237,7 +237,7 @@ export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = s
  *
  * Runs only for live edits. Undo, redo and a restored history replay the
  * arrangement that was decided the first time. With none installed, a scene
- * holding declared layouts (`ContainerNode.layout`) runs its own.
+ * holding declared layouts (`GroupNode.layout`) runs its own.
  */
 export type SceneArrivalHandler<TPose> = (
   arrivals: ReadonlyMap<NodeId, readonly NodeId[]>,
@@ -537,7 +537,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   // Serialization
   /** Snapshot the current scene state to a JSON-serializable shape.
    *  History (undo/redo stacks) is NOT captured. Function fields like
-   *  `ContainerNode.clipFromPose` are translated to string keys via the
+   *  `GroupNode.clipFromPose` are translated to string keys via the
    *  scene's registry; throws if any function field has no matching key. */
   toJSON(): SerializedScene<TData, TLayer, TPose>;
   /** Replace this scene's entire node + layer state in place from a snapshot

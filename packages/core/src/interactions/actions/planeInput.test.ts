@@ -40,7 +40,7 @@ function makeScene(): S {
   return createScene<unknown, 'sky' | 'main', RectPose>({
     systemLayers: [{ id: 'main' }, { id: 'sky', parallax: SKY }],
     initial: [
-      { id: asNodeId('sun'), kind: 'leaf', layer: 'sky', pose: { x: 100, y: 100, width: 40, height: 40 }, data: {} },
+      { id: asNodeId('sun'), kind: 'mark', layer: 'sky', pose: { x: 100, y: 100, width: 40, height: 40 }, data: {} },
     ],
   }) as unknown as S;
 }
@@ -216,7 +216,7 @@ describe('editing a node on a parallax plane', () => {
   it('leaves an edit on a camera layer exactly as it was', () => {
     const scene = createScene<unknown, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],
-      initial: [{ id: asNodeId('sun'), kind: 'leaf', layer: 'main', pose: { x: 100, y: 100, width: 40, height: 40 }, data: {} }],
+      initial: [{ id: asNodeId('sun'), kind: 'mark', layer: 'main', pose: { x: 100, y: 100, width: 40, height: 40 }, data: {} }],
     }) as unknown as S;
     drag(moveAction, scene, { x: 110, y: 110 }, { x: 120, y: 110 });
     expect(poseOf(scene, 'sun')).toMatchObject({ x: 110, y: 100 });
@@ -230,9 +230,9 @@ function twoPlaneScene(): S {
   return createScene<unknown, 'sky' | 'main', RectPose>({
     systemLayers: [{ id: 'main' }, { id: 'sky', parallax: SKY }],
     initial: [
-      { id: asNodeId('sun'), kind: 'leaf', layer: 'sky', pose: { x: 100, y: 100, width: 40, height: 40 }, data: {} },
-      { id: asNodeId('moon'), kind: 'leaf', layer: 'main', pose: { x: 60, y: 50, width: 20, height: 20 }, data: {} },
-      { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 200, y: 0, width: 100, height: 100 }, data: {} },
+      { id: asNodeId('sun'), kind: 'mark', layer: 'sky', pose: { x: 100, y: 100, width: 40, height: 40 }, data: {} },
+      { id: asNodeId('moon'), kind: 'mark', layer: 'main', pose: { x: 60, y: 50, width: 20, height: 20 }, data: {} },
+      { id: asNodeId('box'), kind: 'group', layer: 'main', pose: { x: 200, y: 0, width: 100, height: 100 }, data: {} },
     ],
   }) as unknown as S;
 }
@@ -383,7 +383,7 @@ describe('inPlane', () => {
     // A sky that pans at half the camera's rate, so a pan moves it on screen.
     const scene = createScene<unknown, 'sky', RectPose>({
       systemLayers: [{ id: 'sky', parallax: { pan: 0.5, zoom: 0 } }],
-      initial: [{ id: asNodeId('sun'), kind: 'leaf', layer: 'sky', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} }],
+      initial: [{ id: asNodeId('sun'), kind: 'mark', layer: 'sky', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} }],
     }) as unknown as S;
     let camera = CAMERA;
     const view: ViewApi = { get: () => camera, set: () => {} };

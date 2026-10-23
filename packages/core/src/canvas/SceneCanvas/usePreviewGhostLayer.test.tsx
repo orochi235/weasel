@@ -78,7 +78,7 @@ function collectRects(cmds: DrawCommand[]): Array<{ x: number; y: number }> {
 describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
   it("renders a ghost for an OngoingHandle's previewIds/previewPose", () => {
     const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
 
     const handle: OngoingHandle = {
       previewIds: () => [a],
@@ -102,7 +102,7 @@ describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
 
   it('removing the handle (commit/cancel) removes the ghost', () => {
     const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
 
     const handle: OngoingHandle = {
       previewIds: () => [a],
@@ -126,8 +126,8 @@ describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
 describe('usePreviewGhostLayer — previewOpaqueIds', () => {
   it('splits opaque ids out of the ghost alpha group', () => {
     const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-    const dragged = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'd' } });
-    const reflowed = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'r' } });
+    const dragged = scene.add({ kind: 'mark', layer: 'main', pose: COMMITTED_POSE, data: { label: 'd' } });
+    const reflowed = scene.add({ kind: 'mark', layer: 'main', pose: COMMITTED_POSE, data: { label: 'r' } });
 
     const handle: OngoingHandle = {
       previewIds: () => [dragged, reflowed],
@@ -153,7 +153,7 @@ describe('usePreviewGhostLayer — previewOpaqueIds', () => {
 
   it('emits only the ghost group when nothing is opaque', () => {
     const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
 
     const handle: OngoingHandle = {
       previewIds: () => [a],
@@ -177,7 +177,7 @@ describe('usePreviewGhostLayer — previewOpaqueIds', () => {
 describe('usePreviewGhostLayer — a render React abandons', () => {
   it('ghosts through the committed scene and slot', () => {
     const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
     const other = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
     const handle: OngoingHandle = {
       previewIds: () => [a],
@@ -225,7 +225,7 @@ describe('usePreviewGhostLayer — parallax layers', () => {
     // The sky does not zoom; under a 2x camera its world is the camera's
     // doubled, so a sky rect at (100,200) 10 wide paints at camera (50,100) 5 wide.
     const scene = createScene<Data, 'sky', Pose>({ systemLayers: [{ id: 'sky', parallax: { pan: 1, zoom: 0 } }] });
-    const a = scene.add({ kind: 'leaf', layer: 'sky', pose: COMMITTED_POSE, data: { label: 'a' } });
+    const a = scene.add({ kind: 'mark', layer: 'sky', pose: COMMITTED_POSE, data: { label: 'a' } });
     const handle: OngoingHandle = {
       previewIds: () => [a],
       previewPose: (id) => (id === a ? PREVIEW_POSE : null),

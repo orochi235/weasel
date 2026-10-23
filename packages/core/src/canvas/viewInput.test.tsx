@@ -36,8 +36,8 @@ beforeAll(() => {
 
 function makeScene() {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  const inLens = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-  const underLens = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 210, y: 10, width: 30, height: 30 }, data: { kind: 'rect' } });
+  const inLens = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+  const underLens = scene.add({ kind: 'mark', layer: 'main', pose: { x: 210, y: 10, width: 30, height: 30 }, data: { kind: 'rect' } });
   return { scene, inLens, underLens };
 }
 
@@ -109,7 +109,7 @@ describe('a behavior\'s screen-pixel tolerance goes through the camera the drag 
 
   function dragAt(view: View, guide: number): P {
     const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
     const { container } = render(
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={300}
         defaultView={view} selectTool={guideSnap(guide)} />,

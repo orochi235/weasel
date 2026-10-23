@@ -26,7 +26,7 @@ function setup(members: PrefSection['members'], nodes: Extra[], renderers?: Para
   const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
   const ids = nodes.map((data, i) => {
     const id = `n${i}`;
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
     return id;
   });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];

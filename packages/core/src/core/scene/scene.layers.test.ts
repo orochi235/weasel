@@ -5,31 +5,31 @@ import { POSE, makeScene } from './testing/makeScene';
 describe('setLayer — parent rejection and cascade', () => {
   it('setLayer onto a higher layer than the parent is allowed (renders above)', () => {
     const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
+    const bed = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
     s.setLayer(plant, 'plantings');
     expect(s.get(plant)?.layer).toBe('plantings');
   });
 
   it('setLayer below the parent layer is rejected', () => {
     const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'plantings', pose: POSE, data: { label: 'bed' } });
-    const child = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: bed });
+    const bed = s.add({ kind: 'group', layer: 'plantings', pose: POSE, data: { label: 'bed' } });
+    const child = s.add({ kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: bed });
     expect(() => s.setLayer(child, 'structures')).toThrow(/may not render below its parent/);
   });
 
   it('setLayer succeeds on a leaf with no parent', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     s.setLayer(id, 'plantings');
     expect(s.get(id)?.layer).toBe('plantings');
   });
 
   it('setLayer on a container cascades through all descendants', () => {
     const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const sub = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'sub' }, parent: bed });
-    const leaf = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'leaf' }, parent: sub });
+    const bed = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const sub = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'sub' }, parent: bed });
+    const leaf = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'leaf' }, parent: sub });
     s.setLayer(bed, 'plantings');
     expect(s.get(bed)?.layer).toBe('plantings');
     expect(s.get(sub)?.layer).toBe('plantings');
@@ -38,8 +38,8 @@ describe('setLayer — parent rejection and cascade', () => {
 
   it('setLayer cascade is one undo step', () => {
     const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const leaf = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'leaf' }, parent: bed });
+    const bed = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const leaf = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'leaf' }, parent: bed });
     s.setLayer(bed, 'plantings');
     s.undo();
     expect(s.get(bed)?.layer).toBe('structures');
@@ -48,7 +48,7 @@ describe('setLayer — parent rejection and cascade', () => {
 
   it('setLayer with current layer is a no-op (no history entry added)', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     // Record how many entries are in the stack before the no-op call.
     // We can detect a new entry by checking canUndo before/after (the stack
     // starts non-empty due to the add above, but a no-op must not push another).
@@ -65,7 +65,7 @@ describe('renderOrder with hidden layers', () => {
     // The Scene's renderOrder yields nodes regardless of layer visibility;
     // the Canvas integration is responsible for skipping hidden layers.
     const s = makeScene();
-    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     s.setLayerVisible('structures', false);
     const order = [...s.renderOrder()];
     expect(order).toEqual([a]);
@@ -149,8 +149,8 @@ describe('user-layer mutations', () => {
     const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
       systemLayers: [{ id: 'base' }, { id: 'fx' }],
     });
-    const parent = scene.add({ kind: 'container', layer: 'base', pose: { x: 0 }, data: { v: 1 } });
-    scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 1 }, data: { v: 2 }, parent });
+    const parent = scene.add({ kind: 'group', layer: 'base', pose: { x: 0 }, data: { v: 1 } });
+    scene.add({ kind: 'mark', layer: 'fx', pose: { x: 1 }, data: { v: 2 }, parent });
     expect(() => scene.moveLayer('fx', 0)).toThrow(/below its parent/);
     expect(scene.layers.map((l) => l.id)).toEqual(['base', 'fx']);
   });
@@ -160,8 +160,8 @@ describe('user-layer mutations', () => {
       systemLayers: [{ id: 'base' }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
-    scene.add({ kind: 'leaf', layer: 'base', pose: { x: 0 }, data: { v: 1 } });
-    const onFx = scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 1 }, data: { v: 2 } });
+    scene.add({ kind: 'mark', layer: 'base', pose: { x: 0 }, data: { v: 1 } });
+    const onFx = scene.add({ kind: 'mark', layer: 'fx', pose: { x: 1 }, data: { v: 2 } });
     scene.removeLayer('fx');
     expect(scene.layers.map((l) => l.id)).toEqual(['base']);
     expect(scene.get(onFx)).toBeUndefined();
@@ -173,8 +173,8 @@ describe('user-layer mutations', () => {
       systemLayers: [{ id: 'base' }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
-    const c = scene.add({ kind: 'container', layer: 'fx', pose: { x: 0 }, data: { v: 1 } });
-    const child = scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 1 }, data: { v: 2 }, parent: c });
+    const c = scene.add({ kind: 'group', layer: 'fx', pose: { x: 0 }, data: { v: 1 } });
+    const child = scene.add({ kind: 'mark', layer: 'fx', pose: { x: 1 }, data: { v: 2 }, parent: c });
     scene.removeLayer('fx');
     expect(scene.get(c)).toBeUndefined();
     expect(scene.get(child)).toBeUndefined();
@@ -186,8 +186,8 @@ describe('user-layer mutations', () => {
       systemLayers: [{ id: 'base' }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
-    const a = scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 0 }, data: { v: 1 } });
-    const b = scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 1 }, data: { v: 2 } });
+    const a = scene.add({ kind: 'mark', layer: 'fx', pose: { x: 0 }, data: { v: 1 } });
+    const b = scene.add({ kind: 'mark', layer: 'fx', pose: { x: 1 }, data: { v: 2 } });
     scene.removeLayer('fx');
     scene.undo();
     expect(scene.layers.map((l) => l.id)).toEqual(['base', 'fx']);
@@ -209,7 +209,7 @@ describe('user-layer mutations', () => {
     });
     scene.addLayer({ id: 'mid', name: 'Mid' }); // index 1
     scene.addLayer({ id: 'top', name: 'Top' }); // index 2
-    const node = scene.add({ kind: 'leaf', layer: 'top', pose: { x: 0 }, data: { v: 1 } });
+    const node = scene.add({ kind: 'mark', layer: 'top', pose: { x: 0 }, data: { v: 1 } });
     scene.removeLayer('mid'); // layers -> [base, top]; 'top' shifts index 2 -> 1
     expect(scene.layers.map((l) => l.id)).toEqual(['base', 'top']);
     // requireLayerIndex must resolve 'top' to its new slot for later mutations.

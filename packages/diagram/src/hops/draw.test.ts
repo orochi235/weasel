@@ -101,7 +101,7 @@ describe('withHops', () => {
 describe('edgeDerivePath with hops', () => {
   const dep = (x: number): DerivedDep<RectPose> => {
     const pose = { x, y: 0, width: 40, height: 40 };
-    return { node: { id: asNodeId(`n${x}`), kind: 'leaf', layer: 'main', parent: null, pose, data: { diagram: {} } } as never, pose, path: null };
+    return { node: { id: asNodeId(`n${x}`), kind: 'mark', layer: 'main', parent: null, pose, data: { diagram: {} } } as never, pose, path: null };
   };
   const derive = edgeDerivePath<RectPose>();
 

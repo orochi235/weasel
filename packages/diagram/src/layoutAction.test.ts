@@ -23,13 +23,13 @@ function chain(): Scene<Data, 'main', Rect> {
   for (const id of ['a', 'b', 'c']) {
     scene.add({
       // `b` is a container so the cascade has something to carry.
-      id: id as never, kind: id === 'b' ? 'container' : 'leaf', layer: 'main',
+      id: id as never, kind: id === 'b' ? 'group' : 'mark', layer: 'main',
       pose: { ...START[id]!, width: 100, height: 40 }, data: { diagram: {} },
     });
   }
   for (const [from, to] of [['a', 'b'], ['b', 'c']]) {
     scene.add({
-      kind: 'leaf', layer: 'main',
+      kind: 'mark', layer: 'main',
       pose: { x: 0, y: 0, width: 0, height: 0 },
       data: { diagram: { from: {}, to: {} } },
       dependsOn: [from, to] as never,
@@ -78,7 +78,7 @@ describe('applyLayout', () => {
   it('takes a container\'s children along with it', () => {
     const scene = chain();
     const label = scene.add({
-      kind: 'leaf', layer: 'main', parent: 'b' as never,
+      kind: 'mark', layer: 'main', parent: 'b' as never,
       pose: { x: START['b']!.x + 10, y: START['b']!.y + 10, width: 30, height: 12 },
       data: {},
     });
@@ -101,13 +101,13 @@ describe('routes', () => {
   function spanning(): { scene: Scene<Data, 'main', Rect>; long: string; label: string } {
     const scene = chain();
     const long = scene.add({
-      kind: 'leaf', layer: 'main',
+      kind: 'mark', layer: 'main',
       pose: { x: 0, y: 0, width: 0, height: 0 },
       data: { diagram: { from: {}, to: {} } },
       dependsOn: ['a', 'c'] as never,
     });
     const label = scene.add({
-      kind: 'leaf', layer: 'main',
+      kind: 'mark', layer: 'main',
       pose: { x: 0, y: 0, width: 60, height: 16 },
       data: { diagram: { label: { at: 'mid' } } },
       dependsOn: [long] as never,
@@ -203,7 +203,7 @@ describe('routes', () => {
   it('stations only the first label on an edge, the one it left room for', () => {
     const { scene, long, label } = spanning();
     const second = scene.add({
-      kind: 'leaf', layer: 'main',
+      kind: 'mark', layer: 'main',
       pose: { x: 0, y: 0, width: 60, height: 16 },
       data: { diagram: { label: { at: 'mid' } } },
       dependsOn: [long] as never,
@@ -220,10 +220,10 @@ describe('routes', () => {
     const scene = createScene<Data, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
     const at = { s: [500, 0], l: [0, 200], r: [1000, 200], t: [500, 400] } as const;
     for (const [id, [x, y]] of Object.entries(at)) {
-      scene.add({ id: id as never, kind: 'leaf', layer: 'main', pose: { x, y, width: 100, height: 40 }, data: { diagram: {} } });
+      scene.add({ id: id as never, kind: 'mark', layer: 'main', pose: { x, y, width: 100, height: 40 }, data: { diagram: {} } });
     }
     const edge = (from: string, to: string, waypoints?: { x: number; y: number }[]) => scene.add({
-      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
       data: { diagram: { from: {}, to: {}, ...(waypoints ? { waypoints } : {}) } },
       dependsOn: [from, to] as never,
     });

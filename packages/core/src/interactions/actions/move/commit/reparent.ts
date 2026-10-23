@@ -44,7 +44,7 @@ export function resolveDropTarget(
   // targets (parent = leaf's parent). When the leaf has no parent
   // (top-level under a layer), `newParent === null` and the moved
   // subtree lands at the layer root.
-  if (hitNode.kind === 'container' && session.admits(hit)) {
+  if (hitNode.kind === 'group' && session.admits(hit)) {
     return { newParent: hit, newLayer: hitNode.layer, hitSibling: null };
   }
   // A container `canDropInto` refuses is a sibling to land beside, inside

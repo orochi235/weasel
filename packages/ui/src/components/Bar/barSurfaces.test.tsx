@@ -16,7 +16,7 @@ const flag = (name: string): PrefLeaf => ({ kind: 'boolean', name, description: 
 describe('a section drawn as a bar in SelectionPanel', () => {
   it('is one line of bar forms under no heading, writing into the node', () => {
     const scene = createScene<Data, 'default', Pose>({ systemLayers: [{ id: 'default' }] });
-    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', bold: false, size: 12 } });
+    scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', bold: false, size: 12 } });
     const properties: NodePropertiesEntry[] = [{
       name: 'thing',
       schema: {
@@ -78,7 +78,7 @@ describe('a section drawn as a bar in a form’s object leaf', () => {
 describe('a section drawn as a bar in a panel’s object leaf', () => {
   it('is one line of the object’s fields in their bar forms, each writing the object whole', () => {
     const scene = createScene<Data, 'default', Pose>({ systemLayers: [{ id: 'default' }] });
-    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', font: { bold: false, size: 12 } } });
+    scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', font: { bold: false, size: 12 } } });
     const properties: NodePropertiesEntry[] = [{
       name: 'thing',
       schema: {

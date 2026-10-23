@@ -5,7 +5,7 @@ import { POSE, makeScene, type Data, type Layer } from './testing/makeScene';
 describe('mutations are auto-undoable', () => {
   it('setPose / setLayer / update round-trip through undo/redo', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     s.setPose(id, { x: 10, y: 20, width: 30, height: 40 });
     s.setLayer(id, 'plantings');
     s.update(id, { data: { label: 'a-renamed' } });
@@ -42,7 +42,7 @@ describe('mutations are auto-undoable', () => {
   it('canUndo/canRedo reflect stack state', () => {
     const s = makeScene();
     expect(s.canUndo()).toBe(false);
-    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     expect(s.canUndo()).toBe(true);
     expect(s.canRedo()).toBe(false);
     s.undo();
@@ -55,9 +55,9 @@ describe('mutations are auto-undoable', () => {
       systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
       historyLimit: 2,
     });
-    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
-    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'c' } });
     s.undo(); s.undo(); s.undo();
     // Only the most recent two adds are undoable; the first one stays.
     expect(s.roots).toHaveLength(1);
@@ -68,9 +68,9 @@ describe('batch', () => {
   it('groups mutations into one undo entry', () => {
     const s = makeScene();
     s.batch('build', () => {
-      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
-      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
+      s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+      s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
+      s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'c' } });
     });
     expect(s.roots).toHaveLength(3);
     s.undo();
@@ -88,9 +88,9 @@ describe('batch', () => {
   it('nested batches collapse into the outer batch', () => {
     const s = makeScene();
     s.batch('outer', () => {
-      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+      s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
       s.batch('inner', () => {
-        s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+        s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
       });
     });
     s.undo();
@@ -103,7 +103,7 @@ describe('untracked', () => {
 
   it('applies writes without recording an entry', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const before = s.historyEntries().length;
     s.untracked(() => { s.setPose(id, at(5)); });
     expect(s.get(id)?.pose).toEqual(at(5));
@@ -112,7 +112,7 @@ describe('untracked', () => {
 
   it('notifies once and returns what fn returns', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     let count = 0;
     s.subscribe(() => { count++; });
     const out = s.untracked(() => { s.setPose(id, at(1)); s.setPose(id, at(2)); return 7; });
@@ -122,7 +122,7 @@ describe('untracked', () => {
 
   it('a batch inside it records nothing', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const before = s.historyEntries().length;
     s.untracked(() => s.batch('frame', () => { s.setPose(id, at(3)); }));
     expect(s.historyEntries()).toHaveLength(before);
@@ -130,8 +130,8 @@ describe('untracked', () => {
 
   it('inside a batch, its writes stay out of the entry and the batch still notifies once', () => {
     const s = makeScene();
-    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     let count = 0;
     s.subscribe(() => { count++; });
     s.batch('edit', () => {
@@ -146,7 +146,7 @@ describe('untracked', () => {
 
   it('undo past an untracked write does not restore it', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     s.setPose(id, at(1));
     s.untracked(() => { s.setPose(id, at(2)); });
     s.undo();
@@ -160,7 +160,7 @@ describe('untracked', () => {
       systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
       coalesceWindowMs: 1e9,
     });
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     s.setPose(id, at(1));
     s.untracked(() => { s.setPose(id, at(2)); });
     s.setPose(id, at(3));
@@ -170,7 +170,7 @@ describe('untracked', () => {
 
   it('reverts its writes if fn throws', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     expect(() => s.untracked(() => { s.setPose(id, at(6)); throw new Error('boom'); })).toThrow('boom');
     expect(s.get(id)?.pose).toEqual(POSE);
   });
@@ -237,14 +237,14 @@ describe('undo/redo of container add preserves clipFromPose', () => {
       height: pose.height,
     });
     const id = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'structures',
       pose: POSE,
       data: { label: 'bed' },
       clipFromPose: fn,
     });
     // Node is present with clipFromPose immediately after add.
-    expect(scene.get(id)?.kind).toBe('container');
+    expect(scene.get(id)?.kind).toBe('group');
     expect((scene.get(id) as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
 
     scene.undo();
@@ -252,7 +252,7 @@ describe('undo/redo of container add preserves clipFromPose', () => {
 
     scene.redo();
     const node = scene.get(id);
-    expect(node?.kind).toBe('container');
+    expect(node?.kind).toBe('group');
     // clipFromPose must survive the undo/redo round-trip.
     expect((node as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
   });

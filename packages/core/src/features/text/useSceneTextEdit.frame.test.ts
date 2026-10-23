@@ -24,10 +24,10 @@ function renderEdit(pose: RectPose, view?: View, group?: RectPose) {
   const text = { text: 'hello', style: { fontSize: 16, wrap: true } };
   const initial: UseSceneOptions<DefaultTextData, 'default', RectPose>['initial'] = group
     ? [
-        { id: asNodeId('g'), kind: 'container', layer: 'default', pose: group, data: {} },
-        { id: asNodeId('a'), kind: 'leaf', layer: 'default', pose, data: text, parent: asNodeId('g') },
+        { id: asNodeId('g'), kind: 'group', layer: 'default', pose: group, data: {} },
+        { id: asNodeId('a'), kind: 'mark', layer: 'default', pose, data: text, parent: asNodeId('g') },
       ]
-    : [{ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose, data: text }];
+    : [{ id: asNodeId('a'), kind: 'mark', layer: 'default', pose, data: text }];
   const hook = renderHook(() => {
     const scene = useScene<DefaultTextData, 'default', RectPose>({
       systemLayers: [{ id: 'default' }],

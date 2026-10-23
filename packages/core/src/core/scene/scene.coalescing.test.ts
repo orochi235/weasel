@@ -19,7 +19,7 @@ describe('coalescing (coalesceWindowMs)', () => {
 
   it('rapid setPose on one node merges into a single entry', () => {
     const s = timedScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const before = s.historyEntries().length; // the add
     s.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
     vi.advanceTimersByTime(100);
@@ -32,7 +32,7 @@ describe('coalescing (coalesceWindowMs)', () => {
 
   it('undo of a coalesced entry returns to the pre-burst state; redo to the final', () => {
     const s = timedScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     s.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
     vi.advanceTimersByTime(100);
     s.setPose(id, { x: 5, y: 0, width: 10, height: 10 });
@@ -44,7 +44,7 @@ describe('coalescing (coalesceWindowMs)', () => {
 
   it('a gap larger than the window starts a new entry', () => {
     const s = timedScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const before = s.historyEntries().length;
     s.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
     vi.advanceTimersByTime(600); // outside the 500ms window
@@ -56,8 +56,8 @@ describe('coalescing (coalesceWindowMs)', () => {
 
   it('mutations on different nodes never merge', () => {
     const s = timedScene();
-    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
-    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     const before = s.historyEntries().length;
     s.setPose(a, { x: 1, y: 0, width: 10, height: 10 });
     s.setPose(b, { x: 1, y: 0, width: 10, height: 10 });
@@ -66,7 +66,7 @@ describe('coalescing (coalesceWindowMs)', () => {
 
   it('scene.batch entries are always discrete (recordEntry never coalesces)', () => {
     const s = timedScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const before = s.historyEntries().length;
     s.batch('drag', () => { s.setPose(id, { x: 1, y: 0, width: 10, height: 10 }); });
     vi.advanceTimersByTime(100);
@@ -115,7 +115,7 @@ describe('coalescing (coalesceWindowMs)', () => {
       ],
     });
     const restored = sceneFromJSON(src.toJSON(), { coalesceWindowMs: 500 });
-    const id = restored.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = restored.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const before = restored.historyEntries().length;
     restored.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
     vi.advanceTimersByTime(100);

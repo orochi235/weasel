@@ -38,7 +38,7 @@ function saved(): SavedNode[] {
   const raw = localStorage.getItem(CHART_SCENE_KEY);
   return raw ? (JSON.parse(raw) as { nodes: SavedNode[] }).nodes : [];
 }
-const bodies = () => saved().filter((n) => n.kind === 'container');
+const bodies = () => saved().filter((n) => n.kind === 'group');
 const poseOf = (id: string) => saved().find((n) => n.id === id)!.pose!;
 const edges = () => saved().filter((n) => {
   const d = n.data.diagram as { from?: unknown } | undefined;
@@ -221,7 +221,7 @@ describe('WeaselChart chart mode', () => {
     }
     await expect.poll(() => bodies().length).toBe(1);
     const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; pose: { x: number; y: number; width: number; height: number } }[] })
-      .nodes.find((n) => n.kind === 'container')!.pose;
+      .nodes.find((n) => n.kind === 'group')!.pose;
     // A pointer event's client point is whole pixels, about a world unit at this zoom.
     expect(Math.abs(pose.x + pose.width / 2 - 400)).toBeLessThan(2);
     expect(Math.abs(pose.y + pose.height / 2 - 300)).toBeLessThan(2);

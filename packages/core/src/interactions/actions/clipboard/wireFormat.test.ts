@@ -100,13 +100,13 @@ describe('weasel clipboard wire format', () => {
 
   it('drops function-valued fields (e.g. a container clipFromPose) and still parses back without them', () => {
     const items = [
-      { id: 'a', kind: 'container', clipFromPose: (p: unknown) => p, data: { fill: '#fff' } },
+      { id: 'a', kind: 'group', clipFromPose: (p: unknown) => p, data: { fill: '#fff' } },
     ];
     const text = buildWeaselClipboardText(items);
     expect(sniffWeaselClipboardText(text)).toBe(true);
     const parsed = parseWeaselClipboardText(text) as Array<Record<string, unknown>>;
     expect(parsed).toHaveLength(1);
     expect('clipFromPose' in parsed[0]).toBe(false);
-    expect(parsed[0]).toEqual({ id: 'a', kind: 'container', data: { fill: '#fff' } });
+    expect(parsed[0]).toEqual({ id: 'a', kind: 'group', data: { fill: '#fff' } });
   });
 });

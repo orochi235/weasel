@@ -30,7 +30,7 @@ const BOX: Path = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
 
 function depsOf(...ids: string[]) {
   const deps = new Map<NodeId, DerivedDep<Pose>>(ids.map((id) => [asNodeId(id), {
-    node: { id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} },
+    node: { id: asNodeId(id), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} },
     pose: { x: 0, y: 0, width: 10, height: 10 },
     path: null,
   } as unknown as DerivedDep<Pose>]));

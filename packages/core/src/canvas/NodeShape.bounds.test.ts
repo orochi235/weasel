@@ -24,7 +24,7 @@ const POSE: RectPose = { x: 40, y: 30, width: 60, height: 20 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function node(data: Record<string, unknown>): Node<unknown, string, RectPose> {
-  return { id: asNodeId('n'), kind: 'leaf', layer: 'main', pose: POSE, data } as unknown as Node<unknown, string, RectPose>;
+  return { id: asNodeId('n'), kind: 'mark', layer: 'main', pose: POSE, data } as unknown as Node<unknown, string, RectPose>;
 }
 
 const SPIKY = { ...strokeOf('#000', 6), miterLimit: 10, align: 'outer' as const };

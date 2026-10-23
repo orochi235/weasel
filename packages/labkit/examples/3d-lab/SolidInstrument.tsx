@@ -276,7 +276,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         mint: ({ center, width, depth }) => {
           const height = (width + depth) / 2;
           return scene.add({
-            kind: 'leaf',
+            kind: 'mark',
             layer: 'solids',
             pose: pose3(
               { x: center.x, y: height / 2, z: center.z },

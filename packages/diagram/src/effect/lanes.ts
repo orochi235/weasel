@@ -111,7 +111,7 @@ function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], mea
   const pose = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
   const spec = new Map(specs.map((s) => [s.id as string, s]));
   const nested = nestGroups(groups, (id) => nodes.some((n) => n.id === id))
-    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'leaf', data: spec.get(g.id)?.data })?.group?.inset) }));
+    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'mark', data: spec.get(g.id)?.data })?.group?.inset) }));
   const boxed = (id: string, side: 'top' | 'bottom') => nested.reduce((sum, g) => sum + (g.members.includes(id) ? g.inset[side] : 0), 0);
   const titles = new Map(groups.flatMap((g) => {
     const title = pose.get(groupLabelIdOf(g.id));

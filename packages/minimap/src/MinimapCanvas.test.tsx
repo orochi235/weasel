@@ -76,8 +76,8 @@ type P = { x: number; y: number; width: number; height: number };
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
-    s.add({ kind: 'leaf', data: { color: '#f00' }, layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 } });
-    s.add({ kind: 'leaf', data: { color: '#0f0' }, layer: 'main', pose: { x: 100, y: 100, width: 100, height: 100 } });
+    s.add({ kind: 'mark', data: { color: '#f00' }, layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 } });
+    s.add({ kind: 'mark', data: { color: '#0f0' }, layer: 'main', pose: { x: 100, y: 100, width: 100, height: 100 } });
   });
   return s;
 }
@@ -519,7 +519,7 @@ describe('<MinimapCanvas> — animator', () => {
   it('paints its animator\'s vertex-color overrides', () => {
     const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pose: { x: 0, y: 0, width: 100, height: 40 },
       data: { path: pathFromD('M0 20 L50 0 L100 20'), stroke: { ...strokeOf('#fff', 4), vertexColors: RAINBOW } },

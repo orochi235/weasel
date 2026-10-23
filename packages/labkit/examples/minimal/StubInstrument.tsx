@@ -24,7 +24,7 @@ const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 const SYSTEM_LAYERS = [{ id: 'default' as const }];
 export const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   {
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 120, y: 80, width: 120, height: 80 },
     data: { fill: { paint: solid('#7fb069') } },

@@ -200,7 +200,7 @@ export function commitEdgeToScene(
   };
   const source = scene.get(edge.from.nodeId as never);
   scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: source?.layer ?? scene.layers[0]!.id,
     pose: { x: 0, y: 0, width: 0, height: 0 } as never,
     data: { diagram: trait, stroke: opts.stroke ?? DEFAULT_EDGE_STROKE } as never,

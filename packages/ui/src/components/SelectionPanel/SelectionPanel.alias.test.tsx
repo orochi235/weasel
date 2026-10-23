@@ -17,7 +17,7 @@ const alias = (of: string, name = ''): PrefLeaf => ({ kind: 'alias', name, descr
 
 function setup(members: PrefSection['members'], renderers?: Record<string, PropertyRenderer>) {
   const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', locked: false } });
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', locked: false } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];
   render(<SelectionPanel scene={scene} selection={selectionOf(['a'])} properties={properties} routing={routing} renderers={renderers} />);
   return () => scene.get(asNodeId('a'))?.data;

@@ -53,8 +53,8 @@ function pointer(el: Element, type: string, x: number, y: number) {
 
 function mount(fit?: 'live') {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-  scene.add({ kind: 'leaf', layer: 'main', pose: { x: 990, y: 790, width: 10, height: 10 }, data: { kind: 'rect' } });
+  scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+  scene.add({ kind: 'mark', layer: 'main', pose: { x: 990, y: 790, width: 10, height: 10 }, data: { kind: 'rect' } });
   const onViewChange = vi.fn();
   const minimap = createMinimapContribution({ rect: RECT, ...(fit ? { fit } : {}) });
   const r = render(

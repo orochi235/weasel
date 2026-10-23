@@ -32,7 +32,7 @@ interface LabelData {
 type NodeData = RowData | LabelData;
 
 const row = (id: string, y: number, stroke: Stroke) => ({
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   id: asNodeId(id),
   pose: { x: 40, y, width: ROW_W, height: ROW_H },
@@ -40,7 +40,7 @@ const row = (id: string, y: number, stroke: Stroke) => ({
 });
 
 const label = (id: string, y: number, text: string) => ({
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   id: asNodeId(id),
   pose: { x: 40 + ROW_W + 20, y, width: 200, height: ROW_H },

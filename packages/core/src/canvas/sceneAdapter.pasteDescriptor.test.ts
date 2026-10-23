@@ -20,7 +20,7 @@ const DESCRIPTOR: PoseDescriptor<Pose, PosedNode> = {
 
 function setup() {
   const scene = createScene<{ own: boolean }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-  const id = scene.add({ kind: 'leaf', layer: 'main', data: { own: true }, pose: { x: 10, y: 10, width: 5, height: 5 } });
+  const id = scene.add({ kind: 'mark', layer: 'main', data: { own: true }, pose: { x: 10, y: 10, width: 5, height: 5 } });
   const adapter = sceneToAdapter(scene, { poseDescriptor: DESCRIPTOR as never });
   return { adapter, snapshot: adapter.snapshotSelection!([id]) };
 }

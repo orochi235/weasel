@@ -55,14 +55,14 @@ const LOOSE: RectPose = { x: 0, y: 0, width: 5, height: 5 };
 function makeScene(layout: LayoutStrategy<RectPose> = stack()) {
   const scene = createScene<null, 'l', RectPose>({
     systemLayers: [{ id: 'l' }],
-    initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null, layout }],
+    initial: [{ id: C, kind: 'group', layer: 'l', pose: CONTAINER, data: null, layout }],
   });
   return scene;
 }
 
 function add(scene: ReturnType<typeof makeScene>, id: string, index?: number): NodeId {
   return scene.add({
-    id: asNodeId(id), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C,
+    id: asNodeId(id), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C,
     ...(index !== undefined ? { index } : {}),
   });
 }
@@ -267,7 +267,7 @@ describe('scene container layout', () => {
   it('coalesces a live resize that re-arranges the same children each frame', () => {
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
-      initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null, layout: stack() }],
+      initial: [{ id: C, kind: 'group', layer: 'l', pose: CONTAINER, data: null, layout: stack() }],
       coalesceWindowMs: 500,
     });
     add(scene, 'a');
@@ -307,9 +307,9 @@ describe('scene container layout', () => {
     const scene = makeScene();
     const inner = asNodeId('inner');
     scene.add({
-      id: inner, kind: 'container', layer: 'l', pose: LOOSE, data: null, parent: C, layout: stack(),
+      id: inner, kind: 'group', layer: 'l', pose: LOOSE, data: null, parent: C, layout: stack(),
     });
-    scene.add({ id: asNodeId('x'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: inner });
+    scene.add({ id: asNodeId('x'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: inner });
     // The inner container took the parent's row; its child took the inner's.
     expect(scene.get(inner)!.pose).toEqual({ x: 100, y: 100, width: 50, height: 10 });
     expect(scene.get(asNodeId('x'))!.pose).toEqual({ x: 100, y: 100, width: 50, height: 10 });
@@ -334,7 +334,7 @@ describe('scene container layout', () => {
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
       composition: TRANSLATE,
-      initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null, layout: stack() }],
+      initial: [{ id: C, kind: 'group', layer: 'l', pose: CONTAINER, data: null, layout: stack() }],
     });
     add(scene as ReturnType<typeof makeScene>, 'a');
     add(scene as ReturnType<typeof makeScene>, 'b');
@@ -351,7 +351,7 @@ describe('scene container layout', () => {
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
       registry: { layout: { stack: layout } },
-      initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null, layout }],
+      initial: [{ id: C, kind: 'group', layer: 'l', pose: CONTAINER, data: null, layout }],
     });
     const json = scene.toJSON();
     expect(json.nodes[0].layoutKey).toBe('stack');
@@ -365,10 +365,10 @@ describe('scene container layout', () => {
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
       registry,
-      initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null, layout }],
+      initial: [{ id: C, kind: 'group', layer: 'l', pose: CONTAINER, data: null, layout }],
     });
-    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
-    scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
+    scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C });
+    scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C });
     scene.remove(asNodeId('a'));
     const saved = JSON.parse(JSON.stringify({ doc: scene.toJSON(), history: scene.serializeHistory() }));
 
@@ -393,7 +393,7 @@ describe('scene container layout', () => {
     const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
     const spy = vi.fn();
     scene.onReflow(spy);
-    const id = scene.add({ kind: 'leaf', layer: 'l', pose: LOOSE, data: null });
+    const id = scene.add({ kind: 'mark', layer: 'l', pose: LOOSE, data: null });
     scene.setPose(id, { ...LOOSE, x: 3 });
     expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['add leaf', 'setPose']);
     expect(spy).not.toHaveBeenCalled();
@@ -424,9 +424,9 @@ describe('scene container layout', () => {
     it('lays out a container in a scene that had no layout before', () => {
       const scene = createScene<null, 'l', RectPose>({
         systemLayers: [{ id: 'l' }],
-        initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null }],
+        initial: [{ id: C, kind: 'group', layer: 'l', pose: CONTAINER, data: null }],
       });
-      scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
+      scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C });
       scene.setLayout(C, stack());
       expect(scene.get(asNodeId('a'))!.pose).toEqual({ x: 100, y: 100, width: 50, height: 10 });
       scene.undo();
@@ -469,10 +469,10 @@ describe('scene container layout', () => {
       const scene = createScene<null, 'l', RectPose>({
         systemLayers: [{ id: 'l' }],
         registry,
-        initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null, layout: first }],
+        initial: [{ id: C, kind: 'group', layer: 'l', pose: CONTAINER, data: null, layout: first }],
       });
-      scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
-      scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
+      scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C });
+      scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C });
       scene.setLayout(C, 'row');
       expect(scene.layoutOf(C)).toBe(second);
       const saved = JSON.parse(JSON.stringify({ doc: scene.toJSON(), history: scene.serializeHistory() }));
@@ -517,10 +517,10 @@ describe('scene container layout', () => {
         const scene = createScene<null, 'l', RectPose>({
           systemLayers: [{ id: 'l' }],
           ...(registry ? { registry } : {}),
-          initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null }],
+          initial: [{ id: C, kind: 'group', layer: 'l', pose: CONTAINER, data: null }],
         });
-        scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
-        scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
+        scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C });
+        scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C });
         return scene;
       }
       const adapterOf = (scene: ReturnType<typeof bare>) => ({

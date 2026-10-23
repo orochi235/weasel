@@ -196,7 +196,7 @@ describe('WeaselChart pipeline mode', () => {
       const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
       const r = canvas.getBoundingClientRect();
       const opened = editorScene(RUN_DOC);
-      const boxes = diagramScene(opened.data, opened.scene).filter((s) => s.kind === 'container').map((s) => s.pose as RectPose);
+      const boxes = diagramScene(opened.data, opened.scene).filter((s) => s.kind === 'group').map((s) => s.pose as RectPose);
       const left = Math.min(...boxes.map((b) => b.x));
       const top = Math.min(...boxes.map((b) => b.y));
       const bounds = {

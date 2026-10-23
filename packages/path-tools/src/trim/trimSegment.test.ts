@@ -4,13 +4,13 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId, type NodeId, type Op } from '@weasel-js/core';
 import { planTrim, trimPathAction } from './trimSegment';
 
-interface StubNode { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
+interface StubNode { id: NodeId; kind: 'mark'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
 
 /** Nodes storing their polygon as the pose, back to front in the order given. */
 function setup(paths: Record<string, string>, selected: string[] = [], extra: Record<string, unknown> = {}) {
   const nodes = new Map<string, StubNode>();
   for (const [id, d] of Object.entries(paths)) {
-    nodes.set(id, { id: asNodeId(id), kind: 'leaf', layer: 'main', pose: pathFromD(d), data: {}, parent: null });
+    nodes.set(id, { id: asNodeId(id), kind: 'mark', layer: 'main', pose: pathFromD(d), data: {}, parent: null });
   }
   const scene = {
     get: (id: NodeId) => nodes.get(id),
@@ -65,7 +65,7 @@ describe('trimPathAction', () => {
   it('trims a leaf drawn as its rect pose alone, writing the path it is left with', () => {
     const { deps, batches, nodes } = setup(walls);
     nodes.set('box', {
-      id: asNodeId('box'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 30, height: 20 }, data: { tag: 1 }, parent: null,
+      id: asNodeId('box'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 30, height: 20 }, data: { tag: 1 }, parent: null,
     });
     // The walls are drawn first, so the box is topmost under the click.
     run(trimPathAction, deps, { pressX: 15, pressY: 1, radiusPx: 3 });

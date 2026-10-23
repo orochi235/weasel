@@ -8,7 +8,7 @@ import type { GraphNodeLike } from './graph';
 interface Rect { x: number; y: number; width: number; height: number }
 
 const shape = (id: string, x: number, y: number) => ({
-  node: { id, kind: 'leaf', data: { diagram: {} } } as GraphNodeLike,
+  node: { id, kind: 'mark', data: { diagram: {} } } as GraphNodeLike,
   pose: { x, y, width: 100, height: 40 } as Rect,
 });
 
@@ -20,7 +20,7 @@ const PARTICIPANTS = () => [
   shape('C', 300, 200),
   {
     node: {
-      id: 'ab', kind: 'leaf', dependsOn: ['A', 'B'],
+      id: 'ab', kind: 'mark', dependsOn: ['A', 'B'],
       data: { diagram: { from: { port: 'e' }, to: { port: 'w' }, router: 'straight' } },
     } as GraphNodeLike,
     pose: { x: 0, y: 0, width: 0, height: 0 } as Rect,
@@ -170,7 +170,7 @@ describe('createReconnectAction', () => {
 
   it('will not glue an end to a body with no ports', () => {
     const portless = () => [...PARTICIPANTS(), {
-      node: { id: 'D', kind: 'leaf', data: { diagram: { ports: [] } } } as GraphNodeLike,
+      node: { id: 'D', kind: 'mark', data: { diagram: { ports: [] } } } as GraphNodeLike,
       pose: { x: 0, y: 300, width: 100, height: 40 } as Rect,
     }];
     const commit = vi.fn();

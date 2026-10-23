@@ -15,8 +15,8 @@ interface P { x: number; y: number; width: number; height: number }
 describe('moveAction — a layout container inside the dragged subtree', () => {
   it('does not take the drop of the root that holds it', () => {
     const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
-    const group = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100 } });
-    const inner = scene.add({ kind: 'container', layer: 'main', parent: group, data: {}, pose: { x: 10, y: 10, width: 80, height: 80 } });
+    const group = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100 } });
+    const inner = scene.add({ kind: 'group', layer: 'main', parent: group, data: {}, pose: { x: 10, y: 10, width: 80, height: 80 } });
     const slot: P = { x: 20, y: 20, width: 100, height: 100 };
     const getDropTargets = vi.fn(() => [{ pose: slot, origin: { x: slot.x, y: slot.y } }]);
     const layout = {

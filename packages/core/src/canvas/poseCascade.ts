@@ -4,7 +4,7 @@ import type { PoseCascade } from '../animation/poseTarget';
 
 /** The part of a scene a container's cascade reads. */
 interface CascadeScene<TPose> {
-  get(id: NodeId): { pose: TPose; kind?: 'leaf' | 'container' } | undefined;
+  get(id: NodeId): { pose: TPose; kind?: 'mark' | 'group' } | undefined;
   childrenOf(id: NodeId): readonly NodeId[];
 }
 
@@ -65,7 +65,7 @@ export function cascadingSetPose<TPose>(
 ): (id: NodeId, pose: TPose) => void {
   return (id, pose) => {
     const node = scene.get(id);
-    if (!node || node.kind !== 'container') return scene.setPose(id, pose);
+    if (!node || node.kind !== 'group') return scene.setPose(id, pose);
     const g = poseDescriptorForNode(d, node);
     const from = g.getBounds(node.pose);
     const to = g.getBounds(pose);

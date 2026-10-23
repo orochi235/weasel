@@ -45,10 +45,10 @@ const endOf = (path: Path | null): number[] =>
 function labeled() {
   const routes = { count: 0 };
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: box(100, 0), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: box(100, 0), data: {} });
   const line = scene.add({
-    kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0), data: {},
+    kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0), data: {},
     dependsOn: [a, b],
     derivePath: (_node, deps): Path | null => {
       routes.count++;
@@ -59,7 +59,7 @@ function labeled() {
   });
   /** Sits at the far end of the line it depends on. */
   const label = (): NodeId => scene.add({
-    kind: 'leaf', layer: 'main', pose: box(-1, -1, 4, 4), data: {},
+    kind: 'mark', layer: 'main', pose: box(-1, -1, 4, 4), data: {},
     dependsOn: [line],
     derivePose: (_node, deps): RectPose | null => {
       const path = (deps[0] as DerivedDep<RectPose> | undefined)?.path;
@@ -88,7 +88,7 @@ describe('a dependency carries its path', () => {
     const { scene, a } = labeled();
     // `a` is a plain box. A label hung on one has nothing to sit along.
     const orphan = scene.add({
-      kind: 'leaf', layer: 'main', pose: box(-1, -1, 4, 4), data: {},
+      kind: 'mark', layer: 'main', pose: box(-1, -1, 4, 4), data: {},
       dependsOn: [a],
       derivePose: (_node, deps): RectPose | null => {
         const path = (deps[0] as DerivedDep<RectPose> | undefined)?.path ?? null;
@@ -123,7 +123,7 @@ describe('a dependency carries its path', () => {
     routes.count = 0;
     // A node deriving its pose from the line's *pose* never touches the route.
     const bystander = scene.add({
-      kind: 'leaf', layer: 'main', pose: box(0, 0), data: {},
+      kind: 'mark', layer: 'main', pose: box(0, 0), data: {},
       dependsOn: [line],
       derivePose: (_node, deps): RectPose | null =>
         (deps[0] as DerivedDep<RectPose> | undefined)?.pose ?? null,
@@ -138,21 +138,21 @@ describe('a dependency carries its path', () => {
     // Two paths, each derived from the other's path. `dependsOn` is
     // unvalidated, and a path can now reach a path.
     const first = scene.add({
-      kind: 'leaf', layer: 'main', pose: box(0, 0), data: {},
+      kind: 'mark', layer: 'main', pose: box(0, 0), data: {},
       dependsOn: ['second' as NodeId],
       derivePath: (_n, deps): Path | null =>
         (deps[0] as DerivedDep<RectPose> | undefined)?.path
           ?? segment({ x: 1, y: 1 }, { x: 2, y: 2 }),
     });
     const second = scene.add({
-      id: 'second' as NodeId, kind: 'leaf', layer: 'main', pose: box(0, 0), data: {},
+      id: 'second' as NodeId, kind: 'mark', layer: 'main', pose: box(0, 0), data: {},
       dependsOn: [first],
       derivePath: (_n, deps): Path | null =>
         (deps[0] as DerivedDep<RectPose> | undefined)?.path
           ?? segment({ x: 3, y: 3 }, { x: 4, y: 4 }),
     });
     const reader = scene.add({
-      kind: 'leaf', layer: 'main', pose: box(0, 0), data: {},
+      kind: 'mark', layer: 'main', pose: box(0, 0), data: {},
       dependsOn: [second],
       derivePose: (_n, deps): RectPose | null => {
         const path = (deps[0] as DerivedDep<RectPose> | undefined)?.path ?? null;
@@ -186,9 +186,9 @@ describe('a dependency shown by a pose override path', () => {
   /** A plain shape, and a marker that sits at the end of whatever path the shape shows. */
   function followed() {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const shape = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0, 100, 10), data: {} });
+    const shape = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0, 100, 10), data: {} });
     const marker = scene.add({
-      kind: 'leaf', layer: 'main', pose: box(-1, -1, 4, 4), data: {},
+      kind: 'mark', layer: 'main', pose: box(-1, -1, 4, 4), data: {},
       dependsOn: [shape],
       derivePose: (_node, deps): RectPose | null => {
         const path = (deps[0] as DerivedDep<RectPose> | undefined)?.path;

@@ -25,7 +25,7 @@ const STOPS = [{ offset: 0, color: '#ff0000' }, { offset: 1, color: 'rgba(255,0,
 
 /** A box (150, y) to (190, y + 30) filled red to clear along x, in the given units. */
 const gradientBox = (id: string, y: number, units: 'bounds' | 'world') => ({
-  id: id as never, kind: 'leaf' as const, layer: 'main' as const,
+  id: id as never, kind: 'mark' as const, layer: 'main' as const,
   pose: { x: 150, y, width: 40, height: 30 },
   data: {
     diagram: { outline: 'rect' },

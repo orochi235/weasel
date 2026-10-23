@@ -22,7 +22,7 @@ const FX = asNodeId('fx');
 type Spec = AddNodeSpec<unknown, 'main', RectPose>;
 
 const leaf = (id: string, pose: RectPose, parent?: string): Spec => ({
-  id: asNodeId(id), kind: 'leaf', layer: 'main', pose,
+  id: asNodeId(id), kind: 'mark', layer: 'main', pose,
   data: { path: rectPath(0, 0, pose.width, pose.height), fill: { paint: { color: '#f00' } } },
   ...(parent ? { parent: asNodeId(parent) } : {}),
 });
@@ -61,7 +61,7 @@ describe('a path effect over a source shown by a pose override', () => {
       registry: withPathEffectsRegistry(),
       composition: RIGID_POSE_COMPOSITION,
       initial: [
-        { id: G, kind: 'container', layer: 'main', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
+        { id: G, kind: 'group', layer: 'main', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
         leaf('a', { x: 0, y: 0, width: 40, height: 10 }, 'g'),
         leaf('b', { x: 400, y: 0, width: 10, height: 10 }),
         blend(),

@@ -30,7 +30,7 @@ function setup(seat: Omit<PoseTransitionSeat<RectPose>, 'transition'> = {}) {
   };
   const scene = createScene<object, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
-    initial: [{ id: A, kind: 'leaf', layer: 'main', pose: at(0), data: {} }],
+    initial: [{ id: A, kind: 'mark', layer: 'main', pose: at(0), data: {} }],
   });
   const transition = createReflowTransition(scene, result.current, { ms: 100, easing: linear });
   const departures = createDepartures<RectPose, unknown>();
@@ -118,7 +118,7 @@ describe('bindPoseTransition', () => {
   it('grows an added node in from where `enter` puts it, and shows one with no `enter` in place', () => {
     const grown = setup({ enter: (p) => ({ ...p, width: 0, height: 0 }) });
     let b!: NodeId;
-    act(() => { b = grown.scene.add({ kind: 'leaf', layer: 'main', pose: at(20), data: {} }); });
+    act(() => { b = grown.scene.add({ kind: 'mark', layer: 'main', pose: at(20), data: {} }); });
     expect(grown.where(b).width).toBe(0);
     grown.frame(0);
     grown.frame(100);
@@ -126,7 +126,7 @@ describe('bindPoseTransition', () => {
 
     const plain = setup();
     let c!: NodeId;
-    act(() => { c = plain.scene.add({ kind: 'leaf', layer: 'main', pose: at(20), data: {} }); });
+    act(() => { c = plain.scene.add({ kind: 'mark', layer: 'main', pose: at(20), data: {} }); });
     expect(plain.where(c).width).toBe(10);
   });
 

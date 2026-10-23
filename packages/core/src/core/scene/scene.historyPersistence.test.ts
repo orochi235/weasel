@@ -15,7 +15,7 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
 
   it('native-op entries undo/redo after a round-trip', () => {
     const a = makeScene();
-    const id = a.add({ id: asNodeId('n1'), kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    const id = a.add({ id: asNodeId('n1'), kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'x' } });
     a.setPose(id, { x: 5, y: 5, width: 10, height: 10 });
     const b = roundTrip(a);
     expect(b.historyEntries()).toHaveLength(2);
@@ -53,7 +53,7 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     const a = makeScene();
     a.registerOp('app:oneoff', { apply: () => {}, revert: () => {} });
     a.recordOp({ kind: 'app:oneoff', payload: null });
-    a.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    a.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'x' } });
     const snap = a.serializeHistory();
     const b = makeScene();       // 'app:oneoff' NOT re-registered
     b.loadState(a.toJSON());
@@ -79,11 +79,11 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
         coalesceWindowMs: 500,
       });
       const a = mkTimed();
-      a.add({ id: asNodeId('n1'), kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+      a.add({ id: asNodeId('n1'), kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'x' } });
       a.setPose(asNodeId('n1'), { x: 2, y: 2, width: 10, height: 10 });
       const snap = a.serializeHistory();
       const b = mkTimed();
-      b.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'pre' } });
+      b.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'pre' } });
       b.loadState(a.toJSON());   // clears history + state
       b.restoreHistory(snap);
       expect(b.historyEntries()).toHaveLength(2);
@@ -98,7 +98,7 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
 
   it('restoreHistory notifies subscribers exactly once', () => {
     const a = makeScene();
-    a.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    a.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'x' } });
     const snap = a.serializeHistory();
     const b = makeScene();
     b.loadState(a.toJSON());
@@ -115,7 +115,7 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
       registry: { clipFromPose: { ellipse: fn } },
     });
     const a = mk();
-    a.add({ id: asNodeId('bed'), kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPose: fn });
+    a.add({ id: asNodeId('bed'), kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPose: fn });
     a.undo(); // head state: container absent; the add entry sits on the redo stack
     const snap = a.serializeHistory();
     const b = mk();
@@ -123,7 +123,7 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     b.restoreHistory(snap);
     b.redo(); // re-adds the container in a fresh session — cache is empty
     const node = b.get(asNodeId('bed'));
-    expect(node?.kind).toBe('container');
+    expect(node?.kind).toBe('group');
     expect((node as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
   });
 
@@ -133,7 +133,7 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
       systemLayers: [{ id: 'structures' }],
       registry: { clipFromPose: { ellipse: fn } },
     });
-    a.add({ id: asNodeId('bed'), kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPose: fn });
+    a.add({ id: asNodeId('bed'), kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPose: fn });
     a.undo(); // head state: container absent; the add entry carries the clipKey
     const snap = a.serializeHistory();
     const b = createScene<Data, 'structures', typeof POSE>({
@@ -144,7 +144,7 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     b.restoreHistory(snap);
     expect(() => b.redo()).not.toThrow();
     const node = b.get(asNodeId('bed'));
-    expect(node?.kind).toBe('container');
+    expect(node?.kind).toBe('group');
     expect((node as { clipFromPose?: unknown }).clipFromPose).toBeUndefined();
   });
 });

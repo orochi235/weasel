@@ -20,7 +20,7 @@ type Boxes = readonly { kind: string; pose: unknown; data: unknown }[];
 
 /** The world rect every node box and group box takes, and `extra`, or `null` for none. */
 function diagramBounds(specs: Boxes, extra?: Bounds): Bounds | null {
-  const boxes: Bounds[] = specs.filter((s) => s.kind === 'container' || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
+  const boxes: Bounds[] = specs.filter((s) => s.kind === 'group' || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
   if (extra !== undefined) boxes.push(extra);
   if (boxes.length === 0) return null;
   const x = Math.min(...boxes.map((b) => b.x));

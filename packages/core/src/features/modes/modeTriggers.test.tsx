@@ -56,13 +56,13 @@ const triangle = () => pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath;
 function setup(handlers: ModeTriggerHandlers, isolatedGroup?: () => string | null) {
   const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: asNodeId('p'), kind: 'leaf', layer: 'main', pose: square(0), data: { path: triangle() } });
-  scene.add({ id: asNodeId('t'), kind: 'leaf', layer: 'main', pose: square(40), data: { text: 'hi' } });
+  scene.add({ id: asNodeId('p'), kind: 'mark', layer: 'main', pose: square(0), data: { path: triangle() } });
+  scene.add({ id: asNodeId('t'), kind: 'mark', layer: 'main', pose: square(40), data: { text: 'hi' } });
   // outer > inner > member, all drawn over x 120..150.
-  scene.add({ id: asNodeId('outer'), kind: 'container', layer: 'main', pose: square(120), data: {} } as never);
-  scene.add({ id: asNodeId('inner'), kind: 'container', layer: 'main', parent: asNodeId('outer'),
+  scene.add({ id: asNodeId('outer'), kind: 'group', layer: 'main', pose: square(120), data: {} } as never);
+  scene.add({ id: asNodeId('inner'), kind: 'group', layer: 'main', parent: asNodeId('outer'),
     pose: square(120), data: {} } as never);
-  scene.add({ id: asNodeId('member'), kind: 'leaf', layer: 'main', parent: asNodeId('inner'),
+  scene.add({ id: asNodeId('member'), kind: 'mark', layer: 'main', parent: asNodeId('inner'),
     pose: square(120), data: { path: triangle() } } as never);
   const { container } = render(
     <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={40}

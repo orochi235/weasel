@@ -131,7 +131,7 @@ describe('usePenTool', () => {
       // The shape the kit's own pen commits: a rect pose over a pose-local
       // `data.path`, stroked, no fill.
       const node = {
-        id: 'k', kind: 'leaf' as const, layer: 'default', parent: null,
+        id: 'k', kind: 'mark' as const, layer: 'default', parent: null,
         pose: { x: 40, y: 40, width: 100, height: 50 },
         data: { path: poly('M 0 0 L 100 0 L 100 50'), fill: null, stroke: { color: '#000', width: 2 } },
       };

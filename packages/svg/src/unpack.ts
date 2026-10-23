@@ -53,8 +53,8 @@ const VIEWPORT_FIT = 0.9;
  * rather than its children's.
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
-  | { kind: 'container'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; hidden?: true }
-  | { kind: 'leaf'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData; hidden?: true };
+  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; hidden?: true }
+  | { kind: 'mark'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData; hidden?: true };
 
 /** A leaf `SvgNode`: everything but a group. */
 export type SvgLeafNode = Exclude<SvgNode, SvgGroupNode>;
@@ -181,7 +181,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const id = nextId(source);
     const out = options.leaf ? options.leaf(id, { pose, data }, source) : (data as TData);
     if (out === null) return null;
-    drafts.push({ kind: 'leaf', id, parentId, pose, data: out, ...(source.hidden ? { hidden: true } : {}) });
+    drafts.push({ kind: 'mark', id, parentId, pose, data: out, ...(source.hidden ? { hidden: true } : {}) });
     return pose;
   };
 
@@ -193,8 +193,8 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const k = inherited * (n.opacity ?? 1);
     const takes = takesOf(n, from, k);
     if (n.kind === 'group') {
-      const draft: Extract<SvgSceneDraft<TData>, { kind: 'container' }> = {
-        kind: 'container',
+      const draft: Extract<SvgSceneDraft<TData>, { kind: 'group' }> = {
+        kind: 'group',
         id: nextId(n),
         parentId,
         pose: { x: 0, y: 0, width: 0, height: 0 },
@@ -341,7 +341,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         const wrapperId = ctx.scene.mintId();
         const union = unionAABB(roots.map((d) => d.pose))!;
         drafts = [
-          { kind: 'container' as const, id: wrapperId, parentId: null, pose: union, data: {} },
+          { kind: 'group' as const, id: wrapperId, parentId: null, pose: union, data: {} },
           ...drafts.map((d) => (d.parentId === null ? { ...d, parentId: wrapperId } : d)),
         ];
       }
@@ -378,7 +378,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
             kind: d.kind,
             layer,
             pose: place(d.pose),
-            data: d.kind === 'leaf' ? scaleLeafData(d.data, scale) : d.data,
+            data: d.kind === 'mark' ? scaleLeafData(d.data, scale) : d.data,
             parent: d.parentId,
             ...(d.hidden ? { hidden: true } : {}),
           } as unknown as { id: string },

@@ -8,6 +8,7 @@
  * inverse of a skipped op is skipped too, so undo then redo changes nothing.
  */
 import type { RemoveSnapshot } from './kitOps';
+import { hasChildren } from './treeShape';
 import type { Node, NodeId } from './types';
 
 /** A scene edit named a node the scene does not hold, or one it already does. */
@@ -30,7 +31,7 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
   const holds = (id: NodeId | null): boolean => id === null || nodes.has(id);
   const childless = (id: NodeId, within?: ReadonlySet<NodeId>): boolean => {
     const node = nodes.get(id);
-    return node?.kind !== 'container' || node.children.every((c) => within?.has(c) === true);
+    return node === undefined || !hasChildren(node) || node.children.every((c) => within?.has(c) === true);
   };
 
   function stale(kind: string, payload: unknown, forward: boolean): boolean {

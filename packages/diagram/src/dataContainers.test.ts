@@ -54,7 +54,7 @@ describe('diagramScene with containers', () => {
     const specs = diagramScene(data);
     const ids = specs.map((s) => s.id as string);
     expect(ids.indexOf('c')).toBeLessThan(ids.indexOf('a'));
-    expect(specOf(specs, 'c').kind).toBe('container');
+    expect(specOf(specs, 'c').kind).toBe('group');
     expect(diagramContainerOf(specOf(specs, 'c'))?.role).toBe('container');
     expect(specOf(specs, 'a').parent).toBe('c');
     expect(specOf(specs, 'b').parent ?? null).toBe(null);

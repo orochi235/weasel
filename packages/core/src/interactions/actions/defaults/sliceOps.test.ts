@@ -5,7 +5,7 @@ import { computeSliceOps, type SliceLeaf } from './sliceOps';
 interface Data { path?: Path; fill?: string }
 interface TestNode {
   id: string;
-  kind: 'leaf';
+  kind: 'mark';
   layer: string;
   parent: string | null;
   pose: { x: number; y: number; width: number; height: number; rotation?: number };
@@ -17,7 +17,7 @@ const across = [{ x: -10, y: 50 }, { x: 110, y: 50 }];
 
 function leafOf(over: Partial<TestNode> = {}, index = 0): SliceLeaf<TestNode> {
   const node: TestNode = {
-    id: 'n', kind: 'leaf', layer: 'default', parent: null,
+    id: 'n', kind: 'mark', layer: 'default', parent: null,
     pose: { x: 0, y: 0, width: 100, height: 100 },
     data: { path: square, fill: 'red' },
     ...over,

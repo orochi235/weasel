@@ -67,7 +67,7 @@ export function isWidthSet(entry: VertexWidth | undefined): boolean {
 
 /** The node's stroke, when it paints one along an editable path. */
 function targetOf(scene: Scene<unknown, string, unknown>, node: SceneNode<unknown, string, unknown>, scale: number): WidthTarget | null {
-  if (node.kind !== 'leaf' || node.derivePath || node.derivePose || scene.isLocked(node.id) || scene.isHidden(node.id)) return null;
+  if (node.kind !== 'mark' || node.derivePath || node.derivePose || scene.isLocked(node.id) || scene.isHidden(node.id)) return null;
   const stroke = (node.data as { stroke?: Stroke | null } | null)?.stroke;
   if (!stroke?.paint) return null;
   const path = resolveEditablePathOf(node);

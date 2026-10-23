@@ -13,7 +13,7 @@ function makeScene() {
     registry: { clipFromPose: { a: clipA } },
   });
   const add = (clipFromPose?: typeof clipA) => scene.add({
-    id: X, kind: 'container', layer: 'default', pose: { ...POSE }, data: { label: 'x' },
+    id: X, kind: 'group', layer: 'default', pose: { ...POSE }, data: { label: 'x' },
     ...(clipFromPose ? { clipFromPose } : {}),
   });
   const clip = () => (scene.get(X) as { clipFromPose?: unknown } | undefined)?.clipFromPose;

@@ -490,7 +490,7 @@ describe('a moved mark', () => {
           nodes: [
             {
               id: 'n1',
-              kind: 'leaf',
+              kind: 'mark',
               layer: 'marks',
               pose: { x: 0.1 * 256, y: 0.2 * 170, width: 0.5 * 256, height: 0.4 * 170 },
               data: { target: 'naive', kind: 'line', points: LINE.points },

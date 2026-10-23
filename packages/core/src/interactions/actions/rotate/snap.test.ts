@@ -25,14 +25,14 @@ const RADIUS = 50;
 function rig(opts: { rotation?: number; others?: readonly number[]; selected?: readonly number[]; snap?: boolean } = {}) {
   const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
   const id = scene.add({
-    kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100, rotation: opts.rotation ?? 0 },
+    kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100, rotation: opts.rotation ?? 0 },
   }) as string;
   // More selected nodes on the same box, so the pivot stays put.
   const ids = [id, ...(opts.selected ?? []).map((r) => scene.add({
-    kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100, rotation: r },
+    kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100, rotation: r },
   }) as string)];
   for (const [i, r] of (opts.others ?? []).entries()) {
-    scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 300 + i * 50, y: 0, width: 10, height: 10, rotation: r } });
+    scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 300 + i * 50, y: 0, width: 10, height: 10, rotation: r } });
   }
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {

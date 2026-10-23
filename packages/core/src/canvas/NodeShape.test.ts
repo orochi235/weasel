@@ -34,7 +34,7 @@ function stubFontFetch(): void {
 function node<TData>(data: TData): Node<TData, 'default', { x: number; y: number; width: number; height: number }> {
   return {
     id: 'n',
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 0, y: 0, width: 0, height: 0 },
     data,
@@ -113,7 +113,7 @@ describe('shape painter registry', () => {
 
 describe('findShapeSilhouette rotation', () => {
   function poseNode(pose: object): Node<{ shade: string }, 'default', object> {
-    return { id: 'n', kind: 'leaf', layer: 'default', pose, data: { shade: '#abc' }, parent: null } as never;
+    return { id: 'n', kind: 'mark', layer: 'default', pose, data: { shade: '#abc' }, parent: null } as never;
   }
 
   it('returns the unrotated silhouette for a pose with no rotation', () => {
@@ -483,7 +483,7 @@ describe('kit:rect-fallback resolves its fill for the renderer', () => {
 
 describe('kit:rect-fallback leaves containers alone', () => {
   const container = <TData>(data: TData) =>
-    ({ ...node(data), kind: 'container', children: [], pose: { x: 0, y: 0, width: 10, height: 10 } }) as never;
+    ({ ...node(data), kind: 'group', children: [], pose: { x: 0, y: 0, width: 10, height: 10 } }) as never;
 
   it('paints no box behind a group and gives it no silhouette to clip by', () => {
     expect(findNodeShape(container({}))).toBeUndefined();
@@ -493,7 +493,7 @@ describe('kit:rect-fallback leaves containers alone', () => {
 
 describe('built-in painters need a rect pose', () => {
   const circleNode = <TData>(data: TData) =>
-    ({ id: 'c', kind: 'leaf', layer: 'default', pose: { cx: 0, cy: 0, r: 5 }, data, parent: null }) as never;
+    ({ id: 'c', kind: 'mark', layer: 'default', pose: { cx: 0, cy: 0, r: 5 }, data, parent: null }) as never;
 
   it('does not hand a circle-posed text node to the text painter', () => {
     expect(findNodeShape(circleNode({ text: 'hi' }))?.id).not.toBe('kit:text');

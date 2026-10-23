@@ -23,7 +23,7 @@ function setup() {
     act(() => { for (const cb of cbs.splice(0)) cb(t); });
   };
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
   const shown = (id: string = a) => effectivePose(scene, scene.get(asNodeId(id))!);
   const adapter = sceneToAdapter(scene);
   return { animator: (): Animator => result.current, frame, scene, a, adapter, shown };
@@ -75,7 +75,7 @@ describe('animateOnSetPose over a scene', () => {
 
 describe('animateLifecycle over a scene', () => {
   const node = (id: string, pose: RectPose) =>
-    ({ id: asNodeId(id), kind: 'leaf' as const, layer: 'main' as const, pose, data: {}, parent: null });
+    ({ id: asNodeId(id), kind: 'mark' as const, layer: 'main' as const, pose, data: {}, parent: null });
 
   it('enters from the start pose without ever writing it to the document', () => {
     const { animator, frame, scene, adapter, shown } = setup();

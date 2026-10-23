@@ -103,7 +103,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
   function makeSceneWithNode(): Scene<D8, L8, P8> {
     const s = createScene<D8, L8, P8>({ systemLayers: [{ id: 'main' }] });
     s.batch('seed', () => {
-      s.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L8, pose: { x: 0, y: 0, width: 10, height: 10 } as P8 });
+      s.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L8, pose: { x: 0, y: 0, width: 10, height: 10 } as P8 });
     });
     return s;
   }
@@ -239,7 +239,7 @@ describe('insertDep wired in SceneCanvas', () => {
     expect(pose.y).toBe(20);
     expect(pose.width).toBe(100);
     expect(pose.height).toBe(50);
-    expect(node.kind).toBe('leaf');
+    expect(node.kind).toBe('mark');
     const data = node.data as D14;
     expect(data.fill).toBeTruthy();
     expect(data.path).toBeTruthy();
@@ -273,7 +273,7 @@ describe('insertDep wired in SceneCanvas', () => {
     expect(pose.y).toBe(15);
     expect(pose.width).toBe(80);
     expect(pose.height).toBe(40);
-    expect(node.kind).toBe('leaf');
+    expect(node.kind).toBe('mark');
     const data = node.data as D14;
     expect(data.fill).toBeTruthy();
     expect(data.path).toBeTruthy();

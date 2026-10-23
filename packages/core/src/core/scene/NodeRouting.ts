@@ -8,14 +8,14 @@ export interface NodeRoutingEntry {
    *  the kit places no constraint beyond uniqueness within a registry. */
   name: string;
   /** Predicate over a node's `data` payload, and the node itself where the caller has one, for
-   *  a kind its data cannot show (`'container'`). First registered kind whose `matches` returns
+   *  a kind its data cannot show (`'group'`). First registered kind whose `matches` returns
    *  true claims the node. */
   matches: (data: unknown, node?: RoutedNode) => boolean;
 }
 
 /** What a routing entry may read of a node beside its data. */
 export interface RoutedNode {
-  /** The node's structural kind: `'leaf'` or `'container'`. */
+  /** The node's structural kind: `'mark'` or `'group'`. */
   readonly kind?: string;
 }
 

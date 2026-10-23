@@ -42,7 +42,7 @@ function renderOrder(deps: ActionDeps | undefined): readonly AnyNode[] {
 export function scenePathNodes(deps: ActionDeps | undefined): PathNode[] {
   const out: PathNode[] = [];
   for (const node of renderOrder(deps)) {
-    if (node.kind !== 'leaf') continue;
+    if (node.kind !== 'mark') continue;
     const path = resolveEditablePathOf(node);
     if (path) out.push({ id: node.id as NodeId, node, path });
   }
@@ -54,7 +54,7 @@ export function scenePathNodes(deps: ActionDeps | undefined): PathNode[] {
 export function strokesBesides(deps: ActionDeps | undefined, id: string): Path[] {
   const out: Path[] = [];
   for (const node of renderOrder(deps)) {
-    if (node.kind !== 'leaf' || node.id === id) continue;
+    if (node.kind !== 'mark' || node.id === id) continue;
     const outline = nodeOutline(node);
     if (outline) out.push(outline);
   }

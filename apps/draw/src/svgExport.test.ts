@@ -28,7 +28,7 @@ import {
 // the real `Scene<WeaselDrawData, TLayer, WeaselDrawPose>` type isn't
 // exported from svgExport.ts.
 function fakeScene(nodes: Record<string, {
-  kind: 'leaf' | 'container';
+  kind: 'mark' | 'group';
   pose: { x: number; y: number; width: number; height: number; rotation?: number };
   data?: {
     path?: unknown; fill?: Fill | null; text?: string; style?: unknown;
@@ -66,7 +66,7 @@ describe('text export', () => {
   it('carries the node style through to the <text> element', async () => {
     const scene = fakeScene({
       t: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 5, y: 6, width: 120, height: 40 },
         data: {
           text: 'Hi',
@@ -87,7 +87,7 @@ describe('text export', () => {
   it('exports the leaf stroke as a text stroke', async () => {
     const scene = fakeScene({
       t: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 5, y: 6, width: 120, height: 40 },
         data: { text: 'Hi', style: { fontSize: 32 }, stroke: strokeOf('#c0392b', 3) },
       },
@@ -101,7 +101,7 @@ describe('text export', () => {
 
   it('writes text with no fill, which paints no glyphs, as fill="none"', async () => {
     const scene = fakeScene({
-      t: { kind: 'leaf', pose: { x: 5, y: 6, width: 120, height: 40 }, data: { text: 'Hi' } },
+      t: { kind: 'mark', pose: { x: 5, y: 6, width: 120, height: 40 }, data: { text: 'Hi' } },
     }, ['t']);
     const n = parseSvg(await selectionToSvgString(scene, ['t'])).nodes[0];
     if (n.kind !== 'text') throw new Error('expected text');
@@ -111,7 +111,7 @@ describe('text export', () => {
   it('keeps unfilled text unfilled through scene → SVG → parse → import drafts', async () => {
     const scene = fakeScene({
       t: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 5, y: 6, width: 120, height: 40 },
         data: { text: 'Hi', style: { fontSize: 32 }, fill: null, stroke: strokeOf('#c0392b', 3) },
       },
@@ -130,7 +130,7 @@ describe('text export', () => {
   it('survives the whole loop: scene → SVG → parse → import drafts', async () => {
     const scene = fakeScene({
       t: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 5, y: 6, width: 120, height: 40 },
         data: { text: 'Hi', style: { fontSize: 32 }, stroke: strokeOf('#c0392b', 3) },
       },
@@ -159,7 +159,7 @@ describe('text export', () => {
     ];
     const scene = fakeScene({
       t: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 5, y: 6, width: 200, height: 40 },
         data: { text: 'Plain bold and 2', style: { fontSize: 32 }, runs },
       },
@@ -184,7 +184,7 @@ describe('text export', () => {
       { text: 'Hi' },
     ]) {
       const scene = fakeScene({
-        t: { kind: 'leaf', pose: { x: 0, y: 0, width: 50, height: 20 }, data },
+        t: { kind: 'mark', pose: { x: 0, y: 0, width: 50, height: 20 }, data },
       }, ['t']);
       const parsed = parseSvg(await selectionToSvgString(scene, ['t']));
       const n = parsed.nodes[0];
@@ -200,7 +200,7 @@ describe('Save then Open', () => {
   it('keeps a rectangle with fill None unfilled', async () => {
     const scene = fakeScene({
       r: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 10, y: 20, width: 30, height: 40 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: null, stroke: strokeOf('#00ff00', 2) },
       },
@@ -210,7 +210,7 @@ describe('Save then Open', () => {
     let n = 0;
     const drafts = svgNodesToSceneDrafts(parseSvg(svg), () => `n${n++}`);
     expect(drafts).toHaveLength(1);
-    if (drafts[0].kind !== 'leaf') throw new Error('expected a leaf');
+    if (drafts[0].kind !== 'mark') throw new Error('expected a leaf');
     const { data } = leafOfObj(drafts[0].obj);
     expect(data.fill).toBeNull();
     expect(data.stroke).toMatchObject({ paint: { color: '#00ff00' }, width: 2 });
@@ -221,7 +221,7 @@ describe('Export leaves annotations out', () => {
   it('writes the content and none of the measurements', async () => {
     const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS });
     scene.add({
-      kind: 'leaf', layer: 'default', pose: { x: 10, y: 20, width: 30, height: 40 },
+      kind: 'mark', layer: 'default', pose: { x: 10, y: 20, width: 30, height: 40 },
       data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: { paint: solid('#ff0000') } },
     });
     scene.add(measureNode(scene.mintId(), ANNOTATION_LAYER, { x: 0, y: 0 }, { x: 50, y: 50 }) as never);
@@ -237,8 +237,8 @@ describe('Export writes hidden nodes hidden', () => {
   it('writes a hidden node with display="none", and none for a hidden layer', async () => {
     const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS });
     const shown = { path: { kind: 'rect' as const, x: 0, y: 0, width: 30, height: 40 }, fill: { paint: solid('#ff0000') } };
-    scene.add({ kind: 'leaf', layer: 'default', pose: { x: 10, y: 20, width: 30, height: 40 }, data: shown });
-    const off = scene.add({ kind: 'leaf', layer: 'default', pose: { x: 50, y: 20, width: 30, height: 40 }, data: shown });
+    scene.add({ kind: 'mark', layer: 'default', pose: { x: 10, y: 20, width: 30, height: 40 }, data: shown });
+    const off = scene.add({ kind: 'mark', layer: 'default', pose: { x: 50, y: 20, width: 30, height: 40 }, data: shown });
     scene.setHidden(off, true);
     const svg = await sceneToSvgString(scene, {
       filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff',
@@ -252,7 +252,7 @@ describe('Save then Open: the page background', () => {
   it('comes back as the document background, not as a node', async () => {
     const scene = fakeScene({
       r: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 10, y: 20, width: 30, height: 40 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: { paint: solid('#ff0000') } },
       },
@@ -284,12 +284,12 @@ describe('selectionToSvgString', () => {
   it('emits only the selected subtree, matching the full-scene walk for that node', async () => {
     const scene = fakeScene({
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
       b: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 100, y: 100, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 100, y: 100, width: 10, height: 10 }, fill: { paint: solid('#00ff00') } },
       },
@@ -307,12 +307,12 @@ describe('selectionToSvgString', () => {
   it('fits the viewBox to the selected node(s), not the full scene', async () => {
     const scene = fakeScene({
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
       b: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 500, y: 500, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: { paint: solid('#00ff00') } },
       },
@@ -327,12 +327,12 @@ describe('selectionToSvgString', () => {
   it('unions bounds across multiple selected roots', async () => {
     const scene = fakeScene({
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
       b: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 20, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: { paint: solid('#00ff00') } },
       },
@@ -348,7 +348,7 @@ describe('selectionToSvgString', () => {
   it('fits the viewBox to a rotated node\'s ink, not its unrotated pose box', async () => {
     const scene = fakeScene({
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 40, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
@@ -364,22 +364,22 @@ describe('selectionToSvgString', () => {
   it('walks a selected container subtree (only its descendants, wd:group-id preserved)', async () => {
     const scene = fakeScene({
       g1: {
-        kind: 'container',
+        kind: 'group',
         pose: { x: 0, y: 0, width: 30, height: 10 },
         children: ['a', 'b'],
       },
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
       b: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 20, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: { paint: solid('#00ff00') } },
       },
       c: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 500, y: 500, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: { paint: solid('#0000ff') } },
       },
@@ -402,7 +402,7 @@ describe('selectionToSvgString', () => {
 describe('selectionToClipboardSvgString', () => {
   const scene = () => fakeScene({
     a: {
-      kind: 'leaf',
+      kind: 'mark',
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
     },
@@ -477,7 +477,7 @@ describe('gradient fills', () => {
   function gradientScene() {
     return fakeScene({
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 100, y: 50, width: 200, height: 100 },
         data: {
           path: { kind: 'rect', x: 100, y: 50, width: 200, height: 100 },
@@ -510,7 +510,7 @@ describe('gradient fills', () => {
   it('resolves a text node\'s box-relative gradient against its pose too', async () => {
     const scene = fakeScene({
       t: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 100, y: 50, width: 200, height: 100 },
         data: {
           text: 'Hi',
@@ -550,8 +550,8 @@ describe('gradient fills', () => {
     const svg = await selectionToSvgString(gradientScene(), ['a']);
     let n = 0;
     const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
-    const leaf = drafts.find((d) => d.kind === 'leaf');
-    if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
+    const leaf = drafts.find((d) => d.kind === 'mark');
+    if (leaf?.kind !== 'mark') throw new Error('expected a leaf draft');
     if (!('path' in leaf.obj)) throw new Error('expected a path draft');
     const fill = resolveFill(leaf.obj.fill)?.paint as {
       kind: string; units: string; from: { x: number; y: number }; to: { x: number; y: number };
@@ -569,7 +569,7 @@ describe('what the SVG cannot carry', () => {
   it('reports an inner-aligned stroke through onWarn instead of dropping it silently', async () => {
     const scene = fakeScene({
       r: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: {
           path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
@@ -593,7 +593,7 @@ describe('image export', () => {
     const src = 'data:image/png;base64,iVBORw0KGgo=';
     const scene = fakeScene({
       im: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 3, y: 4, width: 30, height: 20 },
         data: { image: { src, flipX: true } },
       },
@@ -607,9 +607,9 @@ describe('image export', () => {
 describe('derived poses', () => {
   it('lowers a leaf at the pose it derives, not the one it stores', async () => {
     const scene = fakeScene({
-      src: { kind: 'leaf', pose: { x: 0, y: 0, width: 1, height: 1 } },
+      src: { kind: 'mark', pose: { x: 0, y: 0, width: 1, height: 1 } },
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
         dependsOn: ['src'],
@@ -629,12 +629,12 @@ describe('pose composition', () => {
   function framedScene(composition: unknown = RIGID_POSE_COMPOSITION) {
     return fakeScene({
       g: {
-        kind: 'container',
+        kind: 'group',
         pose: { x: 0, y: 0, width: 40, height: 20, rotation: Math.PI / 2 },
         children: ['a'],
       },
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
@@ -692,7 +692,7 @@ describe('a paint kind that loads on demand', () => {
     }));
     return fakeScene({
       a: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: asPaint({ kind: id }) } },
       },
@@ -757,7 +757,7 @@ describe('text export with the canvas layout', () => {
   it('writes a wrapped node as the lines the canvas draws, and reads it back whole', async () => {
     const scene = fakeScene({
       t: {
-        kind: 'leaf',
+        kind: 'mark',
         pose: { x: 5, y: 6, width: 100, height: 100 },
         data: { text: 'AB AB AB', style: { fontFamily: 'inter', fontSize: 32, wrap: true } },
       },

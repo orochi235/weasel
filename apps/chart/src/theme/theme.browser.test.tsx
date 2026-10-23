@@ -96,7 +96,7 @@ function savedBody(): { body: Box; row: { pose: Box; data: { text?: string } } }
   const nodes = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as {
     nodes: { id: string; kind: string; parent?: string | null; pose: Box; data: { text?: string } }[];
   }).nodes;
-  const body = nodes.find((n) => n.kind === 'container')!;
+  const body = nodes.find((n) => n.kind === 'group')!;
   return { body: body.pose, row: nodes.find((n) => n.parent === body.id)! };
 }
 

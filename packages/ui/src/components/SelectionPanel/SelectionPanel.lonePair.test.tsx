@@ -14,7 +14,7 @@ const routing: NodeRoutingEntry[] = ['thing', 'other'].map((name) => ({ name, ma
 
 function panel(properties: NodePropertiesEntry[], kinds: string[]) {
   const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
-  for (const kind of kinds) scene.add({ id: asNodeId(kind), kind: 'leaf', layer: 'default', pose: {}, data: { kind, style: {} } });
+  for (const kind of kinds) scene.add({ id: asNodeId(kind), kind: 'mark', layer: 'default', pose: {}, data: { kind, style: {} } });
   return render(<SelectionPanel scene={scene} selection={{ current: kinds.map(asNodeId) }} properties={properties} routing={routing} />);
 }
 

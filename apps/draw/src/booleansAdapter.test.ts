@@ -9,7 +9,7 @@ function setup() {
   });
   const leaf = (id: string, x: number, parent?: string) => scene.add({
     id: asNodeId(id),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x, y: 0, width: 10, height: 10 },
     data: { path: rectPath(0, 0, 10, 10) },
@@ -18,9 +18,9 @@ function setup() {
   // A top-level node and a container ahead of the one under test, so render
   // order and sibling order disagree about every index inside `g`.
   leaf('top', 100);
-  scene.add({ id: asNodeId('g0'), kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} });
+  scene.add({ id: asNodeId('g0'), kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} });
   leaf('g0a', 200, 'g0');
-  scene.add({ id: asNodeId('g'), kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} });
+  scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} });
   leaf('below', 300, 'g');
   leaf('a', 0, 'g');
   leaf('b', 5, 'g');
@@ -57,7 +57,7 @@ describe('drawBooleansAdapter', () => {
 
   it('mints ids the scene does not already hold', () => {
     const { scene, adapter } = setup();
-    scene.add({ id: asNodeId('b-0'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    scene.add({ id: asNodeId('b-0'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
     scene.setSelection([asNodeId('a'), asNodeId('b')]);
     expect(applyBooleanOp(adapter, 'union').kind).toBe('applied');
   });
@@ -71,7 +71,7 @@ describe('drawBooleansAdapter', () => {
     const result = applyBooleanOp(adapter, 'union');
     const [id] = result.kind === 'applied' ? result.resultIds : [];
     const node = scene.get(asNodeId(id));
-    expect(node?.kind === 'leaf' ? node.data.fill : 'missing').toBeNull();
+    expect(node?.kind === 'mark' ? node.data.fill : 'missing').toBeNull();
   });
 });
 
@@ -116,7 +116,7 @@ describe('drawBooleansAdapter with strokes counted', () => {
   it('fills a result in its topmost source\'s stroke paint, and does not stroke it again', () => {
     const { scene, adapter } = setup();
     scene.add({
-      id: asNodeId('line'), kind: 'leaf', layer: 'default', parent: asNodeId('g'),
+      id: asNodeId('line'), kind: 'mark', layer: 'default', parent: asNodeId('g'),
       pose: { x: -5, y: 5, width: 30, height: 0 },
       data: { path: pathFromD('M0 0 L30 0'), stroke: { paint: { color: '#f00' }, width: 4 } },
     });

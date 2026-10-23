@@ -162,7 +162,7 @@ export function fnKeysOf(
 /**
  * The function fields to carry from a live node into an `AddNodeSpec`. An
  * insert that drops them brings an edge back as a static path that never
- * follows its endpoints again, and a clipped container back with nothing
+ * follows its endpoints again, and a clipped group back with nothing
  * clipped.
  */
 export function fnFieldsOfNode<T extends { kind: 'mark' | 'group' }>(

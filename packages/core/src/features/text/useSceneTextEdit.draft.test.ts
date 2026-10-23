@@ -22,9 +22,9 @@ function setup() {
     systemLayers: [{ id: 'main' }],
     registry: withPathEffectsRegistry(),
     initial: [
-      { id: T, kind: 'leaf', layer: 'main', pose: BOX, data: { text: 'hello', style: { fontSize: 16 } } },
-      { id: LONE, kind: 'leaf', layer: 'main', pose: BOX, data: { text: 'alone', style: { fontSize: 16 } } },
-      { id: P, kind: 'leaf', layer: 'main', pose: BOX, data: { path: pathFromD('M0 100 L200 100') } as never },
+      { id: T, kind: 'mark', layer: 'main', pose: BOX, data: { text: 'hello', style: { fontSize: 16 } } },
+      { id: LONE, kind: 'mark', layer: 'main', pose: BOX, data: { text: 'alone', style: { fontSize: 16 } } },
+      { id: P, kind: 'mark', layer: 'main', pose: BOX, data: { path: pathFromD('M0 100 L200 100') } as never },
       { ...pathEffectNode({ kind: 'textAlong', hideSources: true }, [T, P], 'main', PATH_EFFECT_DERIVATIONS), id: FX } as never,
     ],
   });

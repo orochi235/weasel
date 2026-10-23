@@ -75,7 +75,7 @@ export function inkExtentsOf(
   if (!node) return NO_INK_EXTENTS;
   const own = framedBounds(pose, descriptorFor(scene, id, opts));
   const unframed = { x: own.x, y: own.y, width: own.width, height: own.height };
-  const members = node.kind === 'container' ? scene.childrenOf?.(id) ?? [] : [];
+  const members = node.kind === 'group' ? scene.childrenOf?.(id) ?? [] : [];
   if (members.length > 0) return membersExtents(scene, members, own, opts);
   const drawn = findShapeDrawnBounds(node, pose, withInherited(scene, node, inkCtx(opts.scale, own)));
   return drawn === null ? NO_INK_EXTENTS : inkExtentsBetween(normalized(unframed), drawn);

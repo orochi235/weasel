@@ -20,7 +20,7 @@ const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 describe('GestureContext.kitSettings', () => {
   it('is the kitSettings dep, on the context a move behavior sees', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const s = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
+    const s = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
     const kitSettings = createKitSettingsStore({ view: { animationMs: 1 } });
     let seen: KitSettingsStore | null | undefined;
     const spy: MoveBehavior<RectPose> = { onMove: (ctx) => { seen = ctx.kitSettings; } };

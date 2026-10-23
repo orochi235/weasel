@@ -47,7 +47,7 @@ describe('useLayoutDepSource', () => {
     };
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
-      initial: [{ id: asNodeId('C'), kind: 'container', layer: 'l', pose: { x: 0, y: 0, width: 9, height: 9 }, data: null, layout: declared }],
+      initial: [{ id: asNodeId('C'), kind: 'group', layer: 'l', pose: { x: 0, y: 0, width: 9, height: 9 }, data: null, layout: declared }],
     });
     let reg!: DepRegistry;
     function Wire() {
@@ -75,7 +75,7 @@ describe('useLayoutDepSource', () => {
     const C = asNodeId('C');
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
-      initial: [{ id: C, kind: 'container', layer: 'l', pose: { x: 0, y: 0, width: 9, height: 90 }, data: null, layout: stackOf }],
+      initial: [{ id: C, kind: 'group', layer: 'l', pose: { x: 0, y: 0, width: 9, height: 90 }, data: null, layout: stackOf }],
     });
     const reflow: ReflowTransition<unknown> = {
       glide: vi.fn(), settle: vi.fn(), stop: vi.fn(), poseOf: () => undefined,
@@ -86,7 +86,7 @@ describe('useLayoutDepSource', () => {
     }
     render(<DepRegistryProvider><Wire /></DepRegistryProvider>);
     const from = { x: 50, y: 50, width: 1, height: 1 };
-    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'l', pose: from, data: null, parent: C });
+    scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'l', pose: from, data: null, parent: C });
     expect(reflow.settle).toHaveBeenCalledWith('a', { from });
   });
 });

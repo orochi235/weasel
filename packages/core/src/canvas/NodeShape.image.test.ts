@@ -21,7 +21,7 @@ function imageNode(
   extra: Omit<ImageNodeData['image'], 'src'> = {},
 ): Node<unknown, string, unknown> {
   return {
-    id: 'i1', kind: 'leaf', layer: 'default', parent: null,
+    id: 'i1', kind: 'mark', layer: 'default', parent: null,
     pose: POSE, data: { image: { src, ...extra } },
   } as unknown as Node<unknown, string, unknown>;
 }

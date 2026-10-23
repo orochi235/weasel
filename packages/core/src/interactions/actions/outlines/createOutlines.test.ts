@@ -26,21 +26,21 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
   const scene = createScene<Data, 'default', Pose>({ systemLayers: [{ id: 'default' }] });
   let nextId = 0;
   const add = (id: string, data: Data, pose: Pose = { x: 0, y: 0, width: 400, height: 150 }) =>
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose, data });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose, data });
   const adapter: CreateOutlinesAdapter = {
     ...defaultCommitAdapter(scene),
     getSelection: () => [...scene.getSelection()],
     setSelection: (ids) => { scene.setSelection(ids.map(asNodeId)); },
     getTextSource: (id) => {
       const n = scene.get(asNodeId(id));
-      if (!n || n.kind !== 'leaf' || n.data.text == null) return undefined;
+      if (!n || n.kind !== 'mark' || n.data.text == null) return undefined;
       return { data: n.data as TextOutlineSource, pose: n.pose };
     },
     createPathNode: (path, _sourceId, { fill, stroke, parent }) => {
       const b = boundsOfPath(path);
       return {
         id: `p-${nextId++}`,
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         parent,
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
@@ -49,7 +49,7 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
     },
     ...(containers ? {
       createContainerNode: (_sourceId: NodeId, { parent, bounds }: { parent: string | null; bounds: Rect }) =>
-        ({ id: `g-${nextId++}`, kind: 'container', layer: 'default', parent, pose: bounds, data: {} }) as { id: string },
+        ({ id: `g-${nextId++}`, kind: 'group', layer: 'default', parent, pose: bounds, data: {} }) as { id: string },
     } : {}),
     applyOps: (ops, label) => {
       scene.applyBatch(ops, label ?? 'Create Outlines', { ...defaultCommitAdapter(scene), ...adapter });
@@ -157,7 +157,7 @@ describe('applyCreateOutlines', () => {
     if (result.kind !== 'applied') throw new Error(result.kind);
     const [gid] = result.resultIds;
     expect(result.resultIds).toHaveLength(1);
-    expect(scene.get(asNodeId(gid))!.kind).toBe('container');
+    expect(scene.get(asNodeId(gid))!.kind).toBe('group');
     expect(scene.roots).toEqual([asNodeId('below'), asNodeId(gid), asNodeId('above')]);
     const kids = scene.childrenOf(asNodeId(gid)).map((id) => scene.get(id)!.data as Data);
     expect(kids.map((d) => d.fill)).toEqual([{ paint: RED }, { paint: BLUE }]);

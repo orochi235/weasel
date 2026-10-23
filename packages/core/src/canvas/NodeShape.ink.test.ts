@@ -19,7 +19,7 @@ interface RectPose { x: number; y: number; width: number; height: number }
 function pathNode(data: Record<string, unknown>): Node<unknown, string, RectPose> {
   return {
     id: asNodeId('n'),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: { x: 0, y: 0, width: 100, height: 100 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 100, height: 100 }, ...data },
@@ -59,7 +59,7 @@ describe('findShapeInk', () => {
 
   it('reports kit:shape as filled only when it declares a fill', () => {
     const star = (data: Record<string, unknown>) => ({
-      id: asNodeId('s'), kind: 'leaf', layer: 'main', pose: POSE,
+      id: asNodeId('s'), kind: 'mark', layer: 'main', pose: POSE,
       data: { shape: 'star', points: 5, stroke: strokeOf('#000', 6), ...data },
     } as unknown as Node<unknown, string, RectPose>);
     expect(findShapeInk(star({}), POSE)).toEqual({ filled: false, outset: 3, inset: 3 });
@@ -122,7 +122,7 @@ describe('shapeCoversPoint — unfilled shapes are grabbed by their outline', ()
 describe('shapeCoversPoint — open paths', () => {
   const line = {
     id: asNodeId('l'),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: POSE,
     data: { path: linePath({ x: 0, y: 0 }, { x: 100, y: 100 }), stroke: strokeOf('#000', 2) },
@@ -149,7 +149,7 @@ describe('shapeCoversPoint — painters with no opinion', () => {
     // the "no opinion" case: the caller's AABB pre-filter stays the answer,
     // so a silhouette-less painter can never make a node unpickable.
     const blank = {
-      id: asNodeId('t'), kind: 'leaf', layer: 'main', pose: POSE,
+      id: asNodeId('t'), kind: 'mark', layer: 'main', pose: POSE,
       data: { text: '   ' },
     } as unknown as Node<unknown, string, RectPose>;
     expect(shapeCoversPoint(blank, POSE, 50, 50)).toBe(true);
@@ -160,7 +160,7 @@ describe('shapeCoversPoint — painters with no opinion', () => {
     // The rect fallback declares a silhouette but no `ink`, so it keeps the
     // pre-`ink` behavior: the whole interior is grabbable.
     const opaque = {
-      id: asNodeId('x'), kind: 'leaf', layer: 'main', pose: POSE, data: { fill: { paint: solid('#f00') } },
+      id: asNodeId('x'), kind: 'mark', layer: 'main', pose: POSE, data: { fill: { paint: solid('#f00') } },
     } as unknown as Node<unknown, string, RectPose>;
     expect(findShapeInk(opaque, POSE)).toBeNull();
     expect(shapeCoversPoint(opaque, POSE, 50, 50)).toBe(true);
@@ -302,7 +302,7 @@ describe('a stroke with no paint', () => {
 describe('findShapeInk — text', () => {
   const textNode = (data: Record<string, unknown>): Node<unknown, string, RectPose> => ({
     id: asNodeId('t'),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: { x: 0, y: 0, width: 100, height: 100 },
     data: { text: 'Away', ...data },

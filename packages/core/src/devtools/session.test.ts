@@ -14,9 +14,9 @@ const P = DEVTOOLS_PROTOCOL;
 
 function setup() {
   const scene = createScene<{ label: string; draw?: () => void }, string>({ systemLayers: [{ id: 'main' }] });
-  const group = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'g' } });
+  const group = scene.add({ kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'g' } });
   const leaf = scene.add({
-    kind: 'leaf', layer: 'main', parent: group, locked: true,
+    kind: 'mark', layer: 'main', parent: group, locked: true,
     pose: { x: 1, y: 2, width: 3, height: 4 }, data: { label: 'leaf', draw() {} },
   });
   let selection: readonly string[] = [];
@@ -96,7 +96,7 @@ describe('devtools session', () => {
     const t = setup();
     t.panel.send({ type: 'yo', protocol: P });
     expect(t.result({ type: 'get-children' })).toEqual([
-      { id: t.group, kind: 'container', layer: 'main', childCount: 1, hidden: false, locked: false, pickable: true },
+      { id: t.group, kind: 'group', layer: 'main', childCount: 1, hidden: false, locked: false, pickable: true },
     ]);
     expect(t.result({ type: 'get-children', nodeId: t.group })).toMatchObject([{ id: t.leaf, locked: true }]);
     expect(t.result({ type: 'get-node', nodeId: t.leaf })).toMatchObject({

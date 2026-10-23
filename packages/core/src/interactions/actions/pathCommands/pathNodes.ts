@@ -42,7 +42,7 @@ export function pathNodesOf(
   const out: PathNode[] = [];
   for (const id of ids) {
     const found = scene.get(id as NodeId);
-    if (!found || found.kind !== 'leaf') continue;
+    if (!found || found.kind !== 'mark') continue;
     const shape = shapeOf?.(id);
     const node = shape ? ({ ...found, pose: shape.pose, data: shape.data } as Node<unknown, string, unknown>) : found;
     const path = resolveEditablePathOf(node);

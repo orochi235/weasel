@@ -25,7 +25,7 @@ const OUTLINE_SCALE = (OUTLINE_MIN_SCREEN_PX / FONT_SIZE) * 1.08;
 function render(overflow: 'visible' | 'clip', scale: number): RasterImage {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    kind: 'leaf', layer: 'main', pose: POSE,
+    kind: 'mark', layer: 'main', pose: POSE,
     data: {
       text: 'HHHH\nHHHH\nHHHH',
       style: { fontFamily: FAMILY, fontSize: FONT_SIZE, lineHeight: 1.25 },

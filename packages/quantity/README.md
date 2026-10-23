@@ -110,7 +110,7 @@ formatScoped(1, 'mm', [INCHES, MM])                      // '25.4mm'
 
 A scope converts what is shown, typed and snapped to, never what is stored: a value is held in
 the outermost scope's units however deep it sits (ruled 2026-10-20). In weasel a container
-declares one (`ContainerNode.units`), its children's poses stay in world units, and pose
+declares one (`GroupNode.units`), its children's poses stay in world units, and pose
 composition does not scale by it. `sceneUnitScopes` and `sceneSharedUnitScopes` in
 `@weasel-js/core` read a scene's chain; `scopedPrefUnit` and `prefLeafInScopes` in
 `@weasel-js/prefs` make a field's unit from one; `gridSnapSource`'s `scopes` option in

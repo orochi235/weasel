@@ -18,7 +18,7 @@ const act = (id: string, label: string): Action => ({ id, label, group: 'arrange
 
 function setup(members: Record<string, PrefLeaf>) {
   const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { size: 3 }, data: { kind: 'thing' } });
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { size: 3 }, data: { kind: 'thing' } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];
   return render(
     <ActionsProvider>

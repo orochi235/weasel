@@ -248,7 +248,7 @@ describe('paint-kind registry', () => {
     // `NodeShape`'s paint slot memoizes per node and calls `fillInPoseFrame`
     // inside it, so the registry is ambient state that memo cannot see change.
     const node = {
-      id: 'a', kind: 'leaf', layer: 'default',
+      id: 'a', kind: 'mark', layer: 'default',
       data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: WASH } },
     } as never;
     const pose = { x: 10, y: 20, width: 200, height: 40 };

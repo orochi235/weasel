@@ -24,16 +24,16 @@ function build() {
     systemLayers: [{ id: 'default' }],
     initial: [
       // Polygon pose: the pose is the outline.
-      { id: 'poly' as NodeId, kind: 'leaf', layer: 'default', pose: triangle(0, 0), data: null },
+      { id: 'poly' as NodeId, kind: 'mark', layer: 'default', pose: triangle(0, 0), data: null },
       // Kit-drawn shape: geometry on `data.path` behind a rect pose.
       {
-        id: 'drawn' as NodeId, kind: 'leaf', layer: 'default',
+        id: 'drawn' as NodeId, kind: 'mark', layer: 'default',
         pose: { x: 200, y: 0, width: 100, height: 100 },
         data: { path: triangle(0, 0) },
       },
       // Rotated rect: its ink pokes out of its pose box.
       {
-        id: 'turned' as NodeId, kind: 'leaf', layer: 'default',
+        id: 'turned' as NodeId, kind: 'mark', layer: 'default',
         pose: { x: 0, y: 200, width: 100, height: 20, rotation: Math.PI / 4 },
         data: null,
       },
@@ -110,8 +110,8 @@ describe('sceneToAdapter region hit-tests read the node-specialized descriptor',
     const scene = createScene<Solid, string, Bounds>({
       systemLayers: [{ id: 'default' }],
       initial: [
-        { id: 'box' as NodeId, kind: 'leaf', layer: 'default', pose: WIDE, data: { kind: 'box' } },
-        { id: 'ball' as NodeId, kind: 'leaf', layer: 'default', pose: WIDE, data: { kind: 'ball' } },
+        { id: 'box' as NodeId, kind: 'mark', layer: 'default', pose: WIDE, data: { kind: 'box' } },
+        { id: 'ball' as NodeId, kind: 'mark', layer: 'default', pose: WIDE, data: { kind: 'ball' } },
       ],
     });
     return sceneToAdapter(scene, { poseDescriptor: SOLID_DESCRIPTOR as PoseDescriptor<Bounds> });

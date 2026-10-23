@@ -34,7 +34,7 @@ function setup() {
   const machine = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
   const scene = createScene<{ path: PolygonPath }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    id: A, kind: 'leaf', layer: 'main',
+    id: A, kind: 'mark', layer: 'main',
     data: { path: pathFromD('M 0 0 L 20 0 L 20 20') as PolygonPath },
     pose: { x: 10, y: 10, width: 20, height: 20 },
   });

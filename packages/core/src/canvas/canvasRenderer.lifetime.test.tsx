@@ -41,7 +41,7 @@ type P = { x: number; y: number; width: number; height: number };
 
 function makeScene(): Scene<unknown, 'main', P> {
   const s = createScene<unknown, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  s.add({ kind: 'leaf', data: {}, layer: 'main', pose: { x: 10, y: 20, width: 30, height: 40 } });
+  s.add({ kind: 'mark', data: {}, layer: 'main', pose: { x: 10, y: 20, width: 30, height: 40 } });
   return s;
 }
 
@@ -92,7 +92,7 @@ describe('detached canvas renderer lifetime', () => {
     expect(cachedCanvasRenderer(container.querySelector('canvas')!)).toBeDefined();
 
     const before = clears();
-    act(() => { scene.add({ kind: 'leaf', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 5, height: 5 } }); });
+    act(() => { scene.add({ kind: 'mark', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 5, height: 5 } }); });
     await act(frame);
     expect(clears()).toBeGreaterThan(before);
 

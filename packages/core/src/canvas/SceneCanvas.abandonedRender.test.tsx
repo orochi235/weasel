@@ -33,7 +33,7 @@ afterEach(() => { cleanup(); });
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
-    s.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 100, y: 100, width: 80, height: 60 } });
+    s.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 100, y: 100, width: 80, height: 60 } });
   });
   return s;
 }

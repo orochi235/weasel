@@ -61,7 +61,7 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
       { fontFamily: 'sans-serif', fontSize: 11 },
     );
     // A container's children would cover a label drawn with the container.
-    return [...primary, node.kind === 'container' ? overChildren([label]) : label];
+    return [...primary, node.kind === 'group' ? overChildren([label]) : label];
   }
 
   // Rotation and per-node alpha are applied OUTSIDE this function, by `wrapNodeOutput` in

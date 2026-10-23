@@ -141,7 +141,7 @@ describe('a line longer than its box', () => {
   function painterLines(pose: TextPose): number {
     const data = { text: pose.text, style: pose.style };
     const box = { x: pose.x, y: pose.y, width: pose.width, height: pose.height };
-    const n = { id: 'n', kind: 'leaf', layer: 'default', pose: box, data, parent: null } as unknown as Node<unknown, 'default', typeof box>;
+    const n = { id: 'n', kind: 'mark', layer: 'default', pose: box, data, parent: null } as unknown as Node<unknown, 'default', typeof box>;
     const [cmd] = findNodeShape(n)!.paint(n, box);
     return drawnLines(cmd);
   }

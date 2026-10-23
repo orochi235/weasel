@@ -12,12 +12,12 @@ function sceneWithEdge(): Scene<Data, 'main', Rect> {
   const scene = createScene<Data, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
   for (const [id, x, y] of [['A', 0, 0], ['B', 300, 0], ['C', 300, 200]] as const) {
     scene.add({
-      id: id as never, kind: 'leaf', layer: 'main',
+      id: id as never, kind: 'mark', layer: 'main',
       pose: { x, y, width: 100, height: 40 }, data: { diagram: {} },
     });
   }
   scene.add({
-    id: 'ab' as never, kind: 'leaf', layer: 'main',
+    id: 'ab' as never, kind: 'mark', layer: 'main',
     pose: { x: 0, y: 0, width: 0, height: 0 },
     data: { diagram: { from: { port: 'e' }, to: { port: 'w', laidOut: 'w' }, router: 'straight' }, stroke: { width: 2 } },
     dependsOn: ['A' as never, 'B' as never],

@@ -37,18 +37,18 @@ function Harness({ machine }: { machine: ModeMachine }): ReactElement {
   const [scene] = useState(() => {
     const s = createScene({ systemLayers: [{ id: 'main' }] });
     const leaf = (id: string, x: number, data: unknown) =>
-      s.add({ id: asNodeId(id), kind: 'leaf', layer: 'main', data, pose: square(x) } as never);
+      s.add({ id: asNodeId(id), kind: 'mark', layer: 'main', data, pose: square(x) } as never);
     leaf('anchored', AT.anchored, { path: pathFromD('M 0 0 L 30 0 L 30 30 L 0 30 Z') as PolygonPath, fill: { paint: solid('#888') } });
     // Routed as a `path`, drawn and picked as its commands, and of a kind path edit cannot open.
     const outline = pathFromD('M 0 0 L 30 0 L 30 30 L 0 30 Z') as PolygonPath;
     leaf('anchorless', AT.anchorless, { path: { ...outline, kind: 'spiro' }, fill: { paint: solid('#888') } });
     leaf('text', AT.text, { text: 'hello' });
     const container = (id: string, parent: string | undefined, x: number, width: number) => s.add({
-      id: asNodeId(id), kind: 'container', layer: 'main', data: {}, pose: { ...square(x), width },
+      id: asNodeId(id), kind: 'group', layer: 'main', data: {}, pose: { ...square(x), width },
       ...(parent ? { parent: asNodeId(parent) } : {}),
     } as never);
     const member = (id: string, parent: string, x: number) => s.add({
-      id: asNodeId(id), kind: 'leaf', layer: 'main', parent: asNodeId(parent),
+      id: asNodeId(id), kind: 'mark', layer: 'main', parent: asNodeId(parent),
       data: { path: pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath, fill: { paint: solid('#888') } }, pose: square(x),
     } as never);
     container('group', undefined, AT.member, 70);

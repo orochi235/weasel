@@ -9,7 +9,7 @@ const POSE: RectPose = { x: 0, y: 0, width: 10, height: 10 };
 describe('clipNothing', () => {
   it('saves under the kit key and comes back from JSON with no consumer registry', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const g = scene.add({ kind: 'container', layer: 'main', pose: POSE, data: {}, clipFromPose: clipNothing });
+    const g = scene.add({ kind: 'group', layer: 'main', pose: POSE, data: {}, clipFromPose: clipNothing });
     const json = JSON.parse(JSON.stringify(scene.toJSON()));
     expect(json.nodes.find((n: { id: string }) => n.id === (g as string)).clipFromPoseKey).toBe(CLIP_NOTHING);
     const reloaded = sceneFromJSON<object, 'main', RectPose>(json, {});

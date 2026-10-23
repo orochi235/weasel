@@ -45,7 +45,7 @@ function setup(pathOfA: Path = pathFromD('M 0 0 L 10 0 L 10 10') as PolygonPath)
   );
   for (const id of [A, B]) {
     const path = id === A ? pathOfA : pathFromD('M 0 0 L 10 0 L 10 10');
-    scene.add({ id, kind: 'leaf', data: { path }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
+    scene.add({ id, kind: 'mark', data: { path }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   }
   scene.setSelection([A]);
   const grabbed: { trigger?: (id: string) => void; editAnchors?: () => EditAnchors } = {};

@@ -13,7 +13,7 @@ import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/c
 
 type S = Scene<object, 'main', CirclePose>;
 const scene = (): S => createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
-const leaf = (s: S, p: CirclePose) => s.add({ kind: 'leaf', layer: 'main', pose: p, data: {} });
+const leaf = (s: S, p: CirclePose) => s.add({ kind: 'mark', layer: 'main', pose: p, data: {} });
 const deps = (s: S, ids: NodeId[]) => ({
   selection: { get: () => ids, set: () => {} },
   scene: s,

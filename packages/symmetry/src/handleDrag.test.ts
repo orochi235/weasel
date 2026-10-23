@@ -27,7 +27,7 @@ function rig() {
   const group = sym.create({ center: CENTER, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS } });
   // A 10 x 10 square whose corners are path anchors, the nearest at 200,50.
   scene.add({
-    kind: 'leaf', layer: 'main', id: asNodeId('sq'),
+    kind: 'mark', layer: 'main', id: asNodeId('sq'),
     pose: { x: 200, y: 50, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
   });
   const store = createSnapOutcomeStore();

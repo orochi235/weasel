@@ -18,12 +18,12 @@ export function TestCanvas({ label = 'board' }: { label?: string }) {
   const scene = useScene<Data, 'main', Pose>({
     systemLayers: [{ id: 'main' }],
     initial: [
-      { id: 'group' as NodeId, kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, data: { label: 'g' } },
+      { id: 'group' as NodeId, kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, data: { label: 'g' } },
       {
-        id: 'inner' as NodeId, kind: 'leaf', layer: 'main', parent: 'group' as NodeId, locked: true,
+        id: 'inner' as NodeId, kind: 'mark', layer: 'main', parent: 'group' as NodeId, locked: true,
         pose: { x: 5, y: 5, width: 10, height: 10 }, data: { label: 'inner', paint() {} },
       },
-      { id: 'solo' as NodeId, kind: 'leaf', layer: 'main', pose: { x: 60, y: 60, width: 20, height: 20 }, data: { label: 'solo' } },
+      { id: 'solo' as NodeId, kind: 'mark', layer: 'main', pose: { x: 60, y: 60, width: 20, height: 20 }, data: { label: 'solo' } },
     ],
   });
   return <SceneCanvas scene={scene} width={200} height={200} tools={{ hand: true }} aria-label={label} />;

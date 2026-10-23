@@ -11,8 +11,8 @@ type P = { x: number; y: number; width: number; height: number };
 function makeScene() {
   const s = createScene<null, 'main', P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
-    s.add({ kind: 'leaf', data: null, layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 } });
-    s.add({ kind: 'leaf', data: null, layer: 'main', pose: { x: 300, y: 100, width: 100, height: 100 } });
+    s.add({ kind: 'mark', data: null, layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 } });
+    s.add({ kind: 'mark', data: null, layer: 'main', pose: { x: 300, y: 100, width: 100, height: 100 } });
   });
   return s;
 }

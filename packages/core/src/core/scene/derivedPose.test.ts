@@ -18,11 +18,11 @@ const poseOf = (scene: S, id: NodeId): RectPose => effectivePose(scene, scene.ge
 function grouped() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
   const g = scene.add({
-    kind: 'container', layer: 'main', pose: box(0, 0, 0, 0), data: {},
+    kind: 'group', layer: 'main', pose: box(0, 0, 0, 0), data: {},
     dependsOn: 'children', derivePose: unionOfChildren,
   });
-  const a = scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: box(0, 0), data: {} });
-  const b = scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: box(90, 40), data: {} });
+  const a = scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(0, 0), data: {} });
+  const b = scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(90, 40), data: {} });
   return { scene, g, a, b };
 }
 
@@ -47,7 +47,7 @@ describe('derived pose — a container that hugs its children', () => {
 
   it('follows a member added later', () => {
     const { scene, g } = grouped();
-    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: box(200, 0), data: {} });
+    scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(200, 0), data: {} });
     expect(poseOf(scene, g)).toEqual(box(0, 0, 210, 50));
   });
 
@@ -78,7 +78,7 @@ describe('derived pose — a container that hugs its children', () => {
   it('resolves bottom-up through a nested group', () => {
     const { scene, g, b } = grouped();
     const outer = scene.add({
-      kind: 'container', layer: 'main', pose: box(0, 0, 0, 0), data: {},
+      kind: 'group', layer: 'main', pose: box(0, 0, 0, 0), data: {},
       dependsOn: 'children', derivePose: unionOfChildren,
     });
     scene.move(g, outer);
@@ -115,7 +115,7 @@ describe('derived pose — precedence', () => {
   it('documentPose ignores an override anywhere down the dependency chain', () => {
     const { scene, g, b } = grouped();
     const outer = scene.add({
-      kind: 'container', layer: 'main', pose: box(0, 0, 0, 0), data: {},
+      kind: 'group', layer: 'main', pose: box(0, 0, 0, 0), data: {},
       dependsOn: [g], derivePose: unionOfChildren,
     });
     scene.overrides.set(b, { pose: box(290, 40) });
@@ -142,10 +142,10 @@ describe('derived pose — explicit dependencies', () => {
 
   it('derives from the ids it names, in a scene with no containers', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: box(90, 0), data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: box(90, 0), data: {} });
     const label = scene.add({
-      kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0), data: {},
+      kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0), data: {},
       dependsOn: [a, b], derivePose: spanOf,
     });
     expect(poseOf(scene, label)).toEqual(box(0, 0, 100, 10));
@@ -158,11 +158,11 @@ describe('derived pose — explicit dependencies', () => {
     const x = asNodeId('x');
     const y = asNodeId('y');
     scene.add({
-      kind: 'leaf', id: x, layer: 'main', pose: box(1, 1), data: {},
+      kind: 'mark', id: x, layer: 'main', pose: box(1, 1), data: {},
       dependsOn: [y], derivePose: spanOf,
     });
     scene.add({
-      kind: 'leaf', id: y, layer: 'main', pose: box(2, 2), data: {},
+      kind: 'mark', id: y, layer: 'main', pose: box(2, 2), data: {},
       dependsOn: [x], derivePose: spanOf,
     });
     // Whichever node is asked first is the one that falls back where the cycle
@@ -175,11 +175,11 @@ describe('derived pose — explicit dependencies', () => {
     const x = asNodeId('x');
     const y = asNodeId('y');
     scene.add({
-      kind: 'leaf', id: x, layer: 'main', pose: box(1, 1), data: {},
+      kind: 'mark', id: x, layer: 'main', pose: box(1, 1), data: {},
       dependsOn: [y], derivePose: spanOf,
     });
     scene.add({
-      kind: 'leaf', id: y, layer: 'main', pose: box(2, 2), data: {},
+      kind: 'mark', id: y, layer: 'main', pose: box(2, 2), data: {},
       dependsOn: [x], derivePose: spanOf,
     });
     poseOf(scene, x);
@@ -202,9 +202,9 @@ describe('derived pose — serialization', () => {
 
   it('keeps derivePose attached across undo then redo of the container add', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
     const g = scene.add({
-      kind: 'container', layer: 'main', pose: box(0, 0, 0, 0), data: {},
+      kind: 'group', layer: 'main', pose: box(0, 0, 0, 0), data: {},
       dependsOn: 'children', derivePose: unionOfChildren,
     });
     scene.move(a, g);
@@ -227,7 +227,7 @@ describe('derived pose — serialization', () => {
   it('throws from toJSON when derivePose is not in the registry', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
     const g = scene.add({
-      kind: 'container', layer: 'main', pose: box(0, 0, 0, 0), data: {},
+      kind: 'group', layer: 'main', pose: box(0, 0, 0, 0), data: {},
       dependsOn: 'children', derivePose: () => null,   // never registered
     });
     expect(g).toBeDefined();
@@ -254,11 +254,11 @@ describe('derived pose — a scene whose poses are not rects', () => {
   function grouped3() {
     const scene = createScene<object, 'main', Pose3>({ systemLayers: LAYERS });
     const g = scene.add({
-      kind: 'container', layer: 'main', pose: at(7, 7, 7), data: {},
+      kind: 'group', layer: 'main', pose: at(7, 7, 7), data: {},
       dependsOn: 'children', derivePose: unionOfChildren,
     });
-    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: at(0, 0, 0), data: {} });
-    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: at(4, 0, 2), data: {} });
+    scene.add({ kind: 'mark', parent: g, layer: 'main', pose: at(0, 0, 0), data: {} });
+    scene.add({ kind: 'mark', parent: g, layer: 'main', pose: at(4, 0, 2), data: {} });
     return { scene, g };
   }
 

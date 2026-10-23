@@ -46,7 +46,7 @@ function offEdges(pose: Pose, scale: { x: number; y: number }, d: number) {
 
 function harness(picking: 'pose' | 'shape') {
   const initial: UseSceneOptions<Item, 'default', Pose>['initial'] = [{
-    id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: POSE, data: { color: '#abc' },
+    id: asNodeId('n'), kind: 'mark', layer: 'default', pose: POSE, data: { color: '#abc' },
   }];
   const { result } = renderHook(() => {
     const scene = useScene<Item, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
@@ -77,7 +77,7 @@ describe('picking a { px } outline under 4:1 zoom', () => {
   const pose: Pose = { x: 0, y: 0, width: 40, height: 20 };
   function outline() {
     const initial: UseSceneOptions<Item, 'default', Pose>['initial'] = [{
-      id: asNodeId('n'), kind: 'leaf', layer: 'default', pose,
+      id: asNodeId('n'), kind: 'mark', layer: 'default', pose,
       data: {
         path: { kind: 'rect', x: 0, y: 0, width: 40, height: 20 },
         fill: null,

@@ -14,7 +14,7 @@ interface NodeData { text: string; runs?: StyledRun[]; style: TextStyle; fill: F
 const INK = solid('#1c1c1c');
 
 const leaf = (id: string, y: number, fontSize: number, data: Omit<NodeData, 'fill' | 'style'> & { style?: TextStyle }) => ({
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   id: asNodeId(id),
   pose: { x: 20, y, width: W - 40, height: fontSize * 1.4 },

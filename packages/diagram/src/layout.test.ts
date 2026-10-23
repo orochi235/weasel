@@ -20,7 +20,7 @@ function graphOf(
   const entries: { node: GraphNodeLike; pose: Rect }[] = [];
   for (const [id, [x, y, width = 100, height = 40]] of Object.entries(boxes)) {
     entries.push({
-      node: { id, kind: 'leaf', data: { diagram: pins.includes(id) ? { pinned: true } : {} } },
+      node: { id, kind: 'mark', data: { diagram: pins.includes(id) ? { pinned: true } : {} } },
       pose: { x, y, width, height },
     });
   }
@@ -28,7 +28,7 @@ function graphOf(
     entries.push({
       node: {
         id: `e${i}`,
-        kind: 'leaf',
+        kind: 'mark',
         data: { diagram: { from: {}, to: {} } },
         dependsOn: [from, to],
       },

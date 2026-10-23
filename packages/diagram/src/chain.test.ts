@@ -64,11 +64,11 @@ describe('chain side routes', () => {
   const bottom = (id: string, u: number) => ({ id, at: { u, v: 1 } });
   const top = (id: string) => ({ id, at: { u: 0.5, v: 0 } });
   const node = (id: string, ports: object[], i: number) => ({
-    node: { id, kind: 'leaf', data: { diagram: { ports } } } as GraphNodeLike,
+    node: { id, kind: 'mark', data: { diagram: { ports } } } as GraphNodeLike,
     pose: { x: i, y: i, width: 100, height: 40 },
   });
   const edge = (i: number, from: [string, string], to: [string, string]) => ({
-    node: { id: `e${i}`, kind: 'leaf', data: { diagram: { from: { port: from[1] }, to: { port: to[1] } } }, dependsOn: [from[0], to[0]] } as GraphNodeLike,
+    node: { id: `e${i}`, kind: 'mark', data: { diagram: { from: { port: from[1] }, to: { port: to[1] } } }, dependsOn: [from[0], to[0]] } as GraphNodeLike,
     pose: { x: 0, y: 0, width: 0, height: 0 },
   });
   const graph = buildGraph<Rect>(() => [
