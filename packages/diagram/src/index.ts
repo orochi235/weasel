@@ -310,6 +310,7 @@ export {
   isPinned,
 } from './trait';
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
+export { isBodyOrRegion, isDiagramBody } from './bodyNode';
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {

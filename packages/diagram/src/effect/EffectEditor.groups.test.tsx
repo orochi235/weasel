@@ -85,7 +85,7 @@ describe('EffectEditor groups under nodeGraph', () => {
 
   it('draws groups as pickable containers and reports a pick of one', () => {
     const { onSelectGroup, view } = mount();
-    expect(view().specs.find((s) => s.id === 'g')).toMatchObject({ kind: 'group' });
+    expect(view().specs.find((s) => s.id === 'g')).toMatchObject({ kind: 'mark' });
     expect(view().specs.find((s) => s.id === 'g')!.pickable).not.toBe(false);
     act(() => view().onSelect!('g'));
     expect(onSelectGroup).toHaveBeenLastCalledWith('g');

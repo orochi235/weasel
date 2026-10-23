@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { isDiagramBody } from '../bodyNode';
 import { diagramScene, edgeIdOf } from '../fromData';
 import { PROBLEM_COLOR } from './draw';
 import { nodeGraph } from './nodeGraph';
@@ -107,7 +108,7 @@ describe('nodeGraph', () => {
       stages: [{ id: 'x', title: 'X', inputs: [{ id: 'w', type: 'image' }], outputs: [{ id: 'e', type: 'image' }, { id: 'n', type: 'image' }] }],
       wires: [],
     });
-    const spec = diagramScene(compass.data, compass.scene).find((s) => s.kind === 'group' && s.id === 'x')!;
+    const spec = diagramScene(compass.data, compass.scene).find((s) => isDiagramBody(s) && s.id === 'x')!;
     const ports = (spec.data.diagram as { ports: readonly { id: string }[] }).ports;
     expect(ports.map((p) => p.id).sort()).toEqual(['e', 'n', 'w']);
   });
@@ -127,7 +128,7 @@ describe('nodeGraph', () => {
     const specs = diagramScene(data, scene);
     const ids = data.edges.map(edgeIdOf);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(specs.filter((s) => s.kind === 'group').map((s) => s.id)).toEqual(['src', 'q', 'blur', 'flag']);
+    expect(specs.filter(isDiagramBody).map((s) => s.id)).toEqual(['src', 'q', 'blur', 'flag']);
   });
 });
 

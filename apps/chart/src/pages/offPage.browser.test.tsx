@@ -8,6 +8,7 @@ import { page, userEvent } from 'vitest/browser';
 import { PAGES_DOC_KEY, fitViewToBounds, layoutPages } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
+import { isDiagramBody } from '@weasel-js/diagram';
 import { CHART_SCENE_KEY } from '../chartPersistence';
 import { readClientPixels } from '../testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
@@ -33,7 +34,7 @@ afterEach(() => {
 
 interface SavedNode { id: string; kind: string; data: Record<string, unknown> }
 const saved = (): SavedNode[] => (JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as { nodes: SavedNode[] }).nodes;
-const bodies = () => saved().filter((n) => n.kind === 'group');
+const bodies = () => saved().filter(isDiagramBody);
 const edges = () => saved().filter((n) => 'from' in ((n.data.diagram as object | undefined) ?? {}));
 const editor = (): HTMLElement | null => document.querySelector('.wc-host [contenteditable="true"]');
 
