@@ -16,7 +16,7 @@ export interface SerializedLayer<TLayer extends string>
  *  (e.g., `clipFromPose`) appear as string keys (`clipFromPoseKey`) and
  *  are resolved through `SceneRegistry` at load time. */
 export interface SerializedScene<TData, TLayer extends string, TPose> {
-  version: 1;
+  version: 2;
   /** The whole layer stack, system and user alike — the name predates user
    *  layers and is kept so existing snapshots still parse. */
   systemLayers: readonly SerializedLayer<TLayer>[];
@@ -29,7 +29,7 @@ export interface SerializedScene<TData, TLayer extends string, TPose> {
  *  with function fields replaced by registry keys. */
 export interface SerializedNode<TData, TLayer extends string, TPose> {
   id: string;
-  kind: 'leaf' | 'container';
+  kind: 'mark' | 'group';
   layer: TLayer;
   pose: TPose;
   data: TData;
@@ -58,4 +58,17 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   layoutKey?: string;
   /** Mirrors `ContainerNode.units`. Omitted when the container declares none. */
   units?: UnitScope;
+}
+
+/** A node as version 1 saves wrote it: the kinds were `leaf` and `container`. */
+export interface SerializedNodeV1<TData, TLayer extends string, TPose>
+  extends Omit<SerializedNode<TData, TLayer, TPose>, 'kind'> {
+  kind: 'leaf' | 'container';
+}
+
+/** A version 1 save, still read and never written. */
+export interface SerializedSceneV1<TData, TLayer extends string, TPose>
+  extends Omit<SerializedScene<TData, TLayer, TPose>, 'version' | 'nodes'> {
+  version: 1;
+  nodes: readonly SerializedNodeV1<TData, TLayer, TPose>[];
 }

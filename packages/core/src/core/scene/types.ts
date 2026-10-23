@@ -9,7 +9,9 @@ import type { PoseComposition } from './composeFrame';
 import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
 import type { SceneChanges } from './sceneChanges';
-import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
+import type {
+  SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1,
+} from './serializedTypes';
 import type { UseSceneOptions } from './useSceneOptions';
 import type { SceneDocValues } from './docValues';
 import type { SceneEditPasses } from './editPass';
@@ -17,7 +19,7 @@ import type { RectPose } from '../geometry/rectPose';
 export type { RectPose, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
-export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
+export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1 };
 
 /**
  * # SceneNode — the thing in the scene
@@ -551,6 +553,6 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  malformed snapshot the scene is left empty or partially populated (callers should treat a
    *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
    *  always well-formed. */
-  loadState(json: SerializedScene<TData, TLayer, TPose>): void;
+  loadState(json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>): void;
 
 }
