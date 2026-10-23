@@ -61,6 +61,16 @@ export function inheritedPaintOf(
   return next;
 }
 
+/** What `node`'s `'inherit'` fields take from its containers in `scene`, or
+ *  `undefined` for a node that inherits nothing. */
+export function inheritedPaintIn<TNode extends { data?: unknown; parent?: string | null }>(
+  scene: { get(id: never): TNode | undefined },
+  node: TNode,
+): InheritedPaint | undefined {
+  if (!inheritsPaint(node)) return undefined;
+  return inheritedPaintOf(node, sceneAncestors((id: never) => scene.get(id), node));
+}
+
 /** `node`'s ancestors in `scene`, innermost first, read lazily off `parent`. */
 export function* sceneAncestors<TNode extends { parent?: string | null }>(
   get: (id: never) => TNode | undefined,

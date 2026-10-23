@@ -391,13 +391,8 @@ Priority tags:
   A keycap such as 1️⃣ draws its digit: `paintRuns`' outline tier lacks the `drawsInk` check `textClusters` has.
 
 - **(P2) Readers that still read an `'inherit'` fill or stroke as none** (2026-10-21). Painters, picking,
-  drawn bounds, the panel, SVG, the text editor, booleans and WeaselDraw's export resolve it against
-  the node's containers. These do not yet:
-  - a path effect's source (`features/pathEffects/readSource.ts`): `readEffectSource` gets a
-    `DerivedDep` and no scene, so an inheriting source lends its effect no paint;
-  - every registered painter that does not read `ctx.inherited` (`diagram:shape` does); and
-    `diagram:shape` still paints a diagram container's own fill, where the kit's painters paint no
-    container's — whether a diagram node with children counts as a group is open (2026-10-21);
+  drawn bounds, path effects, the panel, SVG, the text editor, booleans and WeaselDraw's export resolve
+  it against the node's containers. These do not yet:
   - the drag ghost (`usePreviewGhostLayer`) resolves against the scene's container, so a container's
     fill edited mid-gesture reaches its members only when the gesture commits;
   - the headless cull (`defaultPaintBounds`) gives up on a node with an inherited stroke, since it
