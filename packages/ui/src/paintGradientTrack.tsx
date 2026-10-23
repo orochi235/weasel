@@ -1,5 +1,6 @@
 import type { ReactNode, CSSProperties } from 'react';
 import type { TrackCtx } from './components/Slider';
+import { GradientCurve } from './paintGradientCurve';
 
 /**
  * Options for {@link paintGradientTrack}.
@@ -31,13 +32,16 @@ const DEFAULT_HATCH = { angleDeg: 135, stripe: 2, gap: 4, dim: 75 };
  * sampled color gradient, optionally dimming and hatching the portions
  * outside an active range.
  *
- * It paints a straight track only: on a curved shape it draws nothing.
+ * On a curved shape it strokes the band along the curve with the same ramp,
+ * dimming and hatching.
  */
 export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => ReactNode {
   const { gradient, samples = 16, activeRange, hatch } = opts;
 
   return (ctx: TrackCtx) => {
-    if (ctx.shape.kind !== 'line') return null;
+    if (ctx.shape.kind !== 'line') {
+      return <GradientCurve ctx={ctx} gradient={gradient} samples={samples} activeRange={activeRange} hatch={{ ...DEFAULT_HATCH, ...hatch }} />;
+    }
     const stops: string[] = [];
     for (let i = 0; i <= samples; i++) {
       const t = i / samples;
