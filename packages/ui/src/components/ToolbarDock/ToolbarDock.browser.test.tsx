@@ -163,7 +163,9 @@ test('a vertical bar runs down a left dock, a bar that may not is refused there,
   render(<Host at={sides} offered={offered} initial={{ docks: { top: [['file']], left: [['tools']] }, floating: {} }} />);
   const tools = screen.getByRole('toolbar', { name: 'Tools' });
   expect(tools).toHaveAttribute('aria-orientation', 'vertical');
-  expect(tools.getBoundingClientRect().height).toBeGreaterThan(tools.getBoundingClientRect().width);
+  // A column: the button runs on under the lead rather than beside it.
+  const go = screen.getByRole('button', { name: 'Tools go' }).getBoundingClientRect();
+  expect(go.top).toBeGreaterThanOrEqual(handle('Tools').getBoundingClientRect().bottom);
 
   const onTools = line(mid(handle('File')), mid(tools));
   await commands.pointer([to(onTools[0]!), { down: true }, ...onTools.slice(1).map(to)]);

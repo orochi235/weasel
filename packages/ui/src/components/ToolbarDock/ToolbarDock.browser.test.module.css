@@ -1,6 +1,9 @@
-/* A workspace the docks sit round, held clear of the viewport's edge. */
+/* A workspace the docks sit round, held clear of the viewport's edge. Placed rather than given a margin: a top margin
+   collapses through the body, which already fills the viewport, and pushes the page past it. */
 .frame {
+  position: absolute;
+  inset-block-start: var(--wzl-space-6);
+  inset-inline-start: var(--wzl-space-6);
   inline-size: 700px;
   block-size: 400px;
-  margin: var(--wzl-space-6);
 }
