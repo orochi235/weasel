@@ -327,6 +327,7 @@ await writeFile(
     `import * as color from '@weasel-js/ui/color';\n` +
     `import * as paintGradientTrack from '@weasel-js/ui/paint-gradient-track';\n` +
     `import * as kitSettings from '@weasel-js/ui/kit-settings';\n` +
+    `import * as floating from '@weasel-js/ui/floating';\n` +
     // labkit re-exports @weasel-js/ui through its own `./weasel-ui` subpath, so
     // that path is only importable if labkit *declares* ui as a runtime
     // dependency.
@@ -344,7 +345,7 @@ await writeFile(
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
     `  guides, devtools, rig,\n` +
-    `  toolPalette, prefs, callout, icon, paintValue, stance, portalHost, color, paintGradientTrack, kitSettings,\n` +
+    `  toolPalette, prefs, callout, icon, paintValue, stance, portalHost, color, paintGradientTrack, kitSettings, floating,\n` +
     `  toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +

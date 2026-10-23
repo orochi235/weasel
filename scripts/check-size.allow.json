@@ -155,9 +155,6 @@
   "packages/labkit/src/loupe/useLoupe.ts": {
     "longestFunction": 181
   },
-  "packages/labkit/src/primitives/FloatingPanel.tsx": {
-    "longestFunction": 149
-  },
   "packages/labkit/src/specimen/Specimen.tsx": {
     "lines": 873,
     "longestFunction": 132

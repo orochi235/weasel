@@ -51,6 +51,10 @@
       "types": "./dist/kitSettings.d.ts",
       "import": "./dist/kitSettings.js"
     },
+    "./floating": {
+      "types": "./dist/floating/index.d.ts",
+      "import": "./dist/floating/index.js"
+    },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },
@@ -74,7 +78,8 @@
     "@weasel-js/theme": "1.12.0",
     "prism-react-renderer": "^2.4.1",
     "react-aria": "3.52.1",
-    "react-aria-components": "1.21.1"
+    "react-aria-components": "1.21.1",
+    "windease": "^2.0.0"
   },
   "peerDependencies": {
     "react": ">=18",

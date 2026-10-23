@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { labPrefix } from '../state/labRecords';
 import { Persistence } from '../state/Persistence';
 import { FloatingPanel } from './FloatingPanel';
@@ -12,6 +11,7 @@ import { FloatingPanel } from './FloatingPanel';
 // synchronously inside the effect — before a test could register an element.
 const sizes = { host: { w: 400, h: 300 }, panel: { w: 100, h: 40 } };
 const realRO = globalThis.ResizeObserver;
+const realCapture = Element.prototype.setPointerCapture;
 
 beforeEach(() => {
   localStorage.clear();
@@ -34,6 +34,7 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.ResizeObserver = realRO;
+  Element.prototype.setPointerCapture = realCapture;
 });
 
 /** Renders a panel in a 400x300 host, the panel itself measuring 100x40. */
@@ -64,54 +65,19 @@ describe('FloatingPanel', () => {
     expect(panel.style.top).toBe('248px'); // 300 - 40 - 12
   });
 
-  it('honors the anchor it is given', () => {
+  it('starts in the anchor it is given', () => {
     const { panel } = renderPanel(<FloatingPanel anchor="top-right">x</FloatingPanel>);
     expect(panel.style.left).toBe('288px'); // 400 - 100 - 12
     expect(panel.style.top).toBe('12px');
   });
 
-  it('honors a custom inset', () => {
+  it('passes its inset through', () => {
     const { panel } = renderPanel(
       <FloatingPanel anchor="top-left" inset={30}>
         x
       </FloatingPanel>,
     );
     expect(panel.style.left).toBe('30px');
-    expect(panel.style.top).toBe('30px');
-  });
-
-  it('stays hidden until it has been measured and placed', () => {
-    sizes.panel = { w: 0, h: 0 };
-    const { panel } = renderPanel(<FloatingPanel>x</FloatingPanel>);
-    // The strategy withholds an item with no size, so there is no rect to paint.
-    expect(panel.getAttribute('data-placed')).toBeNull();
-  });
-
-  it('measures its border box, so padding does not push it past a corner', () => {
-    // Same content box, but 8px padding and a 1px border on every side.
-    const realObserve = globalThis.ResizeObserver;
-    globalThis.ResizeObserver = class {
-      #cb: ResizeObserverCallback;
-      constructor(cb: ResizeObserverCallback) {
-        this.#cb = cb;
-      }
-      observe(target: Element) {
-        const isPanel = target.classList.contains('lk-floating-panel');
-        const { w, h } = isPanel ? sizes.panel : sizes.host;
-        const contentRect = { width: w, height: h, x: 0, y: 0, top: 0, left: 0 };
-        const entry = {
-          target,
-          contentRect,
-          ...(isPanel ? { borderBoxSize: [{ inlineSize: w + 18, blockSize: h + 18 }] } : {}),
-        };
-        this.#cb([entry as unknown as ResizeObserverEntry], this);
-      }
-      unobserve() {}
-      disconnect() {}
-    } as unknown as typeof ResizeObserver;
-    const { panel } = renderPanel(<FloatingPanel anchor="top-right">x</FloatingPanel>);
-    globalThis.ResizeObserver = realObserve;
-    expect(panel.style.left).toBe('270px'); // 400 - (100 + 18) - 12
   });
 
   it('marks itself placed once it has a rect', () => {
@@ -120,7 +86,7 @@ describe('FloatingPanel', () => {
   });
 });
 
-describe('FloatingPanel dragging', () => {
+describe('FloatingPanel dragging, through useFloatingPlacement', () => {
   it('marks itself dragging once the pointer moves, not on the press', () => {
     const { panel } = renderPanel(<FloatingPanel>x</FloatingPanel>);
     fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
@@ -129,106 +95,6 @@ describe('FloatingPanel dragging', () => {
     expect(panel.dataset.dragging).toBe('true');
     fireEvent.pointerUp(panel);
     expect(panel.dataset.dragging).toBeUndefined();
-  });
-
-  it('becomes a drag at the kit drag threshold, not before', () => {
-    const { panel } = renderPanel(<FloatingPanel>x</FloatingPanel>);
-    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(panel, { clientX: 100 + DRAG_THRESHOLD_PX - 0.5, clientY: 100 });
-    expect(panel.dataset.dragging).toBeUndefined();
-    fireEvent.pointerMove(panel, { clientX: 100 + DRAG_THRESHOLD_PX, clientY: 100 });
-    expect(panel.dataset.dragging).toBe('true');
-    fireEvent.pointerUp(panel);
-  });
-
-  it('a press that never moves is not a drag', () => {
-    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
-    const before = panel.style.left;
-    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
-    fireEvent.pointerUp(panel, { clientX: 100, clientY: 100 });
-    expect(panel.dataset.dragging).toBeUndefined();
-    expect(panel.style.left).toBe(before);
-  });
-
-  it('moves with the pointer, accumulating across moves', () => {
-    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
-    expect(panel.style.left).toBe('12px');
-    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(panel, { clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
-    expect(panel.style.top).toBe('80px');
-    fireEvent.pointerMove(panel, { clientX: 250, clientY: 180 });
-    expect(panel.style.left).toBe('150px');
-    expect(panel.style.top).toBe('80px');
-  });
-
-  it('snaps to a corner when dropped near one', () => {
-    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
-    fireEvent.pointerDown(panel, { clientX: 0, clientY: 0 });
-    // Aim at the bottom-right corner; the snap threshold captures it.
-    fireEvent.pointerMove(panel, { clientX: 400, clientY: 300 });
-    expect(panel.style.left).toBe('288px'); // 400 - 100 - 12
-    expect(panel.style.top).toBe('248px'); // 300 - 40 - 12
-  });
-
-  it('refuses a corner it was not given', () => {
-    const { panel } = renderPanel(
-      <FloatingPanel anchor="top-left" snapCorners={['top-left']}>
-        x
-      </FloatingPanel>,
-    );
-    fireEvent.pointerDown(panel, { clientX: 0, clientY: 0 });
-    fireEvent.pointerMove(panel, { clientX: 400, clientY: 300 });
-    // Clamped inside the container, but not snapped to the bottom-right inset.
-    expect(panel.style.left).toBe('300px');
-    expect(panel.style.top).toBe('260px');
-  });
-
-  it('does not start a drag from an interactive child', () => {
-    const { panel } = renderPanel(
-      <FloatingPanel>
-        <button type="button">press</button>
-      </FloatingPanel>,
-    );
-    fireEvent.pointerDown(screen.getByRole('button'), { clientX: 10, clientY: 10 });
-    expect(panel.dataset.dragging).toBeUndefined();
-  });
-
-  it('does not start a drag from a child opting out', () => {
-    const { panel } = renderPanel(
-      <FloatingPanel>
-        <span data-no-drag="">nope</span>
-      </FloatingPanel>,
-    );
-    fireEvent.pointerDown(screen.getByText('nope'), { clientX: 10, clientY: 10 });
-    expect(panel.dataset.dragging).toBeUndefined();
-  });
-
-  it('stops the pointerdown reaching a pan/zoom surface underneath', () => {
-    const onDown = vi.fn();
-    const { container } = render(
-      <div onPointerDown={onDown}>
-        <FloatingPanel>x</FloatingPanel>
-      </div>,
-    );
-    fireEvent.pointerDown(container.querySelector('.lk-floating-panel') as HTMLElement, {
-      clientX: 5,
-      clientY: 5,
-    });
-    expect(onDown).not.toHaveBeenCalled();
-  });
-
-  it('lets a pointerdown on an interactive child through to the surface', () => {
-    const onDown = vi.fn();
-    render(
-      <div onPointerDown={onDown}>
-        <FloatingPanel>
-          <button type="button">press</button>
-        </FloatingPanel>
-      </div>,
-    );
-    fireEvent.pointerDown(screen.getByRole('button'), { clientX: 5, clientY: 5 });
-    expect(onDown).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -317,133 +183,5 @@ describe('a child that is not a native control', () => {
     const row = screen.getByTestId('row');
     fireEvent.pointerDown(row, { pointerId: 1, button: 0, clientX: 40, clientY: 40 });
     expect(captured).toEqual([]);
-  });
-});
-
-describe('a clickable row nested in a list, the shape a floating panel usually holds', () => {
-  it('does not capture the pointer on a press two ancestors below the panel', () => {
-    const captured: number[] = [];
-    Element.prototype.setPointerCapture = (id: number) => {
-      captured.push(id);
-    };
-    render(
-      <FloatingPanel>
-        <ul>
-          <li>
-            {/* biome-ignore lint/a11y/useSemanticElements: a non-native control is the subject */}
-            <span data-testid="row" role="button" tabIndex={0}>
-              row
-            </span>
-          </li>
-        </ul>
-      </FloatingPanel>,
-    );
-    fireEvent.pointerDown(screen.getByTestId('row'), {
-      pointerId: 1,
-      button: 0,
-      clientX: 40,
-      clientY: 40,
-    });
-    expect(captured).toEqual([]);
-  });
-
-  it('still drags when the press that started in the list actually moves', () => {
-    const { panel } = renderPanel(
-      <FloatingPanel anchor="top-left">
-        <ul>
-          <li>row</li>
-        </ul>
-      </FloatingPanel>,
-    );
-    fireEvent.pointerDown(screen.getByText('row'), { pointerId: 1, clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 100 });
-    expect(panel.dataset.dragging).toBe('true');
-  });
-});
-
-describe('FloatingPanel drag lifecycle', () => {
-  const realCapture = Element.prototype.setPointerCapture;
-  afterEach(() => {
-    Element.prototype.setPointerCapture = realCapture;
-  });
-
-  it('keeps dragging from moves the panel never sees, and ends on a release off it', () => {
-    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
-    fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
-    expect(panel.dataset.dragging).toBe('true');
-    expect(panel.style.left).toBe('100px');
-    fireEvent.pointerUp(document.body, { pointerId: 1, clientX: 200, clientY: 180 });
-    expect(panel.dataset.dragging).toBeUndefined();
-    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
-  });
-
-  // The other half of the rule — a detached origin does cancel — is owned by
-  // pointerSession.test.ts, which exercises it without React in the way.
-  it('keeps dragging when capture is lost and the panel is still in the document', () => {
-    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
-    fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
-    // Chrome releases capture a beat before it delivers pointerup, so ending
-    // here throws away a release that has already been dispatched.
-    fireEvent(panel, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
-    expect(panel.dataset.dragging).toBe('true');
-    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 180 });
-    expect(panel.style.left).toBe('200px');
-  });
-
-  it('reads a move with nothing held as the release that never arrived', () => {
-    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
-    fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
-    expect(panel.dataset.dragging).toBe('true');
-    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 0, clientX: 300, clientY: 180 });
-    expect(panel.dataset.dragging).toBeUndefined();
-    expect(panel.style.left).toBe('100px');
-  });
-
-  it('captures the pointer only once the press crosses the drag threshold', () => {
-    // A proxy for the real symptom: jsdom's setPointerCapture never retargets,
-    // so the child click a capture-on-press would swallow cannot be observed.
-    const captured: number[] = [];
-    Element.prototype.setPointerCapture = (id: number) => {
-      captured.push(id);
-    };
-    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
-    fireEvent.pointerDown(panel, { pointerId: 7, buttons: 1, clientX: 100, clientY: 100 });
-    expect(captured).toEqual([]);
-    fireEvent.pointerMove(document.body, { pointerId: 7, buttons: 1, clientX: 140, clientY: 100 });
-    expect(captured).toEqual([7]);
-  });
-
-  it('drops its document listeners when the panel unmounts mid-drag', () => {
-    const added: string[] = [];
-    const removed: string[] = [];
-    const realAdd = document.addEventListener.bind(document);
-    const realRemove = document.removeEventListener.bind(document);
-    const addSpy = vi
-      .spyOn(document, 'addEventListener')
-      .mockImplementation((type, listener, opts) => {
-        added.push(String(type));
-        realAdd(type as never, listener as never, opts as never);
-      });
-    const removeSpy = vi
-      .spyOn(document, 'removeEventListener')
-      .mockImplementation((type, listener, opts) => {
-        removed.push(String(type));
-        realRemove(type as never, listener as never, opts as never);
-      });
-    try {
-      const { panel, unmount } = renderPanel(<FloatingPanel>x</FloatingPanel>);
-      fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
-      expect(added).toContain('pointermove');
-      unmount();
-      expect(removed).toContain('pointermove');
-    } finally {
-      addSpy.mockRestore();
-      removeSpy.mockRestore();
-    }
   });
 });

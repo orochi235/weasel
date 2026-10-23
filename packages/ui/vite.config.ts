@@ -38,6 +38,7 @@ const entries: Record<string, string> = {
   'color/index': resolve(import.meta.dirname, 'src/color/index.ts'),
   paintGradientTrack: resolve(import.meta.dirname, 'src/paintGradientTrack.tsx'),
   kitSettings: resolve(import.meta.dirname, 'src/kitSettings.ts'),
+  'floating/index': resolve(import.meta.dirname, 'src/floating/index.ts'),
 };
 for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   if (!dirent.isDirectory()) continue;

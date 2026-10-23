@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { Corner } from 'windease';
 import type { BarOrientation } from '../Bar';
 
 export type DockEdge = 'top' | 'bottom' | 'left' | 'right';
@@ -28,7 +29,7 @@ export interface DockBar {
 export interface FloatPlace {
   x: number;
   y: number;
-  anchor: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | null;
+  anchor: Corner | null;
   orientation: BarOrientation;
 }
 
