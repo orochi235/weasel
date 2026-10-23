@@ -6,7 +6,7 @@ export interface Crumb {
 
 const bare = (label: string): string => label.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 
-/** Whether a story's name only restates its component's: `HeadingControl` under `…/Heading control`. */
+/** Whether a story's name only restates its component's: `KeyDiagram` under `…/KeyDiagram`. */
 export function restatesTitle(title: string, name: string): boolean {
   return bare(title.slice(title.lastIndexOf('/') + 1)) === bare(name);
 }

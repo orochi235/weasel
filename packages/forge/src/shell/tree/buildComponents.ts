@@ -113,7 +113,7 @@ function parentOf(row: ComponentRow, byPath: ReadonlyMap<string, ComponentRow>):
  * is a `Gallery` folder inside an `Icons` folder, which it shares with any
  * other row of its library widened to the same prefix. Every component is a
  * folder carrying its index page and holding its stories. A component whose
- * title extends another's, `Prefs/Action rows` beside `Prefs`, is a folder inside
+ * title extends another's, `Prefs/PrefsForm` beside `Prefs`, is a folder inside
  * that one, ahead of its stories as in the tree. A folder a gallery's label opened,
  * holding only that gallery, is folded into it. A component whose one story restates its
  * name is that story.

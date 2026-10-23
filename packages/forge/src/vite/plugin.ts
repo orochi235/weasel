@@ -1,6 +1,7 @@
 import { globSync, readFileSync, statSync } from 'node:fs';
 import { basename, relative, resolve, sep } from 'node:path';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
+import { byComponent } from '../story/indexPages.ts';
 import type { DepGraph, IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
 import { createDepGraph, type DepGraphBuilder, type ResolveImport } from './depGraph.ts';
@@ -90,7 +91,7 @@ export function forge(options: ForgeOptions): Plugin[] {
     );
     return byFile;
   };
-  const index = () => [...files().values()].flat();
+  const index = () => byComponent([...files().values()].flat());
 
   /**
    * Decides, for each of `targets`, which imports reached through another module are forge's `meta`/`story`, and
