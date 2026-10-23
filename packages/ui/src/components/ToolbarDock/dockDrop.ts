@@ -30,9 +30,12 @@ export interface DockPoint {
 
 const isVertical = (spec: DockSpec | undefined) => spec?.edge === 'left' || spec?.edge === 'right';
 
-/** The ids of the bars under `root` that draw something. A bar drawn as nothing keeps its place in the layout. */
+/** Whether the element a dock draws round a bar holds anything: a bar drawn as nothing keeps its place but no room. */
+const isDrawn = (slot: Element): boolean => slot.firstChild !== null;
+
+/** The ids of the bars under `root` that draw something. */
 export function drawnBars(root: HTMLElement): Set<string> {
-  return new Set(Array.from(root.querySelectorAll(`[${DOCK_BAR}]`)).filter((el) => el.firstChild).map((el) => el.getAttribute(DOCK_BAR)!));
+  return new Set(Array.from(root.querySelectorAll(`[${DOCK_BAR}]`)).filter(isDrawn).map((el) => el.getAttribute(DOCK_BAR)!));
 }
 
 /** `layout` with only the bars in `drawn`, and `barId`, left in its rows; rows left empty stay, so row indices hold. */
@@ -63,7 +66,7 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
     const box = el.getBoundingClientRect();
     const rows = Array.from(el.querySelectorAll<HTMLElement>(':scope > [data-dock-row]'), (row) => {
       const r = row.getBoundingClientRect();
-      const drawn = Array.from(row.querySelectorAll<HTMLElement>(`:scope > [${DOCK_BAR}]`)).filter((bar) => bar.firstChild);
+      const drawn = Array.from(row.querySelectorAll<HTMLElement>(`:scope > [${DOCK_BAR}]`)).filter(isDrawn);
       const bars = drawn.map((bar) => {
         const b = bar.getBoundingClientRect();
         return { id: bar.getAttribute(DOCK_BAR)!, at: vertical ? b.top + b.height / 2 : b.left + b.width / 2 };

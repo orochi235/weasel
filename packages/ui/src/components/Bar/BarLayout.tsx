@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf, type PrefOrder } from '@weasel-js/prefs';
 import type { TrackShape } from '@weasel-js/geom';
@@ -140,7 +140,7 @@ function BarLine(props: BarLayoutProps) {
   const leading = useBarLead(barLead(lead, label, icon));
 
   const menu = overflow === 'menu';
-  const { bar, kept } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
+  const { bar, kept, natural } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
   const { line, rest } = splitBarItems(shown, kept);
   const reorder = useBarReorder({ root: bar, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (_, p) => (vertical ? p.clientY : p.clientX) });
   const keys = useBarReorderKeys({ root: bar, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical });
@@ -154,6 +154,7 @@ function BarLine(props: BarLayoutProps) {
       className={[s.bar, framed === 'segmented' ? s.segmented : framed && s.framed, className].filter(Boolean).join(' ')}
       data-orientation={orientation}
       data-overflow={menu ? 'menu' : undefined}
+      style={natural === undefined ? undefined : ({ '--bar-natural': `${natural}px` } as CSSProperties)}
       role={label === undefined ? undefined : 'toolbar'}
       aria-label={label}
       aria-orientation={label === undefined ? undefined : orientation}

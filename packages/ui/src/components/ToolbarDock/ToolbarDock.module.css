@@ -91,12 +91,6 @@
   display: none;
 }
 
-/* A bar that folds what does not fit into a menu takes the room its row has, so its slot has to as well, even where
-   the host wraps the bar in an element of its own. */
-.slot:has([data-overflow='menu']) {
-  flex: 1 1 auto;
-}
-
 /* A bar a drag has lifted. */
 .slot[data-dock-dragging] {
   opacity: 0.5;

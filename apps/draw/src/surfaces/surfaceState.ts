@@ -1,7 +1,7 @@
 // Each surface asset's chrome, persisted under the `ui.surfaces` pref so the
 // inline switch, chevron, and ×, the View menu, and the Preferences dialog edit the same map.
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { PrefOrder } from '@weasel-js/prefs';
 import type { AppCommands } from '../appCommands';
 import { drawPrefs, removeOnceStored, usePref, whenWritable } from '../prefs';
@@ -24,7 +24,7 @@ export interface SurfaceBinding {
   onReorder: (order: PrefOrder) => void;
 }
 
-/** Every asset in `assets`, in order, bound to its persisted chrome. */
+/** Every asset in `assets`, in order, bound to its persisted chrome. The same array until either changes. */
 export function useSurfaces(assets: readonly SurfaceAsset[] = SURFACE_ASSETS): SurfaceBinding[] {
   const [value, setValue] = usePref('ui.surfaces');
   const patch = useCallback(
@@ -33,7 +33,7 @@ export function useSurfaces(assets: readonly SurfaceAsset[] = SURFACE_ASSETS): S
     },
     [setValue],
   );
-  return assets.map((asset) => {
+  return useMemo((): SurfaceBinding[] => assets.map((asset): SurfaceBinding => {
     const state = value[asset.id] ?? {};
     const { id } = asset;
     return {
@@ -48,7 +48,7 @@ export function useSurfaces(assets: readonly SurfaceAsset[] = SURFACE_ASSETS): S
         onHide: () => patch(id, (p) => ({ ...p, hidden: true })),
       },
     };
-  });
+  }), [assets, value, patch]);
 }
 
 /** Whether chrome `id` is hidden, and its toggle, over `ui.surfaces`: what the View menu's rows read and run. */

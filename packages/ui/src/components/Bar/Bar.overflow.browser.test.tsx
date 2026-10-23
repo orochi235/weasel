@@ -122,3 +122,26 @@ it('scrolls with every cell on the line unless asked for the menu', () => {
   expect(more()).toBeNull();
   expect(bar().scrollWidth).toBeGreaterThan(bar().clientWidth);
 });
+
+it('in a row sized to its content, takes the length that holds every cell, and opens the menu only once squeezed', async () => {
+  const el = room(1400);
+  el.style.display = 'flex';
+  const host = document.createElement('div');
+  host.style.display = 'flex';
+  host.style.minWidth = '0';
+  el.append(host);
+  renderWithIcons(<Bar schema={schema} label="Numbers" overflow="menu" />, { container: host });
+  await expect.poll(onLine).toEqual(NAMES);
+  expect(more()).toBeNull();
+  const natural = Number.parseFloat(bar().style.getPropertyValue('--bar-natural'));
+  expect(bar().getBoundingClientRect().width).toBeCloseTo(natural, 0);
+  expect(host.getBoundingClientRect().width).toBeLessThan(1400);
+
+  el.style.width = '300px';
+  await expect.poll(() => more()).not.toBeNull();
+  expect(onLine().length).toBeLessThan(NAMES.length);
+
+  el.style.width = '1400px';
+  await expect.poll(onLine).toEqual(NAMES);
+  expect(more()).toBeNull();
+});

@@ -7,6 +7,8 @@ export type DockEdge = 'top' | 'bottom' | 'left' | 'right';
 export interface DockSpec {
   id: string;
   edge: DockEdge;
+  /** A class for the dock's own element, holding its rows: the host's hook for styling one dock. */
+  className?: string;
 }
 
 /** A toolbar the host offers, and the docks it may sit in. */

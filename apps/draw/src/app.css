@@ -15,10 +15,9 @@
    the tool-options strip, the sidebars and the workspace ----------------- */
 .wd-dock {
   flex: 1;
-  height: auto;
 }
 
-.wd-dock [data-dock='strip'] {
+.wd-dock-strip {
   padding: var(--wzl-space-2) var(--wzl-space-4);
   background: var(--wzl-surface);
   border-bottom: 1px solid var(--wzl-border);

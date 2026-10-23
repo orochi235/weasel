@@ -12,6 +12,8 @@ import { Caret } from '../Caret';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
 import f from '../field.module.css';
+import { DockBarContext } from '../ToolbarDock/dockContext';
+import { useBarLead } from './barLeadHandle';
 import { BarSideContext } from './barSide';
 import s from './Bar.module.css';
 
@@ -40,13 +42,15 @@ export interface BarMenuProps extends BarMenuSources {
 /**
  * A bar's cell for a group drawn `as: 'menu'`: a button that opens the group
  * as the DOM menu the context menu host draws — actions as items, flags as
- * checked items, choices as radio rows, nested groups as submenus.
+ * checked items, choices as radio rows, nested groups as submenus. Drawn as a
+ * bar of a movable `ToolbarDock`, a grip before the button is its handle.
  */
 export function BarMenu({ label, icon, description, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
   const registry = useActionsRegistry();
   const resolveMenu = useBarMenuResolver();
   const trigger = useMenuTrigger();
   const side = useContext(BarSideContext);
+  const handle = useBarLead(null);
 
   // `defaultOpen` holds until the menu has opened once or the reader has touched it.
   const pending = useRef(defaultOpen === true);
@@ -65,8 +69,9 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
   }, [registry, showQuiet]);
 
   return (
-    <>
+    <DockBarContext.Provider value={null}>
       {trigger.anchor}
+      {handle && <span className={s.lead} {...handle.attrs}>{handle.content}</span>}
       <SegmentTooltip content={segmentTooltipContent({ description })}>
         <button
           ref={trigger.button}
@@ -87,7 +92,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
         </button>
       </SegmentTooltip>
       {trigger.portal}
-    </>
+    </DockBarContext.Provider>
   );
 }
 

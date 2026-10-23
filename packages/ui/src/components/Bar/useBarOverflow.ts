@@ -15,16 +15,22 @@ const SLACK = 0.5;
  * button that opens the rest: all of them where the line holds every one.
  * Measured before the first paint, and again when the bar or an item on it
  * changes size. An item off the line keeps the size it last had on it.
+ *
+ * `natural` is the length the bar takes with every item on its line, frame
+ * included: what it asks its host for, so that a host sized to its content
+ * offers it that much and it opens the menu only once squeezed below it.
+ * Undefined until every item has been measured.
  */
 export function useBarOverflow(
   on: boolean,
   keys: readonly string[],
   vertical: boolean,
-): { bar: RefObject<HTMLDivElement | null>; kept: number } {
+): { bar: RefObject<HTMLDivElement | null>; kept: number; natural: number | undefined } {
   const bar = useRef<HTMLDivElement | null>(null);
   const sizes = useRef(new Map<string, number>());
   const more = useRef(0);
   const [kept, setKept] = useState(Number.POSITIVE_INFINITY);
+  const [natural, setNatural] = useState<number | undefined>(undefined);
   const signature = keys.join('\n');
 
   useLayoutEffect(() => {
@@ -41,7 +47,11 @@ export function useBarOverflow(
       const room = roomOf(el, vertical);
       const lead = el.querySelector(`:scope > [${BAR_LEAD}]`);
       if (lead !== null) room.size -= along(lead) + room.gap;
-      setKept(fitting(signature === '' ? [] : signature.split('\n'), sizes.current, more.current, room));
+      const all = signature === '' ? [] : signature.split('\n');
+      setKept(fitting(all, sizes.current, more.current, room));
+      const line = lineLength(all, sizes.current, room.gap);
+      const lead0 = lead === null ? 0 : along(lead) + (all.length > 0 ? room.gap : 0);
+      setNatural(line === undefined ? undefined : Math.ceil(line + lead0 + frameOf(el, vertical)));
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
@@ -51,7 +61,22 @@ export function useBarOverflow(
     return () => observer.disconnect();
   }, [on, signature, kept, vertical]);
 
-  return { bar, kept: on ? Math.min(kept, keys.length) : keys.length };
+  return { bar, kept: on ? Math.min(kept, keys.length) : keys.length, natural: on ? natural : undefined };
+}
+
+/** The length of `keys` laid end to end `gap` apart, or undefined while one has never been measured. */
+function lineLength(keys: readonly string[], sizes: ReadonlyMap<string, number>, gap: number): number | undefined {
+  if (keys.some((key) => !sizes.has(key))) return undefined;
+  return keys.reduce((sum, key, i) => sum + sizes.get(key)! + (i > 0 ? gap : 0), 0);
+}
+
+/** A bar's padding and border along its line. */
+function frameOf(el: HTMLElement, vertical: boolean): number {
+  const style = getComputedStyle(el);
+  const px = (value: string): number => Number.parseFloat(value) || 0;
+  return vertical
+    ? px(style.paddingTop) + px(style.paddingBottom) + px(style.borderTopWidth) + px(style.borderBottomWidth)
+    : px(style.paddingLeft) + px(style.paddingRight) + px(style.borderLeftWidth) + px(style.borderRightWidth);
 }
 
 /** The length of a bar's line inside its padding, and the gap between two items on it. */

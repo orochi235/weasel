@@ -48,7 +48,7 @@ function App() {
       {ACTIONS.map((a) => <Register key={a.id} a={a} />)}
       <div data-testid="strip">
         <CommandBar />
-          <StripDock />
+        <StripDock />
       </div>
       <div data-testid="sidebar">
         <RightSidebar {...({} as SidebarHost)} />

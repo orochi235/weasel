@@ -41,14 +41,22 @@
   user-select: none;
 }
 
-/* Opening what does not fit, a bar takes its host's room along the line: one only as long as its
-   cells could not tell when another fits. */
+/* Opening what does not fit, a bar asks for the length that holds every cell (`--bar-natural`, which it measures),
+   so a host sized to its content gives it that much. Squeezed below it, the bar shrinks and opens the rest from a
+   menu; given room again, it grows back to it. */
 .bar[data-overflow='menu'] {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  box-sizing: border-box;
+  inline-size: var(--bar-natural, auto);
+  max-inline-size: 100%;
   overflow: visible;
 }
 
 .bar[data-overflow='menu'][data-orientation='vertical'] {
+  inline-size: auto;
+  max-inline-size: none;
+  block-size: var(--bar-natural, auto);
+  max-block-size: 100%;
   min-block-size: 0;
 }
 

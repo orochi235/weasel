@@ -49,12 +49,13 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
             {filled.map((dock) => {
               const rows = resolved.docks[dock.id]!;
               return (
-                <div key={dock.id} className={s.dock} data-dock={dock.id} data-dock-unavailable={view?.unavailable.has(dock.id) ? '' : undefined}>
+                <div key={dock.id} className={[s.dock, dock.className].filter(Boolean).join(' ')} data-dock={dock.id} data-dock-unavailable={view?.unavailable.has(dock.id) ? '' : undefined}>
                   {rows.map((row, i) => (
                     <DockRow key={i} index={i} dock={dock.id} view={view}>
                       {row.map((id) => {
                         const bar = byId.get(id);
-                        const drawn = bar?.render(orientation);
+                        if (!bar) return null;
+                        const drawn = bar.render(orientation);
                         if (drawn == null || drawn === false) return null;
                         const value = { barId: id, label: bar.label, movable, ...(movable ? move.handlers(id) : {}) };
                         return (

@@ -1,12 +1,12 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { ToolbarDock, type DockBar, type DockSpec } from '@weasel-js/ui/components/ToolbarDock';
 import { usePref } from '../prefs';
 import { SchemaBar, SchemaMenu } from './SchemaSurfaces';
 import { SwitchMenus } from './surfaceSwitch';
-import { useSurfaces } from './surfaceState';
+import { useSurfaces, type SurfaceBinding } from './surfaceState';
 import { isSchemaAsset } from './types';
 
-const STRIP_DOCKS: readonly DockSpec[] = [{ id: 'strip', edge: 'top' }];
+const STRIP_DOCKS: readonly DockSpec[] = [{ id: 'strip', edge: 'top', className: 'wd-dock-strip' }];
 
 const SWITCH_MENUS: DockBar = { id: 'switch-menus', label: 'Switch menus', docks: ['strip'], render: () => <SwitchMenus /> };
 
@@ -15,8 +15,13 @@ const SWITCH_MENUS: DockBar = { id: 'switch-menus', label: 'Switch menus', docks
  * hidden or shown as a panel draws nothing but stays offered, so it keeps its place for when it comes back.
  */
 export function useStripBars(): DockBar[] {
+  const bindings = useSurfaces();
+  return useMemo(() => stripBars(bindings), [bindings]);
+}
+
+function stripBars(bindings: readonly SurfaceBinding[]): DockBar[] {
   const bars: DockBar[] = [SWITCH_MENUS];
-  for (const { asset, surface, chrome, order, onReorder } of useSurfaces()) {
+  for (const { asset, surface, chrome, order, onReorder } of bindings) {
     if (!isSchemaAsset(asset) || !asset.surfaces.some((s) => s === 'bar' || s === 'menu')) continue;
     bars.push({
       id: asset.id,

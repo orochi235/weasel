@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefOrder } from '@weasel-js/prefs';
-import { BarLayout, type BarNode, type BarOrientation } from '../Bar';
+import { BarLayout, BarMenu, type BarNode, type BarOrientation } from '../Bar';
 import { ToolbarDock } from './ToolbarDock';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 
@@ -308,6 +308,33 @@ describe('a bar drawn as nothing', () => {
     act(() => void fireEvent.keyDown(handle('File'), { key: 'ArrowRight', altKey: true }));
     expect(onChange.mock.calls[0]![0].docks.top).toEqual([['ghost', 'view', 'nil', 'file', 'shape']]);
     expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('File toolbar, row 1, position 2 of 3');
+  });
+});
+
+describe('a bar drawn as a menu button', () => {
+  const MENU = { name: 'Tools', as: 'menu', children: {} } as const;
+  const tools = bar('tools', { render: () => <BarMenu label="Tools" schema={MENU} values={() => undefined} /> });
+  const offered = [bars[0]!, bars[1]!, tools];
+
+  it('has one handle, before its button', () => {
+    setup(start([['file', 'tools']]), offered);
+    const handles = screen.getAllByRole('button', { name: 'Move Tools toolbar' });
+    expect(handles).toHaveLength(1);
+    expect(handles[0]).toHaveAttribute('data-bar-lead');
+    expect(handles[0]!.nextElementSibling).toBe(screen.getByRole('button', { name: 'Tools' }));
+  });
+
+  it('moves by a drag on its handle', () => {
+    const onChange = setup(start([['file', 'view', 'tools']]), offered);
+    press(handle('Tools'), [250, 15], [[240, 15], [40, 15]]);
+    release([40, 15]);
+    expect(onChange.mock.calls[0]![0].docks.top).toEqual([['tools', 'file', 'view']]);
+  });
+
+  it('moves by Alt+arrows on its handle', () => {
+    const onChange = setup(start([['tools', 'file', 'view']]), offered);
+    act(() => void fireEvent.keyDown(handle('Tools'), { key: 'ArrowRight', altKey: true }));
+    expect(onChange.mock.calls[0]![0].docks.top).toEqual([['file', 'tools', 'view']]);
   });
 });
 
