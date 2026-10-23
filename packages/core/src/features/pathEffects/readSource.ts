@@ -29,7 +29,7 @@ export function readEffectSource(dep: DerivedDep<unknown>): EffectSource | null 
 
 function readShape(dep: DerivedDep<unknown>): EffectSource | null {
   const data = (dep.node.data ?? {}) as { fill?: Fill | null; stroke?: Stroke | null };
-  const { fill, stroke } = pathPaintOf(data);
+  const { fill, stroke } = pathPaintOf(data, dep.inherited);
   const paint = { fill, stroke: stroke ?? null };
   const shown = dep.path;
   if (shown !== null) return { world: shown, ...paint };

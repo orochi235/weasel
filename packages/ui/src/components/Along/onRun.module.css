@@ -2,8 +2,16 @@
  * writes `transform: var(--on-run) …` and must outrank this one: where this sheet loads is not fixed. */
 .onRun {
   --on-run: translate(-50%, -50%) rotate(var(--at-angle));
+  /* Appended last by a part that reads, so it turns about its own center and keeps its side of the run. */
+  --upright: rotate(var(--at-upright, 0deg));
   position: absolute;
   left: var(--at-x);
   top: var(--at-y);
   transform: var(--on-run);
+}
+
+/* A part that reads: turned upright where the run would stand it upside down. */
+.uprightOnRun {
+  composes: onRun;
+  transform: var(--on-run) var(--upright);
 }

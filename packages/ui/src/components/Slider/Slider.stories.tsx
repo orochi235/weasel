@@ -287,6 +287,23 @@ export const ZoomAlongALensRim: Story = {
   render: () => <ZoomAlongALensRimStory />,
 };
 
+function HueAlongADialStory() {
+  const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 0.2 }, { value: 0.65 }]);
+  const hue = paintGradientTrack({ gradient: (t) => oklchToHex(0.7, 0.18, t * 360), samples: 24, activeRange: [thumbs[0]!.value, thumbs[1]!.value] });
+  return (
+    <div className={st.lens}>
+      <Along arc={{ start: 225, end: 135, inset: 16 }}>
+        <Slider min={0} max={1} step={0.01} constraint="ordered" trackHeight={14} renderTrack={hue} thumbs={thumbs} onInput={setThumbs} />
+      </Along>
+    </div>
+  );
+}
+
+/** A hue ramp round three quarters of a dial, hatched outside the two thumbs. */
+export const HueAlongADial: Story = {
+  render: () => <HueAlongADialStory />,
+};
+
 function evenlySpacedThumbs(n: number, min: number, max: number): Thumb[] {
   if (n <= 1) return [{ value: (min + max) / 2 }];
   return Array.from({ length: n }, (_, i) => ({ value: min + (i / (n - 1)) * (max - min) }));

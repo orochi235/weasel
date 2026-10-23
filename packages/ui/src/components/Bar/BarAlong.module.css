@@ -7,7 +7,7 @@
 }
 
 .item {
-  composes: onRun from '../Along/onRun.module.css';
+  composes: uprightOnRun from '../Along/onRun.module.css';
   inline-size: max-content;
   pointer-events: auto;
 }

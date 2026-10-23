@@ -52,6 +52,19 @@ describe('trackRun', () => {
     expect(east.at(0.5).angle).toBeCloseTo(90);
     expect(west.at(0.5).angle).toBeCloseTo(-90);
   });
+  test("on a run across 3 o'clock, only the places whose up points down the screen are turned", () => {
+    const east = trackRun(arcShape({ center: C, radius: 100, start: 45, end: 135 }));
+    expect(east.flipped).toBe(false);
+    expect(east.at(0).angle).toBeCloseTo(45);
+    expect(east.at(1).angle).toBeCloseTo(135);
+    expect([0, 0.25, 0.5, 0.75, 1].map((g) => east.at(g).turned)).toEqual([false, false, false, true, true]);
+    expect(east.at(1).normal.y).toBeGreaterThan(0);
+  });
+  test('no place on a run along the top or the bottom is turned', () => {
+    const top = trackRun(arcShape({ center: C, radius: 100, start: 300, end: 60 }));
+    const bottom = trackRun(arcShape({ center: C, radius: 100, start: 120, end: 240 }));
+    for (const g of [0, 0.5, 1]) expect([top.at(g).turned, bottom.at(g).turned]).toEqual([false, false]);
+  });
   test('a sub-run measures its own stretch and clamps nearest to its ends', () => {
     const shape = arcShape({ center: C, radius: 100, start: 300, end: 60 });
     const r = trackRun(shape, 0.25, 0.75);

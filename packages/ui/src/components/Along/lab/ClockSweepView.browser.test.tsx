@@ -57,13 +57,14 @@ function runIn(box: Element, at: number, inset: number): TrackRun {
   return trackRun(arcShape(arcInBox(sweepArc(at, CONFIG.span, inset), { width, height })));
 }
 
-/** Parts in DOM order: each tipped as `run` says at its own spot, and laid in reading order along it. A run is
- *  turned over by its middle alone, so a part near the end of a run across 3 or 9 o'clock may tip past 90°. */
-function expectReadAlong(run: TrackRun, box: Element, parts: Element[], what: string) {
+/** Parts in DOM order: each tipped as `run` says at its own spot, and laid in reading order along it. A part that
+ *  `reads` takes a half turn more where the run's place is turned. */
+function expectReadAlong(run: TrackRun, box: Element, parts: Element[], what: string, reads: boolean) {
   expect(parts.length, what).toBeGreaterThan(1);
   const gs = parts.map((el) => gOn(run, box, el));
   parts.forEach((el, i) => {
-    const want = run.at(gs[i]!).angle;
+    const place = run.at(gs[i]!);
+    const want = place.angle + (reads && place.turned ? 180 : 0);
     expect(Math.abs(wrap(angleOf(el) - want)), `${what} part ${i} tipped ${angleOf(el).toFixed(1)}°, run says ${want.toFixed(1)}°`).toBeLessThanOrEqual(1);
   });
   for (let i = 1; i < gs.length; i++) expect(gs[i]!, `${what} parts read in order`).toBeGreaterThan(gs[i - 1]!);
@@ -79,7 +80,7 @@ test('every dial: its caption is trackRun’s verdict, and each bar item is tipp
     const run = runIn(bar, at, 16);
     expect(dial.dataset.flipped, `${at}° flipped`).toBe(String(run.flipped));
     expect(dial.dataset.reversed, `${at}° reversed`).toBe(String(run.reversed));
-    expectReadAlong(run, bar, [...bar.querySelectorAll(':scope > [data-bar-item]')], `bar at ${at}°`);
+    expectReadAlong(run, bar, [...bar.querySelectorAll(':scope > [data-bar-item]')], `bar at ${at}°`, true);
   }
 });
 
@@ -92,8 +93,19 @@ test('every dial: the slider’s stops run min to max in the run’s reading ord
     const run = runIn(along, at, 64);
     const ticks = [...dial.querySelectorAll('[data-slider-tick]')];
     expect(ticks, `${at}° ticks`).toHaveLength(3);
-    expectReadAlong(run, along, ticks, `slider at ${at}°`);
+    expectReadAlong(run, along, ticks, `slider at ${at}°`, false);
+    expectReadAlong(run, along, [...dial.querySelectorAll('[data-slider-stop-label]')], `slider labels at ${at}°`, true);
     expect(Math.abs(wrap(angleOf(thumb) - run.at(gOn(run, along, thumb)).angle)), `thumb at ${at}°`).toBeLessThanOrEqual(1);
+  }
+});
+
+test('no bar item or stop label reads upside down, even at the ends of a run across 3 or 9 o’clock', async () => {
+  const dials = await mount();
+  for (const dial of dials) {
+    const at = Number(dial.dataset.sweepAt);
+    const parts = [...dial.querySelectorAll('[data-bar-item], [data-slider-stop-label]')];
+    expect(parts.length, `${at}° parts`).toBeGreaterThan(3);
+    for (const el of parts) expect(Math.abs(wrap(angleOf(el))), `${at}° ${el.textContent || el.getAttribute('aria-label')}`).toBeLessThanOrEqual(90.5);
   }
 });
 

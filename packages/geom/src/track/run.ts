@@ -12,7 +12,14 @@ import type {
  *  `angle` the CSS rotation in degrees that tips an upright item to it (0 = upright, clockwise positive, in (-180, 180]). */
 export interface TrackPlace extends TrackStation {
   angle: number;
+  /** True when `normal` points down the screen, so an item tipped by `angle` reads upside down. A run is turned over
+   *  by one place alone, so one across 3 or 9 o'clock has turned places toward one end; an item that should read
+   *  upright turns a half turn about its own center there. Nothing else in the place reflects it. */
+  turned: boolean;
 }
+
+/** Whether an up `normal` points down the screen, y growing downward. */
+const pointsDown = (normal: Point): boolean => normal.y > 1e-9;
 
 /** The stretch `from..to` of a shape in reading order. It is itself a TrackShape: `at(g)` and `nearest(p).f` are
  *  in reading order, g = 0 at the reading start. */
@@ -45,7 +52,7 @@ export interface TrackRunOptions {
 export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunOptions = {}): TrackRun {
   const { side = 'auto', about = (from + to) / 2 } = options;
   const mid = shape.at(about);
-  const flipped = side === 'auto' ? mid.normal.y > 1e-9 : side === 'flipped';
+  const flipped = side === 'auto' ? pointsDown(mid.normal) : side === 'flipped';
   const sgn = flipped ? -1 : 1;
   const reading = (n: Point): Point => ({ x: -(sgn * n.y), y: sgn * n.x });
   const r0 = reading(mid.normal);
@@ -59,11 +66,13 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
     const s = options?.open ? shape.at(toF(g), options) : shape.at(toF(clamp(g, 0, 1)));
     const dir = reading(s.normal);
     const angle = (Math.atan2(dir.y, dir.x) * 180) / Math.PI;
+    const normal = { x: sgn * s.normal.x, y: sgn * s.normal.y };
     return {
       point: s.point,
       tangent: dir,
-      normal: { x: sgn * s.normal.x, y: sgn * s.normal.y },
+      normal,
       angle: angle === 0 ? 0 : angle === -180 ? 180 : angle,
+      turned: pointsDown(normal),
     };
   };
 

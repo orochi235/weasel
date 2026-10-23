@@ -35,6 +35,13 @@ describe('marks', () => {
     expect([...path.coords]).toEqual([100, 240, 140, 240]);
   });
 
+  it('paints an \'inherit\' fill and stroke in what it inherits', () => {
+    const node = { ...drawn, data: { ...drawn.data, fill: 'inherit', stroke: 'inherit' } };
+    const inherited = { fill: { paint: { color: '#0f0' } }, stroke: { paint: { color: '#00f' }, width: 2 } };
+    const [cmd] = markShape().paint(node as never, drawn.pose as never, { inherited } as never);
+    expect(cmd).toMatchObject({ fill: { paint: { color: '#0f0' } }, stroke: { paint: { color: '#00f' }, width: 2 } });
+  });
+
   it('pins a text mark to a point on the node, by a point of its own', () => {
     expect(text.dependsOn).toEqual(['a']);
     expect(text.data?.text).toBe('0.5');

@@ -1,6 +1,6 @@
 import { INHERIT } from '@weasel-js/paint';
 import type { Node, NodeId } from 'core/scene/types';
-import { inheritedPaintOf, inheritsPaint, sceneAncestors, type InheritedPaint } from 'core/scene/inheritedPaint';
+import { inheritedPaintIn, inheritedPaintOf, sceneAncestors, type InheritedPaint } from 'core/scene/inheritedPaint';
 import type { SceneViewDrawOne } from './nodeShapeTypes';
 
 /** The part of a scene the lookup reads. */
@@ -8,15 +8,7 @@ type ParentLookup<TNode> = { get(id: NodeId): TNode | undefined };
 
 type PaintedNode = { data?: unknown; parent?: NodeId | null };
 
-/** What `node`'s `'inherit'` fields take from its containers in `scene`, or
- *  `undefined` for a node that inherits nothing. */
-export function inheritedPaintIn<TNode extends PaintedNode>(
-  scene: ParentLookup<TNode>,
-  node: TNode,
-): InheritedPaint | undefined {
-  if (!inheritsPaint(node)) return undefined;
-  return inheritedPaintOf(node, sceneAncestors((id: never) => scene.get(id), node));
-}
+export { inheritedPaintIn };
 
 const INHERITS_BOTH = { data: { fill: INHERIT, stroke: INHERIT } };
 
