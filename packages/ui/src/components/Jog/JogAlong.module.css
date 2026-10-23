@@ -1,14 +1,6 @@
-/* A Jog laid along a track shape: the shape's coordinates are this box's, and only the controls take input. */
+/* A Jog laid along a track shape; `useRunRow` places its parts. */
 .root {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+  composes: root from '../Along/runRow.module.css';
   column-gap: var(--wzl-space-2);
   color: var(--wzl-fg);
-}
-
-.item {
-  composes: onRun from '../Along/onRun.module.css';
-  inline-size: max-content;
-  pointer-events: auto;
 }

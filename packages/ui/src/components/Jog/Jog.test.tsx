@@ -3,6 +3,7 @@ import { renderWithIcons } from '../../testing/withIcons';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { arcShape, lineShape, trackRun } from '@weasel-js/geom';
 import { Along } from '../Along';
+import alongStyles from '../Along/Along.module.css';
 import { Jog } from './Jog';
 
 const props = {
@@ -76,18 +77,21 @@ describe('Jog', () => {
 });
 
 describe('Jog along a curve', () => {
-  // jsdom lays nothing out: every part is 40 wide untransformed, and every box 200 by 200 at (0, 0).
+  // jsdom lays nothing out: an Along is 200 by 200 untransformed and every other element 40 wide; every box is 200 by
+  // 200 at (0, 0).
   const realRect = Element.prototype.getBoundingClientRect;
-  const realOffset = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!;
+  const realOffset = ['offsetWidth', 'offsetHeight'].map((k) => [k, Object.getOwnPropertyDescriptor(HTMLElement.prototype, k)!] as const);
+  const isAlong = (el: HTMLElement) => el.classList.contains(alongStyles.along!);
   beforeAll(() => {
     Element.prototype.getBoundingClientRect = function box() {
       return { x: 0, y: 0, left: 0, top: 0, right: 200, bottom: 200, width: 200, height: 200, toJSON: () => {} } as DOMRect;
     };
-    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get: () => 40 });
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get(this: HTMLElement) { return isAlong(this) ? 200 : 40; } });
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get(this: HTMLElement) { return isAlong(this) ? 200 : 0; } });
   });
   afterAll(() => {
     Element.prototype.getBoundingClientRect = realRect;
-    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', realOffset);
+    for (const [k, d] of realOffset) Object.defineProperty(HTMLElement.prototype, k, d);
   });
 
   const shape = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 270, end: 90 });
@@ -95,7 +99,7 @@ describe('Jog along a curve', () => {
     const style = (el as HTMLElement).style;
     return { x: Number.parseFloat(style.getPropertyValue('--at-x')), y: Number.parseFloat(style.getPropertyValue('--at-y')), angle: Number.parseFloat(style.getPropertyValue('--at-angle')) };
   };
-  const partOf = (el: Element) => el.closest('[data-bar-item]')!;
+  const partOf = (el: Element) => el.closest('[data-jog-part]')!;
 
   it('lays its buttons and readout along the shape, in reading order, each tipped to it', () => {
     renderWithIcons(<Jog {...props} shape={shape} />);
@@ -137,6 +141,6 @@ describe('Jog along a curve', () => {
   it('stays a straight row on a line', () => {
     renderWithIcons(<Jog {...props} onScrub={() => {}} shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })} />);
     expect(screen.getByRole('slider').closest('[data-shape]')).toBeNull();
-    expect(screen.getByTestId('jog-readout').closest('[data-bar-item]')).toBeNull();
+    expect(screen.getByTestId('jog-readout').closest('[data-jog-part]')).toBeNull();
   });
 });
