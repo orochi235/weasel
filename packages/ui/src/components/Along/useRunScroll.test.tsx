@@ -8,19 +8,20 @@ import { useRunScroll } from './useRunScroll';
 const run = trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }));
 const GAP = 15;
 const lengths = [20, 20, 20, 20, 20];
+const keyOf = (el: Element): string | null => el.getAttribute('data-run-item');
 
 function mount(total: number) {
   const root = document.createElement('div');
   for (let i = 0; i < lengths.length; i++) {
     const item = document.createElement('button');
-    item.setAttribute('data-bar-item', `k${i}`);
+    item.setAttribute('data-run-item', `k${i}`);
     root.append(item);
   }
   document.body.append(root);
   const ref = { current: root };
   const drawn = { offset: 0 };
   const hook = renderHook(() => {
-    const scroll = useRunScroll({ root: ref, run, total, lengths, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
+    const scroll = useRunScroll({ root: ref, keyOf, run, total, lengths, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
     drawn.offset = scroll.offset;
     return scroll;
   });

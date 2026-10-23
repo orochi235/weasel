@@ -656,9 +656,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   right. Reading order needs an inline direction input, which bears on the `'reading' | 'track'` decision above.
 
 - **(P3) Rows other than `Bar` do not follow an `Along` yet.** `ButtonBar`, `ToggleBar`, segmented
-  controls, `SwatchStrip`, `Tabs`/`PageTabs` and `RadioGroup` still lay out on a straight line. They
-  follow on what `BarAlong` uses: geom's `placeAlongRun` for where items fall and `useRunScroll` (`Bar/`) for how a
-  run scrolls, and `placeOnRun` (`Along/placeOnRun.ts`) for the custom properties that put a part there.
+  controls, `SwatchStrip`, `Tabs`/`PageTabs` and `RadioGroup` still lay out on a straight line. Each builds on
+  `useRunRow` (`Along/useRunRow.tsx`), which `BarAlong` uses: it places a component's keyed children along the run
+  with geom's `placeAlongRun`, scrolls an overlong run with `useRunScroll`, and draws the drag band and end chevrons.
+  Planned in arcs (2026-10-22): segmented controls (`ToggleBar`, `ButtonBar`, `OptionsBar`), with the well and
+  the selected fill stroked along the run; `Tabs`/`PageTabs`, whose drag-reorder measures along the run;
+  `RadioGroup`, its label as the lead; then `SwatchStrip`, whose layout on an arc is undecided.
 
 - **(P3) Gaps left in controls along a curve.**
   - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.

@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type P
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
-import { boxPoint } from '../Along/boxPoint';
-import { BAR_ITEM, BAR_LEAD } from './useBarOverflow';
+import { boxPoint } from './boxPoint';
+import type { RunKeyOf } from './useItemLengths';
 
 /** Px a press must travel along the run before it is a scroll rather than a press on an item. */
 export const SCROLL_SLOP = 4;
@@ -20,9 +20,11 @@ const LAND = 0.25;
 /** Capture at the press would retarget the release and kill the click on whatever item was pressed. */
 const NO_CAPTURE = { capture: false } as const;
 
-/** What {@link useRunScroll} reads: the bar's root, its run, how long its items lie end to end, and where each falls now. */
+/** What {@link useRunScroll} reads: the run's root, its run, how long its items lie end to end, and where each falls now. */
 export interface RunScrollArgs {
   root: RefObject<HTMLElement | null>;
+  /** Which of the root's children lie on the run, in run order: those it reads a key off. */
+  keyOf: RunKeyOf;
   /** The band drawn across the root's box while the run scrolls, which pointers are measured through; else the root. */
   frame?: RefObject<SVGSVGElement | null>;
   run: TrackRun;
@@ -31,7 +33,7 @@ export interface RunScrollArgs {
   lengths: readonly number[];
 }
 
-/** A curved bar's offset along its run, and the handlers its root takes so a press, drag or focus moves it. */
+/** A curved run's offset along itself, and the handlers its root takes so a press, drag or focus moves it. */
 export interface RunScroll {
   offset: number;
   onPointerDownCapture: (e: ReactPointerEvent) => void;
@@ -39,17 +41,17 @@ export interface RunScroll {
 }
 
 /**
- * The offset a curved bar's items are laid back by along its run when they run past its end: moved by the wheel,
+ * The offset a curved run's items are laid back by along its run when they run past its end: moved by the wheel,
  * by a drag along the run once it travels {@link SCROLL_SLOP} px, and by focus reaching an item past either end.
  * A run whose items fit keeps offset 0 and ignores all three. The wheel and focus glide to where they send the run
  * over about {@link GLIDE_MS} ms, so items slide rather than jump; a drag follows the pointer, and a reader who
  * prefers reduced motion gets every move at once.
  */
-export function useRunScroll({ root, frame, run, total, spots, lengths }: RunScrollArgs): RunScroll {
+export function useRunScroll({ root, keyOf, frame, run, total, spots, lengths }: RunScrollArgs): RunScroll {
   const max = Math.max(0, total - run.length);
   const [shown, setShown] = useState(0);
   const offset = clamp(shown, 0, max);
-  const latest = useLatest({ max, run, spots, lengths });
+  const latest = useLatest({ max, run, spots, lengths, keyOf });
   const still = usePrefersReducedMotion();
   // Where the handlers last sent the run, ahead of the render it asks for, so two wheel events in one frame both count.
   const moved = useRef(0);
@@ -137,9 +139,9 @@ export function useRunScroll({ root, frame, run, total, spots, lengths }: RunScr
 
   const onFocusCapture = (e: ReactFocusEvent): void => {
     const el = root.current;
-    const { max: most, run: along, spots: where, lengths: sizes } = latest.current;
+    const { max: most, run: along, spots: where, lengths: sizes, keyOf: keyed } = latest.current;
     if (most <= 0 || el === null) return;
-    const index = runIndex(el, e.target as Node);
+    const index = runIndex(el, keyed, e.target as Node);
     const spot = index < 0 ? undefined : where()[index];
     if (spot === undefined) return;
     const half = (sizes[index] ?? 0) / 2;
@@ -170,9 +172,9 @@ function positionAt(frame: Element, run: TrackRun, e: { clientX: number; clientY
   return f * run.length;
 }
 
-/** Where along the run the item holding `target` falls, counting the lead: its index among `root`'s items, or -1. */
-function runIndex(root: HTMLElement, target: Node): number {
-  const items = Array.from(root.querySelectorAll(`:scope > [${BAR_ITEM}], :scope > [${BAR_LEAD}]`));
+/** Where along the run the item holding `target` falls: its index among `root`'s children `keyOf` reads a key off, or -1. */
+function runIndex(root: HTMLElement, keyOf: RunKeyOf, target: Node): number {
+  const items = Array.from(root.children).filter((child) => keyOf(child) !== null);
   return items.findIndex((item) => item.contains(target));
 }
 

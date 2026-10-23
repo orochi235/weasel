@@ -1,0 +1,53 @@
+/* A row laid along a track shape: the shape's coordinates are this box's, and only the items take input. */
+.root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.item {
+  composes: uprightOnRun from './onRun.module.css';
+  inline-size: max-content;
+  pointer-events: auto;
+}
+
+/* Set from how much of the item lies on the run, so one sliding off an end fades as it goes. */
+.item {
+  opacity: var(--along-shown, 1);
+}
+
+/* Past either end of a scrolled run: kept focusable, so Tab reaches it and focus brings it into view. */
+.item[data-clipped='past'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.band {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.bandPath {
+  fill: none;
+  touch-action: none;
+  stroke: transparent;
+  stroke-width: var(--wzl-tb-height);
+  pointer-events: stroke;
+}
+
+.morePast {
+  composes: onRun from './onRun.module.css';
+  display: flex;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* An overflowing run is dragged along itself, so a touch on it must not pan the page instead. */
+.root[data-scrolls] > .item,
+.root[data-scrolls] > .band {
+  touch-action: none;
+}

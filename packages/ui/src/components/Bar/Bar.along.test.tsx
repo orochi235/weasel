@@ -5,7 +5,6 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
 import { Bar } from './Bar';
 import alongStyles from '../Along/Along.module.css';
-import { shownOf } from './BarAlong';
 
 // jsdom lays nothing out: an Along is 200 by 200 untransformed and every other element 40 wide; every box is 200 by
 // 200 at (0, 0).
@@ -213,19 +212,6 @@ describe('Bar along a curve: scroll mode', () => {
     render(<Bar schema={schema} shape={shape} overflow="menu" label="Tools" />);
     expect(marks()).toEqual([]);
     expect(screen.getByRole('toolbar').querySelector(':scope > svg')).toBeNull();
-  });
-});
-
-describe('shownOf', () => {
-  test('is the share of an item lying on the run', () => {
-    expect(shownOf(50, 20, 100)).toBe(1);
-    expect(shownOf(-5, 20, 100)).toBe(0.25);
-    expect(shownOf(105, 20, 100)).toBe(0.25);
-    expect(shownOf(-20, 20, 100)).toBe(0);
-  });
-  test('an item of no length is wholly on or wholly off', () => {
-    expect(shownOf(0, 0, 100)).toBe(1);
-    expect(shownOf(-1, 0, 100)).toBe(0);
   });
 });
 
