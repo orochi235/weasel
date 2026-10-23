@@ -93,7 +93,6 @@ export function runLayoutPass<TPose>(
   const queue: NodeId[] = [...new Set<NodeId>([...arrivals.keys(), ...changed])];
   const passes = new Map<NodeId, number>();
   const write = (id: NodeId, pose: TPose): void => {
-    const node = source.get(id)!;
     const before = poseOf(id);
     if (samePoseValue(before, pose)) return;
     out.set(id, pose);

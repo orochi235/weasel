@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { ungroupAction } from 'interactions/actions/defaults/group';
 import type { ImmediateInvoker } from '@weasel-js/routing';
+import { isBodyOrRegion, isDiagramBody } from './bodyNode';
 import { buildBody } from './buildBody';
 import { withDiagramRegistry } from './edge';
 import type { BodySpec, MeasureRowText } from './body';
@@ -39,5 +40,13 @@ describe('a built diagram body', () => {
     expect(scene.get('body' as NodeId)).toBeDefined();
     expect(scene.childrenOf('body' as NodeId).length).toBe(2);
     expect(selected).toEqual(['body']);
+  });
+
+  it('is told from a region, a diagram group box and an edge by its trait', () => {
+    expect(isDiagramBody({ data: { diagram: { outline: 'rect' } } })).toBe(true);
+    expect(isDiagramBody({ data: { diagram: { container: { role: 'container' } } } })).toBe(false);
+    expect(isBodyOrRegion({ data: { diagram: { container: { role: 'lane' } } } })).toBe(true);
+    expect(isDiagramBody({ data: { diagram: { group: { inset: 8 } } } })).toBe(false);
+    expect(isBodyOrRegion({ data: { diagram: { from: {}, to: {} } } })).toBe(false);
   });
 });

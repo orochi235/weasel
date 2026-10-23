@@ -4,9 +4,9 @@
  * call to `fit()` — each applied only while the view is still the last fit,
  * except `fit()`, which takes the view back.
  */
-import { isBodyOrRegion } from './bodyNode';
 import { fitViewToBounds, useLatest, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { isBodyOrRegion } from './bodyNode';
 import { diagramGroupOf } from './group';
 
 /** How `fitDiagram` frames a diagram in its box. */

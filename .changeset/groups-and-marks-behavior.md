@@ -12,3 +12,4 @@ A node is a mark or a group, and the two now behave differently:
 - Any node may clip, repeat (`copies`), lay out and set units for its children, and `'inherit'` fills and strokes read from any parent.
 - A drop or an insert lands in a mark only when the `canDropInto` dep admits it; with no dep, a group admits and a mark does not. An insert asks `canDropInto` with an empty list, since the new node is not minted yet.
 - Diagram bodies, containers, pools and lanes are marks, so they paint again and take drops through `diagramCanDropInto`. A stencil body still takes nothing, and a press inside an unfilled lane hits the lane.
+- In a diagram scene, `kind === 'group'` no longer identifies a body or a region. Read the trait instead, as diagram's own code now does; the helpers for that (`isDiagramBody`, `isBodyOrRegion`) are internal to the package and not exported.
