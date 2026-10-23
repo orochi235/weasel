@@ -16,6 +16,7 @@
  * a face landing changes its result with nothing in the scene changed.
  */
 import type { Path } from '@weasel-js/geom';
+import type { InheritedPaint } from './inheritedPaint';
 import { fontGeneration, noteFontRead, withFontReads } from './fontReads';
 import { samePoseValue, snapshotPose } from './poseSnapshot';
 import type { DerivedDep, Node, NodeId } from './types';
@@ -55,6 +56,10 @@ class RecordedDep<TPose> implements DerivedDep<TPose> {
 
   get path(): Path | null {
     return (this.paths[this.index] = this.dep.path);
+  }
+
+  get inherited(): InheritedPaint | undefined {
+    return this.dep.inherited;
   }
 }
 
