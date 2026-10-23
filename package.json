@@ -108,6 +108,7 @@
     "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/ packages apps",
     "changeset": "changeset",
     "release": "node scripts/release.mjs",
+    "version-packages": "changeset version && npm install --package-lock-only --ignore-scripts",
     "prepublishOnly": "npm run check:bumps && npm run check:test-projects && npm run check:forge-isolate && npm run audit:jsdoc -- --quiet --check && npm run typecheck && npm run lint && npm run test && npm run build && npm run check:manifests && npm run check:treeshake && npm run check:react-free && npm run test:smoke:consumer",
     "prepare": "npm run build",
     "gen:icons": "node packages/icons/scripts/gen-icons.mjs",

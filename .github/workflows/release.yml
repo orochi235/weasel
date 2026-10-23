@@ -91,7 +91,7 @@ jobs:
         uses: changesets/action@v2
         with:
           publish-script: npm run release
-          version-script: npx changeset version
+          version-script: npm run version-packages
           commit-message: "chore: version packages"
           pr-title: "chore: version packages"
           # scripts/github-releases.mjs writes them, in the next step: the action
