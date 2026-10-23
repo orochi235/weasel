@@ -56,7 +56,7 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   derivePoseKey?: string;
   /** Registry key for the container's layout strategy. Omitted when it has none. */
   layoutKey?: string;
-  /** Mirrors `ContainerNode.units`. Omitted when the container declares none. */
+  /** Mirrors `SceneNode.units`. Omitted when the node declares none. */
   units?: UnitScope;
 }
 

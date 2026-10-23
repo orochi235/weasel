@@ -106,18 +106,23 @@ export type V1Classifier<TData, TLayer extends string, TPose> =
  *  resolves every `NODE_FN_FIELDS` key → function via the registry;
  *  throws on an unsupported version or an unknown registry key. */
 export function specsFromSerialized<TData, TLayer extends string, TPose>(
-  json: SerializedScene<TData, TLayer, TPose>,
+  json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer>,
   opts: { classifyV1?: V1Classifier<TData, TLayer, TPose> } = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  const version = (json as { version: unknown }).version;
-  if (version !== 1 && version !== 2) {
-    throw new Error(`Scene: unsupported version ${String(version)}; versions 1 and 2 are supported`);
+  type Entry = { n: Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>; kind: 'mark' | 'group' };
+  let entries: Entry[];
+  if (json.version === 1) {
+    entries = json.nodes.map((n) => ({ n, kind: kindFromV1(n, opts.classifyV1) }));
+  } else if (json.version === 2) {
+    entries = json.nodes.map((n) => ({ n, kind: n.kind }));
+  } else {
+    throw new Error(`Scene: unsupported version ${String(Reflect.get(json, 'version'))}; versions 1 and 2 are supported`);
   }
-  return json.nodes.map((n) => {
+  return entries.map(({ n, kind }) => {
     const spec: AddNodeSpec<TData, TLayer, TPose> = {
       id: n.id as NodeId,
-      kind: version === 1 ? kindFromV1(n as SerializedNodeV1<TData, TLayer, TPose>, opts.classifyV1) : n.kind as 'mark' | 'group',
+      kind,
       layer: n.layer,
       pose: n.pose,
       data: n.data,
