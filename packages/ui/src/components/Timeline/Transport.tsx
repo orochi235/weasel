@@ -86,7 +86,7 @@ export function Transport(props: TransportProps): ReactElement {
         aria-label={paused ? 'Play' : 'Pause'}
         onClick={paused ? onPlay : onPause}
       >
-        {paused ? <Icon name={icon('play')} size={14} /> : <Icon name={icon('pause')} size={14} />}
+        {paused ? <Icon name={icon('play')} size={16} /> : <Icon name={icon('pause')} size={16} />}
       </button>
 
       {onReverseChange ? (
@@ -98,7 +98,7 @@ export function Transport(props: TransportProps): ReactElement {
           className={s.transportButton}
           onClick={() => onReverseChange(!reverse)}
         >
-          <Icon name={icon('play')} size={14} className={t.backward} />
+          <Icon name={icon('play')} size={16} className={t.backward} />
         </button>
       ) : null}
 

@@ -88,42 +88,42 @@
       "tags": []
     },
     "play": {
-      "body": "<path d=\"M7.6 5.2 15.6 10 7.6 14.8Z\"/>",
+      "body": "<path d=\"M6.88 3.76 17.28 10 6.88 16.24Z\"/>",
       "group": "Playback",
       "tags": []
     },
     "pause": {
-      "body": "<path d=\"M7.8 5.2v9.6M12.2 5.2v9.6\"/>",
+      "body": "<path d=\"M7.14 3.76v12.48M12.86 3.76v12.48\"/>",
       "group": "Playback",
       "tags": []
     },
     "stop": {
-      "body": "<rect x=\"5.6\" y=\"5.6\" width=\"8.8\" height=\"8.8\" rx=\"1.4\"/>",
+      "body": "<rect x=\"4.28\" y=\"4.28\" width=\"11.44\" height=\"11.44\" rx=\"1.82\"/>",
       "group": "Playback",
       "tags": []
     },
     "stepBack": {
-      "body": "<path d=\"M13.6 5.4 7 10 13.6 14.6Z\"/><path d=\"M4.8 5.4v9.2\"/>",
+      "body": "<path d=\"M14.68 4.02 6.1 10 14.68 15.98Z\"/><path d=\"M3.24 4.02v11.96\"/>",
       "group": "Playback",
       "tags": []
     },
     "stepForward": {
-      "body": "<path d=\"M6.4 5.4 13 10 6.4 14.6Z\"/><path d=\"M15.2 5.4v9.2\"/>",
+      "body": "<path d=\"M5.32 4.02 13.9 10 5.32 15.98Z\"/><path d=\"M16.76 4.02v11.96\"/>",
       "group": "Playback",
       "tags": []
     },
     "rewind": {
-      "body": "<path d=\"M9.6 5.6 3.4 10 9.6 14.4Z\"/><path d=\"M16.6 5.6 10.4 10 16.6 14.4Z\"/>",
+      "body": "<path d=\"M9.6 4.28 2.4 10 9.6 15.72Z\"/><path d=\"M17.6 4.28 10.4 10 17.6 15.72Z\"/>",
       "group": "Playback",
       "tags": []
     },
     "fastForward": {
-      "body": "<path d=\"M3.4 5.6 9.6 10 3.4 14.4Z\"/><path d=\"M10.4 5.6 16.6 10 10.4 14.4Z\"/>",
+      "body": "<path d=\"M2.4 4.28 9.6 10 2.4 15.72Z\"/><path d=\"M10.4 4.28 17.6 10 10.4 15.72Z\"/>",
       "group": "Playback",
       "tags": []
     },
     "live": {
-      "body": "<circle cx=\"8.2\" cy=\"10\" r=\"2.6\" fill=\"currentColor\"/><path d=\"M15.2 5.4v9.2\"/>",
+      "body": "<circle cx=\"7.66\" cy=\"10\" r=\"3.38\" fill=\"currentColor\"/><path d=\"M16.76 4.02v11.96\"/>",
       "group": "Playback",
       "tags": []
     },
