@@ -24,12 +24,12 @@ const unitsOf = (scene: ReturnType<typeof sceneOf>, id = G) =>
   (scene.get(id) as GroupNode<object, 'main', RectPose>).units;
 
 describe('Scene — a container declares its unit scope', () => {
-  it('keeps the scope a container is added with, and none on a leaf', () => {
+  it('keeps the scope a node is added with, group or mark', () => {
     const scene = sceneOf();
     scene.add(spec('g', { kind: 'group', units: MM }));
     scene.add(spec('leaf', { units: MM }));
     expect(unitsOf(scene)).toEqual(MM);
-    expect((scene.get(LEAF) as { units?: unknown }).units).toBeUndefined();
+    expect(scene.get(LEAF)!.units).toEqual(MM);
   });
 
   it('keeps it through construction, a snapshot, and a removal undone', () => {
@@ -58,9 +58,10 @@ describe('Scene — a container declares its unit scope', () => {
     expect(scene.historyEntries()).toHaveLength(2);
   });
 
-  it('setUnits refuses a leaf', () => {
+  it('setUnits sets a scope on a mark', () => {
     const scene = sceneOf([spec('leaf')]);
-    expect(() => scene.setUnits(LEAF, MM)).toThrow(/not a container/);
+    scene.setUnits(LEAF, MM);
+    expect(scene.get(LEAF)!.units).toBe(MM);
   });
 
   it('re-adding a node through an adapter keeps its scope', () => {

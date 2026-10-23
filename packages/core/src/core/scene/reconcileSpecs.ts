@@ -49,7 +49,7 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       if (spec.layer !== before.layer) scene.setLayer(id, spec.layer);
       if (!same(spec.data, before.data)) scene.update(id, { data: spec.data });
       if (!same(spec.dependsOn, before.dependsOn)) scene.setDependsOn(id, spec.dependsOn);
-      if (spec.kind === 'group' && !same(spec.units, before.units)) scene.setUnits(id, spec.units ?? null);
+      if (!same(spec.units, before.units)) scene.setUnits(id, spec.units ?? null);
       if (!same(spec.pose, before.pose)) scene.setPose(id, spec.pose);
       if ((spec.hidden === true) !== (before.hidden === true)) scene.setHidden(id, spec.hidden === true);
       if (spec.locked === true && before.locked !== true) scene.setLocked(id, true);

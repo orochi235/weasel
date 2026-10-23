@@ -70,7 +70,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     if (n.pickable === false) out.pickable = false;
     if (n.hidden === true) out.hidden = true;
     if (n.locked === true) out.locked = true;
-    if (n.kind === 'group' && n.units !== undefined) out.units = n.units;
+    if (n.units !== undefined) out.units = n.units;
     Object.assign(
       out,
       fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {

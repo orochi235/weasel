@@ -192,7 +192,6 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     for (const field of fnFields) {
       const fn = (spec as unknown as Record<string, unknown>)[field.spec.field] as NodeFn | undefined;
       if (fn === undefined) continue;
-      if (field.spec.groupsOnly && spec.kind !== 'group') continue;
       field.write(node, fn);
       attached.set(field, fn);
     }

@@ -152,8 +152,8 @@ export function ownClipOf<TPose>(
   pose: TPose,
   derived?: Path | null,
 ): Path | null {
-  if (node.kind !== 'group') return null;
   if (typeof node.clipFromPose === 'function') return node.clipFromPose(pose);
+  if (node.kind !== 'group') return null;
   return findShapeSilhouette(
     node as unknown as Node<unknown, string, TPose>,
     pose,
@@ -194,7 +194,7 @@ export function pickWalk<TPose>(
   const copiesOf = (ancestor: PickCandidate<TPose>): readonly Affine[] => {
     let found = copyMaps.get(ancestor.id);
     if (found === undefined) {
-      const fn = ancestor.kind === 'group' ? ancestor.copiesFromPose : undefined;
+      const fn = ancestor.copiesFromPose;
       const copies = fn ? fn(src.poseOf(ancestor), ancestor as never) ?? [] : [];
       found = copies.map(invert).filter((m): m is Affine => m !== null);
       copyMaps.set(ancestor.id, found);
@@ -217,7 +217,7 @@ export function pickWalk<TPose>(
   };
 
   const order = src.order();
-  const copying = order.some((n) => n.kind === 'group' && typeof n.copiesFromPose === 'function');
+  const copying = order.some((n) => typeof n.copiesFromPose === 'function');
   const visit = (q.broad !== undefined ? src.candidates?.((layer) => {
     const query = queryFor(layer);
     return query === null ? null : query.broad;

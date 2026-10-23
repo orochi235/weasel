@@ -5,9 +5,9 @@ interface ContainerReader {
   get(id: NodeId): { kind: string } | undefined;
 }
 
-/** The container an insert lands in: the one the `insertInto` dep's `into`
- *  names, or null, the top of the tree, when it names no container. */
+/** The node an insert lands in: the one the `insertInto` dep's `into`
+ *  names, or null, the top of the tree, when it names no node in the scene. */
 export function insertParent(scene: ContainerReader | undefined, into: string | null | undefined): NodeId | null {
   if (into == null || !scene) return null;
-  return scene.get(into as NodeId)?.kind === 'group' ? (into as NodeId) : null;
+  return scene.get(into as NodeId) !== undefined ? (into as NodeId) : null;
 }
