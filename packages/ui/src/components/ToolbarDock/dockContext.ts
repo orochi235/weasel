@@ -5,9 +5,11 @@ export interface DockBarContextValue {
   barId: string;
   label: string;
   movable: boolean;
+  /** Whether the bar may float, which Alt+Enter on its handle toggles. */
+  float?: boolean;
   /** What the handle does with a press: drag the bar. */
   onPointerDown?: (e: PointerEvent<HTMLElement>) => void;
-  /** What the handle does with a key: Alt+arrows move the bar. */
+  /** What the handle does with a key: Alt+arrows move the bar, and Alt+Enter floats or docks it. */
   onKeyDown?: (e: KeyboardEvent<HTMLElement>) => void;
 }
 
@@ -32,7 +34,7 @@ export function useDockHandle(): DockHandle | null {
       role: 'button',
       tabIndex: 0,
       'aria-label': `Move ${bar.label} toolbar`,
-      'aria-keyshortcuts': KEYS,
+      'aria-keyshortcuts': bar.float ? `${KEYS} Alt+Enter` : KEYS,
       onPointerDown: bar.onPointerDown,
       onKeyDown: bar.onKeyDown,
     },

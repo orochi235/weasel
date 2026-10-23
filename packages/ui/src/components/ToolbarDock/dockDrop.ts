@@ -79,17 +79,17 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
 
 /**
  * Where `bar` drops with the pointer at `p`: the row under the pointer, at the slot its bars' middles put it in, or a
- * new row where the pointer is within half a row beyond a dock's first or last. Null over no dock, or over one the
- * bar may not enter.
+ * new row where the pointer is within half a row, or `reach` if that is more, beyond a dock's first or last. Null over
+ * no dock, or over one the bar may not enter.
  */
-export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint): { target: BarTarget; mark: DockDropMark | null } | null {
+export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, reach = 0): { target: BarTarget; mark: DockDropMark | null } | null {
   for (const dock of boxes) {
     const along = dock.vertical ? p.clientY : p.clientX;
     const cross = dock.vertical ? p.clientX : p.clientY;
     const first = dock.rows[0];
     const last = dock.rows.at(-1);
     if (!first || !last || along < dock.along[0] || along > dock.along[1]) continue;
-    if (cross < first.start - (first.end - first.start) / 2 || cross > last.end + (last.end - last.start) / 2) continue;
+    if (cross < first.start - Math.max(reach, (first.end - first.start) / 2) || cross > last.end + Math.max(reach, (last.end - last.start) / 2)) continue;
     if (!bar.docks.includes(dock.id)) return null;
     if (cross < first.start || cross >= last.end) {
       const row = cross < first.start ? 0 : dock.rows.length;
@@ -148,9 +148,10 @@ export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar
   return { dock, row: entry, index: into[entry]?.length ?? 0 };
 }
 
-/** What the dock announces after a keyboard move: where the bar landed. */
-export function placeWords(layout: ToolbarLayout, bar: DockBar): string {
+/** What the dock announces after a keyboard move: where the bar landed, after `state` where it is given. */
+export function placeWords(layout: ToolbarLayout, bar: DockBar, state?: string): string {
   const at = locateBar(layout, bar.id);
   if (!at) return '';
-  return `${bar.label} toolbar, row ${at.row + 1}, position ${at.index + 1} of ${layout.docks[at.dock]![at.row]!.length}`;
+  const name = state ? `${bar.label} toolbar ${state}` : `${bar.label} toolbar`;
+  return `${name}, row ${at.row + 1}, position ${at.index + 1} of ${layout.docks[at.dock]![at.row]!.length}`;
 }

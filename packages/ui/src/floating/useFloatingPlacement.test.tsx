@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
 import { type ReactNode, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -415,5 +415,52 @@ describe('useFloatingPlacement drag lifecycle', () => {
       addSpy.mockRestore();
       removeSpy.mockRestore();
     }
+  });
+});
+
+describe('a host that commits the placement a tick later', () => {
+  function Deferred({ onDrawn }: { onDrawn: (left: string) => void }) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [placement, setPlacement] = useState<FloatingPlacement>({ x: 0, y: 0, anchor: 'top-left' });
+    const { style, startDrag } = useFloatingPlacement({
+      panelRef: ref,
+      placement,
+      onPlacementChange: (next) => void setTimeout(() => setPlacement(next), 0),
+    });
+    onDrawn(String(style.left));
+    return <div data-panel="" onPointerDown={startDrag} ref={ref} style={style} />;
+  }
+
+  it('keeps the panel where it was dropped until the new placement arrives, never drawing the old spot', async () => {
+    const drawn: string[] = [];
+    const { panel } = renderPanel(<Deferred onDrawn={(left) => drawn.push(left)} />);
+    expect(panel.style.left).toBe('12px');
+    fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 180 });
+    expect(panel.style.left).toBe('100px');
+    drawn.length = 0;
+    fireEvent.pointerUp(panel, { pointerId: 1, clientX: 200, clientY: 180 });
+    expect(panel.style.left).toBe('100px');
+    await act(() => new Promise((done) => setTimeout(done, 5)));
+    expect(panel.style.left).toBe('100px');
+    expect(drawn.length).toBeGreaterThan(0);
+    expect(drawn).not.toContain('12px');
+  });
+
+  it('lets go of the dropped spot at the next press when no new placement ever arrives', () => {
+    const fixed: FloatingPlacement = { x: 0, y: 0, anchor: 'top-left' };
+    function Refusing() {
+      const ref = useRef<HTMLDivElement>(null);
+      const { style, startDrag } = useFloatingPlacement({ panelRef: ref, placement: fixed, onPlacementChange: () => {} });
+      return <div data-panel="" onPointerDown={startDrag} ref={ref} style={style} />;
+    }
+    const { panel } = renderPanel(<Refusing />);
+    fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 180 });
+    fireEvent.pointerUp(panel, { pointerId: 1, clientX: 200, clientY: 180 });
+    expect(panel.style.left).toBe('100px');
+    fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
+    expect(panel.style.left).toBe('12px');
+    fireEvent.pointerUp(panel, { pointerId: 1, clientX: 100, clientY: 100 });
   });
 });

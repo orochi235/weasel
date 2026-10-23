@@ -1,6 +1,8 @@
-import { useMemo, useRef, type ReactNode } from 'react';
+import { useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import type { BarOrientation } from '../Bar';
 import { DockBarContext } from './dockContext';
 import { DOCK_BAR } from './dockDrop';
+import { FloatingLayer } from './floatingLayer';
 import { resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 import { useDockDrag, type DockDragView } from './useDockDrag';
 import s from './ToolbarDock.module.css';
@@ -15,7 +17,7 @@ export interface ToolbarDockProps {
   layout?: ToolbarLayout;
   /** Called with the layout a move settles on. */
   onLayoutChange?: (layout: ToolbarLayout) => void;
-  /** Makes each bar's lead a handle that moves it: dragged, or with Alt+arrows once focused. */
+  /** Makes each bar's lead a handle that moves it: dragged, or with Alt+arrows once focused, and Alt+Enter to float or dock a bar with `float`. */
   movable?: boolean;
   className?: string;
   /** The workspace the docks sit round. */
@@ -29,38 +31,51 @@ const EDGES: readonly DockEdge[] = ['top', 'left', 'right', 'bottom'];
  * bottom dock stacks its rows, and a left or right dock sets them side by side with each bar drawn vertical. An
  * edge with no bars takes no room. A bar whose `render` gives null, or draws nothing, takes none either, and keeps
  * its place in the layout.
+ *
+ * A bar with `float` may also float over the whole dock, workspace and docks alike: dragged off its dock row, or
+ * with Alt+Enter on its handle, and docked again by dropping it on a dock or by Alt+Enter once more. A floating bar
+ * keeps the orientation of the dock it left and is caught by the corners it is dropped near.
  */
 export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = false, className, children }: ToolbarDockProps) {
   const resolved = useMemo(() => resolveLayout(docks, bars, layout), [docks, bars, layout]);
   const byId = useMemo(() => new Map(bars.map((b) => [b.id, b])), [bars]);
   const root = useRef<HTMLDivElement>(null);
-  const move = useDockDrag({ root, docks, bars, layout: resolved, onLayoutChange });
-  const view = move.view;
+  const layer = useRef<HTMLDivElement>(null);
+  const move = useDockDrag({ root, layer, docks, bars, layout: resolved, onLayoutChange });
+  const { view, layout: shown } = move;
+  const dragged = view ? byId.get(view.barId) : undefined;
+  const empties = dragged ? docks.filter((d) => dragged.docks.includes(d.id) && !(shown.docks[d.id]?.length ?? 0)) : [];
+
+  const draw = (id: string, orientation: BarOrientation): ReactNode => {
+    const bar = byId.get(id);
+    const drawn = bar?.render(orientation);
+    if (!bar || drawn == null || drawn === false) return null;
+    const value = { barId: id, label: bar.label, movable, float: bar.float, ...(movable ? move.handlers(id) : {}) };
+    return <DockBarContext.Provider value={value}>{drawn}</DockBarContext.Provider>;
+  };
 
   return (
     <div ref={root} className={[s.root, className].filter(Boolean).join(' ')}>
       {movable && <span aria-live="polite" aria-atomic="true" data-dock-announce="" className={s.status}>{move.announcement}</span>}
       {EDGES.map((edge) => {
-        const filled = docks.filter((d) => d.edge === edge && (resolved.docks[d.id]?.length ?? 0) > 0);
+        const filled = docks.filter((d) => d.edge === edge && (shown.docks[d.id]?.length ?? 0) > 0);
         if (!filled.length) return null;
         const orientation = edge === 'left' || edge === 'right' ? 'vertical' : 'horizontal';
         return (
           <div key={edge} className={s[edge]} data-dock-edge={edge}>
             {filled.map((dock) => {
-              const rows = resolved.docks[dock.id]!;
+              const rows = shown.docks[dock.id]!;
               return (
                 <div key={dock.id} className={[s.dock, dock.className].filter(Boolean).join(' ')} data-dock={dock.id} data-dock-unavailable={view?.unavailable.has(dock.id) ? '' : undefined}>
                   {rows.map((row, i) => (
                     <DockRow key={i} index={i} dock={dock.id} view={view}>
                       {row.map((id) => {
-                        const bar = byId.get(id);
-                        if (!bar) return null;
-                        const drawn = bar.render(orientation);
-                        if (drawn == null || drawn === false) return null;
-                        const value = { barId: id, label: bar.label, movable, ...(movable ? move.handlers(id) : {}) };
+                        const lifted = view?.barId === id && view.float !== null;
+                        const drawn = lifted ? <div className={s.hold} style={holdSize(view)} /> : draw(id, orientation);
+                        if (drawn == null) return null;
                         return (
-                          <div key={id} className={s.slot} {...{ [DOCK_BAR]: id }} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
-                            <DockBarContext.Provider value={value}>{drawn}</DockBarContext.Provider>
+                          <div key={id} className={s.slot} {...{ [DOCK_BAR]: lifted ? undefined : id }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
+                            {drawn}
                           </div>
                         );
                       })}
@@ -74,9 +89,13 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
         );
       })}
       <div className={s.main}>{children}</div>
+      <FloatingLayer layerRef={layer} layout={shown} view={view} empties={empties} draw={draw} />
     </div>
   );
 }
+
+/** The room a lifted bar's slot keeps, so its row holds still under the drag. */
+const holdSize = (view: DockDragView) => ({ '--dock-hold-w': `${view.size.w}px`, '--dock-hold-h': `${view.size.h}px` }) as CSSProperties;
 
 /** A dock row, after the mark for a new row a drag would make ahead of it. */
 function DockRow({ index, dock, view, children }: { index: number; dock: string; view: DockDragView | null; children: ReactNode }) {

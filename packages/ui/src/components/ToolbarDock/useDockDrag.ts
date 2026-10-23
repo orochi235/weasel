@@ -3,20 +3,29 @@ import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { swallowNextClick } from '../../useReorderDragList';
 import { BAR_LEAD } from '../Bar/useBarOverflow';
-import { DOCK_BAR, drawnBars, drawnLayout, dropAt, keyTarget, measureDocks, movedLayout, placeWords, spreadTarget, type DockBox, type DockDropMark } from './dockDrop';
-import type { DockBar, DockSpec, ToolbarLayout } from './layout';
+import { DOCK_BAR, drawnBars, drawnLayout, keyTarget, movedLayout, placeWords, spreadTarget, type DockDropMark } from './dockDrop';
+import { floatWhereDrawn, grabBar, homeTarget, measureEmpties, tearStep, type DockGrab } from './dockTear';
+import type { DockBar, DockSpec, FloatPlace, ToolbarLayout } from './layout';
 
-/** What a drag in progress shows: the bar it lifted, the drawn docks that bar may not enter, and where it would drop. */
+/**
+ * What a drag in progress shows: the bar it lifted, the drawn docks that bar may not enter, where it would drop, and
+ * where it floats under the pointer once it has left its dock, or all along for a bar that floated already.
+ */
 export interface DockDragView {
   barId: string;
   unavailable: ReadonlySet<string>;
   drop: DockDropMark | null;
+  float: FloatPlace | null;
+  /** The bar's size at the press: the room its dock slot keeps while it floats. */
+  size: { w: number; h: number };
 }
 
 /** What {@link useDockDrag} reads. */
 export interface DockDragArgs {
   /** The dock's own element, under which its docks, rows and bars are marked. */
   root: RefObject<HTMLElement | null>;
+  /** The layer floating bars sit in. */
+  layer: RefObject<HTMLElement | null>;
   docks: readonly DockSpec[];
   bars: readonly DockBar[];
   /** The layout as drawn, already resolved. */
@@ -34,6 +43,8 @@ export interface DockHandleHandlers {
 /** What {@link useDockDrag} gives the dock. */
 export interface DockDrag {
   view: DockDragView | null;
+  /** The layout to draw: the last move made, until `layout` changes or the next move begins; else `layout`. */
+  layout: ToolbarLayout;
   /** Where the last keyboard move landed; empty until one has. */
   announcement: string;
   handlers: (barId: string) => DockHandleHandlers;
@@ -41,18 +52,22 @@ export interface DockDrag {
 
 const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
 
-const sameMark = (a: DockDropMark | null, b: DockDropMark | null) => JSON.stringify(a) === JSON.stringify(b);
+const same = (a: DockDropMark | FloatPlace | null, b: DockDropMark | FloatPlace | null) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * Moving bars by their handles. Dragged past the threshold, a handle lifts its bar: docks it may not enter are listed
- * in `view.unavailable`, and `view.drop` says where it would land. The release calls `onLayoutChange` once, and the
- * click it raises is swallowed; Escape cancels, and a drop where the bar already is calls nothing. Alt+arrows on a
- * focused handle move the bar by a slot, a row, or a dock, keep focus on the handle, and set `announcement`. A bar
- * drawn as nothing is stepped over and keeps its place.
+ * in `view.unavailable`, and `view.drop` says where it would land. A bar that may float tears off its dock past
+ * `TEAR_PX` and floats under the pointer in `view.float`; over a dock it may enter it drops into that dock again. The
+ * release calls `onLayoutChange` once, and the click it raises is swallowed; Escape cancels, and a drop where the bar
+ * already is calls nothing. Alt+arrows on a focused handle move the bar by a slot, a row, or a dock, and Alt+Enter
+ * floats it where it is or docks it again; either keeps focus on the handle and sets `announcement`. A bar drawn as
+ * nothing is stepped over and keeps its place.
  */
-export function useDockDrag({ root, docks, bars, layout, onLayoutChange }: DockDragArgs): DockDrag {
+export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutChange }: DockDragArgs): DockDrag {
   const dragPx = useKitSetting('gestures.dragPx');
-  const latest = useLatest({ docks, bars, layout, onLayoutChange, dragPx });
+  const [held, setHeld] = useState<{ next: ToolbarLayout; over: ToolbarLayout } | null>(null);
+  const layout = held?.over === given ? held.next : given;
+  const latest = useLatest({ docks, bars, layout, given, onLayoutChange, dragPx });
   const drag = useRef<ThresholdDragHandle | null>(null);
   const refocus = useRef<string | null>(null);
   const [view, setView] = useState<DockDragView | null>(null);
@@ -60,7 +75,7 @@ export function useDockDrag({ root, docks, bars, layout, onLayoutChange }: DockD
 
   useEffect(() => () => drag.current?.cancel(), []);
 
-  // A moved bar may be drawn afresh in its new row, so its handle is found again by the bar's mark.
+  // A moved bar may be drawn afresh in its new row, or in the floating layer, so its handle is found again by the bar's mark.
   useLayoutEffect(() => {
     const id = refocus.current;
     refocus.current = null;
@@ -72,12 +87,21 @@ export function useDockDrag({ root, docks, bars, layout, onLayoutChange }: DockD
 
   const barOf = (id: string) => latest.current.bars.find((b) => b.id === id);
 
+  // Drawn as moved until the host's layout arrives, which it may send a tick later.
+  const commit = (next: ToolbarLayout): void => {
+    setHeld({ next, over: latest.current.given });
+    latest.current.onLayoutChange?.(next);
+  };
+
   const onPointerDown = (barId: string, e: ReactPointerEvent<HTMLElement>): void => {
     const el = root.current;
+    const into = layer.current;
     const bar = barOf(barId);
-    if (!el || !bar || !latest.current.onLayoutChange || drag.current !== null || e.button !== 0) return;
-    let boxes: DockBox[] = [];
-    let drawn = new Set<string>();
+    if (!el || !into || !bar || !latest.current.onLayoutChange || drag.current !== null || e.button !== 0) return;
+    setHeld(null);
+    const press = { clientX: e.clientX, clientY: e.clientY };
+    const torn = { now: false };
+    let grab: DockGrab | null = null;
     let next: ToolbarLayout | null = null;
     const end = (): void => {
       drag.current = null;
@@ -88,45 +112,67 @@ export function useDockDrag({ root, docks, bars, layout, onLayoutChange }: DockD
       captureAt: 'threshold',
       threshold: latest.current.dragPx,
       onActivate: () => {
-        boxes = measureDocks(el, latest.current.docks);
-        drawn = drawnBars(el);
-        const unavailable = new Set(boxes.filter((d) => !bar.docks.includes(d.id)).map((d) => d.id));
-        setView({ barId, unavailable, drop: null });
+        grab = grabBar(el, into, latest.current.docks, bar, latest.current.layout);
+        const unavailable = new Set(grab.boxes.filter((d) => !bar.docks.includes(d.id)).map((d) => d.id));
+        setView({ barId, unavailable, drop: null, float: grab.row ? null : grab.from, size: grab.size });
       },
       onMove: (ev) => {
-        const drop = dropAt(boxes, bar, ev);
+        if (!grab) return;
+        if (!grab.empties.length) grab.empties = measureEmpties(el);
+        const step = tearStep(grab, bar, press, ev, torn);
         const was = latest.current.layout;
-        next = drop && movedLayout(was, barId, spreadTarget(was, barId, drop.target, drawn));
-        const mark = next ? drop!.mark : null;
-        setView((v) => (v === null || sameMark(v.drop, mark) ? v : { ...v, drop: mark }));
+        if (step.drop) next = movedLayout(was, barId, spreadTarget(was, barId, step.drop.target, grab.drawn));
+        else next = step.float && movedLayout(was, barId, { float: step.float });
+        const mark = next && step.drop ? step.drop.mark : null;
+        const float = step.float;
+        setView((v) => (v === null || (same(v.drop, mark) && same(v.float, float)) ? v : { ...v, drop: mark, float }));
       },
       onCommit: () => {
         end();
         swallowNextClick(el);
-        if (next) latest.current.onLayoutChange?.(next);
+        if (next) commit(next);
       },
-      onClick: end,
       onCancel: end,
     });
+  };
+
+  /** Alt+Enter: a docked bar floats where it is drawn, and a floating one docks at the end of its home dock. */
+  const toggleFloat = (was: ToolbarLayout, bar: DockBar, drawn: ReadonlySet<string>): { next: ToolbarLayout; words: string } | null => {
+    const specs = latest.current.docks;
+    if (was.floating[bar.id]) {
+      const to = homeTarget(was, specs, bar);
+      const next = to && movedLayout(was, bar.id, spreadTarget(was, bar.id, to, drawn));
+      return next && { next, words: placeWords(drawnLayout(next, drawn, bar.id), bar, 'docked') };
+    }
+    const place = root.current && layer.current && floatWhereDrawn(root.current, layer.current, was, specs, bar.id);
+    const next = place && movedLayout(was, bar.id, { float: place });
+    return next && { next, words: `${bar.label} toolbar floating` };
   };
 
   const onKeyDown = (barId: string, e: ReactKeyboardEvent<HTMLElement>): void => {
     const { layout: was, docks: specs, onLayoutChange: done } = latest.current;
     const bar = barOf(barId);
-    if (!bar || !done || !e.altKey || e.ctrlKey || e.metaKey || !ARROWS.has(e.key)) return;
+    const floats = bar?.float === true && e.key === 'Enter';
+    if (!bar || !done || !e.altKey || e.ctrlKey || e.metaKey || !(floats || ARROWS.has(e.key))) return;
     e.preventDefault();
     e.stopPropagation();
     const drawn = root.current ? drawnBars(root.current) : new Set(latest.current.bars.map((b) => b.id));
-    const to = keyTarget(drawnLayout(was, drawn, barId), specs, bar, e.key);
-    const next = to && movedLayout(was, barId, spreadTarget(was, barId, to, drawn));
-    if (!next) return;
+    let moved: { next: ToolbarLayout; words: string } | null;
+    if (floats) moved = toggleFloat(was, bar, drawn);
+    else {
+      const to = keyTarget(drawnLayout(was, drawn, barId), specs, bar, e.key);
+      const next = to && movedLayout(was, barId, spreadTarget(was, barId, to, drawn));
+      moved = next && { next, words: placeWords(drawnLayout(next, drawn, barId), bar) };
+    }
+    if (!moved) return;
     refocus.current = barId;
-    setAnnouncement(placeWords(drawnLayout(next, drawn, barId), bar));
-    done(next);
+    setAnnouncement(moved.words);
+    commit(moved.next);
   };
 
   return {
     view,
+    layout,
     announcement,
     handlers: (barId) => ({ onPointerDown: (e) => onPointerDown(barId, e), onKeyDown: (e) => onKeyDown(barId, e) }),
   };

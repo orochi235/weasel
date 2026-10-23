@@ -60,7 +60,7 @@ const SURFACES_PREF = {
 const TOOLBARS_PREF = {
   kind: 'data',
   name: 'Toolbar layout',
-  description: 'Which row each toolbar sits in, and in what order.',
+  description: 'Which row each toolbar sits in, and in what order, or where it floats.',
   default: { docks: {}, floating: {} } as ToolbarLayout,
 } as const satisfies WeaselDrawPrefData;
 

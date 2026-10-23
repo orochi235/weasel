@@ -8,6 +8,8 @@ Where bars sit is a controlled `layout` value: the dock reconciles whatever it i
 
 A dock bar drawn as a `BarMenu` gets a handle too: a grip before its button, named and moved the same way.
 
+A bar with `float: true` on its `DockBar` can also float over the whole dock, workspace and docks alike. Drag its handle more than 24 px off the row it sits in and it tears off, following the pointer from where it was held; let go over open space and it stays there, caught by a corner of the dock when dropped near one, the way labkit's `FloatingPanel` is. Drag a floating bar back over a dock row and the same drop marks show where it will land; while any bar is dragged, a dock it may enter that has no bars shows a strip along its edge to drop on. Alt+Enter on a handle floats a docked bar where it is, or docks a floating one at the end of its home dock, and the dock announces "File toolbar floating" or "File toolbar docked, row 1, position 3 of 3". Floating places are part of `layout`, under `floating`, and a floating bar keeps the orientation of the dock it left. A bar without `float` never tears off.
+
 A `Bar` with `overflow="menu"` now asks for its natural length, its lead and every item, instead of taking all the
 room its host has. In a row sized to its content it sits at that length, opens the menu only once the row squeezes it
 shorter, and takes its items back as room returns. A `'menu'` bar in a block container, or stretched in a flex

@@ -78,7 +78,7 @@ export function resolveLayout(
 
   for (const bar of bars) {
     if (placed.has(bar.id)) continue;
-    const home = docks.find((d) => bar.docks.includes(d.id));
+    const home = homeDock(docks, bar);
     if (home) {
       const rows = out.docks[home.id];
       if (rows.length) rows[rows.length - 1].push(bar.id);
@@ -88,6 +88,11 @@ export function resolveLayout(
     }
   }
   return out;
+}
+
+/** The dock a bar goes to when nothing else places it: the first of `docks` it may sit in. */
+export function homeDock(docks: readonly DockSpec[], bar: DockBar): DockSpec | undefined {
+  return docks.find((d) => bar.docks.includes(d.id));
 }
 
 /** Takes a bar out of wherever it sits and places it at `to`. Does not check permissions. */

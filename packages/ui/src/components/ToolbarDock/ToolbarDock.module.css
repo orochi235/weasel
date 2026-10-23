@@ -41,11 +41,77 @@
   min-height: 0;
 }
 
+/* Isolated, so nothing in the workspace stacks above the floating layer. */
 .main {
   grid-area: main;
   position: relative;
+  isolation: isolate;
   min-width: 0;
   min-height: 0;
+}
+
+/* Floating bars sit over the whole dock, docks and workspace alike. The layer lets the pointer through; its bars
+   don't. */
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.floating {
+  position: absolute;
+  left: var(--dock-float-x, 0);
+  top: var(--dock-float-y, 0);
+  display: flex;
+  pointer-events: auto;
+}
+
+.floating:not([data-placed]),
+.floating:empty {
+  visibility: hidden;
+}
+
+.floating[data-dock-dragging] {
+  box-shadow: 0 4px 16px var(--wzl-shadow);
+}
+
+/* The room a lifted bar's slot keeps while the bar floats under the pointer. */
+.hold {
+  inline-size: var(--dock-hold-w);
+  block-size: var(--dock-hold-h);
+}
+
+/* An empty dock a dragged bar may enter: a strip along its edge to drop on. */
+.empty {
+  position: absolute;
+  border: 1px dashed var(--wzl-accent);
+  border-radius: var(--wzl-radius-sm);
+}
+
+.empty[data-dock-edge='top'] {
+  inset: 0 0 auto;
+  block-size: var(--wzl-space-6);
+}
+
+.empty[data-dock-edge='bottom'] {
+  inset: auto 0 0;
+  block-size: var(--wzl-space-6);
+}
+
+.empty[data-dock-edge='left'] {
+  inset: 0 auto 0 0;
+  inline-size: var(--wzl-space-6);
+}
+
+.empty[data-dock-edge='right'] {
+  inset: 0 0 0 auto;
+  inline-size: var(--wzl-space-6);
+}
+
+.empty[data-dock-drop] {
+  border-style: solid;
+  background: color-mix(in srgb, var(--wzl-accent) 20%, transparent);
 }
 
 .dock {

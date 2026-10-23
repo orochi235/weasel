@@ -9,16 +9,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import {
-  type Corner,
-  DEFAULT_INSET,
-  FLOATING_DRAG_PREFIX,
-  type FloatingPlacement,
-  floatingStrategy,
-} from 'windease';
-
-/** The strategy holds a map keyed by item id; a floating box is always a lone item. */
-const ITEM_ID = 'panel';
+import { type Corner, DEFAULT_INSET, type FloatingPlacement } from 'windease';
+import { dragPlacement, floatingItem, ITEM_ID, STRATEGY } from './dragPlacement';
 
 /** What {@link useFloatingPlacement} reads. */
 export interface FloatingPlacementOptions {
@@ -71,7 +63,8 @@ function isInteractive(target: EventTarget | null): boolean {
  * Drives windease's `floatingStrategy` as a pure function rather than mounting a windease container: one item and
  * no zone tree, so the node model would be all cost. The drag is threshold-gated and captures the pointer only once
  * it is a drag, so a press on a non-native control inside the box still clicks it. The box follows the pointer
- * while dragging; the release reports the result once, and Escape puts it back. Persists nothing.
+ * while dragging; the release reports the result once, and the box stays where it was dropped until `placement`
+ * changes or the next press. Escape puts it back. Persists nothing.
  */
 export function useFloatingPlacement({
   panelRef,
@@ -81,22 +74,17 @@ export function useFloatingPlacement({
   snapCorners,
   inset = DEFAULT_INSET,
 }: FloatingPlacementOptions): FloatingPlacementResult {
-  const strategy = useMemo(() => floatingStrategy(), []);
   const options = useMemo(() => ({ inset }), [inset]);
   const dragPx = useKitSetting('gestures.dragPx');
 
   const [container, setContainer] = useState({ w: 0, h: 0 });
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [live, setLive] = useState<FloatingPlacement | null>(null);
+  // Where a drag has the box, and the placement it started from. After the release it holds until `placement` moves
+  // off that one, so a host that commits a tick later never shows the box back where it was.
+  const [live, setLive] = useState<{ at: FloatingPlacement; over: FloatingPlacement; dragging: boolean } | null>(null);
+  const shown = live && (live.dragging || live.over === placement) ? live.at : placement;
 
-  const item = useMemo(
-    () => ({
-      id: ITEM_ID,
-      meta: { floating: true, ...(snapCorners ? { snapCorners: [...snapCorners] } : {}) },
-      natural: size,
-    }),
-    [size, snapCorners],
-  );
+  const item = useMemo(() => floatingItem(size, snapCorners), [size, snapCorners]);
 
   useEffect(() => {
     const el = panelRef.current;
@@ -118,11 +106,11 @@ export function useFloatingPlacement({
     return () => observer.disconnect();
   }, [panelRef, containerRef]);
 
-  const rect = strategy
+  const rect = STRATEGY
     .layout({
       items: [item],
       container,
-      state: { at: { [ITEM_ID]: live ?? placement }, inner: undefined },
+      state: { at: { [ITEM_ID]: shown }, inner: undefined },
       options,
     })
     .placements.get(ITEM_ID);
@@ -139,8 +127,10 @@ export function useFloatingPlacement({
     if (isInteractive(e.target)) return;
     // The canvas stack underneath owns pan/zoom on the same pointer events.
     e.stopPropagation();
+    setLive(null);
     let last = { x: e.clientX, y: e.clientY };
-    let at = latest.current.placement;
+    const over = latest.current.placement;
+    let at = over;
     let moved = false;
     const end = (): void => {
       drag.current = null;
@@ -149,25 +139,21 @@ export function useFloatingPlacement({
     drag.current = startThresholdDrag(e, {
       threshold: latest.current.dragPx,
       captureAt: 'threshold',
-      onActivate: () => setLive(at),
+      onActivate: () => setLive({ at, over, dragging: true }),
       onMove: (ev) => {
         const dx = ev.clientX - last.x;
         const dy = ev.clientY - last.y;
         if (dx === 0 && dy === 0) return;
         last = { x: ev.clientX, y: ev.clientY };
-        const { container: box, options: opts, item: only } = latest.current;
-        at =
-          strategy.reduce?.(
-            { at: { [ITEM_ID]: at }, inner: undefined },
-            { affordanceId: `${FLOATING_DRAG_PREFIX}${ITEM_ID}`, kind: 'drag', payload: { dx, dy } },
-            { container: box, options: opts, items: [only] },
-          ).at[ITEM_ID] ?? at;
+        at = dragPlacement(at, dx, dy, latest.current);
         moved = true;
-        setLive(at);
+        setLive({ at, over, dragging: true });
       },
       onCommit: () => {
-        end();
-        if (moved) latest.current.onPlacementChange(at);
+        drag.current = null;
+        if (!moved) return setLive(null);
+        setLive({ at, over, dragging: false });
+        latest.current.onPlacementChange(at);
       },
       onCancel: end,
     });
@@ -176,7 +162,7 @@ export function useFloatingPlacement({
   return {
     style: { position: 'absolute', left: `${rect?.x ?? 0}px`, top: `${rect?.y ?? 0}px` },
     startDrag,
-    dragging: live !== null,
+    dragging: live?.dragging ?? false,
     placed: rect !== undefined,
   };
 }

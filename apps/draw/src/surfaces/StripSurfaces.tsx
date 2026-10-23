@@ -8,11 +8,12 @@ import { isSchemaAsset } from './types';
 
 const STRIP_DOCKS: readonly DockSpec[] = [{ id: 'strip', edge: 'top', className: 'wd-dock-strip' }];
 
-const SWITCH_MENUS: DockBar = { id: 'switch-menus', label: 'Switch menus', docks: ['strip'], render: () => <SwitchMenus /> };
+const SWITCH_MENUS: DockBar = { id: 'switch-menus', label: 'Switch menus', docks: ['strip'], float: true, render: () => <SwitchMenus /> };
 
 /**
- * The strip's toolbars: every asset that can be a bar or a menu, each drawn as one, plus the switch menus. An asset
- * hidden or shown as a panel draws nothing but stays offered, so it keeps its place for when it comes back.
+ * The strip's toolbars: every asset that can be a bar or a menu, each drawn as one, plus the switch menus. Each may
+ * float over the workspace. An asset hidden or shown as a panel draws nothing but stays offered, so it keeps its place
+ * for when it comes back.
  */
 export function useStripBars(): DockBar[] {
   const bindings = useSurfaces();
@@ -27,6 +28,7 @@ function stripBars(bindings: readonly SurfaceBinding[]): DockBar[] {
       id: asset.id,
       label: asset.label,
       docks: ['strip'],
+      float: true,
       render: () => {
         if (chrome.hidden) return null;
         if (surface === 'bar') return <SchemaBar asset={asset} order={order} onReorder={onReorder} />;
