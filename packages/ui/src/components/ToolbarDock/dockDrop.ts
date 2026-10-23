@@ -1,3 +1,4 @@
+import { dropIndex } from '../Bar/useBarReorder';
 import { moveBar, type BarTarget, type DockBar, type DockSpec, type ToolbarLayout } from './layout';
 
 /** Marks the element a dock draws round each bar, holding the bar's id. */
@@ -67,9 +68,9 @@ export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint): {
     }
     let row = 0;
     while (row + 1 < dock.rows.length && dock.rows[row + 1]!.start <= cross) row++;
-    const others = dock.rows[row]!.bars.filter((b) => b.id !== bar.id);
-    const backward = others.length > 1 && others.at(-1)!.at < others[0]!.at;
-    const index = others.filter((b) => (backward ? b.at > along : b.at < along)).length;
+    const inRow = dock.rows[row]!.bars;
+    const index = dropIndex(inRow, inRow.findIndex((b) => b.id === bar.id), along);
+    const others = inRow.filter((b) => b.id !== bar.id);
     const beside = others[index] ?? others.at(-1);
     const mark = beside ? { bar: beside.id, side: index < others.length ? ('before' as const) : ('after' as const) } : null;
     return { target: { dock: dock.id, row, index }, mark };
@@ -96,8 +97,8 @@ export function locateBar(layout: ToolbarLayout, barId: string): { dock: string;
 
 /**
  * Where Alt+`key` sends `bar`: one slot along its row for Left and Right; for Up and Down the previous or next row of
- * its dock at the same index, and past the first or last row the end of the last row of the previous or next dock it
- * may sit in. Null where it has nowhere to go.
+ * its dock at the same index, and past its dock's first or last row the previous or next dock it may sit in: the end of
+ * that dock's last row going up, of its first row going down. Null where it has nowhere to go.
  */
 export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, key: string): BarTarget | null {
   const at = locateBar(layout, bar.id);
@@ -114,7 +115,8 @@ export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar
   const dock = allowed[allowed.indexOf(at.dock) + step];
   if (dock === undefined) return null;
   const into = layout.docks[dock] ?? [];
-  return { dock, row: Math.max(0, into.length - 1), index: into.at(-1)?.length ?? 0 };
+  const entry = step < 0 ? Math.max(0, into.length - 1) : 0;
+  return { dock, row: entry, index: into[entry]?.length ?? 0 };
 }
 
 /** What the dock announces after a keyboard move: where the bar landed. */

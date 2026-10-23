@@ -147,8 +147,9 @@ export function containerUnits(root: HTMLElement, container: string, along: (p: 
 }
 
 /** Where the unit at `from` lands with the pointer `p` along the line: how many of the others it passes. A line whose
- *  units run backward along the measure, as a right-to-left one does along x, counts the other way. */
-function dropIndex(units: readonly Unit[], from: number, p: number): number {
+ *  units run backward along the measure, as a right-to-left one does along x, counts the other way. A `from` of -1 is a
+ *  unit arriving from elsewhere, so every unit counts. */
+export function dropIndex(units: readonly { at: number }[], from: number, p: number): number {
   const backward = units.length > 1 && units.at(-1)!.at < units[0]!.at;
   return units.filter((unit, i) => i !== from && (backward ? unit.at > p : unit.at < p)).length;
 }

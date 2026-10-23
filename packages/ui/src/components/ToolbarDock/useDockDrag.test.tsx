@@ -210,7 +210,12 @@ describe('moving a bar from its handle with Alt+arrows', () => {
     key(handle('File'), 'ArrowRight');
     expect(onChange.mock.calls[0]![0].docks.top).toEqual([['view', 'file', 'shape']]);
     expect(document.activeElement).toBe(handle('File'));
-    expect(screen.getByRole('status')).toHaveTextContent('File toolbar, row 1, position 2 of 3');
+    const say = document.querySelector('[data-dock-announce]');
+    expect(say).toHaveTextContent('File toolbar, row 1, position 2 of 3');
+    expect(say).toHaveAttribute('aria-live', 'polite');
+    expect(say).toHaveAttribute('aria-atomic', 'true');
+    // A role of status would collide with an app's own status bar.
+    expect(say).not.toHaveAttribute('role');
     key(handle('File'), 'ArrowLeft');
     expect(onChange.mock.calls[1]![0].docks.top).toEqual([['file', 'view', 'shape']]);
   });
@@ -228,22 +233,25 @@ describe('moving a bar from its handle with Alt+arrows', () => {
     key(handle('View'), 'ArrowDown');
     expect(onChange.mock.calls[0]![0].docks.top).toEqual([['file'], ['shape', 'view']]);
     expect(document.activeElement).toBe(handle('View'));
-    expect(screen.getByRole('status')).toHaveTextContent('View toolbar, row 2, position 2 of 2');
+    expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('View toolbar, row 2, position 2 of 2');
     key(handle('View'), 'ArrowUp');
     expect(onChange.mock.calls[1]![0].docks.top).toEqual([['file', 'view'], ['shape']]);
   });
 
-  it('moves past the last row to the end of the next dock it may sit in, and back up through its rows', () => {
+  it('moves past the last row into the first row of the next dock it may sit in, at that row’s end', () => {
     const onChange = setup(start([['file', 'view']], [['shape'], ['pin2']], []), [...bars, bar('pin2', { docks: ['left'] })]);
     handle('File').focus();
     key(handle('File'), 'ArrowDown');
-    expect(onChange.mock.calls[0]![0].docks).toEqual({ top: [['view']], left: [['shape'], ['pin2', 'file']], bottom: [] });
+    expect(onChange.mock.calls[0]![0].docks).toEqual({ top: [['view']], left: [['shape', 'file'], ['pin2']], bottom: [] });
     expect(document.activeElement).toBe(handle('File'));
-    key(handle('File'), 'ArrowUp');
-    expect(onChange.mock.calls[1]![0].docks).toEqual({ top: [['view']], left: [['shape', 'file'], ['pin2']], bottom: [] });
-    key(handle('File'), 'ArrowUp');
-    expect(onChange.mock.calls[2]![0].docks).toEqual({ top: [['view', 'file']], left: [['shape'], ['pin2']], bottom: [] });
-    expect(document.activeElement).toBe(handle('File'));
+  });
+
+  it('moves past the first row into the last row of the previous dock it may sit in, at that row’s end', () => {
+    const onChange = setup(start([['file'], ['view']], [['shape']], []));
+    handle('Shape').focus();
+    key(handle('Shape'), 'ArrowUp');
+    expect(onChange.mock.calls[0]![0].docks).toEqual({ top: [['file'], ['view', 'shape']], left: [], bottom: [] });
+    expect(document.activeElement).toBe(handle('Shape'));
   });
 
   it('skips a dock the bar may not sit in', () => {

@@ -38,7 +38,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
 
   return (
     <div ref={root} className={[s.root, className].filter(Boolean).join(' ')}>
-      {movable && <span role="status" className={s.status}>{move.announcement}</span>}
+      {movable && <span aria-live="polite" aria-atomic="true" data-dock-announce="" className={s.status}>{move.announcement}</span>}
       {EDGES.map((edge) => {
         const filled = docks.filter((d) => d.edge === edge && (resolved.docks[d.id]?.length ?? 0) > 0);
         if (!filled.length) return null;
