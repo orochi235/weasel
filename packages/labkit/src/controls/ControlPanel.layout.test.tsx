@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { PrefSection } from '@weasel-js/prefs';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
@@ -36,9 +37,67 @@ describe('<ControlPanel> packing', () => {
     expect(rowOf('Width')?.className).not.toMatch(/span/);
   });
 
-  it('passes its layout down to the rows', () => {
-    render(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} layout="inline" />);
+  it('sets every label beside its control by default', () => {
+    render(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} />);
     expect(rowOf('Width')?.className).toMatch(/rowInline/);
+    expect(rowOf('Title')?.className).toMatch(/rowInline/);
+  });
+
+  it('puts the labels above their controls under block', () => {
+    render(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} layout="block" />);
+    expect(rowOf('Width')?.className).not.toMatch(/rowInline/);
+  });
+
+  it('lets a section set its labels over the panel', () => {
+    const sectioned = resolveConfigSchema(
+      f.schema({
+        a: f.number(1).label('A'),
+        b: f.number(2).label('B').section('More', { layout: 'block' }),
+      }),
+      [],
+    );
+    render(<ControlPanel schema={sectioned} config={{ a: 1, b: 2 }} setConfig={vi.fn()} />);
+    expect(rowOf('A')?.className).toMatch(/rowInline/);
+    expect(rowOf('B')?.className).not.toMatch(/rowInline/);
+  });
+
+  it('gives a segmented toggle and a textarea the whole width under pairs', () => {
+    const wide = resolveConfigSchema(
+      f.prefs({
+        name: '',
+        members: {
+          mode: {
+            kind: 'enum',
+            name: 'Mode',
+            description: '',
+            default: 'a',
+            options: ['a', 'b', 'c'],
+            control: 'toggle',
+          },
+          notes: {
+            kind: 'string',
+            name: 'Notes',
+            description: '',
+            default: '',
+            control: 'textarea',
+          },
+          count: { kind: 'number', name: 'Count', description: '', default: 1 },
+        } as PrefSection['members'],
+      }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={wide}
+        config={{ mode: 'a', notes: '', count: 1 }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole('radiogroup', { name: 'Mode' }).closest('[class*="row"]')?.className,
+    ).toMatch(/span/);
+    expect(rowOf('Notes')?.className).toMatch(/span/);
+    expect(rowOf('Count')?.className).not.toMatch(/span/);
   });
 });
 

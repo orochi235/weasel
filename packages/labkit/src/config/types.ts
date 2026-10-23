@@ -134,9 +134,9 @@ export interface SectionSpec {
    *  whether or not it was given a panel-wide `collapse`; a fold the reader
    *  has since toggled outranks it. */
   collapsed?: boolean;
-  /** Where the section's rows put their labels, over the panel's `layout`. */
+  /** Where the section's rows put their labels, over the panel's `layout`, `'inline'` by default. */
   layout?: 'block' | 'inline';
-  /** How the section packs its rows, over the panel's `pack`. */
+  /** How the section packs its rows, over the panel's `pack`, `'pairs'` by default. */
   pack?: 'auto' | 'pairs' | 'one-up';
   /** A class on the section's frame, for a look the section alone takes. */
   className?: string;
@@ -189,9 +189,9 @@ export interface DialogSpec extends InDialogOptions {
 export interface SectionOption {
   label: string;
   collapsed?: boolean;
-  /** Where the section's rows put their labels, over the panel's `layout`. */
+  /** Where the section's rows put their labels, over the panel's `layout`, `'inline'` by default. */
   layout?: 'block' | 'inline';
-  /** How the section packs its rows, over the panel's `pack`. */
+  /** How the section packs its rows, over the panel's `pack`, `'pairs'` by default. */
   pack?: 'auto' | 'pairs' | 'one-up';
   /** A class on the section's frame, for a look the section alone takes. */
   className?: string;

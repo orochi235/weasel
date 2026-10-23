@@ -4,6 +4,18 @@
 // inset here doubled the gutter inside an already narrow sidebar.
 .lk-control-panel {
   padding: 0;
+  // Two columns while each gets --lk-control-column-min, one below that. A
+  // track's floor sits just under half the width, so a third never fits.
+  --wzl-prop-columns: repeat(
+    auto-fill,
+    minmax(
+      max(
+        var(--lk-control-column-min, 6rem),
+        calc((100% - var(--wzl-prop-column-gap, 16px)) / 2 - 1px)
+      ),
+      1fr
+    )
+  );
 }
 
 // The panel draws on the theme's surface, so its text takes the theme's ink rather than the page's.

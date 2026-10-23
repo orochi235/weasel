@@ -34,7 +34,7 @@ import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import { boundAction } from './boundAction';
-import type { ControlPack } from './controlPack';
+import { type ControlPack, spansGrid } from './controlPack';
 import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField, leafValueAt } from './fields';
@@ -273,9 +273,6 @@ function LeafRow<TC extends Record<string, unknown>>({
 
   const label = leaf.name;
   const description = leaf.description;
-  // `auto` gives the whole width to the controls that read badly at half of a
-  // sidebar's: free text, a slider track, a segmented toggle. `pairs` doesn't.
-  const wide = pack === 'auto';
   const row = { label, description, layout, readout: autoReadout, changed, error, ...autoProps };
 
   if (leaf.kind === 'action') {
@@ -329,14 +326,13 @@ function LeafRow<TC extends Record<string, unknown>>({
   switch (field.kind) {
     case 'string':
       return draft ? (
-        <DebouncedTextRow leaf={leaf} field={field} span={wide} {...row} />
+        <DebouncedTextRow leaf={leaf} field={field} span={spansGrid(field, pack)} {...row} />
       ) : (
-        <PropertyField {...field} {...row} span={wide} />
+        <PropertyField {...field} {...row} span={spansGrid(field, pack)} />
       );
     case 'number':
-      return <PropertyField {...field} {...row} span={field.control === 'slider' && wide} />;
     case 'enum':
-      return <PropertyField {...field} {...row} span={field.control === 'toggle' && wide} />;
+      return <PropertyField {...field} {...row} span={spansGrid(field, pack)} />;
     default:
       return <PropertyField {...withRowControl(field, 'lab')} {...row} />;
   }

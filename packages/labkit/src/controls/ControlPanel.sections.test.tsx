@@ -117,7 +117,7 @@ describe('<ControlPanel> section layout', () => {
           { value: 'b', label: 'B' },
         ])
         .label('Mode')
-        .section('Globals', { layout: 'inline', pack: 'one-up', className: 'pins' }),
+        .section('Globals', { layout: 'block', pack: 'one-up', className: 'pins' }),
       font: f
         .enum('x', [{ value: 'x', label: 'X' }])
         .label('Font')
@@ -131,14 +131,14 @@ describe('<ControlPanel> section layout', () => {
 
   it('lays out every row in a section the way the section asks, and leaves other sections alone', () => {
     renderWithIcons(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} />);
-    expect(rowOf('Mode').className).toMatch(/rowInline/);
-    expect(rowOf('Font').className).toMatch(/rowInline/);
-    expect(rowOf('Seed').className).not.toMatch(/rowInline/);
+    expect(rowOf('Mode').className).not.toMatch(/rowInline/);
+    expect(rowOf('Font').className).not.toMatch(/rowInline/);
+    expect(rowOf('Seed').className).toMatch(/rowInline/);
   });
 
   it('carries a section’s layout into its resolved spec', () => {
     expect(schema.sections.find((section) => section.label === 'Globals')).toMatchObject({
-      layout: 'inline',
+      layout: 'block',
       pack: 'one-up',
     });
     expect(schema.sections.find((section) => section.label === 'Advanced')).not.toHaveProperty(

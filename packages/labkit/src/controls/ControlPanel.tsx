@@ -60,13 +60,12 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
    * `resolveConfigSchema` that schema too, or it refuses the condition.
    */
   over?: PrefGroup | PrefSection;
-  /** How rows pack into the two-column grid. Defaults to `'pairs'`. */
+  /** How rows pack into the two-column grid, which drops to one column where
+   *  the panel is too narrow for two. Defaults to `'pairs'`, two rows to a
+   *  line; `'one-up'` gives each row its own. */
   pack?: ControlPack;
-  /**
-   * Where a row's label sits relative to its control. Unset takes each row's
-   * own orientation — `block` (label above, which is what leaves a paired row
-   * room for its value) for most, `inline` for colors and checkboxes.
-   */
+  /** Where a row's label sits relative to its control. Defaults to `'inline'`,
+   *  beside it; `'block'` puts every label above its control. */
   layout?: PropertyRowLayout;
   /** Room the rows get. Passed straight to the property list. */
   density?: PropertyDensity;
@@ -161,7 +160,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   renderers,
   over,
   pack = 'pairs',
-  layout,
+  layout = 'inline',
   density,
   align,
   collapse,
