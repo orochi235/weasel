@@ -13,10 +13,10 @@ const pose = (x: number): RectPose => ({ x, y: 0, width: 10, height: 10 });
  *  `data.lift` so the derivation reads something a pose compare cannot see. */
 function makeEdgeScene() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: pose(0), data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: pose(100), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: pose(0), data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: pose(100), data: {} });
   const edge = scene.add({
-    kind: 'leaf', layer: 'main', pose: pose(0), data: {},
+    kind: 'mark', layer: 'main', pose: pose(0), data: {},
     dependsOn: [a, b],
     derivePath: (_n: Node<unknown, string, RectPose>, deps: readonly (DerivedDep<RectPose> | undefined)[]) => {
       const from = deps[0];

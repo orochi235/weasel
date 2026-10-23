@@ -44,8 +44,8 @@ export const properties: NodePropertiesEntry[] = [
 
 export function makeScene() {
   const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 10, y: 20, width: 30, height: 40, rotation: Math.PI / 4 }, data: { kind: 'rect', fill: '#ff0000ff', label: 'hello' } });
-  scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'default', pose: { x: 50, y: 20, width: 30, height: 40 }, data: { kind: 'rect', fill: '#00ff00ff' } });
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 10, y: 20, width: 30, height: 40, rotation: Math.PI / 4 }, data: { kind: 'rect', fill: '#ff0000ff', label: 'hello' } });
+  scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'default', pose: { x: 50, y: 20, width: 30, height: 40 }, data: { kind: 'rect', fill: '#00ff00ff' } });
   return scene;
 }
 

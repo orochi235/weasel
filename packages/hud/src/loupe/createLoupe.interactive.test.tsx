@@ -65,15 +65,15 @@ async function mount(opts: { panel?: boolean } = {}): Promise<Mounted> {
       systemLayers: [{ id: 'default' }],
       initial: [
         {
-          id: 'n' as never, kind: 'leaf', layer: 'default',
+          id: 'n' as never, kind: 'mark', layer: 'default',
           pose: { x: 280, y: 290, width: 10, height: 10 }, data: { kind: 'rect' },
         },
         {
-          id: 'under' as never, kind: 'leaf', layer: 'default',
+          id: 'under' as never, kind: 'mark', layer: 'default',
           pose: { x: 54, y: 93, width: 20, height: 20 }, data: { kind: 'rect' },
         },
         {
-          id: 'p' as never, kind: 'leaf', layer: 'default',
+          id: 'p' as never, kind: 'mark', layer: 'default',
           pose: { x: 1015, y: 1020, width: 4, height: 4 }, data: { kind: 'rect' },
         },
       ],

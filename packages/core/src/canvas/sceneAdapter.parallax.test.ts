@@ -16,7 +16,7 @@ const view = { get: () => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }) };
 function adapter() {
   const scene = createScene<unknown, 'sky', Pose>({
     systemLayers: [{ id: 'sky', parallax: { pan: 1, zoom: 0 } }],
-    initial: [{ id: asNodeId('sun'), kind: 'leaf', layer: 'sky', pose: { x: 40, y: 40, width: 20, height: 20 }, data: {} }],
+    initial: [{ id: asNodeId('sun'), kind: 'mark', layer: 'sky', pose: { x: 40, y: 40, width: 20, height: 20 }, data: {} }],
   });
   return sceneToAdapter(scene);
 }

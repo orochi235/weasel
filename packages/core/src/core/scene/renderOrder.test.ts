@@ -29,7 +29,7 @@ function legacyRenderOrder(scene: AnyScene): NodeId[] {
       const node = scene.get(id);
       if (!node) continue;
       if (node.layer === layer.id) out.push(id);
-      if (node.kind === 'container') {
+      if (node.kind === 'group') {
         const kids = scene.childrenOf(id);
         for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
       }
@@ -78,7 +78,7 @@ function randomScene(seed: number, layers: number, nodes: number): AnyScene {
     const slot = containers[Math.floor(rnd() * containers.length)];
     const layerIndex = slot.layerIndex
       + Math.floor(rnd() * (layers - slot.layerIndex));
-    const kind = rnd() < 0.3 ? 'container' : 'leaf';
+    const kind = rnd() < 0.3 ? 'group' : 'mark';
     const id = scene.add({
       kind,
       layer: `L${layerIndex}`,
@@ -86,7 +86,7 @@ function randomScene(seed: number, layers: number, nodes: number): AnyScene {
       data: { n },
       ...(slot.id !== null ? { parent: slot.id } : {}),
     });
-    if (kind === 'container') containers.push({ id, layerIndex });
+    if (kind === 'group') containers.push({ id, layerIndex });
   }
   return scene;
 }
@@ -98,30 +98,30 @@ describe('renderOrder — single-pass bucketing matches the layer-major walk', (
 
   it('single node', () => {
     const s = sceneWithLayers(1);
-    const a = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const a = s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 0 } });
     expect(agree(s, 'single')).toEqual([a]);
   });
 
   it('multiple roots on one layer keep insertion order', () => {
     const s = sceneWithLayers(1);
     const ids = [0, 1, 2, 3].map((n) =>
-      s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n } }));
+      s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n } }));
     expect(agree(s, 'multi-root')).toEqual(ids);
   });
 
   it('empty layers contribute nothing', () => {
     const s = sceneWithLayers(8);
-    const a = s.add({ kind: 'leaf', layer: 'L7', pose: POSE, data: { n: 0 } });
-    const b = s.add({ kind: 'leaf', layer: 'L3', pose: POSE, data: { n: 1 } });
+    const a = s.add({ kind: 'mark', layer: 'L7', pose: POSE, data: { n: 0 } });
+    const b = s.add({ kind: 'mark', layer: 'L3', pose: POSE, data: { n: 1 } });
     expect(agree(s, 'sparse layers')).toEqual([b, a]);
   });
 
   it('a child on a higher layer than its container sorts after it', () => {
     const s = sceneWithLayers(3);
-    const box = s.add({ kind: 'container', layer: 'L0', pose: POSE, data: { n: 0 } });
-    const high = s.add({ kind: 'leaf', layer: 'L2', pose: POSE, data: { n: 1 }, parent: box });
-    const low = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 2 }, parent: box });
-    const after = s.add({ kind: 'leaf', layer: 'L1', pose: POSE, data: { n: 3 } });
+    const box = s.add({ kind: 'group', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const high = s.add({ kind: 'mark', layer: 'L2', pose: POSE, data: { n: 1 }, parent: box });
+    const low = s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 2 }, parent: box });
+    const after = s.add({ kind: 'mark', layer: 'L1', pose: POSE, data: { n: 3 } });
     expect(agree(s, 'child above parent')).toEqual([box, low, after, high]);
   });
 
@@ -131,7 +131,7 @@ describe('renderOrder — single-pass bucketing matches the layer-major walk', (
     let parent: NodeId | null = null;
     for (let d = 0; d < 40; d++) {
       const id: NodeId = s.add({
-        kind: 'container', layer: 'L0', pose: POSE, data: { n: d },
+        kind: 'group', layer: 'L0', pose: POSE, data: { n: d },
         ...(parent !== null ? { parent } : {}),
       });
       ids.push(id);
@@ -142,10 +142,10 @@ describe('renderOrder — single-pass bucketing matches the layer-major walk', (
 
   it('a dangling child id is skipped, and stops its subtree', () => {
     const s = sceneWithLayers(2);
-    const box = s.add({ kind: 'container', layer: 'L0', pose: POSE, data: { n: 0 } });
-    const inner = s.add({ kind: 'container', layer: 'L0', pose: POSE, data: { n: 1 }, parent: box });
-    s.add({ kind: 'leaf', layer: 'L1', pose: POSE, data: { n: 2 }, parent: inner });
-    const tail = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 3 } });
+    const box = s.add({ kind: 'group', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const inner = s.add({ kind: 'group', layer: 'L0', pose: POSE, data: { n: 1 }, parent: box });
+    s.add({ kind: 'mark', layer: 'L1', pose: POSE, data: { n: 2 }, parent: inner });
+    const tail = s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 3 } });
     // `nodes` and `roots` are live views onto scene state; drop the record
     // without unlinking it so the traversal meets an id it cannot resolve.
     (s.nodes as Map<NodeId, unknown>).delete(inner);
@@ -189,10 +189,10 @@ describe('renderOrder — single-pass bucketing matches the layer-major walk', (
 
   it('agrees after a layer is added, reordered and removed', () => {
     const s = sceneWithLayers(2);
-    s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 0 } });
-    s.add({ kind: 'leaf', layer: 'L1', pose: POSE, data: { n: 1 } });
+    s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 0 } });
+    s.add({ kind: 'mark', layer: 'L1', pose: POSE, data: { n: 1 } });
     s.addLayer({ id: 'extra', name: 'Extra' });
-    s.add({ kind: 'leaf', layer: 'extra', pose: POSE, data: { n: 2 } });
+    s.add({ kind: 'mark', layer: 'extra', pose: POSE, data: { n: 2 } });
     agree(s, 'after addLayer');
     s.moveLayer('extra', 0);
     agree(s, 'after moveLayer');
@@ -214,8 +214,8 @@ describe('renderOrder — single-pass bucketing matches the layer-major walk', (
 describe('renderOrder — caching invalidates on exactly the structural edits', () => {
   function twoLayerScene(): { s: AnyScene; a: NodeId; b: NodeId } {
     const s = sceneWithLayers(2);
-    const a = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 0 } });
-    const b = s.add({ kind: 'leaf', layer: 'L1', pose: POSE, data: { n: 1 } });
+    const a = s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const b = s.add({ kind: 'mark', layer: 'L1', pose: POSE, data: { n: 1 } });
     return { s, a, b };
   }
 
@@ -239,8 +239,8 @@ describe('renderOrder — caching invalidates on exactly the structural edits', 
     // puts it last. Moving it down to L0 flips the pair — a fixture where both
     // nodes share a layer would reorder to the same sequence and prove nothing.
     const s = sceneWithLayers(2);
-    const a = s.add({ kind: 'leaf', layer: 'L1', pose: POSE, data: { n: 0 } });
-    const b = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 1 } });
+    const a = s.add({ kind: 'mark', layer: 'L1', pose: POSE, data: { n: 0 } });
+    const b = s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 1 } });
     expect([...s.renderOrder()]).toEqual([b, a]);
 
     s.setLayer(a, 'L0');
@@ -255,7 +255,7 @@ describe('renderOrder — caching invalidates on exactly the structural edits', 
   it('add and remove invalidate', () => {
     const { s } = twoLayerScene();
     agree(s, 'seeded');
-    const c = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 2 } });
+    const c = s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 2 } });
     agree(s, 'after add');
     s.remove(c);
     agree(s, 'after remove');
@@ -267,9 +267,9 @@ describe('renderOrder — caching invalidates on exactly the structural edits', 
 
   it('reparenting and reordering invalidate', () => {
     const s = sceneWithLayers(1);
-    const box = s.add({ kind: 'container', layer: 'L0', pose: POSE, data: { n: 0 } });
-    const leaf = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 1 } });
-    s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 2 } });
+    const box = s.add({ kind: 'group', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const leaf = s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 1 } });
+    s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 2 } });
     agree(s, 'seeded');
     s.move(leaf, box);
     agree(s, 'after reparent');
@@ -293,7 +293,7 @@ describe('renderOrder — caching invalidates on exactly the structural edits', 
   it('loadState invalidates', () => {
     const { s } = twoLayerScene();
     const snapshot = s.toJSON();
-    s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 9 } });
+    s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 9 } });
     expect([...s.renderOrder()]).toHaveLength(3);
     s.loadState(snapshot);
     expect([...s.renderOrder()]).toHaveLength(2);
@@ -330,14 +330,14 @@ describe('nodesOnLayer', () => {
 
   it('yields an empty array for a layer with no nodes, and for an unknown one', () => {
     const s = sceneWithLayers(2);
-    s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 0 } });
+    s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 0 } });
     expect(s.nodesOnLayer('L1')).toEqual([]);
     expect(s.nodesOnLayer('nope')).toEqual([]);
   });
 
   it('survives a pose edit and invalidates on a structural one', () => {
     const s = sceneWithLayers(2);
-    const a = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const a = s.add({ kind: 'mark', layer: 'L0', pose: POSE, data: { n: 0 } });
     const before = s.nodesOnLayer('L0');
     s.setPose(a, { x: 5, y: 5, width: 1, height: 1 });
     expect(s.nodesOnLayer('L0')).toBe(before);

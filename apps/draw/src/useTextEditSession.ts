@@ -12,7 +12,7 @@ const TEXT_EDIT = 'text-edit';
 function discardIfEmpty(scene: DrawScene, id: string): void {
   const nid = asNodeId(id);
   const node = scene.get(nid);
-  if (!node || node.kind !== 'leaf') return;
+  if (!node || node.kind !== 'mark') return;
   const { text, runs } = node.data;
   if (text !== '' || (Array.isArray(runs) && runs.length > 0)) return;
   scene.batch('Discard empty text', () => { scene.remove(nid); });

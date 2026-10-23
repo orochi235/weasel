@@ -25,7 +25,7 @@ export interface ParticipantScene<TPose> {
   readonly layers?: readonly GatedLayer[];
   renderOrderNodes(): readonly {
     id: string;
-    kind: 'leaf' | 'container';
+    kind: 'mark' | 'group';
     layer?: string;
     parent?: string | null;
     hidden?: boolean;

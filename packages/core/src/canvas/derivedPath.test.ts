@@ -44,7 +44,7 @@ type GradientData = { fill: Fill };
 function makeNode(derivePath: DerivePath): Node<Data, 'main', RectPose> {
   return {
     id: asNodeId('edge'),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     data: {},
     parent: null,
@@ -58,8 +58,8 @@ function makeNode(derivePath: DerivePath): Node<Data, 'main', RectPose> {
  *  `derivePath` reads the dependency poses it is handed, never the scene. */
 function makeEdgeScene() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: pose(0), data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: pose(100), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: pose(0), data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: pose(100), data: {} });
   const derivePath: DerivePath = (_node, deps) => {
     const from = deps[0]?.pose;
     const to = deps[1]?.pose;
@@ -67,7 +67,7 @@ function makeEdgeScene() {
     return linePath({ x: from.x, y: from.y }, { x: to.x, y: to.y });
   };
   const edge = scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: pose(0),
     data: {},
@@ -104,7 +104,7 @@ const handedPoses = (derivePath: { mock: { calls: unknown[][] } }): unknown[] =>
 describe('resolveDerivedPath', () => {
   it('returns null for a node that derives from nothing', () => {
     const plain: Node<Data, 'main', RectPose> = {
-      id: asNodeId('n'), kind: 'leaf', layer: 'main', data: {}, parent: null, pose: pose(0),
+      id: asNodeId('n'), kind: 'mark', layer: 'main', data: {}, parent: null, pose: pose(0),
     };
     expect(resolveDerivedPath(plain, () => undefined, NO_CHILDREN)).toBeNull();
   });
@@ -228,7 +228,7 @@ describe('kit:derived painter', () => {
 
   it('leaves an ordinary node to the other painters', () => {
     const plain: Node<Data, 'main', RectPose> = {
-      id: asNodeId('n2'), kind: 'leaf', layer: 'main', data: {}, parent: null, pose: pose(0),
+      id: asNodeId('n2'), kind: 'mark', layer: 'main', data: {}, parent: null, pose: pose(0),
     };
     expect(findNodeShape(plain)?.id).toBe('kit:rect-fallback');
   });
@@ -237,7 +237,7 @@ describe('kit:derived painter', () => {
     // The two fields are independent optionals, and claiming this node would
     // paint nothing at all where the same node without `dependsOn` draws.
     const inert: Node<Data, 'main', RectPose> = {
-      id: asNodeId('inert'), kind: 'leaf', layer: 'main', data: {}, parent: null,
+      id: asNodeId('inert'), kind: 'mark', layer: 'main', data: {}, parent: null,
       pose: pose(0), dependsOn: [asNodeId('a')],
     };
     expect(findNodeShape(inert)?.id).toBe('kit:rect-fallback');
@@ -245,11 +245,11 @@ describe('kit:derived painter', () => {
 
   it('paints a node with dependsOn but no derivePath exactly as it would without it', () => {
     const inert: Node<Data, 'main', RectPose> = {
-      id: asNodeId('inert2'), kind: 'leaf', layer: 'main', data: {}, parent: null,
+      id: asNodeId('inert2'), kind: 'mark', layer: 'main', data: {}, parent: null,
       pose: pose(0), dependsOn: [asNodeId('a')],
     };
     const plain: Node<Data, 'main', RectPose> = {
-      id: asNodeId('plain2'), kind: 'leaf', layer: 'main', data: {}, parent: null,
+      id: asNodeId('plain2'), kind: 'mark', layer: 'main', data: {}, parent: null,
       pose: pose(0),
     };
     expect(defaultDrawOne(inert, inert.pose, VIEW))
@@ -265,9 +265,9 @@ describe('kit:derived painter', () => {
       systemLayers: [{ id: 'main' }],
       registry: { derivePath: { 'test:connect': connect } },
     });
-    const dep = authored.add({ kind: 'leaf', layer: 'main', pose: pose(0), data: {} });
+    const dep = authored.add({ kind: 'mark', layer: 'main', pose: pose(0), data: {} });
     authored.add({
-      id: asNodeId('edge-replay'), kind: 'leaf', layer: 'main', pose: pose(0), data: {},
+      id: asNodeId('edge-replay'), kind: 'mark', layer: 'main', pose: pose(0), data: {},
       dependsOn: [dep], derivePath: connect,
     });
     authored.undo();
@@ -293,7 +293,7 @@ describe('kit:derived painter', () => {
     // The pose is the zero-sized placeholder a derived edge carries; mapping
     // the gradient onto it would collapse both endpoints onto its origin.
     const node: Node<GradientData, 'main', RectPose> = {
-      id: asNodeId('edge-grad'), kind: 'leaf', layer: 'main', parent: null,
+      id: asNodeId('edge-grad'), kind: 'mark', layer: 'main', parent: null,
       pose: { x: 0, y: 0, width: 0, height: 0 },
       data: {
         fill: { paint: {
@@ -453,7 +453,7 @@ describe('picking a derived node', () => {
     // counted as a reason to bypass the silhouette memo, the whole scene would
     // rebuild its silhouette on every pointer move.
     const plain: Node<Data, 'main', RectPose> = {
-      id: asNodeId('plain'), kind: 'leaf', layer: 'main', data: {}, parent: null,
+      id: asNodeId('plain'), kind: 'mark', layer: 'main', data: {}, parent: null,
       pose: pose(0),
     };
     const first = findShapeSilhouette(plain, plain.pose, { derivedPath: null });

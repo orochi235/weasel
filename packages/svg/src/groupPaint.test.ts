@@ -17,7 +17,7 @@ const RECT = '<rect x="0" y="0" width="10" height="10"/>';
 describe('importing a group’s paint', () => {
   it('gives the container the group’s fill and a child that sets none inherit', () => {
     const [g, leaf] = drafts(`<g fill="#ff0000">${RECT}</g>`);
-    expect(g.kind).toBe('container');
+    expect(g.kind).toBe('group');
     expect(g.data.fill).toMatchObject({ paint: { color: '#ff0000' } });
     expect(leaf.data).toMatchObject({ fill: INHERIT });
   });
@@ -70,8 +70,8 @@ describe('exporting a container’s paint', () => {
   const box = { x: 0, y: 0, width: 10, height: 10 };
   const path = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
   const tree = (group: unknown, children: Record<string, unknown>): SvgKitTree => {
-    const nodes: Record<string, N> = { g: { kind: 'container', data: group, pose: box } };
-    for (const [id, data] of Object.entries(children)) nodes[id] = { kind: 'leaf', data: { path, ...(data as object) }, pose: box };
+    const nodes: Record<string, N> = { g: { kind: 'group', data: group, pose: box } };
+    for (const [id, data] of Object.entries(children)) nodes[id] = { kind: 'mark', data: { path, ...(data as object) }, pose: box };
     return { roots: ['g'], childrenOf: (id) => (id === 'g' ? Object.keys(children) : []), get: (id) => nodes[id] };
   };
   const RED = { paint: { kind: 'solid', color: '#ff0000' } };

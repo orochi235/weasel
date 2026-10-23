@@ -104,7 +104,7 @@ function polyline(points: { x: number; y: number }[]): Path {
 function leaf(id: ReturnType<typeof asNodeId>, path: Path, data: Omit<PaintedData, 'path'>) {
   const { x, y, width, height } = boundsOfPath(path);
   return {
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     id,
     layer: 'default' as LayerId,
     pose: { x, y, width, height },

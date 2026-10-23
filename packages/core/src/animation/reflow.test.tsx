@@ -22,7 +22,7 @@ function setup() {
     act(() => { for (const cb of cbs.splice(0)) cb(t); });
   };
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
   const where = (id: NodeId) => effectivePose(scene, scene.get(id)!);
   return { animator: (): Animator => result.current, frame, scene, a, where };
 }

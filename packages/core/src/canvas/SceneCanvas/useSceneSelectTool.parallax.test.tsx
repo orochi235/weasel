@@ -21,8 +21,8 @@ function harness(camera: View = CAMERA) {
     const scene = useScene<unknown, 'back' | 'main', Pose>({
       systemLayers: [{ id: 'back', parallax: { pan: 0.25 } }, { id: 'main' }],
       initial: [
-        { id: asNodeId('hill'), kind: 'leaf', layer: 'back', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
-        { id: asNodeId('crate'), kind: 'leaf', layer: 'main', pose: { x: 300, y: 100, width: 20, height: 20 }, data: {} },
+        { id: asNodeId('hill'), kind: 'mark', layer: 'back', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
+        { id: asNodeId('crate'), kind: 'mark', layer: 'main', pose: { x: 300, y: 100, width: 20, height: 20 }, data: {} },
       ],
     });
     const adapter = useSceneAdapter(scene);
@@ -65,7 +65,7 @@ describe('useSceneSelectTool — parallax layers', () => {
     const { result } = renderHook(() => {
       const scene = useScene<unknown, 'back', Pose>({
         systemLayers: [{ id: 'back', parallax: { pan: 1, zoom: 0 } }],
-        initial: [{ id: asNodeId('sun'), kind: 'leaf', layer: 'back', pose: { x: 0, y: 0, width: 40, height: 40 }, data: {} }],
+        initial: [{ id: asNodeId('sun'), kind: 'mark', layer: 'back', pose: { x: 0, y: 0, width: 40, height: 40 }, data: {} }],
       });
       const adapter = useSceneAdapter(scene);
       return useSceneSelectTool({ scene, adapter, getView: () => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }) });
@@ -80,8 +80,8 @@ describe('useSceneSelectTool — parallax layers', () => {
       const scene = useScene<unknown, 'trees', Pose>({
         systemLayers: [{ id: 'trees', parallax: { pan: 1.3 } }],
         initial: [
-          { id: asNodeId('tree'), kind: 'container', layer: 'trees', pose: { x: 400, y: 300, width: 30, height: 50 }, data: { fill: null } },
-          { id: asNodeId('trunk'), kind: 'leaf', layer: 'trees', parent: asNodeId('tree'), pose: { x: 410, y: 330, width: 10, height: 20 }, data: {} },
+          { id: asNodeId('tree'), kind: 'group', layer: 'trees', pose: { x: 400, y: 300, width: 30, height: 50 }, data: { fill: null } },
+          { id: asNodeId('trunk'), kind: 'mark', layer: 'trees', parent: asNodeId('tree'), pose: { x: 410, y: 330, width: 10, height: 20 }, data: {} },
         ],
       });
       const adapter = useSceneAdapter(scene);
@@ -103,8 +103,8 @@ describe('useSceneSelectTool — a container and its child on different planes',
       const scene = useScene<unknown, 'sky' | 'main', Pose>({
         systemLayers: [{ id: 'main' }, { id: 'sky', parallax: { pan: 1, zoom: 0 } }],
         initial: [
-          { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, clipFromPose: (p: Pose) => ({ kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height }), data: {} },
-          { id: asNodeId('kid'), kind: 'leaf', layer: 'sky', parent: asNodeId('box'), pose: { x: 0, y: 0, width: 200, height: 200 }, data: {} },
+          { id: asNodeId('box'), kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, clipFromPose: (p: Pose) => ({ kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height }), data: {} },
+          { id: asNodeId('kid'), kind: 'mark', layer: 'sky', parent: asNodeId('box'), pose: { x: 0, y: 0, width: 200, height: 200 }, data: {} },
         ],
       });
       const adapter = useSceneAdapter(scene);

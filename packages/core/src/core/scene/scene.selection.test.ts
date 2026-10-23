@@ -11,7 +11,7 @@ const POSE = { x: 0, y: 0, width: 10, height: 10 };
 function makeScene() {
   const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'default' }] });
   const add = (id: string) =>
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { ...POSE }, data: { label: id } });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { ...POSE }, data: { label: id } });
   return { scene, add };
 }
 

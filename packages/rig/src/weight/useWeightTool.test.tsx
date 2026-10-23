@@ -30,9 +30,9 @@ const ARM: Skeleton = {
 
 function setup(settings?: KitSettingsOverrides) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const rig = scene.add({ kind: 'container', layer: 'main', pose: { x: 100, y: 100, width: 200, height: 100 }, data: { skeleton: ARM } });
+  const rig = scene.add({ kind: 'group', layer: 'main', pose: { x: 100, y: 100, width: 200, height: 100 }, data: { skeleton: ARM } });
   const sleeve = scene.add({
-    kind: 'leaf', layer: 'main', parent: rig, pose: { x: 110, y: 120, width: 180, height: 20 },
+    kind: 'mark', layer: 'main', parent: rig, pose: { x: 110, y: 120, width: 180, height: 20 },
     data: { path: polygonFromPoints([{ x: 110, y: 120 }, { x: 190, y: 120 }, { x: 290, y: 120 }, { x: 200, y: 140 }]) },
   });
   const state = createRigEditState();

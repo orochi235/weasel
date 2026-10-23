@@ -57,7 +57,7 @@ function MachineHarness({
   const [scene] = useState(() => {
     const s = createScene({ systemLayers: [{ id: 'main' }] });
     s.add({
-      id: asNodeId('path-1'), kind: 'leaf', layer: 'main',
+      id: asNodeId('path-1'), kind: 'mark', layer: 'main',
       data: { path: pathFromD('M 0 0 L 40 0 L 40 40 L 0 40 Z') as PolygonPath, fill: { paint: solid('#888') } },
       pose: { x: 0, y: 0, width: 40, height: 40 },
     });

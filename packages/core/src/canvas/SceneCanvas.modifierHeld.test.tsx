@@ -36,7 +36,7 @@ const key = (type: 'keydown' | 'keyup', held: boolean, code = 'ShiftLeft'): void
 describe('<SceneCanvas chromeVisibility> with modifierHeld', () => {
   it('shows the chrome only while the key is down', () => {
     const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'leaf', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
+    const id = scene.add({ kind: 'mark', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
     const seen: { selection: SelectionApi | null } = { selection: null };
     const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
     render(

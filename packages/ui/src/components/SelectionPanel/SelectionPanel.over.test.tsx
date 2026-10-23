@@ -44,7 +44,7 @@ const layout: PrefSection = {
 function setup(data: Record<string, unknown>, over?: PrefGroup | PrefSection, ids = ['a']) {
   const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
   for (const id of ids) {
-    scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
   }
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: layout }];
   render(<SelectionPanel scene={scene} selection={selectionOf(ids)} properties={properties} routing={routing} over={over} />);
@@ -114,7 +114,7 @@ describe('a condition of a SelectionPanel\'s own node that reads a pref of `over
   };
   const draw = (data: Record<string, unknown>, over?: PrefSection) => {
     const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
-    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
+    scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
     render(<SelectionPanel scene={scene} selection={selectionOf(['a'])} properties={[{ name: 'thing', schema: gated }]} routing={routing} over={over} />);
   };
 

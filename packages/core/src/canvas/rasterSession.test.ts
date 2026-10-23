@@ -9,7 +9,7 @@ import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 interface RectPose { x: number; y: number; width: number; height: number }
 
 function leaf(id: string, pose: RectPose): Node<unknown, 'default', RectPose> {
-  return { id, kind: 'leaf', layer: 'default', parent: null, pose, data: null } as unknown as Node<unknown, 'default', RectPose>;
+  return { id, kind: 'mark', layer: 'default', parent: null, pose, data: null } as unknown as Node<unknown, 'default', RectPose>;
 }
 
 function fakeScene(nodes: Node<unknown, 'default', RectPose>[]): Scene<unknown, 'default', RectPose> {

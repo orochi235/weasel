@@ -9,8 +9,8 @@ const rect = (x: number) => ({ kind: 'rect' as const, ...box(x) });
 /** A group holding [below, compound, above], with one more shape over the group. */
 function setup() {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
-  const leaf = { kind: 'leaf' as const, layer: 'default' as const };
-  const g = scene.add({ kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 10 }, data: {} });
+  const leaf = { kind: 'mark' as const, layer: 'default' as const };
+  const g = scene.add({ kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 10 }, data: {} });
   scene.add({ ...leaf, id: asNodeId('below'), parent: g, pose: box(0), data: { path: rect(0) } });
   scene.add({
     ...leaf, id: asNodeId('compound'), parent: g, pose: { x: 20, y: 0, width: 30, height: 10 },

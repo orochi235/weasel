@@ -82,10 +82,10 @@ describe('waypointFollower', () => {
   function twoShapes() {
     const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     for (const [id, x] of [['A', 0], ['B', 300]] as const) {
-      scene.add({ id: id as never, kind: 'leaf', layer: 'main', pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} } });
+      scene.add({ id: id as never, kind: 'mark', layer: 'main', pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} } });
     }
     scene.add({
-      id: 'ab' as never, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      id: 'ab' as never, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
       data: { diagram: { from: {}, to: {}, waypoints: [{ x: 200, y: 100 }] } },
       dependsOn: ['A' as never, 'B' as never], derivePath: EDGE_DERIVE_PATH as never,
     });

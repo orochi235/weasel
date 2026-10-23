@@ -56,7 +56,7 @@ const NODES = [
   { id: 'c', text: 'Handgloves at 13', size: 13, y: 228, h: 24 },
 ].map((n) => ({
   id: n.id as never,
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: 20, y: n.y, width: 560, height: n.h },
   data: { text: n.text, style: style(n.size), fill: { paint: TEXT_FILL } },

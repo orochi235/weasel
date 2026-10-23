@@ -26,7 +26,7 @@ const ADAPTERS: [string, (scene: S) => unknown][] = [
 
 function fixture() {
   const scene: S = createScene<object, 'bg' | 'fg', Pose>({ systemLayers: [{ id: 'bg' }, { id: 'fg' }] });
-  const leaf = () => scene.add({ kind: 'leaf', layer: 'bg', data: {}, pose: POSE });
+  const leaf = () => scene.add({ kind: 'mark', layer: 'bg', data: {}, pose: POSE });
   return { scene, ids: [leaf(), leaf(), leaf()] };
 }
 
@@ -41,7 +41,7 @@ describe.each(ADAPTERS)('scene-backed ops through %s', (_name, make) => {
 
   it('applies and undoes a layout change', () => {
     const { scene } = fixture();
-    const box = scene.add({ kind: 'container', layer: 'bg', data: {}, pose: POSE });
+    const box = scene.add({ kind: 'group', layer: 'bg', data: {}, pose: POSE });
     const layout = { childPoses: () => new Map() } as unknown as LayoutStrategy<Pose>;
     scene.applyBatch([createSetLayoutOp({ id: box, from: null, to: layout })], 'Layout', make(scene));
     expect(scene.layoutOf(box)).toBe(layout);
@@ -72,7 +72,7 @@ describe.each(ADAPTERS)('scene-backed ops through %s', (_name, make) => {
 
   it('brings a deleted node\'s dependents back on undo', () => {
     const { scene, ids } = fixture();
-    const edge = scene.add({ kind: 'leaf', layer: 'bg', data: {}, pose: POSE, dependsOn: [ids[0]] });
+    const edge = scene.add({ kind: 'mark', layer: 'bg', data: {}, pose: POSE, dependsOn: [ids[0]] });
     scene.applyBatch([createDeleteOp({ node: scene.get(ids[0])! })], 'Delete', make(scene));
     expect(scene.get(edge)).toBeUndefined();
     scene.undo();

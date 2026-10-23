@@ -13,7 +13,7 @@ const ONE = { x: 1, y: 1 };
 
 function sceneOf(paths: Record<string, string>) {
   const nodes = new Map(Object.entries(paths).map(([id, d]) => [
-    asNodeId(id), { id: asNodeId(id), kind: 'leaf' as const, layer: 'default', parent: null, pose: pathFromD(d), data: {} },
+    asNodeId(id), { id: asNodeId(id), kind: 'mark' as const, layer: 'default', parent: null, pose: pathFromD(d), data: {} },
   ]));
   return { nodes, layers: [{ id: 'default' }], getVersion: () => 1 } as unknown as Scene<unknown, string, unknown>;
 }
@@ -121,7 +121,7 @@ describe('pathSnapSource', () => {
     const live = sceneOf({ a: 'M0 0 L100 100', b: 'M0 100 L100 0' });
     const nodes = (live as unknown as { nodes: Map<unknown, Record<string, unknown>> }).nodes;
     const b = nodes.get(asNodeId('b'))!;
-    nodes.set(asNodeId('g'), { ...b, id: asNodeId('g'), kind: 'container', hidden: true });
+    nodes.set(asNodeId('g'), { ...b, id: asNodeId('g'), kind: 'group', hidden: true });
     nodes.set(asNodeId('b'), { ...b, parent: asNodeId('g') });
     expect(run(live, { kinds: { nearest: false, midpoint: false } }, {}, { x: 51, y: 50 }).held).toBe(false);
   });
@@ -150,7 +150,7 @@ describe('pathSnapSource', () => {
 
 describe('what a node offers to snap to', () => {
   const sceneWith = (pose: unknown, data: unknown) => ({
-    nodes: new Map([[asNodeId('n'), { id: asNodeId('n'), kind: 'leaf' as const, layer: 'default', parent: null, pose, data }]]),
+    nodes: new Map([[asNodeId('n'), { id: asNodeId('n'), kind: 'mark' as const, layer: 'default', parent: null, pose, data }]]),
     layers: [{ id: 'default' }],
     getVersion: () => 1,
   }) as unknown as Scene<unknown, string, unknown>;

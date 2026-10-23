@@ -22,8 +22,8 @@ const keys: BoundGesture[] = [
 function setup() {
   const scene = createScene<unknown, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.batch('seed', () => {
-    scene.add({ id: asNodeId('a'), kind: 'leaf', data: {}, layer: 'main', pose: { x: 10, y: 0, width: 10, height: 10 } });
-    scene.add({ id: asNodeId('b'), kind: 'leaf', data: {}, layer: 'main', pose: { x: 40, y: 0, width: 10, height: 10 } });
+    scene.add({ id: asNodeId('a'), kind: 'mark', data: {}, layer: 'main', pose: { x: 10, y: 0, width: 10, height: 10 } });
+    scene.add({ id: asNodeId('b'), kind: 'mark', data: {}, layer: 'main', pose: { x: 40, y: 0, width: 10, height: 10 } });
   });
   const pointer = createPointerStore();
   render(

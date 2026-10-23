@@ -73,7 +73,7 @@ export function measurePose(start: MeasurePoint, end: MeasurePoint): RectPose {
 /** A measurement node on `layer`, ready to insert. */
 export function measureNode(id: NodeId, layer: string, start: MeasurePoint, end: MeasurePoint): Node<unknown, string, unknown> {
   const data: MeasureData = { measure: { start: { ...start }, end: { ...end } } };
-  return { id, kind: 'leaf', layer, parent: null, pose: measurePose(start, end), data };
+  return { id, kind: 'mark', layer, parent: null, pose: measurePose(start, end), data };
 }
 
 /** `node`'s data and pose with its `which` end moved to `to`. */

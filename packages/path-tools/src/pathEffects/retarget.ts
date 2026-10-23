@@ -33,7 +33,7 @@ function pathTarget(deps: ActionDeps | undefined): { effect: AnyNode; path: AnyN
   if (!scene || nodes.length !== 2) return ActionDisabledReason.SelectionRequired;
   const effect = nodes.find(isAlong);
   const path = nodes.find((n) => n !== effect);
-  if (!effect || !path || path.kind !== 'leaf' || closesLoop(scene, effect, path)) return ActionDisabledReason.NotApplicable;
+  if (!effect || !path || path.kind !== 'mark' || closesLoop(scene, effect, path)) return ActionDisabledReason.NotApplicable;
   // Text has no outline of its own to lay text along.
   if (pathEffectOf(effect)?.kind === 'textAlong' && isTextData(path.data)) return ActionDisabledReason.NotApplicable;
   return { effect, path };

@@ -37,10 +37,10 @@ function ctx(
  *  leaf's right, authored at a placeholder nowhere near there. */
 function fixture() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const c = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 200, 200) });
-  const s = scene.add({ kind: 'leaf', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
+  const c = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 200, 200) });
+  const s = scene.add({ kind: 'mark', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
   const d = scene.add({
-    kind: 'leaf',
+    kind: 'mark',
     parent: c,
     layer: 'main',
     data: {},

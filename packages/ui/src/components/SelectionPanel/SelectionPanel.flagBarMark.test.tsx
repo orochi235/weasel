@@ -27,7 +27,7 @@ const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: SCHEMA }];
 
 function marked(selected: readonly string[], renderers?: Record<string, PropertyRenderer>): Array<string | null> {
   const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: {} });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
   const { container } = render(
     <SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing}
       selected={selected} renderers={renderers} />,

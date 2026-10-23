@@ -60,8 +60,8 @@ function sceneWith(): S {
 describe('moveAction under a container frame', () => {
   it('moves a frame container once, carrying its children with it', () => {
     const scene = sceneWith();
-    const c = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 200, 200) });
-    const s = scene.add({ kind: 'leaf', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
+    const c = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 200, 200) });
+    const s = scene.add({ kind: 'mark', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
     dragAndCheck(scene, [c], { [c]: box(100, 0, 200, 200, 0), [s]: box(110, 10, 10, 10, 0) });
     // Carried, not moved: its pose in the frame is untouched.
     expect(scene.get(s)!.pose).toEqual(box(10, 10));
@@ -70,9 +70,9 @@ describe('moveAction under a container frame', () => {
   it('moves a leaf inside a turned frame the way the pointer went', () => {
     const scene = sceneWith();
     const c = scene.add({
-      kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 200, 200, Math.PI / 2),
+      kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 200, 200, Math.PI / 2),
     });
-    const s = scene.add({ kind: 'leaf', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
+    const s = scene.add({ kind: 'mark', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
     // Local center (15,15) is (-85,-85) from the frame's center (100,100); a
     // quarter turn sends that to (85,-85), so the leaf starts centered at
     // (185,15) and a drag 100 right lands it at (285,15).
@@ -83,10 +83,10 @@ describe('moveAction under a container frame', () => {
   it('moves the children of an envelope, which carries nothing', () => {
     const scene = sceneWith();
     const e = scene.add({
-      kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 1, 1),
+      kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 1, 1),
       dependsOn: 'children', derivePose: unionOfChildren,
     });
-    const s = scene.add({ kind: 'leaf', parent: e, layer: 'main', data: {}, pose: box(10, 10) });
+    const s = scene.add({ kind: 'mark', parent: e, layer: 'main', data: {}, pose: box(10, 10) });
     dragAndCheck(scene, [e], { [e]: box(110, 10), [s]: box(110, 10) });
   });
 });

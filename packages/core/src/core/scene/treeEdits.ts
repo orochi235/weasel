@@ -47,7 +47,7 @@ function removeSnapshot<TData, TLayer extends string, TPose>(
 ): RemoveSnapshot<TData, TLayer, TPose> {
   const nodes: Node<TData, TLayer, TPose>[] = ids.map((nid) => {
     const n = store.requireNode(nid);
-    return n.kind === 'container' ? { ...n, children: [...n.children] } : { ...n };
+    return n.children ? { ...n, children: [...n.children] } : { ...n };
   });
   // The rest is reachable through a snapshotted parent's cloned `children`.
   const detached = nodes
@@ -73,7 +73,7 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
 
   /** Check that `spec` can be placed, and answer with the `kit:add` payload
    *  that places it. Throws on an id collision, an unknown or locked layer,
-   *  a parent that is not a container or is locked, and a layer below the
+   *  a locked parent, and a layer below the
    *  parent's. */
   function addPayload(spec: AddNodeSpec<TData, TLayer, TPose>) {
     const id = spec.id ?? env.generateId();
@@ -83,9 +83,6 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
     const parent = spec.parent ?? null;
     if (parent !== null) {
       const p = requireNode(parent);
-      if (p.kind !== 'container') {
-        throw new Error(`Scene: parent "${parent}" is not a container`);
-      }
       assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
       refuse(parent, 'add under');
     }
@@ -146,9 +143,6 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
       if (parent !== null) {
         refuse(parent, 'move nodes into');
         const p = requireNode(parent);
-        if (p.kind !== 'container') {
-          throw new Error(`Scene: parent "${parent}" is not a container`);
-        }
         assertSubtreeLayer(id, node.layer, parent, p.layer);
         if (parent === id) throw new Error('Scene: cannot parent a node to itself');
         const desc: NodeId[] = [];

@@ -14,9 +14,9 @@ const B = asNodeId('b');
 
 function makeScene(): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: G, kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 60, height: 20 } });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', parent: G, data: {}, pose: { x: 0, y: 0, width: 20, height: 20 } });
-  scene.add({ id: B, kind: 'leaf', layer: 'main', parent: G, data: {}, pose: { x: 40, y: 0, width: 20, height: 20 } });
+  scene.add({ id: G, kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 60, height: 20 } });
+  scene.add({ id: A, kind: 'mark', layer: 'main', parent: G, data: {}, pose: { x: 0, y: 0, width: 20, height: 20 } });
+  scene.add({ id: B, kind: 'mark', layer: 'main', parent: G, data: {}, pose: { x: 40, y: 0, width: 20, height: 20 } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 

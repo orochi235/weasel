@@ -123,7 +123,7 @@ export function markSpecs(
       const stroke = mark.stroke ?? (mark.fill === undefined ? ctx.style.stroke : undefined);
       return {
         id,
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'main',
         parent: nodeId as never,
         pickable: false,
@@ -141,7 +141,7 @@ export function markSpecs(
     const self = mark.self ?? mark.at;
     return {
       id,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pickable: false,
       pose: {

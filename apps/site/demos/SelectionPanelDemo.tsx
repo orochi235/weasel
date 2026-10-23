@@ -42,9 +42,9 @@ export function SelectionPanelDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'a' as never, kind: 'leaf', layer: 'default', pose: { x: 60, y: 50, width: 120, height: 80 }, data: { kind: 'rect', fill: { paint: solid('#7fb069ff') } } },
-      { id: 'b' as never, kind: 'leaf', layer: 'default', pose: { x: 240, y: 90, width: 90, height: 90 }, data: { kind: 'ellipse', fill: { paint: solid('#d98f6fff') }, stroke: strokeOf('#5a3d2bff', 2) } },
-      { id: 'c' as never, kind: 'leaf', layer: 'default', pose: { x: 130, y: 190, width: 140, height: 70 }, data: { kind: 'rect', fill: { paint: solid('#6f9fd9ff') } } },
+      { id: 'a' as never, kind: 'mark', layer: 'default', pose: { x: 60, y: 50, width: 120, height: 80 }, data: { kind: 'rect', fill: { paint: solid('#7fb069ff') } } },
+      { id: 'b' as never, kind: 'mark', layer: 'default', pose: { x: 240, y: 90, width: 90, height: 90 }, data: { kind: 'ellipse', fill: { paint: solid('#d98f6fff') }, stroke: strokeOf('#5a3d2bff', 2) } },
+      { id: 'c' as never, kind: 'mark', layer: 'default', pose: { x: 130, y: 190, width: 140, height: 70 }, data: { kind: 'rect', fill: { paint: solid('#6f9fd9ff') } } },
     ],
   });
   const selection = useSelection({ mode: 'multi' });

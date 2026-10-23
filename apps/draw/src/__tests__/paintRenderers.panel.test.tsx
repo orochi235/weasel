@@ -14,7 +14,7 @@ function fillKindBar(fill: unknown) {
     systemLayers: [{ id: 'default' }],
   });
   scene.add({
-    id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
+    id: asNodeId('n'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: rectPath(0, 0, 10, 10), ...(fill === undefined ? {} : { fill }) },
   });
   const selection = { current: ['n'] };

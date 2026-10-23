@@ -64,7 +64,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     const h = harness([
       {
         id: asNodeId('bed'),
-        kind: 'container',
+        kind: 'group',
         layer: 'default',
         pose: { x: -10, y: -10, width: 100, height: 100 },
         data: { label: 'bed' },
@@ -73,7 +73,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
       {
         id: asNodeId('corner'),
         parent: asNodeId('bed'),
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: -5, y: -5, width: 20, height: 20 },
         data: { label: 'corner' },
@@ -90,7 +90,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     const h = harness([
       {
         id: asNodeId('bed'),
-        kind: 'container',
+        kind: 'group',
         layer: 'default',
         pose: { x: -50, y: -50, width: 100, height: 100 },
         data: { label: 'bed' },
@@ -99,7 +99,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
       {
         id: asNodeId('inner'),
         parent: asNodeId('bed'),
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: -5, y: -5, width: 10, height: 10 },
         data: { label: 'inner' },
@@ -113,7 +113,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     const h = harness([
       {
         id: asNodeId('bed'),
-        kind: 'container',
+        kind: 'group',
         layer: 'default',
         pose: { x: 0, y: 0, width: 100, height: 100 },
         data: { label: 'bed' },
@@ -129,7 +129,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     const h = harness([
       {
         id: asNodeId('bed'),
-        kind: 'container',
+        kind: 'group',
         layer: 'default',
         pose: { x: 0, y: 0, width: 100, height: 100 },
         data: { label: 'bed' },
@@ -144,14 +144,14 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     const h = harness([
       {
         id: asNodeId('A'),
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 0, y: 0, width: 50, height: 50 },
         data: { label: 'A' },
       },
       {
         id: asNodeId('B'),
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'default',
         pose: { x: 60, y: 60, width: 50, height: 50 },
         data: { label: 'B' },

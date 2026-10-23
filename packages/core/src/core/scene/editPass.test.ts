@@ -17,8 +17,8 @@ const B = asNodeId('b');
 
 function setup() {
   const scene = createScene<{ count: number }, 'base', Pose>({ systemLayers: [{ id: 'base' }] });
-  scene.add({ kind: 'leaf', id: A, layer: 'base', pose: POSE, data: { count: 0 } });
-  scene.add({ kind: 'leaf', id: B, layer: 'base', pose: POSE, data: { count: 0 } });
+  scene.add({ kind: 'mark', id: A, layer: 'base', pose: POSE, data: { count: 0 } });
+  scene.add({ kind: 'mark', id: B, layer: 'base', pose: POSE, data: { count: 0 } });
   scene.history.clear();
   const adapter = {
     setPose: (id: string, pose: Pose) => scene.setPose(asNodeId(id), pose),
@@ -130,7 +130,7 @@ describe('scene edit passes', () => {
     scene.addEditPass((s) => { summaries.push(s); return null; });
     const box = asNodeId('box');
     scene.batch('Build', () => {
-      scene.add({ kind: 'container', id: box, layer: 'base', pose: POSE, data: { count: 0 } });
+      scene.add({ kind: 'group', id: box, layer: 'base', pose: POSE, data: { count: 0 } });
       scene.move(A, box);
       scene.remove(B);
     });

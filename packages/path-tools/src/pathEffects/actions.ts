@@ -26,7 +26,7 @@ function selectedLeaves(deps: ActionDeps | undefined): AnyNode[] | null {
   if (!scene || registeredPathEffects(scene.registry) === null) return null;
   const leaves = (deps?.selection?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
-    .filter((n): n is AnyNode => n !== undefined && n.kind === 'leaf');
+    .filter((n): n is AnyNode => n !== undefined && n.kind === 'mark');
   return leaves.length >= 2 ? leaves : null;
 }
 
@@ -246,7 +246,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
           const { pose, path } = worldEditToStorage({ x: 0, y: 0, width: 0, height: 0 }, part.path);
           const { fill, stroke } = resolvePartPaint(part, node.data as Parameters<typeof resolvePartPaint>[1]);
           const data = { path, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
-          const copy = { id: scene.mintId(), kind: 'leaf', layer: node.layer, parent: node.parent, pose, data } as AnyNode;
+          const copy = { id: scene.mintId(), kind: 'mark', layer: node.layer, parent: node.parent, pose, data } as AnyNode;
           ops.push(insertAt(copy, at < 0 ? at : at + k, EXPAND_LABEL));
           made.push(copy.id);
         });

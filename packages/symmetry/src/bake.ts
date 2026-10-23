@@ -80,11 +80,11 @@ function bakeInBatch(scene: Scene<unknown, string, unknown>, id: NodeId): BakeRe
     for (const inner of [...descendantGroups(scene, child)].reverse()) skipped.push(...bakeInBatch(scene, inner).skipped);
   }
   const group = scene.get(id)!;
-  const copies = group.kind === 'container' && group.copiesFromPose
+  const copies = group.kind === 'group' && group.copiesFromPose
     ? group.copiesFromPose(worldPoseOf(scene, id), group) ?? [] : [];
   const index = (group.parent === null ? scene.roots : scene.childrenOf(group.parent)).indexOf(id);
   const plain = scene.add({
-    kind: 'container',
+    kind: 'group',
     layer: group.layer,
     pose: group.pose,
     data: {},
@@ -118,9 +118,9 @@ function descendantGroups(scene: Scene<unknown, string, unknown>, id: NodeId): N
 function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affine, parent: NodeId, skipped: NodeId[]): void {
   const node = scene.get(id);
   if (!node) return;
-  if (node.kind === 'container') {
+  if (node.kind === 'group') {
     const sub = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: node.layer,
       pose: node.pose,
       data: node.data,
@@ -137,5 +137,5 @@ function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affi
     return;
   }
   const pose = localPoseUnder(scene, carryPose(world, m), parent);
-  scene.add({ kind: 'leaf', layer: node.layer, pose, data: node.data, parent });
+  scene.add({ kind: 'mark', layer: node.layer, pose, data: node.data, parent });
 }

@@ -33,7 +33,7 @@ export function ClipDemo() {
   const scene = useScene<{ shape: 'rect'; fill: Fill }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: useMemo(() => [
-      { id: BOX, kind: 'leaf' as const, layer: 'main' as const, pose: at(30, 30), data: { shape: 'rect' as const, fill: { paint: solid('#7fb069') } } },
+      { id: BOX, kind: 'mark' as const, layer: 'main' as const, pose: at(30, 30), data: { shape: 'rect' as const, fill: { paint: solid('#7fb069') } } },
     ], []),
   });
   const animator = useAnimator();

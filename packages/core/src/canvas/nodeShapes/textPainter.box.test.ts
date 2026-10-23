@@ -9,7 +9,7 @@ type Pose = { x: number; y: number; width: number; height: number };
 const POSE: Pose = { x: 10, y: 20, width: 100, height: 80 };
 
 function node(data: unknown, pose: Pose = POSE): Node<unknown, 'default', Pose> {
-  return { id: 'n', kind: 'leaf', layer: 'default', pose, data, parent: null } as Node<unknown, 'default', Pose>;
+  return { id: 'n', kind: 'mark', layer: 'default', pose, data, parent: null } as Node<unknown, 'default', Pose>;
 }
 
 const paint = (data: unknown): DrawCommand[] => {

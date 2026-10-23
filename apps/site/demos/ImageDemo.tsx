@@ -29,9 +29,9 @@ export function ImageDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'img-a' as never, kind: 'leaf', layer: 'default',
+      { id: 'img-a' as never, kind: 'mark', layer: 'default',
         pose: { x: 60, y: 70, width: 160, height: 120 }, data: { image: { src: swatch('#7fb069') } } },
-      { id: 'img-b' as never, kind: 'leaf', layer: 'default',
+      { id: 'img-b' as never, kind: 'mark', layer: 'default',
         pose: { x: 300, y: 150, width: 160, height: 120 }, data: { image: { src: swatch('#a48bd4') } } },
     ],
   });

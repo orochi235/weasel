@@ -68,14 +68,14 @@ export function d3Bind<
 
       data.forEach((_, i) => {
         const existing = scene.get(dataKeys[i]);
-        if (existing && existing.kind === 'leaf' && existing.layer === layer) {
+        if (existing && existing.kind === 'mark' && existing.layer === layer) {
           updateIndices.push(i);
         } else {
           enterIndices.push(i);
         }
       });
       for (const node of scene.nodesOnLayer(layer)) {
-        if (node.kind === 'leaf' && !dataKeySet.has(node.id)) exitIds.push(node.id);
+        if (node.kind === 'mark' && !dataKeySet.has(node.id)) exitIds.push(node.id);
       }
       // A node already on its way out stops that exit here: re-entering keys
       // rebind as UPDATE, and still-absent ones exit afresh.
@@ -112,7 +112,7 @@ export function d3Bind<
           }
           scene.add({
             id,
-            kind: 'leaf',
+            kind: 'mark',
             layer,
             pose,
             data: payload,

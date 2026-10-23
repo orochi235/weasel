@@ -16,11 +16,11 @@ import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
 registerCanvasFont('sans-serif');
 
 const box = (id: string, x: number, y: number) => ({
-  id, kind: 'leaf', layer: 'shapes', pose: { x, y, width: 100, height: 60 }, data: { diagram: {} },
+  id, kind: 'mark', layer: 'shapes', pose: { x, y, width: 100, height: 60 }, data: { diagram: {} },
 });
 
 const connector = (id: string, from: string, to: string, color: string) => ({
-  id, kind: 'leaf', layer: 'shapes', pose: { x: 0, y: 0, width: 0, height: 0 },
+  id, kind: 'mark', layer: 'shapes', pose: { x: 0, y: 0, width: 0, height: 0 },
   data: { diagram: { from: {}, to: {}, router: 'straight' }, stroke: { paint: { color }, width: 3 } },
   dependsOn: [from, to], derivePath: EDGE_DERIVE_PATH,
 });

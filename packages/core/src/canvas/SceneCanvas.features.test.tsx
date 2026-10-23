@@ -37,7 +37,7 @@ function makeScene(): { scene: Scene<D, L, P>; id: NodeId } {
   let id!: NodeId;
   s.batch('seed', () => {
     id = s.add({
-      kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
       pose: { x: 0, y: 0, width: 50, height: 50, rotation: 0 } as P,
     });
   });
@@ -364,7 +364,7 @@ describe('<SceneCanvas pathEdit>', () => {
     const editAnchors = () => deps.get('editAnchors') as { editingId: string; setEditingId(id: string | null): void };
     const scene = createScene<Record<string, unknown>, L, P>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({
-      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10, rotation: 0 },
+      kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10, rotation: 0 },
       data: { path: polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]) },
     });
     scene.setSelection([id]);

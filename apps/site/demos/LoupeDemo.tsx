@@ -103,7 +103,7 @@ function Demo() {
   const scene = useScene<Block, 'default', Pose>({
     systemLayers: [{ id: 'default' }],
     initial: BLOCKS.map((b) => ({
-      id: b.id as never, kind: 'leaf' as const, layer: 'default' as const,
+      id: b.id as never, kind: 'mark' as const, layer: 'default' as const,
       pose: b.pose, data: { color: b.color },
     })),
   });

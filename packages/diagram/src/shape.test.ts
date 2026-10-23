@@ -6,7 +6,7 @@ type PathCmd = { kind: 'path'; fill?: { paint: { color?: string } }; stroke?: { 
 
 const POSE = { x: 0, y: 0, width: 40, height: 20 };
 const node = (data: Record<string, unknown>) =>
-  ({ id: 'n', kind: 'leaf', data: { diagram: { outline: 'rect' }, ...data } }) as never;
+  ({ id: 'n', kind: 'mark', data: { diagram: { outline: 'rect' }, ...data } }) as never;
 const outlineOf = (data: Record<string, unknown>) => diagramShape().paint(node(data), POSE as never)[0] as PathCmd;
 
 describe('diagramShape', () => {

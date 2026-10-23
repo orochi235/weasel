@@ -121,7 +121,7 @@ export function pathEffectNode<TLayer extends string>(
   layer: TLayer,
   derivations: PathEffectDerivations,
 ): {
-  kind: 'leaf';
+  kind: 'mark';
   layer: TLayer;
   pose: { x: number; y: number; width: number; height: number };
   data: { pathEffect: PathEffect };
@@ -130,7 +130,7 @@ export function pathEffectNode<TLayer extends string>(
   derivePose: PathEffectDerivations['derivePose'];
 } {
   return {
-    kind: 'leaf',
+    kind: 'mark',
     layer,
     pose: { x: 0, y: 0, width: 0, height: 0 },
     data: { pathEffect: effect },

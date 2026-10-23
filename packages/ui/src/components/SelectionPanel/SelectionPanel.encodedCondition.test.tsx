@@ -32,7 +32,7 @@ const members: PrefSection['members'] = {
 
 function setup(data: Record<string, unknown>) {
   const scene = createScene<Data, 'default', Pose>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];
   render(<SelectionPanel scene={scene} selection={{ current: ['n'] } as unknown as SelectionApi} properties={properties} routing={routing} />);
 }

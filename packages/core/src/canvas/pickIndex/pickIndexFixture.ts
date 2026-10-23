@@ -67,7 +67,7 @@ export function mixedScene(seed: number, composed: boolean): AnyScene {
   });
   const id = (s: string) => asNodeId(s);
   const at = () => ({ x: r() * 900, y: r() * 900 });
-  const add = (spec: Record<string, unknown>) => scene.add({ kind: 'leaf', layer: 'main', data: null, ...spec } as never);
+  const add = (spec: Record<string, unknown>) => scene.add({ kind: 'mark', layer: 'main', data: null, ...spec } as never);
 
   for (let i = 0; i < 40; i++) {
     const { x, y } = at();
@@ -112,7 +112,7 @@ export function mixedScene(seed: number, composed: boolean): AnyScene {
     });
   }
   const clip = add({
-    id: id('clip'), kind: 'container', pose: { x: 600, y: 600, width: 100, height: 100, rotation: 0.3 },
+    id: id('clip'), kind: 'group', pose: { x: 600, y: 600, width: 100, height: 100, rotation: 0.3 },
     clipFromPose: (p: { x: number; y: number; width: number; height: number }) =>
       ({ kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height }),
   });
@@ -120,11 +120,11 @@ export function mixedScene(seed: number, composed: boolean): AnyScene {
   add({ id: id('clip.out'), parent: clip, pose: { x: 670, y: 650, width: 90, height: 40, rotation: 0.5 } });
   const copies: Affine[] = [translate(300, 0), rotateAboutPoint(200, 200, 1.1)];
   const copy = add({
-    id: id('copy'), kind: 'container', pose: { x: 100, y: 100, width: 0, height: 0 },
+    id: id('copy'), kind: 'group', pose: { x: 100, y: 100, width: 0, height: 0 },
     copiesFromPose: () => copies, clipFromPose: () => null,
   });
   add({ id: id('copy.a'), parent: copy, pose: { x: 120, y: 130, width: 40, height: 20 }, data: { shape: 'rect', fill: SOLID } });
-  const frame = add({ id: id('frame'), kind: 'container', pose: { x: 300, y: 300, width: 200, height: 100, rotation: Math.PI / 3 }, clipFromPose: () => null });
+  const frame = add({ id: id('frame'), kind: 'group', pose: { x: 300, y: 300, width: 200, height: 100, rotation: Math.PI / 3 }, clipFromPose: () => null });
   add({ id: id('frame.a'), parent: frame, pose: { x: 320, y: 310, width: 40, height: 30, rotation: 0.2 } });
   add({ id: id('frame.b'), parent: frame, pose: { x: 10, y: 20, width: 30, height: 30 } });
   for (let i = 0; i < 15; i++) {

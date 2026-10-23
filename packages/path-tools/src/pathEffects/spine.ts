@@ -25,7 +25,7 @@ function spineTarget(deps: ActionDeps | undefined): { blend: AnyNode; spine: Any
   if (!scene || nodes.length !== 2) return ActionDisabledReason.SelectionRequired;
   const blend = nodes.find(isBlend);
   const spine = nodes.find((n) => n !== blend);
-  if (!blend || !spine || spine.kind !== 'leaf' || closesLoop(scene, blend, spine)) return ActionDisabledReason.NotApplicable;
+  if (!blend || !spine || spine.kind !== 'mark' || closesLoop(scene, blend, spine)) return ActionDisabledReason.NotApplicable;
   return { blend, spine };
 }
 

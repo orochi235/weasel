@@ -49,8 +49,8 @@ describe('svgNodesToKitDrafts', () => {
     const drafts = svgNodesToKitDrafts([rectNode(10, 20, 30, 40)], seq());
     expect(drafts).toHaveLength(1);
     const d = drafts[0];
-    expect(d.kind).toBe('leaf');
-    if (d.kind !== 'leaf') return;
+    expect(d.kind).toBe('mark');
+    if (d.kind !== 'mark') return;
     expect(d.parentId).toBeNull();
     expect(d.pose).toEqual({ x: 10, y: 20, width: 30, height: 40 });
     expect(d.data.path).toEqual({ kind: 'rect', x: 10, y: 20, width: 30, height: 40 });
@@ -64,7 +64,7 @@ describe('svgNodesToKitDrafts', () => {
       stroke: { paint: { kind: 'solid', color: '#00ff00' }, width: 3 },
     })], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     // `null`, not absent: absent takes the painter's default fill, which is
     // not what `fill="none"` asked for.
     expect(d.data.fill).toBeNull();
@@ -74,7 +74,7 @@ describe('svgNodesToKitDrafts', () => {
   it('carries element rotation onto the pose', () => {
     const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, { rotation: Math.PI / 4 })], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.pose.rotation).toBeCloseTo(Math.PI / 4);
   });
 
@@ -84,7 +84,7 @@ describe('svgNodesToKitDrafts', () => {
       text: 'hello', style: { fontSize: 14 },
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.text).toBe('hello');
     expect(d.data.style).toEqual({ fontSize: 14 });
     expect(d.pose).toEqual({ x: 5, y: 6, width: 100, height: 20 });
@@ -95,7 +95,7 @@ describe('svgNodesToKitDrafts', () => {
       kind: 'text', x: 0, y: 0, width: 100, height: 60, text: 'hi', verticalAlign: 'center',
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.verticalAlign).toBe('center');
   });
 
@@ -108,7 +108,7 @@ describe('svgNodesToKitDrafts', () => {
       runs: [{ text: 'hi ' }, { text: 'there', bold: true }],
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.fill).toEqual({ paint: { kind: 'solid', color: '#ff00ff' } });
     expect(d.data.stroke).toEqual({ paint: { kind: 'solid', color: '#0000ff' }, width: 2 });
     expect(d.data.runs).toEqual([{ text: 'hi ' }, { text: 'there', bold: true }]);
@@ -119,7 +119,7 @@ describe('svgNodesToKitDrafts', () => {
       kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'hi',
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.fill).toEqual({ paint: { kind: 'solid', color: '#000' } });
   });
 
@@ -129,7 +129,7 @@ describe('svgNodesToKitDrafts', () => {
       stroke: { paint: { kind: 'solid', color: '#000' }, width: 1 },
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.fill).toBeNull();
   });
 
@@ -143,7 +143,7 @@ describe('svgNodesToKitDrafts', () => {
       } },
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     const fill = (d.data.fill as { paint: { units: string; from: { x: number }; to: { x: number } } }).paint;
     expect(fill.units).toBe('bounds');
     expect(fill.from.x).toBeCloseTo(0);
@@ -156,7 +156,7 @@ describe('svgNodesToKitDrafts', () => {
       x: 5, y: 6, width: 40, height: 30, opacity: 0.5, rotation: Math.PI / 2,
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.image).toEqual({ src: 'data:image/png;base64,AA==', opacity: 0.5 });
     expect(d.pose).toEqual({ x: 5, y: 6, width: 40, height: 30, rotation: Math.PI / 2 });
   });
@@ -167,7 +167,7 @@ describe('svgNodesToKitDrafts', () => {
       source: { x: 0.25, y: 0, width: 0.5, height: 1 }, flipX: true, flipY: true,
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.image).toEqual({
       src: 'a.png', source: { x: 0.25, y: 0, width: 0.5, height: 1 }, flipX: true, flipY: true,
     });
@@ -178,7 +178,7 @@ describe('svgNodesToKitDrafts', () => {
       kind: 'image', href: 'a.png', x: 0, y: 0, width: 10, height: 10,
     } as SvgNode], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.image).toEqual({ src: 'a.png' });
   });
 
@@ -189,7 +189,7 @@ describe('svgNodesToKitDrafts', () => {
     } as SvgNode], seq());
     expect(drafts).toHaveLength(3);
     const [g, a, b] = drafts;
-    expect(g.kind).toBe('container');
+    expect(g.kind).toBe('group');
     expect(g.pose).toEqual({ x: 0, y: 0, width: 30, height: 30 });
     expect(a.parentId).toBe(g.id);
     expect(b.parentId).toBe(g.id);
@@ -207,7 +207,7 @@ describe('svgNodesToKitDrafts', () => {
       fill: { kind: 'gradient', paint },
     })], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.fill).toEqual({ paint });
   });
 
@@ -225,7 +225,7 @@ describe('svgNodesToKitDrafts', () => {
       },
     })], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.fill).toMatchObject({
       paint: { units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } },
     });
@@ -247,7 +247,7 @@ describe('svgNodesToKitDrafts', () => {
       },
     })], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.stroke).toMatchObject({
       paint: { kind: 'linear-gradient' },
       width: 2,
@@ -262,7 +262,7 @@ describe('svgNodesToKitDrafts', () => {
       },
     })], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.stroke).toEqual({
       paint: { color: '#00ff00' },
       width: 3, cap: 'round', join: 'bevel', dash: [4, 2], miterLimit: 8,
@@ -274,7 +274,7 @@ describe('svgNodesToKitDrafts', () => {
       stroke: { paint: { kind: 'solid', color: '#00ff00' }, width: 1, opacity: 0.5 },
     })], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect(d.data.stroke).toEqual({ paint: { color: '#00ff00', opacity: 0.5 }, width: 1 });
   });
 
@@ -296,7 +296,7 @@ describe('svgNodesToKitDrafts', () => {
       },
     })], seq());
     const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     expect((d.data.stroke as { paint: unknown }).paint).toMatchObject({
       units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
     });
@@ -320,7 +320,7 @@ describe('unpackSvgFiles', () => {
     // wrapper + rect leaf + <g> container + inner rect leaf
     expect(nodes).toHaveLength(4);
     const wrapper = nodes[0];
-    expect(wrapper.kind).toBe('container');
+    expect(wrapper.kind).toBe('group');
     expect(wrapper.parent).toBeNull();
     for (const n of nodes.slice(1)) {
       // Every non-wrapper node hangs off the wrapper or the inner <g>.
@@ -359,7 +359,7 @@ describe('unpackSvgFiles', () => {
     const { c, batches } = ctx({ point: { x: 400, y: 300 } });
     await unpackSvgFiles([asFile(rotated)], c);
     const wrapper = batches[0].ops[0];
-    expect(wrapper.kind).toBe('container');
+    expect(wrapper.kind).toBe('group');
     expect(wrapper.pose.width).toBeCloseTo(20);
     expect(wrapper.pose.height).toBeCloseTo(100);
   });
@@ -372,7 +372,7 @@ describe('unpackSvgFiles', () => {
     await unpackSvgFiles([asFile(oneRoot)], c);
     const nodes = batches[0].ops;
     expect(nodes).toHaveLength(1);
-    expect(nodes[0].kind).toBe('leaf');
+    expect(nodes[0].kind).toBe('mark');
     expect(nodes[0].parent).toBeNull();
     expect(nodes[0].pose.x + nodes[0].pose.width / 2).toBeCloseTo(100);
   });
@@ -461,15 +461,15 @@ describe('unpackSvgFiles — document markers', () => {
 
 describe('svgNodesToKitDrafts — opacity', () => {
   const leafOf = (svg: string, index = 0) => {
-    const d = svgNodesToKitDrafts(parseSvg(svg).nodes, seq()).filter((x) => x.kind === 'leaf')[index];
-    if (d?.kind !== 'leaf') throw new Error('expected leaf');
+    const d = svgNodesToKitDrafts(parseSvg(svg).nodes, seq()).filter((x) => x.kind === 'mark')[index];
+    if (d?.kind !== 'mark') throw new Error('expected leaf');
     return d.data;
   };
   const doc = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
 
   it("gives a <g>'s fill and stroke to its container, and its children that set none inherit, text included", () => {
     const svg = doc('<g fill="#ff0000" stroke="#0000ff"><rect width="10" height="10"/><text x="0" y="20">hi</text></g>');
-    const group = svgNodesToKitDrafts(parseSvg(svg).nodes, seq()).find((x) => x.kind === 'container')!;
+    const group = svgNodesToKitDrafts(parseSvg(svg).nodes, seq()).find((x) => x.kind === 'group')!;
     expect(group.data.fill).toEqual({ paint: { color: '#ff0000' } });
     expect((group.data.stroke as { paint: unknown }).paint).toEqual({ color: '#0000ff' });
     expect(leafOf(svg, 0)).toMatchObject({ fill: INHERIT, stroke: INHERIT });
@@ -516,7 +516,7 @@ describe('svgNodesToKitDrafts — document markers', () => {
       + '<defs><marker id="tip" refX="3" refY="2" orient="auto"><path d="M0 0 L3 2 L0 4 Z"/></marker></defs>'
       + '<path d="M10 10 L90 10" stroke="#000" marker-end="url(#tip)"/></svg>');
     const [d] = svgNodesToKitDrafts(parsed, seq());
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    if (d.kind !== 'mark') throw new Error('expected leaf');
     const key = (d.data.stroke as { markerEnd: string }).markerEnd;
     expect(key).toMatch(/^tip-/);
     expect(getMarker(key)).toBeDefined();
@@ -538,7 +538,7 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
       leaf: (id, { data, pose }, source) => ({ id, tag: source.meta?.app?.attrs?.tag, fill: data.fill, w: pose.width }),
     });
     expect(drafts[0]).toMatchObject({
-      kind: 'leaf', id: 'd1', data: { id: 'd1', tag: 't', fill: { paint: { color: '#ff0000', opacity: 0.5 } }, w: 10 },
+      kind: 'mark', id: 'd1', data: { id: 'd1', tag: 't', fill: { paint: { color: '#ff0000', opacity: 0.5 } }, w: 10 },
     });
   });
 
@@ -546,7 +546,7 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
     const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 10, 10)] };
     expect(svgNodesToKitDrafts([g, rectNode(5, 5, 1, 1)], seq(), {
       leaf: (_id, { pose }) => (pose.x === 0 ? null : {}),
-    }).map((d) => d.kind)).toEqual(['leaf']);
+    }).map((d) => d.kind)).toEqual(['mark']);
   });
 
   it('keeps an empty group options.keepEmpty asks for, and the group holding it', () => {
@@ -554,8 +554,8 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
     const outer: SvgNode = { kind: 'group', children: [marked] };
     const keepEmpty = (g: { meta?: SvgNode['meta'] }) => g.meta?.app?.attrs?.keep === '1';
     expect(svgNodesToKitDrafts([outer, { kind: 'group', children: [] }], seq(), { keepEmpty })).toEqual([
-      { kind: 'container', id: 'd1', parentId: null, pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} },
-      { kind: 'container', id: 'd2', parentId: 'd1', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} },
+      { kind: 'group', id: 'd1', parentId: null, pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} },
+      { kind: 'group', id: 'd2', parentId: 'd1', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} },
     ]);
     expect(svgNodesToKitDrafts([outer], seq())).toEqual([]);
   });
@@ -572,7 +572,7 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
       + '<image transform="skewX(45)" width="20" height="10" href="a.png"/></svg>',
     );
     const [text, image] = svgNodesToKitDrafts(nodes, seq());
-    if (text.kind !== 'leaf' || image.kind !== 'leaf') throw new Error('expected leaves');
+    if (text.kind !== 'mark' || image.kind !== 'mark') throw new Error('expected leaves');
     expect(text.pose).toEqual({ x: 40, y: -6, width: 80, height: 24, transform: [2, 0, 0, 0.5] });
     expect(text.data.text).toBe('Hi');
     expect(image.pose).toMatchObject({ x: 5, y: 0, width: 20, height: 10 });

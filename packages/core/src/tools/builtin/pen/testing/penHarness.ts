@@ -130,7 +130,7 @@ export function setup(over: {
     view: { get: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }), set: () => {} },
     areaSelect: { hitTestArea },
     editAnchors: { getEditablePath: (id: string) => scene[id] ?? null, applyEdit, editOps },
-    scene: { get: (id: string) => (scene[id] ? { id, kind: 'leaf', parent: null, data: { path: scene[id] } } : undefined) },
+    scene: { get: (id: string) => (scene[id] ? { id, kind: 'mark', parent: null, data: { path: scene[id] } } : undefined) },
     applyOps,
     ...penDeps(adapter, noMakeNode),
     ...(snap ? { snap: sessionDep(sceneOfPaths(Object.values(paths)), snap, scale) } : {}),

@@ -22,7 +22,7 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 function controlsDrawn(options: UseEnvelopeToolOptions, tune: ActionTunings = {}): number {
   const scene = createScene<unknown, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 60 }, { x: 0, y: 60 }]);
-  scene.add({ id: asNodeId('a'), kind: 'leaf', data: { path: square }, layer: 'main', pose: { x: 0, y: 0, width: 60, height: 60 } });
+  scene.add({ id: asNodeId('a'), kind: 'mark', data: { path: square }, layer: 'main', pose: { x: 0, y: 0, width: 60, height: 60 } });
   const tool = renderHook(() => useEnvelopeTool(options)).result.current;
   let layer: RenderLayer<unknown> | null = null;
   const attach = tool.attach!;

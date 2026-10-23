@@ -18,8 +18,8 @@ function setup(over: {
   previewIds?: () => Iterable<string> | null;
 } = {}) {
   const scene = createScene<Record<string, never>, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'bg', pose: BOX, data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'bg', pose: BOX, data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'bg', pose: BOX, data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'bg', pose: BOX, data: {} });
   const drawn: string[] = [];
   const slot = 'slot' in over
     ? over.slot

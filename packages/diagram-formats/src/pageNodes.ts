@@ -101,7 +101,7 @@ export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] 
     if (p === undefined) poseCache.set(node.id, (p = effectivePose(scene, node)));
     return p;
   };
-  const pathOf = (node: SceneNode) => (node.kind === 'leaf' ? derivedDepOf(scene, node.id)?.path ?? null : null);
+  const pathOf = (node: SceneNode) => (node.kind === 'mark' ? derivedDepOf(scene, node.id)?.path ?? null : null);
 
   const tree: SvgKitTree = {
     roots: scene.layers.flatMap((l) => scene.roots.filter((id) => scene.get(id)?.layer === l.id)),
@@ -112,7 +112,7 @@ export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] 
       return {
         kind: node.kind, data: node.data, pose: poseOf(pose(node)),
         ...(node.hidden ? { hidden: true } : {}),
-        ...(node.kind === 'container' && node.copiesFromPose
+        ...(node.kind === 'group' && node.copiesFromPose
           ? { copiesFromPose: node.copiesFromPose as SvgKitTreeNode['copiesFromPose'] }
           : {}),
       };

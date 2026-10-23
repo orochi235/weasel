@@ -23,7 +23,7 @@ function summaryOf(node: AnyNode): DevtoolsNodeSummary {
     id: node.id,
     kind: node.kind,
     layer: node.layer,
-    childCount: node.kind === 'container' ? node.children.length : 0,
+    childCount: node.children?.length ?? 0,
     hidden: node.hidden === true,
     locked: node.locked === true,
     pickable: node.pickable !== false,

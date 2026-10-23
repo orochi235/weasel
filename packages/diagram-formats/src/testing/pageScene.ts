@@ -14,13 +14,13 @@ const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: INK, bac
 const PAGES = { pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }] };
 const EDGE_STROKE = { paint: { color: INK }, width: 2, markerEnd: 'arrow' as const };
 
-const body = (id: string, pose: RectPose, outline: string, color: string, kind: 'leaf' | 'container' = 'leaf') => ({
+const body = (id: string, pose: RectPose, outline: string, color: string, kind: 'mark' | 'group' = 'mark') => ({
   id: id as never, kind, layer: 'main' as const, pose,
   data: { diagram: { outline }, fill: { paint: { color } }, stroke: { paint: { color: INK }, width: 1 } },
 });
 
 const connector = (id: string, from: string, to: string) => ({
-  id: id as never, kind: 'leaf' as const, layer: 'main' as const, pose: { x: 0, y: 0, width: 0, height: 0 },
+  id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x: 0, y: 0, width: 0, height: 0 },
   data: { diagram: { from: {}, to: {} }, stroke: EDGE_STROKE },
   dependsOn: [from as never, to as never],
   derivePath: EDGE_DERIVE_PATH,
@@ -37,9 +37,9 @@ export function pageScene(): { scene: PageScene; pages: readonly PlacedPage[] } 
     registry: withDiagramRegistry(),
     doc: { [PAGES_DOC_KEY]: PAGES },
     initial: [
-      body('a', { x: 20, y: 20, width: 60, height: 40 }, 'diamond', RED, 'container'),
+      body('a', { x: 20, y: 20, width: 60, height: 40 }, 'diamond', RED, 'group'),
       {
-        id: 'a/row' as never, kind: 'leaf', layer: 'main', parent: 'a' as never,
+        id: 'a/row' as never, kind: 'mark', layer: 'main', parent: 'a' as never,
         pose: { x: 30, y: 30, width: 40, height: 20 },
         data: { text: 'Start', style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: { paint: { color: INK } } },
       },

@@ -7,17 +7,17 @@ describe('subscribe / getVersion', () => {
     let count = 0;
     const v0 = s.getVersion();
     const off = s.subscribe(() => { count++; });
-    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     expect(count).toBe(1);
     expect(s.getVersion()).toBeGreaterThan(v0);
     off();
-    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     expect(count).toBe(1);
   });
 
   it('undo and redo also bump version', () => {
     const s = makeScene();
-    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const v = s.getVersion();
     s.undo();
     expect(s.getVersion()).toBeGreaterThan(v);

@@ -33,7 +33,7 @@ function setup() {
   const scene = createScene<object, 'main' | 'notes', RectPose>({
     systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
   });
-  const box = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 20, height: 10, rotation: 0 } }) as string;
+  const box = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 20, height: 10, rotation: 0 } }) as string;
   let current: string[] = [box];
   const selection = {
     get: () => current,

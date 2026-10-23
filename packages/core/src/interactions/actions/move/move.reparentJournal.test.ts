@@ -27,8 +27,8 @@ const refusing: LayoutStrategy<RectPose> = {
 describe('moveAction — a refused reparent under an active journal', () => {
   it('lands nothing and reports no commit', () => {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    scene.add({ id: A, kind: 'leaf', layer: 'main', data: {}, pose: HOME });
-    scene.add({ id: T, kind: 'container', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 }, layout: refusing });
+    scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: HOME });
+    scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 }, layout: refusing });
     const journal = scene.history.beginJournal({ label: 'session' });
     scene.setActiveJournalAccessor(() => (journal.isActive() ? journal : null));
     const onGestureEnd = vi.fn();

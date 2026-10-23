@@ -13,8 +13,8 @@ function makeScene() {
   return createScene<unknown, 'back' | 'main', Pose>({
     systemLayers: [{ id: 'back', parallax: { pan: 0.25 } }, { id: 'main' }],
     initial: [
-      { id: asNodeId('hill'), kind: 'leaf', layer: 'back', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
-      { id: asNodeId('crate'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 20, height: 20 }, data: {} },
+      { id: asNodeId('hill'), kind: 'mark', layer: 'back', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
+      { id: asNodeId('crate'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 20, height: 20 }, data: {} },
     ],
   }) as never;
 }

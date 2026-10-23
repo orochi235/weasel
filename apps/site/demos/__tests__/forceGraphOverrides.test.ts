@@ -17,7 +17,7 @@ function setup() {
   for (const n of nodes) {
     scene.add({
       id: n.id as never,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'graph',
       pose: { x: n.x - R, y: n.y - R, width: R * 2, height: R * 2 },
       data: { group: 0 },

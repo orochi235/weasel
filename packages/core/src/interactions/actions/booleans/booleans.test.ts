@@ -324,16 +324,16 @@ describe('applyBooleanOp — z-position from getParent / getChildren', () => {
   function nested() {
     const scene = createScene<{ path?: Path }, 'default', Path>({ systemLayers: [{ id: 'default' }] });
     const add = (id: string, x: number, parent?: string) => scene.add({
-      id: asNodeId(id), kind: 'leaf', layer: 'default',
+      id: asNodeId(id), kind: 'mark', layer: 'default',
       pose: { kind: 'rect', x, y: 0, width: 10, height: 10 },
       data: { path: { kind: 'rect', x, y: 0, width: 10, height: 10 } },
       ...(parent ? { parent: asNodeId(parent) } : {}),
     });
     const box = { kind: 'rect', x: 0, y: 0, width: 0, height: 0 } as Path;
     add('top', 100);
-    scene.add({ id: asNodeId('g0'), kind: 'container', layer: 'default', pose: box, data: {} });
+    scene.add({ id: asNodeId('g0'), kind: 'group', layer: 'default', pose: box, data: {} });
     add('g0a', 200, 'g0');
-    scene.add({ id: asNodeId('g'), kind: 'container', layer: 'default', pose: box, data: {} });
+    scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: box, data: {} });
     add('below', 300, 'g');
     add('a', 0, 'g');
     add('b', 5, 'g');
@@ -350,7 +350,7 @@ describe('applyBooleanOp — z-position from getParent / getChildren', () => {
       createPathNode: (path, _op, sourceId) => {
         sources.push(sourceId);
         const parent = scene.get(asNodeId(sourceId))?.parent;
-        return { id: `r${n++}`, kind: 'leaf', layer: 'default', pose: path, data: { path }, parent } as { id: string };
+        return { id: `r${n++}`, kind: 'mark', layer: 'default', pose: path, data: { path }, parent } as { id: string };
       },
       applyOps: (ops, label) => { scene.applyBatch(ops, label ?? 'Booleans', adapter); },
     };

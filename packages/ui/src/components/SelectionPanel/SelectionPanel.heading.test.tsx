@@ -21,7 +21,7 @@ const routing: NodeRoutingEntry[] = [{ name: 'thing', matches: () => true }];
 
 function mount(schema: PrefSection, renderers?: Record<string, PropertyRenderer>) {
   const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: { shadow: true, blur: 4 } });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { shadow: true, blur: 4 } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema }];
   const view = render(
     <SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing} renderers={renderers} />,

@@ -24,10 +24,10 @@ function labelDraw(node: { data: Data }, _pose: Pose): DrawCommand[] {
 describe('buildSceneTree', () => {
   it('does not paint a hidden node, or anything under a hidden container', () => {
     const scene = makeScene();
-    const box = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'box' } });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'kid' }, parent: box });
-    const lone = scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'lone' } });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'shown' } });
+    const box = scene.add({ kind: 'group', layer: 'bg', pose: POSE, data: { label: 'box' } });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'kid' }, parent: box });
+    const lone = scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'lone' } });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'shown' } });
     scene.setHidden(box, true);
     scene.setHidden(lone, true);
     const painted: string[] = [];
@@ -41,8 +41,8 @@ describe('buildSceneTree', () => {
 
   it('does not call the painter for a node on a hidden layer', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'hidden' } });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'shown' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'hidden' } });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'shown' } });
     scene.setLayerVisible('bg', false);
     const painted: string[] = [];
     const draw = (node: { data: Data }, pose: Pose): DrawCommand[] => {
@@ -56,8 +56,8 @@ describe('buildSceneTree', () => {
 
   it('flat scene → one root group per layer, leaf wrappers inside', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'a' } });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'b' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'a' } });
+    scene.add({ kind: 'mark', layer: 'fg', pose: POSE, data: { label: 'b' } });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     expect(out).toHaveLength(2);
@@ -70,9 +70,9 @@ describe('buildSceneTree', () => {
   it('container with two same-layer children → flat bucket [container, child1, child2] in DFS order', () => {
     const scene = makeScene();
     const aabb = { kind: 'rect' as const, x: POSE.x, y: POSE.y, width: POSE.width, height: POSE.height };
-    const bed = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' }, clipFromPose: () => aabb });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'p1' }, parent: bed });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'p2' }, parent: bed });
+    const bed = scene.add({ kind: 'group', layer: 'bg', pose: POSE, data: { label: 'bed' }, clipFromPose: () => aabb });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'p1' }, parent: bed });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'p2' }, parent: bed });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bgGroup = out[0] as { children: DrawCommand[] };
@@ -90,9 +90,9 @@ describe('buildSceneTree', () => {
   it('nested containers (3 levels) → each node clipped by its full ancestor chain', () => {
     const scene = makeScene();
     const clip = () => ({ kind: 'rect' as const, ...POSE });
-    const a = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'a' }, clipFromPose: clip });
-    const b = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'b' }, parent: a, clipFromPose: clip });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'c' }, parent: b });
+    const a = scene.add({ kind: 'group', layer: 'bg', pose: POSE, data: { label: 'a' }, clipFromPose: clip });
+    const b = scene.add({ kind: 'group', layer: 'bg', pose: POSE, data: { label: 'b' }, parent: a, clipFromPose: clip });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'c' }, parent: b });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bg = (out[0] as { children: DrawCommand[] }).children;
@@ -110,7 +110,7 @@ describe('buildSceneTree', () => {
 
   it('empty drawOne output still produces a wrapper group (stable tree shape)', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'a' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'a' } });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, () => [], VIEW);
     const bgGroup = out[0] as { children: DrawCommand[] };
@@ -122,9 +122,9 @@ describe('buildSceneTree', () => {
 
   it('multiple top-level roots on the same layer are all wrapped in that layer group', () => {
     const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'a' } });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'b' } });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'c' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'a' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'b' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'c' } });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bgGroup = out[0] as { children: DrawCommand[] };
@@ -137,13 +137,13 @@ describe('buildSceneTree', () => {
       kind: 'rect', x: 0, y: 0, width: 50, height: 50,
     };
     const bed = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'bg',
       pose: POSE,
       data: { label: 'bed' },
       clipFromPose: () => clipPath,
     });
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'p' }, parent: bed });
+    scene.add({ kind: 'mark', layer: 'bg', pose: POSE, data: { label: 'p' }, parent: bed });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bgGroup = out[0] as { children: DrawCommand[] };
@@ -154,7 +154,7 @@ describe('buildSceneTree', () => {
   it('container with clipFromPose returning null → group has no clip field', () => {
     const scene = makeScene();
     scene.add({
-      kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' },
+      kind: 'group', layer: 'bg', pose: POSE, data: { label: 'bed' },
       clipFromPose: () => null,
     });
     const adapter = sceneToAdapter(scene);
@@ -165,7 +165,7 @@ describe('buildSceneTree', () => {
 
   it('a plain container clips nothing: no painter claims it, so it has no silhouette', () => {
     const scene = makeScene();
-    scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' } });
+    scene.add({ kind: 'group', layer: 'bg', pose: POSE, data: { label: 'bed' } });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bedGroup = (out[0] as { children: DrawCommand[] }).children[0] as { clip?: unknown };
@@ -176,7 +176,7 @@ describe('buildSceneTree', () => {
     const scene = makeScene();
     let received: Pose | null = null;
     const id = scene.add({
-      kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' },
+      kind: 'group', layer: 'bg', pose: POSE, data: { label: 'bed' },
       clipFromPose: (pose: Pose) => { received = pose; return null; },
     });
     const adapter = sceneToAdapter(scene);

@@ -20,7 +20,7 @@ function makeScene(): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', Path>({ systemLayers: [{ id: 'main' }] });
   scene.add({
     id: ID,
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     data: {},
     // Bounds (10, 20) to (50, 40): 40 wide, 20 tall.

@@ -10,7 +10,7 @@ const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: '#111111
 const STUBS = new PathBuilder().moveTo(100, 50).lineTo(124, 50).moveTo(400, 26).lineTo(400, 50).build();
 
 const edgeDep = (path: Path | null): DerivedDep<RectPose> => ({
-  node: { id: asNodeId('e'), kind: 'leaf', layer: 'main', parent: null, pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} } as never,
+  node: { id: asNodeId('e'), kind: 'mark', layer: 'main', parent: null, pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} } as never,
   pose: { x: 0, y: 0, width: 0, height: 0 },
   path,
 });
@@ -51,7 +51,7 @@ describe('off-page tags', () => {
     const registry = withDiagramRegistry<RectPose>();
     expect(registry.derivePose?.[DIAGRAM_OFF_PAGE_TAG]).toBe(OFF_PAGE_TAG_DERIVE_POSE);
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     scene.add(offPageTagSpec(a, 'from', 'Page 2 · A', { ...LOOK, layer: 'main' }) as never);
     const json = scene.toJSON();
     expect(json.nodes.find((n) => n.id === `${a}/offpage-from`)?.derivePoseKey).toBe(DIAGRAM_OFF_PAGE_TAG);

@@ -30,14 +30,14 @@ const RECT = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }, { x: 0, y: 50
 
 function polygonScene() {
   const scene = createScene<{ constraints: PathConstraint[] }, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: ID, kind: 'leaf', layer: 'main', pose: polygonFromPoints(RECT), data: { constraints: CONSTRAINTS } });
+  scene.add({ id: ID, kind: 'mark', layer: 'main', pose: polygonFromPoints(RECT), data: { constraints: CONSTRAINTS } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 
 function dataPathScene() {
   const scene = createScene<{ path: PolygonPath; constraints: PathConstraint[] }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    id: ID, kind: 'leaf', layer: 'main',
+    id: ID, kind: 'mark', layer: 'main',
     pose: { x: 0, y: 0, width: 100, height: 50 },
     data: { path: polygonFromPoints(RECT) as PolygonPath, constraints: CONSTRAINTS },
   });

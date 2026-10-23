@@ -42,7 +42,7 @@ describe('applyBatch (no journal)', () => {
 
   it('ops that re-enter scene mutation methods do not double-record', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const P2 = { x: 9, y: 9, width: 10, height: 10 };
     const mk = (from: typeof POSE, to: typeof POSE): Op => ({
       apply: (adapter) => { (adapter as typeof s).setPose(id, to); },
@@ -63,7 +63,7 @@ describe('applyBatch (no journal)', () => {
 
   it('a throwing op mid-batch reverts the ops before it and still notifies', () => {
     const s = makeScene();
-    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     let notified = 0;
     s.subscribe(() => { notified++; });
     const P2 = { x: 9, y: 9, width: 10, height: 10 };
@@ -93,7 +93,7 @@ describe('applyBatch (no journal)', () => {
       invert: () => ext,
     };
     s.batch('outer', () => {
-      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+      s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
       s.applyBatch([ext], 'inner', null);
     });
     expect(notified).toBe(1);

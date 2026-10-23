@@ -31,7 +31,7 @@ export function EditorStatusBar({
   let groupCount = 0;
   for (const id of scene.renderOrder()) {
     const n = scene.get(id);
-    if (n && n.kind === 'container') groupCount++;
+    if (n && n.kind === 'group') groupCount++;
   }
   const paintLabel = (p: ActivePaint): string =>
     p === null ? 'none' : solidColorOf(p) ?? p.kind ?? 'solid';

@@ -34,7 +34,7 @@ type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', unknown>;
 
 const box = (id: string, pose: { x: number; y: number; width: number; height: number }, data: unknown) =>
-  ({ id: asNodeId(id), kind: 'leaf' as const, layer: 'default' as const, parent: null, pose, data });
+  ({ id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const, parent: null, pose, data });
 
 const createLabScene = () =>
   createScene<unknown, 'default', unknown>({

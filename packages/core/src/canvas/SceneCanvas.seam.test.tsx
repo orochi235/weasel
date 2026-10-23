@@ -56,7 +56,7 @@ describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
     // world x=100..140. Without the view offset it would miss.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     scene.batch('seed', () => {
-      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
         pose: { x: 100, y: 0, width: 40, height: 400 } as P });
     });
     const id = firstId(scene);
@@ -258,9 +258,9 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
     // proves the option overrode it.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     scene.batch('seed', () => {
-      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
         pose: { x: 0, y: 0, width: 100, height: 100 } as P });
-      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
         pose: { x: 0, y: 0, width: 100, height: 100 } as P });
     });
     const [idA, idB] = idsOf(scene);
@@ -297,9 +297,9 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
   it('without pickBest, the default top-most pick is used (byte-identical baseline)', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     scene.batch('seed', () => {
-      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
         pose: { x: 0, y: 0, width: 100, height: 100 } as P });
-      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
         pose: { x: 0, y: 0, width: 100, height: 100 } as P });
     });
     const [, idB] = idsOf(scene);

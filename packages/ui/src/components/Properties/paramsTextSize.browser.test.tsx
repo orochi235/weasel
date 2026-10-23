@@ -104,7 +104,7 @@ function Selection() {
   const data = Object.fromEntries(
     Object.values(LEAVES_BY_KIND).flatMap((leaves) => Object.entries(leaves).map(([k, l]) => [k, l.default])),
   );
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data });
   const properties: NodePropertiesEntry[] = [{ name: 'every', schema: asSection() }];
   const routing: NodeRoutingEntry[] = [{ name: 'every', matches: () => true }];
   return <SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing} />;

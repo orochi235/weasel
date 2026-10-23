@@ -19,7 +19,7 @@ function px(img: RasterImage, x: number, y: number): [number, number, number, nu
 /** A red square at world (10, 10)–(20, 20), with bounds recorded around it. */
 function fixture() {
   const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ kind: 'leaf', layer: 'main', pose: { x: 10, y: 10, width: 10, height: 10 }, data: null });
+  scene.add({ kind: 'mark', layer: 'main', pose: { x: 10, y: 10, width: 10, height: 10 }, data: null });
   const sink = createDebugSink({ bounds: true });
   sink.recordBounds('a', { x: 10, y: 10, width: 10, height: 10 });
   const drawOne = (_n: unknown, p: RectPose): DrawCommand[] => [{

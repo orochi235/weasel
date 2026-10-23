@@ -37,7 +37,7 @@ function buildScene(): Node<unknown, string, RectPose>[] {
   const kinds = ['ellipse', 'polygon', 'star'];
   return Array.from({ length: NODE_COUNT }, (_, i) => ({
     id: asNodeId(`n${i}`),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pose: { x: i * 7, y: i * 3, width: 40, height: 30 },
     data: { shape: kinds[i % kinds.length], sides: 6, points: 5, fill: '#abc' },

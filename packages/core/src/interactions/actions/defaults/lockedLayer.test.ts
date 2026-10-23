@@ -18,11 +18,11 @@ function fixture() {
   const scene = createScene<Record<string, never>, Layer>({
     systemLayers: [{ id: 'base' }, { id: 'art' }],
   });
-  const free = scene.add({ kind: 'leaf', id: asNodeId('free'), layer: 'base', pose: POSE, data: {} });
-  const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'art', pose: POSE, data: {} });
-  scene.add({ kind: 'leaf', id: asNodeId('kid'), layer: 'art', pose: POSE, data: {}, parent: box });
-  const art = scene.add({ kind: 'leaf', id: asNodeId('art'), layer: 'art', pose: POSE, data: {} });
-  scene.add({ kind: 'leaf', id: asNodeId('top'), layer: 'art', pose: POSE, data: {} });
+  const free = scene.add({ kind: 'mark', id: asNodeId('free'), layer: 'base', pose: POSE, data: {} });
+  const box = scene.add({ kind: 'group', id: asNodeId('box'), layer: 'art', pose: POSE, data: {} });
+  scene.add({ kind: 'mark', id: asNodeId('kid'), layer: 'art', pose: POSE, data: {}, parent: box });
+  const art = scene.add({ kind: 'mark', id: asNodeId('art'), layer: 'art', pose: POSE, data: {} });
+  scene.add({ kind: 'mark', id: asNodeId('top'), layer: 'art', pose: POSE, data: {} });
   return { scene, free, box, art, top: asNodeId('top') };
 }
 

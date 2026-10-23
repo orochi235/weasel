@@ -54,7 +54,7 @@ describe('scene document values', () => {
     const s = makeScene();
     const before = s.historyIndex();
     s.batch('Both', () => {
-      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+      s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
       s.doc.set('k', 1);
     });
     expect(s.historyIndex()).toBe(before + 1);

@@ -66,7 +66,7 @@ describe('the built-in text and image painters', () => {
     ['kit:text', { text: 'Hi', style: { fontSize: 20 } }],
     ['kit:image', { image: { src: 'a.png' } }],
   ])('%s paints in its box, and the node wrap stretches it four to one', (id, data) => {
-    const node = { id: 'n', kind: 'leaf', layer: 'main', pose, data };
+    const node = { id: 'n', kind: 'mark', layer: 'main', pose, data };
     const painter = findNodeShape(node as never)!;
     expect(painter.id).toBe(id);
     const own = painter.paint(node as never, pose as never);
@@ -114,7 +114,7 @@ describe('bounds and outlines', () => {
   });
 
   it('bakes the transform into a painter\'s silhouette', () => {
-    const node = { id: 'a', kind: 'leaf', layer: 'main', pose: STRETCHED, data: { kind: 'rect' } };
+    const node = { id: 'a', kind: 'mark', layer: 'main', pose: STRETCHED, data: { kind: 'rect' } };
     const sil = findShapeSilhouette(node as never, STRETCHED);
     expect(sil).not.toBeNull();
     near(boundsOfPath(sil!), [-60, 0, 160, 12]);
@@ -138,7 +138,7 @@ describe('picking', () => {
   });
 
   it('narrows to the painted shape through the same transform', () => {
-    const node = { id: 'a', kind: 'leaf', layer: 'main', pose: STRETCHED, data: { shape: 'ellipse', fill: { paint: { color: '#888' } } } };
+    const node = { id: 'a', kind: 'mark', layer: 'main', pose: STRETCHED, data: { shape: 'ellipse', fill: { paint: { color: '#888' } } } };
     expect(shapeCoversPoint(node as never, STRETCHED, 90, 6)).toBe(true);
     // The stretched ellipse's corner region is bare.
     expect(shapeCoversPoint(node as never, STRETCHED, 98, 0.5)).toBe(false);
@@ -146,8 +146,8 @@ describe('picking', () => {
 
   it('takes a stretched node in a region that only its stretch reaches', () => {
     const scene = createScene<{ kind: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    scene.add({ kind: 'leaf', layer: 'main', id: asNodeId('plain'), pose: PLAIN, data: { kind: 'rect' } });
-    scene.add({ kind: 'leaf', layer: 'main', id: asNodeId('wide'), pose: STRETCHED, data: { kind: 'rect' } });
+    scene.add({ kind: 'mark', layer: 'main', id: asNodeId('plain'), pose: PLAIN, data: { kind: 'rect' } });
+    scene.add({ kind: 'mark', layer: 'main', id: asNodeId('wide'), pose: STRETCHED, data: { kind: 'rect' } });
     expect(hitTestArea(scene as never, { x: 80, y: 2, width: 10, height: 4 })).toEqual(['wide']);
   });
 });

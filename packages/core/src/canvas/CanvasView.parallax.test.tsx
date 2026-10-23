@@ -26,7 +26,7 @@ describe('<CanvasView> chrome on a parallax layer', () => {
     // at the view's 2x its world is the camera's doubled, so the node reads
     // half as large in that view's camera world.
     const scene = createScene<unknown, 'sky', P>({ systemLayers: [{ id: 'sky', parallax: { pan: 1, zoom: 0 } }] });
-    scene.add({ id: 'sun' as NodeId, kind: 'leaf', layer: 'sky', pose: { x: 40, y: 40, width: 20, height: 20 }, data: {} });
+    scene.add({ id: 'sun' as NodeId, kind: 'mark', layer: 'sky', pose: { x: 40, y: 40, width: 20, height: 20 }, data: {} });
     let seen: Record<string, unknown> | undefined;
     const probe: RenderLayer<unknown> = {
       id: 'probe', label: 'probe',

@@ -17,7 +17,7 @@ const POSE: RectPose = { x: 10, y: 20, width: 100, height: 40, rotation: Math.PI
 describe('chrome bounds of a node whose pose carries a transform', () => {
   it('reports the frame the node is drawn in', () => {
     const initial: UseSceneOptions<object, 'default', RectPose>['initial'] = [{
-      id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: POSE, data: {},
+      id: asNodeId('n'), kind: 'mark', layer: 'default', pose: POSE, data: {},
     }];
     const { result } = renderHook(() => {
       const scene = useScene<object, 'default', RectPose>({ systemLayers: [{ id: 'default' }], initial });

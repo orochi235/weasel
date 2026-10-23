@@ -2,18 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { dataKeyReader } from '../trait';
 import { diagramCanDropInto } from './canDropInto';
 
-type N = { id: string; kind: 'leaf' | 'container'; data: unknown };
+type N = { id: string; kind: 'mark' | 'group'; data: unknown };
 const region = (id: string, role: string): N =>
-  ({ id, kind: 'container', data: { diagram: { outline: 'rect', container: { role } } } });
+  ({ id, kind: 'group', data: { diagram: { outline: 'rect', container: { role } } } });
 const NODES: Record<string, N> = {
   box: region('box', 'container'),
   pool: region('pool', 'pool'),
   lane: region('lane', 'lane'),
   lane2: region('lane2', 'lane'),
-  body: { id: 'body', kind: 'container', data: { diagram: { outline: 'rect' } } },
-  group: { id: 'group', kind: 'container', data: {} },
-  shape: { id: 'shape', kind: 'leaf', data: { diagram: { outline: 'rect' } } },
-  edge: { id: 'edge', kind: 'leaf', data: { diagram: { from: {}, to: {} } } },
+  body: { id: 'body', kind: 'group', data: { diagram: { outline: 'rect' } } },
+  group: { id: 'group', kind: 'group', data: {} },
+  shape: { id: 'shape', kind: 'mark', data: { diagram: { outline: 'rect' } } },
+  edge: { id: 'edge', kind: 'mark', data: { diagram: { from: {}, to: {} } } },
 };
 const can = diagramCanDropInto({ get: (id: never) => NODES[id as string] });
 

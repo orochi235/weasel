@@ -97,7 +97,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         }
         const transform = planeTransform(plane, parentPlane);
         const group: GroupDrawCommand = transform ? { kind: 'group', transform, children } : { kind: 'group', children };
-        if (effNode.kind === 'container') {
+        if (effNode.kind === 'group') {
           const clip = findShapeSilhouette(
             effNode as unknown as Node<unknown, string, TPose>,
             entry.pose,

@@ -24,10 +24,10 @@ const DARK = { paint: { color: '#101010' } };
 const INK = { paint: { color: '#ffffff' }, width: 2 };
 
 const box = (id: string, x: number, y: number) =>
-  ({ id: id as never, kind: 'leaf' as const, layer: 'main' as const, pose: { x, y, width: 100, height: 60 }, data: { diagram: {}, fill: DARK } });
+  ({ id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x, y, width: 100, height: 60 }, data: { diagram: {}, fill: DARK } });
 
 const connector = (id: string, from: string, to: string) => ({
-  id: id as never, kind: 'leaf' as const, layer: 'main' as const, pose: { x: 0, y: 0, width: 0, height: 0 },
+  id: id as never, kind: 'mark' as const, layer: 'main' as const, pose: { x: 0, y: 0, width: 0, height: 0 },
   data: { diagram: { from: {}, to: {} }, stroke: INK }, dependsOn: [from as never, to as never], derivePath: EDGE_DERIVE_PATH,
 });
 

@@ -29,8 +29,8 @@ const refusing = {
 
 function dropInto(params: Record<string, unknown>) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', data: {}, pose: HOME });
-  scene.add({ id: T, kind: 'container', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 }, layout: refusing });
+  scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: HOME });
+  scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 }, layout: refusing });
   const onGestureEnd = vi.fn();
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');

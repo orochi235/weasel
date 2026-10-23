@@ -7,7 +7,7 @@ const at = (x: number): P => ({ x, y: 0, width: 10, height: 10 });
 
 function setup() {
   const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  const add = (): NodeId => scene.add({ kind: 'leaf', layer: 'main', pose: at(0), data: {} });
+  const add = (): NodeId => scene.add({ kind: 'mark', layer: 'main', pose: at(0), data: {} });
   return { scene, a: add(), b: add() };
 }
 

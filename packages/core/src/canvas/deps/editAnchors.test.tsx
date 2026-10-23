@@ -20,7 +20,7 @@ describe('useEditAnchorsDepSource', () => {
     };
     const updateMock = vi.fn();
     const nodes = new Map<string, any>([
-      ['poly', { id: 'poly', kind: 'leaf', pose: polyPath, data: null }],
+      ['poly', { id: 'poly', kind: 'mark', pose: polyPath, data: null }],
     ]);
     const scene = {
       layers: [{ id: 'default' }],
@@ -105,7 +105,7 @@ describe('useEditAnchorsDepSource', () => {
     const nodes = new Map<string, any>([
       ['poly', {
         id: 'poly',
-        kind: 'leaf',
+        kind: 'mark',
         pose: { kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array() },
         data: null,
       }],

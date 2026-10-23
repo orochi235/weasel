@@ -12,8 +12,8 @@ const B = asNodeId('b');
 /** Two leaves, and an adapter that moves B by as much as it is asked to move A. */
 function fixture() {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', data: {}, pose: at(0) });
-  scene.add({ id: B, kind: 'leaf', layer: 'main', data: {}, pose: at(100) });
+  scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: at(0) });
+  scene.add({ id: B, kind: 'mark', layer: 'main', data: {}, pose: at(100) });
   scene.history.clear();
   const adapter = {
     setPose(id: string, pose: Pose) {
@@ -56,7 +56,7 @@ describe('Scene — a pose an adapter writes beside the one an op asked for', ()
       scene.setPose(scene.roots.at(-1)!, at(-1));
     } };
     scene.applyBatch([move(0, 5)], 'Move', last);
-    scene.untracked(() => scene.add({ id: C, kind: 'leaf', layer: 'main', data: {}, pose: at(500) }));
+    scene.untracked(() => scene.add({ id: C, kind: 'mark', layer: 'main', data: {}, pose: at(500) }));
     scene.undo();
     expect(scene.get(C)!.pose.x).toBe(500);
     expect(scene.get(B)!.pose.x).toBe(100);

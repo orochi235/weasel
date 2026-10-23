@@ -10,7 +10,7 @@ const POSE = { x: 0, y: 0, width: 10, height: 10 };
 
 function setup() {
   const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-  const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
+  const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'a' } });
   const adapter = sceneToAdapter(scene);
   return { scene, id, adapter };
 }
@@ -64,13 +64,13 @@ describe('overrides on the walk', () => {
   it('moves a container\'s clip with its override', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
     const parent = scene.add({
-      kind: 'container',
+      kind: 'group',
       layer: 'main',
       pose: { x: 0, y: 0, width: 50, height: 50 },
       data: { label: 'p' },
       clipFromPose: (p: typeof POSE) => ({ kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height }),
     });
-    scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'c' }, parent });
+    scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'c' }, parent });
     const adapter = sceneToAdapter(scene);
 
     scene.overrides.set(parent, { pose: { x: 200, y: 0, width: 50, height: 50 } });

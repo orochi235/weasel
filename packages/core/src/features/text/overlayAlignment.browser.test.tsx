@@ -113,7 +113,7 @@ const WHITE = { kind: 'solid' as const, color: '#ffffff' };
 function renderCanvas(c: Case, dpr: number): RasterImage {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
-    kind: 'leaf', layer: 'main',
+    kind: 'mark', layer: 'main',
     pose: { x: c.x, y: c.y, width: 200, height: boxHeight(c) },
     data: { text: c.text ?? TEXT, style: styleOf(c), fill: { paint: WHITE } },
   });

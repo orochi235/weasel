@@ -10,7 +10,7 @@ function isObj(d: unknown): d is Record<string, unknown> {
  *  with it; spread it ahead of `defaultNodeRouting`, which is the shape-kind table alone. */
 export const groupNodeRouting: NodeRoutingEntry = {
   name: 'group',
-  matches: (_data, node) => node?.kind === 'container',
+  matches: (_data, node) => node?.kind === 'group',
 };
 
 /**

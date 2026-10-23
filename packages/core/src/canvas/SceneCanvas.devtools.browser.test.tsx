@@ -32,7 +32,7 @@ async function mount() {
   const scene = createScene<unknown, 'main', { x: number; y: number; width: number; height: number }>({
     systemLayers: [{ id: 'main' }],
   });
-  const id = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 20, width: 40, height: 40 }, data: {} });
+  const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 20, width: 40, height: 40 }, data: {} });
   host = document.createElement('div');
   document.body.appendChild(host);
   root = createRoot(host);

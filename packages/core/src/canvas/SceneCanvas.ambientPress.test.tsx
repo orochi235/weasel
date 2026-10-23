@@ -33,7 +33,7 @@ function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
     for (const x of [0, 100]) {
-      s.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x, y: 0, width: 50, height: 50 } });
+      s.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x, y: 0, width: 50, height: 50 } });
     }
   });
   return s;

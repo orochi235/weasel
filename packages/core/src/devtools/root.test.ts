@@ -7,7 +7,7 @@ import { createDevtoolsRoot, type DevtoolsRootSource } from './root';
 
 function setup() {
   const scene = createScene<unknown, string>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
   const source = {
     scene: () => scene as never,
     trace: createDispatchTrace(10, false),

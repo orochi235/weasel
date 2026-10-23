@@ -9,10 +9,10 @@ const box: RectPose = { x: 0, y: 0, width: 10, height: 10 };
 /** Roots `a`, `g`, `b` back to front; `g` holds `g1`, `g2`. */
 function setup() {
   const scene = createScene<{ name: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const add = (name: string, parent?: NodeId, kind: 'leaf' | 'container' = 'leaf') =>
+  const add = (name: string, parent?: NodeId, kind: 'mark' | 'group' = 'mark') =>
     scene.add({ id: asNodeId(name), kind, layer: 'main', pose: box, data: { name }, ...(parent ? { parent } : {}) });
   add('a');
-  const g = add('g', undefined, 'container');
+  const g = add('g', undefined, 'group');
   add('g1', g);
   add('g2', g);
   add('b');
@@ -104,9 +104,9 @@ function annotated(annotations?: SceneLayerListAnnotations) {
   const scene = createScene<{ name: string }, 'main' | 'notes', RectPose>({
     systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
   });
-  scene.add({ id: asNodeId('box'), kind: 'leaf', layer: 'main', pose: box, data: { name: 'box' } });
-  scene.add({ id: asNodeId('n1'), kind: 'leaf', layer: 'notes', pose: box, data: { name: 'n1' } });
-  scene.add({ id: asNodeId('n2'), kind: 'leaf', layer: 'notes', pose: box, data: { name: 'n2' } });
+  scene.add({ id: asNodeId('box'), kind: 'mark', layer: 'main', pose: box, data: { name: 'box' } });
+  scene.add({ id: asNodeId('n1'), kind: 'mark', layer: 'notes', pose: box, data: { name: 'n1' } });
+  scene.add({ id: asNodeId('n2'), kind: 'mark', layer: 'notes', pose: box, data: { name: 'n2' } });
   const selection = { current: [asNodeId('box')], set: vi.fn() } as unknown as SelectionApi;
   const hook = renderHook(() =>
     useSceneLayerList({ scene, selection, itemFor: (n) => ({ label: n.data.name }), ...(annotations ? { annotations } : {}) }),

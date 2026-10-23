@@ -18,7 +18,7 @@ const TWO: PagesDoc = {
 function setup(doc: PagesDoc = TWO) {
   const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }], doc: { [PAGES_DOC_KEY]: doc } });
   const rect = (n: string, x: number, y: number, parent?: NodeId) => scene.add({
-    kind: parent ? 'leaf' : 'container', layer: 'l', pose: { x, y, width: 10, height: 10 }, data: { n },
+    kind: parent ? 'mark' : 'group', layer: 'l', pose: { x, y, width: 10, height: 10 }, data: { n },
     ...(parent ? { parent } : {}),
   });
   const onA = rect('onA', 10, 10);
@@ -26,7 +26,7 @@ function setup(doc: PagesDoc = TWO) {
   const onB = rect('onB', 130, 50);
   const gap = rect('gap', 103, 50);
   const link = scene.add({
-    kind: 'leaf', layer: 'l', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { n: 'link' }, dependsOn: [onA, onB],
+    kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { n: 'link' }, dependsOn: [onA, onB],
   });
   return { scene, onA, child, onB, gap, link, entries: () => scene.historyIndex() };
 }
@@ -67,10 +67,10 @@ describe('pages as a document value', () => {
   it('moves the children of a group whose pose derives from them, and never writes the group', () => {
     const { scene } = setup();
     const group = scene.add({
-      kind: 'container', layer: 'l', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { n: 'group' },
+      kind: 'group', layer: 'l', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { n: 'group' },
       dependsOn: 'children', derivePose: unionOfChildrenVia(RECT_POSE_DESCRIPTOR),
     });
-    const inner = scene.add({ kind: 'leaf', layer: 'l', parent: group, pose: { x: 140, y: 20, width: 10, height: 10 }, data: { n: 'inner' } });
+    const inner = scene.add({ kind: 'mark', layer: 'l', parent: group, pose: { x: 140, y: 20, width: 10, height: 10 }, data: { n: 'inner' } });
     movePage(scene, 'b', 0);
     expect(x(scene, inner)).toBe(20);
     expect(scene.get(group)!.pose.x).toBe(0);
@@ -110,7 +110,7 @@ describe('pages as a document value', () => {
 
   it('writes a first pages doc on a scene that had none, moving nothing', () => {
     const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
-    const id = scene.add({ kind: 'leaf', layer: 'l', pose: { x: 5, y: 5, width: 1, height: 1 }, data: { n: '' } });
+    const id = scene.add({ kind: 'mark', layer: 'l', pose: { x: 5, y: 5, width: 1, height: 1 }, data: { n: '' } });
     setPages(scene, TWO, 'Pages');
     expect(pagesOf(scene)).toEqual(TWO);
     expect(scene.get(id)!.pose.x).toBe(5);

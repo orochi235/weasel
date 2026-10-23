@@ -31,7 +31,7 @@
     "longestFunction": 235
   },
   "packages/core/src/core/scene/nodeStore.ts": {
-    "longestFunction": 207
+    "longestFunction": 204
   },
   "packages/core/src/core/scene/renderOrder.ts": {
     "longestFunction": 164

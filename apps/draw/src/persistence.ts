@@ -1,7 +1,7 @@
 // WeaselDraw's persistence: the legacy-paint migration layered over the shared snapshot helpers.
 
 import { nodeSpecsFromSnapshot as sharedNodeSpecs, reviveTypedArrays } from '@editor/index';
-import type { AddNodeSpec, SceneRegistry, SerializedScene } from '@weasel-js/core';
+import type { AddNodeSpec, SceneRegistry, SerializedScene, SerializedSceneV1 } from '@weasel-js/core';
 import { solid } from '@weasel-js/core';
 
 
@@ -113,7 +113,7 @@ export function clipboardJsonReviver(key: string, value: unknown): unknown {
 
 /** The shared `nodeSpecsFromSnapshot` with the legacy-paint migration applied to each node's data. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
-  json: SerializedScene<TData, TLayer, TPose>,
+  json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   registry?: SceneRegistry<TPose, TData, TLayer>,
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   return sharedNodeSpecs(json, registry, reviveSnapshot);

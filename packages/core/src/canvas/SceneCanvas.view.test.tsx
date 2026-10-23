@@ -195,7 +195,7 @@ describe('SceneCanvas view', () => {
     const addRect = () => {
       scene.batch('seed', () => {
         scene.add({
-          kind: 'leaf',
+          kind: 'mark',
           data: { kind: 'rect' },
           layer: 'main' as L,
           pose: { x: 10, y: 10, width: 20, height: 20 } as P,
@@ -291,7 +291,7 @@ describe('SceneCanvas view read during the first commit', () => {
   function mountAndRead(viewProps: Pick<SceneCanvasProps<D, L, P>, 'view' | 'defaultView'>) {
     const scene = newScene();
     const id = scene.add({
-      kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 },
+      kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 },
     });
     const apiRef = { current: null as SceneCanvasApi | null };
     const seen: { dep?: View; camera?: View; picked?: string[]; hook?: View } = {};

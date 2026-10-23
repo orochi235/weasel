@@ -48,19 +48,19 @@ export function createSolidScene(): SolidScene {
     systemLayers: [{ id: 'solids' }],
     initial: [
       {
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'solids',
         pose: pose3({ x: -2.2, y: 0.5, z: 0 }),
         data: { kind: 'box', color: '#e06c4f' },
       },
       {
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'solids',
         pose: pose3({ x: 0, y: 0.5, z: 0 }, { x: 1.4, y: 1.4, z: 1.4 }),
         data: { kind: 'sphere', color: '#4f9de0' },
       },
       {
-        kind: 'leaf',
+        kind: 'mark',
         layer: 'solids',
         pose: pose3({ x: 2.2, y: 0.75, z: -1 }, { x: 1, y: 1.5, z: 1 }),
         data: { kind: 'box', color: '#6fbf73' },

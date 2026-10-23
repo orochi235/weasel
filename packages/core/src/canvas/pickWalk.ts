@@ -142,7 +142,7 @@ export interface PickQuery<TPose> {
   inPlane?(map: PlaneMap): PickQuery<TPose>;
   /** The same question carried by `m`, an affine from world into the source
    *  frame of a copy a container draws. A query without it cannot reach
-   *  copies — see `ContainerNode.copiesFromPose`. */
+   *  copies — see `GroupNode.copiesFromPose`. */
   inCopy?(m: Affine): PickQuery<TPose>;
 }
 
@@ -152,7 +152,7 @@ export function ownClipOf<TPose>(
   pose: TPose,
   derived?: Path | null,
 ): Path | null {
-  if (node.kind !== 'container') return null;
+  if (node.kind !== 'group') return null;
   if (typeof node.clipFromPose === 'function') return node.clipFromPose(pose);
   return findShapeSilhouette(
     node as unknown as Node<unknown, string, TPose>,
@@ -194,7 +194,7 @@ export function pickWalk<TPose>(
   const copiesOf = (ancestor: PickCandidate<TPose>): readonly Affine[] => {
     let found = copyMaps.get(ancestor.id);
     if (found === undefined) {
-      const fn = ancestor.kind === 'container' ? ancestor.copiesFromPose : undefined;
+      const fn = ancestor.kind === 'group' ? ancestor.copiesFromPose : undefined;
       const copies = fn ? fn(src.poseOf(ancestor), ancestor as never) ?? [] : [];
       found = copies.map(invert).filter((m): m is Affine => m !== null);
       copyMaps.set(ancestor.id, found);
@@ -217,13 +217,13 @@ export function pickWalk<TPose>(
   };
 
   const order = src.order();
-  const copying = order.some((n) => n.kind === 'container' && typeof n.copiesFromPose === 'function');
+  const copying = order.some((n) => n.kind === 'group' && typeof n.copiesFromPose === 'function');
   const visit = (q.broad !== undefined ? src.candidates?.((layer) => {
     const query = queryFor(layer);
     return query === null ? null : query.broad;
   }) : null) ?? order;
   for (const node of visit) {
-    if (!includeContainers && node.kind === 'container') continue;
+    if (!includeContainers && node.kind === 'group') continue;
     // Transparent to picking: the click belongs to whatever is behind it,
     // which for a label inside a box is the box.
     if (node.pickable === false) continue;

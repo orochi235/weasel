@@ -41,7 +41,7 @@ const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
 const newScene = () => {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'main', data: { kind: 'rect' },
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'main', data: { kind: 'rect' },
     pose: { x: 0, y: 0, width: 10, height: 10 } });
   return scene;
 };
@@ -84,7 +84,7 @@ describe('SceneCanvas scene subscription', () => {
     const before = commits;
 
     act(() => {
-      scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'main', data: { kind: 'rect' },
+      scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'main', data: { kind: 'rect' },
         pose: { x: 5, y: 5, width: 10, height: 10 } });
     });
     await frame();

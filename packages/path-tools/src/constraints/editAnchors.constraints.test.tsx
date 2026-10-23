@@ -33,7 +33,7 @@ const SQUARE = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y:
 function setup(constraints: PathConstraint[] = PARALLELOGRAM, pose: PolygonPath = SQUARE) {
   const scene = createScene<Data, 'main', PolygonPath>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
-    kind: 'leaf', layer: 'main',
+    kind: 'mark', layer: 'main',
     pose,
     data: { constraints },
   });

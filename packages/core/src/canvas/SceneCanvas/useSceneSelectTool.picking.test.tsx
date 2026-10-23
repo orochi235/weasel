@@ -26,7 +26,7 @@ const NODES: UseSceneOptions<Item, 'default', Pose>['initial'] = [
   // Bottom: a small plain rect in the top-left corner.
   {
     id: asNodeId('under'),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 0, y: 0, width: 20, height: 20 },
     data: { color: '#abc' },
@@ -35,7 +35,7 @@ const NODES: UseSceneOptions<Item, 'default', Pose>['initial'] = [
   // `under`; the shape it draws does not.
   {
     id: asNodeId('ellipse'),
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 0, y: 0, width: 100, height: 100 },
     data: { shape: 'ellipse', fill: { paint: { color: '#000' } } },
@@ -72,7 +72,7 @@ describe('useSceneSelectTool — hidden layers', () => {
         systemLayers: [{ id: 'default' }, { id: 'bg' }],
         initial: [{
           id: asNodeId('hidden-node'),
-          kind: 'leaf',
+          kind: 'mark',
           layer: 'bg',
           pose: { x: 0, y: 0, width: 50, height: 50 },
           data: { color: '#abc' },
@@ -169,7 +169,7 @@ describe('useSceneSelectTool — ancestor clips', () => {
         initial: [
           {
             id: asNodeId('bed'),
-            kind: 'container',
+            kind: 'group',
             layer: 'default',
             pose: { x: -50, y: -50, width: 150, height: 150 },
             data: {},
@@ -178,7 +178,7 @@ describe('useSceneSelectTool — ancestor clips', () => {
           {
             id: asNodeId('inner'),
             parent: asNodeId('bed'),
-            kind: 'leaf',
+            kind: 'mark',
             layer: 'default',
             pose: leaf,
             data: {},
@@ -215,7 +215,7 @@ describe('useSceneSelectTool — stroke reach', () => {
         systemLayers: [{ id: 'default' }],
         initial: [{
           id: asNodeId('boxed'),
-          kind: 'leaf',
+          kind: 'mark',
           layer: 'default',
           pose: { x: 0, y: 0, width: 100, height: 100 },
           data: { shape: 'rect', stroke: { width: 20, align: 'outer', paint: '#000' } },
@@ -252,15 +252,15 @@ describe('useSceneSelectTool — derived nodes', () => {
         systemLayers: [{ id: 'default' }],
         initial: [
           {
-            id: asNodeId('a'), kind: 'leaf', layer: 'default',
+            id: asNodeId('a'), kind: 'mark', layer: 'default',
             pose: { x: 0, y: 0, width: 10, height: 10 }, data: {},
           },
           {
-            id: asNodeId('b'), kind: 'leaf', layer: 'default',
+            id: asNodeId('b'), kind: 'mark', layer: 'default',
             pose: { x: 200, y: 0, width: 10, height: 10 }, data: {},
           },
           {
-            id: asNodeId('edge'), kind: 'leaf', layer: 'default',
+            id: asNodeId('edge'), kind: 'mark', layer: 'default',
             pose: { x: 0, y: 0, width: 0, height: 0 },
             data: { stroke: { width: 2, paint: '#000' } },
             dependsOn: [asNodeId('a'), asNodeId('b')],

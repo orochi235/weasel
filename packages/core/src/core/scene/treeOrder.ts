@@ -1,4 +1,5 @@
 import type { Node, NodeId } from './types';
+import { hasChildren } from './treeShape';
 
 /** Every node reachable from `roots`, in tree preorder: a parent before its
  *  children, siblings in sibling order, whatever layer each sits on. */
@@ -12,7 +13,7 @@ export function treePreorder<TData, TLayer extends string, TPose>(
     const node = nodes.get(stack.pop()!);
     if (!node) continue;
     out.push(node);
-    if (node.kind === 'container') {
+    if (hasChildren(node)) {
       for (let i = node.children.length - 1; i >= 0; i--) stack.push(node.children[i]);
     }
   }

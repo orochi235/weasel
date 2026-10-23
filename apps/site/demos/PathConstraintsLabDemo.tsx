@@ -59,7 +59,7 @@ function createLabScene() {
     systemLayers: [{ id: 'default' }],
     initial: [{
       id: ID,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose,
       data: {

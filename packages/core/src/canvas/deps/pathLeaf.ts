@@ -40,7 +40,7 @@ export function storePiece({ world, g, box }: DrawnPose, piece: Path): { pose: u
 /** The path a leaf stores, or null for one that is not a free path leaf: a
  *  group, a locked leaf, one whose geometry derives from other nodes. */
 export function leafPath(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>): Path | null {
-  if (node.kind !== 'leaf' || node.derivePath || node.derivePose) return null;
+  if (node.kind !== 'mark' || node.derivePath || node.derivePose) return null;
   if (scene.isLocked(node.id)) return null;
   const path = (node.data as { path?: unknown } | null)?.path as Path | undefined;
   return path && (path.kind === 'rect' || path.kind === 'polygon') ? path : null;

@@ -78,7 +78,7 @@ describe('useSceneTextEdit — drawOne', () => {
   });
 
   const node = (id: string) => ({
-    id: asNodeId(id), kind: 'leaf' as const, layer: 'default', parent: null,
+    id: asNodeId(id), kind: 'mark' as const, layer: 'default', parent: null,
     pose: { x: 0, y: 0, width: 100, height: 80 },
     data: { text: 'hi', background: { paint: solid('#ffe97a') } },
   });

@@ -44,7 +44,7 @@ const createLabScene = () => {
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [{
-      kind: 'leaf', id: asNodeId('leaf'), layer: 'default', pose: { x, y, width, height },
+      kind: 'mark', id: asNodeId('leaf'), layer: 'default', pose: { x, y, width, height },
       data: { path, fill: { paint: solid('#a8d5a2') }, stroke: { paint: solid('#3f7a3a'), width: 2 } },
     }],
   });

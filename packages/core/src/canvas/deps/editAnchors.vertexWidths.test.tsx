@@ -25,7 +25,7 @@ const WIDTHS: VertexWidth[] = [2, PAIR, 6, NaN];
 function setup() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
-    kind: 'leaf', layer: 'main', pose: { x: 100, y: 100, width: 40, height: 40 },
+    kind: 'mark', layer: 'main', pose: { x: 100, y: 100, width: 40, height: 40 },
     data: {
       path: polygonFromPoints([{ x: 100, y: 100 }, { x: 140, y: 100 }, { x: 140, y: 140 }, { x: 100, y: 140 }]),
       stroke: { width: 4, vertexWidths: WIDTHS },

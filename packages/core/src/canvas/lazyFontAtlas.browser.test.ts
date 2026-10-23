@@ -34,7 +34,7 @@ const drawOne = (node: { data: Kind }, p: RectPose): DrawCommand[] => node.data 
 function render(kinds: Kind[]): RasterImage {
   const scene = createScene<Kind, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   for (const data of kinds) {
-    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 4, y: 4, width: 20, height: 20 }, data });
+    scene.add({ kind: 'mark', layer: 'main', pose: { x: 4, y: 4, width: 20, height: 20 }, data });
   }
   return renderSceneToPixels({
     scene,

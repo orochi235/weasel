@@ -13,7 +13,7 @@ describe('alignPlaneSource', () => {
     const scene = createScene<object, 'solids', Pose3>({
       systemLayers: [{ id: 'solids' }],
       initial: [pose3({ x: 0, y: 0.5, z: -4 }), pose3({ x: 0, y: 0.5, z: -8 })]
-        .map((pose) => ({ kind: 'leaf' as const, layer: 'solids' as const, pose, data: {} })),
+        .map((pose) => ({ kind: 'mark' as const, layer: 'solids' as const, pose, data: {} })),
     });
     const world = { scene, viewport: () => ({ camera: createCamera({}), width: 800, height: 600 }) };
     const probe = { id: 'box.min', at: { x: -0.48, y: 3, z: 6 }, role: 'box' as const };

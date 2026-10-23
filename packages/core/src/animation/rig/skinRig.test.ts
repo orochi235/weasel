@@ -24,7 +24,7 @@ const BENT = { lower: { rotation: Math.PI / 2 } };
 function sleeveScene(pose: RectPose = BOX) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const sleeve = scene.add({
-    kind: 'leaf', layer: 'main', pose,
+    kind: 'mark', layer: 'main', pose,
     data: { path: { kind: 'rect', x: 100, y: 95, width: 100, height: 10 }, fill: '#c33' },
   });
   return { scene, sleeve };
@@ -62,7 +62,7 @@ describe('bindRig with skins', () => {
 
   it('carries skinned and bound nodes in one rig', () => {
     const { scene, sleeve } = sleeveScene();
-    const hand = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 190, y: 90, width: 20, height: 20 }, data: {} });
+    const hand = scene.add({ kind: 'mark', layer: 'main', pose: { x: 190, y: 90, width: 20, height: 20 }, data: {} });
     bindRig({ scene, skeleton: ARM, bindings: { lower: hand }, skins: { [sleeve]: SLEEVE } }).pose(BENT);
     expect(shown(scene, sleeve)).toEqual([100, 95, 155, 150, 145, 150, 100, 105]);
     const at = effectivePose(scene, scene.get(hand)!);
@@ -106,7 +106,7 @@ describe('bindRig with skins', () => {
   it('reads the rest path through `restPath` where the data keeps it elsewhere', () => {
     const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const outline = polygonFromPoints([{ x: 100, y: 100 }, { x: 200, y: 100 }]);
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: BOX, data: { outline } });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: BOX, data: { outline } });
     bindRig({
       scene, skeleton: ARM, skins: { [id]: { upper: [1, 0], lower: [0, 1] } },
       restPath: (node) => (node.data as Data).outline ?? null,
@@ -116,7 +116,7 @@ describe('bindRig with skins', () => {
 
   it('throws on a skin it cannot bind', () => {
     const { scene, sleeve } = sleeveScene();
-    const bare = scene.add({ kind: 'leaf', layer: 'main', pose: BOX, data: {} });
+    const bare = scene.add({ kind: 'mark', layer: 'main', pose: BOX, data: {} });
     const bind = (skins: Record<string, Skin>, bindings = {}) =>
       () => bindRig({ scene, skeleton: ARM, bindings, skins });
     expect(bind({ nope: SLEEVE })).toThrow(/"nope", which the scene lacks/);
@@ -131,7 +131,7 @@ describe('a node that derives from a skinned one', () => {
     const { scene, sleeve } = sleeveScene();
     /** Sits on the second point of the path its dependency shows. */
     const tag = scene.add({
-      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 2, height: 2 }, data: {},
+      kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 2, height: 2 }, data: {},
       dependsOn: [sleeve],
       derivePose: (_node, deps) => {
         const path = deps[0]?.path;

@@ -5,7 +5,7 @@ import type { DrawScene } from './drawDocument';
 export function hasCompoundPath(scene: DrawScene, ids: readonly string[]): boolean {
   return ids.some((id) => {
     const node = scene.get(asNodeId(id));
-    if (node?.kind !== 'leaf' || node.data.path?.kind !== 'polygon') return false;
+    if (node?.kind !== 'mark' || node.data.path?.kind !== 'polygon') return false;
     let moves = 0;
     for (const command of node.data.path.commands) if (command === PATH_M && ++moves >= 2) return true;
     return false;
@@ -23,7 +23,7 @@ export function releaseCompoundPaths(scene: DrawScene, ids: readonly string[]): 
     for (const id of ids) {
       const nid = asNodeId(id);
       const node = scene.get(nid);
-      if (!node || node.kind !== 'leaf') continue;
+      if (!node || node.kind !== 'mark') continue;
       const path = node.data.path;
       // Baked into world coordinates, rotation included: a subpath placed by
       // its own bounds would otherwise lose its offset from its siblings.
@@ -39,7 +39,7 @@ export function releaseCompoundPaths(scene: DrawScene, ids: readonly string[]): 
       parts.forEach((sub, i) => {
         const b = boundsOfPath(sub);
         newIds.push(scene.add({
-          kind: 'leaf',
+          kind: 'mark',
           layer: node.layer,
           parent: node.parent,
           ...(at >= 0 ? { index: at + i } : {}),

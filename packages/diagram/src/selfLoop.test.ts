@@ -45,7 +45,7 @@ describe('selfLoop', () => {
 describe('a self-edge with no named ports', () => {
   const pose: RectPose = { x: 0, y: 0, width: 40, height: 40 };
   const dep: DerivedDep<RectPose> = {
-    node: { id: asNodeId('n'), kind: 'leaf', layer: 'main', parent: null, pose, data: { diagram: {} } } as never,
+    node: { id: asNodeId('n'), kind: 'mark', layer: 'main', parent: null, pose, data: { diagram: {} } } as never,
     pose,
     path: null,
   };

@@ -16,7 +16,7 @@ import type {
 } from '../src/dev/traitSchemas.types.ts';
 import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
 
-const VARIANT_NAMES: readonly string[] = ['LeafNode', 'ContainerNode'];
+const VARIANT_NAMES: readonly string[] = ['MarkNode', 'GroupNode'];
 const BASE_NAME = 'NodeBase';
 const UNION_NAME = 'Node';
 
@@ -73,7 +73,7 @@ function propertiesOfInterface(iface: InterfaceDeclaration): readonly PropertyDe
   return out;
 }
 
-/** The `kind` property's string-literal value (e.g. `'leaf'`), or undefined
+/** The `kind` property's string-literal value (e.g. `'mark'`), or undefined
  *  if the property is missing or its type isn't a single literal. */
 function readKindLiteral(iface: InterfaceDeclaration): string | undefined {
   const prop = iface.getProperty('kind');

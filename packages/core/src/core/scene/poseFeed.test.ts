@@ -9,7 +9,7 @@ const POSE = { x: 0, y: 0, width: 10, height: 10 };
 
 function makeScene() {
   const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-  const id: NodeId = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
+  const id: NodeId = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'a' } });
   return { scene, id };
 }
 
@@ -59,7 +59,7 @@ describe('createPoseFeed', () => {
     const feed = createPoseFeed(scene);
     feed.read();
 
-    const second = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'b' } });
+    const second = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'b' } });
     expect(feed.read().added.map((n) => n.node.id)).toEqual([second]);
 
     scene.remove(id);
@@ -120,9 +120,9 @@ describe('createPoseFeed', () => {
     // Nothing about the derived node itself changes, so without this the feed
     // would silently leave a connector painted at its old position.
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-    const a: NodeId = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
+    const a: NodeId = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'a' } });
     const b: NodeId = scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'main',
       pose: POSE,
       data: { label: 'b' },
@@ -195,7 +195,7 @@ describe('createPoseFeed', () => {
 
   it("reports nothing for a reorder — order is the host's to re-read", () => {
     const { scene, id } = makeScene();
-    const second = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'b' } });
+    const second = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'b' } });
     const feed = createPoseFeed(scene);
     feed.read();
 
@@ -214,7 +214,7 @@ describe('createPoseFeed', () => {
   it('never reports a reparented node as removed', () => {
     const { scene, id } = makeScene();
     const parent: NodeId = scene.add({
-      kind: 'container', layer: 'main', pose: POSE, data: { label: 'p' },
+      kind: 'group', layer: 'main', pose: POSE, data: { label: 'p' },
     });
     const feed = createPoseFeed(scene);
     feed.read();

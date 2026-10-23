@@ -23,7 +23,7 @@ type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
 const shape = (x: number, y: number, width: number, height: number, color: string) => ({
-  kind: 'leaf' as const,
+  kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x, y, width, height },
   data: { fill: { paint: solid(color) } },

@@ -68,7 +68,7 @@ export function RepresentationPanel({
     systemLayers: [{ id: 'default' }],
     initial: [{
       id: nodeId,
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: initialPath,
       data: { kind: 'curve' },

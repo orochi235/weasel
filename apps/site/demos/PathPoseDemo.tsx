@@ -45,7 +45,7 @@ export function PathPoseDemo() {
   const scene = useScene<{ id: string }, 'default', Path>({
     systemLayers: [{ id: 'default' }],
     initial: [{
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: INITIAL_PATH,
       data: { id: ID },

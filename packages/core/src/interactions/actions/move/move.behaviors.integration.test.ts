@@ -44,8 +44,8 @@ function ctx(
 
 function fixture() {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  const box = scene.add({ kind: 'container', layer: 'main', data: { color: '#eee' }, pose: { x: 200, y: 0, width: 200, height: 200 } });
-  const leaf = scene.add({ kind: 'leaf', layer: 'main', data: { color: '#f00' }, pose: { x: 0, y: 0, width: 20, height: 20 } });
+  const box = scene.add({ kind: 'group', layer: 'main', data: { color: '#eee' }, pose: { x: 200, y: 0, width: 200, height: 200 } });
+  const leaf = scene.add({ kind: 'mark', layer: 'main', data: { color: '#f00' }, pose: { x: 0, y: 0, width: 20, height: 20 } });
   return { scene, box: box as string, leaf: leaf as string };
 }
 
@@ -71,7 +71,7 @@ describe('moveAction behavior pipeline', () => {
 
   it('snapToContainer previews every dragged node in its own slot, and commits it there', () => {
     const { scene, box, leaf } = fixture();
-    const second = scene.add({ kind: 'leaf', layer: 'main', data: { color: '#00f' }, pose: { x: 0, y: 60, width: 20, height: 20 } }) as string;
+    const second = scene.add({ kind: 'mark', layer: 'main', data: { color: '#00f' }, pose: { x: 0, y: 60, width: 20, height: 20 } }) as string;
     const slots: Record<string, P> = {
       [leaf]: { x: 210, y: 10, width: 20, height: 20 },
       [second]: { x: 240, y: 10, width: 20, height: 20 },
@@ -99,8 +99,8 @@ describe('moveAction behavior pipeline', () => {
 
   it('carries a dragged container\'s children to where a behavior lands it', () => {
     const { scene, box } = fixture();
-    const group = scene.add({ kind: 'container', layer: 'main', data: { color: '#ccc' }, pose: { x: 0, y: 0, width: 100, height: 100 } }) as string;
-    const child = scene.add({ kind: 'leaf', layer: 'main', parent: asNodeId(group), data: { color: '#0f0' }, pose: { x: 10, y: 10, width: 20, height: 20 } }) as string;
+    const group = scene.add({ kind: 'group', layer: 'main', data: { color: '#ccc' }, pose: { x: 0, y: 0, width: 100, height: 100 } }) as string;
+    const child = scene.add({ kind: 'mark', layer: 'main', parent: asNodeId(group), data: { color: '#0f0' }, pose: { x: 10, y: 10, width: 20, height: 20 } }) as string;
     const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 30, width: 100, height: 100 } };
     const opts: BindingOpts = {
       behaviors: [
@@ -175,8 +175,8 @@ describe('moveAction behavior pipeline', () => {
     // every node translates by the same (dx, dy). Their relative offset
     // must be preserved after the commit.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const leafA = scene.add({ kind: 'leaf', layer: 'main', data: { color: '#f00' }, pose: { x: 0, y: 0, width: 20, height: 20 } }) as string;
-    const leafB = scene.add({ kind: 'leaf', layer: 'main', data: { color: '#00f' }, pose: { x: 100, y: 50, width: 20, height: 20 } }) as string;
+    const leafA = scene.add({ kind: 'mark', layer: 'main', data: { color: '#f00' }, pose: { x: 0, y: 0, width: 20, height: 20 } }) as string;
+    const leafB = scene.add({ kind: 'mark', layer: 'main', data: { color: '#00f' }, pose: { x: 100, y: 50, width: 20, height: 20 } }) as string;
     const poseABefore = { ...scene.get(asNodeId(leafA))!.pose };
     const poseBBefore = { ...scene.get(asNodeId(leafB))!.pose };
 

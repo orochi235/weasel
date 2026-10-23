@@ -13,8 +13,8 @@ const C = asNodeId('C');
 
 function makeScene(options: { coalesceWindowMs?: number } = {}) {
   const scene = createScene<null, 'l' | 'm', RectPose>({ systemLayers: [{ id: 'l' }, { id: 'm' }], ...options });
-  scene.add({ id: A, kind: 'leaf', layer: 'l', pose: POSE, data: null });
-  scene.add({ id: B, kind: 'leaf', layer: 'l', pose: POSE, data: null });
+  scene.add({ id: A, kind: 'mark', layer: 'l', pose: POSE, data: null });
+  scene.add({ id: B, kind: 'mark', layer: 'l', pose: POSE, data: null });
   return scene;
 }
 
@@ -186,7 +186,7 @@ describe('Scene — the selection around a refused edit', () => {
 
   it('an undo restores the selection less whatever a lock has since put out of reach', () => {
     const scene = makeScene();
-    scene.add({ id: asNodeId('m1'), kind: 'leaf', layer: 'm', pose: POSE, data: null });
+    scene.add({ id: asNodeId('m1'), kind: 'mark', layer: 'm', pose: POSE, data: null });
     scene.setSelection([A, asNodeId('m1')]);
     scene.setPose(A, at(1));
     scene.setSelection([]);
@@ -198,7 +198,7 @@ describe('Scene — the selection around a refused edit', () => {
   it('loadState keeps the selected ids the snapshot still holds', () => {
     const scene = makeScene();
     const json = scene.toJSON();
-    scene.add({ id: asNodeId('z'), kind: 'leaf', layer: 'l', pose: POSE, data: null });
+    scene.add({ id: asNodeId('z'), kind: 'mark', layer: 'l', pose: POSE, data: null });
     scene.setSelection([A, asNodeId('z')]);
     scene.loadState(json);
     expect(scene.getSelection()).toEqual([A]);
@@ -220,11 +220,11 @@ function stack(): LayoutStrategy<RectPose> {
 function makeLaidOut(options: { coalesceWindowMs?: number } = {}) {
   const scene = createScene<null, 'l', RectPose>({
     systemLayers: [{ id: 'l' }],
-    initial: [{ id: C, kind: 'container', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 200 }, data: null, layout: stack() }],
+    initial: [{ id: C, kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 200 }, data: null, layout: stack() }],
     ...options,
   });
   const add = (id: NodeId, parent: NodeId | null = C) =>
-    scene.add({ id, kind: 'leaf', layer: 'l', pose: POSE, data: null, ...(parent ? { parent } : {}) });
+    scene.add({ id, kind: 'mark', layer: 'l', pose: POSE, data: null, ...(parent ? { parent } : {}) });
   return { scene, add };
 }
 
@@ -241,7 +241,7 @@ describe('Scene — a bare edit of a laid-out container', () => {
     expect(heard(scene, () => scene.move(B, C)).calls).toBe(1);
     expect(heard(scene, () => scene.remove(A)).calls).toBe(1);
     expect(heard(scene, () => scene.setLayout(C, null)).calls).toBe(1);
-    expect(labels(scene)).toEqual(['add leaf', 'add leaf', 'reorder', 'setPose', 'move', 'move', 'remove', 'setLayout']);
+    expect(labels(scene)).toEqual(['add mark', 'add mark', 'reorder', 'setPose', 'move', 'move', 'remove', 'setLayout']);
     expect(scene.get(B)!.pose.width).toBe(80);
   });
 

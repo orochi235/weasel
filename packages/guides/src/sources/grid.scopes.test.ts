@@ -16,9 +16,9 @@ const MM: UnitScope = { system: { base: 'mm', units: { mm: 1, cm: 10 } }, scale:
 function assembly() {
   const scene = createScene<object, 'default', Bounds>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
   const box = { x: 0, y: 0, width: 0.1, height: 0.1 };
-  const g = scene.add({ kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {}, units: MM });
-  const inside = scene.add({ kind: 'leaf', layer: 'default', parent: g, pose: { ...box }, data: {} }) as string;
-  const outside = scene.add({ kind: 'leaf', layer: 'default', pose: { ...box }, data: {} }) as string;
+  const g = scene.add({ kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {}, units: MM });
+  const inside = scene.add({ kind: 'mark', layer: 'default', parent: g, pose: { ...box }, data: {} }) as string;
+  const outside = scene.add({ kind: 'mark', layer: 'default', pose: { ...box }, data: {} }) as string;
   return { scene: scene as unknown as Scene<unknown, string, unknown>, g: g as string, inside, outside };
 }
 

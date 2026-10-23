@@ -28,15 +28,15 @@ const around = (_n: unknown, deps: readonly (DerivedDep<RectPose> | undefined)[]
 /** `a` and `b` in an inner group, which with `c` makes an outer group. */
 function fixture() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const leaf = (x: number) => scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(x, 0) });
+  const leaf = (x: number) => scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(x, 0) });
   const a = leaf(0);
   const b = leaf(50);
   const c = leaf(200);
   const inner = scene.add({
-    kind: 'leaf', layer: 'main', data: {}, pose: box(0, 0), dependsOn: [a, b], derivePose: around as never,
+    kind: 'mark', layer: 'main', data: {}, pose: box(0, 0), dependsOn: [a, b], derivePose: around as never,
   });
   const outer = scene.add({
-    kind: 'leaf', layer: 'main', data: {}, pose: box(0, 0), dependsOn: [inner, c], derivePose: around as never,
+    kind: 'mark', layer: 'main', data: {}, pose: box(0, 0), dependsOn: [inner, c], derivePose: around as never,
   });
   return { scene, a, b, c, inner, outer };
 }

@@ -32,7 +32,7 @@ const ID = asNodeId('a');
 function setup(initial: string, handlers: ModeShortcutHandlers, { wireMode = true } = {}) {
   const registry: ModeRegistry = createModeRegistry({ modes: DEFAULT_MODES, initial });
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: ID, kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
+  scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
   const { container } = render(
     <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}

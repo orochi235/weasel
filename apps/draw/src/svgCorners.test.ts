@@ -18,7 +18,7 @@ const obj = (path: PolygonPath): PathObj => ({
 
 function reopen(svg: string): PathObj {
   const drafts = svgNodesToSceneDrafts(parseSvg(svg, { namespaces: NS }), () => 'x');
-  const leaf = drafts.find((d): d is Extract<SceneDraft, { kind: 'leaf' }> => d.kind === 'leaf')!;
+  const leaf = drafts.find((d): d is Extract<SceneDraft, { kind: 'mark' }> => d.kind === 'mark')!;
   return leaf.obj as PathObj;
 }
 

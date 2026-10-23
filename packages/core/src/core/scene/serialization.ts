@@ -8,15 +8,17 @@ import {
 import type { SerializedDoc } from './docValues';
 import { treePreorder } from './treeOrder';
 import type {
-  AddNodeSpec, LayerRecord, Node, NodeId, SceneRegistry, SerializedLayer, SerializedNode, SerializedScene,
+  AddNodeSpec, LayerRecord, Node, NodeId, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
+  SerializedScene, SerializedSceneV1,
 } from './types';
 
 /** Whether `value` is a snapshot `specsFromSerialized` reads, as against a live scene. */
 export function isSerializedScene<TData, TLayer extends string, TPose>(
   value: unknown,
-): value is SerializedScene<TData, TLayer, TPose> {
-  return typeof value === 'object' && value != null
-    && (value as { version?: unknown }).version === 1
+): value is SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose> {
+  const version = typeof value === 'object' && value != null
+    ? (value as { version?: unknown }).version : undefined;
+  return (version === 1 || version === 2)
     && Array.isArray((value as { nodes?: unknown }).nodes);
 }
 
@@ -68,7 +70,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     if (n.pickable === false) out.pickable = false;
     if (n.hidden === true) out.hidden = true;
     if (n.locked === true) out.locked = true;
-    if (n.kind === 'container' && n.units !== undefined) out.units = n.units;
+    if (n.kind === 'group' && n.units !== undefined) out.units = n.units;
     Object.assign(
       out,
       fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
@@ -92,24 +94,35 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     }
     return layer;
   });
-  return { version: 1, systemLayers, nodes, ...(doc ? { doc } : {}) };
+  return { version: 2, systemLayers, nodes, ...(doc ? { doc } : {}) };
 }
+
+/** Decides what a version 1 `container` becomes; `leaf` is always a mark. */
+export type V1Classifier<TData, TLayer extends string, TPose> =
+  (node: SerializedNodeV1<TData, TLayer, TPose>) => 'mark' | 'group';
 
 /** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
  *  resolves every `NODE_FN_FIELDS` key → function via the registry;
  *  throws on an unsupported version or an unknown registry key. */
 export function specsFromSerialized<TData, TLayer extends string, TPose>(
-  json: SerializedScene<TData, TLayer, TPose>,
+  json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer>,
+  opts: { classifyV1?: V1Classifier<TData, TLayer, TPose> } = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  if (json.version !== 1) {
-    throw new Error(`Scene: unsupported version ${json.version}; only v1 supported`);
+  type Entry = { n: Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>; kind: 'mark' | 'group' };
+  let entries: Entry[];
+  if (json.version === 1) {
+    entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(1, n, opts.classifyV1) }));
+  } else if (json.version === 2) {
+    entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(2, n) }));
+  } else {
+    throw new Error(`Scene: unsupported version ${String(Reflect.get(json, 'version'))}; versions 1 and 2 are supported`);
   }
-  return json.nodes.map((n) => {
+  return entries.map(({ n, kind }) => {
     const spec: AddNodeSpec<TData, TLayer, TPose> = {
       id: n.id as NodeId,
-      kind: n.kind,
+      kind,
       layer: n.layer,
       pose: n.pose,
       data: n.data,
@@ -139,4 +152,16 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
     }
     return spec;
   });
+}
+
+/** The kind a saved node loads as: its own on version 2; on version 1 a `leaf` is a
+ *  mark and a `container` goes to `classify`, or is a group without one. */
+export function nodeKindOf<TData, TLayer extends string, TPose>(
+  version: 1 | 2,
+  n: SerializedNode<TData, TLayer, TPose> | SerializedNodeV1<TData, TLayer, TPose>,
+  classify?: V1Classifier<TData, TLayer, TPose>,
+): 'mark' | 'group' {
+  if (version === 2) return (n as SerializedNode<TData, TLayer, TPose>).kind;
+  if (n.kind === 'leaf') return 'mark';
+  return classify ? classify(n as SerializedNodeV1<TData, TLayer, TPose>) : 'group';
 }

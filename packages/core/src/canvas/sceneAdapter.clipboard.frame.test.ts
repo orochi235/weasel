@@ -62,16 +62,16 @@ describe('clipboard under a container frame', () => {
       composition: RIGID_POSE_COMPOSITION,
     });
     const frame = scene.add({
-      id: asNodeId('frame'), kind: 'container', layer: 'main', data: { label: 'frame' },
+      id: asNodeId('frame'), kind: 'group', layer: 'main', data: { label: 'frame' },
       pose: { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2 },
     });
     const env = scene.add({
-      id: asNodeId('env'), kind: 'container', layer: 'main', parent: frame, data: { label: 'env' },
+      id: asNodeId('env'), kind: 'group', layer: 'main', parent: frame, data: { label: 'env' },
       pose: { x: 0, y: 0, width: 1, height: 1 },
       dependsOn: 'children', derivePose: unionOfChildren,
     });
     scene.add({
-      id: asNodeId('a'), kind: 'leaf', layer: 'main', parent: env, data: { label: 'a' },
+      id: asNodeId('a'), kind: 'mark', layer: 'main', parent: env, data: { label: 'a' },
       pose: { x: 10, y: 20, width: 20, height: 10 },
     });
     // `a` composed into the frame: see `envelopeFrame.test.ts`.

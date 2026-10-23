@@ -68,10 +68,10 @@ describe('applyBooleanOp: where pieces from several parents land', () => {
   function nested() {
     const scene = createScene<{ path?: Path }, 'default', Path>({ systemLayers: [{ id: 'default' }] });
     const add = (id: string, path: Path, parent?: string) => scene.add({
-      id: asNodeId(id), kind: 'leaf', layer: 'default', pose: path, data: { path },
+      id: asNodeId(id), kind: 'mark', layer: 'default', pose: path, data: { path },
       ...(parent ? { parent: asNodeId(parent) } : {}),
     });
-    scene.add({ id: asNodeId('g'), kind: 'container', layer: 'default', pose: rect(0, 0, 0, 0), data: {} });
+    scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: rect(0, 0, 0, 0), data: {} });
     add('below', rect(300, 0, 10, 10), 'g');
     add('a', rect(0, 0, 10, 10), 'g');
     add('above', rect(400, 0, 10, 10), 'g');
@@ -87,7 +87,7 @@ describe('applyBooleanOp: where pieces from several parents land', () => {
       },
       createPathNode: (path, _op, sourceId) => {
         const parent = scene.get(asNodeId(sourceId))?.parent;
-        return { id: `r${n++}`, kind: 'leaf', layer: 'default', pose: path, data: { path }, parent } as { id: string };
+        return { id: `r${n++}`, kind: 'mark', layer: 'default', pose: path, data: { path }, parent } as { id: string };
       },
       applyOps: (ops, label) => { scene.applyBatch(ops, label ?? 'Booleans', adapter); },
     };

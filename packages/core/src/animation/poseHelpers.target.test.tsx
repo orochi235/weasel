@@ -23,7 +23,7 @@ function setup(options: Parameters<typeof sceneToAdapter>[1] = {}) {
     act(() => { for (const cb of cbs.splice(0)) cb(t); });
   };
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
   const adapter = sceneToAdapter(scene, options as never) as unknown as PoseAnimationAdapter<RectPose>;
   const shown = () => effectivePose(scene, scene.get(a)!);
   return { animator: (): Animator => result.current, frame, scene, a, adapter, shown };
@@ -170,8 +170,8 @@ describe('springPose on a scene', () => {
 describe('a container whose scene composes nothing', () => {
   function family() {
     const s = setup();
-    const box = s.scene.add({ kind: 'container', layer: 'main', pose: at(0), data: {} });
-    const child = s.scene.add({ kind: 'leaf', layer: 'main', pose: at(5), data: {}, parent: box });
+    const box = s.scene.add({ kind: 'group', layer: 'main', pose: at(0), data: {} });
+    const child = s.scene.add({ kind: 'mark', layer: 'main', pose: at(5), data: {}, parent: box });
     const shownX = (id: typeof box): number => effectivePose(s.scene, s.scene.get(id)!).x;
     return { ...s, box, child, shownX };
   }

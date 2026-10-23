@@ -46,7 +46,7 @@ function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
     s.add({
-      kind: 'leaf',
+      kind: 'mark',
       data: { kind: 'rect' },
       layer: 'main' as L,
       pose: { x: 100, y: 100, width: 80, height: 60 } as P,
@@ -690,7 +690,7 @@ describe('useLassoTool smoke', () => {
     const ids = {} as Record<'inside' | 'straddle' | 'outside', NodeId>;
     scene.batch('seed', () => {
       const add = (x: number, y: number, s: number) => scene.add({
-        kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+        kind: 'mark', data: { kind: 'rect' }, layer: 'main' as L,
         pose: { x, y, width: s, height: s } as P,
       });
       ids.inside = add(40, 40, 30);

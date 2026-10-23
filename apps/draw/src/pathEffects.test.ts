@@ -22,7 +22,7 @@ import { sceneToSvgString, selectionToSvgString } from './svgExport';
 type Spec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 
 const box = (id: string, x: number, color: string): Spec => ({
-  kind: 'leaf',
+  kind: 'mark',
   id: asNodeId(id),
   layer: 'default',
   pose: { x, y: 0, width: 40, height: 40 },
@@ -183,12 +183,12 @@ const BARS: OutlineFace = {
 /** A text node and a path, both hidden, and a `textAlong` node laying the text along the path. */
 function withTextAlong() {
   const words: Spec = {
-    kind: 'leaf', id: asNodeId('t'), layer: 'default', hidden: true,
+    kind: 'mark', id: asNodeId('t'), layer: 'default', hidden: true,
     pose: { x: 0, y: 0, width: 300, height: 40 },
     data: { text: 'Hello', style: { fontFamily: 'bars', fontSize: 30 }, fill: { paint: solid('#000000') } },
   };
   const arc: Spec = {
-    kind: 'leaf', id: asNodeId('p'), layer: 'default', hidden: true,
+    kind: 'mark', id: asNodeId('p'), layer: 'default', hidden: true,
     pose: { x: 0, y: 100, width: 300, height: 100 },
     data: { path: pathFromD('M0 200 Q150 100 300 200'), stroke: { paint: solid('#000000'), width: 1 } },
   };

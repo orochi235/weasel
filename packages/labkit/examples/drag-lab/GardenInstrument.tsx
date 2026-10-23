@@ -43,19 +43,19 @@ const DEFAULT_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 export const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   {
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 180, y: 140, width: KIND_SIZE.tree, height: KIND_SIZE.tree },
     data: { kind: 'tree', fill: { paint: KIND_FILLS.tree } },
   },
   {
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 280, y: 200, width: KIND_SIZE.shrub, height: KIND_SIZE.shrub },
     data: { kind: 'shrub', fill: { paint: KIND_FILLS.shrub } },
   },
   {
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'default',
     pose: { x: 360, y: 160, width: KIND_SIZE.flower, height: KIND_SIZE.flower },
     data: { kind: 'flower', fill: { paint: KIND_FILLS.flower } },
@@ -112,7 +112,7 @@ function GardenBody({ ctx }: { ctx: RenderContext<GardenState, GardenConfig> }) 
     const [wx, wy] = screenToWorld(sx, sy, viewToTransform(viewRef.current));
     const s = KIND_SIZE[kind];
     scene.add({
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'default',
       pose: { x: wx - s / 2, y: wy - s / 2, width: s, height: s },
       data: { kind, fill: { paint: KIND_FILLS[kind] } },

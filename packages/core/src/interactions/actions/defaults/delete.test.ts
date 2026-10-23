@@ -4,7 +4,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildDeleteOps, createDeleteAction, deleteAction } from './delete';
 import { createScene } from 'core/scene/scene';
-import type { ContainerNode, RectPose } from 'core/scene/types';
+import type { GroupNode, RectPose } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -18,7 +18,7 @@ import { PATH_M, type PolygonPath } from '@weasel-js/geom';
 
 interface StubNode {
   id: NodeId;
-  kind: 'leaf' | 'container';
+  kind: 'mark' | 'group';
   layer: string;
   pose: unknown;
   data: unknown;
@@ -26,14 +26,14 @@ interface StubNode {
 }
 
 function makeStubScene(
-  initial: Record<string, { parent?: string | null; kind?: 'leaf' | 'container' }> = {},
+  initial: Record<string, { parent?: string | null; kind?: 'mark' | 'group' }> = {},
   rootOrder?: string[],
 ) {
   const nodes = new Map<string, StubNode>();
   for (const [id, v] of Object.entries(initial)) {
     nodes.set(id, {
       id: asNodeId(id),
-      kind: v.kind ?? 'leaf',
+      kind: v.kind ?? 'mark',
       layer: 'main',
       pose: { x: 0, y: 0, width: 10, height: 10 },
       data: {},
@@ -221,9 +221,9 @@ describe('deleteAction.run — undo against a real Scene', () => {
   function sceneFixture() {
     const scene = createScene<Record<string, never>, Layer>({ systemLayers: [{ id: 'main' }] });
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const group = scene.add({ kind: 'container', layer: 'main', pose, data: {} });
-    const c1 = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: group });
-    const c2 = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: group });
+    const group = scene.add({ kind: 'group', layer: 'main', pose, data: {} });
+    const c1 = scene.add({ kind: 'mark', layer: 'main', pose, data: {}, parent: group });
+    const c2 = scene.add({ kind: 'mark', layer: 'main', pose, data: {}, parent: group });
     return { scene, group, c1, c2 };
   }
 
@@ -247,10 +247,10 @@ describe('deleteAction.run — undo against a real Scene', () => {
   it('restores a nested subtree, poses and all', () => {
     const scene = createScene<{ tag?: string }, 'main'>({ systemLayers: [{ id: 'main' }] });
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const outer = scene.add({ kind: 'container', layer: 'main', pose, data: {} });
-    const inner = scene.add({ kind: 'container', layer: 'main', pose, data: {}, parent: outer });
+    const outer = scene.add({ kind: 'group', layer: 'main', pose, data: {} });
+    const inner = scene.add({ kind: 'group', layer: 'main', pose, data: {}, parent: outer });
     const deep = scene.add({
-      kind: 'leaf', layer: 'main', pose: { x: 5, y: 6, width: 1, height: 2 },
+      kind: 'mark', layer: 'main', pose: { x: 5, y: 6, width: 1, height: 2 },
       data: { tag: 'deep' }, parent: inner,
     });
     const selection = makeSelection([outer as string]);
@@ -289,7 +289,7 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
   function fiveRoots() {
     const scene = createScene<Record<string, never>, Layer>({ systemLayers: [{ id: 'main' }] });
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const mk = () => scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+    const mk = () => scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
     const [a, b, c, d, e] = [mk(), mk(), mk(), mk(), mk()];
     return { scene, a: a!, b: b!, c: c!, d: d!, e: e! };
   }
@@ -348,8 +348,8 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
   it('restores children of a container in order', () => {
     const scene = createScene<Record<string, never>, Layer>({ systemLayers: [{ id: 'main' }] });
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const box = scene.add({ kind: 'container', layer: 'main', pose, data: {} });
-    const mk = () => scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: box });
+    const box = scene.add({ kind: 'group', layer: 'main', pose, data: {} });
+    const mk = () => scene.add({ kind: 'mark', layer: 'main', pose, data: {}, parent: box });
     const [a, b, c, d, e] = [mk(), mk(), mk(), mk(), mk()];
 
     runDelete({ selection: makeSelection([b!, c!, d!]), scene });
@@ -367,7 +367,7 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
 // ---------------------------------------------------------------------------
 
 const LAYERS = [{ id: 'main' as const }];
-const leaf = { kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} } as const;
+const leaf = { kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} } as const;
 
 function makeCycleScene() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
@@ -395,14 +395,14 @@ describe('buildDeleteOps over a real scene', () => {
 
   it('emits one op for a container and one of its children', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const box = scene.add({ ...leaf, kind: 'container' });
+    const box = scene.add({ ...leaf, kind: 'group' });
     const child = scene.add({ ...leaf, parent: box });
     expect(buildDeleteOps(scene, [box, child], 'Delete')).toHaveLength(1);
   });
 
   it('emits one op for a node and a child of an edge that derives from it', () => {
     const { scene, a, b } = makeEdgeScene();
-    const group = scene.add({ ...leaf, kind: 'container', dependsOn: [a, b] });
+    const group = scene.add({ ...leaf, kind: 'group', dependsOn: [a, b] });
     const child = scene.add({ ...leaf, parent: group });
     // `child` is neither a descendant of `a` nor derived from it; it goes only
     // because `group` does. Walking one relation at a time never reaches `a`.
@@ -433,7 +433,7 @@ describe('buildDeleteOps over a real scene', () => {
   it('emits one op for a container and the child it derives from', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
     const child = asNodeId('child');
-    const box = scene.add({ ...leaf, kind: 'container', dependsOn: [child] });
+    const box = scene.add({ ...leaf, kind: 'group', dependsOn: [child] });
     scene.add({ ...leaf, id: child, parent: box });
     // No `dependsOn` cycle at all — the loop closes through parent ∪ dependsOn,
     // which is the graph a cascade actually follows.
@@ -534,7 +534,7 @@ describe('deleteAction over a real scene', () => {
     const scene = createScene<object, 'main', RectPose>({
       systemLayers: LAYERS,
       initial: [
-        { ...leaf, kind: 'container', id: box, clipFromPose },
+        { ...leaf, kind: 'group', id: box, clipFromPose },
         { ...leaf, id: kid, parent: box },
       ],
     });
@@ -542,14 +542,14 @@ describe('deleteAction over a real scene', () => {
     runDelete({ selection: makeSelection([box]), scene });
     scene.undo();
 
-    const restored = scene.get(box) as ContainerNode<object, 'main', RectPose>;
+    const restored = scene.get(box) as GroupNode<object, 'main', RectPose>;
     expect(restored.clipFromPose).toBe(clipFromPose);
   });
 
   it('undo restores a cascaded edge with its own children, in order', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
     const a = scene.add(leaf);
-    const edge = scene.add({ ...leaf, kind: 'container', dependsOn: [a] });
+    const edge = scene.add({ ...leaf, kind: 'group', dependsOn: [a] });
     const [c1, c2] = [
       scene.add({ ...leaf, parent: edge }),
       scene.add({ ...leaf, parent: edge }),
@@ -564,7 +564,7 @@ describe('deleteAction over a real scene', () => {
 
   it('restores a cascaded node to its own slot among live siblings', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-    const box = scene.add({ ...leaf, kind: 'container' });
+    const box = scene.add({ ...leaf, kind: 'group' });
     const a = scene.add(leaf);
     const [x, edge, y] = [
       scene.add({ ...leaf, parent: box }),
@@ -593,8 +593,8 @@ describe('Scene.removalClosure', () => {
   it('takes the subtree, the dependents, and the dependents\' subtrees', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
     const a = scene.add(leaf);
-    const kid = scene.add({ ...leaf, parent: scene.add({ ...leaf, kind: 'container' }) });
-    const edge = scene.add({ ...leaf, kind: 'container', dependsOn: [a] });
+    const kid = scene.add({ ...leaf, parent: scene.add({ ...leaf, kind: 'group' }) });
+    const edge = scene.add({ ...leaf, kind: 'group', dependsOn: [a] });
     const edgeKid = scene.add({ ...leaf, parent: edge });
 
     expect([...scene.removalClosure([a])].sort()).toEqual([a, edge, edgeKid].sort());

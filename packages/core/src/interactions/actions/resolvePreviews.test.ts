@@ -21,10 +21,10 @@ type TestScene = Scene<Data, 'main', Pose>;
 /** A parent with two children, plus a loose leaf. */
 function makeScene(): { scene: TestScene; parent: string; kid: string; other: string; loose: string } {
   const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }], initial: [] });
-  const parent = scene.add({ kind: 'container', layer: 'main', pose: AT(0), data: { label: 'parent' } });
-  const kid = scene.add({ kind: 'leaf', layer: 'main', pose: AT(1), data: { label: 'kid' }, parent });
-  const other = scene.add({ kind: 'leaf', layer: 'main', pose: AT(2), data: { label: 'other' }, parent });
-  const loose = scene.add({ kind: 'leaf', layer: 'main', pose: AT(3), data: { label: 'loose' } });
+  const parent = scene.add({ kind: 'group', layer: 'main', pose: AT(0), data: { label: 'parent' } });
+  const kid = scene.add({ kind: 'mark', layer: 'main', pose: AT(1), data: { label: 'kid' }, parent });
+  const other = scene.add({ kind: 'mark', layer: 'main', pose: AT(2), data: { label: 'other' }, parent });
+  const loose = scene.add({ kind: 'mark', layer: 'main', pose: AT(3), data: { label: 'loose' } });
   return { scene, parent, kid, other, loose };
 }
 

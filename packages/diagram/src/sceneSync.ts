@@ -59,7 +59,7 @@ function readScene(scene: DiagramScene): Standing {
   const nodes = new Map<string, { x: number; y: number; parent: string | null }>();
   const routes = new Map<string, Route>();
   for (const n of scene.renderOrderNodes()) {
-    if (n.kind === 'container') {
+    if (n.kind === 'group') {
       if (diagramContainerOf(n) === null) nodes.set(n.id, { x: n.pose.x, y: n.pose.y, parent: n.parent });
       continue;
     }
@@ -81,7 +81,7 @@ export function diagramLayoutOf(specs: readonly DiagramSpec[]): { moves: NodeMov
   for (const s of specs) {
     const id = s.id;
     if (id === undefined) continue;
-    if (s.kind === 'container') {
+    if (s.kind === 'group') {
       const region = diagramContainerOf(s);
       const pinned = isPinned({ id, kind: s.kind, data: s.data });
       if (region !== null) {

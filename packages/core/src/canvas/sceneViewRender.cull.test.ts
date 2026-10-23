@@ -8,8 +8,8 @@ type Pose = { x: number; y: number; width: number; height: number };
 
 function world() {
   const scene = createScene<{ shape: 'rect' }, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
-  const inside = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 50, y: 50, width: 20, height: 20 }, data: { shape: 'rect' } });
-  const far = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 5000, y: 50, width: 20, height: 20 }, data: { shape: 'rect' } });
+  const inside = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 50, y: 50, width: 20, height: 20 }, data: { shape: 'rect' } });
+  const far = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 5000, y: 50, width: 20, height: 20 }, data: { shape: 'rect' } });
   const drawOne = vi.fn(defaultDrawOne) as unknown as typeof defaultDrawOne;
   const painted = () => (drawOne as unknown as ReturnType<typeof vi.fn>).mock.calls.map(([n]) => (n as { id: string }).id);
   return { scene, inside, far, drawOne, painted };

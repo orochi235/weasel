@@ -68,7 +68,7 @@ const siblingEdges: SnapSource = {
 
 function rig(sources: readonly SnapSource[], poses: readonly Pose[], extra: Record<string, unknown> = {}) {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
-  const ids = poses.map((pose) => scene.add({ kind: 'leaf', layer: 'main', data: {}, pose }) as string);
+  const ids = poses.map((pose) => scene.add({ kind: 'mark', layer: 'main', data: {}, pose }) as string);
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
     begin: (req) => sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store }),

@@ -77,7 +77,7 @@ const POSE_B: Pose = {
 
 type Layer = 'bones' | 'joints' | 'labels' | 'target';
 type Data = { shape: 'rect'; fill: Fill } | { text: string; style: TextStyle; fill: Fill };
-interface NodeSpec { id: NodeId; kind: 'leaf'; layer: Layer; pose: RectPose; data: Data }
+interface NodeSpec { id: NodeId; kind: 'mark'; layer: Layer; pose: RectPose; data: Data }
 
 const LABEL_STYLE: TextStyle = { fontFamily: 'sans-serif', fontSize: 10 };
 const CAPTION_STYLE: TextStyle = { fontFamily: 'sans-serif', fontSize: 12 };
@@ -105,7 +105,7 @@ function figure(prefix: string, rootX: number, color: string): Figure {
     const ids = ['bone', 'joint', 'label'].map((k) => asNodeId(`${prefix}:${k}:${bone.name}`));
     nodes.push(
       {
-        id: ids[0], kind: 'leaf', layer: 'bones',
+        id: ids[0], kind: 'mark', layer: 'bones',
         pose: {
           x: (ox + tx) / 2 - bone.length / 2, y: (oy + ty) / 2 - BONE_WIDTH / 2,
           width: bone.length, height: BONE_WIDTH, rotation: Math.atan2(ty - oy, tx - ox),
@@ -113,12 +113,12 @@ function figure(prefix: string, rootX: number, color: string): Figure {
         data: { shape: 'rect', fill: { paint: solid(color) } },
       },
       {
-        id: ids[1], kind: 'leaf', layer: 'joints',
+        id: ids[1], kind: 'mark', layer: 'joints',
         pose: { x: ox - JOINT_SIZE / 2, y: oy - JOINT_SIZE / 2, width: JOINT_SIZE, height: JOINT_SIZE },
         data: { shape: 'rect', fill: { paint: solid('#f0e4cc') } },
       },
       {
-        id: ids[2], kind: 'leaf', layer: 'labels',
+        id: ids[2], kind: 'mark', layer: 'labels',
         pose: { x: ox + 8, y: oy - 14, width: 60, height: 12 },
         data: { text: bone.name, style: LABEL_STYLE, fill: { paint: solid('#a89878') } },
       },
@@ -132,7 +132,7 @@ const BY_SLIDER = figure('slider', 160, '#7fb069');
 const BY_TRACK = figure('track', 430, '#d4a574');
 
 const caption = (id: string, x: number, text: string, color: string): NodeSpec => ({
-  id: asNodeId(id), kind: 'leaf', layer: 'labels',
+  id: asNodeId(id), kind: 'mark', layer: 'labels',
   pose: { x, y: 292, width: 220, height: 14 },
   data: { text, style: CAPTION_STYLE, fill: { paint: solid(color) } },
 });
@@ -146,7 +146,7 @@ const BODY_AXES = jointAxes(BY_SLIDER.skeleton, BONES.map((b) => b.name).filter(
 
 const INITIAL: NodeSpec[] = [
   {
-    id: TARGET, kind: 'leaf', layer: 'target',
+    id: TARGET, kind: 'mark', layer: 'target',
     pose: { x: 235 - TARGET_SIZE / 2, y: 150 - TARGET_SIZE / 2, width: TARGET_SIZE, height: TARGET_SIZE },
     data: { shape: 'rect', fill: { paint: solid('#e06c75') } },
   },

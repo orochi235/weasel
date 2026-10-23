@@ -8,8 +8,8 @@ import { useInsertDepSource } from './insert';
 
 function wire(into: () => string | null) {
   const scene = createScene<unknown, 'back' | 'front', RectPose>({ systemLayers: [{ id: 'back' }, { id: 'front' }] });
-  const group = scene.add({ kind: 'container', layer: 'front', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} });
-  const leaf = scene.add({ kind: 'leaf', layer: 'back', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+  const group = scene.add({ kind: 'group', layer: 'front', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} });
+  const leaf = scene.add({ kind: 'mark', layer: 'back', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
   const applied: Op[][] = [];
   let reg!: DepRegistry;
   function Wire() {

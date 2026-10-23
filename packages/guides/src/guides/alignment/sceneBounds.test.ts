@@ -9,12 +9,12 @@ function fixture() {
   const scene = createScene<object, 'main' | 'off', Pose>({
     systemLayers: [{ id: 'main', visible: true, locked: false }, { id: 'off', visible: false, locked: false }],
   });
-  const a = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
-  const b = scene.add({ kind: 'leaf', layer: 'main', pose: box(30, 0), data: {} });
-  const hidden = scene.add({ kind: 'leaf', layer: 'off', pose: box(60, 0), data: {} });
-  const g = scene.add({ kind: 'container', layer: 'main', pose: box(100, 100, 50, 50), data: {} });
-  const inner = scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: box(110, 110), data: {} });
-  const innerB = scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: box(130, 110), data: {} });
+  const a = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
+  const b = scene.add({ kind: 'mark', layer: 'main', pose: box(30, 0), data: {} });
+  const hidden = scene.add({ kind: 'mark', layer: 'off', pose: box(60, 0), data: {} });
+  const g = scene.add({ kind: 'group', layer: 'main', pose: box(100, 100, 50, 50), data: {} });
+  const inner = scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(110, 110), data: {} });
+  const innerB = scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(130, 110), data: {} });
   return { scene, a, b, hidden, g, inner, innerB };
 }
 

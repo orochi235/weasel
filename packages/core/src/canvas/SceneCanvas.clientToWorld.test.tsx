@@ -72,7 +72,7 @@ const CLIENT = { x: LEFT + 300, y: TOP + 250 };
 
 function mount() {
   const scene = createScene<{ kind: 'rect' }, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: ID, kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 100, y: 100, width: 80, height: 60 } });
+  scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 100, y: 100, width: 80, height: 60 } });
   const pointer = createPointerStore();
   const onClick = vi.fn();
   const modes = createModeRegistry({ modes: DEFAULT_MODES, initial: DEFAULT_MODES[0].id });

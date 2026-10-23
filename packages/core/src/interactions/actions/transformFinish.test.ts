@@ -14,8 +14,8 @@ const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 }
 
 function fixture(answer: 'follow' | 'refuse') {
   const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(0, 0) });
-  const b = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(50, 0) });
+  const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
+  const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(50, 0) });
   const transformOps = vi.fn((ops: readonly Op[], label: string) => (answer === 'refuse' ? null : [
     ...ops, createSetDataOp({ id: b, from: {}, to: { followed: label }, label }),
   ]));
@@ -107,7 +107,7 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
 
   it('composes two followers: the second finishes the first one\'s batch, and previews over its frame', () => {
     const { scene, a, b, deps } = fixture('follow');
-    const c = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(90, 0) });
+    const c = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(90, 0) });
     const first = (deps as unknown as { transformFollowers: TransformFollower[] }).transformFollowers[0]!;
     const second: TransformFollower = {
       finish: (ops, label) => [...ops, createSetDataOp({ id: c, from: {}, to: { after: ops.length, label }, label })],

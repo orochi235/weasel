@@ -23,7 +23,7 @@ const PAGES = [{ id: 'page-1', width: 150, height: 600 }, { id: 'page-2', width:
 beforeEach(async () => {
   await page.viewport(1280, 800);
   localStorage.clear();
-  localStorage.setItem(CHART_SCENE_KEY, JSON.stringify({ version: 1, nodes: [], doc: { [PAGES_DOC_KEY]: { pages: PAGES } } }));
+  localStorage.setItem(CHART_SCENE_KEY, JSON.stringify({ version: 2, nodes: [], doc: { [PAGES_DOC_KEY]: { pages: PAGES } } }));
 });
 
 afterEach(() => {
@@ -33,7 +33,7 @@ afterEach(() => {
 
 interface SavedNode { id: string; kind: string; data: Record<string, unknown> }
 const saved = (): SavedNode[] => (JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as { nodes: SavedNode[] }).nodes;
-const bodies = () => saved().filter((n) => n.kind === 'container');
+const bodies = () => saved().filter((n) => n.kind === 'group');
 const edges = () => saved().filter((n) => 'from' in ((n.data.diagram as object | undefined) ?? {}));
 const editor = (): HTMLElement | null => document.querySelector('.wc-host [contenteditable="true"]');
 

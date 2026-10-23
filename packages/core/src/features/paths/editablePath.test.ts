@@ -135,7 +135,7 @@ describe('a path drawn from a form', () => {
 });
 
 describe('a leaf drawn as its rect pose alone', () => {
-  const node = { kind: 'leaf', pose: { x: 100, y: 50, width: 20, height: 10 }, data: { tag: 1 } };
+  const node = { kind: 'mark', pose: { x: 100, y: 50, width: 20, height: 10 }, data: { tag: 1 } };
 
   it('reads as the rectangle it draws, changing nothing', () => {
     expect(classifyPathStorage(node)?.kind).toBe('data');
@@ -154,7 +154,7 @@ describe('a leaf drawn as its rect pose alone', () => {
   });
 
   it('is not a container, nor a leaf another painter draws', () => {
-    expect(classifyPathStorage({ ...node, kind: 'container' })).toBeNull();
+    expect(classifyPathStorage({ ...node, kind: 'group' })).toBeNull();
     expect(classifyPathStorage({ ...node, data: { text: 'hi' } })).toBeNull();
   });
 });

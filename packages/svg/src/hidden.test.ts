@@ -84,7 +84,7 @@ describe('keepHidden imports what SVG does not render, marked hidden', () => {
     let n = 0;
     const drafts = svgNodesToKitDrafts(out.nodes, () => `n${n++}`);
     expect(drafts.map((d) => [d.kind, d.hidden])).toEqual([
-      ['container', true], ['leaf', undefined], ['leaf', true], ['leaf', undefined],
+      ['group', true], ['mark', undefined], ['mark', true], ['mark', undefined],
     ]);
   });
 });

@@ -23,7 +23,7 @@ const SQUARE = [{ x: 100, y: 100 }, { x: 140, y: 100 }, { x: 140, y: 140 }, { x:
 function setup(path: PolygonPath = polygonFromPoints(SQUARE)) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
-    kind: 'leaf', layer: 'main', pose: { x: 100, y: 100, width: 40, height: 40 },
+    kind: 'mark', layer: 'main', pose: { x: 100, y: 100, width: 40, height: 40 },
     data: { path, vertexColors: [...RED, ...GREEN, ...BLUE, ...WHITE], skin: { a: [1, 0, 0, 0], b: [0, 1, 1, 1] } },
   });
   let selected: ReadonlySet<number> = new Set();

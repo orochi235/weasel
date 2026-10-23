@@ -92,7 +92,7 @@ describe('gridSnapSource', () => {
 
   it('lands a path\'s bounds corner on the grid', () => {
     const { scene } = sceneOf([]);
-    const id = scene.add({ kind: 'leaf', layer: 'default', pose: polygonFromPoints([{ x: 7, y: 13 }, { x: 17, y: 13 }, { x: 12, y: 23 }]), data: {} }) as string;
+    const id = scene.add({ kind: 'mark', layer: 'default', pose: polygonFromPoints([{ x: 7, y: 13 }, { x: 17, y: 13 }, { x: 12, y: 23 }]), data: {} }) as string;
     expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], scene, ids: [id] }).by(0, 0).point, { x: 3, y: -3 });
   });
 

@@ -61,7 +61,7 @@ const pathNode = (id: string, d: string, fill: string | null, stroke = { color: 
   const path = pathFromD(d);
   return {
     id: asNodeId(id),
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     layer: 'default' as const,
     pose: boundsOfPath(path),
     data: {

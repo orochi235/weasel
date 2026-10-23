@@ -27,7 +27,7 @@ const members: PrefSection['members'] = {
 
 function setup(flags: Record<string, boolean>) {
   const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', phases: [{ length: 1 }, { length: 2 }], weights: { left: 3 }, ...flags } });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', phases: [{ length: 1 }, { length: 2 }], weights: { left: 3 }, ...flags } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];
   renderWithIcons(<SelectionPanel scene={scene} selection={{ current: ['n'] } as unknown as SelectionApi} properties={properties} routing={routing} />);
 }
@@ -73,7 +73,7 @@ describe('SelectionPanel conditions that read the entry', () => {
   };
   const draw = (data: Record<string, unknown>[]) => {
     const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
-    data.forEach((d, i) => scene.add({ id: asNodeId(`n${i}`), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', ...d } }));
+    data.forEach((d, i) => scene.add({ id: asNodeId(`n${i}`), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', ...d } }));
     const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: entries } }];
     renderWithIcons(<SelectionPanel scene={scene} selection={{ current: data.map((_, i) => `n${i}`) } as unknown as SelectionApi} properties={properties} routing={routing} />);
   };

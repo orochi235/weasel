@@ -23,7 +23,7 @@ describe('SceneCanvas — override repaint', () => {
 
   it('paints again when an override is committed', async () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'a' } });
 
     render(<SceneCanvas width={100} height={100} scene={scene} layers={{}} />);
     await frame();
@@ -68,7 +68,7 @@ describe('SceneCanvas — override repaint', () => {
 describe('buildSceneViewCommands — override alpha composition', () => {
   it('composes the override alpha with a consumer alphaFor exactly once', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'a' } });
     scene.overrides.set(id, { alpha: 0.5 });
     const consumerAlphaFor = (_id: string) => 0.4;
 

@@ -37,7 +37,7 @@ const selection = { current: [asNodeId('n')] };
 
 function sceneOf() {
   const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
-  scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: { stroke: {} } });
+  scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { stroke: {} } });
   return scene;
 }
 

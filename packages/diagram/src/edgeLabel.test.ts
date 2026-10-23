@@ -13,10 +13,10 @@ type Sc = Scene<unknown, 'main', Rect>;
 function sceneWithEdge(withLabel = false): Sc {
   const scene = createScene<unknown, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
   for (const [id, x] of [['a', 0], ['b', 300]] as const) {
-    scene.add({ id: id as never, kind: 'leaf', layer: 'main', pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} } });
+    scene.add({ id: id as never, kind: 'mark', layer: 'main', pose: { x, y: 0, width: 100, height: 40 }, data: { diagram: {} } });
   }
   scene.add({
-    id: 'e1' as never, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+    id: 'e1' as never, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
     data: { diagram: { from: { nodeId: 'a' }, to: { nodeId: 'b' }, router: 'straight' } },
     dependsOn: ['a' as never, 'b' as never], derivePath: EDGE_DERIVE_PATH as never,
   });
@@ -36,7 +36,7 @@ describe('edgeLabelSpec', () => {
   it('names the label after its edge, depends on it, and derives its pose', () => {
     const spec = edgeLabelSpec('e1', 'weight', { layer: 'main' });
     expect(spec).toMatchObject({
-      id: 'e1/label', kind: 'leaf', layer: 'main', pickable: false, dependsOn: ['e1'],
+      id: 'e1/label', kind: 'mark', layer: 'main', pickable: false, dependsOn: ['e1'],
       derivePose: LABEL_DERIVE_POSE,
       data: { diagram: { label: { at: 'mid', offset: 9 } }, text: 'weight' },
     });
@@ -58,7 +58,7 @@ describe('diagramScene labels', () => {
     const specs = diagramScene({ nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: 'e', from: 'a', to: 'b', label: 'w' }] });
     const label = specs.find((s) => s.id === 'e/label')!;
     expect(label).toMatchObject({
-      kind: 'leaf', layer: 'main', pickable: false, dependsOn: ['e'], derivePose: LABEL_DERIVE_POSE,
+      kind: 'mark', layer: 'main', pickable: false, dependsOn: ['e'], derivePose: LABEL_DERIVE_POSE,
       data: { diagram: { label: { offset: 9 } }, text: 'w', style: { fontFamily: 'sans-serif', fontSize: 10 } },
     });
   });
@@ -112,7 +112,7 @@ describe('editEdgeLabelAction', () => {
   it("edits the label under the pointer, not the label of a connector passing beneath it", () => {
     const scene = sceneWithEdge(true);
     scene.add({
-      id: 'e2' as never, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      id: 'e2' as never, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
       data: { diagram: { from: { nodeId: 'b' }, to: { nodeId: 'a' }, router: 'straight' } },
       dependsOn: ['b' as never, 'a' as never], derivePath: EDGE_DERIVE_PATH as never,
     });

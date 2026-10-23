@@ -20,11 +20,11 @@ function rectScene() {
     systemLayers: [{ id: 'main' }, { id: 'top' }],
   });
   scene.add({
-    kind: 'leaf', layer: 'main', id: asNodeId('a'),
+    kind: 'mark', layer: 'main', id: asNodeId('a'),
     pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' },
   });
   scene.add({
-    kind: 'leaf', layer: 'main', id: asNodeId('b'),
+    kind: 'mark', layer: 'main', id: asNodeId('b'),
     pose: { x: 20, y: 20, width: 40, height: 40 }, data: { kind: 'rect' },
   });
   return scene;
@@ -75,7 +75,7 @@ describe('pickWalk — pickable', () => {
     // A label sitting inside a box: overlapping, above it, and not the thing
     // the user means to grab.
     scene.add({
-      kind: 'leaf', layer: 'main', id: asNodeId('label'), pickable: false,
+      kind: 'mark', layer: 'main', id: asNodeId('label'), pickable: false,
       pose: { x: 4, y: 4, width: 30, height: 10 }, data: { kind: 'rect' },
     });
     expect(pickAt(scene, 8, 8)).toEqual(['a']);
@@ -84,7 +84,7 @@ describe('pickWalk — pickable', () => {
   it('picks it when nothing says otherwise', () => {
     const scene = rectScene();
     scene.add({
-      kind: 'leaf', layer: 'main', id: asNodeId('label'),
+      kind: 'mark', layer: 'main', id: asNodeId('label'),
       pose: { x: 4, y: 4, width: 30, height: 10 }, data: { kind: 'rect' },
     });
     expect(pickAt(scene, 8, 8)).toEqual(['a', 'label']);
@@ -93,7 +93,7 @@ describe('pickWalk — pickable', () => {
   it('round-trips through toJSON', () => {
     const scene = rectScene();
     scene.add({
-      kind: 'leaf', layer: 'main', id: asNodeId('label'), pickable: false,
+      kind: 'mark', layer: 'main', id: asNodeId('label'), pickable: false,
       pose: { x: 4, y: 4, width: 30, height: 10 }, data: { kind: 'rect' },
     });
     const json = scene.toJSON();
@@ -147,11 +147,11 @@ describe('pickWalk — layers', () => {
   it("does not pick a child of a container on a locked layer", () => {
     const scene = rectScene();
     const box = scene.add({
-      kind: 'container', layer: 'main', id: asNodeId('box'),
+      kind: 'group', layer: 'main', id: asNodeId('box'),
       pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'group' },
     });
     scene.add({
-      kind: 'leaf', layer: 'top', id: asNodeId('kid'), parent: box,
+      kind: 'mark', layer: 'top', id: asNodeId('kid'), parent: box,
       pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
     });
     expect(pickAt(scene, 105, 105)).toEqual(['box', 'kid']);
@@ -171,11 +171,11 @@ describe('pickWalk — layers', () => {
   it('does not pick or marquee a hidden node, or anything under a hidden container', () => {
     const scene = rectScene();
     const box = scene.add({
-      kind: 'container', layer: 'main', id: asNodeId('box'),
+      kind: 'group', layer: 'main', id: asNodeId('box'),
       pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'rect' },
     });
     scene.add({
-      kind: 'leaf', layer: 'top', id: asNodeId('kid'), parent: box,
+      kind: 'mark', layer: 'top', id: asNodeId('kid'), parent: box,
       pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
     });
     scene.setHidden(asNodeId('a'), true);
@@ -188,11 +188,11 @@ describe('pickWalk — layers', () => {
   it('does not pick a locked node, or anything under a locked container', () => {
     const scene = rectScene();
     const box = scene.add({
-      kind: 'container', layer: 'main', id: asNodeId('box'),
+      kind: 'group', layer: 'main', id: asNodeId('box'),
       pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'rect' },
     });
     scene.add({
-      kind: 'leaf', layer: 'top', id: asNodeId('kid'), parent: box,
+      kind: 'mark', layer: 'top', id: asNodeId('kid'), parent: box,
       pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
     });
     scene.setLocked(box, true);
@@ -205,8 +205,8 @@ describe('pickWalk — layers', () => {
     const scene = createScene<{ kind: string }, 'main' | 'notes', RectPose>({
       systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
     });
-    scene.add({ kind: 'leaf', layer: 'main', id: asNodeId('a'), pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
-    scene.add({ kind: 'leaf', layer: 'notes', id: asNodeId('n'), pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
+    scene.add({ kind: 'mark', layer: 'main', id: asNodeId('a'), pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
+    scene.add({ kind: 'mark', layer: 'notes', id: asNodeId('n'), pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
     expect(pickAt(scene as never, 5, 5)).toEqual(['a']);
     expect(hitTestArea(scene as never, { x: -10, y: -10, width: 100, height: 100 })).toEqual(['a']);
   });
@@ -222,7 +222,7 @@ describe('pickWalk — order and clips', () => {
     const scene = createScene<{ kind: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     let clipCalls = 0;
     scene.add({
-      kind: 'container', layer: 'main', id: asNodeId('box'),
+      kind: 'group', layer: 'main', id: asNodeId('box'),
       pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'rect' },
       clipFromPose: (p): Path => {
         clipCalls++;
@@ -231,7 +231,7 @@ describe('pickWalk — order and clips', () => {
     });
     for (const id of ['c1', 'c2', 'c3'].map(asNodeId)) {
       scene.add({
-        kind: 'leaf', layer: 'main', id, parent: asNodeId('box'),
+        kind: 'mark', layer: 'main', id, parent: asNodeId('box'),
         pose: { x: 10, y: 10, width: 20, height: 20 }, data: { kind: 'rect' },
       });
     }

@@ -14,7 +14,7 @@ describe('useSelectTool — default pickEvery reads the descriptor', () => {
     const { result } = renderHook(() => {
       const scene = useScene<object, 'default', CirclePose>({
         systemLayers: [{ id: 'default' }],
-        initial: [{ id: asNodeId('c'), kind: 'leaf', layer: 'default', pose: circle(50, 50, 10), data: {} }],
+        initial: [{ id: asNodeId('c'), kind: 'mark', layer: 'default', pose: circle(50, 50, 10), data: {} }],
       });
       const sel = useSelection({ mode: 'single' });
       const adapter = sceneToAdapter(scene, { selection: sel, poseDescriptor: CIRCLE_POSE_DESCRIPTOR });

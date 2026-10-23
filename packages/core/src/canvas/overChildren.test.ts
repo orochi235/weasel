@@ -11,7 +11,7 @@ const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const mark = (name: string): DrawCommand => ({ kind: 'group', children: [], name } as unknown as DrawCommand);
 const nameOf = (cmd: DrawCommand): string => (cmd as unknown as { name: string }).name;
 
-interface TestNode { id: string; layer: string; kind: 'container' | 'leaf'; parent: string | null }
+interface TestNode { id: string; layer: string; kind: 'group' | 'mark'; parent: string | null }
 
 function adapterOf(nodes: TestNode[]): HierarchicalAdapter<TestNode, RectPose> {
   return {
@@ -48,10 +48,10 @@ describe('overChildren', () => {
 
 describe('buildSceneTree with a painter that asks to draw over children', () => {
   const nodes: TestNode[] = [
-    { id: 'g', layer: 'main', kind: 'container', parent: null },
-    { id: 'c1', layer: 'main', kind: 'leaf', parent: 'g' },
-    { id: 'c2', layer: 'main', kind: 'leaf', parent: 'g' },
-    { id: 'after', layer: 'main', kind: 'leaf', parent: null },
+    { id: 'g', layer: 'main', kind: 'group', parent: null },
+    { id: 'c1', layer: 'main', kind: 'mark', parent: 'g' },
+    { id: 'c2', layer: 'main', kind: 'mark', parent: 'g' },
+    { id: 'after', layer: 'main', kind: 'mark', parent: null },
   ];
 
   it('paints that part after the node\'s children and before its next sibling', () => {
@@ -84,19 +84,19 @@ describe('wrapNodeOutput', () => {
 
 describe('defaultDrawOne', () => {
   const POSE: RectPose = { x: 0, y: 0, width: 100, height: 40 };
-  const node = (kind: 'container' | 'leaf') => ({
+  const node = (kind: 'group' | 'mark') => ({
     id: 'n', kind, layer: 'main', parent: null, pose: POSE, data: { label: 'Welcome' },
-    ...(kind === 'container' ? { children: [] } : {}),
+    ...(kind === 'group' ? { children: [] } : {}),
   }) as unknown as Node<{ label: string }, 'main', RectPose>;
 
   it('draws a container\'s label over its children', () => {
-    const cmds = defaultDrawOne(node('container'), POSE, VIEW);
+    const cmds = defaultDrawOne(node('group'), POSE, VIEW);
     expect(cmds.filter(isOverChildren)).toHaveLength(1);
     expect(splitOverChildren(cmds).over.map((c) => c.kind)).toEqual(['text']);
   });
 
   it('draws a leaf\'s label with the leaf', () => {
-    const cmds = defaultDrawOne(node('leaf'), POSE, VIEW);
+    const cmds = defaultDrawOne(node('mark'), POSE, VIEW);
     expect(cmds.some(isOverChildren)).toBe(false);
     expect(cmds.map((c) => c.kind)).toContain('text');
   });

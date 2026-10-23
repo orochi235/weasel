@@ -1,10 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "systemLayers": [{ "id": "default" }],
   "nodes": [
     {
       "id": "F",
-      "kind": "container",
+      "kind": "group",
       "layer": "default",
       "layoutKey": "freeform",
       "pose": { "x": 10, "y": 40, "width": 180, "height": 180 },
@@ -12,7 +12,7 @@
     },
     {
       "id": "G",
-      "kind": "container",
+      "kind": "group",
       "layer": "default",
       "layoutKey": "tileGrid",
       "pose": { "x": 210, "y": 40, "width": 180, "height": 180 },
@@ -20,7 +20,7 @@
     },
     {
       "id": "S",
-      "kind": "container",
+      "kind": "group",
       "layer": "default",
       "layoutKey": "snapPoint",
       "pose": { "x": 410, "y": 40, "width": 180, "height": 180 },
@@ -29,7 +29,7 @@
     {
       "id": "f1",
       "parent": "F",
-      "kind": "leaf",
+      "kind": "mark",
       "layer": "default",
       "pose": { "x": 50, "y": 80, "width": 30, "height": 30 },
       "data": { "color": "#f5b7a3", "isContainer": false }
@@ -37,7 +37,7 @@
     {
       "id": "g1",
       "parent": "G",
-      "kind": "leaf",
+      "kind": "mark",
       "layer": "default",
       "pose": { "x": 210, "y": 40, "width": 90, "height": 90 },
       "data": { "color": "#a3f5b7", "isContainer": false }
@@ -45,7 +45,7 @@
     {
       "id": "s1",
       "parent": "S",
-      "kind": "leaf",
+      "kind": "mark",
       "layer": "default",
       "pose": { "x": 420, "y": 50, "width": 30, "height": 30 },
       "data": { "color": "#a3b7f5", "isContainer": false }

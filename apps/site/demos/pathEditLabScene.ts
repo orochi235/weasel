@@ -27,7 +27,7 @@ export type PathLabState = SceneTrialState<unknown, 'default', RectPose>;
  *  with a tint of it when `filled`. */
 export function strokeNode(id: string, path: Path, color: string, filled = false) {
   return {
-    kind: 'leaf' as const,
+    kind: 'mark' as const,
     id: asNodeId(id),
     layer: 'default' as const,
     pose: boundsOfPath(path),

@@ -32,7 +32,7 @@ const edges: SnapSource = {
 
 function rig(sources: readonly SnapSource[] | null, siblings: readonly Bounds[] = []) {
   const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
-  for (const pose of siblings) scene.add({ kind: 'leaf', layer: 'main', data: {}, pose });
+  for (const pose of siblings) scene.add({ kind: 'mark', layer: 'main', data: {}, pose });
   const committed: Array<{ bounds: Bounds; extras: InsertExtras }> = [];
   const insert: InsertDep = {
     commit: (bounds, extras) => { committed.push({ bounds: { ...bounds }, extras }); return 'n' as NodeId; },
@@ -125,8 +125,8 @@ describe('insert snapping', () => {
      *  `insertInto` names `into`: the `parent` each collect was told. */
     function drawInto(into: (ids: { g: string; l: string }) => string | null) {
       const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
-      const g = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
-      const l = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 } }) as string;
+      const g = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
+      const l = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 } }) as string;
       const told: Array<string | undefined> = [];
       const spy: SnapSource = { id: 'spy', roles: ['pointer'], *collect(q) { told.push(q.parent); } };
       const insert: InsertDep = { commit: () => 'n' as NodeId };

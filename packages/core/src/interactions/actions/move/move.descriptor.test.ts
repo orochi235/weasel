@@ -41,15 +41,15 @@ function drag(
 describe('moveAction — non-rect poses through the descriptor', () => {
   it('translates a circle without writing rect fields', () => {
     const scene = circleScene();
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: circle(10, 10, 5), data: {} });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: circle(10, 10, 5), data: {} });
     drag(scene, [id], { x: 20, y: 0 });
     expect(scene.get(id)!.pose).toEqual(circle(30, 10, 5));
   });
 
   it('drops a circle into a container without NaN', () => {
     const scene = circleScene();
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: circle(0, 0, 5), data: {} });
-    const box = scene.add({ kind: 'container', layer: 'main', pose: circle(100, 100, 50), data: {} });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: circle(0, 0, 5), data: {} });
+    const box = scene.add({ kind: 'group', layer: 'main', pose: circle(100, 100, 50), data: {} });
     drag(scene, [id], { x: 100, y: 100 }, { nodeAtPoint: () => box }, { params: { reparentOnDrop: 'top' } });
     expect(scene.get(id)!.parent).toBe(box);
     expect(scene.get(id)!.pose).toEqual(circle(100, 100, 5));
@@ -57,8 +57,8 @@ describe('moveAction — non-rect poses through the descriptor', () => {
 
   it('finds a layout container under a dragged circle and probes at the pointer', () => {
     const scene = circleScene();
-    const id = scene.add({ kind: 'leaf', layer: 'main', pose: circle(0, 0, 5), data: {} });
-    const box = scene.add({ kind: 'container', layer: 'main', pose: circle(100, 100, 50), data: {} });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: circle(0, 0, 5), data: {} });
+    const box = scene.add({ kind: 'group', layer: 'main', pose: circle(100, 100, 50), data: {} });
     const probes: { x: number; y: number }[] = [];
     const layout = {
       snap: { pickTarget: (t: unknown[], p: { x: number; y: number }) => { probes.push(p); return t[0] ?? null; } },

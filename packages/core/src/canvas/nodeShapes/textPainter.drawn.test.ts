@@ -26,7 +26,7 @@ beforeEach(async () => {
 
 function drawn(data: TextNodeData, pose: RectPose, scale?: number) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: asNodeId('t'), kind: 'leaf', layer: 'main', data, pose } as never);
+  scene.add({ id: asNodeId('t'), kind: 'mark', layer: 'main', data, pose } as never);
   return drawnBoundsOf(scene, asNodeId('t'), pose, scale === undefined ? {} : { scale });
 }
 

@@ -5,7 +5,7 @@ import { useTextEditDepSource } from './textEdit';
 import type { Scene, NodeId } from 'core/scene/types';
 
 function makeScene(text: boolean): Scene<unknown, string, unknown> {
-  const node = { id: 'n', kind: 'leaf' as const, pose: {}, data: text ? { text: 'hi' } : { kind: 'rect' } };
+  const node = { id: 'n', kind: 'mark' as const, pose: {}, data: text ? { text: 'hi' } : { kind: 'rect' } };
   return {
     layers: [{ id: 'default' }],
     renderOrder: () => ['n'] as NodeId[],

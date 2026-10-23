@@ -38,7 +38,7 @@ function mount() {
     showChild = setChild;
     const s = useScene<D, L, P>({
       systemLayers: [{ id: 'main' }],
-      initial: [{ id: 'a' as NodeId, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { color: 'red' } }],
+      initial: [{ id: 'a' as NodeId, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { color: 'red' } }],
     });
     scene = s;
     return <SceneCanvas features={['draw']} scene={s} width={200} height={200} aria-label="board">{child && <ExtraDep />}</SceneCanvas>;
@@ -73,7 +73,7 @@ describe('SceneCanvas devtools root', () => {
 
   it('serves the scene tree and steers the selection', () => {
     const { result, close } = mount();
-    expect(result({ type: 'get-children' })).toMatchObject([{ id: 'a', kind: 'leaf', layer: 'main' }]);
+    expect(result({ type: 'get-children' })).toMatchObject([{ id: 'a', kind: 'mark', layer: 'main' }]);
     result({ type: 'select', ids: ['a'] });
     expect(result({ type: 'get-state' })).toMatchObject({ selection: ['a'] });
     close();

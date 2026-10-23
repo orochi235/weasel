@@ -31,10 +31,10 @@ function ctx(scene: S, ids: string[], drag?: typeof DRAG): InvocationCtx {
 /** Two leaves and a container holding a third. */
 function fixture() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(0, 0) });
-  const b = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(50, 0) });
-  const group = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(0, 100, 60, 60) });
-  const child = scene.add({ kind: 'leaf', parent: group, layer: 'main', data: {}, pose: box(10, 110) });
+  const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
+  const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(50, 0) });
+  const group = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 100, 60, 60) });
+  const child = scene.add({ kind: 'mark', parent: group, layer: 'main', data: {}, pose: box(10, 110) });
   return { scene, a, b, group, child };
 }
 

@@ -70,7 +70,7 @@ const CLIP: Clip = {
 };
 
 const rect = (id: string, pose: RectPose, paint: Paint) =>
-  ({ id: asNodeId(id), kind: 'leaf' as const, layer: 'main' as const, pose, data: { shape: 'rect' as const, fill: { paint } } });
+  ({ id: asNodeId(id), kind: 'mark' as const, layer: 'main' as const, pose, data: { shape: 'rect' as const, fill: { paint } } });
 
 export function TimelineDemo() {
   // Nothing here renders scene data as DOM. The scrub readout drives its own `setNow`.

@@ -218,8 +218,8 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * the file carries one; the caller maps it to the minted `NodeId`.
  */
 export type SceneDraft =
-  | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj; hidden?: true }
-  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; hidden?: true }
+  | { kind: 'mark'; id: string; parentId: string | null; obj: Obj; hidden?: true }
+  | { kind: 'group'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; hidden?: true }
   | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; hidden?: true } & EffectAttrs);
 
 /**
@@ -295,10 +295,10 @@ export function svgNodesToSceneDrafts(
   });
   return drafts.map((d): SceneDraft => {
     const hidden = d.hidden ? { hidden: true as const } : {};
-    if (d.kind === 'leaf') return { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data, ...hidden };
+    if (d.kind === 'mark') return { kind: 'mark', id: d.id, parentId: d.parentId, obj: d.data, ...hidden };
     const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data, ...hidden };
     const effect = effects.get(d.id);
-    return effect === undefined ? { kind: 'container', ...group } : { kind: 'effect', ...group, ...effect };
+    return effect === undefined ? { kind: 'group', ...group } : { kind: 'effect', ...group, ...effect };
   });
 }
 

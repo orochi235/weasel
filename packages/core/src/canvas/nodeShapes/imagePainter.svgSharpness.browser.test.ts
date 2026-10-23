@@ -23,7 +23,7 @@ const SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="${NATURAL}" height="
 const SRC = `data:image/svg+xml;utf8,${encodeURIComponent(SVG)}`;
 
 const POSE: RectPose = { x: 0, y: 0, width: NATURAL, height: NATURAL };
-const NODE = { id: 'n', kind: 'leaf', layer: 'main', parent: null, pose: POSE, data: { image: { src: SRC } } } as
+const NODE = { id: 'n', kind: 'mark', layer: 'main', parent: null, pose: POSE, data: { image: { src: SRC } } } as
   unknown as Node<unknown, string, RectPose>;
 
 let renderer: WeaselRenderer | undefined;

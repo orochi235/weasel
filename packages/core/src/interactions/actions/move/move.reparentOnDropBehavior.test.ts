@@ -19,8 +19,8 @@ const SLOT: RectPose = { x: 120, y: 130, width: 10, height: 10 };
 
 function drop(dx: number, more: { behaviors?: MoveBehavior<unknown>[]; deps?: object } = {}) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: A, kind: 'leaf', layer: 'main', data: {}, pose: HOME });
-  scene.add({ id: T, kind: 'container', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
+  scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: HOME });
+  scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
   const nodeAtPoint = vi.fn(() => T);
   const onGestureEnd = vi.fn();
   const base = {

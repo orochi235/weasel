@@ -166,7 +166,7 @@ function costSpec(stage: DiagramSpec, own: readonly DiagramSpec[], of: EffectSta
   }));
   return {
     id: `${stage.id as string}/cost` as never,
-    kind: 'leaf',
+    kind: 'mark',
     layer: 'main',
     pickable: false,
     pose: { x: box.x + box.width - width, y: top - height - COST_GAP, width, height },

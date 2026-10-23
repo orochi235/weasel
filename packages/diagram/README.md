@@ -415,7 +415,7 @@ the `insert` dep it displaced, so core's rect, ellipse and text tools keep worki
 ### Containers and pools
 
 A container is a titled box that holds other shapes; a pool is a header and a
-stack of lanes, each holding shapes. Both are core `ContainerNode`s carrying a
+stack of lanes, each holding shapes. Both are core `GroupNode`s carrying a
 `container` trait (`diagramContainerOf`): a role of `container`, `pool`, or
 `lane`, and a header. A region's title is a text child named
 `<id>/title`, so double-clicking a header renames it.
