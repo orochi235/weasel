@@ -52,7 +52,7 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
     setPose(id, pose) {
       const node = requireNode(id);
       refuse(id, 'set the pose of');
-      const resizes = resized(layoutFrame, id, node.pose, pose);
+      const resizes = node.layout !== undefined && resized(layoutFrame, id, node.pose, pose);
       // A container with a layout owns where its children go, however one is moved.
       const parent = node.parent === null ? undefined : requireNode(node.parent);
       const arranger = parent?.layout !== undefined ? parent.id : null;

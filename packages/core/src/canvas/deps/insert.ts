@@ -10,6 +10,7 @@ import { useRef } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
+import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { insertParent } from 'interactions/actions/insert/parent';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -141,8 +142,9 @@ function boxKindData(
 function insertSite(
   sc: Scene<unknown, string, unknown>,
   into: string | null | undefined,
+  canDropInto?: CanDropIntoDep,
 ): { parent: NodeId | null; layer: string; local: (world: unknown) => unknown } {
-  const parentId = insertParent(sc, into);
+  const parentId = insertParent(sc, into, canDropInto);
   if (parentId === null) {
     return { parent: null, layer: (sc.layers[0]?.id ?? 'default') as string, local: (p) => p };
   }
@@ -178,7 +180,7 @@ export function useInsertDepSource(
     const sc = sceneRef.current;
     const ad = adapterRef.current;
 
-    const site = () => insertSite(sc, registry.get('insertInto')?.get());
+    const site = () => insertSite(sc, registry.get('insertInto')?.get(), registry.get('canDropInto'));
     const build: NonNullable<InsertDep['build']> = (bounds, extras) => {
         const kind = extras.kind;
         const { parent, layer, local } = site();

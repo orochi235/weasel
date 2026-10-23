@@ -7,6 +7,7 @@ import type { PoseComposition } from 'core/scene/composePose';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { CanDropIntoDep, LayoutDep, NodeAtPointDep } from '../depSchema';
+import { admitsChild } from '../admitsChild';
 import type { GeometryProjection } from '../geometryProjection';
 import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
@@ -97,9 +98,8 @@ function admitsOf(
   ids: readonly NodeId[],
   scene: { get(id: NodeId): { kind: string } | undefined },
 ): (parent: NodeId) => boolean {
-  if (canDropInto === undefined) return (parent) => scene.get(parent)?.kind === 'group';
   const roots = ids as readonly string[];
-  return (parent) => canDropInto(parent as string, roots);
+  return (parent) => admitsChild(scene, parent, roots, canDropInto);
 }
 
 /** Capture a drag at press. Null when there is nothing to move. Runs each
