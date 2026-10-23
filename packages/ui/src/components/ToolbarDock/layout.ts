@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Corner } from 'windease';
+import { FLOATING_CORNERS, type Corner } from 'windease';
 import type { BarOrientation } from '../Bar';
 
 /** Which edge of a ToolbarDock's container a dock runs along; a left or right dock lays its bars vertically. */
@@ -55,6 +55,8 @@ export function canEnter(bar: DockBar, dock: { id: string; edge: DockEdge }): bo
  * Reconciles a stored layout with the docks and bars the app has now. Every bar ends up
  * placed once; unknown ids are dropped, empty rows removed, and a bar that has nowhere
  * valid to sit goes to the end of the last row of its home dock (see {@link homeDock}).
+ * A stored floating place is coerced: a non-finite `x` or `y` becomes 0, an anchor that is
+ * not a corner becomes null, and a bar without `vertical` floats horizontal.
  */
 export function resolveLayout(
   docks: readonly DockSpec[],
@@ -79,9 +81,15 @@ export function resolveLayout(
   }
 
   for (const [id, at] of Object.entries(layout?.floating ?? {})) {
-    if (placed.has(id) || !byId.get(id)?.float) continue;
+    const bar = byId.get(id);
+    if (placed.has(id) || !bar?.float) continue;
     placed.add(id);
-    out.floating[id] = { ...at };
+    out.floating[id] = {
+      x: Number.isFinite(at.x) ? at.x : 0,
+      y: Number.isFinite(at.y) ? at.y : 0,
+      anchor: (FLOATING_CORNERS as readonly unknown[]).includes(at.anchor) ? at.anchor : null,
+      orientation: bar.vertical && at.orientation === 'vertical' ? 'vertical' : 'horizontal',
+    };
   }
 
   for (const bar of bars) {

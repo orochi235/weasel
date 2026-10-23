@@ -95,6 +95,21 @@ describe('resolveLayout', () => {
     expect(out.floating).toEqual({ a: place });
     expect(out.docks).toEqual({ top: [], left: [] });
   });
+
+  it('floats a bar that may not run vertical horizontally, whatever orientation was stored', () => {
+    const stored: ToolbarLayout = { docks: {}, floating: { a: { ...place, orientation: 'vertical' }, b: { ...place, orientation: 'vertical' } } };
+    const out = resolveLayout(docks, [bar('a', { float: true, vertical: undefined }), bar('b', { float: true })], stored);
+    expect(out.floating.a.orientation).toBe('horizontal');
+    expect(out.floating.b.orientation).toBe('vertical');
+  });
+
+  it('coerces a stored floating place: a non-finite x or y to 0, an unknown anchor to null', () => {
+    const bad = { x: Number.NaN, y: Infinity, anchor: 'middle', orientation: 'horizontal' } as unknown as FloatPlace;
+    const out = resolveLayout(docks, [bar('a', { float: true })], { docks: {}, floating: { a: bad } });
+    expect(out.floating.a).toEqual({ x: 0, y: 0, anchor: null, orientation: 'horizontal' });
+    const good = { ...place, anchor: 'bottom-right' as const };
+    expect(resolveLayout(docks, [bar('a', { float: true })], { docks: {}, floating: { a: good } }).floating.a).toEqual(good);
+  });
 });
 
 describe('a bar that may not run vertical', () => {

@@ -65,7 +65,9 @@ function isInteractive(target: EventTarget | null): boolean {
  * it is a drag, so a press on a non-native control inside the box still clicks it. The box follows the pointer
  * while dragging; the release reports the result once, and the box stays where it was dropped until `placement`
  * changes or the next press. That hold compares `placement` by identity, so a host passes a stable object, not one
- * built afresh each render. Escape puts it back. Persists nothing.
+ * built afresh each render. Each move places the box from where it was pressed by the pointer's whole travel, so a
+ * corner it passed or an edge it was held against does not offset it from the pointer. Only the primary button drags.
+ * Escape puts it back. Persists nothing.
  */
 export function useFloatingPlacement({
   panelRef,
@@ -125,11 +127,12 @@ export function useFloatingPlacement({
   useEffect(() => () => drag.current?.cancel(), []);
 
   const startDrag = (e: ReactPointerEvent): void => {
-    if (isInteractive(e.target)) return;
+    if (e.button !== 0 || isInteractive(e.target)) return;
     // The canvas stack underneath owns pan/zoom on the same pointer events.
     e.stopPropagation();
     setLive(null);
-    let last = { x: e.clientX, y: e.clientY };
+    const press = { x: e.clientX, y: e.clientY };
+    let last = press;
     const over = latest.current.placement;
     let at = over;
     let moved = false;
@@ -142,11 +145,9 @@ export function useFloatingPlacement({
       captureAt: 'threshold',
       onActivate: () => setLive({ at, over, dragging: true }),
       onMove: (ev) => {
-        const dx = ev.clientX - last.x;
-        const dy = ev.clientY - last.y;
-        if (dx === 0 && dy === 0) return;
+        if (ev.clientX === last.x && ev.clientY === last.y) return;
         last = { x: ev.clientX, y: ev.clientY };
-        at = dragPlacement(at, dx, dy, latest.current);
+        at = dragPlacement(over, ev.clientX - press.x, ev.clientY - press.y, latest.current);
         moved = true;
         setLive({ at, over, dragging: true });
       },

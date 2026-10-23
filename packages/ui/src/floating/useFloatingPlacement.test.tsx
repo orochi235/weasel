@@ -219,6 +219,22 @@ describe('useFloatingPlacement dragging', () => {
     expect(panel.style.top).toBe('248px'); // 300 - 40 - 12
   });
 
+  it('ends where the pointer says after a slow drag past a corner and back, not stuck to the corner', () => {
+    const { panel } = renderPanel(<Harness />);
+    fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
+    const steps = 80;
+    for (let i = 1; i <= steps; i++) {
+      fireEvent.pointerMove(panel, { pointerId: 1, buttons: 1, clientX: 100 + i * 5, clientY: 100 + i * 4 });
+    }
+    expect(panel.style.left).toBe('288px');
+    expect(panel.style.top).toBe('248px');
+    for (let i = steps - 1; i >= 30; i--) {
+      fireEvent.pointerMove(panel, { pointerId: 1, buttons: 1, clientX: 100 + i * 5, clientY: 100 + i * 4 });
+    }
+    expect(panel.style.left).toBe('150px');
+    expect(panel.style.top).toBe('120px');
+  });
+
   it('refuses a corner it was not given', () => {
     const { panel } = renderPanel(<Harness snapCorners={['top-left']} />);
     fireEvent.pointerDown(panel, { clientX: 0, clientY: 0 });
@@ -226,6 +242,21 @@ describe('useFloatingPlacement dragging', () => {
     // Clamped inside the container, but not snapped to the bottom-right inset.
     expect(panel.style.left).toBe('300px');
     expect(panel.style.top).toBe('260px');
+  });
+
+  it('does not start a drag from any button but the primary', () => {
+    const onDown = vi.fn();
+    const { container } = render(
+      <div onPointerDown={onDown}>
+        <Harness />
+      </div>,
+    );
+    const panel = container.querySelector('[data-panel]') as HTMLElement;
+    fireEvent.pointerDown(panel, { pointerId: 1, button: 2, buttons: 2, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { pointerId: 1, buttons: 2, clientX: 200, clientY: 180 });
+    expect(panel.dataset.dragging).toBeUndefined();
+    expect(panel.style.left).toBe('12px');
+    expect(onDown).toHaveBeenCalledTimes(1);
   });
 
   it('does not start a drag from an interactive child', () => {
