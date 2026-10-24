@@ -29,7 +29,10 @@ Decided in conversation (2026-10-23), none of it in code:
   with a stance (and most of the rest). No stance-to-variant table, no rule for which axis wins. Button's
   `primary` becomes the stance `confirm`; `scope` becomes `clarify` ("this clarifies the scope").
 
-**Next:** the artifact's open questions: what severity is called, whether tone has more moods, which settings cascade, what Slider's `density`
+- **Stance and tone cascade; severity and tint do not** (2026-10-23). A `danger` dialog's Cancel button
+  stays plain; a component may still read its parent's severity as a hint.
+
+**Next:** the artifact's open questions: what severity is called, whether tone has more moods, what Slider's `density`
 (track thickness) becomes.
 
 Also waiting on Mike, unrelated: whether `Primitives/*` story titles merge into `ui/Foundations`
