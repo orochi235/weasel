@@ -516,13 +516,6 @@ Priority tags:
   a blits mix (`core/scene/poseOverrides.ts`), with one voice reading the entry table, so each hold
   could be a voice of its own, and the open question is which voice wins a field two of them write.
 
-- **(P3) The pick index boxes nodes by their stored data, not the data an override shows**
-  (2026-10-23). `build` in `core/src/canvas/pickIndex/scenePickIndex.ts` boxes `scene.renderOrderNodes()`,
-  so a data override that grows a node's ink, such as a stroke width scrubbed past what is stored,
-  leaves the extra outside its box, and a pick there during the scrub can miss. The walk already
-  hands candidates through `nodesAsShown`; boxing the shown order too would close it, and the index
-  already rebuilds on the override generation.
-
 - **(P3) A node's declared clip can be set only when it is added** (2026-10-23). `clip: 'outline'`
   rides `scene.add`, snapshots and the clipboard, but the scene has no `setClip` beside `setUnits`,
   so `reconcileSpecs` replaces a node whose `clip` changed, and no panel can switch it.
