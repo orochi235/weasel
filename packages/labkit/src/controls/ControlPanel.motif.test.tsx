@@ -41,8 +41,15 @@ describe('<ControlPanel> motif', () => {
       .label('Fade')
       .motif(stereo()),
     hold: f.group({ time: f.number(1) }).label('Hold'),
-    notes: f.group({ shout: f.number(1) }).label('Notes').as('section').motif(stereo()),
-    aside: f.group({ hush: f.number(1) }).label('Aside').as('section'),
+    notes: f
+      .group({ shout: f.number(1) })
+      .label('Notes')
+      .as('section')
+      .motif(stereo()),
+    aside: f
+      .group({ hush: f.number(1) })
+      .label('Aside')
+      .as('section'),
     a: f.number(1).section('Look', { motif: stereo() }),
     b: f.number(1).section('Feel'),
   });
