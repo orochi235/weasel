@@ -255,10 +255,21 @@ resize and rotate sessions, snap targets), draw's SVG save and the diagram page
 export take it at their entry; `documentPose` and `documentDepOf` are the same
 reading (2026-10-24).
 
+Several writers can override one node at once — a drag's hold and a live
+route, a move and its previewed follower data — and each entry `set` is a layer
+over the ones set before it. For each field the most recently set layer that
+gives it wins; `alpha` multiplies through every layer, and `data` runs each
+layer's function on what the layers under it show, so a gesture's preview keeps
+an open edit's draft. Setting an installed entry again brings it to the top.
+Releasing a layer shows what lies under it. A writer checks and releases only
+its own: `has(id, entry)` and `clear(id, entry)`; `clear(id)` drops every layer,
+as removing the node does (2026-10-24).
+
 A writer publishing whole frames takes a `hold()`: `set(poses)` publishes poses,
-`show(frame)` poses and data, and `show` leaves an id another writer holds to that
-writer. A hold puts back an entry the table dropped when its node went, so a node
-deleted and restored mid-gesture is shown again on the next frame.
+`show(frame)` poses and data. Each frame is the whole picture of the hold's own
+fields; a field it leaves out shows what the layers under it say. A hold puts
+back an entry the table dropped when its node went, so a node deleted and
+restored mid-gesture is shown again on the next frame.
 `publishPreviews(scene, dispatcher)`, which `<SceneCanvas>` calls, is one: it shows
 every in-flight handle's `previewPose` and `previewData` (except a
 `previewHidesSource: false` handle's), so whatever derives from a node an anchor
