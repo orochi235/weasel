@@ -40,8 +40,10 @@
 
 /* The lit stroke is behind the label, so the label takes the colors it would on a lit segment. */
 .root[data-variant='default'] > [data-state='on'] {
+  color: var(--wzl-fg-on-accent);
   --wzl-fg: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
 }
 
 .root[data-variant='default'] > [data-state='mixed'] {

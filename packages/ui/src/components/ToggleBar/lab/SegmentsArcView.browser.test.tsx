@@ -69,6 +69,22 @@ test('a press on a segment reaches its button over the well, and lights it', asy
   expect(lit.isPointInStroke(q)).toBe(true);
 });
 
+test('a lit segment draws its label in the on-accent color in light mode, as a straight bar does', async () => {
+  document.documentElement.setAttribute('data-wzl-mode', 'light');
+  try {
+    render(<SegmentsArcView config={SEGMENTS_ARC_DEFAULTS} />);
+    await settle();
+    const lit = screen.getByRole('radio', { name: 'Scale' });
+    const probe = document.createElement('i');
+    probe.style.color = 'var(--wzl-fg-on-accent)';
+    document.body.append(probe);
+    expect(getComputedStyle(lit).color).toBe(getComputedStyle(probe).color);
+    probe.remove();
+  } finally {
+    document.documentElement.removeAttribute('data-wzl-mode');
+  }
+});
+
 test('a bar on the bottom arc reads upright', async () => {
   render(<SegmentsArcView config={SEGMENTS_ARC_DEFAULTS} />);
   await settle();
