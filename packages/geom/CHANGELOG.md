@@ -1,5 +1,25 @@
 # @weasel-js/geom
 
+## 1.13.0-rc.0
+
+### Patch Changes
+
+- 7e5f9e3: A curved `Bar` scrolls smoothly. An item sliding off either end of its run now carries on along the curve, round the arc's circle rather than straight out along the end, and fades by how much of it is still on the run, instead of dimming to 40% and then vanishing. Wheel and focus moves glide to where they send the run over about 60 ms; a drag still follows the pointer, and a reader who prefers reduced motion gets every move at once. The chevrons that mark more past an end sit 10 px out past it, clear of the item fading there.
+  
+  `Along`'s `arc` can be given by where its middle faces and how far it reaches: `{ at: 0, span: '120deg' }`, or `{ at: 0, span: '180px' }`, which keeps the arc 180 px long however large its box grows. `spanDegrees` and the `ArcSpan`, `ArcEnds`, `ArcAround` and `AlongArcPlace` types are exported beside it.
+  
+  In geom, a track shape's `at(f, { open: true })` carries a station past 0 and 1 along the shape itself — a line and an open path straight on, an arc and an ellipse round themselves, a closed path round its contour — and `runStationAt` and `placeAlongRun` take `past: 'follow'` to lay places that way. `placeAlongRun`'s `past: 'hold'` now follows the shape with an item part past an end, where it used to carry it on straight, before holding it at the end once it is wholly past.
+- c7516cd: `Jog` follows a curve. Inside an `Along`, or given a curved `shape`, its step and play buttons, readout and caption lie along the shape in reading order, each tipped to it, and the scrubber bends along the stretch of the run they leave between them, keeping at least 80 px. Without a scrubber the controls sit where the `Along`'s `align`, or Jog's own `align`, puts them. On a straight line it is the row it always was.
+  
+  In geom, `trackSlice(shape, from, to)` cuts a stretch of a track shape out as a shape of its own, running the same way: an arc stays an arc and an ellipse an ellipse, so `trackShapeD` still draws it with true arcs.
+- 8c39126: Picks consult a BVH index kept beside the scene, so a marquee, a lasso or a click visits the nodes near the query instead of every node. `@weasel-js/geom` adds the tree. Three contracts tighten for the index to be sound. `NodeInk.outset` must not depend on the view scale: screen-space reach goes in `outsetPx`. In kernel3d, `world.bounds` must be a function of the node alone. Two picks change behavior: marquee and lasso now test a derived node at its derived path, and the point pick now tests a node carrying an override `path` against that path, which is what the renderer paints, instead of its pose box.
+- 769eef8: `SwatchGrid` and `SwatchStrip` follow a curve. Inside an `Along`, or given a curved `shape`, each row of swatches lies on a ring of its own, every next row one row further in toward the curve's center, so a palette reads like a color wheel's rim. `SwatchStrip` puts the recent colors on the outer rings and the palette on the rings inside them, each section's heading — or the palette picker, when there is more than one palette — first on its section's first ring. Each arrow key moves to the swatch beside the focused one, along its ring or on the next ring in or out, that lies the arrow's way on screen, so Down goes down on a bottom arc as on a top one. A ring too long for its arc scrolls along itself, as a curved `Bar` does; where the curve bends too tight for another ring to keep its swatches apart, the rest of that palette's rows share its last ring. Outside a curve both render as before. Both take `shape` and `align` props, as `Bar` does.
+  
+  In geom, `shiftTrack(shape, shift)` is the track that lies a fixed distance along a shape's normal from it, addressed by its own length, or null where that distance passes a center of curvature and the track would fold; `bendSide(shape)` says which side of its normal a shape bends toward.
+- 4c113da: Items along a curved `Bar` or `Slider` no longer read upside down at the ends of an arc across 3 or 9 o'clock. A run still picks its side from its middle. A bar item, stop label or readout whose spot would tip it past 90° turns a half turn about its own center there, keeping its place in the run and its side of the band. Ticks, thumbs and the chevrons that mark more past an end keep the run's direction.
+  
+  In geom, a `TrackPlace` carries `turned`, true where its up points down the screen: where an item that should read upright takes that half turn.
+
 ## 1.12.0
 
 ### Patch Changes

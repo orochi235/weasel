@@ -1,5 +1,120 @@
 # @weasel-js/labkit
 
+## 1.13.0-rc.0
+
+### Patch Changes
+
+- 6bb74c2: **Breaking.** Four props now decide how a component looks, and each is a hint the component draws from as it sees fit: `stance` (the angle it comes from), `grade` (how serious), `emphasis` (how loud), and `tint` (an exact color). They replace a prop that meant two things and four spellings of severity. Color resolves as tint, then grade, then stance; emphasis sets how loudly it shows. Stance and emphasis pass to everything inside a surface; grade and tint do not, so a `danger` dialog's Cancel button stays plain.
+  
+  | Was | Now |
+  |---|---|
+  | `status="accent"` / `"muted"` / `"neutral"` | `emphasis="high"` / `"low"` / nothing |
+  | `status="success"`, `"warn"`, `"danger"`, `"info"` | `grade="…"` |
+  | Badge `status="custom"` with `--badge-edge` | `tint={…}` |
+  | `tone={…}` (palette index or color), KeyDiagram's per-key `tone` | `tint={…}` |
+  | `stance="scope"` | `stance="clarify"` |
+  | `stance="danger"` / `"notice"` / `"important"` | `grade="danger"` / `grade="warn"` / `emphasis="high"` |
+  | Button `variant="primary"` / `"secondary"` | `stance="confirm"` / the default `variant="solid"` |
+  | Toast `tone: 'warning' \| 'error'`, `toast.warning`, `toast.error` | `grade: 'warn' \| 'danger'`, `toast.warn`, `toast.danger` |
+  | labkit Toolbar `variant="danger"` | `grade="danger"` |
+  
+  New stances are `confirm` and `cancel`. `useStance`, `StanceProps` and the `@weasel-js/ui/stance` subpath are gone; use `useAppearance`, `AppearanceProps` and `@weasel-js/ui/appearance`. `BadgeStatus`, `CodeStatus`, `ButtonStatus`, `DetailRowStatus` and `ToastTone` are deleted; `Grade`, `Emphasis` and `Stance` are exported in their place, and `DetailRow`, labkit `Readout` and Toast take `grade`. `BADGE_STATUS_ICONS` is now `GRADE_ICONS` and `EMPHASIS_ICONS`, exported from `@weasel-js/ui` and `@weasel-js/ui/appearance`, and the status glyphs are `gradeSuccess`, `emphasisHigh` and `emphasisLow`.
+  
+  In `@weasel-js/theme`: `GRADES`, `GRADE_TOKENS`, `EMPHASES`, `EMPHASIS_FG`, `EMPHASIS_SLOTS` and `GRADE_SLOTS` join `STANCES`. `TONE_REF` is `TINT_REF` (`{ ref: 'tint' }`), the theme's tone list is its tint list (`ThemeProvider tints`, `useTints`, a theme's `"tints"`), and hud's `tones` option is `tints`. Stance tokens are renamed: `--wzl-stance-scope-*` → `--wzl-stance-clarify-*`, `--wzl-stance-<s>-tone(-mix)` → `-tint(-mix)`, `--wzl-panel-tone-mix` → `--wzl-panel-tint-mix`, `--wzl-button-primary-*` → `--wzl-button-confirm-*`; the danger, notice and important stance tokens are removed. A new `--wzl-info` token colors the info grade, so info badges and toasts take it, where info toasts used the accent before. Badge's `warn` now uses `--wzl-warning` rather than its own amber.
+  
+  <!-- bump-approved: minor: maintainer — 1.13.0-rc release requested 2026-10-24 -->
+- 38d5ad1: Depend on `@msb235/blits` 0.12.0, which has no breaking changes from 0.11.0. Its fixes make a single `fn` voice over many subjects, the shape weasel's animator uses, cheaper per frame.
+- ee9e277: `ControlPanel` sets every row's label beside its control by default: `layout` now defaults to `'inline'`, where unset used to put most labels above their controls. Rows still pack two to a line (`pack: 'pairs'`), and the grid now drops to one column wherever the panel, or a group inside it, is too narrow for two; `--lk-control-column-min` (default `6rem`) is the narrowest a column may get before it does. Under `'pairs'`, a segmented toggle and a textarea now take the whole width, as a custom row, a bar, and a group already did.
+  
+  This changes how every panel that sets neither option looks. `layout: 'block'` puts the labels back above their controls, and `pack: 'one-up'` gives each row its own line; both work panel-wide and per section.
+- 0d97246: A `ControlPanel` group or section can be drawn in a `MotifFrame` motif from `@weasel-js/ui`, such as `stereo()`: `f.group({...}).motif(stereo())` on a group, `.section('Look', { motif: stereo() })` on a section, and `<ControlPanel motif>` for every group and section that names none. Unset, they draw as before.
+- 2d1b1f0: `@weasel-js/ui` exports `useFloatingPlacement`, from the root and from a new `@weasel-js/ui/floating` subpath: it
+  places a box over its container through windease's floating strategy and lets a drag move it, snapping to the
+  container's corners. It is controlled — it takes `placement` and reports a drag once, on release, through
+  `onPlacementChange` — and persists nothing. A dropped box stays where it was let go until `placement` changes or the
+  next press, so a host that stores the new placement a tick later never draws it back at its old spot. A drag captures
+  the pointer only past the drag threshold, and Escape puts the box back. The box is placed before its first paint, so
+  it is never drawn unplaced for a frame. `@weasel-js/ui` now depends on `windease`.
+  
+  labkit's `FloatingPanel` is built on the hook, and still remembers its position through its `persist` prop. Its
+  placement now reaches persistence once per drag, on release, rather than on every move, and Escape cancels a drag.
+- 04b862d: Scene node kinds are now `mark` and `group`, replacing `leaf` and `container`, and any node may have children. `ContainerNode` and `LeafNode` are now `GroupNode` and `MarkNode`; `AddNodeSpec.kind` is `'mark' | 'group'`, and `isLeaf(node)` and `hasChildren(node)` ask whether a node has children. This breaks code that names the old kinds. Scenes save as version 2, and a version 1 save still loads: its leaves become marks and its containers become groups, unless the `classifyV1` option of `sceneFromJSON(json, { classifyV1 })` says otherwise. `V1Classifier` and `nodeKindOf` are exported from `@weasel-js/core`. `@weasel-js/svg`'s `SvgSceneDraft.kind` changed from `'container' | 'leaf'` to `'group' | 'mark'`.
+- a243bd9: `useUndoKeys(history)` binds Mod+Z, Shift+Mod+Z and Mod+Y on the document to a history's undo and redo, the way a trial binds them to its own, for a lab laid out without `<Lab>`. It takes anything with `canUndo`, `canRedo`, `undo` and `redo` — a weasel `History` or a `TrialHistorySource` — leaves the chord to a text field, and leaves a chord with nothing to step to the browser. `undoKeyStep(event)` is the test both it and the trial use: which step a keydown asks for, or null.
+- 773f9c8: Several writers can now override one node at once. Each entry set on `scene.overrides` is a ply over the ones set before it: for each field the most recently claimed ply that gives it wins, `alpha` multiplies through every ply, and `data` runs each ply's function on what the plies under it show. Releasing a ply shows what lies under it. A ply's `path` is drawn in the box of the `pose` it gives beside it, so a pose laid over it by another writer, such as a move over a skinned node, carries the path along; a path given with no pose is drawn where it is. So a gesture's published preview no longer gives way where another writer holds the node: the data a move previews for a transform follower shows while the move holds the follower's pose, and an edge whose live route is eased shows the drag's reroute beside the route, so what derives from either follows every frame.
+  
+  `has` and `clear` take an optional `entry`, to check or release one writer's ply: `has(id, entry)`, `clear(id, entry)`. `clear(id)` still drops every ply of the node; each keeps its place, so a writer that sets its entry again goes back where it stood. `get(id)` answers the top ply. A hand-written `PoseOverrides` must honor `entry` on both: a writer releasing its own ply must not clear another's. This is a behavior change for a writer that set an entry over another's to replace it, or that checked `get(id) === entry` to know its own was still installed: the earlier entry now stays and shows again when the later one goes, and `get` answers only the top one. A hold's `show` no longer leaves an id another writer holds to that writer; it lays its frame over it. `PoseHold.others()` answers each node's topmost pose that is not the hold's own, where it answered the pose of whichever single entry the node held.
+  
+  `PoseTransitionScene.overrides` now needs `read` where it needed `has`: the undo glide skips only a node something else poses, not one showing a data draft. A container's descendants likewise ride along with its pose animation unless another writer poses them. Rigs and pose targets put their override back when the table drops it, and a pose target retargeted mid-run keeps running when its own write reflows a layout. Labkit's `LensActionApi` gains `unfollow`, which Pinned and Close call to let go of the follow hold alone.
+- 4f4f148: A described row shows its description in a tooltip when its label is hovered, with no ⓘ beside the label. Keyboard focus on the row's control still opens it, and the control is still described by it for assistive technology. The kit setting `help.icon` brings the ⓘ back. A `ControlMatrix` row's help opens off its label the same way.
+- ad82e2b: A `ControlPanel` group drawn `as('section')` takes the motif it names with `.motif(…)`. It stays out of `<ControlPanel motif>`, which is for framed groups and sections: a section group with no motif of its own keeps its frameless `divider` look.
+- 4be32cf: **Breaking.** Slider's `density` is gone, and with it the slim face (an accent-tinted thumb with no border or blur). Size a slider with numbers instead: `trackHeight` and the new `thumbSize` each take px or a CSS length, such as `var(--wzl-slider-track-h)`. `thumbShape` sets the shape of every thumb that names none of its own, and `ThumbShape` gains `dot`, a circle centered on the track, beside `notched`. The default rounded-rect thumb, which was `'round'`, is now `'tab'`. A former `density="slim"` is `thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"`, and the thumb wears the default face.
+- fb5bb67: Stories that were filed as components of their own now sit under the component they show: the arc labs are `On An Arc` stories of `Bar`, `RadioGroup`, `Slider`, `SwatchStrip`, `Tabs` and `ToggleBar`, `Along`'s labs are stories of `Along` beside a new `Default` story, the Prefs and ControlPanel extras are stories of `Prefs` and `ControlPanel`, `Keyboard Layouts` is a story of `KeyDiagram`, and the effect chart lab is `EffectChart`'s `Lab`. Their story ids change with their titles. Lab screens carry the `lab` tag.
+- Updated dependencies [6bb74c2]
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [c5ed0d0]
+- Updated dependencies [5d58e92]
+- Updated dependencies [81a2c50]
+- Updated dependencies [8f2edfe]
+- Updated dependencies [25e0d6f]
+- Updated dependencies [38d5ad1]
+- Updated dependencies [7edd3be]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [4b6e14d]
+- Updated dependencies [3f45450]
+- Updated dependencies [5f28e9c]
+- Updated dependencies [2d1b1f0]
+- Updated dependencies [79ca5bc]
+- Updated dependencies [ee4cb7c]
+- Updated dependencies [e70d2cd]
+- Updated dependencies [ed89d42]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [d5a9a80]
+- Updated dependencies [3519c96]
+- Updated dependencies [c7516cd]
+- Updated dependencies [773f9c8]
+- Updated dependencies [39c72a4]
+- Updated dependencies [1f2a0b3]
+- Updated dependencies [b992f80]
+- Updated dependencies [5eb75a1]
+- Updated dependencies [8c39126]
+- Updated dependencies [3eaceb1]
+- Updated dependencies [86f67ad]
+- Updated dependencies [7191306]
+- Updated dependencies [06c809d]
+- Updated dependencies [4f4f148]
+- Updated dependencies [1322310]
+- Updated dependencies [4f42d9c]
+- Updated dependencies [4be32cf]
+- Updated dependencies [7e3463d]
+- Updated dependencies [fb5bb67]
+- Updated dependencies [a0bc69f]
+- Updated dependencies [ceae749]
+- Updated dependencies [769eef8]
+- Updated dependencies [683b998]
+- Updated dependencies [bbee4df]
+- Updated dependencies [a1b479a]
+- Updated dependencies [dee201c]
+- Updated dependencies [5eaf191]
+- Updated dependencies [aba2016]
+- Updated dependencies [4c113da]
+  - @weasel-js/theme@1.13.0-rc.0
+  - @weasel-js/ui@1.13.0-rc.0
+  - @weasel-js/geom@1.13.0-rc.0
+  - @weasel-js/core@1.13.0-rc.0
+  - @weasel-js/animator@1.13.0-rc.0
+  - @weasel-js/svg@1.13.0-rc.0
+  - @weasel-js/kernel3d@1.13.0-rc.0
+  - @weasel-js/minimap@1.13.0-rc.0
+  - @weasel-js/quantity@1.13.0-rc.0
+  - @weasel-js/routing@1.13.0-rc.0
+  - @weasel-js/prefs@1.13.0-rc.0
+  - @weasel-js/loupe@1.13.0-rc.0
+  - @weasel-js/icons@1.13.0-rc.0
+  - @weasel-js/react@1.13.0-rc.0
+  - @weasel-js/registry@1.13.0-rc.0
+  - @weasel-js/storage@1.13.0-rc.0
+
 ## 1.12.0
 
 ### Patch Changes

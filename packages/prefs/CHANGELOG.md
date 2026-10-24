@@ -1,5 +1,20 @@
 # @weasel-js/prefs
 
+## 1.13.0-rc.0
+
+### Patch Changes
+
+- 3eaceb1: `orderPrefGroup` reorders a group's children, and the children of its nested groups, by a stored `PrefOrder` keyed by container path, and `resolveOrder` is the rule it follows for keys the store lacks. An `actions` leaf takes `order`, and the actions it draws follow it, with any it does not name at the end.
+- aba2016: `Bar` takes `order`, a `PrefOrder` that sets the order of its items and groups, and `onReorder`, called with the new order when the user moves one. Passing `onReorder` turns reordering on: hold Cmd and drag an item to move it within its group, or Cmd+Shift and drag a group to move it among the others; with the keyboard, Alt+arrows move the focused item and Alt+Shift+arrows move its group. A plain press still clicks, nothing crosses a group boundary, Escape cancels a drag, and the new position is announced. The same works along a straight or a curved bar. The kit stores nothing: a host keeps the order itself, as a user pref.
+- Updated dependencies [04b862d]
+- Updated dependencies [86f67ad]
+  - @weasel-js/quantity@1.13.0-rc.0
+  - @weasel-js/icons@1.13.0-rc.0
+  - @weasel-js/paint@1.13.0-rc.0
+  - @weasel-js/react@1.13.0-rc.0
+  - @weasel-js/registry@1.13.0-rc.0
+  - @weasel-js/storage@1.13.0-rc.0
+
 ## 1.12.0
 
 ### Patch Changes

@@ -1,5 +1,46 @@
 # @weasel-js/path-tools
 
+## 1.13.0-rc.0
+
+### Patch Changes
+
+- 5f28e9c: A path effect that hides its sources no longer treats a source that was already hidden when the effect was made as one it hid. Release leaves that source hidden, and Expand to Paths, Delete and Cut leave it in the scene; Set Path moving off it leaves it hidden too. The effect records those sources by position in a new `foundHidden` field beside `hideSources`, and a saved effect without one reads as before: it hid them all. `sourcesHiddenBy(scene, id)` in core answers which sources an effect holds hidden, and `sourcesOf(node)` the ids a node names in its `dependsOn`.
+- 04b862d: Scene node kinds are now `mark` and `group`, replacing `leaf` and `container`, and any node may have children. `ContainerNode` and `LeafNode` are now `GroupNode` and `MarkNode`; `AddNodeSpec.kind` is `'mark' | 'group'`, and `isLeaf(node)` and `hasChildren(node)` ask whether a node has children. This breaks code that names the old kinds. Scenes save as version 2, and a version 1 save still loads: its leaves become marks and its containers become groups, unless the `classifyV1` option of `sceneFromJSON(json, { classifyV1 })` says otherwise. `V1Classifier` and `nodeKindOf` are exported from `@weasel-js/core`. `@weasel-js/svg`'s `SvgSceneDraft.kind` changed from `'container' | 'leaf'` to `'group' | 'mark'`.
+- d9f7bb7: Set Spine and Release Spine move the `hidden` flag as Set Path does where a blend hides its sources. Set Spine hides the path it lays the blend along, or records it in `foundHidden` where it was hidden already, and shows the spine it replaces unless another effect still hides it or the blend found it hidden. Release Spine shows the spine on the same terms, counting every selected blend let go of that spine.
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [38d5ad1]
+- Updated dependencies [7edd3be]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [5f28e9c]
+- Updated dependencies [e70d2cd]
+- Updated dependencies [ed89d42]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [d5a9a80]
+- Updated dependencies [3519c96]
+- Updated dependencies [c7516cd]
+- Updated dependencies [773f9c8]
+- Updated dependencies [39c72a4]
+- Updated dependencies [1f2a0b3]
+- Updated dependencies [8c39126]
+- Updated dependencies [3eaceb1]
+- Updated dependencies [1322310]
+- Updated dependencies [769eef8]
+- Updated dependencies [bbee4df]
+- Updated dependencies [aba2016]
+- Updated dependencies [4c113da]
+  - @weasel-js/geom@1.13.0-rc.0
+  - @weasel-js/core@1.13.0-rc.0
+  - @weasel-js/routing@1.13.0-rc.0
+  - @weasel-js/prefs@1.13.0-rc.0
+  - @weasel-js/renderer@1.13.0-rc.0
+  - @weasel-js/stroke@1.13.0-rc.0
+  - @weasel-js/cursor@1.13.0-rc.0
+  - @weasel-js/icons@1.13.0-rc.0
+  - @weasel-js/paint@1.13.0-rc.0
+  - @weasel-js/react@1.13.0-rc.0
+  - @weasel-js/registry@1.13.0-rc.0
+
 ## 1.12.0
 
 ### Patch Changes
