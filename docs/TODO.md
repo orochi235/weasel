@@ -20,13 +20,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
-  (`canvas/SceneCanvas/features.ts`); `packages/core/src/domains/<name>/` is a source directory
-  bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
-  Ruled 2026-10-11: the directory and the taxonomy's term take a new word, and the prop keeps
-  `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
-  its imports, and the section of the taxonomy.
-
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/domains/ingestion/` (its README is the map). Left:
   (a) an insertion ghost under the pointer during a drag. A ghost needs two things nothing has
@@ -1044,7 +1037,7 @@ only story runner in the repo.
 - **(P3) Worker-thread render offload.** Rendering the GL pipeline in a worker — major perf win,
   significant API complexity. Defer until measured pain on the single-thread pipeline. The
   main-thread `OffscreenCanvas` that rasterizes pattern tiles in
-  `packages/core/src/domains/patterns/` is not worker offload.
+  `packages/renderer/src/patterns/` is not worker offload.
 - **(P3) Headless server-side rendering in Node.** `renderSceneToPixels`
   (`packages/core/src/canvas/renderSceneToPixels.ts`) accepts a caller-supplied `gl`, which has to
   be WebGL2. `headless-gl` cannot supply one: `gl@8.1.6` (read 2026-10-17) implements WebGL 1.0.3
