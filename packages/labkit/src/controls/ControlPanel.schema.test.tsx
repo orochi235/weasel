@@ -57,7 +57,7 @@ describe('<ControlPanel> schema', () => {
     expect(screen.getByLabelText('Tint')).toHaveValue('#123456');
   });
 
-  it('gives a described leaf\u2019s description to its control beside a help affordance, and leaves an undescribed leaf bare', () => {
+  it('gives a described leaf\u2019s description to its control, and leaves an undescribed leaf bare', () => {
     const schema = resolveConfigSchema(
       f.schema({
         showGrid: f.boolean(true).describe('Draw the alignment grid.'),
@@ -68,7 +68,7 @@ describe('<ControlPanel> schema', () => {
     render(
       <ControlPanel schema={schema} config={{ showGrid: true, snap: true }} setConfig={vi.fn()} />,
     );
-    expect(screen.getAllByText('ⓘ')).toHaveLength(1);
+    expect(screen.queryByText('ⓘ')).toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).toHaveAccessibleDescription(
       'Draw the alignment grid.',
     );

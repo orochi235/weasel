@@ -1,5 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { afterEach, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { PropertyField } from './PropertyField';
@@ -52,7 +53,11 @@ test('a click on a described row\'s control opens no help', async () => {
 });
 
 test('a press on the ⓘ leaves focus on the control it was on', async () => {
-  render(<Rows />);
+  render(
+    <KitSettingsProvider value={{ help: { icon: true } }}>
+      <Rows />
+    </KitSettingsProvider>,
+  );
   const author = screen.getByRole('textbox', { name: 'Author' });
   await userEvent.click(author);
   await userEvent.click(screen.getAllByText('ⓘ')[0]!);

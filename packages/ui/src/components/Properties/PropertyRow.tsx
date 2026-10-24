@@ -18,8 +18,9 @@ export interface PropertyRowProps extends PropertyMetricProps {
   /** Right-aligned readout shown next to the label (e.g. current value). */
   readout?: ReactNode;
   /**
-   * Help text for the row, shown in a tooltip off an ⓘ affordance beside the
-   * label. Empty or absent renders no affordance.
+   * Help text for the row, shown in a tooltip when the label is hovered or the
+   * row's control has keyboard focus, and given to the control as its
+   * description. The kit setting `help.icon` adds an ⓘ beside the label.
    */
   description?: string;
   variant?: PropertyRowVariant;
@@ -71,7 +72,7 @@ export interface PropertyRowProps extends PropertyMetricProps {
   /** The row's control takes no input: its label is drawn as a disabled control's is. */
   disabled?: boolean;
   /** What the row reads when it is auto, whether or not it is now. Shown as the
-   *  last line of the ⓘ tooltip, after the word `auto`; with no `description`
+   *  last line of the help tooltip, after the word `auto`; with no `description`
    *  the tooltip is that line alone. */
   autoValue?: ReactNode;
   /** What is wrong with the row's value — a validation message, shown under the control as an alert. The
@@ -134,17 +135,21 @@ export function PropertyRow({
   const rowRef = useRef<HTMLElement | null>(null);
   const labelRef = useRef<HTMLSpanElement | null>(null);
   const multiline = useMultiline(rowRef, labelRef, resolved === 'inline');
+  const name = onAutoChange ? (
+    <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} disabled={disabled} />
+  ) : (
+    label
+  );
   const head = (
     <span className={s.rowLabel} ref={labelRef}>
-      {onAutoChange ? (
-        <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} disabled={disabled} />
+      {description || autoValue != null ? (
+        <PropertyHelp label={label} description={description} autoValue={autoValue} within={`[${ROW_ATTR}]`}>
+          {name}
+        </PropertyHelp>
       ) : (
-        label
+        name
       )}
       {hint != null && <span className={s.rowHint} data-wzl-subordinate="">{hint}</span>}
-      {description || autoValue != null ? (
-        <PropertyHelp label={label} description={description} autoValue={autoValue} within={`[${ROW_ATTR}]`} />
-      ) : null}
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );

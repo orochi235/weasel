@@ -30,9 +30,10 @@ it('does not hand a click on an object leaf\'s name to its first field', () => {
 
 it('offers an object leaf\'s field its description, as a row of its own has', () => {
   render(<PrefsForm layout="list" schema={SCHEMA} values={{}} onChange={() => {}} />);
-  const cue = (name: string): Element | null => screen.getByText(name).closest('[data-property-row]')!.querySelector('[role="img"]');
-  expect(cue('Width')).toHaveTextContent('ⓘ');
-  expect(cue('Visible')).toBeNull();
+  const control = (name: string): Element | null =>
+    screen.getByText(name).closest('[data-property-row]')!.querySelector('[aria-describedby]');
+  expect(control('Width')).not.toBeNull();
+  expect(control('Visible')).toBeNull();
 });
 
 it('writes a field over the leaf\'s default where what is stored is no object, so the value is whole', () => {

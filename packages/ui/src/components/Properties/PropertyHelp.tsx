@@ -1,5 +1,7 @@
 import { useRef, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useHover } from 'react-aria';
+import { useKitSetting } from '@weasel-js/react';
 import { Focusable } from '../Tooltip/Focusable';
 import { inlineMarkdownText } from '../InlineMarkdown';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
@@ -22,17 +24,59 @@ export interface PropertyHelpProps {
    * row. Hovering the ⓘ opens it either way.
    */
   within?: string;
+  /**
+   * The label the help is about, drawn by the help. With `within`, hovering it opens the tooltip and no ⓘ is
+   * drawn, unless the kit setting `help.icon` asks for one beside it.
+   */
+  children?: ReactNode;
 }
 
-/** The ⓘ beside a row label that shows its `description` in a tooltip. Exported
+/** A row label's `description` in a tooltip, shown off the label itself or off an ⓘ beside it. Exported
  *  for surfaces that draw a params label outside a `<PropertyRow>`. With no
  *  `within` it stands alone: a tooltip trigger has to be interactive to be
  *  keyboard-reachable, so it is a real button and a tab stop. */
-export function PropertyHelp({ label, description, autoValue, within }: PropertyHelpProps) {
+export function PropertyHelp({ label, description, autoValue, within, children }: PropertyHelpProps) {
   const name = typeof label === 'string' ? label : 'this setting';
   const cue = useRef<HTMLElement | null>(null);
   const help = useRowHelp(cue, within);
   const inRow = within !== undefined;
+  const icon = useKitSetting('help.icon') === true;
+  const { hoverProps } = useHover({ onHoverChange: help.setOpen });
+  const bare = inRow && children != null && !icon;
+  const tip = (
+    <Tooltip {...(bare ? { triggerRef: cue } : {})}>
+      {description}
+      {autoValue != null && (
+        <span className={description ? `${s.auto} ${s.autoAfter}` : s.auto}>
+          <em className={row.autoWord}>auto</em> {autoValue}
+        </span>
+      )}
+    </Tooltip>
+  );
+  // In the page's body: inside the row it would be part of a <label>'s text, and so of the control's name.
+  const text =
+    inRow &&
+    typeof document !== 'undefined' &&
+    createPortal(
+      <span id={help.id} hidden>
+        {description && inlineMarkdownText(description)}
+        {autoValue != null && <> auto {autoValue}</>}
+      </span>,
+      document.body,
+    );
+  if (bare) {
+    // The label stays in the accessible tree, so the control it names keeps its name; the keyboard reaches the
+    // help through the row's control, which the text describes.
+    return (
+      <TooltipTrigger delay={0} isOpen={help.open} onOpenChange={help.setOpen}>
+        <span ref={cue} className={s.label} {...hoverProps}>
+          {children}
+        </span>
+        {text}
+        {tip}
+      </TooltipTrigger>
+    );
+  }
   const stop = (e: MouseEvent): void => {
     // The wrapping <label> would otherwise actuate the row's control.
     e.preventDefault();
@@ -40,6 +84,7 @@ export function PropertyHelp({ label, description, autoValue, within }: Property
   };
   return (
     <TooltipTrigger delay={0} {...(inRow ? { isOpen: help.open, onOpenChange: help.setOpen } : {})}>
+      {children}
       <Focusable excludeFromTabOrder={inRow}>
         {inRow ? (
           // Not a <button>: that is a labelable element, and as the first one in a row's <label> it would be
@@ -70,24 +115,8 @@ export function PropertyHelp({ label, description, autoValue, within }: Property
           </button>
         )}
       </Focusable>
-      {/* In the page's body: inside the row it would be part of a <label>'s text, and so of the control's name. */}
-      {inRow &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <span id={help.id} hidden>
-            {description && inlineMarkdownText(description)}
-            {autoValue != null && <> auto {autoValue}</>}
-          </span>,
-          document.body,
-        )}
-      <Tooltip>
-        {description}
-        {autoValue != null && (
-          <span className={description ? `${s.auto} ${s.autoAfter}` : s.auto}>
-            <em className={row.autoWord}>auto</em> {autoValue}
-          </span>
-        )}
-      </Tooltip>
+      {text}
+      {tip}
     </TooltipTrigger>
   );
 }

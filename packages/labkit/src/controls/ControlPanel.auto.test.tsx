@@ -79,10 +79,10 @@ describe('<ControlPanel> auto', () => {
         setConfig={() => {}}
       />,
     );
-    const help = screen.getAllByText('ⓘ');
-    expect(help).toHaveLength(1);
-    fireEvent.keyDown(document.body, { key: 'Tab' });
-    act(() => help[0]?.focus());
+    fireEvent.pointerMove(document.body, { pointerType: 'mouse' });
+    fireEvent.pointerEnter(screen.getByText('Size'), { pointerType: 'mouse' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    fireEvent.pointerEnter(screen.getByText('Gap'), { pointerType: 'mouse' });
     expect(screen.getByRole('tooltip')).toHaveTextContent(/^auto 13\.3333$/);
     const described = document.querySelectorAll('[aria-describedby]:not([aria-hidden])');
     expect(described).toHaveLength(1);

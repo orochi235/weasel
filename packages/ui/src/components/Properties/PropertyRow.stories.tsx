@@ -74,7 +74,7 @@ export const Variants: Story = {
   ),
 };
 
-/** The ⓘ tooltip ends with what the row reads when it is auto: under the
+/** The help tooltip ends with what the row reads when it is auto: under the
  *  description on a pinned row, and alone on a row with none. The second row is
  *  auto now, so its readout shows the same word. */
 export const AutoValue: Story = {

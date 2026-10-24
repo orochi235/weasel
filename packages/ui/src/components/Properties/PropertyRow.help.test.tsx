@@ -1,9 +1,59 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render as plain, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertyField } from './PropertyField';
 import { PropertyRow } from './PropertyRow';
 
-describe('PropertyRow', () => {
+describe('PropertyRow help with no icon', () => {
+  it('draws no ⓘ, keeps the label as the control\'s name, and gives the control the description', () => {
+    plain(
+      <PropertyRow label="Opacity" description="How see-through the shape is.">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    expect(screen.queryByText('ⓘ')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Opacity' })).toHaveAccessibleDescription(
+      'How see-through the shape is.',
+    );
+  });
+
+  it('opens the help when the pointer is over the label', () => {
+    vi.useFakeTimers();
+    try {
+      plain(
+        <PropertyRow label="Opacity" description="How see-through the shape is.">
+          <input type="text" defaultValue="x" />
+        </PropertyRow>,
+      );
+      fireEvent.pointerMove(document.body, { pointerType: 'mouse' });
+      const label = screen.getByText('Opacity');
+      fireEvent.pointerEnter(label, { pointerType: 'mouse' });
+      expect(screen.getByRole('tooltip')).toHaveTextContent('How see-through the shape is.');
+      fireEvent.pointerLeave(label, { pointerType: 'mouse' });
+      expect(screen.queryByRole('tooltip')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('lets a click on the label reach the row\'s control', () => {
+    const onChange = vi.fn();
+    plain(
+      <PropertyField kind="boolean" label="Visible" value={false} onChange={onChange} description="Show it." />,
+    );
+    fireEvent.click(screen.getByText('Visible'));
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+});
+
+/** Renders with the kit setting that marks a described row with an ⓘ. */
+const render = (ui: ReactElement) =>
+  plain(ui, {
+    wrapper: ({ children }) => <KitSettingsProvider value={{ help: { icon: true } }}>{children}</KitSettingsProvider>,
+  });
+
+describe('PropertyRow with the help icon', () => {
 
   it('renders a help affordance for a non-empty description', () => {
     render(

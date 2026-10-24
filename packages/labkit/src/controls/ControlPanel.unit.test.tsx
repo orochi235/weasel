@@ -63,8 +63,9 @@ describe('what a row with a unit would read as auto', () => {
         setConfig={() => {}}
       />,
     );
-    fireEvent.keyDown(document.body, { key: 'Tab' });
-    act(() => screen.getByText('ⓘ').focus());
+    // React Aria only counts a hover once the pointer has moved.
+    fireEvent.pointerMove(document.body, { pointerType: 'mouse' });
+    fireEvent.pointerEnter(screen.getByText('Angle'), { pointerType: 'mouse' });
     return screen.getByRole('tooltip');
   };
 

@@ -166,8 +166,8 @@ const described = f.schema({
   tint: f.color('#3a86ff').describe('Plot line color.'),
 });
 
-/** A leaf with a `describe(...)` gets an \u24d8 beside its label whose tooltip
- *  carries the text; leaves without one stay bare. */
+/** A leaf with a `describe(...)` shows the text in a tooltip off its label;
+ *  leaves without one stay bare. */
 export const Described: Story = {
   render: (args) => {
     const schema = resolveConfigSchema(described, []);

@@ -1,3 +1,8 @@
+/* A row label that shows its help when hovered, with no ⓘ. */
+.label {
+  min-width: 0;
+}
+
 /* ⓘ help affordance beside a row label. */
 .help {
   flex: 0 0 auto;

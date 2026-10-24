@@ -170,8 +170,13 @@ export function ControlMatrix({
           {rowSpecs.map(({ row, cells, label, about }) => (
             <tr key={row.key}>
               <th scope="row" className="lk-control-matrix__label">
-                <span className="lk-control-matrix__label-text">{label}</span>
-                {about ? <PropertyHelp label={label} description={about} within="tr" /> : null}
+                {about ? (
+                  <PropertyHelp label={label} description={about} within="tr">
+                    <span className="lk-control-matrix__label-text">{label}</span>
+                  </PropertyHelp>
+                ) : (
+                  <span className="lk-control-matrix__label-text">{label}</span>
+                )}
               </th>
               {columns.map((column, i) => {
                 const path = `${column.key}.${row.key}`;

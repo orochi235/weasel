@@ -19,7 +19,7 @@ declare module '@weasel-js/react' {
     numberField: { repeatDelayMs: number; repeatEveryMs: number };
     params: Record<ParamsSurface, ParamsPolicy>;
     tree: { typeaheadMs: number; hoverExpandMs: number; tipRestMs: number };
-    help: { focusDelayMs: number };
+    help: { focusDelayMs: number; icon: boolean };
     toast: { ttlMs: number };
     targets: KitTargetSettings;
     history: { coalesceMs: number };
@@ -74,6 +74,7 @@ export const uiKitSettingsSchema = pref.group('Components', {
   }),
   help: pref.group('Help', {
     focusDelayMs: ms('Focus delay', FOCUS_DELAY, 3000, "How long keyboard focus rests on a row's control before its help opens."),
+    icon: pref.boolean('Icon', false, { description: 'Mark a described row with an ⓘ beside its label.' }),
   }),
   toast: pref.group('Toasts', {
     ttlMs: ms('Duration', DEFAULT_TTL_MS, 60000, 'How long a toast stays when it does not set its own time.'),
