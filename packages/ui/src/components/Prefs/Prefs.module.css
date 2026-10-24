@@ -34,11 +34,13 @@
 .panel {
   --wzl-well-gap: var(--wzl-space-4);
   --wzl-well-pad: var(--wzl-space-5);
+  --wzl-well-head-pad: var(--wzl-space-2);
 }
 
 .subpanel {
   --wzl-well-gap: var(--wzl-space-3);
   --wzl-well-pad: var(--wzl-space-4);
+  --wzl-well-head-pad: var(--wzl-space-1);
   --wzl-well-rule: var(--subpanel-rule);
   --wzl-well-inset-start: var(--subpanel-inset-start);
   --wzl-well-inset-end: var(--subpanel-inset-end);
@@ -378,6 +380,7 @@
 .panePanel {
   --wzl-well-gap: var(--wzl-space-3);
   --wzl-well-pad: var(--wzl-space-4);
+  --wzl-well-head-pad: 0;
   --wzl-well-radius: var(--wzl-radius-md);
   --wzl-well-title-size: var(--wzl-font-size-sm);
   --wzl-well-title-tracking: normal;

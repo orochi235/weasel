@@ -35,6 +35,7 @@
 .objectPanel {
   --wzl-well-gap: var(--wzl-space-3);
   --wzl-well-pad: var(--wzl-space-3) var(--wzl-space-4);
+  --wzl-well-head-pad: 0;
   --wzl-well-radius: var(--wzl-radius-md);
   --wzl-well-title-size: var(--wzl-font-size-xs);
   --wzl-well-title-tracking: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
