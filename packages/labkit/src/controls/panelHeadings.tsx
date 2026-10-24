@@ -1,3 +1,4 @@
+import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import type { ReactNode } from 'react';
 import { headingLeaf } from '../config/headingLeaf';
 import { valueAtPath } from '../config/path';
@@ -53,9 +54,12 @@ export function headingActions(control: ReactNode, reset: ReactNode): ReactNode 
   );
 }
 
-/** What a section says of its own frame. */
-export function sectionFrame(section: SectionSpec): { title: string; className?: string } {
-  return { title: section.label, className: section.className };
+/** What a section says of its own frame: its title, its class, and its motif, else the panel's. */
+export function sectionFrame(
+  section: SectionSpec,
+  motif: Motif | undefined,
+): { title: string; className?: string; motif?: Motif } {
+  return { title: section.label, className: section.className, motif: section.motif ?? motif };
 }
 
 /** How a section is keyed for folding: its label at the root, and its group's

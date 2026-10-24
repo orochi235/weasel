@@ -90,7 +90,6 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     auto,
     setRowAuto,
     changed,
-    motif,
     fold,
   } = source;
 
@@ -164,12 +163,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
     const lifted = lift(found.name, loosePaths(found, path));
     const reset = resolved.resettable?.has(path) ? (
-      <ResetGroup
-        group={found}
-        path={path}
-        config={config as Record<string, unknown>}
-        setConfig={setConfig}
-      />
+      <ResetGroup {...{ group: found, path, config, setConfig }} />
     ) : undefined;
     // `as: 'section'` is a heading over the rows, with none of a group's frame.
     if (found.as === 'section') {
@@ -189,7 +183,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
         // two-column grid leaves it laying its own rows out inside a cell,
         // which overlaps them.
         span
-        motif={resolved.motifs?.get(path) ?? motif}
+        motif={resolved.motifs?.get(path) ?? source.motif}
         actions={headingActions(lifted.control, reset)}
         {...fold(path, undefined, rows.grid)}
       >
@@ -291,8 +285,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           return (
             <PropertyGroup
               key={sectionKey(section)}
-              {...sectionFrame(section)}
-              motif={section.motif ?? motif}
+              {...sectionFrame(section, source.motif)}
               actions={heading.control}
               {...fold(sectionKey(section), section.collapsed, inner.grid)}
             >
