@@ -21,10 +21,13 @@ export function editedData<TData extends DefaultTextData>(
   return next;
 }
 
+type Fields = Record<string, unknown>;
+
 /** Where an edit's writes go. Each `draft` is written through, unrecorded, when something derives from the node; the
  *  `commit` records the result as one undo entry from the text before the first draft; `end` closes the edit, first
- *  putting back the data the drafts replaced when no commit came, so a canceled edit leaves no entry and the redo
- *  stack as it was. */
+ *  putting back the fields the drafts replaced when no commit came, so a canceled edit leaves no entry and the redo
+ *  stack as it was. Only those fields go back, onto the node's data as it is then, so a write made during the edit
+ *  stays. */
 export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends string, TPose>(
   sceneRef: { readonly current: Scene<TData, TLayer, TPose> },
   optsRef: { readonly current: UseSceneTextEditOptions<TData> },
@@ -33,7 +36,8 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
   commit: (id: string, data: TData) => void;
   end: (id: string) => void;
 } {
-  let from: { id: string; data: TData } | null = null;
+  /** The node's data before the first draft, and the fields the drafts have changed since. */
+  let from: { id: string; data: Fields; drafted: Set<string> } | null = null;
   const draftWrite = (id: string, data: TData): void => {
     const scene = sceneRef.current;
     scene.untracked(() => scene.update(asNodeId(id), { data }));
@@ -42,7 +46,14 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
   const restore = (id: string): void => {
     const held = from;
     from = null;
-    if (held?.id === id && sceneRef.current.get(asNodeId(id))) draftWrite(id, held.data);
+    const now = sceneRef.current.get(asNodeId(id))?.data as Fields | undefined;
+    if (held?.id !== id || now === undefined) return;
+    const back: Fields = { ...now };
+    for (const key of held.drafted) {
+      if (key in held.data) back[key] = held.data[key];
+      else delete back[key];
+    }
+    draftWrite(id, back as TData);
   };
   return {
     draft: (id, draft) => {
@@ -50,8 +61,12 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
       const nid = asNodeId(id);
       const node = scene.get(nid);
       if (!node || sceneDependentsOf(scene, nid).length === 0) return;
-      if (from?.id !== id) from = { id, data: node.data };
-      draftWrite(id, editedData(node.data, draft, optsRef.current));
+      if (from?.id !== id) from = { id, data: node.data as Fields, drafted: new Set() };
+      const next = editedData(node.data, draft, optsRef.current);
+      for (const key of new Set([...Object.keys(node.data as Fields), ...Object.keys(next as Fields)])) {
+        if ((node.data as Fields)[key] !== (next as Fields)[key]) from.drafted.add(key);
+      }
+      draftWrite(id, next);
     },
     commit: (id, data) => {
       restore(id);

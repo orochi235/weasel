@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { pathFromD } from '@weasel-js/geom';
+import type { Fill } from '@weasel-js/paint';
 import { pathEffectNode } from 'core/scene/pathEffects/derive';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
@@ -16,9 +17,10 @@ const LONE = asNodeId('lone');
 const P = asNodeId('p');
 const FX = asNodeId('fx');
 const BOX = { x: 0, y: 0, width: 200, height: 40 };
+const RED: Fill = { paint: { kind: 'solid', color: '#ff0000' } };
 
 function setup() {
-  const scene = createScene<{ text?: string; style?: { fontSize: number } }, 'main', RectPose>({
+  const scene = createScene<{ text?: string; style?: { fontSize: number }; fill?: Fill }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     registry: withPathEffectsRegistry(),
     initial: [
@@ -114,6 +116,32 @@ describe('useSceneTextEdit — drafts', () => {
     expect(scene.get(T)!.data.text).toBe('hello');
     scene.redo();
     expect(scene.get(T)!.data.text).toBe('hello!?');
+  });
+
+  // Undoing that write still brings back the draft it was made over: its entry holds the node's whole data.
+  it('keeps a write made to the node during the edit through a cancel, and undoes the write', () => {
+    const { scene, container, hook } = setup();
+    act(() => hook.result.current.startEdit('t'));
+    type(container, '!');
+    scene.update(T, { data: { ...scene.get(T)!.data, fill: RED } });
+    act(() => hook.result.current.cancelEdit());
+    expect(scene.get(T)!.data).toEqual({ text: 'hello', style: { fontSize: 16 }, fill: RED });
+    scene.undo();
+    expect(scene.get(T)!.data.fill).toBeUndefined();
+  });
+
+  it('keeps a write made to the node during the edit through a commit, which undoes to before the edit only', () => {
+    const { scene, container, hook } = setup();
+    act(() => hook.result.current.startEdit('t'));
+    type(container, '!');
+    scene.update(T, { data: { ...scene.get(T)!.data, fill: RED } });
+    type(container, '?');
+    act(() => hook.result.current.commit());
+    expect(scene.get(T)!.data).toEqual({ text: 'hello!?', style: { fontSize: 16 }, fill: RED });
+    scene.undo();
+    expect(scene.get(T)!.data).toEqual({ text: 'hello', style: { fontSize: 16 }, fill: RED });
+    scene.undo();
+    expect(scene.get(T)!.data.fill).toBeUndefined();
   });
 
   it('keeps two edits of one node apart', () => {
