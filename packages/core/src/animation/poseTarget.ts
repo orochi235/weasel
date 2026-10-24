@@ -192,12 +192,20 @@ export function createPoseTarget<TPose>(opts: PoseTargetOptions<TPose>): Target<
 
 const sceneTargets = new WeakMap<object, Map<string, Target<unknown>>>();
 
+/** Whether two poses hold the same fields, compared without allocating: a running target asks on every publish. */
 function samePose(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
-  const ka = Object.keys(a);
-  return ka.length === Object.keys(b).length
-    && ka.every((k) => (a as Record<string, unknown>)[k] === (b as Record<string, unknown>)[k]);
+  const ra = a as Record<string, unknown>;
+  const rb = b as Record<string, unknown>;
+  let count = 0;
+  for (const k in ra) {
+    if (!Object.hasOwn(ra, k)) continue;
+    if (!Object.hasOwn(rb, k) || ra[k] !== rb[k]) return false;
+    count++;
+  }
+  for (const k in rb) if (Object.hasOwn(rb, k)) count--;
+  return count === 0;
 }
 
 /**
@@ -234,6 +242,8 @@ export function scenePoseTarget<TPose>(
   let last = documentPose(scene, node);
   /** The node's pose as an animation last left it, or as it was when the first one started. */
   let mine: TPose | undefined;
+  /** While this target's own commit is being written. */
+  let writing = false;
   const cache = made;
   let target: Target<TPose> | null = null;
   target = build<TPose>({
@@ -249,12 +259,19 @@ export function scenePoseTarget<TPose>(
     set(pose) {
       const n = scene.get(nid);
       if (!n) return;
-      if (!samePose(n.pose, pose)) scene.untracked(() => (cascade ? cascade.write(pose) : scene.setPose(nid, pose)));
+      // The write runs the layout's reflow at once, and a reflow publishes glides to the overrides.
+      writing = true;
+      try {
+        if (!samePose(n.pose, pose)) scene.untracked(() => (cascade ? cascade.write(pose) : scene.setPose(nid, pose)));
+      } finally {
+        writing = false;
+      }
       mine = scene.get(nid)?.pose;
     },
   }, () => {
     if (!scene.get(nid)) cache.delete(id);
   }, () => {
+    if (writing) return false;
     const n = scene.get(nid);
     return !!n && mine !== undefined && !samePose(n.pose, mine);
   }, cascade && riders(scene.overrides, cascade));
