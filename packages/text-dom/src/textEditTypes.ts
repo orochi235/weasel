@@ -84,16 +84,12 @@ export interface TextEditClipRect {
 export interface TextEditCommit {
   text: string;
   runs?: StyledRun[];
-  style?: TextStyle;
-}
-
-/** What the overlay holds mid-edit, as {@link UseTextEditOptions.onDraft} reports it. */
-export interface TextEditDraft {
-  text: string;
-  runs?: readonly StyledRun[];
   /** The node's own style, where the edit rewrote it. */
   style?: TextStyle;
 }
+
+/** What the overlay holds mid-edit, as {@link UseTextEditOptions.onDraft} reports it: what a commit would write now. */
+export type TextEditDraft = TextEditCommit;
 
 /** Options for `useTextEdit`. */
 export interface UseTextEditOptions {

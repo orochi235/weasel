@@ -1,6 +1,7 @@
 /**
- * What the overlay holds, as a node takes it: what a commit writes, and what
- * each keystroke or restyle reports as a draft.
+ * What the overlay holds, as a node takes it — what a commit writes, and what
+ * each keystroke or restyle reports as a draft — and handing it to the host:
+ * a draft when it changed, a commit through the host's options.
  */
 import { runsCarryStyling, runsToPlainText, type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { CaretHolder } from './overlaySeed';
@@ -17,7 +18,7 @@ export function overlayDraft(
   holder: CaretHolder | null,
   priorRuns: readonly StyledRun[] | undefined,
   style: TextStyle | null = null,
-): { text: string; runs?: StyledRun[]; style?: TextStyle } {
+): TextEditCommit {
   const runs = holder?.trim(read) ?? read;
   const inPlay = (priorRuns != null && priorRuns.length > 0) || runsCarryStyling(runs);
   // Read from the DOM, not `innerText`: a browser applies `text-transform`
