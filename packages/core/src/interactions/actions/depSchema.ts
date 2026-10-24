@@ -21,8 +21,10 @@ import type { GeometryProjection } from './geometryProjection';
 import type { DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
 import type { EditAnchorsDep, FinishedEditFrame } from './editAnchorsDep';
 import type { SnapDep } from './snapDep';
+import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { TransformFollower, TransformPreviewNode } from './transformFinish';
 
+export type { EnteredGroupApi };
 export type { EditAnchorsDep, FinishedEditFrame, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
 
@@ -211,6 +213,10 @@ declare module '@weasel-js/routing' {
   interface DepSchema {
     /** Kit selection state — ids of currently selected nodes. */
     selection: SelectionApi;
+    /** The group the user has entered, or null — session state beside the
+     *  selection, not scene data and not undoable. Optional: absent means
+     *  inside no group. */
+    enteredGroup?: EnteredGroupApi;
     /** Current viewport — camera position + scale. */
     view: ViewApi;
     /**

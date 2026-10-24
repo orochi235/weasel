@@ -10,8 +10,7 @@ import { useRef } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
-import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
-import { insertParent } from 'interactions/actions/insert/parent';
+import { insertSite } from './insertSite';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
@@ -31,8 +30,6 @@ import type { ShapeGenerator } from 'features/paths/shapeGenerator';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
-import { composesFrames, composeWorldPose } from 'core/scene/composeFrame';
-import { definesFrame } from 'core/scene/effectivePose';
 import { stickyData, type StickyStyle } from '../../tools/builtin/sticky/stickyNode';
 import { minSizeOf } from 'core/scene/minSize';
 
@@ -132,33 +129,6 @@ function boxKindData(
     default:
       return null;
   }
-}
-
-/**
- * Where an insert lands: the container the `insertInto` dep names, on that container's
- * layer, with the pose made local to it when the scene composes frames —
- * or the top of the tree, on the first layer, when it names no container.
- */
-function insertSite(
-  sc: Scene<unknown, string, unknown>,
-  into: string | null | undefined,
-  canDropInto?: CanDropIntoDep,
-): { parent: NodeId | null; layer: string; local: (world: unknown) => unknown } {
-  const parentId = insertParent(sc, into, canDropInto);
-  if (parentId === null) {
-    return { parent: null, layer: (sc.layers[0]?.id ?? 'default') as string, local: (p) => p };
-  }
-  const parent = sc.get(parentId)!;
-  const composition = sc.composition;
-  if (composition === undefined || !composesFrames(composition)) {
-    return { parent: parent.id, layer: parent.layer, local: (p) => p };
-  }
-  const frame = composeWorldPose({
-    getPose: (id) => sc.get(id as NodeId)!.pose,
-    getParent: (id) => sc.get(id as NodeId)?.parent ?? null,
-    definesFrame: (id) => definesFrame(sc.get(id as NodeId) ?? {}),
-  }, parent.id, composition.compose);
-  return { parent: parent.id, layer: parent.layer, local: (p) => composition.decompose(frame, p) };
 }
 
 export function useInsertDepSource(

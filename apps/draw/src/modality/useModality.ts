@@ -87,10 +87,10 @@ export function useModality(
     () =>
       createScopingDim({
         registry: machine.registry,
-        getTargetIds: () => modeScopeIds(machine, scene),
+        getTargetIds: () => modeScopeIds(machine),
       }),
     // machine.registry is stable; machine is stable (memoized from history).
-    [machine, scene],
+    [machine],
   );
 
   // No path-edit anchor painter here on purpose. The kit's

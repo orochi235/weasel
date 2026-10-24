@@ -5,10 +5,11 @@ import {
   easeOutCubic,
   sceneFromJSON,
   useAnimatedReflow,
+  useDepSource,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
-import type { SerializedScene } from '@weasel-js/core';
+import type { Scene, SerializedScene } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import sceneJson from './data/layout.scene.json';
 import { DemoStage } from './DemoStage';
@@ -28,6 +29,12 @@ type P = { x: number; y: number; width: number; height: number };
 type Data = { color: string; isContainer: boolean };
 
 const G = asNodeId('G');
+
+/** The containers are marks, so a drop lands in one only because this says it may. */
+function LayoutsTakeDrops({ scene }: { scene: Scene<Data, 'default', P> }): null {
+  useDepSource('canDropInto', () => (parent) => scene.layoutOf(asNodeId(parent)) != null);
+  return null;
+}
 const TILE_COLORS = ['#f5e3a3', '#e3a3f5', '#a3e3f5'];
 
 export function LayoutDemo() {
@@ -106,7 +113,9 @@ export function LayoutDemo() {
               },
             },
           }}
-        />
+        >
+          <LayoutsTakeDrops scene={scene} />
+        </SceneCanvas>
       </DemoStage>
       <button className="ckd-btn" onClick={addTile} disabled={tiles >= 4}>add tile</button>
       <label className="ckd-field">

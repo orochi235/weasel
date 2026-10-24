@@ -32,7 +32,7 @@ export const enterPathEditAction: Action & { requires: string[] } = {
     },
     opts: { id: 'enterPathEdit.doubleClick' },
   }],
-  eligible: { mode: { in: ['normal', 'isolation'] } },
+  eligible: { mode: 'normal' },
   requires: ['editAnchors', 'selection', 'nodeAtPoint', 'hitAt', 'scene'],
   invoker: {
     timing: 'immediate',

@@ -6,6 +6,7 @@ import {
   type NodeId,
   useClipboardOps,
   useDepSource,
+  useOptionalDepRegistry,
   useSceneAdapter,
   type SelectionApi,
   WEASEL_CLIPBOARD_MIME
@@ -49,7 +50,10 @@ export function Toolbar({
   paperSize, setPaperSize,
   filename, setFilename, backgroundColor, setBackgroundColor, cornerSelection, menus,
 }: ToolbarProps): ReactElement {
-  const adapter = useSceneAdapter(scene, {});
+  // A paste lands where a draw would: in the entered group, say.
+  const deps = useOptionalDepRegistry();
+  const pasteInto = useCallback(() => deps?.get('insertInto')?.get() ?? null, [deps]);
+  const adapter = useSceneAdapter(scene, { pasteInto });
   // Only its setter is read: a copy re-renders the bar so Paste re-evaluates.
   const [, setClipboardEmpty] = useState(true);
   // `snapshot.items` are adapter-shaped copies (`sceneAdapter.snapshotSelection`),

@@ -78,7 +78,7 @@ export function createFollowOffPageAction(opts: FollowOffPageOptions = {}): Acti
     label: 'Go to the other page',
     group: 'diagram',
     requires: ['scene', 'nodeAtPoint', 'selection', 'view'],
-    eligible: { mode: { in: ['normal', 'isolation'] } },
+    eligible: { mode: 'normal' },
     invoker: {
       timing: 'immediate',
       run(deps, params) {

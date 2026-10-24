@@ -20,6 +20,7 @@ import {
 } from 'core/scene/nodeFnFields';
 import { statedFields } from 'core/scene/statedFields';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
+import type { InsertSite } from './deps/insertSite';
 
 /** What the seam needs from the adapter it serves. */
 export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
@@ -31,6 +32,8 @@ export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
   frameAtOrAbove(id: string | null): string | null;
   poseBounds(pose: TPose, node: unknown): Bounds;
   translate(pose: TPose, dx: number, dy: number, node?: unknown): TPose;
+  /** Where the pasted cluster's roots land; absent, or naming no parent, they keep their layer at the top of the tree. */
+  landing?: () => InsertSite;
 }
 
 // Spread-level copy per the clipboard contract: mutating a snapshot's
@@ -217,16 +220,21 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
       dy = ctx.dropPoint.worldY - minY;
     }
   }
+  const site = env.landing?.();
+  const into = site?.parent != null ? site : null;
+  const placed = (item: Item<TData, TLayer, TPose>): TPose => {
+    if (ridesPastedFrame(item)) return copyField(item.pose);
+    const moved = env.translate(copyField(item.pose), dx, dy, item);
+    return into && isRoot(item) ? into.local(moved) as TPose : moved;
+  };
   // `src` is parents-before-children and this keeps it, so children re-attach
   // to freshly inserted parents when the caller's InsertOps apply in order.
   return src.map((item) => ({
     id: idMap.get(item.id)!,
     kind: item.kind,
-    layer: item.layer,
-    parent: isRoot(item) ? null : idMap.get(item.parent as string)!,
-    pose: ridesPastedFrame(item)
-      ? copyField(item.pose)
-      : env.translate(copyField(item.pose), dx, dy, item),
+    layer: into && isRoot(item) ? into.layer as TLayer : item.layer,
+    parent: isRoot(item) ? into?.parent ?? null : idMap.get(item.parent as string)!,
+    pose: placed(item),
     data: copyField(item.data),
     ...statedFields(item),
     ...(item.children !== undefined

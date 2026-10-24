@@ -15,22 +15,22 @@ const machine = () => createModeMachine({ modes: DEFAULT_MODES, history: fakeHis
 describe('enterModeOn', () => {
   it('enters from normal', () => {
     const m = machine();
-    enterModeOn(m, 'isolation', 'g');
-    expect(m.registry.current().id).toBe('isolation');
-    expect(m.getActiveTargetId()).toBe('g');
+    enterModeOn(m, 'path-edit', 'p');
+    expect(m.registry.current().id).toBe('path-edit');
+    expect(m.getActiveTargetId()).toBe('p');
   });
 
   it('changes nothing on the target the mode is already on', () => {
     const m = machine();
-    m.enterMode('isolation', { targetId: 'g' });
-    expect(() => enterModeOn(m, 'isolation', 'g')).not.toThrow();
-    expect(m.registry.current().id).toBe('isolation');
-    expect(m.getActiveTargetId()).toBe('g');
+    m.enterMode('path-edit', { targetId: 'p' });
+    expect(() => enterModeOn(m, 'path-edit', 'p')).not.toThrow();
+    expect(m.registry.current().id).toBe('path-edit');
+    expect(m.getActiveTargetId()).toBe('p');
   });
 
   it('leaves a soft mode on something else for the new one', () => {
     const m = machine();
-    m.enterMode('isolation', { targetId: 'g' });
+    m.enterMode('text-edit', { targetId: 't' });
     enterModeOn(m, 'path-edit', 'p');
     expect(m.registry.current().id).toBe('path-edit');
     expect(m.getActiveTargetId()).toBe('p');
@@ -39,7 +39,7 @@ describe('enterModeOn', () => {
   it('leaves a strict mode alone', () => {
     const m = machine();
     m.enterMode('crop', {});
-    expect(() => enterModeOn(m, 'isolation', 'g')).not.toThrow();
+    expect(() => enterModeOn(m, 'path-edit', 'p')).not.toThrow();
     expect(m.registry.current().id).toBe('crop');
   });
 });

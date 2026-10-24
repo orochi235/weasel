@@ -4,7 +4,7 @@
   "nodes": [
     {
       "id": "F",
-      "kind": "group",
+      "kind": "mark",
       "layer": "default",
       "layoutKey": "freeform",
       "pose": { "x": 10, "y": 40, "width": 180, "height": 180 },
@@ -12,7 +12,7 @@
     },
     {
       "id": "G",
-      "kind": "group",
+      "kind": "mark",
       "layer": "default",
       "layoutKey": "tileGrid",
       "pose": { "x": 210, "y": 40, "width": 180, "height": 180 },
@@ -20,7 +20,7 @@
     },
     {
       "id": "S",
-      "kind": "group",
+      "kind": "mark",
       "layer": "default",
       "layoutKey": "snapPoint",
       "pose": { "x": 410, "y": 40, "width": 180, "height": 180 },

@@ -53,18 +53,18 @@ describe('createModeDecorations', () => {
     const d = createModeDecorations({ registry });
 
     const pathEditPainter = vi.fn().mockReturnValue([]);
-    const isolationPainter = vi.fn().mockReturnValue([]);
+    const textEditPainter = vi.fn().mockReturnValue([]);
     d.register('path-edit', pathEditPainter);
-    d.register('isolation', isolationPainter);
+    d.register('text-edit', textEditPainter);
 
     registry.setMode('path-edit');
     d.paint();
     expect(pathEditPainter).toHaveBeenCalledTimes(1);
-    expect(isolationPainter).not.toHaveBeenCalled();
+    expect(textEditPainter).not.toHaveBeenCalled();
 
-    registry.setMode('isolation');
+    registry.setMode('text-edit');
     d.paint();
-    expect(isolationPainter).toHaveBeenCalledTimes(1);
+    expect(textEditPainter).toHaveBeenCalledTimes(1);
   });
 
   it('getVersion() bumps when the active mode changes', () => {

@@ -32,7 +32,7 @@ export function pressDecision(
   extendLocked: () => boolean,
   tree: PressTree,
 ): PressDecision {
-  const isExtend = mods.shift || mods.meta;
+  const isExtend = mods.shift;
   const inMultiSelection = sel.includes(top) && sel.length > 1;
   const defer = !isExtend && (inMultiSelection || insideSelectedGroup(top, sel, tree));
   return { applyNow: !defer && !(isExtend && extendLocked()), deferred: defer ? top : null };

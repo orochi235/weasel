@@ -5,29 +5,34 @@ import type { ModeRegistry } from './registry';
 export interface CreateScopingDimOptions {
   registry: ModeRegistry;
   /** Returns the set of node ids that are *in* scope for the current mode.
-   *  The app computes this — typically: selection-only for path-edit,
-   *  isolated subtree for isolation, empty for non-scoping modes. */
+   *  The app computes this — typically: the edited path for path-edit,
+   *  empty for non-scoping modes. */
   getTargetIds: () => ReadonlySet<string>;
-  /** Alpha for out-of-scope nodes. Default 0.3 (spec). */
+  /** Alpha for out-of-scope nodes. Default {@link OUT_OF_SCOPE_ALPHA}. */
   dimAlpha?: number;
 }
 
-/** Answers, per node, how a scoping mode should treat it: dimmed or not,
- *  hit-testable or not. Consult it from the renderer and the hit-tester —
- *  it computes nothing itself. Its answers change when the mode does, or when
- *  the app says the target set moved (`invalidate`); both notify
- *  subscribers, so a canvas can repaint on `subscribe` (`<SceneCanvas
- *  redrawOn>`). */
-export interface ScopingDim {
+/** The alpha a node outside a scope is drawn at, unless the scope says otherwise. */
+export const OUT_OF_SCOPE_ALPHA = 0.3;
+
+/** How a canvas treats each node under a scope: lit or dimmed, reachable or not. Consult it
+ *  from the renderer and the hit-tester; `subscribe` hears its answers change, so a canvas
+ *  can repaint on it (`<SceneCanvas redrawOn>`). */
+export interface NodeScope {
   /** Multiplier in [0, 1] to apply to a node's render alpha. */
   alphaFor(id: string): number;
   /** Whether the node should respond to pointer hits. */
   isPointerInteractive(id: string): boolean;
-  /** Tell subscribers the target set changed without a mode switch. */
-  invalidate(): void;
-  /** Monotonic; bumps on a mode switch and on `invalidate`. */
+  /** Monotonic; bumps whenever the answers may have changed. */
   getVersion(): number;
   subscribe(listener: () => void): () => void;
+}
+
+/** A {@link NodeScope} for a mode registry: it computes nothing itself, and its answers change
+ *  when the mode does, or when the app says the target set moved (`invalidate`). */
+export interface ScopingDim extends NodeScope {
+  /** Tell subscribers the target set changed without a mode switch. */
+  invalidate(): void;
 }
 
 /** Build the scoping lookup for a mode registry. In a mode with
@@ -35,7 +40,7 @@ export interface ScopingDim {
  *  to consult unconditionally. */
 export function createScopingDim(opts: CreateScopingDimOptions): ScopingDim {
   const { registry } = opts;
-  const dim = opts.dimAlpha ?? 0.3;
+  const dim = opts.dimAlpha ?? OUT_OF_SCOPE_ALPHA;
   const listeners = createEmitter();
   let invalidations = 0;
   return {

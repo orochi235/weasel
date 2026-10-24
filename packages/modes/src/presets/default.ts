@@ -35,29 +35,6 @@ export const PATH_EDIT: ModeDefinition = {
   discard: { shortcut: 'Meta+Escape' },
 };
 
-/** Working inside one subtree with everything outside it dimmed and inert,
- *  entered by double-clicking a `group`. Allows the same authoring tools as `NORMAL`, minus page edits. */
-export const ISOLATION: ModeDefinition = {
-  id: 'isolation',
-  label: 'Isolation',
-  description: 'Work inside one group with everything outside it dimmed and locked.',
-  kind: 'soft',
-  allows: [
-    'creates-selection',
-    'transforms-selection',
-    'creates-paths',
-    'creates-shapes',
-    'creates-text',
-    'samples-color',
-    'applies-fill',
-  ],
-  scoping: true,
-  workspace: { tint: '#8b5cf6', gradient: 'bottom-up', intensity: 0.12 },
-  entry: { trigger: 'double-click-target', targets: ['group'] },
-  exit: { shortcut: 'Escape' },
-  discard: { shortcut: 'Meta+Escape' },
-};
-
 /** A transaction that transforms the selection: the whole session is one undo
  *  step, committed with Enter or discarded with Escape. */
 export const FREE_TRANSFORM: ModeDefinition = {
@@ -103,11 +80,10 @@ export const CROP: ModeDefinition = {
   cancel: { shortcut: 'Escape' },
 };
 
-/** The six modes this package ships, ready to hand to `createModeRegistry`. */
+/** The modes this package ships, ready to hand to `createModeRegistry`. */
 export const DEFAULT_MODES: readonly ModeDefinition[] = [
   NORMAL,
   PATH_EDIT,
-  ISOLATION,
   FREE_TRANSFORM,
   TEXT_EDIT,
   CROP,

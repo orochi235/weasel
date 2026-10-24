@@ -12,7 +12,6 @@ import { useMemo } from 'react';
 import type { DrawScene } from '../drawDocument';
 import { enterModeOn } from './enterModeOn';
 import type { ModeMachine } from './machine';
-import { isolatedGroupOf } from './modeScope';
 import { modalityShortcuts } from './shortcuts';
 import { useModeId } from './useModeId';
 
@@ -22,8 +21,6 @@ export interface CanvasModes {
   ambient: readonly Contribution[];
   /** The path being anchor-edited is the path-edit mode's target, read from the machine. */
   pathEdit: PathEditHost;
-  /** The group isolation is in, which a double-click drills down from. */
-  isolatedGroup: () => string | null;
 }
 
 /** The path Enter opens for `ids`: one selected path, or the path a selected effect hides. */
@@ -59,8 +56,7 @@ export function useCanvasModes(
   }), [machine, scene]);
 
   const ambient = useMemo(() => [keys, triggers], [keys, triggers]);
-  const isolatedGroup = useMemo(() => () => isolatedGroupOf(machine), [machine]);
-  return { ambient, pathEdit, isolatedGroup };
+  return { ambient, pathEdit };
 }
 
 /** What the breadcrumb calls the node the current mode is on: its label, its text, or its id. */

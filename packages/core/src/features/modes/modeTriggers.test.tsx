@@ -10,6 +10,7 @@ import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
+import { createEnteredGroup } from 'canvas/deps/enteredGroup';
 import { modeTriggers, type ModeTriggerHandlers } from './modeTriggers';
 
 beforeAll(() => {
@@ -53,7 +54,7 @@ const square = (x: number): P => ({ x, y: 0, width: 30, height: 30 });
 
 const triangle = () => pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath;
 
-function setup(handlers: ModeTriggerHandlers, isolatedGroup?: () => string | null) {
+function setup(handlers: ModeTriggerHandlers, enteredId?: string) {
   const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: asNodeId('p'), kind: 'mark', layer: 'main', pose: square(0), data: { path: triangle() } });
@@ -64,10 +65,12 @@ function setup(handlers: ModeTriggerHandlers, isolatedGroup?: () => string | nul
     pose: square(120), data: {} } as never);
   scene.add({ id: asNodeId('member'), kind: 'mark', layer: 'main', parent: asNodeId('inner'),
     pose: square(120), data: { path: triangle() } } as never);
+  const entered = createEnteredGroup(scene);
+  if (enteredId) entered.enter(asNodeId(enteredId));
   const { container } = render(
     <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={40}
       ambient={[modeTriggers(registry, handlers)]} modes={registry}
-      {...(isolatedGroup ? { isolatedGroup } : {})} />,
+      enteredGroup={entered} />,
   );
   const canvas = container.querySelector('canvas')!;
   const doubleClick = (x: number) => act(() => {
@@ -75,7 +78,7 @@ function setup(handlers: ModeTriggerHandlers, isolatedGroup?: () => string | nul
       canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: 15, pointerId: 1, button: 0, buttons: 1 }));
     }
   });
-  return { doubleClick };
+  return { doubleClick, entered };
 }
 
 describe('modeTriggers on a canvas', () => {
@@ -101,21 +104,23 @@ describe('modeTriggers on a canvas', () => {
     expect(enter).not.toHaveBeenCalled();
   });
 
-  it('enters isolation on the outermost group above a double-clicked member', () => {
+  it('leaves a double-click on a grouped member to the select tool, which enters the group', () => {
     const enter = vi.fn();
     setup({ enter }).doubleClick(135);
-    expect(enter).toHaveBeenCalledExactlyOnceWith('isolation', 'outer');
+    expect(enter).not.toHaveBeenCalled();
   });
 
-  it('drills one group further in from the isolated group', () => {
+  it('leaves a double-click on a nested group inside the entered one to the select tool, which drills in', () => {
     const enter = vi.fn();
-    setup({ enter }, () => 'outer').doubleClick(135);
-    expect(enter).toHaveBeenCalledExactlyOnceWith('isolation', 'inner');
+    const t = setup({ enter }, 'outer');
+    t.doubleClick(135);
+    expect(enter).not.toHaveBeenCalled();
+    expect(t.entered.get()).toBe('inner');
   });
 
-  it('enters path-edit on a member path with no further group above it inside the isolated one', () => {
+  it('enters path-edit on a member path with no further group above it inside the entered one', () => {
     const enter = vi.fn();
-    setup({ enter }, () => 'inner').doubleClick(135);
+    setup({ enter }, 'inner').doubleClick(135);
     expect(enter).toHaveBeenCalledExactlyOnceWith('path-edit', 'member');
   });
 });

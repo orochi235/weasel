@@ -1,3 +1,5 @@
+import type { EnteredGroupApi } from '../deps/enteredGroup';
+
 /** Minimal hit descriptor passed to `onDoubleClick`. Contains the fields
  *  modality dispatch needs; extends as the kit's `Hit` type evolves. */
 export interface SceneCanvasHit {
@@ -14,12 +16,11 @@ export interface SceneCanvasPointerProps {
   isPointerInteractive?: (id: string) => boolean;
 
   /**
-   * The group isolation is working inside, or null outside isolation. A double-click names the
-   * outermost group above the node hit, stopping below this one, so each double-click drills one
-   * group further in; where no group stands between them it names the node hit. Absent, groups
-   * are named from the scene root. Single clicks are untouched.
+   * The entered group: the group a press resolves inside of, and which a double-click drills down
+   * from. Nodes outside it take no hits. Pass one from `useEnteredGroup(scene)` to read or drive it
+   * from outside the canvas, as `selection` is passed; without it the canvas keeps its own.
    */
-  isolatedGroup?: () => string | null;
+  enteredGroup?: EnteredGroupApi;
 
   /**
    * Called when the user double-clicks the canvas, with the hit node (id + kind) at that

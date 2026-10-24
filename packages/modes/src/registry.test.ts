@@ -49,7 +49,7 @@ describe('createModeRegistry', () => {
     r.setMode('path-edit');  // same mode — should NOT notify
     expect(listener).toHaveBeenCalledTimes(1);
 
-    r.setMode('isolation');
+    r.setMode('text-edit');
     expect(listener).toHaveBeenCalledTimes(2);
 
     unsubscribe();

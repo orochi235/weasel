@@ -23,20 +23,25 @@ export function useAreaSelectDepSource(
   descriptor?: PoseDescriptor<unknown>,
   /** The painted alpha the surface's layers apply, which every view shares. */
   alphaOf?: (id: string) => number,
+  /** Whether a node can be reached at all: the canvas's one answer, which picking reads too. */
+  reachable?: (id: string) => boolean,
 ): void {
   const sceneRef = useLatest(scene);
   const selectionRef = useLatest(selection);
   const descriptorRef = useLatest(descriptor);
   const alphaOfRef = useLatest(alphaOf);
+  const reachableRef = useLatest(reachable);
 
   useDepSource('areaSelect', (): AreaSelectDep => {
     const sc = sceneRef.current;
     const s = selectionRef.current;
     const d = descriptorRef.current;
     const a = alphaOfRef.current;
+    const r = reachableRef.current;
+    const keep = (ids: NodeId[]): NodeId[] => (r ? ids.filter((id) => r(id)) : ids);
     return {
       hitTestArea: (bounds, view) =>
-        hitTestAreaShared(sc, bounds, regionPickOptions(view, a), d),
+        keep(hitTestAreaShared(sc, bounds, regionPickOptions(view, a), d)),
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids),
     };

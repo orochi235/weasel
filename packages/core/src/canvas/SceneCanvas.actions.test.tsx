@@ -72,11 +72,11 @@ describe('SceneCanvas actions integration', () => {
     );
     // `actions` governs the kit's DEFAULT action set. Tool activation and
     // Escape-returns-to-default are keybinding concerns, gated by
-    // `enableKeybindings` instead. `select.pick` / `select.collapseDeferred`
-    // are the select tool's OWN actions: `actions={null}` opts out of the
+    // `enableKeybindings` instead. `select.pick`, `select.deep` and
+    // `select.collapseDeferred` are the select tool's OWN actions: `actions={null}` opts out of the
     // kit's defaults, not out of the tools you passed.
     expect(seen.at(-1)).toEqual([
-      'tool.activate', 'tool.resetToDefault', 'select.pick', 'select.collapseDeferred',
+      'tool.activate', 'tool.resetToDefault', 'select.pick', 'select.deep', 'select.collapseDeferred',
     ]);
   });
 
@@ -92,8 +92,8 @@ describe('SceneCanvas actions integration', () => {
       </SceneCanvas>,
     );
     // Both keybinding actions are gone; what remains is exactly the select
-    // tool's own two, for the reason above.
-    expect(seen.at(-1)).toEqual(['select.pick', 'select.collapseDeferred']);
+    // tool's own, for the reason above.
+    expect(seen.at(-1)).toEqual(['select.pick', 'select.deep', 'select.collapseDeferred']);
   });
 
   it('actions={{ selectAll: null }} drops selectAll only', () => {

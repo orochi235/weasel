@@ -3,7 +3,8 @@ import type { Action } from '../interactions/actions/action';
 import type { MenuDef } from '../menus/types';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { KeymapUnbound } from '../keymaps/keymapStack';
-import type { DepName, DepSchema, KernelOverlay } from '../index';
+import type { DepSource } from '../interactions/actions/depNode';
+import type { DepName, KernelOverlay } from '../index';
 
 /** Hotkey-slot trigger key. The slot is engaged while this key is held —
  *  hence "hotkey": active as long as the key is hot. Omitted means the tool
@@ -68,8 +69,8 @@ export interface Eligibility {
  */
 export type OverlayPosition = 'top' | 'before-selection' | 'after-selection';
 
-/** Dep sources an entry provides while it is installed, by dep name. */
-export type ContributionDeps = { [K in DepName]?: () => DepSchema[K] };
+/** Dep sources an entry provides while it is installed, by dep name. A source may read the one it displaces. */
+export type ContributionDeps = { [K in DepName]?: DepSource<K> };
 
 /**
  * What routing reads off an entry: when its bindings are live, which they

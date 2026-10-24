@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { DEFAULT_MODES, byId } from './default';
 
 describe('default mode preset', () => {
-  it('includes the six documented mode ids', () => {
+  it('includes the documented mode ids', () => {
     const ids = DEFAULT_MODES.map((m) => m.id).sort();
-    expect(ids).toEqual(['crop', 'free-transform', 'isolation', 'normal', 'path-edit', 'text-edit']);
+    expect(ids).toEqual(['crop', 'free-transform', 'normal', 'path-edit', 'text-edit']);
   });
 
   it('path-edit is soft, scoping, blue', () => {
@@ -44,7 +44,7 @@ describe('DEFAULT_MODES display', () => {
 
   it('labels the modes the way the chrome names them', () => {
     expect(DEFAULT_MODES.map((m) => m.label)).toEqual([
-      'Normal', 'Path Edit', 'Isolation', 'Free Transform', 'Text Edit', 'Crop',
+      'Normal', 'Path Edit', 'Free Transform', 'Text Edit', 'Crop',
     ]);
   });
 });

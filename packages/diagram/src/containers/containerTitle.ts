@@ -36,7 +36,7 @@ export function editContainerTitleAction(commit: (id: string) => void): Action {
     label: 'Edit container title',
     group: 'diagram',
     requires: ['scene', 'nodeAtPoint'],
-    eligible: { mode: { in: ['normal', 'isolation'] } },
+    eligible: { mode: 'normal' },
     invoker: {
       timing: 'immediate',
       run(deps, params) {

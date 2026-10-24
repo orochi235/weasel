@@ -27,6 +27,8 @@ import { usePoseTransition, type PoseTransitionSeat } from '../../animation/pose
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
 import { drawnBoundsScene } from '../derivedPath';
+import { useEnteredGroupFrameLayer } from 'features/selection/enteredGroupFrame';
+import type { EnteredGroupApi } from '../deps/enteredGroup';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
 import { createSnapReadoutLayer } from 'features/snap/readoutLayer';
 import type { SnapReadoutStyle } from 'features/snap/types';
@@ -49,7 +51,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   poseDescriptor: PoseDescriptor<TPose>;
   alphaFor: ((id: string) => number) | undefined;
   colorOverrides: ColorOverrideRegistry | undefined;
-  boundsOf: (id: string) => Bounds | null;
+  boundsOf: (id: string) => Bounds | null; enteredGroup: EnteredGroupApi; frameColor: { read: () => string; changed: (fn: () => void) => () => void };
   planeOfNode: (id: string, view: View) => PlaneMap | null;
   /** `<SceneCanvas poseTransition>`, whose ghosts of removed nodes this draws. */
   poseTransition: PoseTransitionSeat<TPose> | null | undefined;
@@ -139,10 +141,12 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     resizeHandles,
   );
 
+  const enteredFrameLayer = useEnteredGroupFrameLayer(args.enteredGroup, args.boundsOf, args.frameColor);
   const layers = useMemo<CanvasLayers>(() => ({
     ...builtLayersOf(merged),
     scene: sceneLayers,
     selectionOverlay: selectionOverlayLayer ? { layer: selectionOverlayLayer } : null,
+    enteredGroupFrame: { layer: enteredFrameLayer, before: 'selectionOverlay' },
     departureGhost: { layer: departureLayer, after: 'scene' },
     previewGhost: { layer: previewLayer, after: 'departureGhost' },
     effectSources: { layer: effectSourcesLayer, after: 'previewGhost' },
@@ -152,9 +156,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
       : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(args.snapReadout ? { snapReadout: { layer: snapReadoutLayer, after: overlayAnchor } } : {}),
     ...(slops ? { slopsDebug: { layer: slopsLayer, after: args.snapReadout ? 'snapReadout' : overlayAnchor } } : {}),
-  }), [
-    merged, sceneLayers, selectionOverlayLayer, departureLayer, previewLayer, effectSourcesLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor,
-    snapReadoutLayer, args.snapReadout, slops, slopsLayer,
+  }), [merged, sceneLayers, selectionOverlayLayer, enteredFrameLayer, departureLayer, previewLayer, effectSourcesLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor, snapReadoutLayer, args.snapReadout, slops, slopsLayer,
   ]);
 
   return { layers, rotationBadge, resizeHandles, chromeAffordancesRef, snapStore, departures };

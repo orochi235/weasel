@@ -20,12 +20,13 @@ import { unpackSvgFiles } from '@weasel-js/svg';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
-import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
+import { type ReactElement, type RefObject, useMemo } from 'react';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import { PAPER_PRESETS } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { useInsertPaint } from './insertPaint';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
+import { canvasAlphaFor, useDrawEnteredGroup, useEnteredGroupLabel } from './modality/enteredGroup';
 import { useCanvasModes, useModeTargetLabel } from './modality/useCanvasModes';
 import type { UseModalityReturn } from './modality/useModality';
 import { useModeId } from './modality/useModeId';
@@ -90,13 +91,21 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const spacingHints = useSpacingHints();
   const pathDirection = usePathDirection();
   const symmetry = useSymmetry(scene, page);
+  const group = useDrawEnteredGroup(scene);
+  const groupLabel = useEnteredGroupLabel(group, scene);
+  const leaveAll = group.entered.leaveAll;
+  const groupCrumb = useMemo(
+    () => (groupLabel === null ? null : { label: groupLabel, onExit: leaveAll }),
+    [groupLabel, leaveAll],
+  );
   // The mode tint covers the workspace around the page, not the page itself.
   // Bolder than the modes' own 0.12 so it reads through the stripes.
   const workspaceTint = useMemo(() => workspaceTintLayer({
     registry: machine.registry,
     page: () => ({ x: 0, y: 0, width: page.width, height: page.height }),
     intensity: 0.4,
-  }), [machine, page.width, page.height]);
+    fallback: group.tint,
+  }), [machine, page.width, page.height, group.tint]);
 
   const modeId = useModeId(machine);
   const targetLabel = useModeTargetLabel(machine, scene);
@@ -134,15 +143,17 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     selection,
   });
 
-  // The overlay draws the node being edited, so the scene layer must not draw it too. Composed
-  // over the modality scoping dim: an isolation-dimmed node can also be the one editing.
   const scopingAlphaFor = modality.scopingDim.alphaFor;
+  const groupScope = group.scope;
   const editingId = textEdit.editingId;
-  const alphaFor = useCallback(
-    (id: string) => (id === editingId ? 0 : scopingAlphaFor(id)),
-    [editingId, scopingAlphaFor],
+  const alphaFor = useMemo(
+    () => canvasAlphaFor(scopingAlphaFor, groupScope, editingId),
+    [editingId, scopingAlphaFor, groupScope],
   );
-  const redrawOnScoping = useMemo(() => [modality.scopingDim, modality.anchors], [modality.scopingDim, modality.anchors]);
+  const redrawOnScoping = useMemo(
+    () => [modality.scopingDim, modality.anchors, groupScope],
+    [modality.scopingDim, modality.anchors, groupScope],
+  );
 
   // On-canvas gradient handles edit one node's one paint; which paint is the side the swatches
   // have focus on.
@@ -162,6 +173,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
       <ModeBreadcrumb
         mode={machine.registry.byId(modeId)}
         targetLabel={targetLabel}
+        group={groupCrumb}
         onExit={() => machine.exitMode()}
         onCommit={() => machine.commitMode()}
         onCancel={() => machine.cancelMode()}
@@ -200,7 +212,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           alphaFor={alphaFor}
           redrawOn={redrawOnScoping}
           isPointerInteractive={modality.scopingDim.isPointerInteractive}
-          isolatedGroup={modes.isolatedGroup}
+          enteredGroup={group.entered}
           modes={machine.registry}
           pathEdit={modes.pathEdit}
           chromeVisibility={pathDirection.chromeVisibility}

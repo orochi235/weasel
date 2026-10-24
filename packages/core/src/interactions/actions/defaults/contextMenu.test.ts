@@ -69,3 +69,33 @@ describe('menuHitFor', () => {
     });
   });
 });
+
+describe('openContextMenu on a group', () => {
+  it('selects the group when the right-click lands on an unselected member', () => {
+    const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const g = scene.add({ kind: 'group', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
+    const m = scene.add({ kind: 'mark', data: {}, layer: 'main', parent: g, pose: { x: 0, y: 0, width: 10, height: 10 } });
+    const d = deps({ scene, hitAt: () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: m }) }) as {
+      selection: { set: ReturnType<typeof vi.fn> };
+    };
+    openContextMenu(d as never, { worldX: 5, worldY: 5, clientX: 50, clientY: 60 });
+    expect(d.selection.set).toHaveBeenCalledWith([g]);
+  });
+});
+
+describe('openContextMenu on a member of a group', () => {
+  it("opens the group's menu, not the member's", () => {
+    const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const g = scene.add({ kind: 'group', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
+    const m = scene.add({ kind: 'mark', data: {}, layer: 'main', parent: g, pose: { x: 0, y: 0, width: 10, height: 10 } });
+    const d = deps({
+      scene,
+      hitAt: () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: m }),
+      kindOfNode: (id: string) => (id === g ? 'group' : 'rect'),
+    }) as { menuHost: { open: ReturnType<typeof vi.fn> } };
+    openContextMenu(d as never, { worldX: 5, worldY: 5, clientX: 50, clientY: 60 });
+    expect(d.menuHost.open).toHaveBeenCalledWith(expect.objectContaining({
+      hit: { bodyTarget: 'selected-body', bodyKind: 'group' },
+    }));
+  });
+});

@@ -83,10 +83,11 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     expect(h.selection()).toEqual([]);
   });
 
-  it('picks a leaf whose AABB is inside an ancestor container clip', () => {
+  it("picks a leaf whose AABB is inside an ancestor group's clip, as that group", () => {
     // Paired with the case above. The clip is deliberately smaller than the
     // container's AABB, so passing documents clip-pass rather than
-    // pure-AABB-pass. `pickTopMostHit` drops the ancestor, leaving the leaf.
+    // pure-AABB-pass. `pickTopMostHit` drops the ancestor, leaving the leaf,
+    // and the press then selects the leaf's group.
     const h = harness([
       {
         id: asNodeId('bed'),
@@ -106,7 +107,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
       },
     ]);
     h.press(0, 0);
-    expect(h.selection()).toContain(asNodeId('inner'));
+    expect(h.selection()).toEqual([asNodeId('bed')]);
   });
 
   it('container with a clip is selectable when the press is inside the clip', () => {

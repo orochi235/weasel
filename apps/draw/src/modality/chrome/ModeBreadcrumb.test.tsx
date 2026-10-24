@@ -41,4 +41,32 @@ describe('ModeBreadcrumb', () => {
     );
     expect(screen.queryByText(/·/)).toBeNull();  // separator absent without label
   });
+
+  it('names the entered group in normal mode, and its Exit leaves the group', () => {
+    const onGroupExit = vi.fn();
+    const onExit = vi.fn();
+    renderWithIcons(
+      <ModeBreadcrumb mode={NORMAL} targetLabel={null} group={{ label: 'Logo', onExit: onGroupExit }}
+        onExit={onExit} onCommit={vi.fn()} onCancel={vi.fn()} />
+    );
+    expect(screen.getByText('Group')).toBeTruthy();
+    expect(screen.getByText('Logo')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /exit/i }));
+    expect(onGroupExit).toHaveBeenCalled();
+    expect(onExit).not.toHaveBeenCalled();
+  });
+
+  it('names the group and the mode open inside it, with the mode\'s own buttons', () => {
+    const onGroupExit = vi.fn();
+    const onExit = vi.fn();
+    renderWithIcons(
+      <ModeBreadcrumb mode={PATH_EDIT} targetLabel="Star" group={{ label: 'Logo', onExit: onGroupExit }}
+        onExit={onExit} onCommit={vi.fn()} onCancel={vi.fn()} />
+    );
+    expect(screen.getByText('Logo')).toBeTruthy();
+    expect(screen.getByText(/path edit/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /exit/i }));
+    expect(onExit).toHaveBeenCalled();
+    expect(onGroupExit).not.toHaveBeenCalled();
+  });
 });

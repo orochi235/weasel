@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { pickWalk, adapterPickSource, scenePlaneOf } from 'canvas/pickWalk';
 import type { View } from 'core/viewport/view';
@@ -8,10 +8,13 @@ import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../../overlayBinding';
 import type { Action } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
+import { pressTarget } from '../pressTarget';
 import { pressDecision } from './pressDecision';
+import { createCollapseDeferredAction } from './collapseDeferred';
+import { GROUP_LEAVE_PRESS_BINDING } from './groupEntry';
+import { createSelectDeepAction } from '../../../interactions/actions/defaults/selectDeep';
 import { adapterPointQuery } from './adapterPointQuery';
 import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -168,6 +171,24 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   const optionsRef = useLatest(options);
   const adapterRef = useLatest(adapter);
 
+  // The node under a point, before any group above it is considered.
+  const pickHit = useCallback((
+    worldX: number, worldY: number, alt: boolean, sel: readonly string[],
+  ): string | null => {
+    const opts = optionsRef.current;
+    if (opts.pickBest) return opts.pickBest(worldX, worldY, alt, sel);
+    const ids = pickEveryRef.current(worldX, worldY);
+    if (ids.length === 0) return null;
+    return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
+  }, [optionsRef, pickEveryRef, adapterRef]);
+
+  const extendLocked = useCallback(() => optionsRef.current.extendClickLocked?.() === true, [optionsRef]);
+  const settled = useCallback(() => { pressRef.current = { deferredClickId: null }; }, []);
+  const deepAction = useMemo(
+    () => createSelectDeepAction({ pickHit, extendLocked, settled }),
+    [pickHit, extendLocked, settled],
+  );
+
   /**
    * `select.pick` — classifies the press and updates the node selection.
    *
@@ -180,7 +201,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     id: 'select.pick',
     label: 'Select — pick under pointer',
     eligible: { capability: 'creates-selection' },
-    requires: ['selection'],
+    requires: ['selection', 'enteredGroup'],
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
@@ -195,18 +216,13 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const opts = optionsRef.current;
 
         const sel = selection.get();
-        const top = opts.pickBest
-          ? opts.pickBest(p.worldX, p.worldY, mods.alt, sel)
-          : (() => {
-              const ids = pickEveryRef.current(p.worldX, p.worldY);
-              if (ids.length === 0) return null;
-              return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
-            })();
+        const hit = pickHit(p.worldX, p.worldY, mods.alt, sel);
 
-        if (top === null) {
+        if (hit === null) {
           pressRef.current = { deferredClickId: null };
           return;
         }
+        const top = pressTarget(adapterRef.current, hit, deps.enteredGroup?.get() ?? null);
 
         // See `extendClickLocked`. An option rather than `Action.enabled`
         // because it only applies to *extend* presses, and `enabled` is
@@ -217,46 +233,10 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         pressRef.current = { deferredClickId: press.deferred };
       },
     },
-  }), [optionsRef, pickEveryRef, adapterRef]);
+  }), [optionsRef, adapterRef, pickHit]);
 
-  /**
-   * `select.collapseDeferred` — the release half of the deferred multi-click.
-   *
-   * Pressing an already-selected node inside a multi-selection leaves the
-   * selection alone so the press can start a drag of the whole set. If the
-   * gesture ends without a drag, this collapses to the clicked node.
-   */
-  const collapseDeferredAction = useMemo<Action>(() => ({
-    id: 'select.collapseDeferred',
-    label: 'Select — collapse deferred click',
-    eligible: { capability: 'creates-selection' },
-    requires: ['selection'],
-    // Declining when there is nothing deferred is what keeps this binding
-    // from swallowing every click on a node. It is bound at ACTIVE scope, so
-    // without the gate it would outrank ambient click bindings like
-    // `selectAnchor` and silently break anchor selection.
-    enabled: () =>
-      pressRef.current.deferredClickId !== null
-        ? true
-        : ActionDisabledReason.NotApplicable,
-    invoker: {
-      timing: 'immediate' as const,
-      run: (deps, params) => {
-        const deferred = pressRef.current.deferredClickId;
-        pressRef.current = { deferredClickId: null };
-        if (deferred === null) return;
-        const selection = deps.selection;
-        if (!selection) return;
-        const p = params as {
-          mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
-        } | undefined;
-        selection.applyClick(
-          deferred as NodeId,
-          p?.mods ?? { alt: false, ctrl: false, meta: false, shift: false },
-        );
-      },
-    },
-  }), []);
+
+  const collapseDeferredAction = useMemo(() => createCollapseDeferredAction(pressRef), []);
 
   return useMemo(
     () => {
@@ -273,7 +253,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           icon: icon('select'),
           group: 'select',
         },
-        actions: [pickAction, collapseDeferredAction],
+        actions: [pickAction, deepAction, collapseDeferredAction],
       });
 
       return {
@@ -285,6 +265,17 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         // bindings owned by the selection (`selectionContributions.ts`), so
         // they run under any tool that leaves the gesture unclaimed.
         bindings: [
+          // Cmd-press selects the node itself, past every group. It outranks
+          // `select.pick` because a required modifier counts in specificity.
+          {
+            spec: {
+              kind: 'pointerDown' as const,
+              target: { kindOf: onBody },
+              mods: { mod: true, shift: 'optional' as const },
+            },
+            actionId: 'select.deep',
+            opts: { id: 'select.deep' },
+          },
           // Every press that landed on the scene rather than on chrome. It
           // classifies the press and applies the selection change, and it does
           // not consume the gesture — the same press goes on to open a drag or
@@ -321,6 +312,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             actionId: 'select.collapseDeferred',
             opts: { id: 'select.collapseDeferred' },
           },
+          GROUP_LEAVE_PRESS_BINDING,
           // Empty drag → marquee. `onEmptyCanvas` rather than a bare `'empty'`
           // target: the ambient bindings that own the handles rank below this
           // active one, so `'empty'` took drags that start on them.
@@ -339,6 +331,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         ],
       };
     },
-    [pickAction, collapseDeferredAction],
+    [pickAction, deepAction, collapseDeferredAction],
   );
 }

@@ -21,9 +21,9 @@ export interface ModeTriggerHandlers {
  *
  * The target is the node the dispatcher classified the double-click on (the `hitAt` dep's
  * `doubleClick`, else its hit), the one the binding's `kind:` target matched: a double-click on
- * a grouped member names its outermost group inside `<SceneCanvas isolatedGroup>`. The action is live in every mode, the target mode
- * included, so a double-click on another node moves a mode onto it; `canEnter` and `enter`
- * decide what a switch from the current mode means.
+ * a grouped member names its outermost group inside the entered group (`<SceneCanvas enteredGroup>`).
+ * The action is live in every mode, the target mode included, so a double-click on another node
+ * moves a mode onto it; `canEnter` and `enter` decide what a switch from the current mode means.
  *
  * The bindings ride the ambient tier: a tool that claims the double-click itself, the pen
  * finishing a stroke, keeps it.

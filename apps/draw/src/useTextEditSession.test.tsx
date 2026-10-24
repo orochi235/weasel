@@ -68,7 +68,7 @@ describe('useTextEditSession keeps the text-edit mode in step with the edit', ()
 
   it('opens an edit from inside another soft mode, which it leaves', () => {
     const { machine, mode, edit } = session({ t: 'Hello' });
-    machine.enterMode('isolation', { targetId: 'g' });
+    machine.enterMode('path-edit', { targetId: 'p' });
     act(() => edit().startEdit('t'));
     expect(mode()).toBe('text-edit');
     expect(edit().editingId).toBe('t');
