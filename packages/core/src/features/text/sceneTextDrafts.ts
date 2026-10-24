@@ -21,13 +21,10 @@ export function editedData<TData extends DefaultTextData>(
   return next;
 }
 
-// Shared by every instance, so two editors of one node never fold their edits together.
-let nextSession = 0;
-
-/** Where an edit's writes go. Each `draft` is written through when something derives from the node; the `commit`
- *  writes the result; `end` closes the edit, first putting back the data the drafts replaced when no commit came. All
- *  the writes of one edit fold into one undo entry, so a commit undoes to the text before the first draft, and a
- *  cancel leaves an entry that changes nothing. */
+/** Where an edit's writes go. Each `draft` is written through, unrecorded, when something derives from the node; the
+ *  `commit` records the result as one undo entry from the text before the first draft; `end` closes the edit, first
+ *  putting back the data the drafts replaced when no commit came, so a canceled edit leaves no entry and the redo
+ *  stack as it was. */
 export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends string, TPose>(
   sceneRef: { readonly current: Scene<TData, TLayer, TPose> },
   optsRef: { readonly current: UseSceneTextEditOptions<TData> },
@@ -37,10 +34,15 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
   end: (id: string) => void;
 } {
   let from: { id: string; data: TData } | null = null;
-  let session = nextSession++;
-  const write = (id: string, data: TData): void => {
+  const draftWrite = (id: string, data: TData): void => {
     const scene = sceneRef.current;
-    scene.batch('Edit text', () => scene.update(asNodeId(id), { data }), { coalesceKey: `text-edit:${id}:${session}` });
+    scene.untracked(() => scene.update(asNodeId(id), { data }));
+  };
+  /** Puts back what the drafts replaced, so the recorded change starts from there. */
+  const restore = (id: string): void => {
+    const held = from;
+    from = null;
+    if (held?.id === id && sceneRef.current.get(asNodeId(id))) draftWrite(id, held.data);
   };
   return {
     draft: (id, draft) => {
@@ -49,17 +51,13 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
       const node = scene.get(nid);
       if (!node || sceneDependentsOf(scene, nid).length === 0) return;
       if (from?.id !== id) from = { id, data: node.data };
-      write(id, editedData(node.data, draft, optsRef.current));
+      draftWrite(id, editedData(node.data, draft, optsRef.current));
     },
     commit: (id, data) => {
-      from = null;
-      write(id, data);
+      restore(id);
+      const scene = sceneRef.current;
+      scene.batch('Edit text', () => scene.update(asNodeId(id), { data }));
     },
-    end: (id) => {
-      const held = from;
-      from = null;
-      if (held?.id === id && sceneRef.current.get(asNodeId(id))) write(id, held.data);
-      session = nextSession++;
-    },
+    end: restore,
   };
 }

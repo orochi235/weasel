@@ -86,17 +86,34 @@ describe('useSceneTextEdit — drafts', () => {
     expect(scene.get(T)!.data.text).toBe('hello');
   });
 
-  it('leaves a canceled edit one entry that changes nothing, so an undo brings no draft back', () => {
+  it('leaves a canceled edit no history entry, and the redo stack as it was', () => {
     const { scene, container, hook } = setup();
+    scene.update(LONE, { data: { text: 'renamed', style: { fontSize: 16 } } });
+    scene.undo();
     const before = scene.get(T)!.data;
-    const entries = scene.historyEntries().length;
+    const entries = scene.historyEntries();
+    const at = scene.historyIndex();
     act(() => hook.result.current.startEdit('t'));
     type(container, '!');
     act(() => hook.result.current.cancelEdit());
     expect(scene.get(T)!.data).toEqual(before);
-    expect(scene.historyEntries()).toHaveLength(entries + 1);
-    scene.undo();
+    expect(scene.historyEntries()).toEqual(entries);
+    expect(scene.historyIndex()).toBe(at);
+    expect(scene.redo()).toBe(true);
+    expect(scene.get(LONE)!.data.text).toBe('renamed');
     expect(scene.get(T)!.data).toEqual(before);
+  });
+
+  it('redoes a committed edit to its last draft', () => {
+    const { scene, container, hook } = setup();
+    act(() => hook.result.current.startEdit('t'));
+    type(container, '!');
+    type(container, '?');
+    act(() => hook.result.current.commit());
+    scene.undo();
+    expect(scene.get(T)!.data.text).toBe('hello');
+    scene.redo();
+    expect(scene.get(T)!.data.text).toBe('hello!?');
   });
 
   it('keeps two edits of one node apart', () => {

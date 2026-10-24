@@ -450,10 +450,6 @@ Priority tags:
 
 ## Text
 
-- **(P2) A canceled in-place edit of a text-along source leaves an undo entry that changes nothing.** Its drafts
-  and the restore fold into one "Edit text" entry, which still clears the redo stack
-  (`packages/core/src/features/text/sceneTextDrafts.ts`).
-
 - **(P2) A style change mid-edit does not reach a text-along curve until the next keystroke.** Cmd-B or the
   character panel restyles the overlay, but only an input event sends a draft (`onDraft` in
   `@weasel-js/text-dom`'s `useTextEdit`).
