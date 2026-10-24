@@ -19,6 +19,8 @@ Decided in conversation (2026-10-23), none of it in code:
 - **stance** is the angle a component comes from, its spin or slant (2026-10-23): is it for advanced
   users, is it debug output, is it the confirming action. Not a content class. `confirm` and its
   kin are stances, or adjacent. It goes on every component and cascades through CSS custom properties.
+- **danger is one concept, severity's `danger`** (2026-10-23). A delete button takes it too; there is
+  no `destructive` stance beside it.
 - **tone** means how loudly something reads (`neutral`, `muted`, `accent`); **tint** is an exact
   color (palette index or value, today's `tone`) and wins over severity and tone.
 - `status` is retired. `muted` belongs with tone, not with a drawing variant.
