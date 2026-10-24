@@ -884,9 +884,9 @@ its children, and frames its children's poses unless it is an envelope. A child'
 
 **A node clips its children only when it declares a clip** (decided 2026-10-22): its
 `clipFromPose` when it has one, else its outline when it sets `clip: 'outline'`. That outline
-is the silhouette of the painter that claims the node, read by `clipOutline`; a node only the
-last-resort rect painter claims clips to nothing. A group's is its `data` read as a mark's would
-be: an imported `<g clip-path>` holds its clip as `data.path`. The clip is its children's:
+is the silhouette of whichever painter claims the node, the rect fallback's box included, read
+by `clipOutline`. A group's is its `data` read as a mark's would be: an imported
+`<g clip-path>` holds its clip as `data.path`. The clip is its children's:
 the node's own paint, under its children or over them, is not cut by it. `ownClipOf` and
 `clipOutline` (`canvas/ownClip.ts`) are the one reading, for drawing, picking, the drag ghost
 and SVG export.
@@ -908,9 +908,9 @@ or undone. Shift extends a selection, and Cmd-Shift adds the deepest node under 
 
 **Saving.** Scenes save as version 2 with `kind: 'mark' | 'group'`. A version 1 save loads
 with each `leaf` as a mark and each `container` as a group, unless `classifyV1` says
-otherwise. Version 1 clipped a container with no clip function to its painter's outline, the
-rect fallback's box excepted, which is what `clip: 'outline'` draws, so such a container, and one
-whose clip key a load skipped, loads with it.
+otherwise. Version 1 clipped a container with no clip function to its outline, so such a
+container loading as a group, and one whose clip key a load skipped, gets `clip: 'outline'`; one
+`classifyV1` makes a mark gets no clip, since the loader cannot know its painter.
 
 Rejected (2026-10-22), so nobody re-proposes them: a `group: true` flag on a container
 (keeps "container" meaning only "has children"); three kinds `leaf | container | group`

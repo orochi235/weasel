@@ -8,7 +8,7 @@ import { paintsPose, poseBoxBounds } from './poseBox';
 // ─── Built-in painters ─────────────────────────────────────────────────
 export const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Last-resort painter — matches any rect-posed mark, so it must be
-  // registered last within `'normal'`. Nothing clips to its box (`clipOutline`).
+  // registered last within `'normal'`.
   // Consumers who want a different
   // fallback should register their own painter at `'high'` priority and let
   // this one never fire (or unregister it explicitly).

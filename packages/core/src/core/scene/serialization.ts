@@ -177,16 +177,17 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
       }
       (spec as unknown as Record<string, unknown>)[field.field] = fn;
     }
-    if (clipsAsV1(json.version, n as { kind?: string }, spec)) spec.clip = 'outline';
+    if (clipsAsV1(json.version, spec)) spec.clip = 'outline';
     return spec;
   });
 }
 
-/** Version 1 clipped a container with no clip function to its painter's
- *  silhouette, the rect fallback excepted, which is what `clip: 'outline'`
- *  draws. One whose clip key was skipped loads as it would have without it. */
-function clipsAsV1(version: 1 | 2, n: { kind?: string }, spec: { clipFromPose?: unknown }): boolean {
-  return version === 1 && n.kind === 'container' && spec.clipFromPose === undefined;
+/** Version 1 clipped a container with no clip function to its outline, which
+ *  is what `clip: 'outline'` draws on a group. One a classifier makes a mark
+ *  gets no clip, since which painter claims it is not known here; one whose
+ *  clip key was skipped loads as it would have without it. */
+function clipsAsV1(version: 1 | 2, spec: { kind: string; clipFromPose?: unknown }): boolean {
+  return version === 1 && spec.kind === 'group' && spec.clipFromPose === undefined;
 }
 
 /** The kind a saved node loads as: its own on version 2; on version 1 a `leaf` is a

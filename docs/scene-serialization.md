@@ -227,5 +227,7 @@ const scene = sceneFromJSON(sceneData, {});
 `toJSON()` writes version 2. `sceneFromJSON` and `loadState` read versions 1 and 2, so consumers write no
 migration code. Version 1 named the kinds `leaf` and `container`: a `leaf` loads as a mark, and a `container` as a
 group, unless the `classifyV1` option returns `'mark'` for it, which is how a consumer keeps a container that drew
-itself drawing. Version 1 clipped every container with no `clipFromPose` to the outline its painter drew, so such a
-container loads with `clip: 'outline'`, and so does one whose clip key was skipped.
+itself drawing. Version 1 clipped every container with no `clipFromPose` to its outline, so such a container that
+loads as a group gets `clip: 'outline'`, and so does one whose clip key was skipped. One that `classifyV1` makes a
+mark gets no clip: the loader cannot know which painter will claim it, so a consumer whose marks should clip sets
+`clip` itself.

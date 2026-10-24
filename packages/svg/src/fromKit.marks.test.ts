@@ -56,12 +56,12 @@ describe('svgNodesFromKit: a mark with children', () => {
     expect(clipped.clip?.kind).not.toBe('rect');
   });
 
-  it('clips nothing for a node no painter but the box fallback claims, as the canvas does', () => {
+  it('clips the children of a mark only the rect fallback claims to its box, as the canvas does', () => {
     const node: SvgKitTreeNode = { kind: 'mark', data: {}, pose: BOX, clip: 'outline' };
     const [g] = svgNodesFromKit(tree({ p: node, k: kid }, { p: ['k'] }), {
       leaf: (id, n) => (id === 'p' ? { kind: 'path', path: square, fill: { kind: 'none' } } : svgLeafFromKit(n.data as never, n.pose)),
     }) as SvgGroupNode[];
-    expect(g.children.map((c) => (c as SvgGroupNode).clip)).toEqual([undefined, undefined]);
+    expect((g.children.at(-1) as SvgGroupNode).clip).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
   });
 
   it('copies its children, not itself', () => {

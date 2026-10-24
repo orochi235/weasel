@@ -81,6 +81,14 @@ describe('a node clips its children only when it declares a clip', () => {
     expect(over.children).toEqual([label]);
   });
 
+  it('clips the child of a mark only the rect fallback draws to its box', () => {
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const p = scene.add({ id: asNodeId('p'), kind: 'mark', layer: 'main', pose: BOX, data: {}, clip: 'outline' });
+    scene.add({ id: asNodeId('kid'), kind: 'mark', layer: 'main', pose: FAR, data: { path: OUTLINE }, parent: p });
+    expect(childClip(scene)).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+    expect(pickAt(scene, 55, 55)).toEqual([]);
+  });
+
   it('round-trips the declared clip through a snapshot', () => {
     const json = sceneOf({ kind: 'group', clip: 'outline' }).toJSON();
     expect(json.nodes.find((n) => n.id === 'p')).toMatchObject({ clip: 'outline' });
@@ -110,13 +118,14 @@ describe('a version 1 save draws as version 1 drew it', () => {
     expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
   });
 
-  it.each(['group', 'mark'] as const)('leaves them unclipped under a container no painter but the box fallback claims, loaded as a %s', (kind) => {
-    expect(childClip(sceneFromJSON(saved({}), { classifyV1: () => kind }) as never)).toBeUndefined();
+  it('leaves them unclipped under a container no painter claimed', () => {
+    expect(childClip(sceneFromJSON(saved({})) as never)).toBeUndefined();
   });
 
-  it('clips to the painter\'s outline under a container a classifier makes a mark', () => {
-    const clip = childClip(sceneFromJSON(saved(OUTLINED), { classifyV1: () => 'mark' }) as never);
-    expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+  it('gives a container a classifier makes a mark no implicit clip', () => {
+    const scene = sceneFromJSON(saved(OUTLINED), { classifyV1: () => 'mark' });
+    expect(scene.get(asNodeId('p'))?.clip).toBeUndefined();
+    expect(childClip(scene as never)).toBeUndefined();
   });
 
   it('loads a container naming `clipNothing` with that function, clipping nothing', () => {
@@ -133,6 +142,10 @@ describe('a version 1 save draws as version 1 drew it', () => {
     expect(skipped).toEqual([{ id: 'p', field: 'clipFromPose', key: 'gone' }]);
     const clip = childClip(scene as never);
     expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+    const asMark = sceneFromJSON(saved(OUTLINED, { clipFromPoseKey: 'gone' }), {
+      unknownKeys: 'skip', classifyV1: () => 'mark',
+    });
+    expect(asMark.get(asNodeId('p'))?.clip).toBeUndefined();
   });
 });
 
