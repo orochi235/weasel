@@ -8,7 +8,7 @@ import definition from './win9x.theme.json' with { type: 'json' };
  * Opens in light mode; the dark one is this theme's own invention.
  *
  * A pins-only definition over the built-in theme. Pair it with
- * `<DefaultMotif motif={motifs.titlebar()}>` from `@weasel-js/ui` to title
+ * `<DefaultMotif group={motifs.titlebar()}>` from `@weasel-js/ui` to title
  * every group as a window.
  */
 export const win9xTheme: Theme = defineTheme({

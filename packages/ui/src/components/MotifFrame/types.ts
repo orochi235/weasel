@@ -46,11 +46,16 @@ export interface Motif<P = unknown> {
   render(frame: FrameParts): ReactNode;
 }
 
+/** What a frame is to the frames around it, which picks its motif under `<DefaultMotif>`. */
+export type FrameKind = 'group' | 'subpanel';
+
 /** Props for `<MotifFrame>`. */
 export interface MotifFrameProps extends StanceProps {
   title: ReactNode;
-  /** How the frame draws its title and edge. Defaults to `rule()`. */
+  /** How the frame draws its title and edge. Defaults to the `<DefaultMotif>` for its `kind`: `rule()` for a group, `divider()` for a subpanel. */
   motif?: Motif;
+  /** Which default motif the frame takes when given none. Defaults to `'group'`. */
+  kind?: FrameKind;
   /** Before the title: a drag handle, an ordinal. */
   leading?: ReactNode;
   /** After the title: a summary of the frame's value, a remove button. */

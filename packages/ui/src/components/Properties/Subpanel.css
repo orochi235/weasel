@@ -1,63 +1,23 @@
 /* ── Subpanel ────────────────────────────────────────────────────────
-   Headered group of controls inside a list. The header is a typographic
-   label flanked by a horizontal rule — no card chrome, just the divider. */
-.subpanel {
+   A MotifFrame around a grid of rows; the frame's motif, `divider` unless
+   told otherwise, draws the title, and these rules lay out what it holds. */
+.subpanelBody {
   display: grid;
   grid-template-columns: var(--wzl-prop-columns, 1fr 1fr);
   column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-subpanel-row-gap, 3px);
   align-items: stretch;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  margin: 0;
 }
 
-/* A folding subpanel wraps its rows so it can hide them; the wrapper draws no
-   box, so they stay items of the subpanel's grid. */
-.subpanelBody {
-  display: contents;
-}
-
+/* `hidden` on its own loses to the body's `display: grid` above. */
 .subpanelBody[hidden] {
   display: none;
 }
 
-.subpanel > *,
 .subpanelBody > * {
   min-width: 0;
 }
 
-.subpanel > .subpanelTitle,
-.subpanel > .span,
 .subpanelBody > .span {
   grid-column: 1 / -1;
-}
-
-.subpanelTitle {
-  font-family: var(--_s-title-font);
-  font-weight: var(--_s-title-weight);
-  font-size: var(--_s-title-size);
-  line-height: var(--wzl-leading-tight);
-  color: var(--_s-title-color);
-  text-transform: var(--_s-title-case);
-  letter-spacing: var(--_s-title-tracking);
-  margin: 0;
-  padding: var(--wzl-space-3) 0 var(--wzl-space-2);
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-4);
-}
-
-.subpanelTitle > h4 {
-  flex: 0 0 auto;
-  margin: 0;
-  font: inherit;
-}
-
-.subpanelTitle > hr {
-  flex: 1 1 auto;
-  border: 0;
-  border-top: 1px solid var(--_s-border-color);
-  margin: 0;
 }

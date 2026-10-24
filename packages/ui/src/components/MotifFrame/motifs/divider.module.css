@@ -1,10 +1,48 @@
-/* BEGIN GENERATED stance rules: subpanel — `npm run gen:stances`, do not edit. */
+/* A small title trailed by a rule, no box. The stance reaches only the title
+   and the rule. `[data-motif]` lifts these over the frame's own slots, which
+   sit on the same element. */
+.title {
+  font-family: var(--_s-title-font);
+  font-weight: var(--_s-title-weight);
+  font-size: var(--_s-title-size);
+  line-height: var(--wzl-leading-tight);
+  color: var(--_s-title-color);
+  text-transform: var(--_s-title-case);
+  letter-spacing: var(--_s-title-tracking);
+  margin: 0;
+  padding: var(--wzl-space-3) 0 var(--wzl-space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+}
 
-.subpanel {
+.title > h4 {
+  flex: 0 0 auto;
+  margin: 0;
+  font: inherit;
+}
+
+.title > hr {
+  flex: 1 1 auto;
+  border: 0;
+  border-top: 1px solid var(--_s-border-color);
+  margin: 0;
+}
+
+.actions {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+/* BEGIN GENERATED stance rules: divider — `npm run gen:stances`, do not edit. */
+
+.divider[data-motif] {
   --wzl-tone: initial;
 }
 
-.subpanel {
+.divider[data-motif] {
   --_s-border-color: var(--wzl-line-subtle);
   --_s-accent: var(--wzl-tone);
   --_s-title-font: var(--wzl-font-display);
@@ -15,7 +53,7 @@
   --_s-title-color: var(--wzl-fg);
 }
 
-.subpanel[data-stance='scope'] {
+.divider[data-motif][data-stance='scope'] {
   --_s-border-color: var(--wzl-stance-scope-border-color, var(--wzl-line-subtle));
   --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
   --_s-title-font: var(--wzl-stance-scope-title-font, var(--wzl-font-display));
@@ -26,7 +64,7 @@
   --_s-title-color: var(--wzl-stance-scope-title-color, var(--wzl-fg));
 }
 
-.subpanel[data-stance='aside'] {
+.divider[data-motif][data-stance='aside'] {
   --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-line-subtle));
   --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
   --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-display));
@@ -37,7 +75,7 @@
   --_s-title-color: var(--wzl-stance-aside-title-color, var(--wzl-fg));
 }
 
-.subpanel[data-stance='advanced'] {
+.divider[data-motif][data-stance='advanced'] {
   --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-line-subtle));
   --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
   --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-display));
@@ -48,7 +86,7 @@
   --_s-title-color: var(--wzl-stance-advanced-title-color, var(--wzl-fg));
 }
 
-.subpanel[data-stance='debug'] {
+.divider[data-motif][data-stance='debug'] {
   --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-line-subtle));
   --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
   --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-display));
@@ -59,7 +97,7 @@
   --_s-title-color: var(--wzl-stance-debug-title-color, var(--wzl-fg));
 }
 
-.subpanel[data-stance='danger'] {
+.divider[data-motif][data-stance='danger'] {
   --_s-border-color: var(--wzl-stance-danger-border-color, var(--wzl-line-subtle));
   --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
   --_s-title-font: var(--wzl-stance-danger-title-font, var(--wzl-font-display));
@@ -70,7 +108,7 @@
   --_s-title-color: var(--wzl-stance-danger-title-color, var(--wzl-fg));
 }
 
-.subpanel[data-stance='notice'] {
+.divider[data-motif][data-stance='notice'] {
   --_s-border-color: var(--wzl-stance-notice-border-color, var(--wzl-line-subtle));
   --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
   --_s-title-font: var(--wzl-stance-notice-title-font, var(--wzl-font-display));
@@ -81,7 +119,7 @@
   --_s-title-color: var(--wzl-stance-notice-title-color, var(--wzl-fg));
 }
 
-.subpanel[data-stance='important'] {
+.divider[data-motif][data-stance='important'] {
   --_s-border-color: var(--wzl-stance-important-border-color, var(--wzl-line-subtle));
   --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
   --_s-title-font: var(--wzl-stance-important-title-font, var(--wzl-font-display));
@@ -92,7 +130,7 @@
   --_s-title-color: var(--wzl-stance-important-title-color, var(--wzl-fg));
 }
 
-.subpanel[data-stance='preview'] {
+.divider[data-motif][data-stance='preview'] {
   --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-line-subtle));
   --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
   --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-display));
@@ -103,7 +141,7 @@
   --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg));
 }
 
-.subpanel[data-tone] {
+.divider[data-motif][data-tone] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
@@ -113,4 +151,4 @@
   --wzl-focus-ring: var(--wzl-accent-strong);
 }
 
-/* END GENERATED stance rules: subpanel */
+/* END GENERATED stance rules: divider */

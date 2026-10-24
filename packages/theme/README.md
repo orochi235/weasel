@@ -153,7 +153,7 @@ bevels and flat button faces are override hooks the theme pins (see below),
 which the controls in `@weasel-js/ui` read wherever they draw a raised face, a
 well, or a button that stays down; the description of each hook lists them.
 To title every group as a window, wrap the app in
-`<DefaultMotif motif={motifs.titlebar()}>` from `@weasel-js/ui`.
+`<DefaultMotif group={motifs.titlebar()}>` from `@weasel-js/ui`.
 
 ## The engine
 

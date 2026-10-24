@@ -66,10 +66,11 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     },
   },
   {
-    // A heading and a rule, no box: a stance reaches only the title and the rule.
-    id: 'subpanel',
-    file: 'packages/ui/src/components/Properties/Subpanel.stance.css',
-    selector: '.subpanel',
+    // The divider motif, a subpanel's default: a heading and a rule, no box.
+    // `[data-motif]` outranks the frame's slots on the same element.
+    id: 'divider',
+    file: 'packages/ui/src/components/MotifFrame/motifs/divider.module.css',
+    selector: '.divider[data-motif]',
     base: {
       'border-color': 'var(--wzl-line-subtle)',
       accent: ACCENT_BASE,
