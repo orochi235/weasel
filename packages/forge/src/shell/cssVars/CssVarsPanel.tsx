@@ -294,7 +294,7 @@ function SaveRow({ pending, saving, notice, onSave }: SaveRowProps) {
         </Button>
       ) : null}
       {notice ? (
-        <p className={`fg-css-vars__notice fg-css-vars__notice--${notice.tone}`} role={notice.tone === 'error' ? 'alert' : 'status'}>
+        <p className={`fg-css-vars__notice fg-css-vars__notice--${notice.outcome}`} role={notice.outcome === 'error' ? 'alert' : 'status'}>
           {notice.text}
         </p>
       ) : null}

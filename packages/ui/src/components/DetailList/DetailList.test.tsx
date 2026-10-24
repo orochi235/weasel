@@ -120,7 +120,7 @@ describe('DetailRow grade and absence', () => {
     expect(screen.getByText('n/a').closest('dd')).not.toBeNull();
   });
 
-  it("keeps an absent row's status dot, so the row does not shift when the value arrives", () => {
+  it("keeps an absent row's grade dot, so the row does not shift when the value arrives", () => {
     const { container } = render(<DetailList><DetailRow label="a" grade="danger" /></DetailList>);
     expect(container.querySelector('dd > [aria-hidden]')).not.toBeNull();
   });

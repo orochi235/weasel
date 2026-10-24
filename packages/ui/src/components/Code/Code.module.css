@@ -1,7 +1,7 @@
 .code {
-  --code-status-fg: var(--wzl-emphasis-fg, var(--wzl-fg));
+  --code-emphasis-fg: var(--wzl-emphasis-fg, var(--wzl-fg));
   /* A tint, grade, or stance accent paints over emphasis. */
-  --code-fg: var(--_s-accent, var(--code-status-fg));
+  --code-fg: var(--_s-accent, var(--code-emphasis-fg));
   display: inline;
   padding: 0 var(--wzl-space-2);
   border-radius: var(--wzl-radius-sm);

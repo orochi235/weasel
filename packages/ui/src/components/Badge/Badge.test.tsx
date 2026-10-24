@@ -284,12 +284,12 @@ describe('Badge stylesheet', () => {
     const { container } = render(<Badge grade="success">ok</Badge>);
     expect(container.firstElementChild?.getAttribute('data-grade')).toBe('success');
     expect(css).toMatch(/\.badge\[data-grade\]\s*\{\s*--_s-accent:\s*var\(--wzl-tint, var\(--wzl-grade\)\)/);
-    expect(css).not.toMatch(/--badge-status-edge:\s*var\(--wzl-grade\)/);
-    expect(css).toMatch(/--badge-status-edge: var\(--wzl-emphasis-fg, var\(--wzl-border\)\);/);
+    expect(css).not.toMatch(/--badge-emphasis-edge:\s*var\(--wzl-grade\)/);
+    expect(css).toMatch(/--badge-emphasis-edge: var\(--wzl-emphasis-fg, var\(--wzl-border\)\);/);
   });
 
   it('paints a tint or a stance accent over the grade and emphasis, and keys nothing off data-tone', () => {
-    expect(css).toMatch(/--badge-edge: var\(--_s-accent, var\(--badge-status-edge\)\);/);
+    expect(css).toMatch(/--badge-edge: var\(--_s-accent, var\(--badge-emphasis-edge\)\);/);
     expect(css).not.toMatch(/\[data-tone='/);
   });
 

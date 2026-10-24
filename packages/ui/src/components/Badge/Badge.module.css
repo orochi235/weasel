@@ -9,9 +9,9 @@
   font-size: var(--badge-font-size, var(--wzl-font-size-xs));
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  --badge-status-edge: var(--wzl-emphasis-fg, var(--wzl-border));
+  --badge-emphasis-edge: var(--wzl-emphasis-fg, var(--wzl-border));
   /* A tint, grade, or stance accent paints over emphasis. */
-  --badge-edge: var(--_s-accent, var(--badge-status-edge));
+  --badge-edge: var(--_s-accent, var(--badge-emphasis-edge));
   --badge-fill: var(--wzl-surface);
   --badge-fg: var(--badge-edge);
   background: transparent;
@@ -232,12 +232,12 @@ a.badge {
 button.badge:hover,
 a.badge:hover,
 .badge:has(.target:is(a, [role='button']):hover) {
-  --badge-edge: color-mix(in oklab, var(--_s-accent, var(--badge-status-edge)) 88%, white);
+  --badge-edge: color-mix(in oklab, var(--_s-accent, var(--badge-emphasis-edge)) 88%, white);
 }
 @media (prefers-reduced-motion: reduce) {
   button.badge:hover,
   a.badge:hover,
-  .badge:has(.target:is(a, [role='button']):hover) { --badge-edge: var(--_s-accent, var(--badge-status-edge)); }
+  .badge:has(.target:is(a, [role='button']):hover) { --badge-edge: var(--_s-accent, var(--badge-emphasis-edge)); }
 }
 
 .badge { --_remove-size: 14px; --_remove-glyph: 10px; }

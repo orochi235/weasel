@@ -60,14 +60,14 @@ describe('Code', () => {
   });
 
   it('paints a tint or a stance accent over the grade and emphasis', () => {
-    expect(rule('.code')).toMatch(/--code-fg:\s*var\(--_s-accent, var\(--code-status-fg\)\)/);
+    expect(rule('.code')).toMatch(/--code-fg:\s*var\(--_s-accent, var\(--code-emphasis-fg\)\)/);
     expect(css).not.toMatch(/\[data-tone='/);
   });
 
   it('colors the text from emphasis and grade', () => {
-    expect(css).toMatch(/\.code\s*\{[^}]*--code-status-fg:\s*var\(--wzl-emphasis-fg, var\(--wzl-fg\)\)/);
+    expect(css).toMatch(/\.code\s*\{[^}]*--code-emphasis-fg:\s*var\(--wzl-emphasis-fg, var\(--wzl-fg\)\)/);
     expect(css).toMatch(/\.code\[data-grade\]\s*\{\s*--_s-accent:\s*var\(--wzl-tint, var\(--wzl-grade\)\)/);
-    expect(css).not.toMatch(/--code-status-fg:\s*var\(--wzl-grade\)/);
+    expect(css).not.toMatch(/--code-emphasis-fg:\s*var\(--wzl-grade\)/);
   });
 
   it('drops the chip fill in the plain variant', () => {

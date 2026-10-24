@@ -23,7 +23,7 @@ function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: strin
     <Toolbar.Button
       key={c.id}
       iconOnly={!showLabel}
-      variant={danger ? 'danger' : 'default'}
+      grade={danger ? 'danger' : undefined}
       disabled={disabled}
       pressed={pressed}
       aria-label={label}
