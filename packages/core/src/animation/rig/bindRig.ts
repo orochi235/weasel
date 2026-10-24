@@ -182,7 +182,7 @@ export function bindRigOn<TPose>(
   const drop = () => {
     if (!installed) return;
     installed = false;
-    for (const b of bound) scene.overrides.clear(b.node);
+    for (const b of bound) scene.overrides.clear(b.node, b.entry);
     skins.release();
   };
   const release = () => {

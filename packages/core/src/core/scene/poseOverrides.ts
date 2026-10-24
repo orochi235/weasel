@@ -1,13 +1,9 @@
-import type { Path } from '@weasel-js/geom';
 import { createEmitter } from '@weasel-js/registry';
-import { kit, last, mix, mul, patch } from '@msb235/blits';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import { shownCopyOf } from './nodeAsShown';
 import { createPoseHold } from './poseHold';
+import { foldLayers } from './poseLayers';
 import type { NodeId, PoseOverride, PoseOverrides } from './types';
-
-/** What the table's voice says about a node it holds no entry for. */
-const NOTHING: PoseOverride<never> = Object.freeze({});
 
 /**
  * Build a {@link PoseOverrides} map.
@@ -16,32 +12,20 @@ const NOTHING: PoseOverride<never> = Object.freeze({});
  * `onInvalidate` lets the scene invalidate derived nodes from the same
  * chokepoint.
  *
- * What `read` answers is a blits mix folded per node. The entries a writer
- * `set`s are one voice on it, and a node holding no entry is never probed.
+ * What `read` answers is folded from the node's layers by `foldLayers`; a
+ * node holding no entry is never probed.
  */
 export function createPoseOverrides<TPose, TData = unknown>(
   getNode: (id: NodeId) => { data?: unknown } | undefined,
   onInvalidate?: (id: NodeId) => void,
 ): PoseOverrides<TPose, TData> {
   type Entry = PoseOverride<TPose, TData>;
-  const entries = new Map<NodeId, Entry>();
+  /** Per node, its entries in the order they were set, the last on top. */
+  const layers = new Map<NodeId, Entry[]>();
+  const fold = foldLayers(layers);
   const listeners = createEmitter();
   let generation = 0;
-
-  const folded = mix<NodeId, Entry>(
-    kit<Entry>({ pose: last<NonNullable<TPose>>(), alpha: mul(), path: last<Path>(), data: last<NonNullable<Entry['data']>>() }),
-  );
-  folded.cue({
-    patch: patch<NodeId, Entry>(
-      0,
-      (_phase, id) => entries.get(id) ?? (NOTHING as Entry),
-      { writes: ['pose', 'alpha', 'path', 'data'] },
-    ),
-  });
-  // Mix time only has to move between publishes, so a probe after one never
-  // hands back the delta a probe before it cached.
-  let clock = 0;
-  folded.sync(clock);
+  let depth = 1;
 
   /** Per node: the object `read` folds into and returns, and the generation
    *  it was last folded at. */
@@ -60,67 +44,84 @@ export function createPoseOverrides<TPose, TData = unknown>(
 
   function published(): void {
     generation++;
-    folded.sync(++clock);
+    fold.publish(depth);
     listeners.emit();
   }
 
   function forget(id: NodeId): void {
     reads.delete(id);
-    folded.drop(id);
+    fold.drop(id);
   }
 
   const table: PoseOverrides<TPose, TData> = {
     set(id, entry) {
-      entries.set(id, entry);
+      const stack = layers.get(id);
+      if (stack === undefined) layers.set(id, [entry]);
+      else {
+        const at = stack.indexOf(entry);
+        if (at >= 0) stack.splice(at, 1);
+        stack.push(entry);
+        depth = Math.max(depth, stack.length);
+      }
       invalidate(id);
       published();
     },
     get(id) {
-      return entries.get(id);
+      return layers.get(id)?.at(-1);
     },
     read(id) {
-      if (!entries.has(id)) return undefined;
+      if (!layers.has(id)) return undefined;
       let held = reads.get(id);
       if (held === undefined) {
         held = { out: {}, at: -1 };
         reads.set(id, held);
       }
       if (held.at !== generation) {
-        folded.probe(id, held.out);
+        fold.probe(id, held.out);
         held.at = generation;
       }
       return held.out;
     },
-    has(id) {
-      return entries.has(id);
+    has(id, entry) {
+      const stack = layers.get(id);
+      return stack !== undefined && (entry === undefined || stack.includes(entry));
     },
     ids() {
-      return [...entries.keys()];
+      return [...layers.keys()];
     },
-    clear(id) {
-      if (!entries.delete(id)) return;
-      forget(id);
+    clear(id, entry) {
+      const stack = layers.get(id);
+      if (stack === undefined) return;
+      if (entry !== undefined) {
+        const at = stack.indexOf(entry);
+        if (at < 0) return;
+        stack.splice(at, 1);
+      }
+      if (entry === undefined || stack.length === 0) {
+        layers.delete(id);
+        forget(id);
+      }
       invalidate(id);
       published();
     },
     clearAll() {
-      if (entries.size === 0) return;
-      for (const id of entries.keys()) {
+      if (layers.size === 0) return;
+      for (const id of layers.keys()) {
         forget(id);
         invalidate(id);
       }
-      entries.clear();
+      layers.clear();
       published();
     },
     commit() {
-      for (const id of entries.keys()) invalidate(id);
+      for (const id of layers.keys()) invalidate(id);
       published();
     },
     subscribe: listeners.subscribe,
     getGeneration() {
       return generation;
     },
-    hold: () => createPoseHold(table),
+    hold: () => createPoseHold(table, (id) => layers.get(id)),
   };
   return table;
 }

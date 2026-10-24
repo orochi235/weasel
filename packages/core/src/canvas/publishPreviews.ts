@@ -34,9 +34,11 @@ interface ShownData<TData> {
  * object is shown as it is.
  *
  * A handle with `previewHidesSource: false` previews a copy rather than its
- * source, so it is left out. An id another writer's override already holds —
- * a transform's own frame — is left to that writer. The dispatcher notifies
- * after a handle's `onEnd`, so a commit has landed before its preview goes.
+ * source, so it is left out. On an id another writer's override already holds —
+ * a transform's own frame, a live route — the preview is a layer over it, so a
+ * field the handle does not propose shows what that writer says. The dispatcher
+ * notifies after a handle's `onEnd`, so a commit has landed before its preview
+ * goes.
  */
 export function publishPreviews<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,

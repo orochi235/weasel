@@ -113,7 +113,7 @@ function makeGlides<TPose>(
   const release = (id: string, g: Glide<TPose>): void => {
     if (glides.get(id) === g) glides.delete(id);
     const nid = id as NodeId;
-    if (scene.overrides.get(nid) === g.entry) scene.overrides.clear(nid);
+    scene.overrides.clear(nid, g.entry);
     dirty = true;
   };
 
@@ -175,8 +175,8 @@ function makeGlides<TPose>(
     glides.delete(id);
     animator.cancelKey(keyFor(id));
     const nid = id as NodeId;
-    if (scene.overrides.get(nid) === g.entry) {
-      scene.overrides.clear(nid);
+    if (scene.overrides.has(nid, g.entry)) {
+      scene.overrides.clear(nid, g.entry);
       scene.overrides.commit();
     }
     unsubscribeIfIdle();

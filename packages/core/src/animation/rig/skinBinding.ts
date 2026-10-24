@@ -99,7 +99,7 @@ export function bindSkins<TPose>(
     release() {
       if (!installed) return;
       installed = false;
-      for (const s of skinned) scene.overrides.clear(s.node);
+      for (const s of skinned) scene.overrides.clear(s.node, s.entry);
     },
   };
 }

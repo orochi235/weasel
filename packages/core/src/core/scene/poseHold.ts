@@ -1,27 +1,28 @@
 import type { NodeId, PoseHold, PoseOverride, PoseOverrides, ShownOverride } from './types';
 
 /** The table methods a hold writes through. */
-type HoldTable<TPose, TData> = Pick<PoseOverrides<TPose, TData>, 'set' | 'get' | 'ids' | 'clear' | 'commit'>;
+type HoldTable<TPose, TData> = Pick<PoseOverrides<TPose, TData>, 'set' | 'has' | 'ids' | 'clear' | 'commit'>;
 
-/** Build the {@link PoseHold} a table hands out from `hold()`. */
-export function createPoseHold<TPose, TData = unknown>(table: HoldTable<TPose, TData>): PoseHold<TPose, TData> {
+/** Build the {@link PoseHold} a table hands out from `hold()`. `layersOf`
+ *  answers a node's layers, bottom first. */
+export function createPoseHold<TPose, TData = unknown>(
+  table: HoldTable<TPose, TData>,
+  layersOf: (id: NodeId) => readonly PoseOverride<TPose, TData>[] | undefined,
+): PoseHold<TPose, TData> {
   /** The entry published per id, held by reference so a frame mutates it in place. */
   const held = new Map<NodeId, PoseOverride<TPose, TData>>();
   const seen = new Set<NodeId>();
 
-  /** Publish `frame`; with `yields`, an id another writer holds is left to it. */
-  const publish = (frame: Iterable<readonly [NodeId, ShownOverride<TPose, TData>]>, yields: boolean): void => {
+  const publish = (frame: Iterable<readonly [NodeId, ShownOverride<TPose, TData>]>): void => {
     seen.clear();
     for (const [id, shown] of frame) {
-      const existing = held.get(id);
-      const installed = table.get(id);
-      if (yields && installed !== undefined && installed !== existing) continue;
       seen.add(id);
+      const existing = held.get(id);
       if (existing) {
         existing.pose = shown.pose;
         existing.data = shown.data;
-        // The table drops an entry on its own when the node goes; put back the node, and the frame goes back too.
-        if (installed === undefined) table.set(id, existing);
+        // The table drops a node's layers on its own when the node goes; put back the node, and the frame goes back too.
+        if (!table.has(id, existing)) table.set(id, existing);
         continue;
       }
       const entry: PoseOverride<TPose, TData> = { pose: shown.pose, data: shown.data };
@@ -32,32 +33,33 @@ export function createPoseHold<TPose, TData = unknown>(table: HoldTable<TPose, T
     for (const [id, entry] of held) {
       if (seen.has(id)) continue;
       held.delete(id);
-      if (table.get(id) === entry) table.clear(id);
+      table.clear(id, entry);
     }
     table.commit();
   };
 
   return {
     set(poses) {
-      publish(mapped(poses), false);
+      publish(mapped(poses));
     },
-    show(frame) {
-      publish(frame, true);
-    },
+    show: publish,
     others() {
       const out = new Map<NodeId, TPose>();
       for (const id of table.ids()) {
-        const entry = table.get(id);
-        if (entry === undefined || entry === held.get(id) || entry.pose === undefined) continue;
-        out.set(id, entry.pose);
+        const stack = layersOf(id) ?? [];
+        const mine = held.get(id);
+        for (let k = stack.length - 1; k >= 0; k--) {
+          const entry = stack[k]!;
+          if (entry === mine || entry.pose === undefined) continue;
+          out.set(id, entry.pose);
+          break;
+        }
       }
       return out;
     },
     drop() {
       if (held.size === 0) return;
-      for (const [id, entry] of held) {
-        if (table.get(id) === entry) table.clear(id);
-      }
+      for (const [id, entry] of held) table.clear(id, entry);
       held.clear();
       table.commit();
     },

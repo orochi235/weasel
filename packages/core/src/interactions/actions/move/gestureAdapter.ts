@@ -33,10 +33,10 @@ export function moveGestureAdapter<TPose>(
       for (const [id, pose] of poses) {
         const nodeId = asNodeId(id);
         const mine = previews.get(id);
-        const installed = mine !== undefined && overrides.get(nodeId) === mine;
+        const installed = mine !== undefined && overrides.has(nodeId, mine);
         if (pose === null) {
           previews.delete(id);
-          if (installed) overrides.clear(nodeId);
+          if (installed) overrides.clear(nodeId, mine);
         } else if (installed) {
           mine.pose = pose;
         } else {

@@ -278,11 +278,16 @@ describe('createReflowTransition', () => {
     act(() => { reflow.glide(a, at(100)); });
     frame(0);
     frame(50);
-    scene.overrides.set(a, { pose: at(300) });
+    const over = { pose: at(300) };
+    scene.overrides.set(a, over);
     act(() => { reflow.settle(a, { from: at(300) }); });
     frame(100);
     expect(where(a).x).toBeCloseTo(150);
     frame(150);
+    // Its own layer gone, the node shows the one the other writer still holds.
+    expect(scene.overrides.has(a, over)).toBe(true);
+    expect(where(a).x).toBe(300);
+    scene.overrides.clear(a, over);
     expect(where(a).x).toBe(0);
     expect(scene.overrides.has(a)).toBe(false);
   });

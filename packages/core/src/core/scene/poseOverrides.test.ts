@@ -135,10 +135,12 @@ describe('createPoseOverrides', () => {
       expect(overrides.read(ID)!.alpha).toBe(0.5);
     });
 
-    it('sees a replacement entry set in the same frame as a read', () => {
+    it('sees an entry set in the same frame as a read', () => {
       const { overrides } = setup();
-      overrides.set(ID, { pose: { x: 0, y: 0 }, alpha: 0.5 });
+      const first = { pose: { x: 0, y: 0 }, alpha: 0.5 };
+      overrides.set(ID, first);
       expect(overrides.read(ID)!.alpha).toBe(0.5);
+      overrides.clear(ID, first);
       const pose = { x: 7, y: 7 };
       overrides.set(ID, { pose, alpha: 0.75 });
       expect(overrides.read(ID)!.pose).toBe(pose);
