@@ -12,7 +12,7 @@ import { resolveDerivedPath, scenePaintedPoseOf } from './derivedPath';
 import { indexedCandidates } from './pickIndex/scenePickIndex';
 import type { PickBroad, PickCandidate, PickSource, ViewPickGates } from './pickWalk';
 import { sceneParentsOf, sceneShownPathOf } from './scenePickReads';
-import { nodeAsShown, nodesAsShown } from './shownNodes';
+import { nodeAsShown, nodesAsShown } from 'core/scene/nodeAsShown';
 
 export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
   /** Pose lookup, when the caller holds an adapter that already resolves

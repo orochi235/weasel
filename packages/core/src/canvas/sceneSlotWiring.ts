@@ -13,7 +13,8 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
-import { nodeAsShown, shownLookup, withShownNode } from './shownNodes';
+import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
+import { withShownNode } from './shownNodes';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
 
 /**

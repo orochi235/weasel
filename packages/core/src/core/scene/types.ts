@@ -7,7 +7,7 @@ import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, Use
 import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
 import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
-import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
+import type { PoseHold, PoseOverride, PoseOverrides, ShownOverride } from './poseOverrideTypes';
 import type { SceneChanges } from './sceneChanges';
 import type {
   SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1,
@@ -22,7 +22,7 @@ import type { RectPose } from '../geometry/rectPose';
 export type { RectPose, RegisteredOp, SceneArrivalHandler, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
-export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1 };
+export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, ShownOverride, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1 };
 
 /**
  * # SceneNode — the thing in the scene

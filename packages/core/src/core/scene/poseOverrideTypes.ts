@@ -32,6 +32,9 @@ export interface PoseOverride<TPose, TData = unknown> {
   data?(stored: TData): TData;
 }
 
+/** What a writer publishing whole frames says about one node: see {@link PoseHold.show}. */
+export type ShownOverride<TPose, TData = unknown> = Pick<PoseOverride<TPose, TData>, 'pose' | 'data'>;
+
 /**
  * The scene's ephemeral per-node overrides — see {@link PoseOverride}.
  *
@@ -85,7 +88,7 @@ export interface PoseHold<TPose, TData = unknown> {
   set(poses: Iterable<readonly [NodeId, TPose]>): void;
   /** {@link PoseHold.set} for a frame that shows data as well as poses. An id another writer's
    *  entry holds is left to that writer rather than displaced. */
-  show(frame: Iterable<readonly [NodeId, Pick<PoseOverride<TPose, TData>, 'pose' | 'data'>]>): void;
+  show(frame: Iterable<readonly [NodeId, ShownOverride<TPose, TData>]>): void;
   /** The poses other writers are publishing, by id. */
   others(): ReadonlyMap<NodeId, TPose>;
   /** Release every id still held. An id whose entry another writer has since

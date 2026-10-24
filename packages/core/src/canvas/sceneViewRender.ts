@@ -22,7 +22,8 @@ import { paintedSceneLayers } from './sceneLayerPaint';
 import { cullDrawCommands } from '@weasel-js/renderer';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { paintBoundsFor } from './defaultDrawOne';
-import { nodeAsShown, shownLookup, withShownNode } from './shownNodes';
+import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
+import { withShownNode } from './shownNodes';
 
 export type { SceneViewDrawOne } from './NodeShape';
 

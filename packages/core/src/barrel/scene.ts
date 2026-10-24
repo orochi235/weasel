@@ -71,7 +71,7 @@ export * from '../core/adapters/types';
 // ─── Scene primitive (kit-owned tree of marks and groups) ──────────────
 export {
   createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, sceneSelectionStore, useScene, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
-  createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose, nodeAsShown,
+  createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentOf, documentPose, effectivePose, nodeAsShown,
   CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneSharedUnitScopes, sceneUnitScopes,
 } from '../core/scene';
 export type { PoseSource, PosedNode, ScopedScene, ShownDataSource } from '../core/scene';

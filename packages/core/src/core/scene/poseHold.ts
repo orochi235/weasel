@@ -1,10 +1,7 @@
-import type { NodeId, PoseHold, PoseOverride, PoseOverrides } from './types';
-
+import type { NodeId, PoseHold, PoseOverride, PoseOverrides, ShownOverride } from './types';
 
 /** The table methods a hold writes through. */
 type HoldTable<TPose, TData> = Pick<PoseOverrides<TPose, TData>, 'set' | 'get' | 'ids' | 'clear' | 'commit'>;
-
-type Shown<TPose, TData> = Pick<PoseOverride<TPose, TData>, 'pose' | 'data'>;
 
 /** Build the {@link PoseHold} a table hands out from `hold()`. */
 export function createPoseHold<TPose, TData = unknown>(table: HoldTable<TPose, TData>): PoseHold<TPose, TData> {
@@ -13,15 +10,18 @@ export function createPoseHold<TPose, TData = unknown>(table: HoldTable<TPose, T
   const seen = new Set<NodeId>();
 
   /** Publish `frame`; with `yields`, an id another writer holds is left to it. */
-  const publish = (frame: Iterable<readonly [NodeId, Shown<TPose, TData>]>, yields: boolean): void => {
+  const publish = (frame: Iterable<readonly [NodeId, ShownOverride<TPose, TData>]>, yields: boolean): void => {
     seen.clear();
     for (const [id, shown] of frame) {
       const existing = held.get(id);
-      if (yields && table.get(id) !== undefined && table.get(id) !== existing) continue;
+      const installed = table.get(id);
+      if (yields && installed !== undefined && installed !== existing) continue;
       seen.add(id);
       if (existing) {
         existing.pose = shown.pose;
         existing.data = shown.data;
+        // The table drops an entry on its own when the node goes; put back the node, and the frame goes back too.
+        if (installed === undefined) table.set(id, existing);
         continue;
       }
       const entry: PoseOverride<TPose, TData> = { pose: shown.pose, data: shown.data };
@@ -64,6 +64,6 @@ export function createPoseHold<TPose, TData = unknown>(table: HoldTable<TPose, T
   };
 }
 
-function* mapped<TPose, TData>(poses: Iterable<readonly [NodeId, TPose]>): Iterable<readonly [NodeId, Shown<TPose, TData>]> {
+function* mapped<TPose, TData>(poses: Iterable<readonly [NodeId, TPose]>): Iterable<readonly [NodeId, ShownOverride<TPose, TData>]> {
   for (const [id, pose] of poses) yield [id, { pose }];
 }

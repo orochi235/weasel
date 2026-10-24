@@ -17,7 +17,7 @@ import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
 import { carryBoxPath, carryPathBy, pathAsPainted } from 'core/scene/depFrame';
 import type { SceneViewDrawOne } from './NodeShape';
 import type { DrawnBoundsScene } from './drawnBounds';
-import { nodeAsShown, shownLookup } from './shownNodes';
+import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 
 export { resolveDerivedPath } from 'core/scene/derivedPath';
 
@@ -255,11 +255,9 @@ export function drawnBoundsScene<TData, TLayer extends string, TPose>(scene: Sce
   let held = drawnScenes.get(scene);
   if (held === undefined) {
     const pathOf = sceneDerivedPathOf(scene);
+    const shown = shownLookup(scene);
     held = {
-      get: (id) => {
-        const node = scene.get(id);
-        return (node === undefined ? undefined : nodeAsShown(scene.overrides, node)) as never;
-      },
+      get: (id) => shown.get(id) as never,
       childrenOf: (id) => scene.childrenOf(id),
       derivedPathOf: (id) => {
         const node = scene.get(id);

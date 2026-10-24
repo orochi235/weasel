@@ -12,14 +12,16 @@ import { carryDepPath, depFrameRebase, pathAsPainted } from './depFrame';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { inheritedPaintIn, type InheritedPaint } from './inheritedPaint';
-import { nodeAsShown } from './nodeAsShown';
+import { isDocument } from './documentOf';
+import { nodeAsShown, shownLookup } from './nodeAsShown';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
 import type { Path } from '@weasel-js/geom';
 import type { DerivedDep, DerivePathFn, DerivePoseFn, Node, NodeId, PoseOverrides } from './types';
 
 /**
  * Which pose a resolution answers: `effective` honors overrides all the way
- * down the dependency chain, `document` ignores them all the way down. Each
+ * down the dependency chain, `document` ignores them all the way down. A
+ * `documentOf` view is read as `document` by every entry point. Each
  * reading memoizes in its own slots — the memo key is the node and its
  * authored pose, which is the same for both.
  */
@@ -89,7 +91,12 @@ export function derivedPose<TPose>(
   source: PoseSource<TPose>,
   node: PosedNode<TPose>,
 ): TPose | null {
-  return derivedPoseIn(source, node, 'effective');
+  return derivedPoseIn(source, node, readingOf(source));
+}
+
+/** How `source` is read: as its document holds it when it is a `documentOf` view. */
+function readingOf(source: PoseSource<unknown>): Reading {
+  return isDocument(source) ? 'document' : 'effective';
 }
 
 function derivedPoseIn<TPose>(
@@ -155,14 +162,20 @@ export function derivedDepOf<TPose>(
   id: NodeId,
   reader?: PosedNode<TPose>,
 ): DerivedDep<TPose> | undefined {
-  return reader === undefined ? depIn(source, id, 'effective') : depsAsRead(source, reader, 'effective')(id);
+  const reading = readingOf(source);
+  return reader === undefined ? depIn(source, id, reading) : depsAsRead(source, reader, reading)(id);
 }
 
-/** `id` as {@link derivedDepOf} answers it, but at the pose and path the
- *  document holds: no override anywhere down its dependencies counts. For a
- *  reader that must not see an in-flight gesture, such as an edit pass. */
-export function documentDepOf<TPose>(source: PoseSource<TPose>, id: NodeId): DerivedDep<TPose> | undefined {
-  return depIn(source, id, 'document');
+/** `id` as {@link derivedDepOf} answers it, but at the pose, path and data the
+ *  document holds: no override anywhere down its dependencies counts. The same
+ *  reading as `derivedDepOf(documentOf(source), …)`, for a reader that must not
+ *  see an in-flight gesture or an open edit, such as an edit pass. */
+export function documentDepOf<TPose>(
+  source: PoseSource<TPose>,
+  id: NodeId,
+  reader?: PosedNode<TPose>,
+): DerivedDep<TPose> | undefined {
+  return reader === undefined ? depIn(source, id, 'document') : depsAsRead(source, reader, 'document')(id);
 }
 
 /** `(id) => that dependency as `reader`'s derivation is handed it`: its pose
@@ -261,10 +274,7 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
 
   get inherited(): InheritedPaint | undefined {
     const { source, reading } = this;
-    return inheritedPaintIn({ get: (id: NodeId) => {
-      const n = source.get(id);
-      return n === undefined ? undefined : shownIn(source, n, reading);
-    } }, this.posed);
+    return inheritedPaintIn(reading === 'effective' ? shownLookup(source) : source, this.posed);
   }
 }
 
@@ -293,7 +303,8 @@ function poseIn<TPose>(
  * something it derives from is being dragged.
  *
  * For a reader that must not see an in-flight gesture, such as an action
- * capturing the `from` of a transform op.
+ * capturing the `from` of a transform op. The same reading as
+ * `effectivePose(documentOf(source), node)`.
  */
 export function documentPose<TPose>(
   source: PoseSource<TPose>,
@@ -310,7 +321,7 @@ export function effectivePose<TPose>(
   source: PoseSource<TPose>,
   node: PosedNode<TPose>,
 ): TPose {
-  return poseIn(source, node, 'effective');
+  return poseIn(source, node, readingOf(source));
 }
 
 /**

@@ -2,6 +2,7 @@ import type { Path } from '@weasel-js/geom';
 import { createEmitter } from '@weasel-js/registry';
 import { kit, last, mix, mul, patch } from '@msb235/blits';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
+import { shownCopyOf } from './nodeAsShown';
 import { createPoseHold } from './poseHold';
 import type { NodeId, PoseOverride, PoseOverrides } from './types';
 
@@ -48,7 +49,12 @@ export function createPoseOverrides<TPose, TData = unknown>(
 
   function invalidate(id: NodeId): void {
     const node = getNode(id);
-    if (node) dropPoseKeyedMemoSlots(node);
+    if (node) {
+      dropPoseKeyedMemoSlots(node);
+      // A painter handed the node as it shows memoized against that copy.
+      const shown = shownCopyOf(node);
+      if (shown) dropPoseKeyedMemoSlots(shown);
+    }
     onInvalidate?.(id);
   }
 
