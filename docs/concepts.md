@@ -215,7 +215,7 @@ the layout pass, picking, and every built-in action read it from there.
 
 A node's **pose** is document state: undoable, serialized, the answer to "where
 is this". A pose **override** is the same value for one frame — `scene.overrides`
-holds a per-node `{ pose?, alpha?, path? }` that the render and hit-test paths read
+holds a per-node `{ pose?, alpha?, path?, data? }` that the render and hit-test paths read
 through, and that history and `toJSON()` never see. A 60 Hz camera, a drag
 preview, a physics settle and an animation tween all want this: motion that is
 not an edit.
@@ -236,6 +236,24 @@ error. `commit()` drops the pose-keyed memo slots of every overridden node.
 To promote a frame to document state — dropping a drag, baking a settle — write
 it once through `setPose` and `clearAll()`. That is the one step that belongs in
 the undo stack.
+
+`data(stored)` answers the data a node is shown with, worked out from the data it
+stores, so a recorded write made while it is installed shows through. Replace the
+function to change what it answers; the shown node is kept per stored data and
+function. `nodeAsShown(scene.overrides, node)` is its one read: both scene walks,
+picking, drawn bounds and the effective reading of every derivation go through it,
+so a path effect re-derives from what its source shows. The document reading
+(`documentPose`, `documentDepOf`, an edit pass), `scene.get` and file export never
+see it. A text edit shows its drafts this way, so the document holds no draft until
+the commit (2026-10-23).
+
+A writer publishing whole frames takes a `hold()`: `set(poses)` publishes poses,
+`show(frame)` poses and data, and `show` leaves an id another writer holds to that
+writer. `publishPreviews(scene, dispatcher)`, which `<SceneCanvas>` calls, is one:
+it shows every in-flight handle's `previewPose` and `previewData` (except a
+`previewHidesSource: false` handle's), so whatever derives from a node an anchor
+drag or a paint scrub is changing follows it each frame, and releases them once the
+handle's `onEnd` has committed.
 
 ## Animation target
 
@@ -492,7 +510,8 @@ interface OngoingHandle {
 ```
 
 `previewIds` / `previewPose` / `previewData` feed `usePreviewGhostLayer`, which
-assembles a synthetic node per id and draws it through the scene slot. A
+assembles a synthetic node per id and draws it through the scene slot, and
+`publishPreviews`, which shows them to the scene's other readers as overrides. A
 transform — move, resize, rotate — publishes its poses to the scene's pose
 overrides rather than on the handle, so its ghost and its selection chrome read
 them through `effectivePose` like every other reader.

@@ -281,7 +281,9 @@ export interface OngoingHandle {
    * omitted, means "no preview this gesture". An id with no `previewPose`
    * is shown at its effective pose: an action that publishes its poses to
    * the scene's pose overrides, as move, resize and rotate do, leaves
-   * `previewPose` out rather than answering the same pose twice.
+   * `previewPose` out rather than answering the same pose twice. `<SceneCanvas>`
+   * also shows both answers to the scene as overrides (core's
+   * `publishPreviews`), so what derives from a previewed node follows it.
    */
   previewIds?(): Iterable<string> | null;
   previewPose?(id: string): unknown | null;

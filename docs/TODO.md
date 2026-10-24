@@ -161,9 +161,6 @@ Priority tags:
 - **(P2) Cut of an effect with hidden sources deletes them with it.** Whether the clipboard should carry the
   sources, so a paste is whole, is undecided.
 
-- **(P2) Effects follow an anchor-edit drag only on release, for every effect kind.** The anchor preview stays in
-  the gesture handle and dependents are not re-derived; move drags do follow, through scene overrides.
-
 - **(P3) Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
   Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is Mike's call.
 
@@ -446,13 +443,6 @@ Priority tags:
 ---
 
 ## Text
-
-- **(P2) Undoing a write made to a text-along source mid-edit brings back the draft it was made over** (2026-10-23).
-  The edit's drafts are written into the node's data, unrecorded, so a recorded write during the edit, such as a fill
-  change, holds the draft text in both halves of its entry. A cancel or commit puts back only the drafted fields
-  (`packages/core/src/features/text/sceneTextDrafts.ts`), so the write survives the edit, but undoing the write shows
-  the draft again. Keeping drafts out of the node's data, in an override its dependents read as they read a pose
-  override, is the fix; it is a scene feature, not a text-edit one.
 
 - **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
