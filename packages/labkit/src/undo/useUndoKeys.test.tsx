@@ -2,16 +2,13 @@ import { fireEvent, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type UndoKeysTarget, useUndoKeys } from './useUndoKeys';
 
-function target(can = { undo: true, redo: true }): UndoKeysTarget & {
-  undo: ReturnType<typeof vi.fn>;
-  redo: ReturnType<typeof vi.fn>;
-} {
+function target(can = { undo: true, redo: true }) {
   return {
     canUndo: () => can.undo,
     canRedo: () => can.redo,
-    undo: vi.fn(),
-    redo: vi.fn(),
-  };
+    undo: vi.fn<() => void>(),
+    redo: vi.fn<() => void>(),
+  } satisfies UndoKeysTarget;
 }
 
 function input(type: string): HTMLInputElement {
