@@ -4,6 +4,7 @@ import { useColorCss } from '@weasel-js/theme/react';
 import type { CSSProperties } from 'react';
 
 export type { Emphasis, Grade, Stance } from '@weasel-js/theme';
+export { EMPHASIS_ICONS, GRADE_ICONS } from './appearanceIcons';
 
 /**
  * How a component looks, as hints: each component decides what it draws from

@@ -69,7 +69,7 @@ export {
   withMotifClass,
 } from './components/MotifFrame';
 export * as motifs from './components/MotifFrame/motifs';
-export { type AppearanceAttrs, type AppearanceProps, type Emphasis, type Grade, type Stance, useAppearance } from './components/appearance';
+export { type AppearanceAttrs, type AppearanceProps, EMPHASIS_ICONS, type Emphasis, GRADE_ICONS, type Grade, type Stance, useAppearance } from './components/appearance';
 export type { SegmentTooltipFields } from './components/segmentTooltip';
 export * from './components/SelectionPanel';
 export * from './components/ResizeHandle';
