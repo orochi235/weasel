@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { detectPlatform, keySpecFromCode, type KeyLabels, type LegendStyle, type Platform } from '@weasel-js/gestures';
+import type { ColorSource } from '@weasel-js/paint';
+import { useColorCss } from '@weasel-js/theme/react';
+import { tintSource } from '../appearance';
 import { KeyBank } from './KeyBank';
 import { KeyCap } from './Keycap';
 import { placeKeys, type KeyboardKey, type KeyboardLayout, type PlacedKey } from './keyboardLayout';
@@ -11,8 +14,9 @@ export interface KeyMark {
   caption?: string;
   /** Drawn under the key in place of the caption. */
   icon?: ReactNode;
-  /** A CSS color the key is tinted with, so keys that share one read as one control wherever they sit. */
-  tint?: string;
+  /** The color the key is tinted with, so keys that share one read as one control wherever they sit:
+   *  an index into the theme's tint list, or a color source. */
+  tint?: number | ColorSource;
   /** Drawn faded, as a key that does nothing right now. */
   dimmed?: boolean;
 }
@@ -65,14 +69,16 @@ export function KeyDiagram({
     if (!layout) return null;
     return placeKeys(layout, keys ? new Set(keys.map((k) => (typeof k === 'string' ? k : k.code))) : undefined);
   }, [layout, keys]);
+  const css = useColorCss();
   const up = useLinger(held.size > 0, linger);
   const captioned = marks !== undefined && Object.values(marks).some((m) => m.caption !== undefined || m.icon !== undefined);
 
   const slot = (key: Pick<PlacedKey, 'code' | 'label'>, place?: PlacedKey) => {
     const mark = marks?.[key.code];
+    const tint = css(tintSource(mark?.tint));
     const vars = {
       ...(place && { '--x': place.x, '--y': place.y, '--w': place.width }),
-      ...(mark?.tint && { '--tint': mark.tint }),
+      ...(tint && { '--tint': tint }),
     } as CSSProperties;
     const under = mark?.icon ?? mark?.caption;
     return (
@@ -83,7 +89,7 @@ export function KeyDiagram({
         style={vars}
         data-code={key.code}
         data-held={held.has(key.code) || undefined}
-        data-tinted={mark?.tint ? true : undefined}
+        data-tinted={tint ? true : undefined}
         data-dimmed={mark?.dimmed || undefined}
       >
         <KeyCap className={s.cap} label={key.label ?? keySpecFromCode(key.code, legendOpts).label} font={font} fixed={place !== undefined} />

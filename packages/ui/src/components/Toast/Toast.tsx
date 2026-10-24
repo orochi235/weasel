@@ -40,11 +40,11 @@ function ToastItem({ toast: t, queue }: { toast: QueuedToast<ToastContent>; queu
     <RACToast
       toast={t}
       className={s.toast}
-      data-grade={attrs['data-grade']}
-      // Inline style is the one sanctioned exception here: each toast
-      // needs a *unique* view-transition-name (so enter/exit/reflow
-      // track per-toast), and a class can't mint unique idents. The
-      // prefix keeps the ident valid (RAC keys can start with digits).
+      {...attrs}
+      // Inline style is the one sanctioned exception here, beside the grade's
+      // custom property: each toast needs a *unique* view-transition-name (so
+      // enter/exit/reflow track per-toast), and a class can't mint unique
+      // idents. The prefix keeps the ident valid (RAC keys can start with digits).
       style={{ ...style, viewTransitionName: `wzl-toast-${t.key.replace(/[^a-zA-Z0-9_-]/g, '_')}` }}
     >
       <RACToastContent className={s.content}>

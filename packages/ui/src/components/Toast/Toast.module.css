@@ -20,7 +20,7 @@
 .topLeft { top: 16px; left: 16px; flex-direction: column; }
 
 .toast {
-  --toast-accent: var(--wzl-accent-strong);
+  --toast-accent: var(--wzl-grade);
   /* Groups every toast under one ident so toastViewTransitions.css can
    * target `::view-transition-new/old(.wzl-toast)` without knowing the
    * per-toast view-transition-name (set inline in Toast.tsx). */
@@ -44,8 +44,6 @@
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: 1px;
 }
-
-.toast[data-grade] { --toast-accent: var(--wzl-grade); }
 
 .content {
   flex: 1;

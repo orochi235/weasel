@@ -31,11 +31,11 @@ export const Live: Story = {
   },
 };
 
-const TURN = 'var(--wzl-swatch-violet)';
-const MOVE = 'var(--wzl-swatch-sky)';
-const ZOOM = 'var(--wzl-swatch-amber)';
-const LIFT = 'var(--wzl-swatch-teal)';
-const PITCH = 'var(--wzl-swatch-fuchsia)';
+const TURN = { ref: 'swatch-violet' };
+const MOVE = { ref: 'swatch-sky' };
+const ZOOM = { ref: 'swatch-amber' };
+const LIFT = { ref: 'swatch-teal' };
+const PITCH = { ref: 'swatch-fuchsia' };
 
 const CAMERA: Readonly<Record<string, KeyMark>> = {
   KeyQ: { caption: 'turn', tint: TURN },

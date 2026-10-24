@@ -118,7 +118,7 @@ export const LookVariantMatrix: Story = {
 
 /** `tint` says which of its peers a badge is: an index into the theme's tint
  *  list, the same one a panel takes. It paints over grade and emphasis. */
-export const PeerTones: Story = {
+export const PeerTints: Story = {
   render: (args) => (
     <div>
       {VARIANTS.map((variant) => (

@@ -1,3 +1,4 @@
+import { cssColorLiteral } from '@weasel-js/paint';
 import { act, cleanup, fireEvent, renderHook } from '@testing-library/react';
 import { renderWithIcons as render } from '../../testing/withIcons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -35,7 +36,7 @@ describe('KeyDiagram', () => {
       <KeyDiagram
         layout={KEYBOARD_LAYOUTS.macos}
         held={new Set(['KeyW'])}
-        marks={{ KeyW: { caption: 'fwd', tint: 'red' }, KeyF: { dimmed: true } }}
+        marks={{ KeyW: { caption: 'fwd', tint: cssColorLiteral('#c53030') }, KeyF: { dimmed: true } }}
       />,
     );
     expect(slot(container, 'KeyW')!.dataset).toMatchObject({ held: 'true', tinted: 'true' });

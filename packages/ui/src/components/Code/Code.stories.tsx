@@ -32,7 +32,7 @@ export const Looks: Story = {
 };
 
 /** `tint` says which of its peers a span is, from the theme's tint list. */
-export const PeerTones: Story = {
+export const PeerTints: Story = {
   render: () => (
     <p>
       {[0, 1, 2, 3, 4, 5].map((tint) => (

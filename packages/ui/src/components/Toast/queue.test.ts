@@ -14,17 +14,6 @@ describe('ToastQueue', () => {
     });
   });
 
-  it('queues a toast by grade', () => {
-    try {
-      toast.warn('Low disk');
-      toast.danger('Write failed');
-      const visible = racQueueOf(defaultToastQueue).visibleToasts;
-      expect(visible.map((t) => t.content.grade)).toEqual(['danger', 'warn']);
-    } finally {
-      defaultToastQueue.clear();
-    }
-  });
-
   it('defaults to an 8s timeout and honors ttlMs null as sticky', () => {
     // RAC's underlying ToastState queue unshifts new toasts, so
     // visibleToasts is newest-first: 'sticky' (added last) is index 0,
@@ -58,11 +47,12 @@ describe('ToastQueue', () => {
   it('toast() convenience writes to the default queue by grade', () => {
     try {
       toast('plain');
+      toast.warn('low');
       toast.danger('bad');
       const visible = racQueueOf(defaultToastQueue).visibleToasts;
       // RAC's underlying ToastState queue unshifts new toasts, so the most
       // recently added toast is visibleToasts[0] (newest-on-top stacking).
-      expect(visible.map((t) => t.content.grade)).toEqual(['danger', 'info']);
+      expect(visible.map((t) => t.content.grade)).toEqual(['danger', 'warn', 'info']);
     } finally {
       defaultToastQueue.clear();
     }

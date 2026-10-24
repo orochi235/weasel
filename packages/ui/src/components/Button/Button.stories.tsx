@@ -98,7 +98,7 @@ export const LinkGrades: Story = {
 
 /** `tint` says which of its peers a button is: a confirming button takes it as its
  *  accent, a link as its text color. */
-export const PeerTones: Story = {
+export const PeerTints: Story = {
   render: () => (
     <div>
       <p>

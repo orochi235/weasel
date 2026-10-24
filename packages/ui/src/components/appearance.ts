@@ -32,10 +32,15 @@ export interface AppearanceAttrs {
   style?: CSSProperties;
 }
 
+/** A tint as a color source: a number is an index into the theme's tint list. */
+export function tintSource(tint: number | ColorSource | undefined): ColorSource | undefined {
+  return typeof tint === 'number' ? { ref: TINT_REF, index: tint } : tint;
+}
+
 export function useAppearance({ stance, grade, emphasis, tint }: AppearanceProps): AppearanceAttrs {
   const css = useColorCss();
   if (stance === undefined && grade === undefined && emphasis === undefined && tint === undefined) return {};
-  const color = css(typeof tint === 'number' ? { ref: TINT_REF, index: tint } : tint);
+  const color = css(tintSource(tint));
   const style: Record<string, string> = {};
   if (color !== undefined) style['--wzl-tint'] = color;
   if (grade !== undefined) style['--wzl-grade'] = `var(${GRADE_TOKENS[grade]})`;

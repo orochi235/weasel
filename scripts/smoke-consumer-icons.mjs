@@ -83,7 +83,7 @@ export async function smokeIcons({ repoRoot, workDir, nodeModules, external, fai
   const problems = [];
   const expect = (ok, what) => ok || problems.push(what);
   expect(entry.includes(await pathData(nodeModules, 'close')), "the entry lacks ui:close, named by the app's own icon()");
-  expect(entry.includes(await pathData(nodeModules, 'statusSuccess')), "the entry lacks ui:statusSuccess, named only in ui's dist");
+  expect(entry.includes(await pathData(nodeModules, 'gradeSuccess')), "the entry lacks ui:gradeSuccess, named only in ui's dist");
   const unnamed = await pathData(nodeModules, UNNAMED);
   for (const c of chunks.filter((c) => !variant(c))) {
     expect(!c.code.includes(unnamed), `${c.fileName} ships ui:${UNNAMED}, which nothing names`);
