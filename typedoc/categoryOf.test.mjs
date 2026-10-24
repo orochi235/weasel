@@ -6,6 +6,9 @@ import { categoryOf } from './categoryOf.mjs';
 
 const abs = (rel) => `/Users/x/weasel/${rel}`;
 
+const holdsAFile = (dir) =>
+  readdirSync(dir, { withFileTypes: true }).some((e) => e.isFile() || (e.isDirectory() && holdsAFile(join(dir, e.name))));
+
 describe('categoryOf', () => {
   it('maps a path to its category', () => {
     expect(categoryOf(abs('packages/core/src/core/viewport/useViewTween.ts'), 'useViewTween')).toBe(
@@ -103,6 +106,8 @@ describe('the rule table', () => {
     readdirSync(join(import.meta.dirname, `../${pkg}`), { withFileTypes: true })
       .filter((e) => e.isDirectory() && !noDeclarations.has(e.name))
       .map((e) => `${pkg}/${e.name}`)
+      // A fleet node's synced tree keeps a renamed directory's empty shell.
+      .filter((dir) => holdsAFile(join(import.meta.dirname, `../${dir}`)))
       .filter((dir) => categoryOf(`${dir}/any.ts`, 'any') === null);
 
   it.each(['packages/core/src', 'packages/routing/src'])(
