@@ -95,6 +95,21 @@ describe('the default slice dep', () => {
     expect(leaves(scene).map((n) => n.id)).toEqual(['sq']);
   });
 
+  it('cuts the document, not what an override is showing', () => {
+    const scene = makeScene();
+    const { commit } = mount(scene);
+    act(() => {
+      scene.overrides.set(asNodeId('sq'), {
+        pose: { x: 300, y: 0, width: 100, height: 100 },
+        data: (d) => ({ ...(d as Data), fill: 'blue' }),
+      });
+    });
+    commit(across);
+    const after = leaves(scene);
+    expect(after).toHaveLength(2);
+    for (const n of after) expect(n.data.fill).toBe('red');
+  });
+
   it('cuts a closed loop out of the fill as its own piece', () => {
     const scene = makeScene();
     const { commit } = mount(scene);

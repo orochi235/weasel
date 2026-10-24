@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { registerFontOutlines, type OutlineFace } from '@weasel-js/font';
+import { loadTextOutlines } from '@weasel-js/text';
 import { rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import {
@@ -283,5 +285,31 @@ describe('the settings form', () => {
     expect(pathEffectOf(scene.get(fx as NodeId))).toMatchObject({ align: 'center', shift: 4, overflow: 'fit', start: 1 });
     run(editPathEffectAction, deps, { kind: 'textAlong', start: -2, anchor: 'center' });
     expect(pathEffectOf(scene.get(fx as NodeId))).toMatchObject({ start: 0, anchor: 'center' });
+  });
+});
+
+describe('Expand to Paths during an open edit of its text', () => {
+  const BARS: OutlineFace = {
+    unitsPerEm: 1000, ascender: 0.8, advanceOf: () => 0.6, kernOf: () => 0, glyphD: () => 'M0 -0.5L0.2 -0.5L0.2 0L0 0Z',
+  };
+  const STYLE = { fontFamily: 'expand-bars', fontSize: 16 };
+
+  it('bakes the glyphs the text stores, and the canceled edit leaves the document as Expand left it', async () => {
+    registerFontOutlines('expand-bars', {}, new ArrayBuffer(4), { parser: () => BARS });
+    await loadTextOutlines({ text: 'Hi', style: STYLE });
+    const env = setup(['p', 't']);
+    env.scene.untracked(() => env.scene.update('t' as NodeId, { data: { text: 'Hi', style: STYLE } }));
+    run(textAlongAction, env.deps);
+    // An open in-place edit shows its draft as a data override, as `useSceneTextEdit` does.
+    const draft = env.scene.overrides.hold();
+    draft.show([['t' as NodeId, { data: (stored) => ({ ...(stored as object), text: 'Hi!!!' }) }]]);
+    run(expandPathEffectAction, env.deps);
+    const baked = env.selected();
+    expect(baked).toHaveLength(2);
+    const entries = env.scene.historyEntries();
+    const roots = [...env.scene.roots];
+    draft.drop();
+    expect(env.scene.historyEntries()).toEqual(entries);
+    expect(env.scene.roots).toEqual(roots);
   });
 });

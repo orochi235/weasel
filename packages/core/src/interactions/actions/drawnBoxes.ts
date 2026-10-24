@@ -3,6 +3,7 @@ import { drawnBoundsOf, inkExtentsOf, type DrawnBoundsOptions, type DrawnBoundsS
 import { drawnBoundsScene } from 'canvas/derivedPath';
 import type { InkExtents } from 'core/geometry/inkExtents';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
+import { documentOf } from 'core/scene/documentOf';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseDescriptorOf } from './poseDescriptorDep';
@@ -27,7 +28,8 @@ export function drawnBoxes(
   deps: Pick<ActionDeps, 'scene' | 'poseDescriptor' | 'view' | 'boundsIncludeStroke'>,
   frame?: PoseFrame<unknown>,
 ): DrawnBoxes {
-  const scene: DrawnBoundsScene = deps.scene ? drawnBoundsScene(deps.scene) : NO_SCENE;
+  // A command measures what the document holds, not what an open gesture or edit is showing.
+  const scene: DrawnBoundsScene = deps.scene ? drawnBoundsScene(documentOf(deps.scene)) : NO_SCENE;
   const descriptor = poseDescriptorOf(deps.poseDescriptor);
   const view = deps.view?.get();
   let worlds = frame;
