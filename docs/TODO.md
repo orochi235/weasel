@@ -526,6 +526,13 @@ Priority tags:
 
 ## Scene, adapters & layout
 
+- **(P3) A node's declared clip can be set only when it is added** (2026-10-23). `clip: 'outline'`
+  rides `scene.add`, snapshots and the clipboard, but the scene has no `setClip` beside `setUnits`,
+  so `reconcileSpecs` replaces a node whose `clip` changed, and no panel can switch it. In
+  `@weasel-js/svg`'s export, a mark's declared clip is written only when its outline is a path in
+  its data or an unturned path element; under a text or image mark, or a turned one, its children
+  export unclipped.
+
 - **(P3) Several hit tests still scan every node or shape linearly.** Marquee, lasso and point picks
   consult the scene's BVH pick index (`packages/core/src/canvas/pickIndex/`); these do not, and can
   move onto it: core's `features/text/textHitAt.ts`, `features/measure/measureHit.ts` and

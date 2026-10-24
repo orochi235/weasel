@@ -834,9 +834,10 @@ order. See `packages/core/src/core/scene/types.ts`.
 
 ### Node
 
-`Node<TData, TLayer, TPose>` — a single entry in the scene tree. Either a `LeafNode`
-(`kind: 'leaf'`) or a `ContainerNode` (`kind: 'container'`, with `children: NodeId[]`).
-Every node carries `id`, `layer`, `pose`, `data`, and `parent`. The opaque `data`
+`Node<TData, TLayer, TPose>` (public `SceneNode`) — a single entry in the scene tree:
+a `MarkNode` (`kind: 'mark'`) or a `GroupNode` (`kind: 'group'`); see
+[Marks and groups](#marks-and-groups). Every node carries `id`, `layer`, `pose`, `data`,
+and `parent`, and any node may have `children`. The opaque `data`
 field holds the consumer's domain payload; the kit never inspects it. A node may
 also carry `hidden` (not drawn) and `locked` (drawn, out of reach); each covers its
 whole subtree, and `nodeGates` folds them with the layer's flags into the one
@@ -862,6 +863,54 @@ These are distinct concepts; keep them separate.
 There is no persistent membership-list concept. A consumer that wants named,
 saved selections holds its own `Record<string, string[]>` and calls
 `selection.set(ids)`.
+
+### Marks and groups
+
+A node's kind says whether it draws itself (decided 2026-10-22). Having children is not a kind.
+
+- **Mark** — draws itself through its painter and is hit by its painter's ink (a painter
+  with no `ink` counts as filled, which keeps an unfilled diagram lane hittable across its
+  interior). It may have children: a diagram box and its rows (parts, `pickable: false`), a
+  swimlane and its members, a bone and its child bones. Ungroup never dissolves one.
+- **Group** — draws nothing of its own, whatever its data, and is hit anywhere in its box. What
+  Cmd+G makes, SVG `<g>`, symmetry, draw's outlines. It outlives its children.
+- **Leaf** means "no children" and nothing else: `isLeaf(node)` reads it from the tree;
+  `hasChildren(node)` is its opposite.
+
+Whichever the kind, a node may clip, copy (`copiesFromPose`), lay out and set units for
+its children, and frames its children's poses unless it is an envelope. A child's
+`'inherit'` fill or stroke reads its parent's, whatever the parent's kind. With no
+`canDropInto` dep a group admits drops and a mark does not.
+
+**A node clips its children only when it declares a clip** (decided 2026-10-22): its
+`clipFromPose` when it has one, else its own outline when it sets `clip: 'outline'` — a mark's
+painter silhouette, or for a group the silhouette of its `data.path` (an imported
+`<g clip-path>`). `ownClipOf` (`canvas/ownClip.ts`) is the one reading of it, for drawing,
+picking and the drag ghost. `clipNothing` is kept registered only so saves naming it load.
+
+**A group is selected and behaves as one item** (decided 2026-10-22): a press on any member
+selects the outermost group above it outside the entered one, and it moves, copies and
+deletes as one. These actions reach inside and back out, each bound by the select tool and rebindable:
+
+| Action | Default binding | Does |
+|---|---|---|
+| `select.deep` | Cmd-press (Ctrl off macOS) on a body | selects the deepest pickable node under the pointer |
+| `group.enter` | double-click on a member of a group outside the entered one | enters the outermost such group |
+| `group.leave` | Escape; and a press outside the entered group's box, its own binding `group.leave.press` | Escape leaves one level; the press leaves every group that box is outside of |
+
+The entered group is session state beside the selection (`enteredGroup` dep), never saved
+or undone. Shift alone extends a selection; Cmd no longer does.
+
+**Saving.** Scenes save as version 2 with `kind: 'mark' | 'group'`. A version 1 save loads
+with each `leaf` as a mark and each `container` as a group, unless `classifyV1` says
+otherwise; a version 1 container with no clip function loads with `clip: 'outline'`, since
+version 1 clipped every container to its outline.
+
+Rejected (2026-10-22), so nobody re-proposes them: a `group: true` flag on a container
+(keeps "container" meaning only "has children"); three kinds `leaf | container | group`
+(a second split on having children); only groups having children, with a self-drawing node
+rebuilt as a group of an outline and its parts (the same conflation one level down, and
+Ungroup takes it apart).
 
 ### View / ViewTransform
 
