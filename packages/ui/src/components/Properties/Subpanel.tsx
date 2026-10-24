@@ -1,6 +1,7 @@
 import { type ReactNode, useId } from 'react';
 import { Disclosure } from '../Disclosure';
-import { type StanceProps, useStance } from '../stance';
+import { type Motif, MotifFrame } from '../MotifFrame';
+import type { StanceProps } from '../stance';
 import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import s from './Properties.module.css';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
@@ -8,15 +9,24 @@ import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 /** Props for `<Subpanel>`. */
 export interface SubpanelProps extends PropertyMetricProps, StanceProps, CollapseProps {
   title: ReactNode;
+  /** How the subpanel draws its title and edge. Defaults to the `subpanel` `<DefaultMotif>`, `divider()` unless one is set. */
+  motif?: Motif;
+  /** Before the title: a drag handle, an ordinal. */
+  leading?: ReactNode;
+  /** After the title: a summary of the rows' value, a reset button. */
+  actions?: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
-/** A typographic divider inside a property list: a small title flanked by a
- *  rule. Purely a heading — use `<PropertyGroup>` for a bordered section. A
+/** A divider inside a property list: in the default `divider` motif, a small
+ *  title trailed by a rule. Use `<PropertyGroup>` for a bordered section. A
  *  stance or tone colors the title and rule. */
 export function Subpanel({
   title,
+  motif,
+  leading,
+  actions,
   children,
   className,
   density,
@@ -29,15 +39,18 @@ export function Subpanel({
   onCollapsedChange,
   twisty,
 }: SubpanelProps) {
-  const cls = propertyMetricClass(s.subpanel, { density, align }, className);
   const bodyId = useId();
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
   const { folds, folded, toggle } = fold;
   return (
-    <div className={cls} {...useStance({ stance, tone })}>
-      {/* The twisty is a sibling of the heading, so it stays out of its accessible name. */}
-      <div className={s.subpanelTitle}>
-        {folds && (
+    <MotifFrame
+      kind="subpanel"
+      title={foldTitle(title, fold)}
+      motif={motif}
+      leading={leading}
+      actions={actions}
+      twisty={
+        folds ? (
           <Disclosure
             className={twistyClass(fold)}
             open={!folded}
@@ -45,15 +58,15 @@ export function Subpanel({
             label={typeof title === 'string' ? title : 'this section'}
             controls={bodyId}
           />
-        )}
-        <h4>{foldTitle(title, fold)}</h4>
-        <hr />
+        ) : undefined
+      }
+      className={propertyMetricClass(s.subpanel, { density, align }, className)}
+      stance={stance}
+      tone={tone}
+    >
+      <div id={bodyId} className={s.subpanelBody} hidden={folded}>
+        {children}
       </div>
-      {folds ? (
-        <div id={bodyId} className={s.subpanelBody} hidden={folded}>
-          {children}
-        </div>
-      ) : children}
-    </div>
+    </MotifFrame>
   );
 }

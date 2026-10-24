@@ -24,7 +24,7 @@ test('a rule from every imported sheet reaches the class the module exports', ()
         <label class="${s.row} ${s.rowColor}" data-part="color"></label>
         <label class="${s.row} ${s.rowAuto}"><span class="${s.readout}" data-part="auto">auto</span></label>
         <div class="${s.group}"><div class="${s.groupBody}" data-part="group"></div></div>
-        <section class="${s.subpanel}" data-part="subpanel"><div class="${s.subpanelTitle}" data-part="title"></div></section>
+        <section class="${s.subpanel}" data-part="subpanel"><div class="${s.subpanelBody}" data-part="subpanelBody"></div></section>
       </div>
     </div>`);
   const style = (part: string) => getComputedStyle(root.querySelector(`[data-part="${part}"]`)!);
@@ -36,7 +36,7 @@ test('a rule from every imported sheet reaches the class the module exports', ()
   expect(style('label').whiteSpace).not.toBe(''); // PropertyRow.inline.css
   expect(style('color').display).not.toBe('inline'); // PropertyRow.variants.css
   expect(style('group').display).toBe('grid'); // PropertyGroup.css
-  expect(style('subpanel').display).toBe('grid'); // Subpanel.css
+  expect(style('subpanelBody').display).toBe('grid'); // Subpanel.css
   expect(style('auto').textTransform).toBe('uppercase'); // PropertyRow.auto.css
   // A rule naming two components: a subpanel spans both columns of a paired list.
   expect(style('subpanel').gridColumnStart).toBe('1');

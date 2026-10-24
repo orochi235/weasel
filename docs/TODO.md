@@ -640,6 +640,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) A labkit `as: 'section'` group ignores its motif.** `Subpanel` takes a `motif` (2026-10-23), but the
+  `as: 'section'` branch of `packages/labkit/src/controls/panelRows.tsx` still renders `<Subpanel>` without one,
+  so `f.group({...}).motif(…)` and `<ControlPanel motif>` reach every group and section but that one. Pass it the
+  way the `PropertyGroup` branch beside it does. Left alone on 2026-10-23 because another session had that file
+  open with uncommitted edits.
+
 - **(P3) draw's properties panel titles a text-along node "Unknown", and the layers panel shows its id.**
 
 - **(P3) No curved-label component in ui.** `Along/lab/CurvedLabel` (a story) shows the pattern: DOM spans laid

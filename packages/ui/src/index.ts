@@ -54,6 +54,8 @@ export * from './components/Properties';
 // from `@weasel-js/ui/components/MotifFrame`, and here only as `motifs.rule`.
 export {
   DefaultMotif,
+  type DefaultMotifProps,
+  type FrameKind,
   type FrameParts,
   type HeadingParts,
   type Motif,

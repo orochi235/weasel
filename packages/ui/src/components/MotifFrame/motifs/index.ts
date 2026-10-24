@@ -3,6 +3,7 @@
  *
  * @module
  */
+export { divider } from './divider';
 export type { NotchParams } from './notch';
 export { notch } from './notch';
 export type { PlaqueParams } from './plaque';

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { stereo } from '@weasel-js/ui/components/MotifFrame';
 import { PropertyField, PropertyList, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta<typeof Subpanel> = {
@@ -86,4 +87,10 @@ export const Collapsible: Story = {
       </PropertyPanel>
     </div>
   ),
+};
+
+/** Drawn in another motif, the subpanel keeps its place in the list's grid. */
+export const InAMotif: Story = {
+  args: { title: 'Bubbles', motif: stereo({ side: 'top' }), tone: 2 },
+  render: Basic.render,
 };

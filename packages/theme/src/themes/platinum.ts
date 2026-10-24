@@ -19,7 +19,7 @@ export const classicMacTheme: Theme = defineTheme({
  * faces themselves are not bundled, so the stack falls through to what the
  * machine has. Opens in light mode; the dark one is this theme's own invention.
  *
- * Pair it with `<DefaultMotif motif={motifs.titlebar()}>` from `@weasel-js/ui`
+ * Pair it with `<DefaultMotif group={motifs.titlebar()}>` from `@weasel-js/ui`
  * to title every group as a window.
  */
 export const platinumTheme: Theme = defineTheme({

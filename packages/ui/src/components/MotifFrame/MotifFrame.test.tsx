@@ -2,7 +2,7 @@ import { cssColorLiteral } from '@weasel-js/paint';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DefaultMotif, MotifFrame } from './MotifFrame';
-import { notch, plaque, rule, stereo, tab, titlebar } from './motifs';
+import { divider, notch, plaque, rule, stereo, tab, titlebar } from './motifs';
 import type { Motif } from './types';
 
 const MOTIFS: readonly [string, () => Motif][] = [
@@ -12,6 +12,7 @@ const MOTIFS: readonly [string, () => Motif][] = [
   ['tab', tab],
   ['plaque', plaque],
   ['titlebar', titlebar],
+  ['divider', divider],
 ];
 
 describe('MotifFrame', () => {
@@ -35,7 +36,7 @@ describe('MotifFrame', () => {
 
   it('draws the motif a DefaultMotif above it names, and its own over that', () => {
     render(
-      <DefaultMotif motif={titlebar()}>
+      <DefaultMotif group={titlebar()}>
         <MotifFrame title="Bevel">x</MotifFrame>
         <MotifFrame title="Glow" motif={tab()}>
           x
@@ -44,6 +45,29 @@ describe('MotifFrame', () => {
     );
     expect(screen.getByRole('group', { name: 'Bevel' })).toHaveAttribute('data-motif', 'titlebar');
     expect(screen.getByRole('group', { name: 'Glow' })).toHaveAttribute('data-motif', 'tab');
+  });
+
+  it('keeps a default per kind: a group default leaves subpanels in their divider', () => {
+    render(
+      <DefaultMotif group={titlebar()}>
+        <MotifFrame title="Bevel">x</MotifFrame>
+        <MotifFrame title="Edge" kind="subpanel">
+          x
+        </MotifFrame>
+        <DefaultMotif subpanel={tab()}>
+          <MotifFrame title="Glow">x</MotifFrame>
+          <MotifFrame title="Rim" kind="subpanel">
+            x
+          </MotifFrame>
+        </DefaultMotif>
+      </DefaultMotif>,
+    );
+    const motif = (name: string) => screen.getByRole('group', { name }).getAttribute('data-motif');
+    expect(motif('Bevel')).toBe('titlebar');
+    expect(motif('Edge')).toBe('divider');
+    // An inner DefaultMotif that names one kind keeps the outer one's other kind.
+    expect(motif('Glow')).toBe('titlebar');
+    expect(motif('Rim')).toBe('tab');
   });
 
   it('cuts the notch title into a fieldset legend', () => {

@@ -15,7 +15,7 @@ export function mountThemed(theme: Theme, selection: Selection) {
   document.body.append(host);
   const release = applyTheme(host, theme, selection);
   render(
-    <DefaultMotif motif={titlebar()}>
+    <DefaultMotif group={titlebar()}>
       <PropertyPanel title="Panel">
         <Button>Plain</Button>
         <Button variant="primary">Main</Button>

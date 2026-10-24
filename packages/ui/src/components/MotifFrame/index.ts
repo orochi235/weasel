@@ -1,4 +1,4 @@
-export { DefaultMotif, MotifFrame } from './MotifFrame';
+export { DefaultMotif, type DefaultMotifProps, MotifFrame } from './MotifFrame';
 export * from './motifs';
 export { withMotifClass } from './root';
-export type { FrameParts, HeadingParts, Motif, MotifFrameProps, RootProps } from './types';
+export type { FrameKind, FrameParts, HeadingParts, Motif, MotifFrameProps, RootProps } from './types';
