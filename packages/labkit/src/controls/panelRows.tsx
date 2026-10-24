@@ -6,6 +6,7 @@ import {
   pairRuns,
   prefTabRuns,
 } from '@weasel-js/prefs';
+import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { GroupTabs, type PrefFieldChoice } from '@weasel-js/ui/components/Prefs';
 import {
   type CollapseProps,
@@ -17,15 +18,15 @@ import {
   Subpanel,
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
-import { headingLeaf } from '../config/headingLeaf';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
+import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { isLeafEnabled, isLeafVisible } from '../config/visible';
 import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
-import { BareControl, extra, isSliderLeaf, labField, leafValueAt } from './fields';
+import { extra, isSliderLeaf, labField, leafValueAt } from './fields';
+import { headingActions, liftedControl, sectionFrame, sectionKey } from './panelHeadings';
 import { drawsAnyAt, drawsOwn, loosePathsIn } from './panelPaths';
 import { ResetGroup } from './ResetGroup';
 import { PairedRow } from './rows';
@@ -41,42 +42,6 @@ export interface FoldProps {
   defaultCollapsed: boolean;
   collapsed: boolean | undefined;
   onCollapsedChange: ((next: boolean) => void) | undefined;
-}
-
-/** What a lifted heading control reads and writes through. */
-type LiftScope<TC extends Record<string, unknown>> = Pick<
-  PanelRowsSource<TC>,
-  'resolved' | 'renderers' | 'shown' | 'setConfig' | 'draftConfig'
-> & {
-  visible: (path: string) => boolean;
-  enabled: (path: string) => boolean;
-};
-
-/** The control a heading carries in its title row, lifted out of the rows
- *  beneath it — see `headingLeaf`. */
-function liftedControl<TC extends Record<string, unknown>>(
-  heading: ReactNode,
-  paths: readonly string[],
-  scope: LiftScope<TC>,
-) {
-  const { resolved, renderers, shown, setConfig, draftConfig, visible, enabled } = scope;
-  const found = headingLeaf(resolved, heading, paths, renderers);
-  if (!found) return { path: undefined, control: undefined };
-  const { path, leaf } = found;
-  return {
-    path,
-    control: visible(path) ? (
-      <BareControl
-        leaf={leaf}
-        value={leafValueAt(shown, path, leaf)}
-        write={(value) => setConfig(path, value)}
-        draft={draftConfig && ((value) => draftConfig(path, value))}
-        name={typeof heading === 'string' ? heading : undefined}
-        disabled={!enabled(path)}
-        read={(p) => valueAtPath(shown, p)}
-      />
-    ) : undefined,
-  };
 }
 
 /** What a panel's rows are drawn from. */
@@ -98,6 +63,8 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   setRowAuto: (path: string, next: boolean, value: unknown) => void;
   /** Paths whose rows are marked as changed. */
   changed?: ReadonlySet<string>;
+  /** The motif each group and section is drawn in where it names none of its own. */
+  motif?: Motif;
   /** The fold of the heading keyed `key`, which starts as `declared` says. */
   fold: (key: string, declared: boolean | undefined, grid: PropertyListPack) => FoldProps;
 }
@@ -123,6 +90,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     auto,
     setRowAuto,
     changed,
+    motif,
     fold,
   } = source;
 
@@ -221,6 +189,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
         // two-column grid leaves it laying its own rows out inside a cell,
         // which overlaps them.
         span
+        motif={resolved.motifs?.get(path) ?? motif}
         actions={headingActions(lifted.control, reset)}
         {...fold(path, undefined, rows.grid)}
       >
@@ -323,6 +292,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
             <PropertyGroup
               key={sectionKey(section)}
               {...sectionFrame(section)}
+              motif={section.motif ?? motif}
               actions={heading.control}
               {...fold(sectionKey(section), section.collapsed, inner.grid)}
             >
@@ -338,28 +308,4 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   };
 
   return { body, lift, loosePaths };
-}
-
-/** Whether the node at `path` draws anything: a visible leaf, or a visible group with such a node beneath it. */
-/** What a group's heading carries: its lifted control, its reset button, or both. */
-function headingActions(control: ReactNode, reset: ReactNode): ReactNode {
-  if (!control || !reset) return control ?? reset;
-  return (
-    <>
-      {control}
-      {reset}
-    </>
-  );
-}
-
-/** What a section says of its own frame. */
-function sectionFrame(section: SectionSpec): { title: string; className?: string } {
-  return { title: section.label, className: section.className };
-}
-
-/** How a section is keyed for folding: its label at the root, and its group's
- *  path in front of it anywhere else, so two groups may both have an
- *  `Advanced`. */
-function sectionKey(section: SectionSpec): string {
-  return section.at === '' ? section.label : `${section.at}.${section.label}`;
 }

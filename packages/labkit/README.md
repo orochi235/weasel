@@ -182,6 +182,11 @@ control override, and anywhere else a path is taken. `.section('Advanced')`
 only puts a heading over sibling rows and
 leaves their paths alone.
 
+A group's card or a section's frame can be drawn in any `MotifFrame` motif from
+`@weasel-js/ui`: `f.group({...}).motif(stereo())`, or
+`.section('Look', { motif: stereo() })`. `<ControlPanel motif>` sets the motif for
+every group and section that names none; unset, they keep the default card.
+
 A stored config missing something its schema has since gained — a whole nested
 group included — is filled from the instrument's defaults as it loads, so
 growing a schema never strands a saved trial or a snapshot.

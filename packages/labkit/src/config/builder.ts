@@ -1,5 +1,6 @@
 import type { PrefCondition, PrefLeaf, PrefNumberUnit } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
+import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { BaseNode, conditioned } from './baseNode';
 import {
   ActionNode,
@@ -267,6 +268,13 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
    *  to its default, leaving the rest of the config alone. */
   resettable(): GroupNode<S> {
     return this.with(this.annotations, { ...this.options, resettable: true });
+  }
+
+  /** Draw the group's card in a `MotifFrame` motif from `@weasel-js/ui`, as
+   *  `.motif(stereo())`, in place of the panel's default frame. Has no effect on a
+   *  group drawn `as` a tab, bar, section, or fragment. */
+  motif(motif: Motif): GroupNode<S> {
+    return this.with(this.annotations, { ...this.options, motif });
   }
 }
 

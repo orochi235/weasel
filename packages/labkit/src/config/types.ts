@@ -11,6 +11,7 @@ import type {
   PrefPair,
 } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
+import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import type { PrefRenderer } from '@weasel-js/ui/components/Prefs';
 import type { ReactNode } from 'react';
 
@@ -140,6 +141,8 @@ export interface SectionSpec {
   pack?: 'auto' | 'pairs' | 'one-up';
   /** A class on the section's frame, for a look the section alone takes. */
   className?: string;
+  /** The `MotifFrame` motif the section is drawn in, as `stereo()`. Unset, the panel's `motif`, else the default card. */
+  motif?: Motif;
 }
 
 /** A schema resolved against a set of rules: the vocabulary weasel-ui renders,
@@ -161,6 +164,8 @@ export interface ResolvedConfig {
   /** Paths of the groups marked `.resettable()`, whose heading carries a
    *  button that puts every value beneath it back to its default. */
   resettable?: ReadonlySet<string>;
+  /** The motif each group set with `.motif()` is drawn in, keyed by the group's path. */
+  motifs?: ReadonlyMap<string, Motif>;
 }
 
 /** Options for a row drawn as a button that opens a dialog. */
@@ -195,6 +200,8 @@ export interface SectionOption {
   pack?: 'auto' | 'pairs' | 'one-up';
   /** A class on the section's frame, for a look the section alone takes. */
   className?: string;
+  /** The `MotifFrame` motif the section is drawn in, as `stereo()`. Unset, the panel's `motif`, else the default card. */
+  motif?: Motif;
 }
 
 /** Per-node extras that do not belong on a `PrefLeaf`. */
@@ -231,6 +238,8 @@ export interface BranchOptions {
   /** Put a button on this group's heading that returns every value beneath it
    *  to its default. Groups only. */
   resettable?: boolean;
+  /** The `MotifFrame` motif this group's card is drawn in. Groups only. */
+  motif?: Motif;
 }
 
 /** A group's own annotations: what it is called, optionally why, and how it is drawn. */

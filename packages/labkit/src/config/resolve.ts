@@ -6,6 +6,7 @@ import {
   type PrefSection,
 } from '@weasel-js/prefs';
 import { isDev } from '@weasel-js/react';
+import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { isConfigBranch } from './builder';
 import { applyRules, builtinRules, titleCase } from './rules';
 import type {
@@ -37,6 +38,7 @@ interface Sink {
   renderers: Record<string, ControlRenderer>;
   dialogs: Record<string, DialogSpec>;
   resettable: Set<string>;
+  motifs: Map<string, Motif>;
   chain: readonly ConfigRule[];
 }
 
@@ -61,6 +63,7 @@ export function resolveConfigSchema<TC>(
     renderers: {},
     dialogs: {},
     resettable: new Set(),
+    motifs: new Map(),
     chain: [...rules, ...builtinRules],
   };
   const group = resolveShape(schema.nodes, '', '', sink);
@@ -80,6 +83,7 @@ export function resolveConfigSchema<TC>(
     renderers: sink.renderers,
     dialogs: sink.dialogs,
     resettable: sink.resettable,
+    motifs: sink.motifs,
   };
 }
 
@@ -112,10 +116,12 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
       if (section.pack !== undefined && spec.pack === undefined) spec.pack = section.pack;
       if (section.className !== undefined && spec.className === undefined)
         spec.className = section.className;
+      if (section.motif !== undefined && spec.motif === undefined) spec.motif = section.motif;
     }
     if (predicate) sink.showIf.set(path, predicate);
     if (enableIf) sink.enableIf.set(path, enableIf);
     if (isConfigBranch(entry) && entry.options.resettable) sink.resettable.add(path);
+    if (isConfigBranch(entry) && entry.options.motif) sink.motifs.set(path, entry.options.motif);
     if (!isConfigBranch(entry) && entry.options.render) sink.renderers[path] = entry.options.render;
     if (!isConfigBranch(entry) && entry.options.dialog) sink.dialogs[path] = entry.options.dialog;
   }

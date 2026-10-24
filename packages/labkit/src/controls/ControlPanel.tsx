@@ -1,4 +1,5 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
+import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import {
   type CollapseProps,
   type PropertyAlign,
@@ -67,6 +68,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
   /** Where a row's label sits relative to its control. Defaults to `'inline'`,
    *  beside it; `'block'` puts every label above its control. */
   layout?: PropertyRowLayout;
+  /** The `MotifFrame` motif every group and section is drawn in, as `stereo()`,
+   *  where it names none of its own. Unset, they keep the default card. */
+  motif?: Motif;
   /** Room the rows get. Passed straight to the property list. */
   density?: PropertyDensity;
   /** Cross-axis alignment of an inline row's label and control. */
@@ -161,6 +165,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   over,
   pack = 'pairs',
   layout = 'inline',
+  motif,
   density,
   align,
   collapse,
@@ -223,6 +228,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     auto,
     setRowAuto,
     changed,
+    motif,
     fold,
   });
 
