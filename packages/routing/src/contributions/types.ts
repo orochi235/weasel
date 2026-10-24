@@ -86,6 +86,13 @@ export interface ContributionRouting {
   /** Dep sources this entry provides while it is installed. A host installs
    *  them for as long as the entry is registered, whatever its eligibility. */
   deps?: ContributionDeps;
+  /**
+   * Hear when a source in `deps` may answer differently, and call `changed`;
+   * returns the unsubscribe. A source is a thunk nothing else can watch, so
+   * without this, chrome showing an action's `enabled` or `active` state keeps
+   * what it last read. A host subscribes it while the entry is installed.
+   */
+  watch?: (changed: () => void) => () => void;
 }
 
 /**

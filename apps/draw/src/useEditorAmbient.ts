@@ -1,10 +1,12 @@
 import { type Contribution, type SelectionApi, type SurfaceContribution, useLatest, type View } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
-import { useMemo } from 'react';
+import { createEmitter } from '@weasel-js/registry';
+import { useLayoutEffect, useMemo } from 'react';
 import { type AppCommands, appCommandsContribution } from './appCommands';
 import type { DrawScene } from './drawDocument';
 import { useRecording } from './recording/useRecording';
 import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
+import { CHROME_ITEMS } from './surfaces/chrome';
 import { useChromeCommands } from './surfaces/surfaceState';
 import { colorContribution, useColorContext } from './tools/colorContext';
 
@@ -47,7 +49,17 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
     openPalette: args.openPalette,
   };
   const appCommandsRef = useLatest(appCommands);
-  const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
+  const commandsChanged = useMemo(() => createEmitter(), []);
+  const appKeys = useMemo(
+    () => appCommandsContribution(() => appCommandsRef.current, commandsChanged.subscribe),
+    [appCommandsRef, commandsChanged],
+  );
+  // After the commit, so the dep reads what this render shows.
+  const shown = [
+    appCommands.gridVisible, appCommands.snapToGrid, appCommands.pathDirection, appCommands.symmetryOn,
+    appCommands.canReleaseCompound, ...CHROME_ITEMS.map(({ id }) => appCommands.chromeHidden(id)),
+  ].join();
+  useLayoutEffect(() => commandsChanged.emit(), [commandsChanged, shown]);
 
   const recordingKeys = useRecording({ scene, view: () => view, setView });
   const symmetry = args.symmetry.contribution;

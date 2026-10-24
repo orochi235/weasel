@@ -131,6 +131,8 @@ export function useContributionRoles(
   for (const entry of entries) {
     const deps = entry.deps;
     if (deps && depRegistry) installs.set(deps, () => registerDeps(depRegistry, deps));
+    const watch = entry.watch;
+    if (watch && depRegistry) installs.set(watch, () => watch(() => depRegistry.changed?.()));
     const attach = entry.attach;
     if (attach && api) installs.set(attach, () => attach(api, reader));
   }
