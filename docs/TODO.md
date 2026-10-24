@@ -643,6 +643,18 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) `PropertyPanel` draws its own card and header, so no motif reaches it.** `PropertyGroup` and `Subpanel`
+  render through `MotifFrame`; a panel should too, as a third `FrameKind` (`panel`) whose default motif carries
+  today's card, with `titlebar()` the obvious desktop look under `<DefaultMotif panel>`. That moves the `panel`
+  stance surface (blur, nesting, sinking) into the motif's stylesheet, so build it after the appearance-axes plan
+  (`docs/superpowers/plans/2026-10-23-appearance-axes.md`) lands, since that plan regenerates that surface
+  (2026-10-23).
+
+- **(P3) Prefs and `SelectionPanel` hand-draw their group headings.** `PrefsForm`'s `GroupBody`, `PrefsPane`'s
+  `PanePanel` and `SelectionPanel`'s sections write their own `<h3>`/`<h5>` titles, so `<DefaultMotif>` passes
+  them by. Rendering them through `MotifFrame` with the right `kind` brings them under it; a motif per group needs
+  a schema annotation, as labkit's `.motif()` is.
+
 - **(P3) draw's properties panel titles a text-along node "Unknown", and the layers panel shows its id.**
 
 - **(P3) No curved-label component in ui.** `Along/lab/CurvedLabel` (a story) shows the pattern: DOM spans laid
