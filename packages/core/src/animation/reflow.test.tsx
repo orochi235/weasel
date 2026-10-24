@@ -284,7 +284,7 @@ describe('createReflowTransition', () => {
     frame(100);
     expect(where(a).x).toBeCloseTo(150);
     frame(150);
-    // Its own layer gone, the node shows the one the other writer still holds.
+    // Its own ply gone, the node shows the one the other writer still holds.
     expect(scene.overrides.has(a, over)).toBe(true);
     expect(where(a).x).toBe(300);
     scene.overrides.clear(a, over);

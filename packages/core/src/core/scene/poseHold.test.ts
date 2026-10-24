@@ -179,7 +179,7 @@ describe('PoseOverrides.hold', () => {
       expect(scene.overrides.read(a)?.pose).toEqual(at(6));
     });
 
-    it('puts back every hold layered on a node cleared mid-gesture', () => {
+    it('puts back every hold with a ply on a node cleared mid-gesture', () => {
       const { scene, a } = setup();
       const drag = scene.overrides.hold();
       const previews = scene.overrides.hold();
@@ -197,7 +197,7 @@ describe('PoseOverrides.hold', () => {
       expect(scene.overrides.read(a)?.pose).toEqual(at(6));
     });
 
-    it('puts back every hold layered on a node removed and restored mid-gesture', () => {
+    it('puts back every hold with a ply on a node removed and restored mid-gesture', () => {
       const { scene, a } = setup();
       const lower = scene.overrides.hold();
       const upper = scene.overrides.hold();

@@ -83,7 +83,7 @@ export function bindSkins<TPose>(
         const path = skinPath(s.rest, s.skin, motions);
         s.entry.path = path;
         s.entry.pose = descriptor.fromBounds(boundsOfPath(path), s.restPose);
-        if (!installed) scene.overrides.set(s.node, s.entry);
+        if (!scene.overrides.has(s.node, s.entry)) scene.overrides.set(s.node, s.entry);
       }
       installed = true;
     },

@@ -157,8 +157,8 @@ function build<TPose>(
         return;
       }
       entry.pose = pose;
-      // Installed once per run: an override laid over it since, a drag's, is not taken back.
-      if (!installed) overrides.set(id, entry);
+      // Reinstalled where it stood if the table dropped it; an override laid over it since, a drag's, is not taken back.
+      if (!overrides.has(id, entry)) overrides.set(id, entry);
       installed = true;
       if (overwritten && unwatch === null) {
         unwatch = overrides.subscribe(() => {

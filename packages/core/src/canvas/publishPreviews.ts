@@ -35,7 +35,7 @@ interface ShownData<TData> {
  *
  * A handle with `previewHidesSource: false` previews a copy rather than its
  * source, so it is left out. On an id another writer's override already holds —
- * a transform's own frame, a live route — the preview is a layer over it, so a
+ * a transform's own frame, a live route — the preview is a ply over it, so a
  * field the handle does not propose shows what that writer says. The dispatcher
  * notifies after a handle's `onEnd`, so a commit has landed before its preview
  * goes.

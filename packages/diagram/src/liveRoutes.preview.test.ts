@@ -85,6 +85,16 @@ describe('an edge whose live route is published while its end is dragged', () =>
     expect(s.overrides.has(edge)).toBe(false);
   });
 
+  it('draws the run\'s route where it is, under a pose laid over the edge itself', () => {
+    const { s, edge } = fixture();
+    const route = pathHold(s);
+    const path = pathFromD('M20 10 L220 10');
+    route.show(new Map([[edge, path]]));
+    const drag = s.overrides.hold();
+    drag.set([[edge, box(30, 30, 10, 10)]]);
+    expect(s.overrides.read(edge)?.path).toBe(path);
+  });
+
   it('keeps the preview\'s reroute once the run lets go of the edge first', () => {
     const { s, edge, dragTo } = fixture();
     const route = pathHold(s);

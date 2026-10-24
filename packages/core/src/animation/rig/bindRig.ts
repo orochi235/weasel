@@ -207,7 +207,8 @@ export function bindRigOn<TPose>(
     for (const b of bound) {
       const w = local.get(b.joint)!;
       b.entry.pose = apply(w, { joint: b.joint, node: b.node, rest: b.rest, restWorld: b.restWorld, fromRest: motionOf(b.joint) });
-      if (!installed) scene.overrides.set(b.node, b.entry);
+      // Checked every frame: the table drops a node's overrides when the node goes.
+      if (!scene.overrides.has(b.node, b.entry)) scene.overrides.set(b.node, b.entry);
     }
     skins.joints.forEach(motionOf);
     skins.show(fromRest);

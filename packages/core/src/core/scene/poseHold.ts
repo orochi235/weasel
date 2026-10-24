@@ -3,11 +3,11 @@ import type { NodeId, PoseHold, PoseOverride, PoseOverrides, ShownOverride } fro
 /** The table methods a hold writes through. */
 type HoldTable<TPose, TData> = Pick<PoseOverrides<TPose, TData>, 'set' | 'has' | 'ids' | 'clear' | 'commit'>;
 
-/** Build the {@link PoseHold} a table hands out from `hold()`. `layersOf`
- *  answers a node's layers, bottom first. */
+/** Build the {@link PoseHold} a table hands out from `hold()`. `pliesOf`
+ *  answers a node's plies, bottom first. */
 export function createPoseHold<TPose, TData = unknown>(
   table: HoldTable<TPose, TData>,
-  layersOf: (id: NodeId) => readonly PoseOverride<TPose, TData>[] | undefined,
+  pliesOf: (id: NodeId) => readonly PoseOverride<TPose, TData>[] | undefined,
 ): PoseHold<TPose, TData> {
   /** The entry published per id, held by reference so a frame mutates it in place. */
   const held = new Map<NodeId, PoseOverride<TPose, TData>>();
@@ -21,7 +21,7 @@ export function createPoseHold<TPose, TData = unknown>(
       if (existing) {
         existing.pose = shown.pose;
         existing.data = shown.data;
-        // The table drops a node's layers on its own when the node goes; put back the node, and the frame goes back too.
+        // The table drops a node's plies on its own when the node goes; put back the node, and the frame goes back too.
         if (!table.has(id, existing)) table.set(id, existing);
         continue;
       }
@@ -46,7 +46,7 @@ export function createPoseHold<TPose, TData = unknown>(
     others() {
       const out = new Map<NodeId, TPose>();
       for (const id of table.ids()) {
-        const stack = layersOf(id) ?? [];
+        const stack = pliesOf(id) ?? [];
         const mine = held.get(id);
         for (let k = stack.length - 1; k >= 0; k--) {
           const entry = stack[k]!;

@@ -22,7 +22,9 @@ export interface PoseOverride<TPose, TData = unknown> {
   /** Replaces the geometry the node paints and is picked by: the path in its data, or the one
    *  it derives. It is in the frame a painter draws in, so give `pose` beside it, as the
    *  path's bounds with no rotation, or the pose's turn is applied to the path again and the
-   *  selection chrome stays on the old box. A skinned rig is the writer. */
+   *  selection chrome stays on the old box. A pose laid over it by another writer carries the
+   *  path from that box to its own; a path given with no pose is drawn where it is. A skinned
+   *  rig is the writer. */
   path?: Path;
   /** The data the node is shown with, from the data it stores — so a recorded write made while it is
    *  installed shows through. Painting, picking, drawn bounds and the effective reading of every
@@ -43,34 +45,44 @@ export type ShownOverride<TPose, TData = unknown> = Pick<PoseOverride<TPose, TDa
  * the painter memo keys on pose *reference*, so a mutation without a commit
  * paints the previous frame with no error.
  *
- * Several writers can override one node: each entry `set` is a layer over the
- * ones set before it. A field shows what the topmost layer giving it says —
- * `alpha` multiplies through every layer instead, and `data` runs each layer's
- * function on what the layers under it show — and releasing a layer shows what
- * lies under it.
+ * Several writers can override one node: each entry `set` is a ply over the
+ * ones set before it. A field shows what the topmost ply giving it says —
+ * `alpha` multiplies through every ply instead, and `data` runs each ply's
+ * function on what the plies under it show — and releasing a ply shows what
+ * lies under it. A ply's `path` is drawn in the box of the `pose` it gives
+ * beside it, so a pose from a ply above carries the path along.
+ *
+ * A full `clear(id)` keeps each ply's place: a writer that sets its entry again
+ * goes back where it stood, whatever order the writers come back in. A writer
+ * checks `has(id, entry)` each frame and sets its entry again when it is gone.
+ * A hand-written table honors `entry` on `has` and `clear` too: a writer
+ * releasing its own ply must not clear another's.
  *
  * To promote a frame to document state (dropping a drag, baking an animation),
  * write it once through `Scene.setPose` and `clear` the override.
  */
 export interface PoseOverrides<TPose, TData = unknown> {
-  /** Store `entry` for `id` **by reference**, as the node's top layer; the
-   *  caller keeps mutating it. An entry already installed moves to the top. */
+  /** Store `entry` for `id` **by reference**, as the node's top ply, or where it
+   *  stood when a full `clear` took it off; the caller keeps mutating it. An
+   *  entry already installed moves to the top. */
   set(id: NodeId, entry: PoseOverride<TPose, TData>): void;
-  /** The node's top layer, by reference. Painting reads `read`. */
+  /** The node's top ply, by reference. Painting reads `read`. */
   get(id: NodeId): PoseOverride<TPose, TData> | undefined;
-  /** What the node is drawn and picked with: every layer for it folded into
+  /** What the node is drawn and picked with: every ply for it folded into
    *  one, as of the last write or `commit()`. `undefined` for a node nothing
    *  overrides. The object is reused per node. */
   read(id: NodeId): PoseOverride<TPose, TData> | undefined;
   /** Whether anything overrides the node; given `entry`, whether that entry is
-   *  one of its layers — what a writer checks to know whether its own is
+   *  one of its plies — what a writer checks to know whether its own is
    *  still installed. */
   has(id: NodeId, entry?: PoseOverride<TPose, TData>): boolean;
   /** The overridden ids, as a snapshot array. */
   ids(): readonly NodeId[];
-  /** Drop every layer of the node; given `entry`, only that one, and nothing
-   *  when it is not installed. */
+  /** Drop every ply of the node, each keeping its place for its writer's next
+   *  `set`; given `entry`, only that one, forgetting its place, and nothing
+   *  else when it is not installed. */
   clear(id: NodeId, entry?: PoseOverride<TPose, TData>): void;
+  /** {@link PoseOverrides.clear} of every node. */
   clearAll(): void;
   /** Publish this frame's in-place mutations: invalidate the painter memo for
    *  every overridden node, then notify subscribers. */
@@ -92,13 +104,13 @@ export interface PoseOverrides<TPose, TData = unknown> {
  * A hold knows which entries are its own, so several writers share the table
  * without clearing each other: a drag and a layout run each publish their
  * frame, and each sees the other's nodes as pinned. Each id it holds is one
- * layer of that node's overrides, installed with the hold's first frame
+ * ply of that node's overrides, installed with the hold's first frame
  * naming it.
  */
 export interface PoseHold<TPose, TData = unknown> {
   /** Publish this frame's poses. It is the whole picture of this hold's
    *  fields, not a delta: an id the frame leaves out is released, and a field
-   *  it leaves out shows what the layers under it say. Subscribers are
+   *  it leaves out shows what the plies under it say. Subscribers are
    *  notified once. */
   set(poses: Iterable<readonly [NodeId, TPose]>): void;
   /** {@link PoseHold.set} for a frame that shows data as well as poses. */

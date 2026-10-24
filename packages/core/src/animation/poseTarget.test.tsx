@@ -49,6 +49,17 @@ describe('createPoseTarget', () => {
     expect(scene.overrides.has(a)).toBe(false);
   });
 
+  it('shows the travel again on the next frame after the table drops the node\'s overrides', () => {
+    const { animator, frame, scene, a, shown } = setup();
+    const target = scenePoseTarget(scene, a)!;
+    act(() => { animator().tween({ target, to: at(100), ms: 100, easing: linear }); });
+    frame(0);
+    frame(20);
+    scene.overrides.clear(a);
+    frame(50);
+    expect(shown().x).toBeCloseTo(50);
+  });
+
   it('leaves alone an override laid over its own while it moves', () => {
     const { animator, frame, scene, a } = setup();
     const target = scenePoseTarget(scene, a)!;

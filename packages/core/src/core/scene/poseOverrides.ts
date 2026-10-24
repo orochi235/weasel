@@ -2,7 +2,8 @@ import { createEmitter } from '@weasel-js/registry';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import { shownCopyOf } from './nodeAsShown';
 import { createPoseHold } from './poseHold';
-import { foldLayers } from './poseLayers';
+import { foldPlies } from './posePlies';
+import { createPlyStacks, plyPath, type CarriedPath } from './plyStacks';
 import type { NodeId, PoseOverride, PoseOverrides } from './types';
 
 /**
@@ -12,24 +13,23 @@ import type { NodeId, PoseOverride, PoseOverrides } from './types';
  * `onInvalidate` lets the scene invalidate derived nodes from the same
  * chokepoint.
  *
- * What `read` answers is folded from the node's layers by `foldLayers`; a
- * node holding no entry is never probed.
+ * What `read` answers is folded from the node's plies by `foldPlies`, its
+ * path by `plyPath`; a node holding no entry is never probed.
  */
 export function createPoseOverrides<TPose, TData = unknown>(
   getNode: (id: NodeId) => { data?: unknown } | undefined,
   onInvalidate?: (id: NodeId) => void,
 ): PoseOverrides<TPose, TData> {
   type Entry = PoseOverride<TPose, TData>;
-  /** Per node, its entries in the order they were set, the last on top. */
-  const layers = new Map<NodeId, Entry[]>();
-  const fold = foldLayers(layers);
+  const stacks = createPlyStacks<Entry>();
+  const { plies } = stacks;
+  const fold = foldPlies(plies);
   const listeners = createEmitter();
   let generation = 0;
-  let depth = 1;
 
-  /** Per node: the object `read` folds into and returns, and the generation
-   *  it was last folded at. */
-  const reads = new Map<NodeId, { out: Entry; at: number }>();
+  /** Per node: the object `read` folds into and returns, the generation it
+   *  was last folded at, and the last path it carried. */
+  const reads = new Map<NodeId, { out: Entry; at: number; carried?: CarriedPath }>();
 
   function invalidate(id: NodeId): void {
     const node = getNode(id);
@@ -44,7 +44,7 @@ export function createPoseOverrides<TPose, TData = unknown>(
 
   function published(): void {
     generation++;
-    fold.publish(depth);
+    fold.publish(stacks.depth());
     listeners.emit();
   }
 
@@ -55,22 +55,16 @@ export function createPoseOverrides<TPose, TData = unknown>(
 
   const table: PoseOverrides<TPose, TData> = {
     set(id, entry) {
-      const stack = layers.get(id);
-      if (stack === undefined) layers.set(id, [entry]);
-      else {
-        const at = stack.indexOf(entry);
-        if (at >= 0) stack.splice(at, 1);
-        stack.push(entry);
-        depth = Math.max(depth, stack.length);
-      }
+      stacks.claim(id, entry);
       invalidate(id);
       published();
     },
     get(id) {
-      return layers.get(id)?.at(-1);
+      return plies.get(id)?.at(-1);
     },
     read(id) {
-      if (!layers.has(id)) return undefined;
+      const stack = plies.get(id);
+      if (stack === undefined) return undefined;
       let held = reads.get(id);
       if (held === undefined) {
         held = { out: {}, at: -1 };
@@ -78,50 +72,42 @@ export function createPoseOverrides<TPose, TData = unknown>(
       }
       if (held.at !== generation) {
         fold.probe(id, held.out);
+        held.out.path = plyPath(stack, held.out.pose, held);
         held.at = generation;
       }
       return held.out;
     },
     has(id, entry) {
-      const stack = layers.get(id);
+      const stack = plies.get(id);
       return stack !== undefined && (entry === undefined || stack.includes(entry));
     },
     ids() {
-      return [...layers.keys()];
+      return [...plies.keys()];
     },
     clear(id, entry) {
-      const stack = layers.get(id);
-      if (stack === undefined) return;
-      if (entry !== undefined) {
-        const at = stack.indexOf(entry);
-        if (at < 0) return;
-        stack.splice(at, 1);
-      }
-      if (entry === undefined || stack.length === 0) {
-        layers.delete(id);
-        forget(id);
-      }
+      if (!(entry === undefined ? stacks.drop(id) : stacks.release(id, entry))) return;
+      if (!plies.has(id)) forget(id);
       invalidate(id);
       published();
     },
     clearAll() {
-      if (layers.size === 0) return;
-      for (const id of layers.keys()) {
+      if (plies.size === 0) return;
+      for (const id of plies.keys()) {
         forget(id);
         invalidate(id);
       }
-      layers.clear();
+      stacks.dropAll();
       published();
     },
     commit() {
-      for (const id of layers.keys()) invalidate(id);
+      for (const id of plies.keys()) invalidate(id);
       published();
     },
     subscribe: listeners.subscribe,
     getGeneration() {
       return generation;
     },
-    hold: () => createPoseHold(table, (id) => layers.get(id)),
+    hold: () => createPoseHold(table, (id) => plies.get(id)),
   };
   return table;
 }
