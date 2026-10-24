@@ -26,10 +26,12 @@ Decided in conversation (2026-10-23), none of it in code:
 - `status` is retired. `muted` belongs with tone, not with a drawing variant.
 - Color resolves as `hue = tint ?? severity ?? stance`, tone setting how loudly it shows.
 
-**Next: Mike thinks stance and variant overlap significantly.** Take that up first — it was the
-last thing he raised and nothing has answered it. Then the open questions on the artifact: what
-severity is called, whether tone has more moods, whether Button's `primary` goes, which settings
-cascade, what Slider's `density` (track thickness) becomes.
+**Next: does a theme map each stance to a default variant and tone, an explicit `variant` winning?**
+Proposed 2026-10-23 and not yet ruled: a stance today is almost all drawing slots (border, fill, radius,
+pad, title type in `packages/theme/src/panel.ts`), and Button's `primary` becomes the stance `confirm`.
+Parked on Mike's word (2026-10-23): whether `scope` stays a stance. Then the artifact's open questions:
+what severity is called, whether tone has more moods, which settings cascade, what Slider's `density`
+(track thickness) becomes.
 
 Also waiting on Mike, unrelated: whether `Primitives/*` story titles merge into `ui/Foundations`
 (no rule separates them); which default `layout` forge's two story formats share (native
