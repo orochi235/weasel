@@ -34,7 +34,7 @@ export function createGroupEntryContribution(opts: EnterGroupOptions & LeaveGrou
       {
         spec: { kind: 'key', key: 'Escape', phase: INITIAL },
         actionId: 'group.leave',
-        opts: { id: 'group.leave.key' },
+        opts: { id: 'group.leave.key', yields: true },
       },
     ],
   };
