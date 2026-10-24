@@ -36,7 +36,7 @@ for (const mode of ['light', 'dark']) {
     const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
     scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
     render(<SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing} />);
-    const panel = screen.getByText('Edge').closest('section')!;
+    const panel = screen.getByRole('group', { name: 'Edge' });
     expect(fillOf(screen.getByRole('textbox'), panel)).not.toBe(getComputedStyle(panel).backgroundColor);
   });
 }

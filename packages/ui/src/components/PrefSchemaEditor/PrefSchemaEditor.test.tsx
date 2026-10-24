@@ -68,8 +68,8 @@ describe('PrefSchemaEditor', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
     const top = screen.getByRole('region', { name: 'Attributes' });
-    // A group's heading sits in a header row, first in its panel.
-    const own = within(top).getByRole('heading', { name: 'boolean' }).parentElement!.parentElement!;
+    // The kind's own attributes are a panel named by its heading.
+    const own = within(top).getByRole('group', { name: 'boolean' });
     expect(within(top).queryByRole('heading', { name: /^(Pref|Group)$/ })).toBeNull();
     for (const field of ['Key', 'Name', 'Description']) {
       expect(within(top).getByRole('textbox', { name: field })).toBeInTheDocument();

@@ -1,5 +1,5 @@
 /* A sunken well, its heading over its body in a column. The fill and edge are
-   the frame's slots; the spacing and the title's type are `--wzl-well-*`
+   the frame's slots; the spacing and the title's size are `--wzl-well-*`
    properties, which the surface drawing the well sets for itself. */
 .well {
   display: flex;
@@ -46,11 +46,19 @@
   min-width: 0;
   margin: 0;
   font-size: var(--wzl-well-title-size, var(--wzl-font-size-sm));
-  font-weight: var(--wzl-well-title-weight, var(--wzl-font-weight-bold));
-  color: var(--wzl-well-title-color, var(--wzl-fg));
-  letter-spacing: var(--wzl-well-title-tracking, normal);
-  text-transform: var(--wzl-well-title-case, none);
+  font-weight: var(--wzl-font-weight-bold);
+  color: var(--wzl-fg);
   opacity: var(--wzl-well-title-opacity, 1);
+}
+
+.well[data-label='wide'] .title {
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  text-transform: var(--wzl-params-label-case, uppercase);
+}
+
+.well[data-label='wider'] .title {
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
+  text-transform: var(--wzl-params-label-case, uppercase);
 }
 
 .actions {

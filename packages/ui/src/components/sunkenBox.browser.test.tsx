@@ -20,8 +20,8 @@ const BOXES: readonly [name: string, motif: Motif, className: string, edge: 'bor
   ['a PrefsForm panel', FORM_FRAMES.column, prefs.panel, 'borderTopColor'],
   ['a PrefsForm subpanel', FORM_FRAMES.nested, prefs.subpanel, 'borderLeftColor'],
   ['a PrefsPane panel', FORM_FRAMES.box, prefs.panePanel, 'borderTopColor'],
-  ['a SelectionPanel section panel', FORM_FRAMES.box, selection.sectionPanel, 'borderTopColor'],
-  ['a SelectionPanel object panel', FORM_FRAMES.box, selection.objectPanel, 'borderTopColor'],
+  ['a SelectionPanel section panel', FORM_FRAMES.labeled, selection.sectionPanel, 'borderTopColor'],
+  ['a SelectionPanel object panel', FORM_FRAMES.labeled, selection.objectPanel, 'borderTopColor'],
 ];
 
 for (const mode of ['light', 'dark']) {

@@ -8,15 +8,17 @@ export interface WellParams {
   edge?: 'box' | 'start';
   /** A rule under the heading, between it and the body. */
   ruled?: boolean;
+  /** Set the title as a params label — the label recipe's case, tracked `wide` or `wider` where the theme names none. */
+  label?: 'wide' | 'wider';
 }
 
 /**
  * A sunken well holding its heading and body in a column: the look of a
- * settings form's groups. Its spacing and its title's type are read from
+ * settings form's groups. Its spacing and its title's size are read from
  * `--wzl-well-*` properties, so each surface that draws one sets its own.
  */
 export function well(params: WellParams = {}): Motif<WellParams> {
-  const { edge = 'box', ruled = false } = params;
+  const { edge = 'box', ruled = false, label } = params;
   return {
     id: 'well',
     params,
@@ -24,7 +26,7 @@ export function well(params: WellParams = {}): Motif<WellParams> {
       const Heading = headingTag(level, 3);
       const row = title != null || twisty != null || leading != null || actions != null;
       return (
-        <div {...withMotifClass(root, s.well)} data-edge={edge}>
+        <div {...withMotifClass(root, s.well)} data-edge={edge} data-label={label}>
           {(row || note != null) && (
             <div className={s.head} data-ruled={ruled ? '' : undefined}>
               {row && (

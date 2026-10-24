@@ -26,8 +26,6 @@
 .subpanel {
   --wzl-well-radius: var(--wzl-radius-sm);
   --wzl-well-title-size: var(--wzl-font-size-sm);
-  --wzl-well-title-tracking: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
-  --wzl-well-title-case: var(--wzl-params-label-case, uppercase);
   --wzl-well-title-opacity: 1;
 }
 
@@ -383,8 +381,6 @@
   --wzl-well-head-pad: 0;
   --wzl-well-radius: var(--wzl-radius-md);
   --wzl-well-title-size: var(--wzl-font-size-sm);
-  --wzl-well-title-tracking: normal;
-  --wzl-well-title-case: none;
   --wzl-well-title-opacity: 1;
   margin-top: var(--wzl-space-4);
 }
@@ -392,8 +388,6 @@
 /* An object's panel titles itself as the object's other groups do. */
 .objectPanel {
   --wzl-well-title-size: var(--wzl-font-size-xs);
-  --wzl-well-title-tracking: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
-  --wzl-well-title-case: var(--wzl-params-label-case, uppercase);
   --wzl-well-title-opacity: 0.55;
 }
 

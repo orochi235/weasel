@@ -63,7 +63,7 @@ test('a paired row is outlined when its second leaf is selected, and its control
 test('a selected section is outlined: under a heading, in a panel, and as the open tab\'s panel but not its tab', () => {
   sectioned(['place', 'edge', 'one']);
   expect(outlinedAt(screen.getByRole('heading', { name: 'Place' }).closest('section')!)).toBe(true);
-  expect(outlinedAt(screen.getByRole('heading', { name: 'Edge' }).closest('section')!)).toBe(true);
+  expect(outlinedAt(screen.getByRole('group', { name: 'Edge' }))).toBe(true);
   expect(outlinedAt(screen.getByRole('tabpanel'))).toBe(true);
   expect(outlinedAt(screen.getByRole('tab', { name: 'One' }))).toBe(false);
   // The rows inside a marked section carry no mark of their own.
