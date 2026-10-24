@@ -15,6 +15,9 @@ import type { OngoingHandle } from '@weasel-js/routing';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { GesturePreviewSource } from '../gestureBounds';
+import { INHERIT } from '@weasel-js/paint';
+import { withInheritedPaints } from '../inheritedPaints';
+import type { NodePaintCtx } from '../nodeShapeTypes';
 
 interface Data { label: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -274,5 +277,34 @@ describe('usePreviewGhostLayer — parallax layers', () => {
     const cmds = result.current.draw(env([handle]), camera, DIMS);
     expect(rectsInCamera(cmds)).toEqual([{ x: 50, y: 100, width: 5 }]);
     expect(views[0]).toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  });
+});
+
+describe('usePreviewGhostLayer — inherited paint', () => {
+  it("paints a member's inherited fill from its container's previewed data", () => {
+    const RED = { paint: { color: '#f00' } };
+    const BLUE = { paint: { color: '#00f' } };
+    const scene = createScene<{ fill?: unknown }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+    const g = scene.add({ kind: 'group', layer: 'main', pose: COMMITTED_POSE, data: { fill: RED } });
+    const c = scene.add({ kind: 'mark', layer: 'main', parent: g, pose: COMMITTED_POSE, data: { fill: INHERIT } });
+    const handle: OngoingHandle = {
+      previewIds: () => [g, c],
+      previewPose: () => null,
+      previewData: (id) => (id === g ? { fill: BLUE } : null),
+    };
+    const seen = new Map<string, unknown>();
+    const record = (n: { id: string }, _p: Pose, _v: View, ctx?: NodePaintCtx): DrawCommand[] => {
+      seen.set(n.id, ctx?.inherited?.fill);
+      return [];
+    };
+    const { result } = renderHook(() =>
+      usePreviewGhostLayer<{ fill?: unknown }, 'main', Pose>({
+        scene,
+        sceneSlot: { drawOne: withInheritedPaints(scene, record) },
+        dispatcher: makeDispatcher([handle]),
+      }),
+    );
+    result.current.draw(env([handle]), VIEW, DIMS);
+    expect(seen.get(c)).toBe(BLUE);
   });
 });

@@ -13,7 +13,7 @@ import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { sceneToAdapter } from './sceneAdapter';
-import { withInheritedPaints } from './inheritedPaints';
+import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
@@ -161,7 +161,8 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   const hierarchy = sceneAsHierarchy(scene, layers);
 
   const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
-  const culled = cullRect && cull?.paintBounds ? paintMissesView(cull.paintBounds, view, cullRect) : undefined;
+  const culled = cullRect && cull?.paintBounds
+    ? paintMissesView(withInheritedPaintBounds(scene, cull.paintBounds), view, cullRect) : undefined;
   const tree: DrawCommand[] = buildSceneTree(
     hierarchy as Parameters<typeof buildSceneTree>[0],
     wrappedDrawOne as unknown as Parameters<typeof buildSceneTree>[1],

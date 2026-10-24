@@ -10,7 +10,7 @@
  */
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import { withInheritedPaints } from './inheritedPaints';
+import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
@@ -42,6 +42,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   return {
     ...slot,
     ...(slot.toPose ? { toPose: sceneShownToPose(scene, slot.toPose) } : {}),
+    ...(slot.paintBounds ? { paintBounds: withInheritedPaintBounds(scene, slot.paintBounds) } : {}),
     drawOne: colorOverrides ? withColorOverrides(colorOverrides, derived) : derived,
     derivedPathOf,
     alphaFor: composeAlphaFor(scene, alphaFor),

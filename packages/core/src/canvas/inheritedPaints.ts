@@ -2,6 +2,7 @@ import { INHERIT } from '@weasel-js/paint';
 import type { Node, NodeId } from 'core/scene/types';
 import { inheritedPaintIn, inheritedPaintOf, sceneAncestors, type InheritedPaint } from 'core/scene/inheritedPaint';
 import type { SceneViewDrawOne } from './nodeShapeTypes';
+import type { PaintBoundsFn } from './paintCull';
 
 /** The part of a scene the lookup reads. */
 type ParentLookup<TNode> = { get(id: NodeId): TNode | undefined };
@@ -29,8 +30,9 @@ export function sceneInheritedPaintOf<TNode extends PaintedNode>(
 /**
  * Wrap a `drawOne` so a node whose fill or stroke is `'inherit'` arrives at
  * the painter with its containers' paint on `ctx.inherited`, as
- * `withDerivedPaths` does for a derived path. Every other node passes the
- * caller's `ctx` through untouched.
+ * `withDerivedPaths` does for a derived path. Every other node, and one whose
+ * caller already says what it inherits — a ghost whose containers are mid-edit —
+ * passes the caller's `ctx` through untouched.
  */
 export function withInheritedPaints<TData, TLayer extends string, TPose>(
   scene: ParentLookup<Node<TData, TLayer, TPose>>,
@@ -38,7 +40,19 @@ export function withInheritedPaints<TData, TLayer extends string, TPose>(
 ): SceneViewDrawOne<TData, TLayer, TPose> {
   const inheritedOf = sceneInheritedPaintOf(scene);
   return (node, pose, view, ctx) => {
-    const inherited = inheritedOf(node);
+    const inherited = ctx?.inherited ?? inheritedOf(node);
     return inherited === undefined ? drawOne(node, pose, view, ctx) : drawOne(node, pose, view, { ...ctx, inherited });
+  };
+}
+
+/** {@link withInheritedPaints} for a cull's `paintBounds`: a node's `'inherit'` stroke is measured as the one it takes. */
+export function withInheritedPaintBounds<TData, TLayer extends string, TPose>(
+  scene: ParentLookup<Node<TData, TLayer, TPose>>,
+  paintBounds: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>,
+): PaintBoundsFn<Node<TData, TLayer, TPose>, TPose> {
+  const inheritedOf = sceneInheritedPaintOf(scene);
+  return (node, pose, view, ctx) => {
+    const inherited = ctx?.inherited ?? inheritedOf(node);
+    return paintBounds(node, pose, view, inherited === undefined ? ctx : { ...ctx, inherited });
   };
 }

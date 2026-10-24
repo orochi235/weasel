@@ -386,15 +386,8 @@ Priority tags:
 - **(P3) The renderer's outline tier paints the leading code points of a multi-code-point color cluster.**
   A keycap such as 1️⃣ draws its digit: `paintRuns`' outline tier lacks the `drawsInk` check `textClusters` has.
 
-- **(P2) Readers that still read an `'inherit'` fill or stroke as none** (2026-10-21). Painters, picking,
-  drawn bounds, path effects, the panel, SVG, the text editor, booleans and WeaselDraw's export resolve
-  it against the node's containers. These do not yet:
-  - the drag ghost (`usePreviewGhostLayer`) resolves against the scene's container, so a container's
-    fill edited mid-gesture reaches its members only when the gesture commits;
-  - the headless cull (`defaultPaintBounds`) gives up on a node with an inherited stroke, since it
-    has no scene to measure it by.
-
-  The panel's Inherit segment is a text label among icons; it wants a glyph (`docs/icons.md`).
+- **(P2) The panel's Inherit segment is a text label among icons** (2026-10-21). It wants a glyph
+  (`docs/icons.md`).
 
 - **(P2) A lab nested under another surface owner has no `top` buffer unless that owner offers one**
   (2026-10-21). A `<Lab>` with a surface owner above it takes that owner's `SurfaceCanvases`

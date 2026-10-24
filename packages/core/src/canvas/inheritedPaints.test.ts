@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INHERIT, type Fill, type Stroke } from '@weasel-js/paint';
+import { INHERIT, type Fill, type PaintedStroke, type Stroke } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
@@ -102,10 +102,36 @@ describe('the drawn box of an inheriting node', () => {
 });
 
 describe('culling an inheriting node', () => {
-  it('claims no paint box for a node whose stroke is inherited', async () => {
+  it('claims no paint box for an inherited stroke with nothing to say what it takes', async () => {
     const { defaultPaintBounds } = await import('./defaultDrawOne');
     const { scene } = setup({ shape: 'rect', stroke: INHERIT });
     expect(defaultPaintBounds(scene.get(asNodeId('c'))!, BOX, VIEW)).toBeNull();
+  });
+
+  it('bounds an inherited stroke by the stroke it takes', async () => {
+    const { defaultPaintBounds } = await import('./defaultDrawOne');
+    const { scene } = setup({ shape: 'rect', stroke: INHERIT });
+    const b = defaultPaintBounds(scene.get(asNodeId('c'))!, BOX, VIEW, { inherited: { fill: null, stroke: LINE as PaintedStroke } });
+    const own = setup({ shape: 'rect', stroke: LINE }).scene.get(asNodeId('c'))!;
+    expect(b).not.toBeNull();
+    expect(b).toEqual(defaultPaintBounds(own, BOX, VIEW));
+    expect(b!.width).toBeGreaterThan(BOX.width);
+  });
+
+  it('culls a node with an inherited stroke that the view cannot see', async () => {
+    const { defaultPaintBounds } = await import('./defaultDrawOne');
+    const scene = createScene<Data, 'main'>({ systemLayers: [{ id: 'main' }] });
+    const group = scene.add({ kind: 'group', id: asNodeId('g'), layer: 'main', pose: BOX, data: { stroke: LINE } });
+    scene.add({ kind: 'mark', id: asNodeId('c'), parent: group, layer: 'main', pose: { ...BOX, x: 1000 }, data: { shape: 'rect', stroke: INHERIT } });
+    const drawn: string[] = [];
+    const drawOne: typeof defaultDrawOne = (node, pose, view, ctx) => {
+      drawn.push(node.id);
+      return defaultDrawOne(node, pose, view, ctx);
+    };
+    buildSceneViewCommands(scene, VIEW, drawOne, undefined, undefined, undefined, undefined, {
+      width: 100, height: 100, paintBounds: defaultPaintBounds,
+    });
+    expect(drawn).not.toContain('c');
   });
 });
 

@@ -74,20 +74,22 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
 /**
  * The box {@link defaultDrawOne}'s output for `node` fits in — the matched
  * painter's `bounds` — or `null` when it has none, or when a `data.label`
- * overlay adds text nothing bounds cheaply. The scene slot's `cull` reads it
- * to skip painting nodes the view cannot see.
+ * overlay adds text nothing bounds cheaply, or an inherited stroke with no
+ * `ctx.inherited` to say what it takes. The scene slot's `cull` reads it to
+ * skip painting nodes the view cannot see.
  */
 export function defaultPaintBounds<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
   view: View,
+  ctx?: Pick<NodePaintCtx, 'inherited'>,
 ): Bounds | null {
   const data = node.data as { label?: string; text?: string; stroke?: unknown } | null;
   if (data?.label && data.text == null) return null;
-  // No scene here to say what an inherited stroke reaches.
-  if (data?.stroke === INHERIT) return null;
+  const inherited = ctx?.inherited;
+  if (data?.stroke === INHERIT && inherited === undefined) return null;
   const sx = Math.abs(view.scale.x), sy = Math.abs(view.scale.y);
-  return findShapeBounds(node, pose, { scale: Math.sqrt(sx * sy), leastScale: Math.min(sx, sy) });
+  return findShapeBounds(node, pose, { scale: Math.sqrt(sx * sy), leastScale: Math.min(sx, sy), inherited });
 }
 
 /**

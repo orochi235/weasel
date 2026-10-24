@@ -26,6 +26,7 @@ import type { PlaneMap } from 'core/viewport/parallax';
 import { mat3 } from '@weasel-js/geom';
 import { copiesAbove } from '../copiesAbove';
 import { scenePaintedPoseOf } from '../derivedPath';
+import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
 
 const GHOST_ALPHA = 0.85;
 
@@ -80,19 +81,22 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       };
 
       // Mirrors buildSceneTree's structure, but drawn from the previewed pose
-      // and data, so children are clipped to the shape the node is taking.
+      // and data, so children are clipped to the shape the node is taking and
+      // inherit the paint it is taking. `above` is its containers, innermost first.
       const drawEntry = (
         entry: PreviewNode<TData, TLayer, TPose>,
         parentPlane: PlaneMap | null,
+        above: () => Iterable<{ kind?: string; data?: unknown }>,
       ): DrawCommand[] => {
         const effNode = entry.data === entry.node.data
           ? entry.node
           : ({ ...entry.node, data: entry.data } as typeof entry.node);
         const plane = mapOf(entry.node.layer);
-        const self = drawOne(effNode, entry.pose, viewOf(entry.node.layer));
+        const ctx = inheritsPaint(effNode) ? { inherited: inheritedPaintOf(effNode, above()) } : undefined;
+        const self = drawOne(effNode, entry.pose, viewOf(entry.node.layer), ctx);
         const kids: DrawCommand[] = [];
         for (const child of entry.children) {
-          for (const cmd of drawEntry(child, plane)) kids.push(cmd);
+          for (const cmd of drawEntry(child, plane, () => [effNode, ...above()])) kids.push(cmd);
         }
         // The node's clip is its children's, not its own paint's.
         const clip = kids.length > 0
@@ -114,7 +118,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       const paintedPose = scenePaintedPoseOf(sc);
       for (const root of roots) {
         const sink = root.opaque ? settled : ghosted;
-        const cmds = drawEntry(root, null);
+        const cmds = drawEntry(root, null, () => sceneAncestors((id: never) => sc.get(id), root.node));
         for (const cmd of cmds) sink.push(cmd);
         for (const m of copiesAbove(sc, root.node.id, paintedPose)) {
           sink.push({ kind: 'group', transform: mat3.fromAffine(m), children: cmds });
