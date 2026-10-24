@@ -51,6 +51,6 @@ export function useRecording(target: RecordingTarget): SurfaceContribution {
     save: downloadBlob,
     pick: () => pickFile('.json,.gz,application/json,application/gzip'),
     changed: rerender,
-    failed: (message) => { toast.error('The recording could not be played', { description: message }); },
+    failed: (message) => { toast.danger('The recording could not be played', { description: message }); },
   })), [live]);
 }

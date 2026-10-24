@@ -9,8 +9,9 @@ import {
   type QueuedToast,
 } from 'react-aria-components';
 import { useAssignedPortalContainer, type OverlayPortalProps } from '../../overlays/portalHost';
+import { useAppearance } from '../appearance';
 import { CloseButton } from '../CloseButton';
-import { defaultToastQueue, racQueueOf, readDefaultTtl, type ToastContent, type ToastQueue, type ToastTone } from './queue';
+import { defaultToastQueue, racQueueOf, readDefaultTtl, type ToastContent, type ToastQueue } from './queue';
 import s from './Toast.module.css';
 import './toastViewTransitions.css';
 
@@ -33,12 +34,29 @@ const placementClass: Record<ToastPlacement, string> = {
   'top-left': s.topLeft,
 };
 
-const toneClass: Record<ToastTone, string> = {
-  info: s.toneInfo,
-  success: s.toneSuccess,
-  warning: s.toneWarning,
-  error: s.toneError,
-};
+function ToastItem({ toast: t, queue }: { toast: QueuedToast<ToastContent>; queue: ToastQueue }) {
+  const { style, ...attrs } = useAppearance({ grade: t.content.grade });
+  return (
+    <RACToast
+      toast={t}
+      className={s.toast}
+      data-grade={attrs['data-grade']}
+      // Inline style is the one sanctioned exception here: each toast
+      // needs a *unique* view-transition-name (so enter/exit/reflow
+      // track per-toast), and a class can't mint unique idents. The
+      // prefix keeps the ident valid (RAC keys can start with digits).
+      style={{ ...style, viewTransitionName: `wzl-toast-${t.key.replace(/[^a-zA-Z0-9_-]/g, '_')}` }}
+    >
+      <RACToastContent className={s.content}>
+        <Text slot="title" className={s.title}>{t.content.title}</Text>
+        {t.content.description !== undefined && (
+          <Text slot="description" className={s.description}>{t.content.description}</Text>
+        )}
+      </RACToastContent>
+      <CloseButton ariaLabel="Dismiss notification" onClick={() => racQueueOf(queue).close(t.key)} />
+    </RACToast>
+  );
+}
 
 /**
  * Renders the toast stack for a queue. Mount once, near the app root.
@@ -60,25 +78,7 @@ export function ToastRegion(props: ToastRegionProps) {
   useLayoutEffect(() => readDefaultTtl(queue, () => settings.get('toast.ttlMs')), [queue, settings]);
   const classes = [s.region, placementClass[placement], className];
 
-  const renderToast = (t: QueuedToast<ToastContent>) => (
-    <RACToast
-      toast={t}
-      className={[s.toast, toneClass[t.content.tone]].filter(Boolean).join(' ')}
-      // Inline style is the one sanctioned exception here: each toast
-      // needs a *unique* view-transition-name (so enter/exit/reflow
-      // track per-toast), and a class can't mint unique idents. The
-      // prefix keeps the ident valid (RAC keys can start with digits).
-      style={{ viewTransitionName: `wzl-toast-${t.key.replace(/[^a-zA-Z0-9_-]/g, '_')}` }}
-    >
-      <RACToastContent className={s.content}>
-        <Text slot="title" className={s.title}>{t.content.title}</Text>
-        {t.content.description !== undefined && (
-          <Text slot="description" className={s.description}>{t.content.description}</Text>
-        )}
-      </RACToastContent>
-      <CloseButton ariaLabel="Dismiss notification" onClick={() => racQueueOf(queue).close(t.key)} />
-    </RACToast>
-  );
+  const renderToast = (t: QueuedToast<ToastContent>) => <ToastItem toast={t} queue={queue} />;
 
   const doc = assigned?.ownerDocument;
   const contained = assigned && assigned !== doc?.body && assigned !== doc?.documentElement;

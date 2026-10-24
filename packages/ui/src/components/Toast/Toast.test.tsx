@@ -53,22 +53,22 @@ describe('ToastRegion', () => {
   it('keeps sticky toasts (ttlMs null) indefinitely', () => {
     const q = createToastQueue();
     renderWithIcons(<ToastRegion queue={q} />);
-    act(() => q.add('error', 'Sticky', { ttlMs: null }));
+    act(() => q.add('danger', 'Sticky', { ttlMs: null }));
     act(() => vi.advanceTimersByTime(60_000));
     expect(screen.getByText('Sticky')).toBeTruthy();
   });
 
-  it('stacks multiple toasts and applies tone classes', () => {
+  it('stacks multiple toasts and grades them', () => {
     const q = createToastQueue();
     renderWithIcons(<ToastRegion queue={q} />);
     act(() => {
       q.add('info', 'one', { ttlMs: null });
-      q.add('warning', 'two', { ttlMs: null });
+      q.add('warn', 'two', { ttlMs: null });
     });
     expect(screen.getByText('one')).toBeTruthy();
     expect(screen.getByText('two')).toBeTruthy();
     const toastEl = screen.getByText('two').closest('[class*="toast"]');
-    expect(toastEl?.className).toMatch(/toneWarning/);
+    expect(toastEl?.getAttribute('data-grade')).toBe('warn');
   });
 
   it('orders toasts newest-first in the DOM, so corner CSS keeps the newest at the edge', () => {

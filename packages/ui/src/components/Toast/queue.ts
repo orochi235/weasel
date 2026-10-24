@@ -1,15 +1,14 @@
 import { UNSTABLE_ToastQueue } from 'react-aria-components';
 import { flushSync } from 'react-dom';
 import { prefersReducedMotion } from '@weasel-js/react';
-
-/** Severity of a toast, driving its accent color and icon. */
-export type ToastTone = 'info' | 'success' | 'warning' | 'error';
+import type { Grade } from '../appearance';
 
 /** Kit-owned payload rendered inside each toast. */
 export interface ToastContent {
   title: string;
   description?: string;
-  tone: ToastTone;
+  /** How serious it is; sets the accent color. */
+  grade: Grade;
 }
 
 /** Options for a single toast. */
@@ -104,7 +103,7 @@ export class ToastQueue {
     );
   }
 
-  add(tone: ToastTone, title: string, options: ToastOptions = {}): void {
+  add(grade: Grade, title: string, options: ToastOptions = {}): void {
     const { description, ttlMs = DEFAULT_TTLS.get(this)?.() ?? DEFAULT_TTL_MS, id } = options;
     const rac = RAC_QUEUES.get(this)!;
     if (id !== undefined) {
@@ -119,7 +118,7 @@ export class ToastQueue {
         if (this.keysById.get(id) === key) this.keysById.delete(id);
       };
     }
-    key = rac.add({ title, description, tone }, racOptions);
+    key = rac.add({ title, description, grade }, racOptions);
     if (id !== undefined) this.keysById.set(id, key);
   }
 
@@ -157,23 +156,23 @@ export function racQueueOf(queue: ToastQueue): UNSTABLE_ToastQueue<ToastContent>
 /** Module-level default queue used by `toast()` and `<ToastRegion>`. */
 export const defaultToastQueue = createToastQueue();
 
-/** `toast`: callable for an info toast, with a method per tone. */
+/** `toast`: callable for an info toast, with a method per grade. */
 export type ToastFn = {
   (title: string, options?: ToastOptions): void;
   info(title: string, options?: ToastOptions): void;
   success(title: string, options?: ToastOptions): void;
-  warning(title: string, options?: ToastOptions): void;
-  error(title: string, options?: ToastOptions): void;
+  warn(title: string, options?: ToastOptions): void;
+  danger(title: string, options?: ToastOptions): void;
 };
 
-function tonedAdd(tone: ToastTone) {
-  return (title: string, options?: ToastOptions) => defaultToastQueue.add(tone, title, options);
+function gradedAdd(grade: Grade) {
+  return (title: string, options?: ToastOptions) => defaultToastQueue.add(grade, title, options);
 }
 
 /** Imperative convenience over `defaultToastQueue`. Bare `toast(...)` is `info`. */
-export const toast: ToastFn = Object.assign(tonedAdd('info'), {
-  info: tonedAdd('info'),
-  success: tonedAdd('success'),
-  warning: tonedAdd('warning'),
-  error: tonedAdd('error'),
+export const toast: ToastFn = Object.assign(gradedAdd('info'), {
+  info: gradedAdd('info'),
+  success: gradedAdd('success'),
+  warn: gradedAdd('warn'),
+  danger: gradedAdd('danger'),
 });

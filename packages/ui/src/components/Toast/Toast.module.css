@@ -45,10 +45,7 @@
   outline-offset: 1px;
 }
 
-.toneInfo { /* default accent — uses --toast-accent fallback */ }
-.toneSuccess { --toast-accent: var(--wzl-success); }
-.toneWarning { --toast-accent: var(--wzl-warning); }
-.toneError { --toast-accent: var(--wzl-danger); }
+.toast[data-grade] { --toast-accent: var(--wzl-grade); }
 
 .content {
   flex: 1;

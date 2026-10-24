@@ -8,7 +8,7 @@ export function reportSvgWarnings(did: 'Opened' | 'Imported' | 'Saved', warnings
 
 /** Tells the user a Save produced no file. */
 export function reportSaveFailure(err: unknown): void {
-  toast.error('The SVG was not saved', {
+  toast.danger('The SVG was not saved', {
     id: 'svg-save-failed',
     description: err instanceof Error ? err.message : String(err),
   });
@@ -29,7 +29,7 @@ export function reportSessionSave(saved: boolean): void {
     defaultToastQueue.dismiss(SESSION_TOAST);
     return;
   }
-  toast.error('This drawing is not being kept in the browser', {
+  toast.danger('This drawing is not being kept in the browser', {
     id: SESSION_TOAST,
     description: 'The browser refused to store it. Use Save to keep a copy as an SVG file.',
     ttlMs: null,

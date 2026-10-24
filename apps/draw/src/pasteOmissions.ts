@@ -20,5 +20,5 @@ export function describePasteOmissions(omitted: readonly PasteOmission[]): { tit
 /** Tells the user a paste left shapes out. One toast: the next paste's replaces it. */
 export function reportPasteOmissions(omitted: PasteOmission[]): void {
   const { title, description } = describePasteOmissions(omitted);
-  toast.warning(title, { id: 'paste-omitted', description });
+  toast.warn(title, { id: 'paste-omitted', description });
 }
