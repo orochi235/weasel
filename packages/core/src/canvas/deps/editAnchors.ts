@@ -131,14 +131,14 @@ export function useEditAnchorsDepSource(
         if (!effectiveId) return;
         state.setTool(id);
       },
-      ...pathAccess(sc, ad, state.getExtensions()),
+      ...editAnchorsSceneAccess(sc, ad, state.getExtensions()),
     };
   });
   useTransformFollower(() => pathEditFollower(sceneRef.current, stateRef.current.getExtensions()));
 }
 
-/** The members of the dep that read the scene and commit to it. */
-function pathAccess(
+/** The members of the dep that read the scene and commit to it, through `ad`. */
+export function editAnchorsSceneAccess(
   sc: Scene<unknown, string, unknown>,
   ad: OpsApplier,
   extensions: readonly PathEditExtension[],

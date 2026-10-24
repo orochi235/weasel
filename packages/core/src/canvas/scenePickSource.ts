@@ -42,10 +42,11 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   // Partial scene stand-ins carry only `layers` and `get`, which is all the gates read.
   const gates = nodeGates(scene as never);
   const enumerable = typeof scene.overrides?.ids === 'function';
-  const asShown = <N extends { id: NodeId; data?: unknown }>(node: N): N =>
-    (scene.overrides ? nodeAsShown(scene.overrides, node) : node);
-  const allAsShown = <N extends { id: NodeId; data?: unknown }>(nodes: readonly N[]): readonly N[] =>
-    (enumerable ? nodesAsShown(scene.overrides, nodes) : nodes.map(asShown));
+  // Pick candidates carry a plain string id; the scene answers them all the same.
+  const asShown = <N extends { id: string; data?: unknown }>(node: N): N =>
+    (scene.overrides ? nodeAsShown(scene.overrides, node as N & { id: NodeId }) : node);
+  const allAsShown = <N extends { id: string; data?: unknown }>(nodes: readonly N[]): readonly N[] =>
+    (enumerable ? nodesAsShown(scene.overrides, nodes as readonly (N & { id: NodeId })[]) : nodes.map(asShown));
   const annotations = annotationLayerIds(scene.layers);
   const { getPose, alphaOf, layerIsPainted } = opts;
 
