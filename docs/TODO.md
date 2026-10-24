@@ -1134,7 +1134,16 @@ only story runner in the repo.
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured. Polling did not save "indexes a file added under a glob written with a leading ./", which
-  timed out at 15 s in a full fleet run on 2026-10-21 (onto job 2c564a18).
+  timed out at 15 s in a full fleet run on 2026-10-21 (onto job 2c564a18) and again on 2026-10-24
+  (at d9f7bb7ba), nor "re-decides a story whose helper module did not exist until after it was
+  indexed", which timed out at 15 s on 2026-10-24 (at 968d53abe). Both passed in the runs either
+  side, on commits that touched no forge code.
+
+- **(P3) `npm pack` died with SIGABRT and no output in the consumer smoke step.** A
+  `test:fleet:postbuild` run of d9f7bb7ba's predecessor 570d272b7 on 2026-10-24 failed
+  `test:smoke:consumer` at `scripts/smoke-consumer-bundle.mjs:271` with `signal: 'SIGABRT'` and empty
+  stdout and stderr; a rerun of the same commit passed every step. Seen once. A second sighting
+  says it is not load.
 
 - **(P3) SVG text export: lines written without a layout sit half the leading off.** Without
   `textLayout`, `serializeSvg` writes `dominant-baseline="text-before-edge"`, which puts the face's
