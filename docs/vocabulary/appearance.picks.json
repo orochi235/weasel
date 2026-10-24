@@ -1,0 +1,85 @@
+{
+  "picks": {
+    "tone": "emphasis",
+    "tint": "tint",
+    "severity": "grade",
+    "stance": "stance",
+    "shape": "shape",
+    "size": "size",
+    "density": "density",
+    "theme": "theme",
+    "polarity": "polarity",
+    "arrangement": "control",
+    "v-cascade": "cascade"
+  },
+  "important": {
+    "tone": true,
+    "stance": true,
+    "severity": true,
+    "theme": true
+  },
+  "pos": {
+    "tone": "noun",
+    "tint": "noun",
+    "stance": "noun",
+    "severity": "noun",
+    "theme": "noun",
+    "variant": "noun",
+    "motif": "noun",
+    "shape": "noun",
+    "size": "noun",
+    "density": "noun",
+    "mode": "noun",
+    "flavor": "noun",
+    "polarity": "noun",
+    "arrangement": "noun"
+  },
+  "chosen": {
+    "severity": true,
+    "tone": true,
+    "stance": true,
+    "shape": true,
+    "size": true,
+    "density": true,
+    "theme": true,
+    "polarity": true,
+    "arrangement": true,
+    "v-cascade": true
+  },
+  "starred": {
+    "severity": {
+      "grade": true,
+      "level": true
+    },
+    "density": {
+      "fit": true
+    },
+    "arrangement": {
+      "control": true
+    }
+  },
+  "written": {},
+  "added": {
+    "severity": [
+      "level"
+    ],
+    "arrangement": [
+      "contraol",
+      "control"
+    ]
+  },
+  "locked": {
+    "tone": true,
+    "stance": true,
+    "shape": true,
+    "size": true,
+    "density": true,
+    "theme": true,
+    "polarity": true
+  },
+  "struck": {
+    "arrangement": {
+      "contraol": true
+    }
+  }
+}
