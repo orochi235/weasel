@@ -197,7 +197,7 @@ const SIZES: ButtonSize[] = ['sm', 'md'];
 export const Matrix: Story = {
   tags: ['gallery'],
   render: () => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'auto repeat(3, 1fr)', gap: 12, alignItems: 'center' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `auto repeat(${VARIANTS.length}, 1fr)`, gap: 12, alignItems: 'center' }}>
       <div />
       {VARIANTS.map((v) => (
         <div key={v} style={{ fontSize: 11, color: 'var(--wzl-fg-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
