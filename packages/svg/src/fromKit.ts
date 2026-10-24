@@ -234,6 +234,14 @@ export interface SvgNodesFromKitOptions<TId extends string = string> {
   leaf?(id: TId, node: SvgKitTreeNode, inherited: SvgKitInherited): SvgNode | null;
   /** Decorate the `<g>` written for a scene group, e.g. with `meta`. */
   group?(id: TId, group: SvgGroupNode): SvgGroupNode;
+  /** Decorate the `<g>` written for a mark with children, so a reader can
+   *  tell it from a group: `svgNodesToKitDrafts`'s `mark` option reads one
+   *  back. Given, the `<g>` holds the mark's own element, then one `<g>` of its
+   *  children carrying the mark's clip, then a transformed `<g>` of that for
+   *  each copy; a mark whose children are all left out holds its own element
+   *  alone. Not called for a mark whose own element is itself a group, or that
+   *  draws nothing. */
+  mark?(id: TId, group: SvgGroupNode): SvgGroupNode;
 }
 
 /**
@@ -241,13 +249,14 @@ export interface SvgNodesFromKitOptions<TId extends string = string> {
  * becomes a `<g>` of its children, in z-order, drawing nothing of its own; a
  * mark is written by {@link svgLeafFromKit} unless `options.leaf` says
  * otherwise, and a mark with children is a `<g>` holding that element and then
- * its children. A hidden node is written hidden, with its subtree as it is.
+ * its children, or one `<g>` of them when `options.mark` decorates it. A hidden
+ * node is written hidden, with its subtree as it is.
  */
 export function svgNodesFromKit<TId extends string>(
   tree: SvgKitTree<TId>,
   options: SvgNodesFromKitOptions<TId> = {},
 ): SvgNode[] {
-  const { include, leaf, group } = options;
+  const { include, leaf, group, mark } = options;
   const emit = (id: TId, up: UpPaint): SvgNode | null => {
     const node = tree.get(id);
     const out = node && (!include || include(id)) ? lower(id, node, up) : null;
@@ -279,13 +288,15 @@ export function svgNodesFromKit<TId extends string>(
     const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
     const paint = groupPaintFromKit(own, below, node.pose);
     // The clip travels with each copy, so it goes inside the transform.
-    const withCopies = (g: SvgGroupNode): SvgGroupNode => (copies.length === 0 ? g : {
-      kind: 'group',
-      children: [g, ...copies.map((transform): SvgGroupNode => ({ kind: 'group', transform, children: [content()] }))],
-    });
+    const copied = (): SvgGroupNode[] => copies.map((transform) => ({ kind: 'group', transform, children: [content()] }));
+    const withCopies = (g: SvgGroupNode): SvgGroupNode => (copies.length === 0 ? g : { kind: 'group', children: [g, ...copied()] });
     if (isGroup) {
       const g = withCopies({ ...content(), ...paint });
       return group ? group(id, g) : g;
+    }
+    if (mark && self && self.kind !== 'group') {
+      const kids = content();
+      return mark(id, { kind: 'group', children: kids.children.length === 0 ? [self] : [self, kids, ...copied()], ...paint });
     }
     const inner = withCopies(content());
     const parts = clip || copies.length > 0 ? [inner] : inner.children;

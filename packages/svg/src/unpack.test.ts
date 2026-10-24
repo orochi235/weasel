@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
-import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
+import { svgNodesToKitDrafts } from './unpack';
+import { unpackSvgFiles } from './unpackFiles';
 import { parseSvg } from './parse';
 import { DEFAULT_TEXT_FILL, getMarker, INHERIT, type IngestCtx, type Op } from '@weasel-js/core';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';

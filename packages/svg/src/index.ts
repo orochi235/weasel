@@ -27,8 +27,8 @@ export { specificity, compareSpecificity, type Specificity } from './specificity
 export { splitTopLevel } from './cssScan';
 export { evaluateMediaQuery, DEFAULT_MEDIA_ENVIRONMENT, type SvgMediaEnvironment } from './media';
 export { evaluateSupports, type SupportsOptions } from './supports';
+export { unpackSvgFiles } from './unpackFiles';
 export {
-  unpackSvgFiles,
   svgNodesToKitDrafts,
   fillDataFromSvg,
   strokeDataFromSvg,

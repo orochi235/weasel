@@ -511,13 +511,6 @@ Priority tags:
 - **(P3) No panel switches a node's declared clip** (2026-10-23). `scene.setClip` writes it as one
   undo step; nothing in a property panel calls it.
 
-- **(P3) WeaselDraw's SVG round trip turns a mark with children into a group** (2026-10-23).
-  `svgNodesFromKit` writes such a mark as a `<g>` of its own element and then its children, and
-  calls the `group` decorator only for groups, so the `<g>` carries no `wd:` meta and reopens as a
-  group holding a mark. Keeping it a mark needs the import side too: `svgNodesToKitDrafts` drafts
-  every `<g>` as a group, so it would have to read a marked `<g>`'s first element as the mark's
-  own. Draw makes no such marks itself today; one pasted in from elsewhere loses its kind on save.
-
 - **(P3) Several hit tests still scan every node or shape linearly.** Marquee, lasso and point picks
   consult the scene's BVH pick index (`packages/core/src/canvas/pickIndex/`); these do not, and can
   move onto it: core's `features/text/textHitAt.ts`, `features/measure/measureHit.ts` and

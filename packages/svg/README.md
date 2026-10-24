@@ -105,13 +105,16 @@ drafts the kit's built-in path, text and image painters draw, and registers
 the document's markers. Containers carry no opacity, so an element or group
 `opacity` is multiplied into the paints of the leaves under it. `nextId` is
 handed the node each id is for, and `options.leaf` maps each leaf's kit data
-into data of your own shape, from the source node's metadata too.
+into data of your own shape, from the source node's metadata too. `options.mark`
+says which `<g>`s are marks with children, as the export's `mark` decorator
+tagged them.
 
 `svgNodesFromKit(scene)` goes the other way: containers become groups, and
 each leaf is written the way its painter draws it, with the pose baked into
 the geometry and box-relative paints resolved into that box. Hand
 `serializeSvg` the result. Options pick the roots, skip nodes (a hidden
-layer), replace a leaf's lowering or decorate a group. The per-leaf pieces are
+layer), replace a leaf's lowering, or decorate a group or a mark with children
+so the import can tell the two apart. The per-leaf pieces are
 public too: `svgLeafFromKit`, `svgPaintFromKit`, `svgStrokeFromKit`,
 `svgImageFromKit`.
 
