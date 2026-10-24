@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/geom",
-  "version": "1.12.0",
+  "version": "1.13.0-rc.0",
   "description": "Pure geometry kernel for @weasel-js/core: affine, box, curve, polyline, the Path command stream and its math, and easing curves in 2D. Dependency-free core; curve representations in ./curves, tessellation in ./tessellate (earcut), polygon booleans and path splitting in ./booleans (polygon-clipping), vectors, quaternions, 4x4 matrices and ray intersection in ./3d, and dimension-generic snapping and a BVH (bounding volume hierarchy) for box, point, ray and half-space queries in ./nd.",
   "license": "MIT",
   "type": "module",

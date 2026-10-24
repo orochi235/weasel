@@ -1,5 +1,12 @@
 # @weasel-js/quantity
 
+## 1.13.0-rc.0
+
+### Patch Changes
+
+- 04b862d: Scene node kinds are now `mark` and `group`, replacing `leaf` and `container`, and any node may have children. `ContainerNode` and `LeafNode` are now `GroupNode` and `MarkNode`; `AddNodeSpec.kind` is `'mark' | 'group'`, and `isLeaf(node)` and `hasChildren(node)` ask whether a node has children. This breaks code that names the old kinds. Scenes save as version 2, and a version 1 save still loads: its leaves become marks and its containers become groups, unless the `classifyV1` option of `sceneFromJSON(json, { classifyV1 })` says otherwise. `V1Classifier` and `nodeKindOf` are exported from `@weasel-js/core`. `@weasel-js/svg`'s `SvgSceneDraft.kind` changed from `'container' | 'leaf'` to `'group' | 'mark'`.
+- 86f67ad: `fraction` and `ratio` displays give a value above 1 proportionally fewer denominators to choose from, so a large value reads as a whole number or a simple fraction: 749.81 shows `750` rather than `15746/21`. Values under 1 are unchanged.
+
 ## 1.12.0
 
 No changes in this release.

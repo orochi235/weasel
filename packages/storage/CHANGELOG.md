@@ -1,5 +1,11 @@
 # @weasel-js/storage
 
+## 1.13.0-rc.0
+
+### Patch Changes
+
+- @weasel-js/registry@1.13.0-rc.0
+
 ## 1.12.0
 
 ### Patch Changes

@@ -1,5 +1,103 @@
 # @weasel-js/forge
 
+## 1.13.0-rc.0
+
+### Patch Changes
+
+- 6bb74c2: **Breaking.** Four props now decide how a component looks, and each is a hint the component draws from as it sees fit: `stance` (the angle it comes from), `grade` (how serious), `emphasis` (how loud), and `tint` (an exact color). They replace a prop that meant two things and four spellings of severity. Color resolves as tint, then grade, then stance; emphasis sets how loudly it shows. Stance and emphasis pass to everything inside a surface; grade and tint do not, so a `danger` dialog's Cancel button stays plain.
+  
+  | Was | Now |
+  |---|---|
+  | `status="accent"` / `"muted"` / `"neutral"` | `emphasis="high"` / `"low"` / nothing |
+  | `status="success"`, `"warn"`, `"danger"`, `"info"` | `grade="…"` |
+  | Badge `status="custom"` with `--badge-edge` | `tint={…}` |
+  | `tone={…}` (palette index or color), KeyDiagram's per-key `tone` | `tint={…}` |
+  | `stance="scope"` | `stance="clarify"` |
+  | `stance="danger"` / `"notice"` / `"important"` | `grade="danger"` / `grade="warn"` / `emphasis="high"` |
+  | Button `variant="primary"` / `"secondary"` | `stance="confirm"` / the default `variant="solid"` |
+  | Toast `tone: 'warning' \| 'error'`, `toast.warning`, `toast.error` | `grade: 'warn' \| 'danger'`, `toast.warn`, `toast.danger` |
+  | labkit Toolbar `variant="danger"` | `grade="danger"` |
+  
+  New stances are `confirm` and `cancel`. `useStance`, `StanceProps` and the `@weasel-js/ui/stance` subpath are gone; use `useAppearance`, `AppearanceProps` and `@weasel-js/ui/appearance`. `BadgeStatus`, `CodeStatus`, `ButtonStatus`, `DetailRowStatus` and `ToastTone` are deleted; `Grade`, `Emphasis` and `Stance` are exported in their place, and `DetailRow`, labkit `Readout` and Toast take `grade`. `BADGE_STATUS_ICONS` is now `GRADE_ICONS` and `EMPHASIS_ICONS`, exported from `@weasel-js/ui` and `@weasel-js/ui/appearance`, and the status glyphs are `gradeSuccess`, `emphasisHigh` and `emphasisLow`.
+  
+  In `@weasel-js/theme`: `GRADES`, `GRADE_TOKENS`, `EMPHASES`, `EMPHASIS_FG`, `EMPHASIS_SLOTS` and `GRADE_SLOTS` join `STANCES`. `TONE_REF` is `TINT_REF` (`{ ref: 'tint' }`), the theme's tone list is its tint list (`ThemeProvider tints`, `useTints`, a theme's `"tints"`), and hud's `tones` option is `tints`. Stance tokens are renamed: `--wzl-stance-scope-*` → `--wzl-stance-clarify-*`, `--wzl-stance-<s>-tone(-mix)` → `-tint(-mix)`, `--wzl-panel-tone-mix` → `--wzl-panel-tint-mix`, `--wzl-button-primary-*` → `--wzl-button-confirm-*`; the danger, notice and important stance tokens are removed. A new `--wzl-info` token colors the info grade, so info badges and toasts take it, where info toasts used the accent before. Badge's `warn` now uses `--wzl-warning` rather than its own amber.
+  
+  <!-- bump-approved: minor: maintainer — 1.13.0-rc release requested 2026-10-24 -->
+- be41abc: A component whose only story restates its name — a file titled `…/Heading control` exporting `HeadingControl` — now lists once in the story tree and the Components list, as that story under the component's name, instead of as a folder holding a same-named story. Its breadcrumb drops the repeated name the same way.
+- 2fa9733: An index page's story entries drop their Open button: the story's title is now the link that opens it, and its live example sits to the right of the title and description, wrapping beneath them when the frame is too narrow.
+- 2d21c25: A story file tagged `lab` is a whole screen for exercising a component rather than a specimen of it: its index page entries link to it without embedding an example or a variant grid, and it carries a Lab badge there and in the sidebar. `LAB_TAG` is exported beside `GALLERY_TAG`.
+- 1757c3c: Story and component descriptions on index pages and in the info dialog now draw their inline markdown (code spans, emphasis, links) and break into paragraphs at blank lines, where they used to print as plain text.
+- 79ca5bc: forge builds a control for far more of a component's props. A prop typed as an array, a tuple, an object or a union of objects gets a control built from its parts: a list edited entry by entry, an object edited field by field, and a union of objects that each pin one field to a string edited as a choice of that string with the chosen object's own fields under it. A union a string may stand in, such as a `ReactNode`, gets a text field, and a union mixing string literals with types no control edits offers the literals. An argType may give a value's shape itself through `type`, Storybook's `SBType`, now exported as `ArgShape`. An object type declared in a dependency, or open to any key, gets no control.
+  
+  `BandEditor`'s stories pass every arg through, so its panel now edits the display (fraction, decimal or percent, with each one's options), the ticks, the label, the range limits and the selected band, beside the range, scale and snapping it already had.
+- 19eea3d: Several story files can share one title. The file named for the title's last segment (`Bar.stories.tsx` for `ui/Bar`) speaks for the component: its stories list first in the tree, the Components list and the index page, and its meta's description is the component's. Each file's own meta still applies to its own stories.
+- 773f9c8: Several writers can now override one node at once. Each entry set on `scene.overrides` is a ply over the ones set before it: for each field the most recently claimed ply that gives it wins, `alpha` multiplies through every ply, and `data` runs each ply's function on what the plies under it show. Releasing a ply shows what lies under it. A ply's `path` is drawn in the box of the `pose` it gives beside it, so a pose laid over it by another writer, such as a move over a skinned node, carries the path along; a path given with no pose is drawn where it is. So a gesture's published preview no longer gives way where another writer holds the node: the data a move previews for a transform follower shows while the move holds the follower's pose, and an edge whose live route is eased shows the drag's reroute beside the route, so what derives from either follows every frame.
+  
+  `has` and `clear` take an optional `entry`, to check or release one writer's ply: `has(id, entry)`, `clear(id, entry)`. `clear(id)` still drops every ply of the node; each keeps its place, so a writer that sets its entry again goes back where it stood. `get(id)` answers the top ply. A hand-written `PoseOverrides` must honor `entry` on both: a writer releasing its own ply must not clear another's. This is a behavior change for a writer that set an entry over another's to replace it, or that checked `get(id) === entry` to know its own was still installed: the earlier entry now stays and shows again when the later one goes, and `get` answers only the top one. A hold's `show` no longer leaves an id another writer holds to that writer; it lays its frame over it. `PoseHold.others()` answers each node's topmost pose that is not the hold's own, where it answered the pose of whichever single entry the node held.
+  
+  `PoseTransitionScene.overrides` now needs `read` where it needed `has`: the undo glide skips only a node something else poses, not one showing a data draft. A container's descendants likewise ride along with its pose animation unless another writer poses them. Rigs and pose targets put their override back when the table drops it, and a pose target retargeted mid-run keeps running when its own write reflows a layout. Labkit's `LensActionApi` gains `unfollow`, which Pinned and Close call to let go of the follow hold alone.
+- 4be32cf: **Breaking.** Slider's `density` is gone, and with it the slim face (an accent-tinted thumb with no border or blur). Size a slider with numbers instead: `trackHeight` and the new `thumbSize` each take px or a CSS length, such as `var(--wzl-slider-track-h)`. `thumbShape` sets the shape of every thumb that names none of its own, and `ThumbShape` gains `dot`, a circle centered on the track, beside `notched`. The default rounded-rect thumb, which was `'round'`, is now `'tab'`. A former `density="slim"` is `thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"`, and the thumb wears the default face.
+- Updated dependencies [6bb74c2]
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [c5ed0d0]
+- Updated dependencies [5d58e92]
+- Updated dependencies [81a2c50]
+- Updated dependencies [8f2edfe]
+- Updated dependencies [25e0d6f]
+- Updated dependencies [38d5ad1]
+- Updated dependencies [7edd3be]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [ee9e277]
+- Updated dependencies [0d97246]
+- Updated dependencies [4b6e14d]
+- Updated dependencies [3f45450]
+- Updated dependencies [5f28e9c]
+- Updated dependencies [2d1b1f0]
+- Updated dependencies [79ca5bc]
+- Updated dependencies [ee4cb7c]
+- Updated dependencies [e70d2cd]
+- Updated dependencies [ed89d42]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [d5a9a80]
+- Updated dependencies [3519c96]
+- Updated dependencies [c7516cd]
+- Updated dependencies [a243bd9]
+- Updated dependencies [773f9c8]
+- Updated dependencies [39c72a4]
+- Updated dependencies [1f2a0b3]
+- Updated dependencies [b992f80]
+- Updated dependencies [5eb75a1]
+- Updated dependencies [8c39126]
+- Updated dependencies [3eaceb1]
+- Updated dependencies [7191306]
+- Updated dependencies [06c809d]
+- Updated dependencies [4f4f148]
+- Updated dependencies [1322310]
+- Updated dependencies [ad82e2b]
+- Updated dependencies [4f42d9c]
+- Updated dependencies [4be32cf]
+- Updated dependencies [7e3463d]
+- Updated dependencies [fb5bb67]
+- Updated dependencies [a0bc69f]
+- Updated dependencies [ceae749]
+- Updated dependencies [769eef8]
+- Updated dependencies [683b998]
+- Updated dependencies [bbee4df]
+- Updated dependencies [a1b479a]
+- Updated dependencies [dee201c]
+- Updated dependencies [5eaf191]
+- Updated dependencies [aba2016]
+- Updated dependencies [4c113da]
+  - @weasel-js/theme@1.13.0-rc.0
+  - @weasel-js/ui@1.13.0-rc.0
+  - @weasel-js/labkit@1.13.0-rc.0
+  - @weasel-js/core@1.13.0-rc.0
+  - @weasel-js/svg@1.13.0-rc.0
+  - @weasel-js/prefs@1.13.0-rc.0
+  - @weasel-js/icons@1.13.0-rc.0
+  - @weasel-js/registry@1.13.0-rc.0
+
 ## 1.12.0
 
 ### Patch Changes

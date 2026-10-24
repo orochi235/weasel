@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/stroke",
-  "version": "1.12.0",
+  "version": "1.13.0-rc.0",
   "description": "A stroke as geometry: the ribbon mesh with joins, caps, dashes and per-vertex widths, the marker registry and its placed heads, and a stroke's outline as a path. No scene graph, no React.",
   "license": "MIT",
   "type": "module",
@@ -20,9 +20,9 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.12.0",
-    "@weasel-js/paint": "1.12.0",
-    "@weasel-js/registry": "1.12.0"
+    "@weasel-js/geom": "1.13.0-rc.0",
+    "@weasel-js/paint": "1.13.0-rc.0",
+    "@weasel-js/registry": "1.13.0-rc.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

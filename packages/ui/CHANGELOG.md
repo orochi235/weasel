@@ -1,5 +1,157 @@
 # @weasel-js/ui
 
+## 1.13.0-rc.0
+
+### Minor Changes
+
+- 6bb74c2: **Breaking.** Four props now decide how a component looks, and each is a hint the component draws from as it sees fit: `stance` (the angle it comes from), `grade` (how serious), `emphasis` (how loud), and `tint` (an exact color). They replace a prop that meant two things and four spellings of severity. Color resolves as tint, then grade, then stance; emphasis sets how loudly it shows. Stance and emphasis pass to everything inside a surface; grade and tint do not, so a `danger` dialog's Cancel button stays plain.
+  
+  | Was | Now |
+  |---|---|
+  | `status="accent"` / `"muted"` / `"neutral"` | `emphasis="high"` / `"low"` / nothing |
+  | `status="success"`, `"warn"`, `"danger"`, `"info"` | `grade="…"` |
+  | Badge `status="custom"` with `--badge-edge` | `tint={…}` |
+  | `tone={…}` (palette index or color), KeyDiagram's per-key `tone` | `tint={…}` |
+  | `stance="scope"` | `stance="clarify"` |
+  | `stance="danger"` / `"notice"` / `"important"` | `grade="danger"` / `grade="warn"` / `emphasis="high"` |
+  | Button `variant="primary"` / `"secondary"` | `stance="confirm"` / the default `variant="solid"` |
+  | Toast `tone: 'warning' \| 'error'`, `toast.warning`, `toast.error` | `grade: 'warn' \| 'danger'`, `toast.warn`, `toast.danger` |
+  | labkit Toolbar `variant="danger"` | `grade="danger"` |
+  
+  New stances are `confirm` and `cancel`. `useStance`, `StanceProps` and the `@weasel-js/ui/stance` subpath are gone; use `useAppearance`, `AppearanceProps` and `@weasel-js/ui/appearance`. `BadgeStatus`, `CodeStatus`, `ButtonStatus`, `DetailRowStatus` and `ToastTone` are deleted; `Grade`, `Emphasis` and `Stance` are exported in their place, and `DetailRow`, labkit `Readout` and Toast take `grade`. `BADGE_STATUS_ICONS` is now `GRADE_ICONS` and `EMPHASIS_ICONS`, exported from `@weasel-js/ui` and `@weasel-js/ui/appearance`, and the status glyphs are `gradeSuccess`, `emphasisHigh` and `emphasisLow`.
+  
+  In `@weasel-js/theme`: `GRADES`, `GRADE_TOKENS`, `EMPHASES`, `EMPHASIS_FG`, `EMPHASIS_SLOTS` and `GRADE_SLOTS` join `STANCES`. `TONE_REF` is `TINT_REF` (`{ ref: 'tint' }`), the theme's tone list is its tint list (`ThemeProvider tints`, `useTints`, a theme's `"tints"`), and hud's `tones` option is `tints`. Stance tokens are renamed: `--wzl-stance-scope-*` → `--wzl-stance-clarify-*`, `--wzl-stance-<s>-tone(-mix)` → `-tint(-mix)`, `--wzl-panel-tone-mix` → `--wzl-panel-tint-mix`, `--wzl-button-primary-*` → `--wzl-button-confirm-*`; the danger, notice and important stance tokens are removed. A new `--wzl-info` token colors the info grade, so info badges and toasts take it, where info toasts used the accent before. Badge's `warn` now uses `--wzl-warning` rather than its own amber.
+  
+  <!-- bump-approved: minor: maintainer — 1.13.0-rc release requested 2026-10-24 -->
+
+### Patch Changes
+
+- 7e5f9e3: A curved `Bar` scrolls smoothly. An item sliding off either end of its run now carries on along the curve, round the arc's circle rather than straight out along the end, and fades by how much of it is still on the run, instead of dimming to 40% and then vanishing. Wheel and focus moves glide to where they send the run over about 60 ms; a drag still follows the pointer, and a reader who prefers reduced motion gets every move at once. The chevrons that mark more past an end sit 10 px out past it, clear of the item fading there.
+  
+  `Along`'s `arc` can be given by where its middle faces and how far it reaches: `{ at: 0, span: '120deg' }`, or `{ at: 0, span: '180px' }`, which keeps the arc 180 px long however large its box grows. `spanDegrees` and the `ArcSpan`, `ArcEnds`, `ArcAround` and `AlongArcPlace` types are exported beside it.
+  
+  In geom, a track shape's `at(f, { open: true })` carries a station past 0 and 1 along the shape itself — a line and an open path straight on, an arc and an ellipse round themselves, a closed path round its contour — and `runStationAt` and `placeAlongRun` take `past: 'follow'` to lay places that way. `placeAlongRun`'s `past: 'hold'` now follows the shape with an item part past an end, where it used to carry it on straight, before holding it at the end once it is wholly past.
+- c5ed0d0: `Along` and the controls laid along it work under a scaled or rotated ancestor. `Along` sizes its arc from its untransformed box, so a CSS scale no longer shrinks the arc a second time, and a curved `Slider` and a scrolling curved `Bar` map a pointer back through every transform above them, so a press under a rotated or scaled ancestor lands where it was made.
+- 5d58e92: A selected segment of a `ToggleBar`, `OptionsBar` or `ButtonBar` laid along an arc draws its label in the on-accent color, white in light mode, as a straight bar's does. It drew in the dark text color over the accent fill.
+- 81a2c50: `BandEditor`'s ruler ticks, the range-end ticks included, now run down across the gap to the top edge of the band strip instead of stopping one gap above it. The tick labels stay where they were, and the ticks take no pointer, so the ruler's click-to-split area is unchanged.
+- 8f2edfe: A popover or menu nested inside a curved `Bar`'s popover opens as it would from a straight bar, instead of on the side the outer item faces.
+- 25e0d6f: A `separator` leaf on a `Bar` takes its `aria-orientation` from the line it lands on: `vertical` across a horizontal or curved line, `horizontal` across a vertical one or in the More menu. A curved bar's separators used to report `horizontal`.
+- 4b6e14d: A curved slider reads its `--rp-track-height` in any unit when judging how far off the band a drag has gone. A height in rem or a `calc()` used to be read as its leading number in px.
+- 3f45450: `paintGradientTrack` paints a curved slider track. On a `Slider` given a `shape` or placed in an `Along`, it strokes the band along the curve with the same sampled ramp, carries the end colors over the band past the value span, and dims and hatches the band outside `activeRange`, where it used to draw nothing.
+  
+  `TrackCtx.shape` is typed as the `TrackRun` it always was, so a painter can reach the run's whole `shape` and where the value span sits on it (`from`, `to`, `reversed`).
+- 2d1b1f0: `@weasel-js/ui` exports `useFloatingPlacement`, from the root and from a new `@weasel-js/ui/floating` subpath: it
+  places a box over its container through windease's floating strategy and lets a drag move it, snapping to the
+  container's corners. It is controlled — it takes `placement` and reports a drag once, on release, through
+  `onPlacementChange` — and persists nothing. A dropped box stays where it was let go until `placement` changes or the
+  next press, so a host that stores the new placement a tick later never draws it back at its old spot. A drag captures
+  the pointer only past the drag threshold, and Escape puts the box back. The box is placed before its first paint, so
+  it is never drawn unplaced for a frame. `@weasel-js/ui` now depends on `windease`.
+  
+  labkit's `FloatingPanel` is built on the hook, and still remembers its position through its `persist` prop. Its
+  placement now reaches persistence once per drag, on release, rather than on every move, and Escape cancels a drag.
+- 79ca5bc: forge builds a control for far more of a component's props. A prop typed as an array, a tuple, an object or a union of objects gets a control built from its parts: a list edited entry by entry, an object edited field by field, and a union of objects that each pin one field to a string edited as a choice of that string with the chosen object's own fields under it. A union a string may stand in, such as a `ReactNode`, gets a text field, and a union mixing string literals with types no control edits offers the literals. An argType may give a value's shape itself through `type`, Storybook's `SBType`, now exported as `ArgShape`. An object type declared in a dependency, or open to any key, gets no control.
+  
+  `BandEditor`'s stories pass every arg through, so its panel now edits the display (fraction, decimal or percent, with each one's options), the ticks, the label, the range limits and the selected band, beside the range, scale and snapping it already had.
+- ee4cb7c: A settings form's framed groups draw through `MotifFrame`, so a `<DefaultMotif>` an app sets reaches them: the columns layout's groups (`group`) and the groups inside them (`subpanel`), and every `as: 'panel'` group in `PrefsForm`, `PrefsPane` and `SelectionPanel`. With no such default they keep their own look, now the new `well()` motif: a sunken box, or a rule down the leading edge, whose spacing and title type each form sets through `--wzl-well-*` properties. A pane's panel stays a `region` named by its title, and a leaf marked `heading` still draws its control inside the heading.
+- 04b862d: Scene node kinds are now `mark` and `group`, replacing `leaf` and `container`, and any node may have children. `ContainerNode` and `LeafNode` are now `GroupNode` and `MarkNode`; `AddNodeSpec.kind` is `'mark' | 'group'`, and `isLeaf(node)` and `hasChildren(node)` ask whether a node has children. This breaks code that names the old kinds. Scenes save as version 2, and a version 1 save still loads: its leaves become marks and its containers become groups, unless the `classifyV1` option of `sceneFromJSON(json, { classifyV1 })` says otherwise. `V1Classifier` and `nodeKindOf` are exported from `@weasel-js/core`. `@weasel-js/svg`'s `SvgSceneDraft.kind` changed from `'container' | 'leaf'` to `'group' | 'mark'`.
+- c7516cd: `Jog` follows a curve. Inside an `Along`, or given a curved `shape`, its step and play buttons, readout and caption lie along the shape in reading order, each tipped to it, and the scrubber bends along the stretch of the run they leave between them, keeping at least 80 px. Without a scrubber the controls sit where the `Along`'s `align`, or Jog's own `align`, puts them. On a straight line it is the row it always was.
+  
+  In geom, `trackSlice(shape, from, to)` cuts a stretch of a track shape out as a shape of its own, running the same way: an arc stays an arc and an ellipse an ellipse, so `trackShapeD` still draws it with true arcs.
+- 1f2a0b3: A menu hung from a button opens on a side of it, not only below or above. `placeMenuUnder`'s last argument is now a `MenuSide` (`'top' | 'bottom' | 'left' | 'right'`, default `'bottom'`) where it was the boolean `above`; beside the button the menu is top-aligned and flips to the other side when it does not fit. `MenuOpenRequest` and `OpenMenu` carry `side` in place of `above`. This is a breaking change for anyone passing `above`: pass `side: 'top'` instead. A curved `Bar`'s menus now open on the side their item faces, where `'left'` and `'right'` used to open below.
+- b992f80: `PageTabs` no longer points its lit tab at a panel that does not exist. React Aria set the lit tab's `aria-controls` to the id of a tab panel `PageTabs` never draws, so a screen reader was sent to nothing. Now no tab names a panel unless the new `panelId` prop gives the id of the element that shows the current page, which the lit tab then names.
+- 5eb75a1: `PropertyPanel` takes a `motif`, as `PropertyGroup` and `Subpanel` do. Its own look is now the `sheet()` motif, and `<DefaultMotif panel={…}>` sets the motif every panel below draws in, beside the `group` and `subpanel` slots. A titled panel is now a `group` named by its title.
+  
+  A frame's kind owns its colors and title type, and the motif only its geometry: a panel drawn as a `titlebar()` keeps the `--wzl-panel-*` slots, and a subpanel drawn as a `stereo()` keeps its own. The `panel` and `subpanel` stance rules are now keyed `.panel[data-motif]` and `.subpanel[data-motif]` to beat the frame rules on the same element.
+  
+  `MotifFrame` takes an optional `title` (an untitled frame is not a named group), `twistyAt` to put the fold twisty at the end of the heading, and `attrs` for `data-*` attributes on its root.
+  
+  Breaking: the `panelTitle`, `panelHeader` and `panelActions` classes are gone, replaced by the `sheet` motif's own.
+  
+  A `MotifFrame` can now carry a component's own look as its `fallback`, drawn unless the caller or an explicit `<DefaultMotif>` names another. Its heading takes an `inline` control (drawn inside the heading, kept out of the frame's name), a `note` of help text under it, and a `level`. `role="region"` makes a titled frame a landmark instead of a group.
+- 3eaceb1: `orderPrefGroup` reorders a group's children, and the children of its nested groups, by a stored `PrefOrder` keyed by container path, and `resolveOrder` is the rule it follows for keys the store lacks. An `actions` leaf takes `order`, and the actions it draws follow it, with any it does not name at the end.
+- 7191306: `RadioGroup` follows an `Along` arc. Inside an `Along` with a curved shape, its label and radios lie along the shape in reading order, each tipped to its spot and kept upright, the label first and not pressable. The description and any error sit at the middle of the arc one row further in, toward the inside of the bend: below the radios on an arc over the top, above them on one under the bottom. The arrow keys still choose in reading order, `orientation` has no effect on an arc, and a row too long for its arc scrolls along it.
+- 06c809d: A curved slider's readouts restack their rows when one changes size after layout, as a web font finishing loading makes them, instead of keeping the rows measured from the fallback font.
+- 4f4f148: A described row shows its description in a tooltip when its label is hovered, with no ⓘ beside the label. Keyboard focus on the row's control still opens it, and the control is still described by it for assistive technology. The kit setting `help.icon` brings the ⓘ back. A `ControlMatrix` row's help opens off its label the same way.
+- 4f42d9c: `ToggleBar`, `ButtonBar` and `OptionsBar` follow a curved `Along`, as `Bar` does. Their segments lie edge to edge along the run, each tipped to it and turned upright where the run would stand it upside down. The default variant's pill-shaped well is drawn along the curve behind them, and a selected or mixed segment is filled as its own stretch of that well, rounded at the well's ends. The `'flat'` and `'minimal'` variants keep each segment's own box, set a little apart. A row too long for its arc scrolls along it by wheel, drag or focus, the way a curved `Bar` does, and arrow keys move in reading order. Outside an `Along`, or on a straight one, the three bars render as before.
+- 4be32cf: **Breaking.** Slider's `density` is gone, and with it the slim face (an accent-tinted thumb with no border or blur). Size a slider with numbers instead: `trackHeight` and the new `thumbSize` each take px or a CSS length, such as `var(--wzl-slider-track-h)`. `thumbShape` sets the shape of every thumb that names none of its own, and `ThumbShape` gains `dot`, a circle centered on the track, beside `notched`. The default rounded-rect thumb, which was `'round'`, is now `'tab'`. A former `density="slim"` is `thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"`, and the thumb wears the default face.
+- 7e3463d: `stereo({ invert: true })` swaps the label bar's fill and title colors, and the border takes the title's color. Every stereo frame now pads its bar across its title only, so a side bar is as thin as a top one and its title runs edge to edge; rounds the inside corners where its body meets the bar; sets a frame after another apart by a little more than the rows; and centers its rows down a side bar whose title runs longer than they do.
+- fb5bb67: Stories that were filed as components of their own now sit under the component they show: the arc labs are `On An Arc` stories of `Bar`, `RadioGroup`, `Slider`, `SwatchStrip`, `Tabs` and `ToggleBar`, `Along`'s labs are stories of `Along` beside a new `Default` story, the Prefs and ControlPanel extras are stories of `Prefs` and `ControlPanel`, `Keyboard Layouts` is a story of `KeyDiagram`, and the effect chart lab is `EffectChart`'s `Lab`. Their story ids change with their titles. Lab screens carry the `lab` tag.
+- a0bc69f: `Subpanel` takes a `motif`, as `PropertyGroup` does, along with `leading` and `actions`. Its own look is now the `divider()` motif, and its rows sit in a body element inside the frame. A `<MotifFrame>` has a `kind`, `'group'` or `'subpanel'`, and `<DefaultMotif>` names a default for each: `<DefaultMotif group={titlebar()}>` titles a desktop theme's groups without turning its subpanels into windows.
+  
+  Breaking: `<DefaultMotif motif={…}>` is now `<DefaultMotif group={…}>`, and the `.subpanelTitle` class is gone.
+- 769eef8: `SwatchGrid` and `SwatchStrip` follow a curve. Inside an `Along`, or given a curved `shape`, each row of swatches lies on a ring of its own, every next row one row further in toward the curve's center, so a palette reads like a color wheel's rim. `SwatchStrip` puts the recent colors on the outer rings and the palette on the rings inside them, each section's heading — or the palette picker, when there is more than one palette — first on its section's first ring. Each arrow key moves to the swatch beside the focused one, along its ring or on the next ring in or out, that lies the arrow's way on screen, so Down goes down on a bottom arc as on a top one. A ring too long for its arc scrolls along itself, as a curved `Bar` does; where the curve bends too tight for another ring to keep its swatches apart, the rest of that palette's rows share its last ring. Outside a curve both render as before. Both take `shape` and `align` props, as `Bar` does.
+  
+  In geom, `shiftTrack(shape, shift)` is the track that lies a fixed distance along a shape's normal from it, addressed by its own length, or null where that distance passes a center of curvature and the track would fold; `bendSide(shape)` says which side of its normal a shape bends toward.
+- 683b998: `Tabs` and `PageTabs` follow an `Along` arc, as `Bar` does. Inside an `Along` with a curved shape, a `TabList`'s tabs lie along the shape in reading order, each tipped to its spot and kept upright, and the line under them is drawn along the inside of the bend half a tab off the run, with the selected tab's marker bent along it under that tab. The arrow keys still move through the tabs in reading order, and a row too long for its arc scrolls along it with the wheel, a drag or focus. `Tabs` can sit inside the `Along`, or the `Along` can wrap only the `TabList`. Tabs on an arc need an `id`.
+  
+  `PageTabs` inside such an `Along` puts its + button last on the run. A drag measures the tabs and the pointer along the run, through a scaled or rotated ancestor, and marks where the tab would land with a line across the run; renaming and Alt+arrow work as before.
+  
+  `useReorderDragList` takes `line`, which measures rows and the pointer along a line of the caller's own instead of a screen axis.
+- a1b479a: `ToolOptionsBar` renders nothing when it has neither a `schema` nor children, where it used to draw an empty strip; a `label` alone no longer keeps it. So `CharacterOptions` outside a text edit renders nothing unless it has children. A host that relied on the row holding its height while empty, so the canvas below it does not move as an edit opens, now reserves that height itself, for example with a `min-height` of `var(--wzl-tb-height)` on a wrapper. This changes rendered output.
+- dee201c: `ToolbarDock` docks toolbars down the left and right edges. A left or right dock sets its rows side by side as columns and draws each bar vertical; a drag drops along a column by height and across columns by width, a new column opens to the left of the first or the right of the last, and Alt+Up and Alt+Down move a bar along its column while Alt+Left and Alt+Right move it to the next column, then the next dock. The announcement names the column: "Tools toolbar, column 1, position 2 of 3".
+  
+  Only a bar with `vertical: true` on its `DockBar` may sit in a left or right dock. A layout that puts any other bar there sends it to its home dock, the first dock in its own list that it may enter; a drag over such a dock shows it unavailable and drops nothing, and Alt+arrows skip it. A bar floated off a left or right dock floats vertical, and takes the orientation of whichever dock it lands in next.
+- 5eaf191: `ToolbarDock` lays toolbars out round a workspace. The host declares the docks, each on an edge (`{ id: 'strip', edge: 'top' }`), and the bars on offer, each naming the docks it may sit in and drawing itself for the orientation it is given; the workspace goes in as `children` and fills the middle. A dock holds rows of bars, a side dock draws its bars vertical, and an edge with no bars takes no room. A bar that draws nothing, such as one the host has hidden, takes no room either and keeps its place for when it comes back.
+  
+  Where bars sit is a controlled `layout` value: the dock reconciles whatever it is given with the docks and bars there are now, and calls `onLayoutChange` with the layout a move settles on, for the host to store and hand back. With `movable`, each bar's lead turns into a handle named "Move {label} toolbar": drag it by its name to another slot, row or dock, or focus it and use Alt+arrows. A plain press on anything in the bar still clicks it.
+  
+  A dock bar drawn as a `BarMenu` gets a handle too: a grip before its button, named and moved the same way.
+  
+  A bar with `float: true` on its `DockBar` can also float over the whole dock, workspace and docks alike. Drag its handle more than 24 px off the row it sits in and it tears off, following the pointer from where it was held; let go over open space and it stays there, caught by a corner of the dock when dropped near one, the way labkit's `FloatingPanel` is. Drag a floating bar back over a dock row and the same drop marks show where it will land; while any bar is dragged, a dock it may enter that has no bars shows a strip along its edge to drop on. Alt+Enter on a handle floats a docked bar where it is, or docks a floating one at the end of its home dock, and the dock announces "File toolbar floating" or "File toolbar docked, row 1, position 3 of 3". Floating places are part of `layout`, under `floating`, and a floating bar keeps the orientation of the dock it left. A bar without `float` never tears off.
+  
+  A `Bar` with `overflow="menu"` now asks for its natural length, its lead and every item, instead of taking all the
+  room its host has. In a row sized to its content it sits at that length, opens the menu only once the row squeezes it
+  shorter, and takes its items back as room returns. A `'menu'` bar in a block container, or stretched in a flex
+  column, used to fill the container's width; it now takes its natural length capped at the container, so a framed
+  bar's strip can end short of the container.
+- aba2016: `Bar` takes `order`, a `PrefOrder` that sets the order of its items and groups, and `onReorder`, called with the new order when the user moves one. Passing `onReorder` turns reordering on: hold Cmd and drag an item to move it within its group, or Cmd+Shift and drag a group to move it among the others; with the keyboard, Alt+arrows move the focused item and Alt+Shift+arrows move its group. A plain press still clicks, nothing crosses a group boundary, Escape cancels a drag, and the new position is announced. The same works along a straight or a curved bar. The kit stores nothing: a host keeps the order itself, as a user pref.
+- 4c113da: Items along a curved `Bar` or `Slider` no longer read upside down at the ends of an arc across 3 or 9 o'clock. A run still picks its side from its middle. A bar item, stop label or readout whose spot would tip it past 90° turns a half turn about its own center there, keeping its place in the run and its side of the band. Ticks, thumbs and the chevrons that mark more past an end keep the run's direction.
+  
+  In geom, a `TrackPlace` carries `turned`, true where its up points down the screen: where an item that should read upright takes that half turn.
+- Updated dependencies [6bb74c2]
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [38d5ad1]
+- Updated dependencies [7edd3be]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [5f28e9c]
+- Updated dependencies [e70d2cd]
+- Updated dependencies [ed89d42]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [d5a9a80]
+- Updated dependencies [3519c96]
+- Updated dependencies [c7516cd]
+- Updated dependencies [773f9c8]
+- Updated dependencies [39c72a4]
+- Updated dependencies [1f2a0b3]
+- Updated dependencies [8c39126]
+- Updated dependencies [3eaceb1]
+- Updated dependencies [86f67ad]
+- Updated dependencies [1322310]
+- Updated dependencies [a0bc69f]
+- Updated dependencies [ceae749]
+- Updated dependencies [769eef8]
+- Updated dependencies [bbee4df]
+- Updated dependencies [aba2016]
+- Updated dependencies [4c113da]
+  - @weasel-js/theme@1.13.0-rc.0
+  - @weasel-js/geom@1.13.0-rc.0
+  - @weasel-js/core@1.13.0-rc.0
+  - @weasel-js/animator@1.13.0-rc.0
+  - @weasel-js/svg@1.13.0-rc.0
+  - @weasel-js/quantity@1.13.0-rc.0
+  - @weasel-js/modes@1.13.0-rc.0
+  - @weasel-js/menu@1.13.0-rc.0
+  - @weasel-js/prefs@1.13.0-rc.0
+  - @weasel-js/gestures@1.13.0-rc.0
+  - @weasel-js/font@1.13.0-rc.0
+  - @weasel-js/icons@1.13.0-rc.0
+  - @weasel-js/paint@1.13.0-rc.0
+  - @weasel-js/react@1.13.0-rc.0
+  - @weasel-js/registry@1.13.0-rc.0
+  - @weasel-js/select@1.13.0-rc.0
+
 ## 1.12.0
 
 ### Patch Changes
