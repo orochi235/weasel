@@ -41,6 +41,8 @@ describe('<ControlPanel> motif', () => {
       .label('Fade')
       .motif(stereo()),
     hold: f.group({ time: f.number(1) }).label('Hold'),
+    notes: f.group({ shout: f.number(1) }).label('Notes').as('section').motif(stereo()),
+    aside: f.group({ hush: f.number(1) }).label('Aside').as('section'),
     a: f.number(1).section('Look', { motif: stereo() }),
     b: f.number(1).section('Feel'),
   });
@@ -71,5 +73,12 @@ describe('<ControlPanel> motif', () => {
     expect(frameOf('Hold')).toHaveAttribute('data-motif', 'tab');
     expect(frameOf('Feel')).toHaveAttribute('data-motif', 'tab');
     expect(frameOf('Fade')).toHaveAttribute('data-motif', 'stereo');
+  });
+
+  it('draws an `as: section` group in the motif it names, and in a divider otherwise', () => {
+    // The panel's motif is for framed groups; it leaves a section group frameless.
+    draw(tab());
+    expect(frameOf('Notes')).toHaveAttribute('data-motif', 'stereo');
+    expect(frameOf('Aside')).toHaveAttribute('data-motif', 'divider');
   });
 });

@@ -165,11 +165,11 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     const reset = resolved.resettable?.has(path) ? (
       <ResetGroup {...{ group: found, path, config, setConfig }} />
     ) : undefined;
-    // `as: 'section'` is a heading over the rows, with none of a group's frame.
+    // `as: 'section'` is a heading over the rows, unframed: the panel's motif doesn't reach it.
     if (found.as === 'section') {
       const { pack: _pack, ...folds } = fold(path, undefined, rows.grid);
       return (
-        <Subpanel key={path} title={found.name} {...folds}>
+        <Subpanel key={path} title={found.name} motif={resolved.motifs?.get(path)} {...folds}>
           {body(found, path, rows)}
         </Subpanel>
       );
