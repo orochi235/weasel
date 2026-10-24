@@ -7,7 +7,7 @@ import {
   prefTabRuns,
 } from '@weasel-js/prefs';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
-import { GroupTabs, type PrefFieldChoice } from '@weasel-js/ui/components/Prefs';
+import { GroupTabs } from '@weasel-js/ui/components/Prefs';
 import {
   type CollapseProps,
   type PropertyAlign,
@@ -25,14 +25,11 @@ import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
-import { extra, isSliderLeaf, labField, leafValueAt } from './fields';
+import { extra, leafValueAt } from './fields';
 import { headingActions, liftedControl, sectionFrame, sectionKey } from './panelHeadings';
-import { drawsAnyAt, drawsOwn, loosePathsIn } from './panelPaths';
+import { drawsAnyAt, drawsOwn, loosePathsIn, pairableAt } from './panelPaths';
 import { ResetGroup } from './ResetGroup';
 import { PairedRow } from './rows';
-
-const NO_CHOICES: readonly PrefFieldChoice[] = [];
-const unwritten = (): void => {};
 
 /** What a heading's fold takes: the grid its rows pack into, and how it opens. */
 export interface FoldProps {
@@ -169,7 +166,13 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     if (found.as === 'section') {
       const { pack: _pack, ...folds } = fold(path, undefined, rows.grid);
       return (
-        <Subpanel key={path} title={found.name} motif={resolved.motifs?.get(path)} disabled={!enabled(path)} {...folds}>
+        <Subpanel
+          key={path}
+          title={found.name}
+          motif={resolved.motifs?.get(path)}
+          disabled={!enabled(path)}
+          {...folds}
+        >
           {body(found, path, rows)}
         </Subpanel>
       );
@@ -193,21 +196,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     );
   };
 
-  /**
-   * The leaf at `path` if it may share a row with its neighbours: `pair` is
-   * presentational, so a leaf whose control the lab draws itself, or one whose
-   * control needs the whole row, keeps its own row instead.
-   */
-  const pairable = (path: string): readonly [path: string, leaf: PrefLeaf] | undefined => {
-    const found = schemaNodeAtPath(resolved.group, path);
-    if (!found || !isPrefLeaf(found)) return undefined;
-    if (!visible(path)) return undefined;
-    if (drawsOwn(resolved, renderers, path, found)) return undefined;
-    // A cell is one bare control, so a leaf with no one field keeps its row.
-    if (isSliderLeaf(found) || labField(found, undefined, unwritten, NO_CHOICES) === null)
-      return undefined;
-    return [path, found];
-  };
+  const pairable = (path: string) => pairableAt(resolved, renderers, visible, path);
 
   /** A run of sibling paths as rows, merging each leaf a `pair` names into
    *  the row of the leaf naming it, where they run adjacent. */

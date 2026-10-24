@@ -1,6 +1,11 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import type { PrefFieldChoice } from '@weasel-js/ui/components/Prefs';
 import { schemaNodeAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import { isSliderLeaf, labField } from './fields';
+
+const NO_CHOICES: readonly PrefFieldChoice[] = [];
+const unwritten = (): void => {};
 
 /** Whether anything at `path` draws: a visible leaf, or a group with one inside it. */
 export function drawsAnyAt(
@@ -35,4 +40,25 @@ export function drawsOwn(
     resolved.dialogs[path] ??
     renderers?.[leaf.kind];
   return own !== undefined;
+}
+
+/**
+ * The leaf at `path` if it may share a row with its neighbors: `pair` is
+ * presentational, so a leaf whose control the lab draws itself, or one whose
+ * control needs the whole row, keeps its own row instead.
+ */
+export function pairableAt(
+  resolved: ResolvedConfig,
+  renderers: Record<string, ControlRenderer> | undefined,
+  visible: (path: string) => boolean,
+  path: string,
+): readonly [path: string, leaf: PrefLeaf] | undefined {
+  const found = schemaNodeAtPath(resolved.group, path);
+  if (!found || !isPrefLeaf(found)) return undefined;
+  if (!visible(path)) return undefined;
+  if (drawsOwn(resolved, renderers, path, found)) return undefined;
+  // A cell is one bare control, so a leaf with no one field keeps its row.
+  if (isSliderLeaf(found) || labField(found, undefined, unwritten, NO_CHOICES) === null)
+    return undefined;
+  return [path, found];
 }
