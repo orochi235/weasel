@@ -265,7 +265,11 @@ the working tree, so from a checkout someone else is editing it tests their half
 and blames the commit. `test:fleet` checks the commit out into a throwaway worktree first. Run
 it on the branch before merging and on `main` after. `onto` keeps one tree per repository on a
 node and every worktree syncs into it, so a run counts only if its log has `fleet-tree: N changed
-path(s) match <sha>` and that gate test passed rather than skipped. `scripts/fleet-tree.setup.ts`
+path(s) match <sha>` and that gate test passed rather than skipped. The sha comes with the job,
+never from the tree (`armTree` in `scripts/lib/fleet-tree.mjs`), so two branches can run on one node
+at once: the later sync fails the earlier run, naming both commits. Give each run a log file of its
+own, named for its branch: subagents of one session share its scratchpad, and on 2026-10-21 two of
+them wrote `fleet2.log` over each other and each read the other's run as its own. `scripts/fleet-tree.setup.ts`
 checks each node's tree, so a sharded run (`npm run test:fleet -- HEAD --spread 0`) prints that
 line once per shard. A run whose tree another sync moved before it finished ends with `fleet-tree:
 the tree changed during the run (…); this run is void`, after the summary: none of its failures are real. Sharding is not a way to make a run faster: each of its slices starts vitest

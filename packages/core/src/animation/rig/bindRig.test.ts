@@ -99,6 +99,16 @@ describe('bindRig', () => {
     close(where(scene, lower), { x: 150, y: 115, width: 50, height: 10 });
   });
 
+  it('shows a bound node again on the next frame after the table drops its overrides', () => {
+    const { scene, upper } = armScene();
+    const rig = bindRig({ scene, skeleton: ARM, bindings: { upper } });
+    rig.pose({ upper: { x: 30 } });
+    const posed = where(scene, upper);
+    scene.overrides.clear(upper);
+    rig.pose({ upper: { x: 30 } });
+    close(where(scene, upper), posed);
+  });
+
   it('release returns the nodes to their document poses', () => {
     const { scene, upper } = armScene();
     const rig = bindRig({ scene, skeleton: ARM, bindings: { upper } });

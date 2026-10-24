@@ -192,8 +192,8 @@ function derivedFromFrame<TPose>(
 export interface PathHold {
   /** Show these paths, and stop showing any other this hold showed. */
   show(paths: ReadonlyMap<string, Path>): void;
-  /** Stop showing every path this hold shows. An entry another writer has
-   *  since replaced is left alone. */
+  /** Stop showing every path this hold shows, revealing whatever other
+   *  writers' overrides lie under each. */
   drop(): void;
 }
 
@@ -203,14 +203,14 @@ export function pathHold<TPose>(scene: Scene<unknown, string, TPose>): PathHold 
   const held = new Map<string, PoseOverride<TPose>>();
   const release = (id: string, entry: PoseOverride<TPose>) => {
     held.delete(id);
-    if (scene.overrides.get(id as NodeId) === entry) scene.overrides.clear(id as NodeId);
+    scene.overrides.clear(id as NodeId, entry);
   };
   return {
     show(paths) {
       for (const [id, entry] of held) if (!paths.has(id)) release(id, entry);
       for (const [id, path] of paths) {
         const entry = held.get(id);
-        if (entry !== undefined && scene.overrides.get(id as NodeId) === entry) {
+        if (entry !== undefined && scene.overrides.has(id as NodeId, entry)) {
           entry.path = path;
           continue;
         }

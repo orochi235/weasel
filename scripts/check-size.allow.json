@@ -16,7 +16,7 @@
     "longestFunction": 169
   },
   "packages/core/src/animation/reflow.ts": {
-    "longestFunction": 165
+    "longestFunction": 162
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "longestFunction": 233
@@ -28,7 +28,7 @@
     "longestFunction": 144
   },
   "packages/core/src/core/scene/kitOps.ts": {
-    "longestFunction": 235
+    "longestFunction": 230
   },
   "packages/core/src/core/scene/nodeStore.ts": {
     "longestFunction": 203
@@ -37,7 +37,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 532
+    "lines": 531
   },
   "packages/core/src/features/paths/pathLayer.ts": {
     "longestFunction": 121
@@ -135,7 +135,7 @@
     "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 144
+    "longestFunction": 136
   },
   "packages/labkit/src/controls/panelRows.tsx": {
     "longestFunction": 228

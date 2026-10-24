@@ -161,18 +161,11 @@ Priority tags:
 - **(P2) Cut of an effect with hidden sources deletes them with it.** Whether the clipboard should carry the
   sources, so a paste is whole, is undecided.
 
-- **(P2) Effects follow an anchor-edit drag only on release, for every effect kind.** The anchor preview stays in
-  the gesture handle and dependents are not re-derived; move drags do follow, through scene overrides.
-
 - **(P3) Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
   Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is Mike's call.
 
 - **(P3) Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
-
-- **(P3) Set Spine and Release Spine ignore a blend's `hideSources`.** Set Path hides the path it lays an effect
-  along and shows the one it leaves; the spine actions move neither flag (`packages/path-tools/src/pathEffects/spine.ts`).
-  No action makes a hiding blend today, so only a document built by hand meets it.
 
 - **(P3) The `textAlong` items thunk is not memoized.** Every derivation miss, such as each frame of a source
   drag, re-runs `textClusters`.
@@ -447,13 +440,6 @@ Priority tags:
 
 ## Text
 
-- **(P2) Undoing a write made to a text-along source mid-edit brings back the draft it was made over** (2026-10-23).
-  The edit's drafts are written into the node's data, unrecorded, so a recorded write during the edit, such as a fill
-  change, holds the draft text in both halves of its entry. A cancel or commit puts back only the drafted fields
-  (`packages/core/src/features/text/sceneTextDrafts.ts`), so the write survives the edit, but undoing the write shows
-  the draft again. Keeping drafts out of the node's data, in an override its dependents read as they read a pose
-  override, is the fix; it is a scene feature, not a text-edit one.
-
 - **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
   1px in Chromium at DPR 1, and the matrix rows of `scripts/measure-overlay-alignment.config.ts`
@@ -518,16 +504,8 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A node's declared clip can be set only when it is added** (2026-10-23). `clip: 'outline'`
-  rides `scene.add`, snapshots and the clipboard, but the scene has no `setClip` beside `setUnits`,
-  so `reconcileSpecs` replaces a node whose `clip` changed, and no panel can switch it.
-
-- **(P3) WeaselDraw's SVG round trip turns a mark with children into a group** (2026-10-23).
-  `svgNodesFromKit` writes such a mark as a `<g>` of its own element and then its children, and
-  calls the `group` decorator only for groups, so the `<g>` carries no `wd:` meta and reopens as a
-  group holding a mark. Keeping it a mark needs the import side too: `svgNodesToKitDrafts` drafts
-  every `<g>` as a group, so it would have to read a marked `<g>`'s first element as the mark's
-  own. Draw makes no such marks itself today; one pasted in from elsewhere loses its kind on save.
+- **(P3) No panel switches a node's declared clip** (2026-10-23). `scene.setClip` writes it as one
+  undo step; nothing in a property panel calls it.
 
 - **(P3) Several hit tests still scan every node or shape linearly.** Marquee, lasso and point picks
   consult the scene's BVH pick index (`packages/core/src/canvas/pickIndex/`); these do not, and can
@@ -1154,9 +1132,17 @@ only story runner in the repo.
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
-  7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
-  measured. Polling did not save "indexes a file added under a glob written with a leading ./", which
-  timed out at 15 s in a full fleet run on 2026-10-21 (onto job 2c564a18).
+  7 of 26 tests in one run on 2026-10-13, and polls since; whether a checkout loses them too is not
+  measured. The test's later timeouts were a different thing and are fixed (2026-10-24): a polling
+  watcher takes its baseline of a directory after it reports ready, so a file added in between was
+  never reported. That needs a write within moments of startup, under polling, so it does not
+  explain an edit to an existing file in a long-running server.
+
+- **(P3) `npm pack` died with SIGABRT and no output in the consumer smoke step.** A
+  `test:fleet:postbuild` run of d9f7bb7ba's predecessor 570d272b7 on 2026-10-24 failed
+  `test:smoke:consumer` at `scripts/smoke-consumer-bundle.mjs:271` with `signal: 'SIGABRT'` and empty
+  stdout and stderr; a rerun of the same commit passed every step. Seen once. A second sighting
+  says it is not load.
 
 - **(P3) SVG text export: lines written without a layout sit half the leading off.** Without
   `textLayout`, `serializeSvg` writes `dominant-baseline="text-before-edge"`, which puts the face's
@@ -1219,17 +1205,6 @@ only story runner in the repo.
   Splitting the project across 2 or 3 Chromium processes (vitest `--shard` per process) is untested:
   run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
   every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
-- **(P2) The fleet-tree check passes on another session's commit.** `npm run test:fleet` arms the
-  tree with a marker and a plan whose prelude exports `WEASEL_FLEET_COMMIT`, and both travel inside
-  the synced tree (`scripts/lib/fleet-tree.mjs`). Two branches tested on one node at once share its
-  one weasel tree, so the later sync replaces the marker and the asked-for commit together, and
-  `checkTree` finds them in agreement: on 2026-10-21 two runs of `feat/no-paint-readers` logged
-  `fleet-tree: … match 87199f258` and `match 3e022b9af`, commits of `feat/container-inherit`, with
-  the gate green. The commit the run asks for has to reach the node from outside the tree, such as
-  the job's own environment, so a sync cannot rewrite it. Pinning the two runs to different nodes
-  does not keep them apart: a run pinned to keiei still logged `updated weasel on msb-uai` and
-  shards matching both branches, so the crossing happens on this machine's side. Until it is fixed,
-  run one branch's fleet jobs at a time and compare the logged SHA with the branch tip.
 - **(P2) `onto logs` drops stderr, so a fleet run's log never says why a test failed.** vitest
   writes its failure report to stderr; `onto do` shows it live, but `onto logs <job>` keeps stdout
   only, so a finished job's log holds the failing test's name and nothing else (tested 2026-10-21

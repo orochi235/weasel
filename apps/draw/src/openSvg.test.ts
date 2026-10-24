@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { asNodeId, createScene } from '@weasel-js/core';
+import { asNodeId, createScene, solid, type NodeId } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { importSvgText, openSvgFile, openSvgText } from './openSvg';
 import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
+import { sceneToSvgString } from './svgExport';
 
 function sceneWithOneShape() {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
@@ -74,6 +75,51 @@ describe('a clipped group', () => {
     const scene = sceneWithOneShape();
     importSvgText(scene, svg(CLIPPED));
     expect(scene.get(scene.roots[1])).toMatchObject({ kind: 'group', clip: 'outline', data: clip });
+  });
+});
+
+describe('Save then Open: a mark with children', () => {
+  const PAGE = { filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff' } as const;
+  const rect = (w: number, h: number) => ({ kind: 'rect' as const, x: 0, y: 0, width: w, height: h });
+
+  /** A group holding a red mark that holds two blue ones; `clip` is the red mark's. */
+  function drawn(clip?: 'outline') {
+    const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+    const g = scene.add({ kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 40, height: 40 }, data: {} });
+    const m = scene.add({
+      kind: 'mark', layer: 'default', parent: g, pose: { x: 0, y: 0, width: 40, height: 40 },
+      data: { path: rect(40, 40), fill: { paint: solid('#ff0000') } }, ...(clip ? { clip } : {}),
+    });
+    for (const x of [5, 20]) {
+      scene.add({
+        kind: 'mark', layer: 'default', parent: m, pose: { x, y: 5, width: 10, height: 10 },
+        data: { path: rect(10, 10), fill: { paint: solid('#0000ff') } },
+      });
+    }
+    return scene;
+  }
+  type Drawn = ReturnType<typeof drawn>;
+  /** Each node, depth first, as its kind and the index of its parent in the same list. */
+  const shape = (scene: Drawn) => {
+    const order: NodeId[] = [];
+    const walk = (id: NodeId) => { order.push(id); scene.childrenOf(id).forEach(walk); };
+    scene.roots.forEach(walk);
+    return order.map((id) => {
+      const n = scene.get(id)!;
+      return [n.kind, n.parent === null ? -1 : order.indexOf(n.parent)];
+    });
+  };
+
+  it.each([undefined, 'outline'] as const)('reopens with the same kinds and parents, clip %s', async (clip) => {
+    const saved = drawn(clip);
+    const reopened = sceneWithOneShape();
+    openSvgText(reopened, await sceneToSvgString(saved, PAGE), 'page.svg');
+    expect(shape(reopened)).toEqual(shape(saved));
+    expect(shape(reopened)).toEqual([['group', -1], ['mark', 0], ['mark', 1], ['mark', 1]]);
+    const mark = reopened.get(reopened.childrenOf(reopened.roots[0])[0])!;
+    expect(mark.data.fill).toMatchObject({ paint: { color: '#ff0000' } });
+    expect(mark.clip).toBe(clip);
+    expect(reopened.get(reopened.childrenOf(mark.id)[0])!.data.fill).toMatchObject({ paint: { color: '#0000ff' } });
   });
 });
 

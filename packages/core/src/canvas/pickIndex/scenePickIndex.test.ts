@@ -8,6 +8,7 @@ import { rectRegion } from 'core/geometry/regionHit';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
+import { rectPath } from '@weasel-js/geom';
 import { applyOpsTo, createTransformOp } from 'core/ops';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { registerNodeShape } from 'canvas/NodeShape';
@@ -62,6 +63,14 @@ describe('scenePickIndex freshness', () => {
     scene.overrides.commit();
     expect(pick(scene, at(310, 10))).toEqual(['a']);
     expect(pick(scene, at(10, 10))).toEqual([]);
+  });
+
+  it('boxes the stroke a data override shows, as the full walk meets it', () => {
+    const stroke = (width: number) => ({ paint: { color: '#000' }, width });
+    const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 }, { data: { path: rectPath(0, 0, 20, 20), stroke: stroke(2) } });
+    expect(pick(scene, at(28, 10))).toEqual([]);
+    scene.overrides.set(A, { data: (d) => ({ ...(d as object), stroke: stroke(40) }) });
+    expect(pick(scene, at(28, 10))).toEqual(['a']);
   });
 
   it('follows a data change that moves the bounds a descriptor reads through forNode', () => {

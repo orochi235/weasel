@@ -147,3 +147,57 @@ describe('a blend that hides its sources, retargeted', () => {
     expect(sourcesHiddenBy(scene, blend)).toEqual(['a', 'b', 's2']);
   });
 });
+
+describe('a blend that hides its sources moves the hidden flag with its spine', () => {
+  const HIDING: PathEffect = { kind: 'blend', steps: 1, hideSources: true };
+  const hidden = (scene: TestScene) => ['a', 'b', 's1', 's2'].filter((id) => scene.get(id as NodeId)!.hidden === true);
+  /** `setup`, with `hide` hidden as making the blend would leave them. */
+  function hiding(selected: string[], sources: string[], hide: string[], effect: PathEffect = HIDING) {
+    const s = setup(selected, sources, effect);
+    s.scene.untracked(() => { for (const id of hide) s.scene.setHidden(id as NodeId, true); });
+    return s;
+  }
+
+  it('Set Spine hides the new spine and shows the old one, as one undo step', () => {
+    const { scene, deps } = hiding(['blend', 's2'], ['a', 'b', 's1'], ['a', 'b', 's1']);
+    run(setBlendSpineAction, deps);
+    expect(hidden(scene)).toEqual(['a', 'b', 's2']);
+    scene.undo();
+    expect(hidden(scene)).toEqual(['a', 'b', 's1']);
+  });
+
+  it('Set Spine on a blend with no spine hides the path it lays the blend along', () => {
+    const { scene, deps } = hiding(['blend', 's1'], ['a', 'b'], ['a', 'b']);
+    run(setBlendSpineAction, deps);
+    expect(hidden(scene)).toEqual(['a', 'b', 's1']);
+  });
+
+  it('Set Spine records a path hidden on its own as found hidden, and Release Spine leaves it hidden', () => {
+    const { scene, deps, select } = hiding(['blend', 's1'], ['a', 'b'], ['a', 'b', 's1']);
+    run(setBlendSpineAction, deps);
+    expect(pathEffectOf(scene.get('blend' as NodeId))?.foundHidden).toEqual([2]);
+    select(['blend']);
+    run(releaseBlendSpineAction, deps);
+    expect(hidden(scene)).toEqual(['a', 'b', 's1']);
+  });
+
+  it('Set Spine leaves hidden an old spine it found hidden', () => {
+    const { scene, deps } = hiding(['blend', 's2'], ['a', 'b', 's1'], ['a', 'b', 's1'], { ...HIDING, foundHidden: [2] });
+    run(setBlendSpineAction, deps);
+    expect(hidden(scene)).toEqual(['a', 'b', 's1', 's2']);
+  });
+
+  it('Release Spine shows the spine it hid, as one undo step', () => {
+    const { scene, deps } = hiding(['blend'], ['a', 'b', 's1'], ['a', 'b', 's1']);
+    run(releaseBlendSpineAction, deps);
+    expect(hidden(scene)).toEqual(['a', 'b']);
+    scene.undo();
+    expect(hidden(scene)).toEqual(['a', 'b', 's1']);
+  });
+
+  it('a blend that does not hide its sources moves no flag', () => {
+    const { scene, deps } = setup(['blend', 's2'], ['a', 'b', 's1']);
+    run(setBlendSpineAction, deps);
+    expect(hidden(scene)).toEqual([]);
+  });
+});

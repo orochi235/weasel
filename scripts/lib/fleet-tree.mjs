@@ -5,6 +5,7 @@ import { join, matchesGlob } from 'node:path';
 /** Untracked and not ignored, so `onto test` sends it with the tree and the next sync cleans it away. */
 export const MARKER = '.onto/fleet-tree.json';
 export const COMMIT_ENV = 'WEASEL_FLEET_COMMIT';
+const STEP_ENV = 'WEASEL_FLEET_STEP';
 /** Where onto records what its last sync into a node's tree left there. */
 export const ONTO_STAMP = '.git/onto-stamp';
 const PLAN = '.onto/tests';
@@ -26,19 +27,21 @@ export const changedFiles = (rawDiff) => {
   return files;
 };
 
-/** The marker alone, for a job that is not a vitest run and passes `COMMIT_ENV` itself (`onto do --env`). */
-export const writeMarker = (tree, marker) => writeFileSync(join(tree, MARKER), `${JSON.stringify(marker, null, 1)}\n`);
-
 /**
- * The marker says what the tree must hold, and travels with the tree. The exported commit says
- * which marker this run expects, and travels with the job: onto reads the plan here and sends its
- * script in the launch request, so a tree another run synced in between cannot supply it.
+ * The marker says what the tree must hold, and travels with the tree. The commit the run asks for
+ * travels with the job, so a sync from another session cannot rewrite it. Returned as `K=V` for
+ * `onto do --env`; with `plan`, also exported by the plan's prelude, which `onto test` (no `--env`)
+ * reads on this machine and sends in the launch request.
  */
-export const armTree = (tree, marker) => {
-  writeMarker(tree, marker);
-  const plan = join(tree, PLAN);
-  const gap = readFileSync(plan, 'utf8').endsWith('\n') ? '' : '\n';
-  appendFileSync(plan, `${gap}prelude: export ${COMMIT_ENV}=${marker.commit}\n`);
+export const armTree = (tree, marker, { plan = false } = {}) => {
+  writeFileSync(join(tree, MARKER), `${JSON.stringify(marker, null, 1)}\n`);
+  const env = `${COMMIT_ENV}=${marker.commit}`;
+  if (plan) {
+    const at = join(tree, PLAN);
+    const gap = readFileSync(at, 'utf8').endsWith('\n') ? '' : '\n';
+    appendFileSync(at, `${gap}prelude: export ${env}\n`);
+  }
+  return env;
 };
 
 const fileProblem = (root, path, id) => {
@@ -56,7 +59,11 @@ export const checkTree = (root, env) => {
     return { armed: Boolean(asked), commit: asked, checked: 0, problems };
   }
   const marker = JSON.parse(readFileSync(at, 'utf8'));
-  if (asked && marker.commit !== asked) {
+  if (!asked) {
+    const why = `${MARKER} says ${marker.commit}, and the job named no commit in ${COMMIT_ENV}; a marker alone is whichever run synced last`;
+    return { armed: true, commit: marker.commit, checked: 0, problems: [why] };
+  }
+  if (marker.commit !== asked) {
     return { armed: true, commit: asked, checked: 0, problems: [`this tree is ${marker.commit}, and the run asked for ${asked}`] };
   }
   const entries = Object.entries(marker.files);
@@ -73,11 +80,18 @@ export const selection = (root, env, { always, triggers }) => {
   const at = join(root, MARKER);
   if (!existsSync(at)) return undefined;
   const marker = JSON.parse(readFileSync(at, 'utf8'));
-  if (!marker.select || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
+  if (!marker.select || env[STEP_ENV] || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
   const changed = Object.keys(marker.files);
   if (changed.some((path) => triggers.some((glob) => matchesGlob(path, glob)))) return undefined;
   return [...changed, ...always].map((path) => join(root, path));
 };
+
+/**
+ * The environment for a process a fleet job spawns, such as a ci.yml step that starts vitest. It
+ * keeps the commit, so that process's tree check still has the job's word for it, and turns off
+ * the branch selection, which belongs to the job's own suite.
+ */
+export const stepEnv = (env) => ({ ...env, [STEP_ENV]: '1' });
 
 /** What a fleet run prints about its tree: the line that proves the match, or why nothing else in the run counts. */
 export const treeReport = (check) => check.problems.length === 0

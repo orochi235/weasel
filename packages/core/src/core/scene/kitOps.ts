@@ -64,11 +64,6 @@ function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | und
   else record.parallax = to;
 }
 
-function setUnits(node: { units?: UnitScope }, to: UnitScope | undefined): void {
-  if (to === undefined) delete node.units;
-  else node.units = to;
-}
-
 /** Register every kit op kind. Answers with the table a live `kit:setLayout`
  *  payload's strategies are kept in, which `scene.setLayout` fills. */
 export function registerKitOps<TData, TLayer extends string, TPose>(
@@ -211,11 +206,6 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   }>('kit:setDependsOn', {
     apply: (p) => { retarget(p.id, p.to); },
     revert: (p) => { retarget(p.id, p.from); },
-  });
-
-  registerKitOp<{ id: NodeId; from?: UnitScope; to?: UnitScope }>('kit:setUnits', {
-    apply: (p) => { setUnits(requireNode(p.id) as { units?: UnitScope }, p.to); },
-    revert: (p) => { setUnits(requireNode(p.id) as { units?: UnitScope }, p.from); },
   });
 
   /** The strategies each live `kit:setLayout` payload swaps between. A payload

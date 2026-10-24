@@ -389,6 +389,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   constraint mark by the anchor it holds and a dashed line to where the link wants that anchor,
   both in the conflict red. A link that holds draws nothing there. The layer reads the committed
   scene, so a drag that breaks or mends a link shows it on release.
+- 2026-10-24: With `svgNodesFromKit`'s `mark` decorator, a mark with children is written as a
+  `<g>` of its own element and one `<g>` of its children, even when it neither clips nor copies,
+  so a reader never mistakes a clipped child group for the mark's clip. Copies follow as baked
+  groups and read back as further children of the mark. Draw tags that outer `<g>`
+  `wd:role="mark"`. A mark whose own element is itself a group (text with a background or a
+  clip) is not tagged and still reopens as a group.
 
 ## Animation
 

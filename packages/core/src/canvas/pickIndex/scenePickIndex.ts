@@ -10,6 +10,7 @@ import { createBvh, type Bvh } from '@weasel-js/geom/nd';
 import { markerGeneration } from '@weasel-js/stroke';
 import { getNodeShapes } from 'canvas/NodeShape';
 import { inheritedPaintOf, inheritsPaint } from 'core/scene/inheritedPaint';
+import { nodesAsShown } from 'core/scene/nodeAsShown';
 import { nodeMemoGeneration } from 'core/scene/nodeMemo';
 import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -204,7 +205,8 @@ function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltInd
   let perScene = CACHE.get(scene);
   if (perScene === undefined) CACHE.set(scene, (perScene = new WeakMap()));
   const hit = perScene.get(descriptor);
-  const order = scene.renderOrderNodes() as unknown as Order;
+  // Boxed as shown, so a data override that grows a node's ink is met where it is painted.
+  const order = nodesAsShown(scene.overrides, scene.renderOrderNodes()) as unknown as Order;
   if (hit && hit.version === version && hit.overrides === overrides && hit.memo === memo && hit.markers === markers) {
     if (hit.index === null) hit.index = build(scene, descriptor, order);
     else hit.index.rankBy(order);

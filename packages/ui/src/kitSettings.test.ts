@@ -33,6 +33,7 @@ const expected: Record<string, unknown> = {
   'tree.hoverExpandMs': HOVER_EXPAND_MS,
   'tree.tipRestMs': REST_MS,
   'help.focusDelayMs': FOCUS_DELAY,
+  'help.icon': false,
   'toast.ttlMs': DEFAULT_TTL_MS,
   'targets.curveKeyHitPx': KEY_HIT_PX,
   'targets.curveHandleHitPx': HANDLE_HIT_PX,

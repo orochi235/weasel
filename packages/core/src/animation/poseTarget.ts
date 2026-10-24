@@ -96,7 +96,7 @@ export interface PoseCascade<TPose> {
 }
 
 /** Shows a moving container's descendants through overrides of their own, and takes them back
- *  as it rests. A descendant something else already overrides is left to it. */
+ *  as it rests. A descendant something else already poses is left to it. */
 function riders<TPose>(overrides: PoseOverrides<TPose>, cascade: PoseCascade<TPose>): (pose: TPose | null) => void {
   const riding = new Map<NodeId, PoseOverride<TPose>>();
   return (pose) => {
@@ -104,7 +104,7 @@ function riders<TPose>(overrides: PoseOverrides<TPose>, cascade: PoseCascade<TPo
     for (const [id, beside] of pose === null ? [] : cascade.beside(pose)) {
       let entry = riding.get(id);
       if (!entry) {
-        if (overrides.has(id)) continue;
+        if (overrides.read(id)?.pose !== undefined) continue;
         riding.set(id, entry = {});
         overrides.set(id, entry);
       }
@@ -113,7 +113,7 @@ function riders<TPose>(overrides: PoseOverrides<TPose>, cascade: PoseCascade<TPo
     }
     for (const [id, entry] of riding) {
       if (seen.has(id)) continue;
-      if (overrides.get(id) === entry) overrides.clear(id);
+      overrides.clear(id, entry);
       riding.delete(id);
     }
   };
@@ -133,6 +133,18 @@ function build<TPose>(
   if (!axes) return null;
   const entry: PoseOverride<TPose> = {};
   let installed = false;
+  /** While installed, stops the run as soon as the table changes after something else wrote
+   *  the pose: a drag laid over the run commits and then lets go, which would show this run's
+   *  last frame until its next one. */
+  let unwatch: (() => void) | null = null;
+  const rest = (): void => {
+    installed = false;
+    unwatch?.();
+    unwatch = null;
+    overrides.clear(id, entry);
+    ride?.(null);
+    onRest?.();
+  };
   const target = createTarget<TPose>({
     get: opts.get,
     set: opts.set,
@@ -140,18 +152,22 @@ function build<TPose>(
     show(pose) {
       // The writer wins: what was left to travel belonged to a pose that is no longer committed.
       if (target.active && overwritten?.()) target.stop({ commit: false });
-      if (target.active) {
-        entry.pose = pose;
-        // Installed once per run: an override laid over it since, a drag's, is not taken back.
-        if (!installed) overrides.set(id, entry);
-        installed = true;
-        ride?.(pose);
+      if (!target.active) {
+        rest();
         return;
       }
-      installed = false;
-      if (overrides.get(id) === entry) overrides.clear(id);
-      ride?.(null);
-      onRest?.();
+      entry.pose = pose;
+      // Reinstalled where it stood if the table dropped it; an override laid over it since, a drag's, is not taken back.
+      if (!overrides.has(id, entry)) overrides.set(id, entry);
+      installed = true;
+      if (overwritten && unwatch === null) {
+        unwatch = overrides.subscribe(() => {
+          if (!target.active || !overwritten()) return;
+          target.stop({ commit: false });
+          if (installed) rest();
+        });
+      }
+      ride?.(pose);
     },
     publish: publisherOf(overrides),
   });
@@ -176,12 +192,20 @@ export function createPoseTarget<TPose>(opts: PoseTargetOptions<TPose>): Target<
 
 const sceneTargets = new WeakMap<object, Map<string, Target<unknown>>>();
 
+/** Whether two poses hold the same fields, compared without allocating: a running target asks on every publish. */
 function samePose(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
-  const ka = Object.keys(a);
-  return ka.length === Object.keys(b).length
-    && ka.every((k) => (a as Record<string, unknown>)[k] === (b as Record<string, unknown>)[k]);
+  const ra = a as Record<string, unknown>;
+  const rb = b as Record<string, unknown>;
+  let count = 0;
+  for (const k in ra) {
+    if (!Object.hasOwn(ra, k)) continue;
+    if (!Object.hasOwn(rb, k) || ra[k] !== rb[k]) return false;
+    count++;
+  }
+  for (const k in rb) if (Object.hasOwn(rb, k)) count--;
+  return count === 0;
 }
 
 /**
@@ -218,6 +242,8 @@ export function scenePoseTarget<TPose>(
   let last = documentPose(scene, node);
   /** The node's pose as an animation last left it, or as it was when the first one started. */
   let mine: TPose | undefined;
+  /** While this target's own commit is being written. */
+  let writing = false;
   const cache = made;
   let target: Target<TPose> | null = null;
   target = build<TPose>({
@@ -233,12 +259,19 @@ export function scenePoseTarget<TPose>(
     set(pose) {
       const n = scene.get(nid);
       if (!n) return;
-      if (!samePose(n.pose, pose)) scene.untracked(() => (cascade ? cascade.write(pose) : scene.setPose(nid, pose)));
+      // The write runs the layout's reflow at once, and a reflow publishes glides to the overrides.
+      writing = true;
+      try {
+        if (!samePose(n.pose, pose)) scene.untracked(() => (cascade ? cascade.write(pose) : scene.setPose(nid, pose)));
+      } finally {
+        writing = false;
+      }
       mine = scene.get(nid)?.pose;
     },
   }, () => {
     if (!scene.get(nid)) cache.delete(id);
   }, () => {
+    if (writing) return false;
     const n = scene.get(nid);
     return !!n && mine !== undefined && !samePose(n.pose, mine);
   }, cascade && riders(scene.overrides, cascade));

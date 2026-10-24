@@ -43,12 +43,12 @@ const exitsByDefault = (removal: PoseRemoval<unknown>): boolean => removal.origi
 
 /** The part of a scene a pose transition hears and reads. */
 export interface PoseTransitionScene<TPose, TNode = unknown> extends Pick<ScenePoseReports<TPose, TNode>, 'onPoseWrite'> {
-  readonly overrides: Pick<PoseOverrides<TPose>, 'has'>;
+  readonly overrides: Pick<PoseOverrides<TPose>, 'read'>;
 }
 
 /** Hand `scene`'s pose writes to the seat's transition, each gliding from the
- *  pose it was shown at. A node something else is showing through an override
- *  — a drag's preview, another animation — is left to it. With `departures`,
+ *  pose it was shown at. A node something else poses through an override — a
+ *  drag's preview, another animation — is left to it. With `departures`,
  *  removals leave as ghosts there, and a node that comes back while its ghost
  *  is leaving returns from where the ghost was. */
 export function bindPoseTransition<TPose, TNode = unknown>(
@@ -74,7 +74,7 @@ export function bindPoseTransition<TPose, TNode = unknown>(
         t.settle(id);
         continue;
       }
-      if (scene.overrides.has(w.id as NodeId)) continue;
+      if (scene.overrides.read(w.id as NodeId)?.pose !== undefined) continue;
       const from = w.from ?? back ?? s.enter?.(w.to);
       if (from !== undefined) t.settle(id, { from });
     }

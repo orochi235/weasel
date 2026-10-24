@@ -6,6 +6,7 @@ import {
   boundsOfPath,
   derivedDepOf,
   derivedPartsOf,
+  documentOf,
   INHERIT,
   resolvePartPaint,
   effectivePose,
@@ -91,7 +92,9 @@ const one = (nodes: SvgNode[]): SvgNode | null =>
  * that derives its path (a connector) is drawn along that path, and anything
  * else is written by `svgLeafFromKit`.
  */
-export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] {
+export function pageSvgNodes(live: PageExportScene, page: PageRect): SvgNode[] {
+  // An export writes the document, not what an open gesture or edit is showing.
+  const scene = documentOf(live);
   const painters = [diagramShape<RectPose>(), markShape<RectPose>()];
   const shown = new Set(scene.layers.filter((l) => l.visible && !isAnnotationLayer(l)).map((l) => l.id));
   const poseCache = new Map<string, RectPose>();

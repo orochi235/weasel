@@ -6,8 +6,9 @@
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
  * `params-points`, `params-ratio`, `params-rotation`; a path's corner shapes under `corners`
- * and `corner-anchors` (`svgCorners.ts`); a leaf's scene id under `leaf-id`, and a live path
- * effect on its group (`svgEffects.ts`).
+ * and `corner-anchors` (`svgCorners.ts`); a leaf's scene id under `leaf-id`, a live path
+ * effect on its group (`svgEffects.ts`), and `role="mark"` on the group a mark with children
+ * exports as.
  */
 
 import type { Fill, NodeClip, TextStyle } from '@weasel-js/core';
@@ -218,7 +219,7 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * the file carries one; the caller maps it to the minted `NodeId`.
  */
 export type SceneDraft =
-  | { kind: 'mark'; id: string; parentId: string | null; obj: Obj; hidden?: true }
+  | { kind: 'mark'; id: string; parentId: string | null; obj: Obj; clip?: NodeClip; hidden?: true }
   | { kind: 'group'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
   | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true } & EffectAttrs);
 
@@ -292,11 +293,13 @@ export function svgNodesToSceneDrafts(
     leaf: kitLeafToObj,
     // A blend of no steps or a repeat of no copies exports an empty group.
     keepEmpty: (g) => decodeEffectAttrs(g.meta?.wd?.attrs) !== null,
+    mark: (g) => g.meta?.wd?.attrs?.role === MARK_ROLE,
   });
   return drafts.map((d): SceneDraft => {
     const hidden = d.hidden ? { hidden: true as const } : {};
-    if (d.kind === 'mark') return { kind: 'mark', id: d.id, parentId: d.parentId, obj: d.data, ...hidden };
-    const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data, ...(d.clip ? { clip: d.clip } : {}), ...hidden };
+    const clip = d.clip ? { clip: d.clip } : {};
+    if (d.kind === 'mark') return { kind: 'mark', id: d.id, parentId: d.parentId, obj: d.data, ...clip, ...hidden };
+    const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data, ...clip, ...hidden };
     const effect = effects.get(d.id);
     return effect === undefined ? { kind: 'group', ...group } : { kind: 'effect', ...group, ...effect };
   });
@@ -316,8 +319,8 @@ export interface SceneSource extends SvgKitTree<string> {
 
 /**
  * A scene's container tree as `SvgNode[]`. Every container becomes a group stamped with
- * `meta.wd.attrs['group-id']` = its scene id, so the structure round-trips back through
- * {@link svgNodesToSceneDrafts}.
+ * `meta.wd.attrs['group-id']` = its scene id, and a mark with children one stamped with
+ * `role="mark"`, so the structure round-trips back through {@link svgNodesToSceneDrafts}.
  *
  * `roots`, when supplied, walks exactly those ids (in the given order) instead of
  * `source.roots`. A hidden node is skipped either way: a selection naming one still must not
@@ -334,8 +337,12 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
       return { kind: 'group', children: obj.parts.map(objToSvgNode), meta: { wd: { attrs: encodeEffectAttrs(obj) } } };
     },
     group: (id, g) => ({ ...g, meta: { wd: { attrs: { 'group-id': id } } } }),
+    mark: (_id, g) => ({ ...g, meta: { wd: { attrs: { role: MARK_ROLE } } } }),
   });
 }
+
+/** `wd:role` on the group a mark with children exports as; its first element is the mark. */
+const MARK_ROLE = 'mark';
 
 /** SVG's initial `fill`, for a path or text that names none. */
 const DEFAULT_IMPORT_FILL: Fill = { paint: { color: '#000000' } };

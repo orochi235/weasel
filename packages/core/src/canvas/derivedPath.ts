@@ -17,18 +17,20 @@ import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
 import { carryBoxPath, carryPathBy, pathAsPainted } from 'core/scene/depFrame';
 import type { SceneViewDrawOne } from './NodeShape';
 import type { DrawnBoundsScene } from './drawnBounds';
+import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 
 export { resolveDerivedPath } from 'core/scene/derivedPath';
 
 type ToPose<TData, TLayer extends string, TPose> = (node: Node<TData, TLayer, TPose>) => TPose;
 
-/** `node` as the scene shows it, its `pose` an override's or a derived one: the stored node
- *  itself where the two agree. */
+/** `node` as the scene shows it, its `pose` an override's or a derived one and its `data` an
+ *  override's: the stored node itself where they agree. */
 function shownNode<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
-  node: Node<TData, TLayer, TPose>,
+  stored: Node<TData, TLayer, TPose>,
 ): Node<TData, TLayer, TPose> {
-  const pose = effectivePose(scene, node);
+  const node = nodeAsShown(scene.overrides, stored);
+  const pose = effectivePose(scene, stored);
   return pose === node.pose ? node : { ...node, pose };
 }
 
@@ -109,10 +111,10 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
     slot,
     shown: sceneOverridePathOf(scene, toPose) as (node: unknown) => Path | undefined,
     childrenOf: (id: NodeId) => scene.childrenOf(id),
-    scene: scene as never,
+    scene: shownLookup(scene) as never,
     lookup: (id: NodeId) => {
       const node = scene.get(id);
-      return node === undefined ? undefined : new SlotDep(node, ctx);
+      return node === undefined ? undefined : new SlotDep(nodeAsShown(scene.overrides, node), ctx);
     },
   };
   return ctx.lookup;
@@ -253,8 +255,9 @@ export function drawnBoundsScene<TData, TLayer extends string, TPose>(scene: Sce
   let held = drawnScenes.get(scene);
   if (held === undefined) {
     const pathOf = sceneDerivedPathOf(scene);
+    const shown = shownLookup(scene);
     held = {
-      get: (id) => scene.get(id) as never,
+      get: (id) => shown.get(id) as never,
       childrenOf: (id) => scene.childrenOf(id),
       derivedPathOf: (id) => {
         const node = scene.get(id);

@@ -58,6 +58,13 @@ const line = (x0: number, y0: number, x1: number, y1: number) => new PathBuilder
 describe('simplifyPathAction', () => {
   const ongoing = simplifyPathAction.invoker as OngoingInvoker;
 
+  it('answers the same preview objects until the tolerance moves', () => {
+    const { deps } = setup({ a: circle(120, 50) }, ['a']);
+    const handle = ongoing.start(ctx(deps, { tolerance: 0.01 }), {});
+    expect(handle.previewPose!('a')).toBe(handle.previewPose!('a'));
+    expect(handle.previewData!('a')).toBe(handle.previewData!('a'));
+  });
+
   it('previews the refit as the tolerance moves and commits once', () => {
     const { deps, batches } = setup({ a: circle(120, 50) }, ['a']);
     const handle = ongoing.start(ctx(deps, { tolerance: 0.01 }), {});

@@ -37,6 +37,8 @@ export interface LensActionApi<C> {
   scene: LensScene<C>;
   /** Writes the current lens's reticle to the client point through `scene.overrides.hold()`. */
   follow(client: LoupePoint): void;
+  /** Lets go of the reticle `follow` holds, leaving any other writer's override on it. */
+  unfollow(): void;
   /** `true`, or the reason the source is unavailable. */
   sourceAvailable(kind: LensSourceKind): true | string;
   openCompareMenu(lensId: string): void;
@@ -218,19 +220,17 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     invoker: { timing: 'immediate', run: () => void api.add() },
   };
   const close = on(LENS_ACTION_IDS.close, 'Close lens', (lensId, s) => {
-    const reticleId = lensIdsOf(scene, `${lensId}:body`)?.reticle;
     // Leader first: it depends on both of the others.
     const ids = lensClosure(scene, [`${lensId}:body`]).reverse();
     const nodes = ids.flatMap((id) => scene.get(id as NodeId) ?? []);
     api.apply(nodes.map((node) => createDeleteOp({ node, label: 'close lens' })));
     // A Follow reticle's held pose would otherwise outlive the node.
-    if (s.aim === 'follow' && reticleId !== undefined) scene.overrides.clear(reticleId);
+    if (s.aim === 'follow') api.unfollow();
   });
   const pinned = on(LENS_ACTION_IDS.pinned, 'Aim: pinned', (lensId, s) => {
     api.apply(pinOps(scene, lensId, s));
     // After the write lands, or the scene answers with the old pose in between.
-    const reticleId = lensIdsOf(scene, `${lensId}:body`)?.reticle;
-    if (s.aim === 'follow' && reticleId !== undefined) scene.overrides.clear(reticleId);
+    if (s.aim === 'follow') api.unfollow();
   });
   const follow = on(LENS_ACTION_IDS.follow, 'Aim: follow', (lensId) =>
     api.apply(setAimOps(scene, lensId, 'follow')),

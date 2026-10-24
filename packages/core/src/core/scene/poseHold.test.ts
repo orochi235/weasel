@@ -69,4 +69,148 @@ describe('PoseOverrides.hold', () => {
     first.set([]);
     expect(scene.overrides.read(a)?.pose).toEqual(at(8));
   });
+
+  describe('show', () => {
+    it('publishes data beside poses', () => {
+      const { scene, a } = setup();
+      const hold = scene.overrides.hold();
+      const data = () => ({ shown: true });
+      hold.show([[a, { pose: at(5), data }]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(5));
+      expect(scene.overrides.read(a)?.data).toBe(data);
+    });
+
+    it('lays a frame over an id another writer holds, and reveals that writer once dropped', () => {
+      const { scene, a, b } = setup();
+      const coasting = { pose: at(9), alpha: 0.5 };
+      scene.overrides.set(b, coasting);
+      const hold = scene.overrides.hold();
+      const data = () => ({ shown: true });
+      hold.show([[a, { pose: at(5) }], [b, { pose: at(7), data }]]);
+      expect(scene.overrides.read(b)?.pose).toEqual(at(7));
+      expect(scene.overrides.read(b)?.alpha).toBe(0.5);
+      expect(scene.overrides.read(b)?.data).toBe(data);
+      hold.drop();
+      expect(scene.overrides.has(a)).toBe(false);
+      expect(scene.overrides.get(b)).toBe(coasting);
+      expect(scene.overrides.read(b)?.pose).toEqual(at(9));
+      expect(scene.overrides.read(b)?.data).toBeUndefined();
+    });
+
+    it('leaves a field its frame does not give to the writer under it', () => {
+      const { scene, a } = setup();
+      const drag = scene.overrides.hold();
+      const previews = scene.overrides.hold();
+      const data = () => ({ shown: true });
+      drag.set([[a, at(5)]]);
+      previews.show([[a, { data }]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(5));
+      expect(scene.overrides.read(a)?.data).toBe(data);
+      drag.set([[a, at(6)]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+    });
+  });
+
+  describe('two holds on one field', () => {
+    it('shows the one that took the node last, and the other once it lets go', () => {
+      const { scene, a } = setup();
+      const first = scene.overrides.hold();
+      const second = scene.overrides.hold();
+      first.set([[a, at(5)]]);
+      second.set([[a, at(8)]]);
+      first.set([[a, at(6)]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(8));
+      second.drop();
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+      first.drop();
+      expect(scene.overrides.has(a)).toBe(false);
+    });
+
+    it('keeps the later one when the earlier lets go first', () => {
+      const { scene, a } = setup();
+      const first = scene.overrides.hold();
+      const second = scene.overrides.hold();
+      first.set([[a, at(5)]]);
+      second.set([[a, at(8)]]);
+      first.drop();
+      expect(scene.overrides.read(a)?.pose).toEqual(at(8));
+      second.drop();
+      expect(scene.overrides.has(a)).toBe(false);
+    });
+
+    it('reports to each the pose the other publishes', () => {
+      const { scene, a } = setup();
+      const first = scene.overrides.hold();
+      const second = scene.overrides.hold();
+      first.set([[a, at(5)]]);
+      second.set([[a, at(8)]]);
+      expect([...first.others()]).toEqual([[a, at(8)]]);
+      expect([...second.others()]).toEqual([[a, at(5)]]);
+    });
+  });
+
+  describe('after the table drops its entry', () => {
+    it('reinstalls a shown entry on the next frame', () => {
+      const { scene, a } = setup();
+      const hold = scene.overrides.hold();
+      const data = () => ({ shown: true });
+      hold.show([[a, { data }]]);
+      scene.overrides.clear(a);
+      hold.show([[a, { data }]]);
+      expect(scene.overrides.read(a)?.data).toBe(data);
+    });
+
+    it('reinstalls a set pose on the next frame', () => {
+      const { scene, a } = setup();
+      const hold = scene.overrides.hold();
+      hold.set([[a, at(5)]]);
+      scene.overrides.clear(a);
+      hold.set([[a, at(6)]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+    });
+
+    it('publishes again over a node removed and put back mid-gesture', () => {
+      const { scene, a } = setup();
+      const hold = scene.overrides.hold();
+      hold.set([[a, at(5)]]);
+      scene.remove(a);
+      scene.undo();
+      hold.set([[a, at(6)]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+    });
+
+    it('puts back every hold with a ply on a node cleared mid-gesture', () => {
+      const { scene, a } = setup();
+      const drag = scene.overrides.hold();
+      const previews = scene.overrides.hold();
+      const data = () => ({ shown: true });
+      drag.set([[a, at(5)]]);
+      previews.show([[a, { data }]]);
+      scene.overrides.clear(a);
+      expect(scene.overrides.read(a)).toBeUndefined();
+      drag.set([[a, at(6)]]);
+      previews.show([[a, { data }]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+      expect(scene.overrides.read(a)?.data).toBe(data);
+      previews.drop();
+      expect(scene.overrides.read(a)?.data).toBeUndefined();
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+    });
+
+    it('puts back every hold with a ply on a node removed and restored mid-gesture', () => {
+      const { scene, a } = setup();
+      const lower = scene.overrides.hold();
+      const upper = scene.overrides.hold();
+      lower.set([[a, at(5)]]);
+      upper.set([[a, at(8)]]);
+      scene.remove(a);
+      expect(scene.overrides.has(a)).toBe(false);
+      scene.undo();
+      lower.set([[a, at(6)]]);
+      upper.set([[a, at(9)]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(9));
+      upper.drop();
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+    });
+  });
 });

@@ -16,7 +16,7 @@ import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type React from 'react';
-import { forwardRef, useMemo, useRef } from 'react';
+import { forwardRef, useEffect, useMemo, useRef } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { Canvas } from './Canvas';
 import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
@@ -28,6 +28,7 @@ import { CORE_PRESET_SOURCE } from './SceneCanvas/namedPresets';
 import type { BridgeAdapter, SceneCanvasProps } from './SceneCanvas/props';
 import { useBakedScene } from './SceneCanvas/useBakedScene';
 import { useCanvasDispatcher } from './SceneCanvas/useCanvasDispatcher';
+import { publishPreviews } from './publishPreviews';
 import { useCanvasSelection } from './SceneCanvas/useCanvasSelection';
 import { useEnabledFeatures } from './SceneCanvas/useCanvasTools';
 import { contributionEntries } from './SceneCanvas/useContributionRoles';
@@ -95,6 +96,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // The wrapper's `<InputScope>` provides it.
   const actionsRegistry = useActionsRegistry();
   const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
+  useEffect(() => publishPreviews(scene, dispatcher), [scene, dispatcher]);
 
   const frameColor = useMemo(() => ({
     read: () => chromeColorOf(internalCanvasRef.current, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR),

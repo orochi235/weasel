@@ -77,6 +77,28 @@ describe('bindRig with skins', () => {
     expect(shown(scene, sleeve)).toEqual([110, 115, 210, 115, 210, 125, 110, 125]);
   });
 
+  it('carries the bent path with a move laid over the skinned node, so paint and pick agree', () => {
+    const { scene, sleeve } = sleeveScene();
+    const rig = bindRig({ scene, skeleton: ARM, skins: { [sleeve]: SLEEVE } });
+    rig.pose(BENT);
+    const drag = scene.overrides.hold();
+    drag.set([[sleeve, { x: 110, y: 95, width: 55, height: 55 }]]);
+    expect(shown(scene, sleeve)).toEqual([110, 95, 165, 150, 155, 150, 110, 105]);
+    rig.pose(BENT);
+    expect(shown(scene, sleeve)).toEqual([110, 95, 165, 150, 155, 150, 110, 105]);
+    drag.drop();
+    expect(shown(scene, sleeve)).toEqual([100, 95, 155, 150, 145, 150, 100, 105]);
+  });
+
+  it('shows its path again on the next frame after the table drops the node\'s overrides', () => {
+    const { scene, sleeve } = sleeveScene();
+    const rig = bindRig({ scene, skeleton: ARM, skins: { [sleeve]: SLEEVE } });
+    rig.pose(BENT);
+    scene.overrides.clear(sleeve);
+    rig.pose(BENT);
+    expect(shown(scene, sleeve)).toEqual([100, 95, 155, 150, 145, 150, 100, 105]);
+  });
+
   it('drops the path with the overrides on release', () => {
     const { scene, sleeve } = sleeveScene();
     const rig = bindRig({ scene, skeleton: ARM, skins: { [sleeve]: SLEEVE } });

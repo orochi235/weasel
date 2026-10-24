@@ -184,15 +184,7 @@ export function ControlMatrix({
         <tbody>
           {rowSpecs.map(({ row, cells, label, about }) => (
             <tr key={row.key}>
-              <th scope="row" className="lk-control-matrix__label">
-                {about ? (
-                  <PropertyHelp label={label} description={about} within="tr">
-                    <span className="lk-control-matrix__label-text">{label}</span>
-                  </PropertyHelp>
-                ) : (
-                  <span className="lk-control-matrix__label-text">{label}</span>
-                )}
-              </th>
+              <RowLabel label={label} about={about} />
               {columns.map((column, i) => {
                 const path = `${column.key}.${row.key}`;
                 const cell = cells[i];
@@ -260,6 +252,22 @@ export function ControlMatrix({
       </PropertyPanel>
     );
   return <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>;
+}
+
+/** A row's name, its `about` shown in a tooltip when the name is hovered or the row's first control has focus. */
+function RowLabel({ label, about }: { label: string; about: string | undefined }): ReactElement {
+  const text = <span className="lk-control-matrix__label-text">{label}</span>;
+  return (
+    <th scope="row" className="lk-control-matrix__label">
+      {about ? (
+        <PropertyHelp label={label} description={about} within="tr">
+          {text}
+        </PropertyHelp>
+      ) : (
+        text
+      )}
+    </th>
+  );
 }
 
 function ColumnHeader({

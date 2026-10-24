@@ -197,6 +197,26 @@ describe('a container whose scene composes nothing', () => {
     expect(scene.getVersion()).toBe(version);
   });
 
+  it('shows a child traveling beside it though another writer shows the child\'s data', () => {
+    const { animator, frame, scene, adapter, box, child, shownX } = family();
+    const draft = { data: (stored: object) => ({ ...stored, draft: true }) };
+    scene.overrides.set(child, draft);
+    act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear, recordOp: false }); });
+    frame(0);
+    frame(50);
+    expect(shownX(child)).toBeCloseTo(55);
+    expect(scene.overrides.has(child, draft)).toBe(true);
+  });
+
+  it('leaves a child to another writer posing it', () => {
+    const { animator, frame, scene, adapter, box, child, shownX } = family();
+    scene.overrides.set(child, { pose: at(300) });
+    act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear, recordOp: false }); });
+    frame(0);
+    frame(50);
+    expect(shownX(child)).toBe(300);
+  });
+
   it('adds a second move of the container to the first, children included', () => {
     const { animator, frame, adapter, box, child, shownX } = family();
     act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear, recordOp: false }); });

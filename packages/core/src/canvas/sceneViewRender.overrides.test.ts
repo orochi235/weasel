@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { defaultDrawOne } from './defaultDrawOne';
+import { scenePickSource } from './scenePickSource';
+import { sceneShownToPose } from './derivedPath';
+import { nodeAsShown } from 'core/scene/nodeAsShown';
 import type { DrawCommand } from '@weasel-js/renderer';
 
 type Layer = 'main';
@@ -59,7 +62,10 @@ describe('buildSceneViewCommands — overrides', () => {
     expect(alphas).toContain(0.2);
   });
 
-  it('recomputes a memoized painter after an in-place mutation is committed', () => {
+  it.each([
+    ['', false],
+    [' beside a data override', true],
+  ])('recomputes a memoized painter after an in-place mutation is committed%s', (_name, withData) => {
     const scene = createScene<{ text: string; style: { fontFamily: string; fontSize: number } }, Layer>({
       systemLayers: [{ id: 'main' }],
     });
@@ -78,7 +84,7 @@ describe('buildSceneViewCommands — overrides', () => {
       return x;
     };
     const buffer = { x: 0, y: 0, width: 10, height: 10 };
-    scene.overrides.set(id, { pose: buffer });
+    scene.overrides.set(id, withData ? { pose: buffer, data: (d) => ({ ...d, text: 'Shown' }) } : { pose: buffer });
 
     expect(textX()).toBe(0);
 
@@ -86,5 +92,50 @@ describe('buildSceneViewCommands — overrides', () => {
     scene.overrides.commit();
 
     expect(textX()).toBe(120);
+  });
+
+  describe('a data override', () => {
+    /** Every label `drawOne` was handed, in walk order. */
+    const labelsSeen = (scene: ReturnType<typeof setup>['scene']): string[] => {
+      const seen: string[] = [];
+      buildSceneViewCommands(scene, VIEW, (node) => {
+        seen.push((node.data as Data).label);
+        return [];
+      });
+      return seen;
+    };
+
+    it('paints the data it shows, leaving the stored data alone', () => {
+      const { scene, id } = setup();
+      scene.overrides.set(id, { data: (d) => ({ ...d, label: `${d.label}!` }) });
+      expect(labelsSeen(scene)).toEqual(['a!']);
+      expect(scene.get(id)!.data.label).toBe('a');
+    });
+
+    it('shows a recorded write made while it is installed', () => {
+      const { scene, id } = setup();
+      scene.overrides.set(id, { data: (d) => ({ ...d, label: `${d.label}!` }) });
+      scene.update(id, { data: { label: 'b' } });
+      expect(labelsSeen(scene)).toEqual(['b!']);
+    });
+
+    it('applies once to a copy of a shown node, however it was copied', () => {
+      const { scene, id } = setup();
+      scene.overrides.set(id, { data: (d) => ({ ...d, label: `${d.label}!` }) });
+      const shown = nodeAsShown(scene.overrides, scene.get(id)!);
+      expect(nodeAsShown(scene.overrides, { ...shown, pose: { x: 1, y: 1, width: 1, height: 1 } }).data.label).toBe('a!');
+      const handed: string[] = [];
+      sceneShownToPose(scene, (n) => {
+        handed.push(nodeAsShown(scene.overrides, n).data.label);
+        return n.pose;
+      })(scene.get(id)!);
+      expect(handed).toEqual(['a!']);
+    });
+
+    it('hands picking the node as it shows', () => {
+      const { scene, id } = setup();
+      scene.overrides.set(id, { data: () => ({ label: 'shown' }) });
+      expect(scenePickSource(scene).order().map((n) => (n as { data?: Data }).data?.label)).toEqual(['shown']);
+    });
   });
 });

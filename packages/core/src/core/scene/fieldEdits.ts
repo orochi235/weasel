@@ -1,6 +1,6 @@
 /**
  * The scene's edits to one node's fields: its data, pose, layer, dependency
- * list, layout, and unit scope. Each checks its arguments, then records.
+ * list, and layout. Each checks its arguments, then records.
  */
 import type { LayoutStrategy } from '../../layout/types';
 import type { ArrivalWindow } from './arrivalWindow';
@@ -30,7 +30,7 @@ export interface FieldEditsEnv<TData, TLayer extends string, TPose> {
 
 export type FieldEdits<TData, TLayer extends string, TPose> = Pick<
   Scene<TData, TLayer, TPose>,
-  'update' | 'setPose' | 'setLayer' | 'setDependsOn' | 'setLayout' | 'setUnits'
+  'update' | 'setPose' | 'setLayer' | 'setDependsOn' | 'setLayout'
 >;
 
 export function createFieldEdits<TData, TLayer extends string, TPose>(
@@ -127,12 +127,6 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
         noteChange(id);
         record('kit:setLayout', payload, 'setLayout');
       });
-    },
-
-    setUnits(id, units) {
-      const node = requireNode(id);
-      refuse(id, 'set the units of');
-      record('kit:setUnits', { id, from: node.units, to: units ?? undefined }, 'setUnits');
     },
   };
 }

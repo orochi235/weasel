@@ -33,6 +33,17 @@ describe('exportPageSvg', () => {
     expect(fills(await exported(1))).not.toContain(RED);
   });
 
+  it('writes the document, not what an override is showing', async () => {
+    const { scene, pages } = pageScene();
+    scene.overrides.set('a' as never, {
+      pose: { x: 30, y: 30, width: 60, height: 40 },
+      data: (d) => ({ ...(d as object), fill: { paint: { kind: 'solid', color: BLUE } } }),
+    });
+    const doc = new DOMParser().parseFromString(await exportPageSvg(scene, pages[0]!), 'image/svg+xml');
+    const diamond = paths(doc).find((p) => p.getAttribute('fill') === RED)!;
+    expect(diamond.getAttribute('d')).toMatch(/^M50 20/);
+  });
+
   it('draws an outline as its shape, not its box', async () => {
     const doc = await exported(0);
     const diamond = paths(doc).find((p) => p.getAttribute('fill') === RED)!;

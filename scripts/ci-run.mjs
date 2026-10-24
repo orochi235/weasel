@@ -13,7 +13,7 @@ import { delimiter, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calibrate, createBar, planWeights, readWeights, writeWeights } from './lib/ci-progress.mjs';
 import { CI_YML, builtSteps, jobSteps, readCi } from './lib/ci-steps.mjs';
-import { COMMIT_ENV, checkTree, stampReport, treeReport, treeStamp } from './lib/fleet-tree.mjs';
+import { COMMIT_ENV, checkTree, stampReport, stepEnv, treeReport, treeStamp } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const TAIL = 80;
@@ -74,8 +74,7 @@ const npmBin = (version) => {
   return join(prefix, 'bin');
 };
 
-// A step that starts vitest would otherwise read this run's commit as a branch run's selection.
-const { [COMMIT_ENV]: _armed, ...baseEnv } = process.env;
+const baseEnv = stepEnv(process.env);
 const PATH = jobEnv.NPM_VERSION ? [npmBin(jobEnv.NPM_VERSION), baseEnv.PATH].join(delimiter) : baseEnv.PATH;
 const env = { ...baseEnv, ...jobEnv, PATH };
 say(`node ${process.versions.node}, npm ${execFileSync('npm', ['--version'], { env, encoding: 'utf8' }).trim()}`);

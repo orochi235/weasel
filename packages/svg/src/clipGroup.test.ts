@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { boundsOfPath, findShapeSilhouette, type IngestCtx, type Op, type Path } from '@weasel-js/core';
 import { parseSvg } from './parse';
 import { svgNodesFromKit, type SvgKitTree } from './fromKit';
-import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
+import { svgNodesToKitDrafts } from './unpack';
+import { unpackSvgFiles } from './unpackFiles';
 import type { SvgGroupNode } from './types';
 
 const CLIPPED = `<svg xmlns="http://www.w3.org/2000/svg">
