@@ -8,7 +8,7 @@
   padding: var(--_s-pad);
 }
 
-/* A toned frame is one of a list of like frames; its edge says which. */
+/* A tinted frame is one of a list of like frames; its edge says which. */
 .rule[data-tint] {
   border-left: 4px solid var(--wzl-tint);
 }

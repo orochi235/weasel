@@ -1,4 +1,4 @@
-import { type StanceProps, useStance } from '@weasel-js/ui/stance';
+import { type AppearanceProps, useStance } from '@weasel-js/ui/appearance';
 import type { ReactNode, Ref } from 'react';
 import type {
   RegionContribution,
@@ -27,7 +27,7 @@ export function Section({
   stance,
   tone,
   barRef,
-}: StanceProps & {
+}: AppearanceProps & {
   title: string;
   barRef?: Ref<HTMLDivElement>;
   actions?: ReactNode;

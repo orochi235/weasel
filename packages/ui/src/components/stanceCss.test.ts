@@ -20,7 +20,7 @@ describe('stance rules', () => {
     const text = stanceCss(surface);
     for (const stance of surface.stanceless ? [] : STANCES) {
       for (const { name } of STANCE_SLOTS) {
-        if (!(name in surface.base) || name === 'tint') continue;
+        if (!(name in surface.base) || name === 'tint' || name === 'accent') continue;
         const fallback = surface.stanced?.[name] ?? surface.base[name];
         expect(text).toContain(`--_s-${name}: var(--wzl-stance-${stance}-${name}, ${fallback});`);
         if (surface.nests) {
@@ -68,11 +68,23 @@ describe('stance rules', () => {
 
   it('draws high emphasis in the accent and low emphasis muted', () => {
     const text = stanceCss(panel);
-    expect(text).toContain(".panel[data-emphasis='high'] {\n  --_s-border-color: var(--wzl-accent-fg);\n  --_s-title-color: var(--wzl-accent-fg);\n}");
-    expect(text).toContain(".panel[data-emphasis='low'] {\n  --_s-title-color: var(--wzl-fg-muted);\n}");
+    expect(text).toContain(".panel[data-emphasis='high'],\n.panel[data-emphasis='high'][data-nested] {\n  --_s-border-color: var(--wzl-accent-fg);\n  --_s-title-color: var(--wzl-accent-fg);\n}");
+    expect(text).toContain(".panel[data-emphasis='low'],\n.panel[data-emphasis='low'][data-nested] {\n  --_s-title-color: var(--wzl-fg-muted);\n}");
   });
 
-  it('recolors the controls of a tinted or graded surface', () => {
-    expect(stanceCss(panel)).toContain('.panel[data-tint],\n.panel[data-grade] {\n  --wzl-accent: var(--_s-accent);');
+  it('recolors the controls of a tinted surface and leaves a graded one plain', () => {
+    const text = stanceCss(panel);
+    expect(text).toContain('.panel[data-tint] {\n  --wzl-accent: var(--_s-accent);');
+    expect(text).not.toMatch(/\.panel\[data-grade\][^{]*\{\n  --wzl-accent:/);
+  });
+
+  it('lets a named tint win the accent over a stance', () => {
+    const text = stanceCss(panel);
+    expect(text).toContain('--_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent));');
+    expect(text).toContain('var(--wzl-tint, var(--wzl-stance-debug-nested-accent, var(--wzl-stance-debug-accent)))');
+  });
+
+  it('gives emphasis a nested twin so it outranks a nested stance', () => {
+    expect(stanceCss(panel)).toContain(".panel[data-emphasis='high'][data-nested]");
   });
 });

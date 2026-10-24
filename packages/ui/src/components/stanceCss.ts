@@ -56,7 +56,9 @@ const EMPHASIS: Record<string, [string, string][]> = {
 function emphasisRules(surface: StanceSurface): string[] {
   return Object.entries(EMPHASIS).flatMap(([level, pairs]) => {
     const body = slotDecls(surface, pairs);
-    return body.length ? [`${surface.selector}[data-emphasis='${level}'] {\n${body.join('\n')}\n}`] : [];
+    if (!body.length) return [];
+    const sel = `${surface.selector}[data-emphasis='${level}']`;
+    return [`${surface.nests ? `${sel},\n${sel}[data-nested]` : sel} {\n${body.join('\n')}\n}`];
   });
 }
 
@@ -83,6 +85,10 @@ export function stanceCss(surface: StanceSurface): string {
     if (name === 'tint') {
       const own = stanceVar(`${stance}-tint`, 'var(--_s-surface)');
       return `var(--wzl-tint, ${nested ? stanceVar(`${stance}-nested-tint`, own) : own})`;
+    }
+    if (name === 'accent') {
+      const own = `var(--wzl-stance-${stance}-accent)`;
+      return `var(--wzl-tint, ${nested ? stanceVar(`${stance}-nested-accent`, own) : own})`;
     }
     const outer = stanceVar(`${stance}-${name}`, surface.stanced?.[name] ?? surface.base[name]);
     return nested ? stanceVar(`${stance}-nested-${name}`, outer) : outer;
@@ -111,12 +117,12 @@ export function stanceCss(surface: StanceSurface): string {
     rules.push(`${sel}[data-tint],\n${sel}[data-grade] {\n  --wzl-surface-sunken: oklch(from var(--_s-fill) calc(l - 0.06) c h);\n}`);
   }
   if ('accent' in surface.base) {
-    // Only a surface that names its tint or grade recolors its controls. Derived against
+    // Only a surface that names its tint recolors its controls. Derived against
     // fg, so the family lightens in a dark mode and darkens in a light one, as
     // the theme's own accent steps do.
     rules.push(
       [
-        `${sel}[data-tint],\n${sel}[data-grade] {`,
+        `${sel}[data-tint] {`,
         '  --wzl-accent: var(--_s-accent);',
         '  --wzl-accent-base: var(--_s-accent);',
         '  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));',

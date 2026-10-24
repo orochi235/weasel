@@ -322,7 +322,7 @@ await writeFile(
     `import * as callout from '@weasel-js/ui/components/Callout';\n` +
     `import * as icon from '@weasel-js/ui/components/Icon';\n` +
     `import * as paintValue from '@weasel-js/ui/paint-value';\n` +
-    `import * as stance from '@weasel-js/ui/stance';\n` +
+    `import * as appearance from '@weasel-js/ui/appearance';\n` +
     `import * as portalHost from '@weasel-js/ui/portal-host';\n` +
     `import * as color from '@weasel-js/ui/color';\n` +
     `import * as paintGradientTrack from '@weasel-js/ui/paint-gradient-track';\n` +
@@ -345,7 +345,7 @@ await writeFile(
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
     `  guides, devtools, rig,\n` +
-    `  toolPalette, prefs, callout, icon, paintValue, stance, portalHost, color, paintGradientTrack, kitSettings, floating,\n` +
+    `  toolPalette, prefs, callout, icon, paintValue, appearance, portalHost, color, paintGradientTrack, kitSettings, floating,\n` +
     `  toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +

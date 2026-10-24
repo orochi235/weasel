@@ -158,7 +158,7 @@
       "@weasel-js/ui/icons": ["../ui/src/icons.table.ts"],
       "@weasel-js/ui/kit-icons": ["../ui/src/kitIcons.ts"],
       "@weasel-js/ui/paint-value": ["../ui/src/components/paintValue.ts"],
-      "@weasel-js/ui/stance": ["../ui/src/components/stance.ts"],
+      "@weasel-js/ui/appearance": ["../ui/src/components/appearance.ts"],
       "@weasel-js/ui/portal-host": ["../ui/src/overlays/portalHost.tsx"],
       "@weasel-js/ui/color": ["../ui/src/color/index.ts"],
       "@weasel-js/ui/paint-gradient-track": ["../ui/src/paintGradientTrack.tsx"],

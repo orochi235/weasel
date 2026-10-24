@@ -1,4 +1,4 @@
-import type { StanceProps } from '@weasel-js/ui/stance';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { createContext } from 'react';
 
 /** One library of a project: the story files under `path` carry `label`. */
@@ -7,14 +7,14 @@ export interface Library {
   path: string;
   label: string;
   /** The tone of the library's badge, as a `<Badge>` takes one. Default: the badge's own muted tone. */
-  tone?: StanceProps['tone'];
+  tone?: AppearanceProps['tint'];
 }
 
 /** A project's libraries, as the tree's package filter, the index page header, and Get Info ask about them. */
 export interface Libraries {
   /** The label of the first library whose `path` the story's file holds, else its title's first segment. */
   of(entry: { file: string; title: string }): string;
-  toneOf(label: string): StanceProps['tone'];
+  toneOf(label: string): AppearanceProps['tint'];
 }
 
 export function librariesFrom(table: readonly Library[] = []): Libraries {

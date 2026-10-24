@@ -171,7 +171,7 @@
       "@weasel-js/ui/icons": ["./packages/ui/src/icons.table.ts"],
       "@weasel-js/ui/kit-icons": ["./packages/ui/src/kitIcons.ts"],
       "@weasel-js/ui/paint-value": ["./packages/ui/src/components/paintValue.ts"],
-      "@weasel-js/ui/stance": ["./packages/ui/src/components/stance.ts"],
+      "@weasel-js/ui/appearance": ["./packages/ui/src/components/appearance.ts"],
       "@weasel-js/ui/portal-host": ["./packages/ui/src/overlays/portalHost.tsx"],
       "@weasel-js/ui/color": ["./packages/ui/src/color/index.ts"],
       "@weasel-js/ui/paint-gradient-track": ["./packages/ui/src/paintGradientTrack.tsx"],

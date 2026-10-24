@@ -299,39 +299,38 @@ a.badge:hover,
 }
 
 .badge[data-stance='clarify'] {
-  --_s-accent: var(--wzl-stance-clarify-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-clarify-accent));
 }
 
 .badge[data-stance='aside'] {
-  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-aside-accent));
 }
 
 .badge[data-stance='advanced'] {
-  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-advanced-accent));
 }
 
 .badge[data-stance='debug'] {
-  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent));
 }
 
 .badge[data-stance='preview'] {
-  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-preview-accent));
 }
 
 .badge[data-stance='confirm'] {
-  --_s-accent: var(--wzl-stance-confirm-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-confirm-accent));
 }
 
 .badge[data-stance='cancel'] {
-  --_s-accent: var(--wzl-stance-cancel-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-cancel-accent));
 }
 
 .badge[data-grade] {
   --_s-accent: var(--wzl-tint, var(--wzl-grade));
 }
 
-.badge[data-tint],
-.badge[data-grade] {
+.badge[data-tint] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));

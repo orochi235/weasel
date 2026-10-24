@@ -9,7 +9,7 @@ import {
   PropertyPanel,
   type PropertyRowLayout,
 } from '@weasel-js/ui/components/Properties';
-import type { StanceProps } from '@weasel-js/ui/stance';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
@@ -23,7 +23,7 @@ import type { ConfigField } from './types';
 export type { ControlPack } from './controlPack';
 
 /** Props for {@link ControlPanel}. */
-export interface ControlPanelProps<TC extends Record<string, unknown>> extends StanceProps {
+export interface ControlPanelProps<TC extends Record<string, unknown>> extends AppearanceProps {
   /** The instrument's resolved config schema. */
   schema?: ResolvedConfig;
   /** @deprecated Pass `schema`. A field list is adapted into one internally. */

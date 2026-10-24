@@ -328,39 +328,38 @@
 }
 
 .button[data-stance='clarify'] {
-  --_s-accent: var(--wzl-stance-clarify-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-clarify-accent));
 }
 
 .button[data-stance='aside'] {
-  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-aside-accent));
 }
 
 .button[data-stance='advanced'] {
-  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-advanced-accent));
 }
 
 .button[data-stance='debug'] {
-  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent));
 }
 
 .button[data-stance='preview'] {
-  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-preview-accent));
 }
 
 .button[data-stance='confirm'] {
-  --_s-accent: var(--wzl-stance-confirm-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-confirm-accent));
 }
 
 .button[data-stance='cancel'] {
-  --_s-accent: var(--wzl-stance-cancel-accent, var(--wzl-tint));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-cancel-accent));
 }
 
 .button[data-grade] {
   --_s-accent: var(--wzl-tint, var(--wzl-grade));
 }
 
-.button[data-tint],
-.button[data-grade] {
+.button[data-tint] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));

@@ -21,7 +21,7 @@ export interface RootProps {
   'aria-labelledby': string;
   'data-motif': string;
   'data-stance'?: string;
-  'data-tone'?: string;
+  'data-tint'?: string;
   onContextMenu?: MouseEventHandler;
   style?: CSSProperties;
 }

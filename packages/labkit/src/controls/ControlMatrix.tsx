@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import { useOverlayPortal } from '@weasel-js/ui/portal-host';
-import type { StanceProps } from '@weasel-js/ui/stance';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { type ReactElement, type ReactNode, useRef, useState } from 'react';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
@@ -40,7 +40,7 @@ export interface ControlMatrixRow {
 }
 
 /** Props for `ControlMatrix`. */
-export interface ControlMatrixProps extends StanceProps, CollapseProps {
+export interface ControlMatrixProps extends AppearanceProps, CollapseProps {
   /** Heads the matrix. With `title`, `stance` or `tone` given, or with any of
    *  the fold props, it sits in a `<PropertyPanel>`, as a `ControlPanel` does.
    *  A titled matrix draws its column headers in the panel's title row, over

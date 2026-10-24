@@ -49,7 +49,7 @@ export interface ToolItem {
  *  writes the tool slot, and never reads as the current tool. */
 export type RailItem<TCtx = TrialChromeContext> = ToolItem | CommandItem<TCtx>;
 
-/** A titled block in the sidebar. `stance` and `tone` work as on a
+/** A titled block in the sidebar. `stance` and `tint` work as on a
  *  `<PropertyPanel>`: what kind of content the section holds, and which of its
  *  peers it is. */
 export interface SidebarSection extends AppearanceProps {
