@@ -16,15 +16,13 @@ import { trackCtxOf, useSliderGeometry } from './useSliderGeometry';
 import { useScale, useSpan } from './useSpan';
 import { useThumbDrags } from './useThumbDrags';
 
-/** The custom properties a density or an explicit track height sets on the root. */
-function rootVarsOf(density: SliderProps['density'], trackHeight: number | undefined): CSSProperties | undefined {
+const length = (v: number | string) => (typeof v === 'number' ? `${v}px` : v);
+
+/** The custom properties the track and thumb metrics set on the root. */
+function rootVarsOf({ trackHeight, thumbSize }: Pick<SliderProps, 'trackHeight' | 'thumbSize'>): CSSProperties | undefined {
   const vars: Record<string, string> = {};
-  if (density === 'slim') {
-    vars['--rp-track-height'] = 'var(--wzl-slider-track-h)';
-    vars['--rp-thumb-size'] = 'var(--wzl-slider-thumb-size)';
-  }
-  // An explicit trackHeight wins: a caller who named a number meant it.
-  if (trackHeight !== undefined) vars['--rp-track-height'] = `${trackHeight}px`;
+  if (trackHeight !== undefined) vars['--rp-track-height'] = length(trackHeight);
+  if (thumbSize !== undefined) vars['--rp-thumb-size'] = length(thumbSize);
   return Object.keys(vars).length > 0 ? (vars as CSSProperties) : undefined;
 }
 
@@ -37,7 +35,7 @@ export function SliderBody<T extends Thumb = Thumb>(
     range?: readonly [number, number];
   },
 ): ReactElement {
-  const { thumbs, step, constraint, density, className } = props;
+  const { thumbs, step, constraint, className } = props;
 
   const span = useSpan(props);
   const { stopList, stops, min, max } = span;
@@ -71,10 +69,9 @@ export function SliderBody<T extends Thumb = Thumb>(
   const { renderReadout, display } = props;
   const readoutOf = (t: T, i: number) => (renderReadout ? renderReadout(t, i) : <QuantityText value={t.value} display={display ?? READOUT} mute />);
 
-  const slim = density === 'slim';
   const labeled = labeledStopsOf(stopList, props.stopLabels ?? 'all');
   const curved = geometry.curved && shape !== undefined;
-  const rootClass = [s.root, slim && s.slim, props.thumbFit === 'overhang' && s.overhang, labeled.length > 0 && s.withStopLabels, curved && s.curved, className].filter(Boolean).join(' ');
+  const rootClass = [s.root, props.thumbFit === 'overhang' && s.overhang, labeled.length > 0 && s.withStopLabels, curved && s.curved, className].filter(Boolean).join(' ');
   const painted = props.renderTrack?.(trackCtxOf(run, boxes[0], boxes[2], boxes[1], valueToFraction));
 
   const marks = (
@@ -87,6 +84,7 @@ export function SliderBody<T extends Thumb = Thumb>(
         <SliderThumb<T>
           key={i}
           thumb={thumb}
+          shape={thumb.shape ?? props.thumbShape}
           fraction={valueToFraction(thumb.value)}
           geometry={geometry}
           min={min}
@@ -108,7 +106,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   // On a curve there is no row beside the track, so 'inline-after' is drawn as 'below-thumb'.
   if (curved) {
     return (
-      <div className={rootClass} style={rootVarsOf(density, props.trackHeight)} ref={trackRef} data-shape={shape.kind}>
+      <div className={rootClass} style={rootVarsOf(props)} ref={trackRef} data-shape={shape.kind}>
         <SliderBand shape={shape} faceRef={bandRef} onPointerDown={pointer.onTrackPointerDown} />
         {props.renderTrack && <div className={s.paintLayer} ref={paintRef}>{painted}</div>}
         {marks}
@@ -120,7 +118,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   }
 
   return (
-    <div className={rootClass} style={rootVarsOf(density, props.trackHeight)}>
+    <div className={rootClass} style={rootVarsOf(props)}>
       <div className={s.row}>
       <div className={s.track} ref={trackRef} onPointerDown={pointer.onTrackPointerDown}>
         {props.renderTrack && <div className={s.trackInner} ref={paintRef}>{painted}</div>}

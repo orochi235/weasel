@@ -44,7 +44,7 @@
   inset: calc(-1px - var(--wzl-slider-thumb-slop));
 }
 
-.slim .thumb::before,
+.dot::before,
 .notched::before {
   inset: calc(-1 * var(--wzl-slider-thumb-slop));
 }
@@ -99,19 +99,13 @@
   text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
 }
 
-/* A slim slider's thumb is round and flush with the track, matching the
-   property rows. The default thumb keeps its 2px spill and rounded-rect face. */
-.slim .thumb {
+/* A dot is a circle centered on the track; a tab spans it and spills 2px past each edge. */
+.thumb.dot {
   top: 50%;
   bottom: auto;
-  height: var(--rp-thumb-size);
+  height: var(--rp-thumb-size, 14px);
   transform: translateY(-50%);
   border-radius: 50%;
-  border: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: var(--wzl-bevel-raised, none);
-  background: color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-thumb-mix), transparent);
 }
 
 .thumb:focus-visible {
@@ -126,7 +120,7 @@
 
 /* The row holds absolutely-positioned labels, so it has to state its own
    height: the text's, not the thumb's. It said 14px — the default thumb's
-   size — which left 4px of dead space under the labels at either density. */
+   size — which left 4px of dead space under the labels whatever the thumb's size. */
 .readoutsBelow {
   position: relative;
   margin-inline: var(--rp-thumb-inset);
@@ -296,8 +290,8 @@
   pointer-events: auto;
 }
 
-.curved.slim .thumb {
-  height: var(--rp-thumb-size);
+.curved .thumb.dot {
+  height: var(--rp-thumb-size, 14px);
 }
 
 .curved .tick {

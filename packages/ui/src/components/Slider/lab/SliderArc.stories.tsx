@@ -39,9 +39,8 @@ export const OnAnArc = story({
     }).label('Behavior'),
     look: f.group({
       trackHeight: f.number(D.look.trackHeight).range(2, 32).step(1).suffix('px').label('Track height'),
-      density: f.enum(D.look.density, ['default', 'slim']).radio().label('Density'),
       readoutPlacement: f.enum(D.look.readoutPlacement, ['none', 'inline-after', 'below-thumb']).label('Readout'),
-      thumbShape: f.enum(D.look.thumbShape, ['round', 'notched']).radio().label('Thumb'),
+      thumbShape: f.enum(D.look.thumbShape, ['tab', 'dot', 'notched']).radio().label('Thumb'),
     }).label('Look'),
   }),
   render: ({ config, setConfig }) => (

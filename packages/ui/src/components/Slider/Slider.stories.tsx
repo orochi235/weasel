@@ -95,11 +95,10 @@ export const SnapsToStops: Story = {
   render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }]} />,
 };
 
-/** A slim slider with its values below the thumbs. The readout row is a row of
- *  text, so it takes the text's height in both densities — it used to reserve
- *  the default thumb's 14px, which left a slim slider a gap under it. */
-export const SlimWithReadoutsBelow: Story = {
-  args: { density: 'slim', readoutPlacement: 'below-thumb', step: 0.01 },
+/** A dot-thumbed slider on the row tokens, with its values below the thumbs. The readout row takes
+ *  the text's height whatever the thumb's size, so a small thumb leaves no gap under it. */
+export const DotWithReadoutsBelow: Story = {
+  args: { thumbShape: 'dot', trackHeight: 'var(--wzl-slider-track-h)', thumbSize: 'var(--wzl-slider-thumb-size)', readoutPlacement: 'below-thumb', step: 0.01 },
   render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }, { value: 0.75 }]} />,
 };
 

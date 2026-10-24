@@ -51,7 +51,7 @@ export function LensZoom<C>({ scene, lensId, factor, shape, size, onFocus }: Len
       stops={STOPS}
       spacing="even"
       snap="strict"
-      density="slim"
+      thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
       thumbs={thumbs}
       onInput={(next) => write(next, false)}
       onChange={(next) => write(next, true)}

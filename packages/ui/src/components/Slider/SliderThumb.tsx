@@ -3,11 +3,13 @@ import { qty } from '@weasel-js/quantity';
 import on from '../Along/onRun.module.css';
 import s from './Slider.module.css';
 import type { SliderGeometry } from './sliderGeometry';
-import type { SliderProps, Thumb } from './types';
+import type { SliderProps, Thumb, ThumbShape } from './types';
 
 /** What one thumb draws from: its value and place, the span it sits in, the box it measured, and its handlers. */
 export interface SliderThumbProps<T extends Thumb> {
   thumb: T;
+  /** The thumb's own shape, or the slider's default. */
+  shape: ThumbShape | undefined;
   fraction: number;
   geometry: SliderGeometry;
   min: number;
@@ -25,9 +27,9 @@ export interface SliderThumbProps<T extends Thumb> {
 
 /** One draggable, focusable thumb, with its custom render when its shape has one. */
 export function SliderThumb<T extends Thumb>(p: SliderThumbProps<T>): ReactElement {
-  const { thumb, active } = p;
-  const customRender = typeof thumb.shape === 'object' && thumb.shape !== null ? thumb.shape.render : null;
-  const cls = [s.thumb, p.geometry.curved && on.onRun, thumb.shape === 'notched' && s.notched, active && s.thumbActive].filter(Boolean).join(' ');
+  const { thumb, shape, active } = p;
+  const customRender = typeof shape === 'object' && shape !== null ? shape.render : null;
+  const cls = [s.thumb, p.geometry.curved && on.onRun, shape === 'notched' && s.notched, shape === 'dot' && s.dot, active && s.thumbActive].filter(Boolean).join(' ');
   return (
     <div
       ref={p.elRef}

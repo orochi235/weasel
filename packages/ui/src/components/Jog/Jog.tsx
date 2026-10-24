@@ -129,7 +129,7 @@ function jogParts(props: JogProps): JogParts {
                 max={last}
                 step={1}
                 snap="strict"
-                density="slim"
+                thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
                 ariaLabel={unit}
                 thumbs={[{ value: at, valueText: spoken }]}
                 onInput={(next) => onScrub(Math.round(next[0]?.value ?? 0))}

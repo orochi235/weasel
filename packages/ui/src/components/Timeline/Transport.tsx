@@ -139,7 +139,7 @@ export function Transport(props: TransportProps): ReactElement {
           min={0}
           max={duration}
           onInput={([thumb]) => onSeek(thumb.value)}
-          density="slim"
+          thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
           className={t.scrub}
         />
       ) : null}

@@ -8,7 +8,7 @@ export interface SliderArcConfig {
   values: { min: number; max: number; step: number; thumbs: number; constraint: 'free' | 'ordered'; link: boolean };
   stops: { set: StopSet; showStops: boolean; stopLabels: 'all' | 'ends' | 'none'; snap: 'magnetic' | 'strict'; spacing: 'linear' | 'even' };
   behavior: { trackClick: 'default' | 'none' | 'move-nearest'; allowShiftAll: boolean; thumbFit: 'inside' | 'overhang'; endless: 'none' | Endless; addRemove: boolean };
-  look: { trackHeight: number; density: 'default' | 'slim'; readoutPlacement: 'none' | 'inline-after' | 'below-thumb'; thumbShape: 'round' | 'notched' };
+  look: { trackHeight: number; readoutPlacement: 'none' | 'inline-after' | 'below-thumb'; thumbShape: 'tab' | 'dot' | 'notched' };
 }
 
 export type StopSet = 'none' | 'quarters' | 'labeled' | 'uneven';
@@ -19,7 +19,7 @@ export const SLIDER_ARC_DEFAULTS: SliderArcConfig = {
   values: { min: 0, max: 100, step: 1, thumbs: 1, constraint: 'free', link: true },
   stops: { set: 'labeled', showStops: true, stopLabels: 'all', snap: 'magnetic', spacing: 'linear' },
   behavior: { trackClick: 'default', allowShiftAll: false, thumbFit: 'inside', endless: 'none', addRemove: false },
-  look: { trackHeight: 8, density: 'default', readoutPlacement: 'below-thumb', thumbShape: 'round' },
+  look: { trackHeight: 8, readoutPlacement: 'below-thumb', thumbShape: 'tab' },
 };
 
 /** The stops `set` names, laid over `min..max`. */
@@ -64,7 +64,6 @@ export function twinProps(c: SliderArcConfig): TwinProps {
     thumbFit: b.thumbFit,
     ...(b.endless === 'none' ? {} : { endless: b.endless }),
     trackHeight: l.trackHeight,
-    density: l.density,
     readoutPlacement: l.readoutPlacement,
   };
 }
@@ -88,6 +87,6 @@ export const SLIDER_ARC_PRESETS: readonly SliderArcPreset[] = [
   preset('Fine, no stops', { 'values.max': 1, 'values.step': 0.01, 'stops.set': 'none' }),
   preset('Endless max', { 'values.step': 5, 'behavior.endless': 'max' }),
   preset('Right side, cw', { 'arc.start': 30, 'arc.end': 150, 'arc.direction': 'cw' }),
-  preset('Slim, overhang', { 'look.density': 'slim', 'behavior.thumbFit': 'overhang', 'look.trackHeight': 4 }),
+  preset('Dot, overhang', { 'look.thumbShape': 'dot', 'behavior.thumbFit': 'overhang', 'look.trackHeight': 4 }),
   preset('Add and remove', { 'values.thumbs': 2, 'behavior.addRemove': true, 'values.link': false, 'look.thumbShape': 'notched' }),
 ];
