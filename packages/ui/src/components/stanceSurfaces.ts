@@ -5,7 +5,8 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
   {
     id: 'panel',
     file: 'packages/ui/src/components/Properties/PropertyPanel.stance.css',
-    selector: '.panel',
+    // `[data-motif]` outranks the frame slots on the same root, so a panel keeps them in any motif.
+    selector: '.panel[data-motif]',
     nests: true,
     fills: true,
     sinks: true,
@@ -66,11 +67,11 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     },
   },
   {
-    // The divider motif, a subpanel's default: a heading and a rule, no box.
-    // `[data-motif]` outranks the frame's slots on the same element.
-    id: 'divider',
-    file: 'packages/ui/src/components/MotifFrame/motifs/divider.module.css',
-    selector: '.divider[data-motif]',
+    // A heading and a rule, no box: a stance reaches only the title and the rule. `[data-motif]`
+    // outranks the frame slots on the same root, so a subpanel keeps them in any motif.
+    id: 'subpanel',
+    file: 'packages/ui/src/components/Properties/Subpanel.stance.css',
+    selector: '.subpanel[data-motif]',
     base: {
       'border-color': 'var(--wzl-line-subtle)',
       accent: ACCENT_BASE,

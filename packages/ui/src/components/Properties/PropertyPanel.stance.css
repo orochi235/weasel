@@ -3,11 +3,11 @@
    slot. The slots are @weasel-js/theme's STANCE_SLOTS. */
 /* BEGIN GENERATED stance rules: panel — `npm run gen:stances`, do not edit. */
 
-.panel {
+.panel[data-motif] {
   --wzl-tint: initial;
 }
 
-.panel {
+.panel[data-motif] {
   --_s-surface: var(--wzl-panel-surface);
   --_s-border-color: var(--wzl-panel-border-color);
   --_s-border-style: var(--wzl-panel-border-style);
@@ -27,7 +27,7 @@
   --_s-title-inset: var(--wzl-panel-title-inset);
 }
 
-.panel[data-stance='clarify'] {
+.panel[data-motif][data-stance='clarify'] {
   --_s-surface: var(--wzl-stance-clarify-surface, var(--wzl-panel-surface));
   --_s-border-color: var(--wzl-stance-clarify-border-color, var(--wzl-panel-border-color));
   --_s-border-style: var(--wzl-stance-clarify-border-style, var(--wzl-panel-border-style));
@@ -47,7 +47,7 @@
   --_s-title-inset: var(--wzl-stance-clarify-title-inset, var(--wzl-panel-title-inset));
 }
 
-.panel[data-stance='clarify'][data-nested] {
+.panel[data-motif][data-stance='clarify'][data-nested] {
   --_s-surface: var(--wzl-stance-clarify-nested-surface, var(--wzl-stance-clarify-surface, var(--wzl-panel-surface)));
   --_s-border-color: var(--wzl-stance-clarify-nested-border-color, var(--wzl-stance-clarify-border-color, var(--wzl-panel-border-color)));
   --_s-border-style: var(--wzl-stance-clarify-nested-border-style, var(--wzl-stance-clarify-border-style, var(--wzl-panel-border-style)));
@@ -67,7 +67,7 @@
   --_s-title-inset: var(--wzl-stance-clarify-nested-title-inset, var(--wzl-stance-clarify-title-inset, var(--wzl-panel-title-inset)));
 }
 
-.panel[data-stance='aside'] {
+.panel[data-motif][data-stance='aside'] {
   --_s-surface: var(--wzl-stance-aside-surface, var(--wzl-panel-surface));
   --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-panel-border-color));
   --_s-border-style: var(--wzl-stance-aside-border-style, var(--wzl-panel-border-style));
@@ -87,7 +87,7 @@
   --_s-title-inset: var(--wzl-stance-aside-title-inset, var(--wzl-panel-title-inset));
 }
 
-.panel[data-stance='aside'][data-nested] {
+.panel[data-motif][data-stance='aside'][data-nested] {
   --_s-surface: var(--wzl-stance-aside-nested-surface, var(--wzl-stance-aside-surface, var(--wzl-panel-surface)));
   --_s-border-color: var(--wzl-stance-aside-nested-border-color, var(--wzl-stance-aside-border-color, var(--wzl-panel-border-color)));
   --_s-border-style: var(--wzl-stance-aside-nested-border-style, var(--wzl-stance-aside-border-style, var(--wzl-panel-border-style)));
@@ -107,7 +107,7 @@
   --_s-title-inset: var(--wzl-stance-aside-nested-title-inset, var(--wzl-stance-aside-title-inset, var(--wzl-panel-title-inset)));
 }
 
-.panel[data-stance='advanced'] {
+.panel[data-motif][data-stance='advanced'] {
   --_s-surface: var(--wzl-stance-advanced-surface, var(--wzl-panel-surface));
   --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-panel-border-color));
   --_s-border-style: var(--wzl-stance-advanced-border-style, var(--wzl-panel-border-style));
@@ -127,7 +127,7 @@
   --_s-title-inset: var(--wzl-stance-advanced-title-inset, var(--wzl-panel-title-inset));
 }
 
-.panel[data-stance='advanced'][data-nested] {
+.panel[data-motif][data-stance='advanced'][data-nested] {
   --_s-surface: var(--wzl-stance-advanced-nested-surface, var(--wzl-stance-advanced-surface, var(--wzl-panel-surface)));
   --_s-border-color: var(--wzl-stance-advanced-nested-border-color, var(--wzl-stance-advanced-border-color, var(--wzl-panel-border-color)));
   --_s-border-style: var(--wzl-stance-advanced-nested-border-style, var(--wzl-stance-advanced-border-style, var(--wzl-panel-border-style)));
@@ -147,7 +147,7 @@
   --_s-title-inset: var(--wzl-stance-advanced-nested-title-inset, var(--wzl-stance-advanced-title-inset, var(--wzl-panel-title-inset)));
 }
 
-.panel[data-stance='debug'] {
+.panel[data-motif][data-stance='debug'] {
   --_s-surface: var(--wzl-stance-debug-surface, var(--wzl-panel-surface));
   --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-panel-border-color));
   --_s-border-style: var(--wzl-stance-debug-border-style, var(--wzl-panel-border-style));
@@ -167,7 +167,7 @@
   --_s-title-inset: var(--wzl-stance-debug-title-inset, var(--wzl-panel-title-inset));
 }
 
-.panel[data-stance='debug'][data-nested] {
+.panel[data-motif][data-stance='debug'][data-nested] {
   --_s-surface: var(--wzl-stance-debug-nested-surface, var(--wzl-stance-debug-surface, var(--wzl-panel-surface)));
   --_s-border-color: var(--wzl-stance-debug-nested-border-color, var(--wzl-stance-debug-border-color, var(--wzl-panel-border-color)));
   --_s-border-style: var(--wzl-stance-debug-nested-border-style, var(--wzl-stance-debug-border-style, var(--wzl-panel-border-style)));
@@ -187,7 +187,7 @@
   --_s-title-inset: var(--wzl-stance-debug-nested-title-inset, var(--wzl-stance-debug-title-inset, var(--wzl-panel-title-inset)));
 }
 
-.panel[data-stance='preview'] {
+.panel[data-motif][data-stance='preview'] {
   --_s-surface: var(--wzl-stance-preview-surface, var(--wzl-panel-surface));
   --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-panel-border-color));
   --_s-border-style: var(--wzl-stance-preview-border-style, var(--wzl-panel-border-style));
@@ -207,7 +207,7 @@
   --_s-title-inset: var(--wzl-stance-preview-title-inset, var(--wzl-panel-title-inset));
 }
 
-.panel[data-stance='preview'][data-nested] {
+.panel[data-motif][data-stance='preview'][data-nested] {
   --_s-surface: var(--wzl-stance-preview-nested-surface, var(--wzl-stance-preview-surface, var(--wzl-panel-surface)));
   --_s-border-color: var(--wzl-stance-preview-nested-border-color, var(--wzl-stance-preview-border-color, var(--wzl-panel-border-color)));
   --_s-border-style: var(--wzl-stance-preview-nested-border-style, var(--wzl-stance-preview-border-style, var(--wzl-panel-border-style)));
@@ -227,7 +227,7 @@
   --_s-title-inset: var(--wzl-stance-preview-nested-title-inset, var(--wzl-stance-preview-title-inset, var(--wzl-panel-title-inset)));
 }
 
-.panel[data-stance='confirm'] {
+.panel[data-motif][data-stance='confirm'] {
   --_s-surface: var(--wzl-stance-confirm-surface, var(--wzl-panel-surface));
   --_s-border-color: var(--wzl-stance-confirm-border-color, var(--wzl-panel-border-color));
   --_s-border-style: var(--wzl-stance-confirm-border-style, var(--wzl-panel-border-style));
@@ -247,7 +247,7 @@
   --_s-title-inset: var(--wzl-stance-confirm-title-inset, var(--wzl-panel-title-inset));
 }
 
-.panel[data-stance='confirm'][data-nested] {
+.panel[data-motif][data-stance='confirm'][data-nested] {
   --_s-surface: var(--wzl-stance-confirm-nested-surface, var(--wzl-stance-confirm-surface, var(--wzl-panel-surface)));
   --_s-border-color: var(--wzl-stance-confirm-nested-border-color, var(--wzl-stance-confirm-border-color, var(--wzl-panel-border-color)));
   --_s-border-style: var(--wzl-stance-confirm-nested-border-style, var(--wzl-stance-confirm-border-style, var(--wzl-panel-border-style)));
@@ -267,7 +267,7 @@
   --_s-title-inset: var(--wzl-stance-confirm-nested-title-inset, var(--wzl-stance-confirm-title-inset, var(--wzl-panel-title-inset)));
 }
 
-.panel[data-stance='cancel'] {
+.panel[data-motif][data-stance='cancel'] {
   --_s-surface: var(--wzl-stance-cancel-surface, var(--wzl-panel-surface));
   --_s-border-color: var(--wzl-stance-cancel-border-color, var(--wzl-panel-border-color));
   --_s-border-style: var(--wzl-stance-cancel-border-style, var(--wzl-panel-border-style));
@@ -287,7 +287,7 @@
   --_s-title-inset: var(--wzl-stance-cancel-title-inset, var(--wzl-panel-title-inset));
 }
 
-.panel[data-stance='cancel'][data-nested] {
+.panel[data-motif][data-stance='cancel'][data-nested] {
   --_s-surface: var(--wzl-stance-cancel-nested-surface, var(--wzl-stance-cancel-surface, var(--wzl-panel-surface)));
   --_s-border-color: var(--wzl-stance-cancel-nested-border-color, var(--wzl-stance-cancel-border-color, var(--wzl-panel-border-color)));
   --_s-border-style: var(--wzl-stance-cancel-nested-border-style, var(--wzl-stance-cancel-border-style, var(--wzl-panel-border-style)));
@@ -307,41 +307,41 @@
   --_s-title-inset: var(--wzl-stance-cancel-nested-title-inset, var(--wzl-stance-cancel-title-inset, var(--wzl-panel-title-inset)));
 }
 
-.panel[data-emphasis='high'],
-.panel[data-emphasis='high'][data-nested] {
+.panel[data-motif][data-emphasis='high'],
+.panel[data-motif][data-emphasis='high'][data-nested] {
   --_s-border-color: var(--wzl-accent-fg);
   --_s-title-color: var(--wzl-accent-fg);
 }
 
-.panel[data-emphasis='low'],
-.panel[data-emphasis='low'][data-nested] {
+.panel[data-motif][data-emphasis='low'],
+.panel[data-motif][data-emphasis='low'][data-nested] {
   --_s-title-color: var(--wzl-fg-muted);
 }
 
-.panel[data-grade],
-.panel[data-grade][data-nested] {
+.panel[data-motif][data-grade],
+.panel[data-motif][data-grade][data-nested] {
   --_s-tint: var(--wzl-tint, var(--wzl-grade));
   --_s-border-color: var(--wzl-grade);
   --_s-title-color: var(--wzl-grade);
   --_s-accent: var(--wzl-tint, var(--wzl-grade));
 }
 
-.panel {
+.panel[data-motif] {
   --_s-fill: var(--_s-surface);
 }
 
-.panel[data-tint],
-.panel[data-grade],
-.panel[data-stance] {
+.panel[data-motif][data-tint],
+.panel[data-motif][data-grade],
+.panel[data-motif][data-stance] {
   --_s-fill: color-mix(in oklab, var(--_s-tint) var(--_s-tint-mix), var(--_s-surface));
 }
 
-.panel[data-tint],
-.panel[data-grade] {
+.panel[data-motif][data-tint],
+.panel[data-motif][data-grade] {
   --wzl-surface-sunken: oklch(from var(--_s-fill) calc(l - 0.06) c h);
 }
 
-.panel[data-tint] {
+.panel[data-motif][data-tint] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));

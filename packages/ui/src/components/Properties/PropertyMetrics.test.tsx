@@ -23,7 +23,7 @@ const sheet = readModuleCss(
 );
 
 // A group draws as a MotifFrame, so the metrics that size its box are read there.
-const frameSheets = ['MotifFrame/MotifFrame.module.css', 'MotifFrame/motifs/rule.module.css']
+const frameSheets = ['MotifFrame/MotifFrame.module.css', 'MotifFrame/motifs/rule.module.css', 'MotifFrame/motifs/sheet.module.css']
   .map((file) => readFileSync(resolve(process.cwd(), 'packages/ui/src/components', file), 'utf8'))
   .join('');
 

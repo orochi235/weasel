@@ -1,0 +1,55 @@
+/* A raised sheet titled along the top. Every part of the box comes from the
+   slots of the frame it draws — a panel's `--wzl-panel-*` ones by default. */
+.sheet {
+  background: var(--_s-fill);
+  border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
+  border-radius: var(--_s-radius);
+  padding: var(--_s-pad);
+  box-shadow: var(--wzl-bevel-raised, none);
+  backdrop-filter: blur(var(--_s-blur, 0));
+  -webkit-backdrop-filter: blur(var(--_s-blur, 0));
+}
+
+.title {
+  font-family: var(--_s-title-font);
+  font-weight: var(--_s-title-weight);
+  font-size: var(--_s-title-size);
+  line-height: var(--wzl-leading-snug);
+  letter-spacing: var(--_s-title-tracking);
+  text-transform: var(--_s-title-case);
+  color: var(--_s-title-color);
+  padding: var(--_s-title-inset, 0);
+  margin: 0 0 var(--wzl-prop-panel-title-gap, 8px);
+}
+
+.head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  margin: 0 0 var(--wzl-prop-panel-title-gap, 8px);
+}
+
+.head > .title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  align-self: var(--wzl-prop-panel-actions-align, center);
+}
+
+/* A folded frame is its heading alone, so the gap under the title goes too. */
+.sheet[data-collapsed] > .head {
+  margin-bottom: 0;
+}
+
+/* The basis is a hook for content that has to line up with the sheet's body:
+   a percentage of it is a share of the same width the body gets. */
+.actions {
+  display: flex;
+  flex: 0 0 var(--wzl-prop-panel-actions-basis, auto);
+  min-width: 0;
+  align-self: var(--wzl-prop-panel-actions-align, center);
+  align-items: var(--wzl-prop-panel-actions-align, center);
+  gap: var(--wzl-space-2);
+  margin-inline-start: auto;
+}

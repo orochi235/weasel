@@ -14,7 +14,7 @@ const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
 
 const rows = `<div class="list"><label class="row"><span class="rowLabel">Amount<em class="readout">0.40</em></span><input type="range"></label></div>`;
 const panel = (attrs: string, title: string, inner = rows) =>
-  `<div class="panel" ${attrs}><h2 class="panelTitle">${title}</h2>${inner}</div>`;
+  `<div class="frame panel sheet" data-motif="sheet" ${attrs}><h2 class="title">${title}</h2>${inner}</div>`;
 const tint = (step: string) => `data-tint="1" style="--wzl-tint: var(--wzl-swatch-${step})"`;
 
 const BODY = [
@@ -33,7 +33,7 @@ const BODY = [
   panel('data-k="host"', 'host', [
     `<div class="frame rule group" data-k="group"><h3 class="title"><hr><span>group</span><hr></h3>${rows}</div>`,
     `<div class="frame rule group" data-k="group-danger" data-grade="danger" style="--wzl-grade: var(--wzl-danger)"><h3 class="title"><hr><span>danger group</span><hr></h3>${rows}</div>`,
-    `<div class="subpanel" data-k="sub-high" data-emphasis="high"><h4 class="subpanelTitle"><span>high emphasis</span><hr></h4>${rows}</div>`,
+    `<div class="frame subpanel divider" data-motif="divider" data-k="sub-high" data-emphasis="high"><div class="title"><h4>high emphasis</h4><hr></div>${rows}</div>`,
     `<div class="frame rule group" data-k="group-tint" ${tint('green')}><h3 class="title"><hr><span>tinted group</span><hr></h3>${rows}</div>`,
     `<div class="frame stereo" data-side="left" data-k="stereo-danger" data-grade="danger" style="--wzl-grade: var(--wzl-danger)"><div class="bar"><span class="label">stereo</span></div><div class="body">${rows}</div></div>`,
   ].join('')),
@@ -47,6 +47,8 @@ async function mount(page: Page, mode: 'dark' | 'light') {
      <style>${read('packages/ui/src/components/MotifFrame/MotifFrame.module.css')}</style>
      <style>${read('packages/ui/src/components/MotifFrame/motifs/rule.module.css')}</style>
      <style>${read('packages/ui/src/components/MotifFrame/motifs/stereo.module.css')}</style>
+     <style>${read('packages/ui/src/components/MotifFrame/motifs/sheet.module.css')}</style>
+     <style>${read('packages/ui/src/components/MotifFrame/motifs/divider.module.css')}</style>
      <style>body { background: var(--wzl-surface); display: grid; grid-template-columns: repeat(3, 240px); gap: 12px; padding: 12px; margin: 0 }
        .pin { --wzl-stance-aside-border-style: dotted; }</style></head><body>${BODY}</body></html>`,
   );
@@ -68,7 +70,7 @@ const looks = (page: Page) =>
     const out: Record<string, Record<string, string>> = {};
     for (const el of document.querySelectorAll<HTMLElement>('[data-k]')) {
       const cs = getComputedStyle(el);
-      const title = getComputedStyle(el.querySelector(':scope > .panelTitle, :scope > .title > span, :scope > .bar > .label, :scope > .subpanelTitle')!);
+      const title = getComputedStyle(el.querySelector(':scope > h2.title, :scope > .title > span, :scope > .bar > .label, :scope > .title > h4')!);
       const readout = getComputedStyle(el.querySelector('.readout')!);
       out[el.dataset.k!] = {
         bg: cs.backgroundColor,

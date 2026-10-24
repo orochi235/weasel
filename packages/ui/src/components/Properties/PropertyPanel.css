@@ -5,46 +5,8 @@
    below set them in preset bundles; nothing in this file declares one, so an
    inherited value always reaches the use site. */
 
-.panel {
-  background: var(--_s-fill);
-  border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
-  border-radius: var(--_s-radius);
-  padding: var(--_s-pad);
-  box-shadow: var(--wzl-bevel-raised, none);
-  backdrop-filter: blur(var(--_s-blur));
-  -webkit-backdrop-filter: blur(var(--_s-blur));
-}
-
 .panel[data-stance='preview'] {
   overflow: hidden;
-}
-
-
-.panelTitle {
-  font-family: var(--_s-title-font);
-  font-weight: var(--_s-title-weight);
-  font-size: var(--_s-title-size);
-  line-height: var(--wzl-leading-snug);
-  letter-spacing: var(--_s-title-tracking);
-  text-transform: var(--_s-title-case);
-  color: var(--_s-title-color);
-  padding: var(--_s-title-inset);
-  margin: 0 0 var(--wzl-prop-panel-title-gap, 8px);
-}
-
-.panelHeader {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-4);
-  margin: 0 0 var(--wzl-prop-panel-title-gap, 8px);
-}
-
-.panelHeader > .panelTitle {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-  align-self: var(--wzl-prop-panel-actions-align, center);
 }
 
 /* The twisty's target is taller than a title's line; it overhangs the line
@@ -86,23 +48,6 @@
   cursor: pointer;
 }
 
-/* A folded panel is its header alone, so the gap under the title goes too. */
-.panel[data-collapsed] > .panelHeader {
-  margin-bottom: 0;
-}
-
 .panelBody[hidden] {
   display: none;
-}
-
-/* The basis is a hook for content that has to line up with the panel's body:
-   a percentage of it is a share of the same width the body gets. */
-.panelActions {
-  display: flex;
-  flex: 0 0 var(--wzl-prop-panel-actions-basis, auto);
-  min-width: 0;
-  align-self: var(--wzl-prop-panel-actions-align, center);
-  align-items: var(--wzl-prop-panel-actions-align, center);
-  gap: var(--wzl-space-2);
-  margin-inline-start: auto;
 }

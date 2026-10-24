@@ -55,6 +55,7 @@ export * from './components/Properties';
 export {
   DefaultMotif,
   type DefaultMotifProps,
+  type FrameAttrs,
   type FrameKind,
   type FrameParts,
   type HeadingParts,

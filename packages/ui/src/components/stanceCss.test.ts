@@ -39,7 +39,7 @@ describe('stance rules', () => {
   // check:labels accepts a title reading --_s-title-case, so the recipe has to
   // arrive through the slot: a stanced panel's title, and every frame and
   // subpanel title, are labels.
-  it.each(['panel', 'frame', 'divider'])('%s titles take the params label recipe through their slots', (id) => {
+  it.each(['panel', 'frame', 'subpanel'])('%s titles take the params label recipe through their slots', (id) => {
     const surface = STANCE_SURFACES.find((s) => s.id === id)!;
     const look = { ...surface.base, ...surface.stanced };
     expect(look['title-case']).toMatch(CASE);
@@ -58,9 +58,9 @@ describe('stance rules', () => {
 
   it('paints a graded surface after its stance, so grade wins the hue and tint wins over both', () => {
     const text = stanceCss(panel);
-    const grade = text.indexOf(`.panel[data-grade]`);
-    expect(grade).toBeGreaterThan(text.lastIndexOf(`.panel[data-stance=`));
-    expect(text).toContain(`.panel[data-grade][data-nested]`);
+    const grade = text.indexOf(`.panel[data-motif][data-grade]`);
+    expect(grade).toBeGreaterThan(text.lastIndexOf(`.panel[data-motif][data-stance=`));
+    expect(text).toContain(`.panel[data-motif][data-grade][data-nested]`);
     expect(text.slice(grade)).toContain('--_s-tint: var(--wzl-tint, var(--wzl-grade));');
     expect(text.slice(grade)).toContain('--_s-border-color: var(--wzl-grade);');
     expect(text.slice(grade)).toContain('--_s-title-color: var(--wzl-grade);');
@@ -68,14 +68,14 @@ describe('stance rules', () => {
 
   it('draws high emphasis in the accent and low emphasis muted', () => {
     const text = stanceCss(panel);
-    expect(text).toContain(".panel[data-emphasis='high'],\n.panel[data-emphasis='high'][data-nested] {\n  --_s-border-color: var(--wzl-accent-fg);\n  --_s-title-color: var(--wzl-accent-fg);\n}");
-    expect(text).toContain(".panel[data-emphasis='low'],\n.panel[data-emphasis='low'][data-nested] {\n  --_s-title-color: var(--wzl-fg-muted);\n}");
+    expect(text).toContain(".panel[data-motif][data-emphasis='high'],\n.panel[data-motif][data-emphasis='high'][data-nested] {\n  --_s-border-color: var(--wzl-accent-fg);\n  --_s-title-color: var(--wzl-accent-fg);\n}");
+    expect(text).toContain(".panel[data-motif][data-emphasis='low'],\n.panel[data-motif][data-emphasis='low'][data-nested] {\n  --_s-title-color: var(--wzl-fg-muted);\n}");
   });
 
   it('recolors the controls of a tinted surface and leaves a graded one plain', () => {
     const text = stanceCss(panel);
-    expect(text).toContain('.panel[data-tint] {\n  --wzl-accent: var(--_s-accent);');
-    expect(text).not.toMatch(/\.panel\[data-grade\][^{]*\{\n  --wzl-accent:/);
+    expect(text).toContain('.panel[data-motif][data-tint] {\n  --wzl-accent: var(--_s-accent);');
+    expect(text).not.toMatch(/\.panel\[data-motif\]\[data-grade\][^{]*\{\n  --wzl-accent:/);
   });
 
   it('lets a named tint win the accent over a stance', () => {
@@ -85,6 +85,6 @@ describe('stance rules', () => {
   });
 
   it('gives emphasis a nested twin so it outranks a nested stance', () => {
-    expect(stanceCss(panel)).toContain(".panel[data-emphasis='high'][data-nested]");
+    expect(stanceCss(panel)).toContain(".panel[data-motif][data-emphasis='high'][data-nested]");
   });
 });

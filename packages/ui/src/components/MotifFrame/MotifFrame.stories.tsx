@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Button } from '@weasel-js/ui/components/Button';
-import { PropertyField, PropertyGroup, PropertyList } from '@weasel-js/ui/components/Properties';
-import { MotifFrame, notch, plaque, rule, stereo, tab, titlebar } from '@weasel-js/ui/components/MotifFrame';
+import { PropertyField, PropertyGroup, PropertyList, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
+import { DefaultMotif, MotifFrame, notch, plaque, rule, stereo, tab, titlebar } from '@weasel-js/ui/components/MotifFrame';
 import s from './MotifFrame.stories.module.css';
 
 const meta: Meta<typeof MotifFrame> = {
@@ -121,6 +121,31 @@ export const AsPropertyGroups: Story = {
           <PropertyField kind="number" label="Blur" value={6} onChange={() => {}} layout="inline" />
         </PropertyGroup>
       </PropertyList>
+    </div>
+  ),
+};
+
+/**
+ * Every kind of frame — a panel, its groups, a subpanel — takes a motif, and `DefaultMotif`
+ * names one per kind. The kind keeps its own colors and title type in any motif: the panel's
+ * title bar is the panel's, not a group's.
+ */
+export const EveryKind: Story = {
+  render: () => (
+    <div className={s.narrow}>
+      <DefaultMotif panel={titlebar()} group={stereo({ side: 'top' })}>
+        <PropertyPanel title="Window" collapsible>
+          <PropertyList>
+            <PropertyField kind="number" label="Opacity" value={80} onChange={() => {}} layout="inline" />
+            <PropertyGroup title="Bevel" tint={1}>
+              <PropertyField kind="number" label="Depth" value={4} onChange={() => {}} layout="inline" />
+            </PropertyGroup>
+            <Subpanel title="Glow">
+              <PropertyField kind="number" label="Blur" value={6} onChange={() => {}} layout="inline" />
+            </Subpanel>
+          </PropertyList>
+        </PropertyPanel>
+      </DefaultMotif>
     </div>
   ),
 };
