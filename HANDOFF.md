@@ -31,9 +31,11 @@ Decided in conversation (2026-10-23), none of it in code:
 
 - **Stance and tone cascade; severity and tint do not** (2026-10-23). A `danger` dialog's Cancel button
   stays plain; a component may still read its parent's severity as a hint.
+- **Slider's `density` becomes numeric params, not presets** (2026-10-23). `trackHeight` already exists;
+  `slim` also sets the thumb's size, makes it round and flush, and drops its border and blur
+  (`Slider.module.css`), so those need params too.
 
-**Next:** the artifact's open questions: what severity is called, whether tone has more moods, what Slider's `density`
-(track thickness) becomes.
+**Next:** the artifact's open questions: what severity is called, whether tone has more moods.
 
 Also waiting on Mike, unrelated: whether `Primitives/*` story titles merge into `ui/Foundations`
 (no rule separates them); which default `layout` forge's two story formats share (native
