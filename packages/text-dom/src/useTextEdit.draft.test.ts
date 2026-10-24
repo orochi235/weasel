@@ -62,6 +62,30 @@ describe('useTextEdit — onDraft', () => {
     });
   });
 
+  it('reports a restyle that lowers a node flag and sets more besides once', () => {
+    const styles: Record<string, TextStyle> = { a: { fontSize: 16, fontStyle: 'italic' } };
+    const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
+    h.opts.getStyle = (id) => styles[id];
+    h.opts.setStyle = (id, style) => { styles[id] = style; };
+    const onDraft = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    act(() => result.current.startEdit('a'));
+    selectChars(getOverlay(h.container)!, 4, 7);
+    act(() => result.current.applyStyleToSelection({ italic: false, underline: true }));
+    expect(onDraft).toHaveBeenCalledTimes(1);
+    expect(onDraft.mock.calls[0]![1].runs).toEqual([{ text: 'one ', italic: true }, { text: 'two', underline: true }]);
+  });
+
+  it('reports nothing for a restyle that changes nothing', () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'ab', bold: true }, { text: 'cd' }] } });
+    const onDraft = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    act(() => result.current.startEdit('a'));
+    selectChars(getOverlay(h.container)!, 0, 2);
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    expect(onDraft).not.toHaveBeenCalled();
+  });
+
   it('reports nothing for styling armed at a collapsed caret', () => {
     const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
     const onDraft = vi.fn();

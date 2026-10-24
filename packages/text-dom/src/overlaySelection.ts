@@ -1,4 +1,4 @@
-/** The DOM selection inside the edit overlay, as character offsets and back. */
+/** The DOM selection inside the edit overlay, as character offsets and back, and handing focus back to the overlay. */
 
 import type { StyledRun } from '@weasel-js/text';
 import { charOffsetToDomPosition, domPositionToCharOffset, runsToDom, type OverlayRunBase } from './domRuns';
@@ -62,4 +62,32 @@ export function writeRunsPreservingSelection(
       (active instanceof HTMLElement && active.isContentEditable));
   runsToDom(runs, overlay, base);
   if (!inTextEntry) selectOffsets(overlay, start, end);
+}
+
+/**
+ * Return focus to the overlay after a styling arrived from editor chrome: a
+ * control that took focus to be clicked still holds it when the patch lands,
+ * so the next keystroke would go to that button.
+ *
+ * Two things are left holding focus deliberately: a text entry in the chrome
+ * (the user is still typing a font size) and anything inside an open dialog,
+ * which is where a color picker's live `onChange` fires from.
+ */
+export function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelection): void {
+  const active = document.activeElement;
+  if (active === overlay || overlay.contains(active)) return;
+  if (
+    active instanceof HTMLInputElement
+    || active instanceof HTMLTextAreaElement
+    || (active instanceof HTMLElement && active.isContentEditable)
+    || (active instanceof Element && active.closest('[role="dialog"]') !== null)
+  ) return;
+  overlay.focus();
+  selectOffsets(overlay, range.start, range.end);
+}
+
+/** Whether two published ranges are the same, either being none. */
+export function sameSelection(a: TextEditSelection | null, b: TextEditSelection | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.start === b.start && a.end === b.end;
 }

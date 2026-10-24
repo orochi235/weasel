@@ -20,12 +20,14 @@ import {
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { overlayAlignEdge } from './overlayDirection';
-import { overlayDraft, writeEdit } from './overlayDraft';
+import { draftChanged, overlayDraft, writeEdit } from './overlayDraft';
 import { overlayClipPath, overlayTop, overlayTransform } from './overlayFrame';
 export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
 import { seedOverlay, type CaretHolder } from './overlaySeed';
-import { readSelectionOffsets, selectOffsets, writeRunsPreservingSelection } from './overlaySelection';
+import {
+  readSelectionOffsets, restoreOverlayFocus, sameSelection, writeRunsPreservingSelection,
+} from './overlaySelection';
 import { typingHandlers } from './overlayTyping';
 import { toggleForKey } from './styleShortcuts';
 import { useEditingId } from './editSession';
@@ -65,28 +67,6 @@ function styleAtCaret(runs: readonly StyledRun[], at: number): RangeStyle {
   return at > 0 ? styleAtRange(runs, at - 1, at) : styleAtRange(runs, 0, 1);
 }
 
-/**
- * Return focus to the overlay after a styling arrived from editor chrome: a
- * control that took focus to be clicked still holds it when the patch lands,
- * so the next keystroke would go to that button.
- *
- * Two things are left holding focus deliberately: a text entry in the chrome
- * (the user is still typing a font size) and anything inside an open dialog,
- * which is where a color picker's live `onChange` fires from.
- */
-function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelection): void {
-  const active = document.activeElement;
-  if (active === overlay || overlay.contains(active)) return;
-  if (
-    active instanceof HTMLInputElement
-    || active instanceof HTMLTextAreaElement
-    || (active instanceof HTMLElement && active.isContentEditable)
-    || (active instanceof Element && active.closest('[role="dialog"]') !== null)
-  ) return;
-  overlay.focus();
-  selectOffsets(overlay, range.start, range.end);
-}
-
 /** No pending style. One frozen object so re-publishing an already-empty
  *  pending style doesn't re-render every consumer. */
 const NO_PENDING: RunStylePatch = Object.freeze({});
@@ -105,11 +85,6 @@ function mergePending(prev: RunStylePatch, patch: RunStylePatch): RunStylePatch 
     else next[key] = value;
   }
   return next as RunStylePatch;
-}
-
-function sameSelection(a: TextEditSelection | null, b: TextEditSelection | null): boolean {
-  if (a === null || b === null) return a === b;
-  return a.start === b.start && a.end === b.end;
 }
 
 /** In-place text editing via a contenteditable overlay positioned over the text node's screen-space pose. */
@@ -144,6 +119,7 @@ export function useTextEdit(
   const initialCaretRef = useRef<number | 'all'>('all');
   /** What the overlay read back as when the edit opened, before any input. */
   const openedRef = useRef<string | null>(null);
+  const sentRef = useRef(''); // the last draft sent, as JSON; before the first, the overlay as it opened
   const holderRef = useRef<CaretHolder | null>(null);
   const priorRunsRef = useRef<readonly StyledRun[] | undefined>(undefined); // the node's, as the edit opened
   const [selection, setSelection] = useState<TextEditSelection | null>(null);
@@ -209,17 +185,12 @@ export function useTextEdit(
     dropPending();
   }, [dropPending]);
 
-  const cancelEdit = useCallback(() => {
-    setEditingId(null);
-  }, [setEditingId]);
+  const cancelEdit = useCallback(() => setEditingId(null), [setEditingId]);
 
   const commit = useCallback(() => {
     const id = editingId;
     const overlay = overlayRef.current;
-    if (id == null || !overlay) {
-      setEditingId(null);
-      return;
-    }
+    if (id == null || !overlay) return void setEditingId(null);
     // Runs are written when the node already had them — or stale styling
     // survives a Cmd-B that turned it off — or when the edit produced
     // styling. A plain-text edit of a plain-text node commits text alone.
@@ -245,8 +216,8 @@ export function useTextEdit(
 
   const sendDraft = useCallback((overlay: HTMLElement) => {
     const id = editingIdRef.current;
-    const draft = () => overlayDraft(domToRuns(overlay), holderRef.current, priorRunsRef.current, nodeStyleRef.current);
-    if (id !== null) optsRef.current.onDraft?.(id, draft());
+    const draft = overlayDraft(domToRuns(overlay), holderRef.current, priorRunsRef.current, nodeStyleRef.current);
+    if (id !== null && draftChanged(sentRef, draft)) optsRef.current.onDraft?.(id, draft);
   }, [editingIdRef, optsRef]);
 
   const applyStyleToSelection = useCallback(function applyStyle(patch: RunStylePatch) {
@@ -285,7 +256,6 @@ export function useTextEdit(
       applyOverlayStyle(overlay, resolved);
       writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, resolved);
       publishRange(overlay, range);
-      sendDraft(overlay);
       // The rewrite raised the flag on every existing run, so a caret sitting
       // at the end of one is now *inside* a flagged span and the next
       // character would be absorbed by it. Arming the `false` makes
@@ -298,6 +268,7 @@ export function useTextEdit(
       const rest = { ...patch };
       delete rest[unsetFlag];
       if (Object.keys(rest).length > 0) applyStyle(rest);
+      sendDraft(overlay);
       return;
     }
 
@@ -351,6 +322,7 @@ export function useTextEdit(
     const initialRuns = (priorRunsRef.current = optsRef.current.getRuns?.(editingId));
     holderRef.current = seedOverlay(overlay, getText(editingId), initialRuns, style);
     openedRef.current = JSON.stringify(domToRuns(overlay));
+    sentRef.current = JSON.stringify(overlayDraft(domToRuns(overlay), holderRef.current, initialRuns));
     applyOverlayStyle(overlay, style);
     const hold = holdForFaces(style, initialRuns ?? []);
     if (hold) overlay.style.opacity = '0';

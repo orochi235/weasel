@@ -4,7 +4,7 @@
  */
 import { runsCarryStyling, runsToPlainText, type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { CaretHolder } from './overlaySeed';
-import type { TextEditCommit, UseTextEditOptions } from './textEditTypes';
+import type { TextEditCommit, TextEditDraft, UseTextEditOptions } from './textEditTypes';
 
 /**
  * `read` — the overlay's runs as `domToRuns` gives them — less its caret
@@ -24,6 +24,14 @@ export function overlayDraft(
   // to what that reports, and a break stand-in reads back as its `\n`.
   const text = runsToPlainText(runs);
   return { text, ...(inPlay ? { runs } : {}), ...(style ? { style } : {}) };
+}
+
+/** Whether `draft` differs from the one `sent` holds as JSON, taking it as the one sent when it does. */
+export function draftChanged(sent: { current: string }, draft: TextEditDraft): boolean {
+  const json = JSON.stringify(draft);
+  if (json === sent.current) return false;
+  sent.current = json;
+  return true;
 }
 
 /** Write a finished edit through `opts`: its `commit` where there is one, else each setter it has. */
