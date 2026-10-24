@@ -5,11 +5,11 @@
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  commitOps, createSetDataOp, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, isTextData, type NodeId, type Op, pathEffectOf,
-  type PathEffect, type Scene, type SceneNode as Node, sourcesHiddenBy, sourcesOf,
+  commitOps, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, isTextData, type NodeId, type Op, pathEffectOf,
+  type Scene, type SceneNode as Node, sourcesOf,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
-import { hiddenByOthers, hiddenOnItsOwn, hiddenOps } from './hiding';
+import { releasedOps, takenOps } from './hiding';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -63,20 +63,11 @@ export const setEffectPathAction: Action & { requires: string[] } = {
       const scene = deps.scene as AnyScene;
       const { effect, path } = target;
       const [shape, old] = sourcesOf(effect) as [NodeId, NodeId];
-      const ops: Op[] = [createSetDependsOnOp({ id: effect.id, from: effect.dependsOn, to: [shape, path.id], label: SET_LABEL })];
-      const record = pathEffectOf(effect)!;
-      if (record.hideSources === true) {
-        const self = new Set([effect.id]);
-        if (sourcesHiddenBy(scene, effect.id).includes(old) && !hiddenByOthers(scene, old, self)) ops.push(...hiddenOps(scene, old, false, SET_LABEL));
-        if (hiddenOnItsOwn(scene, path.id, self)) {
-          // The retarget has already dropped the old path's place from the record.
-          const pathEffect: PathEffect = { ...record, foundHidden: [...(record.foundHidden ?? []).filter((at) => at !== 1), 1] };
-          ops.push(createSetDataOp({ id: effect.id, from: effect.data, to: { ...(effect.data as object), pathEffect }, label: SET_LABEL }));
-        } else {
-          ops.push(...hiddenOps(scene, path.id, true, SET_LABEL));
-        }
-      }
-      commitOps(deps, ops, SET_LABEL);
+      commitOps(deps, [
+        createSetDependsOnOp({ id: effect.id, from: effect.dependsOn, to: [shape, path.id], label: SET_LABEL }),
+        ...releasedOps(scene, old, [effect], SET_LABEL),
+        ...takenOps(scene, effect, 1, path.id, SET_LABEL),
+      ], SET_LABEL);
       deps.selection?.set([effect.id] as never);
     },
   } satisfies ImmediateInvoker,
@@ -116,10 +107,10 @@ export const releasePathEffectAction: Action & { requires: string[] } = {
         for (const source of sourcesOf(effect)) {
           if (scene.get(source) === undefined) continue;
           sources.push(source);
-          if (sourcesHiddenBy(scene, effect.id).includes(source) && !shown.has(source) && !hiddenByOthers(scene, source, leaving)) {
-            shown.add(source);
-            ops.push(...hiddenOps(scene, source, false, RELEASE_LABEL));
-          }
+          if (shown.has(source)) continue;
+          const show = releasedOps(scene, source, effects, RELEASE_LABEL, [effect]);
+          if (show.length > 0) shown.add(source);
+          ops.push(...show);
         }
         ops.push(deleteNode(scene, effect, RELEASE_LABEL));
       }
