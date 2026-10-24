@@ -71,3 +71,12 @@
   min-width: 0;
   padding: var(--_s-pad);
 }
+
+.stereo[data-invert] {
+  border-color: var(--_edge-ink);
+}
+
+.stereo[data-invert] > .bar {
+  background: var(--_edge-ink);
+  color: var(--_edge);
+}

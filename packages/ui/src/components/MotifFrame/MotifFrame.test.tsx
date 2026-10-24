@@ -108,3 +108,12 @@ describe('MotifFrame', () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+describe('an inverted stereo frame', () => {
+  it('marks itself inverted only when asked', () => {
+    const { container, rerender } = render(<MotifFrame title="Fade" motif={stereo({ invert: true })} />);
+    expect(container.querySelector('[data-motif="stereo"]')?.hasAttribute('data-invert')).toBe(true);
+    rerender(<MotifFrame title="Fade" motif={stereo()} />);
+    expect(container.querySelector('[data-motif="stereo"]')?.hasAttribute('data-invert')).toBe(false);
+  });
+});

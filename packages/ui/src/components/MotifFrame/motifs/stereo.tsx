@@ -11,6 +11,8 @@ export interface StereoParams {
    * the bottom of a left bar and the top of a right one. Defaults to `'center'`.
    */
   labelAlign?: 'start' | 'center' | 'end';
+  /** Swaps the bar's fill and title colors, and the border takes the title's. Defaults to false. */
+  invert?: boolean;
 }
 
 /**
@@ -20,13 +22,13 @@ export interface StereoParams {
  * to bottom, and top and bottom bars read across.
  */
 export function stereo(params: StereoParams = {}): Motif<StereoParams> {
-  const { side = 'left', labelAlign = 'center' } = params;
+  const { side = 'left', labelAlign = 'center', invert = false } = params;
   return {
     id: 'stereo',
     params,
     render({ heading: { title, titleId, twisty, leading, actions }, body, root }) {
       return (
-        <div {...withMotifClass(root, s.stereo)} data-side={side}>
+        <div {...withMotifClass(root, s.stereo)} data-side={side} data-invert={invert || undefined}>
           <div className={s.bar} data-align={labelAlign}>
             {twisty}
             {leading}
