@@ -69,4 +69,58 @@ describe('PoseOverrides.hold', () => {
     first.set([]);
     expect(scene.overrides.read(a)?.pose).toEqual(at(8));
   });
+
+  describe('show', () => {
+    it('publishes data beside poses', () => {
+      const { scene, a } = setup();
+      const hold = scene.overrides.hold();
+      const data = () => ({ shown: true });
+      hold.show([[a, { pose: at(5), data }]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(5));
+      expect(scene.overrides.read(a)?.data).toBe(data);
+    });
+
+    it('leaves an id another writer holds to that writer', () => {
+      const { scene, a, b } = setup();
+      const coasting = { pose: at(9) };
+      scene.overrides.set(b, coasting);
+      const hold = scene.overrides.hold();
+      hold.show([[a, { pose: at(5) }], [b, { pose: at(7) }]]);
+      expect(scene.overrides.get(b)).toBe(coasting);
+      hold.drop();
+      expect(scene.overrides.has(a)).toBe(false);
+      expect(scene.overrides.get(b)).toBe(coasting);
+    });
+  });
+
+  describe('after the table drops its entry', () => {
+    it('reinstalls a shown entry on the next frame', () => {
+      const { scene, a } = setup();
+      const hold = scene.overrides.hold();
+      const data = () => ({ shown: true });
+      hold.show([[a, { data }]]);
+      scene.overrides.clear(a);
+      hold.show([[a, { data }]]);
+      expect(scene.overrides.read(a)?.data).toBe(data);
+    });
+
+    it('reinstalls a set pose on the next frame', () => {
+      const { scene, a } = setup();
+      const hold = scene.overrides.hold();
+      hold.set([[a, at(5)]]);
+      scene.overrides.clear(a);
+      hold.set([[a, at(6)]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+    });
+
+    it('publishes again over a node removed and put back mid-gesture', () => {
+      const { scene, a } = setup();
+      const hold = scene.overrides.hold();
+      hold.set([[a, at(5)]]);
+      scene.remove(a);
+      scene.undo();
+      hold.set([[a, at(6)]]);
+      expect(scene.overrides.read(a)?.pose).toEqual(at(6));
+    });
+  });
 });

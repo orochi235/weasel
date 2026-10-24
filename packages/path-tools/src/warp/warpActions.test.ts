@@ -61,6 +61,21 @@ const anchorsOf = (scene: S) =>
     .map(({ x, y }) => ({ x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 }));
 
 describe('distort', () => {
+  it('keeps its preview objects through a move that goes nowhere', () => {
+    const scene = makeScene();
+    const from = { x: 100, y: 100 };
+    const to = { x: 120, y: 110 };
+    const drag = (at: { x: number; y: number }) => ({
+      start: from, current: at, delta: { x: at.x - from.x, y: at.y - from.y },
+      affordance: { kind: 'layer:warp-distort', payload: { warpId: null, index: 2 } },
+    });
+    const handle = (createWarpDragAction('distort').invoker as OngoingInvoker).start(ctx(scene, from, drag(from)), { params: {} });
+    handle.onMove?.(ctx(scene, to, drag(to)));
+    const data = handle.previewData!('a');
+    handle.onMove?.(ctx(scene, to, drag(to)));
+    expect(handle.previewData!('a')).toBe(data);
+  });
+
   it('makes a distort on the first corner drag and moves that corner of the shape', () => {
     const scene = makeScene(50, 50);
     dragControl(scene, 'distort', { warpId: null, index: 2 }, { x: 150, y: 150 }, { x: 180, y: 170 });

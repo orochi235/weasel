@@ -3,6 +3,7 @@ import type { RectPose } from 'core/geometry/unionBounds';
 import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
 import { sceneDerivedPathOf, scenePaintedPoseOf } from '../../canvas/derivedPath';
 import { derivedPartsOf } from '../../core/scene/derivedParts';
+import { nodesAsShown, shownLookup } from '../../core/scene/nodeAsShown';
 import { effectSourceFor } from '../pathEffects/effectSources';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { caretIndexAt, pointInTextPose, type StyledRun, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
@@ -37,7 +38,9 @@ export function textHitAt<TData, TPose extends RectPose>(
   cy: number,
 ): { id: string; caret: number } | null {
   // renderOrder() is back-to-front, so iterate in reverse and stop on the first hit.
-  const order = scene.renderOrderNodes();
+  // Hit as painted: an open edit's draft is what the glyphs and the caret are laid out from.
+  const order = nodesAsShown(scene.overrides, scene.renderOrderNodes());
+  const shown = shownLookup(scene);
   const paintedPoseOf = scenePaintedPoseOf(scene);
   const derivedPathOf = sceneDerivedPathOf(scene);
   for (let i = order.length - 1; i >= 0; i--) {
@@ -45,7 +48,7 @@ export function textHitAt<TData, TPose extends RectPose>(
     if (scene.isLocked(node.id) || scene.isHidden(node.id)) continue;
     if (!read.isText(node.data)) {
       const source = effectSourceFor(scene, node.id, 'text');
-      const text = source === null || scene.isLocked(source) ? undefined : scene.get(source);
+      const text = source === null || scene.isLocked(source) ? undefined : shown.get(source);
       if (text === undefined || !read.isText(text.data)) continue;
       const path = derivedPathOf(node);
       if (path !== null && onAGlyph(path, cx, cy)) return { id: String(source), caret: read.text(text.data).length };

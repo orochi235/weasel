@@ -90,7 +90,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
   /** Ephemeral per-node overrides. Deliberately not part of `state`: not
    *  document content, never reaches `toJSON`, and never touches history. */
-  const overrides = createPoseOverrides<TPose>((id) => state.nodes.get(id), doc.store.invalidateDependents);
+  const overrides = createPoseOverrides<TPose, TData>((id) => state.nodes.get(id), doc.store.invalidateDependents);
 
   const recording = createSceneRecording({
     notifier,

@@ -215,7 +215,7 @@ the layout pass, picking, and every built-in action read it from there.
 
 A node's **pose** is document state: undoable, serialized, the answer to "where
 is this". A pose **override** is the same value for one frame — `scene.overrides`
-holds a per-node `{ pose?, alpha?, path? }` that the render and hit-test paths read
+holds a per-node `{ pose?, alpha?, path?, data? }` that the render and hit-test paths read
 through, and that history and `toJSON()` never see. A 60 Hz camera, a drag
 preview, a physics settle and an animation tween all want this: motion that is
 not an edit.
@@ -236,6 +236,36 @@ error. `commit()` drops the pose-keyed memo slots of every overridden node.
 To promote a frame to document state — dropping a drag, baking a settle — write
 it once through `setPose` and `clearAll()`. That is the one step that belongs in
 the undo stack.
+
+`data(stored)` answers the data a node is shown with, worked out from the data it
+stores, so a recorded write made while it is installed shows through. Replace the
+function to change what it answers; the shown node is kept per stored data and
+function. `nodeAsShown(scene.overrides, node)` is its one read: both scene walks,
+picking and the pick index, drawn bounds, text and measurement hits, and the
+effective reading of every derivation go through it, so a path effect re-derives
+from what its source shows. A shown copy is marked, so applying an override to a
+copy of one, however it was spread, does nothing. A text edit shows its drafts this
+way, so the document holds no draft until the commit (2026-10-23).
+
+Commands and exports act on the document, and read it through
+`documentOf(scene)`: the same scene with its overrides empty, so `effectivePose`,
+`derivedDepOf`, the canvas's derived paths and drawn bounds all answer what the
+document holds when handed it. Expand to Paths, Slice, `drawnBoxes` (Align, Flip,
+resize and rotate sessions, snap targets), draw's SVG save and the diagram page
+export take it at their entry; `documentPose` and `documentDepOf` are the same
+reading (2026-10-24).
+
+A writer publishing whole frames takes a `hold()`: `set(poses)` publishes poses,
+`show(frame)` poses and data, and `show` leaves an id another writer holds to that
+writer. A hold puts back an entry the table dropped when its node went, so a node
+deleted and restored mid-gesture is shown again on the next frame.
+`publishPreviews(scene, dispatcher)`, which `<SceneCanvas>` calls, is one: it shows
+every in-flight handle's `previewPose` and `previewData` (except a
+`previewHidesSource: false` handle's), so whatever derives from a node an anchor
+drag or a paint scrub is changing follows it each frame, and releases them once the
+handle's `onEnd` has committed. Previewed data is shown as the fields it changes
+from what the node stored when its preview began, laid over what it stores now, so
+a write or an undo made mid-gesture shows through, as the commit will keep it.
 
 ## Animation target
 
@@ -492,7 +522,8 @@ interface OngoingHandle {
 ```
 
 `previewIds` / `previewPose` / `previewData` feed `usePreviewGhostLayer`, which
-assembles a synthetic node per id and draws it through the scene slot. A
+assembles a synthetic node per id and draws it through the scene slot, and
+`publishPreviews`, which shows them to the scene's other readers as overrides. A
 transform — move, resize, rotate — publishes its poses to the scene's pose
 overrides rather than on the handle, so its ghost and its selection chrome read
 them through `effectivePose` like every other reader.

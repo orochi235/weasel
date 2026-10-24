@@ -2,6 +2,7 @@ import type { Path } from '@weasel-js/geom';
 import { createEmitter } from '@weasel-js/registry';
 import { kit, last, mix, mul, patch } from '@msb235/blits';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
+import { shownCopyOf } from './nodeAsShown';
 import { createPoseHold } from './poseHold';
 import type { NodeId, PoseOverride, PoseOverrides } from './types';
 
@@ -18,22 +19,23 @@ const NOTHING: PoseOverride<never> = Object.freeze({});
  * What `read` answers is a blits mix folded per node. The entries a writer
  * `set`s are one voice on it, and a node holding no entry is never probed.
  */
-export function createPoseOverrides<TPose>(
+export function createPoseOverrides<TPose, TData = unknown>(
   getNode: (id: NodeId) => { data?: unknown } | undefined,
   onInvalidate?: (id: NodeId) => void,
-): PoseOverrides<TPose> {
-  const entries = new Map<NodeId, PoseOverride<TPose>>();
+): PoseOverrides<TPose, TData> {
+  type Entry = PoseOverride<TPose, TData>;
+  const entries = new Map<NodeId, Entry>();
   const listeners = createEmitter();
   let generation = 0;
 
-  const folded = mix<NodeId, PoseOverride<TPose>>(
-    kit<PoseOverride<TPose>>({ pose: last<NonNullable<TPose>>(), alpha: mul(), path: last<Path>() }),
+  const folded = mix<NodeId, Entry>(
+    kit<Entry>({ pose: last<NonNullable<TPose>>(), alpha: mul(), path: last<Path>(), data: last<NonNullable<Entry['data']>>() }),
   );
   folded.cue({
-    patch: patch<NodeId, PoseOverride<TPose>>(
+    patch: patch<NodeId, Entry>(
       0,
-      (_phase, id) => entries.get(id) ?? (NOTHING as PoseOverride<TPose>),
-      { writes: ['pose', 'alpha', 'path'] },
+      (_phase, id) => entries.get(id) ?? (NOTHING as Entry),
+      { writes: ['pose', 'alpha', 'path', 'data'] },
     ),
   });
   // Mix time only has to move between publishes, so a probe after one never
@@ -43,11 +45,16 @@ export function createPoseOverrides<TPose>(
 
   /** Per node: the object `read` folds into and returns, and the generation
    *  it was last folded at. */
-  const reads = new Map<NodeId, { out: PoseOverride<TPose>; at: number }>();
+  const reads = new Map<NodeId, { out: Entry; at: number }>();
 
   function invalidate(id: NodeId): void {
     const node = getNode(id);
-    if (node) dropPoseKeyedMemoSlots(node);
+    if (node) {
+      dropPoseKeyedMemoSlots(node);
+      // A painter handed the node as it shows memoized against that copy.
+      const shown = shownCopyOf(node);
+      if (shown) dropPoseKeyedMemoSlots(shown);
+    }
     onInvalidate?.(id);
   }
 
@@ -62,7 +69,7 @@ export function createPoseOverrides<TPose>(
     folded.drop(id);
   }
 
-  const table: PoseOverrides<TPose> = {
+  const table: PoseOverrides<TPose, TData> = {
     set(id, entry) {
       entries.set(id, entry);
       invalidate(id);

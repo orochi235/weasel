@@ -17,6 +17,7 @@ import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDe
 import { pathInWorld } from '@weasel-js/geom';
 import { drawnPose, leafPath, storePiece, type DrawnPose } from './pathLeaf';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
+import { documentOf } from 'core/scene/documentOf';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
 
 /** Publish how a slice (knife cut) is performed, so the `slice` action can
@@ -56,7 +57,8 @@ export function useSliceDepSource(
 
   useDepSource('slice', (): SliceDep => ({
     commit(cut) {
-      const sc = sceneRef.current;
+      // A commit cuts what the document holds, not what an open gesture or edit is showing.
+      const sc = documentOf(sceneRef.current);
       const frame = scenePoseFrame(sc);
       const descriptor = descriptorRef.current ?? AUTO_POSE_DESCRIPTOR;
       const leaves: SliceLeaf<Node<unknown, string, unknown>>[] = [];

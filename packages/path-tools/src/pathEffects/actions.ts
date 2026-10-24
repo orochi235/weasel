@@ -5,7 +5,7 @@
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, deleteNode, derivedDepOf, hiddenSourceDeleteOps, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
+  commitOps, createSetDataOp, deleteNode, derivedDepOf, documentOf, hiddenSourceDeleteOps, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
 } from '@weasel-js/core';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
 import { hiddenOnItsOwn, hiddenOps } from './hiding';
@@ -241,7 +241,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
       const ops: Op[] = [];
       const made: string[] = [];
       for (const { node, at } of effects) {
-        const sources = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((id) => derivedDepOf(scene, id, node));
+        const sources = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((id) => derivedDepOf(documentOf(scene), id, node));
         const parts = pathEffectParts(node, sources) ?? [];
         ops.push(deleteNode(scene, node, EXPAND_LABEL));
         parts.forEach((part, k) => {

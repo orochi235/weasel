@@ -989,7 +989,8 @@ to render in-flight chrome. Two separate surfaces:
   polyline, insert preview), painted by `useDispatcherOverlayLayer`.
 - `OngoingHandle.previewIds` / `previewPose` / `previewData` → displaced
   scene-node silhouettes, painted by `usePreviewGhostLayer` through the scene
-  slot's own `drawOne`.
+  slot's own `drawOne`, and published to the scene's overrides by
+  `publishPreviews` so what derives from those nodes follows them.
 
 ### GestureContext / InvocationCtx
 

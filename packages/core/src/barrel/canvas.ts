@@ -98,6 +98,7 @@ export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi, ViewAt } fro
 export type { GestureSource, GesturePreviewSource } from '../canvas/gestureBounds';
 export { resolvePreviews, flattenPreviews } from '../interactions/actions/resolvePreviews';
 export type { PreviewNode } from '../interactions/actions/resolvePreviews';
+export { publishPreviews } from '../canvas/publishPreviews';
 // The overlay half of the same seam: what an in-flight gesture paints beside
 // the scene, resolved to world geometry — every variant of it, with no
 // `DrawCommand` and no style, so a renderer that is not core's can read them

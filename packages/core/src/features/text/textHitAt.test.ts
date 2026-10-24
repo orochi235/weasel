@@ -75,6 +75,13 @@ describe('textHitAt over a text-along node', () => {
     expect(textHitAt(scene, READ, 40, 280)).toBeNull();
   });
 
+  it('answers the glyphs an open edit shows, caret at the end of the shown text', async () => {
+    const scene = await curved(true);
+    expect(textHitAt(scene, READ, 130, 280)).toBeNull();
+    scene.overrides.set(T, { data: (d) => ({ ...(d as TextOutlineSource), text: 'Hi!!!' }) });
+    expect(textHitAt(scene, READ, 130, 280)).toEqual({ id: 't', caret: 5 });
+  });
+
   it('leaves an effect showing its sources alone', async () => {
     const scene = await curved(false);
     expect(textHitAt(scene, READ, 10, 280)).toBeNull();

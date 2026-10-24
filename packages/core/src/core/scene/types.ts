@@ -7,7 +7,7 @@ import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, Use
 import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
 import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
-import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
+import type { PoseHold, PoseOverride, PoseOverrides, ShownOverride } from './poseOverrideTypes';
 import type { SceneChanges } from './sceneChanges';
 import type {
   SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1,
@@ -22,7 +22,7 @@ import type { RectPose } from '../geometry/rectPose';
 export type { RectPose, RegisteredOp, SceneArrivalHandler, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
-export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1 };
+export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, ShownOverride, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1 };
 
 /**
  * # SceneNode — the thing in the scene
@@ -430,11 +430,11 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
 
   // Ephemeral presentation state
 
-  /** Per-node pose / alpha overrides the render and hit-test paths read
+  /** Per-node pose / alpha / path / data overrides the render and hit-test paths read
    *  through. Like {@link Scene.getSelection} this is not document content:
    *  writes are never recorded, never serialized, and do not bump
    *  {@link Scene.getVersion}. See {@link PoseOverrides}. */
-  readonly overrides: PoseOverrides<TPose>;
+  readonly overrides: PoseOverrides<TPose, TData>;
 
   // History
   /** The scene's undo/redo engine, in the shape `@weasel-js/history` defines.

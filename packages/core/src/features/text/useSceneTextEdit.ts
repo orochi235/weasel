@@ -10,7 +10,7 @@
  * Consumers with non-rect poses should drop down to raw `useTextEdit` and
  * supply their own `getScreenPose`.
  */
-import { useCallback, useMemo, useRef, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type MouseEvent } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { asNodeId } from '../../core/scene/types';
 import { scenePaintedPoseOf } from '../../canvas/derivedPath';
@@ -178,6 +178,7 @@ export function useSceneTextEdit<
   // canvas the edit was opened on.
   const openedOnRef = useRef<EventTarget | null>(null);
   const drafts = useMemo(() => sceneTextDrafts(sceneRef, optsRef), [sceneRef, optsRef]);
+  useEffect(() => () => drafts.close(), [drafts]);
 
   // The canvas's box in container pixels is both the origin its view projects
   // from and the region its glyphs are clipped to.

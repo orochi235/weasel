@@ -27,6 +27,7 @@ import { mat3 } from '@weasel-js/geom';
 import { copiesAbove } from '../copiesAbove';
 import { scenePaintedPoseOf } from '../derivedPath';
 import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
+import { withShownData } from 'core/scene/nodeAsShown';
 
 const GHOST_ALPHA = 0.85;
 
@@ -88,9 +89,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         parentPlane: PlaneMap | null,
         above: () => Iterable<{ kind?: string; data?: unknown }>,
       ): DrawCommand[] => {
-        const effNode = entry.data === entry.node.data
-          ? entry.node
-          : ({ ...entry.node, data: entry.data } as typeof entry.node);
+        const effNode = entry.data === entry.node.data ? entry.node : withShownData(entry.node, entry.data);
         const plane = mapOf(entry.node.layer);
         const ctx = inheritsPaint(effNode) ? { inherited: inheritedPaintOf(effNode, above()) } : undefined;
         const self = drawOne(effNode, entry.pose, viewOf(entry.node.layer), ctx);

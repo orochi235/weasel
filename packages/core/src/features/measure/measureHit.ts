@@ -1,6 +1,7 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import { measureEndsOf, type MeasureEnd, type MeasurePoint } from './measurement';
 import { measureIds, type Measurements } from './measurements';
+import { nodesAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { nodeGates } from 'core/scene/nodeGates';
 import type { SnapSource } from 'features/snap/types';
 
@@ -25,22 +26,24 @@ function distanceToSegment(p: MeasurePoint, a: MeasurePoint, b: MeasurePoint): n
  * measurement (`nodeGates`) is passed over.
  */
 export function measureAt(
-  scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes' | 'get' | 'layers'>,
+  scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes' | 'get' | 'layers' | 'overrides'>,
   ms: Pick<Measurements, 'layer'>,
   p: MeasurePoint,
   tolerance: number,
 ): MeasureHit | null {
   const gates = nodeGates(scene);
+  // Hit where the ends are shown: a gesture moving one publishes it as a data override.
+  const shown = shownLookup(scene);
   const ids = measureIds(scene, ms).reverse().filter((id) => !gates.hidden(id) && !gates.locked(id));
   for (const id of ids) {
-    const ends = measureEndsOf(scene.get(id));
+    const ends = measureEndsOf(shown.get(id));
     if (!ends) continue;
     for (const part of ['end', 'start'] as const) {
       if (Math.hypot(p.x - ends[part].x, p.y - ends[part].y) <= tolerance) return { id, part };
     }
   }
   for (const id of ids) {
-    const ends = measureEndsOf(scene.get(id));
+    const ends = measureEndsOf(shown.get(id));
     if (ends && distanceToSegment(p, ends.start, ends.end) <= tolerance) return { id, part: 'line' };
   }
   return null;
@@ -63,7 +66,7 @@ export function measureEndSource(opts: MeasureEndSourceOptions = {}): SnapSource
       const gates = nodeGates(q.scene);
       const skip = new Set(q.exclude);
       const reach = q.reachWorld(q.reachPx);
-      for (const node of q.scene.renderOrderNodes()) {
+      for (const node of nodesAsShown(q.scene.overrides, q.scene.renderOrderNodes())) {
         const ends = measureEndsOf(node);
         if (!ends || skip.has(node.id) || gates.hidden(node.id)) continue;
         for (const end of [ends.start, ends.end]) {
