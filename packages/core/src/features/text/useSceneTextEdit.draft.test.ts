@@ -1,11 +1,18 @@
 /**
- * `useSceneTextEdit` writes each keystroke through to a text node something derives from — a text-along node's
- * hidden text, whose curved copy follows the typing — and puts it back on a cancel. Any other node waits for the commit.
+ * `useSceneTextEdit` shows each keystroke to what derives from the edited node — a text-along node's hidden text,
+ * whose curved copy follows the typing — through a data override, so the document holds nothing of the edit until
+ * its commit, and a cancel or an undo cannot bring a draft back.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
+import { registerFontOutlines, type OutlineFace } from '@weasel-js/font';
+import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { pathFromD } from '@weasel-js/geom';
 import type { Fill } from '@weasel-js/paint';
+import { loadTextOutlines } from '@weasel-js/text';
+import { sceneDerivedPathOf } from 'canvas/derivedPath';
+import { derivedPartsOf } from 'core/scene/derivedParts';
 import { pathEffectNode } from 'core/scene/pathEffects/derive';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
@@ -18,13 +25,18 @@ const P = asNodeId('p');
 const FX = asNodeId('fx');
 const BOX = { x: 0, y: 0, width: 200, height: 40 };
 const RED: Fill = { paint: { kind: 'solid', color: '#ff0000' } };
+const BARS: OutlineFace = {
+  unitsPerEm: 1000, ascender: 0.8, advanceOf: () => 0.6, kernOf: () => 0, glyphD: () => 'M0 -0.5L0.2 -0.5L0.2 0L0 0Z',
+};
+const STYLE = { fontFamily: 'bars', fontSize: 16 };
 
 function setup() {
-  const scene = createScene<{ text?: string; style?: { fontSize: number }; fill?: Fill }, 'main', RectPose>({
+  registerFontOutlines('bars', {}, new ArrayBuffer(4), { parser: () => BARS });
+  const scene = createScene<{ text?: string; style?: { fontFamily?: string; fontSize: number }; fill?: Fill }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     registry: withPathEffectsRegistry(),
     initial: [
-      { id: T, kind: 'mark', layer: 'main', pose: BOX, data: { text: 'hello', style: { fontSize: 16 } } },
+      { id: T, kind: 'mark', layer: 'main', pose: BOX, data: { text: 'hello', style: STYLE } },
       { id: LONE, kind: 'mark', layer: 'main', pose: BOX, data: { text: 'alone', style: { fontSize: 16 } } },
       { id: P, kind: 'mark', layer: 'main', pose: BOX, data: { path: pathFromD('M0 100 L200 100') } as never },
       { ...pathEffectNode({ kind: 'textAlong', hideSources: true }, [T, P], 'main', PATH_EFFECT_DERIVATIONS), id: FX } as never,
@@ -44,27 +56,51 @@ function type(container: HTMLElement, ch: string): void {
 
 beforeEach(() => {
   document.body.innerHTML = '';
+  _resetFontRegistryForTests();
+  _resetFontOutlinesForTests();
+  _resetLayoutCacheForTests();
 });
 
+/** How many glyphs the text-along node lays along its path. */
+function glyphsAlong(scene: ReturnType<typeof setup>['scene']): number {
+  return derivedPartsOf(sceneDerivedPathOf(scene)(scene.get(FX)!))?.length ?? 0;
+}
+
 describe('useSceneTextEdit — drafts', () => {
-  it('writes each keystroke to a node something derives from', () => {
+  it('re-derives what derives from the node on each keystroke, writing the document only at the commit', async () => {
+    const { scene, container, hook } = setup();
+    await loadTextOutlines({ text: 'hello', style: STYLE });
+    const stored = scene.get(T)!.data;
+    expect(glyphsAlong(scene)).toBe(5);
+    act(() => hook.result.current.startEdit('t'));
+    type(container, '!');
+    expect(glyphsAlong(scene)).toBe(6);
+    type(container, '?');
+    expect(glyphsAlong(scene)).toBe(7);
+    expect(scene.get(T)!.data).toBe(stored);
+    act(() => hook.result.current.commit());
+    expect(scene.get(T)!.data.text).toBe('hello!?');
+    expect(scene.overrides.ids()).toEqual([]);
+    expect(glyphsAlong(scene)).toBe(7);
+  });
+
+  it('shows a recorded write made during the edit beside the draft', () => {
     const { scene, container, hook } = setup();
     act(() => hook.result.current.startEdit('t'));
     type(container, '!');
-    expect(scene.get(T)!.data.text).toBe('hello!');
-    type(container, '?');
-    expect(scene.get(T)!.data.text).toBe('hello!?');
-    act(() => hook.result.current.commit());
-    expect(scene.get(T)!.data.text).toBe('hello!?');
+    scene.update(T, { data: { ...scene.get(T)!.data, fill: RED } });
+    const shown = scene.overrides.read(T)?.data?.(scene.get(T)!.data);
+    expect(shown).toEqual({ text: 'hello!', style: STYLE, fill: RED });
   });
 
-  it('puts back the data the edit began with on a cancel', () => {
+  it('leaves the data the edit began with on a cancel, and shows it again', () => {
     const { scene, container, hook } = setup();
     const before = scene.get(T)!.data;
     act(() => hook.result.current.startEdit('t'));
     type(container, '!');
     act(() => hook.result.current.cancelEdit());
-    expect(scene.get(T)!.data).toEqual(before);
+    expect(scene.get(T)!.data).toBe(before);
+    expect(scene.overrides.ids()).toEqual([]);
   });
 
   it('writes a node nothing derives from only at the commit', () => {
@@ -118,16 +154,17 @@ describe('useSceneTextEdit — drafts', () => {
     expect(scene.get(T)!.data.text).toBe('hello!?');
   });
 
-  // Undoing that write still brings back the draft it was made over: its entry holds the node's whole data.
-  it('keeps a write made to the node during the edit through a cancel, and undoes the write', () => {
+  it('keeps a write made to the node during the edit through a cancel, and undoes it with no draft coming back', () => {
     const { scene, container, hook } = setup();
     act(() => hook.result.current.startEdit('t'));
     type(container, '!');
     scene.update(T, { data: { ...scene.get(T)!.data, fill: RED } });
     act(() => hook.result.current.cancelEdit());
-    expect(scene.get(T)!.data).toEqual({ text: 'hello', style: { fontSize: 16 }, fill: RED });
+    expect(scene.get(T)!.data).toEqual({ text: 'hello', style: STYLE, fill: RED });
     scene.undo();
-    expect(scene.get(T)!.data.fill).toBeUndefined();
+    expect(scene.get(T)!.data).toEqual({ text: 'hello', style: STYLE });
+    scene.redo();
+    expect(scene.get(T)!.data).toEqual({ text: 'hello', style: STYLE, fill: RED });
   });
 
   it('keeps a write made to the node during the edit through a commit, which undoes to before the edit only', () => {
@@ -137,9 +174,9 @@ describe('useSceneTextEdit — drafts', () => {
     scene.update(T, { data: { ...scene.get(T)!.data, fill: RED } });
     type(container, '?');
     act(() => hook.result.current.commit());
-    expect(scene.get(T)!.data).toEqual({ text: 'hello!?', style: { fontSize: 16 }, fill: RED });
+    expect(scene.get(T)!.data).toEqual({ text: 'hello!?', style: STYLE, fill: RED });
     scene.undo();
-    expect(scene.get(T)!.data).toEqual({ text: 'hello', style: { fontSize: 16 }, fill: RED });
+    expect(scene.get(T)!.data).toEqual({ text: 'hello', style: STYLE, fill: RED });
     scene.undo();
     expect(scene.get(T)!.data.fill).toBeUndefined();
   });
