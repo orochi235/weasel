@@ -113,7 +113,7 @@
   --wzl-stance-clarify-radius: 8px;
   --wzl-stance-clarify-tint-mix: 22%;
   --wzl-stance-clarify-nested-radius: 6px;
-  /* A scope panel inside another sits back into it. */
+  /* A clarify panel inside another sits back into it. */
   --wzl-stance-clarify-nested-surface: var(--wzl-surface);
   --wzl-stance-aside-surface: transparent;
   --wzl-stance-aside-border-color: var(--wzl-line-subtle);

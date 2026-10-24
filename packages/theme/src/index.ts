@@ -16,14 +16,12 @@ export { parseTokenValue, serializeTokenValue } from './dtcg/value';
 export type { RawToken, FlatTokens, TokenValue } from './dtcg/types';
 export type { BakedTheme } from './engine/bake';
 export { colorAt, colorCount, colorCssAt, rampSteps, themeTints, type ColorContext, type ColorList, type ColorListItem, type GeneratedColors, type RampColors, type SerializableColorList } from './colorList';
-export { EMPHASES, EMPHASIS_FG, type Emphasis, GRADE_TOKENS, GRADES, type Grade } from './appearance';
+export { EMPHASES, EMPHASIS_FG, type Emphasis, GRADE_TOKENS, GRADES, type Grade, STANCES, type Stance } from './appearance';
 export { colorSourceCss, colorSourceLiteral, TINT_REF, type ColorSourceContext } from './colorSource';
 export {
   resolveStanceSlots,
   STANCE_SLOTS,
-  STANCES,
   stanceSlotNames,
-  type Stance,
   type StanceLookup,
   type StanceSlot,
 } from './panel';

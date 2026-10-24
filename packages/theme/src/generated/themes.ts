@@ -1818,7 +1818,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "stance-clarify-nested-surface": {
         "value": "{surface}",
         "type": "color",
-        "description": "A scope panel inside another sits back into it."
+        "description": "A clarify panel inside another sits back into it."
       },
       "stance-aside-surface": {
         "value": "transparent",
@@ -3184,7 +3184,7 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "stance-clarify-nested-surface": {
         "type": "color",
         "value": "{surface}",
-        "description": "A scope panel inside another sits back into it."
+        "description": "A clarify panel inside another sits back into it."
       },
       "stance-aside-surface": {
         "type": "color",

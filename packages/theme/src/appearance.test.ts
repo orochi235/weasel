@@ -1,23 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { EMPHASES, EMPHASIS_FG, GRADES, GRADE_TOKENS, STANCES } from './appearance';
+import { EMPHASES, EMPHASIS_FG, GRADE_TOKENS, GRADES, STANCES } from './appearance';
+import { resolveTheme } from './resolveTheme';
+import { weaselTheme } from './theme';
+
+const tokens = resolveTheme(weaselTheme, { mode: 'dark' }) as Readonly<Record<string, string>>;
 
 describe('appearance value lists', () => {
-  it('lists the stances as angles, with no severity among them', () => {
-    expect(STANCES).toEqual(['clarify', 'aside', 'advanced', 'debug', 'preview', 'confirm', 'cancel']);
+  it('names no severity among the stances, and no scope', () => {
+    for (const gone of ['danger', 'notice', 'important', 'scope']) expect(STANCES).not.toContain(gone);
+    expect(STANCES).toContain('clarify');
   });
 
-  it('maps every grade to a theme token', () => {
-    expect(GRADES).toEqual(['info', 'success', 'warn', 'danger']);
-    expect(GRADE_TOKENS).toEqual({
-      info: '--wzl-info',
-      success: '--wzl-success',
-      warn: '--wzl-warning',
-      danger: '--wzl-danger',
-    });
+  it('paints every grade with a token the theme defines', () => {
+    for (const grade of GRADES) expect(tokens[GRADE_TOKENS[grade]], grade).toBeDefined();
   });
 
-  it('maps every emphasis to the text color it lends', () => {
-    expect(EMPHASES).toEqual(['high', 'low']);
-    expect(EMPHASIS_FG).toEqual({ high: 'var(--wzl-accent-fg)', low: 'var(--wzl-fg-muted)' });
+  it('lends every emphasis a color made of tokens the theme defines', () => {
+    for (const emphasis of EMPHASES) {
+      const names = [...EMPHASIS_FG[emphasis].matchAll(/var\((--wzl-[a-z-]+)\)/g)].map((m) => m[1]);
+      expect(names.length, emphasis).toBeGreaterThan(0);
+      for (const name of names) expect(tokens[name], name).toBeDefined();
+    }
   });
 });

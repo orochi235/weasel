@@ -101,7 +101,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-stance-clarify-radius', type: "dimension", group: "stance", defaultValue: "8px", description: "", hook: false },
   { name: '--wzl-stance-clarify-tint-mix', type: "number", group: "stance", defaultValue: "22%", description: "", hook: false },
   { name: '--wzl-stance-clarify-nested-radius', type: "dimension", group: "stance", defaultValue: "6px", description: "", hook: false },
-  { name: '--wzl-stance-clarify-nested-surface', type: "color", group: "stance", defaultValue: "#181a1e", description: "A scope panel inside another sits back into it.", hook: false },
+  { name: '--wzl-stance-clarify-nested-surface', type: "color", group: "stance", defaultValue: "#181a1e", description: "A clarify panel inside another sits back into it.", hook: false },
   { name: '--wzl-stance-aside-surface', type: "color", group: "stance", defaultValue: "transparent", description: "", hook: false },
   { name: '--wzl-stance-aside-border-color', type: "color", group: "stance", defaultValue: "rgba(230, 231, 233, 0.1)", description: "", hook: false },
   { name: '--wzl-stance-aside-blur', type: "dimension", group: "stance", defaultValue: "0px", description: "", hook: false },

@@ -11,8 +11,6 @@
  */
 import { type Stance, STANCES } from './appearance';
 
-export { type Stance, STANCES };
-
 /** One styleable property of a stanced surface. */
 export interface StanceSlot {
   readonly name: string;
