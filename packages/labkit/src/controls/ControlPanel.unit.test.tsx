@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { type PrefLinearUnit, prefUnit } from '@weasel-js/prefs';
 import { ANGLE_RADIANS } from '@weasel-js/quantity';
 import { describe, expect, it, vi } from 'vitest';

@@ -77,7 +77,9 @@ describe('<ControlMatrix>', () => {
     ).toEqual(['Background', 'Fill', 'Glow', 'Shading']);
     // The row's help takes no focus of its own: the row's first control carries it.
     expect(screen.queryByRole('button', { name: 'About Glow' })).toBeNull();
-    expect(screen.getByText('Glow').closest('tr')?.querySelector('[aria-describedby]')).not.toBeNull();
+    expect(
+      screen.getByText('Glow').closest('tr')?.querySelector('[aria-describedby]'),
+    ).not.toBeNull();
   });
 
   it('shows numbers at their step precision and enums by label', () => {

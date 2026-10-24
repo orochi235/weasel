@@ -37,6 +37,28 @@ describe('PropertyRow help with no icon', () => {
     }
   });
 
+  it('closes the help on Escape and leaves the row\'s control focused and its value alone', () => {
+    vi.useFakeTimers();
+    try {
+      const onKeyDown = vi.fn();
+      plain(
+        <PropertyRow label="Opacity" description="How see-through the shape is.">
+          <input type="text" defaultValue="x" onKeyDown={onKeyDown} />
+        </PropertyRow>,
+      );
+      const control = screen.getByRole('textbox', { name: 'Opacity' });
+      act(() => control.focus());
+      act(() => { vi.advanceTimersByTime(600); });
+      expect(screen.getByRole('tooltip')).toBeInTheDocument();
+      fireEvent.keyDown(control, { key: 'Escape' });
+      expect(screen.queryByRole('tooltip')).toBeNull();
+      expect(onKeyDown).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(control);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('lets a click on the label reach the row\'s control', () => {
     const onChange = vi.fn();
     plain(

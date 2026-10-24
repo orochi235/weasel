@@ -135,7 +135,7 @@
     "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 150
+    "longestFunction": 147
   },
   "packages/labkit/src/controls/panelRows.tsx": {
     "longestFunction": 228
@@ -173,7 +173,7 @@
     "longestFunction": 400
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 218
+    "longestFunction": 217
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439

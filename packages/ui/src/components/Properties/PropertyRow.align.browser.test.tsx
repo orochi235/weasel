@@ -1,5 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { ListEditor } from '../ListEditor';
@@ -118,16 +119,18 @@ test('a label that wraps puts its first line level with a one-line control', asy
 
 test('a label that wraps keeps its help glyph on its first line', async () => {
   renderWithIcons(
-    <PropertyList align="center" className="narrow-labels">
-      <PropertyField
-        kind="boolean"
-        label="Silhouette outline width"
-        description="How wide the outline is."
-        value={false}
-        onChange={() => {}}
-        layout="inline"
-      />
-    </PropertyList>,
+    <KitSettingsProvider value={{ help: { icon: true } }}>
+      <PropertyList align="center" className="narrow-labels">
+        <PropertyField
+          kind="boolean"
+          label="Silhouette outline width"
+          description="How wide the outline is."
+          value={false}
+          onChange={() => {}}
+          layout="inline"
+        />
+      </PropertyList>
+    </KitSettingsProvider>,
   );
   await frames();
   const label = screen.getByText('Silhouette outline width', { selector: '[class*="rowLabel"]' });
