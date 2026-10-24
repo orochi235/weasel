@@ -45,7 +45,12 @@ export function withInheritedPaints<TData, TLayer extends string, TPose>(
   };
 }
 
-/** {@link withInheritedPaints} for a cull's `paintBounds`: a node's `'inherit'` stroke is measured as the one it takes. */
+/**
+ * {@link withInheritedPaints} for a cull's `paintBounds`: a node whose stroke
+ * is `'inherit'` is measured with its containers' stroke on `ctx.inherited`,
+ * unless its caller already says what it inherits. For a consumer culling its
+ * own scene walk with `defaultPaintBounds`, which cannot bound such a node alone.
+ */
 export function withInheritedPaintBounds<TData, TLayer extends string, TPose>(
   scene: ParentLookup<Node<TData, TLayer, TPose>>,
   paintBounds: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>,

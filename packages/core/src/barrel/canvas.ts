@@ -51,7 +51,7 @@ export type {
   ShapeCoversPointOptions,
 } from '../canvas/NodeShape';
 export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
-export { inheritedPaintIn, paintAbove, withInheritedPaints } from '../canvas/inheritedPaints';
+export { inheritedPaintIn, paintAbove, withInheritedPaintBounds, withInheritedPaints } from '../canvas/inheritedPaints';
 export { inheritedPaintOf, inheritsPaint, withInheritedPaint } from '../core/scene/inheritedPaint';
 export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds';
 export { drawnBoundsScene } from '../canvas/derivedPath';
