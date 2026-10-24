@@ -8,14 +8,13 @@ import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { registerFontOutlines, type OutlineFace } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { pathFromD, rectPath } from '@weasel-js/geom';
+import { pathFromD, rectPath, type PolygonPath } from '@weasel-js/geom';
 import { loadTextOutlines, type TextOutlineSource } from '@weasel-js/text';
-import { editAnchorsSceneAccess } from 'canvas/deps/editAnchors';
-import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { publishPreviews } from 'canvas/publishPreviews';
 import { effectivePose } from 'core/scene/effectivePose';
 import { pathEffectNode } from 'core/scene/pathEffects/derive';
 import { createScene } from 'core/scene/scene';
+import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from 'features/pathEffects';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
@@ -63,7 +62,21 @@ async function setup() {
       return () => listeners.delete(fn);
     },
   });
-  const dep = makeEditAnchorsDep({ editingId: P, ...editAnchorsSceneAccess(scene, sceneToAdapter(scene), []) });
+  // A path stored in `data.path` under a rect pose, read and committed through the scene as the canvas's dep does.
+  const shape = () => ({ pose: scene.get(P)!.pose, data: scene.get(P)!.data });
+  const dep = makeEditAnchorsDep({
+    editingId: P,
+    getStorageKind: () => 'data',
+    getNodeShape: shape,
+    getEditablePath: () => resolveEditablePathOf(shape()),
+    applyEdit: (_id, worldPath, label) => {
+      const next = storeEditablePath(shape(), worldPath as PolygonPath)!;
+      scene.batch(label, () => {
+        scene.update(P, { data: next.data });
+        scene.setPose(P, next.pose as RectPose);
+      });
+    },
+  });
   const ctxAt = (x: number, y: number): InvocationCtx => ({
     world: { x, y },
     screen: { x, y },
@@ -136,6 +149,20 @@ describe('an anchor drag on a path something derives from', () => {
     expect(scene.historyEntries()).toEqual(entries);
     expect(scene.overrides.ids()).toEqual([]);
     expect(heightOf(ALONG)).toBe(height);
+  });
+
+  it('shows the dragged path over a write made mid-drag, and over its undo', async () => {
+    const { scene, press, move } = await setup();
+    const handle = press();
+    move(handle, 400, 300);
+    const shown = () => scene.overrides.read(P)?.data?.(scene.get(P)!.data) as { path: unknown; stroke?: unknown };
+    const dragged = shown().path;
+    const stroke = { paint: { color: '#f00' }, width: 3 };
+    scene.update(P, { data: { ...(scene.get(P)!.data as object), stroke } });
+    expect(shown()).toMatchObject({ path: dragged, stroke });
+    scene.undo();
+    expect(shown().path).toBe(dragged);
+    expect(shown().stroke).toBeUndefined();
   });
 
   it('stops publishing once stopped', async () => {
