@@ -44,7 +44,7 @@
   inset: calc(-1px - var(--wzl-slider-thumb-slop));
 }
 
-.dot::before,
+/* A notched thumb draws no border, so its slop needs no 1px back. */
 .notched::before {
   inset: calc(-1 * var(--wzl-slider-thumb-slop));
 }
