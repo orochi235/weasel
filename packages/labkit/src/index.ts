@@ -337,3 +337,4 @@ export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
+export { type UndoKeysTarget, undoKeyStep, useUndoKeys } from './undo/useUndoKeys';

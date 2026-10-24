@@ -1,4 +1,4 @@
-import { DevtoolsLabel, historyKey } from '@weasel-js/core';
+import { DevtoolsLabel } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
@@ -23,7 +23,7 @@ import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
-import { editsText } from './editsText';
+import { undoKeyStep } from '../undo/useUndoKeys';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
 import { TrialTitleContext } from './trialTitle';
@@ -251,10 +251,9 @@ export function TrialChrome({
     if (!mod || presented || e.defaultPrevented) return;
     // A chord is its button's: suppress the button and the chord goes with it.
     const offered = (id: string) => contributions.some((c) => c.id === id);
-    const step = historyKey(e);
+    const step = undoKeyStep(e);
     if (step) {
-      // Typing has its own undo, and it is what the user is asking for there.
-      if (!offered(step) || editsText(e.target)) return;
+      if (!offered(step)) return;
       e.preventDefault();
       if (step === 'redo') ctx.redo();
       else ctx.undo();
