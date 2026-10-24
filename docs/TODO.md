@@ -981,6 +981,13 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
+  arc, edge to edge, and the well runs one rim past the first and last"
+  (`packages/ui/src/components/ToggleBar/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
+  ± 0.5 in a full run on teitou on 2026-10-24 (at the features-to-domains rename, which touches no ToggleBar code),
+  then passed 3 of 3 alone on the same node and tree (job e82589ab). Seen once; a measurement taken
+  before a face or a layout settles is the first thing to look for.
+
 - **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the
