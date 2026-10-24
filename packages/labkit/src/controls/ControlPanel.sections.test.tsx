@@ -315,10 +315,10 @@ describe('<ControlPanel> groups drawn `as`', () => {
     expect(screen.queryByLabelText('Glow')).toBeNull();
   });
 
-  it('heads a section group with its name and no frame', () => {
+  it('heads a section group with its name, in the frameless divider motif', () => {
     renderWithIcons(<ControlPanel schema={schema} config={{}} setConfig={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Notes' })).toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: 'Notes' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Notes' })).toHaveAttribute('data-motif', 'divider');
     expect(screen.getByLabelText('Shout')).toBeInTheDocument();
   });
 });
