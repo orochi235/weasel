@@ -1,9 +1,16 @@
-import { useCallback, useContext, useMemo, useRef } from 'react';
+import { type ContextType, useCallback, useContext, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/core';
 import { OverlayTriggerStateContext } from 'react-aria-components';
 
-/** Reports a callout closed by Escape through `onDismiss`, and hands back the pieces `Callout` wires in. */
-export function useEscapeDismissal(onDismiss: (() => void) | undefined) {
+/** What `Callout` wires in: the trigger state to hand its popover, the close report, and the dialog's ref. */
+export interface EscapeDismissal {
+  watched: ContextType<typeof OverlayTriggerStateContext>;
+  closedByEscape: () => void;
+  dialogRef: (node: HTMLElement | null) => void;
+}
+
+/** Reports a callout closed by Escape through `onDismiss`. */
+export function useEscapeDismissal(onDismiss: (() => void) | undefined): EscapeDismissal {
   // An Escape that closes the callout is a dismissal like the close button is.
   // The key alone is not the signal: RAC's overlay stack leaves the callout up
   // when a menu inside it is open. So the listener marks the event, and the
