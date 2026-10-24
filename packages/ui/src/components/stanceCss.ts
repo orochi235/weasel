@@ -77,7 +77,7 @@ export function stanceCss(surface: StanceSurface): string {
       return `var(--wzl-tint, ${nested ? stanceVar(`${stance}-nested-tint`, own) : own})`;
     }
     if (name === 'accent') {
-      const own = `var(--wzl-stance-${stance}-accent)`;
+      const own = stanceVar(`${stance}-accent`, surface.stanced?.accent ?? surface.base.accent);
       return `var(--wzl-tint, ${nested ? stanceVar(`${stance}-nested-accent`, own) : own})`;
     }
     const outer = stanceVar(`${stance}-${name}`, surface.stanced?.[name] ?? surface.base[name]);

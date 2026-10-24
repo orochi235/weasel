@@ -186,9 +186,7 @@ function ButtonsAndToggles() {
           <Button stance="confirm">Save</Button>
           <Button>Cancel</Button>
           <Button variant="ghost">Ghost</Button>
-          <Button disabled>
-            Disabled
-          </Button>
+          <Button disabled>Disabled</Button>
           <Button iconOnly ariaLabel="Add">
             <Dot />
           </Button>

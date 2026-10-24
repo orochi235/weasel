@@ -27,7 +27,9 @@ describe('Toolbar', () => {
   test('Button marks a danger grade', () => {
     render(
       <Toolbar>
-        <Toolbar.Button grade="danger" onClick={() => {}}>Discard</Toolbar.Button>
+        <Toolbar.Button grade="danger" onClick={() => {}}>
+          Discard
+        </Toolbar.Button>
       </Toolbar>,
     );
     expect(screen.getByRole('button', { name: 'Discard' })).toHaveAttribute('data-grade', 'danger');

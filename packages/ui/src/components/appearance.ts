@@ -25,6 +25,7 @@ export interface AppearanceProps {
   tint?: number | ColorSource;
 }
 
+/** The attributes and inline custom properties a component spreads onto its root to carry its appearance. */
 export interface AppearanceAttrs {
   'data-stance'?: Stance;
   'data-grade'?: Grade;
@@ -38,6 +39,7 @@ export function tintSource(tint: number | ColorSource | undefined): ColorSource 
   return typeof tint === 'number' ? { ref: TINT_REF, index: tint } : tint;
 }
 
+/** Turns appearance props into the `data-*` attributes and inline custom properties the stance rules read. */
 export function useAppearance({ stance, grade, emphasis, tint }: AppearanceProps): AppearanceAttrs {
   const css = useColorCss();
   if (stance === undefined && grade === undefined && emphasis === undefined && tint === undefined) return {};

@@ -1,9 +1,11 @@
 /** The angle a component comes from: who it is for, how it speaks, what an action does. */
 export const STANCES = ['clarify', 'aside', 'advanced', 'debug', 'preview', 'confirm', 'cancel'] as const;
+/** One stance. */
 export type Stance = (typeof STANCES)[number];
 
 /** How serious, or how good. The only axis that paints red. */
 export const GRADES = ['info', 'success', 'warn', 'danger'] as const;
+/** One grade. */
 export type Grade = (typeof GRADES)[number];
 
 /** The token each grade paints with. */
@@ -16,6 +18,7 @@ export const GRADE_TOKENS: Readonly<Record<Grade, string>> = {
 
 /** How loudly a component reads. Unset is normal. */
 export const EMPHASES = ['high', 'low'] as const;
+/** One emphasis level; unset reads as normal. */
 export type Emphasis = (typeof EMPHASES)[number];
 
 /** The text color an emphasis lends to everything inside it, as `--wzl-emphasis-fg`. */

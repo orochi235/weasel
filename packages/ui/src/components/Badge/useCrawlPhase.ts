@@ -6,12 +6,12 @@ export function useCrawlPhase(crawl: boolean | number | undefined): number {
   const [phase, setPhase] = useState(0);
   const lastRef = useRef<number | null>(null);
   const loop = useVisibleRaf(
-    (now) => {
+    (now, self) => {
       const speed = typeof crawl === 'number' ? crawl : 0.2;
       const last = lastRef.current;
       lastRef.current = now;
       if (last !== null) setPhase((p) => (p + (speed * (now - last)) / 1000) % 1);
-      loop.request();
+      self.request();
     },
     // A crawl does not advance while nobody is watching it, so the frame that
     // resumes it must not apply the whole interval at once.
@@ -19,13 +19,10 @@ export function useCrawlPhase(crawl: boolean | number | undefined): number {
   );
 
   useEffect(() => {
-    if (!crawl) {
-      setPhase(0);
-      return;
-    }
+    if (!crawl) return;
     lastRef.current = null;
     loop.request();
     return () => loop.cancel();
   }, [crawl, loop]);
-  return phase;
+  return crawl ? phase : 0;
 }

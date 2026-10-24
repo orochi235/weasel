@@ -80,8 +80,8 @@ describe('stance rules', () => {
 
   it('lets a named tint win the accent over a stance', () => {
     const text = stanceCss(panel);
-    expect(text).toContain('--_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent));');
-    expect(text).toContain('var(--wzl-tint, var(--wzl-stance-debug-nested-accent, var(--wzl-stance-debug-accent)))');
+    expect(text).toContain('--_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent, var(--wzl-tint)));');
+    expect(text).toContain('var(--wzl-tint, var(--wzl-stance-debug-nested-accent, var(--wzl-stance-debug-accent, var(--wzl-tint))))');
   });
 
   it('gives emphasis a nested twin so it outranks a nested stance', () => {

@@ -1,4 +1,5 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import {
   type CollapseProps,
   PropertyHelp,
@@ -7,7 +8,6 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import { useOverlayPortal } from '@weasel-js/ui/portal-host';
-import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { type ReactElement, type ReactNode, useRef, useState } from 'react';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
@@ -95,18 +95,25 @@ function rowSpecsOf(
   cellAt: (path: string) => MatrixTarget | undefined,
   visible: (path: string) => boolean,
 ): RowSpec[] {
-  return rows
-    .map((row) => {
-      const cells = columns.map((column) => cellAt(`${column.key}.${row.key}`));
-      const named = cells.find((cell) => cell !== undefined)?.leaf;
-      return { row, cells, label: row.label ?? named?.name ?? row.key, about: named?.description };
-    })
-    // A setting no column shows has no row; one no column has keeps its row of dashes.
-    .filter(
-      ({ row, cells }) =>
-        cells.every((cell) => cell === undefined) ||
-        cells.some((cell, i) => cell !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
-    );
+  return (
+    rows
+      .map((row) => {
+        const cells = columns.map((column) => cellAt(`${column.key}.${row.key}`));
+        const named = cells.find((cell) => cell !== undefined)?.leaf;
+        return {
+          row,
+          cells,
+          label: row.label ?? named?.name ?? row.key,
+          about: named?.description,
+        };
+      })
+      // A setting no column shows has no row; one no column has keeps its row of dashes.
+      .filter(
+        ({ row, cells }) =>
+          cells.every((cell) => cell === undefined) ||
+          cells.some((cell, i) => cell !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
+      )
+  );
 }
 
 /**

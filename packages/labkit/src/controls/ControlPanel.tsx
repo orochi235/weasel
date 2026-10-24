@@ -1,4 +1,5 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import {
   type CollapseProps,
@@ -9,7 +10,6 @@ import {
   PropertyPanel,
   type PropertyRowLayout,
 } from '@weasel-js/ui/components/Properties';
-import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';

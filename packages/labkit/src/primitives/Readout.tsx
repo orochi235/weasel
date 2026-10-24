@@ -1,9 +1,5 @@
-import {
-  DetailList,
-  type DetailListValues,
-  DetailRow,
-} from '@weasel-js/ui/components/DetailList';
 import type { Grade } from '@weasel-js/theme';
+import { DetailList, type DetailListValues, DetailRow } from '@weasel-js/ui/components/DetailList';
 import type { ReactNode } from 'react';
 
 /** One measurement in a {@link Readout}. */
