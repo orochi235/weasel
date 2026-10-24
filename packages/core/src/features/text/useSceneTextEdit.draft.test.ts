@@ -103,6 +103,26 @@ describe('useSceneTextEdit — drafts', () => {
     expect(scene.overrides.ids()).toEqual([]);
   });
 
+  it('lets the draft go when the editor unmounts mid-edit', () => {
+    const { scene, container, hook } = setup();
+    const stored = scene.get(T)!.data;
+    act(() => hook.result.current.startEdit('t'));
+    type(container, '!');
+    hook.unmount();
+    expect(scene.overrides.ids()).toEqual([]);
+    expect(scene.get(T)!.data).toBe(stored);
+  });
+
+  it('shows the draft again on the next keystroke after the node is deleted and the delete undone', () => {
+    const { scene, container, hook } = setup();
+    act(() => hook.result.current.startEdit('t'));
+    type(container, '!');
+    scene.remove(T);
+    scene.undo();
+    type(container, '?');
+    expect(scene.overrides.read(T)?.data?.(scene.get(T)!.data)).toMatchObject({ text: 'hello!?' });
+  });
+
   it('writes a node nothing derives from only at the commit', () => {
     const { scene, container, hook } = setup();
     act(() => hook.result.current.startEdit('lone'));

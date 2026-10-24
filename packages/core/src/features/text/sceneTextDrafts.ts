@@ -31,6 +31,8 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
   draft: (id: string, draft: TextEditDraft) => void;
   commit: (id: string, data: TData) => void;
   end: (id: string) => void;
+  /** Let any open edit's draft go, as an unmount must: the overlay goes without an `end`. */
+  close: () => void;
 } {
   /** The open edit's claim on the scene's overrides, with the scene it was made on. */
   let held: { id: string; scene: Scene<TData, TLayer, TPose>; hold: PoseHold<TPose, TData> } | null = null;
@@ -55,5 +57,8 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
       release(id);
     },
     end: release,
+    close: () => {
+      if (held !== null) release(held.id);
+    },
   };
 }
