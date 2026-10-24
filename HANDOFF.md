@@ -16,8 +16,9 @@ Decided in conversation (2026-10-23), none of it in code:
 - **severity** (`info`, `success`, `warn`, `danger`) is its own axis, apart from **stance**. Today it
   is spelled six ways: three `status` types (Button/Code, Badge/Powerline, DetailList), Toast's
   `tone`, labkit Toolbar's `variant: 'danger'`, and the `danger`/`notice`/`important` stances.
-- **stance** keeps content class only (`scope`, `aside`, `advanced`, `debug`, `preview`), goes on
-  every component, and cascades to children through CSS custom properties.
+- **stance** is the angle a component comes from, its spin or slant (2026-10-23): is it for advanced
+  users, is it debug output, is it the confirming action. Not a content class. `confirm` and its
+  kin are stances, or adjacent. It goes on every component and cascades through CSS custom properties.
 - **tone** means how loudly something reads (`neutral`, `muted`, `accent`); **tint** is an exact
   color (palette index or value, today's `tone`) and wins over severity and tone.
 - `status` is retired. `muted` belongs with tone, not with a drawing variant.

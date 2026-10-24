@@ -20,9 +20,9 @@
       "title": "Stance",
       "was": "stance",
       "kind": "noun",
-      "description": "what kind of content it holds",
+      "description": "the angle it comes from",
       "gloss": {
-        "lead": "The class of content a surface holds: a scoped group, an aside, advanced settings, debug output, a preview.",
+        "lead": "The angle a component comes from, its spin or slant: for advanced users, debug output, an aside, a preview, the action that confirms.",
         "items": [
           "Today on containers (panels, frames, callouts, dialogs, sidebar sections), and declared but drawing nothing on Button, Badge and Code.",
           "The theme decides how each class looks: fill, border, radius, accent.",
