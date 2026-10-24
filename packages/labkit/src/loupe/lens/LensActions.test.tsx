@@ -126,7 +126,9 @@ describe('<LensActions>', () => {
       fireEvent.pointerMove(body, { clientX: 50, clientY: 60 });
     });
     const faded = { alpha: 0.5 };
-    act(() => { api.scene.overrides.set('l0:reticle' as never, faded); });
+    act(() => {
+      api.scene.overrides.set('l0:reticle' as never, faded);
+    });
     act(() => void registry.trigger(LENS_ACTION_IDS.pinned));
     expect(api.scene.overrides.has('l0:reticle' as never, faded)).toBe(true);
     expect(api.scene.overrides.read('l0:reticle' as never)!.pose).toBeUndefined();
