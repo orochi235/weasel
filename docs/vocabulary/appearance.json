@@ -147,7 +147,7 @@
       "title": "Severity",
       "was": "status",
       "kind": "noun",
-      "description": "how serious or how good",
+      "description": "how serious or how good; picked as grade (2026-10-23)",
       "gloss": {
         "lead": "How much an element matters to the reader right now: information, success, a warning, danger.",
         "items": [
@@ -170,7 +170,7 @@
             },
             {
               "word": "grade",
-              "star": false
+              "star": true
             },
             {
               "word": "ordinal",
@@ -264,6 +264,14 @@
             {
               "word": "standing",
               "star": true
+            },
+            {
+              "word": "level",
+              "star": true
+            },
+            {
+              "word": "gravity",
+              "star": false
             }
           ]
         }
@@ -503,7 +511,7 @@
               "star": false
             },
             {
-              "word": "grade",
+              "word": "tinge",
               "star": false
             }
           ]
@@ -2170,7 +2178,8 @@
   ],
   "defaults": {
     "tone": "emphasis",
-    "tint": "tint"
+    "tint": "tint",
+    "severity": "grade"
   },
   "relations": [
     {
