@@ -15,6 +15,8 @@ export interface SubpanelProps extends PropertyMetricProps, AppearanceProps, Col
   leading?: ReactNode;
   /** After the title: a summary of the rows' value, a reset button. */
   actions?: ReactNode;
+  /** What the subpanel holds takes no input: its title dims, and what sits beside it does not. */
+  disabled?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -27,6 +29,7 @@ export function Subpanel({
   motif,
   leading,
   actions,
+  disabled,
   children,
   className,
   density,
@@ -63,6 +66,7 @@ export function Subpanel({
         ) : undefined
       }
       className={propertyMetricClass(s.subpanel, { density, align }, className)}
+      disabled={disabled}
       stance={stance}
       grade={grade}
       emphasis={emphasis}

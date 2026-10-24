@@ -65,7 +65,8 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
     update,
     setValue: (v) => update(() => v),
     ...(draft ? { drafts: { update: draft, setValue: (v: unknown) => draft(() => v) } } : {}),
-    disabled: ctx.disabled === true || ctx.disabledAt?.(childPath) === true,
+    // The walk names every field of a disabled leaf but the one its own `enableIf` reads, which stays live.
+    disabled: ctx.disabledAt ? ctx.disabledAt(childPath) : ctx.disabled === true,
     disabledAt: ctx.disabledAt,
     hidden: ctx.hidden === true || ctx.hiddenAt?.(childPath) === true,
     hiddenAt: ctx.hiddenAt,

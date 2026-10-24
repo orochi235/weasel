@@ -116,4 +116,13 @@ describe('an inverted stereo frame', () => {
     rerender(<MotifFrame title="Fade" motif={stereo()} />);
     expect(container.querySelector('[data-motif="stereo"]')?.hasAttribute('data-invert')).toBe(false);
   });
+
+  it.each(MOTIFS)('%s: disabled dims the title and marks the root, and leaves what sits beside the title alone', (_id, make) => {
+    render(<MotifFrame title="Glow" motif={make()} disabled inline={<input type="checkbox" aria-label="on" />} />);
+    const group = screen.getByRole('group', { name: 'Glow' });
+    expect(group).toHaveAttribute('data-disabled');
+    // A proxy: the CSS-module proxy answers any key, so this shows only that the title asked to dim.
+    expect(screen.getByText('Glow').className).toMatch(/_titleOff_/);
+    expect(screen.getByRole('checkbox', { name: 'on' }).closest('[class*="_titleOff_"]')).toBeNull();
+  });
 });

@@ -52,7 +52,7 @@ export function PrefsPane(props: PrefsPaneProps) {
     // A hidden page is marked whole: its heading and its rows share no element but this one.
     <div className={[s.pane, className].filter(Boolean).join(' ')} ref={scrollRef} data-pref-into={path} data-pref-scroll="" {...hiddenAttrs(marked)}>
       <div className={s.paneHead} {...selectionAttrs(path, { selected: ctx.selected })}>
-        <h3 className={[s.paneTitle, head.className].filter(Boolean).join(' ')}>{group.name}{marked && <HiddenBadge />}{head.control}</h3>
+        <h3 className={[s.paneTitle, head.className].filter(Boolean).join(' ')}>{head.name}{marked && <HiddenBadge />}{head.control}</h3>
         {group.description !== undefined && (
           <p className={s.paneDesc}>{group.description}</p>
         )}
@@ -141,7 +141,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
       aria-label={group.name}
     >
       <Heading className={[depth === 0 ? s.sectionTitle : s.subsectionTitle, head.className].filter(Boolean).join(' ')} data-pref-sticky={depth === 0 ? '' : undefined} ref={depth === 0 ? stuckHeadingRef : undefined}>
-        {group.name}
+        {head.name}
         {marksHidden(ctx.hidden, path) && <HiddenBadge />}
         {head.control}
       </Heading>
@@ -216,6 +216,7 @@ function PanePanel({ ctx, group, path, depth }: {
       fallback={FORM_FRAMES.box}
       role="region"
       title={named ? group.name : undefined}
+      disabled={head.off}
       inline={named ? headingInline(marked, head.control) : undefined}
       note={group.description}
       level={5}

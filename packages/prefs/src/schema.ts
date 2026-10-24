@@ -70,7 +70,8 @@ export interface PrefBase<K extends string, Value> {
   /** Draw the control in the heading of the group or section holding the
    *  leaf, in place of a row of its own. Only a built-in `boolean` or `enum`
    *  fits there (`prefFitsHeading`); any other leaf stays a row. Honored by
-   *  weasel-ui `PrefsForm` and labkit's `ControlPanel`. */
+   *  weasel-ui `PrefsForm` and labkit's `ControlPanel`. A group whose
+   *  `enableIf` reads this leaf is switched by it: see `PrefGroup.enableIf`. */
   heading?: boolean;
   /** Glyph naming this leaf. A name from `@weasel-js/icons`; this package draws
    *  nothing. Read where a leaf's `name` has nowhere to go — a

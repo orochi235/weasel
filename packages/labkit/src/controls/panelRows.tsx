@@ -169,7 +169,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     if (found.as === 'section') {
       const { pack: _pack, ...folds } = fold(path, undefined, rows.grid);
       return (
-        <Subpanel key={path} title={found.name} motif={resolved.motifs?.get(path)} {...folds}>
+        <Subpanel key={path} title={found.name} motif={resolved.motifs?.get(path)} disabled={!enabled(path)} {...folds}>
           {body(found, path, rows)}
         </Subpanel>
       );
@@ -179,6 +179,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
         key={path}
         title={found.name}
         description={found.description}
+        disabled={!enabled(path)}
         // A nested group is a block of rows, not a control: half of a
         // two-column grid leaves it laying its own rows out inside a cell,
         // which overlaps them.

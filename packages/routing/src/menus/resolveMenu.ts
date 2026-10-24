@@ -1,7 +1,8 @@
 import type { MenuEntry } from '@weasel-js/menu';
 import {
-  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefDisplayBounds, prefIsEnabled, prefIsShown, prefLeafAt,
-  prefNumberAt, prefUnitAccepts, prefValueAtPath, resolvePrefUnit,
+  isPrefLeaf, PREF_SCOPE, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefDisplayBounds, prefLeafAt,
+  prefNumberAt, prefScopeIn, prefScopeUnder, prefUnitAccepts, prefValueAtPath, resolvePrefUnit,
+  type PrefConditionJudge, type PrefOwner,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefGroupAs, type PrefLeaf, type PrefNumber, type PrefString,
 } from '@weasel-js/prefs';
@@ -79,7 +80,7 @@ function settingsOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: b
     root: settings.schema,
     read: (path, from) => (from === 'item' ? undefined : values(path)),
   };
-  const entries = state ? tidy(groupRows(form, settings.schema, '', false)) : [];
+  const entries = state ? tidy(groupRows(form, settings.schema, '', ROOT)) : [];
   return {
     kind: 'submenu',
     key,
@@ -238,21 +239,28 @@ function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: bool
   }
 }
 
-function groupRows(ctx: Ctx, group: PrefGroup, prefix: string, off: boolean): MenuEntry[] {
+const ROOT: PrefOwner = { node: {}, scope: PREF_SCOPE, above: PREF_SCOPE };
+
+function groupRows(ctx: Ctx, group: PrefGroup, prefix: string, owner: PrefOwner): MenuEntry[] {
+  const { read } = ctx;
+  const holds: PrefConditionJudge = (condition) => read === undefined || prefConditionHolds(condition, read);
   const out: MenuEntry[] = [];
   for (const [k, node] of Object.entries(group.children)) {
     const path = prefix ? `${prefix}.${k}` : k;
-    if (ctx.read && !prefIsShown(node, ctx.read)) continue;
-    const disabled = off || (ctx.read !== undefined && !prefIsEnabled(node, ctx.read));
+    const sits = isPrefLeaf(node) ? prefScopeIn(owner, path, holds) : owner.scope;
+    const scope = prefScopeUnder(sits, node, holds);
+    if (!scope.shown) continue;
+    const disabled = !scope.enabled;
+    const inner: PrefOwner = { node, scope, above: sits };
     if (isPrefLeaf(node)) {
       out.push(...leafRows(ctx, node, path, path, disabled));
     } else if (node.as !== undefined && SUBMENU_AS.has(node.as)) {
-      const entries = tidy(groupRows(ctx, node, path, disabled));
+      const entries = tidy(groupRows(ctx, node, path, inner));
       if (entries.length) {
         out.push({ kind: 'submenu', key: path, label: node.name, ...(node.icon ? { icon: node.icon } : {}), ...withAccess(node.access), entries });
       }
     } else {
-      out.push(sep(`${path}/<`), ...groupRows(ctx, node, path, disabled), sep(`${path}/>`));
+      out.push(sep(`${path}/<`), ...groupRows(ctx, node, path, inner), sep(`${path}/>`));
     }
   }
   return out;
@@ -296,7 +304,7 @@ export function resolveSchemaMenu(
     at,
     params,
   };
-  return tidy(groupRows(ctx, schema, '', false));
+  return tidy(groupRows(ctx, schema, '', ROOT));
 }
 
 /** Turn a declared menu into model entries; see {@link resolveSchemaMenu}. */

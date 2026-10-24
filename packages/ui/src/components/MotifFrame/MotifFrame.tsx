@@ -58,6 +58,7 @@ export function MotifFrame({
   twistyAt,
   attrs,
   hidden,
+  disabled,
   children,
   className,
   stance,
@@ -76,8 +77,10 @@ export function MotifFrame({
     ...appearance,
     className: [s.frame, className].filter(Boolean).join(' '),
     ...(title == null ? {} : { role, 'aria-labelledby': titleId }),
+    ...(disabled ? { 'data-disabled': '' } : {}),
     'data-motif': chosen.id,
     ...(onContextMenu ? { onContextMenu } : {}),
   };
-  return chosen.render({ heading: { title, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body: children, root });
+  const shownTitle = disabled && title != null ? <span className={s.titleOff}>{title}</span> : title;
+  return chosen.render({ heading: { title: shownTitle, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body: children, root });
 }

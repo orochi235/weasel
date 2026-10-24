@@ -54,7 +54,8 @@ export function ObjectLeaf({
       setAuto: ctx.setAuto,
       values: ctx.values,
       ...(ctx.fields ? { fields: ctx.fields } : {}),
-      disabled: ctx.disabled === true || ctx.disabledAt?.(path) === true,
+      // The walk names every field of a disabled leaf but the one its own `enableIf` reads, which stays live.
+      disabled: ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true,
       disabledAt: ctx.disabledAt,
       hidden: ctx.hidden === true || ctx.hiddenAt?.(path) === true,
       hiddenAt: ctx.hiddenAt,

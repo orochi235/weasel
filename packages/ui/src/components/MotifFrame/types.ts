@@ -101,6 +101,9 @@ export interface MotifFrameProps extends AppearanceProps {
   attrs?: FrameAttrs;
   /** When true the frame renders nothing. */
   hidden?: boolean;
+  /** What the frame holds takes no input: its title dims as a disabled row's label does. Its `inline`,
+   *  `leading` and `actions` do not, since one of them may be the switch that turns it back on. */
+  disabled?: boolean;
   children?: ReactNode;
   className?: string;
   /** A right-click anywhere on the frame. */

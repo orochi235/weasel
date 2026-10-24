@@ -19,10 +19,20 @@ const SCHEMA: PrefGroup = {
       children: {
         shadow: {
           name: 'Shadow',
+          enableIf: { path: 'look.shadow.on' },
           children: {
             on: { kind: 'boolean', name: 'Shadow on', description: '', default: true, control: 'switch', heading: true },
-            blur: { kind: 'number', name: 'Blur', description: '', default: 4, min: 0, max: 40, enableIf: { path: 'look.shadow.on' } },
-            offset: { kind: 'number', name: 'Offset', description: '', default: 2, enableIf: { path: 'look.shadow.on' } },
+            blur: { kind: 'number', name: 'Blur', description: '', default: 4, min: 0, max: 40 },
+            offset: { kind: 'number', name: 'Offset', description: '', default: 2 },
+          },
+        },
+        glow: {
+          name: 'Glow',
+          as: 'panel',
+          enableIf: { path: 'look.glow.on' },
+          children: {
+            on: { kind: 'boolean', name: 'Glow on', description: '', default: false, heading: true },
+            size: { kind: 'number', name: 'Size', description: '', default: 6, min: 0, max: 40 },
           },
         },
         edge: {
@@ -52,7 +62,9 @@ function withValue(values: Record<string, unknown>, path: string, value: unknown
   return { ...values, [key]: withValue((values[key] ?? {}) as Record<string, unknown>, rest.join('.'), value) };
 }
 
-/** A leaf marked `heading` is drawn in its section's heading and its panel's title, and has no row beneath. */
+/** A leaf marked `heading` is drawn in its section's heading and its panel's title, and has no row beneath. Shadow
+ *  and Glow are switched by theirs: each group's `enableIf` reads it, so turning it off dims the group and leaves
+ *  only the switch live. */
 export const HeadingInRail: Story = { args: { layout: 'rail' }, render: (args) => <Form {...args} /> };
 
 /** The same in a column's heading. */

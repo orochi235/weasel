@@ -74,6 +74,29 @@ describe('a leaf marked `heading`', () => {
     expect(screen.getByRole('checkbox', { name: 'Shadow' })).toBeDisabled();
   });
 
+  it("switches its group: the group's enableIf reading it disables the rest and leaves it live", () => {
+    const schema: PrefGroup = {
+      name: '',
+      children: {
+        view: {
+          name: 'View',
+          children: {
+            glow: { name: 'Glow', as: 'panel', enableIf: { path: 'view.glow.on' }, children: { on: flag('Glow on', { heading: true }), size: num('Size') } },
+          },
+        },
+      },
+    };
+    const { rerender } = render(<PrefsForm layout="rail" schema={schema} values={{ view: { glow: { on: false } } }} onChange={() => {}} />);
+    const panel = screen.getByRole('region', { name: 'Glow' });
+    expect(within(panel).getByRole('checkbox', { name: 'Glow' })).toBeEnabled();
+    expect(within(panel).getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
+    // The class is a proxy: the CSS-module proxy answers any key, so this shows only that the title asked to dim.
+    expect(within(panel).getByText('Glow').className).toMatch(/_titleOff_/);
+    rerender(<PrefsForm layout="rail" schema={schema} values={{ view: { glow: { on: true } } }} onChange={() => {}} />);
+    expect(within(panel).getByRole('spinbutton', { name: 'Size' })).toBeEnabled();
+    expect(within(panel).getByText('Glow').className).not.toMatch(/_titleOff_/);
+  });
+
   it('stays a row where its control does not fit a heading, or its group has no heading', () => {
     render(<PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} />);
     expect(screen.getByRole('spinbutton', { name: 'Width' })).toBeInTheDocument();

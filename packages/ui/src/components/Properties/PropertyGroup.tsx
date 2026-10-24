@@ -22,6 +22,8 @@ export interface PropertyGroupProps extends PropertyMetricProps, AppearanceProps
   description?: ReactNode;
   /** When true the group renders nothing — useful for conditional sections. */
   hidden?: boolean;
+  /** What the group holds takes no input: its title dims, and what sits beside it does not. */
+  disabled?: boolean;
   children: ReactNode;
   className?: string;
   /** Take the whole width of a packed grid, like `<PropertyRow span>`: a group
@@ -51,6 +53,7 @@ export function PropertyGroup({
   actions,
   description,
   hidden,
+  disabled,
   collapsible,
   defaultCollapsed,
   collapsed,
@@ -93,6 +96,7 @@ export function PropertyGroup({
         ) : undefined
       }
       className={cls}
+      disabled={disabled}
       stance={stance}
       grade={grade}
       emphasis={emphasis}

@@ -621,6 +621,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P3) A section turned off by its `enableIf` doesn't dim its title.** Groups do (`MotifFrame disabled`,
+  2026-10-24), because `applyPrefConditions` names every disabled group in `disabled`. It names no section, since a
+  section's key is not a path, so `SelectionPanel`'s and an object leaf's section frames have nothing to read. Its
+  switch leaf still stays live. The fix is a set of disabled section keys beside `disabled`, or a judge the section
+  renderers can ask.
+
 - **(P3) A schema cannot name one group's motif for a settings form.** `PrefsForm`, `PrefsPane` and
   `SelectionPanel` draw their framed groups through `MotifFrame` (2026-10-24), so an app's `<DefaultMotif>`
   reaches all of them at once, but a single group can't ask for its own the way labkit's `.motif()` lets a

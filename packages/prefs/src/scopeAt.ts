@@ -2,7 +2,7 @@
 // with everything above it counted.
 
 import { prefAliasTarget, type PrefAlias } from './alias';
-import type { PrefCondition } from './condition';
+import { prefConditionPaths, type PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefLeafAt } from './helpers';
 import { deferEntryConditions, type PrefConditionJudge } from './judge';
@@ -35,53 +35,85 @@ export function prefScopeUnder(
   return shown === above.shown && enabled === above.enabled ? above : { shown, enabled };
 }
 
-/** The scope of the field at `rest` among an object leaf's children, or `undefined` when none is there. */
+/** What holds a node: a group, a section, or a leaf with fields, with its own scope and the scope it sits in. */
+export interface PrefOwner {
+  node: { showIf?: PrefCondition; enableIf?: PrefCondition };
+  scope: PrefScope;
+  above: PrefScope;
+}
+
+/**
+ * The scope a leaf at `path` directly in `owner` sits in: the owner's, except
+ * that the owner's own `enableIf` does not disable a leaf it reads. That leaf
+ * is the owner's switch, and disabled by its own condition it could never be
+ * turned back on.
+ */
+export function prefScopeIn(owner: PrefOwner, path: string, holds: PrefConditionJudge): PrefScope {
+  const { node, scope, above } = owner;
+  if (scope.enabled || !above.enabled || node.enableIf === undefined) return scope;
+  if (!prefConditionPaths(node.enableIf).includes(path)) return scope;
+  return prefScopeUnder(above, { showIf: node.showIf }, holds);
+}
+
+const under = (prefix: string, key: string): string => (prefix === '' ? key : `${prefix}.${key}`);
+
+/** The scope of the field at `rest` among the members of `owner`, whose leaves' paths start at `prefix`, or `undefined` when none is there. */
 function scopeAmong(
-  held: PrefSection['members'], rest: string, above: PrefScope, holds: PrefConditionJudge,
+  held: PrefSection['members'], prefix: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge,
 ): PrefScope | undefined {
   for (const [key, child] of Object.entries(held)) {
     if (!isPrefLeaf(child)) {
-      const found = scopeAmong(child.members, rest, prefScopeUnder(above, child, holds), holds);
+      const found = scopeAmong(child.members, prefix, rest, { node: child, scope: prefScopeUnder(owner.scope, child, holds), above: owner.scope }, holds);
       if (found) return found;
-    } else if (rest === key) return prefScopeUnder(above, child, holds);
-    else if (rest.startsWith(`${key}.`)) return scopeInside(child, rest.slice(key.length + 1), prefScopeUnder(above, child, holds), holds);
+      continue;
+    }
+    if (rest !== key && !rest.startsWith(`${key}.`)) continue;
+    const path = under(prefix, key);
+    const sits = prefScopeIn(owner, path, holds);
+    const scope = prefScopeUnder(sits, child, holds);
+    return rest === key ? scope : scopeInside(child, path, rest.slice(key.length + 1), { node: child, scope, above: sits }, holds);
   }
   return undefined;
 }
 
-/** The scope at `rest` inside `leaf`, whose own scope is `scope`: that of a field, or the leaf's where `rest` names none. */
-function scopeInside(leaf: PrefLeaf, rest: string, scope: PrefScope, holds: PrefConditionJudge): PrefScope {
-  if (leaf.kind === 'object') return scopeAmong((leaf as PrefObject).children, rest, scope, holds) ?? scope;
+/** The scope at `rest` inside `owner`'s leaf, at `path`: that of a field, or the leaf's where `rest` names none. */
+function scopeInside(leaf: PrefLeaf, path: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge): PrefScope {
+  const { scope } = owner;
+  if (leaf.kind === 'object') return scopeAmong((leaf as PrefObject).children, path, rest, owner, holds) ?? scope;
   if (leaf.kind === 'list' || leaf.kind === 'map') {
     const { item } = leaf as Partial<PrefList | PrefMap>;
     if (item === undefined) return scope;
     const inItem = deferEntryConditions(holds);
     const entry = prefScopeUnder(scope, { enableIf: item.enableIf }, inItem);
     const dot = rest.indexOf('.');
-    return dot < 0 ? entry : scopeInside(item, rest.slice(dot + 1), entry, inItem);
+    if (dot < 0) return entry;
+    const at = `${path}.${rest.slice(0, dot)}`;
+    return scopeInside(item, at, rest.slice(dot + 1), { node: { enableIf: item.enableIf }, scope: entry, above: scope }, inItem);
   }
   if (leaf.kind !== 'union') return scope;
   for (const variant of Object.values((leaf as PrefUnion).variants)) {
-    const found = scopeAmong(variant.children, rest, scope, holds);
+    const found = scopeAmong(variant.children, path, rest, owner, holds);
     if (found) return found;
   }
   return scope;
 }
 
 function scopeAt(schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge): PrefScope {
-  let scope = prefScopeUnder(PREF_SCOPE, schema, holds);
-  if (path === '') return scope;
-  if (isPrefSection(schema)) return scopeAmong(schema.members, path, scope, holds) ?? scope;
+  let owner: PrefOwner = { node: schema, scope: prefScopeUnder(PREF_SCOPE, schema, holds), above: PREF_SCOPE };
+  if (path === '') return owner.scope;
+  if (isPrefSection(schema)) return scopeAmong(schema.members, '', path, owner, holds) ?? owner.scope;
   let node: PrefGroup = schema;
   const steps = path.split('.');
   for (let i = 0; i < steps.length; i++) {
-    if (!Object.hasOwn(node.children, steps[i]!)) return scope;
+    if (!Object.hasOwn(node.children, steps[i]!)) return owner.scope;
     const child: PrefLeaf | PrefGroup = node.children[steps[i]!]!;
-    scope = prefScopeUnder(scope, child, holds);
-    if (isPrefLeaf(child)) return i === steps.length - 1 ? scope : scopeInside(child, steps.slice(i + 1).join('.'), scope, holds);
+    const at = steps.slice(0, i + 1).join('.');
+    const sits = isPrefLeaf(child) ? prefScopeIn(owner, at, holds) : owner.scope;
+    owner = { node: child, scope: prefScopeUnder(sits, child, holds), above: sits };
+    if (isPrefLeaf(child)) return i === steps.length - 1 ? owner.scope : scopeInside(child, at, steps.slice(i + 1).join('.'), owner, holds);
     node = child;
   }
-  return scope;
+  return owner.scope;
 }
 
 /** `own`, an alias's scope by its own conditions, narrowed by that of the leaf it shows in `over`, as `holds` judges `over`. */

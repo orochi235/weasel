@@ -293,6 +293,7 @@ function GroupBody({ ctx, group, path, depth }: {
       kind={depth === 0 ? 'group' : 'subpanel'}
       fallback={depth === 0 ? FORM_FRAMES.column : FORM_FRAMES.nested}
       title={named ? group.name : undefined}
+      disabled={head.off}
       inline={named ? headingInline(marked, head.control) : undefined}
       note={group.description || undefined}
       level={3}

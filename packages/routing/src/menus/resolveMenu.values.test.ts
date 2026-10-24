@@ -116,4 +116,15 @@ describe('resolveSchemaMenu: color and string leaves', () => {
     const e = resolveSchemaMenu(schema, valued({ name: 'x', on: false })).find((x) => x.kind === 'text');
     expect(e).toMatchObject({ kind: 'text', disabled: true });
   });
+
+  it("leaves live the leaf its group's enableIf reads, so the group can be switched back on", () => {
+    const schema = menu({
+      glow: { name: 'Glow', enableIf: { path: 'glow.on' }, children: { on: pref.boolean('Glow', false), size: pref.number('Size', 1) } },
+    });
+    const es = resolveSchemaMenu(schema, valued({ 'glow.on': false, 'glow.size': 1 }));
+    const glow = es.find((x) => x.key === 'glow.on');
+    expect(glow).toBeDefined();
+    expect(glow).not.toHaveProperty('disabled', true);
+    expect(es.find((x) => x.key === 'glow.size')).toMatchObject({ disabled: true });
+  });
 });

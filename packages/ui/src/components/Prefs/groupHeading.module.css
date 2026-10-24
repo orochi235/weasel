@@ -1,0 +1,4 @@
+/* A group its `enableIf` turns off, in a heading that is no frame: its name dims as a frame's title does. */
+.off {
+  opacity: 0.5;
+}

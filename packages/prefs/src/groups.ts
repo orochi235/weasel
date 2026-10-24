@@ -70,7 +70,8 @@ export interface PrefGroup {
   access?: string;
   /** Drawn, with everything under it, only while this holds. */
   showIf?: PrefCondition;
-  /** Everything under it is disabled while this does not hold. */
+  /** Everything under it is disabled while this does not hold, except a leaf directly in it that this reads: that
+   *  leaf is the group's switch, often the one marked `heading`, and stays live so the group can be turned back on. */
   enableIf?: PrefCondition;
   children: Record<string, PrefLeaf | PrefGroup>;
 }

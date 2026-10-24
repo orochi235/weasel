@@ -4,12 +4,17 @@ import { HiddenBadge, marksHidden } from './hidden';
 import { prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { selectionAttrs } from './selection';
 import { splitMarks } from './SplitRow';
+import h from './groupHeading.module.css';
 import s from './Prefs.module.css';
 
 type Entry = [key: string, child: PrefLeaf | PrefGroup];
 
 /** What a group's heading draws beside its name, and the children left to draw under it. */
 export interface GroupHeading {
+  /** The group is disabled. A frame dims its own title for it; a plain heading draws `name`. */
+  off: boolean;
+  /** The group's name, dimmed while the group is disabled. */
+  name: ReactNode;
   /** The class a heading takes while it holds `control`. */
   className: string | undefined;
   /** The control of the leaf marked `heading`, named for the group. */
@@ -25,16 +30,20 @@ export interface GroupHeading {
  */
 export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): GroupHeading {
   const entries = Object.entries(group.children);
+  const off = ctx.disabled?.has(path) === true;
+  const name = off ? <span className={h.off}>{group.name}</span> : group.name;
   const key = prefHeadingKey(group);
   const leaf = key === undefined ? undefined : group.children[key];
   if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || ctx.renderers?.[leaf.kind] || ctx.leaves) {
-    return { className: undefined, control: null, entries };
+    return { off, name, className: undefined, control: null, entries };
   }
   const own = path === '' ? key : `${path}.${key}`;
   const shown = shownLeaf(ctx, leaf);
-  if (!shown) return { className: undefined, control: null, entries };
+  if (!shown) return { off, name, className: undefined, control: null, entries };
   const { renderCtx } = prefRenderContext(ctx, own, { ...shown.pref, name: group.name }, shown.at);
   return {
+    off,
+    name,
     className: s.headed,
     control: (
       <span className={s.headingControl} {...selectionAttrs(own, ctx, true)}>

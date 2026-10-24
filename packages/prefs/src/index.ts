@@ -50,6 +50,7 @@ export {
   prefJudge,
   prefReader,
   prefScopeAt,
+  prefScopeIn,
   prefScopeUnder,
   type PrefConditionField,
   type PrefConditionJudge,
@@ -57,6 +58,7 @@ export {
   type PrefConditionsOptions,
   type PrefEntry,
   type PrefEntryApplied,
+  type PrefOwner,
   type PrefScope,
   type PrefScopeAtOptions,
 } from './scope';
