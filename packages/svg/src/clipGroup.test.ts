@@ -11,7 +11,7 @@ const CLIPPED = `<svg xmlns="http://www.w3.org/2000/svg">
 </svg>`;
 
 type Inserted = {
-  id: string; kind: string; pose: { x: number; y: number; width: number; height: number };
+  id: string; kind: string; clip?: string; pose: { x: number; y: number; width: number; height: number };
   data: Record<string, unknown>;
 };
 
@@ -29,10 +29,11 @@ async function unpacked(svg: string): Promise<Inserted[]> {
 }
 
 describe('a clipped <g>', () => {
-  it('drafts a container carrying the clip, boxed by it', () => {
+  it('drafts a group declaring the clip and carrying it, boxed by it', () => {
     let n = 0;
     const [group, leaf] = svgNodesToKitDrafts(parseSvg(CLIPPED), () => `n${n++}`);
-    if (group.kind !== 'group') throw new Error('expected a container');
+    if (group.kind !== 'group') throw new Error('expected a group');
+    expect(group.clip).toBe('outline');
     expect(group.data).toEqual({ path: { kind: 'rect', x: 10, y: 10, width: 20, height: 40 }, fill: null });
     expect(group.pose).toEqual({ x: 10, y: 10, width: 20, height: 40 });
     expect(leaf.pose).toMatchObject({ x: 0, y: 0, width: 100, height: 100 });
@@ -49,9 +50,10 @@ describe('a clipped <g>', () => {
     });
   });
 
-  it('unpacks to a container that paints nothing and whose silhouette, the clip the scene reads, is the clip', async () => {
+  it('unpacks to a group that declares its clip, paints nothing, and whose silhouette is the clip', async () => {
     const [group] = await unpacked(CLIPPED);
     expect(group.kind).toBe('group');
+    expect(group.clip).toBe('outline');
     expect(group.data.fill).toBeNull();
     expect(group.data.stroke).toBeUndefined();
     // Centered on the drop point: the clip's 20 x 40 box, not the child's 100 x 100.
@@ -60,20 +62,22 @@ describe('a clipped <g>', () => {
     expect(boundsOfPath(silhouette)).toMatchObject(group.pose);
   });
 
-  it('writes a container holding a clip back as a clipped group', () => {
+  it('writes a group declaring a clip back as a clipped group, and one only holding a path as unclipped', () => {
     const clip: Path = { kind: 'rect', x: 0, y: 0, width: 2, height: 4 };
-    const nodes: Record<string, { kind: string; data: unknown; pose: { x: number; y: number; width: number; height: number } }> = {
-      g: { kind: 'group', data: { path: clip, fill: null }, pose: { x: 10, y: 10, width: 20, height: 40 } },
+    const nodes: Record<string, { kind: string; clip?: 'outline'; data: unknown; pose: { x: number; y: number; width: number; height: number } }> = {
+      g: { kind: 'group', clip: 'outline', data: { path: clip, fill: null }, pose: { x: 10, y: 10, width: 20, height: 40 } },
+      outlineOnly: { kind: 'group', data: { path: clip, fill: null }, pose: { x: 10, y: 10, width: 20, height: 40 } },
       a: { kind: 'path', data: { path: { kind: 'rect', x: 0, y: 0, width: 100, height: 100 } }, pose: { x: 0, y: 0, width: 100, height: 100 } },
       plain: { kind: 'group', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 } },
     };
     const tree: SvgKitTree = {
-      roots: ['g', 'plain'],
-      childrenOf: (id) => (id === 'g' ? ['a'] : []),
+      roots: ['g', 'outlineOnly', 'plain'],
+      childrenOf: (id) => (id === 'g' || id === 'outlineOnly' ? ['a'] : []),
       get: (id) => nodes[id],
     };
-    const [g, plain] = svgNodesFromKit(tree) as SvgGroupNode[];
+    const [g, outlineOnly, plain] = svgNodesFromKit(tree) as SvgGroupNode[];
     expect(g.clip && boundsOfPath(g.clip)).toMatchObject({ x: 10, y: 10, width: 20, height: 40 });
+    expect(outlineOnly.clip).toBeUndefined();
     expect(plain.clip).toBeUndefined();
   });
 });

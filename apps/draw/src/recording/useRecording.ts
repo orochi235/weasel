@@ -2,7 +2,7 @@ import { useLatest, type SerializedScene, type SurfaceContribution, type View } 
 import { toast } from '@weasel-js/ui/components/Toast';
 import { useMemo, useReducer } from 'react';
 import { downloadBlob, pickFile, serializeReplacer } from '@editor/index';
-import { reviveSnapshot } from '../persistence';
+import { DRAW_LOAD_OPTIONS, reviveSnapshot } from '../persistence';
 import { drawPrefs } from '../prefs';
 import type { RecordingProfile } from '../recorder';
 import { recordingContribution } from './contribution';
@@ -12,7 +12,7 @@ const PROFILES: readonly RecordingProfile[] = ['gesture-only', 'full', 'events-o
 
 /** The parts of the editor a recording's baseline covers. */
 export interface RecordingTarget {
-  scene: { toJSON(): unknown; loadState(json: never): void };
+  scene: { toJSON(): unknown; loadState(json: never, opts?: typeof DRAW_LOAD_OPTIONS): void };
   view(): View;
   setView(view: View): void;
 }
@@ -27,7 +27,7 @@ export function baselineOf(target: RecordingTarget): Pick<RecordingHost, 'snapsh
       view: target.view(),
     }),
     restore: (snapshot) => {
-      target.scene.loadState(reviveSnapshot(snapshot.scene as SerializedScene<unknown, string, unknown>) as never);
+      target.scene.loadState(reviveSnapshot(snapshot.scene as SerializedScene<unknown, string, unknown>) as never, DRAW_LOAD_OPTIONS);
       target.setView(snapshot.view);
     },
   };
@@ -43,7 +43,7 @@ export function useRecording(target: RecordingTarget): SurfaceContribution {
   const live = useLatest(target);
   return useMemo(() => recordingContribution(createRecordingSession({
     ...baselineOf({
-      scene: { toJSON: () => live.current.scene.toJSON(), loadState: (json) => live.current.scene.loadState(json) },
+      scene: { toJSON: () => live.current.scene.toJSON(), loadState: (json, opts) => live.current.scene.loadState(json, opts) },
       view: () => live.current.view(),
       setView: (view) => live.current.setView(view),
     }),

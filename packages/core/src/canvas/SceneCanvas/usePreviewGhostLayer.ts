@@ -14,7 +14,7 @@ import { type DrawCommand, type GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { isCustomEntry, type LayersMap } from '../layerSlots';
 import type { Node, Scene } from 'core/scene/types';
-import { findShapeSilhouette } from '../NodeShape';
+import { ownClipOf } from '../ownClip';
 import { wrapWithPoseRotation } from '../poseRotation';
 import type { Dispatcher } from '@weasel-js/routing';
 import { previewSourcesFrom } from '../drawEnvelope';
@@ -79,9 +79,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         return parallax ? deriveParallaxView(view, parallax) : view;
       };
 
-      // Mirrors buildSceneTree's structure — a container group carries a clip
-      // from its painter's silhouette — but drawn from the previewed pose and
-      // data, so children are clipped to the shape the container is taking.
+      // Mirrors buildSceneTree's structure, but drawn from the previewed pose
+      // and data, so children are clipped to the shape the node is taking.
       const drawEntry = (
         entry: PreviewNode<TData, TLayer, TPose>,
         parentPlane: PlaneMap | null,
@@ -91,21 +90,19 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
           : ({ ...entry.node, data: entry.data } as typeof entry.node);
         const plane = mapOf(entry.node.layer);
         const self = drawOne(effNode, entry.pose, viewOf(entry.node.layer));
-        const children: DrawCommand[] = [...wrapWithPoseRotation(self, entry.pose as unknown)];
+        const kids: DrawCommand[] = [];
         for (const child of entry.children) {
-          for (const cmd of drawEntry(child, plane)) children.push(cmd);
+          for (const cmd of drawEntry(child, plane)) kids.push(cmd);
         }
+        // The node's clip is its children's, not its own paint's.
+        const clip = kids.length > 0
+          ? ownClipOf(effNode, entry.pose, () => slot.derivedPathOf?.(effNode, entry.pose)) : null;
+        const children: DrawCommand[] = [
+          ...wrapWithPoseRotation(self, entry.pose as unknown),
+          ...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids),
+        ];
         const transform = planeTransform(plane, parentPlane);
-        const group: GroupDrawCommand = transform ? { kind: 'group', transform, children } : { kind: 'group', children };
-        if (effNode.kind === 'group') {
-          const clip = findShapeSilhouette(
-            effNode as unknown as Node<unknown, string, TPose>,
-            entry.pose,
-            { derivedPath: slot.derivedPathOf?.(effNode, entry.pose) ?? null },
-          );
-          if (clip) group.clip = clip;
-        }
-        return [group];
+        return [transform ? { kind: 'group', transform, children } : { kind: 'group', children }];
       };
 
       // Opaque is honored at subtree-root granularity, as it always was: a

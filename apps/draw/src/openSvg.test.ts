@@ -64,16 +64,16 @@ describe('a clipped group', () => {
     + '<g clip-path="url(#c)"><rect width="100" height="100" fill="#ff0000"/></g>';
   const clip = { path: { kind: 'rect', x: 10, y: 10, width: 20, height: 40 }, fill: null };
 
-  it('opens as a container holding its clip', () => {
+  it('opens as a group declaring and holding its clip', () => {
     const scene = sceneWithOneShape();
     openSvgText(scene, svg(CLIPPED), 'a.svg');
-    expect(scene.get(scene.roots[0])).toMatchObject({ kind: 'group', data: clip });
+    expect(scene.get(scene.roots[0])).toMatchObject({ kind: 'group', clip: 'outline', data: clip });
   });
 
-  it('imports as a container holding its clip', () => {
+  it('imports as a group declaring and holding its clip', () => {
     const scene = sceneWithOneShape();
     importSvgText(scene, svg(CLIPPED));
-    expect(scene.get(scene.roots[1])).toMatchObject({ kind: 'group', data: clip });
+    expect(scene.get(scene.roots[1])).toMatchObject({ kind: 'group', clip: 'outline', data: clip });
   });
 });
 

@@ -80,9 +80,8 @@ describe('buildSceneTree', () => {
     // under the container group.
     expect(bgGroup.children).toHaveLength(3);
     for (const c of bgGroup.children) expect((c as { kind: string }).kind).toBe('group');
-    // The container carries its own clip…
-    expect((bgGroup.children[0] as { clip?: unknown }).clip).toEqual(aabb);
-    // …and both children inherit it (clipped to the container).
+    // The container's own paint is not under its clip; both children are.
+    expect((bgGroup.children[0] as { clip?: unknown }).clip).toBeUndefined();
     expect((bgGroup.children[1] as { clip?: unknown }).clip).toEqual(aabb);
     expect((bgGroup.children[2] as { clip?: unknown }).clip).toEqual(aabb);
   });
@@ -131,7 +130,7 @@ describe('buildSceneTree', () => {
     expect(bgGroup.children).toHaveLength(3);
   });
 
-  it('container with clipFromPose returning a path → group has clip field set', () => {
+  it('container with clipFromPose returning a path → its child\'s group has clip field set', () => {
     const scene = makeScene();
     const clipPath: import('@weasel-js/geom').Path = {
       kind: 'rect', x: 0, y: 0, width: 50, height: 50,
@@ -147,8 +146,8 @@ describe('buildSceneTree', () => {
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bgGroup = out[0] as { children: DrawCommand[] };
-    const bedGroup = bgGroup.children[0] as { kind: string; clip?: unknown; children: DrawCommand[] };
-    expect(bedGroup.clip).toBe(clipPath);
+    const childGroup = bgGroup.children[1] as { kind: string; clip?: unknown; children: DrawCommand[] };
+    expect(childGroup.clip).toBe(clipPath);
   });
 
   it('container with clipFromPose returning null → group has no clip field', () => {

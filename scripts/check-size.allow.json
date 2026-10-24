@@ -37,7 +37,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 556
+    "lines": 532
   },
   "packages/core/src/features/paths/pathLayer.ts": {
     "longestFunction": 121

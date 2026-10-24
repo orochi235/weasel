@@ -14,8 +14,8 @@ const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: INK, bac
 const PAGES = { pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }] };
 const EDGE_STROKE = { paint: { color: INK }, width: 2, markerEnd: 'arrow' as const };
 
-const body = (id: string, pose: RectPose, outline: string, color: string, kind: 'mark' | 'group' = 'mark') => ({
-  id: id as never, kind, layer: 'main' as const, pose,
+const body = (id: string, pose: RectPose, outline: string, color: string) => ({
+  id: id as never, kind: 'mark' as const, layer: 'main' as const, pose,
   data: { diagram: { outline }, fill: { paint: { color } }, stroke: { paint: { color: INK }, width: 1 } },
 });
 
@@ -37,7 +37,7 @@ export function pageScene(): { scene: PageScene; pages: readonly PlacedPage[] } 
     registry: withDiagramRegistry(),
     doc: { [PAGES_DOC_KEY]: PAGES },
     initial: [
-      body('a', { x: 20, y: 20, width: 60, height: 40 }, 'diamond', RED, 'group'),
+      body('a', { x: 20, y: 20, width: 60, height: 40 }, 'diamond', RED),
       {
         id: 'a/row' as never, kind: 'mark', layer: 'main', parent: 'a' as never,
         pose: { x: 30, y: 30, width: 40, height: 20 },

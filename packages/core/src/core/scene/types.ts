@@ -15,8 +15,11 @@ import type {
 import type { UseSceneOptions } from './useSceneOptions';
 import type { SceneDocValues } from './docValues';
 import type { SceneEditPasses } from './editPass';
+import type { SceneArrivalHandler } from './arrivalTypes';
+import type { RegisteredOp } from './registeredOp';
+import type { SpecsFromSerializedOptions } from './serialization';
 import type { RectPose } from '../geometry/rectPose';
-export type { RectPose, UseSceneOptions };
+export type { RectPose, RegisteredOp, SceneArrivalHandler, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1 };
@@ -54,6 +57,9 @@ export const asNodeId = (s: string): NodeId => s as NodeId;
 
 import type { DerivedDep, Bivariant, DerivePathFn, DerivePoseFn, ClipFromPoseFn, CopiesFromPoseFn } from './nodeFnTypes';
 export type { DerivedDep, Bivariant, DerivePathFn, DerivePoseFn, ClipFromPoseFn, CopiesFromPoseFn };
+
+/** A clip a node declares by name rather than by function: see `SceneNode.clip`. */
+export type NodeClip = 'outline';
 
 interface NodeBase<TData, TLayer extends string, TPose> {
   id: NodeId;
@@ -114,8 +120,12 @@ interface NodeBase<TData, TLayer extends string, TPose> {
   children?: NodeId[];
   /** Optional clip-path source. Re-evaluated each render. Returning `null`
    *  means "no clip for this node right now"; an empty / zero-area path
-   *  means "clip everything out" (children render nowhere). */
+   *  means "clip everything out" (children render nowhere). Wins over `clip`. */
   clipFromPose?: ClipFromPoseFn<TPose>;
+  /** `'outline'` clips the children to this node's own outline: a mark's
+   *  painter silhouette, or for a group the silhouette of its `data.path`.
+   *  Absent, and with no `clipFromPose`, the children are not clipped. */
+  clip?: NodeClip;
   /** Draws the whole subtree again under each affine it returns, on top of
    *  the original, which still draws once as authored. The copies are paint,
    *  not nodes: nothing stores them, so they follow every edit to the
@@ -175,6 +185,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   locked?: boolean;
   /** Attach a clip-path function to the node; mirrors `SceneNode.clipFromPose`. */
   clipFromPose?: ClipFromPoseFn<TPose>;
+  /** Mirrors `SceneNode.clip`. */
+  clip?: NodeClip;
   /** Mirrors `SceneNode.copiesFromPose`. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.dependsOn`. */
@@ -188,20 +200,6 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   layout?: LayoutStrategy<TPose>;
   /** Mirrors `SceneNode.units`. */
   units?: UnitScope;
-}
-
-/** A custom scene mutation registered with `Scene.registerOp`: how to apply
- *  it and how to undo it. The pair is what makes it participate in history. */
-export interface RegisteredOp<P> {
-  apply: (payload: P) => void;
-  revert: (payload: P) => void;
-  /** Opts this kind into coalescing under `UseSceneOptions.coalesceWindowMs`:
-   *  two entries of this kind that return the same key inside the window
-   *  merge, and undoing the merged entry calls `revert` with the first
-   *  payload only. Declare it only when `revert` restores an absolute state
-   *  (a stored "from" value), never for a relative payload such as a delta.
-   *  Omitted, or returning `undefined`, the op is always its own entry. */
-  coalesceKey?: (payload: P) => string | undefined;
 }
 
 /** Per-scene registry mapping string keys to live function references.
@@ -221,31 +219,6 @@ export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = s
   // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
   // plus its entry here; the field name is the registry key by construction.
 }
-
-/**
- * Decides what one edit's changes to containers do to their children.
- * `arrivals` maps each container to the ids that joined it — by an `add`
- * under it or a `move` into it, whatever op or call made them — in the order
- * they arrived. `changed` names every container whose child set or order
- * changed, whose pose changed size, or one of whose children was posed,
- * arrivals included. Both are read once the edit's other mutations have landed.
- *
- * Return the poses to write, in each node's stored frame; they become part of
- * the same edit, and so of the same undo step. An empty map writes nothing.
- * Return `null` to refuse: the whole edit is reverted (see
- * `SceneArrivalRefused`).
- *
- * Runs only for live edits. Undo, redo and a restored history replay the
- * arrangement that was decided the first time. With none installed, a scene
- * holding declared layouts (`GroupNode.layout`) runs its own.
- */
-export type SceneArrivalHandler<TPose> = (
-  arrivals: ReadonlyMap<NodeId, readonly NodeId[]>,
-  changed: ReadonlySet<NodeId>,
-  /** The nodes that left each container in the edit, by the container they
-   *  left — removed, or moved out. */
-  departures: ReadonlyMap<NodeId, readonly NodeId[]>,
-) => ReadonlyMap<NodeId, TPose> | null;
 
 /**
  * The kit-owned scene tree: nodes, layers, and the undo history over both.
@@ -550,7 +523,10 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  undo — which would revert to a state this replaces. Throws on an unsupported version or unknown registry/layer ids; on a
    *  malformed snapshot the scene is left empty or partially populated (callers should treat a
    *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
-   *  always well-formed. */
-  loadState(json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>): void;
+   *  always well-formed. `opts` reads the snapshot as `specsFromSerialized` does. */
+  loadState(
+    json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
+    opts?: SpecsFromSerializedOptions<TData, TLayer, TPose>,
+  ): void;
 
 }

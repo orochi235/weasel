@@ -3,8 +3,9 @@ export { sceneSelectionStore } from './sceneSelection';
 export { useScene } from './useScene';
 export { asNodeId } from './types';
 export { hasChildren, isLeaf } from './treeShape';
-export { nodeKindOf } from './serialization';
-export type { V1Classifier } from './serialization';
+export { statedFields, type StatedNodeFields } from './statedFields';
+export { nodeKindOf, specsFromSerialized } from './serialization';
+export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from './serialization';
 export { SCENE_HISTORY_FORM } from './historyForm';
 export type { SerializedSceneHistory } from './historyForm';
 export type {
@@ -22,6 +23,7 @@ export type {
   LayoutMove,
   MarkNode,
   Node,
+  NodeClip,
   NodeId,
   PoseOverride,
   PoseHold,

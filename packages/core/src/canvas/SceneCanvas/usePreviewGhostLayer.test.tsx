@@ -123,6 +123,38 @@ describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
   });
 });
 
+describe('usePreviewGhostLayer — clips', () => {
+  /** Each rect drawn, with whether any group above it clips. */
+  function rectsUnderClips(cmds: DrawCommand[]): Array<{ x: number; clipped: boolean }> {
+    const out: Array<{ x: number; clipped: boolean }> = [];
+    const visit = (cmd: DrawCommand, clipped: boolean) => {
+      if (cmd.kind === 'group') {
+        const g = cmd as GroupDrawCommand;
+        for (const child of g.children) visit(child, clipped || g.clip !== undefined);
+      } else if (cmd.kind === 'path' && cmd.path.kind === 'rect') out.push({ x: cmd.path.x, clipped });
+    };
+    for (const c of cmds) visit(c, false);
+    return out;
+  }
+
+  it('clips the children of a previewed node by its clip, and not its own paint', () => {
+    const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+    const p = scene.add({
+      kind: 'mark', layer: 'main', pose: COMMITTED_POSE, data: { label: 'p' },
+      clipFromPose: (pose) => ({ kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }),
+    });
+    const k = scene.add({ kind: 'mark', layer: 'main', parent: p, pose: { x: 3, y: 0, width: 10, height: 10 }, data: { label: 'k' } });
+    const handle: OngoingHandle = { previewIds: () => [p, k], previewPose: () => null };
+    const { result } = renderHook(() =>
+      usePreviewGhostLayer<Data, 'main', Pose>({ scene, sceneSlot: { drawOne }, dispatcher: makeDispatcher([handle]) }),
+    );
+    expect(rectsUnderClips(result.current.draw(env([handle]), VIEW, DIMS))).toEqual([
+      { x: 0, clipped: false },
+      { x: 3, clipped: true },
+    ]);
+  });
+});
+
 describe('usePreviewGhostLayer — previewOpaqueIds', () => {
   it('splits opaque ids out of the ghost alpha group', () => {
     const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });

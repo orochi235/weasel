@@ -23,7 +23,6 @@ const BONE = 180, HALF = 18, MID = 50;
 type Data = { skeleton?: Skeleton; skin?: Skin; path?: Path; fill?: Fill | null; stroke?: Stroke };
 interface NodeSpec {
   id: NodeId; kind: 'mark' | 'group'; layer: 'main'; parent?: NodeId; pose: RectPose; data: Data;
-  clipFromPose?: () => null;
 }
 
 const RIG = asNodeId('arm'), SLEEVE = asNodeId('sleeve');
@@ -40,8 +39,7 @@ const SLEEVE_PATH = polygonFromPoints([
 ]);
 
 const INITIAL: NodeSpec[] = [
-  // A container clips its children to its box unless told otherwise, and a limb bends out of it.
-  { id: RIG, kind: 'group', layer: 'main', pose: BOX, data: { skeleton: ARM, fill: null }, clipFromPose: () => null },
+  { id: RIG, kind: 'group', layer: 'main', pose: BOX, data: { skeleton: ARM, fill: null } },
   {
     id: SLEEVE, kind: 'mark', layer: 'main', parent: RIG,
     pose: { x: X0, y: Y0 - HALF, width: 360, height: 2 * HALF },

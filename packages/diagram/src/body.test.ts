@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { clipNothing } from '@weasel-js/core/math';
 import { bodyOutline, bodyTrait, layoutBody, layoutRowPorts, measureBody, sizeToBody } from './body';
 import { buildBody } from './buildBody';
 import { outlinePath } from './outline';
@@ -280,8 +279,10 @@ describe('buildBody', () => {
   // A proxy for what only a browser shows: a perimeter port label sits outside
   // the box, and the outline's silhouette would clip it away.
   // DiagramView.portLabels.browser.test.tsx reads the pixels.
-  it('lets the container draw its children outside its outline', () => {
-    expect(body().specs[0]!.clipFromPose).toBe(clipNothing);
+  it('lets the body draw its children outside its outline', () => {
+    const [spec] = body().specs as { clip?: unknown; clipFromPose?: unknown }[];
+    expect(spec!.clip).toBeUndefined();
+    expect(spec!.clipFromPose).toBeUndefined();
   });
 
   it('formats a field row as one string', () => {

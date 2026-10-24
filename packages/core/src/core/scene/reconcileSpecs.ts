@@ -76,6 +76,7 @@ function needsReplace<TData, TLayer extends string, TPose>(
 ): boolean {
   return a.kind !== b.kind
     || a.pickable !== b.pickable
+    || a.clip !== b.clip
     || a.derivePath !== b.derivePath
     || a.derivePose !== b.derivePose
     || a.clipFromPose !== b.clipFromPose

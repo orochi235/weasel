@@ -13,7 +13,7 @@ import { createSceneRecording } from './sceneRecording';
 import { createSceneSelection } from './sceneSelection';
 import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
-import { layerFromSerialized, specsFromSerialized, type V1Classifier } from './serialization';
+import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptions } from './serialization';
 import { resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from './composeFrame';
 import {
@@ -147,10 +147,10 @@ function buildScene<TData, TLayer extends string, TPose>(
     getSelection: selection.get,
     setSelection: (ids) => selection.set([...ids]),
 
-    loadState(json) {
+    loadState(json, opts) {
       // Validate + map up front (throws before we touch live state on a bad
       // version or unknown registry key).
-      const specs = specsFromSerialized(json, registry);
+      const specs = specsFromSerialized(json, registry, opts);
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
@@ -183,7 +183,6 @@ function buildScene<TData, TLayer extends string, TPose>(
 export function sceneFromJSON<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   options: {
-    classifyV1?: V1Classifier<TData, TLayer, TPose>;
     registry?: SceneRegistry<TPose, TData, TLayer>;
     historyLimit?: number;
     coalesceWindowMs?: number;
@@ -191,12 +190,12 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
     composition?: UseSceneOptions<TData, TLayer, TPose>['composition'];
     layoutFrame?: UseSceneOptions<TData, TLayer, TPose>['layoutFrame'];
-  } = {},
+  } & SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): Scene<TData, TLayer, TPose> {
   return buildScene(
     options,
     json.systemLayers.map(layerFromSerialized),
-    (registry) => specsFromSerialized(json, registry, { classifyV1: options.classifyV1 }),
+    (registry) => specsFromSerialized(json, registry, options),
     json.doc,
   );
 }

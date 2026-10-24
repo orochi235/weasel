@@ -12,7 +12,7 @@ import { restoreFn, type FnBearingNode, type NodeFnField } from './nodeFnFields'
 import { statedFields } from './statedFields';
 import type { createNodeStore } from './nodeStore';
 import type {
-  LayerRecord, Node, NodeId, RegisteredOp, UserLayerRecord,
+  LayerRecord, Node, NodeClip, NodeId, RegisteredOp, UserLayerRecord,
 } from './types';
 
 /**
@@ -91,7 +91,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
     pickable?: boolean; hidden?: boolean; locked?: boolean;
-    units?: UnitScope;
+    units?: UnitScope; clip?: NodeClip;
   } & Record<string, unknown>>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {

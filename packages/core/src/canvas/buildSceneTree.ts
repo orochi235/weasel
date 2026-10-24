@@ -1,7 +1,6 @@
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
-import { findShapeSilhouette } from './NodeShape';
-import type { Node } from 'core/scene/types';
+import { ownClipOf, type ClipBearing } from './ownClip';
 import { mat3, type Affine, type Path } from '@weasel-js/geom';
 import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
@@ -117,38 +116,23 @@ export function buildSceneTree<
       bucket && (copied || !culled?.(node, pose, v)) ? drawOne(node, pose, v) : [],
     );
 
-    // Extend the clip chain with this node's own clip when it is a group or sets one.
     let ownClips = ancestorClips;
     let ownClip: ChainEntry | null = null;
-    const maybeContainer = node as {
-      kind?: string;
-      clipFromPose?: (pose: TPose) => unknown;
+    const maybeContainer = node as ClipBearing<TPose> & {
       copiesFromPose?: (pose: TPose, node: unknown) => readonly Affine[] | null;
     };
-    if (maybeContainer.kind === 'group' || typeof maybeContainer.clipFromPose === 'function') {
-      let clip: unknown;
-      if (typeof maybeContainer.clipFromPose === 'function') {
-        // Explicit per-node clip wins — no fallback to the painter silhouette.
-        clip = maybeContainer.clipFromPose(pose);
-      } else {
-        // No explicit clip → the painter silhouette for the container's shape kind.
-        clip = findShapeSilhouette(
-          node as unknown as Node<unknown, string, TPose>,
-          pose,
-          { derivedPath: derivedPathOf?.(node, pose) },
-        );
-      }
-      if (clip) {
-        ownClip = { path: clip as Path, layer: node.layer };
-        ownClips = [...ancestorClips, ownClip];
-      }
+    const clip = ownClipOf(maybeContainer, pose, () => derivedPathOf?.(node, pose));
+    if (clip) {
+      ownClip = { path: clip, layer: node.layer };
+      ownClips = [...ancestorClips, ownClip];
     }
 
     // Every node emits a wrapper group even with empty paint, keeping the per-node tree
-    // shape stable.
-    if (bucket) {
-      bucket.push(ownClips.length > 0 ? wrapInChain(self, ownClips, node.layer, carry) : { kind: 'group', children: self });
-    }
+    // shape stable. A node's own clip is its children's, so its own paint, over
+    // its children or under them, takes only the clips above it.
+    const wrap = (cmds: DrawCommand[]): DrawCommand => (ancestorClips.length > 0
+      ? wrapInChain(cmds, ancestorClips, node.layer, carry) : { kind: 'group', children: cmds });
+    if (bucket) bucket.push(wrap(self));
 
     // An envelope's children share its own parent's frame.
     const childFrame = definesFrame(node as never) ? pose : parentFrame;
@@ -164,9 +148,7 @@ export function buildSceneTree<
       for (const cid of children) visit(cid, chain, childFrame, true);
     }
 
-    if (bucket && over.length > 0) {
-      bucket.push(ownClips.length > 0 ? wrapInChain(over, ownClips, node.layer, carry) : { kind: 'group', children: over });
-    }
+    if (bucket && over.length > 0) bucket.push(wrap(over));
   }
 
   for (const rootId of adapter.getChildren(null)) visit(rootId, [], null, false);

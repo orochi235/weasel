@@ -71,6 +71,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     if (n.hidden === true) out.hidden = true;
     if (n.locked === true) out.locked = true;
     if (n.units !== undefined) out.units = n.units;
+    if (n.clip !== undefined) out.clip = n.clip;
     Object.assign(
       out,
       fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
@@ -101,14 +102,35 @@ export function serializeScene<TData, TLayer extends string, TPose>(
 export type V1Classifier<TData, TLayer extends string, TPose> =
   (node: SerializedNodeV1<TData, TLayer, TPose>) => 'mark' | 'group';
 
+/** Options for {@link specsFromSerialized}. */
+export interface SpecsFromSerializedOptions<TData, TLayer extends string, TPose> {
+  /** What a version 1 `container` loads as; see {@link V1Classifier}. */
+  classifyV1?: V1Classifier<TData, TLayer, TPose>;
+  /** `'skip'` loads a node whose registry key is unknown without that
+   *  function, for a save that outlived the code that registered it.
+   *  Default `'throw'`. */
+  unknownKeys?: 'throw' | 'skip';
+  /** Hears each key `unknownKeys: 'skip'` leaves out, as it is left out. */
+  onSkip?: (skipped: SkippedKey) => void;
+}
+
+/** A registry key a load left out: the node, the function field it named,
+ *  and the key. */
+export interface SkippedKey {
+  id: NodeId;
+  field: keyof SceneRegistry<unknown>;
+  key: string;
+}
+
 /** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
  *  resolves every `NODE_FN_FIELDS` key → function via the registry;
- *  throws on an unsupported version or an unknown registry key. */
+ *  throws on an unsupported version, and on an unknown registry key unless
+ *  `opts.unknownKeys` is `'skip'`. */
 export function specsFromSerialized<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer>,
-  opts: { classifyV1?: V1Classifier<TData, TLayer, TPose> } = {},
+  opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   type Entry = { n: Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>; kind: 'mark' | 'group' };
   let entries: Entry[];
@@ -132,6 +154,7 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
     if (n.hidden === true) spec.hidden = true;
     if (n.locked === true) spec.locked = true;
     if (n.units !== undefined) spec.units = n.units;
+    if (n.clip !== undefined) spec.clip = n.clip;
     if (n.dependsOn !== undefined) {
       spec.dependsOn = n.dependsOn === 'children'
         ? 'children'
@@ -142,6 +165,10 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
       const key = serialized[field.jsonKey];
       if (key === undefined) continue;
       const fn = (registry[field.field] as Record<string, unknown> | undefined)?.[key];
+      if (!fn && opts.unknownKeys === 'skip') {
+        opts.onSkip?.({ id: spec.id!, field: field.field, key });
+        continue;
+      }
       if (!fn) {
         throw new Error(
           `Scene: unknown ${field.field} key '${key}'. ` +
@@ -150,8 +177,17 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
       }
       (spec as unknown as Record<string, unknown>)[field.field] = fn;
     }
+    if (clipsAsV1(json.version, spec)) spec.clip = 'outline';
     return spec;
   });
+}
+
+/** Version 1 clipped a container with no clip function to its outline, which
+ *  is what `clip: 'outline'` draws on a group. One a classifier makes a mark
+ *  gets no clip, since which painter claims it is not known here; one whose
+ *  clip key was skipped loads as it would have without it. */
+function clipsAsV1(version: 1 | 2, spec: { kind: string; clipFromPose?: unknown }): boolean {
+  return version === 1 && spec.kind === 'group' && spec.clipFromPose === undefined;
 }
 
 /** The kind a saved node loads as: its own on version 2; on version 1 a `leaf` is a

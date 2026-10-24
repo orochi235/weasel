@@ -28,6 +28,7 @@ export type { UseHostAnchorOptions, HostAnchorStyle } from '../canvas/useHostAnc
 export { CursorCoordsHud } from '../canvas/CursorCoordsHud';
 export type { CursorCoordsHudProps } from '../canvas/CursorCoordsHud';
 export { PickHud } from '../canvas/PickHud';
+export { clipOutline } from '../canvas/ownClip';
 export type { PickHudProps } from '../canvas/PickHud';
 export {
   registerNodeShape,

@@ -33,7 +33,6 @@ export interface WorldNodeSpec {
   pose: RectPose;
   data: WorldData;
   parent?: NodeId;
-  clipFromPose?: () => null;
 }
 
 const leaf = (id: string, layer: WorldLayer, pose: RectPose, data: WorldData): WorldNodeSpec => ({
@@ -141,15 +140,8 @@ const boneColor = (name: string): string =>
 /** One node per bone, parented the way the joints are: a bone's pose is local
  *  to the bone it hangs off, and `RIGID_POSE_COMPOSITION` on the canvas is
  *  what turns that into world. `syncScene` writes eleven local poses a frame
- *  and never resolves a matrix.
- *
- *  A node with no `clipFromPose` clips its children to its own silhouette —
- *  for a bone, a box a few units wide — so a bone with children takes
- *  `() => null`, which says it carries them without clipping. */
+ *  and never resolves a matrix. */
 export function boneNodes(): WorldNodeSpec[] {
-  const hasChild = new Set(
-    PLAYER_SKELETON.joints.map((j) => j.parent).filter((p): p is string => p != null),
-  );
   return PLAYER_SKELETON.joints.map((j) => ({
     id: boneId(j.name),
     kind: 'mark' as const,
@@ -160,7 +152,6 @@ export function boneNodes(): WorldNodeSpec[] {
       fill: { paint: solid(boneColor(j.name)) },
     },
     ...(j.parent != null ? { parent: boneId(j.parent) } : {}),
-    ...(hasChild.has(j.name) ? { clipFromPose: () => null } : {}),
   }));
 }
 

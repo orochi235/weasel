@@ -1,5 +1,5 @@
 import { applyToPoint, multiply, poseFrameOf, type Affine, type PoseLinear } from '@weasel-js/geom';
-import { UNION_OF_CHILDREN, unionOfChildren, type NodeId, type Scene } from '@weasel-js/core';
+import { UNION_OF_CHILDREN, statedFields, unionOfChildren, type NodeId, type Scene } from '@weasel-js/core';
 import { isSymmetryGroup } from './group';
 import { keepContentsPut, localPoseUnder, worldPoseOf } from './frames';
 
@@ -114,28 +114,33 @@ function descendantGroups(scene: Scene<unknown, string, unknown>, id: NodeId): N
   return out;
 }
 
-/** Add `id`, carried through `m`, under `parent`. */
+/**
+ * Add `id` and everything under it, carried through `m`, under `parent`. Each
+ * copy keeps its node's kind, data and stated fields, so a declared clip, a
+ * unit scope and a mark's own children come with it; its pose goes through
+ * {@link carryPose}, which carries what the node clips to as well, since a
+ * clip is drawn in its node's pose. A node whose pose derives from its
+ * children keeps that derivation and is placed by them.
+ */
 function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affine, parent: NodeId, skipped: NodeId[]): void {
   const node = scene.get(id);
   if (!node) return;
-  if (node.kind === 'group') {
-    const sub = scene.add({
-      kind: 'group',
-      layer: node.layer,
-      pose: node.pose,
-      data: node.data,
-      parent,
-      dependsOn: 'children',
-      derivePose: scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren,
-    });
-    for (const c of scene.childrenOf(id)) copySubtree(scene, c, m, sub, skipped);
-    return;
-  }
+  const derived = node.dependsOn === 'children' && node.derivePose !== undefined;
   const world = worldPoseOf(scene, id);
-  if (!isBox(world)) {
+  if (!derived && !isBox(world)) {
     skipped.push(id);
     return;
   }
-  const pose = localPoseUnder(scene, carryPose(world, m), parent);
-  scene.add({ kind: 'mark', layer: node.layer, pose, data: node.data, parent });
+  const sub = scene.add({
+    kind: node.kind,
+    layer: node.layer,
+    pose: derived ? node.pose : localPoseUnder(scene, carryPose(world as BoxPose, m), parent),
+    data: node.data,
+    parent,
+    ...statedFields(node),
+    ...(derived ? { dependsOn: 'children' as const, derivePose: node.derivePose } : {}),
+    ...(node.clipFromPose ? { clipFromPose: node.clipFromPose } : {}),
+    ...(node.layout ? { layout: node.layout } : {}),
+  });
+  for (const c of scene.childrenOf(id)) copySubtree(scene, c, m, sub, skipped);
 }

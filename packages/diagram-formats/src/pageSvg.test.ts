@@ -40,6 +40,15 @@ describe('exportPageSvg', () => {
     expect(diamond.getAttribute('d')).toMatch(/^M50 20/);
   });
 
+  it('writes a box with a row as a <g> holding its outline, then the row', async () => {
+    const doc = await exported(0);
+    const diamond = paths(doc).find((p) => p.getAttribute('fill') === RED)!;
+    const g = diamond.parentElement!;
+    expect(g.tagName).toBe('g');
+    expect([...g.children].map((c) => c.tagName)).toEqual(['path', 'text']);
+    expect(g.querySelector('text')!.textContent).toBe('Start');
+  });
+
   it('draws a connector as one path with its marker', async () => {
     const doc = await exported(0);
     const ends = [...doc.querySelectorAll('path[marker-end]')];

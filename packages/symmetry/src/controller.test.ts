@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  asNodeId, createScene, RECT_POSE_COMPOSITION, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
+  asNodeId, createScene, findShapeSilhouette, RECT_POSE_COMPOSITION, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
   type SceneRegistry,
 } from '@weasel-js/core';
-import { rectPath } from '@weasel-js/geom';
+import { boundsOfPath, rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
 import { isSymmetryGroup, symmetryCopies, symmetryRegistry } from './group';
 import { VERTICAL_AXIS } from './kinds';
@@ -135,6 +135,47 @@ describe('bake', () => {
     const copies = scene.childrenOf(out.group).map((id) => scene.get(id)!).filter((n) => (n.data as { text?: string }).text);
     expect(copies).toHaveLength(2);
     expect(copies[1].pose).toEqual({ x: 195, y: 0, width: 5, height: 5, transform: [-1, 0, 0, 1] });
+  });
+
+  it('mirrors a clipping group\'s clip with it, so the copy still shows its content', () => {
+    const { scene, sym, group } = setup();
+    const clipped = scene.add({
+      kind: 'group', layer: 'main', parent: group, clip: 'outline',
+      pose: { x: 110, y: 0, width: 20, height: 20 }, data: { path: rectPath(0, 0, 20, 20) },
+    });
+    scene.add({
+      kind: 'mark', layer: 'main', parent: clipped,
+      pose: { x: 115, y: 5, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+    });
+    const out = sym.bake(group)!;
+    const copy = scene.childrenOf(out.group).map((id) => scene.get(id)!).find((n) => n.kind === 'group' && n.id !== clipped)!;
+    expect(copy.clip).toBe('outline');
+    const clip = boundsOfPath(findShapeSilhouette(copy as never, copy.pose)!);
+    expect(clip.x).toBeCloseTo(70);
+    expect(clip.width).toBeCloseTo(20);
+    const [kid] = scene.childrenOf(copy.id).map((id) => scene.get(id)!);
+    expect(kid!.pose.x).toBeCloseTo(75);
+    expect(kid!.pose.x + kid!.pose.width).toBeLessThanOrEqual(clip.x + clip.width + 1e-9);
+  });
+
+  it('copies a mark with its children, and the flags and unit scope each node states', () => {
+    const { scene, sym, group } = setup();
+    const units = { system: { base: 'mm', units: { mm: 1 } }, scale: 1 };
+    const box = scene.add({
+      kind: 'mark', layer: 'main', parent: group, units,
+      pose: { x: 110, y: 0, width: 20, height: 20 }, data: { path: rectPath(0, 0, 20, 20) },
+    });
+    scene.add({
+      kind: 'mark', layer: 'main', parent: box, pickable: false, hidden: true,
+      pose: { x: 115, y: 5, width: 10, height: 10 }, data: { text: 'row' },
+    });
+    const out = sym.bake(group)!;
+    const copy = scene.childrenOf(out.group).map((id) => scene.get(id)!).find((n) => n.id !== box && scene.childrenOf(n.id).length > 0)!;
+    expect(copy.units).toEqual(units);
+    expect(copy.pose.x).toBeCloseTo(70);
+    const [row] = scene.childrenOf(copy.id).map((id) => scene.get(id)!);
+    expect(row).toMatchObject({ pickable: false, hidden: true, data: { text: 'row' } });
+    expect(row!.pose.x).toBeCloseTo(75);
   });
 
   it('turns a copy through its pose, so a paint laid out in its box turns with it', () => {

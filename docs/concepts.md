@@ -415,8 +415,8 @@ Before relying on it:
 
 - The rest path is read when the rig is bound, and the tools edit the rig as it
   rests.
-- A container clips its children to its box unless `clipFromPose` says otherwise,
-  so a rig node whose paths bend past its box sets `clipFromPose: () => null`.
+- A node clips its children only when it declares a clip (`clip: 'outline'` or
+  `clipFromPose`), so a limb bending past the rig node's box is drawn whole.
 - Editing a skinned path's points keeps its weights with them: the anchor edit actions and
   the pen write `data.skin` in the same undo entry as the path. A new point takes weights
   between those of the anchors either side of it, by its distance to each, and a point drawn

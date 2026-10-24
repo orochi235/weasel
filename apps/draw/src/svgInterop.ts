@@ -10,7 +10,7 @@
  * effect on its group (`svgEffects.ts`).
  */
 
-import type { Fill, TextStyle } from '@weasel-js/core';
+import type { Fill, NodeClip, TextStyle } from '@weasel-js/core';
 import { resolveFill, resolveStroke } from '@weasel-js/core';
 import {
   svgImageFromKit,
@@ -208,8 +208,8 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * so the caller can `scene.add` each draft in turn, resolving `parentId` against the ids it has
  * already inserted.
  *
- * A `container` is an SVG `<g>`; its `pose` is the union-AABB of its leaf descendants. A clipped
- * `<g>` carries its clip in `data` and the clip's box as `pose`.
+ * A `group` is an SVG `<g>`; its `pose` is the union-AABB of its leaf descendants. A clipped
+ * `<g>` declares `clip: 'outline'`, carries its clip in `data` and the clip's box as `pose`.
  *
  * An `effect` is the group a live path effect exported as: it opens as that effect where the file
  * holds its sources too, and as a container of the drafts under it otherwise.
@@ -219,8 +219,8 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  */
 export type SceneDraft =
   | { kind: 'mark'; id: string; parentId: string | null; obj: Obj; hidden?: true }
-  | { kind: 'group'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; hidden?: true }
-  | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; hidden?: true } & EffectAttrs);
+  | { kind: 'group'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
+  | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true } & EffectAttrs);
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
@@ -296,7 +296,7 @@ export function svgNodesToSceneDrafts(
   return drafts.map((d): SceneDraft => {
     const hidden = d.hidden ? { hidden: true as const } : {};
     if (d.kind === 'mark') return { kind: 'mark', id: d.id, parentId: d.parentId, obj: d.data, ...hidden };
-    const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data, ...hidden };
+    const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data, ...(d.clip ? { clip: d.clip } : {}), ...hidden };
     const effect = effects.get(d.id);
     return effect === undefined ? { kind: 'group', ...group } : { kind: 'effect', ...group, ...effect };
   });

@@ -30,6 +30,7 @@ import {
   type Paint,
   type ImageNodeData,
   type IngestCtx,
+  type NodeClip,
   type Op,
   type Path,
   type Stroke,
@@ -47,13 +48,13 @@ const VIEWPORT_FIT = 0.9;
  * roots). `hidden` is the source node's, for the caller to map onto whatever
  * it hides a node with.
  *
- * A container's `data` is empty unless its `<g>` is clipped. A scene container
- * clips to what its painter draws, so a clipped one holds the clip as an
- * unpainted path, `{ path, fill: null }`, and its `pose` is the clip's box
- * rather than its children's.
+ * A group's `data` is empty unless its `<g>` is clipped. A clipped one declares
+ * `clip: 'outline'` and holds the clip as an unpainted path,
+ * `{ path, fill: null }`, which is the outline a group clips to; its `pose` is
+ * the clip's box rather than its children's.
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
-  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; hidden?: true }
+  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
   | { kind: 'mark'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData; hidden?: true };
 
 /** A leaf `SvgNode`: everything but a group. */
@@ -199,6 +200,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         parentId,
         pose: { x: 0, y: 0, width: 0, height: 0 },
         data: n.clip ? { path: n.clip, fill: null } : {},
+        ...(n.clip ? { clip: 'outline' as const } : {}),
         ...(n.hidden ? { hidden: true } : {}),
       };
       drafts.push(draft);
@@ -380,6 +382,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
             pose: place(d.pose),
             data: d.kind === 'mark' ? scaleLeafData(d.data, scale) : d.data,
             parent: d.parentId,
+            ...(d.kind === 'group' && d.clip ? { clip: d.clip } : {}),
             ...(d.hidden ? { hidden: true } : {}),
           } as unknown as { id: string },
           label: 'Insert SVG',

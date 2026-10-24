@@ -17,8 +17,8 @@
  */
 
 import { invert, type Affine, type Path } from '@weasel-js/geom';
-import { findShapeSilhouette } from 'canvas/NodeShape';
-import type { ClipFromPoseFn, CopiesFromPoseFn, Node } from 'core/scene/types';
+import type { CopiesFromPoseFn } from 'core/scene/types';
+import { ownClipOf, type ClipBearing } from './ownClip';
 import { inheritedPaintOf, inheritsPaint, type InheritedPaint } from 'core/scene/inheritedPaint';
 import { rectToPlane, type PlaneMap } from 'core/viewport/parallax';
 import { clipCarrier } from './planeClips';
@@ -26,7 +26,7 @@ import { reaches } from './pickReach';
 
 /** The subset of a node the walk itself reads. Deliberately structural: a
  *  bare adapter's node satisfies it as readily as a `SceneNode`. */
-export interface PickCandidate<TPose> {
+export interface PickCandidate<TPose> extends ClipBearing<TPose> {
   id: string;
   kind?: string;
   layer?: string;
@@ -35,7 +35,6 @@ export interface PickCandidate<TPose> {
   pickable?: boolean;
   /** Read for an `'inherit'` fill or stroke, which takes its containers'. */
   data?: unknown;
-  clipFromPose?: ClipFromPoseFn<TPose>;
   copiesFromPose?: CopiesFromPoseFn<TPose>;
 }
 
@@ -146,21 +145,6 @@ export interface PickQuery<TPose> {
   inCopy?(m: Affine): PickQuery<TPose>;
 }
 
-/** The clip a container imposes on its subtree, or null when it imposes none. */
-export function ownClipOf<TPose>(
-  node: PickCandidate<TPose>,
-  pose: TPose,
-  derived?: Path | null,
-): Path | null {
-  if (typeof node.clipFromPose === 'function') return node.clipFromPose(pose);
-  if (node.kind !== 'group') return null;
-  return findShapeSilhouette(
-    node as unknown as Node<unknown, string, TPose>,
-    pose,
-    { derivedPath: derived },
-  );
-}
-
 /**
  * Collect every candidate the query hits, back-to-front — the last element is
  * the topmost, which is the order `pickTopMostHit` expects.
@@ -184,7 +168,7 @@ export function pickWalk<TPose>(
     const cached = clipPath.get(ancestor.id);
     if (cached !== undefined) return cached;
     const resolved = ownClipOf(
-      ancestor, src.poseOf(ancestor), src.derivedPathOf?.(ancestor),
+      ancestor, src.poseOf(ancestor), () => src.derivedPathOf?.(ancestor),
     );
     clipPath.set(ancestor.id, resolved);
     return resolved;
