@@ -1,3 +1,4 @@
+import { cssColorLiteral } from '@weasel-js/paint';
 import type { AppearanceProps } from '../appearance';
 
 /**
@@ -9,13 +10,13 @@ export type BadgeLook = 'high' | 'info' | 'success' | 'warn' | 'danger' | 'low' 
 /** Every look but `tint`, which needs a color. */
 export const BADGE_LOOKS: readonly Exclude<BadgeLook, 'tint'>[] = ['high', 'info', 'success', 'warn', 'danger', 'low', 'none'];
 
-/** The appearance props that draw `look`; `tint` colors the `tint` look. */
+/** The appearance props that draw `look`; `tint`, a CSS color, colors the `tint` look. */
 export function lookProps(look: BadgeLook, tint?: string): Pick<AppearanceProps, 'grade' | 'emphasis' | 'tint'> {
   switch (look) {
     case 'high': return { emphasis: 'high' };
     case 'low': return { emphasis: 'low' };
     case 'none': return {};
-    case 'tint': return { tint };
+    case 'tint': return tint === undefined ? {} : { tint: cssColorLiteral(tint) };
     default: return { grade: look };
   }
 }
@@ -23,8 +24,7 @@ export function lookProps(look: BadgeLook, tint?: string): Pick<AppearanceProps,
 /** The JSX attributes for {@link lookProps}, for a pasteable snippet. */
 export function lookAttrs(look: BadgeLook, tint?: string): string {
   return Object.entries(lookProps(look, tint))
-    .filter(([, value]) => value !== undefined)
-    .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
+    .map(([name, value]) => (name === 'tint' ? `tint={cssColorLiteral(${JSON.stringify(tint)})}` : `${name}=${JSON.stringify(value)}`))
     .join(' ');
 }
 
