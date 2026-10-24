@@ -104,6 +104,12 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Box shadow of a field’s frame while it holds focus. It replaces --wzl-bevel-sunken there, so a beveled theme restates the bevel in it.',
   },
   {
+    name: 'button-icon-size',
+    type: 'dimension',
+    value: '14px',
+    description: 'The glyph in a Button. Unset, 12px in a small one and 14px otherwise.',
+  },
+  {
     name: 'button-radius',
     type: 'dimension',
     value: 'calc(var(--btn-height) * 0.1)',

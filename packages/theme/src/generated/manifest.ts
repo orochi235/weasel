@@ -208,6 +208,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-button-confirm-pressed-surface', type: "color", group: "button", defaultValue: "var(--btn-glass-pressed)", description: "Background of a confirm Button while it is held down.", hook: true },
   { name: '--wzl-button-confirm-surface', type: "color", group: "button", defaultValue: "var(--btn-glass)", description: "Background of a confirm Button. Unset, glass tinted with --wzl-accent.", hook: true },
   { name: '--wzl-button-gloss', type: "number", group: "button", defaultValue: "1", description: "Opacity of the specular sheen over a Button’s upper half. 0 for a flat face.", hook: true },
+  { name: '--wzl-button-icon-size', type: "dimension", group: "button", defaultValue: "14px", description: "The glyph in a Button. Unset, 12px in a small one and 14px otherwise.", hook: true },
   { name: '--wzl-button-pressed-surface', type: "color", group: "button", defaultValue: "var(--btn-glass-pressed)", description: "Background of a solid Button while it is held down.", hook: true },
   { name: '--wzl-button-radius', type: "dimension", group: "button", defaultValue: "calc(var(--btn-height) * 0.1)", description: "Corner radius of a Button. Unset, a tenth of its height.", hook: true },
   { name: '--wzl-button-surface', type: "color", group: "button", defaultValue: "var(--btn-glass)", description: "Background of a solid Button. Unset, neutral glass mixed from the surfaces.", hook: true },

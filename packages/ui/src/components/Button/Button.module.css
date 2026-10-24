@@ -294,8 +294,8 @@
   flex: 0 0 auto;
 }
 
-.size_sm .iconSlot > svg { width: 12px; height: 12px; }
-.size_md .iconSlot > svg { width: 14px; height: 14px; }
+.size_sm .iconSlot > svg { width: var(--wzl-button-icon-size, 12px); height: var(--wzl-button-icon-size, 12px); }
+.size_md .iconSlot > svg { width: var(--wzl-button-icon-size, 14px); height: var(--wzl-button-icon-size, 14px); }
 
 .label { display: inline-block; }
 
