@@ -167,8 +167,8 @@
   font-size: var(--wzl-font-size);
 }
 
-.card[data-tone] .handle {
-  background: var(--wzl-tone);
+.card[data-tint] .handle {
+  background: var(--wzl-tint);
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);

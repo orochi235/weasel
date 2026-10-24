@@ -1,4 +1,4 @@
-import { ACCENT_BASE, type StanceSurface, TONE_BASE } from './stanceCss';
+import { ACCENT_BASE, type StanceSurface, TINT_BASE } from './stanceCss';
 
 /** Build-time only: every surface `npm run gen:stances` writes rules for. */
 export const STANCE_SURFACES: readonly StanceSurface[] = [
@@ -19,8 +19,8 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       // `preview` can sit its content on the edge.
       pad: 'var(--wzl-prop-panel-pad, var(--wzl-panel-pad))',
       blur: 'var(--wzl-panel-blur)',
-      'tone-mix': 'var(--wzl-panel-tone-mix)',
-      tone: TONE_BASE,
+      'tint-mix': 'var(--wzl-panel-tint-mix)',
+      tint: TINT_BASE,
       accent: ACCENT_BASE,
       'title-font': 'var(--wzl-panel-title-font)',
       'title-weight': 'var(--wzl-panel-title-weight)',
@@ -54,8 +54,8 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'border-width': '0px',
       radius: 'var(--wzl-radius-md)',
       pad: 'var(--wzl-prop-group-pad, 6px 10px 8px)',
-      'tone-mix': 'var(--wzl-panel-tone-mix)',
-      tone: TONE_BASE,
+      'tint-mix': 'var(--wzl-panel-tint-mix)',
+      tint: TINT_BASE,
       accent: ACCENT_BASE,
       'title-font': 'var(--wzl-font-display)',
       'title-weight': 'var(--wzl-font-weight-light)',
@@ -95,8 +95,8 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'border-style': 'solid',
       'border-width': '1px',
       radius: 'var(--wzl-radius-md)',
-      'tone-mix': 'var(--wzl-panel-tone-mix)',
-      tone: TONE_BASE,
+      'tint-mix': 'var(--wzl-panel-tint-mix)',
+      tint: TINT_BASE,
       accent: ACCENT_BASE,
       'title-font': 'var(--wzl-font-ui)',
       'title-weight': 'var(--wzl-font-weight-bold)',
@@ -118,8 +118,8 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'border-style': 'solid',
       'border-width': '1px',
       radius: 'var(--wzl-radius-md)',
-      'tone-mix': 'var(--wzl-panel-tone-mix)',
-      tone: TONE_BASE,
+      'tint-mix': 'var(--wzl-panel-tint-mix)',
+      tint: TINT_BASE,
       accent: ACCENT_BASE,
       'title-font': 'var(--wzl-font-ui)',
       'title-weight': 'var(--wzl-font-weight-bold)',
@@ -138,8 +138,8 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     base: {
       surface: 'transparent',
       'border-color': 'var(--wzl-line-subtle)',
-      'tone-mix': 'var(--wzl-panel-tone-mix)',
-      tone: TONE_BASE,
+      'tint-mix': 'var(--wzl-panel-tint-mix)',
+      tint: TINT_BASE,
       accent: ACCENT_BASE,
       'title-font': 'var(--wzl-font-display)',
       'title-weight': 'var(--wzl-font-weight-bold)',
@@ -150,8 +150,8 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     },
   },
   {
-    // Colored marks rather than boxes: a stance or tone reaches only the color
-    // the status would otherwise paint.
+    // Colored marks rather than boxes: a stance or tint reaches only the color
+    // its grade or emphasis would otherwise paint.
     id: 'badge',
     file: 'packages/ui/src/components/Badge/Badge.module.css',
     selector: '.badge',
@@ -164,7 +164,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     base: { accent: ACCENT_BASE },
   },
   {
-    // A toned primary button takes the tone as its accent; a link, as its text color.
+    // A tinted primary button takes the tint as its accent; a link, as its text color.
     id: 'button',
     file: 'packages/ui/src/components/Button/Button.module.css',
     selector: '.button',

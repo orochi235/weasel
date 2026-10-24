@@ -1,5 +1,5 @@
 import type { IconRef } from '@weasel-js/icons';
-import type { StanceProps } from '@weasel-js/ui/stance';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
 import type { ResolvedConfig } from '../config/types';
 import type { ConfigField } from '../controls/types';
@@ -52,7 +52,7 @@ export type RailItem<TCtx = TrialChromeContext> = ToolItem | CommandItem<TCtx>;
 /** A titled block in the sidebar. `stance` and `tone` work as on a
  *  `<PropertyPanel>`: what kind of content the section holds, and which of its
  *  peers it is. */
-export interface SidebarSection extends StanceProps {
+export interface SidebarSection extends AppearanceProps {
   title: string;
   /** Starts collapsed, until the trial remembers a fold of its own. */
   defaultCollapsed?: boolean;

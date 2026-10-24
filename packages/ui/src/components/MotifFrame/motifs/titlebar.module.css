@@ -11,7 +11,7 @@
 }
 
 /* A tone says which of its peers a frame is, so it outranks the theme's strip. */
-.titlebar[data-tone] {
+.titlebar[data-tint] {
   --_strip: var(--_edge);
   --_strip-ink: var(--_edge-ink);
 }

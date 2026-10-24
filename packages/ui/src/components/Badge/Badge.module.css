@@ -291,46 +291,47 @@ a.badge:hover,
 /* BEGIN GENERATED stance rules: badge — `npm run gen:stances`, do not edit. */
 
 .badge {
-  --wzl-tone: initial;
+  --wzl-tint: initial;
 }
 
 .badge {
-  --_s-accent: var(--wzl-tone);
+  --_s-accent: var(--wzl-tint);
 }
 
-.badge[data-stance='scope'] {
-  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+.badge[data-stance='clarify'] {
+  --_s-accent: var(--wzl-stance-clarify-accent, var(--wzl-tint));
 }
 
 .badge[data-stance='aside'] {
-  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tint));
 }
 
 .badge[data-stance='advanced'] {
-  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tint));
 }
 
 .badge[data-stance='debug'] {
-  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
-}
-
-.badge[data-stance='danger'] {
-  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
-}
-
-.badge[data-stance='notice'] {
-  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
-}
-
-.badge[data-stance='important'] {
-  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tint));
 }
 
 .badge[data-stance='preview'] {
-  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tint));
 }
 
-.badge[data-tone] {
+.badge[data-stance='confirm'] {
+  --_s-accent: var(--wzl-stance-confirm-accent, var(--wzl-tint));
+}
+
+.badge[data-stance='cancel'] {
+  --_s-accent: var(--wzl-stance-cancel-accent, var(--wzl-tint));
+}
+
+.badge[data-grade] {
+  --_s-accent: var(--wzl-tint, var(--wzl-grade));
+}
+
+.badge[data-tint],
+.badge[data-grade] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));

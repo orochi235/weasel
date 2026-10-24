@@ -9,8 +9,8 @@
 }
 
 /* A toned frame is one of a list of like frames; its edge says which. */
-.rule[data-tone] {
-  border-left: 4px solid var(--wzl-tone);
+.rule[data-tint] {
+  border-left: 4px solid var(--wzl-tint);
 }
 
 .headRow {

@@ -31,9 +31,9 @@
       "types": "./dist/components/paintValue.d.ts",
       "import": "./dist/components/paintValue.js"
     },
-    "./stance": {
-      "types": "./dist/components/stance.d.ts",
-      "import": "./dist/components/stance.js"
+    "./appearance": {
+      "types": "./dist/components/appearance.d.ts",
+      "import": "./dist/components/appearance.js"
     },
     "./portal-host": {
       "types": "./dist/overlays/portalHost.d.ts",

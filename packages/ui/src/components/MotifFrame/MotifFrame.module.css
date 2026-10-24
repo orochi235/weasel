@@ -10,7 +10,7 @@
 /* In `:where()` so a motif's own class can redefine the edge and the ink follows it. */
 :where(.frame) {
   /* The edge a motif outlines or fills with: the tone where one is named. */
-  --_edge: var(--wzl-tone, var(--_s-border-color));
+  --_edge: var(--wzl-tint, var(--_s-border-color));
   /* Black or white, whichever reads on the edge color. 0.564 is the lightness at
      which the two reach WCAG's 4.5:1 together; the switch has to sit within a
      hundredth of it, or the losing side falls short there. */
@@ -25,7 +25,7 @@
 /* BEGIN GENERATED stance rules: frame — `npm run gen:stances`, do not edit. */
 
 .frame {
-  --wzl-tone: initial;
+  --wzl-tint: initial;
 }
 
 .frame {
@@ -35,9 +35,9 @@
   --_s-border-width: 0px;
   --_s-radius: var(--wzl-radius-md);
   --_s-pad: var(--wzl-prop-group-pad, 6px 10px 8px);
-  --_s-tone-mix: var(--wzl-panel-tone-mix);
-  --_s-tone: var(--wzl-tone, var(--_s-surface));
-  --_s-accent: var(--wzl-tone);
+  --_s-tint-mix: var(--wzl-panel-tint-mix);
+  --_s-tint: var(--wzl-tint, var(--_s-surface));
+  --_s-accent: var(--wzl-tint);
   --_s-title-font: var(--wzl-font-display);
   --_s-title-weight: var(--wzl-font-weight-light);
   --_s-title-size: var(--wzl-font-size-sm);
@@ -46,22 +46,22 @@
   --_s-title-color: var(--wzl-fg-subtle);
 }
 
-.frame[data-stance='scope'] {
-  --_s-surface: var(--wzl-stance-scope-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-scope-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
-  --_s-border-style: var(--wzl-stance-scope-border-style, solid);
-  --_s-border-width: var(--wzl-stance-scope-border-width, 0px);
-  --_s-radius: var(--wzl-stance-scope-radius, var(--wzl-radius-md));
-  --_s-pad: var(--wzl-stance-scope-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
-  --_s-tone-mix: var(--wzl-stance-scope-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-scope-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-scope-title-font, var(--wzl-font-display));
-  --_s-title-weight: var(--wzl-stance-scope-title-weight, var(--wzl-font-weight-light));
-  --_s-title-size: var(--wzl-stance-scope-title-size, var(--wzl-font-size-sm));
-  --_s-title-case: var(--wzl-stance-scope-title-case, var(--wzl-params-label-case, uppercase));
-  --_s-title-tracking: var(--wzl-stance-scope-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
-  --_s-title-color: var(--wzl-stance-scope-title-color, var(--wzl-fg-subtle));
+.frame[data-stance='clarify'] {
+  --_s-surface: var(--wzl-stance-clarify-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-clarify-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
+  --_s-border-style: var(--wzl-stance-clarify-border-style, solid);
+  --_s-border-width: var(--wzl-stance-clarify-border-width, 0px);
+  --_s-radius: var(--wzl-stance-clarify-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-clarify-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tint-mix: var(--wzl-stance-clarify-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-clarify-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-clarify-accent, var(--wzl-tint));
+  --_s-title-font: var(--wzl-stance-clarify-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-clarify-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-clarify-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-clarify-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-clarify-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-clarify-title-color, var(--wzl-fg-subtle));
 }
 
 .frame[data-stance='aside'] {
@@ -71,9 +71,9 @@
   --_s-border-width: var(--wzl-stance-aside-border-width, 0px);
   --_s-radius: var(--wzl-stance-aside-radius, var(--wzl-radius-md));
   --_s-pad: var(--wzl-stance-aside-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
-  --_s-tone-mix: var(--wzl-stance-aside-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-aside-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-tint-mix: var(--wzl-stance-aside-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-aside-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tint));
   --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-display));
   --_s-title-weight: var(--wzl-stance-aside-title-weight, var(--wzl-font-weight-light));
   --_s-title-size: var(--wzl-stance-aside-title-size, var(--wzl-font-size-sm));
@@ -89,9 +89,9 @@
   --_s-border-width: var(--wzl-stance-advanced-border-width, 0px);
   --_s-radius: var(--wzl-stance-advanced-radius, var(--wzl-radius-md));
   --_s-pad: var(--wzl-stance-advanced-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
-  --_s-tone-mix: var(--wzl-stance-advanced-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-advanced-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-tint-mix: var(--wzl-stance-advanced-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-advanced-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tint));
   --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-display));
   --_s-title-weight: var(--wzl-stance-advanced-title-weight, var(--wzl-font-weight-light));
   --_s-title-size: var(--wzl-stance-advanced-title-size, var(--wzl-font-size-sm));
@@ -107,69 +107,15 @@
   --_s-border-width: var(--wzl-stance-debug-border-width, 0px);
   --_s-radius: var(--wzl-stance-debug-radius, var(--wzl-radius-md));
   --_s-pad: var(--wzl-stance-debug-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
-  --_s-tone-mix: var(--wzl-stance-debug-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-debug-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+  --_s-tint-mix: var(--wzl-stance-debug-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-debug-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tint));
   --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-display));
   --_s-title-weight: var(--wzl-stance-debug-title-weight, var(--wzl-font-weight-light));
   --_s-title-size: var(--wzl-stance-debug-title-size, var(--wzl-font-size-sm));
   --_s-title-case: var(--wzl-stance-debug-title-case, var(--wzl-params-label-case, uppercase));
   --_s-title-tracking: var(--wzl-stance-debug-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
   --_s-title-color: var(--wzl-stance-debug-title-color, var(--wzl-fg-subtle));
-}
-
-.frame[data-stance='danger'] {
-  --_s-surface: var(--wzl-stance-danger-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-danger-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
-  --_s-border-style: var(--wzl-stance-danger-border-style, solid);
-  --_s-border-width: var(--wzl-stance-danger-border-width, 0px);
-  --_s-radius: var(--wzl-stance-danger-radius, var(--wzl-radius-md));
-  --_s-pad: var(--wzl-stance-danger-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
-  --_s-tone-mix: var(--wzl-stance-danger-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-danger-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-danger-title-font, var(--wzl-font-display));
-  --_s-title-weight: var(--wzl-stance-danger-title-weight, var(--wzl-font-weight-light));
-  --_s-title-size: var(--wzl-stance-danger-title-size, var(--wzl-font-size-sm));
-  --_s-title-case: var(--wzl-stance-danger-title-case, var(--wzl-params-label-case, uppercase));
-  --_s-title-tracking: var(--wzl-stance-danger-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
-  --_s-title-color: var(--wzl-stance-danger-title-color, var(--wzl-fg-subtle));
-}
-
-.frame[data-stance='notice'] {
-  --_s-surface: var(--wzl-stance-notice-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-notice-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
-  --_s-border-style: var(--wzl-stance-notice-border-style, solid);
-  --_s-border-width: var(--wzl-stance-notice-border-width, 0px);
-  --_s-radius: var(--wzl-stance-notice-radius, var(--wzl-radius-md));
-  --_s-pad: var(--wzl-stance-notice-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
-  --_s-tone-mix: var(--wzl-stance-notice-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-notice-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-notice-title-font, var(--wzl-font-display));
-  --_s-title-weight: var(--wzl-stance-notice-title-weight, var(--wzl-font-weight-light));
-  --_s-title-size: var(--wzl-stance-notice-title-size, var(--wzl-font-size-sm));
-  --_s-title-case: var(--wzl-stance-notice-title-case, var(--wzl-params-label-case, uppercase));
-  --_s-title-tracking: var(--wzl-stance-notice-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
-  --_s-title-color: var(--wzl-stance-notice-title-color, var(--wzl-fg-subtle));
-}
-
-.frame[data-stance='important'] {
-  --_s-surface: var(--wzl-stance-important-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-important-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
-  --_s-border-style: var(--wzl-stance-important-border-style, solid);
-  --_s-border-width: var(--wzl-stance-important-border-width, 0px);
-  --_s-radius: var(--wzl-stance-important-radius, var(--wzl-radius-md));
-  --_s-pad: var(--wzl-stance-important-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
-  --_s-tone-mix: var(--wzl-stance-important-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-important-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-important-title-font, var(--wzl-font-display));
-  --_s-title-weight: var(--wzl-stance-important-title-weight, var(--wzl-font-weight-light));
-  --_s-title-size: var(--wzl-stance-important-title-size, var(--wzl-font-size-sm));
-  --_s-title-case: var(--wzl-stance-important-title-case, var(--wzl-params-label-case, uppercase));
-  --_s-title-tracking: var(--wzl-stance-important-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
-  --_s-title-color: var(--wzl-stance-important-title-color, var(--wzl-fg-subtle));
 }
 
 .frame[data-stance='preview'] {
@@ -179,9 +125,9 @@
   --_s-border-width: var(--wzl-stance-preview-border-width, 0px);
   --_s-radius: var(--wzl-stance-preview-radius, var(--wzl-radius-md));
   --_s-pad: var(--wzl-stance-preview-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
-  --_s-tone-mix: var(--wzl-stance-preview-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-preview-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-tint-mix: var(--wzl-stance-preview-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-preview-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tint));
   --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-display));
   --_s-title-weight: var(--wzl-stance-preview-title-weight, var(--wzl-font-weight-light));
   --_s-title-size: var(--wzl-stance-preview-title-size, var(--wzl-font-size-sm));
@@ -190,16 +136,70 @@
   --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg-subtle));
 }
 
+.frame[data-stance='confirm'] {
+  --_s-surface: var(--wzl-stance-confirm-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-confirm-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
+  --_s-border-style: var(--wzl-stance-confirm-border-style, solid);
+  --_s-border-width: var(--wzl-stance-confirm-border-width, 0px);
+  --_s-radius: var(--wzl-stance-confirm-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-confirm-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tint-mix: var(--wzl-stance-confirm-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-confirm-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-confirm-accent, var(--wzl-tint));
+  --_s-title-font: var(--wzl-stance-confirm-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-confirm-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-confirm-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-confirm-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-confirm-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-confirm-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-stance='cancel'] {
+  --_s-surface: var(--wzl-stance-cancel-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-cancel-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
+  --_s-border-style: var(--wzl-stance-cancel-border-style, solid);
+  --_s-border-width: var(--wzl-stance-cancel-border-width, 0px);
+  --_s-radius: var(--wzl-stance-cancel-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-cancel-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tint-mix: var(--wzl-stance-cancel-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-cancel-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-cancel-accent, var(--wzl-tint));
+  --_s-title-font: var(--wzl-stance-cancel-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-cancel-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-cancel-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-cancel-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-cancel-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-cancel-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-emphasis='high'] {
+  --_s-border-color: var(--wzl-accent-fg);
+  --_s-title-color: var(--wzl-accent-fg);
+}
+
+.frame[data-emphasis='low'] {
+  --_s-title-color: var(--wzl-fg-muted);
+}
+
+.frame[data-grade] {
+  --_s-tint: var(--wzl-tint, var(--wzl-grade));
+  --_s-border-color: var(--wzl-grade);
+  --_s-title-color: var(--wzl-grade);
+  --_s-accent: var(--wzl-tint, var(--wzl-grade));
+}
+
 .frame {
   --_s-fill: var(--_s-surface);
 }
 
-.frame[data-tone],
+.frame[data-tint],
+.frame[data-grade],
 .frame[data-stance] {
-  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
+  --_s-fill: color-mix(in oklab, var(--_s-tint) var(--_s-tint-mix), var(--_s-surface));
 }
 
-.frame[data-tone] {
+.frame[data-tint],
+.frame[data-grade] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));

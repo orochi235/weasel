@@ -39,12 +39,12 @@
 /* BEGIN GENERATED stance rules: divider — `npm run gen:stances`, do not edit. */
 
 .divider[data-motif] {
-  --wzl-tone: initial;
+  --wzl-tint: initial;
 }
 
 .divider[data-motif] {
   --_s-border-color: var(--wzl-line-subtle);
-  --_s-accent: var(--wzl-tone);
+  --_s-accent: var(--wzl-tint);
   --_s-title-font: var(--wzl-font-display);
   --_s-title-weight: var(--wzl-font-weight-medium);
   --_s-title-size: var(--wzl-font-size-sm);
@@ -53,20 +53,20 @@
   --_s-title-color: var(--wzl-fg);
 }
 
-.divider[data-motif][data-stance='scope'] {
-  --_s-border-color: var(--wzl-stance-scope-border-color, var(--wzl-line-subtle));
-  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-scope-title-font, var(--wzl-font-display));
-  --_s-title-weight: var(--wzl-stance-scope-title-weight, var(--wzl-font-weight-medium));
-  --_s-title-size: var(--wzl-stance-scope-title-size, var(--wzl-font-size-sm));
-  --_s-title-case: var(--wzl-stance-scope-title-case, var(--wzl-params-label-case, uppercase));
-  --_s-title-tracking: var(--wzl-stance-scope-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
-  --_s-title-color: var(--wzl-stance-scope-title-color, var(--wzl-fg));
+.divider[data-motif][data-stance='clarify'] {
+  --_s-border-color: var(--wzl-stance-clarify-border-color, var(--wzl-line-subtle));
+  --_s-accent: var(--wzl-stance-clarify-accent, var(--wzl-tint));
+  --_s-title-font: var(--wzl-stance-clarify-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-clarify-title-weight, var(--wzl-font-weight-medium));
+  --_s-title-size: var(--wzl-stance-clarify-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-clarify-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-clarify-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-clarify-title-color, var(--wzl-fg));
 }
 
 .divider[data-motif][data-stance='aside'] {
   --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-line-subtle));
-  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tint));
   --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-display));
   --_s-title-weight: var(--wzl-stance-aside-title-weight, var(--wzl-font-weight-medium));
   --_s-title-size: var(--wzl-stance-aside-title-size, var(--wzl-font-size-sm));
@@ -77,7 +77,7 @@
 
 .divider[data-motif][data-stance='advanced'] {
   --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-line-subtle));
-  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tint));
   --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-display));
   --_s-title-weight: var(--wzl-stance-advanced-title-weight, var(--wzl-font-weight-medium));
   --_s-title-size: var(--wzl-stance-advanced-title-size, var(--wzl-font-size-sm));
@@ -88,7 +88,7 @@
 
 .divider[data-motif][data-stance='debug'] {
   --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-line-subtle));
-  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tint));
   --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-display));
   --_s-title-weight: var(--wzl-stance-debug-title-weight, var(--wzl-font-weight-medium));
   --_s-title-size: var(--wzl-stance-debug-title-size, var(--wzl-font-size-sm));
@@ -97,42 +97,9 @@
   --_s-title-color: var(--wzl-stance-debug-title-color, var(--wzl-fg));
 }
 
-.divider[data-motif][data-stance='danger'] {
-  --_s-border-color: var(--wzl-stance-danger-border-color, var(--wzl-line-subtle));
-  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-danger-title-font, var(--wzl-font-display));
-  --_s-title-weight: var(--wzl-stance-danger-title-weight, var(--wzl-font-weight-medium));
-  --_s-title-size: var(--wzl-stance-danger-title-size, var(--wzl-font-size-sm));
-  --_s-title-case: var(--wzl-stance-danger-title-case, var(--wzl-params-label-case, uppercase));
-  --_s-title-tracking: var(--wzl-stance-danger-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
-  --_s-title-color: var(--wzl-stance-danger-title-color, var(--wzl-fg));
-}
-
-.divider[data-motif][data-stance='notice'] {
-  --_s-border-color: var(--wzl-stance-notice-border-color, var(--wzl-line-subtle));
-  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-notice-title-font, var(--wzl-font-display));
-  --_s-title-weight: var(--wzl-stance-notice-title-weight, var(--wzl-font-weight-medium));
-  --_s-title-size: var(--wzl-stance-notice-title-size, var(--wzl-font-size-sm));
-  --_s-title-case: var(--wzl-stance-notice-title-case, var(--wzl-params-label-case, uppercase));
-  --_s-title-tracking: var(--wzl-stance-notice-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
-  --_s-title-color: var(--wzl-stance-notice-title-color, var(--wzl-fg));
-}
-
-.divider[data-motif][data-stance='important'] {
-  --_s-border-color: var(--wzl-stance-important-border-color, var(--wzl-line-subtle));
-  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-important-title-font, var(--wzl-font-display));
-  --_s-title-weight: var(--wzl-stance-important-title-weight, var(--wzl-font-weight-medium));
-  --_s-title-size: var(--wzl-stance-important-title-size, var(--wzl-font-size-sm));
-  --_s-title-case: var(--wzl-stance-important-title-case, var(--wzl-params-label-case, uppercase));
-  --_s-title-tracking: var(--wzl-stance-important-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
-  --_s-title-color: var(--wzl-stance-important-title-color, var(--wzl-fg));
-}
-
 .divider[data-motif][data-stance='preview'] {
   --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-line-subtle));
-  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tint));
   --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-display));
   --_s-title-weight: var(--wzl-stance-preview-title-weight, var(--wzl-font-weight-medium));
   --_s-title-size: var(--wzl-stance-preview-title-size, var(--wzl-font-size-sm));
@@ -141,7 +108,45 @@
   --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg));
 }
 
-.divider[data-motif][data-tone] {
+.divider[data-motif][data-stance='confirm'] {
+  --_s-border-color: var(--wzl-stance-confirm-border-color, var(--wzl-line-subtle));
+  --_s-accent: var(--wzl-stance-confirm-accent, var(--wzl-tint));
+  --_s-title-font: var(--wzl-stance-confirm-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-confirm-title-weight, var(--wzl-font-weight-medium));
+  --_s-title-size: var(--wzl-stance-confirm-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-confirm-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-confirm-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-confirm-title-color, var(--wzl-fg));
+}
+
+.divider[data-motif][data-stance='cancel'] {
+  --_s-border-color: var(--wzl-stance-cancel-border-color, var(--wzl-line-subtle));
+  --_s-accent: var(--wzl-stance-cancel-accent, var(--wzl-tint));
+  --_s-title-font: var(--wzl-stance-cancel-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-cancel-title-weight, var(--wzl-font-weight-medium));
+  --_s-title-size: var(--wzl-stance-cancel-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-cancel-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-cancel-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-cancel-title-color, var(--wzl-fg));
+}
+
+.divider[data-motif][data-emphasis='high'] {
+  --_s-border-color: var(--wzl-accent-fg);
+  --_s-title-color: var(--wzl-accent-fg);
+}
+
+.divider[data-motif][data-emphasis='low'] {
+  --_s-title-color: var(--wzl-fg-muted);
+}
+
+.divider[data-motif][data-grade] {
+  --_s-border-color: var(--wzl-grade);
+  --_s-title-color: var(--wzl-grade);
+  --_s-accent: var(--wzl-tint, var(--wzl-grade));
+}
+
+.divider[data-motif][data-tint],
+.divider[data-motif][data-grade] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
