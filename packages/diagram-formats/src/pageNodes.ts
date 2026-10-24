@@ -23,7 +23,6 @@ import {
   svgNodesFromKit,
   svgPaintFromKit,
   svgStrokeFromKit,
-  type SvgGroupNode,
   type SvgKitLeafData,
   type SvgKitPose,
   type SvgKitTree,
@@ -112,9 +111,8 @@ export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] 
       return {
         kind: node.kind, data: node.data, pose: poseOf(pose(node)),
         ...(node.hidden ? { hidden: true } : {}),
-        ...(node.kind === 'group' && node.copiesFromPose
-          ? { copiesFromPose: node.copiesFromPose as SvgKitTreeNode['copiesFromPose'] }
-          : {}),
+        ...(node.clip ? { clip: node.clip } : {}),
+        ...(node.copiesFromPose ? { copiesFromPose: node.copiesFromPose as SvgKitTreeNode['copiesFromPose'] } : {}),
       };
     },
   };
@@ -132,11 +130,6 @@ export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] 
       if (path) return one(derivedNodes(path, kit.data as SvgKitLeafData));
       const painted = diagramPainted(painters, node, pose(node));
       return painted ? one(painted) : svgLeafFromKit(kit.data as SvgKitLeafData, kit.pose);
-    },
-    group(id, g): SvgGroupNode {
-      const node = scene.get(id as never)!;
-      const outline = diagramPainted(painters, node, pose(node));
-      return outline ? { ...g, children: [...outline, ...g.children] } : g;
     },
   });
 }

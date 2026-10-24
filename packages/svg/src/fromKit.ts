@@ -230,15 +230,16 @@ export interface SvgNodesFromKitOptions<TId extends string = string> {
    *  as these, and the walk marks the result as inheriting where SVG's
    *  cascade can carry them. */
   leaf?(id: TId, node: SvgKitTreeNode, inherited: SvgKitInherited): SvgNode | null;
-  /** Decorate the group written for a container, e.g. with `meta`. */
+  /** Decorate the `<g>` written for a scene group, e.g. with `meta`. */
   group?(id: TId, group: SvgGroupNode): SvgGroupNode;
 }
 
 /**
- * Walk a scene's container tree into `SvgNode`s ready for `serializeSvg`:
- * every `container` becomes a group of its children, in z-order, and every
- * leaf goes through {@link svgLeafFromKit} unless `options.leaf` says
- * otherwise. A hidden node is written hidden, with its subtree as it is.
+ * Walk a scene's tree into `SvgNode`s ready for `serializeSvg`: a group
+ * becomes a `<g>` of its children, in z-order, drawing nothing of its own; a
+ * mark is written by {@link svgLeafFromKit} unless `options.leaf` says
+ * otherwise, and a mark with children is a `<g>` holding that element and then
+ * its children. A hidden node is written hidden, with its subtree as it is.
  */
 export function svgNodesFromKit<TId extends string>(
   tree: SvgKitTree<TId>,
@@ -251,37 +252,42 @@ export function svgNodesFromKit<TId extends string>(
     return out && node?.hidden === true ? { ...out, hidden: true } : out;
   };
   const lower = (id: TId, node: SvgKitTreeNode, up: UpPaint): SvgNode | null => {
-    if (node.kind === 'group') {
-      const own = node.data as SvgKitLeafData | null;
-      const below: UpPaint = {
-        fill: own?.fill === INHERIT ? up.fill : resolveFill(own?.fill),
-        stroke: own?.stroke === INHERIT ? up.stroke : resolveStroke(own?.stroke),
-      };
-      // Emitted afresh for each copy: a node object is never shared by two groups.
-      const emitChildren = (): SvgNode[] => {
-        const children: SvgNode[] = [];
-        for (const c of tree.childrenOf(id)) {
-          const child = emit(c, below);
-          if (child) children.push(child);
-        }
-        return children;
-      };
-      const path = node.clip === 'outline' ? own?.path : undefined;
-      const clip = path ? pathThroughPoseFrame(pathInPoseFrame(path, node.pose), node.pose) : undefined;
-      const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
-      const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
-      let g: SvgGroupNode = { ...content(), ...groupPaintFromKit(own, below, node.pose) };
-      if (copies.length > 0) {
-        // The clip travels with each copy, so it goes inside the transform.
-        g = {
-          kind: 'group',
-          children: [g, ...copies.map((transform): SvgGroupNode => ({ kind: 'group', transform, children: [content()] }))],
-        };
+    const own = node.data as SvgKitLeafData | null;
+    const isGroup = node.kind === 'group';
+    const self = isGroup ? null : markInherits(
+      leaf ? leaf(id, node, up) : svgLeafFromKit(resolvedData(own ?? {}, up), node.pose), own ?? {}, up,
+    );
+    const kids = tree.childrenOf(id);
+    if (!isGroup && kids.length === 0) return self;
+    const below: UpPaint = {
+      fill: own?.fill === INHERIT ? up.fill : resolveFill(own?.fill),
+      stroke: own?.stroke === INHERIT ? up.stroke : resolveStroke(own?.stroke),
+    };
+    // Emitted afresh for each copy: a node object is never shared by two groups.
+    const emitChildren = (): SvgNode[] => {
+      const children: SvgNode[] = [];
+      for (const c of kids) {
+        const child = emit(c, below);
+        if (child) children.push(child);
       }
+      return children;
+    };
+    const clip = node.clip === 'outline' ? outlineOf(own, self, node.pose) : undefined;
+    const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
+    const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
+    const paint = groupPaintFromKit(own, below, node.pose);
+    // The clip travels with each copy, so it goes inside the transform.
+    const withCopies = (g: SvgGroupNode): SvgGroupNode => (copies.length === 0 ? g : {
+      kind: 'group',
+      children: [g, ...copies.map((transform): SvgGroupNode => ({ kind: 'group', transform, children: [content()] }))],
+    });
+    if (isGroup) {
+      const g = withCopies({ ...content(), ...paint });
       return group ? group(id, g) : g;
     }
-    const data = (node.data ?? {}) as SvgKitLeafData;
-    return markInherits(leaf ? leaf(id, node, up) : svgLeafFromKit(resolvedData(data, up), node.pose), data, up);
+    const inner = withCopies(content());
+    const parts = clip || copies.length > 0 ? [inner] : inner.children;
+    return { kind: 'group', children: self ? [self, ...parts] : parts, ...paint };
   };
   const out: SvgNode[] = [];
   for (const id of options.roots ?? tree.roots) {
@@ -315,6 +321,13 @@ function groupPaintFromKit(own: SvgKitLeafData | null, below: UpPaint, pose: Svg
   const strokes = own?.stroke === INHERIT && carries(below.stroke);
   if (fill || strokes) out.inherits = { ...(fill ? { fill: true } : {}), ...(strokes ? { stroke: true } : {}) };
   return out;
+}
+
+/** What a node declaring `clip: 'outline'` clips its children to: its
+ *  `data.path` in its pose, or else the unturned path its own element is. */
+function outlineOf(own: SvgKitLeafData | null, self: SvgNode | null, pose: SvgKitPose): Path | undefined {
+  if (own?.path) return pathThroughPoseFrame(pathInPoseFrame(own.path, pose), pose);
+  return self?.kind === 'path' && !self.rotation ? self.path : undefined;
 }
 
 /** `data` with its `'inherit'` fields replaced by what they resolve to. */
