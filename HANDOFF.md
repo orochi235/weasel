@@ -4,40 +4,20 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Appearance axes, 2026-10-23 (design only, nothing built)
+## Appearance axes, merged 2026-10-24
 
-Redesigning the props that decide how a component looks. The inventory, sorted by concept, is the
-artifact https://claude.ai/artifact/RtvLxcSg14jqrBHiMAkdwz; the naming job is
-`docs/vocabulary/appearance.json`, served by semanticore (`node ~/src/semanticore/bin/semanticore.js
-serve docs/vocabulary/appearance.json --port 4872`). Mike's picks land in
-`docs/vocabulary/appearance.picks.json`, left uncommitted until he has picked.
+`stance`, `grade`, `emphasis` and `tint` replaced `status`, `tone` and the old stances; the design of
+record is `docs/conventions.md` ("Appearance props"), and the changeset is
+`.changeset/appearance-axes.md`. Merged to `main` (9e3914b0f), not pushed.
 
-Decided in conversation (2026-10-23), none of it in code:
-- **severity**, called **`grade`** (2026-10-23), with `info`, `success`, `warn`, `danger`, is its own axis, apart from **stance**. Today it
-  is spelled six ways: three `status` types (Button/Code, Badge/Powerline, DetailList), Toast's
-  `tone`, labkit Toolbar's `variant: 'danger'`, and the `danger`/`notice`/`important` stances.
-- **stance** is the angle a component comes from, its spin or slant (2026-10-23): is it for advanced
-  users, is it debug output, is it the confirming action. Not a content class. `confirm` and its
-  kin are stances, or adjacent. It goes on every component and cascades through CSS custom properties.
-- **danger is one concept, severity's `danger`** (2026-10-23). A delete button takes it too; there is
-  no `destructive` stance beside it.
-- **emphasis** (`high`, `low`, unset for normal) is how loudly something reads (2026-10-23), replacing
-  `neutral`/`muted`/`accent`: `accent` names the theme's hue, and `tone` frees up. **tint** is an exact
-  color (palette index or value, today's `tone`) and wins over severity and stance.
-- `status` is retired.
-- Color resolves as `hue = tint ?? severity ?? stance`, emphasis setting how loudly it shows.
-- **Appearance settings are nonbinding hints, for now** (2026-10-23): a component decides what it does
-  with a stance (and most of the rest). No stance-to-variant table, no rule for which axis wins. Button's
-  `primary` becomes the stance `confirm`; `scope` becomes `clarify` ("this clarifies the scope").
+**Left:** Slider's `density` → numeric params, planned in
+`docs/superpowers/plans/2026-10-23-slider-metrics.md` and waiting on one question for Mike: whether a
+radius and a border width cover the slim thumb's round dot, or dot-versus-tab is a drawing variant.
 
-- **Stance and emphasis cascade; severity and tint do not** (2026-10-23). A `danger` dialog's Cancel button
-  stays plain; a component may still read its parent's severity as a hint.
-- **Slider's `density` becomes numeric params, not presets** (2026-10-23). `trackHeight` already exists;
-  `slim` also sets the thumb's size, makes it round and flush, and drops its border and blur
-  (`Slider.module.css`), so those need params too. Had it stayed a preset, Mike would call it `weight`.
-
-**Next:** build it. The plan is `docs/superpowers/plans/2026-10-23-appearance-axes.md` (written
-2026-10-23, nothing built); its Slider task waits on one question for Mike about the thumb's face.
+**Not seen in a browser:** every color change. That means grade and emphasis on panels, dialogs,
+callouts, badges, code, and buttons; `stance="confirm"` against the old primary; the Callout's base accent
+wash; info badges and toasts on the new `--wzl-info`; and Badge `warn` on `--wzl-warning`, where it
+had its own amber. `tests/visual/panel-stances.spec.ts` was migrated but not run.
 
 Also waiting on Mike, unrelated: whether `Primitives/*` story titles merge into `ui/Foundations`
 (no rule separates them); which default `layout` forge's two story formats share (native
