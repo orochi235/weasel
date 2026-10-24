@@ -96,3 +96,21 @@
   flex-direction: column;
   justify-content: center;
 }
+
+/* The rows keep a little more room on the bar's side, so they do not crowd its edge. A
+   transparent border adds it over the theme's own padding, and the body's fill shows through. */
+.stereo[data-side='left'] > .body {
+  border-left: var(--wzl-space-2) solid transparent;
+}
+
+.stereo[data-side='right'] > .body {
+  border-right: var(--wzl-space-2) solid transparent;
+}
+
+.stereo[data-side='top'] > .body {
+  border-top: var(--wzl-space-2) solid transparent;
+}
+
+.stereo[data-side='bottom'] > .body {
+  border-bottom: var(--wzl-space-2) solid transparent;
+}
