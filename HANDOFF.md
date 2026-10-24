@@ -21,22 +21,22 @@ Decided in conversation (2026-10-23), none of it in code:
   kin are stances, or adjacent. It goes on every component and cascades through CSS custom properties.
 - **danger is one concept, severity's `danger`** (2026-10-23). A delete button takes it too; there is
   no `destructive` stance beside it.
-- **tone** means how loudly something reads (`neutral`, `muted`, `accent`); **tint** is an exact
-  color (palette index or value, today's `tone`) and wins over severity and tone.
-- `status` is retired. `muted` belongs with tone, not with a drawing variant.
-- Color resolves as `hue = tint ?? severity ?? stance`, tone setting how loudly it shows.
+- **emphasis** (`high`, `low`, unset for normal) is how loudly something reads (2026-10-23), replacing
+  `neutral`/`muted`/`accent`: `accent` names the theme's hue, and `tone` frees up. **tint** is an exact
+  color (palette index or value, today's `tone`) and wins over severity and stance.
+- `status` is retired.
+- Color resolves as `hue = tint ?? severity ?? stance`, emphasis setting how loudly it shows.
 - **Appearance settings are nonbinding hints, for now** (2026-10-23): a component decides what it does
   with a stance (and most of the rest). No stance-to-variant table, no rule for which axis wins. Button's
   `primary` becomes the stance `confirm`; `scope` becomes `clarify` ("this clarifies the scope").
 
-- **Stance and tone cascade; severity and tint do not** (2026-10-23). A `danger` dialog's Cancel button
+- **Stance and emphasis cascade; severity and tint do not** (2026-10-23). A `danger` dialog's Cancel button
   stays plain; a component may still read its parent's severity as a hint.
 - **Slider's `density` becomes numeric params, not presets** (2026-10-23). `trackHeight` already exists;
   `slim` also sets the thumb's size, makes it round and flush, and drops its border and blur
-  (`Slider.module.css`), so those need params too. Had it stayed a preset, Mike would call it `weight`,
-  which is also the starred candidate for tone in the naming job.
+  (`Slider.module.css`), so those need params too. Had it stayed a preset, Mike would call it `weight`.
 
-**Next:** the artifact's open questions: what severity is called, whether tone has more moods.
+**Next:** what severity is called, Mike's pick on the naming page.
 
 Also waiting on Mike, unrelated: whether `Primitives/*` story titles merge into `ui/Foundations`
 (no rule separates them); which default `layout` forge's two story formats share (native

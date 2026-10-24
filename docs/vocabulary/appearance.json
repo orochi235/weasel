@@ -280,13 +280,13 @@
       "title": "Tone",
       "was": "status (neutral, muted, accent)",
       "kind": "noun",
-      "description": "how loudly it reads",
+      "description": "how loudly it reads: high or low",
       "gloss": {
-        "lead": "How much an element stands out from its neighbors: plain, held back, or picked out in the accent.",
+        "lead": "How much an element stands out from its neighbors: <code>high</code>, <code>low</code>, or unset for normal. Picked as <code>emphasis</code> (2026-10-23).",
         "items": [
-          "Today folded into <code>status</code> as <code>neutral</code>, <code>muted</code> and <code>accent</code>, and into Button's <code>primary</code> and <code>secondary</code>.",
-          "Proposed to say nothing about meaning or exact color: those are severity and tint.",
-          "Open whether it passes to children the way stance does."
+          "Today folded into <code>status</code> as <code>neutral</code>, <code>muted</code> and <code>accent</code>, used almost only on Badge, Code and Powerline segments. <code>neutral</code> is the same as unset; <code>muted</code> becomes <code>low</code>, <code>accent</code> becomes <code>high</code>.",
+          "Says nothing about meaning or color: <code>accent</code> was dropped as a value because it names the theme's accent hue.",
+          "Cascades, as stance does (2026-10-23)."
         ]
       },
       "groups": [
@@ -314,6 +314,10 @@
         {
           "field": "typography",
           "words": [
+            {
+              "word": "emphasis",
+              "star": true
+            },
             {
               "word": "stress",
               "star": false
@@ -418,7 +422,7 @@
         "lead": "A color chosen outright: an index into the theme's palette, or a color value.",
         "items": [
           "Today's <code>tone</code> on stance-taking components, Badge's <code>status=\"custom\"</code> with its <code>--badge-edge</code>, and KeyDiagram's per-key <code>tone</code>.",
-          "The escape hatch: it wins over severity and tone.",
+          "The escape hatch: it wins over severity and stance; emphasis still sets how loudly it shows.",
           "A palette index tells peers apart (series one, two, three); a value sets a color the theme does not know."
         ]
       },
@@ -561,7 +565,7 @@
         "items": [
           "Button: <code>primary</code>, <code>secondary</code>, <code>ghost</code>, <code>link</code>. Badge: <code>solid</code>, <code>outline</code>, <code>subtle</code>. Segmented rows: <code>default</code>, <code>minimal</code>, <code>flat</code>. Select: <code>field</code>, <code>bare</code>.",
           "Per component, because what can be drawn differently depends on the component.",
-          "Proposed to carry no meaning and no emphasis: Button's <code>primary</code> is a tone, not a drawing."
+          "Proposed to carry no meaning and no emphasis: Button's <code>primary</code> is the stance <code>confirm</code>, not a drawing."
         ]
       },
       "groups": [
@@ -1902,7 +1906,7 @@
       "gloss": {
         "lead": "Give every element inside a surface the setting the surface carries, until one sets its own.",
         "items": [
-          "Proposed for stance, and possibly severity and tone; never for tint, which belongs to the one element that names it.",
+          "Stance and emphasis cascade; severity and tint do not (2026-10-23). A component may still read its parent's severity as a hint.",
           "Done with CSS custom properties, so it reaches plain HTML and other libraries' components inside the surface."
         ]
       },
@@ -2165,7 +2169,7 @@
     }
   ],
   "defaults": {
-    "tone": "tone",
+    "tone": "emphasis",
     "tint": "tint"
   },
   "relations": [
@@ -2174,7 +2178,7 @@
       "gloss": "an exact color wins; otherwise severity picks the hue, and stance supplies one when neither is set"
     },
     {
-      "formula": "loudness = tone",
+      "formula": "loudness = emphasis",
       "gloss": "how strongly that hue shows, separately from which hue it is"
     },
     {
@@ -2219,7 +2223,7 @@
     },
     "recommendation": {
       "title": "Where this stands",
-      "body": "<p>Decided in conversation (2026-10-23): severity is its own axis, apart from stance; tone means how loudly something reads; tint is an exact color and wins over both. Everything else is open, and nothing has been built.</p>"
+      "body": "<p>Decided in conversation (2026-10-23): stance is the angle a component comes from; severity is its own axis, and danger is one concept; emphasis (<code>high</code>, <code>low</code>) means how loudly something reads; tint is an exact color. Stance and emphasis cascade. For now every setting is a nonbinding hint a component decides what to do with. Nothing has been built.</p>"
     }
   }
 }
