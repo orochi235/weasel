@@ -43,17 +43,18 @@ export function PropertyHelp({ label, description, autoValue, within, children }
   const icon = useKitSetting('help.icon') === true;
   const { hoverProps } = useHover({ onHoverChange: help.setOpen });
   const bare = inRow && children != null && !icon;
+  const { open, setOpen } = help;
   useEffect(() => {
-    if (!bare || !help.open) return;
+    if (!bare || !open) return;
     // React Aria dismisses on Escape only for a trigger it holds a ref to, and the label is not one.
     const onKeyDown = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return;
       e.stopPropagation();
-      help.setOpen(false);
+      setOpen(false);
     };
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [bare, help.open, help.setOpen]);
+  }, [bare, open, setOpen]);
   const tip = (
     <Tooltip {...(bare ? { triggerRef: cue } : {})}>
       {description}
