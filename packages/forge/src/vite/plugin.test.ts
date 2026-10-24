@@ -3,7 +3,7 @@ import { existsSync, globSync, mkdirSync, mkdtempSync, readFileSync, realpathSyn
 import { createServer as createHttpServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { build, createLogger, createServer, type HotPayload, type InlineConfig, type Plugin, type ViteDevServer } from 'vite';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { IndexEntry } from '../story/types';
@@ -20,6 +20,32 @@ const FOLLOWS = { timeout: 15_000, interval: 50 };
 
 /** macOS file events for a temp directory can go missing for longer than `FOLLOWS` waits. */
 const POLLED = { usePolling: true, interval: 50 };
+
+/**
+ * Resolves once `s`'s watcher reports a file added to `dir`. A polling watcher's baseline for a directory is a stat
+ * on libuv's threadpool, which every vite server in the process shares, and it can land after the watcher says it
+ * is ready: a file added before that stat is in the baseline and is never reported. Any test that writes waits here.
+ */
+const watching = async (s: ViteDevServer, dir: string) => {
+  const added = new Set<string>();
+  const seen = (path: string) => {
+    if (resolve(path).startsWith(join(dir, 'watch-probe-'))) added.add(path);
+  };
+  s.watcher.on('add', seen);
+  try {
+    let probes = 0;
+    // `vi.waitFor` rather than `expect.poll`, which a `beforeAll` cannot call.
+    await vi.waitFor(
+      () => {
+        if (added.size === 0) writeFileSync(join(dir, `watch-probe-${probes++}.txt`), '');
+        expect(added.size).toBeGreaterThan(0);
+      },
+      { timeout: FOLLOWS.timeout, interval: 100 },
+    );
+  } finally {
+    s.watcher.off('add', seen);
+  }
+};
 
 /**
  * No test here needs prebundled dependencies, and `server.close()` resolves while rolldown is still writing them
@@ -67,6 +93,7 @@ describe('forge vite plugin', () => {
       optimizeDeps: NO_PREBUNDLE,
       logLevel: 'silent',
     });
+    await watching(server, root);
     http = createHttpServer(server.middlewares);
     await new Promise<void>((done) => http.listen(0, 'localhost', done));
     port = (http.address() as AddressInfo).port;
@@ -186,6 +213,7 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
       logLevel: 'silent',
       ...config,
     });
+    await watching(server, dir);
     return { dir, server };
   };
 
@@ -291,8 +319,8 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     payloads.findIndex((p) => p.type === 'update' && p.updates.some((u) => u.acceptedPath.endsWith('virtual:forge/importers.js')));
 
   /**
-   * Writes `code` to `file` until the server tells the workshop entry to take the importers again. A write that
-   * lands before the watcher's first scan ends is never reported, so one write is not enough on a busy machine.
+   * Writes `code` to `file` until the server tells the workshop entry to take the importers again. `watching` says
+   * the directory's baseline is taken, not the file's own, so one write is not enough on a busy machine.
    */
   const writeUntilPushed = async (payloads: readonly HotPayload[], file: string, code: string) => {
     let writes = 0;

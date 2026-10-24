@@ -1129,17 +1129,14 @@ only story runner in the repo.
   - `effect-chart.png`, `effect-chart-rack.png`: never captured. Their `maxDiffRatio` of 0.004
     was copied from `diagram.spec.ts`; set it from the first captures.
 
-- **(P2) A dev server on orochi has missed a file write, and `forge/src/vite/plugin.test.ts` keeps
-  main red.** The test half is now the urgent one: it failed in 3 of the 4 full fleet runs of main
-  and its branches on 2026-10-24, always one of its two 15 s timeouts below. A site dev server there served a file
+- **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
-  7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
-  measured. Polling did not save "indexes a file added under a glob written with a leading ./", which
-  timed out at 15 s in a full fleet run on 2026-10-21 (onto job 2c564a18) and again on 2026-10-24
-  (at d9f7bb7ba), nor "re-decides a story whose helper module did not exist until after it was
-  indexed", which timed out at 15 s on 2026-10-24 (at 968d53abe and ffdeb8268). Both passed in the runs either
-  side, on commits that touched no forge code.
+  7 of 26 tests in one run on 2026-10-13, and polls since; whether a checkout loses them too is not
+  measured. The test's later timeouts were a different thing and are fixed (2026-10-24): a polling
+  watcher takes its baseline of a directory after it reports ready, so a file added in between was
+  never reported. That needs a write within moments of startup, under polling, so it does not
+  explain an edit to an existing file in a long-running server.
 
 - **(P3) `npm pack` died with SIGABRT and no output in the consumer smoke step.** A
   `test:fleet:postbuild` run of d9f7bb7ba's predecessor 570d272b7 on 2026-10-24 failed
