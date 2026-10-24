@@ -96,7 +96,7 @@ export interface PoseCascade<TPose> {
 }
 
 /** Shows a moving container's descendants through overrides of their own, and takes them back
- *  as it rests. A descendant something else already overrides is left to it. */
+ *  as it rests. A descendant something else already poses is left to it. */
 function riders<TPose>(overrides: PoseOverrides<TPose>, cascade: PoseCascade<TPose>): (pose: TPose | null) => void {
   const riding = new Map<NodeId, PoseOverride<TPose>>();
   return (pose) => {
@@ -104,7 +104,7 @@ function riders<TPose>(overrides: PoseOverrides<TPose>, cascade: PoseCascade<TPo
     for (const [id, beside] of pose === null ? [] : cascade.beside(pose)) {
       let entry = riding.get(id);
       if (!entry) {
-        if (overrides.has(id)) continue;
+        if (overrides.read(id)?.pose !== undefined) continue;
         riding.set(id, entry = {});
         overrides.set(id, entry);
       }

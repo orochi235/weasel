@@ -272,7 +272,7 @@ describe('createReflowTransition', () => {
     expect(scene.overrides.has(a)).toBe(false);
   });
 
-  it('settling from a given pose takes the node back from an override laid over its own', () => {
+  it('settling from a given pose glides under an override laid over its own, which shows until it lets go', () => {
     const { animator, frame, scene, a, where } = setup();
     const reflow = createReflowTransition(scene, animator(), TWEEN);
     act(() => { reflow.glide(a, at(100)); });
@@ -282,14 +282,30 @@ describe('createReflowTransition', () => {
     scene.overrides.set(a, over);
     act(() => { reflow.settle(a, { from: at(300) }); });
     frame(100);
-    expect(where(a).x).toBeCloseTo(150);
-    frame(150);
-    // Its own ply gone, the node shows the one the other writer still holds.
-    expect(scene.overrides.has(a, over)).toBe(true);
     expect(where(a).x).toBe(300);
     scene.overrides.clear(a, over);
+    expect(where(a).x).toBeCloseTo(150);
+    frame(150);
     expect(where(a).x).toBe(0);
     expect(scene.overrides.has(a)).toBe(false);
+  });
+
+  it('leaves a resize\'s preview over its glide when it retargets or settles mid-resize', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.glide(a, at(100)); });
+    frame(0);
+    frame(50);
+    const resize = scene.overrides.hold();
+    resize.set([[a, { x: 40, y: 0, width: 30, height: 30 }]]);
+    act(() => { reflow.glide(a, at(200)); });
+    expect(where(a)).toEqual({ x: 40, y: 0, width: 30, height: 30 });
+    act(() => { reflow.settle(a); });
+    frame(75);
+    expect(where(a)).toEqual({ x: 40, y: 0, width: 30, height: 30 });
+    resize.drop();
+    expect(scene.overrides.has(a)).toBe(true);
+    expect(where(a)).not.toEqual({ x: 40, y: 0, width: 30, height: 30 });
   });
 
   it('settling from the document pose itself leaves nothing behind', () => {

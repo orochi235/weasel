@@ -42,6 +42,7 @@ export function lensApiFixture(): LensActionApi<string> & {
       hold ??= scene.overrides.hold();
       hold.set([[`${lensId}:reticle` as never, pose]]);
     },
+    unfollow: () => hold?.drop(),
     sourceAvailable: (kind: string) => (kind === 'pixels' ? PIXELS_MISSING : true) as true | string,
     openCompareMenu: vi.fn(),
   };

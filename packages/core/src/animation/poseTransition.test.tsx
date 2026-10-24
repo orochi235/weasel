@@ -46,6 +46,23 @@ const batchAdapter = (scene: ReturnType<typeof setup>['scene']) => ({
 });
 
 describe('bindPoseTransition', () => {
+  it('glides a node another writer shows only the data of', () => {
+    const { scene, frame, where } = setup();
+    scene.overrides.set(A, { data: (stored: object) => ({ ...stored, draft: true }) });
+    act(() => { scene.setPose(A, at(100)); });
+    expect(where().x).toBe(0);
+    frame(0);
+    frame(50);
+    expect(where().x).toBeCloseTo(50);
+  });
+
+  it('leaves a node another writer poses to that writer', () => {
+    const { scene, where } = setup();
+    scene.overrides.set(A, { pose: at(300) });
+    act(() => { scene.setPose(A, at(100)); });
+    expect(where().x).toBe(300);
+  });
+
   it("glides a bare setPose from the pose it left, and lets go once there", () => {
     const { scene, transition, frame, where } = setup();
     act(() => { scene.setPose(A, at(100)); });

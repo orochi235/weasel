@@ -33,17 +33,16 @@ export function moveGestureAdapter<TPose>(
       for (const [id, pose] of poses) {
         const nodeId = asNodeId(id);
         const mine = previews.get(id);
-        const installed = mine !== undefined && overrides.has(nodeId, mine);
         if (pose === null) {
           previews.delete(id);
-          if (installed) overrides.clear(nodeId, mine);
-        } else if (installed) {
-          mine.pose = pose;
-        } else {
-          const entry = { pose };
-          previews.set(id, entry);
-          overrides.set(nodeId, entry);
+          if (mine !== undefined) overrides.clear(nodeId, mine);
+          continue;
         }
+        const entry = mine ?? { pose };
+        entry.pose = pose;
+        previews.set(id, entry);
+        // Back where it stood if the table dropped it: the node went and came back.
+        if (!overrides.has(nodeId, entry)) overrides.set(nodeId, entry);
       }
       overrides.commit();
     },

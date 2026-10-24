@@ -128,6 +128,7 @@ export function createApi(
       hold ??= scene.overrides.hold();
       hold.set([[`${lensId}:reticle` as never, pose]]);
     },
+    unfollow: () => hold?.drop(),
     sourceAvailable: (kind: LensSourceKind) => refs.sources.current[kind]?.status() ?? 'not provided',
     openCompareMenu: (lensId) => refs.compare?.current?.(lensId),
   };

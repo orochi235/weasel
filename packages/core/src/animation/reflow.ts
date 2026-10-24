@@ -175,10 +175,7 @@ function makeGlides<TPose>(
     glides.delete(id);
     animator.cancelKey(keyFor(id));
     const nid = id as NodeId;
-    if (scene.overrides.has(nid, g.entry)) {
-      scene.overrides.clear(nid, g.entry);
-      scene.overrides.commit();
-    }
+    scene.overrides.clear(nid, g.entry);
     unsubscribeIfIdle();
   };
 
@@ -202,7 +199,7 @@ function makeGlides<TPose>(
   };
 
   // The glide for `id`, created if absent, starting from `from` when given,
-  // and published over whatever override is showing the node.
+  // and installed as a ply if it is not one: its place among other writers' is left alone.
   const claim = (
     id: string,
     node: PosedNode<TPose>,
@@ -216,7 +213,7 @@ function makeGlides<TPose>(
       g.slot = from;
       g.entry.pose = from;
     }
-    if (scene.overrides.get(id as NodeId) !== g.entry) scene.overrides.set(id as NodeId, g.entry);
+    if (!scene.overrides.has(id as NodeId, g.entry)) scene.overrides.set(id as NodeId, g.entry);
     return g;
   };
 
