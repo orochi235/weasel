@@ -95,7 +95,7 @@ export function A11yPanel() {
   return (
     <div className="fg-a11y">
       <div className="fg-a11y__controls">
-        <Button size="sm" variant="secondary" onClick={rerun} disabled={!audit || running}>
+        <Button size="sm" onClick={rerun} disabled={!audit || running}>
           {running ? 'Checking…' : 'Re-check'}
         </Button>
       </div>

@@ -37,7 +37,7 @@ export function hiddenAttrs(marked: boolean): Record<string, string | undefined>
  */
 export function HiddenBadge({ lead = false, gapped = false }: { lead?: boolean; gapped?: boolean }) {
   const badge = (
-    <Badge size="xs" status="muted" variant="outline" className={[s.badge, lead && s.lead, gapped && s.gapped].filter(Boolean).join(' ')}>
+    <Badge size="xs" emphasis="low" variant="outline" className={[s.badge, lead && s.lead, gapped && s.gapped].filter(Boolean).join(' ')}>
       hidden
     </Badge>
   );

@@ -275,7 +275,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
         <DetailList>
           {readOnly.map(([k, v]) => (
             <DetailRow key={k} label={k}>
-              <Code size="xs" status="muted">{containsCode(v) && v !== STUB ? `${KEEP} (code)` : printValue(v).replace(/\s*\n\s*/g, ' ')}</Code>
+              <Code size="xs" emphasis="low">{containsCode(v) && v !== STUB ? `${KEEP} (code)` : printValue(v).replace(/\s*\n\s*/g, ' ')}</Code>
             </DetailRow>
           ))}
         </DetailList>

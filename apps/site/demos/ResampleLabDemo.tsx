@@ -47,8 +47,8 @@ function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   useEffect(() => { resample.input(params); }, [resample, params]);
   const bar = (
     <>
-      <Button variant="primary" size="sm" onClick={() => resample.commit()}>Apply</Button>
-      <Button variant="secondary" size="sm" onClick={() => resample.cancel()}>Cancel</Button>
+      <Button stance="confirm" size="sm" onClick={() => resample.commit()}>Apply</Button>
+      <Button size="sm" onClick={() => resample.cancel()}>Cancel</Button>
     </>
   );
   return (

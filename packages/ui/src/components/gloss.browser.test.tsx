@@ -14,8 +14,8 @@ function Controls({ gloss }: { gloss?: number }) {
   return (
     // The token is the theme's; set here as a consumer or a theme would set it on a subtree.
     <div style={gloss === undefined ? undefined : { ['--wzl-gloss' as string]: gloss }}>
-      <Button variant="primary">Save</Button>
-      <Button variant="secondary">Cancel</Button>
+      <Button stance="confirm">Save</Button>
+      <Button>Cancel</Button>
       <ToggleBar
         ariaLabel="View"
         items={[

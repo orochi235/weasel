@@ -1,6 +1,6 @@
 .code {
-  --code-status-fg: var(--wzl-fg);
-  /* A peer tone or a stance's accent paints over the status. */
+  --code-status-fg: var(--wzl-emphasis-fg, var(--wzl-fg));
+  /* A tint or a stance's accent paints over the grade and emphasis. */
   --code-fg: var(--_s-accent, var(--code-status-fg));
   display: inline;
   padding: 0 var(--wzl-space-2);
@@ -16,11 +16,7 @@
   box-decoration-break: clone;
 }
 
-.code[data-status='muted']   { --code-status-fg: var(--wzl-fg-muted); }
-.code[data-status='accent']  { --code-status-fg: var(--wzl-accent-fg); }
-.code[data-status='success'] { --code-status-fg: var(--wzl-success); }
-.code[data-status='warn']    { --code-status-fg: var(--wzl-warning); }
-.code[data-status='danger']  { --code-status-fg: var(--wzl-danger); }
+.code[data-grade] { --code-status-fg: var(--wzl-grade); }
 
 .code[data-variant='plain'] {
   padding: 0;

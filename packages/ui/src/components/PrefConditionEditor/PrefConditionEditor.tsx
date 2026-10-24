@@ -80,7 +80,7 @@ export function PrefConditionEditor({ value, onChange, schema, over, exclude = N
     return (
       <div className={classes} role="group" aria-label={ariaLabel}>
         <div className={s.row} data-invalid>
-          <Code size="xs" status="muted" className={s.text}>{JSON.stringify(value) ?? String(value)}</Code>
+          <Code size="xs" emphasis="low" className={s.text}>{JSON.stringify(value) ?? String(value)}</Code>
           <Button size="sm" onClick={() => onChange(undefined)}>Remove</Button>
           {checkPrefCondition(value, schema, site, over).map((p, i) => <p key={i} className={s.problem}>{p.problem}</p>)}
         </div>

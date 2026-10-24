@@ -1,21 +1,16 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
-import type { BadgeStatus } from '../types';
+import { lookProps } from '../looks';
 import { Field } from './ParamControl';
 import type { LabSnapshot } from './snapshot';
 import { effectSpecs } from './transitions';
 import controls from './controls.stories.module.css';
 import s from './ComposeLab.stories.module.css';
 
-/** The `style` that feeds a badge its `custom` status color. */
-export function customEdge(status: BadgeStatus, color: string): CSSProperties | undefined {
-  return status === 'custom' ? ({ ['--badge-edge' as never]: color }) : undefined;
-}
-
 type Shown = Pick<
   LabSnapshot,
-  | 'base' | 'baseParams' | 'labEffects' | 'status' | 'customColor' | 'variant' | 'bloat' | 'size' | 'label'
+  | 'base' | 'baseParams' | 'labEffects' | 'look' | 'tint' | 'variant' | 'bloat' | 'size' | 'label'
   | 'crawlOn' | 'crawlSpeed' | 'labelX' | 'labelY' | 'zoom' | 'padTop' | 'padRight' | 'padBottom' | 'padLeft'
   | 'fontFamily' | 'fontSizeDelta' | 'bold' | 'italic' | 'caps'
 >;
@@ -33,7 +28,7 @@ function labelStyle(lab: Shown): CSSProperties {
 
 /** The lab's badge, scaled by `zoom` inside a box that grows to hold the scaled size, and the zoom slider under it. */
 export function Preview({ lab, onZoom }: { lab: Shown; onZoom: (zoom: number) => void }) {
-  const { base, baseParams, labEffects, variant, status, bloat, label, zoom } = lab;
+  const { base, baseParams, labEffects, variant, look, bloat, label, zoom } = lab;
   const scaledRef = useRef<HTMLDivElement>(null);
   const [natural, setNatural] = useState({ w: 0, h: 0 });
   useLayoutEffect(() => {
@@ -48,7 +43,7 @@ export function Preview({ lab, onZoom }: { lab: Shown; onZoom: (zoom: number) =>
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [base, baseParams, labEffects, variant, status, bloat, label]);
+  }, [base, baseParams, labEffects, variant, look, bloat, label]);
 
   const box: CSSProperties = {
     width: natural.w > 0 ? natural.w * zoom : undefined,
@@ -64,13 +59,12 @@ export function Preview({ lab, onZoom }: { lab: Shown; onZoom: (zoom: number) =>
               base={base}
               baseParams={baseParams as never}
               effects={effectSpecs(labEffects)}
-              status={status}
+              {...lookProps(look, lab.tint)}
               variant={variant}
               bloat={bloat}
               size={lab.size}
               padding={`${lab.padTop}px ${lab.padRight}px ${lab.padBottom}px ${lab.padLeft}px`}
               crawl={lab.crawlOn ? lab.crawlSpeed : undefined}
-              style={customEdge(status, lab.customColor)}
             >
               <span className={s.labelText} style={labelStyle(lab)}>{label}</span>
             </Badge>

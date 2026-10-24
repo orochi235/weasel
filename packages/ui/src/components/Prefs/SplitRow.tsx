@@ -46,7 +46,7 @@ export function splitRowState(
 export function SplitMarks({ levels }: { levels: readonly SplitLevel[] }) {
   return levels.map((level) => (
     <span key={level.by} className={c.mark} title={`${level.name}: ${level.current}`}>
-      <Badge size="xs" status="accent" variant="outline">{level.current}</Badge>
+      <Badge size="xs" emphasis="high" variant="outline">{level.current}</Badge>
     </span>
   ));
 }

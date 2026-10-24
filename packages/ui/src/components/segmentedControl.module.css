@@ -92,7 +92,7 @@
   color: var(--wzl-fg);
 }
 
-/* Selected segment. Mirrors Button.variant_primary. */
+/* Selected segment. Mirrors a confirm Button. */
 .segmentSelected {
   --_flat-fill: color-mix(in srgb, var(--wzl-accent) calc((1 - var(--wzl-gloss)) * 100%), transparent);
   background: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(

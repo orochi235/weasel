@@ -4,7 +4,7 @@ import { Badge } from '@weasel-js/ui/components/Badge';
 /** Marks a story tagged `lab`: opening it opens a whole screen, not a specimen. */
 export function LabBadge({ className }: { className?: string }) {
   return (
-    <Badge status="info" variant="subtle" size="sm" {...(className ? { className } : {})}>
+    <Badge grade="info" variant="subtle" size="sm" {...(className ? { className } : {})}>
       Lab
     </Badge>
   );

@@ -123,7 +123,7 @@ export function ConditionRow({ name, row, scope, onChange, onRemove }: Condition
           options={comparisonsFor(found.leaf).map((c) => ({ value: c, label: COMPARISON_LABEL[c] }))}
           onSelectionChange={(next) => write(withComparison(row, found.leaf, next as Comparison))} />
       )}
-      {!found && <Code size="xs" status="muted" className={s.text}>{row.negated ? `not ${printOperators(test)}` : printOperators(test)}</Code>}
+      {!found && <Code size="xs" emphasis="low" className={s.text}>{row.negated ? `not ${printOperators(test)}` : printOperators(test)}</Code>}
       {!clauses && remove}
       {problems.map((p, i) => <p key={i} className={s.problem}>{p.problem}</p>)}
     </div>

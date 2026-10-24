@@ -43,7 +43,7 @@ export const CustomOptions: Story = {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <ThemeSwitcher value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" />
         <ThemeSwitcher value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" size="md" />
-        <ThemeSwitcher value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" variant="secondary" />
+        <ThemeSwitcher value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" variant="solid" />
       </div>
     );
   },

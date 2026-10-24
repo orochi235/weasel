@@ -82,13 +82,13 @@ describe('DetailList', () => {
   });
 });
 
-describe('DetailRow status and absence', () => {
-  it('draws a decorative dot before the value for a status, and names the status on the row', () => {
+describe('DetailRow grade and absence', () => {
+  it('draws a decorative dot before the value for a grade, and names the grade on the row', () => {
     const { container } = render(
-      <DetailList><DetailRow label="lock" status="success">locked</DetailRow></DetailList>,
+      <DetailList><DetailRow label="lock" grade="success">locked</DetailRow></DetailList>,
     );
     const row = container.querySelector('dl > div')!;
-    expect(row.getAttribute('data-status')).toBe('success');
+    expect(row.getAttribute('data-grade')).toBe('success');
     const dd = row.querySelector('dd')!;
     const dot = dd.firstElementChild!;
     expect(dot.getAttribute('aria-hidden')).toBe('true');
@@ -96,9 +96,9 @@ describe('DetailRow status and absence', () => {
     expect(dd.textContent).toBe('locked');
   });
 
-  it('draws no dot without a status', () => {
+  it('draws no dot without a grade', () => {
     const { container } = render(<DetailList><DetailRow label="a">b</DetailRow></DetailList>);
-    expect(container.querySelector('dl > div')!.hasAttribute('data-status')).toBe(false);
+    expect(container.querySelector('dl > div')!.hasAttribute('data-grade')).toBe(false);
     expect(container.querySelector('[aria-hidden]')).toBeNull();
   });
 
@@ -121,7 +121,7 @@ describe('DetailRow status and absence', () => {
   });
 
   it("keeps an absent row's status dot, so the row does not shift when the value arrives", () => {
-    const { container } = render(<DetailList><DetailRow label="a" status="danger" /></DetailList>);
+    const { container } = render(<DetailList><DetailRow label="a" grade="danger" /></DetailList>);
     expect(container.querySelector('dd > [aria-hidden]')).not.toBeNull();
   });
 
@@ -178,10 +178,8 @@ describe('DetailList styles', () => {
     expect(body).toMatch(/white-space:\s*pre/);
   });
 
-  it('paints each status dot from its semantic token', () => {
-    expect(rule(".row[data-status='success'] .dot")).toMatch(/var\(--wzl-success\)/);
-    expect(rule(".row[data-status='warn'] .dot")).toMatch(/var\(--wzl-warning\)/);
-    expect(rule(".row[data-status='danger'] .dot")).toMatch(/var\(--wzl-danger\)/);
+  it('paints a grade dot from the row\'s --wzl-grade', () => {
+    expect(rule('.row[data-grade] .dot')).toMatch(/var\(--wzl-grade\)/);
   });
 
   it('mutes the placeholder', () => {

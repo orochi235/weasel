@@ -19,7 +19,7 @@ type Story = StoryObj<typeof DetailList>;
 const rows = (
   <>
     <DetailRow label="id"><Code>select.collapseDeferred</Code></DetailRow>
-    <DetailRow label="kind"><Badge status="accent" size="xs">action</Badge></DetailRow>
+    <DetailRow label="kind"><Badge emphasis="high" size="xs">action</Badge></DetailRow>
     <DetailRow label="shortcut"><KeySequence keys={[{ label: '⌘' }, { label: '⇧' }, { label: 'G' }]} variant="inverse" /></DetailRow>
     <DetailRow label="requires">
       {['selection', 'scene', 'poseDescriptor'].map((d) => <Code key={d}>{d}</Code>)}
@@ -49,15 +49,15 @@ export const Block: Story = {
 
 /** `values="figures"` right-aligns each value in tabular numerals with spaces
  *  kept; a figure space (U+2007) pads a short number onto the decimal point.
- *  A status dot repeats what the value says, and an absent value holds its row
+ *  A grade dot repeats what the value says, and an absent value holds its row
  *  with a dash. */
 export const Figures: Story = {
   render: (args) => (
     <div className={s.frame}>
       <DetailList {...args} values="figures">
-        <DetailRow label="Lock margin" status="success">locked +47.9°</DetailRow>
+        <DetailRow label="Lock margin" grade="success">locked +47.9°</DetailRow>
         <DetailRow label="Score">{' 0.145'}</DetailRow>
-        <DetailRow label="Error" status="danger">over 12.345</DetailRow>
+        <DetailRow label="Error" grade="danger">over 12.345</DetailRow>
         <DetailRow label="Cursor" />
       </DetailList>
     </div>

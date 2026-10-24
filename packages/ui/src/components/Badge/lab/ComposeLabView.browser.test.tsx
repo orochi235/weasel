@@ -21,7 +21,7 @@ test.each([480, 360, 720])('at %ipx the settings panels hold their controls and 
   localStorage.clear();
   const { container } = render(
     <div style={{ width }}>
-      <ComposeLabView status="accent" variant="solid" label="COMPOSE" />
+      <ComposeLabView look="high" variant="solid" label="COMPOSE" />
     </div>,
   );
   const panels = ['Appearance', 'Type & padding']

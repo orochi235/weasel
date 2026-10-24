@@ -6,15 +6,15 @@ export interface Library {
   /** A stretch of path every story file of the library has, with forward slashes: `/packages/ui/`. */
   path: string;
   label: string;
-  /** The tone of the library's badge, as a `<Badge>` takes one. Default: the badge's own muted tone. */
-  tone?: AppearanceProps['tint'];
+  /** The tint of the library's badge, as a `<Badge>` takes one. Default: the badge's own low emphasis. */
+  tint?: AppearanceProps['tint'];
 }
 
 /** A project's libraries, as the tree's package filter, the index page header, and Get Info ask about them. */
 export interface Libraries {
   /** The label of the first library whose `path` the story's file holds, else its title's first segment. */
   of(entry: { file: string; title: string }): string;
-  toneOf(label: string): AppearanceProps['tint'];
+  tintOf(label: string): AppearanceProps['tint'];
 }
 
 export function librariesFrom(table: readonly Library[] = []): Libraries {
@@ -23,7 +23,7 @@ export function librariesFrom(table: readonly Library[] = []): Libraries {
       const file = entry.file.replaceAll('\\', '/');
       return table.find((library) => file.includes(library.path))?.label ?? entry.title.split('/')[0] ?? entry.title;
     },
-    toneOf: (label) => table.find((library) => library.label === label)?.tone,
+    tintOf: (label) => table.find((library) => library.label === label)?.tint,
   };
 }
 

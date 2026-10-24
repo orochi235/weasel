@@ -1,23 +1,23 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
-import { Button, type ButtonVariant, type ButtonSize, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
+import { Button, type ButtonBase, type ButtonVariant, type ButtonSize, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
 import { ToggleBar as KitToggleBar } from '@weasel-js/ui/components/ToggleBar';
-import { BADGE_STATUS_ICONS } from '@weasel-js/ui/components/Badge';
+import { BADGE_EMPHASIS_ICONS, BADGE_GRADE_ICONS } from '@weasel-js/ui/components/Badge';
+import { EMPHASES, GRADES } from '@weasel-js/theme';
+import { BADGE_LOOKS, lookProps } from '../Badge/looks';
 
 const meta: Meta<typeof Button> = {
   title: 'ui/Foundations/Button',
   component: Button,
   args: {
     children: 'Save',
-    variant: 'secondary',
+    variant: 'solid',
     size: 'md',
   },
   argTypes: {
-    status: {
-      control: { type: 'inline-radio', icons: BADGE_STATUS_ICONS },
-      options: ['accent', 'neutral', 'muted', 'success', 'warn', 'danger'],
-    },
-    variant: { control: { type: 'inline-radio', icons: BUTTON_VARIANT_ICONS }, options: ['primary', 'secondary', 'ghost', 'link'] },
+    grade: { control: { type: 'inline-radio', icons: BADGE_GRADE_ICONS }, options: [undefined, ...GRADES] },
+    emphasis: { control: { type: 'inline-radio', icons: BADGE_EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
+    variant: { control: { type: 'inline-radio', icons: BUTTON_VARIANT_ICONS }, options: ['solid', 'ghost', 'link'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
@@ -47,16 +47,16 @@ const TrashIcon = (): ReactElement => (
   </svg>
 );
 
-export const Primary: Story = { args: { variant: 'primary' } };
-export const Secondary: Story = { args: { variant: 'secondary' } };
+export const Confirm: Story = { args: { stance: 'confirm' } };
+export const Solid: Story = { args: { variant: 'solid' } };
 export const Ghost: Story = { args: { variant: 'ghost' } };
 
 /** `--wzl-gloss` at 1, the glass a theme opts into. The default theme sets 0 and draws these flat. */
 export const Glass: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', ['--wzl-gloss' as string]: 1 }}>
-      <Button variant="primary">Save</Button>
-      <Button variant="secondary">Cancel</Button>
+      <Button stance="confirm">Save</Button>
+      <Button>Cancel</Button>
       <KitToggleBar
         ariaLabel="View"
         items={[
@@ -82,36 +82,36 @@ export const Link: Story = {
   ),
 };
 
-/** `status` recolors a `link` from the same set as `Code`: accent unless told
+/** `grade` recolors a `link`, and `emphasis` mutes or sharpens it: accent unless told
  *  otherwise. */
-export const LinkStatuses: Story = {
+export const LinkGrades: Story = {
   render: () => (
     <p style={{ maxWidth: 360, lineHeight: 1.8 }}>
-      {(['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] as const).map((status) => (
-        <span key={status}>
-          <Button variant="link" status={status}>{status}</Button>{' '}
+      {BADGE_LOOKS.map((look) => (
+        <span key={look}>
+          <Button variant="link" {...lookProps(look)}>{look}</Button>{' '}
         </span>
       ))}
     </p>
   ),
 };
 
-/** `tone` says which of its peers a button is: a primary takes it as its
+/** `tint` says which of its peers a button is: a confirming button takes it as its
  *  accent, a link as its text color. */
 export const PeerTones: Story = {
   render: () => (
     <div>
       <p>
-        {[0, 1, 2, 3].map((tone) => (
-          <span key={tone}>
-            <Button variant="primary" tone={tone}>{`Peer ${tone}`}</Button>{' '}
+        {[0, 1, 2, 3].map((tint) => (
+          <span key={tint}>
+            <Button stance="confirm" tint={tint}>{`Peer ${tint}`}</Button>{' '}
           </span>
         ))}
       </p>
       <p>
-        {[0, 1, 2, 3].map((tone) => (
-          <span key={tone}>
-            <Button variant="link" tone={tone}>{`peer ${tone}`}</Button>{' '}
+        {[0, 1, 2, 3].map((tint) => (
+          <span key={tint}>
+            <Button variant="link" tint={tint}>{`peer ${tint}`}</Button>{' '}
           </span>
         ))}
       </p>
@@ -122,8 +122,8 @@ export const PeerTones: Story = {
 export const Sizes: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <Button size="sm" variant="primary">Small</Button>
-      <Button size="md" variant="primary">Medium</Button>
+      <Button size="sm" stance="confirm">Small</Button>
+      <Button size="md" stance="confirm">Medium</Button>
     </div>
   ),
 };
@@ -131,8 +131,8 @@ export const Sizes: Story = {
 export const WithIcons: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-      <Button variant="primary" leadingIcon={<PlusIcon />}>Add layer</Button>
-      <Button variant="secondary" trailingIcon={<ChevronIcon />}>Next</Button>
+      <Button stance="confirm" leadingIcon={<PlusIcon />}>Add layer</Button>
+      <Button trailingIcon={<ChevronIcon />}>Next</Button>
       <Button variant="ghost" leadingIcon={<TrashIcon />} trailingIcon={<ChevronIcon />}>
         Delete
       </Button>
@@ -143,10 +143,10 @@ export const WithIcons: Story = {
 export const IconOnly: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <Button iconOnly ariaLabel="Add" variant="primary"><PlusIcon /></Button>
-      <Button iconOnly ariaLabel="Add" variant="secondary"><PlusIcon /></Button>
+      <Button iconOnly ariaLabel="Add" stance="confirm"><PlusIcon /></Button>
+      <Button iconOnly ariaLabel="Add"><PlusIcon /></Button>
       <Button iconOnly ariaLabel="Add" variant="ghost"><PlusIcon /></Button>
-      <Button iconOnly ariaLabel="Delete" variant="secondary" size="sm"><TrashIcon /></Button>
+      <Button iconOnly ariaLabel="Delete" size="sm"><TrashIcon /></Button>
     </div>
   ),
 };
@@ -165,21 +165,21 @@ export const Tooltips: Story = {
 };
 
 export const Loading: Story = {
-  args: { variant: 'primary', loading: true, children: 'Saving…' },
+  args: { stance: 'confirm', loading: true, children: 'Saving…' },
 };
 
 export const Disabled: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <Button variant="primary" disabled>Primary</Button>
-      <Button variant="secondary" disabled>Secondary</Button>
+      <Button stance="confirm" disabled>Confirm</Button>
+      <Button disabled>Solid</Button>
       <Button variant="ghost" disabled>Ghost</Button>
     </div>
   ),
 };
 
 export const FullWidth: Story = {
-  args: { variant: 'primary', fullWidth: true, children: 'Submit' },
+  args: { stance: 'confirm', fullWidth: true, children: 'Submit' },
   render: (args) => (
     <div style={{ width: 320 }}>
       <Button {...args} />
@@ -187,7 +187,11 @@ export const FullWidth: Story = {
   ),
 };
 
-const VARIANTS: ButtonVariant[] = ['primary', 'secondary', 'ghost'];
+const VARIANTS: ButtonVariant[] = ['solid', 'ghost'];
+/** The lab's weight picker: `confirm` is a solid button in the confirm stance. */
+type LabVariant = 'confirm' | 'solid' | 'ghost';
+const labVariant = (v: LabVariant): Pick<ButtonBase, 'variant' | 'stance'> =>
+  v === 'confirm' ? { variant: 'solid', stance: 'confirm' } : { variant: v };
 const SIZES: ButtonSize[] = ['sm', 'md'];
 
 export const Matrix: Story = {
@@ -252,7 +256,7 @@ interface LabParams {
   // Lab UX
   zoom: number;
   backdrop: 'glass' | 'panel' | 'photo' | 'gradient' | 'grid';
-  variant: ButtonVariant;
+  variant: LabVariant;
   target: 'button' | 'togglebar';
 }
 
@@ -286,7 +290,7 @@ const LAB_DEFAULTS: LabParams = {
   textInsetDist: 1,
   zoom: 2,
   backdrop: 'photo',
-  variant: 'primary',
+  variant: 'confirm',
   target: 'togglebar',
 };
 
@@ -495,7 +499,7 @@ function ButtonLabView(): ReactElement {
       );
     }
     return (
-      <Button variant={p.variant} style={combined}>
+      <Button {...labVariant(p.variant)} style={combined}>
         {p.label}
       </Button>
     );
@@ -538,9 +542,9 @@ function ButtonLabView(): ReactElement {
           <span style={ctrlLabelStyle}>states</span>
           {p.target === 'button' ? (
             <>
-              <Button variant={p.variant} style={style as never}>{p.label}</Button>
-              <Button variant={p.variant} style={{ ...(style as CSSProperties), filter: 'brightness(1.08) saturate(1.06)' }}>{p.label}</Button>
-              <Button variant={p.variant} disabled style={style as never}>{p.label}</Button>
+              <Button {...labVariant(p.variant)} style={style as never}>{p.label}</Button>
+              <Button {...labVariant(p.variant)} style={{ ...(style as CSSProperties), filter: 'brightness(1.08) saturate(1.06)' }}>{p.label}</Button>
+              <Button {...labVariant(p.variant)} disabled style={style as never}>{p.label}</Button>
             </>
           ) : (
             wrapTarget()
@@ -592,9 +596,9 @@ function ButtonLabView(): ReactElement {
           </label>
           <label style={{ display: 'grid', gridTemplateColumns: '100px 1fr', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabelStyle}>variant</span>
-            <ToggleBar<ButtonVariant>
+            <ToggleBar<LabVariant>
               value={p.variant}
-              options={['primary', 'secondary', 'ghost'] as const}
+              options={['confirm', 'solid', 'ghost'] as const}
               onChange={(v) => set('variant', v)}
             />
           </label>

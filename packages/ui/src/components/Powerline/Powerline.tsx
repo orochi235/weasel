@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Badge } from '../Badge/Badge';
-import type { BadgeSize, BadgeStatus, BadgeVariant } from '../Badge/types';
-import type { StanceProps } from '../stance';
+import type { BadgeSize, BadgeVariant } from '../Badge/types';
+import type { AppearanceProps } from '../appearance';
 import type { EdgeCap } from '../Badge/bases/edgeProfiles';
 import s from './Powerline.module.css';
 
@@ -9,11 +9,10 @@ import s from './Powerline.module.css';
  * One segment of a {@link Powerline}. Giving it `onClick` or `href` makes it
  * interactive, the same way it does on a `Badge`.
  */
-export interface PowerlineSegment extends StanceProps {
+export interface PowerlineSegment extends AppearanceProps {
   text: ReactNode;
   /** Cap on this segment's right edge. Next segment's left edge adopts the same profile. */
   endCap?: EdgeCap;
-  status?: BadgeStatus;
   variant?: BadgeVariant;
   size?: BadgeSize;
   onClick?: () => void;
@@ -71,9 +70,10 @@ export function Powerline({
             key={i}
             base="powerline"
             baseParams={{ leftEdge, rightEdge, ...(depth !== undefined && { depth }) }}
-            status={seg.status}
             stance={seg.stance}
-            tone={seg.tone}
+            grade={seg.grade}
+            emphasis={seg.emphasis}
+            tint={seg.tint}
             variant={seg.variant ?? variant}
             size={seg.size ?? size}
             onClick={seg.onClick}

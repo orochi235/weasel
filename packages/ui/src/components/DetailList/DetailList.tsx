@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext, useId } from 'react';
 import s from './DetailList.module.css';
+import { type Grade, useAppearance } from '../appearance';
 
 /** Whether a row's label sits beside its value or above it. */
 export type DetailListLayout = 'inline' | 'block';
@@ -14,10 +15,6 @@ export type DetailListLayout = 'inline' | 'block';
 export type DetailListValues = 'text' | 'figures';
 
 const ListValues = createContext<DetailListValues>('text');
-
-/** The state a row's status dot reports, painted from `--wzl-success`,
- *  `--wzl-warning` or `--wzl-danger`. */
-export type DetailRowStatus = 'success' | 'warn' | 'danger';
 
 /** Props for {@link DetailList}. */
 export interface DetailListProps {
@@ -48,11 +45,11 @@ export interface DetailRowProps {
   /** Shown while there is no value. An en dash by default. */
   placeholder?: ReactNode;
   /**
-   * Draws a dot in the status color before the value. The dot is hidden from
+   * Draws a dot in the grade's color before the value. The dot is hidden from
    * assistive technology and color is never the only signal, so the value
    * itself has to say the same thing — "locked", not just a green dot.
    */
-  status?: DetailRowStatus;
+  grade?: Grade;
   /** Sets this row's value as `text` or `figures`, whatever the list's
    *  `values` says — a sentence among figures, or one figure among text. */
   values?: DetailListValues;
@@ -87,15 +84,16 @@ export function DetailList({ children, title, layout = 'inline', values = 'text'
 }
 
 /** One label and its value in a {@link DetailList}. */
-export function DetailRow({ label, children, placeholder = '–', status, values, className }: DetailRowProps) {
+export function DetailRow({ label, children, placeholder = '–', grade, values, className }: DetailRowProps) {
   const empty = children == null;
   const listValues = useContext(ListValues);
   const figures = (values ?? listValues) === 'figures';
+  const appearance = useAppearance({ grade });
   return (
-    <div className={className ? `${s.row} ${className}` : s.row} data-status={status} data-values={values}>
+    <div className={className ? `${s.row} ${className}` : s.row} {...appearance} data-values={values}>
       <dt className={s.rowLabel}>{label}</dt>
       <dd className={figures ? `${s.value} ${s.figures}` : s.value} data-empty={empty || undefined}>
-        {status && <span className={s.dot} aria-hidden="true" />}
+        {grade && <span className={s.dot} aria-hidden="true" />}
         {empty ? placeholder : children}
       </dd>
     </div>

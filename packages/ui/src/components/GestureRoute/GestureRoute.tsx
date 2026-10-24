@@ -39,8 +39,8 @@ export function gestureRouteSegments(route: string): PowerlineSegment[] {
 
   const segments: PowerlineSegment[] = [];
   for (const p of parsed.phases) {
-    if (p.channel !== '&') segments.push({ text: p.channel, status: 'neutral', variant: 'subtle' });
-    segments.push({ text: p.phase, status: 'accent', variant: 'subtle' });
+    if (p.channel !== '&') segments.push({ text: p.channel, variant: 'subtle' });
+    segments.push({ text: p.phase, emphasis: 'high', variant: 'subtle' });
   }
   segments.push({
     text: hasArg ? (
@@ -56,18 +56,18 @@ export function gestureRouteSegments(route: string): PowerlineSegment[] {
         </>
       )
     ) : parsed.gesture,
-    status: 'info',
+    grade: 'info',
     variant: 'outline',
   });
   if (modKeys) {
     // `+` marks a required modifier and `?` an optional one, so `+mod ?shift` reads `+⌘?⇧`.
     const text = modKeys.map((k) => `${k.optional ? '?' : '+'}${k.label}`).join('');
-    segments.push({ text, status: 'muted', variant: 'solid' });
+    segments.push({ text, emphasis: 'low', variant: 'solid' });
   }
   if (hasTarget) {
     segments.push({
       text: parsed.target,
-      status: 'muted',
+      emphasis: 'low',
       variant: targetIsWildcard ? 'subtle' : 'outline',
     });
   }

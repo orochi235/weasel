@@ -120,13 +120,13 @@
 
 /* ---------- Variants ---------- */
 
-/* Primary: tinted aqua glass — body uses --wzl-accent. The upper / equator
+/* Confirm stance on a solid button: tinted aqua glass — body uses --wzl-accent. The upper / equator
    / lower stops are positioned around --btn-equator so dragging the equator
    shifts the entire transition zone as one block. */
-.variant_primary {
-  background: var(--wzl-button-primary-surface, var(--btn-glass));
+.variant_solid[data-stance='confirm'] {
+  background: var(--wzl-button-confirm-surface, var(--btn-glass));
   text-shadow: var(--wzl-button-text-shadow, var(--btn-engraving));
-  box-shadow: var(--wzl-button-primary-bevel, var(--wzl-bevel-raised, var(--btn-relief)));
+  box-shadow: var(--wzl-button-confirm-bevel, var(--wzl-bevel-raised, var(--btn-relief)));
   --_flat-fill: color-mix(in srgb, var(--wzl-accent) var(--_flat), transparent);
   --btn-glass: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(
     180deg,
@@ -138,7 +138,7 @@
   );
   backdrop-filter: blur(calc(var(--btn-blur) * var(--wzl-gloss))) saturate(calc(1 + (var(--btn-saturate) - 1) * var(--wzl-gloss)));
   -webkit-backdrop-filter: blur(calc(var(--btn-blur) * var(--wzl-gloss))) saturate(calc(1 + (var(--btn-saturate) - 1) * var(--wzl-gloss)));
-  color: var(--wzl-button-primary-fg, var(--wzl-fg-on-accent));
+  color: var(--wzl-button-confirm-fg, var(--wzl-fg-on-accent));
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
   /* Main shadow below for legibility, then a second engraving shadow at a
@@ -157,12 +157,12 @@
     0 3px 6px rgba(0, 0, 0, calc(var(--btn-drop-far) * var(--wzl-gloss)));
 }
 
-.variant_primary:hover:not(:disabled) {
+.variant_solid[data-stance='confirm']:hover:not(:disabled) {
   filter: brightness(1.08) saturate(1.06);
 }
 
-.variant_primary:active:not(:disabled) {
-  background: var(--wzl-button-primary-pressed-surface, var(--btn-glass-pressed));
+.variant_solid[data-stance='confirm']:active:not(:disabled) {
+  background: var(--wzl-button-confirm-pressed-surface, var(--btn-glass-pressed));
   box-shadow: var(--wzl-bevel-pressed, var(--btn-relief-pressed));
   --_flat-fill: color-mix(in srgb, color-mix(in srgb, var(--wzl-accent) 85%, black) var(--_flat), transparent);
   --btn-glass-pressed: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(
@@ -177,12 +177,12 @@
     0 0 0 1px rgba(0, 0, 0, calc((var(--btn-rim) + 0.06) * var(--wzl-gloss)));
   transform: translateY(0.5px);
 }
-.variant_primary:active::before { opacity: calc(0.3 * var(--wzl-gloss)); }
+.variant_solid[data-stance='confirm']:active::before { opacity: calc(0.3 * var(--wzl-gloss)); }
 
-/* Secondary: neutral glass — drained of color. Flat, it is the raised
+/* Solid: neutral glass — drained of color. Flat, it is the raised
    surface, which needs a line around it to read as a button on a panel of
    the same surface; the line fades out as the glass's own rim fades in. */
-.variant_secondary {
+.variant_solid {
   background: var(--wzl-button-surface, var(--btn-glass));
   text-shadow: var(--wzl-button-text-shadow, var(--btn-engraving));
   box-shadow: var(--wzl-bevel-raised, var(--btn-relief));
@@ -213,9 +213,9 @@
     0 3px 6px rgba(0, 0, 0, calc(var(--btn-drop-far) * 0.89 * var(--wzl-gloss)));
 }
 
-.variant_secondary:hover:not(:disabled) { filter: brightness(1.1); }
+.variant_solid:hover:not(:disabled) { filter: brightness(1.1); }
 
-.variant_secondary:active:not(:disabled) {
+.variant_solid:active:not(:disabled) {
   background: var(--wzl-button-pressed-surface, var(--btn-glass-pressed));
   box-shadow: var(--wzl-bevel-pressed, var(--btn-relief-pressed));
   --_flat-fill: color-mix(in srgb, var(--wzl-surface-sunken) var(--_flat), transparent);
@@ -227,7 +227,7 @@
     0 0 0 1px rgba(0, 0, 0, calc(0.3 * var(--wzl-gloss)));
   transform: translateY(0.5px);
 }
-.variant_secondary:active::before { opacity: calc(0.2 * var(--wzl-gloss)); }
+.variant_solid:active::before { opacity: calc(0.2 * var(--wzl-gloss)); }
 
 /* Ghost: silhouette only — no glass body, no gloss. */
 .variant_ghost {
@@ -258,17 +258,13 @@
   line-height: inherit;
   text-align: start;
   overflow: visible;
-  /* A peer tone or a stance's accent paints over the status. */
-  color: var(--_s-accent, var(--btn-link-fg, var(--wzl-accent-fg)));
+  /* A tint or a stance's accent paints over the grade and emphasis. */
+  color: var(--_s-accent, var(--btn-link-fg));
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
-.variant_link[data-status='neutral'] { --btn-link-fg: var(--wzl-fg); }
-.variant_link[data-status='muted']   { --btn-link-fg: var(--wzl-fg-muted); }
-.variant_link[data-status='accent']  { --btn-link-fg: var(--wzl-accent-fg); }
-.variant_link[data-status='success'] { --btn-link-fg: var(--wzl-success); }
-.variant_link[data-status='warn']    { --btn-link-fg: var(--wzl-warning); }
-.variant_link[data-status='danger']  { --btn-link-fg: var(--wzl-danger); }
+.variant_link { --btn-link-fg: var(--wzl-emphasis-fg, var(--wzl-accent-fg)); }
+.variant_link[data-grade] { --btn-link-fg: var(--wzl-grade); }
 
 .variant_link::before { display: none; }
 .variant_link .label { display: inline; }
@@ -285,7 +281,7 @@
   box-shadow: var(--wzl-bevel-pressed, inset 0 1px 2px rgb(0 0 0 / 18%));
 }
 
-.variant_primary.pressed:not(:disabled) { filter: brightness(0.92); }
+.variant_solid[data-stance='confirm'].pressed:not(:disabled) { filter: brightness(0.92); }
 
 .fullWidth { width: 100%; }
 .loading .label { opacity: 0.7; }

@@ -132,7 +132,7 @@ export function IndexVariants({ story }: { story: LoadedStory }) {
 
 function GalleryBadge() {
   return (
-    <Badge status="accent" variant="subtle" size="sm">
+    <Badge emphasis="high" variant="subtle" size="sm">
       Gallery
     </Badge>
   );

@@ -305,7 +305,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
           <>
             <Button onClick={() => setConfirming(null)}>Cancel</Button>
             <Button
-              variant="primary"
+              stance="confirm"
               onClick={() => {
                 if (confirming !== null) adopt(confirming);
                 setConfirming(null);

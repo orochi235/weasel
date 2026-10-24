@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { SHAPES } from '../shapes';
 import { SHAPE_CONTROLS, defaultParamsFor } from '../shapeControls';
-import type { BadgeShape, BadgeStatus, BadgeVariant } from '../types';
+import { lookProps, type BadgeLook } from '../looks';
+import type { BadgeShape, BadgeVariant } from '../types';
 import { ParamControl } from './ParamControl';
 import type { LabParams } from './snapshot';
 import { defaultShapeParams, shapeParamsSnippet, type ShapeParamSets } from './snippets';
@@ -19,9 +20,9 @@ const CATEGORIES: { title: string; shapes: BadgeShape[] }[] = [
 const isLegacy = (shape: BadgeShape): boolean =>
   SHAPES[shape].compose === undefined && shape !== 'pill' && shape !== 'plain';
 
-function ShapeCard({ shape, status, variant, label, params, onChange }: {
+function ShapeCard({ shape, look, variant, label, params, onChange }: {
   shape: BadgeShape;
-  status: BadgeStatus;
+  look: BadgeLook;
   variant: BadgeVariant;
   label: string;
   params: LabParams;
@@ -31,7 +32,7 @@ function ShapeCard({ shape, status, variant, label, params, onChange }: {
   return (
     <div className={s.card}>
       <div className={s.sample}>
-        <Badge shape={shape} status={status} variant={variant} shapeParams={params as never}>{label}</Badge>
+        <Badge shape={shape} {...lookProps(look)} variant={variant} shapeParams={params as never}>{label}</Badge>
       </div>
       <code className={s.name}>
         {shape}
@@ -51,7 +52,7 @@ function ShapeCard({ shape, status, variant, label, params, onChange }: {
 }
 
 /** Every built-in shape with sliders for its params, and an export of the params moved off their defaults. */
-export function ShapeGallery({ status, variant, label }: { status: BadgeStatus; variant: BadgeVariant; label: string }) {
+export function ShapeGallery({ look, variant, label }: { look: BadgeLook; variant: BadgeVariant; label: string }) {
   const [allParams, setAllParams] = useState<ShapeParamSets>(defaultShapeParams);
   const [snippet, setSnippet] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -87,7 +88,7 @@ export function ShapeGallery({ status, variant, label }: { status: BadgeStatus; 
               <ShapeCard
                 key={shape}
                 shape={shape}
-                status={status}
+                look={look}
                 variant={variant}
                 label={label}
                 params={allParams[shape] ?? defaultParamsFor(shape)}

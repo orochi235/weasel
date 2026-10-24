@@ -52,10 +52,10 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
   return (
     <div className={s.history}>
       <div className={s.toolbar}>
-        <Badge size="sm" variant="subtle" status={position?.canUndo ? 'accent' : 'muted'}>
+        <Badge size="sm" variant="subtle" emphasis={position?.canUndo ? 'high' : 'low'}>
           {position?.canUndo ? 'can undo' : 'nothing to undo'}
         </Badge>
-        <Badge size="sm" variant="subtle" status={position?.canRedo ? 'accent' : 'muted'}>
+        <Badge size="sm" variant="subtle" emphasis={position?.canRedo ? 'high' : 'low'}>
           {position?.canRedo ? 'can redo' : 'nothing to redo'}
         </Badge>
         <Switch isSelected={showStack} onChange={toggleStack}>checkpoints</Switch>

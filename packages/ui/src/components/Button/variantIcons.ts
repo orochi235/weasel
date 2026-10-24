@@ -4,8 +4,7 @@ import type { ButtonVariant } from './Button';
 
 /** The glyph for each variant, for a picker that shows them. */
 export const BUTTON_VARIANT_ICONS: Readonly<Record<ButtonVariant, IconRef>> = {
-  primary: icon('variantSolid'),
-  secondary: icon('variantOutline'),
+  solid: icon('variantSolid'),
   ghost: icon('variantGhost'),
   link: icon('variantLink'),
 };

@@ -9,8 +9,8 @@
   font-size: var(--badge-font-size, var(--wzl-font-size-xs));
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  --badge-status-edge: var(--wzl-border);
-  /* A peer tone or a stance's accent paints over the status. */
+  --badge-status-edge: var(--wzl-emphasis-fg, var(--wzl-border));
+  /* A tint or a stance's accent paints over the grade and emphasis. */
   --badge-edge: var(--_s-accent, var(--badge-status-edge));
   --badge-fill: var(--wzl-surface);
   --badge-fg: var(--badge-edge);
@@ -65,15 +65,9 @@
   color: var(--badge-fg, var(--wzl-fg-muted));
 }
 
-/* Status edges double as text color in the outline/subtle variants, so they
+/* Edges double as text color in the outline/subtle variants, so they
    must be foreground-legible — hence accent-fg, not the accent fill. */
-.badge[data-status='accent']  { --badge-status-edge: var(--wzl-accent-fg); }
-.badge[data-status='info']    { --badge-status-edge: #7ab8d4; }
-.badge[data-status='success'] { --badge-status-edge: var(--wzl-success); }
-.badge[data-status='warn']    { --badge-status-edge: #d4a574; }
-.badge[data-status='danger']  { --badge-status-edge: var(--wzl-danger); }
-.badge[data-status='muted']   { --badge-status-edge: var(--wzl-fg-muted); }
-.badge[data-status='neutral'] { --badge-status-edge: var(--wzl-border); }
+.badge[data-grade] { --badge-status-edge: var(--wzl-grade); }
 
 .badge[data-variant='outline'] {
   --badge-fill: var(--wzl-surface);
@@ -90,9 +84,9 @@
   --badge-fill: color-mix(in oklab, var(--badge-edge) 14%, transparent);
   --badge-fg: var(--badge-edge);
 }
-/* Neutral's edge is a border gray that vanishes when the outline/subtle
+/* An ungraded badge's edge is a border gray that vanishes when the outline/subtle
    variants (above) reuse it as the text color — re-assert the muted fg. */
-.badge[data-status='neutral']:not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
+.badge:not([data-grade]):not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-emphasis-fg, var(--wzl-fg-muted))); }
 
 /* The `padding` prop arrives as the --badge-pad-<side> properties. */
 .badge {
@@ -150,7 +144,7 @@
 /* Plain paints no fill, so there is none for solid's ink to flip against: every variant takes
    the ink outline has, the one made to be read on whatever is behind the badge. */
 .badge[data-shape='plain'] { --badge-fg: var(--badge-edge); }
-.badge[data-shape='plain'][data-status='neutral'] { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
+.badge[data-shape='plain']:not([data-grade]) { --badge-fg: var(--_s-accent, var(--wzl-emphasis-fg, var(--wzl-fg-muted))); }
 .badge[data-shape='plain'][data-focused='true'] {
   outline: 2px solid color-mix(in oklab, var(--badge-edge) 60%, transparent);
   outline-offset: 3px;

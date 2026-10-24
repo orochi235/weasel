@@ -16,10 +16,10 @@ export const Measurements: Story = {
   tags: ['gallery'],
   args: {
     rows: [
-      { label: 'Lock margin', value: 'locked +47.9°', status: 'success' },
+      { label: 'Lock margin', value: 'locked +47.9°', grade: 'success' },
       { label: 'Score', value: `${FIGURE_SPACE}0.145` },
       { label: 'Residual', value: `${FIGURE_SPACE}3.020` },
-      { label: 'Overshoot', value: 'over 12.345', status: 'danger' },
+      { label: 'Overshoot', value: 'over 12.345', grade: 'danger' },
     ],
   },
 };
@@ -50,7 +50,7 @@ export const ValuesComeAndGo: Story = {
           rows={[
             { label: 'x', value: on ? `${FIGURE_SPACE}12.50` : undefined },
             { label: 'y', value: on ? '-3.75' : undefined },
-            { label: 'Hit', value: on ? 'inside' : undefined, status: on ? 'success' : undefined },
+            { label: 'Hit', value: on ? 'inside' : undefined, grade: on ? 'success' : undefined },
           ]}
         />
       </div>

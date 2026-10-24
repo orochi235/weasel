@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Badge, BADGE_STATUS_ICONS, BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
+import { Badge, BADGE_EMPHASIS_ICONS, BADGE_GRADE_ICONS, BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
+import { EMPHASES, GRADES } from '@weasel-js/theme';
 import st from './Badge.stories.module.css';
 import { ALL_SHAPES } from './shapes';
-import type { BadgeStatus, BadgeVariant } from './types';
+import { BADGE_LOOKS, lookOf, lookProps } from './looks';
+import type { BadgeVariant } from './types';
 import { ComposeLabView } from './lab/ComposeLabView';
 import { QuatrefoilOctantSweeps } from './lab/QuatrefoilOctants';
 import { ShapeGallery } from './lab/ShapeGallery';
 
-const STATUSES: BadgeStatus[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
 
 const meta: Meta<typeof Badge> = {
@@ -16,14 +17,15 @@ const meta: Meta<typeof Badge> = {
   args: {
     children: 'LABEL',
     shape: 'pill',
-    status: 'accent',
+    emphasis: 'high',
     variant: 'outline',
     size: 'sm',
   },
   argTypes: {
     children: { control: 'text', description: 'Badge label content' },
     shape: { control: 'select', options: ALL_SHAPES },
-    status: { control: { type: 'inline-radio', icons: BADGE_STATUS_ICONS }, options: STATUSES },
+    grade: { control: { type: 'inline-radio', icons: BADGE_GRADE_ICONS }, options: [undefined, ...GRADES] },
+    emphasis: { control: { type: 'inline-radio', icons: BADGE_EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
     variant: { control: { type: 'inline-radio', icons: BADGE_VARIANT_ICONS }, options: VARIANTS },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
     bloat: {
@@ -61,7 +63,7 @@ export const AllShapes: Story = {
   tags: ['gallery'],
   args: {
     children: 'ZORF',
-    status: 'muted',
+    emphasis: 'low',
     variant: 'outline',
   },
   argTypes: {
@@ -70,14 +72,14 @@ export const AllShapes: Story = {
   },
   render: (args) => (
     <ShapeGallery
-      status={args.status ?? 'accent'}
+      look={lookOf(args)}
       variant={args.variant ?? 'outline'}
       label={typeof args.children === 'string' ? args.children : 'LABEL'}
     />
   ),
 };
 
-export const StatusVariantMatrix: Story = {
+export const LookVariantMatrix: Story = {
   tags: ['gallery'],
   render: (args) => {
     const label = typeof args.children === 'string' ? args.children : 'LABEL';
@@ -90,14 +92,14 @@ export const StatusVariantMatrix: Story = {
           </tr>
         </thead>
         <tbody>
-          {STATUSES.map((status) => (
-            <tr key={status}>
-              <td className={st.matrixHead}>{status}</td>
+          {BADGE_LOOKS.map((look) => (
+            <tr key={look}>
+              <td className={st.matrixHead}>{look}</td>
               {VARIANTS.map((variant) => (
                 <td key={variant}>
                   <Badge
                     shape={args.shape as never}
-                    status={status}
+                    {...lookProps(look)}
                     variant={variant}
                     size={args.size}
                                      >
@@ -113,17 +115,17 @@ export const StatusVariantMatrix: Story = {
   },
 };
 
-/** `tone` says which of its peers a badge is: an index into the theme's tone
- *  list, the same one a panel takes. It paints over the status. */
+/** `tint` says which of its peers a badge is: an index into the theme's tint
+ *  list, the same one a panel takes. It paints over grade and emphasis. */
 export const PeerTones: Story = {
   render: (args) => (
     <div>
       {VARIANTS.map((variant) => (
         <p key={variant}>
-          {[0, 1, 2, 3, 4, 5].map((tone) => (
-            <span key={tone}>
-              <Badge shape={args.shape as never} variant={variant} size={args.size} tone={tone}>
-                {`peer ${tone}`}
+          {[0, 1, 2, 3, 4, 5].map((tint) => (
+            <span key={tint}>
+              <Badge shape={args.shape as never} variant={variant} size={args.size} tint={tint}>
+                {`peer ${tint}`}
               </Badge>{' '}
             </span>
           ))}
@@ -138,12 +140,12 @@ export const BaselineRow: Story = {
   render: (_args) => (
     <p className={st.baselineText}>
       Inline text with{' '}
-      <Badge shape="pill" status="accent" >pill</Badge>{' '}
-      <Badge shape="square" status="info" >square</Badge>{' '}
-      <Badge shape="notched" status="warn" >notched</Badge>{' '}
-      <Badge shape="shield" status="danger" >shield</Badge>{' '}
-      <Badge shape="ribbon" status="muted" shapeParams={{ left: 'outward', right: 'outward' } as never} >ribbon</Badge>{' '}
-      <Badge shape="house" status="accent" >house</Badge>{' '}
+      <Badge shape="pill" emphasis="high" >pill</Badge>{' '}
+      <Badge shape="square" grade="info" >square</Badge>{' '}
+      <Badge shape="notched" grade="warn" >notched</Badge>{' '}
+      <Badge shape="shield" grade="danger" >shield</Badge>{' '}
+      <Badge shape="ribbon" emphasis="low" shapeParams={{ left: 'outward', right: 'outward' } as never} >ribbon</Badge>{' '}
+      <Badge shape="house" emphasis="high" >house</Badge>{' '}
       and trailing copy.
     </p>
   ),
@@ -154,9 +156,9 @@ export const Sizes: Story = {
     const label = typeof args.children === 'string' ? args.children : 'LABEL';
     return (
       <div className={st.row}>
-        <Badge size="xs" shape={args.shape as never} status={args.status} variant={args.variant}>{label} xs</Badge>
-        <Badge size="sm" shape={args.shape as never} status={args.status} variant={args.variant}>{label} sm</Badge>
-        <Badge size="md" shape={args.shape as never} status={args.status} variant={args.variant}>{label} md</Badge>
+        <Badge size="xs" shape={args.shape as never} grade={args.grade} emphasis={args.emphasis} variant={args.variant}>{label} xs</Badge>
+        <Badge size="sm" shape={args.shape as never} grade={args.grade} emphasis={args.emphasis} variant={args.variant}>{label} sm</Badge>
+        <Badge size="md" shape={args.shape as never} grade={args.grade} emphasis={args.emphasis} variant={args.variant}>{label} md</Badge>
       </div>
     );
   },
@@ -180,22 +182,22 @@ export const LinkRemovable: Story = {
 /** A plain badge with `tooltip` joins the tab order as an image named by its
  *  text; hover or Tab to it. */
 export const WithTooltip: Story = {
-  args: { children: '?', status: 'muted', size: 'xs', tooltip: 'Matched by a predicate, not a fixed id' },
+  args: { children: '?', emphasis: 'low', size: 'xs', tooltip: 'Matched by a predicate, not a fixed id' },
 };
 
 export const EdgeCases: Story = {
   render: (_args) => (
     <div className={`${st.row} ${st.wrappingRow}`}>
-      <Badge status="info" >A very long label that tests overflow</Badge>
-      <Badge shape="plain" status="warn" >
+      <Badge grade="info" >A very long label that tests overflow</Badge>
+      <Badge shape="plain" grade="warn" >
         <span className={st.dot} />
         live
       </Badge>
-      <Badge shape="starburst" status="danger" variant="solid" >NEW</Badge>
-      <Badge shape="ribbon" status="accent" shapeParams={{ left: 'outward', right: 'outward' } as never} >RIBBON</Badge>
-      <Badge shape="perforated" status="muted" >STAMP</Badge>
-      <Badge shape="house" status="info" >HOME</Badge>
-      <Badge shape="cloud" status="warn" >CLOUDY</Badge>
+      <Badge shape="starburst" grade="danger" variant="solid" >NEW</Badge>
+      <Badge shape="ribbon" emphasis="high" shapeParams={{ left: 'outward', right: 'outward' } as never} >RIBBON</Badge>
+      <Badge shape="perforated" emphasis="low" >STAMP</Badge>
+      <Badge shape="house" grade="info" >HOME</Badge>
+      <Badge shape="cloud" grade="warn" >CLOUDY</Badge>
     </div>
   ),
 };
@@ -206,7 +208,7 @@ export const InlineWrapping: Story = {
     <div className={st.narrowColumn}>
       <p>
         A normal paragraph that contains{' '}
-        <Badge shape="pill" status="accent" >
+        <Badge shape="pill" emphasis="high" >
           a sufficiently long inline badge label
         </Badge>{' '}
         and continues afterward to force the badge to be broken across two visual lines.
@@ -214,14 +216,14 @@ export const InlineWrapping: Story = {
       <p>
         With <code>display: inline-flex</code>, badges don't fragment — they stay whole and either fit the line or push to a new one.
         Here's the same thing with a longer payload:{' '}
-        <Badge shape="square" status="info" >
+        <Badge shape="square" grade="info" >
           this badge has even more text inside that the line can't hold
         </Badge>{' '}
         trailing copy.
       </p>
       <p>
         Constrained-width container —{' '}
-        <Badge shape="ribbon" status="warn" >
+        <Badge shape="ribbon" grade="warn" >
           a ribbon badge that wraps because of width
         </Badge>{' '}
         and we keep going.
@@ -236,14 +238,14 @@ export const RemovableWrapping: Story = {
   render: (_args) => (
     <div className={st.resizable}>
       <p>
-        xx <Badge status="accent" onRemove={() => {}}>alpha beta gamma</Badge> yy
+        xx <Badge emphasis="high" onRemove={() => {}}>alpha beta gamma</Badge> yy
       </p>
       <p>
-        xx <Badge shape="plain" status="info" onClick={() => {}} onRemove={() => {}}>alpha beta gamma</Badge> yy
+        xx <Badge shape="plain" grade="info" onClick={() => {}} onRemove={() => {}}>alpha beta gamma</Badge> yy
       </p>
       <div className={st.row}>
-        <Badge status="accent" onRemove={() => {}}>two words</Badge>
-        <Badge shape="plain" status="info" onRemove={() => {}}>two words</Badge>
+        <Badge emphasis="high" onRemove={() => {}}>two words</Badge>
+        <Badge shape="plain" grade="info" onRemove={() => {}}>two words</Badge>
         <span>after</span>
       </div>
     </div>
@@ -253,7 +255,7 @@ export const RemovableWrapping: Story = {
 export const ComposeShowcase: Story = {
   tags: ['gallery'],
   name: 'Compose: base + effects',
-  args: { children: 'COMPOSE', status: 'danger', variant: 'solid' },
+  args: { children: 'COMPOSE', grade: 'danger', variant: 'solid' },
   render: (args) => (
     <div className={st.showcase}>
       <Badge
@@ -266,7 +268,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="accent"
+        emphasis="high"
         variant="outline"
         base="chamfered-rect"
         baseParams={{ chamfer: 12 }}
@@ -276,7 +278,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="info"
+        grade="info"
         variant="outline"
         base="rounded-rect"
         baseParams={{ erosion: 0.5 }}
@@ -286,7 +288,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="warn"
+        grade="warn"
         variant="solid"
         base="rounded-rect"
         baseParams={{ erosion: 0.75 }}
@@ -296,7 +298,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="muted"
+        emphasis="low"
         variant="outline"
         base="rounded-rect"
         baseParams={{ erosion: 0.27 }}
@@ -306,7 +308,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="info"
+        grade="info"
         variant="solid"
         base="chamfered-rect"
         baseParams={{ chamfer: 6 }}
@@ -319,7 +321,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="accent"
+        emphasis="high"
         variant="outline"
         base="rounded-rect"
         baseParams={{ erosion: 0.4 }}
@@ -329,7 +331,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="muted"
+        emphasis="low"
         variant="solid"
         base="rounded-rect"
         baseParams={{ erosion: 0.67 }}
@@ -339,7 +341,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="warn"
+        grade="warn"
         variant="solid"
         base="rounded-rect"
         baseParams={{ erosion: 0 }}
@@ -353,7 +355,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        status="info"
+        grade="info"
         variant="solid"
         base="rounded-rect"
         baseParams={{ erosion: 0.4 }}
@@ -373,10 +375,10 @@ export const SlotPillReplica: Story = {
   name: 'Slot pill (migration parity)',
   render: (_args) => (
     <div className={`${st.row} ${st.tightRow}`}>
-      <Badge shape="pill" status="accent" variant="outline" >active</Badge>
-      <Badge shape="pill" status="warn" variant="outline" >ambient</Badge>
-      <Badge shape="pill" status="info" variant="outline" >hotkey</Badge>
-      <Badge shape="pill" status="danger" variant="solid" >inactive</Badge>
+      <Badge shape="pill" emphasis="high" variant="outline" >active</Badge>
+      <Badge shape="pill" grade="warn" variant="outline" >ambient</Badge>
+      <Badge shape="pill" grade="info" variant="outline" >hotkey</Badge>
+      <Badge shape="pill" grade="danger" variant="solid" >inactive</Badge>
     </div>
   ),
 };
@@ -387,7 +389,7 @@ export const QuatrefoilOctants: Story = {
   argTypes: {
     shape: { table: { disable: true } }, shapeParams: { table: { disable: true } },
     base: { table: { disable: true } }, baseParams: { table: { disable: true } },
-    effects: { table: { disable: true } }, status: { table: { disable: true } },
+    effects: { table: { disable: true } }, grade: { table: { disable: true } }, emphasis: { table: { disable: true } },
     variant: { table: { disable: true } }, size: { table: { disable: true } },
     crawl: { table: { disable: true } }, bloat: { table: { disable: true } },
     padding: { table: { disable: true } },
@@ -397,7 +399,7 @@ export const QuatrefoilOctants: Story = {
 
 export const ComposeLab: Story = {
   name: 'Compose lab',
-  args: { children: 'COMPOSE', status: 'accent', variant: 'solid' },
+  args: { children: 'COMPOSE', emphasis: 'high', variant: 'solid' },
   argTypes: {
     shape: { table: { disable: true } },
     shapeParams: { table: { disable: true } },
@@ -407,7 +409,7 @@ export const ComposeLab: Story = {
   },
   render: (args) => (
     <ComposeLabView
-      status={args.status ?? 'accent'}
+      look={lookOf(args)}
       variant={args.variant ?? 'solid'}
       label={typeof args.children === 'string' ? args.children : 'COMPOSE'}
     />

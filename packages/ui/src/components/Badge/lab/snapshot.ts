@@ -1,6 +1,7 @@
 import type { BadgeBase, BadgeEffect } from '@weasel-js/ui/components/Badge';
 import { defaultsOf } from '../shapeControls';
-import type { BadgeStatus, BadgeVariant } from '../types';
+import type { BadgeLook } from '../looks';
+import type { BadgeVariant } from '../types';
 import { BASE_LAB_CONTROLS } from './controls';
 
 export type LabParams = Record<string, number | string>;
@@ -15,8 +16,8 @@ export interface LabSnapshot {
   baseParams: LabParams;
   labEffects: LabEffect[];
   nextId: number;
-  status: BadgeStatus;
-  customColor: string;
+  look: BadgeLook;
+  tint: string;
   variant: BadgeVariant;
   bloat: number;
   label: string;
@@ -65,7 +66,7 @@ export function saveLabSnapshot(snap: LabSnapshot): void {
 /** The lab's opening state: what was saved, over the story's args, over the lab's own defaults. */
 export function initialSnapshot(
   saved: Partial<LabSnapshot>,
-  args: { status: BadgeStatus; variant: BadgeVariant; label: string },
+  args: { look: BadgeLook; variant: BadgeVariant; label: string },
 ): LabSnapshot {
   const base = saved.base ?? 'rounded-rect';
   return {
@@ -73,8 +74,8 @@ export function initialSnapshot(
     baseParams: saved.baseParams ?? defaultsOf(BASE_LAB_CONTROLS[base]),
     labEffects: saved.labEffects ?? [],
     nextId: saved.nextId ?? 1,
-    status: saved.status ?? args.status,
-    customColor: saved.customColor ?? '#7fb069',
+    look: saved.look ?? args.look,
+    tint: saved.tint ?? '#7fb069',
     variant: saved.variant ?? args.variant,
     bloat: saved.bloat ?? 0,
     label: saved.label ?? args.label,

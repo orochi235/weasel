@@ -1,5 +1,6 @@
 import { ALL_SHAPES } from '../shapes';
 import { SHAPE_CONTROLS, defaultParamsFor } from '../shapeControls';
+import { lookAttrs } from '../looks';
 import type { BadgeShape } from '../types';
 import { isColorParam } from './controls';
 import type { LabParams, LabSnapshot } from './snapshot';
@@ -8,7 +9,7 @@ const literal = (v: number | string): string => (typeof v === 'string' ? JSON.st
 
 type Composed = Pick<
   LabSnapshot,
-  'base' | 'baseParams' | 'labEffects' | 'status' | 'variant' | 'size' | 'bloat' | 'crawlOn' | 'crawlSpeed' | 'label'
+  'base' | 'baseParams' | 'labEffects' | 'look' | 'tint' | 'variant' | 'size' | 'bloat' | 'crawlOn' | 'crawlSpeed' | 'label'
 >;
 
 /** The `<Badge>` JSX that reproduces the lab's current badge. */
@@ -28,7 +29,8 @@ export function composeSnippet(lab: Composed): string {
     }
     lines.push('  ]}');
   }
-  lines.push(`  status="${lab.status}" variant="${lab.variant}" size="${lab.size}"`);
+  const look = lookAttrs(lab.look, lab.tint);
+  lines.push(`  ${look ? `${look} ` : ''}variant="${lab.variant}" size="${lab.size}"`);
   if (lab.bloat !== 0) lines.push(`  bloat={${lab.bloat}}`);
   if (lab.crawlOn) lines.push(`  crawl={${lab.crawlSpeed}}`);
   lines.push(`>${lab.label}</Badge>`);

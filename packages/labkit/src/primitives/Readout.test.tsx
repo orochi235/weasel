@@ -44,11 +44,11 @@ describe('Readout', () => {
     expect(must(container.querySelector('dd')).textContent).toBe('–');
   });
 
-  it('marks a row with its status', () => {
+  it('marks a row with its grade', () => {
     const { container } = render(
-      <Readout rows={[{ label: 'Lock', value: 'locked', status: 'success' }]} />,
+      <Readout rows={[{ label: 'Lock', value: 'locked', grade: 'success' }]} />,
     );
-    expect(must(container.querySelector('dl > div')).getAttribute('data-status')).toBe('success');
+    expect(must(container.querySelector('dl > div')).getAttribute('data-grade')).toBe('success');
   });
 
   it('puts its children below the rows', () => {

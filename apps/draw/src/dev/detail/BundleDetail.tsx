@@ -69,7 +69,7 @@ export function BundleDetail({
         <DetailRow label="tool count" values="figures">{entry.tools.length}</DetailRow>
         <DetailRow label="by group">
           {[...groupCounts.entries()].map(([g, n]) => (
-            <Code key={g}>{g} <Badge shape="pill" size="sm" status="neutral" variant="subtle">{n}</Badge></Code>
+            <Code key={g}>{g} <Badge shape="pill" size="sm" variant="subtle">{n}</Badge></Code>
           ))}
         </DetailRow>
       </DetailList>
@@ -90,8 +90,8 @@ export function BundleDetail({
               {added.length === 0 && removed.length === 0
                 ? <span className={s.empty}>(identical)</span>
                 : <>
-                    {added.map((t) => <Code key={`+${t}`} status="success">+{t}</Code>)}
-                    {removed.map((t) => <Code key={`-${t}`} status="danger">−{t}</Code>)}
+                    {added.map((t) => <Code key={`+${t}`} grade="success">+{t}</Code>)}
+                    {removed.map((t) => <Code key={`-${t}`} grade="danger">−{t}</Code>)}
                   </>}
             </DetailRow>
           );

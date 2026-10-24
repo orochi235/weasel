@@ -38,7 +38,7 @@ function Specimen({ caption }: { caption: string }) {
     <SidebarPanel title={`Panel · ${caption}`}>
       <div className={styles.specimenBody}>
         <div className={styles.specimenRow}>
-          <Button variant="primary" size="sm">Primary</Button>
+          <Button stance="confirm" size="sm">Primary</Button>
           <Button size="sm">Secondary</Button>
           <Button variant="ghost" size="sm">Ghost</Button>
         </div>

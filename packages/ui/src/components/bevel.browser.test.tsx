@@ -55,11 +55,11 @@ describe('with no hook set', () => {
 });
 
 describe('--wzl-bevel-raised', () => {
-  test('is the shadow of a secondary and a primary button, and of a panel', () => {
+  test('is the shadow of a plain and a confirm button, and of a panel', () => {
     render(
       <Scope vars={{ '--wzl-bevel-raised': RED }}>
         <Button>Plain</Button>
-        <Button variant="primary">Main</Button>
+        <Button stance="confirm">Main</Button>
         <PropertyPanel title="Panel">x</PropertyPanel>
       </Scope>,
     );
@@ -68,11 +68,11 @@ describe('--wzl-bevel-raised', () => {
     expect(css(panel()).boxShadow).toBe(RED_SHADOW);
   });
 
-  test('gives way to --wzl-button-primary-bevel on a primary button only', () => {
+  test('gives way to --wzl-button-confirm-bevel on a confirm button only', () => {
     render(
-      <Scope vars={{ '--wzl-bevel-raised': RED, '--wzl-button-primary-bevel': BLUE }}>
+      <Scope vars={{ '--wzl-bevel-raised': RED, '--wzl-button-confirm-bevel': BLUE }}>
         <Button>Plain</Button>
-        <Button variant="primary">Main</Button>
+        <Button stance="confirm">Main</Button>
       </Scope>,
     );
     expect(css(screen.getByRole('button', { name: 'Plain' })).boxShadow).toBe(RED_SHADOW);
@@ -92,14 +92,14 @@ test('--wzl-bevel-pressed is the shadow of a button that stays down', () => {
 describe('the button face hooks', () => {
   const FACE = {
     '--wzl-button-surface': 'rgb(1, 2, 3)',
-    '--wzl-button-primary-surface': 'rgb(4, 5, 6)',
-    '--wzl-button-primary-fg': 'rgb(7, 8, 9)',
+    '--wzl-button-confirm-surface': 'rgb(4, 5, 6)',
+    '--wzl-button-confirm-fg': 'rgb(7, 8, 9)',
     '--wzl-button-radius': '0px',
     '--wzl-button-gloss': '0',
     '--wzl-button-text-shadow': 'none',
   };
 
-  test('replace the glass of a secondary button with a flat face', () => {
+  test('replace the glass of a plain button with a flat face', () => {
     render(
       <Scope vars={FACE}>
         <Button>Plain</Button>
@@ -113,10 +113,10 @@ describe('the button face hooks', () => {
     expect(css(el, '::before').opacity).toBe('0');
   });
 
-  test('and of a primary one, with its own text color', () => {
+  test('and of a confirm one, with its own text color', () => {
     render(
       <Scope vars={FACE}>
-        <Button variant="primary">Main</Button>
+        <Button stance="confirm">Main</Button>
       </Scope>,
     );
     const el = screen.getByRole('button', { name: 'Main' });

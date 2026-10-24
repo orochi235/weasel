@@ -113,13 +113,13 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     name: 'button-surface',
     type: 'color',
     value: 'var(--btn-glass)',
-    description: 'Background of a secondary Button. Unset, neutral glass mixed from the surfaces.',
+    description: 'Background of a solid Button. Unset, neutral glass mixed from the surfaces.',
   },
   {
     name: 'button-pressed-surface',
     type: 'color',
     value: 'var(--btn-glass-pressed)',
-    description: 'Background of a secondary Button while it is held down.',
+    description: 'Background of a solid Button while it is held down.',
   },
   {
     name: 'button-confirm-surface',

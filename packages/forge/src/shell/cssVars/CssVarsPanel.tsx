@@ -289,7 +289,7 @@ function SaveRow({ pending, saving, notice, onSave }: SaveRowProps) {
   return (
     <div className="fg-css-vars__save">
       {pending ? (
-        <Button variant="primary" size="sm" loading={saving} disabled={saving} onClick={onSave}>
+        <Button stance="confirm" size="sm" loading={saving} disabled={saving} onClick={onSave}>
           Save to theme
         </Button>
       ) : null}

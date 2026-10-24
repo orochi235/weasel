@@ -11,17 +11,15 @@ import { composeOutline, offsetOutline } from './composeOutline';
 import { resolveCompose } from './composeSpec';
 import { liftPadding, paddingStyle } from './paddingSides';
 import { useInsets } from './useInsets';
-import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
+import type { BadgeShape, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
 import { BadgeRemove, BadgeTarget } from './BadgeLabel';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
-import { type StanceProps, useStance } from '../stance';
+import { type AppearanceProps, useAppearance } from '../appearance';
 
 /** What {@link Badge} takes whatever its shape: every prop of {@link BadgeProps}
  *  but `shape`, `shapeParams`, and the DOM attributes it passes through. */
-export interface BadgeOwnProps extends StanceProps {
-  /** The status the badge reports. A peer `tone`, or a stance's accent, paints over it. */
-  status?: BadgeStatus;
+export interface BadgeOwnProps extends AppearanceProps {
   variant?: BadgeVariant;
   size?: BadgeSize;
   /** "Edge bloat": offset every base perimeter sample outward by N CSS px along the normal
@@ -50,7 +48,7 @@ export interface BadgeOwnProps extends StanceProps {
   children: ReactNode;
   className?: string;
   /** Optional style overrides merged with the badge's own style. Useful for setting CSS
-   *  custom properties (e.g. `--badge-edge` to inject a `custom` status color). */
+   *  custom properties. */
   style?: CSSProperties;
   'aria-label'?: string;
   /**
@@ -108,9 +106,10 @@ function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
 export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLElement>) {
   const {
     shape = 'pill',
-    status = 'neutral',
     stance,
-    tone,
+    grade,
+    emphasis,
+    tint,
     variant = 'outline',
     size = 'sm',
     onClick,
@@ -171,7 +170,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     return () => crawlLoop.cancel();
   }, [crawl, crawlLoop]);
   const cls = [s.badge, className].filter(Boolean).join(' ');
-  const stanced = useStance({ stance, tone });
+  const appearance = useAppearance({ stance, grade, emphasis, tint });
 
   // Compose-mode: explicit `base` prop wins; otherwise the shape may declare its own
   // `compose()` spec.
@@ -190,7 +189,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     composeBase ? { effects: resolvedEffects, bloat: bloat ?? 0 } : undefined,
   );
   const style: CSSProperties = {
-    ...stanced.style,
+    ...appearance.style,
     ['--badge-inset-top' as never]: `${insets.top}px`,
     ['--badge-inset-right' as never]: `${insets.right}px`,
     ['--badge-inset-bottom' as never]: `${insets.bottom}px`,
@@ -209,9 +208,10 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     className: cls,
     style,
     'data-shape': composeBase ? 'compose' : resolvedShape,
-    'data-status': status,
-    'data-stance': stanced['data-stance'],
-    'data-tone': stanced['data-tone'],
+    'data-stance': appearance['data-stance'],
+    'data-grade': appearance['data-grade'],
+    'data-emphasis': appearance['data-emphasis'],
+    'data-tint': appearance['data-tint'],
     'data-variant': variant,
     'data-size': size,
     'data-break': breakStyle,

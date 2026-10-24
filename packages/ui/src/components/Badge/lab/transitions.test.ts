@@ -11,14 +11,14 @@ const effect = (id: number, type: LabEffect['type'] = 'shadow'): LabEffect => ({
 const ids = (effects: LabEffect[]): number[] => effects.map((e) => e.id);
 
 describe('initialSnapshot', () => {
-  const args = { status: 'accent', variant: 'solid', label: 'COMPOSE' } as const;
+  const args = { look: 'high', variant: 'solid', label: 'COMPOSE' } as const;
 
   it('opens on the rounded rect at its control defaults, with the story args', () => {
     const snap = initialSnapshot({}, args);
     expect(snap.base).toBe('rounded-rect');
     expect(snap.baseParams).toEqual({ erosion: 0.16, eccentricity: 1, pinch: 0 });
     expect(snap).toMatchObject({
-      labEffects: [], nextId: 1, status: 'accent', variant: 'solid', label: 'COMPOSE', customColor: '#7fb069',
+      labEffects: [], nextId: 1, look: 'high', variant: 'solid', label: 'COMPOSE', tint: '#7fb069',
       bloat: 0, size: 'sm', crawlOn: false, crawlSpeed: 0.2, labelX: 0, labelY: 0, zoom: 2,
       padTop: 1, padRight: 6, padBottom: 1, padLeft: 6, fontFamily: 'inherit', fontSizeDelta: 0,
       bold: false, italic: false, caps: 'normal', linkPadX: true, linkPadY: true,
@@ -26,9 +26,9 @@ describe('initialSnapshot', () => {
   });
 
   it('prefers what was saved, and takes a saved base at its own defaults', () => {
-    const snap = initialSnapshot({ base: 'chamfered-rect', status: 'warn', zoom: 4, linkPadX: false }, args);
+    const snap = initialSnapshot({ base: 'chamfered-rect', look: 'warn', zoom: 4, linkPadX: false }, args);
     expect(snap.baseParams).toEqual({ chamfer: 6 });
-    expect(snap).toMatchObject({ status: 'warn', zoom: 4, linkPadX: false, variant: 'solid' });
+    expect(snap).toMatchObject({ look: 'warn', zoom: 4, linkPadX: false, variant: 'solid' });
   });
 });
 

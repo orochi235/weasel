@@ -18,20 +18,21 @@ describe('Code', () => {
     expect(el.textContent).toBe('editor.insert');
   });
 
-  it('defaults to the neutral status and the subtle variant, with no peer tone', () => {
+  it('defaults to the subtle variant, with no grade, emphasis, or tint', () => {
     const { container } = render(<Code>x</Code>);
     const el = container.firstElementChild!;
-    expect(el.getAttribute('data-status')).toBe('neutral');
-    expect(el.hasAttribute('data-tone')).toBe(false);
+    expect(el.hasAttribute('data-grade')).toBe(false);
+    expect(el.hasAttribute('data-emphasis')).toBe(false);
+    expect(el.hasAttribute('data-tint')).toBe(false);
     expect(el.hasAttribute('data-stance')).toBe(false);
     expect(el.getAttribute('data-variant')).toBe('subtle');
     expect(el.getAttribute('data-size')).toBeNull();
   });
 
-  it('reports status, variant and size as data attributes', () => {
-    const { container } = render(<Code status="danger" variant="plain" size="sm">x</Code>);
+  it('reports grade, variant and size as data attributes', () => {
+    const { container } = render(<Code grade="danger" variant="plain" size="sm">x</Code>);
     const el = container.firstElementChild!;
-    expect(el.getAttribute('data-status')).toBe('danger');
+    expect(el.getAttribute('data-grade')).toBe('danger');
     expect(el.getAttribute('data-variant')).toBe('plain');
     expect(el.getAttribute('data-size')).toBe('sm');
   });
@@ -49,25 +50,23 @@ describe('Code', () => {
     expect(body).toMatch(/box-decoration-break:\s*clone/);
   });
 
-  it('takes a peer tone and a stance beside its status', () => {
-    const { container } = render(<Code status="danger" stance="debug" tone={1}>x</Code>);
+  it('takes a tint and a stance beside its grade', () => {
+    const { container } = render(<Code grade="danger" stance="debug" tint={1}>x</Code>);
     const el = container.firstElementChild as HTMLElement;
-    expect(el.dataset.status).toBe('danger');
+    expect(el.dataset.grade).toBe('danger');
     expect(el.dataset.stance).toBe('debug');
-    expect(el.dataset.tone).toBe('1');
-    expect(el.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-green)');
+    expect(el.dataset.tint).toBe('1');
+    expect(el.style.getPropertyValue('--wzl-tint')).not.toBe('');
   });
 
-  it('paints a peer tone or a stance accent over the status', () => {
+  it('paints a tint or a stance accent over the grade and emphasis', () => {
     expect(rule('.code')).toMatch(/--code-fg:\s*var\(--_s-accent, var\(--code-status-fg\)\)/);
     expect(css).not.toMatch(/\[data-tone='/);
   });
 
-  it('paints each status from a theme token, accent as text', () => {
-    expect(css).toMatch(/\[data-status='accent'\]\s*\{\s*--code-status-fg:\s*var\(--wzl-accent-fg\)/);
-    expect(css).toMatch(/\[data-status='success'\]\s*\{\s*--code-status-fg:\s*var\(--wzl-success\)/);
-    expect(css).toMatch(/\[data-status='warn'\]\s*\{\s*--code-status-fg:\s*var\(--wzl-warning\)/);
-    expect(css).toMatch(/\[data-status='danger'\]\s*\{\s*--code-status-fg:\s*var\(--wzl-danger\)/);
+  it('colors the text from emphasis and grade', () => {
+    expect(css).toMatch(/\.code\s*\{[^}]*--code-status-fg:\s*var\(--wzl-emphasis-fg, var\(--wzl-fg\)\)/);
+    expect(css).toMatch(/\.code\[data-grade\]\s*\{\s*--code-status-fg:\s*var\(--wzl-grade\)/);
   });
 
   it('drops the chip fill in the plain variant', () => {

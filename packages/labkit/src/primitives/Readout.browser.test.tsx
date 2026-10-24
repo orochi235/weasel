@@ -21,10 +21,10 @@ const rows = (withValues: boolean): ReadoutRow[] => [
   {
     label: 'Lock margin',
     value: withValues ? <span data-v>locked +47.9°</span> : undefined,
-    status: 'success',
+    grade: 'success',
   },
   { label: 'Score', value: withValues ? <span data-v>{`${FIGURE_SPACE}0.145`}</span> : undefined },
-  { label: 'Error', value: withValues ? <span data-v>12.345</span> : undefined, status: 'danger' },
+  { label: 'Error', value: withValues ? <span data-v>12.345</span> : undefined, grade: 'danger' },
 ];
 
 const box = (el: Element) => el.getBoundingClientRect();
@@ -90,7 +90,7 @@ test('rows keep their place and the list its height while values are absent', ()
   expect(rowHeights()).toEqual(withValues.rows);
 });
 
-test('a status dot is drawn before its value, on the same line', () => {
+test('a grade dot is drawn before its value, on the same line', () => {
   const { container } = render(
     <div style={{ width: 320 }}>
       <Readout rows={rows(true)} />

@@ -7,7 +7,7 @@ describe('composeSnippet', () => {
       base: 'rounded-rect',
       baseParams: { erosion: 0.5, mode: 'x' },
       labEffects: [{ id: 1, type: 'outline', params: { width: 1, color: '#ff0000', dash: '' } }],
-      status: 'accent', variant: 'solid', size: 'sm', bloat: 0, crawlOn: false, crawlSpeed: 0.2, label: 'HI',
+      look: 'high', tint: '#000', variant: 'solid', size: 'sm', bloat: 0, crawlOn: false, crawlSpeed: 0.2, label: 'HI',
     });
     expect(text).toBe([
       '<Badge',
@@ -16,7 +16,7 @@ describe('composeSnippet', () => {
       '  effects={[',
       '    { type: "outline", params: { width: 1, color: cssColorLiteral("#ff0000"), dash: "" } },',
       '  ]}',
-      '  status="accent" variant="solid" size="sm"',
+      '  emphasis="high" variant="solid" size="sm"',
       '>HI</Badge>',
     ].join('\n'));
   });
@@ -24,12 +24,12 @@ describe('composeSnippet', () => {
   it('leaves out empty params and effects, and adds bloat and crawl only when set', () => {
     const text = composeSnippet({
       base: 'polygon', baseParams: {}, labEffects: [],
-      status: 'info', variant: 'outline', size: 'md', bloat: 2, crawlOn: true, crawlSpeed: 0.5, label: 'X',
+      look: 'info', tint: '#000', variant: 'outline', size: 'md', bloat: 2, crawlOn: true, crawlSpeed: 0.5, label: 'X',
     });
     expect(text).toBe([
       '<Badge',
       '  base="polygon"',
-      '  status="info" variant="outline" size="md"',
+      '  grade="info" variant="outline" size="md"',
       '  bloat={2}',
       '  crawl={0.5}',
       '>X</Badge>',

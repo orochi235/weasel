@@ -18,7 +18,7 @@ export function mountThemed(theme: Theme, selection: Selection) {
     <DefaultMotif group={titlebar()}>
       <PropertyPanel title="Panel">
         <Button>Plain</Button>
-        <Button variant="primary">Main</Button>
+        <Button stance="confirm">Main</Button>
         <Button pressed>Held</Button>
         <Input aria-label="Name" />
         <div style={{ color: 'var(--wzl-fg)' }}>

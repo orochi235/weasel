@@ -65,7 +65,7 @@ The vite plugin takes two optional config modules:
   (default `weaselforge`). The CSS Vars panel stays hidden until its header toggle
   is pressed, and the lab remembers the choice; `cssVars: false` leaves out both.
   `libraries` names the project's libraries, each a stretch of file path, a
-  label and an optional badge tone: `{ path: '/packages/ui/', label: 'ui' }`.
+  label and an optional badge tint: `{ path: '/packages/ui/', label: 'ui' }`.
   The tree's package filter, index pages, and Get Info show the label; a
   story under none of them takes its title's first segment.
 

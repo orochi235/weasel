@@ -13,3 +13,6 @@
 .kind.map { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-sky) 55%, var(--wzl-fg)); }
 .kind.union { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-violet) 55%, var(--wzl-fg)); }
 .kind.action { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-rose) 55%, var(--wzl-fg)); }
+
+/* An ungraded Badge reads its text muted; a kind's own color is the text color too. */
+.kind.kind:not([data-grade])[data-variant] { --badge-fg: var(--badge-edge); }
