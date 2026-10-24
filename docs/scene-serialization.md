@@ -37,7 +37,7 @@ import type { SerializedScene, SerializedNode } from '@weasel-js/core';
 
 // Example value for a scene with two layers and three nodes:
 const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
-  version: 1,
+  version: 2,
 
   // One entry per layer, in layer order. Fields that match the default
   // (visible: true, locked: false) are omitted.
@@ -52,7 +52,7 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
   nodes: [
     {
       id: 'box-1',
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'shapes',
       pose: { x: 10, y: 20, width: 100, height: 80 },
       data: { label: 'My box' },
@@ -60,15 +60,15 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
     },
     {
       id: 'group-1',
-      kind: 'container',
+      kind: 'group',
       layer: 'shapes',
       pose: { x: 0, y: 0, width: 200, height: 200 },
       data: { label: 'Group' },
-      // clipFromPoseKey: present only for containers that have a clip factory
+      clip: 'outline',     // present only when the node declares a clip
     },
     {
       id: 'child-1',
-      kind: 'leaf',
+      kind: 'mark',
       layer: 'shapes',
       pose: { x: 5, y: 5, width: 50, height: 50 },
       data: { label: 'Child' },
@@ -82,16 +82,20 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 
 | Field | Type | Notes |
 |---|---|---|
-| `version` | `1` | `sceneFromJSON` throws on any other value. |
+| `version` | `2` | `toJSON` writes 2; `sceneFromJSON` also reads 1 (see Versioning) and throws on any other value. |
 | `systemLayers` | `SystemLayerSpec[]` | Layer ids and optional visibility/locked overrides. |
 | `nodes` | `SerializedNode[]` | All nodes in tree preorder: parents before children, siblings in sibling order. A reader painting straight from `nodes` derives paint order from layers: paint each `systemLayers` entry in turn, taking that layer's nodes in the order they appear here. |
 | `nodes[i].id` | `string` | Node id. Stable across save/load. |
-| `nodes[i].kind` | `'leaf' \| 'container'` | Leaf or container. |
+| `nodes[i].kind` | `'mark' \| 'group'` | A mark draws itself; a group draws nothing of its own. Either may have children. |
 | `nodes[i].layer` | `TLayer` | Layer id (must match a `systemLayers` entry). |
 | `nodes[i].pose` | `TPose` | Local-coordinate pose, relative to parent (or world for roots). |
 | `nodes[i].data` | `TData` | App-defined payload. Must be JSON-serializable. |
-| `nodes[i].parent` | `string?` | Parent container id. Omitted for root nodes. |
-| `nodes[i].clipFromPoseKey` | `string?` | Registry key for the clip-path factory. Containers only; omitted when no clip. |
+| `nodes[i].parent` | `string?` | Parent id. Omitted for root nodes. |
+| `nodes[i].clip` | `'outline'?` | The node clips its children to its own outline. Omitted when it declares no clip; then its children are not clipped unless it has a `clipFromPoseKey`. |
+| `nodes[i].clipFromPoseKey` | `string?` | Registry key for the node's `clipFromPose`, which wins over `clip`. Omitted when it has none. |
+| `nodes[i].copiesFromPoseKey`, `derivePathKey`, `derivePoseKey`, `layoutKey` | `string?` | Registry keys for the node's other function fields. Omitted when absent. |
+| `nodes[i].dependsOn` | `string[] \| 'children'?` | Ids the node's geometry derives from. |
+| `nodes[i].pickable`, `hidden`, `locked`, `units` | | Present only when stated: `pickable: false`, `hidden: true`, `locked: true`, a unit scope. |
 | `doc` | `Record<string, unknown>?` | The scene's document values (below). Omitted when it has none, so a snapshot written before they existed reads the same. |
 
 ## Document values
@@ -113,7 +117,8 @@ specs itself reads a snapshot's values with `docFromSnapshot` (`apps/shared/edit
 
 ## Function fields and the registry
 
-`ContainerNode.clipFromPose` is a function, which JSON cannot carry.
+A node's `clipFromPose` is a function, which JSON cannot carry; so are `copiesFromPose`, `derivePath`,
+`derivePose` and a `layout`.
 You give each factory a string key in a registry, and the JSON
 stores the key. On load, `sceneFromJSON` looks the key up in the registry and
 wires the live function back onto the node.
@@ -137,16 +142,16 @@ const scene = createScene({
   registry,
 });
 
-// Add a container that clips to an ellipse:
+// Add a group that clips to an ellipse:
 scene.add({
-  kind: 'container',
+  kind: 'group',
   layer: 'shapes',
   pose: { x: 0, y: 0, width: 200, height: 200 },
   data: { label: 'Clipped group' },
   clipFromPose: registry.clipFromPose!['ellipse'],
 });
 
-// Save: the JSON carries `clipFromPoseKey: 'ellipse'` on the container.
+// Save: the JSON carries `clipFromPoseKey: 'ellipse'` on the group.
 const json = scene.toJSON();
 
 // Load: resolve the key back to the live factory.
@@ -154,6 +159,10 @@ const loaded = sceneFromJSON(json, { registry });
 ```
 
 A scene with no function fields needs no registry: omit it from both calls.
+
+A key the registry lacks makes the load throw. `sceneFromJSON(json, { unknownKeys: 'skip' })`, and
+`scene.loadState(json, { unknownKeys: 'skip' })`, load such a node without that function instead, for a save
+that outlived the code that registered it; `onSkip` hears each key left out, as `{ id, field, key }`.
 
 ## What is NOT serialized
 
@@ -179,8 +188,8 @@ than silently losing data.
 
 | Condition | Thrown by | Message pattern |
 |---|---|---|
-| Unknown JSON version | `sceneFromJSON` | `Scene: unsupported version <n>; only v1 supported` |
-| Unknown `clipFromPoseKey` | `sceneFromJSON` | `Scene: unknown clipFromPose key '<key>'. Register a function with this key in the registry option.` |
+| Unknown JSON version | `sceneFromJSON` | `Scene: unsupported version <n>; versions 1 and 2 are supported` |
+| Unknown registry key, without `unknownKeys: 'skip'` | `sceneFromJSON` | `Scene: unknown <field> key '<key>'. Register a function with this key in the registry option.` |
 | Child on a layer below its parent's | `sceneFromJSON` | `Scene: cannot place node '<id>' on layer '<layer>' under parent '<pid>' on layer '<plyr>' — a child may not render below its parent's layer` |
 | Node with `clipFromPose` not registered in the scene's registry | `scene.toJSON()` | `Scene.toJSON: node '<id>' has clipFromPose but no matching registry key. The function must be registered via createScene's registry option to round-trip.` |
 
@@ -215,6 +224,8 @@ const scene = sceneFromJSON(sceneData, {});
 
 ## Versioning
 
-The JSON format is `version: 1`, and `sceneFromJSON` throws on any other
-value. A format change will increment the number and migrate inside
-`sceneFromJSON`, so consumers write no migration code.
+`toJSON()` writes version 2. `sceneFromJSON` and `loadState` read versions 1 and 2, so consumers write no
+migration code. Version 1 named the kinds `leaf` and `container`: a `leaf` loads as a mark, and a `container` as a
+group, unless the `classifyV1` option returns `'mark'` for it, which is how a consumer keeps a container that drew
+itself drawing. Version 1 clipped every container with no `clipFromPose` to the outline its painter drew, so such a
+container loads with `clip: 'outline'`, and so does one whose clip key was skipped.

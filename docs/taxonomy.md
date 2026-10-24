@@ -883,28 +883,34 @@ its children, and frames its children's poses unless it is an envelope. A child'
 `canDropInto` dep a group admits drops and a mark does not.
 
 **A node clips its children only when it declares a clip** (decided 2026-10-22): its
-`clipFromPose` when it has one, else its own outline when it sets `clip: 'outline'` — a mark's
-painter silhouette, or for a group the silhouette of its `data.path` (an imported
-`<g clip-path>`). `ownClipOf` (`canvas/ownClip.ts`) is the one reading of it, for drawing,
-picking and the drag ghost. `clipNothing` is kept registered only so saves naming it load.
+`clipFromPose` when it has one, else its outline when it sets `clip: 'outline'`. That outline
+is the silhouette of the painter that claims the node, read by `clipOutline`; a node only the
+last-resort rect painter claims clips to nothing. A group's is its `data` read as a mark's would
+be: an imported `<g clip-path>` holds its clip as `data.path`. The clip is its children's:
+the node's own paint, under its children or over them, is not cut by it. `ownClipOf` and
+`clipOutline` (`canvas/ownClip.ts`) are the one reading, for drawing, picking, the drag ghost
+and SVG export.
 
 **A group is selected and behaves as one item** (decided 2026-10-22): a press on any member
 selects the outermost group above it outside the entered one, and it moves, copies and
-deletes as one. These actions reach inside and back out, each bound by the select tool and rebindable:
+deletes as one. These actions reach inside and back out; each binding has an id a consumer can
+rebind:
 
-| Action | Default binding | Does |
-|---|---|---|
-| `select.deep` | Cmd-press (Ctrl off macOS) on a body | selects the deepest pickable node under the pointer |
-| `group.enter` | double-click on a member of a group outside the entered one | enters the outermost such group |
-| `group.leave` | Escape; and a press outside the entered group's box, its own binding `group.leave.press` | Escape leaves one level; the press leaves every group that box is outside of |
+| Binding | Bound by | Gesture | Does |
+|---|---|---|---|
+| `select.deep` | the select tool | Cmd-press (Ctrl off macOS) on a body | selects the deepest pickable node under the pointer |
+| `group.enter` | `createGroupEntryContribution`, under any tool | double-click on a member of a group outside the entered one | enters the outermost such group |
+| `group.leave.key` | `createGroupEntryContribution`, under any tool | Escape, yielding to `escape` when nothing is entered | leaves one level |
+| `group.leave.press` | the select tool | a press outside the entered group's box | leaves every group that box is outside of |
 
 The entered group is session state beside the selection (`enteredGroup` dep), never saved
-or undone. Shift alone extends a selection; Cmd no longer does.
+or undone. Shift extends a selection, and Cmd-Shift adds the deepest node under the pointer.
 
 **Saving.** Scenes save as version 2 with `kind: 'mark' | 'group'`. A version 1 save loads
 with each `leaf` as a mark and each `container` as a group, unless `classifyV1` says
-otherwise; a version 1 container with no clip function loads with `clip: 'outline'`, since
-version 1 clipped every container to its outline.
+otherwise. Version 1 clipped a container with no clip function to its painter's outline, the
+rect fallback's box excepted, which is what `clip: 'outline'` draws, so such a container, and one
+whose clip key a load skipped, loads with it.
 
 Rejected (2026-10-22), so nobody re-proposes them: a `group: true` flag on a container
 (keeps "container" meaning only "has children"); three kinds `leaf | container | group`

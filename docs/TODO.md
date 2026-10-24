@@ -528,10 +528,14 @@ Priority tags:
 
 - **(P3) A node's declared clip can be set only when it is added** (2026-10-23). `clip: 'outline'`
   rides `scene.add`, snapshots and the clipboard, but the scene has no `setClip` beside `setUnits`,
-  so `reconcileSpecs` replaces a node whose `clip` changed, and no panel can switch it. In
-  `@weasel-js/svg`'s export, a mark's declared clip is written only when its outline is a path in
-  its data or an unturned path element; under a text or image mark, or a turned one, its children
-  export unclipped.
+  so `reconcileSpecs` replaces a node whose `clip` changed, and no panel can switch it.
+
+- **(P3) WeaselDraw's SVG round trip turns a mark with children into a group** (2026-10-23).
+  `svgNodesFromKit` writes such a mark as a `<g>` of its own element and then its children, and
+  calls the `group` decorator only for groups, so the `<g>` carries no `wd:` meta and reopens as a
+  group holding a mark. Keeping it a mark needs the import side too: `svgNodesToKitDrafts` drafts
+  every `<g>` as a group, so it would have to read a marked `<g>`'s first element as the mark's
+  own. Draw makes no such marks itself today; one pasted in from elsewhere loses its kind on save.
 
 - **(P3) Several hit tests still scan every node or shape linearly.** Marquee, lasso and point picks
   consult the scene's BVH pick index (`packages/core/src/canvas/pickIndex/`); these do not, and can
