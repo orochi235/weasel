@@ -36,7 +36,8 @@ Decided in conversation (2026-10-23), none of it in code:
   `slim` also sets the thumb's size, makes it round and flush, and drops its border and blur
   (`Slider.module.css`), so those need params too. Had it stayed a preset, Mike would call it `weight`.
 
-**Next:** every naming question is settled; nothing is built. Planning the build is next.
+**Next:** build it. The plan is `docs/superpowers/plans/2026-10-23-appearance-axes.md` (written
+2026-10-23, nothing built); its Slider task waits on one question for Mike about the thumb's face.
 
 Also waiting on Mike, unrelated: whether `Primitives/*` story titles merge into `ui/Foundations`
 (no rule separates them); which default `layout` forge's two story formats share (native
