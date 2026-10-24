@@ -113,7 +113,7 @@ function riders<TPose>(overrides: PoseOverrides<TPose>, cascade: PoseCascade<TPo
     }
     for (const [id, entry] of riding) {
       if (seen.has(id)) continue;
-      if (overrides.get(id) === entry) overrides.clear(id);
+      overrides.clear(id, entry);
       riding.delete(id);
     }
   };
@@ -133,6 +133,18 @@ function build<TPose>(
   if (!axes) return null;
   const entry: PoseOverride<TPose> = {};
   let installed = false;
+  /** While installed, stops the run as soon as the table changes after something else wrote
+   *  the pose: a drag laid over the run commits and then lets go, which would show this run's
+   *  last frame until its next one. */
+  let unwatch: (() => void) | null = null;
+  const rest = (): void => {
+    installed = false;
+    unwatch?.();
+    unwatch = null;
+    overrides.clear(id, entry);
+    ride?.(null);
+    onRest?.();
+  };
   const target = createTarget<TPose>({
     get: opts.get,
     set: opts.set,
@@ -140,18 +152,22 @@ function build<TPose>(
     show(pose) {
       // The writer wins: what was left to travel belonged to a pose that is no longer committed.
       if (target.active && overwritten?.()) target.stop({ commit: false });
-      if (target.active) {
-        entry.pose = pose;
-        // Installed once per run: an override laid over it since, a drag's, is not taken back.
-        if (!installed) overrides.set(id, entry);
-        installed = true;
-        ride?.(pose);
+      if (!target.active) {
+        rest();
         return;
       }
-      installed = false;
-      if (overrides.get(id) === entry) overrides.clear(id);
-      ride?.(null);
-      onRest?.();
+      entry.pose = pose;
+      // Installed once per run: an override laid over it since, a drag's, is not taken back.
+      if (!installed) overrides.set(id, entry);
+      installed = true;
+      if (overwritten && unwatch === null) {
+        unwatch = overrides.subscribe(() => {
+          if (!target.active || !overwritten()) return;
+          target.stop({ commit: false });
+          if (installed) rest();
+        });
+      }
+      ride?.(pose);
     },
     publish: publisherOf(overrides),
   });
