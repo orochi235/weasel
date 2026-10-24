@@ -192,8 +192,8 @@ function derivedFromFrame<TPose>(
 export interface PathHold {
   /** Show these paths, and stop showing any other this hold showed. */
   show(paths: ReadonlyMap<string, Path>): void;
-  /** Stop showing every path this hold shows. An entry another writer has
-   *  since replaced is left alone. */
+  /** Stop showing every path this hold shows, revealing whatever other
+   *  writers' overrides lie under each. */
   drop(): void;
 }
 

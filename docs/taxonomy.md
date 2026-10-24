@@ -811,6 +811,11 @@ frame its children are expressed in, which `getWorldPose` folds.
 See `packages/core/src/core/geometry/poseDescriptor.ts` (`RotatedPose`) and
 `packages/geom/src/path.ts` (`Path`).
 
+A **ply** is one writer's pose override on a node: `scene.overrides` stacks a
+node's plies and folds them into what it shows (`docs/concepts.md`, "Pose
+override"). Not a [layer](#layer), which is a render pass the scene's nodes
+are drawn in.
+
 ### PoseDescriptor
 
 `PoseDescriptor<TPose>` — a small projection that bridges an arbitrary `TPose` into

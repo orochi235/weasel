@@ -16,7 +16,7 @@
     "longestFunction": 169
   },
   "packages/core/src/animation/reflow.ts": {
-    "longestFunction": 165
+    "longestFunction": 162
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "longestFunction": 233
