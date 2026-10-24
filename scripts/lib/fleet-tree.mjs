@@ -5,6 +5,7 @@ import { join, matchesGlob } from 'node:path';
 /** Untracked and not ignored, so `onto test` sends it with the tree and the next sync cleans it away. */
 export const MARKER = '.onto/fleet-tree.json';
 export const COMMIT_ENV = 'WEASEL_FLEET_COMMIT';
+const STEP_ENV = 'WEASEL_FLEET_STEP';
 /** Where onto records what its last sync into a node's tree left there. */
 export const ONTO_STAMP = '.git/onto-stamp';
 const PLAN = '.onto/tests';
@@ -79,11 +80,18 @@ export const selection = (root, env, { always, triggers }) => {
   const at = join(root, MARKER);
   if (!existsSync(at)) return undefined;
   const marker = JSON.parse(readFileSync(at, 'utf8'));
-  if (!marker.select || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
+  if (!marker.select || env[STEP_ENV] || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
   const changed = Object.keys(marker.files);
   if (changed.some((path) => triggers.some((glob) => matchesGlob(path, glob)))) return undefined;
   return [...changed, ...always].map((path) => join(root, path));
 };
+
+/**
+ * The environment for a process a fleet job spawns, such as a ci.yml step that starts vitest. It
+ * keeps the commit, so that process's tree check still has the job's word for it, and turns off
+ * the branch selection, which belongs to the job's own suite.
+ */
+export const stepEnv = (env) => ({ ...env, [STEP_ENV]: '1' });
 
 /** What a fleet run prints about its tree: the line that proves the match, or why nothing else in the run counts. */
 export const treeReport = (check) => check.problems.length === 0

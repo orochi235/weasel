@@ -12,6 +12,7 @@ import {
   checkTree,
   selection,
   stampReport,
+  stepEnv,
   treeReport,
   treeStamp,
 } from './fleet-tree.mjs';
@@ -217,6 +218,15 @@ describe('selection', () => {
   it('is undefined for a run that tests everything', () => {
     marked(undefined);
     expect(selection(root, { [COMMIT_ENV]: COMMIT }, none)).toBeUndefined();
+  });
+
+  it('is undefined in a step a fleet job spawns, which still carries the commit for the tree check', () => {
+    marked(true);
+    put('src/a.ts', 'a\n');
+    const env = stepEnv({ [COMMIT_ENV]: COMMIT, PATH: '/bin' });
+    expect(env).toMatchObject({ [COMMIT_ENV]: COMMIT, PATH: '/bin' });
+    expect(selection(root, env, none)).toBeUndefined();
+    expect(checkTree(root, env).problems).toEqual(['src/a.ts differs from the commit']);
   });
 
   it('is undefined with no marker, and for a marker this run did not ask for', () => {

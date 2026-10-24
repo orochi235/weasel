@@ -4,12 +4,11 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { CI_YML, readCi, sourceChecks } from './lib/ci-steps.mjs';
-import { COMMIT_ENV } from './lib/fleet-tree.mjs';
+import { stepEnv } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const run = promisify(execFile);
-// A check that starts vitest itself (check:test-projects) would otherwise inherit a branch run's selection.
-const { [COMMIT_ENV]: _selected, ...CHECK_ENV } = process.env;
+const CHECK_ENV = stepEnv(process.env);
 
 const output = (error: unknown) => {
   const { stdout, stderr } = error as { stdout?: string; stderr?: string };
