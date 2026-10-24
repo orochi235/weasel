@@ -160,7 +160,7 @@ function ScaleSlider({
       max={max}
       step={0.001}
       keyStep={(thumb, steps) => Math.log2(Math.max(finest, round(2 ** thumb.value + steps * finest)))}
-      density="slim"
+      thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
       readoutPlacement="below-thumb"
       renderReadout={(_, i) => (
         <span className={own.readout} data-overridden={tokens[i]?.overridden ? '' : undefined}>

@@ -14,7 +14,7 @@ export function TransportBar({ clock }: { clock: Clock }) {
       <Slider
         className="fg-transport__scrub"
         ariaLabel="Scrub"
-        density="slim"
+        thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
         readoutPlacement="none"
         min={span.start}
         max={span.end > span.start ? span.end : span.start + 1}

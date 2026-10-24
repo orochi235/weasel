@@ -47,7 +47,9 @@ export function ZoomControl({
       <Slider
         className="lk-zoom__slider"
         ariaLabel="Zoom"
-        density="slim"
+        thumbShape="dot"
+        trackHeight="var(--wzl-slider-track-h)"
+        thumbSize="var(--wzl-slider-thumb-size)"
         min={toTrack(min)}
         max={toTrack(max)}
         // Detents at the octaves plus actual size, so 25/50/100/200/400% are

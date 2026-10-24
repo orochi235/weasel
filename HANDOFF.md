@@ -10,12 +10,11 @@ traps from finished arcs are `docs/retained.md`.
 record is `docs/conventions.md` ("Appearance props"), and the changeset is
 `.changeset/appearance-axes.md`. Merged to `main` (9e3914b0f), not pushed.
 
-**Left:** Slider's `density` → numeric params, planned in
-`docs/superpowers/plans/2026-10-23-slider-metrics.md` and waiting on one question for Mike: whether a
-radius and a border width cover the slim thumb's round dot, or dot-versus-tab is a drawing variant.
+Slider's `density` became `trackHeight`, `thumbSize` and a `dot` thumb shape (2026-10-24); the slim face was
+dropped on Mike's word.
 
 **Not seen in a browser:** every color change. That means grade and emphasis on panels, dialogs,
-callouts, badges, code, and buttons; `stance="confirm"` against the old primary; the Callout's base accent
+callouts, badges, code, and buttons; dot thumbs, which now wear the default frosted face; `stance="confirm"` against the old primary; the Callout's base accent
 wash; info badges and toasts on the new `--wzl-info`; and Badge `warn` on `--wzl-warning`, where it
 had its own amber. `tests/visual/panel-stances.spec.ts` was migrated but not run.
 

@@ -79,23 +79,23 @@ describe('a slider', () => {
   const sliders = (
     <>
       <div className={slider.root}><div className={slider.track} data-testid="track"><div className={slider.thumb} data-testid="thumb" /></div></div>
-      <div className={`${slider.root} ${slider.slim}`}><div className={slider.track}><div className={slider.thumb} data-testid="slim" /></div></div>
+      <div className={slider.root}><div className={slider.track}><div className={`${slider.thumb} ${slider.dot}`} data-testid="dot" /></div></div>
       <InlineRange aria-label="Native" value={5} onChange={() => {}} />
     </>
   );
 
-  test('with no hook set has a flat track, and only its full thumb casts a shadow', () => {
+  test('with no hook set has a flat track, and a thumb of either shape casts a shadow', () => {
     render(<Scope>{sliders}</Scope>);
     expect(shadow(screen.getByTestId('track'))).toBe('none');
     expect(shadow(screen.getByTestId('thumb'))).toBe('rgba(0, 0, 0, 0.2) 0px 1px 2px 0px');
-    expect(shadow(screen.getByTestId('slim'))).toBe('none');
+    expect(shadow(screen.getByTestId('dot'))).toBe('rgba(0, 0, 0, 0.2) 0px 1px 2px 0px');
   });
 
-  test('takes --wzl-bevel-sunken on its track and --wzl-bevel-raised on a thumb of either density', () => {
+  test('takes --wzl-bevel-sunken on its track and --wzl-bevel-raised on a thumb of either shape', () => {
     render(<Scope hooks>{sliders}</Scope>);
     expect(shadow(screen.getByTestId('track'))).toBe(SUNKEN);
     expect(shadow(screen.getByTestId('thumb'))).toBe(RAISED);
-    expect(shadow(screen.getByTestId('slim'))).toBe(RAISED);
+    expect(shadow(screen.getByTestId('dot'))).toBe(RAISED);
   });
 
   // A proxy: `getComputedStyle` answers for a native range's track and thumb with the input's own

@@ -14,11 +14,12 @@ export type ThumbRenderCtx = {
 };
 
 /**
- * A thumb's appearance — one of the two built-in shapes, or a custom
- * renderer.
+ * A thumb's appearance: a `tab` spanning the track (the default), a `dot`
+ * centered on it, a `notched` pentagon, or a custom renderer.
  */
 export type ThumbShape =
-  | 'round'
+  | 'tab'
+  | 'dot'
   | 'notched'
   | { render: (ctx: ThumbRenderCtx) => ReactNode };
 
@@ -147,10 +148,12 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
    *  block; it wins over an enclosing `Along`'s. A line keeps the straight
    *  layout, and its coordinates are not read. */
   shape?: TrackShape;
-  trackHeight?: number;
-  /** `'slim'` drives the track and thumb from the kit's slider tokens, so a
-   *  Slider matches the property rows. `trackHeight` still wins if given. */
-  density?: 'default' | 'slim';
+  /** The track's height: a number in px, or a CSS length such as `var(--wzl-slider-track-h)`. */
+  trackHeight?: number | string;
+  /** The thumb's width, and a dot's height: a number in px, or a CSS length. */
+  thumbSize?: number | string;
+  /** The shape of every thumb that names none of its own. Default `tab`. */
+  thumbShape?: ThumbShape;
   renderReadout?: (thumb: T, index: number) => ReactNode;
   /** How a thumb's value shows in the default readout and is spoken as its
    *  `aria-valuetext` when the thumb gives no `valueText` of its own. Default:

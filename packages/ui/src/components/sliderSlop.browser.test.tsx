@@ -27,7 +27,7 @@ describe('Slider', () => {
   test('a press within the track slop lands on the track, and one past it does not', () => {
     const { container } = render(
       <Frame>
-        <Slider density="slim" min={0} max={100} thumbs={[{ value: 90 }]} onInput={() => {}} />
+        <Slider thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)" min={0} max={100} thumbs={[{ value: 90 }]} onInput={() => {}} />
       </Frame>,
     );
     const slop = px('--wzl-slider-track-slop');
@@ -40,10 +40,10 @@ describe('Slider', () => {
     expect(lands(track, x, r.top - slop - 1)).toBe(false);
   });
 
-  test.each(['default', 'slim'] as const)("a %s thumb's slop sits over the track's", (density) => {
+  test.each(['tab', 'dot'] as const)("a %s thumb's slop sits over the track's", (thumbShape) => {
     render(
       <Frame>
-        <Slider density={density} min={0} max={100} thumbs={[{ value: 50 }]} onInput={() => {}} />
+        <Slider thumbShape={thumbShape} min={0} max={100} thumbs={[{ value: 50 }]} onInput={() => {}} />
       </Frame>,
     );
     const slop = px('--wzl-slider-thumb-slop');
