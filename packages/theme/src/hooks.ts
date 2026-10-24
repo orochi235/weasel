@@ -28,7 +28,7 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     type: 'color',
     value: 'var(--_edge)',
     description:
-      'Background of the strip a `titlebar` frame carries its title in: a color, a gradient, or stripes. Unset, the frame’s edge color. A frame that names a tone paints the tone instead.',
+      'Background of the strip a `titlebar` frame carries its title in: a color, a gradient, or stripes. Unset, the frame’s edge color. A frame that names a tint paints the tint instead.',
   },
   {
     name: 'titlebar-fg',
@@ -122,28 +122,28 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Background of a secondary Button while it is held down.',
   },
   {
-    name: 'button-primary-surface',
+    name: 'button-confirm-surface',
     type: 'color',
     value: 'var(--btn-glass)',
-    description: 'Background of a primary Button. Unset, glass tinted with --wzl-accent.',
+    description: 'Background of a confirm Button. Unset, glass tinted with --wzl-accent.',
   },
   {
-    name: 'button-primary-pressed-surface',
+    name: 'button-confirm-pressed-surface',
     type: 'color',
     value: 'var(--btn-glass-pressed)',
-    description: 'Background of a primary Button while it is held down.',
+    description: 'Background of a confirm Button while it is held down.',
   },
   {
-    name: 'button-primary-fg',
+    name: 'button-confirm-fg',
     type: 'color',
     value: 'var(--wzl-fg-on-accent)',
-    description: 'Text color of a primary Button, for a theme whose --wzl-button-primary-surface is not an accent fill.',
+    description: 'Text color of a confirm Button, for a theme whose --wzl-button-confirm-surface is not an accent fill.',
   },
   {
-    name: 'button-primary-bevel',
+    name: 'button-confirm-bevel',
     type: 'shadow',
     value: 'var(--wzl-bevel-raised)',
-    description: 'Box shadow of a primary Button, where it differs from --wzl-bevel-raised: the heavier frame of a default button.',
+    description: 'Box shadow of a confirm Button, where it differs from --wzl-bevel-raised: the heavier frame of a default button.',
   },
   {
     name: 'button-gloss',
@@ -155,7 +155,7 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     name: 'button-text-shadow',
     type: 'shadow',
     value: 'var(--btn-engraving)',
-    description: 'Text shadow of a primary or secondary Button’s label. Unset, an engraving stamp under the glyphs in dark mode.',
+    description: 'Text shadow of a Button’s label. Unset, an engraving stamp under the glyphs in dark mode.',
   },
   {
     name: 'detail-figure-min-width',

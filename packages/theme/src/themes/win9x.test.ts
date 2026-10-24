@@ -13,7 +13,7 @@ describe('win9xTheme', () => {
     const pairings = [
       ...TEXT_PAIRINGS,
       { text: 'fg', on: ['button-surface', 'button-pressed-surface'], min: 4.5 },
-      { text: 'button-primary-fg', on: ['button-primary-surface', 'button-primary-pressed-surface'], min: 4.5 },
+      { text: 'button-confirm-fg', on: ['button-confirm-surface', 'button-confirm-pressed-surface'], min: 4.5 },
     ];
     expect(gateFailures(win9xTheme, definition as ThemeDefinition, lookup, pairings)).toEqual([]);
   });

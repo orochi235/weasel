@@ -227,6 +227,17 @@
         "type": "color"
       }
     },
+    "info-base": {
+      "by": "mode",
+      "light": {
+        "value": "#1c4f9c",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#7ab0f0",
+        "type": "color"
+      }
+    },
     "shadow": {
       "by": "mode",
       "light": {
@@ -386,7 +397,7 @@
         "type": "color"
       }
     },
-    "button-primary-pressed-surface": {
+    "button-confirm-pressed-surface": {
       "by": "mode",
       "light": {
         "value": "#aaaaaa",
@@ -397,7 +408,7 @@
         "type": "color"
       }
     },
-    "button-primary-bevel": {
+    "button-confirm-bevel": {
       "value": "0 0 0 2px var(--wzl-bevel-dark), inset 0 0 0 1px var(--wzl-bevel-dark), inset -2px -2px 0 var(--wzl-bevel-shade), inset 2px 2px 0 var(--wzl-bevel-light)",
       "type": "shadow"
     },

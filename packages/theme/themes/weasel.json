@@ -462,10 +462,10 @@
       "value": "{glass-blur}",
       "type": "dimension"
     },
-    "panel-tone-mix": {
+    "panel-tint-mix": {
       "value": "14%",
       "type": "number",
-      "description": "How much of a panel’s tone mixes into its surface."
+      "description": "How much of a panel’s tint mixes into its surface."
     },
     "panel-title-font": {
       "value": "{font-display}",
@@ -495,23 +495,23 @@
       "value": "0",
       "type": "dimension"
     },
-    "stance-scope-border-width": {
+    "stance-clarify-border-width": {
       "value": "0",
       "type": "dimension"
     },
-    "stance-scope-radius": {
+    "stance-clarify-radius": {
       "value": "8px",
       "type": "dimension"
     },
-    "stance-scope-tone-mix": {
+    "stance-clarify-tint-mix": {
       "value": "22%",
       "type": "number"
     },
-    "stance-scope-nested-radius": {
+    "stance-clarify-nested-radius": {
       "value": "6px",
       "type": "dimension"
     },
-    "stance-scope-nested-surface": {
+    "stance-clarify-nested-surface": {
       "value": "{surface}",
       "type": "color",
       "description": "A scope panel inside another sits back into it."
@@ -547,34 +547,6 @@
     "stance-debug-title-case": {
       "value": "none",
       "type": "string"
-    },
-    "stance-danger-tone": {
-      "value": "{danger}",
-      "type": "color"
-    },
-    "stance-danger-border-color": {
-      "value": "{danger}",
-      "type": "color"
-    },
-    "stance-danger-title-color": {
-      "value": "{danger}",
-      "type": "color"
-    },
-    "stance-notice-tone": {
-      "value": "{accent}",
-      "type": "color"
-    },
-    "stance-notice-tone-mix": {
-      "value": "8%",
-      "type": "number"
-    },
-    "stance-important-border-color": {
-      "value": "{accent-fg}",
-      "type": "color"
-    },
-    "stance-important-title-color": {
-      "value": "{accent-fg}",
-      "type": "color"
     },
     "stance-preview-pad": {
       "value": "0",
@@ -681,6 +653,10 @@
       "value": "#2ec27e",
       "type": "color"
     },
+    "info-base": {
+      "value": "#7ab8d4",
+      "type": "color"
+    },
     "fg-on-accent": {
       "value": "{gray-50}",
       "type": "color"
@@ -737,6 +713,10 @@
     },
     "success": {
       "value": "{success-base}",
+      "type": "color"
+    },
+    "info": {
+      "value": "{info-base}",
       "type": "color"
     },
     "focus-ring": {
