@@ -5,6 +5,7 @@
 import type { LayoutStrategy } from '../../layout/types';
 import type { ArrivalWindow } from './arrivalWindow';
 import { sameDependsOn } from './dependents';
+import { foundHiddenRetargeted } from './pathEffects/foundHidden';
 import type { SetLayoutPayload } from './kitOps';
 import type { createLayerStack } from './layerStack';
 import { resized, type ResolvedLayoutFrame } from './layoutPass';
@@ -93,7 +94,12 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
       const node = requireNode(id);
       refuse(id, 'retarget');
       if (sameDependsOn(node.dependsOn, dependsOn)) return;
-      record('kit:setDependsOn', { id, from: node.dependsOn, to: dependsOn }, 'setDependsOn');
+      const data = foundHiddenRetargeted(node.data, node.dependsOn, dependsOn);
+      if (data === null) return void record('kit:setDependsOn', { id, from: node.dependsOn, to: dependsOn }, 'setDependsOn');
+      batch('setDependsOn', () => {
+        record('kit:setDependsOn', { id, from: node.dependsOn, to: dependsOn }, 'setDependsOn');
+        record('kit:setData', { id, from: node.data, to: data }, 'setDependsOn');
+      });
     },
 
     setLayout(id, layout) {

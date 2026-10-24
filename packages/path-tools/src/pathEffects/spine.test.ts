@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import {
-  createScene, derivedDepOf, type NodeId, pathEffectNode, pathEffectParts, PATH_EFFECT_DERIVATIONS, type RectPose, type Scene,
-  withPathEffectsRegistry,
+  createScene, derivedDepOf, type NodeId, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, PATH_EFFECT_DERIVATIONS,
+  type RectPose, type Scene, sourcesHiddenBy, withPathEffectsRegistry,
 } from '@weasel-js/core';
 import { releaseBlendSpineAction, setBlendSpineAction } from './spine';
 
@@ -28,14 +28,14 @@ const line = (id: string, y: number) => ({
 
 /** Two boxes 180 apart, a blend of one step between them over `sources`,
  *  and two lines, 100 and 200 down. */
-function setup(selected: string[], sources = ['a', 'b']) {
+function setup(selected: string[], sources = ['a', 'b'], effect: PathEffect = { kind: 'blend', steps: 1 }) {
   const scene: TestScene = createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     registry: withPathEffectsRegistry(),
     initial: [
       box('a', 0), box('b', 180), line('s1', 100), line('s2', 200),
       {
-        ...pathEffectNode({ kind: 'blend', steps: 1 }, sources as NodeId[], 'default', PATH_EFFECT_DERIVATIONS),
+        ...pathEffectNode(effect, sources as NodeId[], 'default', PATH_EFFECT_DERIVATIONS),
         id: 'blend' as NodeId,
       },
     ],
@@ -125,5 +125,25 @@ describe('releasing a blend\'s spine', () => {
     expect(releaseBlendSpineAction.enabled!(deps)).toBe('not-applicable');
     run(releaseBlendSpineAction, deps);
     expect(scene.get('blend' as NodeId)!.dependsOn).toEqual(['a', 'b']);
+  });
+});
+
+describe('a blend that hides its sources, retargeted', () => {
+  it('keeps its record of the sources it found hidden in step through Release Spine and Set Spine', () => {
+    const effect: PathEffect = { kind: 'blend', steps: 1, hideSources: true, foundHidden: [2] };
+    const { scene, deps, select } = setup(['blend'], ['a', 'b', 's1'], effect);
+    const blend = 'blend' as NodeId;
+    run(releaseBlendSpineAction, deps);
+    expect(pathEffectOf(scene.get(blend))?.foundHidden).toBeUndefined();
+    select(['blend', 's2']);
+    run(setBlendSpineAction, deps);
+    expect(sourcesHiddenBy(scene, blend)).toEqual(['a', 'b', 's2']);
+    scene.undo();
+    scene.undo();
+    expect(scene.get(blend)!.dependsOn).toEqual(['a', 'b', 's1']);
+    expect(pathEffectOf(scene.get(blend))?.foundHidden).toEqual([2]);
+    scene.redo();
+    scene.redo();
+    expect(sourcesHiddenBy(scene, blend)).toEqual(['a', 'b', 's2']);
   });
 });

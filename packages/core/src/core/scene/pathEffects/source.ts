@@ -16,7 +16,8 @@ export interface PathEffectOptions {
   /**
    * With `hideSources`, the positions in its sources of those already hidden
    * when it was made: it leaves them hidden when it goes, and takes none of
-   * them with it. Absent, it hid them all.
+   * them with it. Absent, it hid them all. `scene.setDependsOn` moves it
+   * with the sources it names.
    */
   foundHidden?: readonly number[];
 }

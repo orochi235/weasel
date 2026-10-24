@@ -68,14 +68,12 @@ export const setEffectPathAction: Action & { requires: string[] } = {
       if (record.hideSources === true) {
         const self = new Set([effect.id]);
         if (sourcesHiddenBy(scene, effect.id).includes(old) && !hiddenByOthers(scene, old, self)) ops.push(...hiddenOps(scene, old, false, SET_LABEL));
-        const found = (record.foundHidden ?? []).filter((at) => at !== 1);
-        if (hiddenOnItsOwn(scene, path.id, self)) found.push(1);
-        else ops.push(...hiddenOps(scene, path.id, true, SET_LABEL));
-        const next = { ...record } as PathEffect;
-        if (found.length > 0) next.foundHidden = found;
-        else delete next.foundHidden;
-        if ((record.foundHidden ?? []).join() !== found.join()) {
-          ops.push(createSetDataOp({ id: effect.id, from: effect.data, to: { ...(effect.data as object), pathEffect: next }, label: SET_LABEL }));
+        if (hiddenOnItsOwn(scene, path.id, self)) {
+          // The retarget has already dropped the old path's place from the record.
+          const pathEffect: PathEffect = { ...record, foundHidden: [...(record.foundHidden ?? []).filter((at) => at !== 1), 1] };
+          ops.push(createSetDataOp({ id: effect.id, from: effect.data, to: { ...(effect.data as object), pathEffect }, label: SET_LABEL }));
+        } else {
+          ops.push(...hiddenOps(scene, path.id, true, SET_LABEL));
         }
       }
       commitOps(deps, ops, SET_LABEL);

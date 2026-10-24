@@ -170,6 +170,10 @@ Priority tags:
 - **(P3) Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
 
+- **(P3) Set Spine and Release Spine ignore a blend's `hideSources`.** Set Path hides the path it lays an effect
+  along and shows the one it leaves; the spine actions move neither flag (`packages/path-tools/src/pathEffects/spine.ts`).
+  No action makes a hiding blend today, so only a document built by hand meets it.
+
 - **(P3) The `textAlong` items thunk is not memoized.** Every derivation miss, such as each frame of a source
   drag, re-runs `textClusters`.
 
