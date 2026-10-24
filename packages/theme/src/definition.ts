@@ -112,6 +112,6 @@ export interface ThemeDefinition {
   readonly semantics?: Readonly<Record<string, Varying<SemanticRule>>>;
   readonly components?: Readonly<Record<string, Varying<PinValue>>>;
   readonly pins?: Readonly<Record<string, Varying<PinValue>>>;
-  /** The colors a `tone` index picks from. Absent: the nearest theme it extends that has one, else the swatch ramp. */
-  readonly tones?: SerializableColorList;
+  /** The colors a `tint` index picks from. Absent: the nearest theme it extends that has one, else the swatch ramp. */
+  readonly tints?: SerializableColorList;
 }

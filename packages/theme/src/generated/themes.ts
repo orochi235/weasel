@@ -2575,7 +2575,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "description": "Alias for space-8. The t-shirt names name every other rung of the ladder."
       }
     },
-    "tones": {
+    "tints": {
       "ramp": "swatch"
     }
   }
@@ -3879,7 +3879,7 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "violet"
       ]
     },
-    "tones": {
+    "tints": {
       "ramp": "swatch"
     }
   }

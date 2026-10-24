@@ -2,7 +2,7 @@ import { colorLiteralToHex, type ColorSource, type Palette } from '@weasel-js/pa
 import React, { createContext, useCallback, useContext, useMemo, useRef, useLayoutEffect } from 'react';
 import { isDev } from '@weasel-js/registry';
 import { applyTheme } from './applyTheme';
-import { themeTones, type ColorList } from './colorList';
+import { themeTints, type ColorList } from './colorList';
 import { colorSourceCss, colorSourceLiteral } from './colorSource';
 import { fullSelection, selectionKey, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
@@ -19,12 +19,12 @@ export {
 export { isColorModePreference, type ColorMode, type ColorModePreference } from './colorMode';
 
 /** What `<ThemeProvider>` publishes: the theme, the full selection in force, the
- *  fully resolved token record for that pair, and the tone list and palette in force. */
+ *  fully resolved token record for that pair, and the tint list and palette in force. */
 export interface ThemeContextValue {
   readonly theme: Theme;
   readonly selection: Selection;
   readonly resolved: ResolvedTheme;
-  readonly tones: ColorList;
+  readonly tints: ColorList;
   readonly palette: Palette;
 }
 
@@ -41,8 +41,8 @@ export interface ThemeProviderProps {
    *  follows the OS setting, live; any other value the theme lacks takes the default, with a
    *  warning in development. */
   readonly selection?: Selection;
-  /** The colors a `tone` index picks from in this subtree. Absent: the theme's own. */
-  readonly tones?: ColorList;
+  /** The colors a `tint` index picks from in this subtree. Absent: the theme's own. */
+  readonly tints?: ColorList;
   /** Colors a `ColorRef` names in this subtree, answered before the theme's own names. Absent: none. */
   readonly palette?: Palette;
   /** Applied to the wrapper element, so it can be the layout element too. */
@@ -64,7 +64,7 @@ export interface ThemeProviderProps {
 export function ThemeProvider({
   theme = weaselTheme,
   selection,
-  tones,
+  tints,
   palette = NO_PALETTE,
   className,
   style,
@@ -81,9 +81,9 @@ export function ThemeProvider({
   const key = selectionKey(axes, full);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, selection: full, resolved: resolveTheme(theme, full), tones: tones ?? themeTones(theme), palette }),
+    () => ({ theme, selection: full, resolved: resolveTheme(theme, full), tints: tints ?? themeTints(theme), palette }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [theme, key, tones, palette],
+    [theme, key, tints, palette],
   );
 
   // Applying again replaces what the element held, so only the unmount releases.
@@ -138,44 +138,44 @@ export function useThemeOptional(): ThemeContextValue | null {
   return useContext(ThemeContext);
 }
 
-let defaultTones: ThemeContextValue | undefined;
+let defaultTints: ThemeContextValue | undefined;
 
 /**
- * The tone list in force and what it resolves against — the nearest
+ * The tint list in force and what it resolves against — the nearest
  * `<ThemeProvider>`'s, else the built-in theme's at its defaults. Pass the
  * result as `colorAt`'s context.
  */
-export function useTones(): ThemeContextValue {
+export function useTints(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (ctx) return ctx;
-  return (defaultTones ??= {
+  return (defaultTints ??= {
     theme: weaselTheme,
     selection: fullSelection(themeAxes(weaselTheme)),
     resolved: resolveTheme(weaselTheme),
-    tones: themeTones(weaselTheme),
+    tints: themeTints(weaselTheme),
     palette: NO_PALETTE,
   });
 }
 
 /**
- * Turns a `ColorSource` into a CSS color under the theme, tones, and palette in
- * force: `colorSourceCss` against `useTones()`. Every component that takes a
+ * Turns a `ColorSource` into a CSS color under the theme, tints, and palette in
+ * force: `colorSourceCss` against `useTints()`. Every component that takes a
  * color writes it through this. `undefined` for no source, and for one nothing
  * answers.
  */
 export function useColorCss(): (source: ColorSource | null | undefined) => string | undefined {
-  const ctx = useTones();
+  const ctx = useTints();
   return useCallback((source) => (source == null ? undefined : (colorSourceCss(source, ctx) ?? undefined)), [ctx]);
 }
 
 /**
- * Turns a `ColorSource` into a hex color under the theme, tones, and palette in force, for a
+ * Turns a `ColorSource` into a hex color under the theme, tints, and palette in force, for a
  * surface drawn without the cascade, such as a scene's paint. `useColorCss` may answer
  * `var(--wzl-…)`, which only the DOM resolves; this answers the value. `undefined` for no
  * source, and for one nothing answers.
  */
 export function useColorHex(): (source: ColorSource | null | undefined) => string | undefined {
-  const ctx = useTones();
+  const ctx = useTints();
   return useCallback((source) => {
     if (source == null) return undefined;
     const literal = colorSourceLiteral(source, ctx);

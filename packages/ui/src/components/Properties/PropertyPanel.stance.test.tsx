@@ -51,9 +51,9 @@ describe('PropertyPanel stance and tone', () => {
     expect(panel.style.getPropertyValue('--wzl-tone')).toBe('');
   });
 
-  it('reads tones from the nearest provider', () => {
+  it('reads tints from the nearest provider', () => {
     const { container } = render(
-      <ThemeProvider tones={['#101010', '#202020']}>
+      <ThemeProvider tints={['#101010', '#202020']}>
         <PropertyPanel tone={3}>x</PropertyPanel>
       </ThemeProvider>,
     );

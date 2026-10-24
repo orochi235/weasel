@@ -33,10 +33,10 @@ export interface ColorContext {
   readonly resolved: ResolvedTheme;
 }
 
-/** What a `ColorSource` resolves against under a theme. `useTones()`'s value is one. */
+/** What a `ColorSource` resolves against under a theme. `useTints()`'s value is one. */
 export interface ColorSourceContext extends ColorContext {
-  /** The list `{ ref: 'tone' }` indexes. Absent: the theme's own. */
-  readonly tones?: ColorList;
+  /** The list `{ ref: 'tint' }` indexes. Absent: the theme's own. */
+  readonly tints?: ColorList;
   /** Names answered before the theme's. */
   readonly palette?: Palette;
 }
@@ -72,9 +72,9 @@ export function rampSteps(theme: Theme, ramp: string): readonly string[] {
   return steps;
 }
 
-/** The tone list a theme declares, from the nearest theme in its chain that has one. */
-export function themeTones(theme: Theme): ColorList {
-  for (const t of themeChain(theme).reverse()) if (t.tones) return t.tones;
+/** The tint list a theme declares, from the nearest theme in its chain that has one. */
+export function themeTints(theme: Theme): ColorList {
+  for (const t of themeChain(theme).reverse()) if (t.tints) return t.tints;
   return { ramp: 'swatch' };
 }
 

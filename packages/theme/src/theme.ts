@@ -17,8 +17,8 @@ export interface Theme {
   readonly tokens: Readonly<Record<string, Varying<RawToken>>>;
   /** Ramp name → step names in order, for the ramps this theme declares itself. */
   readonly ramps?: Readonly<Record<string, readonly string[]>>;
-  /** The colors a `tone` index picks from. Absent: the nearest theme it extends that has one. */
-  readonly tones?: SerializableColorList;
+  /** The colors a `tint` index picks from. Absent: the nearest theme it extends that has one. */
+  readonly tints?: SerializableColorList;
 }
 
 /** What `defineTheme` accepts: a definition whose `extends` is a `Theme`, holding pins and components only. */
@@ -44,7 +44,7 @@ export const weaselTheme: Theme = {
   axes: BAKED_THEMES.weasel.axes,
   tokens: BAKED_THEMES.weasel.tokens,
   ramps: BAKED_THEMES.weasel.ramps,
-  tones: BAKED_THEMES.weasel.tones,
+  tints: BAKED_THEMES.weasel.tints,
 };
 
 /**
@@ -71,6 +71,6 @@ export function defineTheme(input: ThemeInput): Theme {
     extends: input.extends === undefined ? weaselTheme : input.extends,
     axes: input.axes ?? {},
     tokens,
-    ...(input.tones !== undefined ? { tones: input.tones } : {}),
+    ...(input.tints !== undefined ? { tints: input.tints } : {}),
   };
 }

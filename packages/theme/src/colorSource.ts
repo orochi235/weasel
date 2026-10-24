@@ -14,20 +14,20 @@ import {
   findRampSteps,
   isRamp,
   rampProperty,
-  themeTones,
+  themeTints,
   type ColorList,
   type ColorSourceContext,
 } from './colorListItems.ts';
 import { resolveCurrentColor } from './currentColor.ts';
 
-/** The name the tone list answers to: `{ ref: 'tone', index: 2 }` is the third tone, wrapping. */
-export const TONE_REF = 'tone';
+/** The name the tint list answers to: `{ ref: 'tint', index: 2 }` is the third tint, wrapping. */
+export const TINT_REF = 'tint';
 
 export type { ColorSourceContext };
 
 const NO_PALETTE: Palette = { entries: [] };
 
-const tonesOf = (ctx: ColorSourceContext): ColorList => ctx.tones ?? themeTones(ctx.theme);
+const tintsOf = (ctx: ColorSourceContext): ColorList => ctx.tints ?? themeTints(ctx.theme);
 
 function parsed(css: string): ColorLiteral | null {
   try {
@@ -57,23 +57,23 @@ function tokenLiteral(property: string, ctx: ColorSourceContext): ColorLiteral |
 
 const isRef = (source: ColorSource): source is ColorRef => typeof source !== 'function' && 'ref' in source;
 
-function toneSource(index: number, ctx: ColorSourceContext): ColorSource | null {
-  const tones = tonesOf(ctx);
-  if (isRamp(tones)) return tokenLiteral(rampProperty(tones, index, ctx.theme), ctx);
-  const item = colorItemAt(tones, index);
+function tintSource(index: number, ctx: ColorSourceContext): ColorSource | null {
+  const tints = tintsOf(ctx);
+  if (isRamp(tints)) return tokenLiteral(rampProperty(tints, index, ctx.theme), ctx);
+  const item = colorItemAt(tints, index);
   return typeof item === 'string' ? parsed(item) : item;
 }
 
 function themeSource(ref: ColorRef, ctx: ColorSourceContext): ColorSource | null {
-  if (ref.ref === TONE_REF) return toneSource(ref.index ?? 0, ctx);
+  if (ref.ref === TINT_REF) return tintSource(ref.index ?? 0, ctx);
   const property = propertyOf(ref, ctx);
   return property === null ? null : tokenLiteral(property, ctx);
 }
 
 /**
  * Resolve `source` to a literal, for a surface drawn without the cascade. A ref
- * names an entry of the context's palette first, then the theme: `tone` with an
- * index into the tone list, a token by its name without the `--wzl-` prefix, a
+ * names an entry of the context's palette first, then the theme: `tint` with an
+ * index into the tint list, a token by its name without the `--wzl-` prefix, a
  * ramp by its name with the index of a step, or a custom property spelled out.
  * `null` for a name nothing answers, a token that is not a color, and a custom
  * property the theme does not define.
@@ -87,17 +87,17 @@ function literalCss(source: ColorSource, ctx: ColorSourceContext): string | null
   return literal && colorLiteralToCss(literal);
 }
 
-function toneCss(source: ColorRef, ctx: ColorSourceContext): string | null {
-  const tones = tonesOf(ctx);
+function tintCss(source: ColorRef, ctx: ColorSourceContext): string | null {
+  const tints = tintsOf(ctx);
   const index = source.index ?? 0;
-  if (isRamp(tones)) return `var(${rampProperty(tones, index, ctx.theme)})`;
-  const item = colorItemAt(tones, index);
+  if (isRamp(tints)) return `var(${rampProperty(tints, index, ctx.theme)})`;
+  const item = colorItemAt(tints, index);
   if (typeof item === 'string') return item;
-  return isRef(item) && item.ref !== TONE_REF ? colorSourceCss(item, ctx) : literalCss(source, ctx);
+  return isRef(item) && item.ref !== TINT_REF ? colorSourceCss(item, ctx) : literalCss(source, ctx);
 }
 
 function themeRefCss(ref: ColorRef, ctx: ColorSourceContext): string | null {
-  if (ref.ref === TONE_REF) return toneCss(ref, ctx);
+  if (ref.ref === TINT_REF) return tintCss(ref, ctx);
   const property = propertyOf(ref, ctx);
   if (property === null) return null;
   return ref.ref.startsWith('--') || tokenLiteral(property, ctx) ? `var(${property})` : null;

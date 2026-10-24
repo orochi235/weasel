@@ -21,7 +21,7 @@ export interface BakedTheme {
   readonly tokens: Readonly<Record<string, Varying<RawToken>>>;
   /** Each ramp this definition declares → its step names in order, which the tokens alone do not keep. */
   readonly ramps?: Readonly<Record<string, readonly string[]>>;
-  readonly tones?: SerializableColorList;
+  readonly tints?: SerializableColorList;
 }
 
 /** Drop undefined fields so tokens compare and serialize the same way. */
@@ -120,6 +120,6 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     axes,
     tokens,
     ...(Object.keys(ramps).length > 0 ? { ramps } : {}),
-    ...(definition.tones !== undefined ? { tones: definition.tones } : {}),
+    ...(definition.tints !== undefined ? { tints: definition.tints } : {}),
   };
 }
