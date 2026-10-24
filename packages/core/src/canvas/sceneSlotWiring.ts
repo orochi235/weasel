@@ -1,11 +1,11 @@
 /**
  * What the scene slot needs from the `Scene` that `<Canvas>` cannot see.
  *
- * `<Canvas>` is scene-agnostic: it walks an adapter. Four things a node is
- * painted with are therefore invisible to it — an ephemeral override's alpha, a
- * derived path, which needs other nodes' poses to resolve, the paint an
- * `'inherit'` field takes from its containers, and animated vertex colors,
- * which live in an animator. `<SceneCanvas>` folds them into the slot
+ * `<Canvas>` is scene-agnostic: it walks an adapter. Five things a node is
+ * painted with are therefore invisible to it — an ephemeral override's alpha
+ * and data, a derived path, which needs other nodes' poses to resolve, the
+ * paint an `'inherit'` field takes from its containers, and animated vertex
+ * colors, which live in an animator. `<SceneCanvas>` folds them into the slot
  * here; `buildSceneViewCommands` does the same for the headless walk.
  */
 import type { SceneSlotConfig } from './buildSceneLayer';
@@ -13,6 +13,7 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
+import { nodeAsShown, shownLookup, withShownNode } from './shownNodes';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
 
 /**
@@ -37,14 +38,18 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   alphaFor?: (id: string) => number,
   colorOverrides?: ColorOverrideRegistry,
 ): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
-  const derived = withDerivedPaths(scene, withInheritedPaints(scene, slot.drawOne), slot.toPose);
+  const shown = shownLookup(scene);
+  const derived = withDerivedPaths(scene, withInheritedPaints(shown, slot.drawOne), slot.toPose);
+  const painted = colorOverrides ? withColorOverrides(colorOverrides, derived) : derived;
   const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose);
   return {
     ...slot,
     ...(slot.toPose ? { toPose: sceneShownToPose(scene, slot.toPose) } : {}),
-    ...(slot.paintBounds ? { paintBounds: withInheritedPaintBounds(scene, slot.paintBounds) } : {}),
-    drawOne: colorOverrides ? withColorOverrides(colorOverrides, derived) : derived,
-    derivedPathOf,
+    ...(slot.paintBounds
+      ? { paintBounds: withShownNode(scene.overrides, withInheritedPaintBounds(shown, slot.paintBounds)) }
+      : {}),
+    drawOne: withShownNode(scene.overrides, painted),
+    derivedPathOf: (node) => derivedPathOf(nodeAsShown(scene.overrides, node)),
     alphaFor: composeAlphaFor(scene, alphaFor),
   };
 }

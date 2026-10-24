@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { defaultDrawOne } from './defaultDrawOne';
+import { scenePickSource } from './scenePickSource';
 import type { DrawCommand } from '@weasel-js/renderer';
 
 type Layer = 'main';
@@ -86,5 +87,37 @@ describe('buildSceneViewCommands — overrides', () => {
     scene.overrides.commit();
 
     expect(textX()).toBe(120);
+  });
+
+  describe('a data override', () => {
+    /** Every label `drawOne` was handed, in walk order. */
+    const labelsSeen = (scene: ReturnType<typeof setup>['scene']): string[] => {
+      const seen: string[] = [];
+      buildSceneViewCommands(scene, VIEW, (node) => {
+        seen.push((node.data as Data).label);
+        return [];
+      });
+      return seen;
+    };
+
+    it('paints the data it shows, leaving the stored data alone', () => {
+      const { scene, id } = setup();
+      scene.overrides.set(id, { data: (d) => ({ ...d, label: `${d.label}!` }) });
+      expect(labelsSeen(scene)).toEqual(['a!']);
+      expect(scene.get(id)!.data.label).toBe('a');
+    });
+
+    it('shows a recorded write made while it is installed', () => {
+      const { scene, id } = setup();
+      scene.overrides.set(id, { data: (d) => ({ ...d, label: `${d.label}!` }) });
+      scene.update(id, { data: { label: 'b' } });
+      expect(labelsSeen(scene)).toEqual(['b!']);
+    });
+
+    it('hands picking the node as it shows', () => {
+      const { scene, id } = setup();
+      scene.overrides.set(id, { data: () => ({ label: 'shown' }) });
+      expect(scenePickSource(scene).order().map((n) => (n as { data?: Data }).data?.label)).toEqual(['shown']);
+    });
   });
 });

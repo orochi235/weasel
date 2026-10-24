@@ -10,7 +10,7 @@ import type { NodeId } from './types';
  * mutate it in place on a frame loop; `PoseOverrides.commit()` is what makes a
  * mutation visible.
  */
-export interface PoseOverride<TPose> {
+export interface PoseOverride<TPose, TData = unknown> {
   /** Replaces the node's document pose everywhere the render and hit-test
    *  paths read one, including the clip a container derives from its pose, and
    *  winning over a `derivePose`. Resolved by `effectivePose` — reading
@@ -24,6 +24,12 @@ export interface PoseOverride<TPose> {
    *  path's bounds with no rotation, or the pose's turn is applied to the path again and the
    *  selection chrome stays on the old box. A skinned rig is the writer. */
   path?: Path;
+  /** The data the node is shown with, from the data it stores — so a recorded write made while it is
+   *  installed shows through. Painting, picking, drawn bounds and the effective reading of every
+   *  derivation read it through `nodeAsShown`; the document never sees it. Replace the function to
+   *  change what it answers: the shown data is kept per stored data and function. A text edit's
+   *  drafts and a gesture's `previewData` are the writers. */
+  data?(stored: TData): TData;
 }
 
 /**
@@ -37,16 +43,16 @@ export interface PoseOverride<TPose> {
  * To promote a frame to document state (dropping a drag, baking an animation),
  * write it once through `Scene.setPose` and `clear` the override.
  */
-export interface PoseOverrides<TPose> {
+export interface PoseOverrides<TPose, TData = unknown> {
   /** Store `entry` for `id` **by reference**; the caller keeps mutating it. */
-  set(id: NodeId, entry: PoseOverride<TPose>): void;
+  set(id: NodeId, entry: PoseOverride<TPose, TData>): void;
   /** The entry `set` stored, by reference — what a writer checks to know
    *  whether its own entry is still installed. Painting reads `read`. */
-  get(id: NodeId): PoseOverride<TPose> | undefined;
+  get(id: NodeId): PoseOverride<TPose, TData> | undefined;
   /** What the node is drawn and picked with: every source of overrides for
    *  it folded into one, as of the last write or `commit()`. `undefined` for
    *  a node nothing overrides. The object is reused per node. */
-  read(id: NodeId): PoseOverride<TPose> | undefined;
+  read(id: NodeId): PoseOverride<TPose, TData> | undefined;
   has(id: NodeId): boolean;
   /** The overridden ids, as a snapshot array. */
   ids(): readonly NodeId[];
@@ -62,7 +68,7 @@ export interface PoseOverrides<TPose> {
   getGeneration(): number;
   /** A claim on some nodes' poses for a writer that publishes a whole frame
    *  at a time: a gesture's preview, a layout run. Each call is a new claim. */
-  hold(): PoseHold<TPose>;
+  hold(): PoseHold<TPose, TData>;
 }
 
 /**
@@ -73,10 +79,13 @@ export interface PoseOverrides<TPose> {
  * without clearing each other: a drag and a layout run each publish their
  * frame, and each sees the other's nodes as pinned.
  */
-export interface PoseHold<TPose> {
+export interface PoseHold<TPose, TData = unknown> {
   /** Publish this frame's poses. It is the whole picture, not a delta: an id
    *  the frame leaves out is released. Subscribers are notified once. */
   set(poses: Iterable<readonly [NodeId, TPose]>): void;
+  /** {@link PoseHold.set} for a frame that shows data as well as poses. An id another writer's
+   *  entry holds is left to that writer rather than displaced. */
+  show(frame: Iterable<readonly [NodeId, Pick<PoseOverride<TPose, TData>, 'pose' | 'data'>]>): void;
   /** The poses other writers are publishing, by id. */
   others(): ReadonlyMap<NodeId, TPose>;
   /** Release every id still held. An id whose entry another writer has since

@@ -12,6 +12,7 @@ import { resolveDerivedPath, scenePaintedPoseOf } from './derivedPath';
 import { indexedCandidates } from './pickIndex/scenePickIndex';
 import type { PickBroad, PickCandidate, PickSource, ViewPickGates } from './pickWalk';
 import { sceneParentsOf, sceneShownPathOf } from './scenePickReads';
+import { nodeAsShown, nodesAsShown } from './shownNodes';
 
 export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
   /** Pose lookup, when the caller holds an adapter that already resolves
@@ -40,13 +41,17 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 ): PickSource<TPose> {
   // Partial scene stand-ins carry only `layers` and `get`, which is all the gates read.
   const gates = nodeGates(scene as never);
+  const enumerable = typeof scene.overrides?.ids === 'function';
+  const asShown = <N extends { id: NodeId; data?: unknown }>(node: N): N =>
+    (scene.overrides ? nodeAsShown(scene.overrides, node) : node);
+  const allAsShown = <N extends { id: NodeId; data?: unknown }>(nodes: readonly N[]): readonly N[] =>
+    (enumerable ? nodesAsShown(scene.overrides, nodes) : nodes.map(asShown));
   const annotations = annotationLayerIds(scene.layers);
   const { getPose, alphaOf, layerIsPainted } = opts;
 
   // Resolved once per walk rather than once per candidate. Needs enumeration — a
   // partial scene stand-in carrying only `read` falls back to reading per node.
   let faded: Set<string> | null = null;
-  const enumerable = typeof scene.overrides?.ids === 'function';
   if (!alphaOf && enumerable) {
     for (const id of scene.overrides.ids()) {
       const a = scene.overrides.read(id)?.alpha;
@@ -69,8 +74,9 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   // where the renderer draws its dependencies, which is what an override says.
   const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
   const depOf = (id: NodeId): DerivedDep<TPose> | undefined => {
-    const dep = scene.get(id);
-    if (dep === undefined) return undefined;
+    const stored = scene.get(id);
+    if (stored === undefined) return undefined;
+    const dep = asShown(stored);
     return {
       node: dep as Node<unknown, string, TPose>,
       pose: poseOf(dep as never),
@@ -95,10 +101,12 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   return {
     ...(planeOf ? { planeOf } : {}),
     ...(index ? {
-      candidates: (broadFor: (layer: string | undefined) => PickBroad | null | undefined) =>
-        indexedCandidates(scene as never, index.descriptor, broadFor) as readonly PickCandidate<TPose>[] | null,
+      candidates: (broadFor: (layer: string | undefined) => PickBroad | null | undefined) => {
+        const found = indexedCandidates(scene as never, index.descriptor, broadFor) as readonly PickCandidate<TPose>[] | null;
+        return found === null ? null : allAsShown(found);
+      },
     } : {}),
-    order: () => scene.renderOrderNodes() as unknown as readonly PickCandidate<TPose>[],
+    order: () => allAsShown(scene.renderOrderNodes() as unknown as readonly PickCandidate<TPose>[]),
     derivedPathOf,
     poseOf,
     parentsOf: sceneParentsOf(scene),

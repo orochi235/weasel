@@ -22,6 +22,7 @@ import { paintedSceneLayers } from './sceneLayerPaint';
 import { cullDrawCommands } from '@weasel-js/renderer';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { paintBoundsFor } from './defaultDrawOne';
+import { nodeAsShown, shownLookup, withShownNode } from './shownNodes';
 
 export type { SceneViewDrawOne } from './NodeShape';
 
@@ -142,9 +143,11 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
    *  `RenderSceneToCanvasArgs.cull`. Omit to paint every node. */
   cull?: SceneViewCull<TData, TLayer, TPose>,
 ): DrawCommand[] {
-  const derivedOnly = withDerivedPaths(scene, withInheritedPaints(scene, drawOne));
+  const shown = shownLookup(scene);
+  const derivedOnly = withDerivedPaths(scene, withInheritedPaints(shown, drawOne));
   const derived = colorOverrides ? withColorOverrides(colorOverrides, derivedOnly) : derivedOnly;
-  const derivedPathOf = sceneDerivedPathOf(scene);
+  const derivedPathAt = sceneDerivedPathOf(scene);
+  const derivedPathOf = (node: Node<TData, TLayer, TPose>) => derivedPathAt(nodeAsShown(scene.overrides, node));
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
     pose: TPose,
@@ -152,7 +155,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   ): DrawCommand[] => {
     const overrideAlpha = scene.overrides.read(node.id as NodeId)?.alpha ?? 1;
     return wrapNodeOutput(
-      derived(node, pose, v),
+      derived(nodeAsShown(scene.overrides, node), pose, v),
       pose,
       (alphaFor ? alphaFor(node.id) : 1) * overrideAlpha,
     );
@@ -162,7 +165,8 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 
   const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
   const culled = cullRect && cull?.paintBounds
-    ? paintMissesView(withInheritedPaintBounds(scene, cull.paintBounds), view, cullRect) : undefined;
+    ? paintMissesView(withShownNode(scene.overrides, withInheritedPaintBounds(shown, cull.paintBounds)), view, cullRect)
+    : undefined;
   const tree: DrawCommand[] = buildSceneTree(
     hierarchy as Parameters<typeof buildSceneTree>[0],
     wrappedDrawOne as unknown as Parameters<typeof buildSceneTree>[1],

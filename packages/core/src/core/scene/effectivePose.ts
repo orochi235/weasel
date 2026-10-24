@@ -12,6 +12,7 @@ import { carryDepPath, depFrameRebase, pathAsPainted } from './depFrame';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { inheritedPaintIn, type InheritedPaint } from './inheritedPaint';
+import { nodeAsShown } from './nodeAsShown';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
 import type { Path } from '@weasel-js/geom';
 import type { DerivedDep, DerivePathFn, DerivePoseFn, Node, NodeId, PoseOverrides } from './types';
@@ -93,9 +94,10 @@ export function derivedPose<TPose>(
 
 function derivedPoseIn<TPose>(
   source: PoseSource<TPose>,
-  node: PosedNode<TPose>,
+  stored: PosedNode<TPose>,
   reading: Reading,
 ): TPose | null {
+  const node = shownIn(source, stored, reading);
   const derive = node.derivePose;
   if (derive === undefined) return null;
   const ids = dependencyIdsOf(node, source.childrenOf);
@@ -231,11 +233,15 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
   readonly pose: TPose;
   private readonly shown: Path | undefined;
 
+  private readonly posed: PosedNode<TPose>;
+
   constructor(
     private readonly source: PoseSource<TPose>,
-    private readonly posed: PosedNode<TPose>,
+    stored: PosedNode<TPose>,
     private readonly reading: Reading,
   ) {
+    const posed = shownIn(source, stored, reading);
+    this.posed = posed;
     this.node = posed as unknown as Node<unknown, string, TPose>;
     const override = reading === 'effective' ? source.overrides.read(posed.id) : undefined;
     this.shown = override?.path;
@@ -254,9 +260,18 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
   }
 
   get inherited(): InheritedPaint | undefined {
-    const { source } = this;
-    return inheritedPaintIn({ get: (id: NodeId) => source.get(id) }, this.posed);
+    const { source, reading } = this;
+    return inheritedPaintIn({ get: (id: NodeId) => {
+      const n = source.get(id);
+      return n === undefined ? undefined : shownIn(source, n, reading);
+    } }, this.posed);
   }
+}
+
+/** `node` as `reading` reads it: with the data an override shows it with in the effective
+ *  reading, as stored in the document one. */
+function shownIn<TPose>(source: PoseSource<TPose>, node: PosedNode<TPose>, reading: Reading): PosedNode<TPose> {
+  return reading === 'effective' ? nodeAsShown(source.overrides, node) : node;
 }
 
 function poseIn<TPose>(
