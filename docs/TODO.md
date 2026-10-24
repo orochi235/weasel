@@ -450,10 +450,6 @@ Priority tags:
 
 ## Text
 
-- **(P2) A style change mid-edit does not reach a text-along curve until the next keystroke.** Cmd-B or the
-  character panel restyles the overlay, but only an input event sends a draft (`onDraft` in
-  `@weasel-js/text-dom`'s `useTextEdit`).
-
 - **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
   1px in Chromium at DPR 1, and the matrix rows of `scripts/measure-overlay-alignment.config.ts`

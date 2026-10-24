@@ -91,6 +91,8 @@ export interface TextEditCommit {
 export interface TextEditDraft {
   text: string;
   runs?: readonly StyledRun[];
+  /** The node's own style, where the edit rewrote it. */
+  style?: TextStyle;
 }
 
 /** Options for `useTextEdit`. */
@@ -143,8 +145,9 @@ export interface UseTextEditOptions {
    */
   commit?: (id: string, edit: TextEditCommit) => void;
   /**
-   * Called on each edit to the overlay's text with what a commit would write
-   * now, `runs` present when runs are in play (see `setRuns`). For a host
+   * Called on each edit to the overlay's text, and on each restyle of it, with
+   * what a commit would write now: `runs` present when runs are in play (see
+   * `setRuns`), `style` when the edit rewrote the node's own. For a host
    * whose canvas shows the text somewhere besides the overlay, such as a copy
    * laid along a path, to follow the typing. Not a commit: a cancel follows
    * as it would without it.

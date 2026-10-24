@@ -20,7 +20,7 @@ import {
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { overlayAlignEdge } from './overlayDirection';
-import { overlayDraft } from './overlayDraft';
+import { overlayDraft, writeEdit } from './overlayDraft';
 import { overlayClipPath, overlayTop, overlayTransform } from './overlayFrame';
 export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
@@ -223,7 +223,6 @@ export function useTextEdit(
     // Runs are written when the node already had them — or stale styling
     // survives a Cmd-B that turned it off — or when the edit produced
     // styling. A plain-text edit of a plain-text node commits text alone.
-    const { setRuns, setText, setStyle, commit: commitAll } = optsRef.current;
     const read = domToRuns(overlay);
     const style = nodeStyleRef.current;
     // Compared untrimmed: a seeded trailing newline reads back the same at
@@ -232,15 +231,8 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    const { text, runs } = overlayDraft(read, holderRef.current, priorRunsRef.current);
     holdNodeStyle(null);
-    if (commitAll) {
-      commitAll(id, { text, ...(runs ? { runs } : {}), ...(style ? { style } : {}) });
-    } else {
-      if (style) setStyle?.(id, style);
-      setText?.(id, text);
-      if (setRuns && runs) setRuns(id, runs);
-    }
+    writeEdit(optsRef.current, id, overlayDraft(read, holderRef.current, priorRunsRef.current, style));
     setEditingId(null);
   }, [editingId, optsRef, holdNodeStyle, setEditingId]);
 
@@ -250,6 +242,12 @@ export function useTextEdit(
   }, [setEditingId]);
 
   const isEditing = useCallback((id: string) => editingId === id, [editingId]);
+
+  const sendDraft = useCallback((overlay: HTMLElement) => {
+    const id = editingIdRef.current;
+    const draft = () => overlayDraft(domToRuns(overlay), holderRef.current, priorRunsRef.current, nodeStyleRef.current);
+    if (id !== null) optsRef.current.onDraft?.(id, draft());
+  }, [editingIdRef, optsRef]);
 
   const applyStyleToSelection = useCallback(function applyStyle(patch: RunStylePatch) {
     const overlay = overlayRef.current;
@@ -287,6 +285,7 @@ export function useTextEdit(
       applyOverlayStyle(overlay, resolved);
       writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, resolved);
       publishRange(overlay, range);
+      sendDraft(overlay);
       // The rewrite raised the flag on every existing run, so a caret sitting
       // at the end of one is now *inside* a flagged span and the next
       // character would be absorbed by it. Arming the `false` makes
@@ -316,7 +315,8 @@ export function useTextEdit(
     // Republish from the range we just styled, not from the DOM selection:
     // when the patch came from chrome the selection is in that control.
     publishRange(overlay, range);
-  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, holdNodeStyle]);
+    sendDraft(overlay);
+  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, holdNodeStyle, sendDraft]);
 
   const toggleStyle = useCallback((toggle: StyleToggle) => {
     const overlay = overlayRef.current;
@@ -432,7 +432,7 @@ export function useTextEdit(
       onEdited: () => {
         holderRef.current?.edited(overlay);
         place();
-        optsRef.current.onDraft?.(editingId, overlayDraft(domToRuns(overlay), holderRef.current, priorRunsRef.current));
+        sendDraft(overlay);
       },
     });
 
@@ -482,7 +482,7 @@ export function useTextEdit(
       clearSelection();
     };
   }, [editingId, opts.container, optsRef, commit, cancelEdit, syncSelection, clearSelection,
-      frameLoop, toggleStyle, dropPending, publishRange, holdNodeStyle]);
+      frameLoop, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft]);
 
   return {
     editingId, startEdit, cancelEdit, commit, isEditing, nodeStyle,
