@@ -82,6 +82,33 @@ const firstColumnHint =
   (_: ControlMatrixColumn): string =>
     fallback ? `from ${nameOf(fallback)}` : '';
 
+type RowSpec = {
+  row: ControlMatrixProps['rows'][number];
+  cells: (MatrixTarget | undefined)[];
+  label: string;
+  about: string | undefined;
+};
+
+function rowSpecsOf(
+  rows: ControlMatrixProps['rows'],
+  columns: readonly ControlMatrixColumn[],
+  cellAt: (path: string) => MatrixTarget | undefined,
+  visible: (path: string) => boolean,
+): RowSpec[] {
+  return rows
+    .map((row) => {
+      const cells = columns.map((column) => cellAt(`${column.key}.${row.key}`));
+      const named = cells.find((cell) => cell !== undefined)?.leaf;
+      return { row, cells, label: row.label ?? named?.name ?? row.key, about: named?.description };
+    })
+    // A setting no column shows has no row; one no column has keeps its row of dashes.
+    .filter(
+      ({ row, cells }) =>
+        cells.every((cell) => cell === undefined) ||
+        cells.some((cell, i) => cell !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
+    );
+}
+
 /**
  * One setting across several config groups of the same shape: settings down
  * the side, scopes across the top, a compact read-only cell at each crossing.
@@ -92,10 +119,6 @@ const firstColumnHint =
  */
 export function ControlMatrix({
   title,
-  stance,
-  grade,
-  emphasis,
-  tint,
   schema,
   over,
   columns,
@@ -112,6 +135,7 @@ export function ControlMatrix({
   collapsed,
   onCollapsedChange,
   twisty,
+  ...appearance
 }: ControlMatrixProps): ReactElement {
   const hintFor = inheritHint ?? firstColumnHint(columns[0]);
   const [open, setOpen] = useState<OpenCell | null>(null);
@@ -124,18 +148,7 @@ export function ControlMatrix({
 
   // A row is named in `rows`, so a leaf's static `hidden` does not drop it; a `showIf` does.
   const visible = (path: string): boolean => isLeafVisible(schema, path, config, true, over);
-  const rowSpecs = rows
-    .map((row) => {
-      const cells = columns.map((column) => cellAt(`${column.key}.${row.key}`));
-      const named = cells.find((cell) => cell !== undefined)?.leaf;
-      return { row, cells, label: row.label ?? named?.name ?? row.key, about: named?.description };
-    })
-    // A setting no column shows has no row; one no column has keeps its row of dashes.
-    .filter(
-      ({ row, cells }) =>
-        cells.every((cell) => cell === undefined) ||
-        cells.some((cell, i) => cell !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
-    );
+  const rowSpecs = rowSpecsOf(rows, columns, cellAt, visible);
 
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
   // With a title row to sit in, the headers leave the table for it.
@@ -230,10 +243,7 @@ export function ControlMatrix({
 
   const panel =
     title === undefined &&
-    stance === undefined &&
-    grade === undefined &&
-    emphasis === undefined &&
-    tint === undefined &&
+    !Object.values(appearance).some((v) => v !== undefined) &&
     !fold.folds ? (
       table
     ) : (
@@ -241,10 +251,7 @@ export function ControlMatrix({
         className="lk-control-matrix-panel"
         title={title}
         actions={lifted && !fold.folded ? heads : undefined}
-        stance={stance}
-        grade={grade}
-        emphasis={emphasis}
-        tint={tint}
+        {...appearance}
         {...(fold.folds
           ? { collapsible: true, collapsed: fold.folded, onCollapsedChange: fold.toggle, twisty }
           : {})}

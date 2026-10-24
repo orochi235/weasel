@@ -1,4 +1,4 @@
-import { STANCE_SLOTS, STANCES } from '@weasel-js/theme';
+import { EMPHASIS_SLOTS, GRADE_SLOTS, STANCE_SLOTS, STANCES } from '@weasel-js/theme';
 
 /** Build-time only: `npm run gen:stances` writes each surface's rules into its stylesheet. */
 
@@ -45,17 +45,9 @@ const stanceVar = (name: string, fallback: string) => `var(${`--wzl-stance-${nam
 const slotDecls = (surface: StanceSurface, pairs: [string, string][]) =>
   pairs.filter(([name]) => name in surface.base).map(([name, value]) => `  --_s-${name}: ${value};`);
 
-const EMPHASIS: Record<string, [string, string][]> = {
-  high: [
-    ['border-color', 'var(--wzl-accent-fg)'],
-    ['title-color', 'var(--wzl-accent-fg)'],
-  ],
-  low: [['title-color', 'var(--wzl-fg-muted)']],
-};
-
 function emphasisRules(surface: StanceSurface): string[] {
-  return Object.entries(EMPHASIS).flatMap(([level, pairs]) => {
-    const body = slotDecls(surface, pairs);
+  return Object.entries(EMPHASIS_SLOTS).flatMap(([level, slots]) => {
+    const body = slotDecls(surface, Object.entries(slots));
     if (!body.length) return [];
     const sel = `${surface.selector}[data-emphasis='${level}']`;
     return [`${surface.nests ? `${sel},\n${sel}[data-nested]` : sel} {\n${body.join('\n')}\n}`];
@@ -64,9 +56,7 @@ function emphasisRules(surface: StanceSurface): string[] {
 
 function gradeRules(surface: StanceSurface): string[] {
   const body = slotDecls(surface, [
-    ['tint', 'var(--wzl-tint, var(--wzl-grade))'],
-    ['border-color', 'var(--wzl-grade)'],
-    ['title-color', 'var(--wzl-grade)'],
+    ...GRADE_SLOTS.map((slot): [string, string] => [slot, slot === 'tint' ? 'var(--wzl-tint, var(--wzl-grade))' : 'var(--wzl-grade)']),
     ['accent', 'var(--wzl-tint, var(--wzl-grade))'],
   ]);
   if (!body.length) return [];

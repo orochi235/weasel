@@ -53,7 +53,7 @@ export type DialogProps = Omit<
  * `react-aria-components` upstream of this component.
  *
  * Escape, focus trap, and scroll lock all come from the underlying
- * primitives. A click outside closes it only with `isDismissable`. the appearance props work as on `<PropertyPanel>` —
+ * primitives. A click outside closes it only with `isDismissable`. The appearance props work as on `<PropertyPanel>`:
  * a destructive confirm is `grade="danger"`.
  */
 export function Dialog(props: DialogProps) {

@@ -108,13 +108,15 @@ describe('window widget', () => {
     it('lets a grade outrank emphasis in the ring and title, as the generated CSS does', () => {
       const loud = createWindow({ ...opts, emphasis: 'high' }).draw(ctx);
       expect(ring(loud)?.stroke.paint.color).toBe(ctx.tokens['--wzl-accent-fg']);
+      expect(title(loud)).toContain(ctx.tokens['--wzl-accent-fg']);
       const both = createWindow({ ...opts, emphasis: 'high', grade: 'danger' }).draw(ctx);
       expect(ring(both)?.stroke.paint.color).toBe(ctx.tokens['--wzl-danger']);
     });
 
     it('draws a low emphasis title in the muted text color, over a stance\'s', () => {
-      const quiet = title(createWindow({ ...opts, stance: 'debug', emphasis: 'low' }).draw(ctx));
-      expect(quiet).toBe(title(createWindow(opts).draw(ctx)));
+      const aside = title(createWindow({ ...opts, stance: 'aside' }).draw(ctx));
+      expect(aside).not.toBe(title(createWindow(opts).draw(ctx)));
+      expect(title(createWindow({ ...opts, stance: 'aside', emphasis: 'low' }).draw(ctx))).toBe(title(createWindow(opts).draw(ctx)));
     });
 
     it('redraws on setStance, setGrade, setEmphasis, and setTint', () => {

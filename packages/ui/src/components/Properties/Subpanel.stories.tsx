@@ -47,7 +47,7 @@ export const InPairs: Story = {
 };
 
 /** A stance, grade or tint colors the title and the rule. */
-export const Toned: Story = {
+export const Tinted: Story = {
   render: () => (
     <div style={{ width: 320 }}>
       <PropertyPanel title="Stances">

@@ -222,7 +222,7 @@ describe('<ControlPanel> collapsible sections', () => {
   });
 });
 
-describe('<ControlPanel> title, stance and tint', () => {
+describe('<ControlPanel> title, stance, grade, emphasis, and tint', () => {
   const fields: ConfigField[] = [{ key: 'on', label: 'On', type: 'checkbox', default: true }];
 
   it('renders the bare list when given none of them', () => {

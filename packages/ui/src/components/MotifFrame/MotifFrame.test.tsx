@@ -77,7 +77,7 @@ describe('MotifFrame', () => {
     expect(group.querySelector(':scope > legend')).toHaveTextContent('Wall');
   });
 
-  it('carries stance and tint on the root, as every stanced surface does', () => {
+  it('carries stance, grade, emphasis, and tint on the root, as every stanced surface does', () => {
     render(
       <MotifFrame title="Zone" motif={stereo()} stance="clarify" tint={cssColorLiteral('#2b6cb0')}>
         x

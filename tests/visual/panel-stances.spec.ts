@@ -1,5 +1,5 @@
 /**
- * Panel stances and tones, checked in a browser against the real stylesheets —
+ * Panel stances, grades, emphasis, and tints, checked in a browser against the real stylesheets —
  * jsdom resolves no var() or color-mix(), so the unit tests can only read the
  * fallback chains as text. Computed styles only, no pixel baseline.
  */
@@ -15,27 +15,27 @@ const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
 const rows = `<div class="list"><label class="row"><span class="rowLabel">Amount<em class="readout">0.40</em></span><input type="range"></label></div>`;
 const panel = (attrs: string, title: string, inner = rows) =>
   `<div class="panel" ${attrs}><h2 class="panelTitle">${title}</h2>${inner}</div>`;
-const tone = (step: string) => `data-tone="1" style="--wzl-tone: var(--wzl-swatch-${step})"`;
+const tint = (step: string) => `data-tint="1" style="--wzl-tint: var(--wzl-swatch-${step})"`;
 
 const BODY = [
   panel('data-k="none"', 'no stance'),
-  panel(`data-k="scope-tone" data-stance="scope" ${tone('green')}`, 'scope'),
-  panel('data-k="scope" data-stance="scope"', 'scope, no tone'),
-  panel('data-k="danger" data-stance="danger"', 'danger'),
+  panel(`data-k="clarify-tint" data-stance="clarify" ${tint('green')}`, 'clarify'),
+  panel('data-k="clarify" data-stance="clarify"', 'clarify, no tint'),
+  panel('data-k="danger" data-grade="danger" style="--wzl-grade: var(--wzl-danger)"', 'danger'),
   panel('data-k="debug" data-stance="debug"', 'debug'),
   panel('data-k="aside" data-stance="aside"', 'aside'),
   panel('data-k="preview" data-stance="preview"', 'preview'),
-  panel('data-k="notice" data-stance="notice"', 'notice'),
-  panel('data-k="important" data-stance="important"', 'important'),
+  panel('data-k="warn" data-grade="warn" style="--wzl-grade: var(--wzl-warning)"', 'warn'),
+  panel('data-k="high" data-emphasis="high"', 'high emphasis'),
   panel('data-k="advanced" data-stance="advanced"', 'advanced'),
-  panel(`data-k="outer" data-stance="scope" ${tone('sky')}`, 'outer', panel('data-k="nested" data-stance="scope" data-nested', 'nested')),
+  panel(`data-k="outer" data-stance="clarify" ${tint('sky')}`, 'outer', panel('data-k="nested" data-stance="clarify" data-nested', 'nested')),
   `<div class="pin">${panel('data-k="pinned" data-stance="aside"', 'pinned')}</div>`,
   panel('data-k="host"', 'host', [
     `<div class="frame rule group" data-k="group"><h3 class="title"><hr><span>group</span><hr></h3>${rows}</div>`,
-    `<div class="frame rule group" data-k="group-danger" data-stance="danger"><h3 class="title"><hr><span>danger group</span><hr></h3>${rows}</div>`,
-    `<div class="subpanel" data-k="sub-important" data-stance="important"><h4 class="subpanelTitle"><span>important</span><hr></h4>${rows}</div>`,
-    `<div class="frame rule group" data-k="group-tone" ${tone('green')}><h3 class="title"><hr><span>toned group</span><hr></h3>${rows}</div>`,
-    `<div class="frame stereo" data-side="left" data-k="stereo-danger" data-stance="danger"><div class="bar"><span class="label">stereo</span></div><div class="body">${rows}</div></div>`,
+    `<div class="frame rule group" data-k="group-danger" data-grade="danger" style="--wzl-grade: var(--wzl-danger)"><h3 class="title"><hr><span>danger group</span><hr></h3>${rows}</div>`,
+    `<div class="subpanel" data-k="sub-high" data-emphasis="high"><h4 class="subpanelTitle"><span>high emphasis</span><hr></h4>${rows}</div>`,
+    `<div class="frame rule group" data-k="group-tint" ${tint('green')}><h3 class="title"><hr><span>tinted group</span><hr></h3>${rows}</div>`,
+    `<div class="frame stereo" data-side="left" data-k="stereo-danger" data-grade="danger" style="--wzl-grade: var(--wzl-danger)"><div class="bar"><span class="label">stereo</span></div><div class="body">${rows}</div></div>`,
   ].join('')),
 ].join('');
 
@@ -105,34 +105,34 @@ for (const mode of ['dark', 'light'] as const) {
       expect(none).toMatchObject({ bg: ref.raised, borderWidth: '1px', borderStyle: 'solid', borderColor: ref.border, radius: '14px', titleSize: ref.titleSize, titleCase: 'none', readout: ref.accentFg });
     });
 
-    test('each stance draws its own look, and a stanced title takes the row-label recipe', async ({ page }) => {
+    test('each stance, grade, and emphasis draws its own look, and a stanced title takes the row-label recipe', async ({ page }) => {
       await mount(page, mode);
       const l = await looks(page);
-      expect(l.scope).toMatchObject({ borderWidth: '0px', radius: '8px', titleCase: 'uppercase' });
-      expect(l.scope.titleSize).not.toBe(l.none.titleSize);
+      expect(l.clarify).toMatchObject({ borderWidth: '0px', radius: '8px', titleCase: 'uppercase' });
+      expect(l.clarify.titleSize).not.toBe(l.none.titleSize);
       expect(l.aside.bg).toMatch(/[/,] 0\)$/); // fully transparent, however color-mix serializes it
       expect(l.debug.borderStyle).toBe('dashed');
       expect(l.debug.titleFont).toMatch(/mono/i);
       expect(l.danger.bg).not.toBe(l.ref.raised);
       expect(l.danger.titleColor).toBe(l.ref.danger);
-      expect(l.notice.bg).not.toBe(l.ref.raised);
-      expect(l.important.borderColor).toBe(l.ref.accentFg);
-      expect(l.important.titleColor).toBe(l.ref.accentFg);
-      expect(l.important.titleColor).not.toBe(l.none.titleColor);
-      expect(l.advanced.titleColor).not.toBe(l.scope.titleColor);
+      expect(l.warn.bg).not.toBe(l.ref.raised);
+      expect(l.high.borderColor).toBe(l.ref.accentFg);
+      expect(l.high.titleColor).toBe(l.ref.accentFg);
+      expect(l.high.titleColor).not.toBe(l.none.titleColor);
+      expect(l.advanced.titleColor).not.toBe(l.clarify.titleColor);
       expect(l.preview.pad).toBe('0px');
     });
 
-    test('a named tone mixes into the surface and recolors the controls; a stance’s own tone does not', async ({ page }) => {
+    test('a named tint mixes into the surface and recolors the controls; a grade does not', async ({ page }) => {
       await mount(page, mode);
       const l = await looks(page);
-      expect(l['scope-tone'].bg).not.toBe(l.scope.bg);
-      // Readouts paint --wzl-accent-fg, which the rebind derives from the tone.
-      expect(l['scope-tone'].readout).toBe(l.ref.greenFg);
+      expect(l['clarify-tint'].bg).not.toBe(l.clarify.bg);
+      // Readouts paint --wzl-accent-fg, which the rebind derives from the tint.
+      expect(l['clarify-tint'].readout).toBe(l.ref.greenFg);
       expect(l.danger.readout).toBe(l.ref.accentFg);
     });
 
-    test('a nested panel reads its stance’s nested slots, and takes no tone from its parent', async ({ page }) => {
+    test('a nested panel reads its stance’s nested slots, and takes no tint from its parent', async ({ page }) => {
       await mount(page, mode);
       const l = await looks(page);
       expect(l.nested.radius).toBe('6px');
@@ -140,16 +140,16 @@ for (const mode of ['dark', 'light'] as const) {
       expect(l.nested.bg).not.toBe(l.outer.bg);
     });
 
-    test('a group and a subpanel follow the same stances and tones', async ({ page }) => {
+    test('a group and a subpanel follow the same grades, emphasis, and tints', async ({ page }) => {
       await mount(page, mode);
       const l = await looks(page);
       expect(l['group-danger'].bg).not.toBe(l.group.bg);
       expect(l['group-danger'].titleColor).toBe(l.ref.danger);
-      expect(l['sub-important'].titleColor).toBe(l.ref.accentFg);
-      expect(l['group-tone'].readout).toBe(l.ref.greenFg);
+      expect(l['sub-high'].titleColor).toBe(l.ref.accentFg);
+      expect(l['group-tint'].readout).toBe(l.ref.greenFg);
     });
 
-    test('every motif takes the same stance: a danger stereo frame shares the danger group’s border color', async ({ page }) => {
+    test('every motif takes the same grade: a danger stereo frame shares the danger group’s border color', async ({ page }) => {
       await mount(page, mode);
       const l = await looks(page);
       expect(l['stereo-danger'].borderColor).toBe(l['group-danger'].borderColor);

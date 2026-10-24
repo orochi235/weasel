@@ -8,7 +8,7 @@ import { PropertyPanel } from './PropertyPanel';
 
 const panelOf = (el: HTMLElement) => el.firstElementChild as HTMLElement;
 
-describe('PropertyPanel stance and tint', () => {
+describe('PropertyPanel stance, grade, emphasis, and tint', () => {
   it('renders no stance attributes and no inline tint when given neither', () => {
     const { container } = render(<PropertyPanel title="T">x</PropertyPanel>);
     const panel = panelOf(container);
@@ -61,6 +61,18 @@ describe('PropertyPanel stance and tint', () => {
     expect(panel.style.getPropertyValue('--wzl-tint')).toBe('#202020');
   });
 
+  it('names its grade and emphasis, and sets the grade color for the rules to read', () => {
+    const { container } = render(
+      <PropertyPanel grade="danger" emphasis="high">
+        x
+      </PropertyPanel>,
+    );
+    const panel = panelOf(container);
+    expect(panel.dataset).toMatchObject({ grade: 'danger', emphasis: 'high' });
+    expect(panel.style.getPropertyValue('--wzl-grade')).toBe('var(--wzl-danger)');
+    expect(panel.style.getPropertyValue('--wzl-emphasis-fg')).toBe('var(--wzl-accent-fg)');
+  });
+
   it('marks a panel inside another as nested, and only that one', () => {
     const { container } = render(
       <PropertyPanel stance="clarify">
@@ -74,7 +86,7 @@ describe('PropertyPanel stance and tint', () => {
   });
 });
 
-describe('the rest of the family takes stance, grade and tint', () => {
+describe('the rest of the family takes stance, grade, emphasis, and tint', () => {
   it('a group and a subpanel render both', () => {
     const { container } = render(
       <>

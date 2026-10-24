@@ -178,11 +178,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   showHidden = false,
   changed,
   title,
-  stance,
-  grade,
-  emphasis,
-  tint,
   className,
+  ...appearance
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
   const choices = useFieldChoicesOf(resolved.group);
@@ -251,10 +248,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   const panelFolds = collapsible ?? defaultCollapsed !== undefined;
   const panel =
     title === undefined &&
-    stance === undefined &&
-    grade === undefined &&
-    emphasis === undefined &&
-    tint === undefined &&
+    !Object.values(appearance).some((v) => v !== undefined) &&
     !panelFolds ? (
       list
     ) : (
@@ -262,10 +256,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         className="lk-control-panel-frame"
         title={title}
         actions={titled.control}
-        stance={stance}
-        grade={grade}
-        emphasis={emphasis}
-        tint={tint}
+        {...appearance}
         density={density}
         {...(panelFolds
           ? {

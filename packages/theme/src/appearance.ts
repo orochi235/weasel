@@ -23,3 +23,12 @@ export const EMPHASIS_FG: Readonly<Record<Emphasis, string>> = {
   high: 'var(--wzl-accent-fg)',
   low: 'var(--wzl-fg-muted)',
 };
+
+/** The surface slots an emphasis repaints, beyond the text color it hands down. */
+export const EMPHASIS_SLOTS: Readonly<Record<Emphasis, Partial<Record<'border-color' | 'title-color', string>>>> = {
+  high: { 'border-color': 'var(--wzl-accent-fg)', 'title-color': 'var(--wzl-accent-fg)' },
+  low: { 'title-color': 'var(--wzl-fg-muted)' },
+};
+
+/** The surface slots a grade repaints in its color. */
+export const GRADE_SLOTS = ['tint', 'border-color', 'title-color'] as const;

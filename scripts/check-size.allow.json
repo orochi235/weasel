@@ -113,7 +113,7 @@
     "longestFunction": 229
   },
   "packages/hud/src/widgets/window/window.ts": {
-    "longestFunction": 235
+    "longestFunction": 228
   },
   "packages/kernel3d/src/deps.ts": {
     "longestFunction": 161
@@ -135,7 +135,7 @@
     "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 150
+    "longestFunction": 144
   },
   "packages/labkit/src/controls/panelRows.tsx": {
     "longestFunction": 228
@@ -173,7 +173,7 @@
     "longestFunction": 400
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 218
+    "longestFunction": 217
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439
@@ -233,7 +233,7 @@
     "longestFunction": 264
   },
   "packages/ui/src/components/Callout/Callout.tsx": {
-    "longestFunction": 173
+    "longestFunction": 136
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
     "lines": 452,

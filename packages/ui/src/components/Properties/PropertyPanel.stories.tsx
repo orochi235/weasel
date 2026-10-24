@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { decimal } from '@weasel-js/quantity';
+import { EMPHASES, GRADES, STANCES } from '@weasel-js/theme';
 import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
 import { Subpanel, PropertyField, PropertyList, type PropertyListPack, PropertySpan, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { Switch } from '@weasel-js/ui/components/Switch';
@@ -190,17 +191,6 @@ export const ListWithoutChrome: Story = {
   ),
 };
 
-const STANCES = [
-  undefined,
-  'clarify',
-  'aside',
-  'advanced',
-  'debug',
-  'preview',
-  'confirm',
-  'cancel',
-] as const;
-
 function StanceRows() {
   const [amount, setAmount] = useState(0.4);
   const [on, setOn] = useState(true);
@@ -212,12 +202,25 @@ function StanceRows() {
   );
 }
 
-/** Every stance and none, then tints 0–3 on `clarify`, then a panel nested in each. */
+/** No stance and every stance, each grade, high and low emphasis, tints 0–3 on `clarify`, then a panel nested in each stance and a danger one in `clarify`. */
 export const Stances: Story = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 260px)', gap: 16 }}>
+      <PropertyPanel title="no stance">
+        <StanceRows />
+      </PropertyPanel>
       {STANCES.map((stance) => (
-        <PropertyPanel key={stance ?? 'none'} stance={stance} title={stance ?? 'no stance'}>
+        <PropertyPanel key={stance} stance={stance} title={stance}>
+          <StanceRows />
+        </PropertyPanel>
+      ))}
+      {GRADES.map((grade) => (
+        <PropertyPanel key={`grade-${grade}`} grade={grade} title={`grade ${grade}`}>
+          <StanceRows />
+        </PropertyPanel>
+      ))}
+      {EMPHASES.map((emphasis) => (
+        <PropertyPanel key={`emphasis-${emphasis}`} emphasis={emphasis} title={`emphasis ${emphasis}`}>
           <StanceRows />
         </PropertyPanel>
       ))}
@@ -229,7 +232,12 @@ export const Stances: Story = {
       <PropertyPanel tint={2} title="tint 2, no stance">
         <StanceRows />
       </PropertyPanel>
-      {STANCES.filter(Boolean).map((stance) => (
+      <PropertyPanel stance="clarify" tint={4} title="danger nested in clarify">
+        <PropertyPanel grade="danger" title="danger">
+          <StanceRows />
+        </PropertyPanel>
+      </PropertyPanel>
+      {STANCES.map((stance) => (
         <PropertyPanel key={`nested-${stance}`} stance="clarify" tint={4} title={`${stance} nested in clarify`}>
           <PropertyPanel stance={stance} title={stance}>
             <StanceRows />
@@ -561,7 +569,7 @@ export const Sidebar: Story = {
  * ordinal is its handle. Its body pairs its rows and gives the shape's own
  * parameters a `Subpanel`.
  */
-export const ToneList: Story = {
+export const TintList: Story = {
   render: () => {
     function Tails() {
       const [tails, setTails] = useState<LayerListItem[]>([

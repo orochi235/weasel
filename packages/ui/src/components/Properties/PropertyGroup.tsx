@@ -38,9 +38,8 @@ export interface PropertyGroupProps extends PropertyMetricProps, AppearanceProps
  * related rows under a heading.
  *
  * A collapsible group keeps its rows mounted and hides them, so a control's
- * local state survives being folded away. the appearance props work as on
- * `<PropertyPanel>`; in the default
- * `rule` motif a tint also draws the group's leading edge, which is how a list
+ * local state survives being folded away. The appearance props work as on
+ * `<PropertyPanel>`; in the default `rule` motif a tint also draws the group's leading edge, which is how a list
  * of like groups — effects, tails — tells its members apart.
  * `leading` and `actions` put a handle and controls in the title row, and the
  * groups of a `<PropertyList>` reorder with `useReorderDragList`.

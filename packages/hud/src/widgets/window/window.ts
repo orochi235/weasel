@@ -6,10 +6,8 @@ import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns, pathFromD, parseColor, pastDragThreshold } from '@weasel-js/core';
 import { clampRectWithin } from '@weasel-js/geom';
 import { dashForStrokeStyle, mixOklab, type ColorSource } from '@weasel-js/paint';
-import {
-  GRADE_TOKENS, resolveCurrentColor, resolveStanceSlots, TINT_REF,
-  type Emphasis, type Grade, type Stance,
-} from '@weasel-js/theme';
+import { TINT_REF, type Emphasis, type Grade, type Stance } from '@weasel-js/theme';
+import { windowLook } from './windowLook';
 import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
@@ -84,8 +82,6 @@ export interface WindowWidget extends Widget {
   setTint(tint: number | ColorSource | undefined): void;
   dispose(): void;
 }
-
-type WindowLook = Record<'surface' | 'border-color' | 'border-style' | 'border-width' | 'tint-mix' | 'tint' | 'title-color' | 'title-case', string>;
 
 /** `color-mix(in oklab, tint p, surface)`, for a canvas that has no cascade to ask. */
 function mixTint(tint: string, mix: string, surface: string): string {
@@ -204,31 +200,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       // The grab bands sit outside contentRect, so nothing else paints them —
       // without these the scene shows through the window's own border. The
       // titlebar, when there is one, is the top band.
-      const surface = ctx.tokens['--wzl-surface-raised'];
-      const look = resolveStanceSlots<keyof WindowLook>(ctx.tokens, {
-        surface,
-        'border-color': ctx.tokens['--wzl-border'],
-        'border-style': 'solid',
-        'border-width': '1px',
-        'tint-mix': ctx.tokens['--wzl-panel-tint-mix'],
-        tint: surface,
-        'title-color': ctx.tokens['--wzl-fg-muted'],
-        'title-case': 'none',
-      }, { stance });
-      // The overrides the generated CSS applies, in its order: emphasis, then grade.
-      if (emphasis === 'high') {
-        look['border-color'] = ctx.tokens['--wzl-accent-fg'];
-        look['title-color'] = ctx.tokens['--wzl-accent-fg'];
-      } else if (emphasis === 'low') {
-        look['title-color'] = ctx.tokens['--wzl-fg-muted'];
-      }
-      if (grade !== undefined) {
-        const graded = ctx.tokens[GRADE_TOKENS[grade]];
-        look.tint = graded;
-        look['border-color'] = graded;
-        look['title-color'] = graded;
-      }
-      look['title-color'] = resolveCurrentColor(look['title-color'], ctx.tokens['--wzl-fg']);
+      const look = windowLook(ctx.tokens, { stance, grade, emphasis });
       const named = tint === undefined ? undefined : ctx.color(typeof tint === 'number' ? { ref: TINT_REF, index: tint } : tint);
       const band = named === undefined && stance === undefined && grade === undefined
         ? look.surface

@@ -29,7 +29,7 @@ export const Composed: Story = {
   ),
 };
 
-export const Tones: Story = {
+export const Grades: Story = {
   render: () => {
     function Row() {
       const infoRef = useRef<HTMLButtonElement>(null);
@@ -71,8 +71,8 @@ export const Modal: Story = {
           onOpenChange={setOpen}
           footer={
             <>
-              <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button variant="primary" size="sm" onClick={() => setOpen(false)}>Delete</Button>
+              <Button size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button stance="confirm" size="sm" onClick={() => setOpen(false)}>Delete</Button>
             </>
           }
         />

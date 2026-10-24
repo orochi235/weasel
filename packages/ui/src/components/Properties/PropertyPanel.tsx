@@ -29,8 +29,8 @@ const PanelNesting = createContext(false);
  * A titled panel holding property rows — the sidebar container the rest of
  * this module's components fill.
  *
- * `stance` says what kind of content it holds, `grade` how serious it is, and `tint` which of its peers it
- * is; the theme's `--wzl-panel-*` and `--wzl-stance-*` slots decide how each looks. A stanced
+ * `stance` says what kind of content it holds, `grade` how serious it is, `emphasis` how loudly it reads,
+ * and `tint` which of its peers it is; the theme's `--wzl-panel-*` and `--wzl-stance-*` slots decide how each looks. A stanced
  * panel's title takes the row-label recipe rather than the display title.
  */
 export function PropertyPanel({

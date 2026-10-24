@@ -9,7 +9,7 @@ const ctx = {
   setSectionCollapsed: () => {},
 } as unknown as TrialChromeContext;
 
-describe('<SidebarRegion> stance and tint', () => {
+describe('<SidebarRegion> stance, grade, emphasis, and tint', () => {
   it('puts a section’s stance and tint on the section', () => {
     const contributions: RegionContribution<TrialChromeContext>[] = [
       { id: 'a', region: 'sidebar', item: { title: 'Plain', body: 'x' } },
