@@ -1,12 +1,12 @@
 import { createContext, type ReactNode, useContext, useId } from 'react';
 import { Disclosure } from '../Disclosure';
-import { type StanceProps, useStance } from '../stance';
+import { type AppearanceProps, useAppearance } from '../appearance';
 import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import s from './Properties.module.css';
 
 /** Props for `<PropertyPanel>`. */
-export interface PropertyPanelProps extends PropertyMetricProps, StanceProps, CollapseProps {
+export interface PropertyPanelProps extends PropertyMetricProps, AppearanceProps, CollapseProps {
   title?: ReactNode;
   /** Controls on the trailing edge of the title row — a switch, a clear
    *  button. They sit outside the heading, so they neither take its type nor
@@ -29,7 +29,7 @@ const PanelNesting = createContext(false);
  * A titled panel holding property rows — the sidebar container the rest of
  * this module's components fill.
  *
- * `stance` says what kind of content it holds and `tone` which of its peers it
+ * `stance` says what kind of content it holds, `grade` how serious it is, and `tint` which of its peers it
  * is; the theme's `--wzl-panel-*` and `--wzl-stance-*` slots decide how each looks. A stanced
  * panel's title takes the row-label recipe rather than the display title.
  */
@@ -42,7 +42,9 @@ export function PropertyPanel({
   density,
   align,
   stance,
-  tone,
+  grade,
+  emphasis,
+  tint,
   collapsible,
   defaultCollapsed,
   collapsed,
@@ -50,7 +52,7 @@ export function PropertyPanel({
   twisty: twistyShown,
 }: PropertyPanelProps) {
   const nested = useContext(PanelNesting);
-  const attrs = useStance({ stance, tone });
+  const attrs = useAppearance({ stance, grade, emphasis, tint });
   const bodyId = useId();
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty: twistyShown });
   const { folds, folded, toggle } = fold;

@@ -52,7 +52,7 @@ function useAttachOptions(font: AttachHudOptions['font']): AttachHudOptions {
     const stable = family ?? (metricsUrl !== undefined && atlasUrl !== undefined ? { metricsUrl, atlasUrl } : undefined);
     return {
       theme: provided?.resolved ?? resolveTheme(weaselTheme),
-      ...(provided ? { tones: provided } : {}),
+      ...(provided ? { tints: provided } : {}),
       ...(stable !== undefined ? { font: stable } : {}),
     };
   }, [provided, family, metricsUrl, atlasUrl]);

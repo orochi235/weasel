@@ -9,21 +9,21 @@ const ctx = {
   setSectionCollapsed: () => {},
 } as unknown as TrialChromeContext;
 
-describe('<SidebarRegion> stance and tone', () => {
-  it('puts a section’s stance and tone on the section', () => {
+describe('<SidebarRegion> stance and tint', () => {
+  it('puts a section’s stance and tint on the section', () => {
     const contributions: RegionContribution<TrialChromeContext>[] = [
       { id: 'a', region: 'sidebar', item: { title: 'Plain', body: 'x' } },
       {
         id: 'b',
         region: 'sidebar',
-        item: { title: 'Debug', body: 'y', stance: 'debug', tone: cssColorLiteral('#224a63') },
+        item: { title: 'Debug', body: 'y', stance: 'debug', tint: cssColorLiteral('#224a63') },
       },
     ];
     const { container } = render(<SidebarRegion contributions={contributions} ctx={ctx} />);
     const [plain, debug] = [...container.querySelectorAll<HTMLElement>('.lk-sidebar-section')];
     expect(plain.hasAttribute('data-stance')).toBe(false);
     expect(debug.dataset.stance).toBe('debug');
-    expect(debug.style.getPropertyValue('--wzl-tone')).toBe('#224a63');
+    expect(debug.style.getPropertyValue('--wzl-tint')).toBe('#224a63');
   });
 });
 

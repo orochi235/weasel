@@ -1,13 +1,13 @@
 import { type ReactNode, useId } from 'react';
 import { Disclosure } from '../Disclosure';
 import { type Motif, MotifFrame } from '../MotifFrame';
-import type { StanceProps } from '../stance';
+import type { AppearanceProps } from '../appearance';
 import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import s from './Properties.module.css';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 
 /** Props for `<Subpanel>`. */
-export interface SubpanelProps extends PropertyMetricProps, StanceProps, CollapseProps {
+export interface SubpanelProps extends PropertyMetricProps, AppearanceProps, CollapseProps {
   title: ReactNode;
   /** How the subpanel draws its title and edge. Defaults to the `subpanel` `<DefaultMotif>`, `divider()` unless one is set. */
   motif?: Motif;
@@ -21,7 +21,7 @@ export interface SubpanelProps extends PropertyMetricProps, StanceProps, Collaps
 
 /** A divider inside a property list: in the default `divider` motif, a small
  *  title trailed by a rule. Use `<PropertyGroup>` for a bordered section. A
- *  stance or tone colors the title and rule. */
+ *  stance, grade, or tint colors the title and rule. */
 export function Subpanel({
   title,
   motif,
@@ -32,7 +32,9 @@ export function Subpanel({
   density,
   align,
   stance,
-  tone,
+  grade,
+  emphasis,
+  tint,
   collapsible,
   defaultCollapsed,
   collapsed,
@@ -62,7 +64,9 @@ export function Subpanel({
       }
       className={propertyMetricClass(s.subpanel, { density, align }, className)}
       stance={stance}
-      tone={tone}
+      grade={grade}
+      emphasis={emphasis}
+      tint={tint}
     >
       <div id={bodyId} className={s.subpanelBody} hidden={folded}>
         {children}

@@ -142,10 +142,10 @@ const THEME_TONES = Array.from({ length: 10 }, (_, i) => i);
 
 describe('ink', () => {
   it.each([...GRAYS, ...HUES, ...THEME_TONES].map((t) => [t] as const))(
-    'a plaque toned %s draws its title at 4.5:1 or better',
-    (tone) => {
+    'a plaque tinted %s draws its title at 4.5:1 or better',
+    (tint) => {
       render(
-        <MotifFrame title="View" motif={plaque()} tone={typeof tone === 'number' ? tone : cssColorLiteral(tone)}>
+        <MotifFrame title="View" motif={plaque()} tint={typeof tint === 'number' ? tint : cssColorLiteral(tint)}>
           x
         </MotifFrame>,
       );
@@ -155,9 +155,9 @@ describe('ink', () => {
     },
   );
 
-  it.each([...GRAYS, ...HUES].map((t) => [t] as const))('a stereo bar toned %s draws its title at 4.5:1 or better', (tone) => {
+  it.each([...GRAYS, ...HUES].map((t) => [t] as const))('a stereo bar tinted %s draws its title at 4.5:1 or better', (tint) => {
     render(
-      <MotifFrame title="IN" motif={stereo()} tone={cssColorLiteral(tone)}>
+      <MotifFrame title="IN" motif={stereo()} tint={cssColorLiteral(tint)}>
         x
       </MotifFrame>,
     );

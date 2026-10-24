@@ -104,7 +104,7 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
    *  default, or from what was last saved, is the caller's to say. A paired row is marked when any of its
    *  cells is named, and an alias row when the leaf it shows is. */
   changed?: ReadonlySet<string>;
-  /** Heads the panel. With `title`, `stance` or `tone` given, or with the panel
+  /** Heads the panel. With `title`, any appearance prop given, or with the panel
    *  made to fold, the rows sit in a `<PropertyPanel>` carrying them; with
    *  none, they are the bare list. */
   title?: ReactNode;
@@ -179,7 +179,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   changed,
   title,
   stance,
-  tone,
+  grade,
+  emphasis,
+  tint,
   className,
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
@@ -248,7 +250,12 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   );
   const panelFolds = collapsible ?? defaultCollapsed !== undefined;
   const panel =
-    title === undefined && stance === undefined && tone === undefined && !panelFolds ? (
+    title === undefined &&
+    stance === undefined &&
+    grade === undefined &&
+    emphasis === undefined &&
+    tint === undefined &&
+    !panelFolds ? (
       list
     ) : (
       <PropertyPanel
@@ -256,7 +263,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         title={title}
         actions={titled.control}
         stance={stance}
-        tone={tone}
+        grade={grade}
+        emphasis={emphasis}
+        tint={tint}
         density={density}
         {...(panelFolds
           ? {

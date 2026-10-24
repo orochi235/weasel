@@ -559,7 +559,7 @@ function OverlaysAndFeedback() {
             triggerRef={calloutAnchor}
             isOpen={calloutOpen}
             onOpenChange={setCalloutOpen}
-            stance="notice"
+            grade="warn"
             title="Notice"
           >
             Neutral guidance.

@@ -41,7 +41,7 @@ export interface ControlMatrixRow {
 
 /** Props for `ControlMatrix`. */
 export interface ControlMatrixProps extends AppearanceProps, CollapseProps {
-  /** Heads the matrix. With `title`, `stance` or `tone` given, or with any of
+  /** Heads the matrix. With `title`, any appearance prop given, or with any of
    *  the fold props, it sits in a `<PropertyPanel>`, as a `ControlPanel` does.
    *  A titled matrix draws its column headers in the panel's title row, over
    *  their columns, and a folded one draws only the title. */
@@ -93,7 +93,9 @@ const firstColumnHint =
 export function ControlMatrix({
   title,
   stance,
-  tone,
+  grade,
+  emphasis,
+  tint,
   schema,
   over,
   columns,
@@ -227,7 +229,12 @@ export function ControlMatrix({
   );
 
   const panel =
-    title === undefined && stance === undefined && tone === undefined && !fold.folds ? (
+    title === undefined &&
+    stance === undefined &&
+    grade === undefined &&
+    emphasis === undefined &&
+    tint === undefined &&
+    !fold.folds ? (
       table
     ) : (
       <PropertyPanel
@@ -235,7 +242,9 @@ export function ControlMatrix({
         title={title}
         actions={lifted && !fold.folded ? heads : undefined}
         stance={stance}
-        tone={tone}
+        grade={grade}
+        emphasis={emphasis}
+        tint={tint}
         {...(fold.folds
           ? { collapsible: true, collapsed: fold.folded, onCollapsedChange: fold.toggle, twisty }
           : {})}

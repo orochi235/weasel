@@ -4,7 +4,7 @@ import s from './titlebar.module.css';
 
 /**
  * A solid title strip across the top, the way a desktop window is titled. The
- * strip is the edge color, or the tone where one is named; a theme repaints it
+ * strip is the edge color, or the tint where one is named; a theme repaints it
  * through `--wzl-titlebar-surface` and `--wzl-titlebar-fg`, centers the title
  * with `--wzl-titlebar-align`, and draws the frame's edge in relief with
  * `--wzl-bevel-raised`.

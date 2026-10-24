@@ -51,7 +51,7 @@ describe('window widget', () => {
     expect(covered(200, 250 - M.edge / 2)).toBe(true);              // bottom band
   });
 
-  describe('stance and tone', () => {
+  describe('stance, grade, emphasis, and tint', () => {
     type Cmd = ReturnType<ReturnType<typeof createWindow>['draw']>[number];
     const bandColor = (cmds: Cmd[]) => {
       const c = cmds.find((c) => c.kind === 'path' && c.fill !== undefined) as { fill: { paint: { color: string } } };
@@ -70,10 +70,10 @@ describe('window widget', () => {
       expect(ring(cmds)?.stroke.paint.color).toBe(ctx.tokens['--wzl-border']);
     });
 
-    it('takes the theme\'s stance slots, and mixes the stance\'s tone into the fill in oklab', () => {
-      const cmds = createWindow({ ...opts, stance: 'danger' }).draw(ctx);
-      expect(ring(cmds)?.stroke.paint.color).toBe(ctx.tokens['--wzl-stance-danger-border-color']);
-      expect(title(cmds)).toContain(ctx.tokens['--wzl-stance-danger-title-color']);
+    it('draws a grade\'s color in the ring and title, and mixes it into the fill in oklab', () => {
+      const cmds = createWindow({ ...opts, grade: 'danger' }).draw(ctx);
+      expect(ring(cmds)?.stroke.paint.color).toBe(ctx.tokens['--wzl-danger']);
+      expect(title(cmds)).toContain(ctx.tokens['--wzl-danger']);
       // Chrome's color-mix(in oklab, #d94a3f 14%, #25272c).
       expect(ctx.tokens['--wzl-surface-raised']).toBe('#25272c');
       rgb(bandColor(cmds)).forEach((v, i) => expect(Math.abs(v - [61, 46, 48][i])).toBeLessThanOrEqual(1));
@@ -86,32 +86,46 @@ describe('window widget', () => {
     });
 
     it('drops the ring where a stance sets no border width, and dashes it where it says dashed', () => {
-      expect(ring(createWindow({ ...opts, stance: 'scope' }).draw(ctx))).toBeUndefined();
+      expect(ring(createWindow({ ...opts, stance: 'clarify' }).draw(ctx))).toBeUndefined();
       expect(ring(createWindow({ ...opts, stance: 'debug' }).draw(ctx))?.stroke.dash?.length).toBeGreaterThan(0);
     });
 
-    it('resolves a tone through the draw context: an index as the tone ref, a color source as given', () => {
+    it('resolves a tint through the draw context: an index as the tint ref, a color source as given', () => {
       const color = vi.fn(() => '#d94a3f');
-      const indexed = bandColor(createWindow({ ...opts, tone: 3 }).draw({ ...ctx, color }));
-      expect(color).toHaveBeenCalledWith({ ref: 'tone', index: 3 });
+      const indexed = bandColor(createWindow({ ...opts, tint: 3 }).draw({ ...ctx, color }));
+      expect(color).toHaveBeenCalledWith({ ref: 'tint', index: 3 });
       const accent = { ref: 'accent' };
-      expect(bandColor(createWindow({ ...opts, tone: accent }).draw({ ...ctx, color }))).toBe(indexed);
+      expect(bandColor(createWindow({ ...opts, tint: accent }).draw({ ...ctx, color }))).toBe(indexed);
       expect(color).toHaveBeenLastCalledWith(accent);
       expect(indexed).not.toBe(ctx.tokens['--wzl-surface-raised']);
     });
 
-    it('draws a tone nothing answers as no tone', () => {
+    it('draws a tint nothing answers as no tint', () => {
       const plain = bandColor(createWindow(opts).draw(ctx));
-      expect(bandColor(createWindow({ ...opts, tone: { ref: 'nope' } }).draw({ ...ctx, color: () => undefined }))).toBe(plain);
+      expect(bandColor(createWindow({ ...opts, tint: { ref: 'nope' } }).draw({ ...ctx, color: () => undefined }))).toBe(plain);
     });
 
-    it('redraws on setStance and setTone', () => {
+    it('lets a grade outrank emphasis in the ring and title, as the generated CSS does', () => {
+      const loud = createWindow({ ...opts, emphasis: 'high' }).draw(ctx);
+      expect(ring(loud)?.stroke.paint.color).toBe(ctx.tokens['--wzl-accent-fg']);
+      const both = createWindow({ ...opts, emphasis: 'high', grade: 'danger' }).draw(ctx);
+      expect(ring(both)?.stroke.paint.color).toBe(ctx.tokens['--wzl-danger']);
+    });
+
+    it('draws a low emphasis title in the muted text color, over a stance\'s', () => {
+      const quiet = title(createWindow({ ...opts, stance: 'debug', emphasis: 'low' }).draw(ctx));
+      expect(quiet).toBe(title(createWindow(opts).draw(ctx)));
+    });
+
+    it('redraws on setStance, setGrade, setEmphasis, and setTint', () => {
       const onChange = vi.fn();
       const win = createWindow({ ...opts, onChange });
-      win.setStance('danger');
-      win.setTone(2);
-      expect(onChange).toHaveBeenCalledTimes(2);
-      expect(ring(win.draw(ctx))?.stroke.paint.color).toBe(ctx.tokens['--wzl-stance-danger-border-color']);
+      win.setStance('debug');
+      win.setGrade('danger');
+      win.setEmphasis('low');
+      win.setTint(2);
+      expect(onChange).toHaveBeenCalledTimes(4);
+      expect(ring(win.draw(ctx))?.stroke.paint.color).toBe(ctx.tokens['--wzl-danger']);
     });
   });
 

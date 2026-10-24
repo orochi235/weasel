@@ -127,31 +127,31 @@ describe('Callout', () => {
     expect(anchor.style.width).toBe(before);
   });
 
-  it('carries a tone beside the popover’s own positioning', () => {
+  it('carries a tint beside the popover’s own positioning', () => {
     renderWithIcons(
-      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tone={cssColorLiteral('#224a63')} aria-label="Toned">
+      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tint={cssColorLiteral('#224a63')} aria-label="Tinted">
         !
       </Callout>,
     );
     const popover = screen.getByRole('dialog').parentElement!;
-    expect(popover.dataset.stance).toBe('notice');
-    expect(popover.style.getPropertyValue('--wzl-tone')).toBe('#224a63');
+    expect(popover.dataset.grade).toBe('warn');
+    expect(popover.style.getPropertyValue('--wzl-tint')).toBe('#224a63');
     expect(popover.style.position).not.toBe('');
   });
 
-  it('names its stance, `notice` unless told otherwise', () => {
+  it('names its grade, `warn` unless told otherwise', () => {
     renderWithIcons(
       <Callout
         isOpen
         anchorRect={{ x: 0, y: 0, width: 10, height: 10 }}
-        stance="danger"
+        grade="danger"
         aria-label="Danger callout"
       >
         !
       </Callout>,
     );
     const popover = screen.getByRole('dialog').parentElement;
-    expect(popover?.dataset.stance).toBe('danger');
+    expect(popover?.dataset.grade).toBe('danger');
   });
 
   it('closes via the close button in programmatic triggerRef mode (close() no-op fallback)', () => {

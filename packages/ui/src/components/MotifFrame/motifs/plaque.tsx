@@ -5,12 +5,12 @@ import s from './plaque.module.css';
 
 /** Params for {@link plaque}. */
 export interface PlaqueParams {
-  /** How much of the tone fills the frame, in percent. Defaults to 100. */
+  /** How much of the tint fills the frame, in percent. Defaults to 100. */
   mix?: number;
 }
 
 /**
- * The tone fills the whole frame. The title, the text and the controls on it
+ * The tint fills the whole frame. The title, the text and the controls on it
  * are redrawn in black or white, whichever the fill's lightness calls for.
  */
 export function plaque(params: PlaqueParams = {}): Motif<PlaqueParams> {

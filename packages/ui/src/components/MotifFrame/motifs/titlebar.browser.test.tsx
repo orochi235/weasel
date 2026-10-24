@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { MotifFrame } from '../MotifFrame';
 import { titlebar } from './titlebar';
 
-// Where the strip sits, what paints it, and whether a tone outranks a theme's
+// Where the strip sits, what paints it, and whether a tint outranks a theme's
 // strip are layout and cascade questions, so only a real browser answers them.
 
 afterEach(cleanup);
@@ -43,7 +43,7 @@ describe('titlebar', () => {
   it('fills the strip with the edge color and inks the title to read on it', () => {
     render(
       <Scope>
-        <MotifFrame title="Display" motif={titlebar()} tone={cssColorLiteral("rgb(10, 20, 120)")}>
+        <MotifFrame title="Display" motif={titlebar()} tint={cssColorLiteral("rgb(10, 20, 120)")}>
           x
         </MotifFrame>
       </Scope>,
@@ -67,10 +67,10 @@ describe('titlebar', () => {
     expect(strip.color).toBe('rgb(255, 255, 255)');
   });
 
-  it('paints a named tone over the theme’s strip', () => {
+  it('paints a named tint over the theme’s strip', () => {
     render(
       <Scope vars={THEMED}>
-        <MotifFrame title="Display" motif={titlebar()} tone={cssColorLiteral("rgb(250, 240, 120)")}>
+        <MotifFrame title="Display" motif={titlebar()} tint={cssColorLiteral("rgb(250, 240, 120)")}>
           x
         </MotifFrame>
       </Scope>,

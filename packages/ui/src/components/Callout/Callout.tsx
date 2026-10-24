@@ -12,7 +12,7 @@ import {
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import { CloseButton } from '../CloseButton';
-import { type StanceProps, useStance } from '../stance';
+import { type AppearanceProps, useAppearance } from '../appearance';
 import s from './Callout.module.css';
 
 /** Far past the 1/64px a browser lays out in, and far short of anything seen. */
@@ -34,7 +34,7 @@ export type CalloutProps = Omit<
   'children' | 'className' | 'isNonModal' | 'triggerRef'
 > &
   OverlayPortalProps &
-  StanceProps & {
+  AppearanceProps & {
   children?: ReactNode;
   className?: string;
   /** Optional heading rendered above the body. */
@@ -89,8 +89,10 @@ export function Callout(props: CalloutProps) {
     className,
     title,
     footer,
-    stance = 'notice',
-    tone,
+    stance,
+    grade = 'warn',
+    emphasis,
+    tint,
     modal = false,
     showCloseButton,
     onDismiss,
@@ -107,7 +109,7 @@ export function Callout(props: CalloutProps) {
     ...rest
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
-  const stanced = useStance({ stance, tone });
+  const appearance = useAppearance({ stance, grade, emphasis, tint });
   const { anchor: portalAnchor, provide, ready } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
   // An Escape that closes the callout is a dismissal like the close button is.
@@ -204,7 +206,7 @@ export function Callout(props: CalloutProps) {
             aria-label={popoverAriaLabel}
             aria-labelledby={popoverAriaLabelledby}
             className={[s.popover, className].filter(Boolean).join(' ')}
-            {...stanced}
+            {...appearance}
             data-weasel-overlay=""
           >
             <OverlayArrow className={s.arrow}>

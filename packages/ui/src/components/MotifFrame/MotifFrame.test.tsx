@@ -77,26 +77,26 @@ describe('MotifFrame', () => {
     expect(group.querySelector(':scope > legend')).toHaveTextContent('Wall');
   });
 
-  it('carries stance and tone on the root, as every stanced surface does', () => {
+  it('carries stance and tint on the root, as every stanced surface does', () => {
     render(
-      <MotifFrame title="Zone" motif={stereo()} stance="scope" tone={cssColorLiteral('#2b6cb0')}>
+      <MotifFrame title="Zone" motif={stereo()} stance="clarify" tint={cssColorLiteral('#2b6cb0')}>
         x
       </MotifFrame>,
     );
     const group = screen.getByRole('group', { name: 'Zone' });
-    expect(group).toHaveAttribute('data-stance', 'scope');
-    expect(group.style.getPropertyValue('--wzl-tone')).toBe('#2b6cb0');
+    expect(group).toHaveAttribute('data-stance', 'clarify');
+    expect(group.style.getPropertyValue('--wzl-tint')).toBe('#2b6cb0');
   });
 
-  it("writes a plaque's mix on its root, beside the tone", () => {
+  it("writes a plaque's mix on its root, beside the tint", () => {
     render(
-      <MotifFrame title="View" motif={plaque({ mix: 40 })} tone={cssColorLiteral('#c53030')}>
+      <MotifFrame title="View" motif={plaque({ mix: 40 })} tint={cssColorLiteral('#c53030')}>
         x
       </MotifFrame>,
     );
     const group = screen.getByRole('group', { name: 'View' });
     expect(group.style.getPropertyValue('--wzl-plaque-mix')).toBe('40%');
-    expect(group.style.getPropertyValue('--wzl-tone')).toBe('#c53030');
+    expect(group.style.getPropertyValue('--wzl-tint')).toBe('#c53030');
   });
 
   it('renders nothing when hidden', () => {

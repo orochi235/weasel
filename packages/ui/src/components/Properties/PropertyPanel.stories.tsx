@@ -192,14 +192,13 @@ export const ListWithoutChrome: Story = {
 
 const STANCES = [
   undefined,
-  'scope',
+  'clarify',
   'aside',
   'advanced',
   'debug',
-  'danger',
-  'notice',
-  'important',
   'preview',
+  'confirm',
+  'cancel',
 ] as const;
 
 function StanceRows() {
@@ -213,7 +212,7 @@ function StanceRows() {
   );
 }
 
-/** Every stance and none, then tones 0–3 on `scope`, then a panel nested in each. */
+/** Every stance and none, then tints 0–3 on `clarify`, then a panel nested in each. */
 export const Stances: Story = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 260px)', gap: 16 }}>
@@ -222,16 +221,16 @@ export const Stances: Story = {
           <StanceRows />
         </PropertyPanel>
       ))}
-      {[0, 1, 2, 3].map((tone) => (
-        <PropertyPanel key={`tone-${tone}`} stance="scope" tone={tone} title={`scope, tone ${tone}`}>
+      {[0, 1, 2, 3].map((tint) => (
+        <PropertyPanel key={`tint-${tint}`} stance="clarify" tint={tint} title={`clarify, tint ${tint}`}>
           <StanceRows />
         </PropertyPanel>
       ))}
-      <PropertyPanel tone={2} title="tone 2, no stance">
+      <PropertyPanel tint={2} title="tint 2, no stance">
         <StanceRows />
       </PropertyPanel>
       {STANCES.filter(Boolean).map((stance) => (
-        <PropertyPanel key={`nested-${stance}`} stance="scope" tone={4} title={`${stance} nested in scope`}>
+        <PropertyPanel key={`nested-${stance}`} stance="clarify" tint={4} title={`${stance} nested in clarify`}>
           <PropertyPanel stance={stance} title={stance}>
             <StanceRows />
           </PropertyPanel>
@@ -557,7 +556,7 @@ export const Sidebar: Story = {
 
 /**
  * A panel of like items, each a group that reorders, folds and goes away: a
- * `LayerList` of cards inside the panel. Each tail takes the next tone of the theme's
+ * `LayerList` of cards inside the panel. Each tail takes the next tint of the theme's
  * list, which colors its edge and handle and every control inside it, and its
  * ordinal is its handle. Its body pairs its rows and gives the shape's own
  * parameters a `Subpanel`.
@@ -566,9 +565,9 @@ export const ToneList: Story = {
   render: () => {
     function Tails() {
       const [tails, setTails] = useState<LayerListItem[]>([
-        { id: '1', label: 'classic', tone: 0 },
-        { id: '2', label: 'bubbles', tone: 1 },
-        { id: '3', label: 'wavy', tone: 2 },
+        { id: '1', label: 'classic', tint: 0 },
+        { id: '2', label: 'bubbles', tint: 1 },
+        { id: '3', label: 'wavy', tint: 2 },
       ]);
       const numbered = tails.map((tail, i) => ({ ...tail, badge: String(i + 1) }));
       return (

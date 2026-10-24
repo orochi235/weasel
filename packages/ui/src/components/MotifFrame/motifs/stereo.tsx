@@ -16,7 +16,7 @@ export interface StereoParams {
 }
 
 /**
- * A label bar along one edge, in the tone, the way the back of an A/V
+ * A label bar along one edge, in the tint, the way the back of an A/V
  * receiver labels a group of jacks. The title is never upside-down and is
  * read from inside the frame: a left bar reads bottom to top, a right bar top
  * to bottom, and top and bottom bars read across.

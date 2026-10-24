@@ -46,13 +46,13 @@ export const InPairs: Story = {
   ),
 };
 
-/** A stance or a tone colors the title and the rule. */
+/** A stance, grade or tint colors the title and the rule. */
 export const Toned: Story = {
   render: () => (
     <div style={{ width: 320 }}>
       <PropertyPanel title="Stances">
         <PropertyList>
-          <Subpanel title="Tone 0" tone={0}>
+          <Subpanel title="Tint 0" tint={0}>
             <PropertyField kind="number" control="slider" label="Amount" value={0.5} min={0} max={1} step={0.05} onChange={() => {}} />
           </Subpanel>
           <Subpanel title="Advanced" stance="advanced">
@@ -64,13 +64,13 @@ export const Toned: Story = {
   ),
 };
 
-/** Two toned panels that fold from the twisty before their titles, the second
+/** Two tinted panels that fold from the twisty before their titles, the second
  *  starting folded, and a subpanel inside the first that folds on its own. */
 export const Collapsible: Story = {
   args: { title: 'Bubbles', collapsible: true },
   render: (args) => (
     <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <PropertyPanel title="Tail" stance="scope" tone={0} collapsible>
+      <PropertyPanel title="Tail" stance="clarify" tint={0} collapsible>
         <PropertyList pack="pairs">
           <PropertyField kind="number" control="slider" label="Angle" value={115} min={0} max={359} unit="°" onChange={() => {}} />
           <PropertyField kind="number" control="slider" label="Bend" value={0} min={-1} max={1} step={0.02} onChange={() => {}} />
@@ -80,7 +80,7 @@ export const Collapsible: Story = {
           </Subpanel>
         </PropertyList>
       </PropertyPanel>
-      <PropertyPanel title="Code" stance="scope" tone={2} defaultCollapsed>
+      <PropertyPanel title="Code" stance="clarify" tint={2} defaultCollapsed>
         <PropertyList>
           <PropertyField kind="number" control="slider" label="Size" value={12} min={6} max={32} unit="px" onChange={() => {}} />
         </PropertyList>
@@ -91,6 +91,6 @@ export const Collapsible: Story = {
 
 /** Drawn in another motif, the subpanel keeps its place in the list's grid. */
 export const InAMotif: Story = {
-  args: { title: 'Bubbles', motif: stereo({ side: 'top' }), tone: 2 },
+  args: { title: 'Bubbles', motif: stereo({ side: 'top' }), tint: 2 },
   render: Basic.render,
 };

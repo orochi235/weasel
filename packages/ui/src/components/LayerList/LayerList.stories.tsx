@@ -101,14 +101,14 @@ export const Nested: Story = {
 };
 
 /** A stack of effects, each a card whose settings fold away. Each takes the
- *  next tone of the theme's list, and the palette adds more. */
+ *  next tint of the theme's list, and the palette adds more. */
 export const Cards: Story = {
   args: { title: 'Effects' },
   render: (args) => {
     const [items, setItems] = useState<LayerListItem[]>([
-      { id: '1', label: 'fill', tone: 0 },
-      { id: '2', label: 'stroke', tone: 1 },
-      { id: '3', label: 'shadow', tone: 2, defaultCollapsed: true },
+      { id: '1', label: 'fill', tint: 0 },
+      { id: '2', label: 'stroke', tint: 1 },
+      { id: '3', label: 'shadow', tint: 2, defaultCollapsed: true },
     ]);
     const [next, setNext] = useState(4);
     return (
@@ -118,7 +118,7 @@ export const Cards: Story = {
           items={items}
           addKinds={['fill', 'stroke', 'shadow']}
           onAdd={(kind) => {
-            setItems([...items, { id: String(next), label: kind, tone: next - 1 }]);
+            setItems([...items, { id: String(next), label: kind, tint: next - 1 }]);
             setNext(next + 1);
           }}
           onRemove={(id) => setItems(items.filter((it) => it.id !== id))}
