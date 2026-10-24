@@ -26,7 +26,7 @@ function SetupDialog({ page, onApply, onClose }: { page: { name: string; size: P
   const footer = (
     <>
       <Button onClick={onClose}>Cancel</Button>
-      <Button variant="primary" onClick={() => { onApply({ width: setup.width, height: setup.height }); onClose(); }}>Apply</Button>
+      <Button stance="confirm" onClick={() => { onApply({ width: setup.width, height: setup.height }); onClose(); }}>Apply</Button>
     </>
   );
   return (

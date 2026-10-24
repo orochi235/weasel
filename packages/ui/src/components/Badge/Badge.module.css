@@ -9,9 +9,9 @@
   font-size: var(--badge-font-size, var(--wzl-font-size-xs));
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  --badge-status-edge: var(--wzl-border);
-  /* A peer tone or a stance's accent paints over the status. */
-  --badge-edge: var(--_s-accent, var(--badge-status-edge));
+  --badge-emphasis-edge: var(--wzl-emphasis-fg, var(--wzl-border));
+  /* A tint, grade, or stance accent paints over emphasis. */
+  --badge-edge: var(--_s-accent, var(--badge-emphasis-edge));
   --badge-fill: var(--wzl-surface);
   --badge-fg: var(--badge-edge);
   background: transparent;
@@ -65,15 +65,6 @@
   color: var(--badge-fg, var(--wzl-fg-muted));
 }
 
-/* Status edges double as text color in the outline/subtle variants, so they
-   must be foreground-legible — hence accent-fg, not the accent fill. */
-.badge[data-status='accent']  { --badge-status-edge: var(--wzl-accent-fg); }
-.badge[data-status='info']    { --badge-status-edge: #7ab8d4; }
-.badge[data-status='success'] { --badge-status-edge: var(--wzl-success); }
-.badge[data-status='warn']    { --badge-status-edge: #d4a574; }
-.badge[data-status='danger']  { --badge-status-edge: var(--wzl-danger); }
-.badge[data-status='muted']   { --badge-status-edge: var(--wzl-fg-muted); }
-.badge[data-status='neutral'] { --badge-status-edge: var(--wzl-border); }
 
 .badge[data-variant='outline'] {
   --badge-fill: var(--wzl-surface);
@@ -90,9 +81,9 @@
   --badge-fill: color-mix(in oklab, var(--badge-edge) 14%, transparent);
   --badge-fg: var(--badge-edge);
 }
-/* Neutral's edge is a border gray that vanishes when the outline/subtle
+/* An ungraded badge's edge is a border gray that vanishes when the outline/subtle
    variants (above) reuse it as the text color — re-assert the muted fg. */
-.badge[data-status='neutral']:not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
+.badge:not([data-grade]):not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-emphasis-fg, var(--wzl-fg-muted))); }
 
 /* The `padding` prop arrives as the --badge-pad-<side> properties. */
 .badge {
@@ -150,7 +141,7 @@
 /* Plain paints no fill, so there is none for solid's ink to flip against: every variant takes
    the ink outline has, the one made to be read on whatever is behind the badge. */
 .badge[data-shape='plain'] { --badge-fg: var(--badge-edge); }
-.badge[data-shape='plain'][data-status='neutral'] { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
+.badge[data-shape='plain']:not([data-grade]) { --badge-fg: var(--_s-accent, var(--wzl-emphasis-fg, var(--wzl-fg-muted))); }
 .badge[data-shape='plain'][data-focused='true'] {
   outline: 2px solid color-mix(in oklab, var(--badge-edge) 60%, transparent);
   outline-offset: 3px;
@@ -241,12 +232,12 @@ a.badge {
 button.badge:hover,
 a.badge:hover,
 .badge:has(.target:is(a, [role='button']):hover) {
-  --badge-edge: color-mix(in oklab, var(--_s-accent, var(--badge-status-edge)) 88%, white);
+  --badge-edge: color-mix(in oklab, var(--_s-accent, var(--badge-emphasis-edge)) 88%, white);
 }
 @media (prefers-reduced-motion: reduce) {
   button.badge:hover,
   a.badge:hover,
-  .badge:has(.target:is(a, [role='button']):hover) { --badge-edge: var(--_s-accent, var(--badge-status-edge)); }
+  .badge:has(.target:is(a, [role='button']):hover) { --badge-edge: var(--_s-accent, var(--badge-emphasis-edge)); }
 }
 
 .badge { --_remove-size: 14px; --_remove-glyph: 10px; }
@@ -291,46 +282,46 @@ a.badge:hover,
 /* BEGIN GENERATED stance rules: badge — `npm run gen:stances`, do not edit. */
 
 .badge {
-  --wzl-tone: initial;
+  --wzl-tint: initial;
 }
 
 .badge {
-  --_s-accent: var(--wzl-tone);
+  --_s-accent: var(--wzl-tint);
 }
 
-.badge[data-stance='scope'] {
-  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+.badge[data-stance='clarify'] {
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-clarify-accent, var(--wzl-tint)));
 }
 
 .badge[data-stance='aside'] {
-  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-aside-accent, var(--wzl-tint)));
 }
 
 .badge[data-stance='advanced'] {
-  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-advanced-accent, var(--wzl-tint)));
 }
 
 .badge[data-stance='debug'] {
-  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
-}
-
-.badge[data-stance='danger'] {
-  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
-}
-
-.badge[data-stance='notice'] {
-  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
-}
-
-.badge[data-stance='important'] {
-  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent, var(--wzl-tint)));
 }
 
 .badge[data-stance='preview'] {
-  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-preview-accent, var(--wzl-tint)));
 }
 
-.badge[data-tone] {
+.badge[data-stance='confirm'] {
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-confirm-accent, var(--wzl-tint)));
+}
+
+.badge[data-stance='cancel'] {
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-cancel-accent, var(--wzl-tint)));
+}
+
+.badge[data-grade] {
+  --_s-accent: var(--wzl-tint, var(--wzl-grade));
+}
+
+.badge[data-tint] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));

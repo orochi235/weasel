@@ -64,7 +64,7 @@ export interface ToolbarButtonProps {
   /** Required when `children` is an icon with no text of its own. */
   'aria-label'?: string;
   /** `danger` reddens on hover — for actions that discard work. */
-  variant?: 'default' | 'danger';
+  grade?: 'danger';
   /** Square, for a button whose whole content is one glyph. */
   iconOnly?: boolean;
   /** Makes this a toggle: `aria-pressed`, and held down while true. */
@@ -77,13 +77,12 @@ function Button({
   disabled,
   title,
   'aria-label': ariaLabel,
-  variant = 'default',
+  grade,
   iconOnly,
   pressed,
 }: ToolbarButtonProps) {
   const cls = [
     'lk-toolbar-button',
-    variant === 'danger' && 'lk-toolbar-button--danger',
     iconOnly && 'lk-toolbar-button--icon',
     pressed && 'lk-toolbar-button--pressed',
   ]
@@ -93,6 +92,7 @@ function Button({
     <button
       type="button"
       className={cls}
+      data-grade={grade}
       onClick={onClick}
       disabled={disabled}
       title={title}

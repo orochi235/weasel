@@ -273,7 +273,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
         {counts.overridden} of {counts.total} overridden
       </span>
       <ToolbarRegion region="header" label="Theme actions" contributions={contributions} ctx={history} />
-      <Button variant="primary" size="sm" disabled={!dirty || saving} onClick={save} ariaLabel={dirty ? 'Save, with unsaved changes' : 'Save'}>
+      <Button stance="confirm" size="sm" disabled={!dirty || saving} onClick={save} ariaLabel={dirty ? 'Save, with unsaved changes' : 'Save'}>
         {dirty && <span className={styles.dirtyDot} aria-hidden="true" />}
         Save
       </Button>
@@ -350,7 +350,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           <>
             <Button onClick={() => setCreating(false)}>Cancel</Button>
             <Button
-              variant="primary"
+              stance="confirm"
               onClick={() => {
                 const problem = onNew(newName.trim());
                 setNewProblem(problem);

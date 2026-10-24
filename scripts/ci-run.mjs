@@ -68,7 +68,16 @@ const npmBin = (version) => {
   const home = join(tmpdir(), 'weasel-ci-npm');
   const prefix = join(home, version);
   for (const old of existsSync(home) ? readdirSync(home) : []) if (old !== version) rmSync(join(home, old), { recursive: true, force: true });
-  if (!existsSync(join(prefix, 'bin', 'npm'))) {
+  // An interrupted install leaves bin/npm without its lib, so ask the copy itself whether it runs.
+  const runs = () => {
+    try {
+      return execFileSync(join(prefix, 'bin', 'npm'), ['--version'], { encoding: 'utf8' }).trim() === version;
+    } catch {
+      return false;
+    }
+  };
+  if (!runs()) {
+    rmSync(prefix, { recursive: true, force: true });
     execFileSync('npm', ['install', '--global', '--prefix', prefix, '--no-audit', '--no-fund', `npm@${version}`], { stdio: 'ignore' });
   }
   return join(prefix, 'bin');

@@ -115,7 +115,9 @@ function Pane<TCtx extends SidebarSlotContext>({
         barRef={barRef}
         title={item.title}
         stance={item.stance}
-        tone={item.tone}
+        grade={item.grade}
+        emphasis={item.emphasis}
+        tint={item.tint}
         actions={item.actions}
         fill={item.fill}
         collapsed={collapsed}

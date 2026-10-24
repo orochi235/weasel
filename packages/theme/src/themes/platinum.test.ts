@@ -15,7 +15,7 @@ describe('platinumTheme', () => {
     const pairings = [
       ...TEXT_PAIRINGS,
       { text: 'fg', on: ['button-surface', 'button-pressed-surface'], min: 4.5 },
-      { text: 'button-primary-fg', on: ['button-primary-surface', 'button-primary-pressed-surface'], min: 4.5 },
+      { text: 'button-confirm-fg', on: ['button-confirm-surface', 'button-confirm-pressed-surface'], min: 4.5 },
       { text: 'titlebar-fg', on: ['titlebar-label-surface'], min: 4.5 },
     ];
     expect(gateFailures(platinumTheme, definition as ThemeDefinition, lookup, pairings)).toEqual([]);
@@ -55,7 +55,7 @@ describe('classicMacTheme', () => {
     const colors = Object.entries(classicMacTheme.tokens).filter(([, token]) => JSON.stringify(token).includes('#'));
     expect(colors).toEqual([]);
     // What Platinum adds is color and edge alone: every name it pins is one of these kinds.
-    const kinds = /^(surface|fg|border|accent|secondary|danger|warning|success|shadow|backdrop|workspace|code|bevel|field-focus|button-(primary-)?(pressed-surface|bevel)|titlebar-(surface|fg|label-surface))/;
+    const kinds = /^(surface|fg|border|accent|secondary|danger|warning|success|info|shadow|backdrop|workspace|code|bevel|field-focus|button-(confirm-)?(pressed-surface|bevel)|titlebar-(surface|fg|label-surface))/;
     expect(Object.keys(platinumTheme.tokens).filter((name) => !kinds.test(name))).toEqual([]);
   });
 

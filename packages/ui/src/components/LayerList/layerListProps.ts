@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
-import type { StanceProps } from '../stance';
+import type { AppearanceProps } from '../appearance';
 
 /** One layer. With a body (see `renderBody`) it draws as a card that folds its
  *  body away; without one, as a one-line row. Either can hold child layers. */
@@ -14,9 +14,9 @@ export interface LayerListItem {
   leading?: ReactNode;
   /** Drawn in the drag handle in place of the grip — an ordinal. */
   badge?: ReactNode;
-  /** Which of its list this layer is: an index into the theme's tone list, or
+  /** Which of its list this layer is: an index into the theme's tint list, or
    *  a color. A card draws its edge and handle in it and recolors its controls. */
-  tone?: StanceProps['tone'];
+  tint?: AppearanceProps['tint'];
   /** Cannot be dragged, hidden, locked, renamed or removed, walls off drops
    *  on either side, and selects alone rather than joining a multi-selection:
    *  a page's background. */

@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { hudColor } from './colors';
 
 const resolved = resolveTheme(weaselTheme, { mode: 'dark' });
-const color = hudColor({ theme: weaselTheme, resolved, tones: ['#111111', '#222222'] });
+const color = hudColor({ theme: weaselTheme, resolved, tints: ['#111111', '#222222'] });
 
 describe('hudColor', () => {
-  it('resolves a source to a hex against the theme and tone list it is given', () => {
+  it('resolves a source to a hex against the theme and tint list it is given', () => {
     expect(color({ ref: 'accent' })).toBe(resolved['--wzl-accent']);
-    expect(color({ ref: 'tone', index: 3 })).toBe('#222222');
+    expect(color({ ref: 'tint', index: 3 })).toBe('#222222');
     expect(color({ space: 'srgb', coords: [1, 0, 0] })).toBe('#ff0000');
   });
 

@@ -1,6 +1,6 @@
 import { colorLiteralToHex, cssColorLiteral, type ColorSource, type Palette } from '@weasel-js/paint';
 import { describe, expect, it } from 'vitest';
-import { colorSourceCss, colorSourceLiteral, TONE_REF, type ColorSourceContext } from './colorSource';
+import { colorSourceCss, colorSourceLiteral, TINT_REF, type ColorSourceContext } from './colorSource';
 import { resolveTheme } from './resolveTheme';
 import { weaselTheme } from './theme';
 
@@ -61,45 +61,45 @@ describe('a ref with an index', () => {
   });
 });
 
-describe('a ref to the tone list', () => {
+describe('a ref to the tint list', () => {
   it('indexes the list in force, wrapping, as a custom property where the list is a ramp', () => {
-    expect(colorSourceCss({ ref: TONE_REF, index: 12 }, dark)).toBe('var(--wzl-swatch-sky)');
-    expect(hexOf({ ref: TONE_REF, index: 12 }, dark)).toBe(tokenHex(dark, '--wzl-swatch-sky'));
-    expect(colorSourceCss({ ref: TONE_REF }, dark)).toBe('var(--wzl-swatch-fuchsia)');
+    expect(colorSourceCss({ ref: TINT_REF, index: 12 }, dark)).toBe('var(--wzl-swatch-sky)');
+    expect(hexOf({ ref: TINT_REF, index: 12 }, dark)).toBe(tokenHex(dark, '--wzl-swatch-sky'));
+    expect(colorSourceCss({ ref: TINT_REF }, dark)).toBe('var(--wzl-swatch-fuchsia)');
   });
 
   it('reads a literal list, and passes a function list through as CSS', () => {
-    const listed = at('dark', { tones: ['#111111', '#222222'] });
-    expect(colorSourceCss({ ref: TONE_REF, index: 3 }, listed)).toBe('#222222');
-    expect(hexOf({ ref: TONE_REF, index: 3 }, listed)).toBe('#222222');
-    const computed = at('dark', { tones: (i) => `var(--mine-${i})` });
-    expect(colorSourceCss({ ref: TONE_REF, index: 4 }, computed)).toBe('var(--mine-4)');
-    expect(colorSourceLiteral({ ref: TONE_REF, index: 4 }, computed)).toBeNull();
+    const listed = at('dark', { tints: ['#111111', '#222222'] });
+    expect(colorSourceCss({ ref: TINT_REF, index: 3 }, listed)).toBe('#222222');
+    expect(hexOf({ ref: TINT_REF, index: 3 }, listed)).toBe('#222222');
+    const computed = at('dark', { tints: (i) => `var(--mine-${i})` });
+    expect(colorSourceCss({ ref: TINT_REF, index: 4 }, computed)).toBe('var(--mine-4)');
+    expect(colorSourceLiteral({ ref: TINT_REF, index: 4 }, computed)).toBeNull();
   });
 });
 
-describe('a tone list of sources', () => {
+describe('a tint list of sources', () => {
   const palette: Palette = { entries: [{ name: 'brand', color: { space: 'srgb', coords: [1, 0, 0] } }] };
 
-  it('lets a theme name a palette entry, a token, or a literal as a tone', () => {
-    const ctx = at('dark', { palette, tones: [{ ref: 'brand' }, { ref: 'accent' }, { space: 'srgb', coords: [0, 0, 1] }] });
-    expect(colorSourceCss({ ref: TONE_REF, index: 0 }, ctx)).toBe('#ff0000');
-    expect(colorSourceCss({ ref: TONE_REF, index: 1 }, ctx)).toBe('var(--wzl-accent)');
-    expect(hexOf({ ref: TONE_REF, index: 1 }, ctx)).toBe(tokenHex(dark, '--wzl-accent'));
-    expect(colorSourceCss({ ref: TONE_REF, index: 2 }, ctx)).toBe('#0000ff');
+  it('lets a theme name a palette entry, a token, or a literal as a tint', () => {
+    const ctx = at('dark', { palette, tints: [{ ref: 'brand' }, { ref: 'accent' }, { space: 'srgb', coords: [0, 0, 1] }] });
+    expect(colorSourceCss({ ref: TINT_REF, index: 0 }, ctx)).toBe('#ff0000');
+    expect(colorSourceCss({ ref: TINT_REF, index: 1 }, ctx)).toBe('var(--wzl-accent)');
+    expect(hexOf({ ref: TINT_REF, index: 1 }, ctx)).toBe(tokenHex(dark, '--wzl-accent'));
+    expect(colorSourceCss({ ref: TINT_REF, index: 2 }, ctx)).toBe('#0000ff');
   });
 
-  it('answers null for a tone that names itself, directly or through another tone', () => {
-    const ctx = at('dark', { tones: [{ ref: TONE_REF }, { ref: TONE_REF, index: 2 }, { ref: TONE_REF, index: 1 }, () => ({ ref: TONE_REF, index: 3 })] });
+  it('answers null for a tint that names itself, directly or through another tint', () => {
+    const ctx = at('dark', { tints: [{ ref: TINT_REF }, { ref: TINT_REF, index: 2 }, { ref: TINT_REF, index: 1 }, () => ({ ref: TINT_REF, index: 3 })] });
     for (const index of [0, 1, 2, 3]) {
-      expect(colorSourceLiteral({ ref: TONE_REF, index }, ctx)).toBeNull();
-      expect(colorSourceCss({ ref: TONE_REF, index }, ctx)).toBeNull();
+      expect(colorSourceLiteral({ ref: TINT_REF, index }, ctx)).toBeNull();
+      expect(colorSourceCss({ ref: TINT_REF, index }, ctx)).toBeNull();
     }
   });
 
-  it('follows one tone to another', () => {
-    const ctx = at('dark', { tones: ['#111111', { ref: TONE_REF }] });
-    expect(colorSourceCss({ ref: TONE_REF, index: 1 }, ctx)).toBe('#111111');
+  it('follows one tint to another', () => {
+    const ctx = at('dark', { tints: ['#111111', { ref: TINT_REF }] });
+    expect(colorSourceCss({ ref: TINT_REF, index: 1 }, ctx)).toBe('#111111');
   });
 });
 

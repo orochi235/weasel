@@ -46,7 +46,7 @@ export const ModeBreadcrumb = memo(function ModeBreadcrumb(props: ModeBreadcrumb
           <Button size="sm" onClick={props.onCancel} trailingIcon={<KeyCap label="⎋" />}>
             Cancel
           </Button>
-          <Button size="sm" variant="primary" onClick={props.onCommit} trailingIcon={<KeyCap label="⏎" />}>
+          <Button size="sm" stance="confirm" onClick={props.onCommit} trailingIcon={<KeyCap label="⏎" />}>
             Commit
           </Button>
         </>

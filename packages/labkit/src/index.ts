@@ -24,7 +24,6 @@ export type {
   DetailListProps,
   DetailListValues,
   DetailRowProps,
-  DetailRowStatus,
 } from '@weasel-js/ui/components/DetailList';
 export { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 export type { IconProps } from '@weasel-js/ui/components/Icon';

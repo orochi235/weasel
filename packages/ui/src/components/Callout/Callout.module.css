@@ -24,18 +24,18 @@
 /* BEGIN GENERATED stance rules: callout — `npm run gen:stances`, do not edit. */
 
 .popover {
-  --wzl-tone: initial;
+  --wzl-tint: initial;
 }
 
 .popover {
-  --_s-surface: var(--wzl-surface);
+  --_s-surface: color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface));
   --_s-border-color: var(--wzl-accent-strong);
   --_s-border-style: solid;
   --_s-border-width: 1px;
   --_s-radius: var(--wzl-radius-md);
-  --_s-tone-mix: var(--wzl-panel-tone-mix);
-  --_s-tone: var(--wzl-tone, var(--_s-surface));
-  --_s-accent: var(--wzl-tone);
+  --_s-tint-mix: var(--wzl-panel-tint-mix);
+  --_s-tint: var(--wzl-tint, var(--_s-surface));
+  --_s-accent: var(--wzl-tint);
   --_s-title-font: var(--wzl-font-ui);
   --_s-title-weight: var(--wzl-font-weight-bold);
   --_s-title-size: var(--wzl-font-size);
@@ -44,32 +44,32 @@
   --_s-title-color: var(--wzl-fg);
 }
 
-.popover[data-stance='scope'] {
-  --_s-surface: var(--wzl-stance-scope-surface, var(--wzl-surface));
-  --_s-border-color: var(--wzl-stance-scope-border-color, var(--wzl-accent-strong));
-  --_s-border-style: var(--wzl-stance-scope-border-style, solid);
-  --_s-border-width: var(--wzl-stance-scope-border-width, 1px);
-  --_s-radius: var(--wzl-stance-scope-radius, var(--wzl-radius-md));
-  --_s-tone-mix: var(--wzl-stance-scope-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-scope-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-scope-title-font, var(--wzl-font-ui));
-  --_s-title-weight: var(--wzl-stance-scope-title-weight, var(--wzl-font-weight-bold));
-  --_s-title-size: var(--wzl-stance-scope-title-size, var(--wzl-font-size));
-  --_s-title-case: var(--wzl-stance-scope-title-case, none);
-  --_s-title-tracking: var(--wzl-stance-scope-title-tracking, normal);
-  --_s-title-color: var(--wzl-stance-scope-title-color, var(--wzl-fg));
+.popover[data-stance='clarify'] {
+  --_s-surface: var(--wzl-stance-clarify-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
+  --_s-border-color: var(--wzl-stance-clarify-border-color, var(--wzl-accent-strong));
+  --_s-border-style: var(--wzl-stance-clarify-border-style, solid);
+  --_s-border-width: var(--wzl-stance-clarify-border-width, 1px);
+  --_s-radius: var(--wzl-stance-clarify-radius, var(--wzl-radius-md));
+  --_s-tint-mix: var(--wzl-stance-clarify-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-clarify-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-clarify-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-clarify-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-clarify-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-clarify-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-clarify-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-clarify-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-clarify-title-color, var(--wzl-fg));
 }
 
 .popover[data-stance='aside'] {
-  --_s-surface: var(--wzl-stance-aside-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-aside-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-aside-border-style, solid);
   --_s-border-width: var(--wzl-stance-aside-border-width, 1px);
   --_s-radius: var(--wzl-stance-aside-radius, var(--wzl-radius-md));
-  --_s-tone-mix: var(--wzl-stance-aside-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-aside-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-tint-mix: var(--wzl-stance-aside-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-aside-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-aside-accent, var(--wzl-tint)));
   --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-ui));
   --_s-title-weight: var(--wzl-stance-aside-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-aside-title-size, var(--wzl-font-size));
@@ -79,14 +79,14 @@
 }
 
 .popover[data-stance='advanced'] {
-  --_s-surface: var(--wzl-stance-advanced-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-advanced-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-advanced-border-style, solid);
   --_s-border-width: var(--wzl-stance-advanced-border-width, 1px);
   --_s-radius: var(--wzl-stance-advanced-radius, var(--wzl-radius-md));
-  --_s-tone-mix: var(--wzl-stance-advanced-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-advanced-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-tint-mix: var(--wzl-stance-advanced-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-advanced-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-advanced-accent, var(--wzl-tint)));
   --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-ui));
   --_s-title-weight: var(--wzl-stance-advanced-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-advanced-title-size, var(--wzl-font-size));
@@ -96,14 +96,14 @@
 }
 
 .popover[data-stance='debug'] {
-  --_s-surface: var(--wzl-stance-debug-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-debug-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-debug-border-style, solid);
   --_s-border-width: var(--wzl-stance-debug-border-width, 1px);
   --_s-radius: var(--wzl-stance-debug-radius, var(--wzl-radius-md));
-  --_s-tone-mix: var(--wzl-stance-debug-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-debug-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+  --_s-tint-mix: var(--wzl-stance-debug-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-debug-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent, var(--wzl-tint)));
   --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-ui));
   --_s-title-weight: var(--wzl-stance-debug-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-debug-title-size, var(--wzl-font-size));
@@ -112,66 +112,15 @@
   --_s-title-color: var(--wzl-stance-debug-title-color, var(--wzl-fg));
 }
 
-.popover[data-stance='danger'] {
-  --_s-surface: var(--wzl-stance-danger-surface, var(--wzl-surface));
-  --_s-border-color: var(--wzl-stance-danger-border-color, var(--wzl-accent-strong));
-  --_s-border-style: var(--wzl-stance-danger-border-style, solid);
-  --_s-border-width: var(--wzl-stance-danger-border-width, 1px);
-  --_s-radius: var(--wzl-stance-danger-radius, var(--wzl-radius-md));
-  --_s-tone-mix: var(--wzl-stance-danger-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-danger-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-danger-title-font, var(--wzl-font-ui));
-  --_s-title-weight: var(--wzl-stance-danger-title-weight, var(--wzl-font-weight-bold));
-  --_s-title-size: var(--wzl-stance-danger-title-size, var(--wzl-font-size));
-  --_s-title-case: var(--wzl-stance-danger-title-case, none);
-  --_s-title-tracking: var(--wzl-stance-danger-title-tracking, normal);
-  --_s-title-color: var(--wzl-stance-danger-title-color, var(--wzl-fg));
-}
-
-.popover[data-stance='notice'] {
-  --_s-surface: var(--wzl-stance-notice-surface, var(--wzl-surface));
-  --_s-border-color: var(--wzl-stance-notice-border-color, var(--wzl-accent-strong));
-  --_s-border-style: var(--wzl-stance-notice-border-style, solid);
-  --_s-border-width: var(--wzl-stance-notice-border-width, 1px);
-  --_s-radius: var(--wzl-stance-notice-radius, var(--wzl-radius-md));
-  --_s-tone-mix: var(--wzl-stance-notice-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-notice-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-notice-title-font, var(--wzl-font-ui));
-  --_s-title-weight: var(--wzl-stance-notice-title-weight, var(--wzl-font-weight-bold));
-  --_s-title-size: var(--wzl-stance-notice-title-size, var(--wzl-font-size));
-  --_s-title-case: var(--wzl-stance-notice-title-case, none);
-  --_s-title-tracking: var(--wzl-stance-notice-title-tracking, normal);
-  --_s-title-color: var(--wzl-stance-notice-title-color, var(--wzl-fg));
-}
-
-.popover[data-stance='important'] {
-  --_s-surface: var(--wzl-stance-important-surface, var(--wzl-surface));
-  --_s-border-color: var(--wzl-stance-important-border-color, var(--wzl-accent-strong));
-  --_s-border-style: var(--wzl-stance-important-border-style, solid);
-  --_s-border-width: var(--wzl-stance-important-border-width, 1px);
-  --_s-radius: var(--wzl-stance-important-radius, var(--wzl-radius-md));
-  --_s-tone-mix: var(--wzl-stance-important-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-important-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
-  --_s-title-font: var(--wzl-stance-important-title-font, var(--wzl-font-ui));
-  --_s-title-weight: var(--wzl-stance-important-title-weight, var(--wzl-font-weight-bold));
-  --_s-title-size: var(--wzl-stance-important-title-size, var(--wzl-font-size));
-  --_s-title-case: var(--wzl-stance-important-title-case, none);
-  --_s-title-tracking: var(--wzl-stance-important-title-tracking, normal);
-  --_s-title-color: var(--wzl-stance-important-title-color, var(--wzl-fg));
-}
-
 .popover[data-stance='preview'] {
-  --_s-surface: var(--wzl-stance-preview-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-preview-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-preview-border-style, solid);
   --_s-border-width: var(--wzl-stance-preview-border-width, 1px);
   --_s-radius: var(--wzl-stance-preview-radius, var(--wzl-radius-md));
-  --_s-tone-mix: var(--wzl-stance-preview-tone-mix, var(--wzl-panel-tone-mix));
-  --_s-tone: var(--wzl-tone, var(--wzl-stance-preview-tone, var(--_s-surface)));
-  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-tint-mix: var(--wzl-stance-preview-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-preview-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-preview-accent, var(--wzl-tint)));
   --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-ui));
   --_s-title-weight: var(--wzl-stance-preview-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-preview-title-size, var(--wzl-font-size));
@@ -180,20 +129,72 @@
   --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg));
 }
 
+.popover[data-stance='confirm'] {
+  --_s-surface: var(--wzl-stance-confirm-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
+  --_s-border-color: var(--wzl-stance-confirm-border-color, var(--wzl-accent-strong));
+  --_s-border-style: var(--wzl-stance-confirm-border-style, solid);
+  --_s-border-width: var(--wzl-stance-confirm-border-width, 1px);
+  --_s-radius: var(--wzl-stance-confirm-radius, var(--wzl-radius-md));
+  --_s-tint-mix: var(--wzl-stance-confirm-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-confirm-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-confirm-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-confirm-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-confirm-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-confirm-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-confirm-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-confirm-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-confirm-title-color, var(--wzl-fg));
+}
+
+.popover[data-stance='cancel'] {
+  --_s-surface: var(--wzl-stance-cancel-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
+  --_s-border-color: var(--wzl-stance-cancel-border-color, var(--wzl-accent-strong));
+  --_s-border-style: var(--wzl-stance-cancel-border-style, solid);
+  --_s-border-width: var(--wzl-stance-cancel-border-width, 1px);
+  --_s-radius: var(--wzl-stance-cancel-radius, var(--wzl-radius-md));
+  --_s-tint-mix: var(--wzl-stance-cancel-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-cancel-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-cancel-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-cancel-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-cancel-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-cancel-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-cancel-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-cancel-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-cancel-title-color, var(--wzl-fg));
+}
+
+.popover[data-emphasis='high'] {
+  --_s-border-color: var(--wzl-accent-fg);
+  --_s-title-color: var(--wzl-accent-fg);
+}
+
+.popover[data-emphasis='low'] {
+  --_s-title-color: var(--wzl-fg-muted);
+}
+
+.popover[data-grade] {
+  --_s-tint: var(--wzl-tint, var(--wzl-grade));
+  --_s-border-color: var(--wzl-grade);
+  --_s-title-color: var(--wzl-grade);
+  --_s-accent: var(--wzl-tint, var(--wzl-grade));
+}
+
 .popover {
   --_s-fill: var(--_s-surface);
 }
 
-.popover[data-tone],
+.popover[data-tint],
+.popover[data-grade],
 .popover[data-stance] {
-  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
+  --_s-fill: color-mix(in oklab, var(--_s-tint) var(--_s-tint-mix), var(--_s-surface));
 }
 
-.popover[data-tone] {
+.popover[data-tint],
+.popover[data-grade] {
   --wzl-surface-sunken: oklch(from var(--_s-fill) calc(l - 0.06) c h);
 }
 
-.popover[data-tone] {
+.popover[data-tint] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));

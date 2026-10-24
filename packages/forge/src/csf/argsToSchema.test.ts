@@ -52,10 +52,10 @@ describe('argsToSchema', () => {
 
   it("carries a control's icons onto the options they name", () => {
     const argTypes = {
-      status: { control: { type: 'inline-radio', icons: { ok: 'ui:statusSuccess', bad: 'ui:error' } }, options: ['ok', 'bad', 'meh'] },
+      status: { control: { type: 'inline-radio', icons: { ok: 'ui:gradeSuccess', bad: 'ui:error' } }, options: ['ok', 'bad', 'meh'] },
     };
     expect(leaf({ status: 'ok' }, argTypes, 'status')?.annotations.options).toEqual([
-      { value: 'ok', label: 'ok', icon: 'ui:statusSuccess' },
+      { value: 'ok', label: 'ok', icon: 'ui:gradeSuccess' },
       { value: 'bad', label: 'bad', icon: 'ui:error' },
       { value: 'meh', label: 'meh' },
     ]);

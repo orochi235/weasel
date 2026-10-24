@@ -402,7 +402,7 @@ function Level({ items, parentId, shared, path, level, grid, name }: LevelProps)
         <PropertyGroup
           className={s.card}
           title={item.title ?? item.label}
-          {...(item.tone === undefined ? {} : { tone: item.tone })}
+          {...(item.tint === undefined ? {} : { tint: item.tint })}
           collapsed={ghosted || !open}
           onCollapsedChange={() => shared.toggle(item.id)}
           leading={

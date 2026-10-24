@@ -1,5 +1,6 @@
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
-import type { BadgeStatus, BadgeVariant } from '../types';
+import { BADGE_LOOKS, type BadgeLook } from '../looks';
+import type { BadgeVariant } from '../types';
 import { Field, LabToggle, RangeRow } from './ParamControl';
 import type { LabSnapshot } from './snapshot';
 import controls from './controls.stories.module.css';
@@ -7,11 +8,11 @@ import s from './ComposeLab.stories.module.css';
 
 type Appearance = Pick<
   LabSnapshot,
-  'variant' | 'status' | 'customColor' | 'bloat' | 'size' | 'label' | 'crawlOn' | 'crawlSpeed' | 'labelX' | 'labelY'
+  'variant' | 'look' | 'tint' | 'bloat' | 'size' | 'label' | 'crawlOn' | 'crawlSpeed' | 'labelX' | 'labelY'
 >;
 
 const VARIANTS: readonly BadgeVariant[] = ['outline', 'solid', 'subtle'];
-const STATUSES: readonly BadgeStatus[] = ['accent', 'info', 'warn', 'danger', 'muted', 'neutral', 'custom'];
+const LOOKS: readonly BadgeLook[] = [...BADGE_LOOKS, 'tint'];
 const SIZES: readonly LabSnapshot['size'][] = ['sm', 'md'];
 
 export function AppearanceSection({ value, onChange }: { value: Appearance; onChange: (patch: Partial<Appearance>) => void }) {
@@ -21,15 +22,15 @@ export function AppearanceSection({ value, onChange }: { value: Appearance; onCh
       <Field label="variant" columns={controls.wide2}>
         <LabToggle value={value.variant} options={VARIANTS} onChange={(variant) => onChange({ variant })} />
       </Field>
-      <Field label="status" columns={s.status} group>
-        <LabToggle value={value.status} options={STATUSES} name="status" onChange={(status) => onChange({ status })} />
+      <Field label="look" columns={s.look} group>
+        <LabToggle value={value.look} options={LOOKS} name="look" onChange={(look) => onChange({ look })} />
         <input
           type="color"
-          aria-label="Custom status color"
-          className={s.statusSwatch}
-          value={value.customColor}
-          onChange={(e) => onChange({ customColor: e.target.value, status: 'custom' })}
-          title="Pick a custom status color"
+          aria-label="Tint color"
+          className={s.tintSwatch}
+          value={value.tint}
+          onChange={(e) => onChange({ tint: e.target.value, look: 'tint' })}
+          title="Pick a tint color"
         />
       </Field>
       <RangeRow label="bloat" min={-10} max={20} step={0.25} value={value.bloat} onChange={(bloat) => onChange({ bloat })} />

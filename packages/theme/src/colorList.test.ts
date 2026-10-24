@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { colorAt, colorCount, colorCssAt, rampSteps, themeTones } from './colorList';
+import { colorAt, colorCount, colorCssAt, rampSteps, themeTints } from './colorList';
 import { resolveTheme } from './resolveTheme';
 import { defineTheme, weaselTheme } from './theme';
 
@@ -75,15 +75,15 @@ describe('a list of color sources', () => {
   });
 });
 
-describe('themeTones', () => {
+describe('themeTints', () => {
   it('is the swatch ramp for the built-in theme', () => {
-    expect(themeTones(weaselTheme)).toEqual({ ramp: 'swatch' });
+    expect(themeTints(weaselTheme)).toEqual({ ramp: 'swatch' });
   });
 
   it('comes from the nearest theme in the chain that declares one', () => {
-    const child = defineTheme({ name: 'child', tones: ['#f00', '#0f0'] });
+    const child = defineTheme({ name: 'child', tints: ['#f00', '#0f0'] });
     const grandchild = defineTheme({ name: 'grandchild', extends: child });
-    expect(themeTones(grandchild)).toEqual(['#f00', '#0f0']);
+    expect(themeTints(grandchild)).toEqual(['#f00', '#0f0']);
     expect(rampSteps(grandchild, 'swatch')).toEqual(rampSteps(weaselTheme, 'swatch'));
   });
 });

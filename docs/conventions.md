@@ -340,51 +340,62 @@ hold a number stays proportional, and code or hex stays in the mono face.
 `npm run check:numeric` fails on `tabular-nums` or a read of the token anywhere
 else, and on a font property beside the helper.
 
-### Stance and tone
+### Appearance props
 
-A surface that holds a class of content says which with `stance` —
-`scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`,
-`preview` — and which of its peers it is with `tone`: an index into the theme's
-tone list (`ThemeDefinition.tones`, a `ColorList`; weasel's is the swatch ramp),
-or a `ColorSource` (`@weasel-js/paint`): a literal, or a ref such as `{ ref: 'accent' }`,
-resolved by `colorSourceCss` (`@weasel-js/theme`; `useColorCss` in a component),
-as is every other color a kit component takes. `PropertyPanel`, `PropertyGroup`, `MotifFrame`, `Subpanel`, `Callout`, `Dialog`,
-labkit's `ControlPanel` and sidebar sections take both; `LayerList`'s items
-take a tone only, since a list's cards are one kind of thing. `Badge`, `Code`,
-`Button` and `Powerline` segments take both too, beside the `status` they report
-(`success`, `danger`, …); a tone, or a stance's `accent`, paints over the status
-color, and a toned primary button takes the tone as its accent. Toasts take
-neither: a toast reports how an event came out rather than holding a class of
-content. The hud `window` takes both, drawn in WebGL from the resolved theme:
-`resolveStanceSlots` (`@weasel-js/theme`) makes the same lookup the generated CSS
-does, `colorSourceLiteral` resolves the tone with no cascade to ask, and `mixOklab`
-(`@weasel-js/paint`) mixes it in. Anything else that takes several colors — chart series, diagram
-categories — takes a `ColorList` (`@weasel-js/theme`), read with `colorAt` /
-`colorCssAt`, rather than hand-picked color strings that suit only one mode.
+Four props decide how a component looks, and each is a hint: a component decides
+what it draws from it, and one that draws nothing from an axis still accepts it.
+Decided 2026-10-23, replacing `status`, the old `tone` prop, Toast's `tone`,
+labkit Toolbar's `variant: 'danger'`, and Button's `primary`/`secondary`.
 
-The theme decides the look. A stance reads `--wzl-stance-<stance>-<slot>` (the
-slots are `STANCE_SLOTS` in `@weasel-js/theme`) and falls back to the surface's
-own look, so a theme declares only what a stance changes, and a stance looks the
-same on every surface. A nested panel reads `-nested-<slot>` first. A surface
-that names a tone recolors the controls inside it; a stance's own tone, like
-`danger`'s, tints the fill and leaves the controls alone.
+| Prop | Says | Values | Cascades |
+|---|---|---|---|
+| `stance` | the angle it comes from | `clarify`, `aside`, `advanced`, `debug`, `preview`, `confirm`, `cancel` | yes, through the slot values a surface sets |
+| `grade` | how serious, or how good | `info`, `success`, `warn`, `danger` | no |
+| `emphasis` | how loudly it reads | `high`, `low`; unset is normal | yes, as `--wzl-emphasis-fg` |
+| `tint` | an exact color | an index into the theme's tint list, or a `ColorSource` | no |
 
-To give another surface a stance, add it to
+Color resolves as `hue = tint ?? grade ?? stance`, and emphasis sets how loudly
+that hue shows. `danger` is the only red word: a delete button takes
+`grade="danger"`, and there is no destructive stance (2026-10-23). A `danger`
+dialog's Cancel button stays plain, because grade does not recolor the controls
+inside a surface; tint does. A component may still read its parent's
+`--wzl-grade` as a hint. Button's accent-filled button is `stance="confirm"`,
+not a variant: `variant` (`solid`, `ghost`, `link`, and their kin on other
+components) says only how a component is drawn.
+
+The value lists, `GRADE_TOKENS`, `EMPHASIS_FG`, `EMPHASIS_SLOTS` and
+`GRADE_SLOTS` live in `@weasel-js/theme`. `useAppearance()` (`@weasel-js/ui`)
+writes `data-stance`, `data-grade`, `data-emphasis` and `data-tint` on a
+component's root, with `--wzl-tint`, `--wzl-grade` and `--wzl-emphasis-fg`
+inline. A tint resolves through `colorSourceCss` (`useColorCss` in a component),
+as every other color a kit component takes. The hud `window` takes the same
+props, drawn in WebGL from the resolved theme: `resolveStanceSlots` makes the
+lookup the generated CSS makes, and the emphasis and grade overrides come from
+the same slot tables. Anything else that takes several colors (chart series,
+diagram categories) takes a `ColorList`, read with `colorAt` / `colorCssAt`.
+
+The theme decides how a stance looks. A stance reads
+`--wzl-stance-<stance>-<slot>` (the slots are `STANCE_SLOTS`) and falls back to
+the surface's own look, so a theme declares only what a stance changes. A nested
+panel reads `-nested-<slot>` first. The generated rules apply stance, then
+emphasis, then grade, so grade wins the hue, and a named tint wins over both.
+
+To give another surface the props, add it to
 `packages/ui/src/components/stanceSurfaces.ts` with its base look, put an empty
 generated region in its stylesheet, run `npm run gen:stances`, paint its
-properties from the `--_s-*` names, and spread `useStance()` on its root.
+properties from the `--_s-*` names, and spread `useAppearance()` on its root.
 
-Tones mix `in oklab`. In `oklch` the mix takes its hue from weasel's slightly
-blue grays, so a green tone comes out blue.
+Tints mix `in oklab`. In `oklch` the mix takes its hue from weasel's slightly
+blue grays, so a green tint comes out blue.
 
 ### Motifs
 
 A **motif** is how a titled frame draws its title and its edge: a visual idiom
-borrowed from something real. It's neither a stance (what a surface holds) nor a
+borrowed from something real. It's neither a stance (the angle a surface comes from) nor a
 theme (token values). `<MotifFrame motif>` and `<PropertyGroup motif>` take one
 from a factory: `rule()` (a title between two rules, the default), `stereo()` (a
 label bar along one edge, as on the back of an A/V receiver), `notch()` (the
-title cut into the border), `tab()`, `plaque()` (the tone fills the frame) and
+title cut into the border), `tab()`, `plaque()` (the tint fills the frame) and
 `titlebar()` (a solid strip across the top, as a desktop window is titled).
 The root barrel has them as `motifs.stereo()`; `@weasel-js/ui/components/MotifFrame`
 exports the bare names. `<DefaultMotif motif>` changes the default for every
@@ -392,21 +403,21 @@ frame below it, which is how an app pairs a theme with the motif it wants.
 
 `titlebar` is the one motif a theme repaints: its strip, its title's color and
 alignment, and the frame's border and inset are the `--wzl-titlebar-*` hooks,
-and its edge takes `--wzl-bevel-raised`. A frame that names a tone paints the
-tone over the theme's strip.
+and its edge takes `--wzl-bevel-raised`. A frame that names a tint paints the
+tint over the theme's strip.
 
 A motif renders the frame's root element itself, so it picks the element as well
 as the layout: `notch` must be a `<fieldset>`, because a `<legend>` cuts the
 border where a positioned title would only cover it. Geometry belongs to the
 motif and color to the stance. A motif paints its own border widths, padding and
 radii, and reads only colors and the title's type from the `--_s-*` slots,
-because a theme's stance tokens are tuned for one look (`scope` sets a border
+because a theme's stance tokens are tuned for one look (`clarify` sets a border
 width of 0) and would erase the edge another motif is made of. `rule` is the
 exception: its look is the slots' defaults.
 
 To write a motif, return `{ id, params, render(frame) }` from a factory, spread
 `withMotifClass(frame.root, yourClass)` on the root, and place `frame.heading`'s
-parts. `--_edge` is the tone, or the stance's border color without one, and
+parts. `--_edge` is the tint, or the stance's border color without one, and
 `--_edge-ink` is black or white, whichever reads on it. A motif that fills with
 something else redefines `--_edge` on its root, and the ink follows. The ink
 switches at oklch L 0.564: WCAG's 4.5:1 holds for white below a luminance of

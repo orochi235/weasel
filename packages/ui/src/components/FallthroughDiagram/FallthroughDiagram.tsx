@@ -70,7 +70,7 @@ function InputLine({ input, predicted }: { input: DispatchRecordInput; predicted
       )}
       {predicted && (
         <div className={s.field}>
-          <dd><Badge size="xs" status="accent" variant="subtle">predicted</Badge></dd>
+          <dd><Badge size="xs" emphasis="high" variant="subtle">predicted</Badge></dd>
         </div>
       )}
     </dl>
@@ -185,7 +185,7 @@ function RankedStage({ ranked }: { ranked: readonly RankedCandidate[] }) {
                 <td className={s.num}>{i + 1}</td>
                 <td><Code size="sm">{c.actionId}</Code></td>
                 <td>
-                  <Badge size="xs" variant="outline" status={r.placedBy.step === 'first' ? 'muted' : 'warn'}>
+                  <Badge size="xs" variant="outline" emphasis={r.placedBy.step === 'first' ? 'low' : undefined} grade={r.placedBy.step === 'first' ? undefined : 'warn'}>
                     {placedByLabel(r.placedBy)}
                   </Badge>
                 </td>

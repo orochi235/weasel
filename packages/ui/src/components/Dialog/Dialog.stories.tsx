@@ -25,7 +25,7 @@ export const Basic: Story = {
           footer={
             <>
               <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button variant="primary" onClick={() => setOpen(false)}>OK</Button>
+              <Button stance="confirm" onClick={() => setOpen(false)}>OK</Button>
             </>
           }
         >
@@ -50,7 +50,7 @@ export const AlertDialog: Story = {
           footer={
             <>
               <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button variant="primary" onClick={() => setOpen(false)}>Delete</Button>
+              <Button stance="confirm" onClick={() => setOpen(false)}>Delete</Button>
             </>
           }
         >

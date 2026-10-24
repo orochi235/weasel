@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Code, type CodeStatus, CODE_VARIANT_ICONS } from '@weasel-js/ui/components/Code';
-import { BADGE_STATUS_ICONS } from '@weasel-js/ui/components/Badge';
+import { Code, CODE_VARIANT_ICONS } from '@weasel-js/ui/components/Code';
+import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
+import { EMPHASES, GRADES } from '@weasel-js/theme';
+import { BADGE_LOOKS, lookProps } from '../Badge/looks';
 
 const meta: Meta<typeof Code> = {
   title: 'ui/Foundations/Code',
   component: Code,
-  args: { children: 'editor.insert', status: 'neutral', variant: 'subtle' },
+  args: { children: 'editor.insert', variant: 'subtle' },
   argTypes: {
-    status: {
-      control: { type: 'inline-radio', icons: BADGE_STATUS_ICONS },
-      options: ['neutral', 'muted', 'accent', 'success', 'warn', 'danger'],
-    },
+    grade: { control: { type: 'inline-radio', icons: GRADE_ICONS }, options: [undefined, ...GRADES] },
+    emphasis: { control: { type: 'inline-radio', icons: EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
     variant: { control: { type: 'inline-radio', icons: CODE_VARIANT_ICONS }, options: ['subtle', 'plain'] },
     size: { control: 'inline-radio', options: [undefined, 'xs', 'sm', 'md'] },
   },
@@ -20,26 +20,24 @@ type Story = StoryObj<typeof Code>;
 
 export const Default: Story = {};
 
-const STATUSES: CodeStatus[] = ['neutral', 'muted', 'accent', 'success', 'warn', 'danger'];
-
-export const Statuses: Story = {
+export const Looks: Story = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 8, justifyContent: 'start' }}>
-      {STATUSES.flatMap((t) => [
-        <Code key={`${t}-s`} status={t}>{t}</Code>,
-        <Code key={`${t}-p`} status={t} variant="plain">{t}</Code>,
+      {BADGE_LOOKS.flatMap((t) => [
+        <Code key={`${t}-s`} {...lookProps(t)}>{t}</Code>,
+        <Code key={`${t}-p`} {...lookProps(t)} variant="plain">{t}</Code>,
       ])}
     </div>
   ),
 };
 
-/** `tone` says which of its peers a span is, from the theme's tone list. */
-export const PeerTones: Story = {
+/** `tint` says which of its peers a span is, from the theme's tint list. */
+export const PeerTints: Story = {
   render: () => (
     <p>
-      {[0, 1, 2, 3, 4, 5].map((tone) => (
-        <span key={tone}>
-          <Code tone={tone}>{`peer.${tone}`}</Code>{' '}
+      {[0, 1, 2, 3, 4, 5].map((tint) => (
+        <span key={tint}>
+          <Code tint={tint}>{`tint.${tint}`}</Code>{' '}
         </span>
       ))}
     </p>
@@ -50,8 +48,8 @@ export const PeerTones: Story = {
 export const Diff: Story = {
   render: () => (
     <p>
-      vs <strong>minimal</strong>: <Code status="success">+lasso</Code>{' '}
-      <Code status="success">+polygon</Code> <Code status="danger">−marquee</Code>
+      vs <strong>minimal</strong>: <Code grade="success">+lasso</Code>{' '}
+      <Code grade="success">+polygon</Code> <Code grade="danger">−marquee</Code>
     </p>
   ),
 };
@@ -62,7 +60,7 @@ export const InRunningText: Story = {
   render: () => (
     <p style={{ maxWidth: 320, lineHeight: 1.6 }}>
       The dep commits through <Code>(bounds: {'{'} x: number; y: number; width: number; height: number {'}'}, extras: InsertExtras) =&gt; NodeId | null</Code>{' '}
-      and is overridden with <Code status="accent">useDepSource('insert', …)</Code>.
+      and is overridden with <Code emphasis="high">useDepSource('insert', …)</Code>.
     </p>
   ),
 };

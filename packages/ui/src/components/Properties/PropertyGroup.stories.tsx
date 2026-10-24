@@ -91,7 +91,7 @@ export const FoldedTwisty: StoryObj<typeof PropertyGroup> = {
 };
 
 /** `leading` and `actions` share the title row with the title: a handle before it, a value and a remove button after
- *  it. A tone draws the group's edge in it, which tells like groups in a list apart. */
+ *  it. A tint draws the group's edge in it, which tells like groups in a list apart. */
 export const HeaderSlots: StoryObj<typeof PropertyGroup> = {
   render: () => (
     <PropertyPanel title="Effects">
@@ -100,7 +100,7 @@ export const HeaderSlots: StoryObj<typeof PropertyGroup> = {
           <PropertyGroup
             key={name}
             title={name}
-            tone={i}
+            tint={i}
             collapsible
             leading={<DragGrip />}
             actions={

@@ -74,9 +74,7 @@
   background: currentColor;
 }
 
-.row[data-status='success'] .dot { background: var(--wzl-success); }
-.row[data-status='warn'] .dot { background: var(--wzl-warning); }
-.row[data-status='danger'] .dot { background: var(--wzl-danger); }
+.row[data-grade] .dot { background: var(--wzl-grade); }
 
 .title {
   margin: 0 0 var(--wzl-space-3);

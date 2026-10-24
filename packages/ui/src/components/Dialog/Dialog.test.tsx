@@ -17,11 +17,11 @@ describe('Dialog', () => {
     expect(screen.getByText('body content')).toBeTruthy();
   });
 
-  it('puts its stance and tone on the modal box', () => {
-    renderWithIcons(<Dialog isOpen title="Delete" stance="danger" tone={0} role="alertdialog">body</Dialog>);
+  it('puts its grade and tint on the modal box', () => {
+    renderWithIcons(<Dialog isOpen title="Delete" grade="danger" tint={0} role="alertdialog">body</Dialog>);
     const modal = screen.getByRole('alertdialog').parentElement!;
-    expect(modal.dataset.stance).toBe('danger');
-    expect(modal.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-fuchsia)');
+    expect(modal.dataset.grade).toBe('danger');
+    expect(modal.style.getPropertyValue('--wzl-tint')).toBe('var(--wzl-swatch-fuchsia)');
   });
 
   it('draws inline where it is rendered, whatever isOpen says, with its close reporting through onOpenChange', () => {

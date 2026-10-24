@@ -6,6 +6,7 @@ import { derive } from '../engine/derive.ts';
 import type { Lookup } from '../engine/merge.ts';
 import { resolveTheme, themeAxes } from '../resolveTheme.ts';
 import type { Theme } from '../theme.ts';
+import { GRADE_TOKENS, GRADES } from '../appearance.ts';
 
 /** Text, or a line, that has to read on every ground it is drawn on. Names are tokens, without the prefix. */
 export interface Pairing {
@@ -38,7 +39,7 @@ export const BUILT_IN_PAIRINGS: readonly Pairing[] = [
 export const TEXT_PAIRINGS: readonly Pairing[] = [
   { text: 'fg', on: ON_SURFACES, min: 4.5, steps: ['fg-muted', 'fg-subtle'] },
   { text: 'fg-on-accent', on: ['accent', 'accent-hover'], min: 4.5, steps: ['fg-muted-on-accent', 'fg-subtle-on-accent'] },
-  ...['accent-fg', 'secondary-fg', 'danger', 'warning', 'success'].map((text) => ({ text, on: ON_SURFACES, min: 4.5 })),
+  ...['accent-fg', 'secondary-fg', ...GRADES.map((g) => GRADE_TOKENS[g].replace('--wzl-', ''))].map((text) => ({ text, on: ON_SURFACES, min: 4.5 })),
   ...['keyword', 'string', 'number', 'constant', 'property', 'name'].map((k) => ({ text: `code-${k}`, on: ON_SURFACES, min: 4.5 })),
   { text: 'border-strong', on: ON_SURFACES, min: 3 },
 ];

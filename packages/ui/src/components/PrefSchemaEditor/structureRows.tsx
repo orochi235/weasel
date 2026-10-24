@@ -31,7 +31,7 @@ export const nodeLabel = (name: string, key: string): ReactNode => (name ? <>{na
 /** A leaf's label: a row with no glyph before it, set in from where one would be and in the plain weight. */
 export const leafLabel = (label: ReactNode): ReactNode => <span className={s.treeLeaf}>{label}</span>;
 
-const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
+const countBadge = (n: number) => <Badge size="xs" emphasis="low" variant="subtle" className={s.treeCount}>{n}</Badge>;
 
 /** The actions an `actions` leaf draws, each a row under it that names one and takes no edit: the leaf holds none
  *  of them, so they are shown and never selected. */

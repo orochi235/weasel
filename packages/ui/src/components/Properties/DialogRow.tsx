@@ -134,7 +134,7 @@ export function DialogRow({
                   Cancel
                 </Button>
               )}
-              <Button variant="primary" onClick={close}>
+              <Button stance="confirm" onClick={close}>
                 Done
               </Button>
             </>

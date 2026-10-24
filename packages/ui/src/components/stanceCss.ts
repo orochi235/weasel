@@ -1,4 +1,4 @@
-import { STANCE_SLOTS, STANCES } from '@weasel-js/theme';
+import { EMPHASIS_SLOTS, GRADE_SLOTS, STANCE_SLOTS, STANCES } from '@weasel-js/theme';
 
 /** Build-time only: `npm run gen:stances` writes each surface's rules into its stylesheet. */
 
@@ -20,21 +20,21 @@ export interface StanceSurface {
   readonly stanced?: Readonly<Record<string, string>>;
   /** The surface nests inside its own kind and marks it `data-nested`. */
   readonly nests?: boolean;
-  /** The surface paints `--_s-fill` — its surface, with any tone mixed in — as its background. */
+  /** The surface paints `--_s-fill` — its surface, with any tint mixed in — as its background. */
   readonly fills?: boolean;
   /**
-   * A toned surface sinks its controls' wells one step below its fill, not to
+   * A tinted surface sinks its controls' wells one step below its fill, not to
    * the theme's sunken surface. Not for a surface whose own surface is the
    * sunken one: the two would define each other.
    */
   readonly sinks?: boolean;
-  /** The surface takes a tone and no stance. */
+  /** The surface takes a tint and no stance. */
   readonly stanceless?: boolean;
 }
 
-/** A surface with a tone and no stance tone takes this; mixing a surface into itself changes nothing. */
-export const TONE_BASE = 'var(--wzl-tone, var(--_s-surface))';
-export const ACCENT_BASE = 'var(--wzl-tone)';
+/** A surface with a tint and no stance tint takes this; mixing a surface into itself changes nothing. */
+export const TINT_BASE = 'var(--wzl-tint, var(--_s-surface))';
+export const ACCENT_BASE = 'var(--wzl-tint)';
 
 const begin = (id: string) => `/* BEGIN GENERATED stance rules: ${id} — \`npm run gen:stances\`, do not edit. */`;
 const end = (id: string) => `/* END GENERATED stance rules: ${id} */`;
@@ -42,15 +42,43 @@ const end = (id: string) => `/* END GENERATED stance rules: ${id} */`;
 /** `var(--wzl-stance-<name>, <fallback>)`, spelled so the token-read checker sees no literal read. */
 const stanceVar = (name: string, fallback: string) => `var(${`--wzl-stance-${name}`}, ${fallback})`;
 
+const slotDecls = (surface: StanceSurface, pairs: [string, string][]) =>
+  pairs.filter(([name]) => name in surface.base).map(([name, value]) => `  --_s-${name}: ${value};`);
+
+function emphasisRules(surface: StanceSurface): string[] {
+  return Object.entries(EMPHASIS_SLOTS).flatMap(([level, slots]) => {
+    const body = slotDecls(surface, Object.entries(slots));
+    if (!body.length) return [];
+    const sel = `${surface.selector}[data-emphasis='${level}']`;
+    return [`${surface.nests ? `${sel},\n${sel}[data-nested]` : sel} {\n${body.join('\n')}\n}`];
+  });
+}
+
+function gradeRules(surface: StanceSurface): string[] {
+  const body = slotDecls(surface, [
+    ...GRADE_SLOTS.map((slot): [string, string] => [slot, slot === 'tint' ? 'var(--wzl-tint, var(--wzl-grade))' : 'var(--wzl-grade)']),
+    ['accent', 'var(--wzl-tint, var(--wzl-grade))'],
+  ]);
+  if (!body.length) return [];
+  const sel = `${surface.selector}[data-grade]`;
+  // A nested stanced surface's block is (0,3,0); its graded twin must match that to win on order.
+  const selector = surface.nests ? `${sel},\n${sel}[data-nested]` : sel;
+  return [`${selector} {\n${body.join('\n')}\n}`];
+}
+
 export function stanceCss(surface: StanceSurface): string {
   const slots = STANCE_SLOTS.filter((slot) => slot.name in surface.base);
   const block = (selector: string, decl: (name: string) => string) =>
     `${selector} {\n${slots.map(({ name }) => `  --_s-${name}: ${decl(name)};`).join('\n')}\n}`;
 
   const stanced = (stance: string, nested: boolean) => (name: string) => {
-    if (name === 'tone') {
-      const own = stanceVar(`${stance}-tone`, 'var(--_s-surface)');
-      return `var(--wzl-tone, ${nested ? stanceVar(`${stance}-nested-tone`, own) : own})`;
+    if (name === 'tint') {
+      const own = stanceVar(`${stance}-tint`, 'var(--_s-surface)');
+      return `var(--wzl-tint, ${nested ? stanceVar(`${stance}-nested-tint`, own) : own})`;
+    }
+    if (name === 'accent') {
+      const own = stanceVar(`${stance}-accent`, surface.stanced?.accent ?? surface.base.accent);
+      return `var(--wzl-tint, ${nested ? stanceVar(`${stance}-nested-accent`, own) : own})`;
     }
     const outer = stanceVar(`${stance}-${name}`, surface.stanced?.[name] ?? surface.base[name]);
     return nested ? stanceVar(`${stance}-nested-${name}`, outer) : outer;
@@ -58,31 +86,33 @@ export function stanceCss(surface: StanceSurface): string {
 
   const { selector: sel } = surface;
   const rules = [
-    // The tone is per surface: set inline on the one that names it, never inherited by one inside it.
-    `${sel} {\n  --wzl-tone: initial;\n}`,
+    // The tint is per surface: set inline on the one that names it, never inherited by one inside it.
+    `${sel} {\n  --wzl-tint: initial;\n}`,
     block(sel, (name) => surface.base[name]),
     ...(surface.stanceless ? [] : STANCES).flatMap((stance) => [
       block(`${sel}[data-stance='${stance}']`, stanced(stance, false)),
       ...(surface.nests ? [block(`${sel}[data-stance='${stance}'][data-nested]`, stanced(stance, true))] : []),
     ]),
+    ...emphasisRules(surface),
+    ...gradeRules(surface),
   ];
   if (surface.fills) {
     rules.push(
       `${sel} {\n  --_s-fill: var(--_s-surface);\n}`,
-      `${sel}[data-tone],\n${sel}[data-stance] {\n  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));\n}`,
+      `${sel}[data-tint],\n${sel}[data-grade],\n${sel}[data-stance] {\n  --_s-fill: color-mix(in oklab, var(--_s-tint) var(--_s-tint-mix), var(--_s-surface));\n}`,
     );
   }
   if (surface.sinks) {
     // A fixed lightness step, so a well reads one step down in either mode.
-    rules.push(`${sel}[data-tone] {\n  --wzl-surface-sunken: oklch(from var(--_s-fill) calc(l - 0.06) c h);\n}`);
+    rules.push(`${sel}[data-tint],\n${sel}[data-grade] {\n  --wzl-surface-sunken: oklch(from var(--_s-fill) calc(l - 0.06) c h);\n}`);
   }
   if ('accent' in surface.base) {
-    // Only a surface that names its tone recolors its controls. Derived against
+    // Only a surface that names its tint recolors its controls. Derived against
     // fg, so the family lightens in a dark mode and darkens in a light one, as
     // the theme's own accent steps do.
     rules.push(
       [
-        `${sel}[data-tone] {`,
+        `${sel}[data-tint] {`,
         '  --wzl-accent: var(--_s-accent);',
         '  --wzl-accent-base: var(--_s-accent);',
         '  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));',

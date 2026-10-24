@@ -21,7 +21,7 @@ const COLUMNS: readonly DataGridColumn<SchemaRow>[] = [
     id: 'type',
     header: 'type',
     sortable: false,
-    render: ({ prop }) => <Code variant="plain" status="accent" size="xs">{prop.type}</Code>,
+    render: ({ prop }) => <Code variant="plain" emphasis="high" size="xs">{prop.type}</Code>,
   },
   {
     id: 'default',

@@ -21,5 +21,5 @@ export function describeFileWarnings(did: FileDeed, warnings: readonly string[])
 export function reportFileWarnings(did: FileDeed, warnings: readonly string[], id: string): void {
   if (warnings.length === 0) return;
   const { title, description } = describeFileWarnings(did, warnings);
-  toast.warning(title, { id, description });
+  toast.warn(title, { id, description });
 }

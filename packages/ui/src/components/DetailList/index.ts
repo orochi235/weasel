@@ -4,5 +4,4 @@ export type {
   DetailListProps,
   DetailListValues,
   DetailRowProps,
-  DetailRowStatus,
 } from './DetailList';

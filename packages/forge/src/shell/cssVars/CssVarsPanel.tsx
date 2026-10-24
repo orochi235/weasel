@@ -289,12 +289,12 @@ function SaveRow({ pending, saving, notice, onSave }: SaveRowProps) {
   return (
     <div className="fg-css-vars__save">
       {pending ? (
-        <Button variant="primary" size="sm" loading={saving} disabled={saving} onClick={onSave}>
+        <Button stance="confirm" size="sm" loading={saving} disabled={saving} onClick={onSave}>
           Save to theme
         </Button>
       ) : null}
       {notice ? (
-        <p className={`fg-css-vars__notice fg-css-vars__notice--${notice.tone}`} role={notice.tone === 'error' ? 'alert' : 'status'}>
+        <p className={`fg-css-vars__notice fg-css-vars__notice--${notice.outcome}`} role={notice.outcome === 'error' ? 'alert' : 'status'}>
           {notice.text}
         </p>
       ) : null}

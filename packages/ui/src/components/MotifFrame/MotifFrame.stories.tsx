@@ -32,16 +32,16 @@ export const Motifs: Story = {
       <MotifFrame title="Rule" motif={rule()}>
         <Jacks names={VIDEO} />
       </MotifFrame>
-      <MotifFrame title="Component" motif={stereo()} tone={0}>
+      <MotifFrame title="Component" motif={stereo()} tint={0}>
         <Jacks names={VIDEO} />
       </MotifFrame>
       <MotifFrame title="Notch" motif={notch()}>
         <Jacks names={VIDEO} />
       </MotifFrame>
-      <MotifFrame title="Tab" motif={tab()} tone={2}>
+      <MotifFrame title="Tab" motif={tab()} tint={2}>
         <Jacks names={VIDEO} />
       </MotifFrame>
-      <MotifFrame title="Plaque" motif={plaque()} tone={4}>
+      <MotifFrame title="Plaque" motif={plaque()} tint={4}>
         <Jacks names={VIDEO} />
       </MotifFrame>
       <MotifFrame title="Titlebar" motif={titlebar()}>
@@ -55,12 +55,12 @@ export const StereoSides: Story = {
   render: () => (
     <div className={s.wall}>
       {(['left', 'right', 'top', 'bottom'] as const).map((side, i) => (
-        <MotifFrame key={side} title={`Audio ${side}`} motif={stereo({ side })} tone={i}>
+        <MotifFrame key={side} title={`Audio ${side}`} motif={stereo({ side })} tint={i}>
           <Jacks names={['L', 'R']} />
         </MotifFrame>
       ))}
       {(['start', 'center', 'end'] as const).map((labelAlign) => (
-        <MotifFrame key={labelAlign} title={labelAlign} motif={stereo({ labelAlign })} tone={5}>
+        <MotifFrame key={labelAlign} title={labelAlign} motif={stereo({ labelAlign })} tint={5}>
           <Jacks names={['L', 'R', 'SUB']} />
           <Jacks names={['L', 'R', 'SUB']} />
         </MotifFrame>
@@ -77,7 +77,7 @@ export const HeadingParts: Story = {
           key={motif.id}
           title={motif.id}
           motif={motif}
-          tone={i}
+          tint={i}
           actions={
             <Button variant="ghost" size="sm">
               clear
@@ -95,7 +95,7 @@ export const PlaqueMix: Story = {
   render: () => (
     <div className={s.wall}>
       {[100, 60, 30].map((mix) => (
-        <MotifFrame key={mix} title={`${mix}%`} motif={plaque({ mix })} tone={1}>
+        <MotifFrame key={mix} title={`${mix}%`} motif={plaque({ mix })} tint={1}>
           <Jacks names={VIDEO} />
         </MotifFrame>
       ))}
@@ -108,16 +108,16 @@ export const AsPropertyGroups: Story = {
   render: () => (
     <div className={s.narrow}>
       <PropertyList>
-        <PropertyGroup title="Bevel" collapsible tone={0}>
+        <PropertyGroup title="Bevel" collapsible tint={0}>
           <PropertyField kind="number" label="Depth" value={4} onChange={() => {}} layout="inline" />
         </PropertyGroup>
-        <PropertyGroup title="Dome" motif={stereo()} tone={1}>
+        <PropertyGroup title="Dome" motif={stereo()} tint={1}>
           <PropertyField kind="number" label="Height" value={12} onChange={() => {}} layout="inline" />
         </PropertyGroup>
         <PropertyGroup title="Aqua" motif={notch()} collapsible>
           <PropertyField kind="boolean" label="Gloss" value onChange={() => {}} />
         </PropertyGroup>
-        <PropertyGroup title="Shadow" motif={plaque()} tone={3}>
+        <PropertyGroup title="Shadow" motif={plaque()} tint={3}>
           <PropertyField kind="number" label="Blur" value={6} onChange={() => {}} layout="inline" />
         </PropertyGroup>
       </PropertyList>

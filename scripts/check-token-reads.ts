@@ -25,6 +25,9 @@ export const HOOKS = new Set(TOKEN_HOOKS.map((h) => `--wzl-${h.name}`));
 /** Per-stance slots: read with a fallback, declared by a theme only where a stance differs. */
 const STANCE_SLOT_NAMES = stanceSlotNames();
 
+/** Set inline at runtime by `useAppearance` on the element that names them, so no stylesheet or theme declares them. */
+const RUNTIME_PROPS = new Set(['--wzl-grade', '--wzl-emphasis-fg']);
+
 export interface SourceFile {
   readonly path: string;
   readonly source: string;
@@ -69,7 +72,7 @@ export function findUndeclaredReads(
         for (const [, name, comma] of line.matchAll(READ)) {
           // `var(--wzl-swatch-${name})`: the name is built at runtime, so there is nothing to check.
           if (name.endsWith('-')) continue;
-          if (themeTokens.has(name) || declared.has(name)) continue;
+          if (themeTokens.has(name) || declared.has(name) || RUNTIME_PROPS.has(name)) continue;
           if (!hooks.has(name)) {
             out.push({ file: path, line: i + 1, name, reason: 'declared by no theme' });
           } else if (!comma) {

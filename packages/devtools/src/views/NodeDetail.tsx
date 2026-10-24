@@ -29,7 +29,6 @@ export function NodeDetail({ client, rootId, nodeId, onPick }: NodeDetailProps):
         <Code size="sm">{d.id}</Code>
         <Button
           size="sm"
-          variant="secondary"
           onClick={() => { client.request(rootId, { type: 'select', ids: [d.id] }).catch(() => {}); }}
         >
           Select on canvas

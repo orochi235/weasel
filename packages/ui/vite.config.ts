@@ -33,7 +33,7 @@ const entries: Record<string, string> = {
   'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
   kitIcons: resolve(import.meta.dirname, 'src/kitIcons.ts'),
   'components/paintValue': resolve(import.meta.dirname, 'src/components/paintValue.ts'),
-  'components/stance': resolve(import.meta.dirname, 'src/components/stance.ts'),
+  'components/appearance': resolve(import.meta.dirname, 'src/components/appearance.ts'),
   'overlays/portalHost': resolve(import.meta.dirname, 'src/overlays/portalHost.tsx'),
   'color/index': resolve(import.meta.dirname, 'src/color/index.ts'),
   paintGradientTrack: resolve(import.meta.dirname, 'src/paintGradientTrack.tsx'),

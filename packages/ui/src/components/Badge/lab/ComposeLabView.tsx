@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Badge } from '@weasel-js/ui/components/Badge';
+import { lookProps } from '../looks';
 import type { BadgeBase } from '@weasel-js/ui/components/Badge';
 import { AppearanceSection } from './AppearanceSection';
 import { BaseParams } from './BaseParams';
 import { BASE_KEYS } from './controls';
 import { EffectsSection } from './EffectsSection';
 import { LAB_PRESETS, type LabPreset } from './presets';
-import { customEdge, Preview } from './Preview';
+import { Preview } from './Preview';
 import type { LabSnapshot } from './snapshot';
 import { composeSnippet } from './snippets';
 import { addEffect, basePatch, presetPatch, resetPatch } from './transitions';
@@ -15,7 +16,7 @@ import { useLabState, type LabArgs } from './useLabState';
 import controls from './controls.stories.module.css';
 import s from './ComposeLab.stories.module.css';
 
-type Dressed = Pick<LabSnapshot, 'status' | 'customColor' | 'variant' | 'bloat' | 'size' | 'label'>;
+type Dressed = Pick<LabSnapshot, 'look' | 'tint' | 'variant' | 'bloat' | 'size' | 'label'>;
 
 /** Every preset, drawn in the lab's current colors and label; a click loads one. */
 function Presets({ lab, onLoad }: { lab: Dressed; onLoad: (preset: LabPreset) => void }) {
@@ -29,11 +30,10 @@ function Presets({ lab, onLoad }: { lab: Dressed; onLoad: (preset: LabPreset) =>
               base={p.base}
               baseParams={p.baseParams as never}
               effects={p.effects as never}
-              status={lab.status}
+              {...lookProps(lab.look, lab.tint)}
               variant={lab.variant}
               bloat={lab.bloat}
               size={lab.size}
-              style={customEdge(lab.status, lab.customColor)}
             >
               {lab.label}
             </Badge>

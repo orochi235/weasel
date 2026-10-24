@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { decimal } from '@weasel-js/quantity';
+import { EMPHASES, GRADES, STANCES } from '@weasel-js/theme';
 import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
 import { Subpanel, PropertyField, PropertyList, type PropertyListPack, PropertySpan, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { Switch } from '@weasel-js/ui/components/Switch';
@@ -190,18 +191,6 @@ export const ListWithoutChrome: Story = {
   ),
 };
 
-const STANCES = [
-  undefined,
-  'scope',
-  'aside',
-  'advanced',
-  'debug',
-  'danger',
-  'notice',
-  'important',
-  'preview',
-] as const;
-
 function StanceRows() {
   const [amount, setAmount] = useState(0.4);
   const [on, setOn] = useState(true);
@@ -213,25 +202,43 @@ function StanceRows() {
   );
 }
 
-/** Every stance and none, then tones 0–3 on `scope`, then a panel nested in each. */
+/** No stance and every stance, each grade, high and low emphasis, tints 0–3 on `clarify`, then a panel nested in each stance and a danger one in `clarify`. */
 export const Stances: Story = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 260px)', gap: 16 }}>
-      {STANCES.map((stance) => (
-        <PropertyPanel key={stance ?? 'none'} stance={stance} title={stance ?? 'no stance'}>
-          <StanceRows />
-        </PropertyPanel>
-      ))}
-      {[0, 1, 2, 3].map((tone) => (
-        <PropertyPanel key={`tone-${tone}`} stance="scope" tone={tone} title={`scope, tone ${tone}`}>
-          <StanceRows />
-        </PropertyPanel>
-      ))}
-      <PropertyPanel tone={2} title="tone 2, no stance">
+      <PropertyPanel title="no stance">
         <StanceRows />
       </PropertyPanel>
-      {STANCES.filter(Boolean).map((stance) => (
-        <PropertyPanel key={`nested-${stance}`} stance="scope" tone={4} title={`${stance} nested in scope`}>
+      {STANCES.map((stance) => (
+        <PropertyPanel key={stance} stance={stance} title={stance}>
+          <StanceRows />
+        </PropertyPanel>
+      ))}
+      {GRADES.map((grade) => (
+        <PropertyPanel key={`grade-${grade}`} grade={grade} title={`grade ${grade}`}>
+          <StanceRows />
+        </PropertyPanel>
+      ))}
+      {EMPHASES.map((emphasis) => (
+        <PropertyPanel key={`emphasis-${emphasis}`} emphasis={emphasis} title={`emphasis ${emphasis}`}>
+          <StanceRows />
+        </PropertyPanel>
+      ))}
+      {[0, 1, 2, 3].map((tint) => (
+        <PropertyPanel key={`tint-${tint}`} stance="clarify" tint={tint} title={`clarify, tint ${tint}`}>
+          <StanceRows />
+        </PropertyPanel>
+      ))}
+      <PropertyPanel tint={2} title="tint 2, no stance">
+        <StanceRows />
+      </PropertyPanel>
+      <PropertyPanel stance="clarify" tint={4} title="danger nested in clarify">
+        <PropertyPanel grade="danger" title="danger">
+          <StanceRows />
+        </PropertyPanel>
+      </PropertyPanel>
+      {STANCES.map((stance) => (
+        <PropertyPanel key={`nested-${stance}`} stance="clarify" tint={4} title={`${stance} nested in clarify`}>
           <PropertyPanel stance={stance} title={stance}>
             <StanceRows />
           </PropertyPanel>
@@ -557,18 +564,18 @@ export const Sidebar: Story = {
 
 /**
  * A panel of like items, each a group that reorders, folds and goes away: a
- * `LayerList` of cards inside the panel. Each tail takes the next tone of the theme's
+ * `LayerList` of cards inside the panel. Each tail takes the next tint of the theme's
  * list, which colors its edge and handle and every control inside it, and its
  * ordinal is its handle. Its body pairs its rows and gives the shape's own
  * parameters a `Subpanel`.
  */
-export const ToneList: Story = {
+export const TintList: Story = {
   render: () => {
     function Tails() {
       const [tails, setTails] = useState<LayerListItem[]>([
-        { id: '1', label: 'classic', tone: 0 },
-        { id: '2', label: 'bubbles', tone: 1 },
-        { id: '3', label: 'wavy', tone: 2 },
+        { id: '1', label: 'classic', tint: 0 },
+        { id: '2', label: 'bubbles', tint: 1 },
+        { id: '3', label: 'wavy', tint: 2 },
       ]);
       const numbered = tails.map((tail, i) => ({ ...tail, badge: String(i + 1) }));
       return (

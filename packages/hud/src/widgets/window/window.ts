@@ -6,7 +6,8 @@ import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns, pathFromD, parseColor, pastDragThreshold } from '@weasel-js/core';
 import { clampRectWithin } from '@weasel-js/geom';
 import { dashForStrokeStyle, mixOklab, type ColorSource } from '@weasel-js/paint';
-import { resolveCurrentColor, resolveStanceSlots, TONE_REF, type Stance } from '@weasel-js/theme';
+import { TINT_REF, type Emphasis, type Grade, type Stance } from '@weasel-js/theme';
+import { windowLook } from './windowLook';
 import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
@@ -29,9 +30,15 @@ export interface WindowOptions {
    *  `--wzl-stance-<stance>-<slot>` values restyle its fill, border and title,
    *  as they do a DOM panel's. */
   stance?: Stance;
-  /** Which of its peers the window is: an index into the theme's tone list,
-   *  or a color source. Mixed into the fill at the stance's `tone-mix`. */
-  tone?: number | ColorSource;
+  /** How serious it is. Paints the tint, border, and title in the grade's
+   *  color, over the stance's, as it does a DOM panel's. */
+  grade?: Grade;
+  /** How loudly it reads: `high` draws the border and title in the accent,
+   *  `low` draws the title muted. A grade outranks it. */
+  emphasis?: Emphasis;
+  /** Which of its peers the window is: an index into the theme's tint list,
+   *  or a color source. Mixed into the fill at the stance's `tint-mix`. */
+  tint?: number | ColorSource;
   /** Paints the interior. Drawn beneath every widget frame, clipped to
    *  `contentRect`. Receives the scene data and view the hud layer was
    *  handed — the one place hud sees either. */
@@ -70,15 +77,15 @@ export interface WindowWidget extends Widget {
   setHidden(hidden: boolean): void;
   setTitle(title: string): void;
   setStance(stance: Stance | undefined): void;
-  setTone(tone: number | ColorSource | undefined): void;
+  setGrade(grade: Grade | undefined): void;
+  setEmphasis(emphasis: Emphasis | undefined): void;
+  setTint(tint: number | ColorSource | undefined): void;
   dispose(): void;
 }
 
-type WindowLook = Record<'surface' | 'border-color' | 'border-style' | 'border-width' | 'tone-mix' | 'tone' | 'title-color' | 'title-case', string>;
-
-/** `color-mix(in oklab, tone p, surface)`, for a canvas that has no cascade to ask. */
-function mixTone(tone: string, mix: string, surface: string): string {
-  const [r, g, b, a] = mixOklab(parseColor(tone), parseColor(surface), Number.parseFloat(mix) / 100);
+/** `color-mix(in oklab, tint p, surface)`, for a canvas that has no cascade to ask. */
+function mixTint(tint: string, mix: string, surface: string): string {
+  const [r, g, b, a] = mixOklab(parseColor(tint), parseColor(surface), Number.parseFloat(mix) / 100);
   return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${a})`;
 }
 
@@ -135,7 +142,9 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   let hidden = false;
   let title = opts.title;
   let stance = opts.stance;
-  let tone = opts.tone;
+  let grade = opts.grade;
+  let emphasis = opts.emphasis;
+  let tint = opts.tint;
   let bounds = clampSize({ x: opts.x, y: opts.y, w: opts.w, h: opts.h });
   let dragZone: WindowZone | null = null;
   let dragStart: WidgetBounds = bounds;
@@ -179,7 +188,9 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
     setTitle(t) { assertNotDisposed(); title = t; rev.changed(); },
     setStance(st) { assertNotDisposed(); stance = st; rev.changed(); },
-    setTone(t) { assertNotDisposed(); tone = t; rev.changed(); },
+    setGrade(g) { assertNotDisposed(); grade = g; rev.changed(); },
+    setEmphasis(e) { assertNotDisposed(); emphasis = e; rev.changed(); },
+    setTint(t) { assertNotDisposed(); tint = t; rev.changed(); },
 
     draw(ctx: HudDrawCtx): DrawCommand[] {
       hostDims = ctx.dims;
@@ -189,22 +200,11 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       // The grab bands sit outside contentRect, so nothing else paints them —
       // without these the scene shows through the window's own border. The
       // titlebar, when there is one, is the top band.
-      const surface = ctx.tokens['--wzl-surface-raised'];
-      const look = resolveStanceSlots<keyof WindowLook>(ctx.tokens, {
-        surface,
-        'border-color': ctx.tokens['--wzl-border'],
-        'border-style': 'solid',
-        'border-width': '1px',
-        'tone-mix': ctx.tokens['--wzl-panel-tone-mix'],
-        tone: surface,
-        'title-color': ctx.tokens['--wzl-fg-muted'],
-        'title-case': 'none',
-      }, { stance });
-      look['title-color'] = resolveCurrentColor(look['title-color'], ctx.tokens['--wzl-fg']);
-      const named = tone === undefined ? undefined : ctx.color(typeof tone === 'number' ? { ref: TONE_REF, index: tone } : tone);
-      const band = named === undefined && stance === undefined
+      const look = windowLook(ctx.tokens, { stance, grade, emphasis });
+      const named = tint === undefined ? undefined : ctx.color(typeof tint === 'number' ? { ref: TINT_REF, index: tint } : tint);
+      const band = named === undefined && stance === undefined && grade === undefined
         ? look.surface
-        : mixTone(named ?? look.tone, look['tone-mix'], look.surface);
+        : mixTint(named ?? look.tint, look['tint-mix'], look.surface);
       const below = y + m.titleH;
       const bandH = h - m.titleH;
       const rects = [

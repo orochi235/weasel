@@ -24,6 +24,17 @@ describe('Toolbar', () => {
     expect(container.querySelector('.lk-toolbar-title')).not.toBeNull();
   });
 
+  test('Button marks a danger grade', () => {
+    render(
+      <Toolbar>
+        <Toolbar.Button grade="danger" onClick={() => {}}>
+          Discard
+        </Toolbar.Button>
+      </Toolbar>,
+    );
+    expect(screen.getByRole('button', { name: 'Discard' })).toHaveAttribute('data-grade', 'danger');
+  });
+
   test('Button passes onClick and disabled', () => {
     let clicked = false;
     render(

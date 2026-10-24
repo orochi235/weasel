@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'vite';
 
-/** A glyph nothing in the app, ui's Badge, or its chunks names. */
+/** A glyph nothing in the app, ui's appearance module, or its chunks names. */
 const UNNAMED = 'd20';
 
 /** The path data of a ui glyph, which survives the double JSON encoding of a variant chunk. */
@@ -57,10 +57,10 @@ export async function smokeIcons({ repoRoot, workDir, nodeModules, external, fai
   await writeFile(
     join(app, 'src/main.ts'),
     `import icons from 'virtual:weasel-icons';\n` +
-      `import { Badge } from '@weasel-js/ui/components/Badge';\n` +
+      `import { GRADE_ICONS } from '@weasel-js/ui/appearance';\n` +
       `import { icon } from './icons.gen';\n` +
       `const close = { id: 'close', label: 'Close', icon: icon('ui:close') };\n` +
-      `Object.assign(globalThis, { icons, close, Badge, all: () => import('virtual:weasel-icons/all') });\n`,
+      `Object.assign(globalThis, { icons, close, GRADE_ICONS, all: () => import('virtual:weasel-icons/all') });\n`,
   );
   let out;
   try {
@@ -83,7 +83,7 @@ export async function smokeIcons({ repoRoot, workDir, nodeModules, external, fai
   const problems = [];
   const expect = (ok, what) => ok || problems.push(what);
   expect(entry.includes(await pathData(nodeModules, 'close')), "the entry lacks ui:close, named by the app's own icon()");
-  expect(entry.includes(await pathData(nodeModules, 'statusSuccess')), "the entry lacks ui:statusSuccess, named only in ui's dist");
+  expect(entry.includes(await pathData(nodeModules, 'gradeSuccess')), "the entry lacks ui:gradeSuccess, named only in ui's dist");
   const unnamed = await pathData(nodeModules, UNNAMED);
   for (const c of chunks.filter((c) => !variant(c))) {
     expect(!c.code.includes(unnamed), `${c.fileName} ships ui:${UNNAMED}, which nothing names`);

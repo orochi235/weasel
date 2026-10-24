@@ -1,5 +1,5 @@
 import type { CSSProperties, MouseEventHandler, ReactNode } from 'react';
-import type { StanceProps } from '../stance';
+import type { AppearanceProps } from '../appearance';
 
 /** The parts of a frame's heading, which a motif places as it sees fit. */
 export interface HeadingParts {
@@ -21,7 +21,9 @@ export interface RootProps {
   'aria-labelledby': string;
   'data-motif': string;
   'data-stance'?: string;
-  'data-tone'?: string;
+  'data-grade'?: string;
+  'data-emphasis'?: string;
+  'data-tint'?: string;
   onContextMenu?: MouseEventHandler;
   style?: CSSProperties;
 }
@@ -50,7 +52,7 @@ export interface Motif<P = unknown> {
 export type FrameKind = 'group' | 'subpanel';
 
 /** Props for `<MotifFrame>`. */
-export interface MotifFrameProps extends StanceProps {
+export interface MotifFrameProps extends AppearanceProps {
   title: ReactNode;
   /** How the frame draws its title and edge. Defaults to the `<DefaultMotif>` for its `kind`: `rule()` for a group, `divider()` for a subpanel. */
   motif?: Motif;

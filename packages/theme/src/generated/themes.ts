@@ -82,6 +82,8 @@ export type TokenName =
   | '--wzl-handle-size-lg'
   | '--wzl-handle-size-sm'
   | '--wzl-icon-button-size'
+  | '--wzl-info'
+  | '--wzl-info-base'
   | '--wzl-leading'
   | '--wzl-leading-snug'
   | '--wzl-leading-tight'
@@ -98,6 +100,7 @@ export type TokenName =
   | '--wzl-panel-pad'
   | '--wzl-panel-radius'
   | '--wzl-panel-surface'
+  | '--wzl-panel-tint-mix'
   | '--wzl-panel-title-case'
   | '--wzl-panel-title-color'
   | '--wzl-panel-title-font'
@@ -105,7 +108,6 @@ export type TokenName =
   | '--wzl-panel-title-size'
   | '--wzl-panel-title-tracking'
   | '--wzl-panel-title-weight'
-  | '--wzl-panel-tone-mix'
   | '--wzl-radius-lg'
   | '--wzl-radius-md'
   | '--wzl-radius-pill'
@@ -140,25 +142,18 @@ export type TokenName =
   | '--wzl-stance-aside-border-color'
   | '--wzl-stance-aside-surface'
   | '--wzl-stance-aside-title-color'
-  | '--wzl-stance-danger-border-color'
-  | '--wzl-stance-danger-title-color'
-  | '--wzl-stance-danger-tone'
+  | '--wzl-stance-clarify-border-width'
+  | '--wzl-stance-clarify-nested-radius'
+  | '--wzl-stance-clarify-nested-surface'
+  | '--wzl-stance-clarify-radius'
+  | '--wzl-stance-clarify-tint-mix'
   | '--wzl-stance-debug-border-style'
   | '--wzl-stance-debug-title-case'
   | '--wzl-stance-debug-title-font'
-  | '--wzl-stance-important-border-color'
-  | '--wzl-stance-important-title-color'
-  | '--wzl-stance-notice-tone'
-  | '--wzl-stance-notice-tone-mix'
   | '--wzl-stance-preview-pad'
   | '--wzl-stance-preview-title-case'
   | '--wzl-stance-preview-title-inset'
   | '--wzl-stance-preview-title-size'
-  | '--wzl-stance-scope-border-width'
-  | '--wzl-stance-scope-nested-radius'
-  | '--wzl-stance-scope-nested-surface'
-  | '--wzl-stance-scope-radius'
-  | '--wzl-stance-scope-tone-mix'
   | '--wzl-success'
   | '--wzl-success-base'
   | '--wzl-surface'
@@ -281,7 +276,7 @@ export const THEMES = {
         '--wzl-panel-pad': "14px 16px",
         '--wzl-glass-blur': "3px",
         '--wzl-panel-blur': "3px",
-        '--wzl-panel-tone-mix': "14%",
+        '--wzl-panel-tint-mix': "14%",
         '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-panel-title-font': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-font-weight-light': "200",
@@ -291,11 +286,11 @@ export const THEMES = {
         '--wzl-panel-title-tracking': "0.01em",
         '--wzl-panel-title-color': "#e6e7e9",
         '--wzl-panel-title-inset': "0",
-        '--wzl-stance-scope-border-width': "0",
-        '--wzl-stance-scope-radius': "8px",
-        '--wzl-stance-scope-tone-mix': "22%",
-        '--wzl-stance-scope-nested-radius': "6px",
-        '--wzl-stance-scope-nested-surface': "#181a1e",
+        '--wzl-stance-clarify-border-width': "0",
+        '--wzl-stance-clarify-radius': "8px",
+        '--wzl-stance-clarify-tint-mix': "22%",
+        '--wzl-stance-clarify-nested-radius': "6px",
+        '--wzl-stance-clarify-nested-surface': "#181a1e",
         '--wzl-stance-aside-surface': "transparent",
         '--wzl-line-subtle': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(230, 231, 233, 0.1)",
@@ -306,31 +301,26 @@ export const THEMES = {
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-case': "none",
-        '--wzl-danger-base': "#d94a3f",
-        '--wzl-danger': "#d94a3f",
-        '--wzl-stance-danger-tone': "#d94a3f",
-        '--wzl-stance-danger-border-color': "#d94a3f",
-        '--wzl-stance-danger-title-color': "#d94a3f",
-        '--wzl-accent': "#5b63c9",
-        '--wzl-stance-notice-tone': "#5b63c9",
-        '--wzl-stance-notice-tone-mix': "8%",
-        '--wzl-stance-important-border-color': "#8c94ee",
-        '--wzl-stance-important-title-color': "#8c94ee",
         '--wzl-stance-preview-pad': "0",
         '--wzl-stance-preview-title-size': "10px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
+        '--wzl-info-base': "#7ab8d4",
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
         '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
+        '--wzl-accent': "#5b63c9",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
+        '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
+        '--wzl-info': "#7ab8d4",
         '--wzl-focus-ring': "#8c94ee",
         '--wzl-glass-tint': "#5b63c9",
         '--wzl-surface-hover': "rgba(230, 231, 233, 0.1)",
@@ -468,7 +458,7 @@ export const THEMES = {
         '--wzl-panel-pad': "14px 16px",
         '--wzl-glass-blur': "3px",
         '--wzl-panel-blur': "3px",
-        '--wzl-panel-tone-mix': "14%",
+        '--wzl-panel-tint-mix': "14%",
         '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-panel-title-font': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-font-weight-light': "200",
@@ -478,11 +468,11 @@ export const THEMES = {
         '--wzl-panel-title-tracking': "0.01em",
         '--wzl-panel-title-color': "#e6e7e9",
         '--wzl-panel-title-inset': "0",
-        '--wzl-stance-scope-border-width': "0",
-        '--wzl-stance-scope-radius': "8px",
-        '--wzl-stance-scope-tone-mix': "22%",
-        '--wzl-stance-scope-nested-radius': "6px",
-        '--wzl-stance-scope-nested-surface': "#181a1e",
+        '--wzl-stance-clarify-border-width': "0",
+        '--wzl-stance-clarify-radius': "8px",
+        '--wzl-stance-clarify-tint-mix': "22%",
+        '--wzl-stance-clarify-nested-radius': "6px",
+        '--wzl-stance-clarify-nested-surface': "#181a1e",
         '--wzl-stance-aside-surface': "transparent",
         '--wzl-line-subtle': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(230, 231, 233, 0.1)",
@@ -493,31 +483,26 @@ export const THEMES = {
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-case': "none",
-        '--wzl-danger-base': "#d94a3f",
-        '--wzl-danger': "#d94a3f",
-        '--wzl-stance-danger-tone': "#d94a3f",
-        '--wzl-stance-danger-border-color': "#d94a3f",
-        '--wzl-stance-danger-title-color': "#d94a3f",
-        '--wzl-accent': "#5b63c9",
-        '--wzl-stance-notice-tone': "#5b63c9",
-        '--wzl-stance-notice-tone-mix': "8%",
-        '--wzl-stance-important-border-color': "#8c94ee",
-        '--wzl-stance-important-title-color': "#8c94ee",
         '--wzl-stance-preview-pad': "0",
         '--wzl-stance-preview-title-size': "12px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
+        '--wzl-info-base': "#7ab8d4",
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
         '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
+        '--wzl-accent': "#5b63c9",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
+        '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
+        '--wzl-info': "#7ab8d4",
         '--wzl-focus-ring': "#8c94ee",
         '--wzl-glass-tint': "#5b63c9",
         '--wzl-surface-hover': "rgba(230, 231, 233, 0.1)",
@@ -655,7 +640,7 @@ export const THEMES = {
         '--wzl-panel-pad': "14px 16px",
         '--wzl-glass-blur': "3px",
         '--wzl-panel-blur': "3px",
-        '--wzl-panel-tone-mix': "14%",
+        '--wzl-panel-tint-mix': "14%",
         '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-panel-title-font': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-font-weight-light': "200",
@@ -665,11 +650,11 @@ export const THEMES = {
         '--wzl-panel-title-tracking': "0.01em",
         '--wzl-panel-title-color': "#e6e7e9",
         '--wzl-panel-title-inset': "0",
-        '--wzl-stance-scope-border-width': "0",
-        '--wzl-stance-scope-radius': "8px",
-        '--wzl-stance-scope-tone-mix': "22%",
-        '--wzl-stance-scope-nested-radius': "6px",
-        '--wzl-stance-scope-nested-surface': "#181a1e",
+        '--wzl-stance-clarify-border-width': "0",
+        '--wzl-stance-clarify-radius': "8px",
+        '--wzl-stance-clarify-tint-mix': "22%",
+        '--wzl-stance-clarify-nested-radius': "6px",
+        '--wzl-stance-clarify-nested-surface': "#181a1e",
         '--wzl-stance-aside-surface': "transparent",
         '--wzl-line-subtle': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(230, 231, 233, 0.1)",
@@ -680,31 +665,26 @@ export const THEMES = {
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-case': "none",
-        '--wzl-danger-base': "#d94a3f",
-        '--wzl-danger': "#d94a3f",
-        '--wzl-stance-danger-tone': "#d94a3f",
-        '--wzl-stance-danger-border-color': "#d94a3f",
-        '--wzl-stance-danger-title-color': "#d94a3f",
-        '--wzl-accent': "#5b63c9",
-        '--wzl-stance-notice-tone': "#5b63c9",
-        '--wzl-stance-notice-tone-mix': "8%",
-        '--wzl-stance-important-border-color': "#8c94ee",
-        '--wzl-stance-important-title-color': "#8c94ee",
         '--wzl-stance-preview-pad': "0",
         '--wzl-stance-preview-title-size': "14px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
+        '--wzl-info-base': "#7ab8d4",
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
         '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
+        '--wzl-accent': "#5b63c9",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
+        '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
+        '--wzl-info': "#7ab8d4",
         '--wzl-focus-ring': "#8c94ee",
         '--wzl-glass-tint': "#5b63c9",
         '--wzl-surface-hover': "rgba(230, 231, 233, 0.1)",
@@ -842,7 +822,7 @@ export const THEMES = {
         '--wzl-panel-pad': "14px 16px",
         '--wzl-glass-blur': "3px",
         '--wzl-panel-blur': "3px",
-        '--wzl-panel-tone-mix': "14%",
+        '--wzl-panel-tint-mix': "14%",
         '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-panel-title-font': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-font-weight-light': "200",
@@ -852,11 +832,11 @@ export const THEMES = {
         '--wzl-panel-title-tracking': "0.01em",
         '--wzl-panel-title-color': "#0e0f12",
         '--wzl-panel-title-inset': "0",
-        '--wzl-stance-scope-border-width': "0",
-        '--wzl-stance-scope-radius': "8px",
-        '--wzl-stance-scope-tone-mix': "22%",
-        '--wzl-stance-scope-nested-radius': "6px",
-        '--wzl-stance-scope-nested-surface': "#f5f5f6",
+        '--wzl-stance-clarify-border-width': "0",
+        '--wzl-stance-clarify-radius': "8px",
+        '--wzl-stance-clarify-tint-mix': "22%",
+        '--wzl-stance-clarify-nested-radius': "6px",
+        '--wzl-stance-clarify-nested-surface': "#f5f5f6",
         '--wzl-stance-aside-surface': "transparent",
         '--wzl-line-subtle': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(14, 15, 18, 0.1)",
@@ -867,31 +847,26 @@ export const THEMES = {
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-case': "none",
-        '--wzl-danger-base': "#d94a3f",
-        '--wzl-danger': "#d94a3f",
-        '--wzl-stance-danger-tone': "#d94a3f",
-        '--wzl-stance-danger-border-color': "#d94a3f",
-        '--wzl-stance-danger-title-color': "#d94a3f",
-        '--wzl-accent': "#4338ca",
-        '--wzl-stance-notice-tone': "#4338ca",
-        '--wzl-stance-notice-tone-mix': "8%",
-        '--wzl-stance-important-border-color': "#4338ca",
-        '--wzl-stance-important-title-color': "#4338ca",
         '--wzl-stance-preview-pad': "0",
         '--wzl-stance-preview-title-size': "10px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
+        '--wzl-info-base': "#7ab8d4",
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
         '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
+        '--wzl-accent': "#4338ca",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
+        '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
+        '--wzl-info': "#7ab8d4",
         '--wzl-focus-ring': "#6366f1",
         '--wzl-glass-tint': "#4338ca",
         '--wzl-surface-hover': "rgba(14, 15, 18, 0.1)",
@@ -1029,7 +1004,7 @@ export const THEMES = {
         '--wzl-panel-pad': "14px 16px",
         '--wzl-glass-blur': "3px",
         '--wzl-panel-blur': "3px",
-        '--wzl-panel-tone-mix': "14%",
+        '--wzl-panel-tint-mix': "14%",
         '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-panel-title-font': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-font-weight-light': "200",
@@ -1039,11 +1014,11 @@ export const THEMES = {
         '--wzl-panel-title-tracking': "0.01em",
         '--wzl-panel-title-color': "#0e0f12",
         '--wzl-panel-title-inset': "0",
-        '--wzl-stance-scope-border-width': "0",
-        '--wzl-stance-scope-radius': "8px",
-        '--wzl-stance-scope-tone-mix': "22%",
-        '--wzl-stance-scope-nested-radius': "6px",
-        '--wzl-stance-scope-nested-surface': "#f5f5f6",
+        '--wzl-stance-clarify-border-width': "0",
+        '--wzl-stance-clarify-radius': "8px",
+        '--wzl-stance-clarify-tint-mix': "22%",
+        '--wzl-stance-clarify-nested-radius': "6px",
+        '--wzl-stance-clarify-nested-surface': "#f5f5f6",
         '--wzl-stance-aside-surface': "transparent",
         '--wzl-line-subtle': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(14, 15, 18, 0.1)",
@@ -1054,31 +1029,26 @@ export const THEMES = {
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-case': "none",
-        '--wzl-danger-base': "#d94a3f",
-        '--wzl-danger': "#d94a3f",
-        '--wzl-stance-danger-tone': "#d94a3f",
-        '--wzl-stance-danger-border-color': "#d94a3f",
-        '--wzl-stance-danger-title-color': "#d94a3f",
-        '--wzl-accent': "#4338ca",
-        '--wzl-stance-notice-tone': "#4338ca",
-        '--wzl-stance-notice-tone-mix': "8%",
-        '--wzl-stance-important-border-color': "#4338ca",
-        '--wzl-stance-important-title-color': "#4338ca",
         '--wzl-stance-preview-pad': "0",
         '--wzl-stance-preview-title-size': "12px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
+        '--wzl-info-base': "#7ab8d4",
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
         '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
+        '--wzl-accent': "#4338ca",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
+        '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
+        '--wzl-info': "#7ab8d4",
         '--wzl-focus-ring': "#6366f1",
         '--wzl-glass-tint': "#4338ca",
         '--wzl-surface-hover': "rgba(14, 15, 18, 0.1)",
@@ -1216,7 +1186,7 @@ export const THEMES = {
         '--wzl-panel-pad': "14px 16px",
         '--wzl-glass-blur': "3px",
         '--wzl-panel-blur': "3px",
-        '--wzl-panel-tone-mix': "14%",
+        '--wzl-panel-tint-mix': "14%",
         '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-panel-title-font': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
         '--wzl-font-weight-light': "200",
@@ -1226,11 +1196,11 @@ export const THEMES = {
         '--wzl-panel-title-tracking': "0.01em",
         '--wzl-panel-title-color': "#0e0f12",
         '--wzl-panel-title-inset': "0",
-        '--wzl-stance-scope-border-width': "0",
-        '--wzl-stance-scope-radius': "8px",
-        '--wzl-stance-scope-tone-mix': "22%",
-        '--wzl-stance-scope-nested-radius': "6px",
-        '--wzl-stance-scope-nested-surface': "#f5f5f6",
+        '--wzl-stance-clarify-border-width': "0",
+        '--wzl-stance-clarify-radius': "8px",
+        '--wzl-stance-clarify-tint-mix': "22%",
+        '--wzl-stance-clarify-nested-radius': "6px",
+        '--wzl-stance-clarify-nested-surface': "#f5f5f6",
         '--wzl-stance-aside-surface': "transparent",
         '--wzl-line-subtle': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(14, 15, 18, 0.1)",
@@ -1241,31 +1211,26 @@ export const THEMES = {
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-case': "none",
-        '--wzl-danger-base': "#d94a3f",
-        '--wzl-danger': "#d94a3f",
-        '--wzl-stance-danger-tone': "#d94a3f",
-        '--wzl-stance-danger-border-color': "#d94a3f",
-        '--wzl-stance-danger-title-color': "#d94a3f",
-        '--wzl-accent': "#4338ca",
-        '--wzl-stance-notice-tone': "#4338ca",
-        '--wzl-stance-notice-tone-mix': "8%",
-        '--wzl-stance-important-border-color': "#4338ca",
-        '--wzl-stance-important-title-color': "#4338ca",
         '--wzl-stance-preview-pad': "0",
         '--wzl-stance-preview-title-size': "14px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
+        '--wzl-info-base': "#7ab8d4",
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
         '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
+        '--wzl-accent': "#4338ca",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
+        '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
+        '--wzl-info': "#7ab8d4",
         '--wzl-focus-ring': "#6366f1",
         '--wzl-glass-tint': "#4338ca",
         '--wzl-surface-hover': "rgba(14, 15, 18, 0.1)",
@@ -1801,10 +1766,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "value": "{glass-blur}",
         "type": "dimension"
       },
-      "panel-tone-mix": {
+      "panel-tint-mix": {
         "value": "14%",
         "type": "number",
-        "description": "How much of a panel’s tone mixes into its surface."
+        "description": "How much of a panel’s tint mixes into its surface."
       },
       "panel-title-font": {
         "value": "{font-display}",
@@ -1834,26 +1799,26 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "value": "0",
         "type": "dimension"
       },
-      "stance-scope-border-width": {
+      "stance-clarify-border-width": {
         "value": "0",
         "type": "dimension"
       },
-      "stance-scope-radius": {
+      "stance-clarify-radius": {
         "value": "8px",
         "type": "dimension"
       },
-      "stance-scope-tone-mix": {
+      "stance-clarify-tint-mix": {
         "value": "22%",
         "type": "number"
       },
-      "stance-scope-nested-radius": {
+      "stance-clarify-nested-radius": {
         "value": "6px",
         "type": "dimension"
       },
-      "stance-scope-nested-surface": {
+      "stance-clarify-nested-surface": {
         "value": "{surface}",
         "type": "color",
-        "description": "A scope panel inside another sits back into it."
+        "description": "A clarify panel inside another sits back into it."
       },
       "stance-aside-surface": {
         "value": "transparent",
@@ -1886,34 +1851,6 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "stance-debug-title-case": {
         "value": "none",
         "type": "string"
-      },
-      "stance-danger-tone": {
-        "value": "{danger}",
-        "type": "color"
-      },
-      "stance-danger-border-color": {
-        "value": "{danger}",
-        "type": "color"
-      },
-      "stance-danger-title-color": {
-        "value": "{danger}",
-        "type": "color"
-      },
-      "stance-notice-tone": {
-        "value": "{accent}",
-        "type": "color"
-      },
-      "stance-notice-tone-mix": {
-        "value": "8%",
-        "type": "number"
-      },
-      "stance-important-border-color": {
-        "value": "{accent-fg}",
-        "type": "color"
-      },
-      "stance-important-title-color": {
-        "value": "{accent-fg}",
-        "type": "color"
       },
       "stance-preview-pad": {
         "value": "0",
@@ -2020,6 +1957,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "value": "#2ec27e",
         "type": "color"
       },
+      "info-base": {
+        "value": "#7ab8d4",
+        "type": "color"
+      },
       "fg-on-accent": {
         "value": "{gray-50}",
         "type": "color"
@@ -2076,6 +2017,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       },
       "success": {
         "value": "{success-base}",
+        "type": "color"
+      },
+      "info": {
+        "value": "{info-base}",
         "type": "color"
       },
       "focus-ring": {
@@ -2575,7 +2520,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "description": "Alias for space-8. The t-shirt names name every other rung of the ladder."
       }
     },
-    "tones": {
+    "tints": {
       "ramp": "swatch"
     }
   }
@@ -3187,10 +3132,10 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "dimension",
         "value": "{glass-blur}"
       },
-      "panel-tone-mix": {
+      "panel-tint-mix": {
         "type": "number",
         "value": "14%",
-        "description": "How much of a panel’s tone mixes into its surface."
+        "description": "How much of a panel’s tint mixes into its surface."
       },
       "panel-title-font": {
         "type": "fontFamily",
@@ -3220,26 +3165,26 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "dimension",
         "value": "0"
       },
-      "stance-scope-border-width": {
+      "stance-clarify-border-width": {
         "type": "dimension",
         "value": "0"
       },
-      "stance-scope-radius": {
+      "stance-clarify-radius": {
         "type": "dimension",
         "value": "8px"
       },
-      "stance-scope-tone-mix": {
+      "stance-clarify-tint-mix": {
         "type": "number",
         "value": "22%"
       },
-      "stance-scope-nested-radius": {
+      "stance-clarify-nested-radius": {
         "type": "dimension",
         "value": "6px"
       },
-      "stance-scope-nested-surface": {
+      "stance-clarify-nested-surface": {
         "type": "color",
         "value": "{surface}",
-        "description": "A scope panel inside another sits back into it."
+        "description": "A clarify panel inside another sits back into it."
       },
       "stance-aside-surface": {
         "type": "color",
@@ -3273,34 +3218,6 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "string",
         "value": "none"
       },
-      "stance-danger-tone": {
-        "type": "color",
-        "value": "{danger}"
-      },
-      "stance-danger-border-color": {
-        "type": "color",
-        "value": "{danger}"
-      },
-      "stance-danger-title-color": {
-        "type": "color",
-        "value": "{danger}"
-      },
-      "stance-notice-tone": {
-        "type": "color",
-        "value": "{accent}"
-      },
-      "stance-notice-tone-mix": {
-        "type": "number",
-        "value": "8%"
-      },
-      "stance-important-border-color": {
-        "type": "color",
-        "value": "{accent-fg}"
-      },
-      "stance-important-title-color": {
-        "type": "color",
-        "value": "{accent-fg}"
-      },
       "stance-preview-pad": {
         "type": "dimension",
         "value": "0"
@@ -3328,6 +3245,10 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "success-base": {
         "type": "color",
         "value": "#2ec27e"
+      },
+      "info-base": {
+        "type": "color",
+        "value": "#7ab8d4"
       },
       "fg-on-accent": {
         "type": "color",
@@ -3386,6 +3307,10 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "success": {
         "type": "color",
         "value": "{success-base}"
+      },
+      "info": {
+        "type": "color",
+        "value": "{info-base}"
       },
       "focus-ring": {
         "type": "color",
@@ -3879,7 +3804,7 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "violet"
       ]
     },
-    "tones": {
+    "tints": {
       "ramp": "swatch"
     }
   }

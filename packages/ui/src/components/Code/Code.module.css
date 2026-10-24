@@ -1,7 +1,7 @@
 .code {
-  --code-status-fg: var(--wzl-fg);
-  /* A peer tone or a stance's accent paints over the status. */
-  --code-fg: var(--_s-accent, var(--code-status-fg));
+  --code-emphasis-fg: var(--wzl-emphasis-fg, var(--wzl-fg));
+  /* A tint, grade, or stance accent paints over emphasis. */
+  --code-fg: var(--_s-accent, var(--code-emphasis-fg));
   display: inline;
   padding: 0 var(--wzl-space-2);
   border-radius: var(--wzl-radius-sm);
@@ -16,12 +16,6 @@
   box-decoration-break: clone;
 }
 
-.code[data-status='muted']   { --code-status-fg: var(--wzl-fg-muted); }
-.code[data-status='accent']  { --code-status-fg: var(--wzl-accent-fg); }
-.code[data-status='success'] { --code-status-fg: var(--wzl-success); }
-.code[data-status='warn']    { --code-status-fg: var(--wzl-warning); }
-.code[data-status='danger']  { --code-status-fg: var(--wzl-danger); }
-
 .code[data-variant='plain'] {
   padding: 0;
   background: transparent;
@@ -34,46 +28,46 @@
 /* BEGIN GENERATED stance rules: code — `npm run gen:stances`, do not edit. */
 
 .code {
-  --wzl-tone: initial;
+  --wzl-tint: initial;
 }
 
 .code {
-  --_s-accent: var(--wzl-tone);
+  --_s-accent: var(--wzl-tint);
 }
 
-.code[data-stance='scope'] {
-  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+.code[data-stance='clarify'] {
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-clarify-accent, var(--wzl-tint)));
 }
 
 .code[data-stance='aside'] {
-  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-aside-accent, var(--wzl-tint)));
 }
 
 .code[data-stance='advanced'] {
-  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-advanced-accent, var(--wzl-tint)));
 }
 
 .code[data-stance='debug'] {
-  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
-}
-
-.code[data-stance='danger'] {
-  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
-}
-
-.code[data-stance='notice'] {
-  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
-}
-
-.code[data-stance='important'] {
-  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent, var(--wzl-tint)));
 }
 
 .code[data-stance='preview'] {
-  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-preview-accent, var(--wzl-tint)));
 }
 
-.code[data-tone] {
+.code[data-stance='confirm'] {
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-confirm-accent, var(--wzl-tint)));
+}
+
+.code[data-stance='cancel'] {
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-cancel-accent, var(--wzl-tint)));
+}
+
+.code[data-grade] {
+  --_s-accent: var(--wzl-tint, var(--wzl-grade));
+}
+
+.code[data-tint] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));

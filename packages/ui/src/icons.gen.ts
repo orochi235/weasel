@@ -114,10 +114,9 @@ export type UiIconName =
   | 'modeLight'
   | 'modeDark'
   | 'modeAuto'
-  | 'statusSuccess'
-  | 'statusAccent'
-  | 'statusNeutral'
-  | 'statusMuted'
+  | 'gradeSuccess'
+  | 'emphasisHigh'
+  | 'emphasisLow'
   | 'variantSolid'
   | 'variantOutline'
   | 'variantSubtle'
@@ -483,12 +482,11 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
     ]
   },
   {
-    "label": "Badge status",
+    "label": "Appearance",
     "names": [
-      "statusSuccess",
-      "statusAccent",
-      "statusNeutral",
-      "statusMuted"
+      "gradeSuccess",
+      "emphasisHigh",
+      "emphasisLow"
     ]
   },
   {
@@ -833,10 +831,9 @@ declare module '@weasel-js/icons' {
     'ui:modeLight': true;
     'ui:modeDark': true;
     'ui:modeAuto': true;
-    'ui:statusSuccess': true;
-    'ui:statusAccent': true;
-    'ui:statusNeutral': true;
-    'ui:statusMuted': true;
+    'ui:gradeSuccess': true;
+    'ui:emphasisHigh': true;
+    'ui:emphasisLow': true;
     'ui:variantSolid': true;
     'ui:variantOutline': true;
     'ui:variantSubtle': true;

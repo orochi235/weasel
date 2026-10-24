@@ -102,7 +102,7 @@ export function DataControl(ctx: PrefRenderContext) {
   // Only `ui.surfaces` has a known shape; any other data pref belongs to other
   // code, so it shows read-only as a placeholder.
   if (ctx.path === 'ui.surfaces') return <SurfacesEditor ctx={ctx} />;
-  return <Code status="muted" variant="plain" size="xs">(data)</Code>;
+  return <Code emphasis="low" variant="plain" size="xs">(data)</Code>;
 }
 
 const SURFACE_NAMES: Record<SurfaceKind, string> = { bar: 'Toolbar', panel: 'Panel', menu: 'Menu' };

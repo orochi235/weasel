@@ -39,7 +39,7 @@ describe('a wrapped removable badge', () => {
               ))}
             </div>,
           );
-          for (const badge of container.querySelectorAll<HTMLElement>('[data-status]')) {
+          for (const badge of container.querySelectorAll<HTMLElement>('[data-variant]')) {
             const at = `at width ${badge.parentElement!.style.width}`;
             const lines = textLines(badge);
             const last = lines[lines.length - 1];
@@ -70,7 +70,7 @@ describe('a removable badge in a flex row with room to spare', () => {
             <span>after</span>
           </div>,
         );
-        const badge = container.querySelector<HTMLElement>('[data-status]')!;
+        const badge = container.querySelector<HTMLElement>('[data-variant]')!;
         expect(textLines(badge)).toHaveLength(1);
       });
     }

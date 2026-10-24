@@ -47,7 +47,7 @@ export function OpSchemaPanel({ factoryId }: { factoryId: string }) {
       <h3 className={s.subHeading}>Arguments</h3>
       <SchemaTable rows={schema.params} empty="Factory takes no arguments." />
       <DetailList>
-        <DetailRow label="returns"><Code variant="plain" status="accent" size="xs">{schema.returnType}</Code></DetailRow>
+        <DetailRow label="returns"><Code variant="plain" emphasis="high" size="xs">{schema.returnType}</Code></DetailRow>
       </DetailList>
       <p className={s.schemaSource}>
         Extracted from <code>{schema.source.file}:{schema.source.line}</code>

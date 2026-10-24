@@ -47,11 +47,11 @@ export function useRowMarks({ schema, over, changes, actions, rowMark }: {
     };
     return (path: string) => (
       <>
-        {dead.has(path) && <Badge size="xs" status="danger" variant="subtle">no action</Badge>}
-        {lost.has(path) && <Badge size="xs" status="danger" variant="subtle">no setting</Badge>}
-        {clashing.has(path) && <Badge size="xs" status="danger" variant="subtle" tooltip={clashing.get(path)}>key taken</Badge>}
+        {dead.has(path) && <Badge size="xs" grade="danger" variant="subtle">no action</Badge>}
+        {lost.has(path) && <Badge size="xs" grade="danger" variant="subtle">no setting</Badge>}
+        {clashing.has(path) && <Badge size="xs" grade="danger" variant="subtle" tooltip={clashing.get(path)}>key taken</Badge>}
         {unsound.has(path) && (
-          <Badge size="xs" status="danger" variant="subtle" tooltip={unsound.get(path)!.map((p) => p.problem).join('; ')}>bad condition</Badge>
+          <Badge size="xs" grade="danger" variant="subtle" tooltip={unsound.get(path)!.map((p) => p.problem).join('; ')}>bad condition</Badge>
         )}
         {hostMark(path)}
       </>

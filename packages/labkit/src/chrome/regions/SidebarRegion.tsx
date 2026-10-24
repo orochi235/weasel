@@ -1,4 +1,4 @@
-import { type StanceProps, useStance } from '@weasel-js/ui/stance';
+import { type AppearanceProps, useAppearance } from '@weasel-js/ui/appearance';
 import type { ReactNode, Ref } from 'react';
 import type {
   RegionContribution,
@@ -25,9 +25,11 @@ export function Section({
   fill,
   children,
   stance,
-  tone,
+  grade,
+  emphasis,
+  tint,
   barRef,
-}: StanceProps & {
+}: AppearanceProps & {
   title: string;
   barRef?: Ref<HTMLDivElement>;
   actions?: ReactNode;
@@ -41,7 +43,7 @@ export function Section({
     <section
       className="lk-sidebar-section"
       data-fill={fill && !collapsed ? '' : undefined}
-      {...useStance({ stance, tone })}
+      {...useAppearance({ stance, grade, emphasis, tint })}
     >
       <div className="lk-sidebar-section__bar" ref={barRef}>
         <button
@@ -94,7 +96,9 @@ export function SidebarRegion<TCtx extends SidebarSlotContext = TrialChromeConte
             key={c.id}
             title={item.title}
             stance={item.stance}
-            tone={item.tone}
+            grade={item.grade}
+            emphasis={item.emphasis}
+            tint={item.tint}
             actions={item.actions}
             fill={item.fill}
             collapsed={ctx.collapsedSections[c.id] ?? item.defaultCollapsed ?? false}

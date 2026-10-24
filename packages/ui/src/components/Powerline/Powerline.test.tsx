@@ -31,30 +31,30 @@ describe('Powerline', () => {
     expect(afterChevron).not.toBe(afterFlat);
   });
 
-  it('applies row-level variant defaults and per-segment status', () => {
+  it('applies row-level variant defaults and per-segment emphasis and grade', () => {
     const { container } = render(
       <Powerline
         variant="solid"
         segments={[
-          { text: 'a', status: 'accent' },
-          { text: 'b', status: 'info' },
+          { text: 'a', emphasis: 'high' },
+          { text: 'b', grade: 'info' },
         ]}
       />
     );
-    const badges = container.querySelectorAll('[data-status]');
-    expect(badges[0].getAttribute('data-status')).toBe('accent');
-    expect(badges[1].getAttribute('data-status')).toBe('info');
+    const badges = container.querySelectorAll('[data-variant]');
+    expect(badges[0].getAttribute('data-emphasis')).toBe('high');
+    expect(badges[1].getAttribute('data-grade')).toBe('info');
     expect(badges[0].getAttribute('data-variant')).toBe('solid');
   });
 
-  it('passes each segment’s peer tone and stance to its badge', () => {
+  it('passes each segment’s tint and stance to its badge', () => {
     const { container } = render(
-      <Powerline segments={[{ text: 'a', status: 'info', stance: 'debug', tone: 2 }, { text: 'b' }]} />,
+      <Powerline segments={[{ text: 'a', grade: 'info', stance: 'debug', tint: 2 }, { text: 'b' }]} />,
     );
-    const badges = container.querySelectorAll<HTMLElement>('[data-status]');
-    expect(badges[0].dataset.tone).toBe('2');
+    const badges = container.querySelectorAll<HTMLElement>('[data-variant]');
+    expect(badges[0].dataset.tint).toBe('2');
     expect(badges[0].dataset.stance).toBe('debug');
-    expect(badges[1].hasAttribute('data-tone')).toBe(false);
+    expect(badges[1].hasAttribute('data-tint')).toBe(false);
   });
 
   it('draws a puzzle cap as a tab on its segment and a socket in the next', () => {

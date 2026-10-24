@@ -22,10 +22,10 @@ export interface AttachHudOptions {
   /** Resolved theme the widgets draw with. Defaults to the built-in theme's
    *  default mode; pass `useTheme().resolved` to follow a live theme. */
   readonly theme?: ResolvedTheme;
-  /** What a widget's color sources resolve against: a theme, the tone list a
-   *  numeric `tone` indexes, and a palette — `useTheme()`'s value is one.
+  /** What a widget's color sources resolve against: a theme, the tint list a
+   *  numeric `tint` indexes, and a palette — `useTheme()`'s value is one.
    *  Defaults to the built-in theme and its list, resolved against `theme`. */
-  readonly tones?: ColorSourceContext;
+  readonly tints?: ColorSourceContext;
   /**
    * Where the text a widget draws without naming a family comes from.
    *
@@ -53,7 +53,7 @@ export function attachHud(
   options: AttachHudOptions = {},
 ): () => void {
   const theme = options.theme ?? resolveTheme(weaselTheme);
-  const color = hudColor(options.tones ?? { theme: weaselTheme, resolved: theme });
+  const color = hudColor(options.tints ?? { theme: weaselTheme, resolved: theme });
   if (hud.attached) {
     throw new Error('weasel-hud: this HUD is already attached to a canvas.');
   }

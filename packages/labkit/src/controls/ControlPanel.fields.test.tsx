@@ -185,7 +185,7 @@ describe('<ControlPanel> option icons', () => {
   it("draws an option's icon in its segment and keeps the label as its name", () => {
     const status = f
       .enum('ok', [
-        { value: 'ok', label: 'ok', icon: icon('ui:statusSuccess') },
+        { value: 'ok', label: 'ok', icon: icon('ui:gradeSuccess') },
         { value: 'bad', label: 'bad' },
       ])
       .radio();
@@ -204,7 +204,7 @@ describe('<ControlPanel> option icons', () => {
 
   it("draws an option's icon beside its label in a select's trigger and list", () => {
     const status = f.enum('ok', [
-      { value: 'ok', label: 'ok', icon: icon('ui:statusSuccess') },
+      { value: 'ok', label: 'ok', icon: icon('ui:gradeSuccess') },
       { value: 'bad', label: 'bad' },
     ]);
     renderWithIcons(

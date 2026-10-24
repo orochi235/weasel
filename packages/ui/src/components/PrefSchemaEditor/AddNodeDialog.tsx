@@ -68,7 +68,7 @@ function AddNodeForm({ what, taken, dottedKey, kinds, onAdd, onClose }: Omit<Add
       )}
       <div className={s.addActions}>
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" type="submit" disabled={!ready}>Add</Button>
+        <Button stance="confirm" type="submit" disabled={!ready}>Add</Button>
       </div>
     </form>
   );

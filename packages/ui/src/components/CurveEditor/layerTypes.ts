@@ -46,7 +46,7 @@ export interface LayerRenderCtx extends LayerCtx {
   /** True when this layer owns the currently-active gesture. Useful for
    *  surfacing "active anchor" visuals without threading the index. */
   readonly isActive: boolean;
-  /** A color source as a CSS color under the theme, tones, and palette in
+  /** A color source as a CSS color under the theme, tints, and palette in
    *  force; `undefined` for no source and for one nothing answers. */
   colorCss(source: ColorSource | null | undefined): string | undefined;
 }

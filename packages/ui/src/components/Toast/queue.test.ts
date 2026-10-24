@@ -2,15 +2,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { createToastQueue, racQueueOf, toast, defaultToastQueue } from './queue';
 
 describe('ToastQueue', () => {
-  it('adds toasts with tone, title, description', () => {
+  it('adds toasts with grade, title, description', () => {
     const q = createToastQueue();
-    q.add('warning', 'SVG import', { description: '3 elements skipped' });
+    q.add('warn', 'SVG import', { description: '3 elements skipped' });
     const visible = racQueueOf(q).visibleToasts;
     expect(visible).toHaveLength(1);
     expect(visible[0].content).toEqual({
       title: 'SVG import',
       description: '3 elements skipped',
-      tone: 'warning',
+      grade: 'warn',
     });
   });
 
@@ -44,14 +44,15 @@ describe('ToastQueue', () => {
     expect(racQueueOf(q).visibleToasts).toHaveLength(0);
   });
 
-  it('toast() convenience writes to the default queue with tones', () => {
+  it('toast() convenience writes to the default queue by grade', () => {
     try {
       toast('plain');
-      toast.error('bad');
+      toast.warn('low');
+      toast.danger('bad');
       const visible = racQueueOf(defaultToastQueue).visibleToasts;
       // RAC's underlying ToastState queue unshifts new toasts, so the most
       // recently added toast is visibleToasts[0] (newest-on-top stacking).
-      expect(visible.map((t) => t.content.tone)).toEqual(['error', 'info']);
+      expect(visible.map((t) => t.content.grade)).toEqual(['danger', 'warn', 'info']);
     } finally {
       defaultToastQueue.clear();
     }

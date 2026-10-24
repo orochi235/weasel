@@ -103,19 +103,19 @@ export function PalettePreview({ palette, surface }: { palette: Palette; surface
         <Stat
           label="min contrast"
           value={stats.minContrast.toFixed(2)}
-          tone={stats.minContrast >= 3 ? 'ok' : 'bad'}
+          verdict={stats.minContrast >= 3 ? 'ok' : 'bad'}
           note="WCAG, lightness only"
         />
         <Stat
           label="min distance"
           value={stats.minDistance.toFixed(3)}
-          tone={stats.minDistance >= 0.22 ? 'ok' : 'bad'}
+          verdict={stats.minDistance >= 0.22 ? 'ok' : 'bad'}
           note="0.22 reads as two colors"
         />
         <Stat
           label="from surface"
           value={stats.minSurfaceDistance.toFixed(3)}
-          tone={stats.minSurfaceDistance >= 0.25 ? 'ok' : 'bad'}
+          verdict={stats.minSurfaceDistance >= 0.25 ? 'ok' : 'bad'}
         />
       </div>
 
@@ -174,17 +174,17 @@ function Stat({
   label,
   value,
   note,
-  tone,
+  verdict,
 }: {
   label: string;
   value: string;
   note?: string;
-  tone?: 'ok' | 'bad';
+  verdict?: 'ok' | 'bad';
 }) {
   return (
     <div className={styles.stat}>
       <span className={styles.statLabel}>{label}</span>
-      <span className={tone === 'bad' ? styles.statBad : tone === 'ok' ? styles.statOk : styles.statValue}>
+      <span className={verdict === 'bad' ? styles.statBad : verdict === 'ok' ? styles.statOk : styles.statValue}>
         {value}
       </span>
       {note && <span className={styles.statNote}>{note}</span>}

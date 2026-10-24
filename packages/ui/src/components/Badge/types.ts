@@ -12,13 +12,6 @@ export type BadgeShape =
   | 'sparkler' | 'postage' | 'cloud' | 'house' | 'plaque'
   | 'crest' | 'urn' | 'coffin' | 'receipt' | 'wood' | 'quatrefoil';
 
-/**
- * Status color of a badge. `custom` paints from the `--badge-edge` custom
- * property instead of a theme token, so a call site can supply its own color.
- */
-export type BadgeStatus =
-  | 'accent' | 'info' | 'success' | 'warn' | 'danger' | 'muted' | 'neutral' | 'custom';
-
 /** How a badge's color is applied: outline only, filled, or a soft tinted fill. */
 export type BadgeVariant = 'outline' | 'solid' | 'subtle';
 /** Badge type scale and padding step. `xs` is for counts and markers set

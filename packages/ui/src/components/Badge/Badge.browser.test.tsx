@@ -6,7 +6,8 @@ import { painted } from '../../testing/paintedContrast';
 import { GestureRoute } from '../GestureRoute/GestureRoute';
 import { Badge } from './Badge';
 import { BASES, type BadgeBase } from './bases';
-import type { BadgeShape, BadgeSize, BadgeStatus } from './types';
+import { BADGE_LOOKS, lookProps } from './looks';
+import type { BadgeShape, BadgeSize } from './types';
 
 // Badge colors come from tokens that follow currentColor and from color-mix,
 // neither of which jsdom resolves, so legibility is only checkable here.
@@ -74,8 +75,7 @@ async function paint(root: HTMLElement, badge: HTMLElement) {
   return { bg, fill, text };
 }
 
-const STATUSES: readonly BadgeStatus[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
-// What the lightest status inks reach on the light surface: info 2.00, warn 2.04, success 2.11.
+// What the lightest grade inks reach on the light surface: info 2.00, warn 2.04, success 2.11.
 // An ink computed for a fill that is not there lands near 1.1.
 const PLAIN_INK_FLOOR = 1.9;
 
@@ -96,25 +96,25 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
   test('a solid muted pill\'s text is legible on its fill', async () => {
     const { container } = render(
       <Surface mode={mode}>
-        <Badge shape="pill" status="muted" variant="solid">
+        <Badge shape="pill" emphasis="low" variant="solid">
           label
         </Badge>
       </Surface>,
     );
-    const { text, fill } = await paint(container, container.querySelector<HTMLElement>('[data-status]')!);
+    const { text, fill } = await paint(container, container.querySelector<HTMLElement>('[data-variant]')!);
     expect(contrast(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
   });
 
-  for (const status of STATUSES) {
-    test(`a solid ${status} badge's text is legible on its fill`, async () => {
+  for (const look of BADGE_LOOKS) {
+    test(`a solid ${look} badge's text is legible on its fill`, async () => {
       const { container } = render(
         <Surface mode={mode}>
-          <Badge base="powerline" status={status} variant="solid">
+          <Badge base="powerline" {...lookProps(look)} variant="solid">
             label
           </Badge>
         </Surface>,
       );
-      const { text, fill } = await paint(container, container.querySelector<HTMLElement>('[data-status]')!);
+      const { text, fill } = await paint(container, container.querySelector<HTMLElement>('[data-variant]')!);
       expect(contrast(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
     });
   }
@@ -124,10 +124,10 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
     test(`a ${variant} plain badge's ink is legible on the surface behind it`, () => {
       const { container } = render(
         <Surface mode={mode}>
-          {STATUSES.map((status) => (
-            <p key={status}>
-              <Badge shape="plain" status={status} variant="outline" onRemove={() => {}}>label</Badge>{' '}
-              <Badge shape="plain" status={status} variant={variant} onRemove={() => {}}>label</Badge>
+          {BADGE_LOOKS.map((look) => (
+            <p key={look}>
+              <Badge shape="plain" {...lookProps(look)} variant="outline" onRemove={() => {}}>label</Badge>{' '}
+              <Badge shape="plain" {...lookProps(look)} variant={variant} onRemove={() => {}}>label</Badge>
             </p>
           ))}
         </Surface>,
@@ -138,16 +138,16 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
       surface.style.color = 'var(--wzl-fg)';
       const ground = getComputedStyle(surface).backgroundColor;
       const seen = (css: string): Rgba => [...painted(css, ground), 1];
-      const badges = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+      const badges = [...container.querySelectorAll<HTMLElement>('[data-variant]')];
       for (let i = 0; i < badges.length; i += 2) {
         const [outline, badge] = [badges[i], badges[i + 1]];
         expect(getComputedStyle(badge).backgroundColor, 'paints no fill').toBe('rgba(0, 0, 0, 0)');
         for (const part of ['span', 'button'] as const) {
           const ink = getComputedStyle(badge.querySelector(part)!).color;
           const ratio = contrast(seen(ink), seen(ground));
-          expect(ratio, `${badge.dataset.status} ${part}: ${ink} on ${ground}`).toBeGreaterThanOrEqual(PLAIN_INK_FLOOR);
+          expect(ratio, `${badge.dataset.grade ?? badge.dataset.emphasis ?? 'none'} ${part}: ${ink} on ${ground}`).toBeGreaterThanOrEqual(PLAIN_INK_FLOOR);
           // The outline ink is the one chosen to be read with no fill under it.
-          expect(seen(ink), `${badge.dataset.status} ${part}`).toEqual(seen(getComputedStyle(outline.querySelector(part)!).color));
+          expect(seen(ink), `${badge.dataset.grade ?? badge.dataset.emphasis ?? 'none'} ${part}`).toEqual(seen(getComputedStyle(outline.querySelector(part)!).color));
         }
       }
     });
@@ -156,12 +156,12 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
   test('a hovered button badge lightens its edge instead of losing it', async () => {
     const { container } = render(
       <Surface mode={mode}>
-        <Badge shape="pill" status="danger" variant="outline" onClick={() => {}}>
+        <Badge shape="pill" grade="danger" variant="outline" onClick={() => {}}>
           label
         </Badge>
       </Surface>,
     );
-    const badge = container.querySelector<HTMLElement>('[data-status]')!;
+    const badge = container.querySelector<HTMLElement>('[data-variant]')!;
     // The mix serializes as oklab(), so a canvas reads the channels.
     const edge = (): Rgba => [...painted(getComputedStyle(badge).borderTopColor, '#000'), 1];
     const rest = edge();
@@ -181,10 +181,10 @@ describe('a badge with no remove control and no action', () => {
       test(`${shape} ${size}: is as wide as its text, padding, and border, and no wider`, () => {
         const { container } = render(
           <Surface mode="light">
-            <p><Badge shape={shape} size={size} status="muted">hidden</Badge></p>
+            <p><Badge shape={shape} size={size} emphasis="low">hidden</Badge></p>
           </Surface>,
         );
-        const badge = container.querySelector<HTMLElement>('[data-status]')!;
+        const badge = container.querySelector<HTMLElement>('[data-variant]')!;
         const label = [...badge.querySelectorAll('span')].find((el) => el.children.length === 0 && el.textContent === 'hidden')!;
         const range = document.createRange();
         range.selectNodeContents(label.firstChild!);
@@ -213,10 +213,10 @@ describe('a fitted base with content its declared insets already clear', () => {
       test(`${base} ${size}: pads by its declared insets`, async () => {
         const { container } = render(
           <Surface mode="light">
-            <p><Badge base={base} size={size} status="muted">ab</Badge></p>
+            <p><Badge base={base} size={size} emphasis="low">ab</Badge></p>
           </Surface>,
         );
-        const badge = container.querySelector<HTMLElement>('[data-status]')!;
+        const badge = container.querySelector<HTMLElement>('[data-variant]')!;
         await waitFor(() => expect(badge.querySelector('.badge-stroke')).not.toBeNull());
         const declared = BASES[base].insets as { top: number; right: number; bottom: number; left: number };
         for (const side of ['top', 'right', 'bottom', 'left'] as const) {
@@ -248,7 +248,7 @@ describe('a base holds its content inside its outline', () => {
               <p><Badge base={base} onRemove={removable ? () => {} : undefined}>{label}</Badge></p>
             </Surface>,
           );
-          const badge = container.querySelector<HTMLElement>('[data-status]')!;
+          const badge = container.querySelector<HTMLElement>('[data-variant]')!;
           const content = badge.lastElementChild!;
           await waitFor(() => {
             const path = badge.querySelector<SVGPathElement>('.badge-stroke');
@@ -276,7 +276,7 @@ describe('a base holds its content inside its outline', () => {
             <p><Badge base={base} effects={[...effects]}>a considerably longer label</Badge></p>
           </Surface>,
         );
-        const badge = container.querySelector<HTMLElement>('[data-status]')!;
+        const badge = container.querySelector<HTMLElement>('[data-variant]')!;
         const content = badge.lastElementChild!;
         await waitFor(() => {
           const path = badge.querySelector<SVGPathElement>('.badge-stroke');
@@ -299,16 +299,16 @@ describe('a composed badge under keyboard focus', () => {
     return [cs.outlineStyle, cs.outlineWidth, cs.boxShadow, badge.querySelector('svg')!.innerHTML].join('|');
   };
   const cases = {
-    'a base': <Badge base="rounded-rect" status="info" onClick={() => {}}>label</Badge>,
-    'a base and effects': <Badge base="chamfered-rect" effects={[{ type: 'spikes' }]} status="info" onClick={() => {}}>label</Badge>,
-    'a shape that composes': <Badge shape="hexagon" status="info" onClick={() => {}}>label</Badge>,
-    'a base and a remove control': <Badge base="rounded-rect" status="info" onClick={() => {}} onRemove={() => {}}>label</Badge>,
+    'a base': <Badge base="rounded-rect" grade="info" onClick={() => {}}>label</Badge>,
+    'a base and effects': <Badge base="chamfered-rect" effects={[{ type: 'spikes' }]} grade="info" onClick={() => {}}>label</Badge>,
+    'a shape that composes': <Badge shape="hexagon" grade="info" onClick={() => {}}>label</Badge>,
+    'a base and a remove control': <Badge base="rounded-rect" grade="info" onClick={() => {}} onRemove={() => {}}>label</Badge>,
   };
 
   for (const [name, badgeEl] of Object.entries(cases)) {
     test(`${name}: rings the composed silhouette`, async () => {
       const { container } = render(<Surface mode="light"><p>{badgeEl}</p></Surface>);
-      const badge = container.querySelector<HTMLElement>('[data-status]')!;
+      const badge = container.querySelector<HTMLElement>('[data-variant]')!;
       expect(badge.dataset.shape).toBe('compose');
       await waitFor(() => expect(badge.querySelector('.badge-stroke')).not.toBeNull());
       const rest = look(badge);
@@ -353,14 +353,14 @@ describe('a removable badge with an action', () => {
     const { container } = render(
       <Surface mode="light">
         <p>
-          <Badge shape={shape} size={size} status="info">label</Badge>{' '}
-          <Badge shape={shape} size={size} status="info" onRemove={() => {}}>label</Badge>{' '}
-          <Badge shape={shape} size={size} status="info" onClick={() => {}} onRemove={() => {}}>label</Badge>{' '}
-          <Badge shape={shape} size={size} status="info" href="#x" onRemove={() => {}}>label</Badge>
+          <Badge shape={shape} size={size} grade="info">label</Badge>{' '}
+          <Badge shape={shape} size={size} grade="info" onRemove={() => {}}>label</Badge>{' '}
+          <Badge shape={shape} size={size} grade="info" onClick={() => {}} onRemove={() => {}}>label</Badge>{' '}
+          <Badge shape={shape} size={size} grade="info" href="#x" onRemove={() => {}}>label</Badge>
         </p>
       </Surface>,
     );
-    const [plain, removable, clickable, link] = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+    const [plain, removable, clickable, link] = [...container.querySelectorAll<HTMLElement>('[data-variant]')];
     return { plain, removable, clickable, link };
   };
 
@@ -467,7 +467,7 @@ describe('a removable badge with an action', () => {
           </p>
         </Surface>,
       );
-      for (const badge of container.querySelectorAll<HTMLElement>('[data-status]')) {
+      for (const badge of container.querySelectorAll<HTMLElement>('[data-variant]')) {
         await userEvent.click(badge, { position: { x: 1.5, y: badge.getBoundingClientRect().height / 2 } });
       }
       expect(calls).toEqual(['click', 'follow']);
@@ -489,7 +489,7 @@ describe('a removable badge with an action', () => {
             </p>
           </Surface>,
         );
-        const [removable, ...actionable] = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+        const [removable, ...actionable] = [...container.querySelectorAll<HTMLElement>('[data-variant]')];
         for (const badge of actionable) {
           const target = badge.querySelector('a, [role="button"]')!;
           const removeEl = badge.querySelector('button')!;
@@ -537,7 +537,7 @@ describe('a removable badge with an action', () => {
               </p>
             </Surface>,
           );
-          const [removable, clickable] = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+          const [removable, clickable] = [...container.querySelectorAll<HTMLElement>('[data-variant]')];
           const target = clickable.querySelector('[role="button"]')!;
           const remove = clickable.querySelector('button')!.getBoundingClientRect();
           const frags = [...clickable.getClientRects()];

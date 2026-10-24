@@ -1,9 +1,5 @@
-import {
-  DetailList,
-  type DetailListValues,
-  DetailRow,
-  type DetailRowStatus,
-} from '@weasel-js/ui/components/DetailList';
+import type { Grade } from '@weasel-js/theme';
+import { DetailList, type DetailListValues, DetailRow } from '@weasel-js/ui/components/DetailList';
 import type { ReactNode } from 'react';
 
 /** One measurement in a {@link Readout}. */
@@ -14,9 +10,9 @@ export interface ReadoutRow {
   /** `null` or `undefined` keeps the row in place showing an en dash, so the
    *  readout holds its height while a measurement comes and goes. */
   value?: ReactNode;
-  /** A dot in the status color before the value. Color is never the only
+  /** A dot in the grade's color before the value. Color is never the only
    *  signal: the value has to say the same thing in words. */
-  status?: DetailRowStatus;
+  grade?: Grade;
   /** `text` sets this row's value as wrapping prose instead of a figure. */
   values?: DetailListValues;
 }
@@ -48,7 +44,7 @@ export function Readout({ rows, title, children, className }: ReadoutProps) {
           <DetailRow
             key={row.key ?? (typeof row.label === 'string' ? row.label : i)}
             label={row.label}
-            status={row.status}
+            grade={row.grade}
             values={row.values}
           >
             {row.value}

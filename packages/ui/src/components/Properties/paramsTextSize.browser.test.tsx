@@ -129,7 +129,7 @@ const SURFACES: Record<string, () => ReactNode> = {
     <DetailList title="Details">
       <DetailRow label="Name">Untitled</DetailRow>
       <DetailRow label="Size" values="figures">12.50</DetailRow>
-      <DetailRow label="State" status="success">Ready</DetailRow>
+      <DetailRow label="State" grade="success">Ready</DetailRow>
       <DetailRow label="Empty" />
     </DetailList>
   ),

@@ -1,4 +1,5 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import {
   type CollapseProps,
@@ -9,7 +10,6 @@ import {
   PropertyPanel,
   type PropertyRowLayout,
 } from '@weasel-js/ui/components/Properties';
-import type { StanceProps } from '@weasel-js/ui/stance';
 import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
@@ -23,7 +23,7 @@ import type { ConfigField } from './types';
 export type { ControlPack } from './controlPack';
 
 /** Props for {@link ControlPanel}. */
-export interface ControlPanelProps<TC extends Record<string, unknown>> extends StanceProps {
+export interface ControlPanelProps<TC extends Record<string, unknown>> extends AppearanceProps {
   /** The instrument's resolved config schema. */
   schema?: ResolvedConfig;
   /** @deprecated Pass `schema`. A field list is adapted into one internally. */
@@ -104,7 +104,7 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
    *  default, or from what was last saved, is the caller's to say. A paired row is marked when any of its
    *  cells is named, and an alias row when the leaf it shows is. */
   changed?: ReadonlySet<string>;
-  /** Heads the panel. With `title`, `stance` or `tone` given, or with the panel
+  /** Heads the panel. With `title`, any appearance prop given, or with the panel
    *  made to fold, the rows sit in a `<PropertyPanel>` carrying them; with
    *  none, they are the bare list. */
   title?: ReactNode;
@@ -178,9 +178,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   showHidden = false,
   changed,
   title,
-  stance,
-  tone,
   className,
+  ...appearance
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
   const choices = useFieldChoicesOf(resolved.group);
@@ -248,15 +247,16 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   );
   const panelFolds = collapsible ?? defaultCollapsed !== undefined;
   const panel =
-    title === undefined && stance === undefined && tone === undefined && !panelFolds ? (
+    title === undefined &&
+    !Object.values(appearance).some((v) => v !== undefined) &&
+    !panelFolds ? (
       list
     ) : (
       <PropertyPanel
         className="lk-control-panel-frame"
         title={title}
         actions={titled.control}
-        stance={stance}
-        tone={tone}
+        {...appearance}
         density={density}
         {...(panelFolds
           ? {

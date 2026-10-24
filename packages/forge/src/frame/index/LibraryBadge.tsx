@@ -3,11 +3,11 @@ import { Badge } from '@weasel-js/ui/components/Badge';
 import { useContext } from 'react';
 import { LibrariesContext } from '../../story/library';
 
-/** A component's library, as a badge in the tone the project gave that library. */
+/** A component's library, as a badge in the tint the project gave that library. */
 export function LibraryBadge({ library, className }: { library: string; className?: string }) {
-  const tone = useContext(LibrariesContext).toneOf(library);
+  const tint = useContext(LibrariesContext).tintOf(library);
   return (
-    <Badge status="muted" {...(tone === undefined ? {} : { tone })} variant="subtle" size="sm" {...(className ? { className } : {})}>
+    <Badge emphasis="low" {...(tint === undefined ? {} : { tint })} variant="subtle" size="sm" {...(className ? { className } : {})}>
       {library}
     </Badge>
   );

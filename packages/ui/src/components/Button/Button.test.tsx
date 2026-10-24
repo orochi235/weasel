@@ -45,10 +45,10 @@ describe('Button', () => {
 
   it('applies variant and size classes', () => {
     const { getByRole } = render(
-      <Button variant="primary" size="sm">P</Button>,
+      <Button stance="confirm" size="sm">P</Button>,
     );
     const cls = getByRole('button').className;
-    expect(cls).toMatch(/variant_primary/);
+    expect(cls).toMatch(/variant_solid/);
     expect(cls).toMatch(/size_sm/);
   });
 
@@ -118,7 +118,7 @@ describe('Button', () => {
 
     it('paints its text with the accent-as-text token, not the accent fill', () => {
       const body = rule('.variant_link');
-      expect(body).toMatch(/var\(--btn-link-fg, var\(--wzl-accent-fg\)\)/);
+      expect(css).toMatch(/--btn-link-fg:\s*var\(--wzl-emphasis-fg, var\(--wzl-accent-fg\)\)/);
       expect(body).not.toMatch(/--wzl-accent\)/);
     });
 
@@ -131,42 +131,44 @@ describe('Button', () => {
       expect(css).toMatch(/\.variant_link::before\s*\{\s*display:\s*none/);
     });
 
-    it('names its status, and says nothing when left on the default accent', () => {
+    it('names its grade, and says nothing when left on the default accent', () => {
       const { getAllByRole } = render(
         <>
-          <Button variant="link" status="danger">remove</Button>
+          <Button variant="link" grade="danger">remove</Button>
           <Button variant="link">open</Button>
         </>,
       );
       const [danger, plain] = getAllByRole('button');
-      expect(danger.getAttribute('data-status')).toBe('danger');
-      expect(danger.hasAttribute('data-tone')).toBe(false);
-      expect(plain.hasAttribute('data-status')).toBe(false);
+      expect(danger.getAttribute('data-grade')).toBe('danger');
+      expect(danger.hasAttribute('data-tint')).toBe(false);
+      expect(plain.hasAttribute('data-grade')).toBe(false);
     });
 
-    it('takes a peer tone beside its status, merged with its own style', () => {
+    it('takes a tint beside its grade, merged with its own style', () => {
       const { getByRole } = render(
-        <Button variant="link" status="danger" tone={1} style={{ marginLeft: 4 }}>remove</Button>,
+        <Button variant="link" grade="danger" tint={1} style={{ marginLeft: 4 }}>remove</Button>,
       );
       const el = getByRole('button');
-      expect(el.dataset.status).toBe('danger');
-      expect(el.dataset.tone).toBe('1');
-      expect(el.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-green)');
+      expect(el.dataset.grade).toBe('danger');
+      expect(el.dataset.tint).toBe('1');
+      expect(el.style.getPropertyValue('--wzl-tint')).not.toBe('');
       expect(el.style.marginLeft).toBe('4px');
     });
 
-    it('paints a peer tone or a stance accent over the status', () => {
-      expect(rule('.variant_link')).toMatch(/color:\s*var\(--_s-accent, var\(--btn-link-fg, var\(--wzl-accent-fg\)\)\)/);
+    it('paints a tint or a stance accent over the grade and emphasis', () => {
+      expect(rule('.variant_link')).toMatch(/color:\s*var\(--_s-accent, var\(--btn-link-fg\)\)/);
       expect(css).not.toMatch(/\[data-tone='/);
     });
 
-    it('paints each status from the same tokens as Code', () => {
-      expect(rule(".variant_link[data-status='neutral']")).toMatch(/--btn-link-fg:\s*var\(--wzl-fg\)/);
-      expect(rule(".variant_link[data-status='muted']")).toMatch(/--btn-link-fg:\s*var\(--wzl-fg-muted\)/);
-      expect(rule(".variant_link[data-status='accent']")).toMatch(/--btn-link-fg:\s*var\(--wzl-accent-fg\)/);
-      expect(rule(".variant_link[data-status='success']")).toMatch(/--btn-link-fg:\s*var\(--wzl-success\)/);
-      expect(rule(".variant_link[data-status='warn']")).toMatch(/--btn-link-fg:\s*var\(--wzl-warning\)/);
-      expect(rule(".variant_link[data-status='danger']")).toMatch(/--btn-link-fg:\s*var\(--wzl-danger\)/);
+    it('takes the confirm stance in place of a primary variant', () => {
+      const { getByRole } = render(<Button stance="confirm">Go</Button>);
+      expect(getByRole('button').dataset.stance).toBe('confirm');
+    });
+
+    it('colors a link from emphasis and grade, falling back to the accent', () => {
+      expect(css).toMatch(/\.variant_link\s*\{[^}]*--btn-link-fg:\s*var\(--wzl-emphasis-fg, var\(--wzl-accent-fg\)\)/);
+      expect(css).toMatch(/\.button\[data-grade\]\s*\{\s*--_s-accent:\s*var\(--wzl-tint, var\(--wzl-grade\)\)/);
+      expect(css).not.toMatch(/--btn-link-fg:\s*var\(--wzl-grade\)/);
     });
   });
 });

@@ -1,27 +1,25 @@
 import {
-  forwardRef, useEffect, useId, useRef, useState,
+  forwardRef, useRef, useState,
   type CSSProperties, type FocusEvent, type HTMLAttributes, type ReactNode, type Ref,
 } from 'react';
-import { useVisibleRaf } from '@weasel-js/core';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import type { BadgeBase, BadgeBaseParams } from './bases';
-import { EFFECTS, type BadgeEffectSpec } from './effects';
-import { composeOutline, offsetOutline } from './composeOutline';
+import type { BadgeEffectSpec } from './effects';
+import { BadgeDeco } from './BadgeDeco';
+import { useCrawlPhase } from './useCrawlPhase';
 import { resolveCompose } from './composeSpec';
 import { liftPadding, paddingStyle } from './paddingSides';
 import { useInsets } from './useInsets';
-import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
+import type { BadgeShape, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
 import { BadgeRemove, BadgeTarget } from './BadgeLabel';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
-import { type StanceProps, useStance } from '../stance';
+import { type AppearanceProps, useAppearance } from '../appearance';
 
 /** What {@link Badge} takes whatever its shape: every prop of {@link BadgeProps}
  *  but `shape`, `shapeParams`, and the DOM attributes it passes through. */
-export interface BadgeOwnProps extends StanceProps {
-  /** The status the badge reports. A peer `tone`, or a stance's accent, paints over it. */
-  status?: BadgeStatus;
+export interface BadgeOwnProps extends AppearanceProps {
   variant?: BadgeVariant;
   size?: BadgeSize;
   /** "Edge bloat": offset every base perimeter sample outward by N CSS px along the normal
@@ -50,7 +48,7 @@ export interface BadgeOwnProps extends StanceProps {
   children: ReactNode;
   className?: string;
   /** Optional style overrides merged with the badge's own style. Useful for setting CSS
-   *  custom properties (e.g. `--badge-edge` to inject a `custom` status color). */
+   *  custom properties. */
   style?: CSSProperties;
   'aria-label'?: string;
   /**
@@ -77,9 +75,6 @@ export type BadgeDomProps = Omit<
 export type BadgeProps = {
   [S in BadgeShape]: BadgeOwnProps & BadgeDomProps & { shape?: S; shapeParams?: BadgeShapeParams[S] };
 }[BadgeShape];
-
-/** CSS px between a composed badge's outline and its focus ring. */
-const FOCUS_RING_OFFSET = 2;
 
 function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
   if (props.as) return props.as;
@@ -108,9 +103,10 @@ function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
 export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLElement>) {
   const {
     shape = 'pill',
-    status = 'neutral',
     stance,
-    tone,
+    grade,
+    emphasis,
+    tint,
     variant = 'outline',
     size = 'sm',
     onClick,
@@ -141,46 +137,20 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   const ariaLabel = ariaLabelProp
     ?? (tooltipOnPlainBadge && (typeof children === 'string' || typeof children === 'number') ? String(children) : undefined);
   const [focused, setFocused] = useState(false);
-  const [phase, setPhase] = useState(0);
   const shapeModule = SHAPES[shape] ?? SHAPES.pill;
   const resolvedShape = SHAPES[shape] ? shape : 'pill';
-  const ShapeBody = shapeModule.Component;
   const params = { ...(shapeModule.defaults ?? {}), ...(shapeParams ?? {}) };
 
-  const lastCrawlRef = useRef<number | null>(null);
-  const crawlLoop = useVisibleRaf(
-    (now) => {
-      const speed = typeof crawl === 'number' ? crawl : 0.2;
-      const last = lastCrawlRef.current;
-      lastCrawlRef.current = now;
-      if (last !== null) setPhase((p) => (p + (speed * (now - last)) / 1000) % 1);
-      crawlLoop.request();
-    },
-    // A crawl does not advance while nobody is watching it, so the frame that
-    // resumes it must not apply the whole interval at once.
-    { onResume: () => { lastCrawlRef.current = null; } },
-  );
-
-  useEffect(() => {
-    if (!crawl) {
-      setPhase(0);
-      return;
-    }
-    lastCrawlRef.current = null;
-    crawlLoop.request();
-    return () => crawlLoop.cancel();
-  }, [crawl, crawlLoop]);
+  const phase = useCrawlPhase(crawl);
   const cls = [s.badge, className].filter(Boolean).join(' ');
-  const stanced = useStance({ stance, tone });
+  const appearance = useAppearance({ stance, grade, emphasis, tint });
 
   // Compose-mode: explicit `base` prop wins; otherwise the shape may declare its own
   // `compose()` spec.
-  const { base: composeBase, baseParams: composeBaseParams, effects: resolvedEffects } =
-    resolveCompose(shapeModule, params, { base, baseParams, effects });
+  const compose = resolveCompose(shapeModule, params, { base, baseParams, effects });
+  const { base: composeBase, baseParams: composeBaseParams, effects: resolvedEffects } = compose;
   const decoRef = useRef<SVGSVGElement>(null);
   const box = useSvgBox(decoRef, composeBase);
-
-  const sampler = composeBase ? composeBase.build(composeBaseParams, box.w, box.h) : null;
 
   const contentRef = useRef<HTMLSpanElement>(null);
   const insets = useInsets<unknown>(
@@ -190,7 +160,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     composeBase ? { effects: resolvedEffects, bloat: bloat ?? 0 } : undefined,
   );
   const style: CSSProperties = {
-    ...stanced.style,
+    ...appearance.style,
     ['--badge-inset-top' as never]: `${insets.top}px`,
     ['--badge-inset-right' as never]: `${insets.right}px`,
     ['--badge-inset-bottom' as never]: `${insets.bottom}px`,
@@ -205,13 +175,11 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
 
   const commonProps = {
     ...domProps,
+    ...appearance,
     ...(tooltipOnPlainBadge && !split && domProps.role === undefined && { role: 'img' }),
     className: cls,
     style,
     'data-shape': composeBase ? 'compose' : resolvedShape,
-    'data-status': status,
-    'data-stance': stanced['data-stance'],
-    'data-tone': stanced['data-tone'],
     'data-variant': variant,
     'data-size': size,
     'data-break': breakStyle,
@@ -221,52 +189,19 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     'aria-label': split ? undefined : ariaLabel,
   };
 
-  const composedSampler = composeBase && sampler
-    ? composeOutline(sampler, resolvedEffects, bloat ?? 0, box, phase)
-    : null;
-
-  const decoEffects = (resolvedEffects ?? []).filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS]?.Component);
-  const backgroundDecorations = decoEffects.filter((eff) => (EFFECTS[eff.type as keyof typeof EFFECTS].zone ?? 'foreground') === 'background');
-  const foregroundDecorations = decoEffects.filter((eff) => (EFFECTS[eff.type as keyof typeof EFFECTS].zone ?? 'foreground') === 'foreground');
-  const maskDecorations = decoEffects.filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS].zone === 'mask');
-  const bodyMaskId = `badge-mask-${useId().replace(/:/g, '')}`;
-
-  const renderDecoration = (eff: BadgeEffectSpec, i: number) => {
-    const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
-    const EffComponent = mod?.Component;
-    if (!EffComponent || !composedSampler) return null;
-    const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
-    return <EffComponent key={`${eff.type as string}-${i}`} sampler={composedSampler} boxW={box.w} boxH={box.h} variant={variant} params={effParams} phase={phase} />;
-  };
-
-  const decoSvg = composeBase && composedSampler ? (
-    <svg ref={decoRef} className={s.deco} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      {maskDecorations.length > 0 && (
-        <defs>
-          <mask id={bodyMaskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
-            <rect x="-10" y="-10" width="120" height="120" fill="white" />
-            {maskDecorations.map(renderDecoration)}
-          </mask>
-        </defs>
-      )}
-      {backgroundDecorations.map(renderDecoration)}
-      <g {...(maskDecorations.length > 0 ? { mask: `url(#${bodyMaskId})` } : {})}>
-        {(variant === 'solid' || variant === 'subtle') && <path className="badge-fill" d={composedSampler.bodyPath} />}
-        {(variant === 'outline' || variant === 'solid') && <path className="badge-stroke" d={composedSampler.bodyPath} />}
-      </g>
-      {foregroundDecorations.map(renderDecoration)}
-      {focused && <path className="badge-focus" d={offsetOutline(composedSampler, FOCUS_RING_OFFSET, box)} />}
-    </svg>
-  ) : shapeModule.renderMode !== 'css' && ShapeBody ? (
-    <svg
-      className={s.deco}
-      viewBox="0 0 100 100"
-      preserveAspectRatio={shapeModule.stretches === false ? 'xMidYMid meet' : 'none'}
-      aria-hidden="true"
-    >
-      <ShapeBody variant={variant} focused={focused} params={params} phase={phase} />
-    </svg>
-  ) : null;
+  const decoSvg = (
+    <BadgeDeco
+      svgRef={decoRef}
+      compose={compose}
+      shapeModule={shapeModule}
+      params={params}
+      box={box}
+      bloat={bloat ?? 0}
+      variant={variant}
+      focused={focused}
+      phase={phase}
+    />
+  );
 
   const inner = (
     <>

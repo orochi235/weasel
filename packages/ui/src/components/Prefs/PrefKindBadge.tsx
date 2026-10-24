@@ -33,9 +33,9 @@ export interface PrefKindBadgeProps {
 export function PrefKindBadge({ kind, size = 'xs', className }: PrefKindBadgeProps) {
   const own = Object.hasOwn(KIND_CLASS, kind) ? KIND_CLASS[kind as PrefKind] : undefined;
   return own === undefined ? (
-    <Badge size={size} status="muted" variant="outline" className={className}>{kind}</Badge>
+    <Badge size={size} emphasis="low" variant="outline" className={className}>{kind}</Badge>
   ) : (
-    <Badge size={size} status="custom" variant="subtle" className={[s.kind, own, className].filter(Boolean).join(' ')}>
+    <Badge size={size} tint={{ ref: '--_kind' }} variant="subtle" className={[own, className].filter(Boolean).join(' ')}>
       {kind}
     </Badge>
   );

@@ -14,7 +14,7 @@ import { ARCS } from './arcs.mjs';
 import { CURVES } from './curves.mjs';
 import { SOLIDS } from './solids.mjs';
 import { TEXT } from './text.mjs';
-import { STATUSES } from './status.mjs';
+import { APPEARANCE } from './appearance.mjs';
 import { VARIANTS } from './variants.mjs';
 import { MARKS } from './marks.mjs';
 import { KEYS } from './keys.mjs';
@@ -40,7 +40,7 @@ export const groups = [
   ['App chrome', CHROME],
   ['Files', FILES],
   ['State', STATUS],
-  ['Badge status', STATUSES],
+  ['Appearance', APPEARANCE],
   ['Component variants', VARIANTS],
   ['Instrument', INSTRUMENT],
   ['Workspace layout', LAYOUT],

@@ -7,7 +7,7 @@ export {
   colorCount,
   findRampSteps,
   rampSteps,
-  themeTones,
+  themeTints,
   type ColorContext,
   type ColorList,
   type ColorListItem,

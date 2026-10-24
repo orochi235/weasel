@@ -39,7 +39,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  color: var(--tone, inherit);
+  color: var(--tint, inherit);
 }
 
 .board .slot {
@@ -63,21 +63,21 @@
   transition: background-color 0.35s ease-out, border-color 0.35s ease-out, color 0.35s ease-out;
 }
 
-.slot[data-toned] > kbd.cap {
-  background: color-mix(in srgb, var(--tone) 14%, transparent);
+.slot[data-tinted] > kbd.cap {
+  background: color-mix(in srgb, var(--tint) 14%, transparent);
 }
 
 .slot[data-held] > kbd.cap {
-  background: var(--tone, var(--wzl-accent));
-  border-color: var(--tone, var(--wzl-accent));
+  background: var(--tint, var(--wzl-accent));
+  border-color: var(--tint, var(--wzl-accent));
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
   transition: none;
 }
 
-/* A tone may be any color, so its held face takes dark ink rather than the accent's. */
-.slot[data-toned][data-held] > kbd.cap {
+/* A tint may be any color, so its held face takes dark ink rather than the accent's. */
+.slot[data-tinted][data-held] > kbd.cap {
   color: rgb(0 0 0 / 0.85);
 }
 
@@ -93,7 +93,7 @@
   text-align: center;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--tone, var(--wzl-fg-muted));
+  color: var(--tint, var(--wzl-fg-muted));
 }
 
 .caption svg {

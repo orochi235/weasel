@@ -90,9 +90,9 @@
   min-width: min-content;
 }
 
-.status { grid-template-columns: 110px 1fr 24px; }
+.look { grid-template-columns: 110px 1fr 24px; }
 
-.statusSwatch {
+.tintSwatch {
   width: 22px;
   height: 22px;
   padding: 0;

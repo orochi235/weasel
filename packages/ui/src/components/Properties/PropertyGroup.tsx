@@ -1,14 +1,14 @@
 import { type MouseEventHandler, type ReactNode, useId } from 'react';
 import { Disclosure } from '../Disclosure';
 import { type Motif, MotifFrame } from '../MotifFrame';
-import type { StanceProps } from '../stance';
+import type { AppearanceProps } from '../appearance';
 import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import s from './Properties.module.css';
 import { type PropertyListPack, PropertyNote } from './PropertyList';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 
 /** Props for `<PropertyGroup>`. */
-export interface PropertyGroupProps extends PropertyMetricProps, StanceProps, CollapseProps {
+export interface PropertyGroupProps extends PropertyMetricProps, AppearanceProps, CollapseProps {
   /** The group's title, which `motif` places. */
   title: ReactNode;
   /** How the group draws its title and edge (`motifs.stereo()`, `motifs.notch()`, …). Defaults to `rule()`, a title between two rules. */
@@ -38,9 +38,8 @@ export interface PropertyGroupProps extends PropertyMetricProps, StanceProps, Co
  * related rows under a heading.
  *
  * A collapsible group keeps its rows mounted and hides them, so a control's
- * local state survives being folded away. `stance` and `tone` work as on
- * `<PropertyPanel>`; in the default
- * `rule` motif a tone also draws the group's leading edge, which is how a list
+ * local state survives being folded away. The appearance props work as on
+ * `<PropertyPanel>`; in the default `rule` motif a tint also draws the group's leading edge, which is how a list
  * of like groups — effects, tails — tells its members apart.
  * `leading` and `actions` put a handle and controls in the title row, and the
  * groups of a `<PropertyList>` reorder with `useReorderDragList`.
@@ -64,7 +63,9 @@ export function PropertyGroup({
   density,
   align,
   stance,
-  tone,
+  grade,
+  emphasis,
+  tint,
   onContextMenu,
 }: PropertyGroupProps) {
   const bodyId = useId();
@@ -93,7 +94,9 @@ export function PropertyGroup({
       }
       className={cls}
       stance={stance}
-      tone={tone}
+      grade={grade}
+      emphasis={emphasis}
+      tint={tint}
       onContextMenu={onContextMenu}
     >
       {description !== undefined && description !== '' && <PropertyNote>{description}</PropertyNote>}

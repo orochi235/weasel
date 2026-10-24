@@ -1,7 +1,6 @@
 export { Badge } from './Badge';
 export type { BadgeDomProps, BadgeOwnProps, BadgeProps } from './Badge';
-export type { BadgeCorner, BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
-export { BADGE_STATUS_ICONS } from './statusIcons';
+export type { BadgeCorner, BadgeShape, BadgeVariant, BadgeSize } from './types';
 export { BADGE_VARIANT_ICONS } from './variantIcons';
 
 export type { BadgeShapeParams } from './shapes';

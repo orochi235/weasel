@@ -26,7 +26,7 @@ export type ControlRenderer = PrefRenderer;
 export interface ConfigOption {
   value: string;
   label: string;
-  /** A qualified icon ref (`icon('ui:statusSuccess')`) in the registry in scope. A segmented row draws it in
+  /** A qualified icon ref (`icon('ui:gradeSuccess')`) in the registry in scope. A segmented row draws it in
    *  place of `label`, which stays the accessible name and becomes the tooltip;
    *  a select draws it beside `label`. */
   icon?: IconRef;

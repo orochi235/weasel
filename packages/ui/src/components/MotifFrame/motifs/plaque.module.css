@@ -1,8 +1,8 @@
-/* The tone fills the whole frame, and everything on it is drawn in an ink that
+/* The tint fills the whole frame, and everything on it is drawn in an ink that
    reads there: black or white, from the fill's own lightness. */
 .plaque {
   /* The fill is the edge here, so the frame's edge ink is the plaque's ink. */
-  --_edge: color-mix(in oklab, var(--_s-tone) var(--wzl-plaque-mix, 100%), var(--_s-surface));
+  --_edge: color-mix(in oklab, var(--_s-tint) var(--wzl-plaque-mix, 100%), var(--_s-surface));
   background: var(--_edge);
   border-radius: var(--wzl-radius-md);
   padding: var(--_s-pad);

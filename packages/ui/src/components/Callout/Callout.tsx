@@ -1,6 +1,5 @@
-import { useCallback, useContext, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useContext, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { useLatest } from '@weasel-js/core';
 import {
   DialogTrigger,
   Popover as RACPopover,
@@ -12,7 +11,8 @@ import {
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import { CloseButton } from '../CloseButton';
-import { type StanceProps, useStance } from '../stance';
+import { type AppearanceProps, useAppearance } from '../appearance';
+import { useEscapeDismissal } from './useEscapeDismissal';
 import s from './Callout.module.css';
 
 /** Far past the 1/64px a browser lays out in, and far short of anything seen. */
@@ -34,7 +34,7 @@ export type CalloutProps = Omit<
   'children' | 'className' | 'isNonModal' | 'triggerRef'
 > &
   OverlayPortalProps &
-  StanceProps & {
+  AppearanceProps & {
   children?: ReactNode;
   className?: string;
   /** Optional heading rendered above the body. */
@@ -89,8 +89,10 @@ export function Callout(props: CalloutProps) {
     className,
     title,
     footer,
-    stance = 'notice',
-    tone,
+    stance,
+    grade,
+    emphasis,
+    tint,
     modal = false,
     showCloseButton,
     onDismiss,
@@ -107,49 +109,10 @@ export function Callout(props: CalloutProps) {
     ...rest
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
-  const stanced = useStance({ stance, tone });
+  const appearance = useAppearance({ stance, grade, emphasis, tint });
   const { anchor: portalAnchor, provide, ready } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
-  // An Escape that closes the callout is a dismissal like the close button is.
-  // The key alone is not the signal: RAC's overlay stack leaves the callout up
-  // when a menu inside it is open. So the listener marks the event, and the
-  // close RAC makes while that event is still being dispatched reports it.
-  // It can't ride on a React `onKeyDown`: RAC's Dialog runs its props through
-  // filterDOMProps, which drops handlers it doesn't know.
-  const onDismissRef = useLatest(onDismiss);
-  const escaping = useRef(false);
-  const escapeListener = useRef((e: KeyboardEvent) => {
-    if (e.key !== 'Escape') return;
-    escaping.current = true;
-    setTimeout(() => {
-      escaping.current = false;
-    }, 0);
-  });
-  const closedByEscape = useCallback(() => {
-    if (!escaping.current) return;
-    escaping.current = false;
-    onDismissRef.current?.();
-  }, [onDismissRef]);
-  // Under `CalloutTrigger` the popover closes through the trigger's state and
-  // never calls its own `onOpenChange`, so the report rides on that state.
-  const trigger = useContext(OverlayTriggerStateContext);
-  const watched = useMemo(
-    () =>
-      trigger && {
-        ...trigger,
-        close: () => {
-          closedByEscape();
-          trigger.close();
-        },
-      },
-    [trigger, closedByEscape],
-  );
-  const listeningTo = useRef<HTMLElement | null>(null);
-  const dialogRef = useCallback((node: HTMLElement | null) => {
-    listeningTo.current?.removeEventListener('keydown', escapeListener.current);
-    listeningTo.current = node;
-    node?.addEventListener('keydown', escapeListener.current);
-  }, []);
+  const { watched, closedByEscape, dialogRef } = useEscapeDismissal(onDismiss);
   const titleId = useId();
   // RAC repositions when the anchor changes size, through its own ResizeObserver, and not when it only moves, as
   // it does when a consumer tracks a scene node across a pan. Popover has no public updatePosition, so each move
@@ -204,7 +167,7 @@ export function Callout(props: CalloutProps) {
             aria-label={popoverAriaLabel}
             aria-labelledby={popoverAriaLabelledby}
             className={[s.popover, className].filter(Boolean).join(' ')}
-            {...stanced}
+            {...appearance}
             data-weasel-overlay=""
           >
             <OverlayArrow className={s.arrow}>

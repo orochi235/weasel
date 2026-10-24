@@ -23,7 +23,7 @@ export interface HudDrawCtx {
    *  caller rather than read back off the DOM, so a HUD drawn headlessly is
    *  themed the same way one drawn in a browser is. */
   tokens: ResolvedTheme;
-  /** A color source as a hex, resolved against the theme, tone list, and
+  /** A color source as a hex, resolved against the theme, tint list, and
    *  palette the hud was attached with; `undefined` for one nothing answers. */
   color(source: ColorSource): string | undefined;
 }

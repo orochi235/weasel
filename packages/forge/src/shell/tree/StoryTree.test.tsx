@@ -449,7 +449,7 @@ describe('StoryTree', () => {
     expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('tones the badge of a library the project gave a tone, and leaves any other on the muted status', async () => {
+  it('tints the badge of a library the project gave a tint, and leaves any other on low emphasis', async () => {
     const uiEntry = { ...entry('ui/Badge', 'Default'), file: '/repo/packages/ui/src/Badge.stories.tsx' };
     const tagged = [uiEntry, slider];
     const contribution: LabContribution[] = [
@@ -468,7 +468,7 @@ describe('StoryTree', () => {
         />
       );
     }
-    const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui', tone: { ref: 'swatch-amber' } }]);
+    const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui', tint: { ref: 'swatch-amber' } }]);
     renderWithIcons(
       <LibrariesContext.Provider value={libraries}>
         <Tagged />
@@ -478,9 +478,9 @@ describe('StoryTree', () => {
     const tags = Array.from(packages.querySelectorAll<HTMLElement>('.fg-tree__tag'));
     const tag = (label: string) => tags.find((t) => t.textContent === label) as HTMLElement;
     const [ui, kit] = [tag('ui'), tag('Kit')];
-    expect(ui.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-amber)');
-    expect(kit.hasAttribute('data-tone')).toBe(false);
-    expect(kit.dataset.status).toBe('muted');
+    expect(ui.style.getPropertyValue('--wzl-tint')).toBe('var(--wzl-swatch-amber)');
+    expect(kit.hasAttribute('data-tint')).toBe(false);
+    expect(kit.dataset.emphasis).toBe('low');
   });
 
   it('names a route that matches no story', async () => {

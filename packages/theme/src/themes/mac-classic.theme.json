@@ -262,11 +262,11 @@
       "value": "{surface}",
       "type": "color"
     },
-    "button-primary-surface": {
+    "button-confirm-surface": {
       "value": "{surface}",
       "type": "color"
     },
-    "button-primary-fg": {
+    "button-confirm-fg": {
       "value": "{fg}",
       "type": "color"
     },
@@ -346,11 +346,11 @@
       "value": "0",
       "type": "dimension"
     },
-    "stance-scope-radius": {
+    "stance-clarify-radius": {
       "value": "0px",
       "type": "dimension"
     },
-    "stance-scope-nested-radius": {
+    "stance-clarify-nested-radius": {
       "value": "0px",
       "type": "dimension"
     }

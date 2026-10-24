@@ -10,17 +10,17 @@ function inputText(record: DispatchRecord): string {
 
 export function DecisionPath({ record }: { record: DispatchRecord }): ReactElement {
   const winner = record.ranked.find((r) => r.walk.kind === 'fired' || r.walk.kind === 'would-fire');
-  const segments: PowerlineSegment[] = [{ text: inputText(record), status: 'info', endCap: 'chevron' }];
+  const segments: PowerlineSegment[] = [{ text: inputText(record), grade: 'info', endCap: 'chevron' }];
   if (winner) {
     segments.push(
-      { text: winner.candidate.ownerId ?? 'action', status: 'muted', endCap: 'chevron' },
-      { text: winner.candidate.actionId, status: 'accent', endCap: 'chevron' },
+      { text: winner.candidate.ownerId ?? 'action', emphasis: 'low', endCap: 'chevron' },
+      { text: winner.candidate.actionId, emphasis: 'high', endCap: 'chevron' },
     );
   } else {
-    segments.push({ text: `${record.ranked.length} ranked, none fired`, status: 'muted', endCap: 'chevron' });
+    segments.push({ text: `${record.ranked.length} ranked, none fired`, emphasis: 'low', endCap: 'chevron' });
   }
   segments.push(record.outcome === 'handled'
-    ? { text: record.predicted ? 'would handle' : 'handled', status: 'success' }
-    : { text: 'unhandled', status: 'danger' });
+    ? { text: record.predicted ? 'would handle' : 'handled', grade: 'success' }
+    : { text: 'unhandled', grade: 'danger' });
   return <Powerline segments={segments} size="sm" variant="subtle" aria-label="Decision path" />;
 }

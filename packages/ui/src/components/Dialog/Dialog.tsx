@@ -10,7 +10,7 @@ import {
 import { useContainedRoot, useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import { ContainedModal } from './ContainedModal';
 import { CloseButton } from '../CloseButton';
-import { type StanceProps, useStance } from '../stance';
+import { type AppearanceProps, useAppearance } from '../appearance';
 import s from './Dialog.module.css';
 
 /** Props for {@link Dialog}, on top of React Aria's `ModalOverlay` props. */
@@ -19,7 +19,7 @@ export type DialogProps = Omit<
   'children' | 'className'
 > &
   OverlayPortalProps &
-  StanceProps & {
+  AppearanceProps & {
     /** Heading rendered in the dialog's default header. Omit when supplying
      *  a custom `header` slot via children. */
     title?: ReactNode;
@@ -53,8 +53,8 @@ export type DialogProps = Omit<
  * `react-aria-components` upstream of this component.
  *
  * Escape, focus trap, and scroll lock all come from the underlying
- * primitives. A click outside closes it only with `isDismissable`. `stance` and `tone` work as on `<PropertyPanel>` —
- * a destructive confirm is `stance="danger"`.
+ * primitives. A click outside closes it only with `isDismissable`. The appearance props work as on `<PropertyPanel>`:
+ * a destructive confirm is `grade="danger"`.
  */
 export function Dialog(props: DialogProps) {
   const {
@@ -71,10 +71,12 @@ export function Dialog(props: DialogProps) {
     onOpenChange,
     portalContainer,
     stance,
-    tone,
+    grade,
+    emphasis,
+    tint,
     ...rest
   } = props;
-  const stanced = useStance({ stance, tone });
+  const appearance = useAppearance({ stance, grade, emphasis, tint });
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
@@ -97,7 +99,7 @@ export function Dialog(props: DialogProps) {
   );
   if (inline) {
     return (
-      <div className={[s.modal, s.inline, className].filter(Boolean).join(' ')} {...stanced}>
+      <div className={[s.modal, s.inline, className].filter(Boolean).join(' ')} {...appearance}>
         <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
           {box(() => onOpenChange?.(false))}
         </RACDialog>
@@ -116,7 +118,7 @@ export function Dialog(props: DialogProps) {
         isKeyboardDismissDisabled={rest.isKeyboardDismissDisabled}
         overlayClassName={s.overlay}
         modalClassName={[s.modal, className].filter(Boolean).join(' ')}
-        modalProps={stanced}
+        modalProps={appearance}
       >
         <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
           {({ close }) => box(close)}
@@ -136,7 +138,7 @@ export function Dialog(props: DialogProps) {
           className={s.overlay}
           data-weasel-overlay=""
         >
-          <RACModal className={[s.modal, className].filter(Boolean).join(' ')} {...stanced}>
+          <RACModal className={[s.modal, className].filter(Boolean).join(' ')} {...appearance}>
             <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
               {({ close }) => box(close)}
             </RACDialog>

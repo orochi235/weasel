@@ -47,7 +47,7 @@ function ActionDetail({ action }: { action: DevtoolsActionEntry }): ReactElement
       <h3 className={s.title}><Code size="sm">{action.id}</Code></h3>
       <DetailList layout="inline">
         <DetailRow label="Label">{action.label}</DetailRow>
-        <DetailRow label="Enabled" status={action.enabled === true ? 'success' : 'warn'}>
+        <DetailRow label="Enabled" grade={action.enabled === true ? 'success' : 'warn'}>
           {action.enabled === true ? 'yes' : action.enabled}
         </DetailRow>
         <DetailRow label="Active">{action.active === null ? 'no pressed state' : yesNo(action.active)}</DetailRow>

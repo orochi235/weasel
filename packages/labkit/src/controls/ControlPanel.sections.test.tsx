@@ -222,7 +222,7 @@ describe('<ControlPanel> collapsible sections', () => {
   });
 });
 
-describe('<ControlPanel> title, stance and tone', () => {
+describe('<ControlPanel> title, stance, grade, emphasis, and tint', () => {
   const fields: ConfigField[] = [{ key: 'on', label: 'On', type: 'checkbox', default: true }];
 
   it('renders the bare list when given none of them', () => {
@@ -237,16 +237,16 @@ describe('<ControlPanel> title, stance and tone', () => {
     const { container } = renderWithIcons(
       <ControlPanel
         title="View"
-        stance="scope"
-        tone={1}
+        stance="clarify"
+        tint={1}
         fields={fields}
         config={{ on: true }}
         setConfig={vi.fn()}
       />,
     );
     const panel = container.firstElementChild as HTMLElement;
-    expect(panel.dataset.stance).toBe('scope');
-    expect(panel.dataset.tone).toBe('1');
+    expect(panel.dataset.stance).toBe('clarify');
+    expect(panel.dataset.tint).toBe('1');
     expect(screen.getByRole('heading', { name: 'View' })).toBeTruthy();
     expect(panel.querySelector('.lk-control-panel')).not.toBeNull();
   });

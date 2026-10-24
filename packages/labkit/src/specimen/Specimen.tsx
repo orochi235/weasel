@@ -183,32 +183,30 @@ function ButtonsAndToggles() {
     <Section title="Buttons & toggles">
       <Cell label="Button">
         <div className="lk-specimen__row">
-          <Button variant="primary">Save</Button>
-          <Button variant="secondary">Cancel</Button>
+          <Button stance="confirm">Save</Button>
+          <Button>Cancel</Button>
           <Button variant="ghost">Ghost</Button>
-          <Button variant="secondary" disabled>
-            Disabled
-          </Button>
-          <Button variant="secondary" iconOnly ariaLabel="Add">
+          <Button disabled>Disabled</Button>
+          <Button iconOnly ariaLabel="Add">
             <Dot />
           </Button>
         </div>
       </Cell>
       <Cell label="Badge">
         <div className="lk-specimen__row">
-          <Badge shape="pill" status="accent" variant="outline" size="sm">
+          <Badge shape="pill" emphasis="high" variant="outline" size="sm">
             ACCENT
           </Badge>
-          <Badge status="info" variant="subtle">
+          <Badge grade="info" variant="subtle">
             INFO
           </Badge>
-          <Badge status="warn" variant="solid">
+          <Badge grade="warn" variant="solid">
             WARN
           </Badge>
-          <Badge status="danger" variant="solid">
+          <Badge grade="danger" variant="solid">
             DANGER
           </Badge>
-          <Badge status="muted">MUTED</Badge>
+          <Badge emphasis="low">MUTED</Badge>
         </div>
       </Cell>
       <Cell label="Checkbox, Switch">
@@ -559,8 +557,8 @@ function OverlaysAndFeedback() {
             triggerRef={calloutAnchor}
             isOpen={calloutOpen}
             onOpenChange={setCalloutOpen}
-            stance="notice"
-            title="Notice"
+            grade="info"
+            title="Info"
           >
             Neutral guidance.
           </Callout>
@@ -570,7 +568,7 @@ function OverlaysAndFeedback() {
             onOpenChange={setDialogOpen}
             title="Preferences"
             footer={
-              <Button variant="primary" onClick={() => setDialogOpen(false)}>
+              <Button stance="confirm" onClick={() => setDialogOpen(false)}>
                 OK
               </Button>
             }
@@ -592,9 +590,9 @@ function OverlaysAndFeedback() {
           variant="solid"
           size="sm"
           segments={[
-            { text: 'main', status: 'accent', endCap: 'chevron' },
-            { text: '✓ 12', status: 'info', endCap: 'slant' },
-            { text: '~/proj', status: 'muted' },
+            { text: 'main', emphasis: 'high', endCap: 'chevron' },
+            { text: '✓ 12', grade: 'info', endCap: 'slant' },
+            { text: '~/proj', emphasis: 'low' },
           ]}
         />
       </Cell>

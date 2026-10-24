@@ -27,7 +27,7 @@ function toRows(node: SchemaNode, path: string | null, tails: ReadonlyMap<string
       ...row,
       ...(action?.icon != null ? { leading: action.icon } : {}),
       ...(fires !== undefined && !action
-        ? { trailing: <Badge size="xs" status="danger" variant="subtle">no action</Badge> }
+        ? { trailing: <Badge size="xs" grade="danger" variant="subtle">no action</Badge> }
         : action?.shortcut ? { trailing: <ShortcutKeys legend={action.shortcut} /> } : {}),
     };
   });

@@ -13,22 +13,24 @@ describe('Badge', () => {
     expect(container.firstElementChild?.tagName).toBe('SPAN');
   });
 
-  it('applies status via data-status attribute, with no peer tone', () => {
-    const { container } = render(<Badge status="accent">x</Badge>);
-    expect(container.firstElementChild?.getAttribute('data-status')).toBe('accent');
-    expect(container.firstElementChild?.hasAttribute('data-tone')).toBe(false);
-    expect(container.firstElementChild?.hasAttribute('data-stance')).toBe(false);
+  it('marks grade and emphasis, never a status', () => {
+    const { container } = render(<Badge grade="warn" emphasis="low">x</Badge>);
+    const badge = container.firstElementChild as HTMLElement;
+    expect(badge.dataset).toMatchObject({ grade: 'warn', emphasis: 'low' });
+    expect(badge.dataset.status).toBeUndefined();
+    expect(badge.hasAttribute('data-tint')).toBe(false);
+    expect(badge.hasAttribute('data-stance')).toBe(false);
   });
 
-  it('takes a peer tone and a stance beside its status, merged with its own style', () => {
+  it('takes a tint and a stance beside its grade, merged with its own style', () => {
     const { container } = render(
-      <Badge status="warn" stance="notice" tone={1} style={{ marginLeft: 4 }}>x</Badge>,
+      <Badge grade="warn" stance="debug" tint={1} style={{ marginLeft: 4 }}>x</Badge>,
     );
     const el = container.firstElementChild as HTMLElement;
-    expect(el.dataset.status).toBe('warn');
-    expect(el.dataset.stance).toBe('notice');
-    expect(el.dataset.tone).toBe('1');
-    expect(el.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-green)');
+    expect(el.dataset.grade).toBe('warn');
+    expect(el.dataset.stance).toBe('debug');
+    expect(el.dataset.tint).toBe('1');
+    expect(el.style.getPropertyValue('--wzl-tint')).not.toBe('');
     expect(el.style.marginLeft).toBe('4px');
   });
 
@@ -171,12 +173,12 @@ describe('Badge removable with an action of its own', () => {
   it('keeps the box, the data attributes, and the ref on the root', () => {
     const ref = createRef<HTMLElement>();
     const { container } = render(
-      <Badge ref={ref} id="b1" status="warn" size="md" shape="notched" onClick={() => {}} onRemove={() => {}}>x</Badge>,
+      <Badge ref={ref} id="b1" grade="warn" size="md" shape="notched" onClick={() => {}} onRemove={() => {}}>x</Badge>,
     );
     const root = container.firstElementChild as HTMLElement;
     expect(ref.current).toBe(root);
     expect(root.id).toBe('b1');
-    expect(root.dataset.status).toBe('warn');
+    expect(root.dataset.grade).toBe('warn');
     expect(root.dataset.size).toBe('md');
     expect(root.dataset.shape).toBe('notched');
     expect(root.style.getPropertyValue('--badge-inset-left')).toBe('4px');
@@ -278,14 +280,16 @@ describe('Badge padded through style', () => {
 describe('Badge stylesheet', () => {
   const css = readFileSync(resolve(__dirname, 'Badge.module.css'), 'utf8');
 
-  it('paints the success status from --wzl-success', () => {
-    const { container } = render(<Badge status="success">ok</Badge>);
-    expect(container.firstElementChild?.getAttribute('data-status')).toBe('success');
-    expect(css).toMatch(/\.badge\[data-status='success'\]\s*\{\s*--badge-status-edge: var\(--wzl-success\);/);
+  it('paints a grade from its inherited --wzl-grade', () => {
+    const { container } = render(<Badge grade="success">ok</Badge>);
+    expect(container.firstElementChild?.getAttribute('data-grade')).toBe('success');
+    expect(css).toMatch(/\.badge\[data-grade\]\s*\{\s*--_s-accent:\s*var\(--wzl-tint, var\(--wzl-grade\)\)/);
+    expect(css).not.toMatch(/--badge-emphasis-edge:\s*var\(--wzl-grade\)/);
+    expect(css).toMatch(/--badge-emphasis-edge: var\(--wzl-emphasis-fg, var\(--wzl-border\)\);/);
   });
 
-  it('paints a peer tone or a stance accent over the status, and keys no status off data-tone', () => {
-    expect(css).toMatch(/--badge-edge: var\(--_s-accent, var\(--badge-status-edge\)\);/);
+  it('paints a tint or a stance accent over the grade and emphasis, and keys nothing off data-tone', () => {
+    expect(css).toMatch(/--badge-edge: var\(--_s-accent, var\(--badge-emphasis-edge\)\);/);
     expect(css).not.toMatch(/\[data-tone='/);
   });
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { colorAt } from './colorList';
-import { ThemeProvider, useColorCss, useColorHex, useTheme, useTones } from './react';
+import { ThemeProvider, useColorCss, useColorHex, useTheme, useTints } from './react';
 import { defineTheme } from './theme';
 
 function Probe(): React.ReactElement {
@@ -68,31 +68,31 @@ describe('ThemeProvider', () => {
     expect(() => render(<Probe />)).toThrow(/ThemeProvider/);
   });
 
-  it('publishes the theme’s tones, and a tones prop overrides them for its subtree', () => {
-    function Tone(): React.ReactElement {
-      const ctx = useTones();
-      return <span data-testid="t">{colorAt(ctx.tones, 1, ctx)}</span>;
+  it('publishes the theme’s tints, and a tints prop overrides them for its subtree', () => {
+    function Tint(): React.ReactElement {
+      const ctx = useTints();
+      return <span data-testid="t">{colorAt(ctx.tints, 1, ctx)}</span>;
     }
-    const { rerender } = render(<Tone />);
+    const { rerender } = render(<Tint />);
     expect(screen.getByTestId('t').textContent).toBe('#48e628');
     rerender(
-      <ThemeProvider tones={['#000', '#fff']}>
-        <Tone />
+      <ThemeProvider tints={['#000', '#fff']}>
+        <Tint />
       </ThemeProvider>,
     );
     expect(screen.getByTestId('t').textContent).toBe('#fff');
   });
 
-  it('resolves a color source against the theme, the tones, and a palette prop', () => {
+  it('resolves a color source against the theme, the tints, and a palette prop', () => {
     function Colors(): React.ReactElement {
       const css = useColorCss();
-      const all = [css({ ref: 'accent' }), css({ ref: 'tone', index: 1 }), css({ ref: 'brand' }), css(undefined)];
+      const all = [css({ ref: 'accent' }), css({ ref: 'tint', index: 1 }), css({ ref: 'brand' }), css(undefined)];
       return <span data-testid="c">{all.map(String).join(' ')}</span>;
     }
     const { rerender } = render(<Colors />);
     expect(screen.getByTestId('c').textContent).toBe('var(--wzl-accent) var(--wzl-swatch-green) undefined undefined');
     rerender(
-      <ThemeProvider tones={['#000', '#fff']} palette={{ entries: [{ name: 'brand', color: { space: 'srgb', coords: [1, 0, 0] } }] }}>
+      <ThemeProvider tints={['#000', '#fff']} palette={{ entries: [{ name: 'brand', color: { space: 'srgb', coords: [1, 0, 0] } }] }}>
         <Colors />
       </ThemeProvider>,
     );

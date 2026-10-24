@@ -1,14 +1,13 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import s from './Button.module.css';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
-import { type StanceProps, useStance } from '../stance';
+import { type AppearanceProps, useAppearance } from '../appearance';
 
-/** Visual weight of a button. Defaults to `secondary`. `link` drops the
+/** Visual weight of a button. Defaults to `solid`. `link` drops the
  *  control box entirely and reads as a hyperlink in running text -- for an
- *  in-page navigation that is still a button, not an `<a href>`. */
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link';
-/** Text color of a `link` button — the same set as `Code`'s statuses. */
-export type ButtonStatus = 'neutral' | 'muted' | 'accent' | 'success' | 'warn' | 'danger';
+ *  in-page navigation that is still a button, not an `<a href>`. The
+ *  confirming button is `stance="confirm"` on a `solid` one. */
+export type ButtonVariant = 'solid' | 'ghost' | 'link';
 /** Button height and type scale. */
 export type ButtonSize = 'sm' | 'md';
 
@@ -16,10 +15,6 @@ export type ButtonSize = 'sm' | 'md';
 export type ButtonBase = {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** Text color of the `link` variant, which is `accent` unless told
-   *  otherwise. The boxed variants carry their weight in their fill and
-   *  ignore it. A peer `tone`, or a stance's accent, paints over it. */
-  status?: ButtonStatus;
   /** A button that stays down: renders `aria-pressed` and holds the active
    *  treatment while it is on. For a control that reports a state rather than
    *  firing an action -- a panel toggle, a mode switch. Left off, the button
@@ -35,7 +30,7 @@ export type ButtonBase = {
   style?: ButtonHTMLAttributes<HTMLButtonElement>['style'];
   children?: ReactNode;
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
-} & StanceProps & SegmentTooltipFields;
+} & AppearanceProps & SegmentTooltipFields;
 
 /** A button with a visible label, which names it. */
 export type ButtonRegular = ButtonBase & {
@@ -96,11 +91,12 @@ export const Button = forwardRef(function Button(
   ref: Ref<HTMLButtonElement>,
 ) {
   const {
-    variant = 'secondary',
+    variant = 'solid',
     size = 'md',
-    status,
     stance,
-    tone,
+    grade,
+    emphasis,
+    tint,
     pressed,
     disabled,
     loading,
@@ -132,7 +128,7 @@ export const Button = forwardRef(function Button(
     .join(' ');
 
   const showLeading = !iconOnly && (loading || leadingIcon);
-  const stanced = useStance({ stance, tone });
+  const appearance = useAppearance({ stance, grade, emphasis, tint });
 
   return (
     <SegmentTooltip
@@ -143,13 +139,11 @@ export const Button = forwardRef(function Button(
         ref={ref}
         type={type}
         className={cls}
-        data-stance={stanced['data-stance']}
-        data-tone={stanced['data-tone']}
-        style={stanced.style || style ? { ...stanced.style, ...style } : undefined}
+        {...appearance}
+        style={appearance.style || style ? { ...appearance.style, ...style } : undefined}
         disabled={disabled}
         aria-busy={loading ? true : undefined}
         aria-pressed={pressed}
-        data-status={status}
         aria-label={ariaLabel}
         onClick={onClick}
       >

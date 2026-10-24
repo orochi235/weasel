@@ -8,63 +8,75 @@ import { PropertyPanel } from './PropertyPanel';
 
 const panelOf = (el: HTMLElement) => el.firstElementChild as HTMLElement;
 
-describe('PropertyPanel stance and tone', () => {
-  it('renders no stance attributes and no inline tone when given neither', () => {
+describe('PropertyPanel stance, grade, emphasis, and tint', () => {
+  it('renders no stance attributes and no inline tint when given neither', () => {
     const { container } = render(<PropertyPanel title="T">x</PropertyPanel>);
     const panel = panelOf(container);
     expect(panel.hasAttribute('data-stance')).toBe(false);
-    expect(panel.hasAttribute('data-tone')).toBe(false);
+    expect(panel.hasAttribute('data-tint')).toBe(false);
     expect(panel.hasAttribute('data-nested')).toBe(false);
     expect(panel.getAttribute('style')).toBeNull();
   });
 
-  it('names its stance and resolves a tone index to the theme ramp’s custom property', () => {
+  it('names its stance and resolves a tint index to the theme ramp’s custom property', () => {
     const { container } = render(
-      <PropertyPanel stance="scope" tone={1}>
+      <PropertyPanel stance="clarify" tint={1}>
         x
       </PropertyPanel>,
     );
     const panel = panelOf(container);
-    expect(panel.dataset.stance).toBe('scope');
-    expect(panel.dataset.tone).toBe('1');
-    expect(panel.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-green)');
+    expect(panel.dataset.stance).toBe('clarify');
+    expect(panel.dataset.tint).toBe('1');
+    expect(panel.style.getPropertyValue('--wzl-tint')).toBe('var(--wzl-swatch-green)');
   });
 
   it('takes a color given directly, with no stance', () => {
-    const { container } = render(<PropertyPanel tone={cssColorLiteral('#224a63')}>x</PropertyPanel>);
+    const { container } = render(<PropertyPanel tint={cssColorLiteral('#224a63')}>x</PropertyPanel>);
     const panel = panelOf(container);
     expect(panel.hasAttribute('data-stance')).toBe(false);
-    expect(panel.style.getPropertyValue('--wzl-tone')).toBe('#224a63');
+    expect(panel.style.getPropertyValue('--wzl-tint')).toBe('#224a63');
   });
 
   it('takes a color named in the theme, as its custom property', () => {
-    const { container } = render(<PropertyPanel tone={{ ref: 'accent' }}>x</PropertyPanel>);
+    const { container } = render(<PropertyPanel tint={{ ref: 'accent' }}>x</PropertyPanel>);
     const panel = panelOf(container);
-    expect(panel.hasAttribute('data-tone')).toBe(true);
-    expect(panel.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-accent)');
+    expect(panel.hasAttribute('data-tint')).toBe(true);
+    expect(panel.style.getPropertyValue('--wzl-tint')).toBe('var(--wzl-accent)');
   });
 
-  it('takes no tone from a name nothing answers', () => {
-    const { container } = render(<PropertyPanel tone={{ ref: 'nope' }}>x</PropertyPanel>);
+  it('takes no tint from a name nothing answers', () => {
+    const { container } = render(<PropertyPanel tint={{ ref: 'nope' }}>x</PropertyPanel>);
     const panel = panelOf(container);
-    expect(panel.hasAttribute('data-tone')).toBe(false);
-    expect(panel.style.getPropertyValue('--wzl-tone')).toBe('');
+    expect(panel.hasAttribute('data-tint')).toBe(false);
+    expect(panel.style.getPropertyValue('--wzl-tint')).toBe('');
   });
 
-  it('reads tones from the nearest provider', () => {
+  it('reads tints from the nearest provider', () => {
     const { container } = render(
-      <ThemeProvider tones={['#101010', '#202020']}>
-        <PropertyPanel tone={3}>x</PropertyPanel>
+      <ThemeProvider tints={['#101010', '#202020']}>
+        <PropertyPanel tint={3}>x</PropertyPanel>
       </ThemeProvider>,
     );
     const panel = panelOf(container.firstElementChild as HTMLElement);
-    expect(panel.style.getPropertyValue('--wzl-tone')).toBe('#202020');
+    expect(panel.style.getPropertyValue('--wzl-tint')).toBe('#202020');
+  });
+
+  it('names its grade and emphasis, and sets the grade color for the rules to read', () => {
+    const { container } = render(
+      <PropertyPanel grade="danger" emphasis="high">
+        x
+      </PropertyPanel>,
+    );
+    const panel = panelOf(container);
+    expect(panel.dataset).toMatchObject({ grade: 'danger', emphasis: 'high' });
+    expect(panel.style.getPropertyValue('--wzl-grade')).toBe('var(--wzl-danger)');
+    expect(panel.style.getPropertyValue('--wzl-emphasis-fg')).toBe('var(--wzl-accent-fg)');
   });
 
   it('marks a panel inside another as nested, and only that one', () => {
     const { container } = render(
-      <PropertyPanel stance="scope">
-        <PropertyPanel stance="scope">inner</PropertyPanel>
+      <PropertyPanel stance="clarify">
+        <PropertyPanel stance="clarify">inner</PropertyPanel>
       </PropertyPanel>,
     );
     const outer = panelOf(container);
@@ -74,11 +86,11 @@ describe('PropertyPanel stance and tone', () => {
   });
 });
 
-describe('the rest of the family takes stance and tone', () => {
+describe('the rest of the family takes stance, grade, emphasis, and tint', () => {
   it('a group and a subpanel render both', () => {
     const { container } = render(
       <>
-        <PropertyGroup title="G" stance="danger" tone={2}>
+        <PropertyGroup title="G" grade="danger" tint={2}>
           x
         </PropertyGroup>
         <Subpanel title="S" stance="debug">
@@ -87,8 +99,8 @@ describe('the rest of the family takes stance and tone', () => {
       </>,
     );
     const [group, sub] = [...container.children] as HTMLElement[];
-    expect(group.dataset).toMatchObject({ stance: 'danger', tone: '2' });
-    expect(group.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-sky)');
+    expect(group.dataset).toMatchObject({ grade: 'danger', tint: '2' });
+    expect(group.style.getPropertyValue('--wzl-tint')).toBe('var(--wzl-swatch-sky)');
     expect(sub.dataset.stance).toBe('debug');
   });
 

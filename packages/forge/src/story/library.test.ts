@@ -5,7 +5,7 @@ const UI = '/repo/packages/ui/src/components/Button/Button.stories.tsx';
 
 describe('librariesFrom', () => {
   const libraries = librariesFrom([
-    { path: '/packages/ui/', label: 'ui', tone: { ref: 'swatch-red' } },
+    { path: '/packages/ui/', label: 'ui', tint: { ref: 'swatch-red' } },
     { path: '/packages/labkit/', label: 'labkit' },
   ]);
 
@@ -19,10 +19,10 @@ describe('librariesFrom', () => {
     expect(libraries.of({ title: 'Notes/Scratch', file: '/elsewhere/Scratch.stories.tsx' })).toBe('Notes');
   });
 
-  it('tones a library that names a tone', () => {
-    expect(libraries.toneOf('ui')).toEqual({ ref: 'swatch-red' });
-    expect(libraries.toneOf('labkit')).toBeUndefined();
-    expect(libraries.toneOf('Notes')).toBeUndefined();
+  it('tints a library that names a tint', () => {
+    expect(libraries.tintOf('ui')).toEqual({ ref: 'swatch-red' });
+    expect(libraries.tintOf('labkit')).toBeUndefined();
+    expect(libraries.tintOf('Notes')).toBeUndefined();
   });
 
   it('knows no library of its own: a project with a packages/ui is not labeled as weasel-ui', () => {

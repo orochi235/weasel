@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useId } from 'react';
-import { useStance } from '../stance';
+import { useAppearance } from '../appearance';
 import s from './MotifFrame.module.css';
 import { divider } from './motifs/divider';
 import { rule } from './motifs/rule';
@@ -25,11 +25,11 @@ export function DefaultMotif({ children, ...kinds }: DefaultMotifProps) {
 /**
  * A titled frame around anything, drawn in a motif: `rule` (a title between
  * two rules, the default), `stereo` (a label bar along one edge), `notch` (the
- * title cut into the border), `tab`, `plaque` (the tone fills the frame) or
+ * title cut into the border), `tab`, `plaque` (the tint fills the frame) or
  * `titlebar` (a strip across the top), or `divider` (a title and a rule, a
  * subpanel's look). A `<DefaultMotif>` above changes the default for each `kind`.
  *
- * Every motif colors itself from the same `stance` and `tone`, so a theme that
+ * Every motif colors itself from the same appearance props, so a theme that
  * recolors one recolors all of them. The root is a `group` named by its title.
  */
 export function MotifFrame({
@@ -43,16 +43,18 @@ export function MotifFrame({
   children,
   className,
   stance,
-  tone,
+  grade,
+  emphasis,
+  tint,
   onContextMenu,
 }: MotifFrameProps) {
   const titleId = useId();
-  const stanced = useStance({ stance, tone });
+  const appearance = useAppearance({ stance, grade, emphasis, tint });
   const inherited = useContext(MotifContext);
   if (hidden) return null;
   const chosen = motif ?? inherited[kind];
   const root: RootProps = {
-    ...stanced,
+    ...appearance,
     className: [s.frame, className].filter(Boolean).join(' '),
     role: 'group',
     'aria-labelledby': titleId,
