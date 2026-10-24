@@ -110,6 +110,16 @@ export interface SpecsFromSerializedOptions<TData, TLayer extends string, TPose>
    *  function, for a save that outlived the code that registered it.
    *  Default `'throw'`. */
   unknownKeys?: 'throw' | 'skip';
+  /** Hears each key `unknownKeys: 'skip'` leaves out, as it is left out. */
+  onSkip?: (skipped: SkippedKey) => void;
+}
+
+/** A registry key a load left out: the node, the function field it named,
+ *  and the key. */
+export interface SkippedKey {
+  id: NodeId;
+  field: keyof SceneRegistry<unknown>;
+  key: string;
 }
 
 /** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
@@ -145,7 +155,6 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
     if (n.locked === true) spec.locked = true;
     if (n.units !== undefined) spec.units = n.units;
     if (n.clip !== undefined) spec.clip = n.clip;
-    else if (clipsAsV1(json.version, n)) spec.clip = 'outline';
     if (n.dependsOn !== undefined) {
       spec.dependsOn = n.dependsOn === 'children'
         ? 'children'
@@ -156,7 +165,10 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
       const key = serialized[field.jsonKey];
       if (key === undefined) continue;
       const fn = (registry[field.field] as Record<string, unknown> | undefined)?.[key];
-      if (!fn && opts.unknownKeys === 'skip') continue;
+      if (!fn && opts.unknownKeys === 'skip') {
+        opts.onSkip?.({ id: spec.id!, field: field.field, key });
+        continue;
+      }
       if (!fn) {
         throw new Error(
           `Scene: unknown ${field.field} key '${key}'. ` +
@@ -165,14 +177,16 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
       }
       (spec as unknown as Record<string, unknown>)[field.field] = fn;
     }
+    if (clipsAsV1(json.version, n as { kind?: string }, spec)) spec.clip = 'outline';
     return spec;
   });
 }
 
-/** A version 1 container with no clip function clipped its children to its
- *  outline, which a node now does only when it declares it. */
-function clipsAsV1(version: 1 | 2, n: { kind?: string; clipFromPoseKey?: string }): boolean {
-  return version === 1 && n.kind === 'container' && n.clipFromPoseKey === undefined;
+/** Version 1 clipped a container with no clip function to its painter's
+ *  silhouette, the rect fallback excepted, which is what `clip: 'outline'`
+ *  draws. One whose clip key was skipped loads as it would have without it. */
+function clipsAsV1(version: 1 | 2, n: { kind?: string }, spec: { clipFromPose?: unknown }): boolean {
+  return version === 1 && n.kind === 'container' && spec.clipFromPose === undefined;
 }
 
 /** The kind a saved node loads as: its own on version 2; on version 1 a `leaf` is a

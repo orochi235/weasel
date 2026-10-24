@@ -16,8 +16,10 @@ import type { UseSceneOptions } from './useSceneOptions';
 import type { SceneDocValues } from './docValues';
 import type { SceneEditPasses } from './editPass';
 import type { SceneArrivalHandler } from './arrivalTypes';
+import type { RegisteredOp } from './registeredOp';
+import type { SpecsFromSerializedOptions } from './serialization';
 import type { RectPose } from '../geometry/rectPose';
-export type { RectPose, SceneArrivalHandler, UseSceneOptions };
+export type { RectPose, RegisteredOp, SceneArrivalHandler, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1 };
@@ -198,20 +200,6 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   layout?: LayoutStrategy<TPose>;
   /** Mirrors `SceneNode.units`. */
   units?: UnitScope;
-}
-
-/** A custom scene mutation registered with `Scene.registerOp`: how to apply
- *  it and how to undo it. The pair is what makes it participate in history. */
-export interface RegisteredOp<P> {
-  apply: (payload: P) => void;
-  revert: (payload: P) => void;
-  /** Opts this kind into coalescing under `UseSceneOptions.coalesceWindowMs`:
-   *  two entries of this kind that return the same key inside the window
-   *  merge, and undoing the merged entry calls `revert` with the first
-   *  payload only. Declare it only when `revert` restores an absolute state
-   *  (a stored "from" value), never for a relative payload such as a delta.
-   *  Omitted, or returning `undefined`, the op is always its own entry. */
-  coalesceKey?: (payload: P) => string | undefined;
 }
 
 /** Per-scene registry mapping string keys to live function references.
@@ -535,7 +523,10 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  undo — which would revert to a state this replaces. Throws on an unsupported version or unknown registry/layer ids; on a
    *  malformed snapshot the scene is left empty or partially populated (callers should treat a
    *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
-   *  always well-formed. */
-  loadState(json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>): void;
+   *  always well-formed. `opts` reads the snapshot as `specsFromSerialized` does. */
+  loadState(
+    json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
+    opts?: SpecsFromSerializedOptions<TData, TLayer, TPose>,
+  ): void;
 
 }

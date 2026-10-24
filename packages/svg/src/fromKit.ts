@@ -7,6 +7,7 @@
  */
 import {
   fillInPoseFrame,
+  clipOutline,
   pathInPoseFrame,
   pathThroughPoseFrame,
   poseFrameOf,
@@ -15,6 +16,7 @@ import {
   resolveStroke,
   type Paint,
   type ImageNodeData,
+  type NodeClip,
   type Path,
   type PoseLinear,
   type Stroke,
@@ -203,11 +205,11 @@ export interface SvgKitTreeNode {
   /** The kit's `SceneNode.hidden`: written with `display="none"`, which
    *  `parseSvg(…, { keepHidden: true })` reads back as `hidden`. */
   hidden?: boolean;
-  /** The kit's `SceneNode.clip`: `'outline'` writes a group's `data.path` as
-   *  its clip. */
-  clip?: string;
-  /** A container's copies, as the kit's `GroupNode.copiesFromPose`
-   *  draws them: each is written as a transformed group of its children. */
+  /** The kit's `SceneNode.clip`: `'outline'` writes the node's children
+   *  clipped to its outline, as core's `clipOutline` reads it. */
+  clip?: NodeClip;
+  /** The node's copies, as the kit's `SceneNode.copiesFromPose` draws them:
+   *  each is written as a transformed group of its children. */
   copiesFromPose?(pose: SvgKitPose, node: never): readonly Matrix[] | null;
 }
 
@@ -272,7 +274,7 @@ export function svgNodesFromKit<TId extends string>(
       }
       return children;
     };
-    const clip = node.clip === 'outline' ? outlineOf(own, self, node.pose) : undefined;
+    const clip = node.clip === 'outline' ? clipOutline(node as never, node.pose) ?? undefined : undefined;
     const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
     const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
     const paint = groupPaintFromKit(own, below, node.pose);
@@ -321,13 +323,6 @@ function groupPaintFromKit(own: SvgKitLeafData | null, below: UpPaint, pose: Svg
   const strokes = own?.stroke === INHERIT && carries(below.stroke);
   if (fill || strokes) out.inherits = { ...(fill ? { fill: true } : {}), ...(strokes ? { stroke: true } : {}) };
   return out;
-}
-
-/** What a node declaring `clip: 'outline'` clips its children to: its
- *  `data.path` in its pose, or else the unturned path its own element is. */
-function outlineOf(own: SvgKitLeafData | null, self: SvgNode | null, pose: SvgKitPose): Path | undefined {
-  if (own?.path) return pathThroughPoseFrame(pathInPoseFrame(own.path, pose), pose);
-  return self?.kind === 'path' && !self.rotation ? self.path : undefined;
 }
 
 /** `data` with its `'inherit'` fields replaced by what they resolve to. */

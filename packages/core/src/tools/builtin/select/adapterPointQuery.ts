@@ -38,9 +38,9 @@ export function adapterPointQuery<TPose>(
           node as Node<unknown, string, TPose>, pose, px, py, { tolerance: t, derivedPath: derived, inherited },
         );
       }
-      // A group's own clip *is* its hit shape — it is picked where it
-      // paints, and it paints only inside its clip. Ancestor clips are the
-      // walk's business; this one is not.
+      // A group paints nothing and is hit across its box, within its own clip
+      // when it declares one, since only what shows there is its. Ancestor
+      // clips are the walk's business.
       const inAabb = px >= b.x && px <= b.x + b.width
         && py >= b.y && py <= b.y + b.height;
       if (!inAabb) return false;

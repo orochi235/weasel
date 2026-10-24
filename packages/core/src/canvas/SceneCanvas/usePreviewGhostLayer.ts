@@ -90,15 +90,19 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
           : ({ ...entry.node, data: entry.data } as typeof entry.node);
         const plane = mapOf(entry.node.layer);
         const self = drawOne(effNode, entry.pose, viewOf(entry.node.layer));
-        const children: DrawCommand[] = [...wrapWithPoseRotation(self, entry.pose as unknown)];
+        const kids: DrawCommand[] = [];
         for (const child of entry.children) {
-          for (const cmd of drawEntry(child, plane)) children.push(cmd);
+          for (const cmd of drawEntry(child, plane)) kids.push(cmd);
         }
+        // The node's clip is its children's, not its own paint's.
+        const clip = kids.length > 0
+          ? ownClipOf(effNode, entry.pose, () => slot.derivedPathOf?.(effNode, entry.pose)) : null;
+        const children: DrawCommand[] = [
+          ...wrapWithPoseRotation(self, entry.pose as unknown),
+          ...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids),
+        ];
         const transform = planeTransform(plane, parentPlane);
-        const group: GroupDrawCommand = transform ? { kind: 'group', transform, children } : { kind: 'group', children };
-        const clip = ownClipOf(effNode, entry.pose, () => slot.derivedPathOf?.(effNode, entry.pose));
-        if (clip) group.clip = clip;
-        return [group];
+        return [transform ? { kind: 'group', transform, children } : { kind: 'group', children }];
       };
 
       // Opaque is honored at subtree-root granularity, as it always was: a

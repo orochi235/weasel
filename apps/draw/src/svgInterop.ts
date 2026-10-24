@@ -10,7 +10,7 @@
  * effect on its group (`svgEffects.ts`).
  */
 
-import type { Fill, TextStyle } from '@weasel-js/core';
+import type { Fill, NodeClip, TextStyle } from '@weasel-js/core';
 import { resolveFill, resolveStroke } from '@weasel-js/core';
 import {
   svgImageFromKit,
@@ -219,8 +219,8 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  */
 export type SceneDraft =
   | { kind: 'mark'; id: string; parentId: string | null; obj: Obj; hidden?: true }
-  | { kind: 'group'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: 'outline'; hidden?: true }
-  | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: 'outline'; hidden?: true } & EffectAttrs);
+  | { kind: 'group'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
+  | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true } & EffectAttrs);
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`

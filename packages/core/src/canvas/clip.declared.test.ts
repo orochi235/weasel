@@ -3,10 +3,11 @@ import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene, sceneFromJSON } from 'core/scene/scene';
 import { CLIP_NOTHING, clipNothing } from 'core/scene/clipNothing';
-import { asNodeId, type NodeId } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import type { RectPose } from 'core/scene/composePose';
 import type { View } from 'core/viewport/view';
 import { buildSceneTree } from './buildSceneTree';
+import { overChildren } from './overChildren';
 import { pickWalk, scenePickSource } from './pickWalk';
 import { sceneToAdapter } from './sceneAdapter';
 
@@ -15,6 +16,7 @@ const BOX: RectPose = { x: 0, y: 0, width: 10, height: 10 };
 const FAR: RectPose = { x: 50, y: 50, width: 10, height: 10 };
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const OUTLINE: Path = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+const FAR_OUTLINE: Path = { kind: 'rect', x: 50, y: 50, width: 10, height: 10 };
 
 type Group = { kind: 'group'; clip?: Path; children: DrawCommand[] };
 
@@ -59,6 +61,26 @@ describe('a node clips its children only when it declares a clip', () => {
     expect(pickAt(scene, 55, 55)).toEqual([]);
   });
 
+  it('leaves the own paint of a clipping mark, stroke and all, outside its clip', () => {
+    const scene = sceneOf({ kind: 'mark', clip: 'outline' });
+    const draw = (): DrawCommand[] => [{ kind: 'path', path: OUTLINE, stroke: { paint: { color: '#000' }, width: 4 } }];
+    const [layer] = buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW) as Group[];
+    const [own, kid] = layer!.children as Group[];
+    expect(own!.clip).toBeUndefined();
+    expect(own!.children).toEqual([{ kind: 'path', path: OUTLINE, stroke: { paint: { color: '#000' }, width: 4 } }]);
+    expect(kid!.clip).toBeDefined();
+  });
+
+  it('leaves what a clipping mark paints over its children outside its clip too', () => {
+    const scene = sceneOf({ kind: 'mark', clip: 'outline' });
+    const label: DrawCommand = { kind: 'path', path: FAR_OUTLINE, fill: { paint: { color: '#f00' } } };
+    const draw = (n: { id: string }): DrawCommand[] => (n.id === 'p' ? [overChildren([label])] : []);
+    const [layer] = buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW) as Group[];
+    const over = layer!.children.at(-1) as Group;
+    expect(over.clip).toBeUndefined();
+    expect(over.children).toEqual([label]);
+  });
+
   it('round-trips the declared clip through a snapshot', () => {
     const json = sceneOf({ kind: 'group', clip: 'outline' }).toJSON();
     expect(json.nodes.find((n) => n.id === 'p')).toMatchObject({ clip: 'outline' });
@@ -74,27 +96,61 @@ describe('a node clips its children only when it declares a clip', () => {
   });
 });
 
-describe('a version 1 save', () => {
+describe('a version 1 save draws as version 1 drew it', () => {
   const v1 = (nodes: object[]) => ({ version: 1 as const, systemLayers: [{ id: 'main' }], nodes });
-  const node = (id: string, kind: 'leaf' | 'container', extra: object = {}) => (
-    { id, kind, layer: 'main', pose: BOX, data: {}, ...extra }
-  );
+  const OUTLINED = { path: OUTLINE, fill: null };
+  /** A container `c` holding a leaf beside it, as version 1 saved one. */
+  const saved = (data: object, extra: object = {}) => v1([
+    { id: 'p', kind: 'container', layer: 'main', pose: BOX, data, ...extra },
+    { id: 'kid', kind: 'leaf', layer: 'main', pose: FAR, data: { path: OUTLINE }, parent: 'p' },
+  ]) as never;
 
-  it('loads a container without a clip key as clipping to its outline, as version 1 drew it', () => {
-    const scene = sceneFromJSON(v1([node('c', 'container'), node('l', 'leaf', { parent: 'c' })]) as never);
-    expect(scene.get(asNodeId('c'))?.clip).toBe('outline');
-    expect(scene.get(asNodeId('l'))?.clip).toBeUndefined();
+  it('clips a container\'s children to the outline its painter draws', () => {
+    const clip = childClip(sceneFromJSON(saved(OUTLINED)) as never);
+    expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
   });
 
-  it('keeps that clip when a classifier makes the container a mark', () => {
-    const scene = sceneFromJSON(v1([node('c', 'container')]) as never, { classifyV1: () => 'mark' });
-    expect(scene.get(asNodeId('c'))).toMatchObject({ kind: 'mark', clip: 'outline' });
+  it.each(['group', 'mark'] as const)('leaves them unclipped under a container no painter but the box fallback claims, loaded as a %s', (kind) => {
+    expect(childClip(sceneFromJSON(saved({}), { classifyV1: () => kind }) as never)).toBeUndefined();
   });
 
-  it('loads a container naming `clipNothing` with that function and no declared clip', () => {
-    const scene = sceneFromJSON(v1([node('c', 'container', { clipFromPoseKey: CLIP_NOTHING })]) as never);
-    const c = scene.get(asNodeId('c' as NodeId));
-    expect(c?.clipFromPose).toBe(clipNothing);
-    expect(c?.clip).toBeUndefined();
+  it('clips to the painter\'s outline under a container a classifier makes a mark', () => {
+    const clip = childClip(sceneFromJSON(saved(OUTLINED), { classifyV1: () => 'mark' }) as never);
+    expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+  });
+
+  it('loads a container naming `clipNothing` with that function, clipping nothing', () => {
+    const scene = sceneFromJSON(saved(OUTLINED, { clipFromPoseKey: CLIP_NOTHING }));
+    expect(scene.get(asNodeId('p'))?.clipFromPose).toBe(clipNothing);
+    expect(childClip(scene as never)).toBeUndefined();
+  });
+
+  it('reports a clip key it skips, and clips as version 1 did without one', () => {
+    const skipped: unknown[] = [];
+    const scene = sceneFromJSON(saved(OUTLINED, { clipFromPoseKey: 'gone' }), {
+      unknownKeys: 'skip', onSkip: (s) => skipped.push(s),
+    });
+    expect(skipped).toEqual([{ id: 'p', field: 'clipFromPose', key: 'gone' }]);
+    const clip = childClip(scene as never);
+    expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+  });
+});
+
+describe('loading with unknown registry keys', () => {
+  const v2 = {
+    version: 2 as const, systemLayers: [{ id: 'main' }],
+    nodes: [{ id: 'g', kind: 'group' as const, layer: 'main', pose: BOX, data: {}, layoutKey: 'gone' }],
+  };
+
+  it('throws by default', () => {
+    expect(() => sceneFromJSON(v2 as never)).toThrow(/unknown layout key 'gone'/);
+  });
+
+  it('skips and reports one in loadState when asked', () => {
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const skipped: unknown[] = [];
+    scene.loadState(v2 as never, { unknownKeys: 'skip', onSkip: (s) => skipped.push(s) });
+    expect(scene.get(asNodeId('g'))?.layout).toBeUndefined();
+    expect(skipped).toEqual([{ id: 'g', field: 'layout', key: 'gone' }]);
   });
 });

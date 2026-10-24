@@ -5,7 +5,9 @@
 // encoding; loads read the tags back, and also the untagged shapes older saves
 // wrote, which is why the walk here is our own.
 
-import type { AddNodeSpec, SceneRegistry, SerializedScene, SerializedSceneV1, V1Classifier } from '@weasel-js/core';
+import type {
+  AddNodeSpec, SceneRegistry, SerializedScene, SerializedSceneV1, SpecsFromSerializedOptions,
+} from '@weasel-js/core';
 import { specsFromSerialized } from '@weasel-js/core';
 import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
 
@@ -56,15 +58,15 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
 /** Rebuild the full node list from a persisted scene snapshot, shaped for
  *  `useScene`'s `initial` option: core's `specsFromSerialized`, so every field
  *  a save writes comes back. A key `registry` lacks leaves the node without
- *  that function rather than failing the load. `revive` rewrites each node's
- *  data on the way in; the default revives typed arrays only. A version 1
- *  snapshot's containers are groups unless `classifyV1` says otherwise. */
+ *  that function rather than failing the load, unless `opts.unknownKeys` says
+ *  `'throw'`; `opts.onSkip` hears each. `revive` rewrites each node's data on
+ *  the way in; the default revives typed arrays only. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
   revive: <T>(node: T) => T = reviveTypedArrays,
-  opts: { classifyV1?: V1Classifier<TData, TLayer, TPose> } = {},
+  opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  return specsFromSerialized(json, registry, { ...opts, unknownKeys: 'skip' })
+  return specsFromSerialized(json, registry, { unknownKeys: 'skip', ...opts })
     .map((spec) => ({ ...spec, data: revive(spec.data) }));
 }

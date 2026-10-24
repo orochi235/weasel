@@ -21,14 +21,16 @@ describe('a reloaded snapshot keeps every field it saved', () => {
     expect(byId('mm')?.units).toEqual(MM);
   });
 
-  it('leaves a node as authored when the registry lacks a key it names', () => {
+  it('leaves a node as authored when the registry lacks a key it names, and reports the key', () => {
     const json: SerializedScene<unknown, 'main', typeof BOX> = {
       version: 2,
       systemLayers: [{ id: 'main' }],
       nodes: [{ id: 'g', kind: 'group', layer: 'main', pose: BOX, data: {}, copiesFromPoseKey: 'gone' }],
     };
-    const [g] = nodeSpecsFromSnapshot(json);
+    const skipped: unknown[] = [];
+    const [g] = nodeSpecsFromSnapshot(json, {}, undefined, { onSkip: (s) => skipped.push(s) });
     expect(g).toMatchObject({ id: asNodeId('g'), kind: 'group' });
     expect(g!.copiesFromPose).toBeUndefined();
+    expect(skipped).toEqual([{ id: 'g', field: 'copiesFromPose', key: 'gone' }]);
   });
 });

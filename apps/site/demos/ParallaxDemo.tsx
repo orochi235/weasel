@@ -87,9 +87,8 @@ const hill = (id: string, x: number, y: number, w: number, h: number, color: str
   return leaf(id, 'hills', { x, y, width: w, height: h }, polygonFromPoints([...top, { x: w, y: h }, { x: 0, y: h }]), color);
 };
 
-// A tree is a group of its foliage and trunk, clipped to its box; `fill: null`
-// keeps the rect fallback from painting that box. Foliage over the top
-// three quarters of the box, trunk centered below it.
+// A tree is a group of its foliage and trunk: foliage over the top three
+// quarters of the box, trunk centered below it.
 const TRUNK_COLOR = '#5a3a1f';
 const tree = (id: string, x: number, y: number, w: number, h: number) => {
   const fh = h * 0.75, tw = w * 0.25;

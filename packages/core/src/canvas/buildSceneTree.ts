@@ -128,10 +128,11 @@ export function buildSceneTree<
     }
 
     // Every node emits a wrapper group even with empty paint, keeping the per-node tree
-    // shape stable.
-    if (bucket) {
-      bucket.push(ownClips.length > 0 ? wrapInChain(self, ownClips, node.layer, carry) : { kind: 'group', children: self });
-    }
+    // shape stable. A node's own clip is its children's, so its own paint, over
+    // its children or under them, takes only the clips above it.
+    const wrap = (cmds: DrawCommand[]): DrawCommand => (ancestorClips.length > 0
+      ? wrapInChain(cmds, ancestorClips, node.layer, carry) : { kind: 'group', children: cmds });
+    if (bucket) bucket.push(wrap(self));
 
     // An envelope's children share its own parent's frame.
     const childFrame = definesFrame(node as never) ? pose : parentFrame;
@@ -147,9 +148,7 @@ export function buildSceneTree<
       for (const cid of children) visit(cid, chain, childFrame, true);
     }
 
-    if (bucket && over.length > 0) {
-      bucket.push(ownClips.length > 0 ? wrapInChain(over, ownClips, node.layer, carry) : { kind: 'group', children: over });
-    }
+    if (bucket && over.length > 0) bucket.push(wrap(over));
   }
 
   for (const rootId of adapter.getChildren(null)) visit(rootId, [], null, false);

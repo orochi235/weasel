@@ -30,4 +30,18 @@ describe('a recording baseline', () => {
     expect(replayed.get(asNodeId('tri'))!.data.path).toEqual(path);
     expect(setView).toHaveBeenCalledWith(view);
   });
+
+  it('loads a baseline naming a function this build lacks, as a reload does, and says so', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const replayed = newScene();
+    const scene = {
+      version: 2, systemLayers: [{ id: 'default' }],
+      nodes: [{ id: 'g', kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {}, layoutKey: 'gone' }],
+    };
+    baselineOf({ scene: replayed, view: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), setView: vi.fn() })
+      .restore({ version: 2, scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } } } as never);
+    expect(replayed.roots).toEqual([asNodeId('g')]);
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/"g".*layout.*"gone"/));
+    warn.mockRestore();
+  });
 });

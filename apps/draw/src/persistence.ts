@@ -1,7 +1,9 @@
 // WeaselDraw's persistence: the legacy-paint migration layered over the shared snapshot helpers.
 
 import { nodeSpecsFromSnapshot as sharedNodeSpecs, reviveTypedArrays } from '@editor/index';
-import type { AddNodeSpec, SceneRegistry, SerializedScene, SerializedSceneV1 } from '@weasel-js/core';
+import type {
+  AddNodeSpec, SceneRegistry, SerializedScene, SerializedSceneV1, SpecsFromSerializedOptions,
+} from '@weasel-js/core';
 import { solid } from '@weasel-js/core';
 
 
@@ -111,10 +113,19 @@ export function clipboardJsonReviver(key: string, value: unknown): unknown {
   return key === '' ? reviveSnapshot(value) : value;
 }
 
+/** How draw reads a saved scene, on reload and on a recording's replay alike:
+ *  a function key this build does not register is left out, and said. */
+export const DRAW_LOAD_OPTIONS = {
+  unknownKeys: 'skip',
+  onSkip: ({ id, field, key }) => {
+    console.warn(`WeaselDraw: node "${id}" names ${field} "${key}", which this build does not register; loaded without it`);
+  },
+} as const satisfies Pick<SpecsFromSerializedOptions<unknown, string, unknown>, 'unknownKeys' | 'onSkip'>;
+
 /** The shared `nodeSpecsFromSnapshot` with the legacy-paint migration applied to each node's data. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
   registry?: SceneRegistry<TPose, TData, TLayer>,
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  return sharedNodeSpecs(json, registry, reviveSnapshot);
+  return sharedNodeSpecs(json, registry, reviveSnapshot, DRAW_LOAD_OPTIONS);
 }

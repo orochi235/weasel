@@ -30,6 +30,7 @@ import {
   type Paint,
   type ImageNodeData,
   type IngestCtx,
+  type NodeClip,
   type Op,
   type Path,
   type Stroke,
@@ -53,7 +54,7 @@ const VIEWPORT_FIT = 0.9;
  * the clip's box rather than its children's.
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
-  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; clip?: 'outline'; hidden?: true }
+  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
   | { kind: 'mark'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData; hidden?: true };
 
 /** A leaf `SvgNode`: everything but a group. */

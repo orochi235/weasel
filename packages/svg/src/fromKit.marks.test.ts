@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { clipOutline } from '@weasel-js/core';
 import { translate, type Path } from '@weasel-js/geom';
 import { svgLeafFromKit, svgNodesFromKit, type SvgKitTree, type SvgKitTreeNode } from './fromKit';
 import { serializeSvg } from './serialize';
@@ -47,13 +48,20 @@ describe('svgNodesFromKit: a mark with children', () => {
     expect(inner.children.map((c) => c.kind)).toEqual(['text']);
   });
 
-  it('clips to the element a custom leaf writes for it when its data holds no path', () => {
-    const drawn: Path = { kind: 'rect', x: 1, y: 1, width: 8, height: 8 };
-    const nodes = { p: { kind: 'mark', data: { shape: 'diamond' }, pose: BOX, clip: 'outline' }, k: kid };
-    const [g] = svgNodesFromKit(tree(nodes, { p: ['k'] }), {
-      leaf: (id, node) => (id === 'p' ? { kind: 'path' as const, path: drawn, fill: { kind: 'none' as const } } : svgLeafFromKit(node.data as never, node.pose)),
+  it.each(['mark', 'group'] as const)('clips the children of a %s to the outline the canvas clips them to', (kind) => {
+    const node: SvgKitTreeNode = { kind, data: { shape: 'ellipse' }, pose: BOX, clip: 'outline' };
+    const out = svgNodesFromKit(tree({ p: node, k: kid }, { p: ['k'] })) as SvgGroupNode[];
+    const clipped = kind === 'group' ? out[0]! : out[0]!.children.at(-1) as SvgGroupNode;
+    expect(clipped.clip).toEqual(clipOutline(node as never, BOX));
+    expect(clipped.clip?.kind).not.toBe('rect');
+  });
+
+  it('clips nothing for a node no painter but the box fallback claims, as the canvas does', () => {
+    const node: SvgKitTreeNode = { kind: 'mark', data: {}, pose: BOX, clip: 'outline' };
+    const [g] = svgNodesFromKit(tree({ p: node, k: kid }, { p: ['k'] }), {
+      leaf: (id, n) => (id === 'p' ? { kind: 'path', path: square, fill: { kind: 'none' } } : svgLeafFromKit(n.data as never, n.pose)),
     }) as SvgGroupNode[];
-    expect((g.children[1] as SvgGroupNode).clip).toEqual(drawn);
+    expect(g.children.map((c) => (c as SvgGroupNode).clip)).toEqual([undefined, undefined]);
   });
 
   it('copies its children, not itself', () => {

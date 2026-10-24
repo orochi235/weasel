@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Op, SerializedScene } from '@weasel-js/core';
@@ -302,5 +302,19 @@ describe('persistence — a group reopens tracking its members', () => {
     reopened.setPose(a, { x: 100, y: 10, width: 20, height: 20 });
 
     expect(effectivePose(reopened, reopened.get(g)!)).toMatchObject({ x: 100, y: 10, width: 20, height: 20 });
+  });
+});
+
+describe('persistence — keys this build lacks', () => {
+  it('loads a node naming one without it, and says which', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const saved = {
+      version: 2, systemLayers: [{ id: 'default' }],
+      nodes: [{ id: 'g', kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {}, copiesFromPoseKey: 'gone' }],
+    } as unknown as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const [g] = nodeSpecsFromSnapshot(saved, DRAW_REGISTRY);
+    expect(g!.copiesFromPose).toBeUndefined();
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/"g".*copiesFromPose.*"gone"/));
+    warn.mockRestore();
   });
 });

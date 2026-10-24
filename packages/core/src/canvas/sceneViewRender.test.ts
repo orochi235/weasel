@@ -286,10 +286,8 @@ describe('buildSceneViewCommands — scene-tree fidelity', () => {
 
     const clips = clipsIn(buildSceneViewCommands(scene, identityView, nestedDrawOne));
 
-    // Container and child each carry the container's own clip.
-    expect(clips).toHaveLength(2);
-    expect(clips[0]).toEqual({ kind: 'rect', x: 100, y: 100, width: 200, height: 200 });
-    expect(clips[1]).toEqual(clips[0]);
+    // The child carries the container's clip; the container's own paint does not.
+    expect(clips).toEqual([{ kind: 'rect', x: 100, y: 100, width: 200, height: 200 }]);
   });
 
   it('leaves an unparented node unclipped', () => {
