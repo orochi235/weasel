@@ -35,10 +35,10 @@ describe('KeyDiagram', () => {
       <KeyDiagram
         layout={KEYBOARD_LAYOUTS.macos}
         held={new Set(['KeyW'])}
-        marks={{ KeyW: { caption: 'fwd', tone: 'red' }, KeyF: { dimmed: true } }}
+        marks={{ KeyW: { caption: 'fwd', tint: 'red' }, KeyF: { dimmed: true } }}
       />,
     );
-    expect(slot(container, 'KeyW')!.dataset).toMatchObject({ held: 'true', toned: 'true' });
+    expect(slot(container, 'KeyW')!.dataset).toMatchObject({ held: 'true', tinted: 'true' });
     expect(slot(container, 'KeyW')!.textContent).toBe('Wfwd');
     expect(slot(container, 'KeyF')!.dataset.dimmed).toBe('true');
     expect(slot(container, 'KeyS')!.dataset.held).toBeUndefined();

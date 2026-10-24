@@ -38,24 +38,24 @@ const LIFT = 'var(--wzl-swatch-teal)';
 const PITCH = 'var(--wzl-swatch-fuchsia)';
 
 const CAMERA: Readonly<Record<string, KeyMark>> = {
-  KeyQ: { caption: 'turn', tone: TURN },
-  KeyW: { caption: 'fwd', tone: MOVE },
-  KeyE: { caption: 'turn', tone: TURN },
-  KeyR: { caption: 'climb', tone: LIFT },
-  KeyA: { caption: 'left', tone: MOVE },
-  KeyS: { caption: 'back', tone: MOVE },
-  KeyD: { caption: 'right', tone: MOVE },
-  KeyF: { caption: 'sink', tone: LIFT },
+  KeyQ: { caption: 'turn', tint: TURN },
+  KeyW: { caption: 'fwd', tint: MOVE },
+  KeyE: { caption: 'turn', tint: TURN },
+  KeyR: { caption: 'climb', tint: LIFT },
+  KeyA: { caption: 'left', tint: MOVE },
+  KeyS: { caption: 'back', tint: MOVE },
+  KeyD: { caption: 'right', tint: MOVE },
+  KeyF: { caption: 'sink', tint: LIFT },
   KeyG: { caption: 'go to' },
   KeyZ: { caption: 'loupe' },
-  KeyX: { caption: 'wide', tone: ZOOM },
-  KeyC: { caption: 'close', tone: ZOOM },
+  KeyX: { caption: 'wide', tint: ZOOM },
+  KeyC: { caption: 'close', tint: ZOOM },
   ShiftLeft: { caption: 'fast' },
   AltLeft: { caption: 'slow', dimmed: true },
-  ArrowUp: { caption: 'pitch', tone: PITCH },
-  ArrowDown: { caption: 'pitch', tone: PITCH },
-  ArrowLeft: { caption: 'turn', tone: TURN },
-  ArrowRight: { caption: 'turn', tone: TURN },
+  ArrowUp: { caption: 'pitch', tint: PITCH },
+  ArrowDown: { caption: 'pitch', tint: PITCH },
+  ArrowLeft: { caption: 'turn', tint: TURN },
+  ArrowRight: { caption: 'turn', tint: TURN },
 };
 
 /** A camera's keys, marked by what they do and colored by the movement they

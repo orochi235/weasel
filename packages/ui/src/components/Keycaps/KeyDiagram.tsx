@@ -12,7 +12,7 @@ export interface KeyMark {
   /** Drawn under the key in place of the caption. */
   icon?: ReactNode;
   /** A CSS color the key is tinted with, so keys that share one read as one control wherever they sit. */
-  tone?: string;
+  tint?: string;
   /** Drawn faded, as a key that does nothing right now. */
   dimmed?: boolean;
 }
@@ -72,18 +72,18 @@ export function KeyDiagram({
     const mark = marks?.[key.code];
     const vars = {
       ...(place && { '--x': place.x, '--y': place.y, '--w': place.width }),
-      ...(mark?.tone && { '--tone': mark.tone }),
+      ...(mark?.tint && { '--tint': mark.tint }),
     } as CSSProperties;
     const under = mark?.icon ?? mark?.caption;
     return (
       <span
         key={key.code}
         className={s.slot}
-        // Places and tones are the caller's data, with no static home in the stylesheet.
+        // Places and tints are the caller's data, with no static home in the stylesheet.
         style={vars}
         data-code={key.code}
         data-held={held.has(key.code) || undefined}
-        data-toned={mark?.tone ? true : undefined}
+        data-tinted={mark?.tint ? true : undefined}
         data-dimmed={mark?.dimmed || undefined}
       >
         <KeyCap className={s.cap} label={key.label ?? keySpecFromCode(key.code, legendOpts).label} font={font} fixed={place !== undefined} />
