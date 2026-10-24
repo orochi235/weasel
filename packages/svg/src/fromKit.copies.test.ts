@@ -9,7 +9,7 @@ const pose = { x: 0, y: 0, width: 10, height: 10 };
 
 function treeWith(copies: readonly Affine[], clip?: Path): SvgKitTree {
   const nodes: Record<string, SvgKitTreeNode> = {
-    g: { kind: 'group', data: clip ? { path: clip } : {}, pose, copiesFromPose: () => copies },
+    g: { kind: 'group', data: clip ? { path: clip } : {}, ...(clip ? { clip: 'outline' } : {}), pose, copiesFromPose: () => copies },
     a: { kind: 'path', data: { path: square }, pose },
   };
   return { roots: ['g'], childrenOf: (id) => (id === 'g' ? ['a'] : []), get: (id) => nodes[id] };

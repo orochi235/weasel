@@ -1,5 +1,5 @@
 import type { UnitScope } from '@weasel-js/quantity';
-import type { SystemLayerSpec } from './types';
+import type { NodeClip, SystemLayerSpec } from './types';
 
 /** One layer as it appears in a snapshot. A snapshot written before layer
  *  kind was serialized carries neither field, and loads as a system layer —
@@ -58,6 +58,8 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   layoutKey?: string;
   /** Mirrors `SceneNode.units`. Omitted when the node declares none. */
   units?: UnitScope;
+  /** Mirrors `SceneNode.clip`. Omitted when the node declares none. */
+  clip?: NodeClip;
 }
 
 /** A node as version 1 saves wrote it: the kinds were `leaf` and `container`. */

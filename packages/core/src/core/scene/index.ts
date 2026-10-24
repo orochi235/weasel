@@ -22,6 +22,7 @@ export type {
   LayoutMove,
   MarkNode,
   Node,
+  NodeClip,
   NodeId,
   PoseOverride,
   PoseHold,

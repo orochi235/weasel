@@ -2,7 +2,6 @@
  * A body as scene nodes: one container carrying the trait, and one leaf per
  * row, row port label and perimeter port label that wants drawing.
  */
-import { clipNothing } from '@weasel-js/core/math';
 import { bodyTrait, labelSize, layoutBody, layoutRowPorts, measureBody, sizeToBody } from './body';
 import type { BodySpec, MeasureRowText, Row, RowBox, RowPortBox } from './body';
 import type { Bounds } from './outline';
@@ -19,9 +18,6 @@ export interface BodyNodeSpec<TData, TLayer extends string, TPose> {
   data: TData;
   id?: string;
   parent?: string;
-  /** Set on the container to {@link clipNothing}: a perimeter port label sits
-   *  outside the body, and a container clips its children to its outline. */
-  clipFromPose?: () => null;
   /** Set `false` on every leaf the builder emits: the innermost hit wins, so a
    *  row that answers a press is a body that cannot be dragged. */
   pickable?: boolean;
@@ -75,7 +71,6 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
     layer: opts.layer,
     pose,
     data: opts.body(trait, pose),
-    clipFromPose: clipNothing,
     ...(opts.id === undefined ? {} : { id: opts.id }),
   }];
 

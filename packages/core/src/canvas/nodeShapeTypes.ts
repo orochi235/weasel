@@ -74,8 +74,8 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  immutable and copy before appending — a painter is free to memoize its
    *  command list, and an in-place `push` would grow that list on every frame. */
   paint(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodePaintCtx): DrawCommand[];
-  /** Optional: the node's silhouette path from its pose. Used by clipping (when the
-   *  container has no explicit `clipFromPose`), by non-rect hit-testing, and by
+  /** Optional: the node's silhouette path from its pose. Used by clipping (a node's
+   *  `clip: 'outline'`), by non-rect hit-testing, and by
    *  lasso/area-select. Painters whose visual has no meaningful closed silhouette
    *  leave this undefined. */
   silhouette?(

@@ -92,6 +92,7 @@ export type {
   LayoutMove,
   MarkNode,
   Node as SceneNode,
+  NodeClip,
   NodeId,
   PoseFeed,
   PoseOverride,

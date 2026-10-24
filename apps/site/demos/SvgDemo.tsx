@@ -87,6 +87,7 @@ function sceneFromSvg(source: string) {
         pose: d.pose,
         data: d.data as SvgKitLeafData,
         ...(d.parentId ? { parent: d.parentId } : {}),
+        ...(d.kind === 'group' && d.clip ? { clip: d.clip } : {}),
       })),
     },
   };

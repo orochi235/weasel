@@ -1,7 +1,9 @@
 import type { UnitScope } from '@weasel-js/quantity';
+import type { NodeClip } from './types';
 
 interface Stated {
   kind?: 'mark' | 'group'; pickable?: boolean; hidden?: boolean; locked?: boolean; units?: UnitScope;
+  clip?: NodeClip;
 }
 
 /** The plain optional fields of a node or spec as a spread for `scene.add`:
@@ -12,4 +14,5 @@ export const statedFields = (n: Stated): Omit<Stated, 'kind'> => ({
   ...(n.hidden === true ? { hidden: true } : {}),
   ...(n.locked === true ? { locked: true } : {}),
   ...(n.units !== undefined ? { units: n.units } : {}),
+  ...(n.clip !== undefined ? { clip: n.clip } : {}),
 });

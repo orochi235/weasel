@@ -38,8 +38,9 @@ export const symmetryCopies: CopiesFromPoseFn<unknown> = (pose, node) =>
 
 /** The registry key a group's `copiesFromPose` is saved under. */
 export const SYMMETRY_COPIES_KEY = 'weasel-symmetry:copies';
-/** The registry key a group's `clipFromPose`, core's `clipNothing`, is saved
- *  under: a group draws its copies wherever they land. */
+/** The registry key symmetry groups once saved core's `clipNothing` under, as
+ *  their `clipFromPose`. A group declares no clip now, so draws its copies
+ *  wherever they land; the key stays registered so those saves still load. */
 export const SYMMETRY_CLIP_KEY = 'weasel-symmetry:no-clip';
 
 /**
@@ -71,7 +72,6 @@ export function symmetryGroupSpec<TLayer extends string>(
     layer: opts.layer,
     pose: poseAtCenter(opts.center),
     data: { symmetry: { ...DEFAULT_SYMMETRY, ...opts.symmetry } },
-    clipFromPose: clipNothing,
     copiesFromPose: symmetryCopies as CopiesFromPoseFn<SymmetryPose, SymmetryGroupData, TLayer>,
     ...(opts.id !== undefined ? { id: opts.id } : {}),
     ...(opts.parent !== undefined ? { parent: opts.parent } : {}),

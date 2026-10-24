@@ -203,6 +203,9 @@ export interface SvgKitTreeNode {
   /** The kit's `SceneNode.hidden`: written with `display="none"`, which
    *  `parseSvg(…, { keepHidden: true })` reads back as `hidden`. */
   hidden?: boolean;
+  /** The kit's `SceneNode.clip`: `'outline'` writes a group's `data.path` as
+   *  its clip. */
+  clip?: string;
   /** A container's copies, as the kit's `GroupNode.copiesFromPose`
    *  draws them: each is written as a transformed group of its children. */
   copiesFromPose?(pose: SvgKitPose, node: never): readonly Matrix[] | null;
@@ -263,8 +266,7 @@ export function svgNodesFromKit<TId extends string>(
         }
         return children;
       };
-      // What a container draws is what it clips to; see `SvgSceneDraft`.
-      const path = (node.data as SvgKitLeafData | null)?.path;
+      const path = node.clip === 'outline' ? own?.path : undefined;
       const clip = path ? pathThroughPoseFrame(pathInPoseFrame(path, node.pose), node.pose) : undefined;
       const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
       const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });

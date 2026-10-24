@@ -71,6 +71,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     if (n.hidden === true) out.hidden = true;
     if (n.locked === true) out.locked = true;
     if (n.units !== undefined) out.units = n.units;
+    if (n.clip !== undefined) out.clip = n.clip;
     Object.assign(
       out,
       fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
@@ -132,6 +133,8 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
     if (n.hidden === true) spec.hidden = true;
     if (n.locked === true) spec.locked = true;
     if (n.units !== undefined) spec.units = n.units;
+    if (n.clip !== undefined) spec.clip = n.clip;
+    else if (clipsAsV1(json.version, n)) spec.clip = 'outline';
     if (n.dependsOn !== undefined) {
       spec.dependsOn = n.dependsOn === 'children'
         ? 'children'
@@ -152,6 +155,12 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
     }
     return spec;
   });
+}
+
+/** A version 1 container with no clip function clipped its children to its
+ *  outline, which a node now does only when it declares it. */
+function clipsAsV1(version: 1 | 2, n: { kind?: string; clipFromPoseKey?: string }): boolean {
+  return version === 1 && n.kind === 'container' && n.clipFromPoseKey === undefined;
 }
 
 /** The kind a saved node loads as: its own on version 2; on version 1 a `leaf` is a

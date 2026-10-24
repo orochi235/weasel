@@ -56,7 +56,7 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
     if (draft.kind === 'effect' && !parents.has(draft.id)) continue;
     const node = draft.kind === 'mark'
       ? { kind: 'mark' as const, ...leafOfObj(draft.obj) }
-      : { kind: 'group' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
+      : { kind: 'group' as const, pose: draft.pose, data: draft.data as WeaselDrawData, ...(draft.clip ? { clip: draft.clip } : {}) };
     scene.add({ ...node, layer: 'default', ...at });
   }
 }

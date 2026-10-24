@@ -1,7 +1,6 @@
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
-import { findShapeSilhouette } from './NodeShape';
-import type { Node } from 'core/scene/types';
+import { ownClipOf, type ClipBearing } from './ownClip';
 import { mat3, type Affine, type Path } from '@weasel-js/geom';
 import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
@@ -117,31 +116,15 @@ export function buildSceneTree<
       bucket && (copied || !culled?.(node, pose, v)) ? drawOne(node, pose, v) : [],
     );
 
-    // Extend the clip chain with this node's own clip when it is a group or sets one.
     let ownClips = ancestorClips;
     let ownClip: ChainEntry | null = null;
-    const maybeContainer = node as {
-      kind?: string;
-      clipFromPose?: (pose: TPose) => unknown;
+    const maybeContainer = node as ClipBearing<TPose> & {
       copiesFromPose?: (pose: TPose, node: unknown) => readonly Affine[] | null;
     };
-    if (maybeContainer.kind === 'group' || typeof maybeContainer.clipFromPose === 'function') {
-      let clip: unknown;
-      if (typeof maybeContainer.clipFromPose === 'function') {
-        // Explicit per-node clip wins — no fallback to the painter silhouette.
-        clip = maybeContainer.clipFromPose(pose);
-      } else {
-        // No explicit clip → the painter silhouette for the container's shape kind.
-        clip = findShapeSilhouette(
-          node as unknown as Node<unknown, string, TPose>,
-          pose,
-          { derivedPath: derivedPathOf?.(node, pose) },
-        );
-      }
-      if (clip) {
-        ownClip = { path: clip as Path, layer: node.layer };
-        ownClips = [...ancestorClips, ownClip];
-      }
+    const clip = ownClipOf(maybeContainer, pose, () => derivedPathOf?.(node, pose));
+    if (clip) {
+      ownClip = { path: clip, layer: node.layer };
+      ownClips = [...ancestorClips, ownClip];
     }
 
     // Every node emits a wrapper group even with empty paint, keeping the per-node tree

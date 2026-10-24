@@ -1,6 +1,7 @@
 import { applyToPoint, boundsOfPath, meanScale, pathContainsPoint } from '@weasel-js/geom';
 import { shapeCoversPoint } from 'canvas/NodeShape';
-import { ownClipOf, type PickQuery } from 'canvas/pickWalk';
+import { ownClipOf } from 'canvas/ownClip';
+import type { PickQuery } from 'canvas/pickWalk';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Node } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
@@ -37,13 +38,13 @@ export function adapterPointQuery<TPose>(
           node as Node<unknown, string, TPose>, pose, px, py, { tolerance: t, derivedPath: derived, inherited },
         );
       }
-      // A container's own clip *is* its hit shape — it is picked where it
+      // A group's own clip *is* its hit shape — it is picked where it
       // paints, and it paints only inside its clip. Ancestor clips are the
       // walk's business; this one is not.
       const inAabb = px >= b.x && px <= b.x + b.width
         && py >= b.y && py <= b.y + b.height;
       if (!inAabb) return false;
-      const own = ownClipOf(node, pose, derived);
+      const own = ownClipOf(node, pose, () => derived);
       return own === null || pathContainsPoint(own, px, py);
     },
     clipAdmits: (clip) => pathContainsPoint(clip, px, py),

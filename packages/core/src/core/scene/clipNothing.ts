@@ -2,8 +2,8 @@
 export const CLIP_NOTHING = 'kit:clipNothing';
 
 /**
- * A container's `clipFromPose` that clips nothing, for a container whose
- * children may draw outside it. A container without one clips its children to
- * its painter's silhouette.
+ * A `clipFromPose` that clips nothing. A node no longer clips unless it
+ * declares a clip, so this is kept registered only so that saves naming it
+ * still load.
  */
 export const clipNothing = (): null => null;
