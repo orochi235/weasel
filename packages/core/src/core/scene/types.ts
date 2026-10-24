@@ -14,6 +14,7 @@ import type {
 } from './serializedTypes';
 import type { UseSceneOptions } from './useSceneOptions';
 import type { SceneDocValues } from './docValues';
+import type { SceneDeclaredFieldSetters } from './declaredFieldSetters';
 import type { SceneEditPasses } from './editPass';
 import type { SceneArrivalHandler } from './arrivalTypes';
 import type { RegisteredOp } from './registeredOp';
@@ -233,7 +234,7 @@ export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = s
  * default; `TLayer` is the union of layer names.
  */
 export interface Scene<TData, TLayer extends string, TPose = RectPose>
-  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses {
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
@@ -451,8 +452,6 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   batch<T>(label: string, fn: () => T, options?: import('./recorder').SceneBatchOptions): T;
   /** The layout group `id` declares, or `null` for a mark or a group with none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
-  /** Declare the unit scope of container `id`, or clear it with `null`. */
-  setUnits(id: NodeId, units: UnitScope | null): void;
   /** Run `fn` with every mutation applied but none recorded — for writes
    *  that are not edits, such as a simulation stepping poses each frame.
    *  Undo and redo move between recorded states and never restore an

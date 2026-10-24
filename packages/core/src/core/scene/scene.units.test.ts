@@ -58,6 +58,13 @@ describe('Scene — a container declares its unit scope', () => {
     expect(scene.historyEntries()).toHaveLength(2);
   });
 
+  it('setUnits records nothing for a scope equal to the one declared', () => {
+    const scene = sceneOf([spec('g', { kind: 'group', units: MM })]);
+    const entries = scene.historyEntries().length;
+    scene.setUnits(G, { system: { base: 'mm', units: { mm: 1, cm: 10 } }, scale: 1 / 25.4 });
+    expect(scene.historyEntries()).toHaveLength(entries);
+  });
+
   it('setUnits sets a scope on a mark', () => {
     const scene = sceneOf([spec('leaf')]);
     scene.setUnits(LEAF, MM);

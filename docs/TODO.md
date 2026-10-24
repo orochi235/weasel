@@ -508,9 +508,8 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A node's declared clip can be set only when it is added** (2026-10-23). `clip: 'outline'`
-  rides `scene.add`, snapshots and the clipboard, but the scene has no `setClip` beside `setUnits`,
-  so `reconcileSpecs` replaces a node whose `clip` changed, and no panel can switch it.
+- **(P3) No panel switches a node's declared clip** (2026-10-23). `scene.setClip` writes it as one
+  undo step; nothing in a property panel calls it.
 
 - **(P3) WeaselDraw's SVG round trip turns a mark with children into a group** (2026-10-23).
   `svgNodesFromKit` writes such a mark as a `<g>` of its own element and then its children, and

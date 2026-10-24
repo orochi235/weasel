@@ -4,6 +4,7 @@
  */
 import type { ArrivalWindow } from './arrivalWindow';
 import { createSceneDoc, type SceneDocValues } from './docValues';
+import { createDeclaredFieldSetters, type SceneDeclaredFieldSetters } from './declaredFieldSetters';
 import { createFieldEdits, type FieldEdits } from './fieldEdits';
 import { registerKitOps } from './kitOps';
 import { createNodeFlags } from './nodeFlags';
@@ -48,6 +49,7 @@ export interface SceneEdits<TData, TLayer extends string, TPose> {
     & FieldEdits<TData, TLayer, TPose>
     & LayerEdits<TData, TLayer, TPose>
     & ReturnType<typeof createNodeFlags<TData, TLayer, TPose>>
+    & SceneDeclaredFieldSetters
     & SceneDocValues;
 }
 
@@ -109,7 +111,14 @@ export function createSceneEdits<TData, TLayer extends string, TPose>(
     narrowSelection: () => env.narrowSelection(),
   });
 
+  const declaredEdits = createDeclaredFieldSetters<TData, TLayer, TPose>({
+    register: env.ops.register,
+    requireNode: store.requireNode,
+    refuse: locks.refuse,
+    record: recorder.record,
+  });
+
   const doc = createSceneDoc({ values: state.docValues, register: env.ops.register, record: recorder.record });
 
-  return { construct, methods: { ...treeEdits, ...fieldEdits, ...layerEdits, ...flagEdits, doc } };
+  return { construct, methods: { ...treeEdits, ...fieldEdits, ...layerEdits, ...flagEdits, ...declaredEdits, doc } };
 }

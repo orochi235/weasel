@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene, sceneFromJSON } from 'core/scene/scene';
+import { reconcileSpecs } from 'core/scene/reconcileSpecs';
 import { CLIP_NOTHING, clipNothing } from 'core/scene/clipNothing';
 import { asNodeId } from 'core/scene/types';
 import type { RectPose } from 'core/scene/composePose';
@@ -101,6 +102,52 @@ describe('a node clips its children only when it declares a clip', () => {
     scene.remove(asNodeId('p'));
     scene.undo();
     expect(scene.get(asNodeId('p'))?.clip).toBe('outline');
+  });
+});
+
+describe('scene.setClip', () => {
+  const P = asNodeId('p');
+
+  it.each(['mark', 'group'] as const)('declares a clip on a %s as one undo step, and null clears it', (kind) => {
+    const scene = sceneOf({ kind });
+    scene.setClip(P, 'outline');
+    expect(scene.get(P)?.clip).toBe('outline');
+    expect(childClip(scene)).toBeDefined();
+    scene.undo();
+    expect(scene.get(P)).not.toHaveProperty('clip');
+    expect(childClip(scene)).toBeUndefined();
+    scene.redo();
+    scene.setClip(P, null);
+    expect(scene.get(P)).not.toHaveProperty('clip');
+    expect(scene.historyEntries().map((e) => e.label).slice(-2)).toEqual(['setClip', 'setClip']);
+  });
+
+  it('records nothing when the clip is already the one asked for', () => {
+    const scene = sceneOf({ kind: 'group', clip: 'outline' });
+    const entries = scene.historyEntries().length;
+    scene.setClip(P, 'outline');
+    expect(scene.historyEntries()).toHaveLength(entries);
+  });
+
+  it('refuses a locked node', () => {
+    const scene = sceneOf({ kind: 'group' });
+    scene.setLocked(P, true);
+    expect(() => scene.setClip(P, 'outline')).toThrow(/locked/);
+  });
+
+  it('is what reconcileSpecs writes, keeping the node', () => {
+    const specs = (clip?: 'outline') => [
+      { id: P, kind: 'group' as const, layer: 'main' as const, pose: BOX, data: { path: OUTLINE }, ...(clip ? { clip } : {}) },
+      { id: asNodeId('kid'), kind: 'mark' as const, layer: 'main' as const, pose: FAR, data: { path: OUTLINE }, parent: P },
+    ];
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }], initial: specs() });
+    const before = scene.get(P);
+    reconcileSpecs(scene, specs(), specs('outline'));
+    expect(scene.get(P)).toBe(before);
+    expect(scene.get(P)?.clip).toBe('outline');
+    reconcileSpecs(scene, specs('outline'), specs());
+    expect(scene.get(P)).toBe(before);
+    expect(scene.get(P)).not.toHaveProperty('clip');
   });
 });
 

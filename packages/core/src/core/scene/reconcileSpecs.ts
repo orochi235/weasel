@@ -1,4 +1,4 @@
-import { isPlainObject } from '../isPlainObject';
+import { sameValue as same } from './sameValue';
 import type { AddNodeSpec, NodeId, Scene } from './types';
 
 /**
@@ -50,6 +50,7 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       if (!same(spec.data, before.data)) scene.update(id, { data: spec.data });
       if (!same(spec.dependsOn, before.dependsOn)) scene.setDependsOn(id, spec.dependsOn);
       if (!same(spec.units, before.units)) scene.setUnits(id, spec.units ?? null);
+      if (spec.clip !== before.clip) scene.setClip(id, spec.clip ?? null);
       if (!same(spec.pose, before.pose)) scene.setPose(id, spec.pose);
       if ((spec.hidden === true) !== (before.hidden === true)) scene.setHidden(id, spec.hidden === true);
       if (spec.locked === true && before.locked !== true) scene.setLocked(id, true);
@@ -76,23 +77,9 @@ function needsReplace<TData, TLayer extends string, TPose>(
 ): boolean {
   return a.kind !== b.kind
     || a.pickable !== b.pickable
-    || a.clip !== b.clip
     || a.derivePath !== b.derivePath
     || a.derivePose !== b.derivePose
     || a.clipFromPose !== b.clipFromPose
     || a.copiesFromPose !== b.copiesFromPose
     || a.layout !== b.layout;
-}
-
-/** Structural equality over plain objects and arrays; anything else by identity. */
-function same(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((v, i) => same(v, b[i]));
-  }
-  if (isPlainObject(a) && isPlainObject(b)) {
-    const ka = Object.keys(a);
-    return ka.length === Object.keys(b).length && ka.every((k) => k in b && same(a[k], b[k]));
-  }
-  return false;
 }

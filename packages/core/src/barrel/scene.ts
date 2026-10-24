@@ -127,6 +127,7 @@ export type {
   UseSceneOptions,
 } from '../core/scene';
 export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docValues';
+export type { SceneDeclaredFieldSetters } from '../core/scene/declaredFieldSetters';
 
 // ─── Reorder: ops ───────────────────────────────────────────────────────────
 export {
