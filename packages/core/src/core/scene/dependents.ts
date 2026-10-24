@@ -16,6 +16,10 @@ export function sceneDependentsOf<TData, TLayer extends string, TPose>(
   return scene.removalClosure([id]).filter((d) => d !== id && !scene.ancestorsOf(d).includes(id));
 }
 
+/** The ids `node` names in its `dependsOn`, in order: none for a node naming `'children'` or nothing. */
+export const sourcesOf = (node: { dependsOn?: unknown } | undefined): readonly NodeId[] =>
+  (Array.isArray(node?.dependsOn) ? node.dependsOn as readonly NodeId[] : NONE);
+
 /**
  * The nodes `node`'s geometry derives from: the ids it named, or its own
  * children when it named `'children'`.

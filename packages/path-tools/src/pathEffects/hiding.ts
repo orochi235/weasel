@@ -4,17 +4,13 @@
  * effects hide stays hidden until neither does. One hidden before any effect
  * hid it stays hidden.
  */
-import { createSetHiddenOp, type NodeId, type Op, type Scene, type SceneNode as Node, sourcesHiddenBy } from '@weasel-js/core';
+import { createSetHiddenOp, type NodeId, type Op, type Scene, sourcesHiddenBy } from '@weasel-js/core';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
-/** A node's sources, in order; empty for a node that reads none. */
-export const sourcesOf = (node: Node<unknown, string, unknown>): readonly NodeId[] =>
-  (Array.isArray(node.dependsOn) ? node.dependsOn : []);
-
 /** Whether an effect other than those `leaving` holds `source` hidden. */
 export function hiddenByOthers(scene: AnyScene, source: NodeId, leaving: ReadonlySet<NodeId> = new Set()): boolean {
-  return scene.removalClosure([source]).some((id) => !leaving.has(id) && sourcesHiddenBy(scene.get(id)).includes(source));
+  return scene.removalClosure([source]).some((id) => !leaving.has(id) && sourcesHiddenBy(scene, id).includes(source));
 }
 
 /** Whether `source` is hidden by something other than an effect, apart from those `leaving`. */

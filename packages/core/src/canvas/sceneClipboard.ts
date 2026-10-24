@@ -14,6 +14,7 @@ import type { ClipboardSnapshot, PasteCtx, PasteOmission } from 'core/adapters/t
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { hasChildren } from 'core/scene/treeShape';
+import { sourcesOf } from 'core/scene/dependents';
 import { definesFrame } from 'core/scene/effectivePose';
 import {
   NODE_FN_FIELDS, createNodeFnFields, fnFieldsOfNode, fnKeysOf, type FnBearingNode,
@@ -46,9 +47,6 @@ function copyField<T>(value: T): T {
 
 type Item<TData, TLayer extends string, TPose> =
   Node<TData, TLayer, TPose> & Record<string, unknown>;
-
-const dependencyList = (item: { dependsOn?: readonly NodeId[] | 'children' }): readonly NodeId[] =>
-  (Array.isArray(item.dependsOn) ? item.dependsOn : []);
 
 export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
   env: SceneClipboardEnv<TData, TLayer, TPose>,
@@ -147,7 +145,7 @@ function omissions<TData, TLayer extends string, TPose>(
     for (const item of src) {
       if (out.has(item.id)) continue;
       let omission: PasteOmission | undefined;
-      const deps = dependencyList(item);
+      const deps = sourcesOf(item);
       const missing = deps.filter((dep) => !present.has(dep));
       const fn = fns.get(item.id)!;
       if (item.parent !== null && out.has(item.parent)) {
@@ -242,8 +240,8 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
       : {}),
     ...(item.dependsOn === 'children'
       ? { dependsOn: 'children' as const }
-      : dependencyList(item).length > 0
-        ? { dependsOn: dependencyList(item).map((dep) => idMap.get(dep)!) }
+      : sourcesOf(item).length > 0
+        ? { dependsOn: sourcesOf(item).map((dep) => idMap.get(dep)!) }
         : {}),
     ...fns.get(item.id),
   } as Node<TData, TLayer, TPose>));

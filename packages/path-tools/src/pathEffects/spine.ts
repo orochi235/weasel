@@ -5,10 +5,9 @@
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  commitOps, createSetDependsOnOp, type NodeId, type Op, pathEffectOf, type Scene, type SceneNode as Node,
+  commitOps, createSetDependsOnOp, type NodeId, type Op, pathEffectOf, type Scene, type SceneNode as Node, sourcesOf,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP } from './actions';
-import { sourcesOf } from './hiding';
 import { closesLoop } from './retarget';
 
 type AnyScene = Scene<unknown, string, unknown>;

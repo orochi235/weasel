@@ -6,10 +6,10 @@
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
   commitOps, createSetDataOp, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, isTextData, type NodeId, type Op, pathEffectOf,
-  type PathEffect, type Scene, type SceneNode as Node, sourcesHiddenBy,
+  type PathEffect, type Scene, type SceneNode as Node, sourcesHiddenBy, sourcesOf,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
-import { hiddenByOthers, hiddenOnItsOwn, hiddenOps, sourcesOf } from './hiding';
+import { hiddenByOthers, hiddenOnItsOwn, hiddenOps } from './hiding';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -67,7 +67,7 @@ export const setEffectPathAction: Action & { requires: string[] } = {
       const record = pathEffectOf(effect)!;
       if (record.hideSources === true) {
         const self = new Set([effect.id]);
-        if (sourcesHiddenBy(effect).includes(old) && !hiddenByOthers(scene, old, self)) ops.push(...hiddenOps(scene, old, false, SET_LABEL));
+        if (sourcesHiddenBy(scene, effect.id).includes(old) && !hiddenByOthers(scene, old, self)) ops.push(...hiddenOps(scene, old, false, SET_LABEL));
         const found = (record.foundHidden ?? []).filter((at) => at !== 1);
         if (hiddenOnItsOwn(scene, path.id, self)) found.push(1);
         else ops.push(...hiddenOps(scene, path.id, true, SET_LABEL));
@@ -118,7 +118,7 @@ export const releasePathEffectAction: Action & { requires: string[] } = {
         for (const source of sourcesOf(effect)) {
           if (scene.get(source) === undefined) continue;
           sources.push(source);
-          if (sourcesHiddenBy(effect).includes(source) && !shown.has(source) && !hiddenByOthers(scene, source, leaving)) {
+          if (sourcesHiddenBy(scene, effect.id).includes(source) && !shown.has(source) && !hiddenByOthers(scene, source, leaving)) {
             shown.add(source);
             ops.push(...hiddenOps(scene, source, false, RELEASE_LABEL));
           }

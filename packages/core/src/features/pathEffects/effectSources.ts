@@ -4,6 +4,7 @@
  */
 import { isTextData } from '@weasel-js/text';
 import { pathEffectOf } from 'core/scene/pathEffects/derive';
+import { sourcesOf } from 'core/scene/dependents';
 import type { NodeId, Scene } from 'core/scene/types';
 
 /**
@@ -19,24 +20,27 @@ export function effectSourceFor<TData, TLayer extends string, TPose>(
 ): NodeId | null {
   const node = scene.get(id);
   const effect = pathEffectOf(node);
-  const sources = node?.dependsOn;
-  if (effect === null || effect.hideSources !== true || !Array.isArray(sources)) return null;
+  if (effect === null || effect.hideSources !== true) return null;
   const at = role === 'text' ? 0 : effect.kind === 'blend' ? 2 : 1;
-  const source = (sources as readonly NodeId[])[at];
+  const source = sourcesOf(node)[at];
   const found = source === undefined ? undefined : scene.get(source);
   if (found === undefined) return null;
   return role === 'text' && !isTextData(found.data) ? null : source!;
 }
 
 /**
- * The sources a path-effect node holds hidden: with `hideSources`, each of
+ * The sources path-effect node `id` holds hidden: with `hideSources`, each of
  * its sources but those it found hidden. Empty for any other node.
  */
-export function sourcesHiddenBy(node: { data?: unknown; dependsOn?: unknown } | undefined): NodeId[] {
+export function sourcesHiddenBy<TData, TLayer extends string, TPose>(
+  scene: Pick<Scene<TData, TLayer, TPose>, 'get'>,
+  id: NodeId,
+): NodeId[] {
+  const node = scene.get(id);
   const effect = pathEffectOf(node);
-  if (effect?.hideSources !== true || !Array.isArray(node?.dependsOn)) return [];
+  if (effect?.hideSources !== true) return [];
   const found = effect.foundHidden ?? [];
-  return (node.dependsOn as NodeId[]).filter((_, at) => !found.includes(at));
+  return sourcesOf(node).filter((_, at) => !found.includes(at));
 }
 
 /**
@@ -61,7 +65,7 @@ export function hiddenSourcesTakenWith<TData, TLayer extends string, TPose>(
   while (grew) {
     grew = false;
     for (const id of [...going]) {
-      for (const source of sourcesHiddenBy(scene.get(id))) {
+      for (const source of sourcesHiddenBy(scene, id)) {
         if (going.has(source) || keep.has(source) || scene.get(source)?.hidden !== true) continue;
         const closure = scene.removalClosure([source]);
         if (!closure.every((n) => going.has(n) || within(n, source))) continue;
