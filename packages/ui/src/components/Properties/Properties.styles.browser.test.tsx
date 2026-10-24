@@ -18,19 +18,21 @@ function mount(html: string): HTMLElement {
 
 test('a rule from every imported sheet reaches the class the module exports', () => {
   const root = mount(`
-    <div class="${s.panel}" data-part="panel">
+    <div class="${s.panel}" data-motif="sheet" data-part="panel">
       <div class="${s.list} ${s.listPairs}" data-part="list">
         <label class="${s.row} ${s.rowInline}" data-part="row"><span class="${s.rowLabel}" data-part="label">Gap</span></label>
         <label class="${s.row} ${s.rowColor}" data-part="color"></label>
         <label class="${s.row} ${s.rowAuto}"><span class="${s.readout}" data-part="auto">auto</span></label>
         <div class="${s.group}"><div class="${s.groupBody}" data-part="group"></div></div>
-        <section class="${s.subpanel}" data-part="subpanel"><div class="${s.subpanelBody}" data-part="subpanelBody"></div></section>
+        <section class="${s.subpanel}" data-motif="divider" data-part="subpanel"><div class="${s.subpanelBody}" data-part="subpanelBody"></div></section>
       </div>
     </div>`);
   const style = (part: string) => getComputedStyle(root.querySelector(`[data-part="${part}"]`)!);
   expect(style('panel').boxSizing).toBe('border-box'); // family.css
   expect(style('panel').userSelect).toBe('none'); // family.css
-  expect(style('panel').borderTopStyle).toBe('solid'); // PropertyPanel.css, through PropertyPanel.stance.css
+  // The box is the sheet motif's to draw; the panel's own sheets give it the slots it draws from.
+  expect(style('panel').getPropertyValue('--_s-border-style').trim()).toBe('solid'); // PropertyPanel.stance.css
+  expect(style('subpanel').getPropertyValue('--_s-title-case').trim()).not.toBe(''); // Subpanel.stance.css
   expect(style('list').display).toBe('grid'); // PropertyList.css
   expect(style('row').display).not.toBe('inline'); // PropertyRow.css
   expect(style('label').whiteSpace).not.toBe(''); // PropertyRow.inline.css

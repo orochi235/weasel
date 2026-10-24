@@ -14,7 +14,7 @@ export function notch(params: NotchParams = {}): Motif<NotchParams> {
   return {
     id: 'notch',
     params,
-    render({ heading: { title, titleId, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, twisty, leading, actions }, body, root }) {
       return (
         <fieldset {...withMotifClass(root, s.notch)}>
           <legend className={s.legend} data-align={align} data-actions={actions === undefined ? undefined : ''}>
@@ -23,6 +23,7 @@ export function notch(params: NotchParams = {}): Motif<NotchParams> {
             <span id={titleId} className={s.label}>
               {title}
             </span>
+            {inline}
             {actions === undefined ? null : (
               <>
                 <span className={s.run} aria-hidden="true" />
@@ -30,6 +31,7 @@ export function notch(params: NotchParams = {}): Motif<NotchParams> {
               </>
             )}
           </legend>
+          {note}
           {body}
         </fieldset>
       );

@@ -26,7 +26,7 @@ export function stereo(params: StereoParams = {}): Motif<StereoParams> {
   return {
     id: 'stereo',
     params,
-    render({ heading: { title, titleId, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, twisty, leading, actions }, body, root }) {
       return (
         <div {...withMotifClass(root, s.stereo)} data-side={side} data-invert={invert || undefined}>
           <div className={s.bar} data-align={labelAlign}>
@@ -35,9 +35,13 @@ export function stereo(params: StereoParams = {}): Motif<StereoParams> {
             <span id={titleId} className={s.label}>
               {title}
             </span>
+            {inline}
             {actions}
           </div>
-          <div className={s.body}>{body}</div>
+          <div className={s.body}>
+            {note}
+            {body}
+          </div>
         </div>
       );
     },

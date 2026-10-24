@@ -13,7 +13,7 @@ export function titlebar(): Motif<Record<string, never>> {
   return {
     id: 'titlebar',
     params: {},
-    render({ heading: { title, titleId, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, twisty, leading, actions }, body, root }) {
       return (
         <div {...withMotifClass(root, s.titlebar)}>
           <div className={s.strip}>
@@ -23,10 +23,14 @@ export function titlebar(): Motif<Record<string, never>> {
               <span id={titleId} className={s.label}>
                 {title}
               </span>
+              {inline}
             </span>
             {actions}
           </div>
-          <div className={s.body}>{body}</div>
+          <div className={s.body}>
+            {note}
+            {body}
+          </div>
         </div>
       );
     },

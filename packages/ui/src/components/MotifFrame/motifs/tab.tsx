@@ -14,7 +14,7 @@ export function tab(params: TabParams = {}): Motif<TabParams> {
   return {
     id: 'tab',
     params,
-    render({ heading: { title, titleId, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, twisty, leading, actions }, body, root }) {
       return (
         <div {...withMotifClass(root, s.tab)}>
           <div className={s.tabRow} data-align={align}>
@@ -24,10 +24,14 @@ export function tab(params: TabParams = {}): Motif<TabParams> {
               <span id={titleId} className={s.text}>
                 {title}
               </span>
+              {inline}
               {actions}
             </div>
           </div>
-          <div className={s.box}>{body}</div>
+          <div className={s.box}>
+            {note}
+            {body}
+          </div>
         </div>
       );
     },

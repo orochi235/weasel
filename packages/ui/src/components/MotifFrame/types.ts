@@ -7,6 +7,12 @@ export interface HeadingParts {
   title?: ReactNode;
   /** The id the title's own element carries; the frame is named by it. */
   titleId: string;
+  /** Drawn inside the heading after the title, and kept out of the frame's name: a control the title row owns. */
+  inline?: ReactNode;
+  /** Help text for the whole frame, drawn under its heading. */
+  note?: ReactNode;
+  /** The outline level of the heading, for a motif that draws a heading element. Each motif has its own default. */
+  level?: HeadingLevel;
   /** A control that folds the body away, from a caller that folds: `PropertyGroup`. */
   twisty?: ReactNode;
   /** Which end of the heading the twisty sits at, where the motif places it in a row. Defaults to `'start'`. */
@@ -17,14 +23,17 @@ export interface HeadingParts {
   actions?: ReactNode;
 }
 
+/** A heading's outline level, `h1` to `h6`. */
+export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
+
 /** `data-*` attributes a caller puts on the frame's root, for its own stylesheet to read. */
 export type FrameAttrs = { readonly [attr: `data-${string}`]: string | undefined };
 
 /** The attributes a motif spreads on the element it renders as the frame's root. */
 export interface RootProps extends FrameAttrs {
   className: string;
-  /** A titled frame is a group named by its title; an untitled one is neither. */
-  role?: 'group';
+  /** A titled frame is a group, or a region where it asks to be a landmark, named by its title; an untitled one is neither. */
+  role?: 'group' | 'region';
   'aria-labelledby'?: string;
   'data-motif': string;
   'data-stance'?: string;
@@ -66,6 +75,20 @@ export interface MotifFrameProps extends AppearanceProps {
   motif?: Motif;
   /** Which default motif the frame takes when given none. Defaults to `'group'`. */
   kind?: FrameKind;
+  /**
+   * The motif drawn when neither `motif` nor a `<DefaultMotif>` above names one for the kind: a
+   * component's own look, which an app's explicit default still overrides. The kind's built-in
+   * motif is drawn when this is absent too.
+   */
+  fallback?: Motif;
+  /** `'region'` makes a titled frame a landmark rather than a group. Defaults to `'group'`. */
+  role?: 'group' | 'region';
+  /** Drawn inside the heading after the title, and kept out of the frame's name. */
+  inline?: ReactNode;
+  /** Help text for the whole frame, drawn under its heading. */
+  note?: ReactNode;
+  /** The outline level of the heading, where the motif draws a heading element. */
+  level?: HeadingLevel;
   /** Before the title: a drag handle, an ordinal. */
   leading?: ReactNode;
   /** After the title: a summary of the frame's value, a remove button. */

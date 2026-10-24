@@ -9,3 +9,5 @@ A frame's kind owns its colors and title type, and the motif only its geometry: 
 `MotifFrame` takes an optional `title` (an untitled frame is not a named group), `twistyAt` to put the fold twisty at the end of the heading, and `attrs` for `data-*` attributes on its root.
 
 Breaking: the `panelTitle`, `panelHeader` and `panelActions` classes are gone, replaced by the `sheet` motif's own.
+
+A `MotifFrame` can now carry a component's own look as its `fallback`, drawn unless the caller or an explicit `<DefaultMotif>` names another. Its heading takes an `inline` control (drawn inside the heading, kept out of the frame's name), a `note` of help text under it, and a `level`. `role="region"` makes a titled frame a landmark instead of a group.

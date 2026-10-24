@@ -1,4 +1,4 @@
-import { withMotifClass } from '../root';
+import { headingTag, withMotifClass } from '../root';
 import type { Motif } from '../types';
 import s from './rule.module.css';
 
@@ -7,17 +7,19 @@ export function rule(): Motif<Record<string, never>> {
   return {
     id: 'rule',
     params: {},
-    render({ heading: { title, titleId, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, level, twisty, leading, actions }, body, root }) {
       // The heading is named by the title alone, not the twisty's label too.
+      const Heading = headingTag(level, 3);
       const titled = (
-        <h3 className={s.title} aria-labelledby={twisty === undefined ? undefined : titleId}>
+        <Heading className={s.title} aria-labelledby={twisty === undefined && inline === undefined ? undefined : titleId}>
           <hr />
           <span className={s.mid}>
             {twisty === undefined ? null : <span className={s.twisty}>{twisty}</span>}
             <span id={titleId}>{title}</span>
+            {inline}
           </span>
           <hr />
-        </h3>
+        </Heading>
       );
       return (
         <div {...withMotifClass(root, s.rule)}>
@@ -30,6 +32,7 @@ export function rule(): Motif<Record<string, never>> {
               {actions === undefined ? null : <span className={s.actions}>{actions}</span>}
             </div>
           )}
+          {note}
           {body}
         </div>
       );

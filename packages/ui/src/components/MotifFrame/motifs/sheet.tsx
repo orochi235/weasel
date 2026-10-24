@@ -1,4 +1,4 @@
-import { withMotifClass } from '../root';
+import { headingTag, withMotifClass } from '../root';
 import type { Motif } from '../types';
 import s from './sheet.module.css';
 
@@ -11,11 +11,13 @@ export function sheet(): Motif<Record<string, never>> {
   return {
     id: 'sheet',
     params: {},
-    render({ heading: { title, titleId, twisty, twistyAt, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body, root }) {
+      const Heading = headingTag(level, 2);
       const titled = title != null && (
-        <h2 id={titleId} className={s.title}>
-          {title}
-        </h2>
+        <Heading className={s.title} aria-labelledby={inline === undefined ? undefined : titleId}>
+          <span id={titleId}>{title}</span>
+          {inline}
+        </Heading>
       );
       const end = twistyAt === 'end';
       // Actions sit outside the heading, so they neither take its type nor join its accessible name.
@@ -34,6 +36,7 @@ export function sheet(): Motif<Record<string, never>> {
       return (
         <div {...withMotifClass(root, s.sheet)}>
           {head}
+          {note}
           {body}
         </div>
       );

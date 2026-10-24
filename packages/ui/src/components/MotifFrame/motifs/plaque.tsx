@@ -18,7 +18,7 @@ export function plaque(params: PlaqueParams = {}): Motif<PlaqueParams> {
   return {
     id: 'plaque',
     params,
-    render({ heading: { title, titleId, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, twisty, leading, actions }, body, root }) {
       const rooted = withMotifClass(root, s.plaque);
       const style =
         mix === undefined ? rooted.style : ({ ...rooted.style, '--wzl-plaque-mix': `${mix}%` } as CSSProperties);
@@ -31,8 +31,10 @@ export function plaque(params: PlaqueParams = {}): Motif<PlaqueParams> {
               <span id={titleId} className={s.label}>
                 {title}
               </span>
+              {inline}
               {actions}
             </div>
+            {note}
             {body}
           </div>
         </div>

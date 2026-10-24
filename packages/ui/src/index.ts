@@ -58,6 +58,7 @@ export {
   type FrameAttrs,
   type FrameKind,
   type FrameParts,
+  type HeadingLevel,
   type HeadingParts,
   type Motif,
   MotifFrame,
