@@ -10,7 +10,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   --badge-status-edge: var(--wzl-emphasis-fg, var(--wzl-border));
-  /* A tint or a stance's accent paints over the grade and emphasis. */
+  /* A tint, grade, or stance accent paints over emphasis. */
   --badge-edge: var(--_s-accent, var(--badge-status-edge));
   --badge-fill: var(--wzl-surface);
   --badge-fg: var(--badge-edge);
@@ -65,9 +65,6 @@
   color: var(--badge-fg, var(--wzl-fg-muted));
 }
 
-/* Edges double as text color in the outline/subtle variants, so they
-   must be foreground-legible — hence accent-fg, not the accent fill. */
-.badge[data-grade] { --badge-status-edge: var(--wzl-grade); }
 
 .badge[data-variant='outline'] {
   --badge-fill: var(--wzl-surface);

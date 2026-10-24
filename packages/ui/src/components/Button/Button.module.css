@@ -258,13 +258,12 @@
   line-height: inherit;
   text-align: start;
   overflow: visible;
-  /* A tint or a stance's accent paints over the grade and emphasis. */
+  /* A tint, grade, or stance accent paints over emphasis. */
   color: var(--_s-accent, var(--btn-link-fg));
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
 .variant_link { --btn-link-fg: var(--wzl-emphasis-fg, var(--wzl-accent-fg)); }
-.variant_link[data-grade] { --btn-link-fg: var(--wzl-grade); }
 
 .variant_link::before { display: none; }
 .variant_link .label { display: inline; }

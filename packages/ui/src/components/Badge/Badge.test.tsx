@@ -283,7 +283,8 @@ describe('Badge stylesheet', () => {
   it('paints a grade from its inherited --wzl-grade', () => {
     const { container } = render(<Badge grade="success">ok</Badge>);
     expect(container.firstElementChild?.getAttribute('data-grade')).toBe('success');
-    expect(css).toMatch(/\.badge\[data-grade\]\s*\{\s*--badge-status-edge: var\(--wzl-grade\);/);
+    expect(css).toMatch(/\.badge\[data-grade\]\s*\{\s*--_s-accent:\s*var\(--wzl-tint, var\(--wzl-grade\)\)/);
+    expect(css).not.toMatch(/--badge-status-edge:\s*var\(--wzl-grade\)/);
     expect(css).toMatch(/--badge-status-edge: var\(--wzl-emphasis-fg, var\(--wzl-border\)\);/);
   });
 

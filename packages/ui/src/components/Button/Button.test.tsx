@@ -167,7 +167,8 @@ describe('Button', () => {
 
     it('colors a link from emphasis and grade, falling back to the accent', () => {
       expect(css).toMatch(/\.variant_link\s*\{[^}]*--btn-link-fg:\s*var\(--wzl-emphasis-fg, var\(--wzl-accent-fg\)\)/);
-      expect(css).toMatch(/\.variant_link\[data-grade\]\s*\{\s*--btn-link-fg:\s*var\(--wzl-grade\)/);
+      expect(css).toMatch(/\.button\[data-grade\]\s*\{\s*--_s-accent:\s*var\(--wzl-tint, var\(--wzl-grade\)\)/);
+      expect(css).not.toMatch(/--btn-link-fg:\s*var\(--wzl-grade\)/);
     });
   });
 });

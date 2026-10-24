@@ -2,8 +2,8 @@ import { onCircle } from '../../icons/scripts/lib/base.mjs';
 
 // Badge statuses. info, warn and danger are state.mjs's `info`, `warning` and
 // `error`; these are the rest, drawn on the same r=7 ring so the set reads as
-// one family. accent, neutral and muted are roles, not alerts, so they carry
-// no mark: they are one ring at three weights of ink — solid, half, broken.
+// one family. accent and muted are emphases, not alerts, so they carry
+// no mark: they are one ring at two weights of ink — solid, broken.
 
 const RING = 7;
 const round2 = (v) => Math.round(v * 100) / 100;
@@ -38,8 +38,5 @@ const brokenRing = Array.from({ length: DASHES }, (_, i) => {
 export const STATUSES = {
   'status-success': `<circle cx="10" cy="10" r="${RING}"/><path d="${ringCheck}"/>`,
   'status-accent': `<circle cx="10" cy="10" r="${RING}" fill="currentColor"/>`,
-  'status-neutral': `
-    <path d="M10 ${10 - RING}A${RING} ${RING} 0 0 1 10 ${10 + RING}Z" fill="currentColor" stroke="none"/>
-    <circle cx="10" cy="10" r="${RING}"/>`,
   'status-muted': `<path d="${brokenRing}"/>`,
 };

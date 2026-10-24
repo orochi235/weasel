@@ -77,6 +77,7 @@ export const CHANNEL_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
   shape: 'ribbon',
   shapeParams: { left: 'flat', right: 'flat' },
   size: 'sm',
+  emphasis: 'low',
   variant: 'subtle',
 };
 
@@ -128,8 +129,8 @@ const bundleTokenSet: BadgeTokenSet = {
   id: 'bundle',
   label: 'Bundle id',
   description:
-    'The inspector\'s named tool sets, each `features={[\'draw\']}` plus a `defaultTools` list. Look grades from '
-    + 'low emphasis → info → high emphasis to reflect the minimal → standard → exhaustive progression.',
+    'The inspector\'s named tool sets, each `features={[\'draw\']}` plus a `defaultTools` list. Badges run '
+    + 'from low emphasis through the info grade to high emphasis, for the minimal → standard → exhaustive progression.',
   entries: (Object.entries(BUNDLE_BADGE_PROPS) as [keyof typeof BUNDLE_BADGE_PROPS, Omit<BadgeProps, 'children'>][])
     .map(([value, props]) => ({ value, props })),
 };

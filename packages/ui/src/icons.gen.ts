@@ -116,7 +116,6 @@ export type UiIconName =
   | 'modeAuto'
   | 'statusSuccess'
   | 'statusAccent'
-  | 'statusNeutral'
   | 'statusMuted'
   | 'variantSolid'
   | 'variantOutline'
@@ -487,7 +486,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
     "names": [
       "statusSuccess",
       "statusAccent",
-      "statusNeutral",
       "statusMuted"
     ]
   },
@@ -835,7 +833,6 @@ declare module '@weasel-js/icons' {
     'ui:modeAuto': true;
     'ui:statusSuccess': true;
     'ui:statusAccent': true;
-    'ui:statusNeutral': true;
     'ui:statusMuted': true;
     'ui:variantSolid': true;
     'ui:variantOutline': true;

@@ -139,10 +139,7 @@ export const Button = forwardRef(function Button(
         ref={ref}
         type={type}
         className={cls}
-        data-stance={appearance['data-stance']}
-        data-grade={appearance['data-grade']}
-        data-emphasis={appearance['data-emphasis']}
-        data-tint={appearance['data-tint']}
+        {...appearance}
         style={appearance.style || style ? { ...appearance.style, ...style } : undefined}
         disabled={disabled}
         aria-busy={loading ? true : undefined}

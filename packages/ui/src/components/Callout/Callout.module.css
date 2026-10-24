@@ -28,7 +28,7 @@
 }
 
 .popover {
-  --_s-surface: var(--wzl-surface);
+  --_s-surface: color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface));
   --_s-border-color: var(--wzl-accent-strong);
   --_s-border-style: solid;
   --_s-border-width: 1px;
@@ -45,7 +45,7 @@
 }
 
 .popover[data-stance='clarify'] {
-  --_s-surface: var(--wzl-stance-clarify-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-clarify-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-clarify-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-clarify-border-style, solid);
   --_s-border-width: var(--wzl-stance-clarify-border-width, 1px);
@@ -62,7 +62,7 @@
 }
 
 .popover[data-stance='aside'] {
-  --_s-surface: var(--wzl-stance-aside-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-aside-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-aside-border-style, solid);
   --_s-border-width: var(--wzl-stance-aside-border-width, 1px);
@@ -79,7 +79,7 @@
 }
 
 .popover[data-stance='advanced'] {
-  --_s-surface: var(--wzl-stance-advanced-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-advanced-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-advanced-border-style, solid);
   --_s-border-width: var(--wzl-stance-advanced-border-width, 1px);
@@ -96,7 +96,7 @@
 }
 
 .popover[data-stance='debug'] {
-  --_s-surface: var(--wzl-stance-debug-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-debug-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-debug-border-style, solid);
   --_s-border-width: var(--wzl-stance-debug-border-width, 1px);
@@ -113,7 +113,7 @@
 }
 
 .popover[data-stance='preview'] {
-  --_s-surface: var(--wzl-stance-preview-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-preview-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-preview-border-style, solid);
   --_s-border-width: var(--wzl-stance-preview-border-width, 1px);
@@ -130,7 +130,7 @@
 }
 
 .popover[data-stance='confirm'] {
-  --_s-surface: var(--wzl-stance-confirm-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-confirm-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-confirm-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-confirm-border-style, solid);
   --_s-border-width: var(--wzl-stance-confirm-border-width, 1px);
@@ -147,7 +147,7 @@
 }
 
 .popover[data-stance='cancel'] {
-  --_s-surface: var(--wzl-stance-cancel-surface, var(--wzl-surface));
+  --_s-surface: var(--wzl-stance-cancel-surface, color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface)));
   --_s-border-color: var(--wzl-stance-cancel-border-color, var(--wzl-accent-strong));
   --_s-border-style: var(--wzl-stance-cancel-border-style, solid);
   --_s-border-width: var(--wzl-stance-cancel-border-width, 1px);

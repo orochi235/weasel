@@ -22,13 +22,10 @@ export function lookProps(look: BadgeLook, tint?: string): Pick<AppearanceProps,
 
 /** The JSX attributes for {@link lookProps}, for a pasteable snippet. */
 export function lookAttrs(look: BadgeLook, tint?: string): string {
-  switch (look) {
-    case 'high': return 'emphasis="high"';
-    case 'low': return 'emphasis="low"';
-    case 'none': return '';
-    case 'tint': return `tint=${JSON.stringify(tint)}`;
-    default: return `grade="${look}"`;
-  }
+  return Object.entries(lookProps(look, tint))
+    .filter(([, value]) => value !== undefined)
+    .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
+    .join(' ');
 }
 
 /** The look that draws a badge's `grade` and `emphasis`, a grade first. */

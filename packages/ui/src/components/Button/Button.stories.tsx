@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
 import { Button, type ButtonBase, type ButtonVariant, type ButtonSize, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
 import { ToggleBar as KitToggleBar } from '@weasel-js/ui/components/ToggleBar';
-import { BADGE_EMPHASIS_ICONS, BADGE_GRADE_ICONS } from '@weasel-js/ui/components/Badge';
+import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
 
@@ -15,8 +15,8 @@ const meta: Meta<typeof Button> = {
     size: 'md',
   },
   argTypes: {
-    grade: { control: { type: 'inline-radio', icons: BADGE_GRADE_ICONS }, options: [undefined, ...GRADES] },
-    emphasis: { control: { type: 'inline-radio', icons: BADGE_EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
+    grade: { control: { type: 'inline-radio', icons: GRADE_ICONS }, options: [undefined, ...GRADES] },
+    emphasis: { control: { type: 'inline-radio', icons: EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
     variant: { control: { type: 'inline-radio', icons: BUTTON_VARIANT_ICONS }, options: ['solid', 'ghost', 'link'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
@@ -104,14 +104,14 @@ export const PeerTones: Story = {
       <p>
         {[0, 1, 2, 3].map((tint) => (
           <span key={tint}>
-            <Button stance="confirm" tint={tint}>{`Peer ${tint}`}</Button>{' '}
+            <Button stance="confirm" tint={tint}>{`Tint ${tint}`}</Button>{' '}
           </span>
         ))}
       </p>
       <p>
         {[0, 1, 2, 3].map((tint) => (
           <span key={tint}>
-            <Button variant="link" tint={tint}>{`peer ${tint}`}</Button>{' '}
+            <Button variant="link" tint={tint}>{`tint ${tint}`}</Button>{' '}
           </span>
         ))}
       </p>

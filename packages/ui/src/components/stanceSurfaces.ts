@@ -89,7 +89,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     fills: true,
     sinks: true,
     base: {
-      surface: 'var(--wzl-surface)',
+      surface: 'color-mix(in oklab, var(--wzl-accent) 8%, var(--wzl-surface))',
       // Also the arrow's stroke.
       'border-color': 'var(--wzl-accent-strong)',
       'border-style': 'solid',
@@ -164,7 +164,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     base: { accent: ACCENT_BASE },
   },
   {
-    // A tinted primary button takes the tint as its accent; a link, as its text color.
+    // A tinted confirm button takes the tint as its accent; a link, as its text color.
     id: 'button',
     file: 'packages/ui/src/components/Button/Button.module.css',
     selector: '.button',

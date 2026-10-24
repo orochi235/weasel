@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Code, CODE_VARIANT_ICONS } from '@weasel-js/ui/components/Code';
-import { BADGE_EMPHASIS_ICONS, BADGE_GRADE_ICONS } from '@weasel-js/ui/components/Badge';
+import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
 
@@ -9,8 +9,8 @@ const meta: Meta<typeof Code> = {
   component: Code,
   args: { children: 'editor.insert', variant: 'subtle' },
   argTypes: {
-    grade: { control: { type: 'inline-radio', icons: BADGE_GRADE_ICONS }, options: [undefined, ...GRADES] },
-    emphasis: { control: { type: 'inline-radio', icons: BADGE_EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
+    grade: { control: { type: 'inline-radio', icons: GRADE_ICONS }, options: [undefined, ...GRADES] },
+    emphasis: { control: { type: 'inline-radio', icons: EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
     variant: { control: { type: 'inline-radio', icons: CODE_VARIANT_ICONS }, options: ['subtle', 'plain'] },
     size: { control: 'inline-radio', options: [undefined, 'xs', 'sm', 'md'] },
   },
@@ -37,7 +37,7 @@ export const PeerTones: Story = {
     <p>
       {[0, 1, 2, 3, 4, 5].map((tint) => (
         <span key={tint}>
-          <Code tint={tint}>{`peer.${tint}`}</Code>{' '}
+          <Code tint={tint}>{`tint.${tint}`}</Code>{' '}
         </span>
       ))}
     </p>

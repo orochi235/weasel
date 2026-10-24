@@ -90,7 +90,7 @@ export function Callout(props: CalloutProps) {
     title,
     footer,
     stance,
-    grade = 'warn',
+    grade,
     emphasis,
     tint,
     modal = false,

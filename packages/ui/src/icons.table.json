@@ -563,11 +563,6 @@
       "group": "Badge status",
       "tags": []
     },
-    "statusNeutral": {
-      "body": "<path d=\"M10 3A7 7 0 0 1 10 17Z\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"10\" cy=\"10\" r=\"7\"/>",
-      "group": "Badge status",
-      "tags": []
-    },
     "statusMuted": {
       "body": "<path d=\"M11.44 3.15A7 7 0 0 0 8.56 3.15M4.79 5.33A7 7 0 0 0 3.35 7.82M3.35 12.18A7 7 0 0 0 4.79 14.67M8.56 16.85A7 7 0 0 0 11.44 16.85M15.21 14.67A7 7 0 0 0 16.65 12.18M16.65 7.82A7 7 0 0 0 15.21 5.33\"/>",
       "group": "Badge status",

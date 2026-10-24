@@ -10,6 +10,7 @@ describe('PrefKindBadge', () => {
     render(<PrefKindBadge kind="number" />);
     const badge = screen.getByText('number').closest('[data-variant]')!;
     expect(badge.hasAttribute('data-emphasis')).toBe(false);
+    expect((badge as HTMLElement).style.getPropertyValue('--wzl-tint')).toBe('var(--_kind)');
     expect(badge.classList.contains(s.number!)).toBe(true);
   });
 

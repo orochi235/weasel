@@ -218,7 +218,7 @@
     "longestFunction": 172
   },
   "packages/ui/src/components/Badge/Badge.tsx": {
-    "longestFunction": 202
+    "longestFunction": 142
   },
   "packages/ui/src/components/Badge/bases/RoundedRect.tsx": {
     "longestFunction": 150

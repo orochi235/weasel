@@ -134,12 +134,12 @@ describe('Callout', () => {
       </Callout>,
     );
     const popover = screen.getByRole('dialog').parentElement!;
-    expect(popover.dataset.grade).toBe('warn');
+    expect(popover.hasAttribute('data-grade')).toBe(false);
     expect(popover.style.getPropertyValue('--wzl-tint')).toBe('#224a63');
     expect(popover.style.position).not.toBe('');
   });
 
-  it('names its grade, `warn` unless told otherwise', () => {
+  it('names the grade it is given', () => {
     renderWithIcons(
       <Callout
         isOpen

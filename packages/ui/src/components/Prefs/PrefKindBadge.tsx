@@ -35,7 +35,7 @@ export function PrefKindBadge({ kind, size = 'xs', className }: PrefKindBadgePro
   return own === undefined ? (
     <Badge size={size} emphasis="low" variant="outline" className={className}>{kind}</Badge>
   ) : (
-    <Badge size={size} variant="subtle" className={[s.kind, own, className].filter(Boolean).join(' ')}>
+    <Badge size={size} tint={{ ref: '--_kind' }} variant="subtle" className={[own, className].filter(Boolean).join(' ')}>
       {kind}
     </Badge>
   );

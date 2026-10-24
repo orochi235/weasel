@@ -185,7 +185,7 @@ function RankedStage({ ranked }: { ranked: readonly RankedCandidate[] }) {
                 <td className={s.num}>{i + 1}</td>
                 <td><Code size="sm">{c.actionId}</Code></td>
                 <td>
-                  <Badge size="xs" variant="outline" {...(r.placedBy.step === 'first' ? { emphasis: 'low' as const } : { grade: 'warn' as const })}>
+                  <Badge size="xs" variant="outline" emphasis={r.placedBy.step === 'first' ? 'low' : undefined} grade={r.placedBy.step === 'first' ? undefined : 'warn'}>
                     {placedByLabel(r.placedBy)}
                   </Badge>
                 </td>

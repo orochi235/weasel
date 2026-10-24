@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Badge, BADGE_EMPHASIS_ICONS, BADGE_GRADE_ICONS, BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
+import { Badge, BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
+import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import st from './Badge.stories.module.css';
 import { ALL_SHAPES } from './shapes';
@@ -24,8 +25,8 @@ const meta: Meta<typeof Badge> = {
   argTypes: {
     children: { control: 'text', description: 'Badge label content' },
     shape: { control: 'select', options: ALL_SHAPES },
-    grade: { control: { type: 'inline-radio', icons: BADGE_GRADE_ICONS }, options: [undefined, ...GRADES] },
-    emphasis: { control: { type: 'inline-radio', icons: BADGE_EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
+    grade: { control: { type: 'inline-radio', icons: GRADE_ICONS }, options: [undefined, ...GRADES] },
+    emphasis: { control: { type: 'inline-radio', icons: EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
     variant: { control: { type: 'inline-radio', icons: BADGE_VARIANT_ICONS }, options: VARIANTS },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
     bloat: {
@@ -125,7 +126,7 @@ export const PeerTones: Story = {
           {[0, 1, 2, 3, 4, 5].map((tint) => (
             <span key={tint}>
               <Badge shape={args.shape as never} variant={variant} size={args.size} tint={tint}>
-                {`peer ${tint}`}
+                {`tint ${tint}`}
               </Badge>{' '}
             </span>
           ))}
