@@ -124,6 +124,7 @@ function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affi
       layer: node.layer,
       pose: node.pose,
       data: node.data,
+      ...(node.clip ? { clip: node.clip } : {}),
       parent,
       dependsOn: 'children',
       derivePose: scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren,

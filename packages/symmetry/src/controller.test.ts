@@ -137,6 +137,18 @@ describe('bake', () => {
     expect(copies[1].pose).toEqual({ x: 195, y: 0, width: 5, height: 5, transform: [-1, 0, 0, 1] });
   });
 
+  it('copies a group that declares a clip with its clip', () => {
+    const { scene, sym, group } = setup();
+    const clipped = scene.add({
+      kind: 'group', layer: 'main', parent: group, clip: 'outline',
+      pose: { x: 0, y: 0, width: 5, height: 5 }, data: { path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 } },
+    });
+    const out = sym.bake(group)!;
+    const groups = scene.childrenOf(out.group).filter((id) => scene.get(id)!.kind === 'group');
+    expect(groups).toHaveLength(2);
+    expect(groups.filter((id) => id !== clipped).map((id) => scene.get(id)!.clip)).toEqual(['outline']);
+  });
+
   it('turns a copy through its pose, so a paint laid out in its box turns with it', () => {
     const { scene, sym, group, leaf } = setup();
     sym.update(group, { spec: { kind: 'point' } });
