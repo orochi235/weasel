@@ -17,14 +17,14 @@ const FX = asNodeId('fx');
 const TEXT = { text: 'Hi', style: { fontSize: 16 }, background: { paint: { kind: 'solid', color: '#fff' } } };
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-function drawn(hideSources: boolean, selection: readonly NodeId[]): DrawCommand[] {
+function drawn(hideSources: boolean, selection: readonly NodeId[], foundHidden?: number[]): DrawCommand[] {
   const scene = createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     registry: withPathEffectsRegistry(),
     initial: [
       { id: T, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 80, height: 20 }, data: TEXT, hidden: hideSources },
       { id: P, kind: 'mark', layer: 'main', pose: { x: 0, y: 100, width: 100, height: 1 }, data: { path: pathFromD('M0 100 L100 100') }, hidden: hideSources },
-      { ...pathEffectNode({ kind: 'textAlong', hideSources }, [T, P], 'main', PATH_EFFECT_DERIVATIONS), id: FX },
+      { ...pathEffectNode({ kind: 'textAlong', hideSources, ...(foundHidden ? { foundHidden } : {}) }, [T, P], 'main', PATH_EFFECT_DERIVATIONS), id: FX },
     ],
   });
   const { result } = renderHook(() => useEffectSourcesLayer(scene));
@@ -44,6 +44,10 @@ describe('useEffectSourcesLayer', () => {
     for (const line of lines) {
       expect(line).toMatchObject({ stroke: { paint: PATH_OVERLAY_ROLES['chrome']!.stroke, width: { px: 1 } } });
     }
+  });
+
+  it('leaves out a source that was hidden before the effect was made', () => {
+    expect(strokes(drawn(true, [FX], [1]))).toHaveLength(1);
   });
 
   it('draws nothing when the node is not selected, or shows its sources', () => {

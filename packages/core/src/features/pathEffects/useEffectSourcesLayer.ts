@@ -9,14 +9,14 @@ import { PATH_OVERLAY_ROLES } from 'canvas/pathOverlay';
 import { sceneDepLookup } from 'canvas/derivedPath';
 import { chromeStateFrom } from 'canvas/drawEnvelope';
 import type { RenderLayer } from 'core/layers/render';
-import { pathEffectOf } from 'core/scene/pathEffects/derive';
+import { sourcesHiddenBy } from './effectSources';
 import type { NodeId, Scene } from 'core/scene/types';
 import { readEffectSource } from './readSource';
 
 const FAINT = 0.4;
 
-/** For each selected path-effect node with `hideSources`, its hidden sources' outlines as the effect reads them, in a
- *  one-screen-pixel stroke of the `'chrome'` overlay color at 40% opacity. The selection comes off the draw envelope. */
+/** For each selected path-effect node, the outlines of the sources it holds hidden (`sourcesHiddenBy`) as the effect
+ *  reads them, in a one-screen-pixel stroke of the `'chrome'` overlay color at 40% opacity. The selection comes off the draw envelope. */
 export function useEffectSourcesLayer<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
 ): RenderLayer<unknown> {
@@ -32,9 +32,7 @@ export function useEffectSourcesLayer<TData, TLayer extends string, TPose>(
       const depOf = sceneDepLookup(sc);
       const lines: DrawCommand[] = [];
       for (const id of selected) {
-        const node = sc.get(id);
-        if (pathEffectOf(node)?.hideSources !== true || !Array.isArray(node!.dependsOn)) continue;
-        for (const source of node!.dependsOn as readonly NodeId[]) {
+        for (const source of sourcesHiddenBy(sc, id as NodeId)) {
           if (!sc.isHidden(source)) continue;
           const dep = depOf(source);
           const path = dep === undefined ? null : readEffectSource(dep as never)?.world ?? null;

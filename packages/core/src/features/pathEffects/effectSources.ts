@@ -11,7 +11,8 @@ import type { NodeId, Scene } from 'core/scene/types';
  * For a path-effect node with `hideSources`, the source an edit of `role`
  * goes to: `'text'`, its first source when that is a text node; `'path'`, the
  * path it lays along — the second source of an along kind, a blend's spine.
- * `null` otherwise. The one answer every edit route asks.
+ * `null` otherwise. The one answer every edit route asks. It takes a source
+ * hidden before the effect was made too: either way the effect is what shows it.
  */
 export function effectSourceFor<TData, TLayer extends string, TPose>(
   scene: Pick<Scene<TData, TLayer, TPose>, 'get'>,
