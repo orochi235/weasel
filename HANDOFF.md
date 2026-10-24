@@ -29,7 +29,7 @@ Decided in conversation (2026-10-23), none of it in code:
 **Next: does a theme map each stance to a default variant and tone, an explicit `variant` winning?**
 Proposed 2026-10-23 and not yet ruled: a stance today is almost all drawing slots (border, fill, radius,
 pad, title type in `packages/theme/src/panel.ts`), and Button's `primary` becomes the stance `confirm`.
-Parked on Mike's word (2026-10-23): whether `scope` stays a stance. Then the artifact's open questions:
+`scope` becomes `clarify` (2026-10-23): it meant "this clarifies the scope". Then the artifact's open questions:
 what severity is called, whether tone has more moods, which settings cascade, what Slider's `density`
 (track thickness) becomes.
 
