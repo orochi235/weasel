@@ -29,7 +29,7 @@
   align-items: center;
   gap: var(--wzl-space-3);
   padding-block: var(--wzl-space-1);
-  padding-inline: 0;
+  padding-inline: 2px;
   background: var(--_edge);
   color: var(--_edge-ink);
   font-family: var(--_s-title-font);
