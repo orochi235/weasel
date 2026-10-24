@@ -92,11 +92,15 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
         const press = ctx.drag?.start ?? ctx.world;
         let current = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
         const publish = () => live?.set(new Map([...current].map(([id, e]) => [id, e.shape])));
+        // Where the last move put the control: a move that leaves it there keeps the previews it made.
+        let last: { x: number; y: number } | null = null;
         return {
           kind: `${kind}.drag`,
           onMove(m: InvocationCtx): void {
             const at = m.drag?.current ?? m.world;
             const world = { x: cx + at.x - press.x, y: cy + at.y - press.y };
+            if (last !== null && last.x === world.x && last.y === world.y) return;
+            last = world;
             current = new Map();
             for (const target of targets) {
               const back = invert(target.toWorld);

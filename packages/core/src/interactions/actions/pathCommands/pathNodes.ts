@@ -51,12 +51,19 @@ export function pathNodesOf(
   return out;
 }
 
+/** Per node, the last path `withPath` stored and what it made of it. */
+const lastStored = new WeakMap<object, { path: PolygonPath; shape: { pose: unknown; data: unknown } | null }>();
+
 /** `node` storing `worldPath` as plain geometry, or null when it holds no
- *  editable polygon. */
+ *  editable polygon. The same object while the node and the path are, so a
+ *  gesture previewing through it keeps its preview's identity between frames. */
 export function withPath(node: Node<unknown, string, unknown>, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
+  const held = lastStored.get(node);
+  if (held?.path === worldPath) return held.shape;
   const stored = storeEditablePath(node, worldPath);
-  if (!stored) return null;
-  return { pose: stored.pose, data: withoutGeometryBoundData(withoutShapeGenerator(stored.data)) };
+  const shape = stored ? { pose: stored.pose, data: withoutGeometryBoundData(withoutShapeGenerator(stored.data)) } : null;
+  lastStored.set(node, { path: worldPath, shape });
+  return shape;
 }
 
 /** The ops that give `node` the geometry `worldPath`, labeled `label`. */
