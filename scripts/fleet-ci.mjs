@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { offFleetNodes, readCi } from './lib/ci-steps.mjs';
 import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
-import { COMMIT_ENV, changedFiles, writeMarker } from './lib/fleet-tree.mjs';
+import { armTree, changedFiles } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const say = (line) => console.log(`fleet-ci: ${line}`);
@@ -67,14 +67,14 @@ let status = 0;
 try {
   say(`${git('log', '-1', '--format=%h %s', commit)}${branch ? ` (${branch})` : ''}`);
   const base = git('merge-base', commit, 'origin/main');
-  writeMarker(tree, { commit, files: changedFiles(git('diff', '--raw', '--no-renames', '--no-abbrev', '-z', base, commit)) });
+  const commitEnv = armTree(tree, { commit, files: changedFiles(git('diff', '--raw', '--no-renames', '--no-abbrev', '-z', base, commit)) });
   const jobs = MODES[mode](tree);
   if (jobs.length === 0) say("ci.yml's matrix runs no Node version the fleet does not");
   for (const job of jobs) {
     const started = Date.now();
     const result = await ontoWhenFree(
       ['do', '--kind', job.kind, '--icon', job.icon, '--in', job.tree, '--ref', base, '--timeout', '90m',
-        '--env', `${COMMIT_ENV}=${commit}`, '--task', `${job.task}-${(branch || commit.slice(0, 9)).replace(/[^A-Za-z0-9.-]/g, '-')}`, '--about', job.about,
+        '--env', commitEnv,'--task', `${job.task}-${(branch || commit.slice(0, 9)).replace(/[^A-Za-z0-9.-]/g, '-')}`, '--about', job.about,
         '--expect', job.expect, ...ontoArgs, '--', 'bash', '-c', job.shell],
       { cwd: tree, say },
     );

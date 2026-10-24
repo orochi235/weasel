@@ -1209,17 +1209,6 @@ only story runner in the repo.
   Splitting the project across 2 or 3 Chromium processes (vitest `--shard` per process) is untested:
   run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
   every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
-- **(P2) The fleet-tree check passes on another session's commit.** `npm run test:fleet` arms the
-  tree with a marker and a plan whose prelude exports `WEASEL_FLEET_COMMIT`, and both travel inside
-  the synced tree (`scripts/lib/fleet-tree.mjs`). Two branches tested on one node at once share its
-  one weasel tree, so the later sync replaces the marker and the asked-for commit together, and
-  `checkTree` finds them in agreement: on 2026-10-21 two runs of `feat/no-paint-readers` logged
-  `fleet-tree: … match 87199f258` and `match 3e022b9af`, commits of `feat/container-inherit`, with
-  the gate green. The commit the run asks for has to reach the node from outside the tree, such as
-  the job's own environment, so a sync cannot rewrite it. Pinning the two runs to different nodes
-  does not keep them apart: a run pinned to keiei still logged `updated weasel on msb-uai` and
-  shards matching both branches, so the crossing happens on this machine's side. Until it is fixed,
-  run one branch's fleet jobs at a time and compare the logged SHA with the branch tip.
 - **(P2) `onto logs` drops stderr, so a fleet run's log never says why a test failed.** vitest
   writes its failure report to stderr; `onto do` shows it live, but `onto logs <job>` keeps stdout
   only, so a finished job's log holds the failing test's name and nothing else (tested 2026-10-21

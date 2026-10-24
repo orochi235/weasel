@@ -38,7 +38,7 @@ try {
   // machine apart, so the suite checks the tree itself: `scripts/fleet-tree.gate.ts`.
   const files = changedFiles(git('diff', '--raw', '--no-renames', '--no-abbrev', '-z', base, commit));
   const select = Boolean(branch) && branch !== 'main' && !full;
-  armTree(tree, { commit, files, select });
+  armTree(tree, { commit, files, select }, { plan: true });
   console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
   console.log(
     select

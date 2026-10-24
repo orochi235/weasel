@@ -108,23 +108,91 @@ describe('checkTree', () => {
     expect(problems).toEqual([`this tree is ${OTHER}, and the run asked for ${COMMIT}`]);
   });
 
-  it('checks a marker on its own when no commit is named', () => {
-    put('src/gone.ts', 'x\n');
-    mark(COMMIT, { 'src/gone.ts': null });
+  it('fails a marker when the job names no commit, however well the tree agrees with it', () => {
+    put('src/a.ts', 'a\n');
+    mark(COMMIT, { 'src/a.ts': blobHash(Buffer.from('a\n')) });
     const { armed, problems } = checkTree(root, {});
     expect(armed).toBe(true);
-    expect(problems).toHaveLength(1);
+    expect(problems).toEqual([
+      `${MARKER} says ${COMMIT}, and the job named no commit in ${COMMIT_ENV}; a marker alone is whichever run synced last`,
+    ]);
   });
 });
 
 describe('armTree', () => {
   it('writes the marker and has the plan export the commit to the suite', () => {
     put('.onto/tests', 'plugin: node\nrun: vitest run\n');
-    armTree(root, { commit: COMMIT, files: { 'src/a.ts': null } });
+    expect(armTree(root, { commit: COMMIT, files: { 'src/a.ts': null } }, { plan: true })).toBe(`${COMMIT_ENV}=${COMMIT}`);
     expect(JSON.parse(readFileSync(join(root, MARKER), 'utf8'))).toEqual({ commit: COMMIT, files: { 'src/a.ts': null } });
     expect(readFileSync(join(root, '.onto/tests'), 'utf8')).toBe(
       `plugin: node\nrun: vitest run\nprelude: export ${COMMIT_ENV}=${COMMIT}\n`,
     );
+  });
+
+  it('leaves the plan alone for a job that carries the commit in its own environment', () => {
+    put('.onto/tests', 'run: vitest run\n');
+    expect(armTree(root, { commit: COMMIT, files: {} })).toBe(`${COMMIT_ENV}=${COMMIT}`);
+    expect(readFileSync(join(root, '.onto/tests'), 'utf8')).toBe('run: vitest run\n');
+  });
+});
+
+/**
+ * Two sessions test two commits on one node, whose one tree each sync replaces whole. Each run
+ * arms its own local tree, and `onto test` reads that tree's plan here, at launch, so the job
+ * carries its commit; the node's copy of the marker and plan is whichever sync came last.
+ */
+describe('two runs syncing one node tree', () => {
+  const PLAN_TEXT = 'plugin: node\nrun: vitest run\n';
+  let local: Record<string, string>;
+  const arm = (commit: string) => {
+    const dir = mkdtempSync(join(tmpdir(), 'fleet-local-'));
+    writeFileSync(join(dir, 'a.ts'), `${commit}\n`);
+    mkdirSync(join(dir, '.onto'));
+    writeFileSync(join(dir, '.onto/tests'), PLAN_TEXT);
+    armTree(dir, { commit, files: { 'a.ts': blobHash(Buffer.from(`${commit}\n`)) } }, { plan: true });
+    local[commit] = dir;
+  };
+  const sync = (commit: string) => {
+    for (const path of ['a.ts', MARKER, '.onto/tests']) put(path, readFileSync(join(local[commit], path), 'utf8'));
+  };
+  /** What `onto test` puts in the launch request: the prelude of the plan it reads on this machine. */
+  const launch = (commit: string) => {
+    const env: Record<string, string> = {};
+    for (const [, key, value] of readFileSync(join(local[commit], '.onto/tests'), 'utf8').matchAll(/^prelude: export (\w+)=(\S+)$/gm)) {
+      env[key] = value;
+    }
+    return env;
+  };
+
+  beforeEach(() => {
+    local = {};
+    arm(COMMIT);
+    arm(OTHER);
+  });
+  afterEach(() => {
+    for (const dir of Object.values(local)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('passes the run whose sync the tree still holds', () => {
+    sync(COMMIT);
+    expect(treeReport(checkTree(root, launch(COMMIT)))).toEqual({ ok: true, text: `fleet-tree: 1 changed path(s) match ${COMMIT}` });
+  });
+
+  it('fails the earlier run once a later sync replaces the marker and the plan, naming both commits', () => {
+    sync(COMMIT);
+    const job = launch(COMMIT);
+    sync(OTHER);
+    const report = treeReport(checkTree(root, job));
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(`this tree is ${OTHER}, and the run asked for ${COMMIT}`);
+  });
+
+  it('fails a job that names no commit rather than take the later sync’s marker for its own', () => {
+    sync(COMMIT);
+    sync(OTHER);
+    const report = treeReport(checkTree(root, {}));
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(`${MARKER} says ${OTHER}`);
   });
 });
 
