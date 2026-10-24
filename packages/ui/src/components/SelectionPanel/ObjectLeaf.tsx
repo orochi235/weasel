@@ -4,6 +4,8 @@
  */
 import { useContext, type ReactNode } from 'react';
 import { isPrefLeaf, pairRuns, prefAsBox, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { MotifFrame } from '../MotifFrame';
+import { FORM_FRAMES } from '../Prefs/frames';
 import { objectRows, type ObjectLeafParts } from '../Prefs/objectRows';
 import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { renderCells, type LeafCell } from './cells';
@@ -85,10 +87,16 @@ export function ObjectLeaf({
     ),
     // Depth is drawn only where a label marks it.
     frame: (key, section, inner, { labeled, indent }) => [
-      <div key={`group:${key}`} className={prefAsBox(section.as) ? s.objectPanel : labeled && indent ? s.objectGroup : undefined}>
-        {labeled && <h5 className={s.sectionTitle}>{section.name}</h5>}
-        {inner}
-      </div>,
+      prefAsBox(section.as) ? (
+        <MotifFrame key={`group:${key}`} fallback={FORM_FRAMES.box} title={labeled ? section.name : undefined} level={5} className={s.objectPanel}>
+          <div>{inner}</div>
+        </MotifFrame>
+      ) : (
+        <div key={`group:${key}`} className={labeled && indent ? s.objectGroup : undefined}>
+          {labeled && <h5 className={s.sectionTitle}>{section.name}</h5>}
+          {inner}
+        </div>
+      ),
     ],
   };
 

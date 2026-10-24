@@ -15,3 +15,5 @@ export { stereo } from './stereo';
 export type { TabParams } from './tab';
 export { tab } from './tab';
 export { titlebar } from './titlebar';
+export type { WellParams } from './well';
+export { well } from './well';

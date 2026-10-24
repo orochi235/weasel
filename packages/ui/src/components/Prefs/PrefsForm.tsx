@@ -1,8 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { applyPrefConditions, prefAliasTargets, prefJudge, prefReader, visiblePrefSubtree, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Input } from '../Input';
+import { MotifFrame } from '../MotifFrame';
 import { withDrop, type PrefDrop } from './drop';
 import { entryApplier } from './entry';
+import { FORM_FRAMES, headingInline } from './frames';
 import { groupHeading } from './groupHeading';
 import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';
@@ -285,21 +287,25 @@ function GroupBody({ ctx, group, path, depth }: {
 }) {
   const marked = marksHidden(ctx.hidden, path);
   const head = groupHeading(ctx, group, path);
+  const named = group.name !== '';
   return (
-    <div className={depth === 0 ? s.panel : s.subpanel} {...selectionAttrs(path, ctx)}>
-      {(group.name !== '' || group.description) && (
-        <div className={s.groupHeader}>
-          {group.name !== '' && <h3 className={[s.groupTitle, head.className].filter(Boolean).join(' ')}>{group.name}{marked && <HiddenBadge />}{head.control}</h3>}
-          {group.description && <p className={s.groupDesc}>{group.description}</p>}
-        </div>
-      )}
-      {group.name === '' && marked && <HiddenBadge lead />}
+    <MotifFrame
+      kind={depth === 0 ? 'group' : 'subpanel'}
+      fallback={depth === 0 ? FORM_FRAMES.column : FORM_FRAMES.nested}
+      title={named ? group.name : undefined}
+      inline={named ? headingInline(marked, head.control) : undefined}
+      note={group.description || undefined}
+      level={3}
+      className={depth === 0 ? s.panel : s.subpanel}
+      attrs={selectionAttrs(path, ctx)}
+    >
+      {!named && marked && <HiddenBadge lead />}
       <div className={s.rows}>
         {paneChildren(ctx, head.entries, path, depth + 1, (key, child, childPath) => (
           <GroupBody key={key} ctx={ctx} group={child} path={childPath} depth={depth + 1} />
         ))}
       </div>
-    </div>
+    </MotifFrame>
   );
 }
 

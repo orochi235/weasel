@@ -1,0 +1,67 @@
+/* A sunken well, its heading over its body in a column. The fill and edge are
+   the frame's slots; the spacing and the title's type are `--wzl-well-*`
+   properties, which the surface drawing the well sets for itself. */
+.well {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-well-gap, var(--wzl-space-3));
+  padding: var(--wzl-well-pad, var(--wzl-space-4));
+  background: var(--_s-fill);
+  border: 1px solid var(--_s-border-color);
+  border-radius: var(--wzl-well-radius, var(--wzl-radius-md));
+  --wzl-input-surface: var(--wzl-surface);
+}
+
+/* A rule down the leading edge only, inset from the body on both sides. */
+.well[data-edge='start'] {
+  border: 0;
+  border-inline-start: var(--wzl-well-rule, 2px) solid var(--_s-border-color);
+  padding-inline: var(--wzl-well-inset-start, var(--wzl-space-5)) var(--wzl-well-inset-end, var(--wzl-space-4));
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+}
+
+.head[data-ruled] {
+  padding-bottom: var(--wzl-space-2);
+  border-bottom: 1px solid var(--wzl-border);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+/* A control drawn in the heading sits at its far end, as `inline`. */
+.title {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  min-width: 0;
+  margin: 0;
+  font-size: var(--wzl-well-title-size, var(--wzl-font-size-sm));
+  font-weight: var(--wzl-well-title-weight, var(--wzl-font-weight-bold));
+  color: var(--wzl-well-title-color, var(--wzl-fg));
+  letter-spacing: var(--wzl-well-title-tracking, normal);
+  text-transform: var(--wzl-well-title-case, none);
+  opacity: var(--wzl-well-title-opacity, 1);
+}
+
+.actions {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  line-height: 1.35;
+}

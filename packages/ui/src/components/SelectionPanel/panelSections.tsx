@@ -5,6 +5,8 @@
 import { Fragment, type ReactNode } from 'react';
 import { prefAsBox, prefTabRuns } from '@weasel-js/prefs';
 import { BarLayout } from '../Bar/BarLayout';
+import { MotifFrame } from '../MotifFrame';
+import { FORM_FRAMES } from '../Prefs/frames';
 import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefDrawsActionRow } from '../Prefs/registeredActions';
@@ -19,6 +21,8 @@ import s from './SelectionPanel.module.css';
 interface DrawnSection {
   section: PanelSection;
   content: ReactNode;
+  /** The same section split for a frame to draw: whether it is titled, what its heading holds after the name, and its rows. */
+  framed?: { titled: boolean; inline: ReactNode; rows: ReactNode };
   /** Every row of the section is one a `showIf` hides, and its heading says so. */
   hidden?: boolean;
 }
@@ -119,27 +123,32 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
   const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden)) && headControl?.hidden !== false;
   const rowMarks: PanelMarks = whole ? { ...marks, hidden: undefined } : marks;
   const marked = (controls: readonly RenderedCell[]): boolean => !whole && controls.every((cell) => cell.hidden);
+  const control = headControl && (
+    <span className={s.headingControl} {...selectionAttrs(panelLeafKey(only!), rowMarks, true)}>
+      {headControl.content}
+      {!whole && headControl.hidden && <HiddenBadge />}
+    </span>
+  );
+  const drawnRows = rows.map(({ row, controls }) =>
+    row.leaves.length === 1 && controls[0].block
+      ? blockRow(row, controls[0], section.name === '', rowMarks, marked(controls))
+      : labeledRow(row, controls, rowMarks, marked(controls)),
+  );
   const content = (
     <>
-      {headed && !headControl && <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>}
-      {headControl && (
+      {headed && !control && <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>}
+      {control && (
         // The title dims itself, so the control sits beside it rather than in it, where it would dim too.
         <div className={s.sectionHead}>
           <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>
-          <span className={s.headingControl} {...selectionAttrs(panelLeafKey(only!), rowMarks, true)}>
-            {headControl.content}
-            {!whole && headControl.hidden && <HiddenBadge />}
-          </span>
+          {control}
         </div>
       )}
-      {rows.map(({ row, controls }) =>
-        row.leaves.length === 1 && controls[0].block
-          ? blockRow(row, controls[0], section.name === '', rowMarks, marked(controls))
-          : labeledRow(row, controls, rowMarks, marked(controls)),
-      )}
+      {drawnRows}
     </>
   );
-  return [{ section, content, hidden: whole }];
+  const inline = whole || control ? <>{whole && <HiddenBadge />}{control}</> : undefined;
+  return [{ section, content, hidden: whole, framed: { titled: headed || Boolean(control), inline, rows: drawnRows } }];
 }
 
 /** The sections in order, each one `selected` can name carrying its key: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
@@ -148,13 +157,27 @@ function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode
   const out: ReactNode[] = [];
   for (const step of prefTabRuns(sections, (drawn) => drawn.section.as === 'tab')) {
     if (!step.tabs) {
-      const { section, content, hidden } = step.item;
-      const cls = prefAsBox(section.as) ? `${s.section} ${s.sectionPanel}` : s.section;
+      const { section, content, hidden, framed } = step.item;
+      const attrs = { ...(sectionNamed(section) ? selectionAttrs(section.key, selectedOnly(marks)) : {}), ...hiddenAttrs(hidden === true) };
       out.push(
-        <section key={section.key} className={cls} {...(sectionNamed(section) ? selectionAttrs(section.key, selectedOnly(marks)) : {})}
-          {...hiddenAttrs(hidden === true)}>
-          {content}
-        </section>,
+        prefAsBox(section.as) && framed ? (
+          <MotifFrame
+            key={section.key}
+            fallback={FORM_FRAMES.box}
+            title={framed.titled ? section.name : undefined}
+            inline={framed.inline}
+            level={3}
+            className={s.sectionPanel}
+            attrs={attrs}
+          >
+            {/* One item for the well's column, so its gap falls under the heading and not between rows. */}
+            <div>{framed.rows}</div>
+          </MotifFrame>
+        ) : (
+          <section key={section.key} className={s.section} {...attrs}>
+            {content}
+          </section>
+        ),
       );
       continue;
     }

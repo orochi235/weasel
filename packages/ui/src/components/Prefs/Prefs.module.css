@@ -20,61 +20,34 @@
   gap: var(--wzl-space-4);
 }
 
+/* The columns layout's groups are wells (`FORM_FRAMES`), set out here. Each frame states the whole set, so a
+   well nested in another takes none of its spacing. */
+.panel,
+.subpanel {
+  --wzl-well-radius: var(--wzl-radius-sm);
+  --wzl-well-title-size: var(--wzl-font-size-sm);
+  --wzl-well-title-tracking: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
+  --wzl-well-title-case: var(--wzl-params-label-case, uppercase);
+  --wzl-well-title-opacity: 1;
+}
+
 .panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-4);
-  padding: var(--wzl-space-5);
-  background: var(--wzl-surface-sunken);
-  border: 1px solid var(--wzl-border-on-sunken);
-  border-radius: var(--wzl-radius-sm);
-  --wzl-input-surface: var(--wzl-surface);
+  --wzl-well-gap: var(--wzl-space-4);
+  --wzl-well-pad: var(--wzl-space-5);
 }
 
 .subpanel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-3);
+  --wzl-well-gap: var(--wzl-space-3);
+  --wzl-well-pad: var(--wzl-space-4);
+  --wzl-well-rule: var(--subpanel-rule);
+  --wzl-well-inset-start: var(--subpanel-inset-start);
+  --wzl-well-inset-end: var(--subpanel-inset-end);
   margin-top: var(--wzl-space-3);
-  padding: var(--wzl-space-4) var(--subpanel-inset-end) var(--wzl-space-4) var(--subpanel-inset-start);
-  background: var(--wzl-surface-sunken);
-  border-left: var(--subpanel-rule) solid var(--wzl-border-on-sunken);
-  border-radius: var(--wzl-radius-sm);
-  --wzl-input-surface: var(--wzl-surface);
 }
 
 /* The list layout's loose rows take the inset of the subpanels they sit over, so every label and control shares an edge. */
 .columnsLayout > .rows:has(> .subpanel) > .rowSlot {
   padding-inline: calc(var(--subpanel-rule) + var(--subpanel-inset-start)) var(--subpanel-inset-end);
-}
-
-.groupHeader {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-1);
-  padding-bottom: var(--wzl-space-2);
-  border-bottom: 1px solid var(--wzl-border);
-}
-
-.subpanel .groupHeader {
-  border-bottom: none;
-  padding-bottom: var(--wzl-space-1);
-}
-
-.groupTitle {
-  margin: 0;
-  font-size: var(--wzl-font-size-sm);
-  font-weight: var(--wzl-font-weight-bold);
-  color: var(--wzl-fg);
-  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
-  text-transform: var(--wzl-params-label-case, uppercase);
-}
-
-.groupDesc {
-  margin: 0;
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg-subtle);
-  line-height: 1.35;
 }
 
 .rows {
@@ -401,24 +374,24 @@
   display: contents;
 }
 
-/* `as: 'panel'`: the one group in a pane that draws its own box. */
+/* `as: 'panel'`: the one group in a pane that draws its own box, a well (`FORM_FRAMES.box`) at its defaults. */
 .panePanel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-3);
+  --wzl-well-gap: var(--wzl-space-3);
+  --wzl-well-pad: var(--wzl-space-4);
+  --wzl-well-radius: var(--wzl-radius-md);
+  --wzl-well-title-size: var(--wzl-font-size-sm);
+  --wzl-well-title-tracking: normal;
+  --wzl-well-title-case: none;
+  --wzl-well-title-opacity: 1;
   margin-top: var(--wzl-space-4);
-  padding: var(--wzl-space-4);
-  border: 1px solid var(--wzl-border-on-sunken);
-  border-radius: var(--wzl-radius-md);
-  background: var(--wzl-surface-sunken);
-  --wzl-input-surface: var(--wzl-surface);
 }
 
-.panelTitle {
-  margin: 0;
-  font-size: var(--wzl-font-size-sm);
-  font-weight: var(--wzl-font-weight-bold);
-  color: var(--wzl-fg);
+/* An object's panel titles itself as the object's other groups do. */
+.objectPanel {
+  --wzl-well-title-size: var(--wzl-font-size-xs);
+  --wzl-well-title-tracking: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  --wzl-well-title-case: var(--wzl-params-label-case, uppercase);
+  --wzl-well-title-opacity: 0.55;
 }
 
 /* `as: 'tab'`: a `Tabs` strip, set off from the rows above it. */

@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DefaultMotif, MotifFrame } from './MotifFrame';
-import { divider, notch, plaque, rule, sheet, stereo, tab, titlebar } from './motifs';
+import { divider, notch, plaque, rule, sheet, stereo, tab, titlebar, well } from './motifs';
 import type { Motif } from './types';
 
 const MOTIFS: readonly [string, () => Motif][] = [
@@ -13,6 +13,7 @@ const MOTIFS: readonly [string, () => Motif][] = [
   ['titlebar', titlebar],
   ['divider', divider],
   ['sheet', sheet],
+  ['well', well],
 ];
 
 describe('MotifFrame heading parts', () => {
@@ -31,6 +32,7 @@ describe('MotifFrame heading parts', () => {
     ['rule', rule],
     ['divider', divider],
     ['sheet', sheet],
+    ['well', well],
   ] as const)('%s: puts the inline control inside its heading, at the level asked for', (_, make) => {
     render(
       <MotifFrame title="Glow" motif={make()} level={5} inline={<input type="checkbox" aria-label="Glow on" />}>

@@ -68,6 +68,7 @@ export {
   type RootProps,
   type StereoParams,
   type TabParams,
+  type WellParams,
   withMotifClass,
 } from './components/MotifFrame';
 export * as motifs from './components/MotifFrame/motifs';

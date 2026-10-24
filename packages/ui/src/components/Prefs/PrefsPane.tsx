@@ -1,5 +1,7 @@
 import { Fragment, type ReactNode, type RefObject } from 'react';
 import { isPrefLeaf, prefAsBox, prefTabRuns, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { MotifFrame } from '../MotifFrame';
+import { FORM_FRAMES, headingInline } from './frames';
 import { groupHeading } from './groupHeading';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
@@ -208,13 +210,21 @@ function PanePanel({ ctx, group, path, depth }: {
 }) {
   const marked = marksHidden(ctx.hidden, path);
   const head = groupHeading(ctx, group, path);
+  const named = group.name !== '';
   return (
-    <section className={s.panePanel} {...selectionAttrs(path, ctx)} aria-label={group.name}>
-      {group.name !== '' && <h5 className={[s.panelTitle, head.className].filter(Boolean).join(' ')}>{group.name}{marked && <HiddenBadge />}{head.control}</h5>}
-      {group.name === '' && marked && <HiddenBadge lead />}
-      {group.description !== undefined && <p className={s.paneDesc}>{group.description}</p>}
+    <MotifFrame
+      fallback={FORM_FRAMES.box}
+      role="region"
+      title={named ? group.name : undefined}
+      inline={named ? headingInline(marked, head.control) : undefined}
+      note={group.description}
+      level={5}
+      className={s.panePanel}
+      attrs={selectionAttrs(path, ctx)}
+    >
+      {!named && marked && <HiddenBadge lead />}
       <div className={s.rows}>{paneChildren(ctx, head.entries, path, depth + 1)}</div>
-    </section>
+    </MotifFrame>
   );
 }
 

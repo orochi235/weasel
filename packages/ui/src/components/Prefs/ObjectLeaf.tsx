@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 import { prefAsBox, prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
+import { MotifFrame } from '../MotifFrame';
 import { PropertyRow } from '../Properties/PropertyRow';
 import { rowWidthOf, type RowWidth } from './compound';
+import { FORM_FRAMES } from './frames';
 import { HiddenBadge, hiddenAttrs } from './hidden';
 import { leafAtValues } from './leafAtValues';
 import { objectRows, type ObjectLeafParts } from './objectRows';
@@ -93,10 +95,22 @@ export function ObjectLeaf({
     lead: (key, section) => (section.description ? [<p key={`desc:${key}`} className={s.paneDesc}>{section.description}</p>] : []),
     frame: (key, section, inner, { labeled }) => {
       if (section.as === 'fragment') return inner;
-      const note = parts.lead!(key, section);
+      if (prefAsBox(section.as)) {
+        return [
+          <MotifFrame
+            key={`panel:${key}`}
+            fallback={FORM_FRAMES.box}
+            title={labeled ? section.name : undefined}
+            note={section.description}
+            level={4}
+            className={`${s.panePanel} ${s.objectPanel}`}
+          >
+            {inner}
+          </MotifFrame>,
+        ];
+      }
       const heading = labeled ? [<h4 key={`group:${key}`} className={s.objectGroup}>{section.name}</h4>] : [];
-      if (prefAsBox(section.as)) return [<div key={`panel:${key}`} className={s.panePanel}>{heading}{note}{inner}</div>];
-      return [...heading, ...note, ...inner];
+      return [...heading, ...parts.lead!(key, section), ...inner];
     },
   };
   return <div className={s.objectLeaf}>{objectRows(pref.children, parts)}</div>;

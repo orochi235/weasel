@@ -30,15 +30,17 @@
   border-block-end: 1px solid var(--wzl-border);
 }
 
-/* `as: 'panel'`: a section in a box of its own. */
+/* `as: 'panel'`: a section in a box of its own, a well (`FORM_FRAMES.box`) titled as the other sections are. */
 .sectionPanel,
 .objectPanel {
+  --wzl-well-gap: var(--wzl-space-3);
+  --wzl-well-pad: var(--wzl-space-3) var(--wzl-space-4);
+  --wzl-well-radius: var(--wzl-radius-md);
+  --wzl-well-title-size: var(--wzl-font-size-xs);
+  --wzl-well-title-tracking: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  --wzl-well-title-case: var(--wzl-params-label-case, uppercase);
+  --wzl-well-title-opacity: 0.55;
   margin-block: var(--wzl-space-3);
-  padding: var(--wzl-space-3) var(--wzl-space-4);
-  border: 1px solid var(--wzl-border-on-sunken);
-  border-radius: var(--wzl-radius-md);
-  background: var(--wzl-surface-sunken);
-  --wzl-input-surface: var(--wzl-surface);
 }
 
 .section:last-child {
