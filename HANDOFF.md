@@ -33,7 +33,8 @@ Decided in conversation (2026-10-23), none of it in code:
   stays plain; a component may still read its parent's severity as a hint.
 - **Slider's `density` becomes numeric params, not presets** (2026-10-23). `trackHeight` already exists;
   `slim` also sets the thumb's size, makes it round and flush, and drops its border and blur
-  (`Slider.module.css`), so those need params too.
+  (`Slider.module.css`), so those need params too. Had it stayed a preset, Mike would call it `weight`,
+  which is also the starred candidate for tone in the naming job.
 
 **Next:** the artifact's open questions: what severity is called, whether tone has more moods.
 
