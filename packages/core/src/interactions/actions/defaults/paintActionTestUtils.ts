@@ -16,6 +16,7 @@ interface FakeNode<TData> { id: NodeId; kind: 'mark'; pose: unknown; data: TData
 
 export interface FakeScene<TData> {
   get(id: NodeId): FakeNode<TData> | null;
+  childrenOf(id: NodeId): NodeId[];
   update: Mock<(id: NodeId, patch: { data: unknown }) => void>;
   setPose: Mock;
   batch: Mock<(label: string, fn: () => void) => void>;
@@ -48,6 +49,7 @@ export function makeScene<TData extends object>(nodes: Record<string, TData>): F
   const batches: string[] = [];
   return {
     get: (id: NodeId) => current[id as unknown as string] ?? null,
+    childrenOf: () => [],
     update: vi.fn((id: NodeId, patch: { data: unknown }) => {
       updates.push({ id: id as unknown as string, data: patch.data });
       current[id as unknown as string].data = patch.data as never;

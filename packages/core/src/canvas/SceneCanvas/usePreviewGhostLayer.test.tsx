@@ -11,7 +11,8 @@ import type { View } from 'core/viewport/view';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import type { Dispatcher } from '@weasel-js/routing';
-import type { OngoingHandle } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import { setFillAction } from 'interactions/actions/defaults/setFill';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { GesturePreviewSource } from '../gestureBounds';
@@ -281,17 +282,13 @@ describe('usePreviewGhostLayer — parallax layers', () => {
 });
 
 describe('usePreviewGhostLayer — inherited paint', () => {
-  it("paints a member's inherited fill from its container's previewed data", () => {
-    const RED = { paint: { color: '#f00' } };
-    const BLUE = { paint: { color: '#00f' } };
-    const scene = createScene<{ fill?: unknown }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
-    const g = scene.add({ kind: 'group', layer: 'main', pose: COMMITTED_POSE, data: { fill: RED } });
-    const c = scene.add({ kind: 'mark', layer: 'main', parent: g, pose: COMMITTED_POSE, data: { fill: INHERIT } });
-    const handle: OngoingHandle = {
-      previewIds: () => [g, c],
-      previewPose: () => null,
-      previewData: (id) => (id === g ? { fill: BLUE } : null),
-    };
+  const RED = { paint: { color: '#f00' } };
+  const BLUE = { paint: { color: '#00f' } };
+  type PaintScene = ReturnType<typeof createScene<{ fill?: unknown }, 'main', Pose>>;
+  const paintScene = (): PaintScene => createScene<{ fill?: unknown }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+
+  /** The inherited fill each node the ghost draws arrives at its painter with. */
+  function ghostFills(scene: PaintScene, handle: OngoingHandle): Map<string, unknown> {
     const seen = new Map<string, unknown>();
     const record = (n: { id: string }, _p: Pose, _v: View, ctx?: NodePaintCtx): DrawCommand[] => {
       seen.set(n.id, ctx?.inherited?.fill);
@@ -305,6 +302,44 @@ describe('usePreviewGhostLayer — inherited paint', () => {
       }),
     );
     result.current.draw(env([handle]), VIEW, DIMS);
-    expect(seen.get(c)).toBe(BLUE);
+    return seen;
+  }
+
+  it("paints a member's inherited fill from its container's previewed data", () => {
+    const scene = paintScene();
+    const g = scene.add({ kind: 'group', layer: 'main', pose: COMMITTED_POSE, data: { fill: RED } });
+    const c = scene.add({ kind: 'mark', layer: 'main', parent: g, pose: COMMITTED_POSE, data: { fill: INHERIT } });
+    const handle: OngoingHandle = {
+      previewIds: () => [g, c],
+      previewPose: () => null,
+      previewData: (id) => (id === g ? { fill: BLUE } : null),
+    };
+    expect(ghostFills(scene, handle).get(c)).toBe(BLUE);
+  });
+
+  it('reads a previewed ancestor above one that is not previewed', () => {
+    const scene = paintScene();
+    const a = scene.add({ kind: 'group', layer: 'main', pose: COMMITTED_POSE, data: { fill: RED } });
+    const b = scene.add({ kind: 'group', layer: 'main', parent: a, pose: COMMITTED_POSE, data: { fill: INHERIT } });
+    const c = scene.add({ kind: 'mark', layer: 'main', parent: b, pose: COMMITTED_POSE, data: { fill: INHERIT } });
+    const handle: OngoingHandle = {
+      previewIds: () => [a, c],
+      previewPose: () => null,
+      previewData: (id) => (id === a ? { fill: BLUE } : null),
+    };
+    expect(ghostFills(scene, handle).get(c)).toBe(BLUE);
+  });
+
+  it("previews a group's inheriting members while its fill is scrubbed, so they ghost in the new fill", () => {
+    const scene = paintScene();
+    const g = scene.add({ kind: 'group', layer: 'main', pose: COMMITTED_POSE, data: { fill: RED } });
+    const c = scene.add({ kind: 'mark', layer: 'main', parent: g, pose: COMMITTED_POSE, data: { fill: INHERIT } });
+    const own = scene.add({ kind: 'mark', layer: 'main', parent: g, pose: COMMITTED_POSE, data: { fill: RED } });
+    const handle = (setFillAction.invoker as OngoingInvoker).start(
+      { deps: { scene, selection: { get: () => [g] } }, params: { color: '#00ff00' } } as unknown as InvocationCtx,
+    );
+    expect([...(handle.previewIds?.() ?? [])]).toEqual([g, c]);
+    expect((ghostFills(scene, handle).get(c) as { paint?: { color?: string } }).paint?.color).toBe('#00ff00');
+    expect([...(handle.previewIds?.() ?? [])]).not.toContain(own);
   });
 });

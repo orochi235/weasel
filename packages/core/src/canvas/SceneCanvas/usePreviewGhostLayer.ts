@@ -18,7 +18,7 @@ import { ownClipOf } from '../ownClip';
 import { wrapWithPoseRotation } from '../poseRotation';
 import type { Dispatcher } from '@weasel-js/routing';
 import { previewSourcesFrom } from '../drawEnvelope';
-import { resolvePreviews, type PreviewNode } from 'interactions/actions/resolvePreviews';
+import { flattenPreviews, resolvePreviews, type PreviewNode } from 'interactions/actions/resolvePreviews';
 import { scenePlaneOf } from '../pickWalk';
 import { planeTransform } from '../planeClips';
 import { deriveParallaxView } from 'core/viewport/parallax';
@@ -116,9 +116,12 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // A node an ancestor draws copies of is ghosted in each copy too, or
       // the copies vanish for the length of the gesture.
       const paintedPose = scenePaintedPoseOf(sc);
+      // A root's containers are read as previewed too, where one is.
+      const previewed = new Map(flattenPreviews(roots).map((e) => [e.id as string, e.data]));
+      const asPreviewed = (n: Node<TData, TLayer, TPose>) => (previewed.has(n.id) ? { kind: n.kind, data: previewed.get(n.id) } : n);
       for (const root of roots) {
         const sink = root.opaque ? settled : ghosted;
-        const cmds = drawEntry(root, null, () => sceneAncestors((id: never) => sc.get(id), root.node));
+        const cmds = drawEntry(root, null, () => [...sceneAncestors((id: never) => sc.get(id), root.node)].map(asPreviewed));
         for (const cmd of cmds) sink.push(cmd);
         for (const m of copiesAbove(sc, root.node.id, paintedPose)) {
           sink.push({ kind: 'group', transform: mat3.fromAffine(m), children: cmds });

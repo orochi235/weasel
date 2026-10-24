@@ -70,6 +70,28 @@ export function inheritedPaintIn<TNode extends { data?: unknown; parent?: string
   return inheritedPaintOf(node, sceneAncestors((id: never) => scene.get(id), node));
 }
 
+/**
+ * The descendants of `id` whose `key` is `'inherit'` all the way up to it:
+ * those that paint whatever `id`'s own `key` holds, so a preview of that paint
+ * reaches them too. Parents before children.
+ */
+export function paintInheritors(
+  scene: { get(id: never): { data?: unknown } | undefined; childrenOf(id: never): readonly string[] },
+  id: string,
+  key: 'fill' | 'stroke',
+): string[] {
+  const out: string[] = [];
+  const walk = (parent: string): void => {
+    for (const child of scene.childrenOf(parent as never)) {
+      if ((scene.get(child as never)?.data as PaintData)?.[key] !== INHERIT) continue;
+      out.push(child);
+      walk(child);
+    }
+  };
+  walk(id);
+  return out;
+}
+
 /** `node`'s ancestors in `scene`, innermost first, read lazily off `parent`. */
 export function* sceneAncestors<TNode extends { parent?: string | null }>(
   get: (id: never) => TNode | undefined,

@@ -5,6 +5,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { paintInheritors } from 'core/scene/inheritedPaint';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
@@ -110,6 +111,11 @@ export function createPaintAction<TState, TValue, K extends string>(
           applyOps,
         };
         refreshPreviews(scratch);
+        // Members that inherit the paint being changed preview with it.
+        const key = spec.dataKey as string;
+        const inheritors = key === 'fill' || key === 'stroke'
+          ? [...new Set(ids.flatMap((id) => paintInheritors(scene, id, key)))].filter((id) => !startData.has(id as NodeId))
+          : [];
 
         return {
           onMove(moveCtx: InvocationCtx): void {
@@ -141,7 +147,7 @@ export function createPaintAction<TState, TValue, K extends string>(
             }
             scratch.previews.clear();
           },
-          previewIds: () => scratch.previews.keys(),
+          previewIds: () => (scratch.previews.size === 0 ? [] : [...scratch.previews.keys(), ...inheritors]),
           previewData: (id: string) => scratch.previews.get(id as unknown as NodeId) ?? null,
         };
       },
