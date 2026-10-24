@@ -170,10 +170,6 @@ Priority tags:
 - **(P3) Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
 
-- **(P2) Release and Expand treat a source hidden before its effect was made as one the effect hid.** Release
-  shows it and Expand deletes it, because `hideSources` records that the effect hides its sources, not which ones
-  were already hidden (`packages/path-tools/src/pathEffects/retarget.ts`, `actions.ts`).
-
 - **(P3) The `textAlong` items thunk is not memoized.** Every derivation miss, such as each frame of a source
   drag, re-runs `textClusters`.
 

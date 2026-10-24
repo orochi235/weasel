@@ -1,9 +1,10 @@
 /**
  * The scene's `hidden` flag on a path effect's sources: an effect with
  * `hideSources` hides them while it shows them, and a source two such
- * effects read stays hidden until neither does.
+ * effects hide stays hidden until neither does. One hidden before any effect
+ * hid it stays hidden.
  */
-import { createSetHiddenOp, type NodeId, type Op, pathEffectOf, type Scene, type SceneNode as Node } from '@weasel-js/core';
+import { createSetHiddenOp, type NodeId, type Op, type Scene, type SceneNode as Node, sourcesHiddenBy } from '@weasel-js/core';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -11,14 +12,14 @@ type AnyScene = Scene<unknown, string, unknown>;
 export const sourcesOf = (node: Node<unknown, string, unknown>): readonly NodeId[] =>
   (Array.isArray(node.dependsOn) ? node.dependsOn : []);
 
-/** Whether an effect with `hideSources` other than those `leaving` reads `source`. */
-export function hiddenByOthers(scene: AnyScene, source: NodeId, leaving: ReadonlySet<NodeId>): boolean {
-  return scene.removalClosure([source]).some((id) => {
-    if (leaving.has(id)) return false;
-    const node = scene.get(id);
-    return node !== undefined && pathEffectOf(node)?.hideSources === true && sourcesOf(node).includes(source);
-  });
+/** Whether an effect other than those `leaving` holds `source` hidden. */
+export function hiddenByOthers(scene: AnyScene, source: NodeId, leaving: ReadonlySet<NodeId> = new Set()): boolean {
+  return scene.removalClosure([source]).some((id) => !leaving.has(id) && sourcesHiddenBy(scene.get(id)).includes(source));
 }
+
+/** Whether `source` is hidden by something other than an effect, apart from those `leaving`. */
+export const hiddenOnItsOwn = (scene: AnyScene, source: NodeId, leaving?: ReadonlySet<NodeId>): boolean =>
+  scene.get(source)?.hidden === true && !hiddenByOthers(scene, source, leaving);
 
 /** The op setting `id`'s own `hidden` flag to `to`, or none where it has it already. */
 export function hiddenOps(scene: AnyScene, id: NodeId, to: boolean, label: string): Op[] {

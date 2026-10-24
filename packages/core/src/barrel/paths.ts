@@ -276,7 +276,7 @@ export type {
   TextAlongEffect,
 } from '../core/scene/pathEffects';
 export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../features/pathEffects';
-export { effectSourceFor, hiddenSourcesTakenWith } from '../features/pathEffects/effectSources';
+export { effectSourceFor, hiddenSourcesTakenWith, sourcesHiddenBy } from '../features/pathEffects/effectSources';
 export { useEffectSourcesLayer } from '../features/pathEffects/useEffectSourcesLayer';
 
 // ─── Geometric constraints on a path's anchors ──────────────────────────────

@@ -5,11 +5,11 @@
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  commitOps, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, isTextData, type NodeId, type Op, pathEffectOf, type Scene,
-  type SceneNode as Node,
+  commitOps, createSetDataOp, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, isTextData, type NodeId, type Op, pathEffectOf,
+  type PathEffect, type Scene, type SceneNode as Node, sourcesHiddenBy,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
-import { hiddenByOthers, hiddenOps, sourcesOf } from './hiding';
+import { hiddenByOthers, hiddenOnItsOwn, hiddenOps, sourcesOf } from './hiding';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -46,7 +46,8 @@ const SET_LABEL = 'Set Path';
  * effect and the path, in either order. With two along effects selected, the
  * first selected is the one retargeted. A text node cannot be a Text Along
  * Path's path. Where the effect hides its sources, the new path is hidden and
- * the old one shown again, unless another such effect still reads it.
+ * the old one shown again, unless another effect still hides it or it was
+ * hidden before this one was made.
  */
 export const setEffectPathAction: Action & { requires: string[] } = {
   id: 'setEffectPath',
@@ -63,9 +64,19 @@ export const setEffectPathAction: Action & { requires: string[] } = {
       const { effect, path } = target;
       const [shape, old] = sourcesOf(effect) as [NodeId, NodeId];
       const ops: Op[] = [createSetDependsOnOp({ id: effect.id, from: effect.dependsOn, to: [shape, path.id], label: SET_LABEL })];
-      if (pathEffectOf(effect)?.hideSources === true) {
-        if (!hiddenByOthers(scene, old, new Set([effect.id]))) ops.push(...hiddenOps(scene, old, false, SET_LABEL));
-        ops.push(...hiddenOps(scene, path.id, true, SET_LABEL));
+      const record = pathEffectOf(effect)!;
+      if (record.hideSources === true) {
+        const self = new Set([effect.id]);
+        if (sourcesHiddenBy(effect).includes(old) && !hiddenByOthers(scene, old, self)) ops.push(...hiddenOps(scene, old, false, SET_LABEL));
+        const found = (record.foundHidden ?? []).filter((at) => at !== 1);
+        if (hiddenOnItsOwn(scene, path.id, self)) found.push(1);
+        else ops.push(...hiddenOps(scene, path.id, true, SET_LABEL));
+        const next = { ...record } as PathEffect;
+        if (found.length > 0) next.foundHidden = found;
+        else delete next.foundHidden;
+        if ((record.foundHidden ?? []).join() !== found.join()) {
+          ops.push(createSetDataOp({ id: effect.id, from: effect.data, to: { ...(effect.data as object), pathEffect: next }, label: SET_LABEL }));
+        }
       }
       commitOps(deps, ops, SET_LABEL);
       deps.selection?.set([effect.id] as never);
@@ -81,7 +92,7 @@ const RELEASE_LABEL = 'Release';
 
 /**
  * Delete each selected path effect and select its sources, shown again where
- * it hid them — unless another effect that hides its sources still reads one.
+ * it hid them — unless another effect still hides one.
  * An effect deleted along the way, one reading a released one, takes the
  * sources it hid with it.
  */
@@ -107,7 +118,7 @@ export const releasePathEffectAction: Action & { requires: string[] } = {
         for (const source of sourcesOf(effect)) {
           if (scene.get(source) === undefined) continue;
           sources.push(source);
-          if (pathEffectOf(effect)?.hideSources === true && !shown.has(source) && !hiddenByOthers(scene, source, leaving)) {
+          if (sourcesHiddenBy(effect).includes(source) && !shown.has(source) && !hiddenByOthers(scene, source, leaving)) {
             shown.add(source);
             ops.push(...hiddenOps(scene, source, false, RELEASE_LABEL));
           }

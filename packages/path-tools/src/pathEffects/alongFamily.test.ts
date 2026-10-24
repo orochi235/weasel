@@ -220,6 +220,57 @@ describe('removing an effect that hides its sources', () => {
   });
 });
 
+describe('a source hidden before its effect was made', () => {
+  /** A text-along node of `t` on `p`, with `p` hidden beforehand. */
+  function onHiddenPath() {
+    const env = setup(['p', 't']);
+    env.scene.setHidden('p' as NodeId, true);
+    run(textAlongAction, env.deps);
+    return { ...env, fx: env.selected()[0]! };
+  }
+
+  it('stays hidden on Release', () => {
+    const { scene, deps } = onHiddenPath();
+    run(releasePathEffectAction, deps);
+    expect(hidden(scene, 't')).toBe(false);
+    expect(hidden(scene, 'p')).toBe(true);
+  });
+
+  it('stays on Expand and Delete', () => {
+    for (const action of [expandPathEffectAction, deleteAction]) {
+      const { scene, deps } = onHiddenPath();
+      run(action, deps);
+      expect(scene.get('t' as NodeId)).toBeUndefined();
+      expect(scene.get('p' as NodeId)).toBeDefined();
+    }
+  });
+
+  it('stays hidden when Set Path moves off it, and the path moved to is shown on Release', () => {
+    const { scene, deps, select, fx } = onHiddenPath();
+    select(['q', fx]);
+    run(setEffectPathAction, deps);
+    expect(hidden(scene, 'p')).toBe(true);
+    expect(hidden(scene, 'q')).toBe(true);
+    select([fx]);
+    run(releasePathEffectAction, deps);
+    expect(hidden(scene, 'p')).toBe(true);
+    expect(hidden(scene, 'q')).toBe(false);
+  });
+
+  it('counts as hidden by the second of two effects when the first hid it', () => {
+    const { scene, deps, select, selected, fx } = textAlong();
+    select(['t2', 'p']);
+    run(textAlongAction, deps);
+    const second = selected()[0]!;
+    select([fx]);
+    run(releasePathEffectAction, deps);
+    expect(hidden(scene, 'p')).toBe(true);
+    select([second]);
+    run(releasePathEffectAction, deps);
+    expect(hidden(scene, 'p')).toBe(false);
+  });
+});
+
 describe('the settings form', () => {
   it('reads and writes the text-along fields', () => {
     const { scene, deps, fx } = textAlong();

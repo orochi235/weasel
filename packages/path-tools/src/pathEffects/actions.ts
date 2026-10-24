@@ -8,7 +8,7 @@ import {
   commitOps, createSetDataOp, deleteNode, derivedDepOf, hiddenSourceDeleteOps, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
 } from '@weasel-js/core';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
-import { hiddenOps } from './hiding';
+import { hiddenOnItsOwn, hiddenOps } from './hiding';
 import { icon } from '../icons.gen';
 import { pathEffectSettingsForm } from './settingsForm';
 
@@ -91,7 +91,9 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
         const derivations = registeredPathEffects(scene.registry)!;
         const [a, b, c] = leaves as [AnyNode, AnyNode, AnyNode?];
         const sources = spec.third && c ? [a.id, b.id, c.id] : [a.id, b.id];
-        const effect = withEffectSettings(EFFECT_DEFAULTS[spec.kind], params as Record<string, unknown> | undefined);
+        const settled = withEffectSettings(EFFECT_DEFAULTS[spec.kind], params as Record<string, unknown> | undefined);
+        const foundHidden = settled.hideSources === true ? sources.flatMap((id, at) => (hiddenOnItsOwn(scene, id) ? [at] : [])) : [];
+        const effect = foundHidden.length > 0 ? { ...settled, foundHidden } : settled;
         const sameParent = a.parent === b.parent;
         const slots = [slotOf(scene, a.id), slotOf(scene, b.id)];
         // Inserting at the upper source's slot puts the steps just under it.

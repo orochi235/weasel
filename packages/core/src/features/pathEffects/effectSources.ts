@@ -29,6 +29,17 @@ export function effectSourceFor<TData, TLayer extends string, TPose>(
 }
 
 /**
+ * The sources a path-effect node holds hidden: with `hideSources`, each of
+ * its sources but those it found hidden. Empty for any other node.
+ */
+export function sourcesHiddenBy(node: { data?: unknown; dependsOn?: unknown } | undefined): NodeId[] {
+  const effect = pathEffectOf(node);
+  if (effect?.hideSources !== true || !Array.isArray(node?.dependsOn)) return [];
+  const found = effect.foundHidden ?? [];
+  return (node.dependsOn as NodeId[]).filter((_, at) => !found.includes(at));
+}
+
+/**
  * The sources a removal of `ids` takes with it: those that a path effect with
  * `hideSources` in the removal hid, and that nothing staying still derives
  * from. A source another effect still reads stays, and so does one shown
@@ -50,9 +61,7 @@ export function hiddenSourcesTakenWith<TData, TLayer extends string, TPose>(
   while (grew) {
     grew = false;
     for (const id of [...going]) {
-      const node = scene.get(id);
-      if (pathEffectOf(node)?.hideSources !== true || !Array.isArray(node?.dependsOn)) continue;
-      for (const source of node.dependsOn as readonly NodeId[]) {
+      for (const source of sourcesHiddenBy(scene.get(id))) {
         if (going.has(source) || keep.has(source) || scene.get(source)?.hidden !== true) continue;
         const closure = scene.removalClosure([source]);
         if (!closure.every((n) => going.has(n) || within(n, source))) continue;

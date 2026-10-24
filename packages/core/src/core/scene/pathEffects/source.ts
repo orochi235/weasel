@@ -13,6 +13,12 @@ import type { DerivedDep } from '../types';
 export interface PathEffectOptions {
   /** Its sources are hidden while it shows them. */
   hideSources?: boolean;
+  /**
+   * With `hideSources`, the positions in its sources of those already hidden
+   * when it was made: it leaves them hidden when it goes, and takes none of
+   * them with it. Absent, it hid them all.
+   */
+  foundHidden?: readonly number[];
 }
 
 /** One rigid piece an effect lays along a path, in its own frame: x from 0 at its leading edge to `length`, y down,
