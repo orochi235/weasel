@@ -4,6 +4,35 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## Appearance axes, 2026-10-23 (design only, nothing built)
+
+Redesigning the props that decide how a component looks. The inventory, sorted by concept, is the
+artifact https://claude.ai/artifact/RtvLxcSg14jqrBHiMAkdwz; the naming job is
+`docs/vocabulary/appearance.json`, served by semanticore (`node ~/src/semanticore/bin/semanticore.js
+serve docs/vocabulary/appearance.json --port 4872`). Mike's picks land in
+`docs/vocabulary/appearance.picks.json`, left uncommitted until he has picked.
+
+Decided in conversation (2026-10-23), none of it in code:
+- **severity** (`info`, `success`, `warn`, `danger`) is its own axis, apart from **stance**. Today it
+  is spelled six ways: three `status` types (Button/Code, Badge/Powerline, DetailList), Toast's
+  `tone`, labkit Toolbar's `variant: 'danger'`, and the `danger`/`notice`/`important` stances.
+- **stance** keeps content class only (`scope`, `aside`, `advanced`, `debug`, `preview`), goes on
+  every component, and cascades to children through CSS custom properties.
+- **tone** means how loudly something reads (`neutral`, `muted`, `accent`); **tint** is an exact
+  color (palette index or value, today's `tone`) and wins over severity and tone.
+- `status` is retired. `muted` belongs with tone, not with a drawing variant.
+- Color resolves as `hue = tint ?? severity ?? stance`, tone setting how loudly it shows.
+
+**Next: Mike thinks stance and variant overlap significantly.** Take that up first — it was the
+last thing he raised and nothing has answered it. Then the open questions on the artifact: what
+severity is called, whether tone has more moods, whether Button's `primary` goes, which settings
+cascade, what Slider's `density` (track thickness) becomes.
+
+Also waiting on Mike, unrelated: whether `Primitives/*` story titles merge into `ui/Foundations`
+(no rule separates them); which default `layout` forge's two story formats share (native
+`centered`, CSF `padded`); whether `ReactNode` props keep the text controls forge's prop reader now
+gives them, which put empty rows on many stories.
+
 ## Forge loupe follow-ups, 2026-10-21
 
 The forge loupe merged to `main` (fb370f72c, pushed); its design of record is
