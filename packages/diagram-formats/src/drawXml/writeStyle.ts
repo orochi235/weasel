@@ -3,6 +3,7 @@ import {
   EDGE_STROKE_WIDTH, LANE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, type ContainerHeader, type DataContainer,
   type DataEdge, type DataLane, type DataNode, type DiagramTheme, type NodeStyle, type Row,
 } from '@weasel-js/diagram';
+import { rowLines } from '../rowLines';
 import { SHAPES, STADIUM_ARC, markerStyle } from './mapping';
 import type { Warn } from './readStyle';
 import { writeStyle, type StylePart } from './style';
@@ -33,14 +34,7 @@ function outlineParts(node: DataNode, warn: Warn): StylePart[] {
 
 /** A node's text, one line per row; rows that hold no text are left out, with a warning. */
 export function nodeLines(node: DataNode, warn: Warn): string[] {
-  if (node.rows === undefined) return [...(node.lines ?? [])];
-  const lines: string[] = [];
-  for (const row of node.rows) {
-    if (row.kind === 'label') lines.push(row.text);
-    else if (row.kind === 'field') lines.push(`${row.label}: ${row.value}`);
-    else warn('Port rows and slots inside shapes were left out.');
-  }
-  return lines;
+  return rowLines(node, () => warn('Port rows and slots inside shapes were left out.'));
 }
 
 function fontParts(rows: readonly Row[] | undefined): StylePart[] {
