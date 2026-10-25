@@ -1,0 +1,25 @@
+/* Text drawn along the run by `useRunText`: the glyphs it stands in for are kept for layout and made transparent. */
+[data-run-text-hides] {
+  -webkit-text-fill-color: transparent;
+}
+
+.bend {
+  position: absolute;
+  left: 0;
+  top: 0;
+  inline-size: 0;
+  block-size: 0;
+  pointer-events: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.svg {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: visible;
+}
+
+.svg text {
+  fill: currentColor;
+}

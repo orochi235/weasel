@@ -5,6 +5,7 @@ import { Icon } from '../../icons/Icon';
 import { placeStyle } from './placeOnRun';
 import type { RunItemsOf, RunKeyOf } from './useItemLengths';
 import { useRunScroll } from './useRunScroll';
+import { useRunText } from './runText';
 import s from './runRow.module.css';
 
 /** What a run too long for its track does: `'scroll'` along itself, or `'center'` on the track and stay put. */
@@ -61,6 +62,7 @@ export function useRunRow({ root, keyOf, itemsOf, run, lengths, gap, align, over
   const total = scrolling ? runLength(lengths, gap) : 0;
   let spots: RunPlace[] = [];
   const scroll = useRunScroll({ root, keyOf, itemsOf, frame: band, run, total, spots: () => spots, lengths });
+  useRunText(root, run);
   spots = placeAlongRun(run, lengths, { gap, align, offset: scrolling ? scroll.offset : Math.max(0, (runLength(lengths, gap) - run.length) / 2), past: 'hold' });
   // A zero-length run has no direction to carry items along: they all sit at its one point.
   const flat = run.length <= 0;
