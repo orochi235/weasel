@@ -213,9 +213,9 @@ export function ForceGraphDemo() {
           label="Nodes"
           orientation="row"
           width="fit"
-          options={GRAPH_SIZES.map((g) => ({ value: g.count, label: g.count.toLocaleString('en-US') }))}
-          selectedKey={size.count}
-          onSelectionChange={(count) => regenerate(GRAPH_SIZES.find((g) => g.count === count)!)}
+          options={GRAPH_SIZES.map((g) => ({ value: String(g.count), label: g.count.toLocaleString('en-US') }))}
+          selectedKey={String(size.count)}
+          onSelectionChange={(count) => regenerate(GRAPH_SIZES.find((g) => String(g.count) === count)!)}
         />
         <Button onClick={() => { setSettled(false); sim.alpha(1).restart(); }}>Reheat</Button>
         <Button onClick={() => regenerate(size)}>Regenerate</Button>
