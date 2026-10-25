@@ -6,6 +6,7 @@ import { BAR_LEAD } from '../Bar/useBarOverflow';
 import { DOCK_BAR, drawnBars, drawnLayout, keyTarget, movedLayout, placeWords, spreadTarget, type DockDropMark } from './dockDrop';
 import { floatWhereDrawn, grabBar, homeTarget, measureEmpties, tearStep, type DockGrab } from './dockTear';
 import { canEnter, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
+import { isNudgeChord } from '../../nudgeKey';
 
 /**
  * What a drag in progress shows: the bar it lifted, the drawn docks that bar may not enter, where it would drop, and
@@ -159,7 +160,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
     const { layout: was, docks: specs, onLayoutChange: done } = latest.current;
     const bar = barOf(barId);
     const floats = bar?.float === true && e.key === 'Enter';
-    if (!bar || !done || !e.altKey || e.ctrlKey || e.metaKey || !(floats || ARROWS.has(e.key))) return;
+    if (!bar || !done || !isNudgeChord(e) || !(floats || ARROWS.has(e.key))) return;
     e.preventDefault();
     e.stopPropagation();
     const drawn = root.current ? drawnBars(root.current) : new Set(latest.current.bars.map((b) => b.id));

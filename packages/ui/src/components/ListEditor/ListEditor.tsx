@@ -1,7 +1,7 @@
-import { useMemo, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type Ref } from 'react';
+import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
 import type { ReorderDragState } from '../../useReorderDragList';
 import { CloseButton } from '../CloseButton';
-import { DragGrip } from '../DragGrip';
+import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
 import f from '../field.module.css';
 import { AddEntry, type ListEntryKind } from './AddEntry';
 import { useEntryMoves, useListFocus } from './listEntries';
@@ -58,33 +58,6 @@ function dropAttrs(i: number, count: number, { targetIndex, draggedIds }: Reorde
     'data-drop-after': targetIndex === count && i === count - 1 ? '' : undefined,
     'data-dragging': draggedIds?.includes(String(i)) ? '' : undefined,
   };
-}
-
-/** An entry's drag handle, which Alt+Up / Alt+Down also move from. */
-function Handle({
-  name,
-  disabled,
-  ref,
-  onPointerDown,
-}: {
-  name: string;
-  disabled: boolean;
-  ref: Ref<HTMLButtonElement>;
-  onPointerDown: (e: ReactPointerEvent) => void;
-}) {
-  return (
-    <button
-      type="button"
-      ref={ref}
-      className={s.handle}
-      aria-label={`Drag to reorder ${name}`}
-      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-      disabled={disabled}
-      onPointerDown={disabled ? undefined : onPointerDown}
-    >
-      <DragGrip size={13} />
-    </button>
-  );
 }
 
 /**
@@ -153,8 +126,9 @@ export function ListEditor<T>({
               onKeyDown={(e) => move(e, i)}
             >
               {reorder && (
-                <Handle
-                  name={name(i)}
+                <ReorderHandle
+                  className={s.handle}
+                  label={name(i)}
                   disabled={disabled}
                   ref={(el) => {
                     focus.handles.current[i] = el;

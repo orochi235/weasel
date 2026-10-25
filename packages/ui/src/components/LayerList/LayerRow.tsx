@@ -2,6 +2,7 @@ import { type MouseEventHandler, useState } from 'react';
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGrip } from '../DragGrip';
+import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
 import rows from '../ItemList/ItemList.module.css';
 import type { Shared } from './LayerList';
 import type { LayerListItem } from './layerListProps';
@@ -136,24 +137,11 @@ export function Handle({
   item: LayerListItem;
   reorder: boolean;
   onPointerDown: ((e: React.PointerEvent) => void) | undefined;
-  onNudge: (delta: -1 | 1) => void;
+  onNudge: (delta: -1 | 1) => boolean | void;
 }) {
   if (item.fixed || item.locked || !reorder) return <Grip item={item} reorder={reorder} />;
   return (
-    <button
-      type="button"
-      className={s.handle}
-      aria-label={`Drag to reorder ${item.label}`}
-      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-      onPointerDown={onPointerDown}
-      onKeyDown={(e) => {
-        if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
-        e.preventDefault();
-        onNudge(e.key === 'ArrowUp' ? -1 : 1);
-      }}
-    >
-      {item.badge ?? <DragGrip />}
-    </button>
+    <ReorderHandle className={s.handle} label={item.label} onPointerDown={onPointerDown} onNudge={onNudge} badge={item.badge} size={16} />
   );
 }
 

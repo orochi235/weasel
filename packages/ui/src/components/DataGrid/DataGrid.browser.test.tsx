@@ -31,11 +31,11 @@ function Grid({ tall = false }: { tall?: boolean }) {
   );
 }
 
-const order = () => screen.getAllByRole('button', { name: /^Reorder / }).map((b) => b.getAttribute('aria-label'));
+const order = () => screen.getAllByRole('button', { name: /^Drag to reorder / }).map((b) => b.getAttribute('aria-label'));
 
 test('a handle fills its cell, in a row its own content does not set the height of', () => {
   render(<Grid tall />);
-  const handle = screen.getByRole('button', { name: 'Reorder Alpha' });
+  const handle = screen.getByRole('button', { name: 'Drag to reorder Alpha' });
   const cell = handle.closest('td')!;
   const name = cell.nextElementSibling!;
   const h = handle.getBoundingClientRect();
@@ -48,12 +48,12 @@ test('a handle fills its cell, in a row its own content does not set the height 
 
 test('Alt+Arrow on a focused handle moves the row and keeps focus on it', async () => {
   render(<Grid />);
-  const handle = screen.getByRole('button', { name: 'Reorder Alpha' });
+  const handle = screen.getByRole('button', { name: 'Drag to reorder Alpha' });
   handle.focus();
   await userEvent.keyboard('{Alt>}{ArrowDown}{/Alt}');
-  expect(order()).toEqual(['Reorder Beta', 'Reorder Alpha', 'Reorder Gamma']);
-  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Reorder Alpha' }));
+  expect(order()).toEqual(['Drag to reorder Beta', 'Drag to reorder Alpha', 'Drag to reorder Gamma']);
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Drag to reorder Alpha' }));
   await userEvent.keyboard('{Alt>}{ArrowDown}{ArrowUp}{ArrowUp}{/Alt}');
-  expect(order()).toEqual(['Reorder Alpha', 'Reorder Beta', 'Reorder Gamma']);
-  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Reorder Alpha' }));
+  expect(order()).toEqual(['Drag to reorder Alpha', 'Drag to reorder Beta', 'Drag to reorder Gamma']);
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Drag to reorder Alpha' }));
 });

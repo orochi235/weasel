@@ -150,16 +150,7 @@
 }
 
 .handle {
-  font: inherit;
-  background: transparent;
-  border: 0;
-  color: var(--wzl-fg-subtle);
   padding: var(--wzl-space-1) var(--wzl-space-2);
-  cursor: grab;
-  touch-action: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   min-width: var(--wzl-icon-button-size);
   height: var(--wzl-icon-button-size);
   border-radius: var(--wzl-radius-sm);
@@ -172,10 +163,6 @@
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-}
-
-.handle:active {
-  cursor: grabbing;
 }
 
 .entry[data-selected] > .card {
