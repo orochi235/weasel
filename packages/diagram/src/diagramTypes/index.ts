@@ -1,4 +1,7 @@
-export { BPMN_TYPE, DIAGRAM_TYPES, FLOWCHART_TYPE, NETWORK_TYPE, STENCIL_GROUPS, groupStencilIds, groupStencils, isContainerStencil } from './catalog';
+export {
+  BPMN_TYPE, DIAGRAM_TYPES, FLOWCHART_TYPE, MIND_MAP_TYPE, NETWORK_TYPE, ORG_CHART_TYPE, STENCIL_GROUPS, groupStencilIds,
+  groupStencils, isContainerStencil,
+} from './catalog';
 export {
   addStencilGroup, diagramTypeDocOf, diagramTypeDocValue, diagramTypeOf, removeStencilGroup, setDiagramType,
 } from './doc';

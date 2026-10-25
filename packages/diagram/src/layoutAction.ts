@@ -14,6 +14,7 @@ import { force } from './force';
 import { buildGraph, type GraphSource } from './graph';
 import { chain } from './chain';
 import { layered } from './layered';
+import { radial } from './radial';
 import { tree } from './tree';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
 import { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
@@ -25,6 +26,7 @@ export const LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
   tree,
   force,
   chain,
+  radial,
 });
 
 /** Options for {@link applyLayout}. */

@@ -52,7 +52,7 @@ describe('StencilPanel', () => {
     const { scene } = panel();
     fireEvent.click(screen.getByRole('button', { name: /More shapes/ }), { detail: 1 });
     expect(screen.getAllByRole('menuitemcheckbox').map((r) => [r.textContent?.replace('✓', ''), r.getAttribute('aria-checked')]))
-      .toEqual(Object.values(STENCIL_GROUPS).map((g) => [g.label, String(g.id === 'flowchart' || g.id === 'containers')]));
+      .toEqual(Object.values(STENCIL_GROUPS).map((g) => [g.label, String(['flowchart', 'containers'].includes(g.id))]));
     act(() => { fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Flowchart/ })); });
     expect(titles()).toEqual(['Containers']);
     act(() => { scene.undo(); });

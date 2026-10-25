@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
+import { DIAGRAM_TYPES } from '@weasel-js/diagram';
 import { App } from './App';
 import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
 import { chartPrefs } from './prefs';
@@ -254,7 +255,7 @@ describe('App', () => {
     expect(panels()).not.toContain('Flowchart');
     choose('File', 'New…');
     const dialog = screen.getByRole('dialog', { name: 'New Chart' });
-    expect(within(dialog).getAllByRole('option').map((o) => o.textContent)).toEqual(['Flowchart']);
+    expect(within(dialog).getAllByRole('option').map((o) => o.textContent)).toEqual(Object.values(DIAGRAM_TYPES).map((t) => t.label));
     act(() => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })); });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(panels()).not.toContain('Flowchart');
@@ -270,6 +271,24 @@ describe('App', () => {
     const row = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
       .find((el) => el.textContent?.startsWith('Auto layout'));
     expect(row?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('turns Arrange › Auto layout on for a new org chart or mind map, whose types have a layout', () => {
+    mount();
+    const autoLayoutOff = () => {
+      act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Arrange' })); });
+      const row = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+        .find((el) => el.textContent?.startsWith('Auto layout'));
+      const off = row?.getAttribute('aria-disabled');
+      act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+      return off;
+    };
+    for (const label of ['Org chart', 'Mind map']) {
+      choose('File', 'New…');
+      act(() => { fireEvent.click(within(screen.getByRole('dialog', { name: 'New Chart' })).getByRole('option', { name: new RegExp(label) })); });
+      act(() => { fireEvent.click(screen.getByRole('button', { name: 'Create' })); });
+      expect(autoLayoutOff()).not.toBe('true');
+    }
   });
 
   it('opens Page Setup on a page from the Page menu', () => {

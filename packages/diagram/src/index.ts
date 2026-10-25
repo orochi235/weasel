@@ -280,7 +280,8 @@ export {
 } from './layoutAction';
 export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';
 export { routeWrites, routesOf, type LayoutRoutes, type RoutedScene } from './routeWrites';
-export { forestOf, tree, type Forest } from './tree';
+export { forestOf, subtreeBlocks, tree, type Forest } from './tree';
+export { radial } from './radial';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
   PORT_AFFORDANCE_KIND,
@@ -345,5 +346,7 @@ export { FLOWCHART_GROUP } from './stencils/flowchart';
 export { CONTAINERS_GROUP } from './stencils/containers';
 export { NETWORK_GROUP, NETWORK_STENCILS } from './stencils/network';
 export { BPMN_GROUP, BPMN_STENCILS } from './stencils/bpmn';
+export { ORG_GROUP, ORG_STENCILS } from './stencils/org';
+export { MIND_MAP_GROUP, MIND_MAP_STENCILS } from './stencils/mindMap';
 export { layoutDiagram } from './layoutAction';
 export type { LayoutDiagramOptions } from './layoutAction';
