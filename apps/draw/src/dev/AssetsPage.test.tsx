@@ -26,7 +26,8 @@ describe('AssetsPage', () => {
     fireEvent.click(within(tree()).getByText('pose.x'));
     expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('pose.x');
     expect(within(screen.getByRole('region', { name: 'Live preview' })).getByRole('heading', { name: 'Layout' })).toBeInTheDocument();
-  });
+    // About 0.5 s of jsdom work alone, spread over every pane; a loaded fleet node runs it seven to ten times slower.
+  }, 15_000);
 
   it('describes registry-enum attributes, so its source is editable', () => {
     renderWithIcons(<AssetsPage />);

@@ -626,11 +626,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   2026-10-22). A scale is fine. The curved geometry maps pointers through `boxPoint` in `Along/boxPoint.ts`, which
   needs an SVG drawn across the box; the rail is HTML.
 
-- **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
-  `apps/draw/src/dev/AssetsPage.test.tsx` with a node property schema open: the Export panel's
-  highlighted literal (`pre[data-testid=schema-literal]`) is about 3,300 elements and 130 ms of a
-  jsdom test, and `IconAttrField`'s grid of every registered icon about 2,200 and 90 ms. Virtualizing
-  either, or mounting the literal only while its panel is open, changes the UI.
+- **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
+  `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
+  (median of 12) with a node property schema open: `IconAttrField`'s grid of every registered icon
+  (489 cells, about 2,200 elements) costs about 105 ms of it, and highlighting the Export panel's
+  two literals about 70 ms (`pre[data-testid=schema-literal]`, about 1,800 elements since
+  `CodeBlock` stopped wrapping plain tokens). The rest is spread over every pane. Virtualizing
+  either list, or mounting the literal only while its panel is open, changes the UI.
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -987,13 +989,6 @@ only story runner in the repo.
 ---
 
 ## Demos & visual regression
-
-- **(P3) `AssetsPage`'s first test still times out in some full fleet runs.** "opens on WeaselDraw
-  preferences, and opens a node property schema picked from the list" (`apps/draw/src/dev/AssetsPage.test.tsx`)
-  hit its 5 s limit at 5195 ms on 2026-10-21 (onto job 9139de7e), after 69d135f92 moved its one-off
-  warmup into a `beforeAll` and memoized `CodeBlock` (501 ms locally, about 1.5 s under moderate
-  load). Its body still renders about 6,800 elements; the two big lists are the entry under
-  "Selection, actions & UI panels".
 
 - **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
