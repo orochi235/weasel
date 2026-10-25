@@ -20,7 +20,7 @@ function setup() {
     systemLayers: [{ id: 'main' }], initial: diagramScene(DATA) as never, registry: withDiagramRegistry(),
   });
   const box = (id: string) => scene.get(id as never)!.pose as Box;
-  const [name, x] = scene.childrenOf('c' as never) as string[];
+  const [name, x] = scene.childrenOf('c' as never).map(String);
   return { scene, box, name: name!, x: x! };
 }
 
