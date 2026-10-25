@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { pref } from '@weasel-js/prefs';
 import { ActionBar as KitActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Bar } from '@weasel-js/ui/components/Bar';
+import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { DEBUG_MENU } from './dev/devRoutes';
 import { FILE_ACTIONS } from './fileCommands';
 import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
@@ -35,23 +36,23 @@ const DEBUG_BAR = pref.group('', { debug: DEBUG_MENU }, { as: 'bar' });
 
 export function CommandBar(p: CommandBarProps) {
   return (
-    <div className="wd-commandbar" role="toolbar" aria-label="Actions">
+    <Toolbar className="wd-commandbar" aria-label="Actions" roving={false} wrap>
       {p.menus}
-      <div className="wd-commandbar-group">
+      <Toolbar.Group className="wd-commandbar-group">
         <Bar schema={FILE_BAR} />
-      </div>
+      </Toolbar.Group>
       {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
       <KitActionBar group="view" />
       <PathCommands />
       {p.corners && <CornerShape {...p.corners} />}
       <KitActionBar group="text" />
       <KitActionBar group="compound" />
-      <div className="wd-commandbar-spacer" />
+      <Toolbar.Spacer />
       <KitActionBar group="record" />
-      <div className="wd-commandbar-group">
+      <Toolbar.Group className="wd-commandbar-group">
         <Bar schema={DEBUG_BAR} />
-      </div>
+      </Toolbar.Group>
       <KitActionBar group="app" />
-    </div>
+    </Toolbar>
   );
 }
