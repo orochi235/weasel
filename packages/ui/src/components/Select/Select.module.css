@@ -126,14 +126,7 @@
 }
 
 .option {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-4);
-  padding: var(--wzl-space-2) var(--wzl-space-4);
-  border-radius: var(--wzl-radius-sm);
-  cursor: pointer;
-  color: var(--wzl-fg);
-  outline: none;
+  composes: option from '../listbox.module.css';
 }
 
 :is(.option, .section) + .section,
@@ -157,34 +150,10 @@
   white-space: nowrap;
 }
 
-.optionIcon {
-  display: inline-flex;
-  vertical-align: middle;
-  margin-inline-end: var(--wzl-space-3);
-}
-
-.optionIcon > svg {
-  display: block;
-}
-
 /* A trigger that sets its value against its end edge gets a list that does the
    same, so the row that opened over the value stays on top of it. */
 .popover[data-align='end'] .option {
   justify-content: flex-end;
-}
-
-.option[data-focused] {
-  background: var(--wzl-surface-hover);
-}
-
-.option[data-selected] {
-  color: var(--wzl-fg);
-  font-weight: var(--wzl-font-weight-medium);
-}
-
-.option[data-disabled] {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .check {

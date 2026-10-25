@@ -1,6 +1,4 @@
 import {
-  Children,
-  isValidElement,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -29,6 +27,7 @@ import listbox from '../listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 import { Caret } from '../Caret';
+import { optionLabels, withIcon } from '../optionLabels';
 import type { OptionKey } from '../../optionKey';
 
 /** One option in a {@link Select}'s `options` list. */
@@ -198,7 +197,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           {width === 'fit' && (
             <span className={s.sizer} aria-hidden="true">
               {placeholder !== undefined && <span>{placeholder}</span>}
-              {optionLabels(options, children).map((l, i) => (
+              {optionLabels(options, children, SelectSection).map((l, i) => (
                 <span key={i}>{l}</span>
               ))}
             </span>
@@ -383,38 +382,6 @@ function renderOption<T extends OptionKey>(o: SelectOption & { value: T }) {
     <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled} icon={o.icon} textValue={o.textValue}>
       {o.label}
     </SelectItem>
-  );
-}
-
-/**
- * The labels a `width='fit'` trigger measures itself against. In the children
- * form the label sits one element deep, inside a `SelectItem`, or two inside a
- * `SelectSection`.
- */
-function optionLabels(
-  options: ReadonlyArray<SelectOption | SelectOptionGroup<OptionKey>> | undefined,
-  children: ReactNode,
-): ReactNode[] {
-  if (options !== undefined)
-    return options.flatMap((o) =>
-      'options' in o ? o.options.map((g) => withIcon(g.icon, g.label)) : [withIcon(o.icon, o.label)],
-    );
-  return Children.toArray(children).flatMap((c) => {
-    if (!isValidElement<{ children?: ReactNode; icon?: ReactNode }>(c)) return [c];
-    return c.type === SelectSection
-      ? optionLabels(undefined, c.props.children)
-      : [withIcon(c.props.icon, c.props.children)];
-  });
-}
-
-/** A label led by its icon, as a row draws it. */
-function withIcon(icon: ReactNode, label: ReactNode): ReactNode {
-  if (icon === undefined || icon === null) return label;
-  return (
-    <>
-      <span className={s.optionIcon} aria-hidden="true">{icon}</span>
-      {label}
-    </>
   );
 }
 
