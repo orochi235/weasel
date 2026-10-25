@@ -7,10 +7,6 @@
   border: 1px dashed var(--wzl-border);
   border-radius: 50%;
   color: var(--wzl-fg);
-}
-
-.char {
-  white-space: pre;
   font-size: var(--wzl-font-size-lg);
   line-height: 1;
 }
