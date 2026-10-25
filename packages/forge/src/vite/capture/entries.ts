@@ -13,7 +13,14 @@ export function captureEntry(): string {
 import '@weasel-js/labkit/styles.css';
 import '@weasel-js/forge/shell.css';
 import config from 'virtual:forge/shell-config.js';
-${body('mountCapture({ index, importers, setup, labTheme: config.labTheme });')}`;
+${body(`mountCapture({
+  index,
+  importers,
+  setup,
+  labTheme: config.labTheme,
+  libraries: config.libraries,
+  dependencies: () => import('virtual:forge/deps.js').then((m) => m.default),
+});`)}`;
 }
 
 /** The capture page for an isolated story: a frame document's stylesheets. `styles` are absolute paths. */

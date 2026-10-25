@@ -186,7 +186,7 @@ describe('mountFrame', () => {
       void mountFrame({ index: entries, importers });
       handoff(location.origin, window.parent, undefined, 'ui-a:index');
       await vi.waitFor(() => expect(startIndex).toHaveBeenCalled());
-      const options = vi.mocked(startIndex).mock.calls[0]?.[0];
+      const options = vi.mocked(startIndex).mock.calls[0]?.[0].bundle;
       expect(options?.title).toBe('ui/A');
       expect(options?.stories.map((s) => s.id)).toEqual(['ui-a--two', 'ui-a--one']);
       expect(options?.descriptions).toEqual({ 'ui-a--two': 'Second.' });
@@ -202,7 +202,7 @@ describe('mountFrame', () => {
       });
       handoff(location.origin, window.parent, undefined, 'ui-a:index');
       await vi.waitFor(() => expect(startIndex).toHaveBeenCalled());
-      expect(vi.mocked(startIndex).mock.calls[0]?.[0].render).toBe(own);
+      expect(vi.mocked(startIndex).mock.calls[0]?.[0].bundle.render).toBe(own);
       expect(indexRenderOf({ default: { parameters: { forge: { index: own } } } })).toBe(own);
       expect(indexRenderOf({ default: { title: 'x' } })).toBeNull();
     });

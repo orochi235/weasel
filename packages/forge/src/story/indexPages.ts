@@ -31,8 +31,8 @@ export function primaryFile(title: string, files: readonly string[]): string | u
 }
 
 /** `stories` grouped by title, in the order titles first appear, each title's primary file's stories first. */
-export function byComponent(stories: readonly IndexEntry[]): IndexEntry[] {
-  const byTitle = new Map<string, IndexEntry[]>();
+export function byComponent<E extends Pick<IndexEntry, 'title' | 'file'>>(stories: readonly E[]): E[] {
+  const byTitle = new Map<string, E[]>();
   for (const entry of stories) {
     const group = byTitle.get(entry.title);
     if (group) group.push(entry);

@@ -8,16 +8,22 @@ import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo
 import { useHostConditions } from '../../shell/hostConditions';
 import { LAB_DENSITY } from '../../shell/labDensity';
 import type { Globals } from '../../protocol/messages';
-import type { LoadedStory, StoryContext } from '../../story/types';
+import type { Loaded } from '../../story/indexBundle';
+import type { DepGraph, LoadedStory, StoryContext } from '../../story/types';
 import { ClockContext } from '../../timeline/context';
 import { useStoryClock } from '../../timeline/StoryClock';
 import type { CapturePayload } from '../../vite/capture/payload';
 import type { FrameSetup } from '../FrameController';
+import { indexEnvOf } from '../index/indexEnv';
+import { IndexPage } from '../index/IndexPage';
 import { StoryHost } from '../StoryHost';
 
 /** Props for `CaptureView`. */
 export interface CaptureViewProps {
-  story: LoadedStory;
+  /** What the payload's id names: one story, or a component's index page. */
+  subject: Loaded;
+  /** The component graph an index page lists dependencies and history from. */
+  graph?: DepGraph | null | undefined;
   payload: CapturePayload;
   setup: FrameSetup;
   /** The shell config's `labTheme`, which the workshop's lab is themed by. */
@@ -44,16 +50,8 @@ function scrollTo(host: HTMLElement | null, { left, top }: CapturePayload['scrol
   scroller.scrollTop = top;
 }
 
-/**
- * One story rendered from a capture payload, still: its clock stands at the payload's playhead and nothing plays
- * it, and nothing it writes to its config or state goes anywhere. A story that would be in the workshop document
- * sits under a lab root themed as the lab is, as it does there; an isolated one sits in the frame document's own
- * wrapper.
- */
-export function CaptureView({ story, payload, setup, labTheme, onRendered }: CaptureViewProps) {
-  const [host, setHost] = useState<HTMLDivElement | null>(null);
-  useHostConditions(host, { hostId: HOST_ID, globals: payload.globals, overrides: payload.overrides, setup });
-
+/** One story at the payload's playhead, config and state, writing nowhere. */
+function CapturedStory({ story, payload, setup }: { story: LoadedStory; payload: CapturePayload; setup: FrameSetup }) {
   const spec = useMemo(() => story.timeline?.(payload.config) ?? null, [story, payload.config]);
   const clock = useStoryClock(spec, () => payload.playhead);
 
@@ -70,6 +68,22 @@ export function CaptureView({ story, payload, setup, labTheme, onRendered }: Cap
     title: story.title,
     name: story.name,
   };
+  return (
+    <ClockContext.Provider value={clock}>
+      <StoryHost story={story} ctx={ctx} decorators={setup.decorators ?? []} resetKey={0} onError={NO_WRITE} />
+    </ClockContext.Provider>
+  );
+}
+
+/**
+ * One story, or a component's index page, rendered from a capture payload, still: a story's clock stands at the
+ * payload's playhead and nothing plays it, and nothing it writes to its config or state goes anywhere. A story that would be in the workshop document
+ * sits under a lab root themed as the lab is, as it does there; an isolated one sits in the frame document's own
+ * wrapper.
+ */
+export function CaptureView({ subject, graph = null, payload, setup, labTheme, onRendered }: CaptureViewProps) {
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  useHostConditions(host, { hostId: HOST_ID, globals: payload.globals, overrides: payload.overrides, setup });
 
   const latest = useLatest({ onRendered, host, scroll: payload.scroll });
   useLayoutEffect(() => scrollTo(host, payload.scroll), [host, payload.scroll]);
@@ -99,11 +113,14 @@ export function CaptureView({ story, payload, setup, labTheme, onRendered }: Cap
     };
   }, [host, raf]);
 
-  const content: ReactNode = host ? (
-    <ClockContext.Provider value={clock}>
-      <StoryHost story={story} ctx={ctx} decorators={setup.decorators ?? []} resetKey={0} onError={NO_WRITE} />
-    </ClockContext.Provider>
-  ) : null;
+  const content: ReactNode = !host ? null : subject.kind === 'story' ? (
+    <CapturedStory story={subject.story} payload={payload} setup={setup} />
+  ) : (
+    <IndexPage
+      env={indexEnvOf(subject.bundle, { graph, globals: payload.globals, decorators: setup.decorators ?? [], open: NO_WRITE })}
+      render={subject.bundle.render}
+    />
+  );
 
   const box = (
     <div

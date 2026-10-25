@@ -6,12 +6,12 @@ import type { IndexEntry } from '../story/types';
 import { TrialTransport } from '../timeline/TransportBar';
 import { crumbTitle } from './Crumbs';
 import { type GlobalDeclarations, PLAYHEAD_KEY, withGlobals } from './globals';
-import { type IndexBundle, IndexTrial } from './IndexTrial';
+import { IndexTrial } from './IndexTrial';
+import type { Loaded } from '../story/indexBundle';
 import { CaptureInputs } from './loupe/CaptureInputs';
 import { StoryTrial } from './StoryTrial';
 
-/** What the registry has loaded for an entry: one story, or a component's index page. */
-export type Loaded = { kind: 'story'; story: import('../story/types').LoadedStory } | { kind: 'index'; bundle: IndexBundle };
+export type { Loaded };
 
 export interface DocumentInstrumentOptions {
   entry: IndexEntry;
@@ -38,15 +38,21 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
     config,
     defaultConfig: () => config.defaults(),
     initialState: (c) => initialState?.(c) ?? null,
-    render: (ctx) =>
-      loaded.kind === 'story' ? (
-        <>
+    render: (ctx) => (
+      <>
+        {loaded.kind === 'story' ? (
           <StoryTrial key={loaded.story.id} story={loaded.story} setup={setup} ctx={ctx} />
-          <CaptureInputs entry={entry} layout={loaded.story.layout} config={ctx.config} state={ctx.state} />
-        </>
-      ) : (
-        <IndexTrial bundle={loaded.bundle} setup={setup} config={ctx.config} />
-      ),
+        ) : (
+          <IndexTrial bundle={loaded.bundle} setup={setup} config={ctx.config} />
+        )}
+        <CaptureInputs
+          entry={entry}
+          layout={loaded.kind === 'story' ? loaded.story.layout : 'fullscreen'}
+          config={ctx.config}
+          state={ctx.state}
+        />
+      </>
+    ),
     ...(loaded.kind === 'story' && loaded.story.viewport
       ? { stage: { size: { width: loaded.story.viewport.width, height: loaded.story.viewport.height } } }
       : {}),
