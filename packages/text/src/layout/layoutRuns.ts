@@ -34,6 +34,7 @@ import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign } from '../textStyle';
 import { analyzeParagraphs, orderLine } from './bidiLines';
 import { directionOfLevel, warnRtlWithoutEngine } from './bidiRegistry';
+import { LayoutColumns } from './layoutColumns';
 import { measureRuns, mirrorEntries } from './layoutEntries';
 import { breakLines, placeLine } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
@@ -192,17 +193,23 @@ export function layoutRuns(
     : null;
   if (!bidi) warnRtlWithoutEngine(cps);
 
+  const broken = breakLines(entries, o.maxWidth, o.lineHeight);
+  let size = 0;
+  for (const line of broken) size += line.entries.length;
+  const cols = new LayoutColumns(size);
   const lines: LaidOutLineBox[] = [];
   let y = 0;
   let width = 0;
-  for (const line of breakLines(entries, o.maxWidth, o.lineHeight)) {
+  let start = 0;
+  for (const line of broken) {
     const order = orderLine(paragraphs, line.start, line.entries.length);
     // L4, done per line rather than during analysis: the same code point
     // mirrors in one run and not in another, and the level is known only now.
     if (bidi) line.entries = mirrorEntries(line.entries, order.levels, (cp) => bidi.mirror(cp), runs);
     const reads = o.direction !== 'auto' ? o.direction
       : directionOfLevel(line.entries.length > 0 ? paragraphs?.baseLevel(line.start) ?? 0 : 0);
-    const placed = placeLine(line, y, order, resolveAlign(o.align, reads), o.alignWidth, o.justify);
+    const placed = placeLine(line, y, order, resolveAlign(o.align, reads), o.alignWidth, o.justify, cols, start);
+    start += line.entries.length;
     lines.push(placed.box);
     width = Math.max(width, placed.inkWidth);
     y += line.height;

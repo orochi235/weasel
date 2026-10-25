@@ -17,9 +17,11 @@ import {
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { emboldenGlyphD } from '../syntheticBold';
 import { lineDecorations, type DecorationKind } from './decorationMetrics';
+import { blankGlyph, lazy, LineBox } from './layoutColumns';
 import type { LaidOutRuns, PlacedGlyph } from './layoutRuns';
 
-/** One textured glyph quad, relative to the text's own top-left. */
+/** One textured glyph quad, relative to the text's own top-left: what
+ *  `LaidOutGroup.quads` holds, read out of `quadData`. */
 export interface LaidOutQuad {
   x0: number; y0: number; x1: number; y1: number;
   u0: number; v0: number; u1: number; v1: number;
@@ -83,8 +85,15 @@ export interface LaidOutGroup {
    *  run onto the outline tier at any size. A run the tier cannot serve at all
    *  (no registered outlines) stays on the atlas, unstroked. */
   stroke?: Stroke;
-  /** Textured glyph quads. Always empty for an `'outline'` group. */
-  quads: LaidOutQuad[];
+  /** Textured glyph quads, {@link QUAD_STRIDE} numbers each, in
+   *  `LaidOutQuad`'s field order: `x0 y0 x1 y1 u0 v0 u1 v1 baselineY`. What
+   *  a painter reads; `quads` is a view of it. Empty for an `'outline'` group. */
+  quadData: Float64Array;
+  /** On a `'color'` group, each quad's glyph record, which a renderer drawing
+   *  it larger than its bake asks for a sharper one (`sharperColorGlyph`). */
+  colorGlyphs?: readonly BmFontChar[];
+  /** The same quads as objects, built on first read. */
+  readonly quads: LaidOutQuad[];
   /** Outline geometry. Always empty for an `'atlas'` / `'canvas'` group. */
   glyphs: LaidOutOutlineGlyph[];
 }
@@ -164,27 +173,52 @@ export function faceOutlineD(g: PlacedGlyph): string | null {
   return glyphOutline(family, weight, style, g.cp);
 }
 
+/** Numbers per quad in `LaidOutGroup.quadData`. */
+export const QUAD_STRIDE = 9;
+
 /**
- * The atlas quad for `g`, or null when it has nothing to sample: no atlas
- * record, a zero-area glyph, or a dynamic glyph not baked yet.
+ * Whether `g` has an atlas quad: false with no atlas record, for a zero-area
+ * glyph, or for a dynamic glyph not baked yet.
  */
-export function glyphQuad(g: PlacedGlyph): LaidOutQuad | null {
+export function hasGlyphQuad(g: PlacedGlyph): boolean {
   const { font, glyph } = g;
-  if (font === null || glyph === null || glyph.width === 0 || glyph.page < 0) return null;
+  return font !== null && glyph !== null && glyph.width !== 0 && glyph.page >= 0;
+}
+
+/** Write `g`'s atlas quad, which it must have, into `out` at `at`. */
+function writeGlyphQuad(g: PlacedGlyph, out: Float64Array, at: number): void {
+  const font = g.font!, glyph = g.glyph!;
   const scale = g.fontSize / g.metrics.size;
   const x0 = g.x + glyph.xoffset * scale;
   // `yoffset` is measured from the line top in the atlas's own frame, so
   // subtracting that frame's baseline hangs the glyph off its own.
   const y0 = g.baselineY + (glyph.yoffset - g.metrics.base) * scale;
-  return {
-    x0, y0, x1: x0 + glyph.width * scale, y1: y0 + glyph.height * scale,
-    u0: glyph.x / font.common.scaleW,
-    v0: glyph.y / font.common.scaleH,
-    u1: (glyph.x + glyph.width) / font.common.scaleW,
-    v1: (glyph.y + glyph.height) / font.common.scaleH,
-    baselineY: g.baselineY,
-  };
+  out[at] = x0;
+  out[at + 1] = y0;
+  out[at + 2] = x0 + glyph.width * scale;
+  out[at + 3] = y0 + glyph.height * scale;
+  out[at + 4] = glyph.x / font.common.scaleW;
+  out[at + 5] = glyph.y / font.common.scaleH;
+  out[at + 6] = (glyph.x + glyph.width) / font.common.scaleW;
+  out[at + 7] = (glyph.y + glyph.height) / font.common.scaleH;
+  out[at + 8] = g.baselineY;
 }
+
+const groupViews: PropertyDescriptorMap = {
+  quads: lazy('quads', (group: LaidOutGroup) => {
+    const d = group.quadData;
+    const out: LaidOutQuad[] = [];
+    for (let at = 0, k = 0; at < d.length; at += QUAD_STRIDE, k++) {
+      const q: LaidOutQuad = {
+        x0: d[at], y0: d[at + 1], x1: d[at + 2], y1: d[at + 3],
+        u0: d[at + 4], v0: d[at + 5], u1: d[at + 6], v1: d[at + 7], baselineY: d[at + 8],
+      };
+      if (group.colorGlyphs) q.colorGlyph = group.colorGlyphs[k];
+      out.push(q);
+    }
+    return out;
+  }),
+};
 
 /** Each run's own face, which places its rules: a glyph's `resolved` may be a
  *  per-glyph fallback. */
@@ -193,20 +227,29 @@ export function runFaces(runs: readonly ResolvedRun[]): (run: number) => FaceMet
   return (run) => faces[run];
 }
 
+/** A group being filled: its quads so far, in a buffer that grows. */
+interface Filling {
+  group: LaidOutGroup;
+  data: Float64Array;
+  count: number;
+  colorGlyphs: BmFontChar[] | undefined;
+}
+
 /** The group the previous glyph joined, and every input its key was built from. */
 interface LastGroup {
-  group: LaidOutGroup | null;
+  group: Filling | null;
   run: number; family: string; weight: number; style: FontStyle;
   bold: boolean; italic: boolean; source: LaidOutGroup['source']; page: number;
 }
 
 function groupFor(
-  groups: Map<string, LaidOutGroup>,
+  groups: Map<string, Filling>,
   g: PlacedGlyph,
   run: ResolvedRun,
   source: LaidOutGroup['source'],
   last: LastGroup,
-): LaidOutGroup {
+  capacity: number,
+): Filling {
   const { family, weight, style } = g.resolved.resolved;
   const { synthetic } = g.resolved;
   const page = source === 'outline' ? 0 : g.glyph!.page;
@@ -222,19 +265,51 @@ function groupFor(
   const stroke = source === 'outline' && strokeHasInk(run.stroke) ? run.stroke : undefined;
   const key = `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}`
     + `|${paintKey(run.fill?.paint)}|${strokeKey(stroke)}|${source}|${page}`;
-  let group = groups.get(key);
-  if (!group) {
-    group = {
+  let filling = groups.get(key);
+  if (!filling) {
+    const group = {
       family, weight, style, synthetic: { ...synthetic }, source, page,
       fill: run.fill,
       ...(stroke ? { stroke } : {}),
-      quads: [], glyphs: [],
+      quadData: EMPTY,
+      glyphs: [],
+    } as unknown as LaidOutGroup;
+    filling = {
+      group,
+      data: source === 'outline' ? EMPTY : new Float64Array(capacity * QUAD_STRIDE),
+      count: 0,
+      colorGlyphs: source === 'color' ? [] : undefined,
     };
-    groups.set(key, group);
+    groups.set(key, filling);
   }
-  last.group = group;
+  last.group = filling;
   last.run = g.run; last.family = family; last.weight = weight; last.style = style;
   last.bold = synthetic.bold; last.italic = synthetic.italic; last.source = source; last.page = page;
+  return filling;
+}
+
+const EMPTY = new Float64Array(0);
+
+/** Append `g`'s atlas quad to `f`. */
+function pushQuad(f: Filling, g: PlacedGlyph): void {
+  const at = f.count * QUAD_STRIDE;
+  if (at === f.data.length) {
+    const grown = new Float64Array(Math.max(f.data.length * 2, QUAD_STRIDE * 4));
+    grown.set(f.data);
+    f.data = grown;
+  }
+  writeGlyphQuad(g, f.data, at);
+  f.count++;
+  f.colorGlyphs?.push(g.glyph!);
+}
+
+/** `f`'s group, its quads trimmed to the ones written. */
+function finish(f: Filling): LaidOutGroup {
+  const { group } = f;
+  const used = f.count * QUAD_STRIDE;
+  group.quadData = used === f.data.length ? f.data : f.data.slice(0, used);
+  if (f.colorGlyphs) group.colorGlyphs = f.colorGlyphs;
+  Object.defineProperties(group, groupViews);
   return group;
 }
 
@@ -247,7 +322,7 @@ export function paintRuns(
   runs: readonly ResolvedRun[],
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
-  const groups = new Map<string, LaidOutGroup>();
+  const groups = new Map<string, Filling>();
   const last: LastGroup = {
     group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
   };
@@ -256,9 +331,18 @@ export function paintRuns(
   // A rule is a solid rect with only a fill to paint it.
   const rulePaint = (run: number): string | null =>
     (fillHasInk(runs[run].fill) ? paintKey(runs[run].fill!.paint) : null);
+  // One glyph walks the layout's columns, so painting builds no object a glyph.
+  const cursor = blankGlyph();
+  let glyphCount = 0;
+  for (const line of laid.lines) glyphCount += LineBox.span(line)?.count ?? line.glyphs.length;
 
   for (const line of laid.lines) {
-    for (const g of line.glyphs) {
+    const span = LineBox.span(line);
+    const count = span ? span.count : line.glyphs.length;
+    const rules = lineDecorations(runs, faceOf, rulePaint);
+    for (let slot = 0; slot < count; slot++) {
+      const g = span ? span.cols.glyph(span.start, span.cols.visual(span.start, slot), cursor) : line.glyphs[slot];
+      rules.add(g);
       const run = runs[g.run];
       // Asked before the quad: a dynamic glyph still waiting for its bake has
       // no atlas rect, but its outline is available right now.
@@ -268,20 +352,23 @@ export function paintRuns(
       // refused, so it gets none.
       if (!fillHasInk(run.fill) && !(outline !== null && strokeHasInk(run.stroke))) continue;
       if (outline !== null) {
-        groupFor(groups, g, run, 'outline', last).glyphs.push({
+        groupFor(groups, g, run, 'outline', last, 0).group.glyphs.push({
           ...outline, x: g.x, baselineY: g.baselineY, scale: g.fontSize,
         });
         continue;
       }
-      const quad = glyphQuad(g);
-      if (!quad) continue;
-      if (g.glyph?.color) groupFor(groups, g, run, 'color', last).quads.push({ ...quad, colorGlyph: g.glyph });
-      else groupFor(groups, g, run, g.resolved.source, last).quads.push(quad);
+      if (!hasGlyphQuad(g)) continue;
+      const source = g.glyph!.color ? 'color' : g.resolved.source;
+      // Most text is one group, so the first is sized for every glyph and the
+      // rest grow.
+      pushQuad(groupFor(groups, g, run, source, last, groups.size === 0 ? glyphCount : 4), g);
     }
-    for (const rule of lineDecorations(line.glyphs, runs, faceOf, rulePaint)) {
+    for (const rule of rules.end()) {
       const { run, ...rect } = rule;
       decorations.push({ ...rect, fill: runs[run].fill! });
     }
   }
-  return { groups: [...groups.values()], decorations };
+  const out: LaidOutGroup[] = [];
+  for (const f of groups.values()) out.push(finish(f));
+  return { groups: out, decorations };
 }

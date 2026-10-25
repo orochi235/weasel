@@ -4,8 +4,8 @@
  * have had their say.
  */
 import type { LineOrder } from './bidiLines';
+import { LineBox, type LayoutColumns } from './layoutColumns';
 import type { Entry } from './layoutEntries';
-import type { LaidOutCell, LaidOutLineBox, PlacedGlyph } from './layoutRuns';
 import { hangs, wrapLines } from './lineBreak/wrapLines';
 import { tabAdvance, widthWithTabs } from './tabStops';
 
@@ -126,9 +126,11 @@ function alignOffset(align: 'left' | 'center' | 'right', alignWidth: number, ink
   return align === 'center' ? slack / 2 : slack;
 }
 
+const NO_GAPS: ReadonlySet<number> = new Set();
+
 /** A line set at its place in the text. */
 export interface PlacedLine {
-  box: LaidOutLineBox;
+  box: LineBox;
   /** Width of the line's ink, hung white space left out and any justified
    *  spread counted. */
   inkWidth: number;
@@ -136,8 +138,8 @@ export interface PlacedLine {
 
 /**
  * Set `line` with its top at `y`: align it in `alignWidth`, spread it when it
- * is `justify`'s to spread, then walk the pen through `order`, giving every
- * entry a cell and a placed glyph.
+ * is `justify`'s to spread, then walk the pen through `order`, storing every
+ * entry's cell and placed glyph in `cols` from index `start`.
  */
 export function placeLine(
   line: Line,
@@ -146,6 +148,8 @@ export function placeLine(
   align: 'left' | 'center' | 'right',
   alignWidth: number,
   justify: boolean,
+  cols: LayoutColumns,
+  start: number,
 ): PlacedLine {
   const { entries } = line;
   const hung = hungWidth(entries);
@@ -153,7 +157,7 @@ export function placeLine(
   const slack = alignWidth - inkWidth;
   const gaps = justify && line.wrapped && Number.isFinite(alignWidth) && slack > 0
     ? wordGaps(entries)
-    : new Set<number>();
+    : NO_GAPS;
   const gapExtra = gaps.size > 0 ? slack / gaps.size : 0;
   const spread = gapExtra * gaps.size;
   const inkLeft = spread > 0 ? 0 : alignOffset(align, alignWidth, inkWidth);
@@ -163,10 +167,9 @@ export function placeLine(
   const left = hangsLeft ? inkLeft - hung : inkLeft;
   const lineBaselineY = y + line.ascent;
 
-  const cells: LaidOutCell[] = new Array(entries.length);
-  const glyphs: PlacedGlyph[] = [];
   let penX = left;
   let prevPos = -1;
+  let slot = 0;
   for (const pos of order.visual) {
     const e = entries[pos];
     // Kerning is a gap between two adjacent characters, and the wrap measured
@@ -179,27 +182,17 @@ export function placeLine(
       : 0;
     prevPos = pos;
     const step = e.advance + e.tracking + (gaps.has(pos) ? gapExtra : 0);
-    cells[pos] = {
-      srcIndex: e.srcIndex, srcEnd: e.srcEnd, cp: e.cp, x: penX,
-      advance: step, level: order.levels[pos],
-      drawsInk: e.drawsInk, clusterEnd: e.clusterEnd,
-    };
-    glyphs.push({
-      run: e.run, cell: pos, cp: e.cp, fontSize: e.fontSize,
-      resolved: e.resolved, metrics: e.metrics, font: e.font, glyph: e.glyph,
-      x: penX,
-      // Positive raises, and y grows down, so the shift subtracts.
-      baselineY: lineBaselineY - e.baselineShift,
-      advance: e.advance, step,
-    });
+    // Positive raises, and y grows down, so the shift subtracts.
+    cols.set(start + pos, e, order.levels[pos], penX, step, lineBaselineY - e.baselineShift);
+    cols.setVisual(start, slot++, pos);
     penX += step;
   }
 
   return {
-    box: {
+    box: new LineBox({
       x0: left, y0: y, x1: left + line.width + spread, y1: y + line.height,
-      baselineY: lineBaselineY, cells, glyphs, srcEnd: line.srcEnd, justified: spread > 0,
-    },
+      baselineY: lineBaselineY, srcEnd: line.srcEnd, justified: spread > 0,
+    }, cols, start, entries.length),
     inkWidth: inkWidth + spread,
   };
 }
