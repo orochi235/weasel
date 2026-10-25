@@ -163,9 +163,6 @@ Priority tags:
 - **(P3) Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
 
-- **(P3) The `textAlong` items thunk is not memoized.** Every derivation miss, such as each frame of a source
-  drag, re-runs `textClusters`.
-
 - **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
   read as letter spacing (`packages/svg/src/glyphShifts.ts`), and so is a `dx` on a `<text>`
   holding only text. `rotate`, list-valued per-glyph `x` / `y`, and a `dx` on a `<text>` that

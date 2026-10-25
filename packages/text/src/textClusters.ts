@@ -3,7 +3,7 @@
  * origin with the slot it takes on the line — the pieces a caller lays out
  * one by one, as text along a path does.
  */
-import { faceMetricsOf } from '@weasel-js/font';
+import { faceMetricsOf, glyphGeneration } from '@weasel-js/font';
 import type { PolygonPath } from '@weasel-js/geom';
 import { concat, paintsOf, placedGlyphOutline } from './glyphOutlines';
 import { layoutRuns, type PlacedGlyph } from './layout/layoutRuns';
@@ -46,9 +46,30 @@ const MIDDLE_FALLBACK = 0.25;
  * glyph, or one drawn by a fallback face with no outlines, keeps its slot
  * with no `paths`. Only a code point that inks its slot is drawn, so a color
  * cluster's leading code points stay blank too.
+ *
+ * Remembered per `data` object: the same `data`, `width` and `scale` hand
+ * back the same array until a face or glyph changes, so treat `data` as
+ * immutable and don't mutate the result. A throw is not remembered.
  */
 export function textClusters(data: TextOutlineSource, opts: TextClustersOptions = {}): TextCluster[] {
-  const box = { x: 0, y: 0, width: opts.width ?? Infinity, height: 0 };
+  const width = opts.width ?? Infinity;
+  const scale = opts.scale ?? 1;
+  const generation = glyphGeneration();
+  const hit = remembered.get(data);
+  if (hit && hit.width === width && hit.scale === scale && hit.generation === generation) return hit.clusters;
+  const clusters = clustersOf(data, width, scale);
+  remembered.set(data, { width, scale, generation, clusters });
+  return clusters;
+}
+
+// One slot per data object: a resize drag replaces it rather than piling up a width per frame.
+const remembered = new WeakMap<TextOutlineSource, {
+  width: number; scale: number; generation: number; clusters: TextCluster[];
+}>();
+
+function clustersOf(data: TextOutlineSource, width: number, scale: number): TextCluster[] {
+  const opts = { scale };
+  const box = { x: 0, y: 0, width, height: 0 };
   const { runs, opts: layoutOpts } = outlineLayoutInput(data, box, opts, 'textClusters');
   const line = layoutRuns(runs, layoutOpts).lines[0];
   if (!line || line.cells.length === 0) return [];

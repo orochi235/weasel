@@ -221,4 +221,35 @@ describe('textClusters', () => {
   it('throws as textToPath does for a face with no outlines', () => {
     expect(() => textClusters(text('H', 'nowhere'))).toThrow(TextOutlinesError);
   });
+
+  it('hands back the same clusters for the same data, width and scale', () => {
+    const src = text('AVA');
+    const first = textClusters(src, { width: 500 });
+    expect(textClusters(src, { width: 500 })).toBe(first);
+    expect(textClusters(src, { width: 500, scale: 1 })).toBe(first);
+  });
+
+  it('lays out again for another width, scale or data object', () => {
+    const src = text('AVA');
+    const first = textClusters(src, { width: 500 });
+    expect(textClusters(src, { width: 600 })).not.toBe(first);
+    expect(textClusters(src, { width: 600, scale: 2 })).not.toBe(first);
+    expect(textClusters({ ...src }, { width: 600, scale: 2 })).not.toBe(first);
+  });
+
+  it('lays out again once a face changes', async () => {
+    const src = text('AVA');
+    const first = textClusters(src);
+    await registerAll();
+    const again = textClusters(src);
+    expect(again).not.toBe(first);
+    expect(again).toEqual(first);
+  });
+
+  it('remembers no throw, so a face that lands is read', async () => {
+    const src = text('ab', 'all');
+    expect(() => textClusters(src)).toThrow(TextOutlinesError);
+    await registerAll();
+    expect(textClusters(src)).toHaveLength(2);
+  });
 });
