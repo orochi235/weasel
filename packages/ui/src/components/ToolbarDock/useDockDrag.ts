@@ -176,17 +176,26 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
     commit(moved.next);
   };
 
-  // Stable, so the dock's context for each bar does not change, and redraw every bar, on each frame of a drag.
-  const on = useLatest({ onPointerDown, onKeyDown });
+  const handlers = useStableHandlers(onPointerDown, onKeyDown);
+  return { view, layout, announcement, handlers };
+}
+
+/**
+ * One handler object per bar, the same across renders, calling the latest `down` and `key`. Stable, so the dock's
+ * context for each bar does not change, and redraw every bar, on each frame of a drag.
+ */
+function useStableHandlers(
+  down: (barId: string, e: ReactPointerEvent<HTMLElement>) => void,
+  key: (barId: string, e: ReactKeyboardEvent<HTMLElement>) => void,
+): DockDrag['handlers'] {
+  const on = useLatest({ down, key });
   const made = useRef(new Map<string, DockHandleHandlers>());
-  const handlers = useCallback((barId: string): DockHandleHandlers => {
+  return useCallback((barId: string): DockHandleHandlers => {
     let got = made.current.get(barId);
     if (!got) {
-      got = { onPointerDown: (e) => on.current.onPointerDown(barId, e), onKeyDown: (e) => on.current.onKeyDown(barId, e) };
+      got = { onPointerDown: (e) => on.current.down(barId, e), onKeyDown: (e) => on.current.key(barId, e) };
       made.current.set(barId, got);
     }
     return got;
   }, [on]);
-
-  return { view, layout, announcement, handlers };
 }
