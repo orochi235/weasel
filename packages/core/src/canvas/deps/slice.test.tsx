@@ -308,6 +308,43 @@ describe('the default slice dep', () => {
     });
   });
 
+  describe('in a still scene', () => {
+    function grid(): S {
+      const scene = createScene<Data, Layer, RectPose>({ systemLayers: [{ id: 'main' }] });
+      for (let i = 0; i < 100; i++) {
+        const x = (i % 10) * 20, y = Math.floor(i / 10) * 20;
+        scene.add({
+          id: asNodeId(`n${i}`), kind: 'mark', layer: 'main',
+          pose: { x, y, width: 10, height: 10 },
+          data: { path: rectPath(x, y, 10, 10), fill: 'red' },
+        });
+      }
+      return scene;
+    }
+    const miss = [{ x: -50, y: -50 }, { x: -40, y: -50 }];
+
+    it('reads only the nodes the pick index finds under the cut', () => {
+      const scene = grid();
+      const { commit } = mount(scene);
+      commit(miss);
+      const hidden = vi.spyOn(scene, 'isHidden');
+      commit(miss);
+      expect(hidden).not.toHaveBeenCalled();
+    });
+
+    it('cuts what the index finds under the cut, and nothing else', () => {
+      const scene = grid();
+      const { commit } = mount(scene);
+      commit(miss);
+      commit([{ x: 15, y: 25 }, { x: 35, y: 25 }]);
+      const ids = leaves(scene).map((n) => n.id);
+      expect(ids).toHaveLength(101);
+      expect(ids).not.toContain('n11');
+      expect(ids).toContain('n10');
+      expect(ids).toContain('n12');
+    });
+  });
+
   it('gives way to a slice dep the consumer publishes', () => {
     const scene = makeScene();
     const own = { commit: vi.fn() };

@@ -489,8 +489,8 @@ Priority tags:
 
 - **(P3) Several hit tests still scan every node or shape linearly.** Marquee, lasso and point picks
   consult the scene's BVH pick index (`packages/core/src/canvas/pickIndex/`); these do not, and can
-  move onto it: core's `features/text/textHitAt.ts`, `features/measure/measureHit.ts` and
-  `canvas/deps/slice.ts`; `diagram/src/portLayer.ts`, `diagram/src/labelDragLayer.ts`,
+  move onto it: core's `features/text/textHitAt.ts` and `features/measure/measureHit.ts`;
+  `diagram/src/portLayer.ts`, `diagram/src/labelDragLayer.ts`,
   `labkit/src/loupe/lens/lensHitBoxes.ts`, `findPathSnaps` in `geom/src/snap/pathSnap.ts`, and
   `boxesOf` in kernel3d's `snap/sources.ts`.
 
