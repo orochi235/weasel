@@ -109,6 +109,14 @@ Priority tags:
 
 ## Viewport
 
+- **(P3) A drag pan under a scaled host moves the view by the drag in client px** (2026-10-25, read in the
+  code, not seen). The dispatcher's `drag.screenDelta` is the raw `clientX`/`clientY` difference
+  (`routing/src/interactions/dispatcher/invocationCtx.ts`), and `viewport.dragPan` applies it as view px, so
+  under a `scale(2)` ancestor the content runs twice as far as the pointer. Every other pointer read now
+  honors a host's `clientToLocal` (labkit's `CameraInput` wires one since 2026-10-25, and `<SceneCanvas>`
+  already did); the delta would be the difference of two `toCanvasLocal` points instead, which changes
+  what `screenDelta` means for every view-mutating drag.
+
 - **(P3) Raw WebGL that skips `useOrbitView` escapes labkit's missing-camera check.** A trial with
   `orbit` undeclared flags a 3D view in the console and with a "no camera" title-bar badge when the
   instrument calls `useOrbitView()` or a three.js `WebGLRenderer` or `WebGPURenderer` lands in it
@@ -886,10 +894,6 @@ only story runner in the repo.
   `<CanvasStack>` puts the scale an ancestor transform shows it at into its backing density, so an in-document copy
   is sharp at any factor. Inside an isolated story's frame the lens's transform is outside the frame's document,
   where the stack's measurement cannot see it, so its canvas is enlarged instead.
-- **(P3) A `<CanvasStack>` under a scaled ancestor maps the pointer in client px** (2026-10-21, read in the code, not
-  seen). `CameraInput`'s `clientToWorld`, `worldToClient` and `hostSize` read the host's client rect, which an
-  ancestor transform (a `<Stage>`, `<TrialOverview>`) scales, while the stack now draws in its layout px. Nothing
-  takes input there today: a lens's copy takes no clicks.
 
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite

@@ -43,6 +43,7 @@ import { useCameraWheelSlot } from './CameraWheelContext';
 import { type CameraGestures, resolveGestures } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
+import { clientToHost, hostBox, hostToClient } from './hostBox';
 import type { ViewportSize, WorldFrame } from './worldSpec';
 
 /** The view id the stage publishes its pointer under. */
@@ -128,8 +129,6 @@ export function useCameraView({
 }: CameraViewOptions): CameraView {
   // Written by each commit and by `set`, ahead of the render it asks for —
   // two writers, so not `useLatest`.
-  // Written by each commit and by `set`, ahead of the render it asks for —
-  // two writers, so not `useLatest`.
   const live = useRef({ view: normalize2DView(view), onViewChange, frame });
   // A view `set` wrote is already in `live`; any other was placed from outside.
   const placedRef = useRef<ZoomRange | null>(null);
@@ -165,8 +164,8 @@ export function useCameraView({
         live.current.onViewChange(vt);
       },
       hostSize: () => {
-        const r = hostRef.current?.getBoundingClientRect();
-        return r ? { width: r.width, height: r.height } : null;
+        const box = hostBox(hostRef.current);
+        return box ? { width: box.width, height: box.height } : null;
       },
       zoomRange: () => ({ ...bounds.current }),
       zoomOf: (v) => as2DView(v)?.zoom ?? null,
@@ -239,23 +238,24 @@ function CameraDispatch({
   useDepSource('rootView', () => camera);
   useDepSource('menuHost', () => labMenu ?? undefined);
 
+  // In the host's layout px, which an ancestor transform's scale is taken out of.
+  const clientToLocal = useMemo(
+    () => (cx: number, cy: number) => clientToHost(hostBox(hostRef.current), cx, cy),
+    [hostRef],
+  );
   const clientToWorld = useMemo(
     () => (cx: number, cy: number) => {
-      const r = hostRef.current?.getBoundingClientRect();
-      const [x, y] = screenToWorld(
-        cx - (r?.left ?? 0),
-        cy - (r?.top ?? 0),
-        viewToTransform(camera.get()),
-      );
+      const local = clientToLocal(cx, cy);
+      const [x, y] = screenToWorld(local.x, local.y, viewToTransform(camera.get()));
       return { x, y };
     },
-    [hostRef, camera],
+    [clientToLocal, camera],
   );
   useDepSource('worldToClient', () => (x: number, y: number) => {
-    const r = hostRef.current?.getBoundingClientRect();
-    if (!r) return null;
+    const box = hostBox(hostRef.current);
+    if (!box) return null;
     const [sx, sy] = worldToScreen(x, y, viewToTransform(camera.get()));
-    return { x: r.left + sx, y: r.top + sy };
+    return hostToClient(box, sx, sy);
   });
 
   const actions = useMemo<Action[]>(() => {
@@ -313,6 +313,7 @@ function CameraDispatch({
     actions: registry,
     entriesById: NO_TOOLS,
     clientToWorld,
+    clientToLocal,
     channels: labMenu ? CHANNELS_WITH_MENU : CHANNELS,
   });
 
