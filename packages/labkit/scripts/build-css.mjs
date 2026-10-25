@@ -25,39 +25,48 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cssInputs, skipIfBuilt } from './build-css-inputs.mjs';
 
 const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const packages = join(pkgRoot, '..');
+const sheet = join(pkgRoot, 'dist/styles.css');
+const { resolve } = createRequire(import.meta.url);
+const inputs = cssInputs(packages, resolve);
 
 // core's and ui's builds end by calling this with --if-built, so a rebuild of
 // either alone cannot leave the sheet behind the CSS it was copied from. In a
-// full build they run before labkit has a dist, and labkit's own build makes
-// the sheet.
-if (process.argv.includes('--if-built') && !existsSync(join(pkgRoot, 'dist/styles.css')))
-  process.exit(0);
+// full build they run before labkit has a dist, or before each other's, and
+// the last of those builds makes the sheet.
+if (process.argv.includes('--if-built')) {
+  const missing = skipIfBuilt(inputs, sheet, existsSync);
+  if (missing) {
+    console.log(`[css] --if-built: skipped, not built yet: ${missing.join(', ')}`);
+    process.exit(0);
+  }
+}
 
 // styles.less imports the theme's faces as a bare CSS @import, which a bundler
 // resolves in a source build. A consumer's page may have no bundler, so the dist
 // inlines them instead, pointed at the copies build:fonts puts in dist/fonts/.
 const facesImport = "@import '@weasel-js/theme/faces.css';\n";
-const faces = readFileSync(join(packages, 'theme/src/faces.css'), 'utf8');
+const faces = readFileSync(inputs.faces, 'utf8');
 const facesInDist = faces.replaceAll("url('../fonts/", "url('./fonts/");
 if (facesInDist === faces) throw new Error('[css] theme faces.css no longer loads ../fonts/');
 
-const labkit = execFileSync('lessc', [join(pkgRoot, 'src/styles.less')], { encoding: 'utf8' });
+const labkit = execFileSync('lessc', [inputs.labkit], { encoding: 'utf8' });
 if (!labkit.includes(facesImport))
   throw new Error(`[css] lessc output has no ${facesImport.trim()}`);
 
 const layers = [
   facesInDist,
-  readFileSync(join(packages, 'theme/dist/tokens.css'), 'utf8'),
-  readFileSync(join(packages, 'core/dist/style.css'), 'utf8'),
-  readFileSync(join(packages, 'ui/dist/style.css'), 'utf8'),
-  readFileSync(createRequire(import.meta.url).resolve('windease/styles.css'), 'utf8'),
+  readFileSync(inputs.tokens, 'utf8'),
+  readFileSync(inputs.core, 'utf8'),
+  readFileSync(inputs.ui, 'utf8'),
+  readFileSync(inputs.windease ?? resolve('windease/styles.css'), 'utf8'),
   labkit.replace(facesImport, ''),
 ];
 
-writeFileSync(join(pkgRoot, 'dist/styles.css'), layers.join('\n'));
+writeFileSync(sheet, layers.join('\n'));
 console.log(
   '[css] dist/styles.css — theme faces + theme tokens + core + weasel-ui + windease + labkit',
 );
