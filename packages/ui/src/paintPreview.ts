@@ -8,6 +8,7 @@
 // stops themselves, and the browser only interpolates the short hops between.
 
 import { sampleGradientStops, type Paint } from '@weasel-js/core';
+import { solidColorOf } from './components/paintValue';
 
 /** Sample count along a previewed gradient. Enough that a hue arc reads as a
  *  curve at chip size; a straight sRGB ramp would need a fraction of it. */
@@ -69,8 +70,8 @@ function pct(v: number): string {
  */
 export function paintPreviewCss(paint: Paint | null | undefined): string | undefined {
   if (paint == null) return undefined;
-  const kind = paint.kind ?? 'solid';
-  if (kind === 'solid') return (paint as { color: string }).color;
+  const solid = solidColorOf(paint);
+  if (solid !== undefined) return solid;
 
   if (paint.kind === 'linear-gradient') {
     const dx = paint.to.x - paint.from.x;
