@@ -5,6 +5,7 @@ import type { Clip, TimelineHandle } from '@weasel-js/animator';
 import { asNodeId, SceneCanvas, sceneClipTargets, solid, useScene } from '@weasel-js/core';
 import type { RectPose, Fill } from '@weasel-js/core';
 import { AnimatedTimeline } from '@weasel-js/ui/components/Timeline';
+import { Button } from '@weasel-js/ui/components/Button';
 import s from './ClipDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -72,8 +73,8 @@ export function ClipDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <button className="ckd-btn" onClick={load}>load the JSON</button>
-        <button className="ckd-btn" onClick={save}>save to JSON</button>
+        <Button onClick={load}>load the JSON</Button>
+        <Button onClick={save}>save to JSON</Button>
         <span className="ckd-readout">last event: {fired || 'none'}</span>
         <span className={s.error}>{error}</span>
       </div>

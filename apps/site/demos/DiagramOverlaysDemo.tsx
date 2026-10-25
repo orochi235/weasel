@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { DiagramView, diagramScene, edgeIdOf, type DataEdge, type DataNode } from '@weasel-js/diagram';
+import { Button } from '@weasel-js/ui/components/Button';
 import { FONT } from './diagram/shared';
 import { DemoStage } from './DemoStage';
 
@@ -34,16 +35,14 @@ export function DiagramOverlaysDemo() {
     ...(hoveredEdge === undefined ? [] : [{
       target: hovered!,
       content: (
-        <button
-          type="button"
-          className="ckd-btn"
+        <Button
           onClick={() => {
             setData((d) => insertOn(d, hoveredEdge, `step ${d.nodes.length - 1}`));
             setHovered(null);
           }}
         >
           +
-        </button>
+        </Button>
       ),
     }]),
     ...(node === undefined ? [] : [{

@@ -36,7 +36,7 @@ async function draw(
 
 /** The exported document, as text. */
 async function captureSvg(page: import('@playwright/test').Page): Promise<string> {
-  await page.getByTestId('capture-svg').click();
+  await page.getByRole('button', { name: 'Capture SVG' }).click();
   const img = page.getByTestId('capture-result');
   await img.waitFor();
   return page.evaluate(async (src) => (await fetch(src)).text(), await img.getAttribute('src'));
@@ -68,7 +68,7 @@ test('a capture at scale 4 puts the mark on the feature it was drawn over', asyn
   await ready(page);
   await draw(page, 'Rectangle', [0.125, 0.1875], [0.375, 0.5625]);
 
-  await page.getByTestId('capture-png').click();
+  await page.getByRole('button', { name: 'Capture PNG ×4' }).click();
   const img = page.getByTestId('capture-result');
   await img.waitFor();
 

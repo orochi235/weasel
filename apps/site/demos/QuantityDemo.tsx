@@ -23,6 +23,7 @@ import {
 } from '@weasel-js/quantity';
 import { BandEditor, type Band } from '@weasel-js/ui/components/BandEditor';
 import { UnitField } from '@weasel-js/ui/components/NumberField';
+import { Button } from '@weasel-js/ui/components/Button';
 import s from './QuantityDemo.module.css';
 
 const KINDS: [string, Display][] = [
@@ -81,9 +82,9 @@ export function QuantityDemo() {
       <div className={s.presets}>
         <UnitField value={value} onChange={setValue} display={ENTRY} width="fit" className={s.entry} aria-label="Value" />
         {PRESETS.map((p) => (
-          <button key={p} type="button" className="ckd-btn" onClick={() => setValue(p)}>
+          <Button key={p} onClick={() => setValue(p)}>
             {qty(p, decimal({ maxPlaces: 4 })).text}
-          </button>
+          </Button>
         ))}
       </div>
       <table className={s.table}>

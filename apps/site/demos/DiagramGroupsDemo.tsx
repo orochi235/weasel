@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { DiagramView, diagramScene, type DataEdge, type DataGroup, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
+import { Button } from '@weasel-js/ui/components/Button';
 import { FONT, moved, routed } from './diagram/shared';
 import { DemoStage } from './DemoStage';
 
@@ -44,9 +45,9 @@ export function DiagramGroupsDemo() {
     <div className="ckd-stack">
       <div className="ckd-row">
         {(['layered', 'tree'] as const).map((name) => (
-          <button key={name} type="button" className="ckd-btn" onClick={() => view.current?.layout(name)}>
+          <Button key={name} onClick={() => view.current?.layout(name)}>
             {name}
-          </button>
+          </Button>
         ))}
       </div>
       <DemoStage width={640} height={400}>
