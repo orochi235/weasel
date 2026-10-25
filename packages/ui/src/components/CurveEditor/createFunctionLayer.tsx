@@ -7,6 +7,7 @@
  */
 import type { ReactNode } from 'react';
 import { CurveFill } from './CurveFill';
+import { Diamond } from './Diamond';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { arrowMove } from '../../arrowKeys';
@@ -178,14 +179,11 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
           if (renderAsDiamond) {
             const half = locked ? LOCKED_HALF : ENDPOINT_HALF;
             return (
-              <rect
+              <Diamond
                 key={i}
                 className={anchorCls}
-                x={a.x - half}
-                y={a.y - half}
-                width={half * 2}
-                height={half * 2}
-                transform={`rotate(45 ${a.x} ${a.y})`}
+                at={a}
+                half={half}
                 data-anchor-index={i}
                 {...a11y}
               />

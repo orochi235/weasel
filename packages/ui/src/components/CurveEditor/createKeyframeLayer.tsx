@@ -10,10 +10,11 @@
 import type { ReactNode } from 'react';
 import { cubicBezierEasing, resolveEasing } from '@weasel-js/core';
 import { type EasingFn, type Keyframe } from '@weasel-js/animator';
+import { Diamond } from './Diamond';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { arrowMove } from '../../arrowKeys';
 import { handleHalf } from '../../handles';
-import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
+import { snapRadiusPx as kitSnapRadiusPx, snapToNearest } from '../../snap';
 import s from './CurveEditor.module.css';
 import type {
   CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint,
@@ -145,7 +146,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
   const id = cfg.id ?? 'keyframes';
   const label = cfg.label ?? 'Curve';
   const formatX = cfg.formatX ?? ((x: number) => String(Math.round(x)));
-  const snapRadiusPx = (ctx: LayerCtx): number => cfg.snapRadiusPx ?? ctx.kitSettings?.get('targets.snapRadiusPx') ?? SNAP_RADIUS_PX;
+  const snapRadiusPx = (ctx: LayerCtx): number => cfg.snapRadiusPx ?? kitSnapRadiusPx(ctx.kitSettings);
 
   // A live handle drag is previewed straight from its control points: a
   // fresh spec per pointermove through `resolveEasing` would leave one
@@ -258,14 +259,11 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
         {state.keys.map((k, i) => {
           const p = ctx.toPlot({ x: k.t, y: k.value });
           return (
-            <rect
+            <Diamond
               key={`key-${i}`}
               className={s.keyframe}
-              x={p.x - KEY_HALF}
-              y={p.y - KEY_HALF}
-              width={KEY_HALF * 2}
-              height={KEY_HALF * 2}
-              transform={`rotate(45 ${p.x} ${p.y})`}
+              at={p}
+              half={KEY_HALF}
               role="button"
               tabIndex={0}
               aria-label={`${label} key at ${formatX(k.t)}`}
@@ -278,14 +276,11 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
         {state.drag?.kind === 'key' ? (() => {
           const p = ctx.toPlot({ x: state.drag.t, y: state.drag.value });
           return (
-            <rect
+            <Diamond
               aria-hidden="true"
               className={s.keyframeGhost}
-              x={p.x - KEY_HALF}
-              y={p.y - KEY_HALF}
-              width={KEY_HALF * 2}
-              height={KEY_HALF * 2}
-              transform={`rotate(45 ${p.x} ${p.y})`}
+              at={p}
+              half={KEY_HALF}
               data-keyframe-ghost=""
             />
           );
