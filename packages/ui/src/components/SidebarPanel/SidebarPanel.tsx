@@ -1,16 +1,18 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
+import { type AppearanceProps, useAppearance } from '../appearance';
 import { CloseButton } from '../CloseButton';
 import { DisclosureMark } from '../Disclosure';
+import { useCollapse } from '../Properties/collapse';
 import s from './SidebarPanel.module.css';
 
 /** Props for {@link SidebarPanel}. */
-export interface SidebarPanelProps {
+export interface SidebarPanelProps extends AppearanceProps {
   /** Title rendered in the panel's header row. */
   title?: ReactNode;
   /**
    * Collapsed state — when true, only the header paints; the body is
-   * omitted. Caller owns the state (typically via prefs) and flips it
-   * back via `onToggleCollapse`.
+   * unmounted, so a heavy body costs nothing while folded. Caller owns the
+   * state (typically via prefs) and flips it back via `onToggleCollapse`.
    */
   collapsed?: boolean;
   /**
@@ -27,9 +29,29 @@ export interface SidebarPanelProps {
   onHide?(): void;
   /** Controls drawn in the header row at its trailing edge, before the close button. */
   actions?: ReactNode;
+  /**
+   * Controls for the panel itself rather than its contents — undock, pop out —
+   * drawn after `actions` and before the close button.
+   */
+  trailing?: ReactNode;
+  /**
+   * Take the height the panel's flex container leaves, and hand it to the
+   * body, so a body that scrolls itself gets a bounded box. Folded, the panel
+   * is as tall as its header.
+   */
+  fill?: boolean;
+  /** The header row, for a container that measures it or drags by it. */
+  headerRef?: Ref<HTMLDivElement>;
   children?: ReactNode;
   className?: string;
+  /** Classes added to the header row, the title, and the body. The panel's own
+   *  look sits in `:where()`, so a class here outranks it. */
+  headerClassName?: string;
+  titleClassName?: string;
+  bodyClassName?: string;
 }
+
+const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(' ');
 
 /**
  * Generic collapsible panel section for sidebars. Pure presentation —
@@ -40,27 +62,34 @@ export interface SidebarPanelProps {
  * Pair with `<Sidebar>` for the docked column layout.
  */
 export function SidebarPanel(props: SidebarPanelProps) {
-  const { title, collapsed, onToggleCollapse, onHide, actions, children, className } = props;
-  const cls = [s.panel, collapsed && s.collapsed, className].filter(Boolean).join(' ');
-  const headerInteractive = onToggleCollapse !== undefined;
+  const { title, collapsed = false, onToggleCollapse, onHide, actions, trailing, fill, headerRef, children } = props;
+  const fold = useCollapse({ collapsed, onCollapsedChange: onToggleCollapse && (() => onToggleCollapse()) });
+  const appearance = useAppearance(props);
+  const titleBox = cx(s.titleBox, props.titleClassName);
   return (
-    <div className={cls}>
+    <div
+      className={cx(s.panel, collapsed && s.collapsed, props.className)}
+      data-fill={fill && !collapsed ? '' : undefined}
+      {...appearance}
+    >
       {title !== undefined && (
-        <div className={s.titleRow}>
-          {headerInteractive ? (
+        <div className={cx(s.titleRow, props.headerClassName)} ref={headerRef}>
+          {onToggleCollapse !== undefined ? (
             <button
               type="button"
-              className={`${s.titleButton} ${s.titleBox}`}
-              onClick={onToggleCollapse}
-              aria-expanded={!collapsed}
+              className={cx(s.titleButton, titleBox)}
+              {...fold.control}
+              // The body is unmounted while folded, so there is nothing to name.
+              aria-controls={collapsed ? undefined : fold.body.id}
             >
               <DisclosureMark open={!collapsed} />
               <span className={s.title}>{title}</span>
             </button>
           ) : (
-            <span className={`${s.title} ${s.titleBox}`}>{title}</span>
+            <span className={cx(s.title, titleBox)}>{title}</span>
           )}
           {actions !== undefined && <div className={s.actions}>{actions}</div>}
+          {trailing !== undefined && <div className={s.trailing}>{trailing}</div>}
           {onHide !== undefined && (
             <CloseButton
               className={s.hideButton}
@@ -71,7 +100,11 @@ export function SidebarPanel(props: SidebarPanelProps) {
           )}
         </div>
       )}
-      {!collapsed && <div className={s.body}>{children}</div>}
+      {!collapsed && (
+        <div id={fold.body.id} className={cx(s.body, props.bodyClassName)}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
