@@ -99,7 +99,10 @@ function FrameHarness() {
   useWheelPassThrough(input, layer);
   return (
     <div className="lk-wheel-test-host">
-      <iframe className="lk-wheel-test-frame" srcDoc={FRAME_DOC} title="story" />
+      <div className="lk-wheel-test-outer">
+        <iframe className="lk-wheel-test-frame" srcDoc={FRAME_DOC} title="story" />
+        <div className="lk-wheel-test-tall" />
+      </div>
       <div ref={setLayer} className="lk-lens-layer">
         <div ref={setInput} className="lk-lens-input">
           <div className="lk-lens-hit lk-wheel-test-hit" />
@@ -109,7 +112,11 @@ function FrameHarness() {
   );
 }
 
-async function mountFrame(): Promise<{ frame: HTMLIFrameElement; scroller: HTMLElement; at: [number, number] }> {
+async function mountFrame(): Promise<{
+  frame: HTMLIFrameElement;
+  scroller: HTMLElement;
+  at: [number, number];
+}> {
   await page.viewport(800, 600);
   render(<FrameHarness />);
   const frame = document.querySelector('.lk-wheel-test-frame') as HTMLIFrameElement;
@@ -124,8 +131,21 @@ async function mountFrame(): Promise<{ frame: HTMLIFrameElement; scroller: HTMLE
 
 test("scrolls the scroller beneath a lens inside an isolated story's frame", async () => {
   const { scroller, at } = await mountFrame();
+  const outer = document.querySelector('.lk-wheel-test-outer') as HTMLElement;
   await commands.pointer([{ to: at }, { wheel: [0, 120] }]);
   await expect.poll(() => scroller.scrollTop).toBe(120);
+  await settle();
+  expect(outer.scrollTop).toBe(0);
+});
+
+test('scrolls out of the frame once nothing inside it can move', async () => {
+  const { scroller, at } = await mountFrame();
+  const outer = document.querySelector('.lk-wheel-test-outer') as HTMLElement;
+  scroller.scrollTop = scroller.scrollHeight;
+  const end = scroller.scrollTop;
+  await commands.pointer([{ to: at }, { wheel: [0, 120] }]);
+  await expect.poll(() => outer.scrollTop).toBe(120);
+  expect(scroller.scrollTop).toBe(end);
 });
 
 test('hands the frame a wheel of its own realm, at the point in its own coordinates', async () => {
