@@ -883,12 +883,9 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) Undo after a drag on a lens's rim zoom waits for the lens canvas to have focus** (2026-10-21). The drag
-  leaves focus on the zoom's thumb (`lens/LensZoom.tsx`), and the lens history answers only while its input element
-  has focus, so Cmd+Z does nothing until the body is pressed. Two loose ends from the same work: a square body's
-  zoom labels nearly touch at the default 160 px (`32×` and `64×`, the end label held inside the track), and a
-  `Slider` given a `lineShape` ignores its coordinates, so the square body's zoom is a straight slider placed by
-  `.lk-lens-zoom__line` rather than a line track.
+- **(P3) A square lens body's zoom labels nearly touch at the default 160 px** (2026-10-21). `32×` and `64×` sit
+  close together there, the end label held inside the track (`lens/LensZoom.tsx`). The zoom became a line track
+  inset 24 px from each edge (2026-10-25), which shortens it, so look again in a browser before picking a fix.
 - **(P2) In a magnified Live copy, a popover flips and limits its height against the wrong viewport, and a Tooltip
   still lands off by the lens factor.** ui's `Popover` (2026-10-24) hands React Aria the trigger's rect in the
   scaled box's own px (`overlays/blockFrame.ts`), so a popover now opens against its trigger at any scale, and the

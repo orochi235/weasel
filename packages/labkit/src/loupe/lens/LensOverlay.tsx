@@ -108,6 +108,7 @@ function LensInterior<C>({
   describe,
   renderReadouts,
   onFocus,
+  onRelease,
   preview,
 }: {
   lens: LensIds;
@@ -118,6 +119,8 @@ function LensInterior<C>({
   describe: (compare: C, at: LensDescribeContext) => string;
   renderReadouts: ((props: LensReadoutProps<C>) => ReactNode) | undefined;
   onFocus: ((lensId: string) => void) | undefined;
+  /** Hands focus back to the input element, where the lens keys answer. */
+  onRelease: () => void;
   preview: SeamPreview;
 }) {
   const [interior, setInterior] = useState<HTMLDivElement | null>(null);
@@ -155,6 +158,7 @@ function LensInterior<C>({
         shape={settings.shape}
         size={props.size}
         {...(onFocus ? { onFocus } : {})}
+        onRelease={onRelease}
       />
     </div>
   );
@@ -329,6 +333,7 @@ export function LensOverlay<C>({
                 describe={describe}
                 renderReadouts={renderReadouts}
                 onFocus={onFocusLens}
+                onRelease={() => input?.focus()}
                 preview={preview}
               />
             ) : null;

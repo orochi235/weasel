@@ -19,15 +19,19 @@ export interface LensZoomProps<C> {
   size: { width: number; height: number };
   /** Called with this lens's id as the zoom writes, so the lens actions land on it after. */
   onFocus?: (lensId: string) => void;
+  /** Called when a press on the zoom ends, to hand focus back to whatever answers the lens keys. */
+  onRelease?: () => void;
 }
 
 /**
  * A lens body's zoom: a slider across the bottom of its rim, stopping at the factors the zoom keys step through. It
  * writes the factor as those keys do, so the reticle resizes with it, and a whole drag folds into one undo entry.
- * Only its band and thumb take presses; a press anywhere else on the body reaches the body.
+ * Only its band and thumb take presses; a press anywhere else on the body reaches the body. A press leaves the thumb
+ * focused, so `onRelease` takes focus back when it ends; the arrow keys on a thumb reached by Tab keep it.
  */
-export function LensZoom<C>({ scene, lensId, factor, shape, size, onFocus }: LensZoomProps<C>) {
+export function LensZoom<C>({ scene, lensId, factor, shape, size, onFocus, onRelease }: LensZoomProps<C>) {
   const gesture = useRef(0);
+  const pressed = useRef(false);
   const thumbs = useMemo<Thumb[]>(() => [{ value: factor, valueText: `${factor}×` }], [factor]);
   const write = (next: Thumb[], done: boolean) => {
     const value = next[0]?.value;
@@ -41,7 +45,12 @@ export function LensZoom<C>({ scene, lensId, factor, shape, size, onFocus }: Len
         },
       );
     }
-    if (done) gesture.current += 1;
+    if (!done) return;
+    gesture.current += 1;
+    if (pressed.current) {
+      pressed.current = false;
+      onRelease?.();
+    }
   };
   const slider = (
     <Slider
@@ -61,10 +70,17 @@ export function LensZoom<C>({ scene, lensId, factor, shape, size, onFocus }: Len
   );
   const track = zoomTrackOf(shape, size);
   return (
-    <div className="lk-lens-zoom" data-track={track.kind}>
-      {track.kind === 'line' ? (
-        <div className="lk-lens-zoom__line">{slider}</div>
-      ) : track.kind === 'arc' ? (
+    <div
+      className="lk-lens-zoom"
+      data-track={track.kind}
+      onPointerDownCapture={() => {
+        pressed.current = true;
+      }}
+      onKeyDownCapture={() => {
+        pressed.current = false;
+      }}
+    >
+      {track.kind === 'arc' ? (
         <Along arc={track.arc}>{slider}</Along>
       ) : (
         <Along shape={track.shape}>{slider}</Along>

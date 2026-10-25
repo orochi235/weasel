@@ -65,15 +65,18 @@ export type BoundsCtx = {
  *
  * `shape` is the value span as a run in the painted layer's px, in reading
  * order: `shape.at(valueToFraction(v))` is where a thumb at `v` sits, on a
- * line or a curve. On a curve its `shape`, `from` and `to` place the span on
- * the whole band, which runs past it under `thumbFit: 'inside'`. On a curve `trackWidth` is the run's length, and
- * `fractionToPosition` means nothing; a painter there draws through `shape`.
+ * line or a curve. When `along` is set the slider lies along a `shape`, a
+ * line one included: the run's `shape`, `from` and `to` place the span on the
+ * whole band, which runs past it under `thumbFit: 'inside'`, `trackWidth` is
+ * the run's length, and `fractionToPosition` means nothing; a painter there
+ * draws through `shape`.
  */
 export type TrackCtx = {
   shape: TrackRun;
   trackWidth: number;
   valueToFraction: (v: number) => number;
   fractionToPosition: (f: number) => string;
+  along: boolean;
 };
 
 /** A {@link Slider} stop that carries a label, drawn under the track at the stop. */
@@ -145,8 +148,9 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
   renderTrack?: (ctx: TrackCtx) => ReactNode;
   thumbFit?: 'inside' | 'overhang';
   /** The track to lie along, in the coordinates of the slider's containing
-   *  block; it wins over an enclosing `Along`'s. A line keeps the straight
-   *  layout, and its coordinates are not read. */
+   *  block; it wins over an enclosing `Along`'s. A line is laid where its
+   *  ends say, as a curve is; with no shape the slider keeps the straight
+   *  layout. */
   shape?: TrackShape;
   /** The track's height: a number in px, or a CSS length such as `var(--wzl-slider-track-h)`. */
   trackHeight?: number | string;

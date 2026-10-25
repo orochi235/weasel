@@ -16,30 +16,29 @@ export interface SliderGeometryArgs {
   band: () => SVGGraphicsElement | null;
 }
 
-/** The slider's geometry, one identity per shape, fit and thumb length, and on a curve the value span it runs over. */
+/** The slider's geometry, one identity per shape, fit and thumb length, and along a shape the value span it runs over. */
 export function useSliderGeometry(args: SliderGeometryArgs): { geometry: SliderGeometry; run: TrackRun | null } {
   const { shape, thumbFit, thumbLength } = args;
   const [els] = useState(() => ({ rail: args.rail, band: args.band }));
   const [line] = useState(() => lineGeometry(els.rail));
-  const curve = shape && shape.kind !== 'line' ? shape : undefined;
   const run = useMemo(() => {
-    if (!curve) return null;
-    if (thumbFit === 'overhang') return trackRun(curve);
-    // Capped at the middle, so an arc shorter than a thumb collapses there instead of inverting.
-    const i = Math.min(0.5, thumbLength / 2 / curve.length);
-    return trackRun(curve, i, 1 - i);
-  }, [curve, thumbFit, thumbLength]);
+    if (!shape) return null;
+    if (thumbFit === 'overhang') return trackRun(shape);
+    // Capped at the middle, so a shape shorter than a thumb collapses there instead of inverting.
+    const i = Math.min(0.5, thumbLength / 2 / shape.length);
+    return trackRun(shape, i, 1 - i);
+  }, [shape, thumbFit, thumbLength]);
   const geometry = useMemo(() => (run ? curvedGeometry(run, els.band) : line), [run, els, line]);
   return { geometry, run };
 }
 
-/** What a track painter is handed. On a line the span runs along the rail, centered in the painted layer. */
+/** What a track painter is handed. With no shape the span runs along the rail, centered in the painted layer. */
 export function trackCtxOf(run: TrackRun | null, track: Box | undefined, layer: Box | undefined, rail: Box | undefined, valueToFraction: (v: number) => number): TrackCtx {
-  if (run) return { shape: run, trackWidth: run.length, valueToFraction, fractionToPosition };
+  if (run) return { shape: run, trackWidth: run.length, valueToFraction, fractionToPosition, along: true };
   const w = layer?.width ?? 0;
   const h = layer?.height ?? 0;
   const railW = rail?.width ?? 0;
   const i = (w - railW) / 2;
   const shape = trackRun(lineShape({ x: i, y: h / 2 }, { x: i + railW, y: h / 2 }));
-  return { shape, trackWidth: track?.width ?? 0, valueToFraction, fractionToPosition };
+  return { shape, trackWidth: track?.width ?? 0, valueToFraction, fractionToPosition, along: false };
 }
