@@ -1491,6 +1491,24 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
+- **(P3) DOT reads every rounded box as a stadium.** `style=rounded` maps to `stadium` on read, so a
+  `roundRect` written to DOT comes back as a stadium. Reading it as `roundRect` breaks the stadium
+  round trip instead. Decision needed: which of the two DOT keeps, or whether a stadium is written with
+  a marker DOT can carry (2026-10-25).
+- **(P3) The formats don't know the network, BPMN, or org chart outlines.** DOT, Mermaid, and
+  draw-style XML write `server`, the gateways, and the rest as rectangles with a warning
+  (`packages/diagram-formats`). Draw-style XML has shape names for most of them; Mermaid would lose a
+  gateway's marker (2026-10-25).
+- **(P3) A branch dragged to the other side of a mind map goes back on Auto layout.** `radial`
+  deals branches right and left by graph order, so a re-layout is stable but ignores where a branch
+  was moved. Reading sides from current positions would make a second run move things (2026-10-25).
+- **(P3) A stencil tool dragged a few pixels draws a shape a few pixels wide.** The insert action
+  takes any nonzero box as the size, so a click that wobbles makes an 8px class whose rows spill
+  out. Every insert tool shares it; a minimum drag before the box counts would fix them all
+  (2026-10-25).
+- **(P3) The mind map type glyph thickens at 16px** where its four branches leave the central box
+  (`packages/diagram/icons/mindMap.mjs`) (2026-10-25).
+
 - **(P3) Two wires can't meet at one audio input in pipeline mode.** `livePlan` sums every wire
   into an input, but the editor lets a wire join only a free input
   (`packages/diagram/src/effect/editorHandlers.ts`), so Mix is the only way to combine sounds.
