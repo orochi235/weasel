@@ -1,0 +1,8 @@
+/* The transparency checker as one background layer: compose `checker` into the element's own class, then use
+ * `var(--wzl-checker-layer)` as a layer of its background. It is declared on that element, not on :root,
+ * because a var() in a custom property resolves where the property is declared — so the checker's colors
+ * follow the element's mode. */
+.checker {
+  --wzl-checker-layer: repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%) 50% /
+    var(--wzl-checker-size) var(--wzl-checker-size);
+}
