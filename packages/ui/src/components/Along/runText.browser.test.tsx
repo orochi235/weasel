@@ -36,9 +36,11 @@ test('every label on an arc is drawn along a circle concentric with it, where it
   const bends = [...document.querySelectorAll<HTMLElement>('[data-run-text-bend]')];
   expect(bends.length).toBeGreaterThan(2);
   for (const bend of bends) {
-    const text = bend.querySelector('text')!;
+    const text = bend.shadowRoot!.querySelector('text')!;
     const label = bend.previousSibling as Text;
     expect(text.textContent).toBe(label.data);
+    // The copy is no part of the item's own text.
+    expect(label.parentElement!.textContent).not.toContain(label.data + label.data);
     expect(getComputedStyle(label.parentElement!).webkitTextFillColor).toBe('rgba(0, 0, 0, 0)');
     const radii = glyphs(text).map((p) => Math.hypot(p.x - c.x, p.y - c.y));
     for (const r of radii) expect(r).toBeCloseTo(radii[0]!, 0);

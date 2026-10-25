@@ -17,14 +17,3 @@
   pointer-events: none;
   -webkit-text-fill-color: currentColor;
 }
-
-.svg {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: visible;
-}
-
-.svg text {
-  fill: currentColor;
-}

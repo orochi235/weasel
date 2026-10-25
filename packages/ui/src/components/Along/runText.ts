@@ -18,8 +18,6 @@ interface Bend {
   text: SVGTextElement;
 }
 
-let ids = 0;
-
 /**
  * Draws every line of text in a run row's items along the run itself rather than straight across each item: each text
  * node's glyphs are laid on the curve through the text's own baseline, parallel to the run. The text node stays where
@@ -111,21 +109,33 @@ function make(node: Text): Bend {
   span.className = s.bend!;
   span.setAttribute(BEND, '');
   span.setAttribute('aria-hidden', 'true');
+  // In a shadow tree the copy's glyphs stay out of the item's textContent and out of queries for its text, while the
+  // inherited styles still reach them.
+  const shadow = span.attachShadow({ mode: 'open' });
+  shadow.adoptedStyleSheets = [sheet()];
   const svg = document.createElementNS(SVG, 'svg');
-  svg.setAttribute('class', s.svg!);
   const path = document.createElementNS(SVG, 'path');
-  path.id = `wzl-run-text-${++ids}`;
-  path.setAttribute('fill', 'none');
+  path.id = 'run';
   const text = document.createElementNS(SVG, 'text');
   const along = document.createElementNS(SVG, 'textPath');
-  along.setAttribute('href', `#${path.id}`);
+  along.setAttribute('href', '#run');
   along.setAttribute('startOffset', '50%');
   text.setAttribute('text-anchor', 'middle');
   text.append(along);
   svg.append(path, text);
-  span.append(svg);
+  shadow.append(svg);
   node.after(span);
   return { span, path, text };
+}
+
+let shared: CSSStyleSheet | undefined;
+
+function sheet(): CSSStyleSheet {
+  if (shared === undefined) {
+    shared = new CSSStyleSheet();
+    shared.replaceSync('svg { position: absolute; inline-size: 1px; block-size: 1px; overflow: visible; } path { fill: none; } text { fill: currentColor; }');
+  }
+  return shared;
 }
 
 function drop(node: Text, bend: Bend, bends: Map<Text, Bend>): void {
