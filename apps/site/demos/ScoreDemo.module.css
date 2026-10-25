@@ -47,11 +47,6 @@
   color: var(--wzl-fg-subtle);
 }
 
-.range {
-  width: 100%;
-  margin: 0;
-}
-
 .value {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   text-align: end;
@@ -75,9 +70,4 @@
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   min-width: 26ch;
   color: var(--wzl-fg-muted);
-}
-
-.pick[aria-pressed='true'] {
-  border-color: var(--wzl-accent);
-  background: var(--wzl-surface-sunken);
 }
