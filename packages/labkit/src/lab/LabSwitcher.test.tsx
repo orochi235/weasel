@@ -30,6 +30,38 @@ describe('currentPage', () => {
     expect(currentPage('/bench', PAGES)).toBe(-1);
   });
 
+  it('resolves a relative href against the path before comparing', () => {
+    const rel = [
+      { href: './corpus', label: 'Wall' },
+      { href: './effects', label: 'Effects' },
+      { href: '../bench', label: 'Bench' },
+    ];
+    expect(currentPage('/effects', rel)).toBe(1);
+    expect(currentPage('/lab/effects?kind=base#top', rel)).toBe(1);
+    expect(currentPage('/lab/bench', [{ href: '../bench', label: 'Bench' }])).toBe(0);
+    expect(currentPage('/lab/sub/bench', [{ href: '../bench', label: 'Bench' }])).toBe(-1);
+    expect(currentPage('/lab/sub/', [{ href: '../bench', label: 'Bench' }])).toBe(-1);
+    expect(currentPage('/lab/bench', [{ href: 'sub/../bench', label: 'Bench' }])).toBe(0);
+  });
+
+  it('matches an href carrying its own query, and a relative hash route', () => {
+    const pages = [
+      { href: './corpus?kind=base', label: 'Wall' },
+      { href: '../app/#/dev/tools', label: 'Tools' },
+    ];
+    expect(currentPage('/lab/corpus', pages)).toBe(0);
+    expect(currentPage('/lab/app/#/dev/tools', pages)).toBe(1);
+    expect(currentPage('/lab/other/#/dev/tools', pages)).toBe(-1);
+  });
+
+  it('matches a full URL on this origin and never one on another', () => {
+    const here = window.location.origin;
+    expect(currentPage('/stats', [{ href: `${here}/stats`, label: 'Dashboard' }])).toBe(0);
+    expect(currentPage('/stats', [{ href: 'https://elsewhere.invalid/stats', label: 'Away' }])).toBe(
+      -1,
+    );
+  });
+
   // One document serving its pages from the hash: every href shares a path, so
   // only the fragment can tell them apart.
   const ROUTES = [
