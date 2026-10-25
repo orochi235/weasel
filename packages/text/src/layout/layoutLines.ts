@@ -4,7 +4,7 @@
  * have had their say.
  */
 import type { LineOrder } from './bidiLines';
-import { LineBox, type LayoutColumns } from './layoutColumns';
+import { doubles, LineBox, type LayoutColumns } from './layoutColumns';
 import type { Entry } from './layoutEntries';
 import { hangs, wrapLines } from './lineBreak/wrapLines';
 import { tabAdvance, widthWithTabs } from './tabStops';
@@ -50,11 +50,13 @@ function aboveBaseline(e: Entry, lineHeight: number): number {
  */
 export function breakLines(
   entries: readonly Entry[],
+  cps: readonly number[],
   maxWidth: number,
   lineHeight: number,
 ): Line[] {
   /** `sum[k]`: width of entries `[0, k)` set end to end. */
-  const sum = new Float64Array(entries.length + 1);
+  const sum = doubles(entries.length + 1);
+  sum[0] = 0;
   const tabs: number[] = [];
   entries.forEach((e, k) => {
     sum[k + 1] = sum[k] + e.kerningBefore + e.advance + e.tracking;
@@ -66,7 +68,7 @@ export function breakLines(
   const widthOf = tabs.length === 0 ? flatWidth : (start: number, end: number): number =>
     widthWithTabs(start, end, tabs, (k) => entries[k].tab!, flatWidth);
 
-  return wrapLines(entries.map((e) => e.cp), maxWidth, widthOf).map((span): Line => {
+  return wrapLines(cps, maxWidth, widthOf).map((span): Line => {
     const line: Line = {
       start: span.start, entries: [], width: 0, height: 0, ascent: 0,
       wrapped: span.wrapped, srcEnd: 0,

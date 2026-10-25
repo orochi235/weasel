@@ -193,7 +193,7 @@ export function layoutRuns(
     : null;
   if (!bidi) warnRtlWithoutEngine(cps);
 
-  const broken = breakLines(entries, o.maxWidth, o.lineHeight);
+  const broken = breakLines(entries, cps, o.maxWidth, o.lineHeight);
   let size = 0;
   for (const line of broken) size += line.entries.length;
   const cols = new LayoutColumns(size);
