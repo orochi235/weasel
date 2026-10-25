@@ -1,8 +1,9 @@
 /** The style string each kind of cell is written with: a shape, a region, a group, or an edge. */
 import {
   EDGE_STROKE_WIDTH, LANE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, type ContainerHeader, type DataContainer,
-  type DataEdge, type DataLane, type DataNode, type DiagramTheme, type NodeStyle, type Row,
+  type DataEdge, type DataLane, type DataNode, type DiagramTheme, type NodeStyle, type Row, type RowTextStyle,
 } from '@weasel-js/diagram';
+import { rowLines } from '../rowLines';
 import { SHAPES, STADIUM_ARC, markerStyle } from './mapping';
 import type { Warn } from './readStyle';
 import { writeStyle, type StylePart } from './style';
@@ -23,28 +24,29 @@ function colorParts(style: NodeStyle, fill: boolean): StylePart[] {
 function outlineParts(node: DataNode, warn: Warn): StylePart[] {
   const outline = node.outline ?? 'rect';
   if (outline === 'stadium') return [['rounded', 1], ['arcSize', STADIUM_ARC]];
+  if (outline === 'roundRect') return [['rounded', 1]];
   const shape = SHAPES.find((s) => s.outline === outline);
   if (shape !== undefined) return shape.write as StylePart[];
   if (typeof outline !== 'string') warn('Shapes drawn with an outline path of their own were written as rects.');
+  else if (outline !== 'rect') warn(`Shapes of kind "${outline}" were written as rects.`);
   return [['rounded', 0]];
 }
 
 /** A node's text, one line per row; rows that hold no text are left out, with a warning. */
 export function nodeLines(node: DataNode, warn: Warn): string[] {
-  if (node.rows === undefined) return [...(node.lines ?? [])];
-  const lines: string[] = [];
-  for (const row of node.rows) {
-    if (row.kind === 'label') lines.push(row.text);
-    else if (row.kind === 'field') lines.push(`${row.label}: ${row.value}`);
-    else warn('Port rows and slots inside shapes were left out.');
-  }
-  return lines;
+  return rowLines(node, () => warn('Port rows and slots inside shapes were left out.'));
+}
+
+/** draw-style XML's `fontStyle`: bit 1 bold, bit 2 italic. */
+function fontBits(style: RowTextStyle): number | undefined {
+  const bits = (style.bold === true ? 1 : 0) | (style.italic === true ? 2 : 0);
+  return bits === 0 ? undefined : bits;
 }
 
 function fontParts(rows: readonly Row[] | undefined): StylePart[] {
   const style = rows?.find((r) => r.kind === 'label' || r.kind === 'field')?.style;
   if (style === undefined) return [];
-  return [['fontSize', style.fontSize], ['fontFamily', style.fontFamily], ['fontStyle', style.bold === true ? 1 : undefined]];
+  return [['fontSize', style.fontSize], ['fontFamily', style.fontFamily], ['fontStyle', fontBits(style)]];
 }
 
 const VERTICAL: Readonly<Record<string, string>> = { top: 'top', center: 'middle', bottom: 'bottom' };

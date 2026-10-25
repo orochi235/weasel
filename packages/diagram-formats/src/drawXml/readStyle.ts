@@ -17,7 +17,7 @@ export function outlineOf(style: CellStyle, warn: Warn): Outline {
   const shape = shapeOf(style);
   const known = SHAPES.find((s) => s.name === shape);
   if (known !== undefined) return known.outline;
-  if (styleFlag(style, 'rounded') && (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC) return 'stadium';
+  if (styleFlag(style, 'rounded')) return (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC ? 'stadium' : 'roundRect';
   if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as rects.`);
   return 'rect';
 }
@@ -60,6 +60,7 @@ export function textOf(cell: RawCell): Pick<DataNode, 'lines' | 'rows'> {
     fontSize: styleNumber(cell.style, 'fontSize'),
     fontFamily: cell.style.values.get('fontFamily') || undefined,
     bold: fontStyle !== undefined && (fontStyle & 1) === 1 ? true : undefined,
+    italic: fontStyle !== undefined && (fontStyle & 2) === 2 ? true : undefined,
   });
   if (style === undefined) return { lines };
   return { rows: lines.map((text): Row => ({ kind: 'label', text, style })) };

@@ -4,6 +4,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { DataContainer, DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
 import { DRAW_XML } from './format';
+import { outlineOf } from './readStyle';
+import { parseStyle } from './style';
 
 const fixture = (name: string): string => readFileSync(join(__dirname, 'fixtures', name), 'utf8');
 const read = (text: string) => Promise.resolve(DRAW_XML.read!(text));
@@ -44,10 +46,12 @@ describe('reading a file of pages', () => {
   it('reads each outline, and draws a shape it does not know as a rect, with a warning', () => {
     const outlines = Object.fromEntries([...nodes(doc)].map(([id, n]) => [id, n.outline]));
     expect(outlines).toMatchObject({
-      start: 'stadium', check: 'diamond', done: 'ellipse', prep: 'hexagon', io: 'parallelogram', manual: 'trapezoid', db: 'rect',
+      start: 'stadium', check: 'diamond', done: 'ellipse', prep: 'hexagon', io: 'parallelogram', manual: 'trapezoid', db: 'cylinder',
       inner: 'rect',
     });
-    expect(warnings.some((w) => w.includes('cylinder3'))).toBe(true);
+    const seen: string[] = [];
+    expect(outlineOf(parseStyle('shape=mxgraph.basic.star;'), (w) => seen.push(w))).toBe('rect');
+    expect(seen.some((w) => w.includes('mxgraph.basic.star'))).toBe(true);
   });
 
   it('reads geometry as places and sizes on the page', () => {
@@ -117,6 +121,7 @@ describe('reading a file of pages', () => {
       ],
     });
     expect(nodes(doc, 1).get('task')!.at).toEqual({ x: 120, y: 70 });
+    expect(nodes(doc, 1).get('task')!.outline).toBe('roundRect');
   });
 
   it('reads a group cell as a group of what it holds', () => {

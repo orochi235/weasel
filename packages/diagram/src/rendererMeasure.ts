@@ -13,6 +13,7 @@ export const rendererMeasure: MeasureRowText = (text, style) => {
   const fontSize = style.fontSize ?? FALLBACK_SIZE;
   const { width } = measureTextBounds(text, {
     fontSize, ...(style.fontFamily !== undefined ? { fontFamily: style.fontFamily } : {}), ...(style.bold === true ? { fontWeight: 700 } : {}),
+    ...(style.italic === true ? { fontStyle: 'italic' as const } : {}),
   });
   return { width: Math.ceil(width), height: Math.ceil(fontSize * 1.2) };
 };

@@ -46,9 +46,10 @@ describe('reading DOT', () => {
     const outlines = Object.fromEntries(document.pages[0]!.data.nodes.map((n) => [n.id, n.outline]));
     expect(outlines).toEqual({
       r: 'rect', s: 'stadium', d: 'diamond', e: 'ellipse', plain: 'ellipse', h: 'hexagon', p: 'parallelogram',
-      t: 'trapezoid', c: 'ellipse', cyl: 'rect', n: 'rect', html: 'ellipse',
+      t: 'trapezoid', c: 'ellipse', cyl: 'cylinder', n: 'note', html: 'ellipse',
     });
-    expect(warnings).toContain('DOT shapes read as rectangles: cylinder, note.');
+    expect(warnings.some((w) => w.startsWith('DOT shapes read as rectangles'))).toBe(false);
+    expect(readDot('graph g { a [shape=star]; b [shape=box3d] }').warnings).toContain('DOT shapes read as rectangles: star.');
   });
 
   it('reads HTML labels as their text', () => {

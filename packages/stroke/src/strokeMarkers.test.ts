@@ -73,8 +73,9 @@ describe('marker registry', () => {
   it('enumerates the built-in vocabulary', () => {
     const ids = listMarkers().map((e) => e.id);
     expect(ids).toEqual(expect.arrayContaining([
-      'arrow', 'arrow-open', 'arrow-concave',
+      'arrow', 'arrow-open', 'arrow-concave', 'triangle-hollow',
       'diamond', 'diamond-hollow', 'circle', 'square', 'bar',
+      'crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many',
     ]));
   });
 });

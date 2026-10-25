@@ -71,6 +71,15 @@ describe('MenuButton', () => {
     expect(onAction).not.toHaveBeenCalled();
   });
 
+  it('draws a row given `checked` as a check row, on or off, and the rest as plain rows', () => {
+    const items = [{ value: 'a', label: 'Shown', checked: true }, { value: 'b', label: 'Hidden', checked: false }, { value: 'c', label: 'Plain' }];
+    render(<MenuButton label="More shapes" items={items} onAction={() => {}} />);
+    press(trigger(/More shapes/));
+    expect(screen.getByRole('menuitemcheckbox', { name: /Shown/ })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemcheckbox', { name: /Hidden/ })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('menuitem', { name: 'Plain' })).not.toHaveAttribute('aria-checked');
+  });
+
   it('closes on a second press of the button, and stays closed', () => {
     render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} />);
     const btn = trigger(/Add trial…/);

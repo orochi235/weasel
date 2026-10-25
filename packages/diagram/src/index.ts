@@ -280,7 +280,8 @@ export {
 } from './layoutAction';
 export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';
 export { routeWrites, routesOf, type LayoutRoutes, type RoutedScene } from './routeWrites';
-export { forestOf, tree, type Forest } from './tree';
+export { forestOf, subtreeBlocks, tree, type Forest } from './tree';
+export { radial } from './radial';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
   PORT_AFFORDANCE_KIND,
@@ -296,10 +297,10 @@ export type {
 } from './portAffordance';
 export { portLayer, sceneParticipants } from './portLayer';
 export type { ParticipantScene } from './portLayer';
-export { boxForContent, contentBox, outlinePath } from './outline';
+export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, registerOutline } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
 export type { DiagramShapeOptions } from './shape';
-export type { Bounds, Outline } from './outline';
+export type { Bounds, BuiltinOutline, Outline, OutlineDef } from './outline';
 export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export type { PortsOptions } from './ports';
 export {
@@ -340,3 +341,17 @@ export {
 } from './theme/themeEdit';
 export type { ThemePath } from './theme/themeEdit';
 export { DIAGRAM_THEME_EXTENSION, parseDiagramTheme, themeToJson } from './theme/themeFile';
+export * from './diagramTypes';
+export { FLOWCHART_GROUP } from './stencils/flowchart';
+export { CONTAINERS_GROUP } from './stencils/containers';
+export { NETWORK_GROUP, NETWORK_STENCILS } from './stencils/network';
+export { BPMN_GROUP, BPMN_STENCILS } from './stencils/bpmn';
+export { ORG_GROUP, ORG_STENCILS } from './stencils/org';
+export { MIND_MAP_GROUP, MIND_MAP_STENCILS } from './stencils/mindMap';
+export { layoutDiagram } from './layoutAction';
+export type { LayoutDiagramOptions } from './layoutAction';
+export { DIVIDER_HEIGHT } from './body';
+export type { BodyDivider, BodyLayout } from './types';
+export { bodyFollower } from './bodyFollower';
+export { UML_GROUP, UML_STENCILS } from './stencils/uml';
+export { ERD_GROUP, ERD_STENCILS } from './stencils/erd';

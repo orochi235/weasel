@@ -45,7 +45,7 @@ const bodies = () => saved().filter(isDiagramBody);
 const byId = (id: string) => saved().find((n) => n.id === id)!;
 const lanesInOrder = () => role('lane').sort((a, b) => a.pose.y - b.pose.y);
 
-const shapes = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name, exact: true }));
+const shapes = (name: string) => userEvent.click(page.getByRole('complementary', { name: 'Shapes and tools' }).getByRole('button', { name, exact: true }));
 const useSelect = () => userEvent.click(page.getByRole('toolbar').getByRole('button', { name: /^Select/ }));
 
 describe('WeaselChart containers', () => {

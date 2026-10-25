@@ -58,7 +58,7 @@ function followers(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: Reado
 }
 
 /** The poses `ops` change, by node id. */
-function posesMovedBy(sc: AnyScene, ops: Parameters<TransformFollower['finish']>[0]): Map<string, unknown> | null {
+export function posesMovedBy(sc: AnyScene, ops: Parameters<TransformFollower['finish']>[0]): Map<string, unknown> | null {
   const written = writtenBy(sc, ops);
   if (written === null) return null;
   const moved = new Map<string, unknown>();

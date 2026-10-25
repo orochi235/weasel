@@ -5,7 +5,6 @@
  */
 import { createInsertOp, type NodeId, type Op, type RectPose, type Scene } from '@weasel-js/core';
 import type { IconRef } from '@weasel-js/icons';
-import { icon } from '../icons.gen';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
 import { themeWrites, type ThemedScene } from '../theme/themeWrites';
@@ -26,12 +25,7 @@ export interface ContainerStencil {
   icon?: IconRef;
 }
 
-/** A titled box, and pools of rows and of columns. */
-export const CONTAINER_STENCILS: readonly ContainerStencil[] = [
-  { id: 'container', label: 'Container', role: 'container', size: { width: 240, height: 160 }, icon: icon('container') },
-  { id: 'pool-rows', label: 'Pool (rows)', role: 'pool', axis: 'y', size: { width: 480, height: 240 }, icon: icon('poolRows') },
-  { id: 'pool-columns', label: 'Pool (columns)', role: 'pool', axis: 'x', size: { width: 480, height: 300 }, icon: icon('poolColumns') },
-];
+export { CONTAINER_STENCILS } from '../stencils/containers';
 
 /** A lane added to a pool, along its stack. */
 const NEW_LANE_SIZE = 120;

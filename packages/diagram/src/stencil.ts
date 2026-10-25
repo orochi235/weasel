@@ -3,7 +3,7 @@
  * is drawn — a `buildBody` body whose rows are ordinary text nodes.
  */
 import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
-import type { MeasureRowText, Row } from './body';
+import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
 import { DEFAULT_FONT } from './edgeLabel';
@@ -11,7 +11,6 @@ import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './fro
 import { NODE_STROKE_WIDTH } from './dataTypes';
 import { rowTextStyle } from './rowStyle';
 import type { IconRef } from '@weasel-js/icons';
-import { icon } from './icons.gen';
 import type { Outline } from './outline';
 
 /** One shape a palette offers. `size` is what a click places; `rows` default
@@ -24,18 +23,15 @@ export interface DiagramStencil {
   size: { width: number; height: number };
   rows?: readonly Row[];
   icon?: IconRef;
+  /** Laid over the style the body is drawn in: a BPMN end event's heavier ring. */
+  style?: Partial<NodeStyle>;
+  /** How its body stacks its rows, as `BodySpec`'s fields of the same names. */
+  padding?: number;
+  gap?: number;
+  verticalAlign?: BodySpec['verticalAlign'];
 }
 
-/** The basic flowchart symbols. */
-export const FLOWCHART_STENCILS: readonly DiagramStencil[] = [
-  { id: 'process', label: 'Process', outline: 'rect', size: { width: 120, height: 60 }, icon: icon('shape:rectangle') },
-  { id: 'decision', label: 'Decision', outline: 'diamond', size: { width: 120, height: 80 }, icon: icon('shape:diamond') },
-  { id: 'terminal', label: 'Terminal', outline: 'stadium', size: { width: 120, height: 50 }, icon: icon('shape:stadium') },
-  { id: 'data', label: 'Data', outline: 'parallelogram', size: { width: 130, height: 60 }, icon: icon('shape:parallelogram') },
-  { id: 'manual', label: 'Manual', outline: 'trapezoid', size: { width: 130, height: 60 }, icon: icon('shape:trapezoidSide') },
-  { id: 'preparation', label: 'Preparation', outline: 'hexagon', size: { width: 130, height: 60 }, icon: icon('shape:hexagonFlat') },
-  { id: 'connector', label: 'Connector', outline: 'ellipse', size: { width: 50, height: 50 }, icon: icon('shape:circle') },
-];
+export { FLOWCHART_STENCILS } from './stencils/flowchart';
 
 /** The insert kind a stencil's tool passes to the `insert` dep. */
 export const stencilKind = (id: string): string => `stencil:${id}`;
@@ -73,9 +69,14 @@ export function stencilBuild<TLayer extends string>(
   },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
-  const style = opts.style ?? DEFAULT_NODE_STYLE;
+  const style = { ...(opts.style ?? DEFAULT_NODE_STYLE), ...stencil.style };
   const at = placedBounds(stencil, bounds);
-  const spec = { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS };
+  const spec: BodySpec = {
+    outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS,
+    ...(stencil.padding !== undefined ? { padding: stencil.padding } : {}),
+    ...(stencil.gap !== undefined ? { gap: stencil.gap } : {}),
+    ...(stencil.verticalAlign !== undefined ? { verticalAlign: stencil.verticalAlign } : {}),
+  };
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(
     spec,
     at,
@@ -84,7 +85,7 @@ export function stencilBuild<TLayer extends string>(
       layer: opts.layer,
       ...(opts.measure ? { measure: opts.measure } : {}),
       body: (trait) => ({
-        diagram: { ...trait, ...bodyLayoutOf(spec, trait) },
+        diagram: { ...trait, ...bodyLayoutOf(spec, trait, opts.measure) },
         fill: { paint: { color: style.fill } },
         stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
       }),

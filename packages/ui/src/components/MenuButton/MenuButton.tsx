@@ -17,6 +17,8 @@ export type MenuButtonItem<T extends string = string> = {
   href?: string;
   /** The row for the page that is open: `aria-current="page"`, drawn bold. */
   isCurrent?: boolean;
+  /** Makes the row a check row, ticked while true. */
+  checked?: boolean;
 };
 
 /** Props for {@link MenuButton}. */
@@ -68,6 +70,7 @@ export function MenuButton<T extends string = string>({
       ...(item.isDisabled ? { disabled: true } : {}),
       ...(item.href !== undefined ? { href: item.href } : {}),
       ...(item.isCurrent ? { current: true } : {}),
+      ...(item.checked !== undefined ? { checked: item.checked } : {}),
       run: () => onAction?.(item.value),
     })),
     [items, onAction],

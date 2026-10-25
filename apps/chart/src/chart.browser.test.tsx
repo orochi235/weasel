@@ -55,7 +55,7 @@ const editor = (): HTMLElement | null => document.querySelector('.wc-host [conte
 
 /** Two Process bodies, 120 by 60: one from world (100, 100), one from (500, 100). */
 async function twoBodies(host: HTMLElement, canvas: HTMLCanvasElement): Promise<string[]> {
-  await userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name: 'Process' }));
+  await userEvent.click(page.getByRole('toolbar', { name: 'Flowchart' }).getByRole('button', { name: 'Process' }));
   await drag(canvas, at(host, 100, 100), at(host, 220, 160));
   await expect.poll(() => bodies().length).toBe(1);
   await drag(canvas, at(host, 500, 100), at(host, 620, 160));
@@ -231,7 +231,7 @@ describe('WeaselChart chart mode', () => {
     chartPrefs().set('view.alignmentSnap', false);
     chartPrefs().set('view.spacingSnap', false);
     const { host, canvas } = await mountApp();
-    await userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name: 'Process' }));
+    await userEvent.click(page.getByRole('toolbar', { name: 'Flowchart' }).getByRole('button', { name: 'Process' }));
     await drag(canvas, at(host, 100, 100), at(host, 220, 160));
     await expect.poll(() => bodies().length).toBe(1);
     const id = bodies()[0]!.id;

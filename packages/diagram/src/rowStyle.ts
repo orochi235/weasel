@@ -1,7 +1,7 @@
 import type { Row, RowTextStyle } from './body';
 
 /** The face a diagram node's text is set in. */
-export type DiagramTextStyle = { fontFamily: string; fontSize: number; fontWeight?: number; align?: 'center' };
+export type DiagramTextStyle = { fontFamily: string; fontSize: number; fontWeight?: number; fontStyle?: 'italic'; align?: 'center' };
 
 type Font = { fontFamily: string; fontSize: number };
 
@@ -10,6 +10,7 @@ export const textFace = (s: RowTextStyle | undefined, font: Font): DiagramTextSt
   fontFamily: s?.fontFamily ?? font.fontFamily,
   fontSize: s?.fontSize ?? font.fontSize,
   ...(s?.bold === true ? { fontWeight: 700 } : {}),
+  ...(s?.italic === true ? { fontStyle: 'italic' as const } : {}),
 });
 
 /** The face a body row's text is set in. A label row's is centered in the row. */

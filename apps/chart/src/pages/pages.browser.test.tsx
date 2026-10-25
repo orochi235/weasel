@@ -66,7 +66,7 @@ describe('WeaselChart pages', () => {
     await expect.poll(() => tabs().length).toBe(2);
     await expect.poll(lit).toBe(1);
 
-    await userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name: 'Process' }));
+    await userEvent.click(page.getByRole('toolbar', { name: 'Flowchart' }).getByRole('button', { name: 'Process' }));
     await drag(canvas, onPage(host, 1, 100, 100), onPage(host, 1, 220, 160));
     await expect.poll(bodyX).toBeCloseTo(CHART_PAGE.width + 40 + 100, -1);
 

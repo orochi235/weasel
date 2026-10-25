@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { PAGES_DOC_KEY, commitOps, createScene, pagesOf, type ActionDeps } from '@weasel-js/core';
-import { DIAGRAM_THEME_KEY, DIAGRAM_THEMES, EDGE_DERIVE_PATH, FLOWCHART_STENCILS, applyDiagramTheme, stencilBuild } from '@weasel-js/diagram';
+import {
+  DIAGRAM_THEME_KEY, DIAGRAM_THEMES, DIAGRAM_TYPE_DOC_KEY, EDGE_DERIVE_PATH, FLOWCHART_STENCILS, applyDiagramTheme, diagramTypeDocOf,
+  stencilBuild,
+} from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
-import { chartFromJson, chartToJson, replaceChart } from './chartPersistence';
+import { chartFromJson, chartToJson, emptyChart, replaceChart } from './chartPersistence';
 
 const newScene = () => createScene<ChartData, ChartLayer, ChartPose>({ systemLayers: CHART_LAYERS, registry: CHART_REGISTRY });
 
@@ -86,5 +89,21 @@ describe('chart persistence', () => {
 
   it('rejects text that is not a saved chart', () => {
     expect(() => chartFromJson('{"hello":1}')).toThrow();
+  });
+
+  it('reads a chart saved without a diagram type as a flowchart with its groups', () => {
+    const { scene } = twoBodiesAndAnEdge();
+    const file = chartFromJson(chartToJson(scene));
+    expect(DIAGRAM_TYPE_DOC_KEY in file.doc).toBe(false);
+    const loaded = newScene();
+    replaceChart(loaded, file, 'Open');
+    expect(diagramTypeDocOf(loaded)).toEqual({ type: 'flowchart', groups: ['flowchart', 'containers'] });
+  });
+
+  it('starts a new chart carrying its type, and saves it', () => {
+    const scene = newScene();
+    replaceChart(scene, emptyChart('flowchart'), 'New chart');
+    expect(scene.doc.get(DIAGRAM_TYPE_DOC_KEY)).toEqual({ type: 'flowchart', groups: ['flowchart', 'containers'] });
+    expect(chartFromJson(chartToJson(scene)).doc[DIAGRAM_TYPE_DOC_KEY]).toEqual({ type: 'flowchart', groups: ['flowchart', 'containers'] });
   });
 });

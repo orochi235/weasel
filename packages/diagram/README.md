@@ -517,7 +517,7 @@ dragged undoes in one step; `scene.history.seal()` ends the run. `parseDiagramTh
 
 ### Laying it out
 
-`layered`, `tree`, `force` and `chain` are plain functions of the graph. Each
+`layered`, `tree`, `force`, `chain`, and `radial` are plain functions of the graph. Each
 hands back the new top-left for every node that **moves** — a node already
 standing where the layout wants it is absent, so re-running a layout on an
 unchanged diagram writes nothing at all.
@@ -601,6 +601,14 @@ naming ports that face each other, runs on a track of its own in the gap
 between them, so a fan of them never crosses; the gap grows to keep tracks 12
 apart. Groups are ignored.
 
+`radial` is the mind-map layout. The first root `tree` would find sits in the middle, and its
+children are dealt to its right and its left, in graph order, each to whichever side holds fewer
+nodes so far. Each side grows away from the root as a horizontal `tree`, one band per depth
+`rankGap` apart, its subtrees packed as blocks `nodeGap` apart and centered on the root. Because
+sides are dealt in graph order and each side keeps the order its branches stand in, a second run
+moves nothing. Further trees lay out the same way, stacked below the first. `direction` and groups
+are ignored.
+
 ### From data
 
 `diagramScene` turns plain `{ nodes, edges }` into a laid-out scene, and
@@ -628,12 +636,24 @@ give the style an item is drawn in, for a writer that needs it without drawing; 
 no width, `NODE_STROKE_WIDTH`, `LANE_STROKE_WIDTH`, and `EDGE_STROKE_WIDTH` are what is drawn. `layer` puts every
 spec on a layer other than `'main'`.
 
-`outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
-`'trapezoid'` (a demultiplexer: tall at the right, short at the left),
-`'hexagon'` (pointed at the left and right, its rows kept between the points), or a
-`Path` drawn in a unit square — `(0, 0)` the box's top-left, `(1, 1)` its
-bottom-right — which is stretched over the box, so it follows its node as
-marks do.
+`outline` is a name from the outline table, or a `Path` drawn in a unit square
+— `(0, 0)` the box's top-left, `(1, 1)` its bottom-right — which is stretched
+over the box, so it follows its node as marks do. The built-in names are the
+flowchart shapes `'rect'`, `'diamond'`, `'stadium'`, `'ellipse'`, `'parallelogram'`,
+`'trapezoid'` (a demultiplexer: tall at the right, short at the left), and
+`'hexagon'` (pointed at the left and right, its rows kept between the points);
+`'roundRect'`, `'triangle'`, `'octagon'`, `'cloud'`, `'doubleEllipse'`, and
+`'actor'` (a stick figure, its label in the strip beneath it); and `'cylinder'`,
+`'document'`, `'note'`, `'folder'`, and `'cube'`. Each keeps its rows inside the
+visible shape, clear of a cylinder's cap or a note's fold. Some draw a detail,
+stroked over the fill: a cylinder's rim, a note's fold, a cube's front edges.
+
+`registerOutline(name, def)` adds a name, or shadows a built-in until its
+disposer runs. An `OutlineDef` builds `path` in a node's bounds, and optionally
+`detail`, `content` (the box rows lay out in), and `boxForContent` (its inverse,
+for sizing a node to its rows). `outlineFromD(d, { detail, content })` builds one
+from SVG path data in a unit square. A saved name that is not registered paints
+as `'rect'` and warns once.
 
 `marks` draws more over a box than its rows. A mark with `d` is SVG path data
 in a unit square, stretched over the node's box; it takes `fill`, `stroke`,

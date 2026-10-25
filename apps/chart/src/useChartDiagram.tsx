@@ -2,18 +2,19 @@ import {
   useDepSource, useTransformFollower, type Contribution, type RenderLayer, type SelectionApi, type Tool,
 } from '@weasel-js/core';
 import {
-  CONNECTOR_TOOL_ID, CONTAINER_STENCILS, FLOWCHART_STENCILS, diagramCanDropInto, diagramContainers, diagramEdgeEnds,
+  CONNECTOR_TOOL_ID, STENCIL_GROUPS, bodyFollower, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
   diagramLabelDrag, diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding,
-  registerDiagramShape, roleStyle, sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont,
+  registerDiagramShape, roleStyle, sceneParticipants, stencilKind, stencilTool, themeFont,
   themeLabelStyle, useAvoidRouting, useHops, useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers,
-  useStencilInsert, waypointFollower, type DiagramTheme,
+  useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
+import { useAutoLayoutCommand } from './autoLayout';
 import type { ChartPose, ChartScene } from './chartDocument';
 import { PAGE_FIT_PADDING } from './pages/useChartPages';
 import { CHART_DEFAULT_THEME } from './theme/themeCommands';
 
-/** New connectors route around shapes; saved ones keep the router they have. */
+/** New connectors route around shapes unless the chart's type names a router; saved ones keep the router they have. */
 const ROUTER = 'avoid';
 
 /** Double-click an edge to label it, in the theme's label color and face. */
@@ -30,9 +31,12 @@ const OFF_PAGE = diagramOffPage({ padding: PAGE_FIT_PADDING }).contribution;
 /** Labels sized by the renderer's own text metrics, as stencil rows are. */
 const LABEL_PLACEMENT = { measure: rendererMeasure };
 
-const STENCIL_TOOLS: Record<string, Tool> = Object.fromEntries(
-  [...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map((s) => [stencilKind(s.id), stencilTool(s)]),
-);
+/** Every shipped group's stencils, so a chart showing any group can draw it. */
+const ALL_STENCILS = Object.values(STENCIL_GROUPS).flatMap((g) => g.stencils);
+const SHAPE_STENCILS = ALL_STENCILS.filter((s): s is DiagramStencil => !isContainerStencil(s));
+const CONTAINER_STENCILS = ALL_STENCILS.filter(isContainerStencil);
+
+const STENCIL_TOOLS: Record<string, Tool> = Object.fromEntries(ALL_STENCILS.map((s) => [stencilKind(s.id), stencilTool(s)]));
 
 export interface ChartDiagram {
   /** For `registerLayer`, in order: the last registered is hit first. */
@@ -42,17 +46,19 @@ export interface ChartDiagram {
 }
 
 /** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, where they
- *  settle and dragging them, lanes, off-page tags, the connector and the stencils. What it inserts is drawn in
- *  `theme`. */
-export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme): ChartDiagram {
+ *  settle and dragging them, lanes, off-page tags, the connector and the stencils, and Arrange › Auto layout. What
+ *  it inserts is drawn in `theme`, its connectors as `type` starts them. */
+export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme, type: DiagramType): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
   useLabelPlacement<ChartPose>(scene as never, LABEL_PLACEMENT);
   const participants = useMemo(() => sceneParticipants<ChartPose>(scene), [scene]);
   const selected = useCallback(() => selection.get() as readonly string[], [selection]);
-  const edgeStroke = useMemo(() => themeEdgeStroke(theme), [theme]);
+  const edgeStroke = useMemo(() => diagramTypeEdgeStroke(theme, type), [theme, type]);
+  const router = type.edge?.router ?? ROUTER;
+  useAutoLayoutCommand(scene, type, participants);
   const ports = useMemo(
-    () => diagramPorts<ChartPose>({ participants, bodies: true, router: ROUTER, edgeStroke }),
-    [participants, edgeStroke],
+    () => diagramPorts<ChartPose>({ participants, bodies: true, router, edgeStroke }),
+    [participants, router, edgeStroke],
   );
   const ends = useMemo(
     () => diagramEdgeEnds<ChartPose>({ selected, participants, bodies: true }),
@@ -61,7 +67,7 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
   const route = useMemo(() => diagramWaypoints<ChartPose>({ selected, participants }), [selected, participants]);
   const containers = useMemo(() => diagramContainers({ scene: scene as never, selected }), [scene, selected]);
   const labelDrag = useMemo(() => diagramLabelDrag({ scene: scene as never, selected }), [scene, selected]);
-  const connector = useConnectorTool<ChartPose>({ participants, router: ROUTER, edgeStroke });
+  const connector = useConnectorTool<ChartPose>({ participants, router, edgeStroke });
   const label = useMemo(() => edgeLabel(theme), [theme]);
   useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });
   return useMemo(() => ({
@@ -88,13 +94,20 @@ export function StencilInsertPublisher({ theme }: { theme: DiagramTheme }): null
     }),
     [theme],
   );
-  useStencilInsert(FLOWCHART_STENCILS, opts);
+  useStencilInsert(SHAPE_STENCILS, opts);
   return null;
 }
 
 /** Carries a connector's waypoints along when a move takes both its ends. Mounted as a child of `<SceneCanvas>`. */
 export function WaypointFollowerPublisher({ scene }: { scene: ChartScene }): null {
   const follower = useMemo(() => waypointFollower<ChartPose>(scene), [scene]);
+  useTransformFollower(() => follower);
+  return null;
+}
+
+/** Lays a resized shape's rows out again inside its new box. Mounted as a child of `<SceneCanvas>`. */
+export function BodyFollowerPublisher({ scene }: { scene: ChartScene }): null {
+  const follower = useMemo(() => bodyFollower<ChartPose>(scene), [scene]);
   useTransformFollower(() => follower);
   return null;
 }

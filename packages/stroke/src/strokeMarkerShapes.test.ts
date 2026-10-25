@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BUILTIN_MARKERS } from './strokeMarkerShapes';
-import type { PolygonPath } from '@weasel-js/geom';
+import { PATH_M, type PolygonPath } from '@weasel-js/geom';
 
 const byId = (id: string) => {
   const e = BUILTIN_MARKERS.find((m) => m.id === id);
@@ -12,8 +12,9 @@ const ctx = { size: 1, stroke: { paint: { kind: 'solid', color: '#000' } } } as 
 describe('built-in marker geometry', () => {
   it('ships the whole documented vocabulary', () => {
     expect(BUILTIN_MARKERS.map((m) => m.id)).toEqual([
-      'arrow', 'arrow-open', 'arrow-concave',
+      'arrow', 'arrow-open', 'arrow-concave', 'triangle-hollow',
       'diamond', 'diamond-hollow', 'circle', 'square', 'bar',
+      'crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many',
     ]);
   });
 
@@ -34,6 +35,7 @@ describe('built-in marker geometry', () => {
     expect(byId('arrow-concave').inset).toBe(3);
     expect(byId('diamond').inset).toBe(4);
     expect(byId('diamond-hollow').inset).toBe(4);
+    expect(byId('triangle-hollow').inset).toBe(4);
     expect(byId('circle').inset).toBe(2);
     expect(byId('square').inset).toBe(2);
     expect(byId('arrow-open').inset ?? 0).toBe(0);
@@ -46,6 +48,8 @@ describe('built-in marker geometry', () => {
     expect(byId('bar').fill).toBe('none');
     expect(byId('diamond-hollow').fill).toBe('none');
     expect(byId('diamond-hollow').outline).toMatchObject({ width: 0.5 });
+    expect(byId('triangle-hollow').fill).toBe('none');
+    expect(byId('triangle-hollow').outline).toMatchObject({ width: 0.5 });
     expect(byId('arrow').fill ?? 'line').toBe('line');
   });
 
@@ -72,5 +76,44 @@ describe('built-in marker geometry', () => {
     for (let i = 0; i < small.coords.length; i++) {
       expect(large.coords[i]).toBeCloseTo(small.coords[i] * 4, 5);
     }
+  });
+
+  describe('crow\'s feet', () => {
+    const CROWS = ['crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many'];
+    const subpathsOf = (path: PolygonPath) => [...path.commands].filter((c) => c === PATH_M).length;
+    const xs = (path: PolygonPath) => [...path.coords].filter((_, i) => i % 2 === 0);
+
+    it('draws open strokes as thick as the line, filling nothing', () => {
+      for (const id of CROWS) {
+        expect(byId(id).fill, id).toBe('none');
+        expect(byId(id).outline, id).toMatchObject({ width: 1 });
+      }
+    });
+
+    it('builds each from its parts', () => {
+      // Bars and prongs are one subpath each; a zero adds its circle and the run to the anchor.
+      expect(subpathsOf(byId('crow-one').path(ctx) as PolygonPath)).toBe(3);
+      expect(subpathsOf(byId('crow-many').path(ctx) as PolygonPath)).toBe(2);
+      expect(subpathsOf(byId('crow-zero-one').path(ctx) as PolygonPath)).toBe(3);
+      expect(subpathsOf(byId('crow-one-many').path(ctx) as PolygonPath)).toBe(3);
+      expect(subpathsOf(byId('crow-zero-many').path(ctx) as PolygonPath)).toBe(4);
+    });
+
+    it('stops the line at a zero\'s back, so the circle stays hollow', () => {
+      for (const id of ['crow-zero-one', 'crow-zero-many']) {
+        const back = Math.min(...xs(byId(id).path(ctx) as PolygonPath));
+        expect(byId(id).inset, id).toBeCloseTo(-back, 3);
+      }
+    });
+
+    it('leaves the line running through the heads with no zero', () => {
+      for (const id of ['crow-one', 'crow-many', 'crow-one-many']) expect(byId(id).inset ?? 0, id).toBe(0);
+    });
+
+    it('opens the foot wider at the anchor than both prongs are thick', () => {
+      const path = byId('crow-many').path(ctx) as PolygonPath;
+      const ys = [...path.coords].filter((_, i) => i % 2 === 1);
+      expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(2 + 0.5);
+    });
   });
 });

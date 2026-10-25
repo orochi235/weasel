@@ -82,6 +82,38 @@ export function forestOf(graph: Graph, crossAxis: 'x' | 'y'): Forest {
   return { roots, children, depth };
 }
 
+/** Subtrees packed as solid blocks on one axis. `span` is how much room a node's
+ *  whole subtree takes: its children's blocks side by side, or the node itself
+ *  when that is wider. `lay` writes the low corner of every node in a subtree
+ *  whose block starts at `from`, each parent centered over its children. */
+export function subtreeBlocks(
+  children: ReadonlyMap<string, readonly GraphNode[]>,
+  axis: 'x' | 'y',
+  gap: number,
+): { span(node: GraphNode): number; lay(node: GraphNode, from: number, into: Map<string, number>): void } {
+  const measured = new Map<string, number>();
+  const kidsSpan = (kids: readonly GraphNode[]): number =>
+    kids.reduce((sum, k) => sum + span(k), 0) + Math.max(0, kids.length - 1) * gap;
+  const span = (node: GraphNode): number => {
+    const known = measured.get(node.id);
+    if (known !== undefined) return known;
+    const block = Math.max(extent(node.bounds, axis), kidsSpan(children.get(node.id) ?? []));
+    measured.set(node.id, block);
+    return block;
+  };
+  const lay = (node: GraphNode, from: number, into: Map<string, number>): void => {
+    const kids = children.get(node.id) ?? [];
+    const block = span(node);
+    let cursor = from + (block - kidsSpan(kids)) / 2;
+    for (const child of kids) {
+      lay(child, cursor, into);
+      cursor += span(child) + gap;
+    }
+    into.set(node.id, from + (block - extent(node.bounds, axis)) / 2);
+  };
+  return { span, lay };
+}
+
 /** The hierarchy layout: each parent centered over its children's block, one
  *  rank per depth. A graph that is not a tree lays out as the forest
  *  {@link forestOf} reads from it. */
@@ -111,47 +143,19 @@ const treeOnce: LayoutFn = (graph, opts = {}) => {
   }
 
   const slots = new Map<string, Slot>();
-
-  /** How wide `node`'s whole subtree is on the cross axis: its children's
-   *  blocks side by side, or the node itself when that is wider. */
-  const measured = new Map<string, number>();
-  const measure = (node: GraphNode): number => {
-    const known = measured.get(node.id);
-    if (known !== undefined) return known;
-    const kids = children.get(node.id) ?? [];
-    let width = 0;
-    for (const child of kids) width += measure(child);
-    if (kids.length > 0) width += nodeGap * (kids.length - 1);
-    const block = Math.max(extent(node.bounds, axes.cross), width);
-    measured.set(node.id, block);
-    return block;
-  };
-
-  /** Place `node`'s subtree with its block starting at `from`. */
-  const place = (node: GraphNode, from: number): void => {
-    const kids = children.get(node.id) ?? [];
-    const block = measure(node);
-    const width = kids.reduce((sum, k) => sum + measure(k), 0)
-      + Math.max(0, kids.length - 1) * nodeGap;
-
-    let cursor = from + (block - width) / 2;
-    for (const child of kids) {
-      place(child, cursor);
-      cursor += measure(child) + nodeGap;
-    }
-
-    const own = extent(node.bounds, axes.cross);
-    const at = depth.get(node.id) ?? 0;
-    slots.set(node.id, {
-      cross: from + (block - own) / 2,
-      rank: bandStart.get(at)! + (bands.get(at)! - extent(node.bounds, axes.rank)) / 2,
-    });
-  };
-
+  const blocks = subtreeBlocks(children, axes.cross, nodeGap);
+  const crossAt = new Map<string, number>();
   let cursor = 0;
   for (const root of roots) {
-    place(root, cursor);
-    cursor += measure(root) + nodeGap;
+    blocks.lay(root, cursor, crossAt);
+    cursor += blocks.span(root) + nodeGap;
+  }
+  for (const node of graph.nodes) {
+    const at = depth.get(node.id) ?? 0;
+    slots.set(node.id, {
+      cross: crossAt.get(node.id)!,
+      rank: bandStart.get(at)! + (bands.get(at)! - extent(node.bounds, axes.rank)) / 2,
+    });
   }
 
   if (grouped) {

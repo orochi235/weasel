@@ -1,4 +1,5 @@
 import type { AddNodeSpec, SerializedDoc, SerializedScene, SerializedSceneV1 } from '@weasel-js/core';
+import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue } from '@weasel-js/diagram';
 import { docFromSnapshot, nodeSpecsFromSnapshot, readStored, serializeReplacer } from '@editor/index';
 import { CHART_REGISTRY, chartDoc, type ChartData, type ChartLayer, type ChartPose, type ChartScene } from './chartDocument';
 
@@ -14,8 +15,9 @@ export interface ChartFile {
   doc: SerializedDoc;
 }
 
-/** A chart with nothing on its one page. */
-export const emptyChart = (): ChartFile => ({ specs: [], doc: chartDoc() });
+/** A chart of diagram type `type` with nothing on its one page. */
+export const emptyChart = (type: string = FLOWCHART_TYPE.id): ChartFile =>
+  ({ specs: [], doc: chartDoc({ [DIAGRAM_TYPE_DOC_KEY]: diagramTypeDocValue(type) }) });
 
 /** The chart as the text a `.weaselchart.json` file and the session store hold. */
 export function chartToJson(scene: ChartScene): string {
@@ -31,7 +33,7 @@ export function chartFromJson(text: string): ChartFile {
 
 /** The chart the last session left, or an empty one. */
 export function loadChartSession(): ChartFile {
-  return readStored(CHART_SCENE_KEY, chartFromJson, emptyChart);
+  return readStored(CHART_SCENE_KEY, chartFromJson, () => emptyChart());
 }
 
 /** Replaces everything in the chart, nodes and document values, with `file`, as one undo entry. */

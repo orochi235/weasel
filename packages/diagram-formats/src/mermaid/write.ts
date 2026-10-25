@@ -7,7 +7,7 @@ const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TD', up: 'BT'
 const RESERVED = new Set(['end', 'subgraph', 'graph', 'flowchart', 'style', 'classdef', 'class', 'click', 'linkstyle', 'direction', 'default', 'call', 'href']);
 const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
   rect: ['[', ']'], stadium: ['([', '])'], diamond: ['{', '}'], ellipse: ['((', '))'], hexagon: ['{{', '}}'],
-  parallelogram: ['[/', '/]'], trapezoid: ['[/', '\\]'],
+  parallelogram: ['[/', '/]'], trapezoid: ['[/', '\\]'], cylinder: ['[(', ')]'], doubleEllipse: ['(((', ')))'], roundRect: ['(', ')'],
 };
 
 const valid = (id: string) => /^[A-Za-z_]\w*$/.test(id) && !RESERVED.has(id.toLowerCase());
@@ -61,7 +61,11 @@ class MermaidWriter {
 
   node(node: DataNode, indent: string): void {
     const outline: Outline = node.outline ?? 'rect';
-    const [open, close] = BRACKETS[typeof outline === 'string' ? outline : 'rect']!;
+    const brackets = typeof outline === 'string' ? BRACKETS[outline] : undefined;
+    if (brackets === undefined && typeof outline === 'string') {
+      this.out.warnings.add('Mermaid has no bracket shape for some outlines; they were written as rectangles.');
+    }
+    const [open, close] = brackets ?? BRACKETS.rect!;
     this.lines.push(`${indent}${this.id(node.id)}${open}${mermaidText(nodeLines(node, this.out.warnings, 'Mermaid'))}${close}`);
   }
 

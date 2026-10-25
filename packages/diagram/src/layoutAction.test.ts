@@ -272,7 +272,7 @@ describe('createLayoutAction', () => {
     expect(scene.get('a' as never)!.pose.y).toBe(START['a']!.y);
   });
 
-  it('ships layered, tree, force and chain under stable keys', () => {
-    expect(Object.keys(LAYOUTS).sort()).toEqual(['chain', 'force', 'layered', 'tree']);
+  it('ships layered, tree, force, chain, and radial under stable keys', () => {
+    expect(Object.keys(LAYOUTS).sort()).toEqual(['chain', 'force', 'layered', 'radial', 'tree']);
   });
 });
