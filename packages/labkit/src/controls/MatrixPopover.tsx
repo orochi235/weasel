@@ -1,9 +1,9 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { Button } from '@weasel-js/ui/components/Button';
+import { Popover } from '@weasel-js/ui/components/Popover';
 import { PropertyList } from '@weasel-js/ui/components/Properties';
 import type { ReactNode, RefObject } from 'react';
 import { Dialog as RACDialog } from 'react-aria-components';
-import { Popover } from '@weasel-js/ui/components/Popover';
 import { auto as autoValue } from '../config/auto';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
