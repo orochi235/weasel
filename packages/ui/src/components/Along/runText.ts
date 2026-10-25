@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useLatest } from '@weasel-js/react';
 import { runStationAt, type Point, type TrackRun } from '@weasel-js/geom';
 import row from './runRow.module.css';
 import s from './runText.module.css';
@@ -7,6 +8,8 @@ import s from './runText.module.css';
 const BEND = 'data-run-text-bend';
 const HIDES = 'data-run-text-hides';
 const SVG = 'http://www.w3.org/2000/svg';
+/** A run item, by the class `runRow.module.css` names it with first: the rest are the classes it composes. */
+const ITEM = `.${row.item!.split(' ')[0]}`;
 
 /** One text node's copy along the run: an empty span after it, holding the svg its glyphs are drawn in. */
 interface Bend {
@@ -25,11 +28,11 @@ let ids = 0;
  */
 export function useRunText(root: RefObject<HTMLElement | null>, run: TrackRun): void {
   const bends = useRef(new Map<Text, Bend>());
-  const draw = useRef<() => void>(() => {});
-  draw.current = () => {
+  const runNow = useLatest(run);
+  const draw = useRef(() => {
     const el = root.current;
-    if (el !== null) bendText(el, run, bends.current);
-  };
+    if (el !== null) bendText(el, runNow.current, bends.current);
+  });
   useLayoutEffect(() => draw.current());
   useEffect(() => {
     const el = root.current;
@@ -62,7 +65,7 @@ function bendText(root: HTMLElement, run: TrackRun, bends: Map<Text, Bend>): voi
     const scale = box.width / root.offsetWidth;
     const toRoot = (x: number, y: number): Point => ({ x: (x - box.left) / scale, y: (y - box.top) / scale });
     const range = document.createRange();
-    for (const item of root.querySelectorAll<HTMLElement>(`.${row.item}`)) {
+    for (const item of root.querySelectorAll<HTMLElement>(ITEM)) {
       const turn = turnOf(item);
       for (const node of textUnder(item)) {
         range.selectNodeContents(node);
@@ -89,7 +92,7 @@ function textUnder(item: HTMLElement): Text[] {
     const node = n as Text;
     const parent = node.parentElement;
     if (parent === null || node.data.trim() === '' || ours(node)) continue;
-    if (parent.closest(`.${row.item}`) !== item) continue;
+    if (parent.closest(ITEM) !== item) continue;
     found.push(node);
   }
   return found;

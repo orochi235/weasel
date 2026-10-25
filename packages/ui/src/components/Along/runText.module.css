@@ -3,6 +3,11 @@
   -webkit-text-fill-color: transparent;
 }
 
+/* A field's value is no text node, so nothing is drawn in its place. */
+[data-run-text-hides] :is(input, textarea) {
+  -webkit-text-fill-color: currentColor;
+}
+
 .bend {
   position: absolute;
   left: 0;
