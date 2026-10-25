@@ -25,6 +25,13 @@ export interface TreeNode {
   muted?: boolean;
   /** Focusable and announced, but cannot be activated, expanded or selected. */
   disabled?: boolean;
+  /** Draws the row as a link to this address. A plain or Shift click activates the row as any click does; a
+   *  click with Cmd, Ctrl or Alt, and a middle click, are left to the browser, which opens a tab, a window or a
+   *  download. The link stays out of the tab order: the treeitem holds focus. */
+  href?: string;
+  /** The row stands for what is showing now elsewhere — the open page, the running document. Sets
+   *  `aria-current`, and colors the row with `--wzl-tree-current`. */
+  current?: boolean;
   className?: string;
 }
 

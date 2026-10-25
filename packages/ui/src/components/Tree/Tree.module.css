@@ -104,6 +104,14 @@
   background: var(--wzl-tree-selected, var(--wzl-border));
 }
 
+.row[href] {
+  text-decoration: none;
+}
+
+.item[aria-current='true'] > .row {
+  color: var(--wzl-tree-current, var(--wzl-accent-fg));
+}
+
 .item[data-muted] > .row {
   color: var(--wzl-fg-subtle);
 }
