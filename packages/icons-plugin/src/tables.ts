@@ -70,13 +70,20 @@ export function sourceTablesUnder(dir: string): IconTable[] {
  * is not built, the source tables under its `src`.
  */
 function packageTables(pkg: string): IconTable[] {
+  const linked = lstatSync(pkg).isSymbolicLink();
+  const sources = () => {
+    const real = realpathSync(pkg);
+    return sourceTablesUnder(existsSync(join(real, 'src')) ? join(real, 'src') : real);
+  };
+  // A linked package's code is served from source, so its built table can lag a glyph just added.
+  if (linked) {
+    const fromSource = sources();
+    if (fromSource.length > 0) return fromSource;
+  }
   const declared = declaredTable(pkg);
   if (declared) return [declared];
-  const linked = lstatSync(pkg).isSymbolicLink();
   const declares = existsSync(join(pkg, 'package.json')) && readFileSync(join(pkg, 'package.json'), 'utf8').includes('"weaselIcons"');
-  if (!linked && !declares) return [];
-  const real = realpathSync(pkg);
-  return sourceTablesUnder(existsSync(join(real, 'src')) ? join(real, 'src') : real);
+  return declares ? sources() : [];
 }
 
 /**
