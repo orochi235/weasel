@@ -42,7 +42,7 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 | `path-tools` | `@weasel-js/path-tools` | `packages/path-tools/icons/` | The path tools and their commands |
 | `rig` | `@weasel-js/rig` | `packages/rig/icons/` | The bone and weight tools |
 | `shape` | `@weasel-js/icons` | `packages/icons/icons/` | Plain geometry: polygons, round shapes, stars |
-| `diagram` | `@weasel-js/diagram` | `packages/diagram/icons/` | The container stencils: a titled box and pools of rows and of columns |
+| `diagram` | `@weasel-js/diagram` | `packages/diagram/icons/` | The container stencils (a titled box and pools of rows and of columns), and the UML and ERD stencils |
 | `draw` | `apps/draw` | `apps/draw/icons/` | WeaselDraw's own actions |
 
 `labkit`, `forge`, `site`, `theme-editor` and `forge-app` draw nothing. Their `icons/index.mjs`
