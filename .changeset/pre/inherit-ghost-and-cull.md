@@ -1,5 +1,0 @@
----
-"@weasel-js/core": patch
----
-
-Two more readers resolve an `'inherit'` fill or stroke against a node's containers. The preview ghost of a gesture paints a member with the paint its containers are taking mid-gesture, so a container's fill or stroke scrubbed in a paint control reaches its inheriting members at once rather than at the commit: the paint actions preview those members with the container, and the ghost reads every previewed container above a member. And culling measures an inherited stroke as the stroke it takes instead of declining to bound the node: `defaultPaintBounds` and `PaintBoundsFn` take an optional fourth `ctx` with `inherited`, which `<SceneCanvas>` and the headless render fill in from the scene; `withInheritedPaintBounds` does the same for a consumer's own cull. A `drawOne` wrapped by `withInheritedPaints` now keeps a `ctx.inherited` its caller passes.

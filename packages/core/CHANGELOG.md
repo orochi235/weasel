@@ -1,5 +1,113 @@
 # Changelog
 
+## 1.13.0
+
+### Patch Changes
+
+- b1c691a: A contribution can declare `watch(changed)` beside its `deps`. A dep source is a thunk nothing else can watch, so an `ActionBar` button showing an action's `active` or `enabled` state kept whatever it last read when the source changed without the scene or selection changing. A host subscribes `watch` while the entry is installed and tells the dep registry whenever it fires, and the chrome re-reads.
+- 16464c5: `cullDrawCommands` now culls a group with effects: it drops one whose children's bound, grown by
+  how far its effects reach and cut by its clip, misses the cull rect, and keeps it whole otherwise. A
+  group whose effects do not say how far they reach is still always kept. Effect reach is in device
+  pixels, so `cullDrawCommands` takes the density as a new, required fourth argument, `dpr`.
+  
+  That density reaches a layer through a new `LayerDims` type, `Dims` plus `dpr`, which is what
+  `RenderLayer.draw` and `deps`, `drawLayers`, `drawOneLayer`, `CanvasViewHandle.draw` and hud's
+  `HudContentCtx.dims` now take. A layer written against `Dims` still type-checks; code that calls
+  `draw` itself must pass `dpr`. `SceneViewCull` gains `dpr` too, which `sceneViewFrame` and
+  `renderSceneToCanvas` fill from their `dpr` argument. These are breaking for direct callers.
+- 9a76fb5: A text layout holds its code points in columns of numbers, and painting it reads them there, so text re-laid out every frame — a HUD readout — no longer leaves a cell, a placed glyph and a quad object per glyph for the garbage collector. A line's `cells` and `glyphs` and a group's `quads` read as before, built the first time something reads them. A `LaidOutGroup` gains `quadData`, its quads packed `QUAD_STRIDE` (exported) numbers each, which is what the renderer draws from, and a color group gains `colorGlyphs`.
+- 38d5ad1: Depend on `@msb235/blits` 0.12.0, which has no breaking changes from 0.11.0. Its fixes make a single `fn` voice over many subjects, the shape weasel's animator uses, cheaper per frame.
+- 7edd3be: Canceling an in-place edit of text something derives from, such as the hidden text of a Text Along Path, now leaves no undo entry and keeps the redo stack. Its keystrokes still reach the curved copy as you type, but they are shown through a data override rather than written into the node, so the document holds none of them; a commit records one entry from the text before the edit to the text after it. A write made to the node during the edit, such as a fill change, shows through the draft and is kept, and undoing it after a cancel brings back no draft text.
+- cbb16ca: `kit:shape` paints a container that has a `shape` again, and its interior is grabbable by its fill. The previous release stopped it, so a node that draws itself and has children, such as a skeleton bone with child bones, drew nothing. A container whose `path` is its clip, as an SVG `<g>` imports, still paints nothing of its own.
+- 5f28e9c: A path effect that hides its sources no longer treats a source that was already hidden when the effect was made as one it hid. Release leaves that source hidden, and Expand to Paths, Delete and Cut leave it in the scene; Set Path moving off it leaves it hidden too. The effect records those sources by position in a new `foundHidden` field beside `hideSources`, and a saved effect without one reads as before: it hid them all. `sourcesHiddenBy(scene, id)` in core answers which sources an effect holds hidden, and `sourcesOf(node)` the ids a node names in its `dependsOn`.
+- e70d2cd: A node is a mark or a group, and the two now behave differently:
+  
+  - A group never paints, whatever its data: a `shape` or `path` on a group draws nothing, and only its members draw. A mark with children paints itself and its children. A group is hit anywhere in its box, even with no member under the press or after its last member is deleted.
+  - Ungroup dissolves only groups; a mark with children is left whole.
+  - The area hit test's `includeContainers` option is now `includeGroups` (breaking for a custom `hitTestArea` dep). Marquee and lasso take a mark and its children, and a group only when asked for.
+  - A mark's drawn bounds include its own ink as well as its children's.
+  - Any node may clip, repeat (`copies`), lay out and set units for its children, and `'inherit'` fills and strokes read from any parent.
+  - A drop or an insert lands in a mark only when the `canDropInto` dep admits it; with no dep, a group admits and a mark does not. An insert asks `canDropInto` with an empty list, since the new node is not minted yet.
+  - Diagram bodies, containers, pools and lanes are marks, so they paint again and take drops through `diagramCanDropInto`. A stencil body still takes nothing, and a press inside an unfilled lane hits the lane.
+  - In a diagram scene, `kind === 'group'` no longer identifies a body or a region. A region is a node where `diagramContainerOf(node)` is not null. A diagram group box is one where `diagramGroupOf(node)` is not null. A body is a node where `diagramNodeOf(node)` is not null and neither of those is. `isDiagramBody(node)` asks that, and `isBodyOrRegion(node)` asks for either.
+- ed89d42: A node clips its children only when it declares a clip. Breaking: a group no longer clips its children to its outline by default, and nothing else does either. A node clips its children to its `clipFromPose` when it has one, or to its outline when it sets the new `clip: 'outline'` field. Its own paint, under its children or over them, is not clipped by its own clip. That outline is the silhouette of whichever painter claims the node, the rect fallback's box included, read by the new `clipOutline(node, pose)`. `clip` is saved and loaded, copied, pasted and undone like the node's other fields, and `NodeClip` names its type.
+  
+  Scenes saved at version 1 keep their look: a version 1 container that loads as a group, as it does by default, gets `clip: 'outline'` when it has no clip function or a load skips its clip key. One that `classifyV1` makes a mark gets no implicit clip, since the loader cannot know which painter will claim it; set `clip` on it where it should clip. Version 2 scenes saved by builds between the version 2 format and this change are read as written, so a group there that relied on the old default clip draws its children unclipped.
+  
+  - `clipNothing` and symmetry's `SYMMETRY_CLIP_KEY` stay registered so saves naming them load; diagram bodies and symmetry groups no longer set a clip, and `@weasel-js/diagram`'s `BodyNodeSpec` drops its `clipFromPose` field.
+  - Baking a symmetry group carries each copied node's pose through the copy's transform, its clip with it, and copies a mark's children and every node's stated fields (`pickable`, `hidden`, `units`, `clip`). A mirrored copy of a clipping group used to clip its content away.
+  - `statedFields(node)` and `StatedNodeFields` are exported: the plain optional fields a copy of a node carries.
+  - `@weasel-js/svg`: an imported `<g clip-path>` is a group with `clip: 'outline'` (`SvgSceneDraft` carries `clip` on a group). The export writes a clip only for a node that declares one, clipped to the same `clipOutline` the canvas uses; a group holding `data.path` without `clip` exports unclipped. A mark with children now exports as a `<g>` holding its own element and then its children, which were left out before; its declared clip and copies apply to its children only. `SvgKitTreeNode` takes `clip`.
+  - `@weasel-js/diagram-formats`: a page export writes a diagram box as its outline followed by its rows, with no special case for diagram nodes.
+  - `specsFromSerialized` is exported, with `SpecsFromSerializedOptions`. Its `unknownKeys: 'skip'` loads a node whose registry key is unknown without that function instead of throwing, and `onSkip` hears each key left out as a `SkippedKey`. `sceneFromJSON` takes both options, and `scene.loadState(json, opts)` takes them as a second argument.
+- 04b862d: Scene node kinds are now `mark` and `group`, replacing `leaf` and `container`, and any node may have children. `ContainerNode` and `LeafNode` are now `GroupNode` and `MarkNode`; `AddNodeSpec.kind` is `'mark' | 'group'`, and `isLeaf(node)` and `hasChildren(node)` ask whether a node has children. This breaks code that names the old kinds. Scenes save as version 2, and a version 1 save still loads: its leaves become marks and its containers become groups, unless the `classifyV1` option of `sceneFromJSON(json, { classifyV1 })` says otherwise. `V1Classifier` and `nodeKindOf` are exported from `@weasel-js/core`. `@weasel-js/svg`'s `SvgSceneDraft.kind` changed from `'container' | 'leaf'` to `'group' | 'mark'`.
+- 7e7549c: A group now selects as one item:
+  
+  - A press on a group's member selects the group, and so does a right-click, whose menu is the group's own. A drag from a member moves the group.
+  - A double-click on a member enters the group, drawn with a dashed frame; a press then selects among its members, and a further double-click goes one level deeper. Escape leaves one level. Both work under any tool. While a group is entered only what is inside it can be pressed, marqueed, lassoed or selected with Select All. Under the select tool a press outside the entered group's box, with or without modifiers, leaves every group that box is outside of and selects nothing; that leave is its own binding, `group.leave.press`, which `bindingOverrides` can rebind or remove. Under a drawing tool the press draws, and what is drawn or pasted lands in the entered group: core now sources the `insertInto` dep from it, under any source registered after it, and `sceneToAdapter`'s new `pasteInto` option says where a paste lands. A double-click on a member that is not a group still reaches text and path editing, and an open mode takes Escape before the group does.
+  - Cmd-click (Ctrl on Windows and Linux) selects the node under the pointer past every group. It no longer extends the selection: Shift-click does that, and Cmd-Shift-click adds the node under the pointer past every group.
+  - The entered group is session state beside the selection: undo does not move it. `<SceneCanvas>` publishes it as the optional `enteredGroup` dep, and an absent dep means no group is entered. `<SceneCanvas enteredGroup>` takes an `EnteredGroupApi` made with `useEnteredGroup(scene)`, as `selection` is passed, for an app that reads or drives it; without it the canvas keeps its own. `leaveAll()` leaves every level at once.
+  - `createEnteredGroupScope({ entered, scene })` returns a `NodeScope` (from `@weasel-js/modes`, which `ScopingDim` now extends) for the entered group, everything outside it dimmed to `OUT_OF_SCOPE_ALPHA`. Compose its `alphaFor` into `<SceneCanvas alphaFor>` and pass it in `redrawOn` to dim what is outside the group.
+  - The entered-group frame takes its color from the `--wzl-entered-group` override hook on the canvas or any element above it, and repaints when a theme, mode or class attribute changes there or the system color scheme flips.
+  - A contribution's dep source may read the source it displaces: `ContributionDeps` entries take the `below` argument `DepSource` does. The symmetry contribution's `insertInto` falls through to it when no symmetry group is active.
+  - `workspaceTintLayer` takes a `fallback` tint, shown when the mode has none.
+  
+  Breaking: isolation mode is gone. `ISOLATION` is no longer exported from `@weasel-js/modes` and `DEFAULT_MODES` no longer holds it, and `<SceneCanvas isolatedGroup>` is removed: the entered group is the one way of working inside a group. In WeaselDraw a double-click on a group's member now enters the group, dims everything outside it, tints the workspace, and names the group in the breadcrumb. Edits made inside it are each their own undo step, where isolation by default collected them into one entry on leaving, and path and text editing open inside the group without leaving it.
+- d5a9a80: A path effect whose source has an `'inherit'` fill or stroke paints that source in what it inherits from its containers, and follows a container's paint when it changes; it used to read as none. `DerivedDep` gains an optional `inherited`, which every dependency the scene builds carries, so any derivation can read the paint a dependency shows. `diagram:mark` resolves an `'inherit'` fill and stroke too.
+- 3519c96: Two more readers resolve an `'inherit'` fill or stroke against a node's containers. The preview ghost of a gesture paints a member with the paint its containers are taking mid-gesture, so a container's fill or stroke scrubbed in a paint control reaches its inheriting members at once rather than at the commit: the paint actions preview those members with the container, and the ghost reads every previewed container above a member. And culling measures an inherited stroke as the stroke it takes instead of declining to bound the node: `defaultPaintBounds` and `PaintBoundsFn` take an optional fourth `ctx` with `inherited`, which `<SceneCanvas>` and the headless render fill in from the scene; `withInheritedPaintBounds` does the same for a consumer's own cull. A `drawOne` wrapped by `withInheritedPaints` now keeps a `ctx.inherited` its caller passes.
+- 773f9c8: Several writers can now override one node at once. Each entry set on `scene.overrides` is a ply over the ones set before it: for each field the most recently claimed ply that gives it wins, `alpha` multiplies through every ply, and `data` runs each ply's function on what the plies under it show. Releasing a ply shows what lies under it. A ply's `path` is drawn in the box of the `pose` it gives beside it, so a pose laid over it by another writer, such as a move over a skinned node, carries the path along; a path given with no pose is drawn where it is. So a gesture's published preview no longer gives way where another writer holds the node: the data a move previews for a transform follower shows while the move holds the follower's pose, and an edge whose live route is eased shows the drag's reroute beside the route, so what derives from either follows every frame.
+  
+  `has` and `clear` take an optional `entry`, to check or release one writer's ply: `has(id, entry)`, `clear(id, entry)`. `clear(id)` still drops every ply of the node; each keeps its place, so a writer that sets its entry again goes back where it stood. `get(id)` answers the top ply. A hand-written `PoseOverrides` must honor `entry` on both: a writer releasing its own ply must not clear another's. This is a behavior change for a writer that set an entry over another's to replace it, or that checked `get(id) === entry` to know its own was still installed: the earlier entry now stays and shows again when the later one goes, and `get` answers only the top one. A hold's `show` no longer leaves an id another writer holds to that writer; it lays its frame over it. `PoseHold.others()` answers each node's topmost pose that is not the hold's own, where it answered the pose of whichever single entry the node held.
+  
+  `PoseTransitionScene.overrides` now needs `read` where it needed `has`: the undo glide skips only a node something else poses, not one showing a data draft. A container's descendants likewise ride along with its pose animation unless another writer poses them. Rigs and pose targets put their override back when the table drops it, and a pose target retargeted mid-run keeps running when its own write reflows a layout. Labkit's `LensActionApi` gains `unfollow`, which Pinned and Close call to let go of the follow hold alone.
+- 39c72a4: What derives from a node now follows an anchor drag on it every frame, rather than at the release: a Text Along Path laid along a path or a blend from it, and the same for every other action that previews through its handle. `<SceneCanvas>` publishes each in-flight handle's `previewPose` and `previewData` to the scene's overrides through the new `publishPreviews(scene, dispatcher)`, and releases them once the handle's commit has landed, so a cancel leaves the document and its history untouched. A consumer driving a dispatcher of its own, a 3D host among them, can call it too.
+  
+  A pose override can now carry `data(stored)`, the data a node is shown with, worked out from what it stores. Painting, picking, drawn bounds and the effective reading of every derivation read it through the new `nodeAsShown(overrides, node)`; the document reading, `scene.get`, history and export do not. `PoseOverride` and `PoseOverrides` take the scene's data type as a second parameter, and `PoseHold` gains `show(frame)`, which publishes data beside poses and leaves an id another writer holds to that writer; a hold now puts back an entry the scene dropped when its node was removed, once the node is back.
+  
+  Commands and exports read the document through the new `documentOf(scene)`, the scene with its overrides empty: Expand to Paths, Slice, `drawnBoxes` and what it serves (Align, Flip, resize and rotate, snap targets), and the diagram page export no longer bake in an in-flight drag's pose or an open edit's draft, and `documentDepOf` takes the reading node as `derivedDepOf` does. `withPath` keeps returning the same object for the same node and path, so a gesture previewing through it keeps its previews' identity between frames.
+- 8c39126: Picks consult a BVH index kept beside the scene, so a marquee, a lasso or a click visits the nodes near the query instead of every node. `@weasel-js/geom` adds the tree. Three contracts tighten for the index to be sound. `NodeInk.outset` must not depend on the view scale: screen-space reach goes in `outsetPx`. In kernel3d, `world.bounds` must be a function of the node alone. Two picks change behavior: marquee and lasso now test a derived node at its derived path, and the point pick now tests a node carrying an override `path` against that path, which is what the renderer paints, instead of its pose box.
+- 1322310: A node's declared clip can now be changed after it is added: `scene.setClip(id, 'outline')` declares it and `scene.setClip(id, null)` clears it, as one undo step, refused on a locked node like `setUnits`. `reconcileSpecs` writes a changed `clip` in place through it, where before it removed the node and added it again. The two setters are typed together as `SceneDeclaredFieldSetters`, which `Scene` extends. `setUnits` no longer records an entry when given a scope equal to the one declared. This adds API.
+- bbee4df: `startThresholdDrag` takes `captureAt: 'threshold'`, which leaves the pointer uncaptured until the press is a drag, so a press released short of the threshold still clicks what it was on; the capture it takes is released when the drag ends or is canceled. `modifierStateOf`, which reads an event's modifier keys as a `ModifierState`, is exported from routing and core, for `keysHeld` to read a press.
+- Updated dependencies [b1c691a]
+- Updated dependencies [16464c5]
+- Updated dependencies [7c1134c]
+- Updated dependencies [f1c1528]
+- Updated dependencies [9a76fb5]
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [38d5ad1]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [c7516cd]
+- Updated dependencies [1f2a0b3]
+- Updated dependencies [8c39126]
+- Updated dependencies [3eaceb1]
+- Updated dependencies [86f67ad]
+- Updated dependencies [769eef8]
+- Updated dependencies [352502d]
+- Updated dependencies [bbee4df]
+- Updated dependencies [aba2016]
+- Updated dependencies [4c113da]
+  - @weasel-js/routing@1.13.0
+  - @weasel-js/renderer@1.13.0
+  - @weasel-js/prefs@1.13.0
+  - @weasel-js/text@1.13.0
+  - @weasel-js/geom@1.13.0
+  - @weasel-js/animator@1.13.0
+  - @weasel-js/quantity@1.13.0
+  - @weasel-js/modes@1.13.0
+  - @weasel-js/text-dom@1.13.0
+  - @weasel-js/stroke@1.13.0
+  - @weasel-js/gestures@1.13.0
+  - @weasel-js/cursor@1.13.0
+  - @weasel-js/font@1.13.0
+  - @weasel-js/history@1.13.0
+  - @weasel-js/icons@1.13.0
+  - @weasel-js/paint@1.13.0
+  - @weasel-js/react@1.13.0
+  - @weasel-js/registry@1.13.0
+  - @weasel-js/select@1.13.0
+  - @weasel-js/simulation@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes

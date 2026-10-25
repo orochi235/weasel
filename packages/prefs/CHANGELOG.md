@@ -1,5 +1,24 @@
 # @weasel-js/prefs
 
+## 1.13.0
+
+### Patch Changes
+
+- 7c1134c: A group's, a section's, or a leaf's `enableIf` no longer disables a leaf directly inside it that the condition reads. That leaf is the node's switch, and it stays live so the node can be turned back on. So a panel of settings that can be turned on and off, such as one layer effect, is a group whose `enableIf: { path: '<group>.on' }` reads a boolean marked `heading`: the checkbox sits in the panel's title, and turning it off disables everything else in the panel. This holds in `PrefsForm`, `SelectionPanel`, labkit's `ControlPanel`, and schema menus, and `prefScopeIn` exposes the rule to other walkers.
+  
+  `MotifFrame`, `PropertyGroup`, and `Subpanel` take `disabled`, which dims the title and leaves the controls beside it alone. A settings form passes it for each group its `enableIf` turns off.
+- f1c1528: A section its `enableIf` turns off now dims its title, as a group's does, and its switch leaf stays live. `applyPrefConditions` names every disabled section in `disabled`, and with `keepHidden` every hidden one in `hidden`, by `prefSectionPath(at, key)`: the path of what holds the section, then its key marked so no value path can be the same (`'#look'` at a section root, `'stroke.#edge'` inside an `object` leaf, `'#look.#more'` for a section nested in another). `SelectionPanel`'s sections, and the sections of an `object` leaf in `SelectionPanel`, `PrefsForm`, and labkit's `ControlPanel`, read it through the `disabledAt` they already ask about fields.
+- 3eaceb1: `orderPrefGroup` reorders a group's children, and the children of its nested groups, by a stored `PrefOrder` keyed by container path, and `resolveOrder` is the rule it follows for keys the store lacks. An `actions` leaf takes `order`, and the actions it draws follow it, with any it does not name at the end.
+- aba2016: `Bar` takes `order`, a `PrefOrder` that sets the order of its items and groups, and `onReorder`, called with the new order when the user moves one. Passing `onReorder` turns reordering on: hold Cmd and drag an item to move it within its group, or Cmd+Shift and drag a group to move it among the others; with the keyboard, Alt+arrows move the focused item and Alt+Shift+arrows move its group. A plain press still clicks, nothing crosses a group boundary, Escape cancels a drag, and the new position is announced. The same works along a straight or a curved bar. The kit stores nothing: a host keeps the order itself, as a user pref.
+- Updated dependencies [04b862d]
+- Updated dependencies [86f67ad]
+  - @weasel-js/quantity@1.13.0
+  - @weasel-js/icons@1.13.0
+  - @weasel-js/paint@1.13.0
+  - @weasel-js/react@1.13.0
+  - @weasel-js/registry@1.13.0
+  - @weasel-js/storage@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes

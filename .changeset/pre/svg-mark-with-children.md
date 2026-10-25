@@ -1,5 +1,0 @@
----
-"@weasel-js/svg": patch
----
-
-A mark with children can survive a round trip through SVG. `svgNodesFromKit` takes a `mark` decorator beside `group`: given one, it writes such a mark as a `<g>` holding the mark's own element, then one `<g>` of its children carrying the mark's clip, then a transformed `<g>` of that for each copy, and hands the outer `<g>` to the decorator to tag; a mark whose children are all left out holds its own element alone. `svgNodesToKitDrafts` takes a matching `mark` predicate, and reads a `<g>` it claims as a mark drafted from its first element, with the children of the `<g>` after it as the mark's (hidden where that `<g>` is), that `<g>`'s clip as its `clip: 'outline'`, and baked copies as further children. A clip on the claimed `<g>` itself becomes a clipping group around the mark; a mark draft can now carry `clip`, and `unpackSvgFiles` inserts it. Without either option both walks behave as before. `unpackSvgFiles` moved to its own module and is exported from the same place.

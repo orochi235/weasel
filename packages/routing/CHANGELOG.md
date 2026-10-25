@@ -1,5 +1,53 @@
 # @weasel-js/routing
 
+## 1.13.0
+
+### Patch Changes
+
+- b1c691a: A contribution can declare `watch(changed)` beside its `deps`. A dep source is a thunk nothing else can watch, so an `ActionBar` button showing an action's `active` or `enabled` state kept whatever it last read when the source changed without the scene or selection changing. A host subscribes `watch` while the entry is installed and tells the dep registry whenever it fires, and the chrome re-reads.
+- 7c1134c: A group's, a section's, or a leaf's `enableIf` no longer disables a leaf directly inside it that the condition reads. That leaf is the node's switch, and it stays live so the node can be turned back on. So a panel of settings that can be turned on and off, such as one layer effect, is a group whose `enableIf: { path: '<group>.on' }` reads a boolean marked `heading`: the checkbox sits in the panel's title, and turning it off disables everything else in the panel. This holds in `PrefsForm`, `SelectionPanel`, labkit's `ControlPanel`, and schema menus, and `prefScopeIn` exposes the rule to other walkers.
+  
+  `MotifFrame`, `PropertyGroup`, and `Subpanel` take `disabled`, which dims the title and leaves the controls beside it alone. A settings form passes it for each group its `enableIf` turns off.
+- 7e7549c: A group now selects as one item:
+  
+  - A press on a group's member selects the group, and so does a right-click, whose menu is the group's own. A drag from a member moves the group.
+  - A double-click on a member enters the group, drawn with a dashed frame; a press then selects among its members, and a further double-click goes one level deeper. Escape leaves one level. Both work under any tool. While a group is entered only what is inside it can be pressed, marqueed, lassoed or selected with Select All. Under the select tool a press outside the entered group's box, with or without modifiers, leaves every group that box is outside of and selects nothing; that leave is its own binding, `group.leave.press`, which `bindingOverrides` can rebind or remove. Under a drawing tool the press draws, and what is drawn or pasted lands in the entered group: core now sources the `insertInto` dep from it, under any source registered after it, and `sceneToAdapter`'s new `pasteInto` option says where a paste lands. A double-click on a member that is not a group still reaches text and path editing, and an open mode takes Escape before the group does.
+  - Cmd-click (Ctrl on Windows and Linux) selects the node under the pointer past every group. It no longer extends the selection: Shift-click does that, and Cmd-Shift-click adds the node under the pointer past every group.
+  - The entered group is session state beside the selection: undo does not move it. `<SceneCanvas>` publishes it as the optional `enteredGroup` dep, and an absent dep means no group is entered. `<SceneCanvas enteredGroup>` takes an `EnteredGroupApi` made with `useEnteredGroup(scene)`, as `selection` is passed, for an app that reads or drives it; without it the canvas keeps its own. `leaveAll()` leaves every level at once.
+  - `createEnteredGroupScope({ entered, scene })` returns a `NodeScope` (from `@weasel-js/modes`, which `ScopingDim` now extends) for the entered group, everything outside it dimmed to `OUT_OF_SCOPE_ALPHA`. Compose its `alphaFor` into `<SceneCanvas alphaFor>` and pass it in `redrawOn` to dim what is outside the group.
+  - The entered-group frame takes its color from the `--wzl-entered-group` override hook on the canvas or any element above it, and repaints when a theme, mode or class attribute changes there or the system color scheme flips.
+  - A contribution's dep source may read the source it displaces: `ContributionDeps` entries take the `below` argument `DepSource` does. The symmetry contribution's `insertInto` falls through to it when no symmetry group is active.
+  - `workspaceTintLayer` takes a `fallback` tint, shown when the mode has none.
+  
+  Breaking: isolation mode is gone. `ISOLATION` is no longer exported from `@weasel-js/modes` and `DEFAULT_MODES` no longer holds it, and `<SceneCanvas isolatedGroup>` is removed: the entered group is the one way of working inside a group. In WeaselDraw a double-click on a group's member now enters the group, dims everything outside it, tints the workspace, and names the group in the breadcrumb. Edits made inside it are each their own undo step, where isolation by default collected them into one entry on leaving, and path and text editing open inside the group without leaving it.
+- 1f2a0b3: A menu hung from a button opens on a side of it, not only below or above. `placeMenuUnder`'s last argument is now a `MenuSide` (`'top' | 'bottom' | 'left' | 'right'`, default `'bottom'`) where it was the boolean `above`; beside the button the menu is top-aligned and flips to the other side when it does not fit. `MenuOpenRequest` and `OpenMenu` carry `side` in place of `above`. This is a breaking change for anyone passing `above`: pass `side: 'top'` instead. A curved `Bar`'s menus now open on the side their item faces, where `'left'` and `'right'` used to open below.
+- bbee4df: `startThresholdDrag` takes `captureAt: 'threshold'`, which leaves the pointer uncaptured until the press is a drag, so a press released short of the threshold still clicks what it was on; the capture it takes is released when the drag ends or is canceled. `modifierStateOf`, which reads an event's modifier keys as a `ModifierState`, is exported from routing and core, for `keysHeld` to read a press.
+- Updated dependencies [7c1134c]
+- Updated dependencies [f1c1528]
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [c7516cd]
+- Updated dependencies [1f2a0b3]
+- Updated dependencies [8c39126]
+- Updated dependencies [3eaceb1]
+- Updated dependencies [86f67ad]
+- Updated dependencies [769eef8]
+- Updated dependencies [aba2016]
+- Updated dependencies [4c113da]
+  - @weasel-js/prefs@1.13.0
+  - @weasel-js/geom@1.13.0
+  - @weasel-js/quantity@1.13.0
+  - @weasel-js/modes@1.13.0
+  - @weasel-js/menu@1.13.0
+  - @weasel-js/gestures@1.13.0
+  - @weasel-js/cursor@1.13.0
+  - @weasel-js/history@1.13.0
+  - @weasel-js/icons@1.13.0
+  - @weasel-js/react@1.13.0
+  - @weasel-js/registry@1.13.0
+  - @weasel-js/select@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes

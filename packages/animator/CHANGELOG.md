@@ -1,5 +1,20 @@
 # @weasel-js/animator
 
+## 1.13.0
+
+### Patch Changes
+
+- 38d5ad1: Depend on `@msb235/blits` 0.12.0, which has no breaking changes from 0.11.0. Its fixes make a single `fn` voice over many subjects, the shape weasel's animator uses, cheaper per frame.
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [c7516cd]
+- Updated dependencies [8c39126]
+- Updated dependencies [769eef8]
+- Updated dependencies [4c113da]
+  - @weasel-js/geom@1.13.0
+  - @weasel-js/paint@1.13.0
+  - @weasel-js/react@1.13.0
+  - @weasel-js/registry@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes

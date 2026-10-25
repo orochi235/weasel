@@ -1,5 +1,20 @@
 # @weasel-js/text
 
+## 1.13.0
+
+### Patch Changes
+
+- 9a76fb5: A text layout holds its code points in columns of numbers, and painting it reads them there, so text re-laid out every frame — a HUD readout — no longer leaves a cell, a placed glyph and a quad object per glyph for the garbage collector. A line's `cells` and `glyphs` and a group's `quads` read as before, built the first time something reads them. A `LaidOutGroup` gains `quadData`, its quads packed `QUAD_STRIDE` (exported) numbers each, which is what the renderer draws from, and a color group gains `colorGlyphs`.
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [c7516cd]
+- Updated dependencies [8c39126]
+- Updated dependencies [769eef8]
+- Updated dependencies [4c113da]
+  - @weasel-js/geom@1.13.0
+  - @weasel-js/font@1.13.0
+  - @weasel-js/paint@1.13.0
+  - @weasel-js/registry@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes
