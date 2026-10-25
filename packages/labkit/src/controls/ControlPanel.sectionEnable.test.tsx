@@ -52,3 +52,23 @@ describe('<ControlPanel> a section of an object leaf its enableIf turns off', ()
     },
   );
 });
+
+const grouped = (as: 'tab' | 'bar'): ResolvedConfig => ({
+  ...schema,
+  group: {
+    name: 'root',
+    children: {
+      on: flag('Edge on'),
+      edge: { name: 'Edge', as, ...(as === 'bar' ? { lead: 'label' as const } : {}), enableIf: { path: 'on' }, children: { width: num('Width') } },
+    },
+  },
+});
+
+describe('<ControlPanel> a group its enableIf turns off', () => {
+  it.each([
+    ['tab', false], ['tab', true], ['bar', false], ['bar', true],
+  ] as const)('as %s, on: %s — dims its name only while off', (as, on) => {
+    renderWithIcons(<ControlPanel schema={grouped(as)} config={{ on, edge: { width: 1 } }} setConfig={vi.fn()} />);
+    expect(dimmed(screen.getByText('Edge'))).toBe(!on);
+  });
+});

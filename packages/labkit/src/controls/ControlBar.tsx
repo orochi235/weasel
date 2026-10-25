@@ -44,6 +44,7 @@ export function ControlBar(props: ControlBarProps) {
       overflow={group.overflow}
       lead={group.lead}
       icon={group.icon}
+      disabled={!enabled(path)}
       label={group.name === '' ? undefined : group.name}
       nodes={groupBarNodes(group, path, open)}
       cells={(leaves) =>

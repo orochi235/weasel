@@ -36,6 +36,8 @@ export interface ObjectLeafParts<Cell> {
   lead?(key: string, section: PrefSection): ReactNode[];
   /** A run of neighboring `tab` sections, each with the section it draws. Default: a strip that keeps its own open tab. */
   tabs?(run: readonly ObjectTab[]): ReactNode;
+  /** Whether the section named `path` (`prefSectionPath`) is disabled, which dims its tab's or its bar's name. Default: never. */
+  off?(path: string): boolean;
   /** Attributes for the element a bar draws for the field at `path`. Default: none. */
   barAttrs?(path: string, leaf: boolean): Record<string, string | undefined>;
   /** A section drawn in place, with `inner` its rows: under a heading, in a panel, or as a fragment. */
@@ -45,7 +47,7 @@ export interface ObjectLeafParts<Cell> {
 /** One child of an object leaf with something to draw, before it is placed among its neighbors. */
 type Drawn<Cell> =
   | { kind: 'cell'; cell: Cell }
-  | { kind: 'bar'; key: string; section: PrefSection; nodes: BarNode[] }
+  | { kind: 'bar'; key: string; section: PrefSection; nodes: BarNode[]; off: boolean }
   | { kind: 'tab'; tab: ObjectTab }
   | { kind: 'frame'; key: string; section: PrefSection; inner: ReactNode[]; labeled: boolean; path: string };
 
@@ -57,18 +59,19 @@ function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeaf
       out.push({ kind: 'cell', cell: parts.cell(key, child, 'row') });
       continue;
     }
+    const path = prefSectionPath(within, key);
+    const off = parts.off?.(path) === true;
     if (child.as === 'bar') {
       const nodes = barNodes(child.members, parts);
-      if (nodes.length > 0) out.push({ kind: 'bar', key, section: child, nodes });
+      if (nodes.length > 0) out.push({ kind: 'bar', key, section: child, nodes, off });
       continue;
     }
     const labeled = child.name !== '' && child.as !== 'fragment';
-    const path = prefSectionPath(within, key);
     const inner = objectRows(child.members, parts, labeled && child.as !== 'tab', path);
     if (inner.length === 0) continue;
     if (child.as === 'tab') {
       const content = [...(parts.lead?.(key, child) ?? []), ...inner];
-      out.push({ kind: 'tab', tab: { id: key, name: child.name, section: child, content } });
+      out.push({ kind: 'tab', tab: { id: key, name: child.name, section: child, content, disabled: off } });
     } else {
       out.push({ kind: 'frame', key, section: child, inner, labeled, path });
     }
@@ -105,7 +108,7 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
     flush();
     if (drawn.kind === 'bar') {
       out.push(
-        <BarLayout key={`bar:${drawn.key}`} framed label={drawn.section.name === '' ? undefined : drawn.section.name} overflow={drawn.section.overflow} lead={drawn.section.lead} icon={drawn.section.icon}
+        <BarLayout key={`bar:${drawn.key}`} framed label={drawn.section.name === '' ? undefined : drawn.section.name} overflow={drawn.section.overflow} lead={drawn.section.lead} icon={drawn.section.icon} disabled={drawn.off}
           nodes={drawn.nodes} cells={() => []} row={() => null} attrs={parts.barAttrs} />,
       );
     } else if (drawn.kind === 'frame') {

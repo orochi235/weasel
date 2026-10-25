@@ -22,6 +22,9 @@ export interface GroupHeading {
   entries: Entry[];
 }
 
+/** Whether the group at `path` is disabled, which dims its name wherever it is drawn. */
+export const groupOff = (ctx: WalkCtx, path: string): boolean => ctx.disabled?.has(path) === true;
+
 /**
  * The leaf of `group` marked `heading`, lifted out of its rows into the
  * heading. It stays a row where the form has its own renderer for its kind,
@@ -30,7 +33,7 @@ export interface GroupHeading {
  */
 export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): GroupHeading {
   const entries = Object.entries(group.children);
-  const off = ctx.disabled?.has(path) === true;
+  const off = groupOff(ctx, path);
   const name = offTitle(group.name, off);
   const key = prefHeadingKey(group);
   const leaf = key === undefined ? undefined : group.children[key];

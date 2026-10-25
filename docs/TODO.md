@@ -604,10 +604,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) A disabled group's or section's tab, or a bar's label, doesn't dim.** Headings and frames do (2026-10-24):
-  `applyPrefConditions` names a disabled section in `disabled` by `prefSectionPath`, and every surface reads it
-  there. `GroupTabs`, `PanelTabs` and `BarLayout` take no `disabled` for their labels.
-
 
 - **(P3) A schema cannot name one group's motif for a settings form.** `PrefsForm`, `PrefsPane` and
   `SelectionPanel` draw their framed groups through `MotifFrame` (2026-10-24), so an app's `<DefaultMotif>`

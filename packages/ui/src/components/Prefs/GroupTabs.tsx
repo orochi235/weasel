@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from '../Tabs';
+import { offTitle } from './offTitle';
 
 /** One group in a {@link GroupTabs} strip. */
 export interface GroupTab {
@@ -7,6 +8,8 @@ export interface GroupTab {
   name: string;
   /** The group's rows, drawn while its tab is the one open. */
   content: ReactNode;
+  /** The group's `enableIf` turns it off, and its name dims as a heading's does. The tab still opens. */
+  disabled?: boolean;
   /** Extra attributes for the tab, and for the panel while this tab is open. */
   attrs?: Record<string, string | undefined>;
   panelAttrs?: Record<string, string | undefined>;
@@ -39,7 +42,7 @@ export function GroupTabs({ tabs, picked, onPick, className }: GroupTabsProps) {
       }}
     >
       <TabList aria-label="Groups">
-        {tabs.map((t) => <Tab key={t.id} id={t.id} {...t.attrs}>{t.name}</Tab>)}
+        {tabs.map((t) => <Tab key={t.id} id={t.id} {...t.attrs}>{offTitle(t.name, t.disabled === true)}</Tab>)}
       </TabList>
       <TabPanel id={open.id} {...open.panelAttrs}>{open.content}</TabPanel>
     </Tabs>

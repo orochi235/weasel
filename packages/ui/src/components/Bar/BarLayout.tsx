@@ -83,6 +83,8 @@ export interface BarLayoutProps {
   lead?: PrefBarLead;
   /** The glyph naming the bar, which `lead: 'icon'` starts its line with. */
   icon?: IconRef;
+  /** The bar's group is disabled, and its lead dims as a heading's name does. The cells say so for themselves. */
+  disabled?: boolean;
   /** Draw the strip the bar sits on, for a bar set among other things with
    *  no strip of the host's under it. `'segmented'` is a compact strip with
    *  the cells almost touching. */
@@ -134,12 +136,12 @@ export function BarLayout(props: BarLayoutProps) {
 }
 
 function BarLine(props: BarLayoutProps) {
-  const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, lead, icon, framed, className } = props;
+  const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, framed, className } = props;
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const vertical = orientation === 'vertical';
   // A vertical bar has no room beside a field, so only a button stays on it.
   const shown = barItems(nodes, { popLeaves: vertical, cells, row, mark: props.onReorder !== undefined });
-  const leading = useBarLead(barLead(lead, label, icon));
+  const leading = useBarLead(barLead(props));
 
   const menu = overflow === 'menu';
   const { bar, kept, natural } = useBarOverflow(menu, shown.map((item) => item.key), vertical);

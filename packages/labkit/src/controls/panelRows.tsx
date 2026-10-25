@@ -221,6 +221,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
               return {
                 id: path,
                 name: group.name,
+                disabled: !enabled(path),
                 content: listOf(rows, body(group, path, rows)),
               };
             })}

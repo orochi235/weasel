@@ -2,7 +2,7 @@ import { Fragment, type ReactNode, type RefObject } from 'react';
 import { isPrefLeaf, prefAsBox, prefTabRuns, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { MotifFrame } from '../MotifFrame';
 import { FORM_FRAMES, headingInline } from './frames';
-import { groupHeading } from './groupHeading';
+import { groupHeading, groupOff } from './groupHeading';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
@@ -177,6 +177,7 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
       overflow={ctx.droppable ? undefined : group.overflow}
       lead={group.lead}
       icon={group.icon}
+      disabled={groupOff(ctx, path)}
       rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
       label={group.name === '' ? undefined : group.name}
       nodes={shownBarNodes(groupBarNodes(group, path, (inner, at) => (
@@ -246,6 +247,7 @@ function PaneTabs({ ctx, tabs, depth, box }: {
       tabs={tabs.map(([p, g]) => ({
         id: p,
         name: g.name,
+        disabled: groupOff(ctx, p),
         attrs: tabAttrs(p, ctx, p === open),
         panelAttrs: selectionAttrs(p, ctx),
         content: (

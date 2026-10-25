@@ -39,7 +39,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const run = useMemo(() => trackRun(shape), [shape]);
   const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.onReorder !== undefined });
-  const leading = useBarLead(barLead(props.lead, label, props.icon));
+  const leading = useBarLead(barLead(props));
   const lengths = useItemLengths(root, drawnKeys(items, leading != null), barKeyOf);
   const gap = useRunGap(root);
 
