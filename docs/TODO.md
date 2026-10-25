@@ -619,11 +619,18 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   open page goes unmarked with no warning. bree's lab hit this on 2026-10-24 and dropped the `./`.
   Resolve each href against the location before comparing.
 
-- **(P3) A section turned off by its `enableIf` doesn't dim its title.** Groups do (`MotifFrame disabled`,
-  2026-10-24), because `applyPrefConditions` names every disabled group in `disabled`. It names no section, since a
-  section's key is not a path, so `SelectionPanel`'s and an object leaf's section frames have nothing to read. Its
-  switch leaf still stays live. The fix is a set of disabled section keys beside `disabled`, or a judge the section
-  renderers can ask.
+- **(P3) A disabled group's or section's tab, or a bar's label, doesn't dim.** Headings and frames do (2026-10-24):
+  `applyPrefConditions` names a disabled section in `disabled` by `prefSectionPath`, and every surface reads it
+  there. `GroupTabs`, `PanelTabs` and `BarLayout` take no `disabled` for their labels.
+
+- **(P3) A list item's switch field is disabled by the condition it switches.** `prefScopeIn` spares the leaf an
+  owner's `enableIf` reads by comparing the condition's paths with the leaf's full path, but a `from: 'item'`
+  condition names an item-relative path (`on`), so in `phases.2` the field `phases.2.on` stays disabled
+  (`applyPrefEntryConditions`, checked 2026-10-24).
+
+- **(P3) labkit's `configFromPrefs` drops a section's `showIf` and `enableIf`.** A lab built from a property schema
+  turns each top-level section into a labkit section (`options.section`), which holds no condition, so the section
+  neither hides nor disables its rows there.
 
 - **(P3) A schema cannot name one group's motif for a settings form.** `PrefsForm`, `PrefsPane` and
   `SelectionPanel` draw their framed groups through `MotifFrame` (2026-10-24), so an app's `<DefaultMotif>`

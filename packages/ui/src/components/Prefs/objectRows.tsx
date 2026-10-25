@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import { isPrefLeaf, prefTabRuns, type PrefLeaf, type PrefObject, type PrefSection } from '@weasel-js/prefs';
+import { isPrefLeaf, prefSectionPath, prefTabRuns, type PrefLeaf, type PrefObject, type PrefSection } from '@weasel-js/prefs';
 import { BarLayout, type BarNode } from '../Bar/BarLayout';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { GroupTabs, type GroupTab } from './GroupTabs';
@@ -10,6 +10,8 @@ export interface ObjectSectionAt {
   labeled: boolean;
   /** Something visible sits above the section's rows, so depth can be drawn against it. */
   indent: boolean;
+  /** The path the section is named by (`prefSectionPath`), which a surface asks `disabledAt` about. */
+  path: string;
 }
 
 /** One tab of a run inside an object leaf. */
@@ -45,10 +47,10 @@ type Drawn<Cell> =
   | { kind: 'cell'; cell: Cell }
   | { kind: 'bar'; key: string; section: PrefSection; nodes: BarNode[] }
   | { kind: 'tab'; tab: ObjectTab }
-  | { kind: 'frame'; key: string; section: PrefSection; inner: ReactNode[]; labeled: boolean };
+  | { kind: 'frame'; key: string; section: PrefSection; inner: ReactNode[]; labeled: boolean; path: string };
 
-/** The children that draw something, in order. */
-function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeafParts<Cell>): Drawn<Cell>[] {
+/** The children that draw something, in order. `within` is the path a section among them is named under. */
+function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeafParts<Cell>, within: string): Drawn<Cell>[] {
   const out: Drawn<Cell>[] = [];
   for (const [key, child] of Object.entries(children)) {
     if (isPrefLeaf(child)) {
@@ -61,13 +63,14 @@ function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeaf
       continue;
     }
     const labeled = child.name !== '' && child.as !== 'fragment';
-    const inner = objectRows(child.members, parts, labeled && child.as !== 'tab');
+    const path = prefSectionPath(within, key);
+    const inner = objectRows(child.members, parts, labeled && child.as !== 'tab', path);
     if (inner.length === 0) continue;
     if (child.as === 'tab') {
       const content = [...(parts.lead?.(key, child) ?? []), ...inner];
       out.push({ kind: 'tab', tab: { id: key, name: child.name, section: child, content } });
     } else {
-      out.push({ kind: 'frame', key, section: child, inner, labeled });
+      out.push({ kind: 'frame', key, section: child, inner, labeled, path });
     }
   }
   return out;
@@ -76,16 +79,17 @@ function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeaf
 /**
  * An object leaf's children as rows, the one walk every params surface makes: fields in runs, a `bar` section as
  * one line, neighboring `tab` sections as one set of tabs, and any other section framed by the surface. A section
- * with nothing to draw is skipped and ends no run.
+ * with nothing to draw is skipped and ends no run. `within` is the path a section among them is named under: the
+ * object leaf's own, or the section's that holds them.
  */
-export function objectRows<Cell>(children: PrefObject['children'], parts: ObjectLeafParts<Cell>, indent = true): ReactNode[] {
+export function objectRows<Cell>(children: PrefObject['children'], parts: ObjectLeafParts<Cell>, indent = true, within = parts.path): ReactNode[] {
   const out: ReactNode[] = [];
   let pending: Cell[] = [];
   const flush = (): void => {
     if (pending.length > 0) out.push(...parts.rows(pending));
     pending = [];
   };
-  for (const step of prefTabRuns(drawnChildren(children, parts), (drawn) => drawn.kind === 'tab')) {
+  for (const step of prefTabRuns(drawnChildren(children, parts, within), (drawn) => drawn.kind === 'tab')) {
     if (step.tabs) {
       const tabs = step.tabs.map((drawn) => (drawn as Extract<Drawn<Cell>, { kind: 'tab' }>).tab);
       const key = `tabs:${tabs[0]!.id}`;
@@ -105,7 +109,7 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
           nodes={drawn.nodes} cells={() => []} row={() => null} attrs={parts.barAttrs} />,
       );
     } else if (drawn.kind === 'frame') {
-      out.push(...parts.frame(drawn.key, drawn.section, drawn.inner, { labeled: drawn.labeled, indent }));
+      out.push(...parts.frame(drawn.key, drawn.section, drawn.inner, { labeled: drawn.labeled, indent, path: drawn.path }));
     }
   }
   flush();

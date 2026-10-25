@@ -66,7 +66,7 @@ describe("a node's enableIf and the leaves it reads", () => {
       },
     };
     const dark = over({ lit: false });
-    expect([...applyPrefConditions(section, dark).disabled]).toEqual(['gain']);
+    expect([...applyPrefConditions(section, dark).disabled].sort()).toEqual(['#look', 'gain']);
     expect(prefScopeAt(section, 'lit', dark).enabled).toBe(true);
 
     const object: PrefGroup = {
