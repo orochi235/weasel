@@ -81,9 +81,10 @@ export type StrokeAlign = 'center' | 'inner' | 'outer';
  * `PaintKind` is so a consumer's registered key typechecks.
  */
 export type KitMarkerKey =
-  | 'arrow' | 'arrow-open' | 'arrow-concave'
+  | 'arrow' | 'arrow-open' | 'arrow-concave' | 'triangle-hollow'
   | 'diamond' | 'diamond-hollow'
-  | 'circle' | 'square' | 'bar';
+  | 'circle' | 'square' | 'bar'
+  | 'crow-one' | 'crow-many' | 'crow-zero-one' | 'crow-one-many' | 'crow-zero-many';
 /** A marker shape's key: a built-in {@link KitMarkerKey} or a consumer-registered name. */
 export type MarkerKey = KitMarkerKey | (string & {});
 

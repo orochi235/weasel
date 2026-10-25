@@ -13,29 +13,66 @@
 import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import type { MarkerCtx, MarkerEntry } from './strokeMarkers';
 
-function poly(pts: readonly number[], size: number, close = true): PolygonPath {
-  const n = pts.length / 2;
-  const commands = new Uint8Array(close ? n + 1 : n);
-  commands[0] = PATH_M;
-  for (let i = 1; i < n; i++) commands[i] = PATH_L;
-  if (close) commands[n] = PATH_Z;
-  const coords = new Float32Array(pts.length);
-  for (let i = 0; i < pts.length; i++) coords[i] = pts[i] * size;
+/** One path of several subpaths, each a flat `[x, y, …]` list in marker
+ *  units and closed or left open. */
+function subpaths(size: number, ...parts: ReadonlyArray<readonly [readonly number[], boolean]>): PolygonPath {
+  let nCmds = 0;
+  let nCoords = 0;
+  for (const [pts, close] of parts) {
+    nCmds += pts.length / 2 + (close ? 1 : 0);
+    nCoords += pts.length;
+  }
+  const commands = new Uint8Array(nCmds);
+  const coords = new Float32Array(nCoords);
+  let c = 0;
+  let k = 0;
+  for (const [pts, close] of parts) {
+    for (let i = 0; i < pts.length; i += 2) {
+      commands[c++] = i === 0 ? PATH_M : PATH_L;
+      coords[k++] = pts[i] * size;
+      coords[k++] = pts[i + 1] * size;
+    }
+    if (close) commands[c++] = PATH_Z;
+  }
   return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
 }
 
-/** Circle of radius `r` centred at `cx`, in marker units. */
-function circle(cx: number, r: number, size: number, segments = 32): PolygonPath {
+function poly(pts: readonly number[], size: number, close = true): PolygonPath {
+  return subpaths(size, [pts, close]);
+}
+
+/** A circle of radius `r` centred at `(cx, 0)`, in marker units, as a flat point list. */
+function circlePoints(cx: number, r: number, segments = 32): number[] {
   const pts: number[] = [];
   for (let i = 0; i < segments; i++) {
     const theta = (i / segments) * Math.PI * 2;
     pts.push(cx + r * Math.cos(theta), r * Math.sin(theta));
   }
-  return poly(pts, size);
+  return pts;
 }
 
+function circle(cx: number, r: number, size: number): PolygonPath {
+  return poly(circlePoints(cx, r), size);
+}
+
+// Proportions proofed at 12x: bars 2 apart leave a clear gap at outline
+// width 1, and a foot narrower than ±2.5 reads as an arrowhead.
+/** A crow's-foot bar across the line at `x`. */
+const crowBar = (x: number) => [[x, -2, x, 2], false] as const;
+/** The foot's two outer prongs; the line itself is the middle one. */
+const CROW_FOOT = [[[-4, 0, 0, -2.5], false], [[-4, 0, 0, 2.5], false]] as const;
+const ZERO_R = 2;
+/** The hollow circle of a zero-minimum, and the run of line from its front to
+ *  the anchor that the ribbon, stopping at its back, no longer draws. */
+const crowZero = (cx: number) => [[circlePoints(cx, ZERO_R), true], [[cx + ZERO_R, 0, 0, 0], false]] as const;
+
+/** Every crow's-foot head: open strokes as thick as the line, nothing filled. */
+const CROW = { reads: [], fill: 'none', outline: { width: 1 } } as const;
+
 /** The markers the registry is seeded with: `arrow`, `arrow-open`,
- *  `arrow-concave`, `diamond`, `diamond-hollow`, `circle`, `square` and `bar`. */
+ *  `arrow-concave`, `triangle-hollow`, `diamond`, `diamond-hollow`, `circle`,
+ *  `square`, `bar`, and the crow's-foot family `crow-one`, `crow-many`,
+ *  `crow-zero-one`, `crow-one-many`, and `crow-zero-many`. */
 export const BUILTIN_MARKERS: readonly MarkerEntry[] = [
   {
     id: 'arrow',
@@ -61,6 +98,15 @@ export const BUILTIN_MARKERS: readonly MarkerEntry[] = [
     reads: [],
     inset: 3,
     path: ({ size }: MarkerCtx) => poly([0, 0, -3, -1.5, -2, 0, -3, 1.5], size),
+  },
+  {
+    id: 'triangle-hollow',
+    reads: [],
+    // Inset to its back edge, so the line does not show through the hollow.
+    inset: 4,
+    fill: 'none',
+    outline: { width: 0.5 },
+    path: ({ size }: MarkerCtx) => poly([0, 0, -4, -2, -4, 2], size),
   },
   {
     id: 'diamond',
@@ -95,5 +141,38 @@ export const BUILTIN_MARKERS: readonly MarkerEntry[] = [
     fill: 'none',
     outline: { width: 1 },
     path: ({ size }: MarkerCtx) => poly([0, -1.5, 0, 1.5], size, false),
+  },
+  // Nearest the anchor is the maximum (one or many), behind it the minimum.
+  {
+    id: 'crow-one',
+    ...CROW,
+    inset: 0,
+    // The run to the anchor repeats the line beneath it, and puts the head's
+    // leading edge on the anchor as every marker's is.
+    path: ({ size }: MarkerCtx) => subpaths(size, crowBar(-2), crowBar(-4), [[-4, 0, 0, 0], false]),
+  },
+  {
+    id: 'crow-many',
+    ...CROW,
+    inset: 0,
+    path: ({ size }: MarkerCtx) => subpaths(size, ...CROW_FOOT),
+  },
+  {
+    id: 'crow-zero-one',
+    ...CROW,
+    inset: 7.5,
+    path: ({ size }: MarkerCtx) => subpaths(size, crowBar(-2), ...crowZero(-5.5)),
+  },
+  {
+    id: 'crow-one-many',
+    ...CROW,
+    inset: 0,
+    path: ({ size }: MarkerCtx) => subpaths(size, ...CROW_FOOT, crowBar(-5.5)),
+  },
+  {
+    id: 'crow-zero-many',
+    ...CROW,
+    inset: 9.5,
+    path: ({ size }: MarkerCtx) => subpaths(size, ...CROW_FOOT, ...crowZero(-7.5)),
   },
 ];
