@@ -1,8 +1,8 @@
 // The org chart cards. A person is a rounded card holding a name over a title; an executive is a
 // bigger card whose name is heavier; an assistant hangs off a reporting line on a short stub, as it
-// does in a chart; a department is a square-cornered box with one line.
+// does in a chart; a vacancy is a person card drawn broken; a department is a square-cornered box with one line.
 
-import { at, line, rect, roundRect } from './grid.mjs';
+import { at, line, n, P, rect, roundRect } from './grid.mjs';
 
 const R = at(3);
 const BOLD = 2.5;
@@ -28,6 +28,18 @@ const assistant = (() => {
   return { d: spine + stub + card + line(at(17), at(15), at(25), at(15)), fill: card };
 })();
 
+/** A position nobody holds yet: the person card's corners and a dash down each side, its name line alone. */
+const vacancy = (() => {
+  const [l, t, r, b, g] = [at(5), at(9), at(27), at(23), at(2)];
+  const a = (x, y) => `A${n(R)} ${n(R)} 0 0 1 ${P(x, y)}`;
+  const corners = `M${P(l, t + R + g)}V${n(t + R)}${a(l + R, t)}H${n(l + R + g)}`
+    + `M${P(r - R - g, t)}H${n(r - R)}${a(r, t + R)}V${n(t + R + g)}`
+    + `M${P(r, b - R - g)}V${n(b - R)}${a(r - R, b)}H${n(r - R - g)}`
+    + `M${P(l + R + g, b)}H${n(l + R)}${a(l, b - R)}V${n(b - R - g)}`;
+  const dashes = line(at(14), t, at(18), t) + line(at(14), b, at(18), b);
+  return { d: corners + dashes + line(at(11), at(15), at(21), at(15)), fill: roundRect(l, t, r, b, R) };
+})();
+
 const department = (() => {
   const box = rect(at(5), at(9), at(27), at(25));
   return { d: box + line(at(9), at(17), at(23), at(17)), fill: box, join: 'miter' };
@@ -41,4 +53,4 @@ const orgChart = (() => {
   return { d: boxes + bus, fill: boxes, join: 'miter' };
 })();
 
-export const ORG = { person, executive, assistant, department, 'org-chart': orgChart };
+export const ORG = { person, executive, assistant, vacancy, department, 'org-chart': orgChart };

@@ -10,6 +10,7 @@ export type DiagramIconName =
   | 'person'
   | 'executive'
   | 'assistant'
+  | 'vacancy'
   | 'department'
   | 'orgChart'
   | 'server'
@@ -60,6 +61,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DiagramIconN
       "person",
       "executive",
       "assistant",
+      "vacancy",
       "department",
       "orgChart"
     ]
@@ -117,6 +119,7 @@ declare module '@weasel-js/icons' {
     'diagram:person': true;
     'diagram:executive': true;
     'diagram:assistant': true;
+    'diagram:vacancy': true;
     'diagram:department': true;
     'diagram:orgChart': true;
     'diagram:server': true;

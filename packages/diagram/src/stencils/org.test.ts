@@ -15,6 +15,12 @@ describe('the org group', () => {
     }
   });
 
+  it('draws a vacancy dashed, with a name row and a title row', () => {
+    const vacancy = ORG_GROUP.stencils.find((s) => s.id === 'vacancy')!;
+    expect('style' in vacancy && vacancy.style?.dash).toEqual([6, 4]);
+    expect('rows' in vacancy && vacancy.rows?.map((r) => ('id' in r ? r.id : undefined))).toEqual(['name', 'title']);
+  });
+
   it('is registered, and the org chart type opens with it and the containers, laid out top-down as a tree', () => {
     expect(STENCIL_GROUPS.org).toBe(ORG_GROUP);
     const type = DIAGRAM_TYPES.orgChart!;

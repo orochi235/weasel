@@ -25,6 +25,11 @@ export const ORG_STENCILS: readonly DiagramStencil[] = [
     rows: card({ bold: true, fontSize: 11 }, { fontSize: 10 }), icon: icon('assistant'),
   },
   {
+    id: 'vacancy', label: 'Vacancy', outline: 'roundRect', size: { width: 160, height: 64 },
+    rows: [{ kind: 'label', text: 'Vacant', style: { bold: true }, id: 'name' }, { kind: 'label', text: 'Title', style: { fontSize: 11 }, id: 'title' }],
+    style: { dash: [6, 4] }, icon: icon('vacancy'),
+  },
+  {
     id: 'department', label: 'Department', outline: 'rect', size: { width: 200, height: 56 },
     rows: [{ kind: 'label', text: 'Department', style: { bold: true, fontSize: 13 } }], icon: icon('department'),
   },
