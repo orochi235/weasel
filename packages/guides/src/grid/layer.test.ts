@@ -107,7 +107,7 @@ describe('createGridLayer', () => {
     });
     const view = { x: 5, y: 7, scale: { x: 2, y: 2 } };
     layer.draw(undefined, view, { width: 300, height: 200, dpr: 1 });
-    expect(seen).toEqual([view, { width: 300, height: 200 }]);
+    expect(seen).toEqual([view, { width: 300, height: 200, dpr: 1 }]);
   });
 
   describe('with bounds omitted', () => {

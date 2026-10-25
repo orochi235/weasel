@@ -112,7 +112,7 @@ describe('attachHud: widget command cache', () => {
     const draw = vi.fn(() => []);
     hud.add(plain({ draw, deps: () => [] }));
     paint(); paint();
-    paint({ width: 800, height: 300 });
+    paint({ width: 800, height: 300, dpr: 1 });
     expect(draw).toHaveBeenCalledTimes(2);
   });
 

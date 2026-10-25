@@ -4,24 +4,13 @@ import type { View } from 'core/viewport/view';
 import { groupMembership, wrapGroup, type LayerGroup } from './layerGroup';
 import { DEFAULT_LAYER_RETAIN, retainedId, type LayerRetainPolicy } from './retain';
 import type { RedrawSource } from './redrawSource';
+import type { Dims, LayerDims } from './dims';
 
-export type { LayerGroup, LayerRetainPolicy };
+export type { Dims, LayerDims, LayerGroup, LayerRetainPolicy };
 export { DEFAULT_LAYER_RETAIN };
 export { subscribeToSources, type RedrawSource } from './redrawSource';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-
-/** Canvas size in CSS pixels, so layers don't have to know about DPR. */
-export interface Dims {
-  width: number;
-  height: number;
-}
-
-/** What a layer draws into: its size, and the device pixels to the CSS pixel
- *  the frame is painted at, which is what an effect's reach is measured in. */
-export interface LayerDims extends Dims {
-  dpr: number;
-}
 
 /**
  * What a layer's `draw` threw, and which layer threw it. A throw that escaped

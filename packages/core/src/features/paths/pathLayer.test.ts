@@ -159,7 +159,7 @@ describe('createPathLayer color overrides', () => {
   const triangle = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }]);
   const baseFillColors = [255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255];
   const view = { x: 0, y: 0, scale: { x: 1, y: 1 } } as any;
-  const size = { width: 100, height: 100 };
+  const size = { width: 100, height: 100, dpr: 1 };
 
   it('falls back to the consumer accessor when no override is registered', () => {
     const layer = createPathLayer({

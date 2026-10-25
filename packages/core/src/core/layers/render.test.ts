@@ -22,7 +22,7 @@ describe('drawLayers', () => {
     const c: RenderLayer<unknown> = { id: 'c', label: 'C', space: 'screen', draw: () => [cmd()] };
     const spans: LayerDrawSpan[] = [];
     const out = drawLayers(
-      [a, empty, b, c], null, {}, undefined, undefined, { width: 10, height: 10 },
+      [a, empty, b, c], null, {}, undefined, undefined, { width: 10, height: 10, dpr: 1 },
       undefined, undefined, [{ id: 'bc', layers: ['b', 'c'], effects: [] }], spans,
     );
     expect(spans.map(({ id, start, end }) => ({ id, start, end }))).toEqual([
@@ -237,7 +237,7 @@ describe('a layer that throws', () => {
     };
     const onLayerError = vi.fn();
     const out = drawLayers(
-      [bad, good], null, {}, undefined, undefined, { width: 10, height: 10 },
+      [bad, good], null, {}, undefined, undefined, { width: 10, height: 10, dpr: 1 },
       undefined, onLayerError,
     );
     expect(out).toEqual([PATH_CMD]);

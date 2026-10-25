@@ -81,7 +81,7 @@ describe('routing through a viewport', () => {
   it('tracks bounds that move with the canvas size', () => {
     const layer = pip();
     // Same rect-relative point, taller canvas → the rect follows the bottom edge.
-    const tall = { width: 600, height: 500 };
+    const tall = { width: 600, height: 500, dpr: 1 };
     expect(route([layer], { x: 8, y: 332 }, tall)).toEqual({ id: 'pip', point: { x: 250, y: 200 } });
     // The rect moved down with the bottom edge, so the old origin is now above it.
     expect(route([layer], { x: 8, y: 232 }, tall).id).toBeNull();

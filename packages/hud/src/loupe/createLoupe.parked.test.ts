@@ -7,7 +7,7 @@ import { createLoupe, type LoupeHandle } from './createLoupe';
 // A parked lens: the aim holds still while what is under it changes.
 
 const tokens = resolveTheme(weaselTheme, { mode: 'dark' });
-const dims = { width: 800, height: 600 };
+const dims = { width: 800, height: 600, dpr: 1 };
 const source: RenderLayer<unknown>[] = [];
 
 function makeElement(pixel: () => number[]) {
