@@ -158,22 +158,6 @@
   white-space: nowrap;
 }
 
-.copy {
-  height: var(--wzl-control-h);
-  padding: 0 var(--wzl-space-md);
-  border-radius: var(--wzl-radius-sm);
-  border: var(--wzl-border-w) solid var(--wzl-border-strong);
-  background: var(--wzl-surface-raised);
-  color: var(--wzl-fg);
-  font-family: inherit;
-  font-size: var(--wzl-font-size-sm);
-  cursor: pointer;
-}
-
-.copy:hover {
-  background: var(--wzl-surface-hover);
-}
-
 .anchorHint {
   margin: 0;
   padding: var(--wzl-space-xs) 0;
@@ -215,30 +199,8 @@
 }
 
 .anchorHexInput {
-  width: 5.5em;
-  height: var(--wzl-control-h);
-  padding: 0 var(--wzl-space-xs);
+  width: 6.5em;
   font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-sm);
-  background: var(--wzl-surface-sunken);
-  color: var(--wzl-fg);
-  border: var(--wzl-border-w) solid var(--wzl-border-strong);
-  border-radius: var(--wzl-radius-sm);
-}
-
-.anchorSwatchInput {
-  width: var(--wzl-control-h);
-  height: var(--wzl-control-h);
-  padding: 0;
-  border: var(--wzl-border-w) solid var(--wzl-border-strong);
-  border-radius: var(--wzl-radius-sm);
-  background: none;
-  cursor: pointer;
-}
-
-.copy:disabled {
-  opacity: 0.45;
-  cursor: default;
 }
 
 .infeasible {
@@ -330,12 +292,6 @@
 .anchorX:hover {
   background: var(--wzl-surface-hover);
   color: var(--wzl-danger);
-}
-
-.copy {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wzl-space-xs);
 }
 
 /* A grid you scan, not a field you type into: 45 colors you would recognize on
@@ -440,31 +396,14 @@
   background: var(--wzl-surface-raised);
 }
 
-.presetLoad,
-.presetCopy {
-  height: var(--wzl-control-h);
-  border: 0;
-  background: none;
-  color: var(--wzl-fg);
-  font: inherit;
-  font-size: var(--wzl-font-size-sm);
-  cursor: pointer;
+.presetChip .presetLoad,
+.presetChip .presetCopy {
+  border-radius: 0;
 }
 
-.presetLoad {
-  padding: 0 var(--wzl-space-sm);
-}
-
-.presetCopy {
-  width: var(--wzl-control-h);
-  padding: 0;
+.presetChip .presetCopy {
   color: var(--wzl-fg-muted);
   border-left: var(--wzl-border-w) solid var(--wzl-border);
-}
-
-.presetLoad:hover,
-.presetCopy:hover {
-  background: var(--wzl-surface-hover);
 }
 
 .presetSave {
@@ -497,29 +436,15 @@
 }
 
 .swatchTabs {
+  flex: 1;
+  min-height: 0;
+}
+
+.swatchPanel .swatchTabPanel {
   display: flex;
-  gap: var(--wzl-space-1);
-}
-
-.swatchTab,
-.swatchTabOn {
-  height: var(--wzl-control-h);
-  padding: 0 var(--wzl-space-md);
-  font: inherit;
-  font-size: var(--wzl-font-size-sm);
-  border: var(--wzl-border-w) solid var(--wzl-border-strong);
-  border-radius: var(--wzl-radius-sm);
-  background: var(--wzl-surface-raised);
-  color: var(--wzl-fg-muted);
-  cursor: pointer;
-}
-
-.swatchTabOn {
-  background: var(--wzl-accent);
-  border-color: var(--wzl-accent);
-  color: var(--wzl-fg-on-accent);
-  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
-  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
 }
 
 .bandControl {
@@ -530,8 +455,8 @@
   color: var(--wzl-fg-muted);
 }
 
-.bandControl input {
-  width: 110px;
+.bandSlider {
+  width: 150px;
 }
 
 .bandValue {

@@ -30,7 +30,7 @@ describe('the Registry tab', () => {
     expect(screen.getByRole('treeitem', { name: /^Actions\b/ })).toBeTruthy();
     expect(screen.getByRole('treeitem', { name: /^Deps\b/ })).toBeTruthy();
     expect(screen.getByRole('treeitem', { name: /^selection\b/ })).toBeTruthy();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter' }), { target: { value: 'hand' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter registry' }), { target: { value: 'hand' } });
     await waitFor(() => expect(screen.queryByRole('treeitem', { name: /^selection\b/ })).toBeNull());
     expect(entry('hand')).toBeTruthy();
   });

@@ -16,3 +16,5 @@ export { DevtoolsPanel } from './DevtoolsPanel';
 export type { DevtoolsPanelProps } from './DevtoolsPanel';
 export type { DevtoolsTabId } from './tabs';
 export { createInPagePanelTransport } from './inPageTransport';
+export { RegistryBrowser } from './views/RegistryBrowser';
+export type { RegistryBrowserEntry, RegistryBrowserPick, RegistryBrowserProps, RegistryCategory } from './views/RegistryBrowser';

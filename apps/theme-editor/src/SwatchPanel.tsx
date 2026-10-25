@@ -5,6 +5,13 @@ import { COPIC_COLORS } from './palette/copicColors';
 import { LEGO_COLORS } from './palette/legoColors';
 import { CRAYONS, crayonAnchor, crayonHex } from './palette/crayons';
 import { anchorFromHex, toLch, type Anchor } from '@weasel-js/theme/engine';
+import { Button } from '@weasel-js/ui/components/Button';
+import { ColorField } from '@weasel-js/ui/components/ColorField';
+import { Input } from '@weasel-js/ui/components/Input';
+import { Slider } from '@weasel-js/ui/components/Slider';
+import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
+
+const HEX6 = /^#[0-9a-f]{6}$/i;
 
 export type SourceId = 'named' | 'lego' | 'copic';
 
@@ -105,63 +112,55 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
 
   return (
     <section className={styles.swatchPanel} aria-label="Color sources">
+    <Tabs className={styles.swatchTabs} selectedKey={source} onSelectionChange={(key) => setSource(key as SourceId)}>
       <header className={styles.swatchHead}>
-        <div className={styles.swatchTabs} role="tablist" aria-label="Color source">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={source === t.id}
-              className={source === t.id ? styles.swatchTabOn : styles.swatchTab}
-              onClick={() => setSource(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <label className={styles.bandControl}>
+        <TabList aria-label="Color source" items={TABS}>
+          {(t) => <Tab id={t.id}>{t.label}</Tab>}
+        </TabList>
+        <div className={styles.bandControl}>
           <span>Chroma bands</span>
-          <input
-            type="range"
+          <Slider
+            className={styles.bandSlider}
+            thumbs={[{ value: bands, valueText: bands === 1 ? 'off' : String(bands) }]}
+            onInput={([t]) => setBands(t.value)}
             min={1}
             max={12}
             step={1}
-            value={bands}
-            onChange={(e) => setBands(Number(e.target.value))}
-            aria-label="Number of chroma bands to group into"
+            thumbShape="dot"
+            trackHeight="var(--wzl-slider-track-h)"
+            thumbSize="var(--wzl-slider-thumb-size)"
+            readoutPlacement="inline-after"
+            renderReadout={(t) => <span className={styles.bandValue}>{t.value === 1 ? 'off' : t.value}</span>}
+            ariaLabel="Number of chroma bands to group into"
           />
-          <output className={styles.bandValue}>{bands === 1 ? 'off' : bands}</output>
-        </label>
+        </div>
         <span className={styles.swatchHover}>{hovered ?? ''}</span>
-        <label className={styles.anchorFromHex}>
-          <input
-            type="text"
+        <div className={styles.anchorFromHex}>
+          <Input
             value={hex}
-            spellCheck={false}
-            onChange={(e) => setHex(e.target.value)}
+            onChange={setHex}
             className={styles.anchorHexInput}
             aria-label="Hex color to pin"
           />
-          <input
-            type="color"
-            value={/^#[0-9a-f]{6}$/i.test(hex) ? hex : '#000000'}
-            onChange={(e) => setHex(e.target.value)}
-            className={styles.anchorSwatchInput}
+          <ColorField
+            value={HEX6.test(hex) ? hex : '#000000'}
+            onInput={setHex}
+            onChange={setHex}
             aria-label="Pick a color to pin"
           />
-          <button
-            type="button"
-            className={styles.copy}
-            disabled={full || !/^#[0-9a-f]{6}$/i.test(hex)}
+          <Button
+            size="sm"
+            leadingIcon={<PinIcon size={11} />}
+            disabled={full || !HEX6.test(hex)}
             onClick={() => add(() => anchorFromHex(hex))}
           >
-            <PinIcon size={11} /> Pin
-          </button>
-        </label>
+            Pin
+          </Button>
+        </div>
       </header>
 
-      <div className={styles.crayonGrid} onMouseLeave={() => setHovered(null)} role="group">
+      <TabPanel id={source} className={styles.swatchTabPanel}>
+        <div className={styles.crayonGrid} onMouseLeave={() => setHovered(null)} role="group">
           {swatches.map((s) => {
             const isPinned = pinnedHexes.has(s.key) || anchors.some((a) => a.name === s.label);
             return (
@@ -182,8 +181,10 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
               </button>
             );
           })}
-      </div>
+        </div>
+      </TabPanel>
       {full && <p className={styles.anchorHint}>Every slot is pinned — raise the color count to add more.</p>}
+    </Tabs>
     </section>
   );
 }

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Input } from '@weasel-js/ui/components/Input';
 import styles from './PaletteLab.module.css';
 import { BUILTIN_PRESETS, persist, toSource, type LabState, type Preset } from './presets';
 
@@ -37,19 +39,22 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
       <div className={styles.presetList}>
         {all.map((p) => (
           <span key={p.name} className={styles.presetChip}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               className={styles.presetLoad}
               onClick={() => onLoad(p.state, p.name)}
-              title={`Load ${p.name}`}
+              tooltip={`Load ${p.name}`}
             >
               {p.name}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
               className={styles.presetCopy}
-              title="Copy as a built-in entry"
-              aria-label={`Copy ${p.name} as source`}
+              tooltip="Copy as a built-in entry"
+              ariaLabel={`Copy ${p.name} as source`}
               onClick={() => {
                 void navigator.clipboard?.writeText(toSource(p));
                 setCopied(p.name);
@@ -57,36 +62,36 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
               }}
             >
               {copied === p.name ? '✓' : '⧉'}
-            </button>
+            </Button>
             {!p.builtin && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
                 className={styles.presetCopy}
                 onClick={() => remove(p.name)}
-                title={`Delete ${p.name}`}
-                aria-label={`Delete ${p.name}`}
+                tooltip={`Delete ${p.name}`}
+                ariaLabel={`Delete ${p.name}`}
               >
                 ×
-              </button>
+              </Button>
             )}
           </span>
         ))}
       </div>
       <div className={styles.presetSave}>
-        <input
-          type="text"
+        <Input
           value={name}
           placeholder="Name this state"
-          onChange={(e) => setName(e.target.value)}
+          onChange={setName}
           onKeyDown={(e) => {
             if (e.key === 'Enter') save();
           }}
-          className={styles.anchorSearch}
           aria-label="Preset name"
         />
-        <button type="button" className={styles.copy} onClick={save} disabled={!name.trim()}>
+        <Button size="sm" onClick={save} disabled={!name.trim()}>
           Save
-        </button>
+        </Button>
       </div>
     </section>
   );
