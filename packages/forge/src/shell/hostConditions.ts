@@ -9,6 +9,13 @@ import type { CssOverrides } from './cssVars/overrides';
 /** A selector matching only the element carrying `id`. */
 export const scopeOf = (id: string) => `[data-fg-host="${id}"]`;
 
+/** Applies `globals` to the host carrying `hostId` through `setup`; the returned function removes what it styled. */
+export function applyGlobalsTo(host: HTMLElement, hostId: string, globals: Globals, setup: FrameSetup): () => void {
+  const target = createGlobalsTarget(host, scopeOf(hostId));
+  setup.applyGlobals?.(globals, target);
+  return () => target.dispose();
+}
+
 /**
  * The conditions a host element lives under: its globals target, and its CSS variable overrides rule with the
  * trial's persisted overrides put back and kept in step. Everything is scoped to `hostId`; no registry connection.
@@ -45,12 +52,10 @@ export function useHostConditions(
     applied.current = { ...persisted };
   }, [host, hostId, persisted]);
 
-  useLayoutEffect(() => {
-    if (!host) return;
-    const target = createGlobalsTarget(host, scopeOf(hostId));
-    latest.current.setup.applyGlobals?.(globals, target);
-    return () => target.dispose();
-  }, [host, hostId, globals, latest]);
+  useLayoutEffect(
+    () => (host ? applyGlobalsTo(host, hostId, globals, latest.current.setup) : undefined),
+    [host, hostId, globals, latest],
+  );
 
   return overridesRef;
 }

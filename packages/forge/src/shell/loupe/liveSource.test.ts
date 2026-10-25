@@ -28,11 +28,16 @@ const request = (x: number, conditions: ForgeComparison | null): LensSourceReque
   dpr: 1,
 });
 
-function attach(x: number, conditions: ForgeComparison | null) {
-  const source = createLiveSource(createLiveLenses(), resolveComparison, () => ({
-    base: { mode: 'light' },
-    ctx: { declarations: {}, modeGlobal: 'mode', prefersDark: false, labMode: 'light' },
-  }));
+function attach(x: number, conditions: ForgeComparison | null, schedule?: (run: () => void) => void) {
+  const source = createLiveSource(
+    createLiveLenses(),
+    resolveComparison,
+    () => ({
+      base: { mode: 'light' },
+      ctx: { declarations: {}, modeGlobal: 'mode', prefersDark: false, labMode: 'light' },
+    }),
+    schedule,
+  );
   source.subscribe(() => {
     heard += 1;
   });
@@ -106,4 +111,27 @@ it('stops listening to the story once it compares something, and once detached',
   left.dispatchEvent(new Event('pointerover', { bubbles: true }));
   await settle();
   expect(heard).toBe(0);
+});
+
+it('tells its readers once per frame, however many changes the frame holds', async () => {
+  const frames: (() => void)[] = [];
+  attach(100, null, (run) => frames.push(run));
+  await settle();
+  for (const run of frames.splice(0)) run();
+  heard = 0;
+  const p = left.querySelector('p')!;
+  p.className = 'open';
+  p.dispatchEvent(new Event('pointerover', { bubbles: true }));
+  slot.querySelector('.fg-lens-live')!.append(document.createElement('span'));
+  await settle();
+  p.className = 'shut';
+  await settle();
+  expect(heard).toBe(0);
+  expect(frames).toHaveLength(1);
+  for (const run of frames.splice(0)) run();
+  expect(heard).toBe(1);
+  // A change after the frame asks for the next one.
+  p.className = 'open';
+  await settle();
+  expect(frames).toHaveLength(1);
 });

@@ -16,10 +16,9 @@
   transform: translate(var(--fg-lens-copy-x), var(--fg-lens-copy-y)) scale(var(--fg-lens-copy-f));
 }
 
-/* Painted in the copy's own mode, so a transparent story does not show the lab through the lens. */
-.fg-lens-copy > .fg-story,
+/* As `.fg-story` paints an in-document host: in the copy's mode, which its globals apply to the host. */
 .fg-lens-copy > .fg-frame-host {
-  background: var(--wzl-bg);
+  background: var(--wzl-surface);
 }
 
 /* A Pixels lens's capture, enlarged nearest-neighbor: the browser scaling the canvas to the screen keeps it so. */
@@ -42,7 +41,7 @@
   text-align: center;
   font-size: 11px;
   color: var(--wzl-fg-muted);
-  background: var(--wzl-bg);
+  background: var(--wzl-surface);
 }
 
 .fg-lens-empty[hidden] {
