@@ -106,7 +106,7 @@ describe('applyPrefConditions', () => {
     const kept = shown!.children.stroke as PrefObject;
     expect(Object.keys(kept.children)).toEqual(['width', 'ends']);
     expect(Object.keys((kept.children.ends as PrefSection).members)).toEqual(['cap']);
-    expect([...disabled]).toEqual(['stroke.cap']);
+    expect([...disabled].sort()).toEqual(['stroke.#ends', 'stroke.cap']);
   });
 
   it('names every field of an object leaf that is disabled', () => {
@@ -115,7 +115,7 @@ describe('applyPrefConditions', () => {
       children: { width: num('Width'), ends: { name: 'Ends', members: { cap: num('Cap') } } },
     } as PrefObject;
     const { disabled } = applyPrefConditions({ name: '', children: { stroke } }, over({}));
-    expect([...disabled].sort()).toEqual(['stroke', 'stroke.cap', 'stroke.width']);
+    expect([...disabled].sort()).toEqual(['stroke', 'stroke.#ends', 'stroke.cap', 'stroke.width']);
   });
 
   it('walks each variant of a union', () => {
@@ -149,7 +149,7 @@ describe('applyPrefConditions', () => {
     };
     const { shown, disabled } = applyPrefConditions(node, over({ pose: { x: 1 }, data: { kind: 'rect', locked: true } }));
     expect(Object.keys(shown!.members)).toEqual(['pose.x', 'look']);
-    expect([...disabled].sort()).toEqual(['data.fill', 'data.kind']);
+    expect([...disabled].sort()).toEqual(['#look', 'data.fill', 'data.kind']);
   });
 });
 
