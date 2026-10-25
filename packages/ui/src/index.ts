@@ -34,6 +34,7 @@ export * from './components/ButtonBar';
 export * from './components/ToolOptionsBar';
 export * from './components/CharacterOptions';
 export * from './components/Bar';
+export * from './components/Toolbar';
 export * from './components/ToolbarDock';
 export * from './components/PaintInput';
 export * from './components/PaintField';
