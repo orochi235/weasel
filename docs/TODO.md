@@ -974,10 +974,6 @@ only story runner in the repo.
 - **(P3) Glass is unbuilt as a user-facing aim** (2026-10-21). `setAimOps(scene, id, 'glass')` makes the reticle's
   pose depend on the body and is tested (`labkit/src/loupe/lens/lensScene.test.ts`), but no lens action switches to it,
   so the Loupe keymap has no key for it. What is left: a `loupe.aim.glass` action and key in `lensActionDefs.ts`.
-- **(P2) A Live lens with no comparison never tells its readouts the main story changed** (2026-10-21). With nothing
-  compared, Token and Contrast read the main story, but the Live source notifies them from a `MutationObserver` on the
-  lens's own copy (`shell/loupe/liveSource.ts`). A change only the main story shows, such as a hover or a menu opened in
-  it, leaves the readout on its old reading until the lens next renders.
 - **(P2) A story's own scroller cannot be wheel-scrolled under a lens** (2026-10-21). labkit's wheel pass-through
   (`useWheelPassThrough`) hands the wheel on as a dispatched copy, which is untrusted, and a browser scrolls an element
   only for a trusted wheel. A camera's wheel zoom answers the copy; a story's native `overflow` scroller under a lens

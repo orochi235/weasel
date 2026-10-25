@@ -25,3 +25,7 @@
   white-space: nowrap;
   color: var(--wzl-fg);
 }
+
+.fg-readouts-test-text.fg-readouts-test-text--strong {
+  color: var(--wzl-accent-fg);
+}
