@@ -19,9 +19,9 @@ export type FieldProps = {
  * canonical weasel-ui form-row shape. The control itself owns its semantics
  * (RAC `TextField`, `Checkbox`, etc.); this just paints the layout.
  *
- * Most users will instead reach for `Input` / `Checkbox` / `Switch`, which
- * compose Field internally. Use Field directly when you need a custom
- * control to sit in the same visual rhythm.
+ * `Input`, `Checkbox`, and `Switch` lay themselves out and do not render
+ * Field. Use it when a custom control needs to sit in the same visual rhythm;
+ * `RadioGroup` reads {@link fieldClasses} for the same purpose.
  */
 export function Field({ orientation = 'stacked', className, children }: FieldProps) {
   const cls = [s.field, orientation === 'row' && s.row, className].filter(Boolean).join(' ');
