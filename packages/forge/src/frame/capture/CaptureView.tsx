@@ -33,9 +33,12 @@ const NO_WRITE = () => {};
 const boxStyle = ({ width, height }: CapturePayload['box']): CSSProperties =>
   ({ ['--fg-capture-w' as string]: `${width}px`, ['--fg-capture-h' as string]: `${height}px` }) as CSSProperties;
 
-/** Scrolls the story's scroller to where the screen's stood; a story still growing is scrolled again before the shot. */
+/**
+ * Scrolls the story's scroller to where the screen's stood; a story still growing is scrolled again before the shot.
+ * An isolated story scrolls its frame's document on screen, which the box itself stands in for here.
+ */
 function scrollTo(host: HTMLElement | null, { left, top }: CapturePayload['scroll']) {
-  const scroller = host?.querySelector<HTMLElement>(':scope > .fg-story__scroll');
+  const scroller = host?.querySelector<HTMLElement>(':scope > .fg-story__scroll') ?? host;
   if (!scroller) return;
   scroller.scrollLeft = left;
   scroller.scrollTop = top;

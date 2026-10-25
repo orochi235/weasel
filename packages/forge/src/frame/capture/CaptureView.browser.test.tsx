@@ -55,3 +55,14 @@ it("renders the patch the screen's scroller stood at, not the story's top", asyn
   expect(marker.top - box.top).toBe(0);
   expect(marker.left - box.left).toBe(0);
 });
+
+it("renders an isolated story at the patch its frame's document stood at", async () => {
+  let rendered = false;
+  const isolated = { ...payload, isolate: true };
+  const { container } = render(<CaptureView story={story} payload={isolated} setup={{}} onRendered={() => (rendered = true)} />);
+  await expect.poll(() => rendered).toBe(true);
+  const box = container.querySelector<HTMLElement>('[data-fg-capture]')!.getBoundingClientRect();
+  const marker = container.querySelector('.fg-capture-test-marker')!.getBoundingClientRect();
+  expect(marker.top - box.top).toBe(0);
+  expect(marker.left - box.left).toBe(0);
+});

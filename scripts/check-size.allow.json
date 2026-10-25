@@ -76,7 +76,7 @@
     "longestFunction": 130
   },
   "packages/forge/src/frame/FrameController.tsx": {
-    "longestFunction": 176
+    "longestFunction": 163
   },
   "packages/forge/src/shell/cssVars/CssVarsPanel.tsx": {
     "longestFunction": 145
