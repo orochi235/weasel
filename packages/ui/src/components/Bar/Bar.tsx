@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import type { TrackShape } from '@weasel-js/geom';
-import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefOrder, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefOrder, type PrefSection } from '@weasel-js/prefs';
 import type { RunAlign } from '../Along/alongContext';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
@@ -28,7 +28,7 @@ export interface BarProps {
    * button.
    */
   schema: PrefGroup;
-  /** Each leaf's value, keyed by dotted path. A path with no entry is unset. */
+  /** Each leaf's value, keyed by dotted path. A path with no entry shows its leaf's default, as a params surface does. */
   values?: Readonly<Record<string, unknown>>;
   /** A leaf edit, as the dotted path it was declared at and its new value. */
   onChange?: (path: string, value: unknown) => void;
@@ -40,8 +40,7 @@ export interface BarProps {
    *  aliases into another passes that other: each alias is drawn as the leaf of it at the alias's path, reads and
    *  writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own. A
    *  condition of this schema's own may read a setting of that one too: a path no leaf here holds is compared as
-   *  the leaf of that schema there shows it. That leaf is read as the bar reads its own, from `values` alone:
-   *  where they hold nothing its default does not stand in, since the bar would not draw it there either. */
+   *  the leaf of that schema there shows it: its entry in `values`, else its default. */
   over?: PrefGroup | PrefSection;
   /** Which way the bar runs. A vertical bar has no room beside a field, so
    *  every leaf but an action opens from a button. Default `'horizontal'`. */
@@ -89,7 +88,7 @@ export interface BarProps {
 export function Bar(props: BarProps) {
   const { schema, values, onChange, mixed, renderers, orientation, label, framed, className } = props;
   const fields = prefFieldChoices(schema);
-  const read = (path: string): unknown => valueAt(values, path);
+  const read = barReader(schema, values, props.over);
   const over = props.over ?? schema;
   const targets = prefAliasTargets(over, (entry) => prefJudge(over, read, entry));
   const judge = (entry?: PrefEntry) => prefJudge(schema, read, entry, props.over);
@@ -151,6 +150,18 @@ export function valueAt(values: Readonly<Record<string, unknown>> | undefined, p
   return undefined;
 }
 
+/** What a bar over `schema` shows at `path`, as its conditions read it: the entry there ({@link valueAt}), else
+ *  the default of the leaf of `schema` there, or of `over` where `schema` has none. */
+export function barReader(
+  schema: PrefGroup, values: Readonly<Record<string, unknown>> | undefined, over?: PrefGroup | PrefSection,
+): (path: string) => unknown {
+  const defaults = prefReader(schema, undefined, over);
+  return (path) => {
+    const held = valueAt(values, path);
+    return held === undefined ? defaults(path) : held;
+  };
+}
+
 /** Neighboring leaves as cells, a run of paired flags fused into one. */
 function barCells(leaves: readonly BarLeafNode[], draw: Draw): BarCell[] {
   return pairRows(leaves).flatMap((row) => {
@@ -168,16 +179,17 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
   const { values, mixed, renderers, onChange, fields } = draw;
   const path = at ?? own;
   const isMixed = mixed?.has(path) === true;
+  const shown = isMixed ? undefined : prefLeafValue(leaf, values?.[path]);
   const ctx: PropertyRenderContext = {
     path,
     pref: leaf,
-    value: isMixed ? undefined : values?.[path],
+    value: shown,
     mixed: isMixed,
-    unset: !isMixed && values?.[path] === undefined,
-    each: isMixed ? [] : [values?.[path]],
+    unset: !isMixed && shown === undefined,
+    each: isMixed ? [] : [shown],
     setValue: (v) => onChange?.(path, v),
     // One set of values, so there is one prior value to derive from.
-    update: (fn) => onChange?.(path, fn(isMixed ? undefined : values?.[path])),
+    update: (fn) => onChange?.(path, fn(shown)),
     valueAt: (p) => ({ value: values?.[p], mixed: mixed?.has(p) === true }),
     fields,
     disabled: draw.disabled.has(own),

@@ -800,9 +800,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
   segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
-  `MatrixEditor` always lists an enum as radios. The value a leaf shows is one function
-  (`prefLeafValue`, 2026-10-20), which `Bar` and `MenuBar` do not call: a path their `values` lack
-  draws unset, where a params surface draws the default.
+  `MatrixEditor` always lists an enum as radios.
 
 - **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
