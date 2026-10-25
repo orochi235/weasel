@@ -1,5 +1,14 @@
 # @weasel-js/menu
 
+## 1.13.0
+
+### Patch Changes
+
+- 1f2a0b3: A menu hung from a button opens on a side of it, not only below or above. `placeMenuUnder`'s last argument is now a `MenuSide` (`'top' | 'bottom' | 'left' | 'right'`, default `'bottom'`) where it was the boolean `above`; beside the button the menu is top-aligned and flips to the other side when it does not fit. `MenuOpenRequest` and `OpenMenu` carry `side` in place of `above`. This is a breaking change for anyone passing `above`: pass `side: 'top'` instead. A curved `Bar`'s menus now open on the side their item faces, where `'left'` and `'right'` used to open below.
+- Updated dependencies [04b862d]
+- Updated dependencies [86f67ad]
+  - @weasel-js/quantity@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes

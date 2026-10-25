@@ -1,5 +1,45 @@
 # @weasel-js/minimap
 
+## 1.13.0
+
+### Patch Changes
+
+- 16464c5: `cullDrawCommands` now culls a group with effects: it drops one whose children's bound, grown by
+  how far its effects reach and cut by its clip, misses the cull rect, and keeps it whole otherwise. A
+  group whose effects do not say how far they reach is still always kept. Effect reach is in device
+  pixels, so `cullDrawCommands` takes the density as a new, required fourth argument, `dpr`.
+  
+  That density reaches a layer through a new `LayerDims` type, `Dims` plus `dpr`, which is what
+  `RenderLayer.draw` and `deps`, `drawLayers`, `drawOneLayer`, `CanvasViewHandle.draw` and hud's
+  `HudContentCtx.dims` now take. A layer written against `Dims` still type-checks; code that calls
+  `draw` itself must pass `dpr`. `SceneViewCull` gains `dpr` too, which `sceneViewFrame` and
+  `renderSceneToCanvas` fill from their `dpr` argument. These are breaking for direct callers.
+- 04b862d: Scene node kinds are now `mark` and `group`, replacing `leaf` and `container`, and any node may have children. `ContainerNode` and `LeafNode` are now `GroupNode` and `MarkNode`; `AddNodeSpec.kind` is `'mark' | 'group'`, and `isLeaf(node)` and `hasChildren(node)` ask whether a node has children. This breaks code that names the old kinds. Scenes save as version 2, and a version 1 save still loads: its leaves become marks and its containers become groups, unless the `classifyV1` option of `sceneFromJSON(json, { classifyV1 })` says otherwise. `V1Classifier` and `nodeKindOf` are exported from `@weasel-js/core`. `@weasel-js/svg`'s `SvgSceneDraft.kind` changed from `'container' | 'leaf'` to `'group' | 'mark'`.
+- Updated dependencies [b1c691a]
+- Updated dependencies [16464c5]
+- Updated dependencies [7c1134c]
+- Updated dependencies [9a76fb5]
+- Updated dependencies [38d5ad1]
+- Updated dependencies [7edd3be]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [5f28e9c]
+- Updated dependencies [e70d2cd]
+- Updated dependencies [ed89d42]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [d5a9a80]
+- Updated dependencies [3519c96]
+- Updated dependencies [773f9c8]
+- Updated dependencies [39c72a4]
+- Updated dependencies [1f2a0b3]
+- Updated dependencies [8c39126]
+- Updated dependencies [1322310]
+- Updated dependencies [bbee4df]
+  - @weasel-js/routing@1.13.0
+  - @weasel-js/core@1.13.0
+  - @weasel-js/animator@1.13.0
+  - @weasel-js/react@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes

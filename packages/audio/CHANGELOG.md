@@ -1,5 +1,9 @@
 # @weasel-js/audio
 
+## 1.13.0
+
+No changes in this release.
+
 ## 1.13.0-rc.0
 
 No changes in this release.

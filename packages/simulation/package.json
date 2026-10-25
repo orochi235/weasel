@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/simulation",
-  "version": "1.13.0-rc.0",
+  "version": "1.13.0",
   "description": "A velocity-Verlet N-body integrator that takes d3-force's forces, and a hook that runs it on a frame loop. The root entry has no React and no DOM.",
   "license": "MIT",
   "type": "module",
@@ -26,7 +26,7 @@
     "react": { "optional": true }
   },
   "dependencies": {
-    "@weasel-js/react": "1.13.0-rc.0"
+    "@weasel-js/react": "1.13.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

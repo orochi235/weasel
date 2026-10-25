@@ -1,5 +1,68 @@
 # @weasel-js/diagram
 
+## 1.13.0
+
+### Patch Changes
+
+- e70d2cd: A node is a mark or a group, and the two now behave differently:
+  
+  - A group never paints, whatever its data: a `shape` or `path` on a group draws nothing, and only its members draw. A mark with children paints itself and its children. A group is hit anywhere in its box, even with no member under the press or after its last member is deleted.
+  - Ungroup dissolves only groups; a mark with children is left whole.
+  - The area hit test's `includeContainers` option is now `includeGroups` (breaking for a custom `hitTestArea` dep). Marquee and lasso take a mark and its children, and a group only when asked for.
+  - A mark's drawn bounds include its own ink as well as its children's.
+  - Any node may clip, repeat (`copies`), lay out and set units for its children, and `'inherit'` fills and strokes read from any parent.
+  - A drop or an insert lands in a mark only when the `canDropInto` dep admits it; with no dep, a group admits and a mark does not. An insert asks `canDropInto` with an empty list, since the new node is not minted yet.
+  - Diagram bodies, containers, pools and lanes are marks, so they paint again and take drops through `diagramCanDropInto`. A stencil body still takes nothing, and a press inside an unfilled lane hits the lane.
+  - In a diagram scene, `kind === 'group'` no longer identifies a body or a region. A region is a node where `diagramContainerOf(node)` is not null. A diagram group box is one where `diagramGroupOf(node)` is not null. A body is a node where `diagramNodeOf(node)` is not null and neither of those is. `isDiagramBody(node)` asks that, and `isBodyOrRegion(node)` asks for either.
+- ed89d42: A node clips its children only when it declares a clip. Breaking: a group no longer clips its children to its outline by default, and nothing else does either. A node clips its children to its `clipFromPose` when it has one, or to its outline when it sets the new `clip: 'outline'` field. Its own paint, under its children or over them, is not clipped by its own clip. That outline is the silhouette of whichever painter claims the node, the rect fallback's box included, read by the new `clipOutline(node, pose)`. `clip` is saved and loaded, copied, pasted and undone like the node's other fields, and `NodeClip` names its type.
+  
+  Scenes saved at version 1 keep their look: a version 1 container that loads as a group, as it does by default, gets `clip: 'outline'` when it has no clip function or a load skips its clip key. One that `classifyV1` makes a mark gets no implicit clip, since the loader cannot know which painter will claim it; set `clip` on it where it should clip. Version 2 scenes saved by builds between the version 2 format and this change are read as written, so a group there that relied on the old default clip draws its children unclipped.
+  
+  - `clipNothing` and symmetry's `SYMMETRY_CLIP_KEY` stay registered so saves naming them load; diagram bodies and symmetry groups no longer set a clip, and `@weasel-js/diagram`'s `BodyNodeSpec` drops its `clipFromPose` field.
+  - Baking a symmetry group carries each copied node's pose through the copy's transform, its clip with it, and copies a mark's children and every node's stated fields (`pickable`, `hidden`, `units`, `clip`). A mirrored copy of a clipping group used to clip its content away.
+  - `statedFields(node)` and `StatedNodeFields` are exported: the plain optional fields a copy of a node carries.
+  - `@weasel-js/svg`: an imported `<g clip-path>` is a group with `clip: 'outline'` (`SvgSceneDraft` carries `clip` on a group). The export writes a clip only for a node that declares one, clipped to the same `clipOutline` the canvas uses; a group holding `data.path` without `clip` exports unclipped. A mark with children now exports as a `<g>` holding its own element and then its children, which were left out before; its declared clip and copies apply to its children only. `SvgKitTreeNode` takes `clip`.
+  - `@weasel-js/diagram-formats`: a page export writes a diagram box as its outline followed by its rows, with no special case for diagram nodes.
+  - `specsFromSerialized` is exported, with `SpecsFromSerializedOptions`. Its `unknownKeys: 'skip'` loads a node whose registry key is unknown without that function instead of throwing, and `onSkip` hears each key left out as a `SkippedKey`. `sceneFromJSON` takes both options, and `scene.loadState(json, opts)` takes them as a second argument.
+- 04b862d: Scene node kinds are now `mark` and `group`, replacing `leaf` and `container`, and any node may have children. `ContainerNode` and `LeafNode` are now `GroupNode` and `MarkNode`; `AddNodeSpec.kind` is `'mark' | 'group'`, and `isLeaf(node)` and `hasChildren(node)` ask whether a node has children. This breaks code that names the old kinds. Scenes save as version 2, and a version 1 save still loads: its leaves become marks and its containers become groups, unless the `classifyV1` option of `sceneFromJSON(json, { classifyV1 })` says otherwise. `V1Classifier` and `nodeKindOf` are exported from `@weasel-js/core`. `@weasel-js/svg`'s `SvgSceneDraft.kind` changed from `'container' | 'leaf'` to `'group' | 'mark'`.
+- d5a9a80: A path effect whose source has an `'inherit'` fill or stroke paints that source in what it inherits from its containers, and follows a container's paint when it changes; it used to read as none. `DerivedDep` gains an optional `inherited`, which every dependency the scene builds carries, so any derivation can read the paint a dependency shows. `diagram:mark` resolves an `'inherit'` fill and stroke too.
+- 773f9c8: Several writers can now override one node at once. Each entry set on `scene.overrides` is a ply over the ones set before it: for each field the most recently claimed ply that gives it wins, `alpha` multiplies through every ply, and `data` runs each ply's function on what the plies under it show. Releasing a ply shows what lies under it. A ply's `path` is drawn in the box of the `pose` it gives beside it, so a pose laid over it by another writer, such as a move over a skinned node, carries the path along; a path given with no pose is drawn where it is. So a gesture's published preview no longer gives way where another writer holds the node: the data a move previews for a transform follower shows while the move holds the follower's pose, and an edge whose live route is eased shows the drag's reroute beside the route, so what derives from either follows every frame.
+  
+  `has` and `clear` take an optional `entry`, to check or release one writer's ply: `has(id, entry)`, `clear(id, entry)`. `clear(id)` still drops every ply of the node; each keeps its place, so a writer that sets its entry again goes back where it stood. `get(id)` answers the top ply. A hand-written `PoseOverrides` must honor `entry` on both: a writer releasing its own ply must not clear another's. This is a behavior change for a writer that set an entry over another's to replace it, or that checked `get(id) === entry` to know its own was still installed: the earlier entry now stays and shows again when the later one goes, and `get` answers only the top one. A hold's `show` no longer leaves an id another writer holds to that writer; it lays its frame over it. `PoseHold.others()` answers each node's topmost pose that is not the hold's own, where it answered the pose of whichever single entry the node held.
+  
+  `PoseTransitionScene.overrides` now needs `read` where it needed `has`: the undo glide skips only a node something else poses, not one showing a data draft. A container's descendants likewise ride along with its pose animation unless another writer poses them. Rigs and pose targets put their override back when the table drops it, and a pose target retargeted mid-run keeps running when its own write reflows a layout. Labkit's `LensActionApi` gains `unfollow`, which Pinned and Close call to let go of the follow hold alone.
+- fb5bb67: Stories that were filed as components of their own now sit under the component they show: the arc labs are `On An Arc` stories of `Bar`, `RadioGroup`, `Slider`, `SwatchStrip`, `Tabs` and `ToggleBar`, `Along`'s labs are stories of `Along` beside a new `Default` story, the Prefs and ControlPanel extras are stories of `Prefs` and `ControlPanel`, `Keyboard Layouts` is a story of `KeyDiagram`, and the effect chart lab is `EffectChart`'s `Lab`. Their story ids change with their titles. Lab screens carry the `lab` tag.
+- Updated dependencies [b1c691a]
+- Updated dependencies [16464c5]
+- Updated dependencies [9a76fb5]
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [38d5ad1]
+- Updated dependencies [7edd3be]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [5f28e9c]
+- Updated dependencies [e70d2cd]
+- Updated dependencies [ed89d42]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [d5a9a80]
+- Updated dependencies [3519c96]
+- Updated dependencies [c7516cd]
+- Updated dependencies [773f9c8]
+- Updated dependencies [39c72a4]
+- Updated dependencies [8c39126]
+- Updated dependencies [1322310]
+- Updated dependencies [769eef8]
+- Updated dependencies [bbee4df]
+- Updated dependencies [4c113da]
+  - @weasel-js/core@1.13.0
+  - @weasel-js/geom@1.13.0
+  - @weasel-js/animator@1.13.0
+  - @weasel-js/audio@1.13.0
+  - @weasel-js/font@1.13.0
+  - @weasel-js/icons@1.13.0
+  - @weasel-js/react@1.13.0
+  - @weasel-js/simulation@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes

@@ -1,5 +1,33 @@
 # @weasel-js/renderer
 
+## 1.13.0
+
+### Patch Changes
+
+- 16464c5: `cullDrawCommands` now culls a group with effects: it drops one whose children's bound, grown by
+  how far its effects reach and cut by its clip, misses the cull rect, and keeps it whole otherwise. A
+  group whose effects do not say how far they reach is still always kept. Effect reach is in device
+  pixels, so `cullDrawCommands` takes the density as a new, required fourth argument, `dpr`.
+  
+  That density reaches a layer through a new `LayerDims` type, `Dims` plus `dpr`, which is what
+  `RenderLayer.draw` and `deps`, `drawLayers`, `drawOneLayer`, `CanvasViewHandle.draw` and hud's
+  `HudContentCtx.dims` now take. A layer written against `Dims` still type-checks; code that calls
+  `draw` itself must pass `dpr`. `SceneViewCull` gains `dpr` too, which `sceneViewFrame` and
+  `renderSceneToCanvas` fill from their `dpr` argument. These are breaking for direct callers.
+- 9a76fb5: A text layout holds its code points in columns of numbers, and painting it reads them there, so text re-laid out every frame — a HUD readout — no longer leaves a cell, a placed glyph and a quad object per glyph for the garbage collector. A line's `cells` and `glyphs` and a group's `quads` read as before, built the first time something reads them. A `LaidOutGroup` gains `quadData`, its quads packed `QUAD_STRIDE` (exported) numbers each, which is what the renderer draws from, and a color group gains `colorGlyphs`.
+- Updated dependencies [9a76fb5]
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [c7516cd]
+- Updated dependencies [8c39126]
+- Updated dependencies [769eef8]
+- Updated dependencies [4c113da]
+  - @weasel-js/text@1.13.0
+  - @weasel-js/geom@1.13.0
+  - @weasel-js/stroke@1.13.0
+  - @weasel-js/font@1.13.0
+  - @weasel-js/paint@1.13.0
+  - @weasel-js/registry@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes

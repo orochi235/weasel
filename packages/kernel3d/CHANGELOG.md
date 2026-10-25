@@ -1,5 +1,42 @@
 # @weasel-js/kernel3d
 
+## 1.13.0
+
+### Patch Changes
+
+- 04b862d: Scene node kinds are now `mark` and `group`, replacing `leaf` and `container`, and any node may have children. `ContainerNode` and `LeafNode` are now `GroupNode` and `MarkNode`; `AddNodeSpec.kind` is `'mark' | 'group'`, and `isLeaf(node)` and `hasChildren(node)` ask whether a node has children. This breaks code that names the old kinds. Scenes save as version 2, and a version 1 save still loads: its leaves become marks and its containers become groups, unless the `classifyV1` option of `sceneFromJSON(json, { classifyV1 })` says otherwise. `V1Classifier` and `nodeKindOf` are exported from `@weasel-js/core`. `@weasel-js/svg`'s `SvgSceneDraft.kind` changed from `'container' | 'leaf'` to `'group' | 'mark'`.
+- 8c39126: Picks consult a BVH index kept beside the scene, so a marquee, a lasso or a click visits the nodes near the query instead of every node. `@weasel-js/geom` adds the tree. Three contracts tighten for the index to be sound. `NodeInk.outset` must not depend on the view scale: screen-space reach goes in `outsetPx`. In kernel3d, `world.bounds` must be a function of the node alone. Two picks change behavior: marquee and lasso now test a derived node at its derived path, and the point pick now tests a node carrying an override `path` against that path, which is what the renderer paints, instead of its pose box.
+- Updated dependencies [b1c691a]
+- Updated dependencies [16464c5]
+- Updated dependencies [7c1134c]
+- Updated dependencies [f1c1528]
+- Updated dependencies [9a76fb5]
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [38d5ad1]
+- Updated dependencies [7edd3be]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [5f28e9c]
+- Updated dependencies [e70d2cd]
+- Updated dependencies [ed89d42]
+- Updated dependencies [04b862d]
+- Updated dependencies [7e7549c]
+- Updated dependencies [d5a9a80]
+- Updated dependencies [3519c96]
+- Updated dependencies [c7516cd]
+- Updated dependencies [773f9c8]
+- Updated dependencies [39c72a4]
+- Updated dependencies [8c39126]
+- Updated dependencies [3eaceb1]
+- Updated dependencies [1322310]
+- Updated dependencies [769eef8]
+- Updated dependencies [bbee4df]
+- Updated dependencies [aba2016]
+- Updated dependencies [4c113da]
+  - @weasel-js/core@1.13.0
+  - @weasel-js/prefs@1.13.0
+  - @weasel-js/geom@1.13.0
+  - @weasel-js/react@1.13.0
+
 ## 1.13.0-rc.0
 
 ### Patch Changes
