@@ -183,7 +183,7 @@ export const Tree = forwardRef(function Tree(
   };
 
   let seq = 0;
-  const renderLevel = (list: readonly TreeNode[], parentId: string | null, level: number): ReactNode =>
+  const renderLevel = (list: readonly TreeNode[], level: number): ReactNode =>
     list.map((node, pos) => {
       const n = seq++;
       const branch = !!node.children;
@@ -234,7 +234,7 @@ export const Tree = forwardRef(function Tree(
           </div>
           {open && node.children!.length > 0 && (
             <ul role="group" className={s.group}>
-              {renderLevel(node.children!, node.id, level + 1)}
+              {renderLevel(node.children!, level + 1)}
             </ul>
           )}
         </li>
@@ -255,7 +255,7 @@ export const Tree = forwardRef(function Tree(
         data-hang={hang ? '' : undefined}
         data-guides={guides ? '' : undefined}
       >
-        {renderLevel(nodes, null, 1)}
+        {renderLevel(nodes, 1)}
       </ul>
       {tipNode?.tooltip != null && (
         // The trigger is the row, handed over by ref: the tooltip only reads its open state from the wrapper.
