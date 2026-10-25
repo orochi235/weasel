@@ -68,7 +68,8 @@
 }
 
 .floating:not([data-placed]),
-.floating:empty {
+.floating:empty,
+.floating:has(> .host:empty) {
   visibility: hidden;
 }
 
@@ -152,8 +153,14 @@
   min-height: 0;
 }
 
+/* The element a bar is drawn into, which moves with the bar from slot to slot; the bar lays out as the slot's own. */
+.host {
+  display: contents;
+}
+
 /* A bar whose content draws nothing takes no room, nor a gap in its row. */
-.slot:empty {
+.slot:empty,
+.slot:has(> .host:empty) {
   display: none;
 }
 

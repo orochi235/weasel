@@ -394,7 +394,11 @@ describe('a bar drawn as nothing', () => {
   it('gets no slot when its render is null, and an empty one when what it renders draws nothing', () => {
     setup(start(row), offered);
     expect(document.querySelector('[data-dock-bar="ghost"]')).toBeNull();
-    expect(document.querySelector('[data-dock-bar="nil"]')).toBeEmptyDOMElement();
+    // The slot holds the host the bar is drawn into, and the host holds nothing.
+    const slot = document.querySelector('[data-dock-bar="nil"]')!;
+    expect(slot.children).toHaveLength(1);
+    expect(slot.firstElementChild).toHaveAttribute('data-dock-host', 'nil');
+    expect(slot.firstElementChild).toBeEmptyDOMElement();
   });
 
   it('keeps its place while a drag reorders the bars drawn round it', () => {

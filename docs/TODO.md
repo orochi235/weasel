@@ -837,9 +837,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   shrink by their flex basis, so a short bar loses its only item before the others lose theirs.
   Visible in draw on a narrow window.
 
-- **(P3) A bar torn off a `ToolbarDock` remounts in the floating layer** (2026-10-23), so a menu open
-  in it closes and a draft typed into one of its fields is lost.
-
 - **(P3) The `ToolbarDock` lab copies `Along/lab/labActions`' private `Register`** (2026-10-23).
   `ToolbarDock/lab/ToolbarDock.stories.tsx` and `Along/lab/labActions.tsx` each declare the same
   one-line `useAction` wrapper; one shared lab helper would serve both.

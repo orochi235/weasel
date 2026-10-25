@@ -336,3 +336,34 @@ describe('a drag in progress', () => {
     release([430, 280]);
   });
 });
+
+describe('a bar that moves', () => {
+  // A draft held in the bar's own state: a remount would empty the field.
+  function Draft({ orientation }: { orientation: BarOrientation }) {
+    const [text, setText] = useState('');
+    const field = <input aria-label="File draft" value={text} onChange={(e) => setText(e.target.value)} />;
+    return <BarLayout label="File" lead="label" orientation={orientation} nodes={[{ kind: 'cell', path: 'file.draft', content: field }]} cells={() => []} row={() => null} />;
+  }
+  const drafted: DockBar = { ...bar('file'), render: (o) => <Draft orientation={o} /> };
+  function Drafting({ initial }: { initial: ToolbarLayout }) {
+    const [layout, setLayout] = useState(initial);
+    return <ToolbarDock docks={docks} bars={[drafted, bar('view')]} layout={layout} movable onLayoutChange={setLayout} />;
+  }
+  const draft = () => screen.getByRole('textbox', { name: 'File draft' }) as HTMLInputElement;
+
+  it('keeps its state when torn off, and when docked again', () => {
+    render(<Drafting initial={start([['file', 'view']])} />);
+    const field = draft();
+    fireEvent.change(field, { target: { value: 'half typed' } });
+    press(handle('File'), [50, 15], [[50, 50], [300, 200]]);
+    release([300, 200]);
+    expect(floating('file')?.contains(draft())).toBe(true);
+    expect(draft()).toBe(field);
+    expect(draft().value).toBe('half typed');
+    press(handle('File'), [300, 200], [[310, 200], [150, 15]]);
+    release([150, 15]);
+    expect(floating('file')).toBeNull();
+    expect(draft()).toBe(field);
+    expect(draft().value).toBe('half typed');
+  });
+});

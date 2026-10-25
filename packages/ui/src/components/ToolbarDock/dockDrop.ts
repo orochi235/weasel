@@ -4,6 +4,9 @@ import { canEnter, isVerticalEdge, moveBar, type BarTarget, type DockBar, type D
 /** Marks the element a dock draws round each bar, holding the bar's id. */
 export const DOCK_BAR = 'data-dock-bar';
 
+/** Marks the element a bar is drawn into, which the dock moves between its slots. */
+export const DOCK_HOST = 'data-dock-host';
+
 /** Where a drag would drop a bar: beside a bar in a row, or as a new row at `row` of `dock`. */
 export type DockDropMark = { bar: string; side: 'before' | 'after' } | { dock: string; row: number };
 
@@ -30,7 +33,10 @@ export interface DockPoint {
 }
 
 /** Whether the element a dock draws round a bar holds anything: a bar drawn as nothing keeps its place but no room. */
-const isDrawn = (slot: Element): boolean => slot.firstChild !== null;
+const isDrawn = (slot: Element): boolean => {
+  const inner = slot.firstChild;
+  return inner !== null && !(inner instanceof Element && inner.hasAttribute(DOCK_HOST) && inner.firstChild === null);
+};
 
 /** The ids of the bars under `root` that draw something. */
 export function drawnBars(root: HTMLElement): Set<string> {

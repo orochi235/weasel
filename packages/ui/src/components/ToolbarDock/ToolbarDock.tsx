@@ -1,8 +1,10 @@
 import { memo, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { BarOrientation } from '../Bar';
+import { useBarHosts } from './barHosts';
 import { DockBarContext } from './dockContext';
 import { DOCK_BAR } from './dockDrop';
-import { FloatingLayer } from './floatingLayer';
+import { FloatingLayer, floatPlaces } from './floatingLayer';
 import { canEnter, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 import { useDockDrag, type DockDrag, type DockDragView } from './useDockDrag';
 import s from './ToolbarDock.module.css';
@@ -57,7 +59,9 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
   const dragged = view ? byId.get(view.barId) : undefined;
   const empties = dragged ? docks.filter((d) => canEnter(dragged, d) && !(shown.docks[d.id]?.length ?? 0)) : [];
 
-  const draw = barDrawer(byId, movable, move.handlers);
+  const hosts = useBarHosts(bars.map((b) => b.id));
+  const drawn = (id: string, orientation: BarOrientation) => drawsIn(byId.get(id), orientation);
+  const at = orientations(docks, shown, view);
 
   return (
     <div ref={root} className={[s.root, className].filter(Boolean).join(' ')}>
@@ -76,11 +80,10 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
                     <DockRow key={i} index={i} dock={dock.id} view={view}>
                       {row.map((id) => {
                         const lifted = view?.barId === id && view.float !== null;
-                        const drawn = lifted ? <div className={s.hold} style={holdSize(view)} /> : draw(id, orientation);
-                        if (drawn == null) return null;
+                        if (!lifted && !drawn(id, orientation)) return null;
                         return (
-                          <div key={id} className={s.slot} {...{ [DOCK_BAR]: lifted ? undefined : id }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
-                            {drawn}
+                          <div key={id} ref={lifted ? undefined : hosts.attach(id)} className={s.slot} {...{ [DOCK_BAR]: lifted ? undefined : id }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
+                            {lifted && <div className={s.hold} style={holdSize(view)} />}
                           </div>
                         );
                       })}
@@ -94,24 +97,35 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
         );
       })}
       <div className={s.main}>{children}</div>
-      <FloatingLayer layerRef={layer} layout={shown} view={view} empties={empties} draw={draw} />
+      <FloatingLayer layerRef={layer} layout={shown} view={view} empties={empties} drawn={drawn} attach={hosts.attach} />
+      {/* Last, so each bar's own effects run once its slot has taken it in. */}
+      {[...at].map(([id, orientation]) => {
+        const bar = byId.get(id)!;
+        return createPortal(<DockedBar bar={bar} orientation={orientation} movable={movable} handlers={move.handlers} />, hosts.host(id), id);
+      })}
     </div>
   );
 }
 
-/**
- * Draws a bar with its handle. Each is a memoized element, redrawn only when its bar object, orientation, `movable`
- * or the handlers change, so the dock's re-render on each frame of a drag redraws no bar.
- */
-function barDrawer(byId: ReadonlyMap<string, DockBar>, movable: boolean, handlers: DockDrag['handlers']): (id: string, orientation: BarOrientation) => ReactNode {
-  return (id, orientation) => {
-    const bar = byId.get(id);
-    const out = bar?.render(orientation);
-    if (!bar || out == null || out === false) return null;
-    return <DockedBar bar={bar} orientation={orientation} movable={movable} handlers={handlers} />;
-  };
+/** Whether `bar` draws anything in `orientation`. */
+function drawsIn(bar: DockBar | undefined, orientation: BarOrientation): boolean {
+  const out = bar?.render(orientation);
+  return out != null && out !== false;
 }
 
+/** The orientation each placed bar is drawn in where it is now: its dock's, or the one it floats with. */
+function orientations(docks: readonly DockSpec[], layout: ToolbarLayout, view: DockDragView | null): Map<string, BarOrientation> {
+  const at = new Map<string, BarOrientation>();
+  for (const dock of docks) for (const row of layout.docks[dock.id] ?? []) for (const id of row) at.set(id, isVerticalEdge(dock.edge) ? 'vertical' : 'horizontal');
+  for (const [id, place] of floatPlaces(layout, view)) at.set(id, place.orientation);
+  return at;
+}
+
+/**
+ * A bar with its handle, drawn once into the bar's host wherever the bar sits. Memoized, so it redraws only when its
+ * bar object, orientation, `movable` or the handlers change, and the dock's re-render on each frame of a drag redraws
+ * no bar.
+ */
 const DockedBar = memo(function DockedBar({ bar, orientation, movable, handlers }: { bar: DockBar; orientation: BarOrientation; movable: boolean; handlers: DockDrag['handlers'] }) {
   const value = useMemo(() => ({ barId: bar.id, label: bar.label, movable, float: bar.float, ...(movable ? handlers(bar.id) : {}) }), [bar, movable, handlers]);
   return <DockBarContext.Provider value={value}>{bar.render(orientation)}</DockBarContext.Provider>;
