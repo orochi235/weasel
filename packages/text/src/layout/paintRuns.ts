@@ -308,12 +308,16 @@ export function paintRuns(
     const count = LineBox.count(line);
     const rules = faceOf && lineDecorations(runs, faceOf, rulePaint);
     for (let slot = 0; slot < count; slot++) {
-      const g = span ? span.cols.glyph(span.start, span.cols.visual(span.start, slot), cursor) : line.glyphs[slot];
+      const pos = span ? span.cols.visual(span.start, slot) : -1;
+      const g = span ? span.cols.glyph(span.start, pos, cursor) : line.glyphs[slot];
       rules?.add(g);
       const run = runs[g.run];
+      // A color cluster's leading code points draw no ink of their own, though
+      // an outline face has a glyph for each: a keycap would paint its digit.
+      const inks = span ? span.cols.drawsInk(span.start, pos) : line.cells[g.cell].drawsInk;
       // Asked before the quad: a dynamic glyph still waiting for its bake has
       // no atlas rect, but its outline is available right now.
-      const outline = glyphOutlineD(g, run, opts.outlineMinSize);
+      const outline = inks ? glyphOutlineD(g, run, opts.outlineMinSize) : null;
       // An unfilled run paints through its stroke, and only tessellated
       // geometry can carry one. An atlas quad would paint the fill that was
       // refused, so it gets none.

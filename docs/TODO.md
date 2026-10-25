@@ -376,9 +376,6 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P3) The renderer's outline tier paints the leading code points of a multi-code-point color cluster.**
-  A keycap such as 1️⃣ draws its digit: `paintRuns`' outline tier lacks the `drawsInk` check `textClusters` has.
-
 - **(P2) The panel's Inherit segment is a text label among icons** (2026-10-21). It wants a glyph
   (`docs/icons.md`).
 

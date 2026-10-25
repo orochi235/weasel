@@ -101,6 +101,37 @@ describe('layoutRuns — outline tier', () => {
     expect(quad.baselineY - quad.y0).toBeCloseTo(26 * (32 / 48), 10);
   });
 
+  it('draws a color cluster as its one quad, not the outlines of the code points leading it', async () => {
+    _resetDynamicFontsForTests();
+    _resetFallbackForTests();
+    resetBakeBudget();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255),
+        left: -8, top: 26, advance: 24,
+      }),
+      rasterizeColor: () => ({
+        width: 60, height: 60, rgba: new Uint8ClampedArray(60 * 60 * 4).fill(255), left: -6, top: 50, advance: 48,
+      }),
+    });
+    registerFontOutlines('solo', { weight: 400, style: 'normal' }, new ArrayBuffer(4), {
+      parser: () => ({
+        unitsPerEm: 1000, ascender: 0.8, kernOf: () => 0,
+        advanceOf: () => 0.6, glyphD: () => OUTLINE_D,
+      }),
+    });
+    glyphOutline('solo', 400, 'normal', 65);
+    await new Promise<void>((r) => setTimeout(r, 0));
+
+    // A keycap: the digit, VS16, then the enclosing keycap mark.
+    const out = layoutAndPaint([{ ...RUN_PLAIN('A1️⃣'), fontFamily: 'solo' }], OPTS_OUT);
+    expect(out.lines[0].cells.map((c) => c.drawsInk)).toEqual([true, false, false, true]);
+    expect(out.groups.map((g) => [g.source, g.glyphs.length, g.quads.length]))
+      .toEqual([['outline', 1, 0], ['color', 0, 1]]);
+    expect(out.groups[0].glyphs[0].key.split('|').at(-1)).toBe('65');
+  });
+
   it('draws nothing in a slot the layout left empty, though the outline face has the glyph', async () => {
     _resetFallbackForTests();
     await registerFixture('inter', [{}]);
