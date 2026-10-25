@@ -1,14 +1,16 @@
 import { type ActionsRegistry, useActionsRegistry } from '@weasel-js/core';
 import { useEffect } from 'react';
 
-/** Puts the actions scope it renders in, a canvas's own, into `into`. */
-export function ScopeOf({ into }: { into: { current: ActionsRegistry | null } }): null {
+/** Hands `onScope` the actions scope it renders in, a canvas's own when it is that canvas's child. */
+export function ScopeOf({
+  onScope,
+}: {
+  onScope: (registry: ActionsRegistry | null) => void;
+}): null {
   const registry = useActionsRegistry();
   useEffect(() => {
-    into.current = registry;
-    return () => {
-      if (into.current === registry) into.current = null;
-    };
-  }, [into, registry]);
+    onScope(registry);
+    return () => onScope(null);
+  }, [onScope, registry]);
   return null;
 }

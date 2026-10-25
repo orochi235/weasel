@@ -5,7 +5,6 @@ import {
   effectivePose,
   type NodeId,
   type RectPose,
-  registerNodeShape,
   SceneCanvas,
   type SceneCanvasApi,
   useTransformFollower,
@@ -31,11 +30,12 @@ import { LensSlot } from './LensSlot';
 import { LensZoom } from './LensZoom';
 import { HANDLE_SLOP, hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
 import { applyLensOps, lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
-import { type LensColors, lensShapes, RIM_PX } from './lensShapes';
+import { RIM_PX } from './lensShapes';
 import type { LensDescribeContext, LensSlotProps, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
 import { reticleFollower } from './reticleFollower';
 import { ScopeOf } from './ScopeOf';
+import { useLensShapes } from './useLensShapes';
 import { useWheelPassThrough } from './useWheelPassThrough';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
@@ -82,10 +82,6 @@ export interface LensReadoutProps<C> extends LensSlotProps<C> {
 }
 
 const TILE = 'lab-loupe';
-
-function cssVar(el: Element, name: string, fallback: string): string {
-  return getComputedStyle(el).getPropertyValue(name).trim() || fallback;
-}
 
 const sameSize = (a: { w: number; h: number } | null, b: { w: number; h: number }) =>
   a !== null && a.w === b.w && a.h === b.h;
@@ -273,33 +269,14 @@ export function LensOverlay<C>({
   const canvas = useSurfaceCanvas('top');
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
-  const lensActions = useRef<ActionsRegistry | null>(null);
+  const [lensActions, setLensActions] = useState<ActionsRegistry | null>(null);
   const release = useCallback(() => {
-    lensActions.current?.activate();
+    lensActions?.activate();
     input?.focus();
-  }, [input]);
-  const [colors, setColors] = useState<LensColors | null>(null);
+  }, [lensActions, input]);
   const { redraw, preview, attachSceneCanvas, actions, selectTool } = useLensCanvas(scene);
   const { container, size } = useLensTile(layer, redraw);
-  // Read once, from the layer, so the lenses take the theme the lab is in.
-  const attachLayer = useCallback((el: HTMLDivElement | null) => {
-    setLayer(el);
-    if (el) {
-      setColors({
-        rim: cssVar(el, '--wzl-accent', '#4c8dff'),
-        reticle: cssVar(el, '--wzl-fg', '#ffffff'),
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!colors) return;
-    const off = lensShapes(colors, scene).map((s) => registerNodeShape(s, { priority: 'high' }));
-    redraw();
-    return () => {
-      for (const u of off) u();
-    };
-  }, [colors, scene, redraw]);
+  const attachLayer = useLensShapes(scene, redraw, setLayer);
 
   useSyncExternalStore(scene.subscribe, scene.getVersion);
   const view = useSyncExternalStore(attachment.subscribe, attachment.view);
@@ -380,7 +357,7 @@ export function LensOverlay<C>({
             actions={actions}
             selectTool={selectTool}
           >
-            <ScopeOf into={lensActions} />
+            <ScopeOf onScope={setLensActions} />
           </SceneCanvas>
         </WeaselProvider>
       ) : null}
