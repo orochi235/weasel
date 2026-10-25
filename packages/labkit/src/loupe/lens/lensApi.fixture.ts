@@ -15,7 +15,7 @@ export function lensApiFixture(): LensActionApi<string> & {
   const scene = createLensScene<string>();
   let n = 0;
   let focused: string | null = null;
-  let hold: PoseHold<RectPose> | null = null;
+  const holds = new Map<string, PoseHold<RectPose>>();
   const apply = (ops: readonly Op[]) => {
     if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
   };
@@ -39,10 +39,14 @@ export function lensApiFixture(): LensActionApi<string> & {
       if (lensId === null) return;
       const pose = reticleAt(scene, lensId, client);
       if (pose === null) return;
-      hold ??= scene.overrides.hold();
+      const hold = holds.get(lensId) ?? scene.overrides.hold();
+      holds.set(lensId, hold);
       hold.set([[`${lensId}:reticle` as never, pose]]);
     },
-    unfollow: () => hold?.drop(),
+    unfollow: (lensId: string) => {
+      holds.get(lensId)?.drop();
+      holds.delete(lensId);
+    },
     sourceAvailable: (kind: string) => (kind === 'pixels' ? PIXELS_MISSING : true) as true | string,
     openCompareMenu: vi.fn(),
   };

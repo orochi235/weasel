@@ -93,7 +93,15 @@ export function createApi(
   },
 ): LensActionApi<ForgeComparison> {
   let next = 0;
-  let hold: PoseHold<RectPose> | null = null;
+  const holds = new Map<string, PoseHold<RectPose>>();
+  const release = (lensId: string) => {
+    holds.get(lensId)?.drop();
+    holds.delete(lensId);
+  };
+  // An undo, a redo or a write from outside the actions can also take a lens out of Follow.
+  scene.subscribe(() => {
+    for (const lensId of [...holds.keys()]) if (settingsOf(scene, lensId)?.aim !== 'follow') release(lensId);
+  });
   const toBody = (client: LoupePoint, box: DOMRect) => ({ x: client.x - box.left, y: client.y - box.top });
   const apply = (ops: readonly Op[]) => {
     if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
@@ -125,10 +133,11 @@ export function createApi(
       if (lensId === null || !body) return;
       const pose = reticleAt(scene, lensId, toBody(client, body.getBoundingClientRect()));
       if (pose === null) return;
-      hold ??= scene.overrides.hold();
+      const hold = holds.get(lensId) ?? scene.overrides.hold();
+      holds.set(lensId, hold);
       hold.set([[`${lensId}:reticle` as never, pose]]);
     },
-    unfollow: () => hold?.drop(),
+    unfollow: release,
     sourceAvailable: (kind: LensSourceKind) => refs.sources.current[kind]?.status() ?? 'not provided',
     openCompareMenu: (lensId) => refs.compare?.current?.(lensId),
   };

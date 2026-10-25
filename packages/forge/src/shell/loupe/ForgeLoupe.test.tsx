@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { LabContext, type LabContextValue } from '@weasel-js/labkit';
 import type { ReactNode } from 'react';
-import { createLensScene, lensesOf, MAX_LENSES } from '@weasel-js/labkit/loupe';
+import { createLensScene, lensesOf, MAX_LENSES, setAimOps } from '@weasel-js/labkit/loupe';
 import { describe, expect, it, vi } from 'vitest';
 import type { ForgeComparison } from './conditions';
 import { createApi, useLensFocus, useRemeasure } from './ForgeLoupe';
@@ -47,6 +47,47 @@ describe('the workshop’s lens API', () => {
     for (let i = 0; i < MAX_LENSES; i++) api.add();
     expect(api.add()).toBeNull();
     expect(lensesOf(scene)).toHaveLength(MAX_LENSES);
+  });
+});
+
+describe('the workshop’s Follow reticles', () => {
+  function twoFollowing() {
+    const { scene, api, onFocusLens } = setup();
+    const [a, b] = [api.add()!, api.add()!];
+    act(() => api.apply([...setAimOps(scene, a, 'follow'), ...setAimOps(scene, b, 'follow')]));
+    onFocusLens(a);
+    act(() => api.follow({ x: 40, y: 40 }));
+    onFocusLens(b);
+    act(() => api.follow({ x: 90, y: 90 }));
+    const held = (lensId: string) => scene.overrides.has(`${lensId}:reticle` as never);
+    return { scene, api, a, b, held };
+  }
+
+  it('keeps each lens’s held pose when the focus moves to another', () => {
+    const { a, b, held } = twoFollowing();
+    expect(held(a)).toBe(true);
+    expect(held(b)).toBe(true);
+  });
+
+  it('lets go of one lens’s hold and leaves the other’s', () => {
+    const { api, a, b, held } = twoFollowing();
+    act(() => api.unfollow(a));
+    expect(held(a)).toBe(false);
+    expect(held(b)).toBe(true);
+  });
+
+  it('lets go of a lens’s hold when another aim takes it out of Follow', () => {
+    const { scene, api, a, b, held } = twoFollowing();
+    act(() => api.apply(setAimOps(scene, b, 'glass')));
+    expect(held(a)).toBe(true);
+    expect(held(b)).toBe(false);
+  });
+
+  it('lets go of the holds when an undo takes their lenses out of Follow', () => {
+    const { scene, a, b, held } = twoFollowing();
+    act(() => scene.history.undo());
+    expect(held(a)).toBe(false);
+    expect(held(b)).toBe(false);
   });
 });
 
