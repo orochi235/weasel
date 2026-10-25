@@ -60,6 +60,7 @@ export function textOf(cell: RawCell): Pick<DataNode, 'lines' | 'rows'> {
     fontSize: styleNumber(cell.style, 'fontSize'),
     fontFamily: cell.style.values.get('fontFamily') || undefined,
     bold: fontStyle !== undefined && (fontStyle & 1) === 1 ? true : undefined,
+    italic: fontStyle !== undefined && (fontStyle & 2) === 2 ? true : undefined,
   });
   if (style === undefined) return { lines };
   return { rows: lines.map((text): Row => ({ kind: 'label', text, style })) };

@@ -1,7 +1,7 @@
 /** The style string each kind of cell is written with: a shape, a region, a group, or an edge. */
 import {
   EDGE_STROKE_WIDTH, LANE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, type ContainerHeader, type DataContainer,
-  type DataEdge, type DataLane, type DataNode, type DiagramTheme, type NodeStyle, type Row,
+  type DataEdge, type DataLane, type DataNode, type DiagramTheme, type NodeStyle, type Row, type RowTextStyle,
 } from '@weasel-js/diagram';
 import { rowLines } from '../rowLines';
 import { SHAPES, STADIUM_ARC, markerStyle } from './mapping';
@@ -37,10 +37,16 @@ export function nodeLines(node: DataNode, warn: Warn): string[] {
   return rowLines(node, () => warn('Port rows and slots inside shapes were left out.'));
 }
 
+/** draw-style XML's `fontStyle`: bit 1 bold, bit 2 italic. */
+function fontBits(style: RowTextStyle): number | undefined {
+  const bits = (style.bold === true ? 1 : 0) | (style.italic === true ? 2 : 0);
+  return bits === 0 ? undefined : bits;
+}
+
 function fontParts(rows: readonly Row[] | undefined): StylePart[] {
   const style = rows?.find((r) => r.kind === 'label' || r.kind === 'field')?.style;
   if (style === undefined) return [];
-  return [['fontSize', style.fontSize], ['fontFamily', style.fontFamily], ['fontStyle', style.bold === true ? 1 : undefined]];
+  return [['fontSize', style.fontSize], ['fontFamily', style.fontFamily], ['fontStyle', fontBits(style)]];
 }
 
 const VERTICAL: Readonly<Record<string, string>> = { top: 'top', center: 'middle', bottom: 'bottom' };

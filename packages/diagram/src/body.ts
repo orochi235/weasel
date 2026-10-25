@@ -49,6 +49,7 @@ export interface RowTextStyle {
   fontSize?: number;
   fontFamily?: string;
   bold?: boolean;
+  italic?: boolean;
 }
 
 /** Measures one run of text. Returns its advance width and its line height. */
@@ -110,7 +111,7 @@ export function canvasMeasure(
 ): MeasureRowText {
   return (text, style) => {
     const size = style.fontSize ?? FALLBACK_LINE;
-    ctx.font = `${style.bold === true ? 'bold ' : ''}${size}px ${cssFamilyName(style.fontFamily ?? 'sans-serif')}`;
+    ctx.font = `${style.italic === true ? 'italic ' : ''}${style.bold === true ? 'bold ' : ''}${size}px ${cssFamilyName(style.fontFamily ?? 'sans-serif')}`;
     return { width: ctx.measureText(text).width, height: Math.ceil(size * 1.2) };
   };
 }

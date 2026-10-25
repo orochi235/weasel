@@ -40,7 +40,7 @@ export function recordedRows(layout: BodyLayout): Row[] | null {
 }
 
 type Box = { x: number; y: number; width: number; height: number };
-type TextData = { text?: unknown; bodyRow?: unknown; style?: { fontSize?: number; fontFamily?: string; fontWeight?: number } };
+type TextData = { text?: unknown; bodyRow?: unknown; style?: { fontSize?: number; fontFamily?: string; fontWeight?: number; fontStyle?: string } };
 
 /** A scene as {@link relayoutBodies} reads and writes it. */
 export interface RelayoutScene {
@@ -54,6 +54,7 @@ const rowStyle = (s: TextData['style']): RowTextStyle => ({
   ...(s?.fontSize !== undefined ? { fontSize: s.fontSize } : {}),
   ...(s?.fontFamily !== undefined ? { fontFamily: s.fontFamily } : {}),
   ...((s?.fontWeight ?? 400) >= 700 ? { bold: true } : {}),
+  ...(s?.fontStyle === 'italic' ? { italic: true } : {}),
 });
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
