@@ -844,10 +844,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (2026-10-23). `useBarReorderKeys` moves by DOM order, while the pointer reorder places by where the
   pointer is, so the two disagree under `dir="rtl"`.
 
-- **(P3) A `ToolbarDock` top dock's new-row zone overlaps the side docks' top edges** (2026-10-23).
-  The half-row zone above the top dock's first row reaches over the left and right docks, so a drag
-  near a side dock's top can land in a new top row.
-
 - **(P3) In a squeezed `ToolbarDock` row, a short bar loses its only item first** (2026-10-23). Bars
   shrink by their flex basis, so a short bar loses its only item before the others lose theirs.
   Visible in draw on a narrow window.
