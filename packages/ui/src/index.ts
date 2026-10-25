@@ -25,6 +25,7 @@ export * from './components/Slider';
 export * from './components/Along';
 export * from './components/ItemList';
 export * from './components/ListEditor';
+export * from './components/segmentedVariant';
 export * from './components/ToggleBar';
 export * from './components/FitLabel';
 export * from './components/ColorModeControl';
