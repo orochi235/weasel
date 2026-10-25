@@ -16,6 +16,20 @@ describe('Input', () => {
     expect(screen.getByLabelText('Name')).toHaveAttribute('placeholder', 'Mixed');
   });
 
+  it('forwards the native text-entry hints to the input', () => {
+    render(
+      <Input label="Hex" spellCheck={false} autoComplete="off" autoCorrect="off" autoCapitalize="none"
+        enterKeyHint="done" inputMode="text" />,
+    );
+    const input = screen.getByLabelText('Hex');
+    expect(input).toHaveAttribute('spellcheck', 'false');
+    expect(input).toHaveAttribute('autocomplete', 'off');
+    expect(input).toHaveAttribute('autocorrect', 'off');
+    expect(input).toHaveAttribute('autocapitalize', 'none');
+    expect(input).toHaveAttribute('enterkeyhint', 'done');
+    expect(input).toHaveAttribute('inputmode', 'text');
+  });
+
   it('fires onChange with the new value as user types', () => {
     const onChange = vi.fn();
     render(<Input label="Name" onChange={onChange} />);

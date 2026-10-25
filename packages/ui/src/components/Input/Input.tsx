@@ -11,7 +11,9 @@ import f from '../field.module.css';
 import s from './Input.module.css';
 
 /** Props for {@link Input}, on top of React Aria's `TextField` props. */
-export type InputProps = Omit<RACTextFieldProps, 'children' | 'className'> & FieldSlotProps & {
+export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spellCheck'> & FieldSlotProps & {
+  /** Whether the browser checks the text's spelling, as on a native `<input>`. */
+  spellCheck?: boolean | 'true' | 'false';
   placeholder?: string;
   /** The field stands for several values that differ: it reads `Mixed` in
    *  place of `placeholder` while its value is empty. */
@@ -42,12 +44,14 @@ export const Input = forwardRef(function Input(
     leadingAdornment,
     trailingAdornment,
     className,
+    spellCheck,
     ...textFieldProps
   } = props;
 
   return (
     <TextField
       {...textFieldProps}
+      spellCheck={spellCheck === undefined ? undefined : String(spellCheck)}
       className={fieldRootClass({ orientation, className })}
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
