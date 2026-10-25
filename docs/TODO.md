@@ -973,9 +973,6 @@ only story runner in the repo.
   (2026-10-21). `.fg-lens-copy > .fg-frame-host` paints `var(--wzl-bg)` as the shell resolves it there, and the
   compared globals apply inside the copy's frame, not to its host in the shell. A transparent isolated story under
   an opposite-mode lens shows the lab's background through it.
-- **(P3) The Live source notifies its readers once per DOM mutation** (2026-10-21). Its `MutationObserver` calls every
-  listener on each batch of records, so an animating story keeps Token and Contrast recomputing styles every
-  mutation. Coalesce the notifications to one per frame through `useVisibleRaf`.
 
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite

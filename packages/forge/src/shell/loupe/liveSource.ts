@@ -56,19 +56,30 @@ function watchOf(notify: () => void): (el: HTMLElement | null) => void {
   };
 }
 
+const now = (run: () => void) => run();
+
 /**
  * A lens showing a second copy of the story under its reticle, rendered by that story's own trial into the lens.
- * `conditions` is read on every measure, so a comparison resolves against the lab as it is then.
+ * `conditions` is read on every measure, so a comparison resolves against the lab as it is then. `schedule` runs the
+ * readers' notification: every change it gathers before running is one notification. The default runs it at once.
  */
 export function createLiveSource(
   lenses: LiveLenses,
   resolve: (c: ForgeComparison | null, base: Globals, ctx: ResolveContext) => ResolvedConditions,
   conditions: () => { base: Globals; ctx: ResolveContext },
+  schedule: (run: () => void) => void = now,
 ): LiveSource {
   const measures = new Set<() => void>();
   const listeners = new Set<() => void>();
-  const notify = () => {
+  let due = false;
+  const flush = () => {
+    due = false;
     for (const listener of [...listeners]) listener();
+  };
+  const notify = () => {
+    if (due) return;
+    due = true;
+    schedule(flush);
   };
   return {
     kind: 'live',

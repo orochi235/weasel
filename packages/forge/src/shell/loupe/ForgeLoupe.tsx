@@ -1,5 +1,5 @@
 import './loupe.css';
-import { effectivePose, type Op, type PoseHold, type RectPose, sceneToAdapter, useLatest } from '@weasel-js/core';
+import { effectivePose, type Op, type PoseHold, type RectPose, sceneToAdapter, useLatest, useVisibleRaf } from '@weasel-js/core';
 import { useLabContext } from '@weasel-js/labkit';
 import {
   addLensOps,
@@ -179,6 +179,23 @@ export function useRemeasure(sources: readonly Remeasurable[], body: HTMLElement
   }, [sources, body, rerender]);
 }
 
+/** Runs the last function handed to it on the next visible frame, once however many arrive before then. */
+function useFrameSchedule(): (run: () => void) => void {
+  const next = useRef<(() => void) | null>(null);
+  const frame = useVisibleRaf(() => {
+    const run = next.current;
+    next.current = null;
+    run?.();
+  });
+  return useCallback(
+    (run: () => void) => {
+      next.current = run;
+      frame.request();
+    },
+    [frame],
+  );
+}
+
 /**
  * The workshop's lenses: the lens canvas over the lab, its actions in the Loupe keymap, the hint for that keymap, a
  * Live source rendering a second copy of whichever story sits under each reticle, and a Pixels source showing a real
@@ -194,9 +211,15 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const pointer = useRef<LoupePoint | null>(null);
   const { focus, onFocusLens } = useLensFocus();
   const conditions = useLatest<LabConditions>({ labValues, mode, declarations, modeGlobal });
+  const onFrame = useFrameSchedule();
   const [live] = useState(() =>
     lenses
-      ? createLiveSource(lenses, resolveComparison, () => ({ base: conditions.current.labValues, ctx: resolveContextOf(conditions.current) }))
+      ? createLiveSource(
+          lenses,
+          resolveComparison,
+          () => ({ base: conditions.current.labValues, ctx: resolveContextOf(conditions.current) }),
+          onFrame,
+        )
       : null,
   );
   const pixels = usePixelsSource(conditions);
