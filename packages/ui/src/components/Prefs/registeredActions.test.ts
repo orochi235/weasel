@@ -1,4 +1,4 @@
-import type { Action } from '@weasel-js/core';
+import { actionItems, type Action } from '@weasel-js/core';
 import type { PrefActions } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { actionsLeafActions } from './registeredActions';
@@ -15,5 +15,10 @@ describe('actionsLeafActions order', () => {
   });
   it('keeps registry order with no order', () => {
     expect(actionsLeafActions(leaf, all).map((a) => a.action)).toEqual(['a', 'b', 'c']);
+  });
+  it('keeps every copy of a key listed twice, drawn together where the order puts it', () => {
+    const pick = (list: readonly Action[]) => [list[0]!, list[1]!, list[0]!, list[2]!].flatMap(actionItems);
+    const keys = actionsLeafActions({ ...leaf, order: ['c', 'a'] }, all, { pick }).map((a) => a.action);
+    expect(keys).toEqual(['c', 'a', 'a', 'b']);
   });
 });

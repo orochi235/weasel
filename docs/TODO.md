@@ -836,9 +836,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
   one in labkit, and `PrefsPane` has no emptiness check.
 
-- **(P3) Setting an order on a `Bar`'s `actions` run collapses duplicate keys** (2026-10-23). With an
-  order, an action listed twice in the run is drawn once; with none, both copies stay.
-
 - **(P3) A Cmd- or Ctrl-press never scrolls a curved `Bar`'s run** (2026-10-23), even on a bar with no
   `onReorder`, where the press reorders nothing. `useRunScroll` skips any mod-press so reordering can
   take it; it could skip one only where the bar reorders.
