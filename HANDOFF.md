@@ -4,6 +4,17 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## TODO batch, merged 2026-10-24
+
+Sixteen fixes from `docs/TODO.md` merged to `main` in 0b14563a2, not pushed; each has its own `patch` changeset.
+The branch gate was green (fleet, gate, and post-build). Two changesets say in their prose that they break
+callers: `LensActionApi.unfollow(lensId)` and `cullDrawCommands`/`RenderLayer.draw` taking `LayerDims` (`dpr`).
+
+**Not seen in a browser by a person:** the forge loupe fixes (Follow holds, wheel scrolling under a lens and into
+an isolated frame, Live readouts, nested-lab top canvas, scrolled isolated stories, Pixels on an index page),
+popovers and context menus in a magnified copy, Live copies now painting `--wzl-surface` (they were transparent:
+`--wzl-bg` is no token), and the "Nothing under the reticle" message's new background.
+
 ## Appearance axes, merged 2026-10-24
 
 `stance`, `grade`, `emphasis` and `tint` replaced `status`, `tone` and the old stances; the design of
