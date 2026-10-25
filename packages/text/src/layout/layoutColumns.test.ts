@@ -1,5 +1,5 @@
 /**
- * A layout and its painting hold their numbers in typed arrays, and the
+ * A layout and its painting hold their numbers in plain number arrays, and the
  * object views — a line's `cells` and `glyphs`, a group's `quads` — are built
  * only when something reads them. Painting must not be what reads them: it
  * runs every frame for text that changes every frame, and the views are one
@@ -41,10 +41,10 @@ describe('layout columns', () => {
     const runs = [RUN_PLAIN('AB')];
     const laid = layoutRuns(runs, OPTS);
     const [group] = paintRuns(laid, runs).groups;
-    expect(group.quadData).toBeInstanceOf(Float64Array);
+    expect(Array.isArray(group.quadData)).toBe(true);
     expect(group.quadData.length).toBe(2 * QUAD_STRIDE);
     const { x0, y0, x1, y1, u0, v0, u1, v1, baselineY } = group.quads[1];
-    expect([...group.quadData.subarray(QUAD_STRIDE)]).toEqual([x0, y0, x1, y1, u0, v0, u1, v1, baselineY]);
+    expect(group.quadData.slice(QUAD_STRIDE)).toEqual([x0, y0, x1, y1, u0, v0, u1, v1, baselineY]);
   });
 
   it('builds a view once and keeps it as a plain value', () => {
