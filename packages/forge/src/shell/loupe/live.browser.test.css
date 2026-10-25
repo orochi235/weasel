@@ -46,5 +46,5 @@
 .fg-live-test-backing {
   width: 10px;
   height: 10px;
-  background: var(--wzl-bg);
+  background: var(--wzl-surface);
 }
