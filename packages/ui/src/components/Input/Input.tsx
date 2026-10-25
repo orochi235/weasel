@@ -16,6 +16,8 @@ export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spe
   spellCheck?: boolean | 'true' | 'false';
   /** The label on a virtual keyboard's enter key, as on a native `<input>`. */
   enterKeyHint?: InputHTMLAttributes<HTMLInputElement>['enterKeyHint'];
+  /** Whether and how typed text is capitalized, as on a native `<input>`. */
+  autoCapitalize?: InputHTMLAttributes<HTMLInputElement>['autoCapitalize'];
   placeholder?: string;
   /** The field stands for several values that differ: it reads `Mixed` in
    *  place of `placeholder` while its value is empty. */
@@ -48,6 +50,7 @@ export const Input = forwardRef(function Input(
     className,
     spellCheck,
     enterKeyHint,
+    autoCapitalize,
     ...textFieldProps
   } = props;
 
@@ -60,7 +63,7 @@ export const Input = forwardRef(function Input(
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
         {leadingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{leadingAdornment}</span>}
-        <RACInput ref={ref} enterKeyHint={enterKeyHint} placeholder={mixed ? MIXED_HINT : placeholder} />
+        <RACInput ref={ref} enterKeyHint={enterKeyHint} autoCapitalize={autoCapitalize} placeholder={mixed ? MIXED_HINT : placeholder} />
         {trailingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{trailingAdornment}</span>}
       </div>
       <FieldFoot description={description} errorMessage={errorMessage} />
