@@ -39,15 +39,20 @@ function meshPreview(paint: { patches?: { colors: string[] }[] }): string | unde
   return layers.join(', ');
 }
 
+/** `samples + 1` CSS color stops, evenly spaced from 0 to 1: the color `colorAt` gives each, placed at `positionOf`. */
+export function sampledCssStops(colorAt: (t: number) => string, samples: number, positionOf: (t: number) => string): string {
+  const out: string[] = [];
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    out.push(`${colorAt(t)} ${positionOf(t)}`);
+  }
+  return out.join(', ');
+}
+
 /** CSS color stops across the whole ramp, in the gradient's own blend space. */
 function sampledStops(paint: Extract<Paint, { stops: unknown }>): string {
   const space = paint.interpolate ?? 'rgb';
-  const out: string[] = [];
-  for (let i = 0; i <= SAMPLES; i++) {
-    const t = i / SAMPLES;
-    out.push(`${sampleGradientStops(paint.stops, t, space)} ${(t * 100).toFixed(1)}%`);
-  }
-  return out.join(', ');
+  return sampledCssStops((t) => sampleGradientStops(paint.stops, t, space), SAMPLES, (t) => `${(t * 100).toFixed(1)}%`);
 }
 
 const DEG = 180 / Math.PI;
