@@ -125,22 +125,31 @@ const cloud: OutlineDef = {
   boxForContent: (c) => ({ width: c.width / CLOUD.content.width, height: c.height / CLOUD.content.height }),
 };
 
-/** The figure's height, of the box; its label goes in the strip beneath. */
-const FIGURE = 0.75;
-/** The figure's width, of its own height. */
-const FIGURE_ASPECT = 0.6;
-
-/** The figure keeps its proportions, top-centered in the box. */
-function figureBox({ x, y, width: w, height: h }: Bounds): Bounds {
-  const s = Math.min(h * FIGURE, w / FIGURE_ASPECT);
-  return { x: x + (w - s * FIGURE_ASPECT) / 2, y, width: s * FIGURE_ASPECT, height: s };
+/**
+ * `def` drawn in a box of its own that keeps its proportions — `aspect` is its
+ * width over its height — standing on a strip across the foot of the bounds
+ * where the rows lay out. The figure takes `share` of the height, and narrows
+ * to fit a box too thin for it.
+ */
+export function figureOver(def: OutlineDef, aspect: number, share: number): OutlineDef {
+  const figureBox = ({ x, y, width: w, height: h }: Bounds): Bounds => {
+    const s = Math.min(h * share, w / aspect);
+    return { x: x + (w - s * aspect) / 2, y: y + h * share - s, width: s * aspect, height: s };
+  };
+  const detail = def.detail;
+  return {
+    path: (b) => def.path(figureBox(b)),
+    ...(detail ? { detail: (b: Bounds) => detail(figureBox(b)) } : {}),
+    content: ({ x, y, width: w, height: h }) => ({ x, y: y + h * share, width: w, height: h * (1 - share) }),
+    boxForContent: (c) => ({ width: c.width, height: c.height / (1 - share) }),
+  };
 }
 
 /** A filled head and open strokes for the body: the strokes enclose no area,
- *  so the fill lands only on the head and the node picks by its strokes. */
-const actor: OutlineDef = {
-  path: (bounds) => {
-    const { x, y, height: s } = figureBox(bounds);
+ *  so the fill lands only on the head and the node picks by its strokes.
+ *  Drawn in a box 0.6 as wide as it is tall. */
+export const ACTOR_FIGURE: OutlineDef = {
+  path: ({ x, y, height: s }) => {
     const at = (u: number, v: number): [number, number] => [x + u * s, y + v * s];
     const r = 0.13 * s;
     const b = new PathBuilder().moveTo(x + 0.3 * s + r, y + r);
@@ -154,12 +163,8 @@ const actor: OutlineDef = {
     ] as const) b.moveTo(...from).lineTo(...to);
     return b.build();
   },
-  content: (bounds) => {
-    const fig = figureBox(bounds);
-    return { x: bounds.x, y: fig.y + fig.height, width: bounds.width, height: bounds.y + bounds.height - fig.y - fig.height };
-  },
-  boxForContent: (c) => ({ width: c.width, height: c.height / (1 - FIGURE) }),
 };
+const actor = figureOver(ACTOR_FIGURE, 0.6, 0.75);
 
 const RING = 3;
 const ringOf = (w: number, h: number): number => Math.min(RING, w / 4, h / 4);
