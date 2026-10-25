@@ -77,7 +77,9 @@ export function LensChrome<C>({
           value={source?.kind ?? null}
           // The pressed source may be a fallback for the one wanted, so pressing it again still asks for it.
           allowDeselect
-          onChange={(next) => fire(SOURCE_TOGGLES.find((t) => t.kind === (next ?? source?.kind))?.id)}
+          onChange={(next) =>
+            fire(SOURCE_TOGGLES.find((t) => t.kind === (next ?? source?.kind))?.id)
+          }
         />
         <ToggleBar
           ariaLabel="Readouts"
@@ -86,11 +88,18 @@ export function LensChrome<C>({
           variant="minimal"
           items={READOUT_TOGGLES.map((t) => ({
             value: t.readout,
-            label: t.readout === 'grid' && settings.readouts.includes('grid') && !gridOk ? GRID_NEEDS : t.label,
+            label:
+              t.readout === 'grid' && settings.readouts.includes('grid') && !gridOk
+                ? GRID_NEEDS
+                : t.label,
           }))}
           value={settings.readouts}
           onChange={(next) =>
-            fire(READOUT_TOGGLES.find((t) => next.includes(t.readout) !== settings.readouts.includes(t.readout))?.id)
+            fire(
+              READOUT_TOGGLES.find(
+                (t) => next.includes(t.readout) !== settings.readouts.includes(t.readout),
+              )?.id,
+            )
           }
         />
         {settings.compare !== null ? (

@@ -10,8 +10,8 @@ import {
   PARAMS_SETTLES,
   type PrefFieldChoice,
   prefFieldProps,
-  useParamsPolicy,
   useDebouncedText,
+  useParamsPolicy,
   withDrafts,
 } from '@weasel-js/ui/components/Prefs';
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';

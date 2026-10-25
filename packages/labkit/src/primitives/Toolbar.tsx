@@ -1,6 +1,10 @@
-import type { MouseEventHandler, ReactNode } from 'react';
 import { Button as UiButton } from '@weasel-js/ui/components/Button';
-import { Toolbar as UiToolbar, ToolbarGroup, ToolbarSpacer } from '@weasel-js/ui/components/Toolbar';
+import {
+  ToolbarGroup,
+  ToolbarSpacer,
+  Toolbar as UiToolbar,
+} from '@weasel-js/ui/components/Toolbar';
+import type { MouseEventHandler, ReactNode } from 'react';
 
 export type { ToolbarGroupProps } from '@weasel-js/ui/components/Toolbar';
 

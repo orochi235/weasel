@@ -265,7 +265,10 @@ describe('LensSlot and LensChrome', () => {
     render(
       <ActionsProvider>
         <Spy />
-        <Both settings={settings({ source: 'pixels' })} sources={{ live: live.source, pixels: pixels.source }} />
+        <Both
+          settings={settings({ source: 'pixels' })}
+          sources={{ live: live.source, pixels: pixels.source }}
+        />
       </ActionsProvider>,
     );
     fireEvent.click(screen.getByRole('radio', { name: 'Live' }));
