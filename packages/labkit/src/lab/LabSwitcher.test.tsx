@@ -57,9 +57,9 @@ describe('currentPage', () => {
   it('matches a full URL on this origin and never one on another', () => {
     const here = window.location.origin;
     expect(currentPage('/stats', [{ href: `${here}/stats`, label: 'Dashboard' }])).toBe(0);
-    expect(currentPage('/stats', [{ href: 'https://elsewhere.invalid/stats', label: 'Away' }])).toBe(
-      -1,
-    );
+    expect(
+      currentPage('/stats', [{ href: 'https://elsewhere.invalid/stats', label: 'Away' }]),
+    ).toBe(-1);
   });
 
   // One document serving its pages from the hash: every href shares a path, so
