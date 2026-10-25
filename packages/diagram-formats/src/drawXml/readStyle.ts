@@ -17,7 +17,7 @@ export function outlineOf(style: CellStyle, warn: Warn): Outline {
   const shape = shapeOf(style);
   const known = SHAPES.find((s) => s.name === shape);
   if (known !== undefined) return known.outline;
-  if (styleFlag(style, 'rounded') && (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC) return 'stadium';
+  if (styleFlag(style, 'rounded')) return (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC ? 'stadium' : 'roundRect';
   if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as rects.`);
   return 'rect';
 }

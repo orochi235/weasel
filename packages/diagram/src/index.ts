@@ -296,10 +296,10 @@ export type {
 } from './portAffordance';
 export { portLayer, sceneParticipants } from './portLayer';
 export type { ParticipantScene } from './portLayer';
-export { boxForContent, contentBox, outlinePath } from './outline';
+export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, registerOutline } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
 export type { DiagramShapeOptions } from './shape';
-export type { Bounds, Outline } from './outline';
+export type { Bounds, BuiltinOutline, Outline, OutlineDef } from './outline';
 export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export type { PortsOptions } from './ports';
 export {

@@ -24,7 +24,8 @@ const color = (key: string, value: string | undefined) => (value === undefined ?
 const num = (n: number) => String(Math.round(n * 10000) / 10000);
 
 function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
-  const { shape, rounded } = shapeOf(node.outline);
+  const { shape, rounded, missing } = shapeOf(node.outline);
+  if (missing) out.warnings.add('DOT has no shape for some outlines; they were written as boxes.');
   const own = changed(nodeStyleIn(out, node), nodeStyleIn(out));
   const styles = [rounded ? 'rounded' : null, 'filled', own.dash !== undefined ? 'dashed' : null].filter((s) => s !== null);
   const page = out.page.height;

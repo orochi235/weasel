@@ -114,4 +114,21 @@ describe('writing Mermaid', () => {
       'Mermaid draws a link\'s two heads alike; some ends were changed.',
     ]);
   });
+
+  it('writes a cylinder, a double ellipse, and a rounded rect in brackets, and an outline it has none for as a rectangle', () => {
+    const data: DiagramData = {
+      nodes: [
+        { id: 'a', lines: ['Store'], outline: 'cylinder' },
+        { id: 'b', lines: ['Event'], outline: 'doubleEllipse' },
+        { id: 'c', lines: ['Fold'], outline: 'note' },
+        { id: 'd', lines: ['Round'], outline: 'roundRect' },
+      ],
+      edges: [],
+    };
+    const { text, warnings } = writeMermaid(pageOf(data));
+    expect(shapes(readMermaid(text).document.pages[0]!.data)).toEqual({
+      a: ['cylinder', ['Store']], b: ['doubleEllipse', ['Event']], c: ['rect', ['Fold']], d: ['roundRect', ['Round']],
+    });
+    expect(warnings).toContain('Mermaid has no bracket shape for some outlines; they were written as rectangles.');
+  });
 });

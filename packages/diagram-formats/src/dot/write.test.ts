@@ -116,4 +116,27 @@ describe('writing DOT', () => {
       'DOT joins nodes only; connectors to containers and groups were dropped.',
     ]);
   });
+
+  it('writes the outlines DOT has a shape for, and the rest as boxes with a warning', () => {
+    const data: DiagramData = {
+      nodes: (['cylinder', 'note', 'folder', 'octagon', 'triangle', 'cube', 'doubleEllipse', 'document'] as const)
+        .map((outline) => ({ id: outline, lines: [outline], outline })),
+      edges: [],
+    };
+    const { text, warnings } = writeDot(pageOf(data));
+    expect(Object.fromEntries(readDot(text).document.pages[0]!.data.nodes.map((n) => [n.id, n.outline ?? 'rect']))).toEqual({
+      cylinder: 'cylinder', note: 'note', folder: 'folder', octagon: 'octagon', triangle: 'triangle', cube: 'cube',
+      doubleEllipse: 'doubleEllipse', document: 'rect',
+    });
+    expect(warnings).toContain('DOT has no shape for some outlines; they were written as boxes.');
+  });
+
+  it('round-trips the crow\'s-foot and hollow-triangle heads', () => {
+    const heads = ['triangle-hollow', 'crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many'] as const;
+    const data: DiagramData = {
+      nodes: [{ id: 'a', lines: ['A'] }, { id: 'b', lines: ['B'] }],
+      edges: heads.map((h) => ({ from: 'a', to: 'b', colors: { markerEnd: h } })),
+    };
+    expect(back(pageOf(data)).data.edges.map((e) => e.colors?.markerEnd)).toEqual([...heads]);
+  });
 });
