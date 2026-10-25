@@ -344,5 +344,7 @@ export { DIAGRAM_THEME_EXTENSION, parseDiagramTheme, themeToJson } from './theme
 export * from './diagramTypes';
 export { FLOWCHART_GROUP } from './stencils/flowchart';
 export { CONTAINERS_GROUP } from './stencils/containers';
+export { ORG_GROUP, ORG_STENCILS } from './stencils/org';
+export { MIND_MAP_GROUP, MIND_MAP_STENCILS } from './stencils/mindMap';
 export { layoutDiagram } from './layoutAction';
 export type { LayoutDiagramOptions } from './layoutAction';

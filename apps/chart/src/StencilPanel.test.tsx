@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { createScene, type Tool, type ToolsApi } from '@weasel-js/core';
-import { CONTAINER_STENCILS, DIAGRAM_TYPE_DOC_KEY, FLOWCHART_STENCILS, stencilTool } from '@weasel-js/diagram';
+import { CONTAINER_STENCILS, DIAGRAM_TYPE_DOC_KEY, FLOWCHART_STENCILS, STENCIL_GROUPS, stencilTool } from '@weasel-js/diagram';
 import { toIconRef, type IconRef } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
@@ -52,7 +52,7 @@ describe('StencilPanel', () => {
     const { scene } = panel();
     fireEvent.click(screen.getByRole('button', { name: /More shapes/ }), { detail: 1 });
     expect(screen.getAllByRole('menuitemcheckbox').map((r) => [r.textContent?.replace('✓', ''), r.getAttribute('aria-checked')]))
-      .toEqual([['Flowchart', 'true'], ['Containers', 'true']]);
+      .toEqual(Object.values(STENCIL_GROUPS).map((g) => [g.label, String(['flowchart', 'containers'].includes(g.id))]));
     act(() => { fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Flowchart/ })); });
     expect(titles()).toEqual(['Containers']);
     act(() => { scene.undo(); });

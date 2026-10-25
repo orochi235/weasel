@@ -6,7 +6,17 @@ import { scopedIcon } from '@weasel-js/icons';
 export type DiagramIconName =
   | 'container'
   | 'poolRows'
-  | 'poolColumns';
+  | 'poolColumns'
+  | 'person'
+  | 'executive'
+  | 'assistant'
+  | 'department'
+  | 'orgChart'
+  | 'centralTopic'
+  | 'mainTopic'
+  | 'subtopic'
+  | 'floatingNote'
+  | 'mindMap';
 
 /** This package's `icon()`: a bare name means `diagram:<name>`. */
 export const icon = scopedIcon<DiagramIconName>('diagram');
@@ -20,6 +30,26 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DiagramIconN
       "poolRows",
       "poolColumns"
     ]
+  },
+  {
+    "label": "Org chart",
+    "names": [
+      "person",
+      "executive",
+      "assistant",
+      "department",
+      "orgChart"
+    ]
+  },
+  {
+    "label": "Mind map",
+    "names": [
+      "centralTopic",
+      "mainTopic",
+      "subtopic",
+      "floatingNote",
+      "mindMap"
+    ]
   }
 ];
 
@@ -28,5 +58,15 @@ declare module '@weasel-js/icons' {
     'diagram:container': true;
     'diagram:poolRows': true;
     'diagram:poolColumns': true;
+    'diagram:person': true;
+    'diagram:executive': true;
+    'diagram:assistant': true;
+    'diagram:department': true;
+    'diagram:orgChart': true;
+    'diagram:centralTopic': true;
+    'diagram:mainTopic': true;
+    'diagram:subtopic': true;
+    'diagram:floatingNote': true;
+    'diagram:mindMap': true;
   }
 }
