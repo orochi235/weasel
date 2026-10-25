@@ -154,10 +154,6 @@ Priority tags:
 - **(P3) Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it would change the output of saved documents.
 
-- **(P3) Bend Along and Repeat Along cannot hide their sources on create.** `hideSources` exists on every effect
-  kind, but only Text Along Path's create action sets it (`EFFECT_DEFAULTS` in
-  `packages/path-tools/src/pathEffects/params.ts`).
-
 - **(P2) Cut of an effect with hidden sources deletes them with it.** Whether the clipboard should carry the
   sources, so a paste is whole, is undecided.
 

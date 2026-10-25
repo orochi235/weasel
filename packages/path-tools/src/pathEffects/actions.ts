@@ -7,7 +7,7 @@ import { worldEditToStorage } from '@weasel-js/geom';
 import {
   commitOps, createSetDataOp, deleteNode, derivedDepOf, documentOf, hiddenSourceDeleteOps, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
 } from '@weasel-js/core';
-import { EFFECT_DEFAULTS, withEffectSettings } from './params';
+import { newEffect, withEffectSettings } from './params';
 import { hiddenOnItsOwn, hiddenOps } from './hiding';
 import { icon } from '../icons.gen';
 import { pathEffectSettingsForm } from './settingsForm';
@@ -91,7 +91,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
         const derivations = registeredPathEffects(scene.registry)!;
         const [a, b, c] = leaves as [AnyNode, AnyNode, AnyNode?];
         const sources = spec.third && c ? [a.id, b.id, c.id] : [a.id, b.id];
-        const settled = withEffectSettings(EFFECT_DEFAULTS[spec.kind], params as Record<string, unknown> | undefined);
+        const settled = newEffect(spec.kind, params as Record<string, unknown> | undefined);
         const foundHidden = settled.hideSources === true ? sources.flatMap((id, at) => (hiddenOnItsOwn(scene, id) ? [at] : [])) : [];
         const effect = foundHidden.length > 0 ? { ...settled, foundHidden } : settled;
         const sameParent = a.parent === b.parent;

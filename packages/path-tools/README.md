@@ -65,8 +65,8 @@ Only the text's first laid line follows the path. A color glyph (an emoji) keeps
 underline, strikethrough and overline are not drawn. The node's rotation and skew are ignored; its scale is a
 font-size factor.
 
-The sources are hidden while the effect shows them (every effect takes `hideSources`; only Text Along Path sets it
-on create). Release shows them again, as one undo step, and Delete, Cut and Expand take them with the effect.
+The sources are hidden while the effect shows them (every effect's create action takes
+`hideSources` in its params; Text Along Path sets it unless told not to). Release shows them again, as one undo step, and Delete, Cut and Expand take them with the effect.
 Double-clicking the curved text edits the hidden text in place; Enter path edit on the effect edits its path.
 
 The comb, balance lines, constraint marks, and direction arrows are off until

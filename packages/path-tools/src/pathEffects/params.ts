@@ -76,3 +76,16 @@ export const EFFECT_DEFAULTS: { [K in PathEffect['kind']]: Extract<PathEffect, {
   repeatAlong: { kind: 'repeatAlong' },
   textAlong: { kind: 'textAlong', hideSources: true },
 };
+
+/**
+ * A new effect of `kind` with the settings `params` names, `hideSources`
+ * among them. Only here: an edit flipping it would leave the sources' hidden
+ * flags as they were.
+ */
+export function newEffect(kind: PathEffect['kind'], params: Params): PathEffect {
+  const effect = withEffectSettings(EFFECT_DEFAULTS[kind], params);
+  const hideSources = bool(params?.hideSources);
+  if (hideSources === undefined) return effect;
+  const { hideSources: _, ...rest } = effect;
+  return (hideSources ? { ...rest, hideSources } : rest) as PathEffect;
+}
