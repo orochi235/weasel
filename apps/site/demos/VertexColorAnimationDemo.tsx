@@ -17,6 +17,8 @@ import {
   tweenVertexColors,
 } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
 
 const W = 440, H = 240;
@@ -90,15 +92,12 @@ export function VertexColorAnimationDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <button className="ckd-btn" onClick={() => setCycling((c) => !c)}>
+        <Button onClick={() => setCycling((c) => !c)}>
           {cycling ? 'pause cycle' : 'cycle'}
-        </button>
-        <label className="ckd-field">
-          <input type="checkbox" checked={oklch} onChange={(e) => setOklch(e.currentTarget.checked)} />
-          OKLCh
-        </label>
-        <button className="ckd-btn" onClick={tween}>tween</button>
-        <button className="ckd-btn" onClick={stagger}>stagger</button>
+        </Button>
+        <Checkbox isSelected={oklch} onChange={setOklch}>OKLCh</Checkbox>
+        <Button onClick={tween}>tween</Button>
+        <Button onClick={stagger}>stagger</Button>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas

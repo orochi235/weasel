@@ -5,6 +5,8 @@ import {
 } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
 import type { SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle, Fill } from '@weasel-js/core';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 300;
@@ -132,50 +134,31 @@ export function TextOutlinesDemo() {
 
   return (
     <div style={{ position: 'relative', width: 'min-content' }}>
-      <label style={{ display: 'block', marginBottom: 6 }}>
-        <input
-          type="checkbox"
-          checked={outlines}
-          data-testid="outline-toggle"
-          onChange={(e) => setOutlines(e.target.checked)}
-        />
-        {' '}Outline tier
+      <div style={{ marginBottom: 6 }}>
+        <Checkbox isSelected={outlines} data-testid="outline-toggle" onChange={setOutlines}>Outline tier</Checkbox>
         <span data-testid="outline-status" style={{ marginLeft: 12, opacity: 0.6 }}>
           {status} · switches at {OUTLINE_MIN_SCREEN_PX}px on screen
         </span>
-      </label>
-      <label style={{ display: 'block', marginBottom: 6 }}>
-        <input
-          type="checkbox"
-          checked={stroked}
-          data-testid="stroke-toggle"
-          onChange={(e) => setStroked(e.target.checked)}
-        />
-        {' '}Stroke
+      </div>
+      <div style={{ marginBottom: 6 }}>
+        <Checkbox isSelected={stroked} data-testid="stroke-toggle" onChange={setStroked}>Stroke</Checkbox>
         <span style={{ marginLeft: 12, opacity: 0.6 }}>
           only glyphs on the outline tier can be stroked — a distance field has
           no geometry to stroke, so the small line stays bare until you zoom it
           past the threshold
         </span>
-      </label>
-      <label style={{ display: 'block', marginBottom: 6 }}>
-        <input
-          type="checkbox"
-          checked={filled}
-          data-testid="fill-toggle"
-          onChange={(e) => setFilled(e.target.checked)}
-        />
-        {' '}Fill
+      </div>
+      <div style={{ marginBottom: 6 }}>
+        <Checkbox isSelected={filled} data-testid="fill-toggle" onChange={setFilled}>Fill</Checkbox>
         <span style={{ marginLeft: 12, opacity: 0.6 }}>
           off is `data.fill: null` — the same explicit no-fill every other node
           kind reads. Turn it off with the stroke on for outline-only display
           type; with both off the glyphs have no paint at all and nothing draws
         </span>
-      </label>
+      </div>
       <label style={{ display: 'block', marginBottom: 8 }}>
         Zoom{' '}
-        <input
-          type="range"
+        <InlineRange
           min={1}
           max={8}
           step={0.25}

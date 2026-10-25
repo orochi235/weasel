@@ -23,6 +23,8 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import {
   GRAPH_SIZES, graphForces, makeGraph, type GraphLink, type GraphNode, type GraphSize,
 } from './forceGraph/graph';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Select } from '@weasel-js/ui/components/Select';
 import { bakeGraphPoses, syncGraphPoses } from './forceGraph/overrides';
 import s from './ForceGraphDemo.module.css';
 import { DemoStage } from './DemoStage';
@@ -207,26 +209,17 @@ export function ForceGraphDemo() {
   return (
     <div className={s.stack}>
       <div className={s.controls}>
-        <label className={s.field}>
-          Nodes
-          <select
-            value={size.count}
-            onChange={(e) => regenerate(GRAPH_SIZES.find((g) => g.count === Number(e.currentTarget.value))!)}
-          >
-            {GRAPH_SIZES.map((g) => (
-              <option key={g.count} value={g.count}>{g.count.toLocaleString('en-US')}</option>
-            ))}
-          </select>
-        </label>
-        <button onClick={() => { setSettled(false); sim.alpha(1).restart(); }}>
-          Reheat
-        </button>
-        <button onClick={() => regenerate(size)}>
-          Regenerate
-        </button>
-        <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>
-          Reset view
-        </button>
+        <Select
+          label="Nodes"
+          orientation="row"
+          width="fit"
+          options={GRAPH_SIZES.map((g) => ({ value: g.count, label: g.count.toLocaleString('en-US') }))}
+          selectedKey={size.count}
+          onSelectionChange={(count) => regenerate(GRAPH_SIZES.find((g) => g.count === count)!)}
+        />
+        <Button onClick={() => { setSettled(false); sim.alpha(1).restart(); }}>Reheat</Button>
+        <Button onClick={() => regenerate(size)}>Regenerate</Button>
+        <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</Button>
         <span className={s.hint}>
           drag node to pin · drag empty canvas to pan · ctrl/⌘+wheel zoom · wheel pan · ⌘+0 reset
         </span>

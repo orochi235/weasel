@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { SceneCanvas, asNodeId, springPose, tweenPose, useScene, useSceneAdapter } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Fill } from '@weasel-js/core';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
 
 interface Block { id: string; x: number; y: number; width: number; height: number; fill: Fill }
@@ -34,12 +36,9 @@ export function PoseBlendDemo() {
     <div>
       <div className="ckd-toolbar">
         {CORNERS.map((c) => (
-          <button key={c.name} className="ckd-btn" onClick={() => send(c.x, c.y)}>{c.name}</button>
+          <Button key={c.name} onClick={() => send(c.x, c.y)}>{c.name}</Button>
         ))}
-        <label className="ckd-field">
-          <input type="checkbox" checked={spring} onChange={(e) => setSpring(e.target.checked)} />
-          spring
-        </label>
+        <Checkbox isSelected={spring} onChange={setSpring}>spring</Checkbox>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas className="ckd-canvas" scene={scene} />

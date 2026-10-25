@@ -6,6 +6,9 @@ import {
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Select } from '@weasel-js/ui/components/Select';
 import s from './PerAxisZoomDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -16,6 +19,8 @@ interface Pose { x: number; y: number; width: number; height: number }
 const W = 600, H = 400;
 // Non-square bounds so 'contain' / 'fill' / 'stretch' look visibly different.
 const IMAGE_BOUNDS = { x: 0, y: 0, width: 400, height: 200 };
+type FitMode = 'contain' | 'fill' | 'stretch';
+const FIT_MODES: FitMode[] = ['contain', 'fill', 'stretch'];
 
 export function PerAxisZoomDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
@@ -27,7 +32,7 @@ export function PerAxisZoomDemo() {
     ],
   });
   const [view, setView] = useState<View>({ x: -100, y: -100, scale: { x: 1, y: 1 } });
-  const [mode, setMode] = useState<'contain' | 'fill' | 'stretch'>('contain');
+  const [mode, setMode] = useState<FitMode>('contain');
   const [size, setSize] = useState({ width: W, height: H });
 
   const setScaleX = (sx: number) => setView({ ...view, scale: { ...view.scale, x: sx } });
@@ -38,8 +43,8 @@ export function PerAxisZoomDemo() {
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <label className={s.axis}>
           scale.x:{' '}
-          <input
-            type="range" min={0.25} max={4} step={0.05}
+          <InlineRange
+            min={0.25} max={4} step={0.05}
             value={view.scale.x}
             onChange={(e) => setScaleX(parseFloat(e.target.value))}
           />{' '}
@@ -47,27 +52,23 @@ export function PerAxisZoomDemo() {
         </label>
         <label className={s.axis}>
           scale.y:{' '}
-          <input
-            type="range" min={0.25} max={4} step={0.05}
+          <InlineRange
+            min={0.25} max={4} step={0.05}
             value={view.scale.y}
             onChange={(e) => setScaleY(parseFloat(e.target.value))}
           />{' '}
           {view.scale.y.toFixed(2)}
         </label>
-        <label>
-          mode:{' '}
-          <select value={mode} onChange={(e) => setMode(e.target.value as typeof mode)}>
-            <option value="contain">contain</option>
-            <option value="fill">fill</option>
-            <option value="stretch">stretch</option>
-          </select>
-        </label>
-        <button onClick={() => setView(fitViewToBounds(IMAGE_BOUNDS, size, view, { mode }))}>
-          Fit
-        </button>
-        <button onClick={() => setView({ x: -100, y: -100, scale: { x: 1, y: 1 } })}>
-          Reset
-        </button>
+        <Select
+          label="mode"
+          orientation="row"
+          width="fit"
+          options={FIT_MODES.map((m) => ({ value: m, label: m }))}
+          selectedKey={mode}
+          onSelectionChange={setMode}
+        />
+        <Button onClick={() => setView(fitViewToBounds(IMAGE_BOUNDS, size, view, { mode }))}>Fit</Button>
+        <Button onClick={() => setView({ x: -100, y: -100, scale: { x: 1, y: 1 } })}>Reset</Button>
       </div>
       <span style={{ fontSize: 12, color: '#888' }}>
         Cmd/Ctrl+wheel zooms uniformly · plain wheel pans · Cmd/Ctrl+= / - / 0 for zoom steps.

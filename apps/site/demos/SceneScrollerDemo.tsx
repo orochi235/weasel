@@ -13,6 +13,8 @@ import { createSlew } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer } from '@weasel-js/parallax';
 import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { backdropBand, COLORS, drawCallouts, drawEnding, drawSky } from './platformer/skin';
@@ -282,16 +284,16 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       }}
     >
       <div className="ckd-toolbar">
-        <button className="ckd-btn ckd-btn--text" onClick={() => setRunning((r) => !r)}>
+        <Button variant="ghost" onClick={() => setRunning((r) => !r)}>
           {running ? 'click to pause' : 'click to start'}
-        </button>
-        <button className="ckd-btn" onClick={sound.enableAudio} disabled={sound.audioState === 'running'}>
+        </Button>
+        <Button onClick={sound.enableAudio} disabled={sound.audioState === 'running'}>
           {sound.audioState === 'running' ? 'audio on' : 'enable audio'}
-        </button>
-        <button className="ckd-btn" onClick={sound.toggleMusic} aria-pressed={sound.musicOn}>
+        </Button>
+        <Button onClick={sound.toggleMusic} pressed={sound.musicOn}>
           {sound.musicOn ? 'music off' : 'music on'}
-        </button>
-        <button className="ckd-btn" onClick={onRestart}>restart</button>
+        </Button>
+        <Button onClick={onRestart}>restart</Button>
         <span className={`ckd-readout ${num.numeric}`}>zoom {CAM_SCALE}x</span>
       </div>
       <DemoStage width={W} height={H}>
@@ -319,15 +321,8 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         />
       </DemoStage>
       <div className="ckd-toolbar">
-        <label className="ckd-field">
-          <input
-            type="checkbox"
-            checked={showBoxes}
-            onChange={(e) => setShowBoxes(e.target.checked)}
-          />
-          collision boxes
-        </label>
-        <button className="ckd-btn" onClick={swarm}>swarm +40</button>
+        <Checkbox isSelected={showBoxes} onChange={setShowBoxes}>collision boxes</Checkbox>
+        <Button onClick={swarm}>swarm +40</Button>
         <span className={`ckd-readout ${num.numeric}`}>frame {stats.frame.toFixed(1)} ms</span>
         <span className={`ckd-readout ${num.numeric}`}>nodes {stats.nodes}</span>
         <span className={`ckd-readout ${num.numeric}`}>frames committed {stats.writes}</span>

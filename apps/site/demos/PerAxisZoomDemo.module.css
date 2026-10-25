@@ -1,3 +1,7 @@
 .axis {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
 }
+
+.axis > input {
+  width: 130px;
+}

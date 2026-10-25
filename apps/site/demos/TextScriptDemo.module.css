@@ -19,7 +19,8 @@
   align-items: center;
 }
 
-.slider {
+.control > .slider {
+  flex: none;
   width: 150px;
 }
 
