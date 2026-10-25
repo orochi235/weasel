@@ -5,7 +5,7 @@ import {
 import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
-import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, emptyChart, replaceChart } from './chartPersistence';
+import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, replaceChart } from './chartPersistence';
 import { EXPORT_MENU } from './exportCommands';
 import { IMPORT_ACTION } from './importExport';
 import { run, type ChartMenuContributions } from './menuBar';
@@ -15,7 +15,7 @@ import { THEME_MENU } from './theme/themeCommands';
 
 export const CHART_ACTIONS = {
   new: 'chart.new', open: 'chart.open', save: 'chart.save', preferences: 'chart.preferences',
-  grid: 'chart.view.grid', snapToGrid: 'chart.view.snapToGrid',
+  grid: 'chart.view.grid', snapToGrid: 'chart.view.snapToGrid', autoLayout: 'chart.arrange.autoLayout',
 } as const;
 
 /** Chart mode's File (Import and Export included), Edit, View, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, Reset label, Line jumps, and Release members are the diagram package's. */
@@ -45,6 +45,7 @@ export const CHART_MENUS: ChartMenuContributions = {
     }),
   },
   arrange: {
+    layout: run({ autoLayout: CHART_ACTIONS.autoLayout }),
     containers: run({ releaseMembers: RELEASE_MEMBERS_ACTION_ID }),
   },
   page: PAGE_MENU,
@@ -56,9 +57,9 @@ async function openChart(scene: ChartScene): Promise<void> {
   replaceChart(scene, chartFromJson(await file.text()), 'Open chart');
 }
 
-/** Registers New, Open and Save, and View's Show grid and Snap to grid, on the nearest `<ActionsProvider>`. */
+/** Registers Open and Save, and View's Show grid and Snap to grid, on the nearest `<ActionsProvider>`. New… is
+ *  `NewChart`'s, which owns its dialog. */
 export function useChartCommands(scene: ChartScene): void {
-  useCommand(CHART_ACTIONS.new, 'New', () => replaceChart(scene, emptyChart(), 'New chart'));
   useCommand(CHART_ACTIONS.open, 'Open…', () => {
     openChart(scene).catch((err: unknown) => console.warn('weaselchart: could not open the file', err));
   });

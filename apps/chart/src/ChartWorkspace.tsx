@@ -2,7 +2,7 @@ import {
   SceneCanvas, isTextData, useCanvasSize, useScene, useSceneTextEdit, useSelection,
   type PlacedPage, type SceneCanvasApi, type Tool, type ToolsApi, type View,
 } from '@weasel-js/core';
-import { diagramResizable, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
+import { diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
@@ -15,6 +15,7 @@ import {
   CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
 } from './chartDocument';
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
+import { NewChart } from './NewChartDialog';
 import { ChartPageStrip } from './pages/ChartPageStrip';
 import { PAGE_FIT_PADDING, useChartPages, type ChartPages } from './pages/useChartPages';
 import { isStencilTool, StencilPanel } from './StencilPanel';
@@ -59,7 +60,7 @@ export function ChartWorkspace(): ReactElement {
   useSessionPersistence(scene, SESSION);
   useChartCommands(scene);
   const theme = chartThemeOf(scene);
-  const diagram = useChartDiagram(scene, selection, theme);
+  const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene));
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -95,7 +96,7 @@ export function ChartWorkspace(): ReactElement {
     <div className="wc-body">
       <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes and tools">
         {tools && <ToolPalette tools={tools} include={isPaletteTool} orientation="horizontal" />}
-        {tools && <StencilPanel tools={tools} />}
+        {tools && <StencilPanel tools={tools} scene={scene} />}
       </Sidebar>
       <div className="wc-stage">
         <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
@@ -138,6 +139,7 @@ export function ChartWorkspace(): ReactElement {
       </Sidebar>
       <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
       <ImportExportCommands scene={scene} pages={pages} />
+      <NewChart scene={scene} />
       <ToastRegion />
     </div>
   );

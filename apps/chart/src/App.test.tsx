@@ -57,7 +57,7 @@ describe('App', () => {
     expect(screen.getByText('Select a stage to edit its params.')).toBeTruthy();
     choose('Mode', 'Chart');
     expect(screen.queryByRole('grid', { name: 'Stages' })).toBeNull();
-    expect(screen.getByRole('toolbar', { name: 'Shapes' })).toBeTruthy();
+    expect(screen.getByRole('toolbar', { name: 'Flowchart' })).toBeTruthy();
   });
 
   it("keeps pipeline mode's undo history through a visit to chart mode", async () => {
@@ -244,6 +244,32 @@ describe('App', () => {
     mount();
     const format = screen.getByRole('complementary', { name: 'Format' });
     expect(within(format).getByText('Select shapes or connectors to style them.')).toBeTruthy();
+  });
+
+  it('starts a new chart of the type picked in File › New…, and leaves the chart alone on Cancel', () => {
+    mount();
+    const panels = () => [...document.querySelectorAll('[role="toolbar"]')].map((t) => t.getAttribute('aria-label')).filter((n) => n !== null);
+    fireEvent.click(screen.getByRole('button', { name: /More shapes/ }), { detail: 1 });
+    act(() => { fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Flowchart/ })); });
+    expect(panels()).not.toContain('Flowchart');
+    choose('File', 'New…');
+    const dialog = screen.getByRole('dialog', { name: 'New Chart' });
+    expect(within(dialog).getAllByRole('option').map((o) => o.textContent)).toEqual(['Flowchart']);
+    act(() => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })); });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(panels()).not.toContain('Flowchart');
+    choose('File', 'New…');
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Create' })); });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(panels()).toEqual(expect.arrayContaining(['Flowchart', 'Containers']));
+  });
+
+  it("offers Arrange › Auto layout, off for a flowchart, which has no layout", () => {
+    mount();
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Arrange' })); });
+    const row = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+      .find((el) => el.textContent?.startsWith('Auto layout'));
+    expect(row?.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('opens Page Setup on a page from the Page menu', () => {

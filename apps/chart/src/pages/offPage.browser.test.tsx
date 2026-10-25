@@ -60,7 +60,7 @@ describe('WeaselChart off-page markers', () => {
     const { host, canvas } = await mountChartApp();
     expect(at(host, 340, 0).x).toBeLessThan(host.getBoundingClientRect().right);
 
-    await userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name: 'Process' }));
+    await userEvent.click(page.getByRole('toolbar', { name: 'Flowchart' }).getByRole('button', { name: 'Process' }));
     await drag(canvas, at(host, 20, 100), at(host, 120, 150));
     await expect.poll(() => bodies().length).toBe(1);
     await drag(canvas, at(host, 210, 400), at(host, 310, 450));
