@@ -17,10 +17,24 @@ export interface SidebarRegionProps<TCtx extends SidebarSlotContext = TrialChrom
 }
 
 /** A section's undock or dock control, for the trailing edge of its bar. */
-export function DockButton({ title, dock, onPress }: { title: string; dock: boolean; onPress: () => void }) {
+export function DockButton({
+  title,
+  dock,
+  onPress,
+}: {
+  title: string;
+  dock: boolean;
+  onPress: () => void;
+}) {
   const label = `${dock ? 'Dock' : 'Undock'} ${title}`;
   return (
-    <button type="button" className="lk-sidebar-section__dock" aria-label={label} title={label} onClick={onPress}>
+    <button
+      type="button"
+      className="lk-sidebar-section__dock"
+      aria-label={label}
+      title={label}
+      onClick={onPress}
+    >
       {dock ? '⇤' : '⧉'}
     </button>
   );
@@ -72,7 +86,13 @@ export function Section({
 export function undockButton(ctx: SidebarSlotContext, id: string, item: SidebarSection): ReactNode {
   const { undockPanel } = ctx;
   if (!undockPanel || item.undockable === false) return undefined;
-  return <DockButton title={item.title} dock={false} onPress={() => undockPanel(id, item.undockAs ?? 'tile')} />;
+  return (
+    <DockButton
+      title={item.title}
+      dock={false}
+      onPress={() => undockPanel(id, item.undockAs ?? 'tile')}
+    />
+  );
 }
 
 /** Lays `sidebar` contributions out as titled, collapsible sections — a
