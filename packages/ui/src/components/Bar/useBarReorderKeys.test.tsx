@@ -111,6 +111,22 @@ describe('Alt+arrow reordering', () => {
     expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'a', 'c'] });
   });
 
+  it('on a right-to-left bar, Alt+Right moves an item toward the visual right, back along the list', () => {
+    const onReorder = vi.fn();
+    render(host(<div dir="rtl"><Bar schema={flat} onReorder={onReorder} /></div>));
+    alt(button('b'), 'ArrowRight');
+    expect(onReorder).toHaveBeenLastCalledWith({ '': ['b', 'a', 'c'] });
+    alt(button('b'), 'ArrowLeft');
+    expect(onReorder).toHaveBeenLastCalledWith({ '': ['a', 'c', 'b'] });
+  });
+
+  it('a vertical bar keeps Up as back under right-to-left', () => {
+    const onReorder = vi.fn();
+    render(host(<div dir="rtl"><Bar schema={flat} orientation="vertical" onReorder={onReorder} /></div>));
+    alt(button('b'), 'ArrowUp');
+    expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'a', 'c'] });
+  });
+
   it('names its shortcuts on each unit, by orientation', () => {
     const { rerender } = render(host(<Bar schema={flat} onReorder={() => {}} />));
     expect(button('a')).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight');

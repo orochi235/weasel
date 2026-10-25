@@ -58,6 +58,11 @@ function isEnabled(el: HTMLElement): boolean {
   return !el.matches(':disabled') && el.getAttribute('aria-disabled') !== 'true';
 }
 
+/** The inline direction `el` lays its children out in, from its computed `direction`. */
+export function inlineDirection(el: Element): RovingDirection {
+  return getComputedStyle(el).direction === 'rtl' ? 'rtl' : 'ltr';
+}
+
 const MIRRORED: Record<string, string> = { ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
 
 /** Where `key` takes focus from `current`, or null if it does not move it.
@@ -242,7 +247,7 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
         return;
       }
       const enabled = found.map(isEnabled);
-      const dir = latest.current.dir ?? (getComputedStyle(e.currentTarget).direction === 'rtl' ? 'rtl' : 'ltr');
+      const dir = latest.current.dir ?? inlineDirection(e.currentTarget);
       const next = columns
         ? rovingGridTarget(current, e.key, enabled, gridRows(found, columns, groupSelector), dir)
         : rovingTarget(current, e.key, enabled, orientation, dir);
