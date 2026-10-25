@@ -340,3 +340,8 @@ export {
 } from './theme/themeEdit';
 export type { ThemePath } from './theme/themeEdit';
 export { DIAGRAM_THEME_EXTENSION, parseDiagramTheme, themeToJson } from './theme/themeFile';
+export * from './diagramTypes';
+export { FLOWCHART_GROUP } from './stencils/flowchart';
+export { CONTAINERS_GROUP } from './stencils/containers';
+export { layoutDiagram } from './layoutAction';
+export type { LayoutDiagramOptions } from './layoutAction';

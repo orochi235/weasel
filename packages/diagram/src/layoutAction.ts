@@ -135,18 +135,44 @@ export interface LayoutActionOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
 }
 
+/** Options for {@link layoutDiagram}. */
+export interface LayoutDiagramOptions<TPose> {
+  layout?: LayoutOptions;
+  read?: DiagramNodeReader;
+  geometry?: PoseDescriptor<TPose>;
+  /** The undo entry's name. Default `'Layout'`. */
+  label?: string;
+}
+
+/** Builds the graph `source` reads, runs `algorithm` on it — a key of {@link LAYOUTS} or a layout of
+ *  the caller's own — and writes the moves and routes as one undo entry. Returns how many nodes moved. */
+export function layoutDiagram<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  source: GraphSource<TPose>,
+  algorithm: string | LayoutFn,
+  opts: LayoutDiagramOptions<TPose> = {},
+): number {
+  const fn = typeof algorithm === 'function' ? algorithm : LAYOUTS[algorithm] ?? layered;
+  const graph = buildGraph(source, {
+    ...(opts.read ? { read: opts.read } : {}),
+    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+  });
+  const plan = planOf(fn, graph, opts.layout);
+  return applyLayout(scene, plan.moves, {
+    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.label ? { label: opts.label } : {}),
+    routes: routesOf(graph, plan),
+  });
+}
+
 /**
  * `diagram.layout` — rebuild the graph, run a layout, write the result.
  */
 export function createLayoutAction<TPose>(opts: LayoutActionOptions<TPose>): Action {
-  const algorithm = typeof opts.algorithm === 'function'
-    ? opts.algorithm
-    : LAYOUTS[opts.algorithm ?? 'layered'] ?? layered;
-  const build = {
-    ...(opts.read ? { read: opts.read } : {}),
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+  const { read, geometry, layout, label } = opts;
+  const options = {
+    ...(read ? { read } : {}), ...(geometry ? { geometry } : {}), ...(layout ? { layout } : {}), ...(label ? { label } : {}),
   };
-
   return {
     id: opts.id ?? LAYOUT_ACTION_ID,
     label: opts.label ?? 'Lay out diagram',
@@ -156,14 +182,7 @@ export function createLayoutAction<TPose>(opts: LayoutActionOptions<TPose>): Act
       timing: 'immediate',
       run: (deps) => {
         const scene = deps['scene'] as Scene<unknown, string, TPose> | undefined;
-        if (scene === undefined) return;
-        const graph = buildGraph(opts.source, build);
-        const plan = planOf(algorithm, graph, opts.layout);
-        applyLayout(scene, plan.moves, {
-          ...(opts.geometry ? { geometry: opts.geometry } : {}),
-          ...(opts.label ? { label: opts.label } : {}),
-          routes: routesOf(graph, plan),
-        });
+        if (scene !== undefined) layoutDiagram(scene, opts.source, opts.algorithm ?? 'layered', options);
       },
     },
     enabled: () => true as const,
