@@ -26,6 +26,7 @@ export interface DockBar {
   float?: boolean;
   /** Whether the bar may run vertical, which a left or right dock needs of every bar it holds. */
   vertical?: boolean;
+  /** The bar as drawn. The dock redraws it only for a new bar object or orientation, so a bar whose content changes is passed anew. */
   render: (orientation: BarOrientation) => ReactNode;
 }
 
