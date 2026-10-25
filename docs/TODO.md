@@ -1101,12 +1101,14 @@ only story runner in the repo.
   it changes, a browser test can print its own diagnosis with `console.log`, which does reach the log
   (`LabFit.browser.test.tsx` does).
 
-- **(P3) Browser-project runs print "ResizeObserver loop completed with undelivered notifications"** (2026-10-21).
-  The notice is on stderr from passing tests in `labkit/src/loupe/lens/LensOverlay.browser.test.tsx`,
-  `forge/src/shell/FrameView.browser.test.tsx`, `LabLightbox`, `Lab.sidebar`, `AnnotationOverlay.clip`'s and the site's
-  `PuppetSolverLabDemo` browser tests, seen across the forge-loupe branch's runs. Nothing fails on it, so a new loop hides among the old ones;
-  `SidebarPanes.browser.test.tsx` shows the shape of a test that asserts none is raised. Find which observer resizes
-  its own target in each, and fail the browser project on the notice once they are gone.
+- **(P3) The `forge-stories` project prints "ResizeObserver loop completed with undelivered notifications"** (2026-10-21).
+  The `browser` project fails a test on the notice since 2026-10-25 (`vitest.browser.setup.ts`), after `Split` stopped
+  starting its zone observer inside windease's resize delivery, which was the cause in every browser test that raised
+  it. The opt-in stories project loads no such guard and still prints it on stderr from passing stories:
+  `LabFullChrome.stories.tsx`'s "All Chrome" and "Undockable Panels", and `SelectionPanel.stories.tsx`'s "Gradient
+  Fill Paint" (fleet run of `fe7082659`). Find which observer is skipped in each, then give the project the same guard. Commit 50ce09b7d (2026-10-25) has a
+  probe for this: it wraps `ResizeObserver` and logs each callback's targets and their depth for the looping frame and
+  the next, and the next frame's first callbacks are the skipped ones.
 
 - **(P3) `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
