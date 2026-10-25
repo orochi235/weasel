@@ -990,10 +990,6 @@ only story runner in the repo.
   seen). `CameraInput`'s `clientToWorld`, `worldToClient` and `hostSize` read the host's client rect, which an
   ancestor transform (a `<Stage>`, `<TrialOverview>`) scales, while the stack now draws in its layout px. Nothing
   takes input there today: a lens's copy takes no clicks.
-- **(P2) Two Follow lenses share one reticle hold** (review finding, 2026-10-21). `createApi`
-  (`shell/loupe/ForgeLoupe.tsx`) keeps one `PoseHold` for every Follow lens and each `follow` sets it to the
-  focused lens's reticle alone, so moving the focus to another Follow lens drops the first one's held pose. One hold
-  per lens, released when its lens leaves Follow or closes, fixes it.
 - **(P3) A Live copy of an isolated story is backed by the lab's background, not the compared mode's**
   (2026-10-21). `.fg-lens-copy > .fg-frame-host` paints `var(--wzl-bg)` as the shell resolves it there, and the
   compared globals apply inside the copy's frame, not to its host in the shell. A transparent isolated story under
