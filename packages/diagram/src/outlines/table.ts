@@ -3,10 +3,12 @@
  * built-ins are seeded here; `registerOutline` adds to them or shadows one.
  */
 import { pathFromD, transformPath } from '@weasel-js/geom';
+import { FIGURE_OUTLINES } from './figures';
 import { FLOWCHART_OUTLINES } from './flowchart';
+import { STORAGE_OUTLINES } from './storage';
 import type { Bounds, OutlineDef, Size } from './types';
 
-const BUILTINS = { ...FLOWCHART_OUTLINES };
+const BUILTINS = { ...FLOWCHART_OUTLINES, ...FIGURE_OUTLINES, ...STORAGE_OUTLINES };
 
 /** A name the kit itself registers. */
 export type BuiltinOutline = keyof typeof BUILTINS;
