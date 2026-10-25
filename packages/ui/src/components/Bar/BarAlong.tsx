@@ -49,7 +49,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const { line, rest } = splitBarItems(items, kept);
 
   const order = [...(leading != null ? [BAR_LEAD] : []), ...line.map((item) => item.key), ...(rest.length > 0 ? [BAR_MORE] : [])];
-  const along = useRunRow({ root, keyOf: barKeyOf, run, lengths: order.map((key) => lengths.get(key) ?? 0), gap, align, overflow: menu ? 'center' : 'scroll' });
+  const along = useRunRow({ root, keyOf: barKeyOf, run, lengths: order.map((key) => lengths.get(key) ?? 0), gap, align, overflow: menu ? 'center' : 'scroll', modReorders: props.onReorder !== undefined });
   const place = (i: number) => {
     const spot = along.place(i);
     return { ...spot, className: s.item!, side: sideAtRun(run, spot.at) };

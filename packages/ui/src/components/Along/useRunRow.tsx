@@ -25,6 +25,8 @@ export interface RunRowArgs {
   align: RunAlign;
   /** Default `'scroll'`. */
   overflow?: RunOverflow;
+  /** Whether a press with Cmd, or Ctrl off Apple platforms, is left to a reorder rather than scrolling the row. */
+  modReorders?: boolean;
 }
 
 /** Where one item of a run row goes: the class and style that put it there, and its center as a share of the run. */
@@ -56,12 +58,12 @@ export interface RunRow {
  * along it, its items fading as they slide off either end and kept focusable past it, or with `overflow: 'center'`
  * sits centered on it. Every item is a child of `root` that `keyOf` reads a key off, drawn in run order.
  */
-export function useRunRow({ root, keyOf, itemsOf, run, lengths, gap, align, overflow = 'scroll' }: RunRowArgs): RunRow {
+export function useRunRow({ root, keyOf, itemsOf, run, lengths, gap, align, overflow = 'scroll', modReorders }: RunRowArgs): RunRow {
   const band = useRef<SVGSVGElement>(null);
   const scrolling = overflow === 'scroll';
   const total = scrolling ? runLength(lengths, gap) : 0;
   let spots: RunPlace[] = [];
-  const scroll = useRunScroll({ root, keyOf, itemsOf, frame: band, run, total, spots: () => spots, lengths });
+  const scroll = useRunScroll({ root, keyOf, itemsOf, frame: band, run, total, spots: () => spots, lengths, modReorders });
   useRunText(root, run);
   spots = placeAlongRun(run, lengths, { gap, align, offset: scrolling ? scroll.offset : Math.max(0, (runLength(lengths, gap) - run.length) / 2), past: 'hold' });
   // A zero-length run has no direction to carry items along: they all sit at its one point.

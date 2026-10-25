@@ -825,10 +825,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
   one in labkit, and `PrefsPane` has no emptiness check.
 
-- **(P3) A Cmd- or Ctrl-press never scrolls a curved `Bar`'s run** (2026-10-23), even on a bar with no
-  `onReorder`, where the press reorders nothing. `useRunScroll` skips any mod-press so reordering can
-  take it; it could skip one only where the bar reorders.
-
 
 - **(P3) In a squeezed `ToolbarDock` row, a short bar loses its only item first** (2026-10-23). Bars
   shrink by their flex basis, so a short bar loses its only item before the others lose theirs.
