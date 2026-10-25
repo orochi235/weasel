@@ -621,6 +621,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P3) `LabSwitcher` never marks a page whose `href` starts with `./`.** `currentPage` checks that
+  the location ends with the href's document, and `/effects` does not end with `./effects`, so the
+  open page goes unmarked with no warning. bree's lab hit this on 2026-10-24 and dropped the `./`.
+  Resolve each href against the location before comparing.
+
 - **(P3) A section turned off by its `enableIf` doesn't dim its title.** Groups do (`MotifFrame disabled`,
   2026-10-24), because `applyPrefConditions` names every disabled group in `disabled`. It names no section, since a
   section's key is not a path, so `SelectionPanel`'s and an object leaf's section frames have nothing to read. Its
