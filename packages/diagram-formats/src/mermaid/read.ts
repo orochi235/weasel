@@ -15,13 +15,16 @@ const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = {
 };
 
 const SHAPE_OUTLINES: Readonly<Partial<Record<MermaidShape, Outline>>> = {
-  rect: 'rect', rounded: 'stadium', stadium: 'stadium', circle: 'ellipse', 'double-circle': 'ellipse', diamond: 'diamond',
+  rect: 'rect', rounded: 'roundRect', stadium: 'stadium', circle: 'ellipse', 'double-circle': 'doubleEllipse', diamond: 'diamond',
+  cylinder: 'cylinder',
   hexagon: 'hexagon', 'lean-right': 'parallelogram', 'lean-left': 'parallelogram', trapezoid: 'trapezoid', 'inv-trapezoid': 'trapezoid',
 };
 
 const META_OUTLINES: Readonly<Record<string, Outline>> = {
-  rect: 'rect', rectangle: 'rect', proc: 'rect', process: 'rect', rounded: 'stadium', event: 'stadium', stadium: 'stadium',
-  pill: 'stadium', terminal: 'stadium', circle: 'ellipse', circ: 'ellipse', 'dbl-circ': 'ellipse', 'double-circle': 'ellipse',
+  rect: 'rect', rectangle: 'rect', proc: 'rect', process: 'rect', rounded: 'roundRect', event: 'roundRect', stadium: 'stadium',
+  pill: 'stadium', terminal: 'stadium', circle: 'ellipse', circ: 'ellipse', 'dbl-circ': 'doubleEllipse', 'double-circle': 'doubleEllipse',
+  cyl: 'cylinder', cylinder: 'cylinder', db: 'cylinder', database: 'cylinder', doc: 'document', document: 'document',
+  cloud: 'cloud', tri: 'triangle', triangle: 'triangle', extract: 'triangle',
   diam: 'diamond', diamond: 'diamond', decision: 'diamond', question: 'diamond', hex: 'hexagon', hexagon: 'hexagon',
   prepare: 'hexagon', 'lean-r': 'parallelogram', 'lean-right': 'parallelogram', 'in-out': 'parallelogram',
   'lean-l': 'parallelogram', 'lean-left': 'parallelogram', 'out-in': 'parallelogram', 'trap-b': 'trapezoid',

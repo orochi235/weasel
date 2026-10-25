@@ -15,6 +15,15 @@ export const SHAPES: ReadonlyArray<{ name: string; outline: Exclude<Outline, obj
     name: 'trapezoid', outline: 'trapezoid',
     write: [['shape', 'trapezoid'], ['perimeter', 'trapezoidPerimeter'], ['direction', 'north'], ['size', 0.25]],
   },
+  { name: 'cylinder3', outline: 'cylinder', write: [['shape', 'cylinder3'], ['boundedLbl', 1], ['backgroundOutline', 1], ['size', 15]] },
+  { name: 'document', outline: 'document', write: [['shape', 'document'], ['boundedLbl', 1]] },
+  { name: 'note', outline: 'note', write: [['shape', 'note'], ['size', 20]] },
+  { name: 'cloud', outline: 'cloud', write: ['ellipse', ['shape', 'cloud']] },
+  { name: 'triangle', outline: 'triangle', write: ['triangle', ['direction', 'north']] },
+  { name: 'cube', outline: 'cube', write: [['shape', 'cube'], ['boundedLbl', 1], ['flipH', 1]] },
+  { name: 'folder', outline: 'folder', write: [['shape', 'folder'], ['tabPosition', 'left']] },
+  { name: 'umlActor', outline: 'actor', write: [['shape', 'umlActor'], ['verticalLabelPosition', 'bottom'], ['verticalAlign', 'top']] },
+  { name: 'doubleEllipse', outline: 'doubleEllipse', write: ['ellipse', ['shape', 'doubleEllipse']] },
 ];
 
 /** Style names that draw a plain box. */
@@ -25,10 +34,12 @@ export const ORTHOGONAL_EDGE_STYLES: ReadonlySet<string> = new Set(['orthogonalE
 
 /** Arrowheads by their style name, and whether a `Fill` of `0` makes one hollow. */
 const MARKERS_READ: Readonly<Record<string, { filled: MarkerRef; hollow?: MarkerRef }>> = {
-  classic: { filled: 'arrow' }, classicThin: { filled: 'arrow' }, block: { filled: 'arrow', hollow: 'arrow-open' },
-  blockThin: { filled: 'arrow', hollow: 'arrow-open' }, open: { filled: 'arrow-open' }, openThin: { filled: 'arrow-open' },
+  classic: { filled: 'arrow' }, classicThin: { filled: 'arrow' }, block: { filled: 'arrow', hollow: 'triangle-hollow' },
+  blockThin: { filled: 'arrow', hollow: 'triangle-hollow' }, open: { filled: 'arrow-open' }, openThin: { filled: 'arrow-open' },
   diamond: { filled: 'diamond', hollow: 'diamond-hollow' }, diamondThin: { filled: 'diamond', hollow: 'diamond-hollow' },
   oval: { filled: 'circle' }, box: { filled: 'square' }, dash: { filled: 'bar' },
+  ERone: { filled: 'bar' }, ERmandOne: { filled: 'crow-one' }, ERmany: { filled: 'crow-many' },
+  ERzeroToOne: { filled: 'crow-zero-one' }, ERoneToMany: { filled: 'crow-one-many' }, ERzeroToMany: { filled: 'crow-zero-many' },
 };
 
 /** The marker an arrowhead style name draws as, `null` for none, or `undefined` for a name it does not know. */
@@ -42,6 +53,8 @@ export function markerOf(name: string, fill: string | undefined): MarkerRef | nu
 const MARKERS_WRITE: Readonly<Record<string, readonly [string, 0 | 1]>> = {
   'arrow': ['block', 1], 'arrow-concave': ['classic', 1], 'arrow-open': ['open', 0], 'diamond': ['diamond', 1],
   'diamond-hollow': ['diamond', 0], 'circle': ['oval', 1], 'square': ['box', 1], 'bar': ['dash', 1],
+  'triangle-hollow': ['block', 0], 'crow-one': ['ERmandOne', 0], 'crow-many': ['ERmany', 0],
+  'crow-zero-one': ['ERzeroToOne', 0], 'crow-one-many': ['ERoneToMany', 0], 'crow-zero-many': ['ERzeroToMany', 0],
 };
 
 /** The arrowhead style name and fill a marker writes as; `undefined` for a marker the format has none like. */

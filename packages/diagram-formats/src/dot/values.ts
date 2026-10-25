@@ -45,9 +45,21 @@ export function dotColor(value: string): string {
 
 const OUTLINES: Readonly<Record<string, Outline>> = {
   box: 'rect', rect: 'rect', rectangle: 'rect', square: 'rect',
-  ellipse: 'ellipse', oval: 'ellipse', circle: 'ellipse', doublecircle: 'ellipse', point: 'ellipse',
+  ellipse: 'ellipse', oval: 'ellipse', circle: 'ellipse', doublecircle: 'doubleEllipse', point: 'ellipse',
   diamond: 'diamond', hexagon: 'hexagon', parallelogram: 'parallelogram', trapezium: 'trapezoid',
+  cylinder: 'cylinder', note: 'note', folder: 'folder', tab: 'folder', octagon: 'octagon', triangle: 'triangle', box3d: 'cube',
 };
+
+/** Outlines DOT names differently, or draws as a rounded box. */
+const SHAPE_NAMES: Readonly<Record<string, { shape: string; rounded?: boolean }>> = {
+  stadium: { shape: 'box', rounded: true }, roundRect: { shape: 'box', rounded: true }, trapezoid: { shape: 'trapezium' },
+  cube: { shape: 'box3d' }, doubleEllipse: { shape: 'doublecircle' },
+};
+
+/** The outlines DOT has a shape of the same name for. */
+const SAME_NAMES: ReadonlySet<string> = new Set([
+  'diamond', 'ellipse', 'hexagon', 'parallelogram', 'cylinder', 'note', 'folder', 'octagon', 'triangle',
+]);
 
 /** The outline a shape and style draw as, or `null` for a shape the diagram has none for. */
 export function outlineOf(shape: string, styles: readonly string[]): Outline | null {
@@ -56,22 +68,23 @@ export function outlineOf(shape: string, styles: readonly string[]): Outline | n
   return outline === 'rect' && styles.includes('rounded') ? 'stadium' : outline;
 }
 
-/** The shape and the style word an outline writes as; a drawn path as a box. */
-export function shapeOf(outline: Outline | undefined): { shape: string; rounded?: boolean } {
+/** The shape and the style word an outline writes as; a drawn path as a box,
+ *  and a name DOT has no shape for as a box marked `missing`. */
+export function shapeOf(outline: Outline | undefined): { shape: string; rounded?: boolean; missing?: true } {
   if (outline === undefined || typeof outline !== 'string' || outline === 'rect') return { shape: 'box' };
-  if (outline === 'stadium') return { shape: 'box', rounded: true };
-  if (outline === 'trapezoid') return { shape: 'trapezium' };
-  return { shape: outline };
+  return SHAPE_NAMES[outline] ?? (SAME_NAMES.has(outline) ? { shape: outline } : { shape: 'box', missing: true });
 }
 
 const ARROWS: Readonly<Record<string, MarkerRef | null>> = {
   normal: 'arrow', inv: 'arrow', none: null, dot: 'circle', odot: 'circle', diamond: 'diamond', odiamond: 'diamond-hollow',
-  box: 'square', obox: 'square', tee: 'bar', empty: 'arrow-open', onormal: 'arrow-open', vee: 'arrow-concave',
+  box: 'square', obox: 'square', tee: 'bar', empty: 'arrow-open', onormal: 'triangle-hollow', vee: 'arrow-concave',
+  crow: 'crow-many', teetee: 'crow-one', teeodot: 'crow-zero-one', crowtee: 'crow-one-many', crowodot: 'crow-zero-many',
 };
 
 const ARROW_NAMES: Readonly<Record<string, string>> = {
   arrow: 'normal', 'arrow-open': 'empty', 'arrow-concave': 'vee', diamond: 'diamond', 'diamond-hollow': 'odiamond',
-  circle: 'dot', square: 'box', bar: 'tee',
+  circle: 'dot', square: 'box', bar: 'tee', 'triangle-hollow': 'onormal',
+  'crow-many': 'crow', 'crow-one': 'teetee', 'crow-zero-one': 'teeodot', 'crow-one-many': 'crowtee', 'crow-zero-many': 'crowodot',
 };
 
 /** The marker an arrowhead name draws: `undefined` for a name the diagram has none for. */

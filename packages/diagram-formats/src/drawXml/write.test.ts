@@ -163,4 +163,16 @@ describe('writing what the format cannot carry', () => {
     expect(geometry(out, 'a').width).toBeGreaterThan(0);
     expect(geometry(out, 'a').y).not.toBe(geometry(out, 'b').y);
   });
+
+  it('round-trips the storage and figure outlines, and the crow\'s-foot and hollow-triangle heads', async () => {
+    const OUTLINES = ['roundRect', 'cylinder', 'document', 'note', 'cloud', 'triangle', 'cube', 'folder', 'actor', 'doubleEllipse'] as const;
+    const MARKERS = ['triangle-hollow', 'crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many'] as const;
+    const doc: DiagramDocument = { pages: [{ id: 'p', width: 900, height: 200, data: {
+      nodes: OUTLINES.map((outline, i) => ({ id: outline, lines: [outline], outline, at: { x: i * 100, y: 0 }, width: 80, height: 60 })),
+      edges: MARKERS.map((m, i) => ({ id: m, from: OUTLINES[i]!, to: OUTLINES[i + 1]!, colors: { markerEnd: m } })),
+    } }] };
+    const back = (await DRAW_XML.read!(DRAW_XML.write!(doc).text)).document.pages[0]!.data;
+    expect(back.nodes.map((n) => n.outline)).toEqual([...OUTLINES]);
+    expect(back.edges.map((e) => e.colors?.markerEnd)).toEqual([...MARKERS]);
+  });
 });

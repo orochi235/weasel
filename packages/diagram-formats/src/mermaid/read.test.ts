@@ -22,11 +22,13 @@ describe('reading Mermaid', () => {
     const outlines = Object.fromEntries(document.pages[0]!.data.nodes.map((n) => [n.id, n.outline]));
     expect(outlines).toEqual({
       start: 'stadium', check: 'diamond', pick: 'rect', wait: 'ellipse', pack: 'hexagon', label: 'parallelogram',
-      ship: 'trapezoid', done: 'rect', db: 'rect',
+      ship: 'trapezoid', done: 'rect', db: 'cylinder',
     });
-    expect(warnings).toContain('Mermaid shapes read as rectangles: cylinder.');
-    expect(page('flowchart TD\nA(round) & B@{ shape: diam, label: "Meta" } & C@{ shape: cloud }').data.nodes.map((n) => [n.outline, n.lines]))
-      .toEqual([['stadium', ['round']], ['diamond', ['Meta']], ['rect', ['C']]]);
+    expect(warnings.some((w) => w.startsWith('Mermaid shapes read as rectangles'))).toBe(false);
+    const meta = readMermaid('flowchart TD\nA(round) & B@{ shape: diam, label: "Meta" } & C@{ shape: cloud } & D@{ shape: bolt }');
+    expect(meta.document.pages[0]!.data.nodes.map((n) => [n.outline, n.lines]))
+      .toEqual([['roundRect', ['round']], ['diamond', ['Meta']], ['cloud', ['C']], ['rect', ['D']]]);
+    expect(meta.warnings).toContain('Mermaid shapes read as rectangles: bolt.');
   });
 
   it('reads text: quoted, with entities and line breaks, and the id when there is none', () => {
@@ -83,7 +85,6 @@ describe('reading Mermaid', () => {
   it('warns for each construct a diagram does not hold', () => {
     expect(readMermaid(FLOW).warnings).toEqual([
       'Mermaid configuration directives were dropped.',
-      'Mermaid shapes read as rectangles: cylinder.',
       'Mermaid statements a diagram does not hold were dropped: click.',
       'Mermaid subgraph directions were dropped; the page runs one way.',
       'Mermaid style properties a diagram does not hold were dropped: font-size.',
