@@ -24,7 +24,7 @@ import { StylePanel } from './theme/StylePanel';
 import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
 import { ThemePanel } from './theme/ThemePanel';
 import {
-  AvoidRoutingPublisher, ContainerDropPublisher, HopsPublisher, StencilInsertPublisher, useChartDiagram,
+  AvoidRoutingPublisher, BodyFollowerPublisher, ContainerDropPublisher, HopsPublisher, StencilInsertPublisher, useChartDiagram,
   WaypointFollowerPublisher,
 } from './useChartDiagram';
 import { useChartSnap } from './useChartSnap';
@@ -124,6 +124,7 @@ export function ChartWorkspace(): ReactElement {
             >
               <StencilInsertPublisher theme={theme} />
               <WaypointFollowerPublisher scene={scene} />
+              <BodyFollowerPublisher scene={scene} />
               <AvoidRoutingPublisher scene={scene} />
               <HopsPublisher scene={scene} />
               <ContainerDropPublisher scene={scene} />

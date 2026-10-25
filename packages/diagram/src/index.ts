@@ -345,3 +345,6 @@ export { FLOWCHART_GROUP } from './stencils/flowchart';
 export { CONTAINERS_GROUP } from './stencils/containers';
 export { layoutDiagram } from './layoutAction';
 export type { LayoutDiagramOptions } from './layoutAction';
+export { DIVIDER_HEIGHT } from './body';
+export type { BodyDivider, BodyLayout } from './types';
+export { bodyFollower } from './bodyFollower';
