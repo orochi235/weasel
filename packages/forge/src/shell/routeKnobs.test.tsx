@@ -1,6 +1,6 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../story/define';
 import type { IndexEntry } from '../story/types';
@@ -100,12 +100,12 @@ describe('knobs in the URL', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
     // The fold mark: the folder's own row would open its index page in the trial.
-    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(folder.querySelector('.fg-tree__fold')!);
+    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(folder.querySelector('[data-tree-twisty]')!);
     // Picking an open story scrolls its trial into view, which jsdom has no method for.
     const proto = Element.prototype as { scrollIntoView?: () => void };
     proto.scrollIntoView = () => {};
     try {
-      fireEvent.click(screen.getByRole('treeitem', { name: 'A' }));
+      fireEvent.click(within(screen.getByRole('treeitem', { name: 'A' })).getByText('A'));
       await waitFor(() => expect(location.hash).toBe('#/x--a?label=Save'));
       await shows('Save/4/false');
     } finally {
@@ -130,11 +130,11 @@ describe('knobs in the URL', () => {
     renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" importers={{ '/x.stories.tsx': () => pending }} storage={storage} />);
     fireEvent.click(await screen.findByRole('radio', { name: 'Tree' }, { timeout: 5000 }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
-    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(folder.querySelector('.fg-tree__fold')!);
+    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(folder.querySelector('[data-tree-twisty]')!);
     const proto = Element.prototype as { scrollIntoView?: () => void };
     proto.scrollIntoView = () => {};
     try {
-      fireEvent.click(screen.getByRole('treeitem', { name: 'A' }));
+      fireEvent.click(within(screen.getByRole('treeitem', { name: 'A' })).getByText('A'));
       expect(screen.queryByTestId('story')).toBeNull();
       await act(async () => {
         load();

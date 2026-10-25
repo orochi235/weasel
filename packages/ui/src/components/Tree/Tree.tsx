@@ -16,7 +16,7 @@ import { TreeDragGhost } from './TreeGhost';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Tree.module.css';
 import { handleMoveKey } from './treeKeyboardMove';
-import { TreeRowLead } from './TreeRowLead';
+import { TreeRowBox, TreeRowLead } from './TreeRowLead';
 import type { TreeNode, TreeProps } from './treeTypes';
 import { nodeById } from './treeMoves';
 import { textOf, useControlledSet } from './treeUtils';
@@ -55,7 +55,11 @@ const NO_MODS: PressModifiers = { shiftKey: false, ctrlKey: false, metaKey: fals
  *
  * **Activating** a row — click, Enter, Space — toggles it if it is a branch,
  * selects it under `selectionMode`, and calls `onAction`. Clicking the twisty
- * only toggles.
+ * only toggles. A row with an `href` is a link as well: Cmd, Ctrl and Alt
+ * clicks on it, and middle clicks, are the browser's, not activations.
+ *
+ * **Sizing.** `--wzl-tree-row-h` sets every row's height, `--wzl-control-h`
+ * when unset; `--wzl-tree-font-size` sets its text.
  *
  * **Filtering** is the consumer's: narrow `nodes` with `filterTree`, and pass
  * `treeBranchIds` of the result as `expandedIds` so every match shows.
@@ -175,12 +179,8 @@ export const Tree = forwardRef(function Tree(
 
   const tipNode = rowTip.tip && !drag.state.dragging ? visible[indexOf.get(rowTip.tip.id) ?? -1]?.node : undefined;
 
-  const onRowClick = (node: TreeNode) => (e: MouseEvent<HTMLDivElement>) => activate(node, modsOf(e));
-
-  const onTwistyClick = (node: TreeNode) => (e: MouseEvent<HTMLSpanElement>) => {
-    e.stopPropagation();
-    toggle(node);
-  };
+  const onRowClick = (node: TreeNode) => (e: MouseEvent<HTMLElement>) => activate(node, modsOf(e));
+  const onTwistyClick = (node: TreeNode) => () => toggle(node);
 
   let seq = 0;
   const renderLevel = (list: readonly TreeNode[], level: number): ReactNode =>
@@ -202,6 +202,7 @@ export const Tree = forwardRef(function Tree(
           aria-expanded={branch ? open : undefined}
           aria-selected={selectable ? selected.has(node.id) : undefined}
           aria-disabled={node.disabled || undefined}
+          aria-current={node.current ? 'true' : undefined}
           aria-labelledby={trailingId ? `${labelId} ${trailingId}` : labelId}
           aria-description={typeof node.tooltip === 'string' ? node.tooltip : undefined}
           data-tree-id={node.id}
@@ -218,9 +219,9 @@ export const Tree = forwardRef(function Tree(
           }}
           onBlur={(e) => { if (e.target === e.currentTarget) rowTip.clear(); }}
         >
-          <div
-            className={s.row}
-            onClick={onRowClick(node)}
+          <TreeRowBox
+            className={s.row} href={node.href} draggable={onMove ? false : undefined}
+            onPress={onRowClick(node)}
             onPointerEnter={node.tooltip != null ? (e) => rowTip.rest(node.id, e.currentTarget) : undefined}
             onPointerLeave={node.tooltip != null ? rowTip.clear : undefined}
             onPointerDown={(e) => {
@@ -231,7 +232,7 @@ export const Tree = forwardRef(function Tree(
             <TreeRowLead foldBy={foldBy} branch={branch} open={open} leading={node.leading} onToggle={onTwistyClick(node)} />
             <span id={labelId} className={s.label}>{node.label}</span>
             {trailingId && <span id={trailingId} className={s.trailing}>{node.trailing}</span>}
-          </div>
+          </TreeRowBox>
           {open && node.children!.length > 0 && (
             <ul role="group" className={s.group}>
               {renderLevel(node.children!, level + 1)}

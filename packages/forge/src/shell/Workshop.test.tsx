@@ -108,7 +108,7 @@ describe('Workshop', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
     if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
-    fireEvent.click(screen.getByRole('treeitem', { name: 'B' }));
+    fireEvent.click(within(screen.getByRole('treeitem', { name: 'B' })).getByText('B'));
     await waitFor(() => expect(location.hash).toBe('#/x--b'));
     await act(async () => {});
     expect(screen.getAllByRole('region', { name: 'Trial X > B' })).toHaveLength(1);
@@ -121,7 +121,7 @@ describe('Workshop', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
     if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
-    fireEvent.click(screen.getByRole('treeitem', { name: 'B' }));
+    fireEvent.click(within(screen.getByRole('treeitem', { name: 'B' })).getByText('B'));
     await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > B' })).toBeInTheDocument());
     act(() => history.back());
     await waitFor(() => expect(location.hash).toBe('#/x--a'));
@@ -153,7 +153,7 @@ describe('Workshop', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: /^X/ });
     if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
-    fireEvent.click(screen.getByRole('treeitem', { name: 'B' }), { shiftKey: true });
+    fireEvent.click(within(screen.getByRole('treeitem', { name: 'B' })).getByText('B'), { shiftKey: true });
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(2));
     const frames = [...container.querySelectorAll<HTMLIFrameElement>('iframe.fg-frame-view')].map(connectFrame);
     expect(frames).toHaveLength(2);

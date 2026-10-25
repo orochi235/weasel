@@ -253,10 +253,12 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-titlebar-label-surface', type: "color", group: "titlebar", defaultValue: "transparent", description: "Background behind a `titlebar` frame’s title alone, for a strip drawn in stripes that must not run through the letters.", hook: true },
   { name: '--wzl-titlebar-surface', type: "color", group: "titlebar", defaultValue: "var(--_edge)", description: "Background of the strip a `titlebar` frame carries its title in: a color, a gradient, or stripes. Unset, the frame’s edge color. A frame that names a tint paints the tint instead.", hook: true },
   { name: '--wzl-titlebar-weight', type: "fontWeight", group: "titlebar", defaultValue: "var(--wzl-font-weight-bold)", description: "Font weight of a `titlebar` frame’s title.", hook: true },
+  { name: '--wzl-tree-current', type: "color", group: "tree", defaultValue: "var(--wzl-accent-fg)", description: "Text color of the Tree row marked `current`, the page or item being shown.", hook: true },
   { name: '--wzl-tree-fold-size', type: "dimension", group: "tree", defaultValue: "16px", description: "Size of the leading glyph a Tree folds a branch by, where its branches fold by their glyphs.", hook: true },
   { name: '--wzl-tree-font-size', type: "dimension", group: "tree", defaultValue: "var(--wzl-font-size-sm)", description: "Size of a Tree row’s text.", hook: true },
   { name: '--wzl-tree-guide', type: "color", group: "tree", defaultValue: "var(--wzl-fg-subtle)", description: "Color of the bracket a Tree draws down a branch.", hook: true },
   { name: '--wzl-tree-indent', type: "dimension", group: "tree", defaultValue: "calc(var(--wzl-control-h-xs) + var(--wzl-space-2))", description: "Indent of each Tree level. Unset, it is one twisty and one gap, so a child’s twisty sits under its parent’s label.", hook: true },
   { name: '--wzl-tree-leaf-indent', type: "dimension", group: "tree", defaultValue: "0", description: "How far in from its branches' glyphs a Tree with guides sets a row that folds nothing.", hook: true },
+  { name: '--wzl-tree-row-h', type: "dimension", group: "tree", defaultValue: "var(--wzl-control-h)", description: "Height of every row in a Tree below the container that sets it, and of its drag ghost. Unset, the control height.", hook: true },
   { name: '--wzl-tree-selected', type: "color", group: "tree", defaultValue: "var(--wzl-border)", description: "Background of a selected Tree row.", hook: true },
 ];

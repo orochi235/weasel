@@ -385,5 +385,16 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     type: 'color',
     value: '#a48bd4',
     description: 'Color of the dashed frame a canvas draws around the group it is working inside. Read off the canvas element, so it can be set on it or anything above it.',
+  },  {
+    name: 'tree-row-h',
+    type: 'dimension',
+    value: 'var(--wzl-control-h)',
+    description: 'Height of every row in a Tree below the container that sets it, and of its drag ghost. Unset, the control height.',
+  },
+  {
+    name: 'tree-current',
+    type: 'color',
+    value: 'var(--wzl-accent-fg)',
+    description: 'Text color of the Tree row marked `current`, the page or item being shown.',
   },
 ];

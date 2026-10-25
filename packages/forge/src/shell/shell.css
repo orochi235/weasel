@@ -179,69 +179,17 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-.fg-tree__items,
-.fg-tree__group {
-  display: flex;
-  flex-direction: column;
-}
-
 .fg-tree__items {
+  --wzl-tree-current: var(--wzl-secondary-fg);
+  --wzl-tree-row-h: 25px;
   flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
-  font-size: var(--wzl-font-size-sm);
-}
-
-.fg-tree__group {
-  padding-inline-start: var(--wzl-space-sm);
-}
-
-.fg-tree__node {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  outline: none;
-}
-
-.fg-tree__item {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-xs);
-  padding: calc(var(--wzl-space-xs) / 2) var(--wzl-space-xs);
-  border-radius: var(--wzl-radius-sm);
-  overflow: hidden;
-  color: inherit;
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-/* text-overflow does not reach a flex container's anonymous text box, so the label clips itself. */
-.fg-tree__label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.fg-tree__item:hover {
-  background: var(--wzl-surface-hover);
-}
-
-/* Sits after the label, which is the element that shrinks, so the tag keeps
-   its width and the rows' tags line up down the column. */
-.fg-tree__item > .fg-tree__tag {
-  flex: none;
-  margin-inline-start: auto;
 }
 
 .fg-tree__tag,
 .fg-tree__lab {
   --badge-font-size: var(--wzl-font-size-2xs);
-}
-
-.fg-tree__lab {
-  flex: none;
 }
 
 .fg-tree__libraries {
@@ -264,30 +212,6 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-/* A folder item holds its group, so its ring goes on its own row rather than around the subtree. */
-.fg-tree__story:focus-visible,
-.fg-tree__node:focus-visible > .fg-tree__folder {
-  outline: var(--wzl-line-width) solid var(--wzl-accent);
-  outline-offset: calc(-1 * var(--wzl-line-width));
-}
-
-.fg-tree__item[aria-current='true'],
-.fg-tree__node[aria-current='true'] > .fg-tree__folder {
-  color: var(--wzl-secondary-fg);
-}
-
-/* Padded out to a hit target and pulled back by the same amount, except on the label's side, where the padding
-   widens the gap to the label. */
-.fg-tree__fold {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: calc(-1 * var(--wzl-space-xs));
-  margin-inline-end: 0;
-  padding: var(--wzl-space-xs);
-}
-
 .fg-tree__folder {
   font-weight: calc(var(--wzl-font-weight-normal) + 100);
 }
@@ -295,8 +219,6 @@
 .fg-tree__story {
   /* The CSS floor, which the browser rounds up to the lightest weight the face has. */
   font-weight: 100;
-  /* Clears the folder rows' 13px fold mark, so a story's label lines up with its folder's. */
-  padding-inline-start: calc(var(--wzl-space-xs) * 3 + 13px);
 }
 
 .lk-trial.fg-flash {

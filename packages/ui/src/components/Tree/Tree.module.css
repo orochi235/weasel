@@ -82,7 +82,7 @@
   align-items: center;
   gap: var(--wzl-space-2);
   padding: 0 var(--wzl-space-2) 0 var(--tree-gutter);
-  height: var(--wzl-control-h);
+  height: var(--wzl-tree-row-h, var(--wzl-control-h));
   font-size: var(--wzl-tree-font-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
   border-radius: var(--wzl-radius-sm);
@@ -102,6 +102,15 @@
 
 .item[aria-selected='true'] > .row {
   background: var(--wzl-tree-selected, var(--wzl-border));
+}
+
+.row[href] {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.item[aria-current='true'] > .row {
+  color: var(--wzl-tree-current, var(--wzl-accent-fg));
 }
 
 .item[data-muted] > .row {
@@ -205,7 +214,7 @@
 .tree[data-drag-effect='link'] .row { cursor: alias; }
 
 .ghostRow {
-  height: var(--wzl-control-h);
+  height: var(--wzl-tree-row-h, var(--wzl-control-h));
   display: flex;
   align-items: center;
   padding-inline: var(--wzl-space-2);
