@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { boxPoint } from '../Along/boxPoint';
 import { placeOnRun } from '../Along/placeOnRun';
 import { lineShape, trackRun, type Point, type TrackRun } from '@weasel-js/geom';
+import { layoutBox } from './useBoxes';
 
 /** Where a client point falls on a slider's value span. */
 export interface SliderMeasure {
@@ -33,18 +34,21 @@ const OPEN = { open: true };
 /** Band thicknesses off the centerline past which a drag drops a thumb. */
 export const DROP_OFF = 1.5;
 
-/** A straight, left-to-right geometry measured against the rail's box on every call. */
-export function lineGeometry(rail: () => HTMLElement | null): SliderGeometry {
+/** A straight, left-to-right geometry along the rail's centerline, in the rail's own px. A pointer is mapped through
+ *  the screen matrix of `frame`, an SVG drawn across the rail, so a rotated ancestor maps it back. */
+export function lineGeometry(rail: () => HTMLElement | null, frame: () => SVGGraphicsElement | null): SliderGeometry {
   return {
     curved: false,
     place: (g) => ({ left: `${g * 100}%` }),
     measure: (clientX, clientY) => {
       const el = rail();
       if (!el) return null;
-      const { left, top, width, height } = el.getBoundingClientRect();
-      const y = top + height / 2;
-      const run = trackRun(lineShape({ x: left, y }, { x: left + width, y }));
-      const p = { x: clientX, y: clientY };
+      // Without a screen matrix (jsdom) the rail's client rect is the frame, as it is for any untransformed rail.
+      const f = frame();
+      const matrixed = f?.getScreenCTM?.() ? f : null;
+      const p = boxPoint(matrixed ?? el, clientX, clientY);
+      const { width, height } = matrixed ? layoutBox(el) : el.getBoundingClientRect();
+      const run = trackRun(lineShape({ x: 0, y: height / 2 }, { x: width, y: height / 2 }));
       const { f: g, dist } = run.nearest(p);
       return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: width, thickness: height };
     },

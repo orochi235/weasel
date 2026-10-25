@@ -637,12 +637,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Hebrew or Arabic curved bar puts item 1 at the left end while the same bar laid out straight starts on the
   right. Reading order needs an inline direction input, which bears on the `'reading' | 'track'` decision above.
 
-- **(P3) A straight `Slider` misreads a press under a rotated ancestor.** `lineGeometry` in
-  `sliderGeometry.ts` lays its line across the rail's client rect, which a rotation turns into the bounding box of
-  the turned rail: under `rotate(90deg)` a press at three quarters of the rail reads 50 (seen in Chromium,
-  2026-10-22). A scale is fine. The curved geometry maps pointers through `boxPoint` in `Along/boxPoint.ts`, which
-  needs an SVG drawn across the box; the rail is HTML.
-
 - **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
   `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
   (median of 12) with a node property schema open: `IconAttrField`'s grid of every registered icon

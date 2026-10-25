@@ -12,6 +12,8 @@ export interface SliderGeometryArgs {
   /** The first thumb's untransformed width in px. */
   thumbLength: number;
   rail: () => HTMLElement | null;
+  /** On a line, an SVG drawn across the rail: what pointers are measured through. */
+  railFrame: () => SVGGraphicsElement | null;
   /** On a curve, the band's face: what pointers are measured through. */
   band: () => SVGGraphicsElement | null;
 }
@@ -19,8 +21,8 @@ export interface SliderGeometryArgs {
 /** The slider's geometry, one identity per shape, fit and thumb length, and along a shape the value span it runs over. */
 export function useSliderGeometry(args: SliderGeometryArgs): { geometry: SliderGeometry; run: TrackRun | null } {
   const { shape, thumbFit, thumbLength } = args;
-  const [els] = useState(() => ({ rail: args.rail, band: args.band }));
-  const [line] = useState(() => lineGeometry(els.rail));
+  const [els] = useState(() => ({ rail: args.rail, railFrame: args.railFrame, band: args.band }));
+  const [line] = useState(() => lineGeometry(els.rail, els.railFrame));
   const run = useMemo(() => {
     if (!shape) return null;
     if (thumbFit === 'overhang') return trackRun(shape);
