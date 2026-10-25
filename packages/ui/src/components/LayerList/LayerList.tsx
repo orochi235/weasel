@@ -4,7 +4,6 @@ import {
   type RefCallback,
   useCallback,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -12,6 +11,7 @@ import { useLatest } from '@weasel-js/core';
 import { dlog } from '../../dlog';
 import { intentOf, select, type SelectPolicy } from '@weasel-js/select';
 import { LIST_KEYS, type PressModifiers, selectModifiers, useReorderDragList } from '../../useReorderDragList';
+import { useRowNavigation } from '../../useRowNavigation';
 import { DragGhost } from '../DragGhost';
 import rows from '../ItemList/ItemList.module.css';
 import { PropertyGroup, PropertyList } from '../Properties';
@@ -73,10 +73,8 @@ export interface Shared {
 interface RowKeys {
   tabStop: string | undefined;
   register: (id: string) => (el: HTMLElement | null) => void;
-  onKeyDown: (item: LayerListItem, parentId: string | null) => (e: KeyboardEvent<HTMLElement>) => void;
+  onKeyDown: (item: LayerListItem) => (e: KeyboardEvent<HTMLElement>) => void;
   onFocus: (id: string) => void;
-  /** A row's own control is about to remove it. */
-  onRemoving: (id: string) => void;
 }
 
 interface VisibleRow {
@@ -151,113 +149,42 @@ export function LayerList(props: LayerListProps) {
   walk(items, null, 1);
   const order = useLatest(visible.map((v) => v.item.id));
 
-  const rowEls = useRef(new Map<string, HTMLElement>());
-  const [focusId, setFocusId] = useState<string | null>(null);
-  const pendingFocus = useRef<string | null>(null);
-  const anchor = useRef<string | null>(null);
+  const byId = new Map(visible.map((v) => [v.item.id, v]));
   const nudgers = useRef(new Map<string | null, (id: string, delta: -1 | 1) => boolean>()).current;
-  useLayoutEffect(() => {
-    const id = pendingFocus.current;
-    if (id === null) return;
-    pendingFocus.current = null;
-    const el = rowEls.current.get(id);
-    if (el && document.activeElement !== el) el.focus();
-  });
-  // A row removed from inside itself takes focus with it; the row that takes its place gets it.
-  const removing = useRef<{ id: string; at: number } | null>(null);
-  useLayoutEffect(() => {
-    const gone = removing.current;
-    if (!gone) return;
-    if (visible.some((v) => v.item.id === gone.id)) {
-      if (!rowEls.current.get(gone.id)?.contains(document.activeElement)) removing.current = null;
-      return;
-    }
-    removing.current = null;
-    const next = visible[Math.min(gone.at, visible.length - 1)];
-    if (next) rowEls.current.get(next.item.id)?.focus();
-  });
-
   const selectedIds = props.selectedIds ?? [];
-  const tabStop = visible.some((v) => v.item.id === focusId)
-    ? (focusId ?? undefined)
-    : (visible.find((v) => selectedIds.includes(v.item.id)) ?? visible[0])?.item.id;
-
-  const focusRow = (id: string) => {
-    pendingFocus.current = id;
-    setFocusId(id);
-  };
   const selectRange = (to: string) => {
     const before = { ids: live.current.selectedIds ?? [], anchor: anchor.current };
     const next = select(before, to, 'range', { order: order.current, eligible: unlocked() });
     anchor.current = next.anchor;
     if (next !== before) live.current.onSelect?.([...next.ids]);
   };
+  const nav = useRowNavigation<HTMLElement>({
+    rows: visible.map((v) => ({ id: v.item.id, parentId: v.parentId })),
+    isSelected: (id) => selectedIds.includes(id),
+    ...(props.onSelect ? { onExtend: selectRange } : {}),
+    onNudge: (id, delta) => nudgers.get(byId.get(id)?.parentId ?? null)?.(id, delta) ?? false,
+    onActivate: (id, mods) => {
+      const v = byId.get(id);
+      if (v) press(v.item, mods);
+    },
+    tree: {
+      isBranch: (id) => (byId.get(id)?.item.children?.length ?? 0) > 0,
+      isOpen: (id) => (byId.get(id)?.item.children?.length ?? 0) > 0 && !collapsed.has(id),
+      toggle: (id) => {
+        toggle(id);
+        return true;
+      },
+    },
+  });
+  const anchor = nav.anchor;
 
   const keys: RowKeys = {
-    tabStop,
-    register: (id) => (el) => {
-      if (el) rowEls.current.set(id, el);
-      else rowEls.current.delete(id);
-    },
-    onFocus: (id) => {
-      setFocusId(id);
-      anchor.current ??= id;
-    },
-    onRemoving: (id) => {
-      const at = visible.findIndex((v) => v.item.id === id);
-      if (at >= 0 && rowEls.current.get(id)?.contains(document.activeElement)) removing.current = { id, at };
-    },
-    onKeyDown: (item, parentId) => (e) => {
+    tabStop: nav.tabStop,
+    register: nav.rowRef,
+    onFocus: nav.onFocus,
+    onKeyDown: (item) => (e) => {
       // Keys on a control inside the row are the control's.
-      if (e.target !== e.currentTarget) return;
-      const at = visible.findIndex((v) => v.item.id === item.id);
-      const go = (index: number) => {
-        const next = visible[Math.max(0, Math.min(visible.length - 1, index))];
-        if (!next) return;
-        focusRow(next.item.id);
-        if (e.shiftKey && props.onSelect) selectRange(next.item.id);
-        else anchor.current = next.item.id;
-      };
-      const branch = (item.children?.length ?? 0) > 0;
-      const open = branch && !collapsed.has(item.id);
-      switch (e.key) {
-        case 'ArrowDown':
-        case 'ArrowUp': {
-          const delta = e.key === 'ArrowDown' ? 1 : -1;
-          if (e.altKey) {
-            if (nudgers.get(parentId)?.(item.id, delta)) pendingFocus.current = item.id;
-          } else {
-            go(at + delta);
-          }
-          break;
-        }
-        case 'Home':
-          go(0);
-          break;
-        case 'End':
-          go(visible.length - 1);
-          break;
-        case 'ArrowRight':
-          if (branch && !open) toggle(item.id);
-          else if (open) go(at + 1);
-          else return;
-          break;
-        case 'ArrowLeft':
-          if (open) toggle(item.id);
-          else {
-            const parent = visible.findIndex((v) => v.item.id === parentId);
-            if (parent < 0) return;
-            go(parent);
-          }
-          break;
-        case 'Enter':
-        case ' ':
-          press(item, { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey });
-          break;
-        default:
-          return;
-      }
-      e.preventDefault();
+      if (e.target === e.currentTarget) nav.onKeyDown(item.id, e);
     },
   };
 
@@ -422,7 +349,6 @@ function Level({ items, parentId, shared, path, level, grid, name }: LevelProps)
         <Row
           item={item}
           shared={shared}
-          parentId={parentId}
           level={level}
           ghosted={ghosted}
           selected={isSelected}

@@ -7,7 +7,7 @@ import { Fragment, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { useReorderDragList } from '../../useReorderDragList';
 import { Disclosure } from '../Disclosure';
-import { ReorderHandle } from './ReorderHandle';
+import { ReorderHandle, type ReorderHandleProps } from '../ReorderHandle/ReorderHandle';
 import s from './DataGrid.module.css';
 
 /**
@@ -39,8 +39,8 @@ export interface DataGridProps<Row extends { id: string }> {
   /** Enable drag handles in a leading column. Receives the reorder spec
    *  (the existing `useReorderDragList` semantics — see weasel-ui). */
   onReorder?: (ids: string[], targetIndex: number) => void;
-  /** What a row is called, for its drag handle's accessible name ("Reorder
-   *  <label>"). Without it a handle is named for the row's position. */
+  /** What a row is called, for its drag handle's accessible name ("Drag to
+   *  reorder <label>"). Without it a handle is named for the row's position. */
   rowLabel?: (row: Row) => string;
   /** Empty-state row text. Default `'—'`. */
   empty?: ReactNode;
@@ -211,7 +211,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                   } : undefined}
                 >
                   {dragEnabled && (
-                    <ReorderHandle
+                    <HandleCell
                       label={rowLabel?.(row) ?? `row ${i + 1}`}
                       onPointerDown={drag.rowProps(row.id, i).onPointerDown}
                       onNudge={(delta) => drag.nudge(row.id, i, delta)}
@@ -250,5 +250,14 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** A row's leading cell, holding its drag handle. */
+function HandleCell(props: Pick<ReorderHandleProps, 'label' | 'onPointerDown' | 'onNudge'>) {
+  return (
+    <td className={s.handleCell}>
+      <ReorderHandle className={s.handle} {...props} />
+    </td>
   );
 }

@@ -37,25 +37,9 @@
 
 .handle {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   align-self: stretch;
   padding: 0 var(--wzl-space-1);
-  border: 0;
   border-radius: var(--wzl-radius-sm);
-  background: transparent;
-  color: var(--wzl-fg-subtle);
-  cursor: grab;
-  touch-action: none;
-}
-
-.handle:active {
-  cursor: grabbing;
-}
-
-.handle:disabled {
-  cursor: default;
 }
 
 .input {

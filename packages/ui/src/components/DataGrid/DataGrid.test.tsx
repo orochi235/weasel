@@ -74,7 +74,7 @@ describe('DataGrid reorder', () => {
     const onReorder = vi.fn();
     const { container } = render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={onReorder} />);
     stubGeometry(container);
-    const handles = screen.getAllByRole('button', { name: /^Reorder / });
+    const handles = screen.getAllByRole('button', { name: /^Drag to reorder / });
     // Grab row 2 ('c', y 90..120) and drop it on the upper half of row 0 ('a', y 30..60).
     fireEvent(handles[2], pointer('pointerdown', 105));
     fireEvent(handles[2], pointer('pointermove', 35));
@@ -86,7 +86,7 @@ describe('DataGrid reorder', () => {
     const onReorder = vi.fn();
     const { container } = render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={onReorder} />);
     stubGeometry(container);
-    const handles = screen.getAllByRole('button', { name: /^Reorder / });
+    const handles = screen.getAllByRole('button', { name: /^Drag to reorder / });
     fireEvent(handles[0], pointer('pointerdown', 45));
     fireEvent(handles[0], pointer('pointermove', 400));
     fireEvent(handles[0], pointer('pointerup', 400));
@@ -95,11 +95,16 @@ describe('DataGrid reorder', () => {
 
   it('names each handle for its row with rowLabel, and by position without it', () => {
     const { rerender } = render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={() => {}} rowLabel={(r) => r.name} />);
-    expect(screen.getAllByRole('button', { name: /^Reorder / }).map((b) => b.getAttribute('aria-label')))
-      .toEqual(['Reorder Alpha', 'Reorder Beta', 'Reorder Gamma']);
+    expect(screen.getAllByRole('button', { name: /^Drag to reorder / }).map((b) => b.getAttribute('aria-label')))
+      .toEqual(['Drag to reorder Alpha', 'Drag to reorder Beta', 'Drag to reorder Gamma']);
     rerender(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={() => {}} />);
-    expect(screen.getAllByRole('button', { name: /^Reorder / }).map((b) => b.getAttribute('aria-label')))
-      .toEqual(['Reorder row 1', 'Reorder row 2', 'Reorder row 3']);
+    expect(screen.getAllByRole('button', { name: /^Drag to reorder / }).map((b) => b.getAttribute('aria-label')))
+      .toEqual(['Drag to reorder row 1', 'Drag to reorder row 2', 'Drag to reorder row 3']);
+  });
+
+  it('names the keys that move a row on its handle', () => {
+    render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={() => {}} />);
+    expect(screen.getAllByRole('button', { name: /^Drag to reorder / })[0]).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
   });
 
   it('leaves the handle cell a plain cell, with the press on the button inside it', () => {
@@ -117,9 +122,9 @@ describe('DataGrid reorder', () => {
   it('moves a row one place with Alt+ArrowDown and Alt+ArrowUp on its handle', () => {
     const onReorder = vi.fn();
     render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={onReorder} rowLabel={(r) => r.name} />);
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Reorder Alpha' }), { key: 'ArrowDown', altKey: true });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Drag to reorder Alpha' }), { key: 'ArrowDown', altKey: true });
     expect(onReorder).toHaveBeenLastCalledWith(['a'], 2);
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Reorder Gamma' }), { key: 'ArrowUp', altKey: true });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Drag to reorder Gamma' }), { key: 'ArrowUp', altKey: true });
     expect(onReorder).toHaveBeenLastCalledWith(['c'], 1);
     expect(onReorder).toHaveBeenCalledTimes(2);
   });
@@ -127,16 +132,16 @@ describe('DataGrid reorder', () => {
   it('moves nothing for an arrow without Alt, or a row already at the end', () => {
     const onReorder = vi.fn();
     render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={onReorder} rowLabel={(r) => r.name} />);
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Reorder Alpha' }), { key: 'ArrowDown' });
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Reorder Alpha' }), { key: 'ArrowUp', altKey: true });
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Reorder Gamma' }), { key: 'ArrowDown', altKey: true });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Drag to reorder Alpha' }), { key: 'ArrowDown' });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Drag to reorder Alpha' }), { key: 'ArrowUp', altKey: true });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Drag to reorder Gamma' }), { key: 'ArrowDown', altKey: true });
     expect(onReorder).not.toHaveBeenCalled();
   });
 
   it('does not activate the row when a key lands on the handle', () => {
     const onRowClick = vi.fn();
     render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={() => {}} onRowClick={onRowClick} rowLabel={(r) => r.name} />);
-    const handle = screen.getByRole('button', { name: 'Reorder Alpha' });
+    const handle = screen.getByRole('button', { name: 'Drag to reorder Alpha' });
     fireEvent.keyDown(handle, { key: 'Enter' });
     fireEvent.click(handle);
     expect(onRowClick).not.toHaveBeenCalled();

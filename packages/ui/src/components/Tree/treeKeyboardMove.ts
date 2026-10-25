@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import type { TreeDropTarget } from '../../dropTarget';
+import { isNudgeChord } from '../../nudgeKey';
 import type { TreeNode } from './Tree';
 import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, parentsOf, type KeyboardMove } from './treeMoves';
 import type { TreeDragEffect } from './useTreeDrag';
@@ -21,7 +22,7 @@ interface MoveKeyCtx {
 
 /** Handle an Alt+arrow move on `nodeId`; returns true when the key was a move key (handled, default prevented). */
 export function handleMoveKey(e: KeyboardEvent<HTMLElement>, nodeId: string, ctx: MoveKeyCtx): boolean {
-  if (!e.altKey || e.metaKey || e.ctrlKey) return false;
+  if (!isNudgeChord(e)) return false;
   const dir = MOVE_KEYS[e.key];
   if (!dir) return false;
   e.preventDefault();

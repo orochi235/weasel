@@ -9,7 +9,7 @@ import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';
 import { FOCUS_DELAY } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
 import { DEFAULT_TTL_MS } from './components/Toast/queue';
-import { TYPEAHEAD_MS } from './components/Tree/useTypeahead';
+import { TYPEAHEAD_MS } from './useTypeahead';
 import { REST_MS } from './components/Tree/useRowTip';
 import { HOVER_EXPAND_MS } from './components/Tree/useTreeDrag';
 import { uiKitSettingsSchema } from './kitSettings';

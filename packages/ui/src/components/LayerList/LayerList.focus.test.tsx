@@ -40,6 +40,23 @@ describe('LayerList focus', () => {
     expect(document.activeElement).toBe(row('Beta'));
   });
 
+  it('keeps focus among the siblings when the last child of a group is removed', () => {
+    const drop = (list: LayerListItem[], id: string): LayerListItem[] =>
+      list.filter((it) => it.id !== id).map((it) => (it.children ? { ...it, children: drop(it.children, id) } : it));
+    function Nested(): ReactElement {
+      const [items, setItems] = useState<LayerListItem[]>([
+        { id: 'g', label: 'Group', children: [{ id: 'g1', label: 'One' }, { id: 'g2', label: 'Two' }] },
+        { id: 'z', label: 'Zed' },
+      ]);
+      return <LayerList items={items} onRemove={(id) => setItems((list) => drop(list, id))} />;
+    }
+    renderWithIcons(<Nested />);
+    const remove = screen.getByRole('button', { name: 'Remove Two' });
+    act(() => remove.focus());
+    fireEvent.click(remove);
+    expect(document.activeElement).toBe(row('One'));
+  });
+
   it('leaves focus alone when a row is removed by a press that never focused it', () => {
     renderWithIcons(<Removable initial={ABC} />);
     fireEvent.click(screen.getByRole('button', { name: 'Remove Beta' }));

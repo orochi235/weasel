@@ -251,11 +251,11 @@
     "longestFunction": 165
   },
   "packages/ui/src/components/ItemList/ItemList.tsx": {
-    "longestFunction": 225
+    "longestFunction": 184
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
-    "lines": 477,
-    "longestFunction": 204
+    "lines": 403,
+    "longestFunction": 134
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
     "longestFunction": 156
@@ -295,7 +295,7 @@
     "lines": 425
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "longestFunction": 285
+    "longestFunction": 210
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 143

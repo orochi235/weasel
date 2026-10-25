@@ -13,8 +13,8 @@ import {
 } from 'react';
 import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
 import { assignRef } from '@weasel-js/react';
-import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
-import { useRemovedRowFocus } from '../../useRemovedRowFocus';
+import { modsOf, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
+import { useRowNavigation } from '../../useRowNavigation';
 import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';
 
@@ -146,24 +146,28 @@ export const ItemList = forwardRef(function ItemList(
 
   /** The element of each row that takes focus: the row itself, or in a grid its label cell. */
   const targets = useRef(new Map<string, HTMLElement>());
-  const [focusId, setFocusId] = useState<string | null>(null);
-  const pendingFocus = useRef<string | null>(null);
-  const anchor = useRef<string | null>(null);
-  /** The row a range move is focusing, whose focus must not re-anchor. */
-  const extending = useRef<string | null>(null);
-
-  const { rowRef } = useRemovedRowFocus<HTMLDivElement>(rows, (id) => targets.current.get(id)?.focus());
-
-  const stopId = rows.some((r) => r.id === focusId)
-    ? focusId
-    : (rows.find((r) => r.selected) ?? rows[0])?.id;
-
-  useLayoutEffect(() => {
-    const id = pendingFocus.current;
-    if (id == null) return;
-    pendingFocus.current = null;
-    const el = targets.current.get(id);
-    if (el && document.activeElement !== el) el.focus();
+  const ranges = selection === 'multi' && onSelectRange !== undefined;
+  const nav = useRowNavigation<HTMLDivElement>({
+    rows,
+    isSelected: (id) => !!rows.find((r) => r.id === id)?.selected,
+    target: (id) => targets.current.get(id),
+    anchorOnFocus: true,
+    ...(ranges ? {
+      onExtend: (to: string, from: string) => {
+        let at = rows.findIndex((r) => r.id === nav.anchor.current);
+        if (at < 0) {
+          nav.anchor.current = from;
+          at = rows.findIndex((r) => r.id === from);
+        }
+        const end = rows.findIndex((r) => r.id === to);
+        onSelectRange(rows.slice(Math.min(at, end), Math.max(at, end) + 1).map((r) => r.id));
+      },
+    } : {}),
+    ...(onNudge ? { onNudge: (id: string, delta: -1 | 1) => onNudge(id, rows.findIndex((r) => r.id === id), delta) } : {}),
+    onActivate: (id, mods) => {
+      nav.anchor.current = id;
+      onActivate?.(id, rows.findIndex((r) => r.id === id), mods);
+    },
   });
 
   useLayoutEffect(() => {
@@ -183,31 +187,6 @@ export const ItemList = forwardRef(function ItemList(
     );
   }
 
-  const focusRow = (index: number) => {
-    const row = rows[Math.max(0, Math.min(rows.length - 1, index))];
-    if (row) targets.current.get(row.id)?.focus();
-  };
-
-  const ranges = selection === 'multi' && onSelectRange !== undefined;
-
-  /** Moves focus to `index`: a range from the anchor when `extend`, else a plain move. */
-  const moveTo = (from: ItemListRow, index: number, extend: boolean) => {
-    const to = Math.max(0, Math.min(rows.length - 1, index));
-    if (!extend || !ranges) {
-      focusRow(to);
-      return;
-    }
-    let at = rows.findIndex((r) => r.id === anchor.current);
-    if (at < 0) {
-      anchor.current = from.id;
-      at = rows.indexOf(from);
-    }
-    extending.current = rows[to]!.id;
-    focusRow(to);
-    extending.current = null;
-    onSelectRange(rows.slice(Math.min(at, to), Math.max(at, to) + 1).map((r) => r.id));
-  };
-
   const onKeyDown = (row: ItemListRow, i: number) => (e: KeyboardEvent<HTMLDivElement>) => {
     row.rowProps?.onKeyDown?.(e);
     if (e.defaultPrevented) return;
@@ -219,31 +198,13 @@ export const ItemList = forwardRef(function ItemList(
       : null;
     if (!onTarget && !controlCell?.contains(e.target as Node)) return;
 
+    if (onTarget && nav.onKeyDown(row.id, e)) return;
     switch (e.key) {
       case 'ArrowDown':
-      case 'ArrowUp': {
+      case 'ArrowUp':
+        // From a row's controls, Up and Down still move between rows.
         e.preventDefault();
-        const delta = e.key === 'ArrowDown' ? 1 : -1;
-        if (e.altKey && onNudge && onTarget) {
-          pendingFocus.current = row.id;
-          onNudge(row.id, i, delta);
-        } else {
-          moveTo(row, i + delta, e.shiftKey);
-        }
-        return;
-      }
-      case 'Home':
-      case 'End':
-        if (!onTarget) return;
-        e.preventDefault();
-        moveTo(row, e.key === 'Home' ? 0 : rows.length - 1, e.shiftKey);
-        return;
-      case 'Enter':
-      case ' ':
-        if (!onTarget) return;
-        e.preventDefault();
-        anchor.current = row.id;
-        onActivate?.(row.id, i, modsOf(e));
+        nav.go(row.id, i + (e.key === 'ArrowDown' ? 1 : -1), e.shiftKey);
         return;
       case 'ArrowRight':
       case 'ArrowLeft':
@@ -271,15 +232,13 @@ export const ItemList = forwardRef(function ItemList(
   const onClick = (row: ItemListRow, i: number) => (e: MouseEvent<HTMLDivElement>) => {
     row.rowProps?.onClick?.(e);
     if (e.defaultPrevented || isInControlWithin(e.target, e.currentTarget)) return;
-    anchor.current = row.id;
+    nav.anchor.current = row.id;
     onActivate?.(row.id, i, modsOf(e));
   };
 
   const onFocus = (row: ItemListRow) => (e: FocusEvent<HTMLDivElement>) => {
     row.rowProps?.onFocus?.(e);
-    if (e.target !== targets.current.get(row.id)) return;
-    setFocusId(row.id);
-    if (extending.current !== row.id) anchor.current = row.id;
+    if (e.target === targets.current.get(row.id)) nav.onFocus(row.id);
   };
 
   const targetRef = (id: string) => (el: HTMLElement | null) => {
@@ -301,7 +260,7 @@ export const ItemList = forwardRef(function ItemList(
         <DragGhost at={ghost} from={container}><GhostRows rows={rows} ids={ghost.ids} /></DragGhost>
       ) : null}
       {rows.map((row, i) => {
-        const tabIndex = interactive ? (row.id === stopId ? 0 : -1) : undefined;
+        const tabIndex = interactive ? (row.id === nav.tabStop ? 0 : -1) : undefined;
         const content = (
           <>
             {row.leading}
@@ -321,7 +280,7 @@ export const ItemList = forwardRef(function ItemList(
             role={roles.row}
             aria-selected={selection && mode !== 'list' ? !!row.selected : undefined}
             ref={(el) => {
-              rowRef(row.id)(el);
+              nav.rowRef(row.id)(el);
               if (mode === 'listbox') targetRef(row.id)(el);
             }}
             tabIndex={mode === 'listbox' ? tabIndex : row.rowProps?.tabIndex}
@@ -358,10 +317,6 @@ function GhostRows({ rows, ids }: { rows: readonly ItemListRow[]; ids: readonly 
         <span className={s.label}>{row.label}</span>
       </div>
     ));
-}
-
-function modsOf(e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): PressModifiers {
-  return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
 }
 
 /** Which edge of row `i` carries the seam for `dropIndex`, if any. */

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { nudgeOf } from '../../nudgeKey';
 import { useReorderDragList, type ReorderItem } from '../../useReorderDragList';
 
 /** Where focus goes once the list has committed an edit. `removed`: the entry that held it is gone. */
@@ -36,8 +37,6 @@ export function movedEntry<T>(list: readonly T[], from: number, target: number):
   return out;
 }
 
-const isMove = (e: KeyboardEvent): boolean => e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown');
-
 /**
  * How a list's entries move: `drag` for each entry's handle, and `move` for Alt+Up / Alt+Down anywhere in an
  * entry. Focus follows the entry, into its text field when it was there, and onto its handle otherwise.
@@ -59,9 +58,9 @@ export function useEntryMoves<T>(
     },
   });
   const move = (e: KeyboardEvent, at: number): void => {
-    if (!enabled || !isMove(e)) return;
+    const by = nudgeOf(e);
+    if (!enabled || by === null) return;
     e.preventDefault();
-    const by = e.key === 'ArrowUp' ? -1 : 1;
     const to = at + by;
     if (to < 0 || to >= value.length) return;
     onChange(movedEntry(value, at, by < 0 ? to : to + 1));

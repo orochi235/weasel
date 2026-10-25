@@ -1,0 +1,21 @@
+/* In :where() so an owner's class sizes and colors the handle without a specificity contest. */
+:where(.handle) {
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--wzl-fg-subtle);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+:where(.handle):active {
+  cursor: grabbing;
+}
+
+:where(.handle):disabled {
+  cursor: default;
+}

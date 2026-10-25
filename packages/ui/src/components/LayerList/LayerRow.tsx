@@ -2,6 +2,7 @@ import { type MouseEventHandler, useState } from 'react';
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGrip } from '../DragGrip';
+import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
 import rows from '../ItemList/ItemList.module.css';
 import type { Shared } from './LayerList';
 import type { LayerListItem } from './layerListProps';
@@ -13,7 +14,6 @@ import { canRename, LockToggle, RowLabel, stop } from './RowParts';
 interface RowProps {
   item: LayerListItem;
   shared: Shared;
-  parentId: string | null;
   /** The row's depth in the treegrid that holds it. */
   level: number;
   /** Drawn in a drag's ghost: no role, no keys, no remove. */
@@ -32,11 +32,11 @@ export function rowContextMenu(shared: Shared, item: LayerListItem, ghosted: boo
 }
 
 /** A layer with no body: one line, and one row of its treegrid. */
-export function Row({ item, shared, parentId, level, ghosted, selected, open, childId, onPointerDown }: RowProps) {
+export function Row({ item, shared, level, ghosted, selected, open, childId, onPointerDown }: RowProps) {
   const { props } = shared;
   const branch = (item.children?.length ?? 0) > 0;
   const [renaming, setRenaming] = useState(false);
-  const keyDown = shared.keys.onKeyDown(item, parentId);
+  const keyDown = shared.keys.onKeyDown(item);
   return (
     <div
       className={[rows.row, s.row, selected ? rows.selected : '', item.nonPrinting ? s.nonPrinting : ''].filter(Boolean).join(' ')}
@@ -137,24 +137,11 @@ export function Handle({
   item: LayerListItem;
   reorder: boolean;
   onPointerDown: ((e: React.PointerEvent) => void) | undefined;
-  onNudge: (delta: -1 | 1) => void;
+  onNudge: (delta: -1 | 1) => boolean | void;
 }) {
   if (item.fixed || item.locked || !reorder) return <Grip item={item} reorder={reorder} />;
   return (
-    <button
-      type="button"
-      className={s.handle}
-      aria-label={`Drag to reorder ${item.label}`}
-      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-      onPointerDown={onPointerDown}
-      onKeyDown={(e) => {
-        if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
-        e.preventDefault();
-        onNudge(e.key === 'ArrowUp' ? -1 : 1);
-      }}
-    >
-      {item.badge ?? <DragGrip />}
-    </button>
+    <ReorderHandle className={s.handle} label={item.label} onPointerDown={onPointerDown} onNudge={onNudge} badge={item.badge} size={16} />
   );
 }
 
@@ -185,10 +172,7 @@ function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
     <span className={s.stop} onPointerDown={stop}>
       <CloseButton
         ariaLabel={`Remove ${item.label}`}
-        onClick={() => {
-          shared.keys.onRemoving(item.id);
-          onRemove(item.id);
-        }}
+        onClick={() => onRemove(item.id)}
       />
     </span>
   );

@@ -5,6 +5,7 @@ import { BAR_IN, BAR_UNIT } from './barOrder';
 import { BAR_LEAD } from './useBarOverflow';
 import { containerUnits, grabbedUnit, movedInto } from './useBarReorder';
 import { inlineDirection } from '../../useRovingTabIndex';
+import { nudgeOf } from '../../nudgeKey';
 
 /** What {@link useBarReorderKeys} reads. */
 export interface BarReorderKeysArgs {
@@ -80,10 +81,11 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, keysOf }: 
   const onKeyDownCapture = (e: ReactKeyboardEvent): void => {
     const el = root.current;
     const { order: was = {}, onReorder: done, keysOf: listOf } = latest.current;
-    if (done === undefined || el === null || !e.altKey || e.ctrlKey || e.metaKey) return;
+    if (done === undefined || el === null) return;
     const [backKey, onKey] = vertical ? ['ArrowUp', 'ArrowDown'] : inlineDirection(el) === 'rtl' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
-    const back = e.key === backKey;
-    if (!back && e.key !== onKey) return;
+    const delta = nudgeOf(e, backKey, onKey);
+    if (delta === null) return;
+    const back = delta < 0;
     const target = e.target as Element;
     // A dock's handle answers to Alt+arrows itself, moving the whole bar.
     if (entersText(target) || target.closest?.(`[${BAR_LEAD}]`)) return;
