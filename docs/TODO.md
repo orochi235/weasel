@@ -1212,6 +1212,41 @@ only story runner in the repo.
     rather than 30, which is a look to decide, not a fix to make.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
+- **(P2) Browser test files fail to load in bursts: "Failed to fetch dynamically imported module".**
+  On 2026-10-25, four fleet runs of branches that touched none of them failed whole files this way,
+  and the next run passed. Each failure is the file's own import, `Failed to import test file …
+  Caused by: TypeError: Failed to fetch dynamically imported module: http://localhost:<port>/…?import&browserv=<ms>`,
+  where `browserv` is the `Date.now()` the tester stamped on the import, so each run's failures can
+  be dated to the millisecond:
+
+  | Log (scratchpad, `fleet-fix-*`) | Node, mode | Files | Project | Window | Into the run |
+  |---|---|---:|---|---|---:|
+  | `n858-squeezed-dock-row` | msb-uai, browser beside | 10 | forge-stories | 01:54:24–01:54:26 | 99 s |
+  | `p932-clean` | studio, browser after | 5 | forge-stories | 01:54:21–01:54:24 | 189 s |
+  | `ui-shared-register` | msb-uai, browser beside | 5 | forge-stories | 02:26:00–02:26:09 | 94 s |
+  | `s825-bar-menubar-defaults-2` | studio, browser after | 1 | browser (`hud/src/glyph.browser.test.ts`) | 02:33:54 | 403 s |
+
+  Ruled out, from the logs and the nodes (verified):
+  - **The optimizer.** Both browser projects log at `info`, and none of these logs has a
+    "Re-optimizing", "new dependencies optimized" or "reloading" line. On msb-uai the
+    `forge-stories` and `browser` dep caches (`node_modules/.vite/vitest/<sha1 of the project
+    name>/deps`) were born at 01:02:48–49 and not rewritten since, which spans both msb-uai failures
+    (stat on the node, 02:58). So neither the run nor the gate's `vitest list` (check:test-projects,
+    which starts a vite server for every project on the same cache dirs) re-bundled under them.
+  - **A fleet-tree sync.** Every log ends `fleet-tree: the tree held … for the whole run`.
+  - **A broken import elsewhere.** None of these logs has an `Internal server error`, a
+    `Failed to resolve import` or a pre-transform error; `x637-curved-label-red`'s single such
+    failure was its own missing `./CurvedLabel`, a real red.
+  - **Another job on the node.** `onto jobs --internal` shows no other job on msb-uai or studio
+    at any of the four moments (studio's long-lived `brick-spot-render` service aside).
+
+  Not known: what the server answered. vite logs neither a 404 nor an aborted request, so the next
+  step is to record it: a Playwright `requestfailed` / `response.status() >= 400` listener on the
+  tester page, printing URL, status and failure text, would say whether the module or one of its
+  imports 404s, 504s, or never answers (inferred as the cheapest discriminator, not tried). The burst
+  shape, many files in under 10 s and then clean, points at a transient server- or browser-side
+  event rather than any one file (inferred).
+
 - **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
   `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
   layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
