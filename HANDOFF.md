@@ -4,6 +4,29 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## Overnight TODO batch, merged 2026-10-25 (not pushed)
+
+Twenty-seven fixes from `docs/TODO.md` merged to `main` in c4f600a75 (2026-10-25). The branch gate on
+b906aeeca was green: fleet 30367 passed, 0 failed (gate included), and post-build passed. Nothing is pushed.
+
+**Calls made without a ruling** (each says so in its commit body):
+- The Loupe's new "Aim: glass" action is bound to `b`.
+- When a `Bar`'s ordered `actions` run lists one action twice, both copies sit at that key's place in the order.
+- `Bar` and `MenuBar` conditions now read a leaf's default where `values` lacks its path, as `PrefsForm` does.
+
+**Changes callers can feel:**
+- `TrackCtx` gains a required `along` field, so a `TrackCtx` built by hand needs it.
+- ui adds `CurvedLabel`, `useBoxShape`, and `BoxShape`.
+- `Tooltip` now draws its own bubble and fade, instead of React Aria's.
+- The `browser` test project now fails any test that raises "ResizeObserver loop completed".
+
+**Not seen in a browser by a person:** the Tooltip fade, the square lens body's new line-track zoom (its labels
+entry is still open), a squeezed `ToolbarDock` row, a torn-off bar keeping its state, the disabled-tab dimming,
+and draw's effect-node titles.
+
+Filed tonight: the fleet's "Failed to fetch dynamically imported module" bursts (P2, Release-gate), and
+drag pan under a scaled host (P3, Viewport).
+
 ## TODO batch, merged 2026-10-24
 
 Sixteen fixes from `docs/TODO.md` merged to `main` in 0b14563a2 and released in 1.13.0 (2026-10-24).
