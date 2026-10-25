@@ -935,10 +935,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) An index page's variant rows fail two accessibility checks** (2026-10-23). Each row's heading is an `h4`
-  directly under the story's `h2`, which skips a level, and the rows of every story share labels such as
-  "Variant" and "Size", so several landmarks on one page have the same name. Both show in the workshop's
-  accessibility panel on any index page with variant rows (`frame/index/IndexPage.tsx`, `IndexVariants`).
 - **(P3) Undo after a drag on a lens's rim zoom waits for the lens canvas to have focus** (2026-10-21). The drag
   leaves focus on the zoom's thumb (`lens/LensZoom.tsx`), and the lens history answers only while its input element
   has focus, so Cmd+Z does nothing until the body is pressed. Two loose ends from the same work: a square body's
