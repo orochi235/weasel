@@ -830,9 +830,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   shrink by their flex basis, so a short bar loses its only item before the others lose theirs.
   Visible in draw on a narrow window.
 
-- **(P3) The `ToolbarDock` lab copies `Along/lab/labActions`' private `Register`** (2026-10-23).
-  `ToolbarDock/lab/ToolbarDock.stories.tsx` and `Along/lab/labActions.tsx` each declare the same
-  one-line `useAction` wrapper; one shared lab helper would serve both.
+- **(P3) ui's stories and tests each declare their own `Register` wrapper round `useAction`** (2026-10-23).
+  The labs share `LabActions` (`Along/lab/labActions.tsx`, whose `extra` prop takes a lab's own actions,
+  2026-10-25), but the `MenuBar`, `ContextMenuHost`, `KeymapHint`, and `PrefActionButton` stories and
+  the `MenuBar`, `menuBarKeys`, `MenuBar.browser`, `MeasureReadout`, and `PrefsForm.actions` tests each
+  copy the same one-line component. One helper in `packages/ui/src/testing/` would serve them all.
 
 ### WeaselDraw app follow-ups (defer)
 

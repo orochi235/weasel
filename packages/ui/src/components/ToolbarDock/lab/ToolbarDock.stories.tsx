@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactElement } from 'react';
-import { useAction, type Action } from '@weasel-js/core';
+import type { Action } from '@weasel-js/core';
 import { f, meta, story } from '@weasel-js/forge';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Bar } from '@weasel-js/ui/components/Bar';
@@ -26,11 +26,6 @@ const ARRANGE_BAR: PrefGroup = {
   name: 'Arrange',
   children: { run: { kind: 'actions', name: 'Arrange', description: '', default: undefined, group: 'dock-lab.arrange' } as PrefLeaf },
 };
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 /** The actions the Arrange bar's run draws: the lab's arrange actions, in a group of their own. */
 const RUN: Action[] = ARRANGE.map((a) => ({ id: `dock-lab.${a.key}`, label: a.name, icon: a.glyph, group: 'dock-lab.arrange', invoker: { timing: 'immediate', run: () => {} } }));
@@ -60,10 +55,7 @@ function DockLab({ config }: { config: DockLabConfig }): ReactElement {
   }, [values, order]);
 
   return (
-    <LabActions>
-      {RUN.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+    <LabActions extra={RUN}>
       <div className={lab.lab}>
         <div className={`${lab.stack} ${lab.main}`}>
           <div className={s.frame}>

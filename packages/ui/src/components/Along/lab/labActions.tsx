@@ -34,15 +34,23 @@ function Register({ action }: { action: Action }) {
   return null;
 }
 
-/** Every lab action registered, each reporting its key to `onPress`, around `children`. */
-export function LabActions({ onPress, children }: { onPress?: (key: string) => void; children: ReactNode }): ReactElement {
+/** Every lab action registered, each reporting its key to `onPress`, plus a lab's own `extra` actions, around `children`. */
+export function LabActions({
+  onPress,
+  extra = [],
+  children,
+}: {
+  onPress?: (key: string) => void;
+  extra?: readonly Action[];
+  children: ReactNode;
+}): ReactElement {
   const actions = useMemo<Action[]>(
     () => LAB_ACTIONS.map((a) => ({ id: `lab.${a.key}`, label: a.name, icon: a.glyph, invoker: { timing: 'immediate', run: () => onPress?.(a.key) } })),
     [onPress],
   );
   return (
     <ActionsProvider>
-      {actions.map((a) => <Register key={a.id} action={a} />)}
+      {[...actions, ...extra].map((a) => <Register key={a.id} action={a} />)}
       {children}
     </ActionsProvider>
   );
