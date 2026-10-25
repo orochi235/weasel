@@ -5,14 +5,21 @@ const SCROLLS = new Set(['auto', 'scroll', 'overlay']);
 
 function canMove(el: Element, overflow: string, at: number, room: number, delta: number): boolean {
   if (delta === 0 || room <= 0) return false;
-  if (el !== document.scrollingElement && !SCROLLS.has(overflow)) return false;
+  if (el !== el.ownerDocument.scrollingElement && !SCROLLS.has(overflow)) return false;
   return delta > 0 ? at < room - 0.5 : at > 0.5;
 }
 
+/** The next element out, through a shadow root's host and out of a same-origin frame, as a scroll chains. */
 function parentOf(el: Element): Element | null {
   if (el.parentElement) return el.parentElement;
   const root = el.getRootNode();
-  return root instanceof ShadowRoot ? root.host : null;
+  // A frame's ShadowRoot is not this realm's, so `instanceof` would miss it.
+  if (root !== el.ownerDocument && 'host' in root) return (root as ShadowRoot).host;
+  try {
+    return el.ownerDocument.defaultView?.frameElement ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -29,7 +36,7 @@ export function scrollByWheel(from: Element, wheel: WheelEvent): boolean {
           : 1;
     const dx = wheel.deltaX * scale;
     const dy = wheel.deltaY * scale;
-    const style = getComputedStyle(el);
+    const style = (el.ownerDocument.defaultView ?? window).getComputedStyle(el);
     const x = canMove(el, style.overflowX, el.scrollLeft, el.scrollWidth - el.clientWidth, dx);
     const y = canMove(el, style.overflowY, el.scrollTop, el.scrollHeight - el.clientHeight, dy);
     if (!x && !y) continue;
