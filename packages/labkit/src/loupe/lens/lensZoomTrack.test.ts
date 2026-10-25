@@ -27,9 +27,14 @@ describe('zoomTrackOf', () => {
     expect(bottom.y).toBeCloseTo(160 - ZOOM_INSET);
   });
 
-  test('a square body gets a straight run', () => {
-    expect(zoomTrackOf('square', { width: 160, height: 160 }).kind).toBe('line');
-    expect(zoomTrackOf('square', { width: 240, height: 160 }).kind).toBe('line');
+  test('a square body gets a straight run across its bottom, inset from the edges as the arc is', () => {
+    const track = zoomTrackOf('square', { width: 240, height: 160 });
+    expect(track.kind).toBe('line');
+    if (track.kind !== 'line') return;
+    const shape = track.shape({ width: 240, height: 160 });
+    expect(shape.kind).toBe('line');
+    expect(shape.at(0).point).toEqual({ x: ZOOM_INSET, y: 160 - ZOOM_INSET });
+    expect(shape.at(1).point).toEqual({ x: 240 - ZOOM_INSET, y: 160 - ZOOM_INSET });
   });
 });
 

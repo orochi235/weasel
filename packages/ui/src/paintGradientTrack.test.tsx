@@ -10,6 +10,7 @@ const ctx: TrackCtx = {
   trackWidth: 200,
   valueToFraction: (v: number) => v,
   fractionToPosition: (f: number) => `${(f * 100).toFixed(1)}%`,
+  along: false,
 };
 
 describe('paintGradientTrack', () => {
@@ -78,7 +79,7 @@ describe('paintGradientTrack', () => {
 describe('paintGradientTrack on a curve', () => {
   // A quarter of the way in from each end of a 180° arc is the value span; the rest is band past it.
   const arc = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 90, end: 270, direction: 'ccw' });
-  const curved: TrackCtx = { ...ctx, shape: trackRun(arc, 0.25, 0.75), trackWidth: arc.length / 2 };
+  const curved: TrackCtx = { ...ctx, shape: trackRun(arc, 0.25, 0.75), trackWidth: arc.length / 2, along: true };
   const paint = (opts: Parameters<typeof paintGradientTrack>[0]) => render(<svg>{paintGradientTrack(opts)(curved)}</svg>).container;
   const near = (a: number, b: number) => Math.abs(a - b) < 1e-6;
 
@@ -132,4 +133,10 @@ describe('paintGradientTrack on a curve', () => {
     const c = paint({ gradient: () => '#888', activeRange: [0, 1] });
     expect(c.querySelector('[data-dim], [data-hatch], pattern')).toBeNull();
   });
+});
+
+it('strokes a line shape the slider lies along as a band, not a box-wide CSS ramp', () => {
+  const line: TrackCtx = { ...ctx, shape: trackRun(lineShape({ x: 10, y: 90 }, { x: 190, y: 30 })), along: true };
+  const c = render(<svg>{paintGradientTrack({ gradient: () => '#888', samples: 2 })(line)}</svg>).container;
+  expect(c.querySelectorAll('linearGradient')).toHaveLength(2);
 });

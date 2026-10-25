@@ -3,6 +3,7 @@ import '@weasel-js/theme/fonts.css';
 import { useState } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
+import { lineShape } from '@weasel-js/geom';
 import { Along } from '../Along';
 import { Slider, type SliderProps, type Thumb } from './index';
 
@@ -194,3 +195,29 @@ for (const [name, transform, scale] of [
     expect(thumb.getAttribute('aria-valuenow')).toBe('8');
   });
 }
+
+test('a line shape is laid where its coordinates say, and a press on it lands on the stop there', async () => {
+  // A diagonal, so neither the straight layout nor a level line could pass by accident.
+  const from = { x: 30, y: 200 };
+  const to = { x: 210, y: 80 };
+  const { box, all, thumb } = await mount({ shape: lineShape(from, to) });
+  const r = box.getBoundingClientRect();
+  const a = { x: r.left + from.x, y: r.top + from.y };
+  const b = { x: r.left + to.x, y: r.top + to.y };
+  const len = dist(a, b);
+  /** How far `p` lies off the line through a and b, and how far along it, 0..1. */
+  const off = (p: { x: number; y: number }) => Math.abs((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / len;
+  const along = (p: { x: number; y: number }) => ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / len ** 2;
+  const ticks = all('[data-slider-tick]');
+  expect(ticks).toHaveLength(4);
+  for (const el of [...ticks, thumb]) expect(off(mid(el))).toBeLessThanOrEqual(1);
+  const gs = ticks.map((el) => along(mid(el)));
+  for (let i = 1; i < gs.length; i++) expect(gs[i]!).toBeGreaterThan(gs[i - 1]!);
+  expect(gs[0]!).toBeGreaterThanOrEqual(0);
+  expect(gs.at(-1)!).toBeLessThanOrEqual(1);
+  const sixteen = mid(ticks[3]!);
+  hit(sixteen.x, sixteen.y)!.dispatchEvent(new PointerEvent('pointerdown', opts(sixteen.x, sixteen.y)));
+  document.dispatchEvent(new PointerEvent('pointerup', opts(sixteen.x, sixteen.y)));
+  await frame();
+  expect(thumb.getAttribute('aria-valuenow')).toBe('16');
+});
