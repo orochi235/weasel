@@ -41,3 +41,10 @@
   width: 1000px;
   height: 700px;
 }
+
+/* What a host paints behind its story, in a given mode. */
+.fg-live-test-backing {
+  width: 10px;
+  height: 10px;
+  background: var(--wzl-bg);
+}
