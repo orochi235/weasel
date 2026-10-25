@@ -8,21 +8,15 @@ import {
   measureIds,
   measureNode,
   measurementsContribution,
-  useAction,
   useDepSource,
-  type Action,
   type DepName,
   type NodeId,
   type Scene,
 } from '@weasel-js/core';
 import { MeasureReadout } from './MeasureReadout';
+import { RegisterActions } from '../../testing/registerAction';
 
 type AnyScene = Scene<unknown, string, unknown>;
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 function Deps({ scene, selected }: { scene: AnyScene; selected: string[] }) {
   useDepSource('scene' as DepName, () => scene as never);
@@ -42,7 +36,7 @@ function setup() {
     <DepRegistryProvider>
       <ActionsProvider>
         <Deps scene={scene} selected={selected} />
-        {actions.map((a) => <Register key={a.id} action={a} />)}
+        <RegisterActions actions={actions} />
         <MeasureReadout scene={scene} measurements={ms} />
       </ActionsProvider>
     </DepRegistryProvider>

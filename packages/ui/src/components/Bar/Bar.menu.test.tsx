@@ -1,16 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { barMenuRoot } from './barMenuRoot';
 import { Bar } from './Bar';
+import { RegisterActions } from '../../testing/registerAction';
 
 afterEach(cleanup);
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 const front = vi.fn();
 const ACTIONS: Action[] = [
@@ -32,7 +28,7 @@ const schema: PrefGroup = pref.group('Tools', {
 function bar(values: Record<string, unknown>, onChange = vi.fn()) {
   render(
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <Bar schema={schema} values={values} onChange={onChange} label="Tools" />
     </ActionsProvider>,
   );

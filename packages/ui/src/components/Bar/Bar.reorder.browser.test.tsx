@@ -3,11 +3,12 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { arcShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Bar, type BarProps } from './Bar';
 import s from './Bar.reorder.browser.test.module.css';
+import { RegisterActions } from '../../testing/registerAction';
 
 const KEYS = ['a', 'b', 'c', 'd'] as const;
 let presses: string[] = [];
@@ -23,16 +24,9 @@ const ARRANGE: PrefGroup = {
   children: { a: act('a'), arrange: { kind: 'actions', name: 'Arrange', description: '', default: undefined, group: 'arrange' } as PrefLeaf },
 };
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 const host = (node: ReactNode) => (
   <ActionsProvider>
-    {ACTIONS.map((a) => (
-      <Register key={a.id} action={a} />
-    ))}
+    <RegisterActions actions={ACTIONS} />
     {node}
   </ActionsProvider>
 );

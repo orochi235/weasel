@@ -1,24 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState, type ReactNode } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Bar } from './Bar';
+import { RegisterAction } from '../../testing/registerAction';
 
 afterEach(cleanup);
 
 const act = (name: string): PrefLeaf => ({ kind: 'action', name, description: '', default: undefined, action: `x.${name}` }) as PrefLeaf;
 const num = (name: string): PrefLeaf => ({ kind: 'number', name, description: '', default: 1 }) as PrefLeaf;
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 const host = (node: ReactNode) => (
   <ActionsProvider>
     {['a', 'b', 'c', 'p', 'q'].map((n) => (
-      <Register key={n} action={{ id: `x.${n}`, label: n, group: 'x', invoker: { timing: 'immediate', run: () => {} } }} />
+      <RegisterAction key={n} action={{ id: `x.${n}`, label: n, group: 'x', invoker: { timing: 'immediate', run: () => {} } }} />
     ))}
     {node}
   </ActionsProvider>

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ActionDisabledReason, ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionDisabledReason, ActionsProvider, type Action } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
+import { RegisterActions } from '../../testing/registerAction';
 
 const run = (id: string) => () => { console.log(`[CommandPalette story] ${id}`); };
 
@@ -28,16 +29,11 @@ const ACTIONS: Action[] = [
   { id: 'selectAll', label: 'Select all', invoker: { timing: 'immediate', run: run('selectAll') } },
 ];
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 function Demo({ initiallyOpen }: { initiallyOpen: boolean }) {
   const [open, setOpen] = useState(initiallyOpen);
   return (
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <Button onClick={() => setOpen(true)}>Open commands</Button>
       <CommandPalette open={open} onClose={() => setOpen(false)} />
     </ActionsProvider>

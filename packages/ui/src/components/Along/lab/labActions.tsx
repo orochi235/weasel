@@ -1,8 +1,9 @@
 import { useMemo, type ReactElement, type ReactNode } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { IconRef } from '@weasel-js/icons';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { icon } from '../../../icons.gen';
+import { RegisterActions } from '../../../testing/registerAction';
 
 /** The actions a lab's bars are built from, in the order a bar of `n` takes them. */
 export const LAB_ACTIONS: readonly { key: string; name: string; glyph: IconRef }[] = [
@@ -29,11 +30,6 @@ export function actionsSchema(n: number, name = 'Actions'): PrefGroup {
   return { name, children: Object.fromEntries(LAB_ACTIONS.slice(0, n).map((a) => [a.key, actionLeaf(a.key)])) };
 }
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 /** Every lab action registered, each reporting its key to `onPress`, plus a lab's own `extra` actions, around `children`. */
 export function LabActions({
   onPress,
@@ -50,7 +46,7 @@ export function LabActions({
   );
   return (
     <ActionsProvider>
-      {[...actions, ...extra].map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={[...actions, ...extra]} />
       {children}
     </ActionsProvider>
   );

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ActionsProvider, defaultNodeProperties, solid, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, defaultNodeProperties, solid, type Action } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import s from './PrefSchemaEditor.stories.module.css';
 import { icon } from '../../icons.gen';
+import { RegisterActions } from '../../testing/registerAction';
 
 const meta: Meta<typeof PrefSchemaEditor> = {
   title: 'Primitives/PrefSchemaEditor',
@@ -182,11 +183,6 @@ const SAMPLE_ACTIONS: Action[] = [
   { id: 'file.export', label: 'Export', invoker: { timing: 'immediate', run } },
 ];
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 /**
  * A toolbar: a root drawn as a bar, previewed as the bar itself. The Actions list in the shelf holds what the
  * registry above the editor can fire, and one dragged into the tree lands as a pref that fires it. Flatten fires
@@ -197,9 +193,7 @@ export const Toolbar: Story = {
     const [schema, setSchema] = useState(TOOLBAR);
     return (
       <ActionsProvider>
-        {SAMPLE_ACTIONS.map((action) => (
-          <Register key={action.id} action={action} />
-        ))}
+        <RegisterActions actions={SAMPLE_ACTIONS} />
         <div className={s.frame}>
           <PrefSchemaEditor schema={schema} onChange={setSchema} />
         </div>

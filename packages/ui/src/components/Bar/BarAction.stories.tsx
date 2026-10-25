@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState, type ReactNode } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import { BarAction } from '@weasel-js/ui/components/Bar';
 import s from './Bar.stories.module.css';
 import { icon } from '../../icons.gen';
+import { RegisterActions } from '../../testing/registerAction';
 
 const meta: Meta<typeof BarAction> = {
   title: 'ui/Bar/BarAction',
@@ -20,17 +21,10 @@ const leaf = (rest: Partial<PrefAction> & Pick<PrefAction, 'name'>): PrefAction 
   ...rest,
 });
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 function Host({ actions, children }: { actions: Action[]; children: ReactNode }) {
   return (
     <ActionsProvider>
-      {actions.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={actions} />
       <div className={s.strip}>{children}</div>
     </ActionsProvider>
   );

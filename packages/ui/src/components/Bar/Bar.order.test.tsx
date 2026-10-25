@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Bar } from './Bar';
 import { movedOrder } from './barOrder';
+import { RegisterAction } from '../../testing/registerAction';
 
 afterEach(cleanup);
 
@@ -22,16 +23,12 @@ const schema: PrefGroup = {
 
 const names = (): (string | null)[] => screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'));
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 const reg = (id: string): Action => ({ id, label: id, group: 'arrange', invoker: { timing: 'immediate', run: () => {} } });
 
 const withActions = (node: ReactNode) => (
   <ActionsProvider>
-    <Register action={reg('front')} />
-    <Register action={reg('back')} />
+    <RegisterAction action={reg('front')} />
+    <RegisterAction action={reg('back')} />
     {node}
   </ActionsProvider>
 );

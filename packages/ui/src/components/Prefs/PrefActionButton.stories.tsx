@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { PrefActionButton, PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { icon } from '../../icons.gen';
+import { RegisterActions } from '../../testing/registerAction';
 
 const meta: Meta<typeof PrefActionButton> = {
   title: 'Primitives/Prefs',
@@ -20,11 +21,6 @@ const ACTIONS: Action[] = [
   { id: 'arrange.group', label: 'Group', group: 'arrange', icon: icon('core:group'), invoker: run, enabled: () => 'selection-required' },
   { id: 'doc.export', label: 'Export…', icon: icon('export'), invoker: run },
 ];
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 const SCHEMA: PrefGroup = pref.group('Document', {
   export: pref.action('doc.export'),
@@ -46,9 +42,7 @@ export const ActionRows: Story = {
     const [values, setValues] = useState<Record<string, unknown>>({ stats: { nodes: 128, grid: true, units: 'mm', color: '#f4efe6' } });
     return (
       <ActionsProvider>
-        {ACTIONS.map((a) => (
-          <Register key={a.id} action={a} />
-        ))}
+        <RegisterActions actions={ACTIONS} />
         <PrefsForm schema={SCHEMA} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
       </ActionsProvider>
     );
