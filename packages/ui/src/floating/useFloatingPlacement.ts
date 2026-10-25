@@ -147,6 +147,7 @@ export function useFloatingPlacement({
     if (e.button !== 0 || isInteractive(e.target)) return;
     // The canvas stack underneath owns pan/zoom on the same pointer events.
     e.stopPropagation();
+    drag.current?.cancel();
     setLive(null);
     const press = { x: e.clientX, y: e.clientY };
     let last = press;

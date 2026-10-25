@@ -423,6 +423,44 @@ describe('useFloatingPlacement drag lifecycle', () => {
     }
   });
 
+  // Proxies, both: jsdom's releasePointerCapture changes nothing, so what is asserted is that the hook asked for it.
+  describe('releasing the capture a drag took', () => {
+    const released: number[] = [];
+    const realRelease = Element.prototype.releasePointerCapture;
+    beforeEach(() => {
+      released.length = 0;
+      Element.prototype.setPointerCapture = () => {};
+      Element.prototype.releasePointerCapture = (id: number) => {
+        released.push(id);
+      };
+    });
+    afterEach(() => {
+      Element.prototype.releasePointerCapture = realRelease;
+    });
+
+    it('releases it when Escape cancels the drag', () => {
+      const { panel } = renderPanel(<Harness />);
+      fireEvent.pointerDown(panel, { pointerId: 7, buttons: 1, clientX: 100, clientY: 100 });
+      fireEvent.pointerMove(document.body, { pointerId: 7, buttons: 1, clientX: 140, clientY: 100 });
+      fireEvent.keyDown(window, { key: 'Escape' });
+      expect(released).toEqual([7]);
+    });
+
+    it('cancels the drag it held when a second press starts one, releasing its capture', () => {
+      const onChange = vi.fn();
+      const { panel } = renderPanel(<Harness onChange={onChange} />);
+      fireEvent.pointerDown(panel, { pointerId: 7, buttons: 1, clientX: 100, clientY: 100 });
+      fireEvent.pointerMove(document.body, { pointerId: 7, buttons: 1, clientX: 140, clientY: 100 });
+      fireEvent.pointerDown(panel, { pointerId: 8, buttons: 1, clientX: 100, clientY: 100 });
+      expect(released).toEqual([7]);
+      expect(panel.dataset.dragging).toBeUndefined();
+      // The first pointer's moves and release no longer belong to any drag.
+      fireEvent.pointerMove(document.body, { pointerId: 7, buttons: 1, clientX: 300, clientY: 100 });
+      fireEvent.pointerUp(document.body, { pointerId: 7, clientX: 300, clientY: 100 });
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
+
   it('drops its document listeners when the panel unmounts mid-drag', () => {
     const added: string[] = [];
     const removed: string[] = [];

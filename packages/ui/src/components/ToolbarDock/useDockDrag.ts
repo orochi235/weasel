@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { swallowNextClick } from '../../useReorderDragList';
@@ -47,6 +47,7 @@ export interface DockDrag {
   layout: ToolbarLayout;
   /** Where the last keyboard move landed; empty until one has. */
   announcement: string;
+  /** One bar's handlers: the same function across renders, giving the same object for a bar each time. */
   handlers: (barId: string) => DockHandleHandlers;
 }
 
@@ -175,10 +176,17 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
     commit(moved.next);
   };
 
-  return {
-    view,
-    layout,
-    announcement,
-    handlers: (barId) => ({ onPointerDown: (e) => onPointerDown(barId, e), onKeyDown: (e) => onKeyDown(barId, e) }),
-  };
+  // Stable, so the dock's context for each bar does not change, and redraw every bar, on each frame of a drag.
+  const on = useLatest({ onPointerDown, onKeyDown });
+  const made = useRef(new Map<string, DockHandleHandlers>());
+  const handlers = useCallback((barId: string): DockHandleHandlers => {
+    let got = made.current.get(barId);
+    if (!got) {
+      got = { onPointerDown: (e) => on.current.onPointerDown(barId, e), onKeyDown: (e) => on.current.onKeyDown(barId, e) };
+      made.current.set(barId, got);
+    }
+    return got;
+  }, [on]);
+
+  return { view, layout, announcement, handlers };
 }

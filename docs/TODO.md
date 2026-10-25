@@ -849,10 +849,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (2026-10-23). `useBarReorderKeys` moves by DOM order, while the pointer reorder places by where the
   pointer is, so the two disagree under `dir="rtl"`.
 
-- **(P3) Every docked bar re-renders on each frame of a `ToolbarDock` drag** (2026-10-23). The handle
-  handlers `useDockDrag` gives each bar are built afresh every render, so the dock's context value
-  changes for all of them. While a bar floats, every `SchemaBar` in draw re-renders per pointer move.
-
 - **(P3) A `ToolbarDock` top dock's new-row zone overlaps the side docks' top edges** (2026-10-23).
   The half-row zone above the top dock's first row reaches over the left and right docks, so a drag
   near a side dock's top can land in a new top row.
@@ -860,10 +856,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) In a squeezed `ToolbarDock` row, a short bar loses its only item first** (2026-10-23). Bars
   shrink by their flex basis, so a short bar loses its only item before the others lose theirs.
   Visible in draw on a narrow window.
-
-- **(P3) A second press mid-drag orphans the first drag in `useFloatingPlacement`** (2026-10-23,
-  inherited from labkit's `FloatingPanel`). `startDrag` replaces `drag.current` without canceling the
-  one it held. There is also no hook-level test that a cancel releases the pointer capture.
 
 - **(P3) A bar torn off a `ToolbarDock` remounts in the floating layer** (2026-10-23), so a menu open
   in it closes and a draft typed into one of its fields is lost.
