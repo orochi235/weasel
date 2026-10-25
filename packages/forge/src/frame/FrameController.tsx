@@ -15,6 +15,7 @@ import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { auditElement } from './a11y';
 import { createA11yHighlighter } from './a11yHighlight';
 import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
+import { followDocumentScroll } from './documentScroll';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { StoryHost } from './StoryHost';
 
@@ -59,6 +60,25 @@ function fault(phase: FaultPhase, error: unknown, seq?: number): FromFrame {
     ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
     ...(seq === undefined ? {} : { seq }),
   };
+}
+
+/**
+ * The shell unhides the frame on `rendered` and fades it in, so a webfont
+ * swapping in after that message reads as the story gliding. Waiting for the
+ * fonts and then one painted frame means the story the shell reveals is the
+ * settled one.
+ *
+ * `document.fonts` is absent in jsdom, so the message stays synchronous
+ * there; the deferral is only exercised in a browser.
+ */
+function announceRendered(send: (msg: FromFrame) => void): void {
+  const { fonts } = document;
+  if (!fonts) {
+    send({ type: 'rendered' });
+    return;
+  }
+  const afterPaint = () => requestAnimationFrame(() => send({ type: 'rendered' }));
+  void fonts.ready.then(afterPaint, afterPaint);
 }
 
 /** Sends `ready`, then renders the story on `init` and keeps it in step. Returns a stop function. */
@@ -152,43 +172,12 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     }
     if (!rendered) {
       rendered = true;
-      announceRendered();
+      announceRendered(send);
     }
     reportVars();
   };
 
-  /**
-   * The shell unhides the frame on `rendered` and fades it in, so a webfont
-   * swapping in after that message reads as the story gliding. Waiting for the
-   * fonts and then one painted frame means the story the shell reveals is the
-   * settled one.
-   *
-   * `document.fonts` is absent in jsdom, so the message stays synchronous
-   * there; the deferral is only exercised in a browser.
-   */
-  const announceRendered = () => {
-    const { fonts } = document;
-    if (!fonts) {
-      send({ type: 'rendered' });
-      return;
-    }
-    const afterPaint = () => requestAnimationFrame(() => send({ type: 'rendered' }));
-    void fonts.ready.then(afterPaint, afterPaint);
-  };
-
-  // The story scrolls the frame document itself; the shell keeps a lens's copy and a capture on the same patch.
-  const scroller = document.scrollingElement ?? document.documentElement;
-  let scrolled: string | null = null;
-  const reportScroll = () => {
-    const left = scroller.scrollLeft;
-    const top = scroller.scrollTop;
-    const key = `${left} ${top}`;
-    if (key === scrolled) return;
-    scrolled = key;
-    send({ type: 'scroll', left, top });
-  };
-  reportScroll();
-  window.addEventListener('scroll', reportScroll, { passive: true });
+  const scroll = followDocumentScroll(document, send);
 
   const audit = async (id: string) => send({ type: 'a11y', id, ...(await auditElement(wrapper)) });
 
@@ -239,15 +228,14 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
         highlighter.show(msg.targets);
         break;
       case 'scroll':
-        scroller.scrollLeft = msg.left;
-        scroller.scrollTop = msg.top;
+        scroll.apply(msg);
         break;
     }
   });
 
   return () => {
     off();
-    window.removeEventListener('scroll', reportScroll);
+    scroll.dispose();
     mutations?.disconnect();
     clearTimeout(settleTimer);
     overrides.dispose();

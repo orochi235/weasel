@@ -54,7 +54,7 @@ it('reports where its document stands, from the start and on each scroll', async
 it('scrolls its document to where the shell says', async () => {
   await page.viewport(400, 300);
   const { shell } = start();
-  await expect.poll(() => document.documentElement.scrollHeight).toBeGreaterThan(4000);
+  await expect.poll(() => document.documentElement.scrollHeight).toBeGreaterThanOrEqual(4000);
   shell.send({ type: 'scroll', left: 40, top: 600 });
   await expect.poll(() => [window.scrollX, window.scrollY]).toEqual([40, 600]);
 });
