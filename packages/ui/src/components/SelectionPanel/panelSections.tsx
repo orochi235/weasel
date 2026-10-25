@@ -13,6 +13,7 @@ import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefDrawsActionRow } from '../Prefs/registeredActions';
 import { pathWithin, RAIL_ATTR, selectionAttrs } from '../Prefs/selection';
 import type { RenderedCell } from './cells';
+import { LabeledRow } from './LabeledRow';
 import { panelLeafKey, type PanelRow, type PanelSection } from './model';
 import { rowCells, type PanelCellScope } from './panelCells';
 import { PanelTabs, sectionHeaded, sectionNamed, type PanelMarks } from './selection';
@@ -86,18 +87,18 @@ function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: Pan
   // A row several leaves share is drawn for its first, and is hidden only when they all are.
   const shared = row.leaves.length > 1;
   return (
-    <div key={panelLeafKey(first)} className={s.row} {...(controls.every((cell) => cell.disabled) ? { 'data-disabled': '' } : {})}
-      {...selectionAttrs(panelLeafKey(first), shared ? selectedOnly(marks) : marks, true)} {...(shared ? hiddenAttrs(marked) : {})}>
-      <span className={s.rowLabel} title={first.leaf.description}>
-        {row.label}
-        {marked && <HiddenBadge />}
-      </span>
-      <span className={s.rowControls}>
-        {controls.map(({ key, content }) => (
-          <Fragment key={key}>{content}</Fragment>
-        ))}
-      </span>
-    </div>
+    <LabeledRow
+      key={panelLeafKey(first)}
+      label={row.label}
+      title={first.leaf.description}
+      marked={marked}
+      disabled={controls.every((cell) => cell.disabled)}
+      attrs={{ ...selectionAttrs(panelLeafKey(first), shared ? selectedOnly(marks) : marks, true), ...(shared ? hiddenAttrs(marked) : {}) }}
+    >
+      {controls.map(({ key, content }) => (
+        <Fragment key={key}>{content}</Fragment>
+      ))}
+    </LabeledRow>
   );
 }
 
