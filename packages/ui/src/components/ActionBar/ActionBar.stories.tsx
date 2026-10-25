@@ -2,16 +2,11 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { IconRef } from '@weasel-js/icons';
 import {
   ActionsProvider,
-  useAction,
   type Action,
 } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { icon } from '../../icons.gen';
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
+import { RegisterActions } from '../../testing/registerAction';
 
 function makeAction(opts: {
   id: string;
@@ -61,9 +56,7 @@ type Story = StoryObj<typeof ActionBar>;
 export const Default: Story = {
   render: () => (
     <ActionsProvider>
-      {alignActions.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={alignActions} />
       <ActionBar group="align" />
     </ActionsProvider>
   ),
@@ -72,9 +65,7 @@ export const Default: Story = {
 export const Vertical: Story = {
   render: () => (
     <ActionsProvider>
-      {alignActions.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={alignActions} />
       <ActionBar group="align" orientation="vertical" />
     </ActionsProvider>
   ),
@@ -83,9 +74,7 @@ export const Vertical: Story = {
 export const MixedEnabledState: Story = {
   render: () => (
     <ActionsProvider>
-      {mixedEnabled.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={mixedEnabled} />
       <ActionBar group="mix" />
     </ActionsProvider>
   ),
@@ -94,9 +83,7 @@ export const MixedEnabledState: Story = {
 export const WithIconAndLabelOverrides: Story = {
   render: () => (
     <ActionsProvider>
-      {alignActions.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={alignActions} />
       <ActionBar
         group="align"
         icons={{ 'align.center': icon('fit') }}
@@ -109,9 +96,7 @@ export const WithIconAndLabelOverrides: Story = {
 export const EmptyGroup: Story = {
   render: () => (
     <ActionsProvider>
-      {alignActions.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={alignActions} />
       <ActionBar group="this-group-has-no-actions" />
     </ActionsProvider>
   ),

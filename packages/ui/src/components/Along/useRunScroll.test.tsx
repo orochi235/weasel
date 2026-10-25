@@ -10,7 +10,7 @@ const GAP = 15;
 const lengths = [20, 20, 20, 20, 20];
 const keyOf = (el: Element): string | null => el.getAttribute('data-run-item');
 
-function mount(total: number) {
+function mount(total: number, opts: { modReorders?: boolean } = {}) {
   const root = document.createElement('div');
   for (let i = 0; i < lengths.length; i++) {
     const item = document.createElement('button');
@@ -21,7 +21,7 @@ function mount(total: number) {
   const ref = { current: root };
   const drawn = { offset: 0 };
   const hook = renderHook(() => {
-    const scroll = useRunScroll({ root: ref, keyOf, run, total, lengths, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
+    const scroll = useRunScroll({ root: ref, keyOf, run, total, lengths, modReorders: opts.modReorders, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
     drawn.offset = scroll.offset;
     return scroll;
   });
@@ -37,8 +37,8 @@ const wheel = (root: HTMLElement, deltaY: number): WheelEvent => {
   return e;
 };
 
-const press = (on: HTMLElement, x: number) =>
-  ({ target: on, currentTarget: on, button: 0, buttons: 1, pointerId: 1, clientX: x, clientY: 0 }) as unknown as ReactPointerEvent;
+const press = (on: HTMLElement, x: number, mods: { metaKey?: boolean; ctrlKey?: boolean } = {}) =>
+  ({ target: on, currentTarget: on, button: 0, buttons: 1, pointerId: 1, clientX: x, clientY: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, ...mods }) as unknown as ReactPointerEvent;
 const pointer = (type: string, x: number) => new PointerEvent(type, { pointerId: 1, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: 0, bubbles: true });
 
 /** Whether a click dispatched on `el` reaches a listener on it. */
@@ -123,6 +123,28 @@ describe('useRunScroll', () => {
       document.dispatchEvent(pointer('pointerup', 30));
     });
     expect(clickReaches(items[1]!)).toBe(false);
+  });
+
+  test('a drag with Cmd and Ctrl held scrolls a run that does not reorder', () => {
+    const { items, hook } = mount(160);
+    act(() => {
+      hook.result.current.onPointerDownCapture(press(items[1]!, 50, { metaKey: true, ctrlKey: true }));
+      document.dispatchEvent(pointer('pointermove', 30));
+      document.dispatchEvent(pointer('pointerup', 30));
+    });
+    expect(hook.result.current.offset).toBe(20);
+    // Lets go of the click the release would raise, so it does not swallow a later test's.
+    settle();
+  });
+
+  test('a drag with Cmd and Ctrl held is left to a run that reorders', () => {
+    const { items, hook } = mount(160, { modReorders: true });
+    act(() => {
+      hook.result.current.onPointerDownCapture(press(items[1]!, 50, { metaKey: true, ctrlKey: true }));
+      document.dispatchEvent(pointer('pointermove', 30));
+      document.dispatchEvent(pointer('pointerup', 30));
+    });
+    expect(hook.result.current.offset).toBe(0);
   });
 
   test('a drag that carries on past the end of the run keeps scrolling it', () => {

@@ -64,8 +64,10 @@ export function ObjectLeaf({
       settles: ctx.settles,
     };
   };
+  const off = (path: string): boolean => (ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true);
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: PrefRenderContext }> = {
     path: ctx.path,
+    off,
     cell: (key, child) => ({ key, child, field: fieldCtx(key, child) }),
     rows: (cells) => cells.map(({ key, child, field }) => {
       const width = rowWidth(child);
@@ -97,7 +99,6 @@ export function ObjectLeaf({
     lead: (key, section) => (section.description ? [<p key={`desc:${key}`} className={s.paneDesc}>{section.description}</p>] : []),
     frame: (key, section, inner, { labeled, path }) => {
       if (section.as === 'fragment') return inner;
-      const off = ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true;
       if (prefAsBox(section.as)) {
         return [
           <MotifFrame
@@ -107,13 +108,13 @@ export function ObjectLeaf({
             note={section.description}
             level={4}
             className={`${s.panePanel} ${s.objectPanel}`}
-            disabled={off}
+            disabled={off(path)}
           >
             {inner}
           </MotifFrame>,
         ];
       }
-      const heading = labeled ? [<h4 key={`group:${key}`} className={s.objectGroup}>{offTitle(section.name, off)}</h4>] : [];
+      const heading = labeled ? [<h4 key={`group:${key}`} className={s.objectGroup}>{offTitle(section.name, off(path))}</h4>] : [];
       return [...heading, ...parts.lead!(key, section), ...inner];
     },
   };

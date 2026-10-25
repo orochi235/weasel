@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf } from './schema';
-import { applyPrefConditions, prefJudge, prefScopeAt } from './scope';
+import { applyPrefConditions, applyPrefEntryConditions, prefJudge, prefScopeAt } from './scope';
 
 const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'boolean', name, description: '', default: false, ...extra }) as PrefLeaf;
@@ -78,5 +78,30 @@ describe("a node's enableIf and the leaves it reads", () => {
     const bare = over({ stroke: { on: false } });
     expect([...applyPrefConditions(object, bare).disabled].sort()).toEqual(['stroke', 'stroke.width']);
     expect(prefScopeAt(object, 'stroke.on', bare).enabled).toBe(true);
+  });
+});
+
+describe("an item's enableIf that reads the entry, and the field it reads", () => {
+  const obj = (name: string, children: Record<string, PrefLeaf>, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
+    ({ kind: 'object', name, description: '', default: {}, children, ...extra }) as PrefLeaf;
+  const phase = obj('Phase', {
+    on: bool('On'),
+    gain: num('Gain'),
+    sub: obj('Sub', { on: bool('Sub on'), size: num('Size') }, { enableIf: { from: 'item', path: 'sub.on' } }),
+  }, { enableIf: { from: 'item', path: 'on' } });
+  const schema: PrefGroup = { name: '', children: { phases: { kind: 'list', name: 'Phases', description: '', default: [], item: phase } as PrefLeaf } };
+  const entry = (value: unknown) =>
+    applyPrefEntryConditions(phase, 'phases.2', prefJudge(schema, () => undefined, { item: phase, value }));
+
+  it('spares the field the item reads, by its path in the entry', () => {
+    const { disabled } = entry({ on: false, sub: { on: true } });
+    expect(disabled.has('phases.2')).toBe(true);
+    expect(disabled.has('phases.2.gain')).toBe(true);
+    expect(disabled.has('phases.2.on')).toBe(false);
+  });
+
+  it('spares a field deeper in the entry only for the owner directly above it', () => {
+    expect([...entry({ on: true, sub: { on: false } }).disabled].sort()).toEqual(['phases.2.sub', 'phases.2.sub.size']);
+    expect(entry({ on: false, sub: { on: true } }).disabled.has('phases.2.sub.on')).toBe(true);
   });
 });

@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar, type MenuBarProps } from '@weasel-js/ui/components/MenuBar';
 import s from './MenuBar.stories.module.css';
+import { RegisterActions } from '../../testing/registerAction';
 
 const meta: Meta<typeof MenuBar> = {
   title: 'ui/MenuBar',
@@ -38,16 +39,11 @@ const SCHEMA: PrefGroup = pref.group('', {
   },
 });
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 function AppMenuBar(args: Partial<MenuBarProps>) {
   const [values, setValues] = useState<Record<string, unknown>>({ zoom: 150, 'view.grid': true, 'view.units': 'px' });
   return (
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <div className={s.strip}>
         <MenuBar {...args} schema={SCHEMA} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
       </div>

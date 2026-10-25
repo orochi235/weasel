@@ -28,6 +28,7 @@ const switched = (as?: PrefSection['as']): PrefSection => ({
     shadow: {
       name: 'Shadow',
       ...(as ? { as } : {}),
+      ...(as === 'bar' ? { lead: 'label' as const } : {}),
       enableIf: { path: 'data.shadow' },
       members: { 'data.shadow': flag('Shadow on', { heading: true }), 'data.blur': num('Blur') },
     },
@@ -72,6 +73,37 @@ describe("a section its enableIf turns off, in SelectionPanel", () => {
     expect(screen.getByRole('switch', { name: 'Edge on' })).toBeEnabled();
     cleanup();
     mount(schema, { stroke: { on: true, width: 1 } });
+    expect(dimmed(screen.getByText('Edge'))).toBe(false);
+  });
+
+  it.each(['tab', 'bar'] as const)('as %s: dims its name only while off', (as) => {
+    mount(switched(as), { shadow: false, blur: 4 });
+    expect(dimmed(screen.getByText('Shadow'))).toBe(true);
+    cleanup();
+    mount(switched(as), { shadow: true, blur: 4 });
+    expect(dimmed(screen.getByText('Shadow'))).toBe(false);
+  });
+
+  it.each(['tab', 'bar'] as const)('as %s inside an object leaf: dims its name only while off', (as) => {
+    const schema = (on: boolean): [PrefSection, Record<string, unknown>] => [{
+      name: 'Thing',
+      members: {
+        'data.stroke': {
+          kind: 'object',
+          name: 'Stroke',
+          description: '',
+          default: {},
+          children: {
+            on: flag('Edge on'),
+            edge: { name: 'Edge', as, ...(as === 'bar' ? { lead: 'label' as const } : {}), enableIf: { path: 'data.stroke.on' }, members: { width: num('Width') } },
+          },
+        } as PrefLeaf,
+      },
+    }, { stroke: { on, width: 1 } }];
+    mount(...schema(false));
+    expect(dimmed(screen.getByText('Edge'))).toBe(true);
+    cleanup();
+    mount(...schema(true));
     expect(dimmed(screen.getByText('Edge'))).toBe(false);
   });
 });

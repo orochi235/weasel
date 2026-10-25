@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
-import type { IconRef } from '@weasel-js/icons';
-import type { PrefBarLead } from '@weasel-js/prefs';
 import { resolveIcon } from '../../icons/resolveIcon';
+import { offTitle } from '../Prefs/offTitle';
 import { BarMenu } from './BarMenu';
 import { barMenuRoot } from './barMenuRoot';
 import { BarPopover } from './BarPopover';
@@ -103,9 +102,10 @@ export function splitBarItems(items: readonly BarItem[], kept: number): { line: 
   return { line, rest };
 }
 
-/** What a bar's line starts with: `label` for `lead: 'label'`, `icon` for `'icon'`, else nothing. */
-export function barLead(lead: PrefBarLead | undefined, label: string | undefined, icon: IconRef | undefined): ReactNode {
-  return lead === 'label' ? label : lead === 'icon' ? resolveIcon(icon) : undefined;
+/** What a bar's line starts with: `label` for `lead: 'label'`, `icon` for `'icon'`, else nothing. Dimmed while the bar is disabled. */
+export function barLead({ lead, label, icon, disabled }: Pick<BarLayoutProps, 'lead' | 'label' | 'icon' | 'disabled'>): ReactNode {
+  const shown = lead === 'label' ? label : lead === 'icon' ? resolveIcon(icon) : undefined;
+  return shown == null || shown === '' ? shown : offTitle(shown, disabled === true);
 }
 
 /** Where a drawn item sits along a curve: its class, the custom properties that place it, and how far it is clipped. */

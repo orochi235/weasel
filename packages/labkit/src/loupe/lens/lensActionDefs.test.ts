@@ -99,6 +99,23 @@ describe('lens actions', () => {
     expect(s().compare).toBeNull();
   });
 
+  it('switches the current lens to Glass, its reticle set by the body', () => {
+    trigger(LENS_ACTION_IDS.add);
+    trigger(LENS_ACTION_IDS.glass);
+    expect(settingsOf(api.scene, 'l0')!.aim).toBe('glass');
+    expect(api.scene.get('l0:reticle' as never)!.dependsOn).toEqual(['l0:body']);
+  });
+
+  it('lets go of a Follow reticle on the switch to Glass', () => {
+    trigger(LENS_ACTION_IDS.add);
+    trigger(LENS_ACTION_IDS.follow);
+    trigger(LENS_ACTION_IDS.followMove, { clientX: 500, clientY: 500 });
+    expect(api.scene.overrides.read('l0:reticle' as never)).toBeDefined();
+    trigger(LENS_ACTION_IDS.glass);
+    expect(settingsOf(api.scene, 'l0')!.aim).toBe('glass');
+    expect(api.scene.overrides.read('l0:reticle' as never)).toBeUndefined();
+  });
+
   it('opens the compare menu on the current lens', () => {
     trigger(LENS_ACTION_IDS.add);
     trigger(LENS_ACTION_IDS.compareMenu);
@@ -122,6 +139,8 @@ describe('createLoupeKeymap', () => {
         spec: { kind: 'key', key: 'L', mods: { alt: true }, code: 'KeyL' },
       }),
     ]);
+    const glass = keymap!.bindings!.find((b) => b.actionId === LENS_ACTION_IDS.glass)!;
+    expect(glass.spec).toEqual({ kind: 'key', key: 'b' });
     // The follow hover is no key: it binds outside the keymap.
     expect(keymap!.bindings!.some((b) => b.actionId === LENS_ACTION_IDS.followMove)).toBe(false);
   });

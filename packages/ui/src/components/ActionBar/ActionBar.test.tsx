@@ -3,7 +3,6 @@ import { screen, fireEvent, act } from '@testing-library/react';
 import {
   ActionsProvider,
   DepRegistryProvider,
-  useAction,
   useDepSource,
   useDepRegistry,
   type DepRegistry,
@@ -19,6 +18,7 @@ import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 import { renderWithIcons } from '../../testing/withIcons';
 import barStyles from '../Bar/Bar.module.css';
+import { RegisterAction, RegisterActions } from '../../testing/registerAction';
 
 /**
  * Test harness: registers a set of `Action` descriptors on mount via
@@ -29,17 +29,10 @@ import barStyles from '../Bar/Bar.module.css';
 function Harness(props: { actions: Action[]; bar: React.ReactElement }) {
   return (
     <ActionsProvider>
-      {props.actions.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={props.actions} />
       {props.bar}
     </ActionsProvider>
   );
-}
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
 }
 
 function makeAction(partial: Partial<Action> & Pick<Action, 'id'> & { run?: () => void }): Action {
@@ -150,7 +143,7 @@ describe('ActionBar', () => {
     const view = (open: boolean) => (
       <DepRegistryProvider>
         <ActionsProvider>
-          <Register action={action} />
+          <RegisterAction action={action} />
           <Gate open={open} />
           <ActionBar group="demo" />
         </ActionsProvider>
@@ -180,7 +173,7 @@ describe('ActionBar', () => {
     renderWithIcons(
       <DepRegistryProvider>
         <ActionsProvider>
-          <Register action={action} />
+          <RegisterAction action={action} />
           <Gate />
           <ActionBar group="demo" />
         </ActionsProvider>

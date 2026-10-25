@@ -4,6 +4,9 @@ import { canEnter, isVerticalEdge, moveBar, type BarTarget, type DockBar, type D
 /** Marks the element a dock draws round each bar, holding the bar's id. */
 export const DOCK_BAR = 'data-dock-bar';
 
+/** Marks the element a bar is drawn into, which the dock moves between its slots. */
+export const DOCK_HOST = 'data-dock-host';
+
 /** Where a drag would drop a bar: beside a bar in a row, or as a new row at `row` of `dock`. */
 export type DockDropMark = { bar: string; side: 'before' | 'after' } | { dock: string; row: number };
 
@@ -30,7 +33,10 @@ export interface DockPoint {
 }
 
 /** Whether the element a dock draws round a bar holds anything: a bar drawn as nothing keeps its place but no room. */
-const isDrawn = (slot: Element): boolean => slot.firstChild !== null;
+const isDrawn = (slot: Element): boolean => {
+  const inner = slot.firstChild;
+  return inner !== null && !(inner instanceof Element && inner.hasAttribute(DOCK_HOST) && inner.firstChild === null);
+};
 
 /** The ids of the bars under `root` that draw something. */
 export function drawnBars(root: HTMLElement): Set<string> {
@@ -79,22 +85,14 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
 
 /**
  * Where `bar` drops with the pointer at `p`: the row under the pointer, at the slot its bars' middles put it in, or a
- * new row where the pointer is within half a row, or `reach` if that is more, beyond a dock's first or last. Null over
- * no dock, or over one the bar may not enter.
+ * new row where the pointer is within half a row, or `reach` if that is more, beyond a dock's first or last. A row
+ * under the pointer wins over another dock's new-row zone. Null over no dock, or over one the bar may not enter.
  */
 export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, reach = 0): { target: BarTarget; mark: DockDropMark | null } | null {
   for (const dock of boxes) {
-    const along = dock.vertical ? p.clientY : p.clientX;
-    const cross = dock.vertical ? p.clientX : p.clientY;
-    const first = dock.rows[0];
-    const last = dock.rows.at(-1);
-    if (!first || !last || along < dock.along[0] || along > dock.along[1]) continue;
-    if (cross < first.start - Math.max(reach, (first.end - first.start) / 2) || cross > last.end + Math.max(reach, (last.end - last.start) / 2)) continue;
+    const { along, cross } = axes(dock, p);
+    if (!overRows(dock, along) || cross < dock.rows[0]!.start || cross >= dock.rows.at(-1)!.end) continue;
     if (!canEnter(bar, dock)) return null;
-    if (cross < first.start || cross >= last.end) {
-      const row = cross < first.start ? 0 : dock.rows.length;
-      return { target: { dock: dock.id, row, index: 0, newRow: true }, mark: { dock: dock.id, row } };
-    }
     let row = 0;
     while (row + 1 < dock.rows.length && dock.rows[row + 1]!.start <= cross) row++;
     const inRow = dock.rows[row]!.bars;
@@ -104,8 +102,24 @@ export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, re
     const mark = beside ? { bar: beside.id, side: index < others.length ? ('before' as const) : ('after' as const) } : null;
     return { target: { dock: dock.id, row, index }, mark };
   }
+  for (const dock of boxes) {
+    const { along, cross } = axes(dock, p);
+    if (!overRows(dock, along)) continue;
+    const first = dock.rows[0]!;
+    const last = dock.rows.at(-1)!;
+    if (cross < first.start - Math.max(reach, (first.end - first.start) / 2) || cross > last.end + Math.max(reach, (last.end - last.start) / 2)) continue;
+    if (!canEnter(bar, dock)) return null;
+    const row = cross < first.start ? 0 : dock.rows.length;
+    return { target: { dock: dock.id, row, index: 0, newRow: true }, mark: { dock: dock.id, row } };
+  }
   return null;
 }
+
+/** `p` along `dock`'s rows and across them. */
+const axes = (dock: DockBox, p: DockPoint) => (dock.vertical ? { along: p.clientY, cross: p.clientX } : { along: p.clientX, cross: p.clientY });
+
+/** Whether `dock` has rows and `along` falls within its length. */
+const overRows = (dock: DockBox, along: number): boolean => dock.rows.length > 0 && along >= dock.along[0] && along <= dock.along[1];
 
 /** `layout` with `barId` moved to `to`, or null where that changes nothing. */
 export function movedLayout(layout: ToolbarLayout, barId: string, to: BarTarget): ToolbarLayout | null {

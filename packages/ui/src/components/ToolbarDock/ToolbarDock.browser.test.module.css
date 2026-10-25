@@ -7,3 +7,7 @@
   inline-size: 700px;
   block-size: 400px;
 }
+
+.narrow {
+  inline-size: 420px;
+}

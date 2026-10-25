@@ -109,6 +109,14 @@ Priority tags:
 
 ## Viewport
 
+- **(P3) A drag pan under a scaled host moves the view by the drag in client px** (2026-10-25, read in the
+  code, not seen). The dispatcher's `drag.screenDelta` is the raw `clientX`/`clientY` difference
+  (`routing/src/interactions/dispatcher/invocationCtx.ts`), and `viewport.dragPan` applies it as view px, so
+  under a `scale(2)` ancestor the content runs twice as far as the pointer. Every other pointer read now
+  honors a host's `clientToLocal` (labkit's `CameraInput` wires one since 2026-10-25, and `<SceneCanvas>`
+  already did); the delta would be the difference of two `toCanvasLocal` points instead, which changes
+  what `screenDelta` means for every view-mutating drag.
+
 - **(P3) Raw WebGL that skips `useOrbitView` escapes labkit's missing-camera check.** A trial with
   `orbit` undeclared flags a 3D view in the console and with a "no camera" title-bar badge when the
   instrument calls `useOrbitView()` or a three.js `WebGLRenderer` or `WebGPURenderer` lands in it
@@ -154,10 +162,6 @@ Priority tags:
 - **(P3) Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it would change the output of saved documents.
 
-- **(P3) Bend Along and Repeat Along cannot hide their sources on create.** `hideSources` exists on every effect
-  kind, but only Text Along Path's create action sets it (`EFFECT_DEFAULTS` in
-  `packages/path-tools/src/pathEffects/params.ts`).
-
 - **(P2) Cut of an effect with hidden sources deletes them with it.** Whether the clipboard should carry the
   sources, so a paste is whole, is undecided.
 
@@ -166,12 +170,6 @@ Priority tags:
 
 - **(P3) Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
-
-- **(P3) The `textAlong` items thunk is not memoized.** Every derivation miss, such as each frame of a source
-  drag, re-runs `textClusters`.
-
-- **(P3) `packages/pdf/src/textOutlines.ts` places glyph outlines its own way.** Fold it onto the shared
-  glyph-outline helper in `@weasel-js/text`.
 
 - **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
   read as letter spacing (`packages/svg/src/glyphShifts.ts`), and so is a `dx` on a `<text>`
@@ -380,9 +378,6 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P3) The renderer's outline tier paints the leading code points of a multi-code-point color cluster.**
-  A keycap such as 1️⃣ draws its digit: `paintRuns`' outline tier lacks the `drawsInk` check `textClusters` has.
-
 - **(P2) The panel's Inherit segment is a text label among icons** (2026-10-21). It wants a glyph
   (`docs/icons.md`).
 
@@ -432,6 +427,12 @@ Priority tags:
 ---
 
 ## Text
+
+- **(P3) `emboldenGlyph` caches by outline data while its callers pass that data in both windings**
+  (2026-10-25). `glyphOutlines.ts` passes `emGlyph(d)`, wound positive since `glyphOutlineAt` (2026-10-25), and
+  `emboldenGlyphD` passes `pathFromD(d)` as the font wound it, both under the key `growth|join|d`
+  (`packages/text/src/syntheticBold.ts`). If `growRegion` grows a reversed contour inward, whichever caller runs
+  first decides the other's glyph. Read, not run: check with one glyph wound each way, bolded through both paths.
 
 - **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
@@ -502,8 +503,8 @@ Priority tags:
 
 - **(P3) Several hit tests still scan every node or shape linearly.** Marquee, lasso and point picks
   consult the scene's BVH pick index (`packages/core/src/canvas/pickIndex/`); these do not, and can
-  move onto it: core's `features/text/textHitAt.ts`, `features/measure/measureHit.ts` and
-  `canvas/deps/slice.ts`; `diagram/src/portLayer.ts`, `diagram/src/labelDragLayer.ts`,
+  move onto it: core's `features/text/textHitAt.ts` and `features/measure/measureHit.ts`;
+  `diagram/src/portLayer.ts`, `diagram/src/labelDragLayer.ts`,
   `labkit/src/loupe/lens/lensHitBoxes.ts`, `findPathSnaps` in `geom/src/snap/pathSnap.ts`, and
   `boxesOf` in kernel3d's `snap/sources.ts`.
 
@@ -614,28 +615,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) A disabled group's or section's tab, or a bar's label, doesn't dim.** Headings and frames do (2026-10-24):
-  `applyPrefConditions` names a disabled section in `disabled` by `prefSectionPath`, and every surface reads it
-  there. `GroupTabs`, `PanelTabs` and `BarLayout` take no `disabled` for their labels.
-
-- **(P3) A list item's switch field is disabled by the condition it switches.** `prefScopeIn` spares the leaf an
-  owner's `enableIf` reads by comparing the condition's paths with the leaf's full path, but a `from: 'item'`
-  condition names an item-relative path (`on`), so in `phases.2` the field `phases.2.on` stays disabled
-  (`applyPrefEntryConditions`, checked 2026-10-24).
-
-- **(P3) labkit's `configFromPrefs` drops a section's `showIf` and `enableIf`.** A lab built from a property schema
-  turns each top-level section into a labkit section (`options.section`), which holds no condition, so the section
-  neither hides nor disables its rows there.
-
 - **(P3) A schema cannot name one group's motif for a settings form.** `PrefsForm`, `PrefsPane` and
   `SelectionPanel` draw their framed groups through `MotifFrame` (2026-10-24), so an app's `<DefaultMotif>`
   reaches all of them at once, but a single group can't ask for its own the way labkit's `.motif()` lets a
   `ControlPanel` group. That needs a `PrefGroup` annotation the forms pass as `motif`.
-
-- **(P3) draw's properties panel titles a text-along node "Unknown", and the layers panel shows its id.**
-
-- **(P3) No curved-label component in ui.** `Along/lab/CurvedLabel` (a story) shows the pattern: DOM spans laid
-  along an `Along` arc with `placeAlongRun`. A public component over it is not built.
 
 - **(P2) Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
@@ -647,17 +630,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Hebrew or Arabic curved bar puts item 1 at the left end while the same bar laid out straight starts on the
   right. Reading order needs an inline direction input, which bears on the `'reading' | 'track'` decision above.
 
-- **(P3) A straight `Slider` misreads a press under a rotated ancestor.** `lineGeometry` in
-  `sliderGeometry.ts` lays its line across the rail's client rect, which a rotation turns into the bounding box of
-  the turned rail: under `rotate(90deg)` a press at three quarters of the rail reads 50 (seen in Chromium,
-  2026-10-22). A scale is fine. The curved geometry maps pointers through `boxPoint` in `Along/boxPoint.ts`, which
-  needs an SVG drawn across the box; the rail is HTML.
-
-- **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
-  `apps/draw/src/dev/AssetsPage.test.tsx` with a node property schema open: the Export panel's
-  highlighted literal (`pre[data-testid=schema-literal]`) is about 3,300 elements and 130 ms of a
-  jsdom test, and `IconAttrField`'s grid of every registered icon about 2,200 and 90 ms. Virtualizing
-  either, or mounting the literal only while its panel is open, changes the UI.
+- **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
+  `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
+  (median of 12) with a node property schema open: `IconAttrField`'s grid of every registered icon
+  (489 cells, about 2,200 elements) costs about 105 ms of it, and highlighting the Export panel's
+  two literals about 70 ms (`pre[data-testid=schema-literal]`, about 1,800 elements since
+  `CodeBlock` stopped wrapping plain tokens). The rest is spread over every pane. Virtualizing
+  either list, or mounting the literal only while its panel is open, changes the UI.
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -827,9 +806,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
   segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
-  `MatrixEditor` always lists an enum as radios. The value a leaf shows is one function
-  (`prefLeafValue`, 2026-10-20), which `Bar` and `MenuBar` do not call: a path their `values` lack
-  draws unset, where a params surface draws the default.
+  `MatrixEditor` always lists an enum as radios.
 
 - **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
@@ -840,31 +817,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
   one in labkit, and `PrefsPane` has no emptiness check.
 
-- **(P3) Setting an order on a `Bar`'s `actions` run collapses duplicate keys** (2026-10-23). With an
-  order, an action listed twice in the run is drawn once; with none, both copies stay.
-
-- **(P3) A Cmd- or Ctrl-press never scrolls a curved `Bar`'s run** (2026-10-23), even on a bar with no
-  `onReorder`, where the press reorders nothing. `useRunScroll` skips any mod-press so reordering can
-  take it; it could skip one only where the bar reorders.
-
-- **(P3) On a right-to-left horizontal `Bar`, Alt+→ moves an item toward the visual left**
-  (2026-10-23). `useBarReorderKeys` moves by DOM order, while the pointer reorder places by where the
-  pointer is, so the two disagree under `dir="rtl"`.
-
-- **(P3) A `ToolbarDock` top dock's new-row zone overlaps the side docks' top edges** (2026-10-23).
-  The half-row zone above the top dock's first row reaches over the left and right docks, so a drag
-  near a side dock's top can land in a new top row.
-
-- **(P3) In a squeezed `ToolbarDock` row, a short bar loses its only item first** (2026-10-23). Bars
-  shrink by their flex basis, so a short bar loses its only item before the others lose theirs.
-  Visible in draw on a narrow window.
-
-- **(P3) A bar torn off a `ToolbarDock` remounts in the floating layer** (2026-10-23), so a menu open
-  in it closes and a draft typed into one of its fields is lost.
-
-- **(P3) The `ToolbarDock` lab copies `Along/lab/labActions`' private `Register`** (2026-10-23).
-  `ToolbarDock/lab/ToolbarDock.stories.tsx` and `Along/lab/labActions.tsx` each declare the same
-  one-line `useAction` wrapper; one shared lab helper would serve both.
+- **(P3) Four tests outside ui still declare their own `Register` wrapper round `useAction`** (2026-10-25).
+  ui's stories and tests share `RegisterAction` (`packages/ui/src/testing/registerAction.tsx`), which is not
+  shipped, so labkit's `controls/ControlRow.actions.test.tsx`, core's
+  `interactions/dispatcher/viewport.safari.integration.test.tsx`, and draw's `surfaces/surfaces.test.tsx` and
+  `toolbarDock.test.tsx` each keep a copy. Sharing it across packages needs a test-only export.
 
 ### WeaselDraw app follow-ups (defer)
 
@@ -929,32 +886,20 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) Undo after a drag on a lens's rim zoom waits for the lens canvas to have focus** (2026-10-21). The drag
-  leaves focus on the zoom's thumb (`lens/LensZoom.tsx`), and the lens history answers only while its input element
-  has focus, so Cmd+Z does nothing until the body is pressed. Two loose ends from the same work: a square body's
-  zoom labels nearly touch at the default 160 px (`32×` and `64×`, the end label held inside the track), and a
-  `Slider` given a `lineShape` ignores its coordinates, so the square body's zoom is a straight slider placed by
-  `.lk-lens-zoom__line` rather than a line track.
-- **(P2) In a magnified Live copy, a popover flips and limits its height against the wrong viewport, and a Tooltip
-  still lands off by the lens factor.** ui's `Popover` (2026-10-24) hands React Aria the trigger's rect in the
-  scaled box's own px (`overlays/blockFrame.ts`), so a popover now opens against its trigger at any scale, and the
-  context menu places itself the same way. React Aria still measures the boundary — the viewport — in client px
-  while placing in the box's px, so at `f = 2` it sees about twice the room there is, flips too late and allows
-  too tall a popover (inferred from `calculatePosition`, not seen). A boundary can only be handed to it as an
-  element, and one outside the box breaks the frame its descendant-of-boundary branch assumes, so the fix is likely
-  upstream. RAC's `Tooltip` passes no `getTargetRect` to `useOverlayPosition`, so it is not fixed at all: that too
-  wants an upstream prop, or a ui tooltip on `useOverlayPosition` directly.
-- **(P3) Glass is unbuilt as a user-facing aim** (2026-10-21). `setAimOps(scene, id, 'glass')` makes the reticle's
-  pose depend on the body and is tested (`labkit/src/loupe/lens/lensScene.test.ts`), but no lens action switches to it,
-  so the Loupe keymap has no key for it. What is left: a `loupe.aim.glass` action and key in `lensActionDefs.ts`.
+- **(P3) A square lens body's zoom labels nearly touch at the default 160 px** (2026-10-21). `32×` and `64×` sit
+  close together there, the end label held inside the track (`lens/LensZoom.tsx`). The zoom became a line track
+  inset 24 px from each edge (2026-10-25), which shortens it, so look again in a browser before picking a fix.
+- **(P2) In a magnified Live copy, a popover flips and limits its height against the wrong viewport.** ui's
+  `Popover` (2026-10-24) and `Tooltip` (2026-10-25) hand React Aria the trigger's rect in the scaled box's own px
+  (`overlays/blockFrame.ts`), so they open against their trigger at any scale, and the context menu places itself
+  the same way. React Aria still measures the boundary — the viewport — in client px while placing in the box's
+  px, so at `f = 2` it sees about twice the room there is, flips too late and allows too tall a popover (inferred
+  from `calculatePosition`, not seen). A boundary can only be handed to it as an element, and one outside the box
+  breaks the frame its descendant-of-boundary branch assumes, so the fix is likely upstream.
 - **(P3) A Live copy of an isolated story is drawn soft at magnification** (2026-10-21, inferred, not seen). A
   `<CanvasStack>` puts the scale an ancestor transform shows it at into its backing density, so an in-document copy
   is sharp at any factor. Inside an isolated story's frame the lens's transform is outside the frame's document,
   where the stack's measurement cannot see it, so its canvas is enlarged instead.
-- **(P3) A `<CanvasStack>` under a scaled ancestor maps the pointer in client px** (2026-10-21, read in the code, not
-  seen). `CameraInput`'s `clientToWorld`, `worldToClient` and `hostSize` read the host's client rect, which an
-  ancestor transform (a `<Stage>`, `<TrialOverview>`) scales, while the stack now draws in its layout px. Nothing
-  takes input there today: a lens's copy takes no clicks.
 
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
@@ -1046,13 +991,6 @@ only story runner in the repo.
 ---
 
 ## Demos & visual regression
-
-- **(P3) `AssetsPage`'s first test still times out in some full fleet runs.** "opens on WeaselDraw
-  preferences, and opens a node property schema picked from the list" (`apps/draw/src/dev/AssetsPage.test.tsx`)
-  hit its 5 s limit at 5195 ms on 2026-10-21 (onto job 9139de7e), after 69d135f92 moved its one-off
-  warmup into a `beforeAll` and memoized `CodeBlock` (501 ms locally, about 1.5 s under moderate
-  load). Its body still renders about 6,800 elements; the two big lists are the entry under
-  "Selection, actions & UI panels".
 
 - **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
@@ -1163,12 +1101,14 @@ only story runner in the repo.
   it changes, a browser test can print its own diagnosis with `console.log`, which does reach the log
   (`LabFit.browser.test.tsx` does).
 
-- **(P3) Browser-project runs print "ResizeObserver loop completed with undelivered notifications"** (2026-10-21).
-  The notice is on stderr from passing tests in `labkit/src/loupe/lens/LensOverlay.browser.test.tsx`,
-  `forge/src/shell/FrameView.browser.test.tsx`, `LabLightbox`, `Lab.sidebar`, `AnnotationOverlay.clip`'s and the site's
-  `PuppetSolverLabDemo` browser tests, seen across the forge-loupe branch's runs. Nothing fails on it, so a new loop hides among the old ones;
-  `SidebarPanes.browser.test.tsx` shows the shape of a test that asserts none is raised. Find which observer resizes
-  its own target in each, and fail the browser project on the notice once they are gone.
+- **(P3) The `forge-stories` project prints "ResizeObserver loop completed with undelivered notifications"** (2026-10-21).
+  The `browser` project fails a test on the notice since 2026-10-25 (`vitest.browser.setup.ts`), after `Split` stopped
+  starting its zone observer inside windease's resize delivery, which was the cause in every browser test that raised
+  it. The opt-in stories project loads no such guard and still prints it on stderr from passing stories:
+  `LabFullChrome.stories.tsx`'s "All Chrome" and "Undockable Panels" in every run, and `SelectionPanel.stories.tsx`'s
+  "Gradient Fill Paint" and `Keycap.stories.tsx` in one run each (fleet runs of `fe7082659` and `bdf51b691`). Find which observer is skipped in each, then give the project the same guard. Commit 50ce09b7d (2026-10-25) has a
+  probe for this: it wraps `ResizeObserver` and logs each callback's targets and their depth for the looping frame and
+  the next, and the next frame's first callbacks are the skipped ones.
 
 - **(P3) `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
@@ -1267,6 +1207,45 @@ only story runner in the repo.
     inline-flex inside a line box; made face-independent the strip would settle near 27 px (estimated)
     rather than 30, which is a look to decide, not a fix to make.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
+
+- **(P2) Browser test files fail to load in bursts: "Failed to fetch dynamically imported module".**
+  On 2026-10-25, four fleet runs of branches that touched none of them failed whole files this way,
+  and the next run passed. Each failure is the file's own import, `Failed to import test file …
+  Caused by: TypeError: Failed to fetch dynamically imported module: http://localhost:<port>/…?import&browserv=<ms>`,
+  where `browserv` is the `Date.now()` the tester stamped on the import, so each run's failures can
+  be dated to the millisecond:
+
+  | Log (scratchpad, `fleet-fix-*`) | Node, mode | Files | Project | Window | Into the run |
+  |---|---|---:|---|---|---:|
+  | `n858-squeezed-dock-row` | msb-uai, browser beside | 10 | forge-stories | 01:54:24–01:54:26 | 99 s |
+  | `p932-clean` | studio, browser after | 5 | forge-stories | 01:54:21–01:54:24 | 189 s |
+  | `ui-shared-register` | msb-uai, browser beside | 5 | forge-stories | 02:26:00–02:26:09 | 94 s |
+  | `s825-bar-menubar-defaults-2` | studio, browser after | 1 | browser (`hud/src/glyph.browser.test.ts`) | 02:33:54 | 403 s |
+
+  Ruled out, from the logs and the nodes (verified):
+  - **The optimizer.** Both browser projects log at `info`, and none of these logs has a
+    "Re-optimizing", "new dependencies optimized" or "reloading" line. On msb-uai the
+    `forge-stories` and `browser` dep caches (`node_modules/.vite/vitest/<sha1 of the project
+    name>/deps`) were born at 01:02:48–49 and not rewritten since, which spans both msb-uai failures
+    (stat on the node, 02:58). So neither the run nor the gate's `vitest list` (check:test-projects,
+    which starts a vite server for every project on the same cache dirs) re-bundled under them.
+  - **A fleet-tree sync.** Every log ends `fleet-tree: the tree held … for the whole run`.
+  - **A broken import elsewhere.** None of these logs has an `Internal server error`, a
+    `Failed to resolve import` or a pre-transform error; `x637-curved-label-red`'s single such
+    failure was its own missing `./CurvedLabel`, a real red.
+  - **Another job on the node.** `onto jobs --internal` shows no other job on msb-uai or studio
+    at any of the four moments (studio's long-lived `brick-spot-render` service aside).
+
+  Not known: what the server answered. vite logs neither a 404 nor an aborted request, so the next
+  step is to record it: a Playwright `requestfailed` / `response.status() >= 400` listener on the
+  tester page, printing URL, status and failure text, would say whether the module or one of its
+  imports 404s, 504s, or never answers (inferred as the cheapest discriminator, not tried). The burst
+  shape, many files in under 10 s and then clean, points at a transient server- or browser-side
+  event rather than any one file (inferred).
+  The first two bursts came 3 s apart on two different nodes (01:54:21 on studio, 01:54:24 on
+  msb-uai), each serving its own localhost, so what they shared at that moment is the first thing
+  to look for: a sync from this machine into another tree, a network event, or the onto daemons. The
+  logs lived in a session scratchpad and are not kept.
 
 - **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
   `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM

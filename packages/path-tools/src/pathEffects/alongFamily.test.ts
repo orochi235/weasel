@@ -6,7 +6,7 @@ import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import {
   clipboardCutAction, createScene, deleteAction, type NodeId, pathEffectOf, type RectPose, type Scene, withPathEffectsRegistry,
 } from '@weasel-js/core';
-import { bendAlongAction, editPathEffectAction, expandPathEffectAction, textAlongAction } from './actions';
+import { bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction, textAlongAction } from './actions';
 import { releasePathEffectAction, setEffectPathAction } from './retarget';
 import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
 
@@ -219,6 +219,33 @@ describe('removing an effect that hides its sources', () => {
     run(deleteAction, deps);
     expect(scene.get('r' as NodeId)).toBeDefined();
     expect(scene.get('p' as NodeId)).toBeDefined();
+  });
+});
+
+describe('hideSources on create', () => {
+  it.each([
+    ['Bend Along', bendAlongAction],
+    ['Repeat Along', repeatAlongAction],
+  ])('%s hides its sources when its params ask', (_, action) => {
+    const { scene, deps, selected } = setup(['r', 'p']);
+    run(action, deps, { hideSources: true });
+    expect(pathEffectOf(scene.get(selected()[0] as NodeId)!)).toMatchObject({ hideSources: true });
+    expect(hidden(scene, 'r')).toBe(true);
+    expect(hidden(scene, 'p')).toBe(true);
+  });
+
+  it('Text Along Path leaves its sources shown when its params say not to hide them', () => {
+    const { scene, deps, selected } = setup(['p', 't']);
+    run(textAlongAction, deps, { hideSources: false });
+    expect(pathEffectOf(scene.get(selected()[0] as NodeId)!)?.hideSources).toBeUndefined();
+    expect(hidden(scene, 't')).toBe(false);
+    expect(hidden(scene, 'p')).toBe(false);
+  });
+
+  it('is not an edit setting, which would leave the hidden flags out of step', () => {
+    const { scene, deps, fx } = textAlong();
+    run(editPathEffectAction, deps, { hideSources: false });
+    expect(pathEffectOf(scene.get(fx as NodeId)!)).toMatchObject({ hideSources: true });
   });
 });
 

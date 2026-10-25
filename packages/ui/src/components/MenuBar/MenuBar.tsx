@@ -2,7 +2,7 @@ import { useCallback, useId, useMemo, useRef, useState, type KeyboardEvent } fro
 import { createPortal } from 'react-dom';
 import { useLatest, type OpenMenu } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar, valueAt } from '../Bar/Bar';
+import { Bar, barReader } from '../Bar/Bar';
 import { useBarMenuResolver } from '../Bar/BarMenu';
 import { barMenuRoot } from '../Bar/barMenuRoot';
 import { OpenPanels } from '../ContextMenu/ContextMenuHost';
@@ -45,7 +45,7 @@ const ALT: MenuAccessChord = { alt: true };
  * panels do, with the pointer and keyboard behavior of a desktop menu bar.
  */
 export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', accessChord = ALT, className }: MenuBarProps) {
-  const read = (path: string) => valueAt(values, path);
+  const read = barReader(schema, values, over);
   const { titles, disabled } = shownMenuBar(schema, read, over);
   const menus = titles.filter((t): t is MenuTitle => t.kind === 'menu');
   const resolve = useBarMenuResolver();

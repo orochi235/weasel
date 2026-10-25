@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { icon } from '../../icons.gen';
 import { Bar } from './Bar';
 import { renderWithIcons } from '../../testing/withIcons';
+import { RegisterAction } from '../../testing/registerAction';
 
 const schema: PrefGroup = {
   name: 'Text',
@@ -34,11 +35,6 @@ const schema: PrefGroup = {
     },
   },
 };
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 const separators = (root: HTMLElement): number => root.querySelectorAll('[role="separator"]').length;
 
@@ -124,7 +120,7 @@ describe('Bar', () => {
     const run = vi.fn();
     renderWithIcons(
       <ActionsProvider>
-        <Register action={{ id: 'edit.undo', label: 'Undo', invoker: { timing: 'immediate', run } }} />
+        <RegisterAction action={{ id: 'edit.undo', label: 'Undo', invoker: { timing: 'immediate', run } }} />
         <Bar schema={schema} />
       </ActionsProvider>,
     );

@@ -1,24 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
-  ActionsProvider, DepRegistryProvider, useAction, useDepRegistry, useDepSource,
+  ActionsProvider, DepRegistryProvider, useDepRegistry, useDepSource,
   type Action, type DepName, type DepRegistry,
 } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { BarAction, BarActionButton } from './BarAction';
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
+import { RegisterActions } from '../../testing/registerAction';
 
 function Host({ actions, children }: { actions: Action[]; children: React.ReactNode }) {
   return (
     <ActionsProvider>
-      {actions.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={actions} />
       {children}
     </ActionsProvider>
   );

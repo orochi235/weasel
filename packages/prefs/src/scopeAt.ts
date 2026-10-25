@@ -48,18 +48,24 @@ export interface PrefOwner {
   node: { showIf?: PrefCondition; enableIf?: PrefCondition };
   scope: PrefScope;
   above: PrefScope;
+  /** The path of the list's or the map's entry the owner sits in (`'phases.2'`), under which a condition that reads
+   *  the entry (`from: 'item'`) names its paths. Unset outside an entry, or where it has no one path. */
+  entry?: string;
 }
 
 /**
  * The scope a leaf at `path` directly in `owner` sits in: the owner's, except
  * that the owner's own `enableIf` does not disable a leaf it reads. That leaf
  * is the owner's switch, and disabled by its own condition it could never be
- * turned back on.
+ * turned back on. A test that reads the entry reads the leaf at its path
+ * under `owner.entry`.
  */
 export function prefScopeIn(owner: PrefOwner, path: string, holds: PrefConditionJudge): PrefScope {
-  const { node, scope, above } = owner;
+  const { node, scope, above, entry } = owner;
   if (scope.enabled || !above.enabled || node.enableIf === undefined) return scope;
-  if (!prefConditionPaths(node.enableIf).includes(path)) return scope;
+  const reads = prefConditionPaths(node.enableIf).includes(path)
+    || (entry !== undefined && prefConditionPaths(node.enableIf, 'item').some((p) => `${entry}.${p}` === path));
+  if (!reads) return scope;
   return prefScopeUnder(above, { showIf: node.showIf }, holds);
 }
 

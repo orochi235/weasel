@@ -39,7 +39,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const run = useMemo(() => trackRun(shape), [shape]);
   const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.onReorder !== undefined });
-  const leading = useBarLead(barLead(props.lead, label, props.icon));
+  const leading = useBarLead(barLead(props));
   const lengths = useItemLengths(root, drawnKeys(items, leading != null), barKeyOf);
   const gap = useRunGap(root);
 
@@ -49,7 +49,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const { line, rest } = splitBarItems(items, kept);
 
   const order = [...(leading != null ? [BAR_LEAD] : []), ...line.map((item) => item.key), ...(rest.length > 0 ? [BAR_MORE] : [])];
-  const along = useRunRow({ root, keyOf: barKeyOf, run, lengths: order.map((key) => lengths.get(key) ?? 0), gap, align, overflow: menu ? 'center' : 'scroll' });
+  const along = useRunRow({ root, keyOf: barKeyOf, run, lengths: order.map((key) => lengths.get(key) ?? 0), gap, align, overflow: menu ? 'center' : 'scroll', modReorders: props.onReorder !== undefined });
   const place = (i: number) => {
     const spot = along.place(i);
     return { ...spot, className: s.item!, side: sideAtRun(run, spot.at) };

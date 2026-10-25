@@ -40,8 +40,13 @@ export function actionsLeafActions(
   { pick, only, icons, labels }: ActionsLeafOptions = {},
 ): PrefAction[] {
   const picked = pick ? pick(all) : all.filter((a) => a.group === leaf.group).flatMap(actionItems);
-  const byKey = new Map(picked.map((item) => [item.key, item]));
-  const items = leaf.order ? resolveOrder([...byKey.keys()], leaf.order, 'end').map((key) => byKey.get(key)!) : picked;
+  const byKey = new Map<string, ActionItem[]>();
+  for (const item of picked) {
+    const copies = byKey.get(item.key);
+    if (copies) copies.push(item);
+    else byKey.set(item.key, [item]);
+  }
+  const items = leaf.order ? resolveOrder([...byKey.keys()], leaf.order, 'end').flatMap((key) => byKey.get(key)!) : picked;
   return items
     .filter((item) => !only || only.includes(item.key) || only.includes(item.action.id))
     .map((item) => {

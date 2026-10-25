@@ -1,18 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { ActionsProvider, asNodeId, createScene, useAction, type Action, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import { ActionsProvider, asNodeId, createScene, type Action, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import { pref, type PrefLeaf } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
+import { RegisterAction } from '../../testing/registerAction';
 
 afterEach(cleanup);
 
 interface Data { kind: string }
 const routing: NodeRoutingEntry[] = [{ name: 'thing', matches: (d) => (d as Data)?.kind === 'thing' }];
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 const act = (id: string, label: string): Action => ({ id, label, group: 'arrange', invoker: { timing: 'immediate', run: () => {} } });
 
@@ -22,8 +18,8 @@ function setup(members: Record<string, PrefLeaf>) {
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];
   return render(
     <ActionsProvider>
-      <Register action={act('front', 'Bring to front')} />
-      <Register action={act('back', 'Send to back')} />
+      <RegisterAction action={act('front', 'Bring to front')} />
+      <RegisterAction action={act('back', 'Send to back')} />
       <SelectionPanel scene={scene} selection={{ current: ['a'] } as unknown as SelectionApi} properties={properties} routing={routing} />
     </ActionsProvider>,
   );

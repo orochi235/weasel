@@ -68,7 +68,8 @@
 }
 
 .floating:not([data-placed]),
-.floating:empty {
+.floating:empty,
+.floating:has(> .host:empty) {
   visibility: hidden;
 }
 
@@ -140,20 +141,29 @@
   min-height: 0;
 }
 
-/* What the dock draws round each bar, so a drag can mark it. */
+/* What the dock draws round each bar, so a drag can mark it. A squeezed row shrinks it no shorter than its bar's
+   least length (`--dock-least`, which the bar reports), so the long bars give up their items before a short one loses
+   its only item. */
 .slot {
   display: flex;
-  min-width: 0;
+  min-inline-size: var(--dock-least, 0);
 }
 
 .left .slot,
 .right .slot {
   flex-direction: column;
-  min-height: 0;
+  min-inline-size: 0;
+  min-block-size: var(--dock-least, 0);
+}
+
+/* The element a bar is drawn into, which moves with the bar from slot to slot; the bar lays out as the slot's own. */
+.host {
+  display: contents;
 }
 
 /* A bar whose content draws nothing takes no room, nor a gap in its row. */
-.slot:empty {
+.slot:empty,
+.slot:has(> .host:empty) {
   display: none;
 }
 

@@ -17,6 +17,7 @@ import { LayerList, type LayerListItem, useSceneLayerList } from '@weasel-js/ui/
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { type CSSProperties, type MouseEvent, type ReactElement, useSyncExternalStore } from 'react';
 import type { DrawScene, WeaselDrawData } from './drawDocument';
+import { effectNodeName } from './nodeKinds';
 import type { PanelChrome } from './surfaces/types';
 import { usePref } from './prefs';
 
@@ -66,7 +67,7 @@ export interface LayersPanelProps {
 /**
  * The Layers panel: a row per node, front to back, and a fixed Background
  * row last. Each row hides, locks and renames its node; a name is
- * `data.label`, shown in place of a text node's text. With
+ * `data.label`, shown in place of a text node's text or an effect's name. With
  * `ui.showAnnotations` on, the annotation layer — the measurements — and each
  * measurement are listed too, marked not printed; picking one there picks the
  * measurement, as a click on it does.
@@ -83,7 +84,7 @@ export function LayersPanel(props: LayersPanelProps): ReactElement {
       if (m) return { label: node.data.label ?? `Measurement ${qty(m.distance, AT).text}` };
       const data = node.data;
       const shown = withInheritedPaint(data, inheritedPaintIn(scene, node));
-      return { label: data.label ?? data.text ?? node.id, leading: <LayerSwatch color={layerSwatch(shown)} /> };
+      return { label: data.label ?? data.text ?? effectNodeName(data) ?? node.id, leading: <LayerSwatch color={layerSwatch(shown)} /> };
     },
     rename: (node, label) => ({ ...node.data, label }),
     ...(showAnnotations

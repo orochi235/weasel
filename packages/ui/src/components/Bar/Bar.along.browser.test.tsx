@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, type AlongArc } from '../Along';
 import { Slider, type Thumb } from '../Slider';
 import { renderWithIcons } from '../../testing/withIcons';
 import { icon } from '../../icons.gen';
 import { Bar, type BarProps } from './Bar';
+import { RegisterActions } from '../../testing/registerAction';
 
 const KEYS = ['undo', 'redo', 'flipX', 'flipY', 'front', 'back'] as const;
 const NAMES = ['Undo', 'Redo', 'Flip across', 'Flip down', 'Bring to front', 'Send to back'];
@@ -49,16 +50,11 @@ interface LensProps {
   transform?: string;
 }
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 function Lens({ size = 240, top = 40, arc = TOP, schema = SIX, overflow, slider = false, underlay = false, density, transform }: LensProps) {
   const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 4 }]);
   return (
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <button type="button">Before</button>
       <div data-box data-wzl-density={density} style={{ position: 'relative', width: size, height: size, margin: `${top}px 40px 40px`, transform }}>
         {underlay && <button type="button" style={{ position: 'absolute', inset: 0 }}>Image</button>}

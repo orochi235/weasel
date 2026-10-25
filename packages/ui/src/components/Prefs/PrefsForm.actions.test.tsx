@@ -1,23 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { icon } from '../../icons.gen';
 import { renderWithIcons } from '../../testing/withIcons';
+import { RegisterActions } from '../../testing/registerAction';
 
 afterEach(cleanup);
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 function Host({ actions, children }: { actions: Action[]; children: ReactNode }) {
   return (
     <ActionsProvider>
-      {actions.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={actions} />
       {children}
     </ActionsProvider>
   );

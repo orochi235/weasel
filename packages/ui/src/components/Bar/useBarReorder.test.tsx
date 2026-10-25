@@ -1,12 +1,13 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Bar } from './Bar';
 import { BAR_IN, BAR_UNIT } from './barOrder';
 import { useBarReorder } from './useBarReorder';
+import { RegisterAction } from '../../testing/registerAction';
 
 // jsdom lays nothing out: every marked unit is 40 px wide, side by side along x in document order, so a top-level
 // cell and the buttons inside it stand at successive slots. Every other box is empty at the origin.
@@ -29,21 +30,16 @@ const MOD: Record<string, boolean> = isApplePlatform() ? { metaKey: true } : { c
 
 const act = (name: string): PrefLeaf => ({ kind: 'action', name, description: '', default: undefined, action: `x.${name}` }) as PrefLeaf;
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 const ran = vi.fn();
 const reg = (id: string, group: string): Action => ({ id, label: id, group, invoker: { timing: 'immediate', run: () => ran(id) } });
 
 const host = (node: ReactNode) => (
   <ActionsProvider>
     {['a', 'b', 'c', 'd', 'p', 'q'].map((n) => (
-      <Register key={n} action={reg(`x.${n}`, 'x')} />
+      <RegisterAction key={n} action={reg(`x.${n}`, 'x')} />
     ))}
-    <Register action={reg('front', 'arrange')} />
-    <Register action={reg('back', 'arrange')} />
+    <RegisterAction action={reg('front', 'arrange')} />
+    <RegisterAction action={reg('back', 'arrange')} />
     {node}
   </ActionsProvider>
 );

@@ -8,6 +8,9 @@ export interface Box {
 }
 
 const NONE: Box = { width: 0, height: 0 };
+
+/** An element's laid-out size, which a CSS transform on it or an ancestor leaves alone. */
+export const layoutBox = (el: HTMLElement): Box => ({ width: el.offsetWidth, height: el.offsetHeight });
 const same = (a: readonly Box[], b: readonly Box[]): boolean =>
   a.length === b.length && a.every((box, i) => box.width === b[i]!.width && box.height === b[i]!.height);
 
@@ -29,7 +32,7 @@ export function useBoxes(
     const measure = (): void => {
       const next = read.current().map((el) => {
         if (!el) return NONE;
-        if (untransformed && el instanceof HTMLElement) return { width: el.offsetWidth, height: el.offsetHeight };
+        if (untransformed && el instanceof HTMLElement) return layoutBox(el);
         const r = el.getBoundingClientRect();
         return { width: r.width, height: r.height };
       });

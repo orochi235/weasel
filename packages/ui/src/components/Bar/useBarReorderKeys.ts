@@ -4,6 +4,7 @@ import { useLatest } from '@weasel-js/react';
 import { BAR_IN, BAR_UNIT } from './barOrder';
 import { BAR_LEAD } from './useBarOverflow';
 import { containerUnits, grabbedUnit, movedInto } from './useBarReorder';
+import { inlineDirection } from '../../useRovingTabIndex';
 
 /** What {@link useBarReorderKeys} reads. */
 export interface BarReorderKeysArgs {
@@ -12,7 +13,7 @@ export interface BarReorderKeysArgs {
   order: PrefOrder | undefined;
   /** Unset, the keys do nothing and no shortcuts are named. */
   onReorder?: (order: PrefOrder) => void;
-  /** A vertical bar answers to Alt+Up and Down; any other, to Alt+Left and Right in reading order. */
+  /** A vertical bar answers to Alt+Up and Down; any other, to Alt+Left and Right, mirrored under right-to-left. */
   vertical: boolean;
   /** As on `useBarReorder`: every child key of a container, so children nothing draws keep their places. */
   keysOf?: (container: string) => readonly string[] | undefined;
@@ -79,8 +80,10 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, keysOf }: 
   const onKeyDownCapture = (e: ReactKeyboardEvent): void => {
     const el = root.current;
     const { order: was = {}, onReorder: done, keysOf: listOf } = latest.current;
-    const back = e.key === (vertical ? 'ArrowUp' : 'ArrowLeft');
-    if (done === undefined || el === null || !e.altKey || e.ctrlKey || e.metaKey || (!back && e.key !== (vertical ? 'ArrowDown' : 'ArrowRight'))) return;
+    if (done === undefined || el === null || !e.altKey || e.ctrlKey || e.metaKey) return;
+    const [backKey, onKey] = vertical ? ['ArrowUp', 'ArrowDown'] : inlineDirection(el) === 'rtl' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+    const back = e.key === backKey;
+    if (!back && e.key !== onKey) return;
     const target = e.target as Element;
     // A dock's handle answers to Alt+arrows itself, moving the whole bar.
     if (entersText(target) || target.closest?.(`[${BAR_LEAD}]`)) return;

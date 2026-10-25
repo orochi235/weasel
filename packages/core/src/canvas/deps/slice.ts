@@ -14,11 +14,12 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { pathInWorld } from '@weasel-js/geom';
+import { boundsOfCoords, pathInWorld } from '@weasel-js/geom';
 import { drawnPose, leafPath, storePiece, type DrawnPose } from './pathLeaf';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { documentOf } from 'core/scene/documentOf';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
+import { indexedCandidates } from 'canvas/pickIndex/scenePickIndex';
 
 /** Publish how a slice (knife cut) is performed, so the `slice` action can
  *  run against the consumer's geometry. */
@@ -63,7 +64,8 @@ export function useSliceDepSource(
       const descriptor = descriptorRef.current ?? AUTO_POSE_DESCRIPTOR;
       const leaves: SliceLeaf<Node<unknown, string, unknown>>[] = [];
       const drawnAt = new Map<string, DrawnPose>();
-      for (const node of sc.renderOrderNodes()) {
+      const nodes = (candidatesUnder(sc, descriptor, cut) ?? sc.renderOrderNodes()) as readonly Node<unknown, string, unknown>[];
+      for (const node of nodes) {
         if (sc.isHidden(node.id)) continue;
         const path = leafPath(sc, node);
         if (!path) continue;
@@ -89,6 +91,18 @@ export function useSliceDepSource(
       if (nextSelection) sel.set(nextSelection as NodeId[]);
     },
   }));
+}
+
+/** The nodes whose boxes the cut's bounds reach, or null when the pick index cannot say. */
+function candidatesUnder(
+  scene: Scene<unknown, string, unknown>,
+  descriptor: PoseDescriptor<unknown>,
+  cut: ReadonlyArray<{ x: number; y: number }>,
+): readonly unknown[] | null {
+  const b = boundsOfCoords(cut.flatMap((p) => [p.x, p.y]));
+  if (b === null) return null;
+  const broad = { box: { x: b[0], y: b[1], width: b[2] - b[0], height: b[3] - b[1] } };
+  return indexedCandidates(scene, descriptor, () => broad);
 }
 
 function siblingIndex(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>): number {

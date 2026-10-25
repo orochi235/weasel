@@ -73,6 +73,7 @@ export function ObjectLeaf({
   const sectionOff = (path: string): boolean => (ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true);
   const parts: ObjectLeafParts<LeafCell> = {
     path: ctx.path,
+    off: sectionOff,
     cell: (key, child, surface) => objectFieldCell(owner, key, child, surface),
     // Neighbors are drawn together, so a run of paired flags fuses in a bar as it does in a row.
     barCells: (cells) => renderCells(cells, renderers).map((cell) => ({ kind: 'cell', path: cell.key, content: cell.content })),

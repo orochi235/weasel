@@ -19,6 +19,30 @@
   opacity: 0;
 }
 
+.arrow {
+  position: absolute;
+}
+
+.arrow[data-placement='top'] {
+  top: 100%;
+  transform: translateX(-50%);
+}
+
+.arrow[data-placement='bottom'] {
+  bottom: 100%;
+  transform: translateX(-50%);
+}
+
+.arrow[data-placement='left'] {
+  left: 100%;
+  transform: translateY(-50%);
+}
+
+.arrow[data-placement='right'] {
+  right: 100%;
+  transform: translateY(-50%);
+}
+
 .arrow svg {
   display: block;
   fill: var(--wzl-surface);

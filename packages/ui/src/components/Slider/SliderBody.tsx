@@ -46,17 +46,18 @@ export function SliderBody<T extends Thumb = Thumb>(
   // The value span on a line. Every pointer is measured against it, and thumbs, ticks
   // and stop labels are laid out inside it, so they agree by construction.
   const railRef = useRef<HTMLDivElement | null>(null);
+  const railFrameRef = useRef<SVGSVGElement | null>(null);
   const paintRef = useRef<HTMLDivElement | null>(null);
   const bandRef = useRef<SVGPathElement | null>(null);
   const thumbEls = useRef<(HTMLDivElement | null)[]>([]);
-  // The track, the rail and the painted layer, then each thumb.
-  const boxes = useBoxes(() => [trackRef.current, railRef.current, paintRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], thumbs.length);
+  // The track, the rail and the painted layer, then each thumb, in their own px as the pointers are.
+  const boxes = useBoxes(() => [trackRef.current, railRef.current, paintRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], thumbs.length, { untransformed: true });
   const thumbLength = useBoxes(() => [thumbEls.current[0] ?? null], thumbs.length, { untransformed: true })[0]?.width || 14;
   const along = useTrackShape();
   const shape = props.shape ?? along?.shape;
   const { geometry, run } = useSliderGeometry({
     shape, thumbFit: props.thumbFit ?? 'inside', thumbLength,
-    rail: () => railRef.current, band: () => bandRef.current,
+    rail: () => railRef.current, railFrame: () => railFrameRef.current, band: () => bandRef.current,
   });
   const scale = useScale(span, strict, step);
   const { valueToFraction, valueAt } = scale;
@@ -122,7 +123,10 @@ export function SliderBody<T extends Thumb = Thumb>(
       <div className={s.row}>
       <div className={s.track} ref={trackRef} onPointerDown={pointer.onTrackPointerDown}>
         {props.renderTrack && <div className={s.trackInner} ref={paintRef}>{painted}</div>}
-        <div className={s.rail} ref={railRef} data-slider-rail>{marks}</div>
+        <div className={s.rail} ref={railRef} data-slider-rail>
+          <svg className={s.railFrame} ref={railFrameRef} aria-hidden="true" />
+          {marks}
+        </div>
       </div>
       {placement === 'inline-after' && (
         <span data-readout="inline" className={s.readoutInline}>

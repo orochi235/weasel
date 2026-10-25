@@ -101,6 +101,11 @@ export class LayoutColumns {
     return out;
   }
 
+  /** Code point `start + pos`'s `LaidOutCell.drawsInk`, without building the cell. */
+  drawsInk(start: number, pos: number): boolean {
+    return (this.num[(start + pos) * NUM + FLAGS] & DRAWS_INK) !== 0;
+  }
+
   /** Code point `start + pos`'s cell, as a new object. */
   cell(start: number, pos: number): LaidOutCell {
     const n = (start + pos) * NUM;

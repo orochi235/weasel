@@ -1,6 +1,7 @@
 import { type Camera3d, clampCamera, createCamera } from '@weasel-js/kernel3d';
 import { type ReactNode, type RefObject, useContext, useMemo, useRef, useState } from 'react';
 import { type CameraGestures, CameraGesturesContext } from '../canvas/cameraGestures';
+import { clientSize, layoutSize } from '../canvas/hostBox';
 import { Orbit } from '../canvas/Orbit';
 import { orbitZoomView } from '../canvas/orbitZoom';
 import { Stage } from '../canvas/Stage';
@@ -78,6 +79,7 @@ export function useTrialCamera({
     setView,
     presented: useIsPresented(trialId),
     viewport: camera?.kind === 'canvas' ? canvasHost : measured,
+    measure: camera?.kind === 'orbit' ? clientSize : layoutSize,
   });
   const home = (): void => {
     const placed = placement.home();

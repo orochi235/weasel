@@ -1,4 +1,4 @@
-import { ellipseShape, type TrackShape } from '@weasel-js/geom';
+import { ellipseShape, lineShape, type TrackShape } from '@weasel-js/geom';
 import type { AlongArc } from '@weasel-js/ui/components/Along';
 import type { LoupeShape } from '../types';
 
@@ -11,8 +11,7 @@ export const ZOOM_INSET = 24;
 /** The track a body's zoom lies along: an arc on a round body, an ellipse on a stretched one, straight on a square. */
 export type ZoomTrack =
   | { kind: 'arc'; arc: AlongArc }
-  | { kind: 'ellipse'; shape: (box: { width: number; height: number }) => TrackShape }
-  | { kind: 'line' };
+  | { kind: 'ellipse' | 'line'; shape: (box: { width: number; height: number }) => TrackShape };
 
 const ARC: ZoomTrack = {
   kind: 'arc',
@@ -30,7 +29,14 @@ const ELLIPSE: ZoomTrack = {
       direction: 'ccw',
     }),
 };
-const LINE: ZoomTrack = { kind: 'line' };
+const LINE: ZoomTrack = {
+  kind: 'line',
+  shape: ({ width, height }) =>
+    lineShape(
+      { x: ZOOM_INSET, y: height - ZOOM_INSET },
+      { x: Math.max(ZOOM_INSET, width - ZOOM_INSET), y: height - ZOOM_INSET },
+    ),
+};
 
 /** The zoom track for a body of `shape` drawn `size` px; a round body under half a px out of true is a circle. */
 export function zoomTrackOf(shape: LoupeShape, size: { width: number; height: number }): ZoomTrack {

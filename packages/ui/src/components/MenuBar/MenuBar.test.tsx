@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from './MenuBar';
 import { menuBarTitles } from './menuBarTitles';
+import { RegisterActions } from '../../testing/registerAction';
 
 afterEach(cleanup);
 
@@ -26,15 +27,10 @@ const WITH_SUBMENU: PrefGroup = pref.group('', {
   edit: SCHEMA.children.edit!,
 });
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 function setup(schema = SCHEMA) {
   render(
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <button type="button">Before</button>
       <MenuBar schema={schema} />
     </ActionsProvider>,
@@ -223,7 +219,7 @@ describe('MenuBar conditions', () => {
   });
   const gated = (on: boolean) => render(
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <MenuBar schema={GATED} values={{ on }} />
     </ActionsProvider>,
   );
@@ -249,7 +245,7 @@ describe('MenuBar conditions', () => {
   const openThenFlip = (title: 'File' | 'Edit') => {
     const tree = (on: boolean) => (
       <ActionsProvider>
-        {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+        <RegisterActions actions={ACTIONS} />
         <MenuBar schema={GATED} values={{ on }} />
       </ActionsProvider>
     );

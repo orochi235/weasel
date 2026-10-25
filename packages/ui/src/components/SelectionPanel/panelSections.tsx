@@ -30,16 +30,21 @@ interface DrawnSection {
   off?: boolean;
 }
 
+/** Whether `section`'s `enableIf` turns it off. */
+const sectionOff = (section: PanelSection, scope: PanelCellScope): boolean => scope.disabled.has(prefSectionPath('', section.key));
+
 /** One line of bar forms, with no heading and no row labels. */
 function barSection(section: PanelSection, scope: PanelCellScope, marks: PanelMarks): DrawnSection[] {
   const cells = section.rows.flatMap((row) => rowCells(row, scope, 'bar'));
   if (cells.length === 0) return [];
+  const off = sectionOff(section, scope);
   const bar = (
     <BarLayout
       framed
       overflow={section.overflow}
       lead={section.lead}
       icon={section.icon}
+      disabled={off}
       label={section.name === '' ? undefined : section.name}
       nodes={cells.map((cell) => ({ kind: 'cell', path: cell.key, content: cell.hidden ? <>{cell.content}<HiddenBadge /></> : cell.content }))}
       cells={() => []}
@@ -47,7 +52,7 @@ function barSection(section: PanelSection, scope: PanelCellScope, marks: PanelMa
       attrs={(at, leaf) => selectionAttrs(at, marks, leaf)}
     />
   );
-  return [{ section, content: bar }];
+  return [{ section, content: bar, off }];
 }
 
 /**
@@ -122,7 +127,7 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
   const headControl = only && rowCells({ label: section.name, leaves: [{ ...only, leaf: { ...only.leaf, name: section.name } }] }, scope)[0];
   if (rows.length === 0 && !headControl) return [];
   const headed = sectionHeaded(section);
-  const off = scope.disabled.has(prefSectionPath('', section.key));
+  const off = sectionOff(section, scope);
   const title = offTitle(section.name, off);
   // A section hidden whole carries one mark, on its heading; with no heading each of its rows does.
   const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden)) && headControl?.hidden !== false;
@@ -187,11 +192,11 @@ function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode
       );
       continue;
     }
-    const run = step.tabs.map(({ section: at, content }) => {
+    const run = step.tabs.map(({ section: at, content, off }) => {
       const holds = at.key === lead || at.rows.some((row) => row.leaves.some((item) => pathWithin(panelLeafKey(item), lead)));
       // An open tab says so with `data-selected` of its own, so a tab is pressed as a rail entry is and the mark is its panel's.
       const [attrs, panelAttrs] = [{ [RAIL_ATTR]: at.key }, selectionAttrs(at.key, selectedOnly(marks))];
-      return { id: at.key, name: at.name, content, holds, attrs, panelAttrs };
+      return { id: at.key, name: at.name, content, holds, attrs, panelAttrs, disabled: off };
     });
     out.push(<PanelTabs key={step.tabs[0]!.section.key} className={s.section} tabs={run} lead={lead} />);
   }

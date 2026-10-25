@@ -7,7 +7,7 @@ import { cleanup, screen, waitFor } from '@testing-library/react';
 import { createTransformOp, effectivePose, type RectPose, sceneToAdapter } from '@weasel-js/core';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, expect, test } from 'vitest';
-import { commands, page } from 'vitest/browser';
+import { commands, page, userEvent } from 'vitest/browser';
 import { defineInstrument } from '../../instrument/defineInstrument';
 import { Lab } from '../../lab/Lab';
 import { LensOverlay } from './LensOverlay';
@@ -123,6 +123,25 @@ test('dragging the thumb sets the factor and resizes the reticle with it, as one
   expect(pose('a:reticle').width).toBe(lens.width / 4);
 });
 
+test('a drag on the zoom hands focus back to the lenses, so the undo key answers at once', async () => {
+  const zoom = await mount();
+  const thumb = screen.getByRole('slider', { name: 'Zoom' });
+  await drag(mid(thumb), mid(ticks(zoom)[4]!));
+  await waitFor(() => expect(settingsOf(scene, 'a')?.factor).toBe(16));
+  expect(document.activeElement).toBe(document.querySelector('.lk-lens-input'));
+  await userEvent.keyboard('{ControlOrMeta>}z{/ControlOrMeta}');
+  await waitFor(() => expect(settingsOf(scene, 'a')?.factor).toBe(4));
+});
+
+test('the arrow keys on a focused zoom thumb leave focus on it', async () => {
+  await mount();
+  const thumb = screen.getByRole('slider', { name: 'Zoom' });
+  thumb.focus();
+  await userEvent.keyboard('{ArrowRight}');
+  await waitFor(() => expect(settingsOf(scene, 'a')?.factor).toBe(8));
+  expect(document.activeElement).toBe(thumb);
+});
+
 test('a press on the zoom moves and selects nothing, and a press beside it still moves the body', async () => {
   const zoom = await mount();
   const before = pose('a:body');
@@ -192,7 +211,7 @@ test('a body stretched into an ellipse gets an elliptical track', async () => {
 test('a square body’s zoom runs straight along its bottom edge', async () => {
   sceneToAdapter(scene).applyOps(setLensOps(scene, 'a', { shape: 'square' }), 'square');
   const zoom = await mount();
-  expect(zoom.querySelector('[data-shape]')).toBeNull();
+  expect(zoom.querySelector<HTMLElement>('[data-shape]')?.dataset.shape).toBe('line');
   const b = body();
   const ys = ticks(zoom).map((t) => mid(t).y);
   for (const y of ys) expect(y).toBeCloseTo(ys[0]!, 0);

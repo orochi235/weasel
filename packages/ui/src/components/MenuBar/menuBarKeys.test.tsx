@@ -4,7 +4,6 @@ import {
   ActionsProvider,
   ActiveToolContextProvider,
   DepRegistryProvider,
-  useAction,
   useActionsRegistry,
   useGestureDispatcher,
   type Action,
@@ -14,6 +13,7 @@ import {
 import { isApplePlatform } from '@weasel-js/gestures';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar, type MenuAccessChord } from './MenuBar';
+import { RegisterActions } from '../../testing/registerAction';
 
 /** Every dispatcher mounted, by its options: how the test reaches the registry the bar's own dispatcher reads. */
 const mounted = vi.hoisted(() => [] as UseGestureDispatcherOptions[]);
@@ -56,11 +56,6 @@ const FILE_GATED: PrefGroup = pref.group('', {
   edit: SCHEMA.children.edit!,
 });
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 /** The app's own keys, on a dispatcher of its own as an app's canvas would run one. */
 function AppKeys() {
   const registry = useActionsRegistry() as ActionsRegistry;
@@ -75,7 +70,7 @@ function setup({ accessChord, schema = SCHEMA }: { accessChord?: MenuAccessChord
     <DepRegistryProvider>
       <ActionsProvider>
         <ActiveToolContextProvider>
-          {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+          <RegisterActions actions={ACTIONS} />
           <AppKeys />
           <input aria-label="Name" />
           <MenuBar schema={schema} values={{ on: false }} {...(accessChord ? { accessChord } : {})} />

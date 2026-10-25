@@ -5,13 +5,13 @@ import {
   DepRegistryProvider,
   held,
   key,
-  useAction,
   useDepSource,
   type Action,
   type GestureBinding,
 } from '@weasel-js/core';
 import { useState } from 'react';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
+import { RegisterActions } from '../../testing/registerAction';
 
 const ACTIONS: readonly Action[] = [
   { id: 'zoomIn', label: 'Zoom in' },
@@ -27,11 +27,6 @@ const BINDINGS: readonly GestureBinding[] = [
   { spec: held('Space'), actionId: 'peek' },
 ];
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 /** A keymap labeled `label`, open, with a key, a pointer and a held binding. */
 function Open({ label }: { label: string }) {
   const [stack] = useState(() => {
@@ -43,7 +38,7 @@ function Open({ label }: { label: string }) {
     <DepRegistryProvider>
       <ActionsProvider>
         <Deps stack={stack} />
-        {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+        <RegisterActions actions={ACTIONS} />
         <KeymapHint />
       </ActionsProvider>
     </DepRegistryProvider>

@@ -7,6 +7,7 @@ import { BarLayout, type BarOrientation } from '../Bar';
 import { ToolbarDock } from './ToolbarDock';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 import s from './ToolbarDock.browser.test.module.css';
+import { renderWithIcons } from '../../testing/withIcons';
 
 let presses: string[] = [];
 let layouts: ToolbarLayout[] = [];
@@ -179,4 +180,44 @@ test('a vertical bar runs down a left dock, a bar that may not is refused there,
   await commands.pointer([to(pastFile[0]!), { down: true }, ...pastFile.slice(1).map(to), { up: true }]);
   expect(layouts).toEqual([{ docks: { top: [['file', 'tools']], left: [] }, floating: {} }]);
   expect(screen.getByRole('toolbar', { name: 'Tools' })).toHaveAttribute('aria-orientation', 'horizontal');
+});
+
+/** A bar of `count` buttons that opens what does not fit from a menu, as draw's bars do. */
+const menuBar = (id: string, label: string, count: number): DockBar => ({
+  id,
+  label,
+  docks: ['top'],
+  render: (orientation: BarOrientation) => (
+    <BarLayout
+      label={label}
+      lead="label"
+      orientation={orientation}
+      framed
+      overflow="menu"
+      nodes={Array.from({ length: count }, (_, i) => ({ kind: 'cell' as const, path: `${id}.${i}`, content: <button type="button">{`${label} ${i}`}</button> }))}
+      cells={() => []}
+      row={() => null}
+    />
+  ),
+});
+
+test('in a squeezed row, a short bar keeps its only item and the long bars give up theirs', async () => {
+  const offered = [menuBar('pick', 'Pick', 1), menuBar('file', 'File', 6), menuBar('view', 'View', 6)];
+  renderWithIcons(
+    <div className={`${s.frame} ${s.narrow}`}>
+      <ToolbarDock docks={docks} bars={offered} layout={{ docks: { top: [['pick', 'file', 'view']] }, floating: {} }} movable />
+    </div>,
+  );
+  // A bar re-measures on its next resize notice, so the row settles over a few frames.
+  await expect.poll(() => screen.queryAllByRole('button', { name: 'More' }).length).toBe(2);
+  await expect.poll(() => screen.queryByRole('button', { name: 'Pick 0' })).not.toBeNull();
+  const pick = screen.getByRole('toolbar', { name: 'Pick' });
+  const slot = document.querySelector('[data-dock-bar="pick"]')!.getBoundingClientRect();
+  const item = screen.getByRole('button', { name: 'Pick 0' }).getBoundingClientRect();
+  expect(pick.querySelector('[data-bar-more]')).toBeNull();
+  expect(item.right).toBeLessThanOrEqual(slot.right + 0.5);
+  expect(pick.getBoundingClientRect().right).toBeLessThanOrEqual(slot.right + 0.5);
+  for (const name of ['File', 'View']) expect(screen.getByRole('toolbar', { name }).querySelector('[data-bar-more]')).not.toBeNull();
+  const row = document.querySelector('[data-dock-row]')!;
+  expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth);
 });

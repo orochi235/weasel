@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState, type ReactNode } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
 import { Along } from '@weasel-js/ui/components/Along';
@@ -8,6 +8,7 @@ import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import s from './Bar.stories.module.css';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
+import { RegisterActions } from '../../testing/registerAction';
 
 const meta: Meta<typeof Bar> = {
   title: 'ui/Bar/Bar',
@@ -76,11 +77,6 @@ const TEXT: PrefGroup = {
   },
 };
 
-function Register({ action: a }: { action: Action }) {
-  useAction(a);
-  return null;
-}
-
 function Host({ children }: { children: (snap: boolean) => ReactNode }) {
   const [snap, setSnap] = useState(true);
   const immediate = { timing: 'immediate', run: () => {} } as const;
@@ -91,9 +87,7 @@ function Host({ children }: { children: (snap: boolean) => ReactNode }) {
   ];
   return (
     <ActionsProvider>
-      {actions.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={actions} />
       {children(snap)}
     </ActionsProvider>
   );
@@ -214,9 +208,7 @@ function ArrangeBar(args: BarProps) {
   const [values, setValues] = useState<Record<string, unknown>>({ zoom: 150, snap: true, 'view.grid': true, 'view.units': 'px' });
   return (
     <ActionsProvider>
-      {ARRANGE_ACTIONS.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={ARRANGE_ACTIONS} />
       <div className={args.orientation === 'vertical' ? s.rail : s.strip}>
         <Bar {...args} schema={ARRANGE} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
       </div>
@@ -276,9 +268,7 @@ function LensStory({ overflow }: Pick<BarProps, 'overflow'>) {
   const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 4 }]);
   return (
     <ActionsProvider>
-      {LENS_ACTIONS.map((a) => (
-        <Register key={a.id} action={a} />
-      ))}
+      <RegisterActions actions={LENS_ACTIONS} />
       <div className={s.lens}>
         <button type="button" className={s.lensImage}>Image</button>
         <Along arc={{ start: 300, end: 60, inset: 18 }}>

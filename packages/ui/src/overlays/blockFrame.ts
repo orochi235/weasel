@@ -99,3 +99,12 @@ export function inBlockUnits(rect: DOMRectReadOnly, frame: BlockFrame): DOMRect 
     rect.height / frame.scaleY,
   );
 }
+
+/**
+ * A trigger's client rect as React Aria's placement must be handed it to put `overlay` against that trigger: in the
+ * px of the overlay's containing block. Before the overlay is mounted there is no block to read, and the rect is
+ * returned as given.
+ */
+export function targetInBlockUnits(rect: DOMRectReadOnly, overlay: HTMLElement | null): DOMRect {
+  return overlay ? inBlockUnits(rect, blockFrame(containingBlock(overlay))) : DOMRect.fromRect(rect);
+}

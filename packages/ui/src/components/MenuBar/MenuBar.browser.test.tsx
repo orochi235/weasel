@@ -2,10 +2,11 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from './MenuBar';
 import s from './MenuBar.browser.test.module.css';
+import { RegisterActions } from '../../testing/registerAction';
 
 afterEach(cleanup);
 
@@ -21,15 +22,10 @@ const SCHEMA: PrefGroup = pref.group('', {
   edit: pref.group('Edit', { undo: pref.action('edit.undo') }, { as: 'menu' }),
 });
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 function setup() {
   render(
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <MenuBar schema={SCHEMA} />
       <div className={s.far} data-testid="far" />
     </ActionsProvider>,
@@ -81,7 +77,7 @@ function setupTitle(access?: string) {
   const schema = pref.group('', { file: pref.group('File', { new: pref.action('file.new') }, { as: 'menu', access }) });
   render(
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <MenuBar schema={schema} />
     </ActionsProvider>,
   );

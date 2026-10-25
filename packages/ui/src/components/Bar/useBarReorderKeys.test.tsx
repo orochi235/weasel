@@ -1,24 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState, type ReactNode } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Bar } from './Bar';
+import { RegisterAction } from '../../testing/registerAction';
 
 afterEach(cleanup);
 
 const act = (name: string): PrefLeaf => ({ kind: 'action', name, description: '', default: undefined, action: `x.${name}` }) as PrefLeaf;
 const num = (name: string): PrefLeaf => ({ kind: 'number', name, description: '', default: 1 }) as PrefLeaf;
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 const host = (node: ReactNode) => (
   <ActionsProvider>
     {['a', 'b', 'c', 'p', 'q'].map((n) => (
-      <Register key={n} action={{ id: `x.${n}`, label: n, group: 'x', invoker: { timing: 'immediate', run: () => {} } }} />
+      <RegisterAction key={n} action={{ id: `x.${n}`, label: n, group: 'x', invoker: { timing: 'immediate', run: () => {} } }} />
     ))}
     {node}
   </ActionsProvider>
@@ -107,6 +103,22 @@ describe('Alt+arrow reordering', () => {
     render(host(<Bar schema={flat} orientation="vertical" onReorder={onReorder} />));
     alt(button('b'), 'ArrowRight');
     expect(onReorder).not.toHaveBeenCalled();
+    alt(button('b'), 'ArrowUp');
+    expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'a', 'c'] });
+  });
+
+  it('on a right-to-left bar, Alt+Right moves an item toward the visual right, back along the list', () => {
+    const onReorder = vi.fn();
+    render(host(<div dir="rtl"><Bar schema={flat} onReorder={onReorder} /></div>));
+    alt(button('b'), 'ArrowRight');
+    expect(onReorder).toHaveBeenLastCalledWith({ '': ['b', 'a', 'c'] });
+    alt(button('b'), 'ArrowLeft');
+    expect(onReorder).toHaveBeenLastCalledWith({ '': ['a', 'c', 'b'] });
+  });
+
+  it('a vertical bar keeps Up as back under right-to-left', () => {
+    const onReorder = vi.fn();
+    render(host(<div dir="rtl"><Bar schema={flat} orientation="vertical" onReorder={onReorder} /></div>));
     alt(button('b'), 'ArrowUp');
     expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'a', 'c'] });
   });

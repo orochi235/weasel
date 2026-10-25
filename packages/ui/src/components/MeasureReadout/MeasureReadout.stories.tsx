@@ -6,9 +6,7 @@ import {
   DepRegistryProvider,
   measureNode,
   measurementsContribution,
-  useAction,
   useDepSource,
-  type Action,
   type DepName,
   type NodeId,
   type Scene,
@@ -16,14 +14,10 @@ import {
 import { useState } from 'react';
 import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import s from './MeasureReadout.stories.module.css';
+import { RegisterActions } from '../../testing/registerAction';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type Pt = { x: number; y: number };
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 function Deps({ scene, selected }: { scene: AnyScene; selected: readonly string[] }) {
   useDepSource('scene' as DepName, () => scene as never);
@@ -46,7 +40,7 @@ function Held({ from, to, selected }: { from: Pt; to: Pt; selected: readonly str
     <DepRegistryProvider>
       <ActionsProvider>
         <Deps scene={scene} selected={selected} />
-        {actions.map((a) => <Register key={a.id} action={a} />)}
+        <RegisterActions actions={actions} />
         <div className={s.stage}>
           <MeasureReadout scene={scene} measurements={ms} />
         </div>

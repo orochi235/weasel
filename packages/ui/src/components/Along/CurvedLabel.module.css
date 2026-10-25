@@ -1,0 +1,9 @@
+.label {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.char {
+  white-space: pre;
+}

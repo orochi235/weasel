@@ -3,14 +3,24 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { Slider, type ThumbRenderCtx, type TrackCtx } from './index';
 
 // jsdom lays nothing out: a thumb is 10 by 20 here, and everything else 300 by 6.
+const size = (el: Element) => (el.getAttribute('role') === 'slider' ? [10, 20] : [300, 6]) as [number, number];
 const real = Element.prototype.getBoundingClientRect;
+const proto = HTMLElement.prototype;
+const realW = Object.getOwnPropertyDescriptor(proto, 'offsetWidth')!;
+const realH = Object.getOwnPropertyDescriptor(proto, 'offsetHeight')!;
 beforeAll(() => {
   Element.prototype.getBoundingClientRect = function box(this: Element) {
-    const [width, height] = this.getAttribute('role') === 'slider' ? [10, 20] : [300, 6];
+    const [width, height] = size(this);
     return { x: 0, y: 0, left: 0, top: 0, right: width, bottom: height, width, height, toJSON: () => {} } as DOMRect;
   };
+  Object.defineProperty(proto, 'offsetWidth', { configurable: true, get(this: Element) { return size(this)[0]; } });
+  Object.defineProperty(proto, 'offsetHeight', { configurable: true, get(this: Element) { return size(this)[1]; } });
 });
-afterAll(() => { Element.prototype.getBoundingClientRect = real; });
+afterAll(() => {
+  Element.prototype.getBoundingClientRect = real;
+  Object.defineProperty(proto, 'offsetWidth', realW);
+  Object.defineProperty(proto, 'offsetHeight', realH);
+});
 
 describe('Slider render contexts', () => {
   function setup() {

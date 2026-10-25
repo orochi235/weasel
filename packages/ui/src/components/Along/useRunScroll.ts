@@ -34,6 +34,8 @@ export interface RunScrollArgs {
   total: number;
   spots: () => readonly RunSpot[];
   lengths: readonly number[];
+  /** Whether a press with Cmd, or Ctrl off Apple platforms, is left to a reorder rather than scrolling the run. */
+  modReorders?: boolean;
 }
 
 /** A curved run's offset along itself, and the handlers its root takes so a press, drag or focus moves it. */
@@ -45,17 +47,17 @@ export interface RunScroll {
 
 /**
  * The offset a curved run's items are laid back by along its run when they run past its end: moved by the wheel,
- * by a drag along the run once it travels {@link SCROLL_SLOP} px (a press with Cmd, or Ctrl off Apple platforms, is left
- * to a reorder), and by focus reaching an item past either end.
+ * by a drag along the run once it travels {@link SCROLL_SLOP} px (unless `modReorders` leaves a press with Cmd, or Ctrl off
+ * Apple platforms, to a reorder), and by focus reaching an item past either end.
  * A run whose items fit keeps offset 0 and ignores all three. The wheel and focus glide to where they send the run
  * over about {@link GLIDE_MS} ms, so items slide rather than jump; a drag follows the pointer, and a reader who
  * prefers reduced motion gets every move at once.
  */
-export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, lengths }: RunScrollArgs): RunScroll {
+export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, lengths, modReorders = false }: RunScrollArgs): RunScroll {
   const max = Math.max(0, total - run.length);
   const [shown, setShown] = useState(0);
   const offset = clamp(shown, 0, max);
-  const latest = useLatest({ max, run, spots, lengths, keyOf, itemsOf });
+  const latest = useLatest({ max, run, spots, lengths, keyOf, itemsOf, modReorders });
   const still = usePrefersReducedMotion();
   // Where the handlers last sent the run, ahead of the render it asks for, so two wheel events in one frame both count.
   const moved = useRef(0);
@@ -112,7 +114,7 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
 
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     const el = root.current;
-    if (latest.current.max <= 0 || el === null || e.button !== 0 || keysHeld(['mod'], modifierStateOf(e), isApplePlatform()) || !el.contains(e.target as Node)) return;
+    if (latest.current.max <= 0 || el === null || e.button !== 0 || (latest.current.modReorders && keysHeld(['mod'], modifierStateOf(e), isApplePlatform())) || !el.contains(e.target as Node)) return;
     session.current?.cancel();
     const across = frame?.current ?? el;
     const s0 = positionAt(across, latest.current.run, e);

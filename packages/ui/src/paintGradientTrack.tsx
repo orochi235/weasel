@@ -32,14 +32,14 @@ const DEFAULT_HATCH = { angleDeg: 135, stripe: 2, gap: 4, dim: 75 };
  * sampled color gradient, optionally dimming and hatching the portions
  * outside an active range.
  *
- * On a curved shape it strokes the band along the curve with the same ramp,
- * dimming and hatching.
+ * Along a shape it strokes the band along it with the same ramp, dimming and
+ * hatching.
  */
 export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => ReactNode {
   const { gradient, samples = 16, activeRange, hatch } = opts;
 
   return (ctx: TrackCtx) => {
-    if (ctx.shape.kind !== 'line') {
+    if (ctx.along) {
       return <GradientCurve ctx={ctx} gradient={gradient} samples={samples} activeRange={activeRange} hatch={{ ...DEFAULT_HATCH, ...hatch }} />;
     }
     const stops: string[] = [];

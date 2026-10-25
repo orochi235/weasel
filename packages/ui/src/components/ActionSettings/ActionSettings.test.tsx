@@ -1,11 +1,12 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { ActionDisabledReason, ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionDisabledReason, ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { ActionBar } from '../ActionBar';
 import { CommandPalette } from '../CommandPalette';
 import { renderWithIcons } from '../../testing/withIcons';
+import { RegisterAction } from '../../testing/registerAction';
 
 afterEach(cleanup);
 beforeAll(() => {
@@ -32,15 +33,10 @@ function snapAction(run: (params?: Record<string, unknown>) => void, enabled = t
   };
 }
 
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
-
 describe('an action carrying settings, on a bar', () => {
   it('opens its form rather than running, and runs with each change', () => {
     const run = vi.fn();
-    renderWithIcons(<ActionsProvider><Register action={snapAction(run)} /><ActionBar group="g" /></ActionsProvider>);
+    renderWithIcons(<ActionsProvider><RegisterAction action={snapAction(run)} /><ActionBar group="g" /></ActionsProvider>);
     const button = screen.getByRole('button', { name: 'Snap' });
     expect(button).toHaveAttribute('aria-haspopup', 'dialog');
     fireEvent.click(button);
@@ -53,7 +49,7 @@ describe('an action carrying settings, on a bar', () => {
   });
 
   it('opens nothing while the action cannot run', () => {
-    renderWithIcons(<ActionsProvider><Register action={snapAction(vi.fn(), false)} /><ActionBar group="g" /></ActionsProvider>);
+    renderWithIcons(<ActionsProvider><RegisterAction action={snapAction(vi.fn(), false)} /><ActionBar group="g" /></ActionsProvider>);
     fireEvent.click(screen.getByRole('button', { name: 'Snap' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -63,7 +59,7 @@ function PaletteHarness({ run }: { run: (params?: Record<string, unknown>) => vo
   const [open, setOpen] = useState(false);
   return (
     <ActionsProvider>
-      <Register action={snapAction(run)} />
+      <RegisterAction action={snapAction(run)} />
       <button type="button" onClick={() => setOpen(true)}>open</button>
       <CommandPalette open={open} onClose={() => setOpen(false)} />
     </ActionsProvider>

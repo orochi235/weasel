@@ -1,11 +1,12 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useState } from 'react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { actionLeaf, actionLeafKey } from './editorActions';
 import { PrefSchemaEditor, type PrefSchemaEditorProps } from './PrefSchemaEditor';
 import { renderWithIcons } from '../../testing/withIcons';
+import { RegisterAction } from '../../testing/registerAction';
 
 const START: PrefGroup = {
   name: 'Tools',
@@ -25,11 +26,6 @@ const ACTIONS = [
 function Live(props: Partial<PrefSchemaEditorProps<PrefGroup>>) {
   const [schema, setSchema] = useState(START);
   return <PrefSchemaEditor schema={schema} onChange={setSchema} {...props} />;
-}
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
 }
 
 const actions = () => screen.getByRole('tree', { name: 'Actions' });
@@ -58,7 +54,7 @@ describe('PrefSchemaEditor actions', () => {
   it('lists what the registry above it can fire from a button, when given none', () => {
     renderWithIcons(
       <ActionsProvider>
-        <Register action={{ id: 'file.save', label: 'Save', group: 'File', invoker: { timing: 'immediate', run: () => {} } }} />
+        <RegisterAction action={{ id: 'file.save', label: 'Save', group: 'File', invoker: { timing: 'immediate', run: () => {} } }} />
         <Live />
       </ActionsProvider>,
     );

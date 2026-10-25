@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type Action, type MenuDef,
+  ActionDisabledReason, ActionsProvider, useMenuHost, useMenus, type Action, type MenuDef,
 } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/ContextMenu';
 import s from './ContextMenuHost.stories.module.css';
+import { RegisterActions } from '../../testing/registerAction';
 
 const meta: Meta = { title: 'ui/ContextMenu' };
 export default meta;
@@ -14,11 +15,6 @@ type Story = StoryObj;
 
 const key = (k: string, mods: { mod?: boolean; shift?: boolean; alt?: boolean } = {}) =>
   ({ kind: 'key' as const, key: k, mods }) as Action['defaultBinding'];
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 function useEditActions(log: (id: string) => void): readonly Action[] {
   const [snap, setSnap] = useState(true);
@@ -71,7 +67,7 @@ function Target({ openOnMount }: { openOnMount?: boolean }) {
   }, [host, openOnMount]);
   return (
     <div>
-      {actions.map((a) => <Register key={a.id} action={a} />)}
+      <RegisterActions actions={actions} />
       <ContextMenuHost />
       <div className={s.target} onContextMenu={onContextMenu}>Right-click here</div>
       <p>Last ran: {last ?? 'nothing yet'}</p>

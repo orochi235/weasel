@@ -32,11 +32,11 @@ describe('a group a standalone Bar opens', () => {
     expect(within(screen.getByRole('region', { name: 'Box' })).getByLabelText('Inset')).toBeTruthy();
   });
 
-  it('draws its leaves as the bar draws a row: unset where the values hold nothing, written at the dotted path', () => {
+  it('draws its leaves as the bar draws a row: at the default where the values hold nothing, written at the dotted path', () => {
     const onChange = vi.fn();
     renderWithIcons(<Bar schema={schema} values={{ 'more.fill.opacity': 0.5 }} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    expect(screen.getByLabelText('Gap')).toHaveValue('');
+    expect(screen.getByLabelText('Gap')).toHaveValue('1');
     const opacity = screen.getByLabelText('Opacity');
     expect(opacity).toHaveValue('0.5');
     fireEvent.change(opacity, { target: { value: '0.25' } });
