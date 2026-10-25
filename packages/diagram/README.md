@@ -517,7 +517,7 @@ dragged undoes in one step; `scene.history.seal()` ends the run. `parseDiagramTh
 
 ### Laying it out
 
-`layered`, `tree`, `force` and `chain` are plain functions of the graph. Each
+`layered`, `tree`, `force`, `chain`, and `radial` are plain functions of the graph. Each
 hands back the new top-left for every node that **moves** — a node already
 standing where the layout wants it is absent, so re-running a layout on an
 unchanged diagram writes nothing at all.
@@ -600,6 +600,14 @@ they connect to. An edge between a chain node and one hung beside it, both ends
 naming ports that face each other, runs on a track of its own in the gap
 between them, so a fan of them never crosses; the gap grows to keep tracks 12
 apart. Groups are ignored.
+
+`radial` is the mind-map layout. The first root `tree` would find sits in the middle, and its
+children are dealt to its right and its left, in graph order, each to whichever side holds fewer
+nodes so far. Each side grows away from the root as a horizontal `tree`, one band per depth
+`rankGap` apart, its subtrees packed as blocks `nodeGap` apart and centered on the root. Because
+sides are dealt in graph order and each side keeps the order its branches stand in, a second run
+moves nothing. Further trees lay out the same way, stacked below the first. `direction` and groups
+are ignored.
 
 ### From data
 

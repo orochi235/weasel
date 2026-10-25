@@ -280,7 +280,8 @@ export {
 } from './layoutAction';
 export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';
 export { routeWrites, routesOf, type LayoutRoutes, type RoutedScene } from './routeWrites';
-export { forestOf, tree, type Forest } from './tree';
+export { forestOf, subtreeBlocks, tree, type Forest } from './tree';
+export { radial } from './radial';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
   PORT_AFFORDANCE_KIND,
