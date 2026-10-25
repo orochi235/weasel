@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Button } from '@weasel-js/ui/components/Button';
 import styles from './PaletteLab.module.css';
 import { PinIcon } from './PinIcon';
 import { toLch, type Palette } from '@weasel-js/theme/engine';
@@ -154,9 +155,8 @@ export function PalettePreview({ palette, surface }: { palette: Palette; surface
 
       <div className={styles.output}>
         <code className={styles.hexes}>{hexes}</code>
-        <button
-          type="button"
-          className={styles.copy}
+        <Button
+          size="sm"
           onClick={() => {
             void navigator.clipboard?.writeText(tokenJson);
             setCopied(true);
@@ -164,7 +164,7 @@ export function PalettePreview({ palette, surface }: { palette: Palette; surface
           }}
         >
           {copied ? 'Copied' : 'Copy as tokens'}
-        </button>
+        </Button>
       </div>
     </div>
   );
