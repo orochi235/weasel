@@ -6,7 +6,30 @@ import { scopedIcon } from '@weasel-js/icons';
 export type DiagramIconName =
   | 'container'
   | 'poolRows'
-  | 'poolColumns';
+  | 'poolColumns'
+  | 'server'
+  | 'database'
+  | 'cloud'
+  | 'router'
+  | 'switch'
+  | 'firewall'
+  | 'laptop'
+  | 'desktop'
+  | 'phone'
+  | 'printer'
+  | 'user'
+  | 'internet'
+  | 'startEvent'
+  | 'intermediateEvent'
+  | 'endEvent'
+  | 'task'
+  | 'subprocess'
+  | 'exclusiveGateway'
+  | 'parallelGateway'
+  | 'inclusiveGateway'
+  | 'eventGateway'
+  | 'dataObject'
+  | 'dataStore';
 
 /** This package's `icon()`: a bare name means `diagram:<name>`. */
 export const icon = scopedIcon<DiagramIconName>('diagram');
@@ -20,6 +43,39 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DiagramIconN
       "poolRows",
       "poolColumns"
     ]
+  },
+  {
+    "label": "Network",
+    "names": [
+      "server",
+      "database",
+      "cloud",
+      "router",
+      "switch",
+      "firewall",
+      "laptop",
+      "desktop",
+      "phone",
+      "printer",
+      "user",
+      "internet"
+    ]
+  },
+  {
+    "label": "BPMN",
+    "names": [
+      "startEvent",
+      "intermediateEvent",
+      "endEvent",
+      "task",
+      "subprocess",
+      "exclusiveGateway",
+      "parallelGateway",
+      "inclusiveGateway",
+      "eventGateway",
+      "dataObject",
+      "dataStore"
+    ]
   }
 ];
 
@@ -28,5 +84,28 @@ declare module '@weasel-js/icons' {
     'diagram:container': true;
     'diagram:poolRows': true;
     'diagram:poolColumns': true;
+    'diagram:server': true;
+    'diagram:database': true;
+    'diagram:cloud': true;
+    'diagram:router': true;
+    'diagram:switch': true;
+    'diagram:firewall': true;
+    'diagram:laptop': true;
+    'diagram:desktop': true;
+    'diagram:phone': true;
+    'diagram:printer': true;
+    'diagram:user': true;
+    'diagram:internet': true;
+    'diagram:startEvent': true;
+    'diagram:intermediateEvent': true;
+    'diagram:endEvent': true;
+    'diagram:task': true;
+    'diagram:subprocess': true;
+    'diagram:exclusiveGateway': true;
+    'diagram:parallelGateway': true;
+    'diagram:inclusiveGateway': true;
+    'diagram:eventGateway': true;
+    'diagram:dataObject': true;
+    'diagram:dataStore': true;
   }
 }
