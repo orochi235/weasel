@@ -1,4 +1,5 @@
 import type { CSSProperties, KeyboardEvent, ReactElement } from 'react';
+import { inlineDirection, rovingGridTarget } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import type { SwatchGridOption } from './SwatchGrid';
 import s from './SwatchGrid.module.css';
@@ -28,18 +29,13 @@ export function useSwatchApply(onChange: (value: string | null) => void, onAltCh
   };
 }
 
-/** Where an arrow, Home or End moves focus from swatch `i` of `count`, `columns` to a row; -1 for any other key. */
-export function nextSwatch(key: string, i: number, count: number, columns: number): number {
-  const last = count - 1;
-  switch (key) {
-    case 'ArrowLeft': return Math.max(0, i - 1);
-    case 'ArrowRight': return Math.min(last, i + 1);
-    case 'ArrowUp': return i - columns >= 0 ? i - columns : i;
-    case 'ArrowDown': return i + columns <= last ? i + columns : i;
-    case 'Home': return 0;
-    case 'End': return last;
-    default: return -1;
-  }
+const GRID_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
+
+/** The indices of `count` swatches, `columns` to a row. */
+function rowsOf(count: number, columns: number): number[][] {
+  const rows: number[][] = [];
+  for (let i = 0; i < count; i += columns) rows.push(Array.from({ length: Math.min(columns, count - i) }, (_, k) => i + k));
+  return rows;
 }
 
 /** The swatches of one palette, under `root`, in order. */
@@ -55,10 +51,10 @@ export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], c
       }
       return;
     }
-    const next = nextSwatch(e.key, i, options.length, columns);
-    if (next < 0) return;
+    if (!GRID_KEYS.has(e.key)) return;
     e.preventDefault();
-    if (next !== i) swatches()[next]?.focus();
+    const next = rovingGridTarget(i, e.key, options.map(() => true), rowsOf(options.length, columns), inlineDirection(e.currentTarget));
+    if (next !== null && next !== i) swatches()[next]?.focus();
   };
 }
 
