@@ -15,7 +15,7 @@ import type { Globals } from '../../protocol/messages';
 import { indexId } from '../../story/indexPages';
 import type { ComponentDeps, Decorator, IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
 import { StoryHost } from '../StoryHost';
-import { useNearViewport } from '../useNearViewport';
+import { useNearViewport } from '@weasel-js/react';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
 import { Description } from './Description';

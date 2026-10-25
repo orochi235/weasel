@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useNearViewport } from '@weasel-js/react';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { DEMOS, DEMOS_BY_ID, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
@@ -140,23 +141,6 @@ export function WeaselDemos() {
   );
 }
 
-/** True once `ref`'s element has come near the viewport, and true forever
- *  after — the source it gates stays wanted once it has been asked for. */
-function useHasBeenNearViewport(ref: RefObject<Element | null>): boolean {
-  const [near, setNear] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || near) return;
-    const io = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setNear(true); },
-      { rootMargin: '300px' },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [ref, near]);
-  return near;
-}
-
 /** A source tab's text: `null` while it loads, `'failed'` when it could not be fetched. */
 function useSourceText(tab: DemoSourceTab | undefined, enabled: boolean): string | null | 'failed' {
   const [text, setText] = useState<string | null | 'failed'>(null);
@@ -183,7 +167,11 @@ function DemoView({ entry }: { entry: DemoEntry }) {
   const [activeTab, setActiveTab] = useState(0);
   const current = tabs[activeTab];
   const panelRef = useRef<HTMLDivElement>(null);
-  const code = useSourceText(current, useHasBeenNearViewport(panelRef));
+  // Once asked for, the source stays wanted: scrolling away does not drop the text.
+  const near = useNearViewport(panelRef, '300px', false);
+  const [wanted, setWanted] = useState(false);
+  if (near && !wanted) setWanted(true);
+  const code = useSourceText(current, wanted);
   const [devtools, setDevtools] = useState(false);
 
   const source = (
