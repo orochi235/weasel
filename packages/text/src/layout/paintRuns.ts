@@ -17,7 +17,7 @@ import {
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { emboldenGlyphD } from '../syntheticBold';
 import { lineDecorations, type DecorationKind } from './decorationMetrics';
-import { blankGlyph, lazy, LineBox } from './layoutColumns';
+import { blankGlyph, doubles, lazy, LineBox } from './layoutColumns';
 import type { LaidOutRuns, PlacedGlyph } from './layoutRuns';
 
 /** One textured glyph quad, relative to the text's own top-left: what
@@ -185,20 +185,23 @@ export function hasGlyphQuad(g: PlacedGlyph): boolean {
   return font !== null && glyph !== null && glyph.width !== 0 && glyph.page >= 0;
 }
 
-/** Append `g`'s atlas quad, which it must have, to `out`. */
-function pushGlyphQuad(g: PlacedGlyph, out: number[]): void {
+/** Write `g`'s atlas quad, which it must have, into `out` at `at`. */
+function writeGlyphQuad(g: PlacedGlyph, out: number[], at: number): void {
   const font = g.font!, glyph = g.glyph!;
   const scale = g.fontSize / g.metrics.size;
   const x0 = g.x + glyph.xoffset * scale;
   // `yoffset` is measured from the line top in the atlas's own frame, so
   // subtracting that frame's baseline hangs the glyph off its own.
   const y0 = g.baselineY + (glyph.yoffset - g.metrics.base) * scale;
-  out.push(
-    x0, y0, x0 + glyph.width * scale, y0 + glyph.height * scale,
-    glyph.x / font.common.scaleW, glyph.y / font.common.scaleH,
-    (glyph.x + glyph.width) / font.common.scaleW, (glyph.y + glyph.height) / font.common.scaleH,
-    g.baselineY,
-  );
+  out[at] = x0;
+  out[at + 1] = y0;
+  out[at + 2] = x0 + glyph.width * scale;
+  out[at + 3] = y0 + glyph.height * scale;
+  out[at + 4] = glyph.x / font.common.scaleW;
+  out[at + 5] = glyph.y / font.common.scaleH;
+  out[at + 6] = (glyph.x + glyph.width) / font.common.scaleW;
+  out[at + 7] = (glyph.y + glyph.height) / font.common.scaleH;
+  out[at + 8] = g.baselineY;
 }
 
 const groupViews: PropertyDescriptorMap = {
@@ -291,6 +294,12 @@ export function paintRuns(
     (fillHasInk(runs[run].fill) ? paintKey(runs[run].fill!.paint) : null);
   // One glyph walks the layout's columns, so painting builds no object a glyph.
   const cursor = blankGlyph();
+  // Most text is one group. The first to take a quad gets an array sized for
+  // every glyph, trimmed at the end; any other grows as it fills.
+  let glyphCount = 0;
+  for (const line of laid.lines) glyphCount += LineBox.span(line)?.count ?? line.glyphs.length;
+  let sized: LaidOutGroup | null = null;
+  let sizedAt = 0;
 
   for (const line of laid.lines) {
     const span = LineBox.span(line);
@@ -315,7 +324,17 @@ export function paintRuns(
       }
       if (!hasGlyphQuad(g)) continue;
       const group = groupFor(groups, g, run, g.glyph!.color ? 'color' : g.resolved.source, last);
-      pushGlyphQuad(g, group.quadData as number[]);
+      if (sized === null) {
+        sized = group;
+        group.quadData = doubles(glyphCount * QUAD_STRIDE);
+      }
+      const quads = group.quadData as number[];
+      if (group === sized) {
+        writeGlyphQuad(g, quads, sizedAt);
+        sizedAt += QUAD_STRIDE;
+      } else {
+        writeGlyphQuad(g, quads, quads.length);
+      }
       (group.colorGlyphs as BmFontChar[] | undefined)?.push(g.glyph!);
     }
     for (const rule of rules.end()) {
@@ -323,6 +342,7 @@ export function paintRuns(
       decorations.push({ ...rect, fill: runs[run].fill! });
     }
   }
+  if (sized !== null) (sized.quadData as number[]).length = sizedAt;
   const out: LaidOutGroup[] = [];
   for (const group of groups.values()) out.push(Object.defineProperties(group, groupViews));
   return { groups: out, decorations };

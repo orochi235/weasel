@@ -30,6 +30,21 @@ const DRAWS_INK = 1, CLUSTER_END = 2;
  *  the glyph's record there. */
 const REF = 4;
 
+/** Longest array {@link doubles} copies from its template rather than builds. */
+const TEMPLATE_LIMIT = 1 << 16;
+/** All fractions, so V8 holds its elements as unboxed doubles, and `slice`
+ *  hands a copy that kind. An array that starts out empty or holding integers
+ *  is copied again the first time a fraction lands in it. */
+let template: number[] = [0.5];
+
+/** A new array of `n` numbers, held as unboxed doubles from the start. Its
+ *  contents are placeholders for the caller to overwrite. */
+export function doubles(n: number): number[] {
+  if (n > TEMPLATE_LIMIT) return new Array<number>(n).fill(0.5);
+  while (template.length < n) template = template.concat(template);
+  return template.slice(0, n);
+}
+
 /** Every code point of one layout. Index `i` is a code point's place in the
  *  text, in logical order, newlines left out. */
 export class LayoutColumns {
@@ -37,7 +52,7 @@ export class LayoutColumns {
   readonly ref: unknown[];
 
   constructor(size: number) {
-    this.num = new Array<number>(size * NUM);
+    this.num = doubles(size * NUM);
     this.ref = new Array<unknown>(size * REF);
   }
 
