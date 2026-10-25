@@ -8,3 +8,5 @@
 labkit's `Toolbar` is now that component at the compact control height, and `Toolbar.Button` is a ghost `Button`: its `title` shows as a kit tooltip rather than a native one, its pressed state takes `Button`'s pressed look, and it takes an `icon` for a glyph ahead of a text label.
 
 The loupe lens strip draws its Source and View choices as single-choice `ToggleBar`s (radios, with arrow keys moving the choice) and its readouts as a multiple-choice one.
+
+`useDebouncedText` moves from labkit's controls into `@weasel-js/ui/components/Prefs`, beside `PARAMS_TEXT_WAIT_MS`, which sets the wait it is called with.

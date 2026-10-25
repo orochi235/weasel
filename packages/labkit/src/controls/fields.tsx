@@ -11,10 +11,10 @@ import {
   type PrefFieldChoice,
   prefFieldProps,
   useParamsPolicy,
+  useDebouncedText,
   withDrafts,
 } from '@weasel-js/ui/components/Prefs';
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { valueAtPath } from '../config/path';
 import { useFieldChoices } from './fieldChoices';
 
@@ -151,57 +151,4 @@ export function BareControl({
 export function useTextWaitMs(leaf: PrefLeaf): number {
   const lab = useParamsPolicy('lab').textWaitMs;
   return extra<number>(leaf, 'debounceMs') ?? lab;
-}
-
-/**
- * Live text held locally between debounced commits, so typing does not re-run
- * the instrument on every keystroke. Locally controlled between commits, which
- * means it has to notice the value changing underneath it.
- */
-export function useDebouncedText(
-  value: string,
-  write: (value: string) => void,
-  debounceMs: number,
-): { local: string; type: (next: string) => void } {
-  const [local, setLocal] = useState(value);
-  const lastExternal = useRef(value);
-  // The text typed since the last write, and the timer that will write it.
-  const pending = useRef<{ text: string; timer: ReturnType<typeof setTimeout> } | null>(null);
-  const latestWrite = useRef(write);
-  useEffect(() => {
-    latestWrite.current = write;
-  });
-
-  const settle = useCallback((commit: boolean): void => {
-    const waiting = pending.current;
-    if (waiting === null) return;
-    pending.current = null;
-    clearTimeout(waiting.timer);
-    if (!commit) return;
-    lastExternal.current = waiting.text;
-    latestWrite.current(waiting.text);
-  }, []);
-
-  useEffect(() => {
-    if (value !== lastExternal.current) {
-      // Replaced from outside (a reset): text still waiting would overwrite it.
-      settle(false);
-      lastExternal.current = value;
-      setLocal(value);
-    }
-  }, [value, settle]);
-
-  // A row that unmounts inside the debounce window (a closing popover, a tab
-  // switch) still owes its last keystrokes.
-  useEffect(() => () => settle(true), [settle]);
-
-  return {
-    local,
-    type: (next) => {
-      setLocal(next);
-      settle(false);
-      pending.current = { text: next, timer: setTimeout(() => settle(true), debounceMs) };
-      if (debounceMs === 0) settle(true);
-    },
-  };
 }
