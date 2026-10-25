@@ -350,3 +350,8 @@ export { ORG_GROUP, ORG_STENCILS } from './stencils/org';
 export { MIND_MAP_GROUP, MIND_MAP_STENCILS } from './stencils/mindMap';
 export { layoutDiagram } from './layoutAction';
 export type { LayoutDiagramOptions } from './layoutAction';
+export { DIVIDER_HEIGHT } from './body';
+export type { BodyDivider, BodyLayout } from './types';
+export { bodyFollower } from './bodyFollower';
+export { UML_GROUP, UML_STENCILS } from './stencils/uml';
+export { ERD_GROUP, ERD_STENCILS } from './stencils/erd';

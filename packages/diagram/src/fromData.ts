@@ -99,7 +99,7 @@ function nodeSpecs(
     measure: look.measure,
     body: (trait) => ({
       diagram: {
-        ...trait, ...bodyLayoutOf(body, trait), ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}),
+        ...trait, ...bodyLayoutOf(body, trait, look.measure), ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}),
         ...ownNodeStyle(n.colors),
       },
       fill: { paint: { color: style.fill } },

@@ -2,7 +2,7 @@ import {
   useDepSource, useTransformFollower, type Contribution, type RenderLayer, type SelectionApi, type Tool,
 } from '@weasel-js/core';
 import {
-  CONNECTOR_TOOL_ID, STENCIL_GROUPS, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
+  CONNECTOR_TOOL_ID, STENCIL_GROUPS, bodyFollower, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
   diagramLabelDrag, diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding,
   registerDiagramShape, roleStyle, sceneParticipants, stencilKind, stencilTool, themeFont,
   themeLabelStyle, useAvoidRouting, useHops, useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers,
@@ -101,6 +101,13 @@ export function StencilInsertPublisher({ theme }: { theme: DiagramTheme }): null
 /** Carries a connector's waypoints along when a move takes both its ends. Mounted as a child of `<SceneCanvas>`. */
 export function WaypointFollowerPublisher({ scene }: { scene: ChartScene }): null {
   const follower = useMemo(() => waypointFollower<ChartPose>(scene), [scene]);
+  useTransformFollower(() => follower);
+  return null;
+}
+
+/** Lays a resized shape's rows out again inside its new box. Mounted as a child of `<SceneCanvas>`. */
+export function BodyFollowerPublisher({ scene }: { scene: ChartScene }): null {
+  const follower = useMemo(() => bodyFollower<ChartPose>(scene), [scene]);
   useTransformFollower(() => follower);
   return null;
 }

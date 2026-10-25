@@ -6,6 +6,8 @@ import { FLOWCHART_GROUP } from '../stencils/flowchart';
 import { NETWORK_GROUP } from '../stencils/network';
 import { MIND_MAP_GROUP } from '../stencils/mindMap';
 import { ORG_GROUP } from '../stencils/org';
+import { ERD_GROUP } from '../stencils/erd';
+import { UML_GROUP } from '../stencils/uml';
 import type { DiagramStencil } from '../stencil';
 import type { DiagramType, StencilGroup } from './types';
 
@@ -15,7 +17,7 @@ const byId = <T extends { id: string }>(list: readonly T[]): Readonly<Record<str
 /** The stencil groups this package ships, by id, in menu order. */
 export const STENCIL_GROUPS: Readonly<Record<string, StencilGroup>> = byId([
   FLOWCHART_GROUP, CONTAINERS_GROUP,
-  ORG_GROUP, NETWORK_GROUP, BPMN_GROUP, MIND_MAP_GROUP,
+  ORG_GROUP, NETWORK_GROUP, BPMN_GROUP, UML_GROUP, ERD_GROUP, MIND_MAP_GROUP,
 ]);
 
 /** The flowchart: its symbols and containers, connectors as the theme draws them, no auto layout. */
@@ -64,10 +66,28 @@ export const MIND_MAP_TYPE: DiagramType = {
   layout: 'radial',
 };
 
+/** A UML class diagram: classes and their kin, connectors routed orthogonally to an open arrowhead. */
+export const UML_CLASS_TYPE: DiagramType = {
+  id: 'umlClass',
+  label: 'UML class',
+  icon: icon('umlClass'),
+  groups: [UML_GROUP.id, CONTAINERS_GROUP.id],
+  edge: { router: 'orthogonal', markerEnd: 'arrow-open' },
+};
+
+/** An entity-relationship diagram: connectors routed orthogonally, one at the start and many at the end. */
+export const ERD_TYPE: DiagramType = {
+  id: 'erd',
+  label: 'Entity relationship',
+  icon: icon('erdEntity'),
+  groups: [ERD_GROUP.id],
+  edge: { router: 'orthogonal', markerStart: 'crow-one', markerEnd: 'crow-many' },
+};
+
 /** The diagram types this package ships, by id, in menu order. */
 export const DIAGRAM_TYPES: Readonly<Record<string, DiagramType>> = byId([
   FLOWCHART_TYPE,
-  ORG_CHART_TYPE, NETWORK_TYPE, BPMN_TYPE, MIND_MAP_TYPE,
+  ORG_CHART_TYPE, NETWORK_TYPE, BPMN_TYPE, UML_CLASS_TYPE, ERD_TYPE, MIND_MAP_TYPE,
 ]);
 
 /** Whether `stencil` is a container's rather than a shape's. */

@@ -165,4 +165,13 @@ describe('documentFromScene', () => {
       expect(pageOf(scene, 'p1').data.edges.map((e) => e.id)).not.toContain('qa');
     });
   });
+
+  it('reads a shape\'s divider rows back in their places among its text rows', () => {
+    const rows: DataNode['rows'] = [{ kind: 'label', text: 'Order' }, { kind: 'divider' }, { kind: 'label', text: 'id' }, { kind: 'divider', inset: 4 }];
+    const scene = docScene({ ...DOC_DATA, nodes: [...DOC_DATA.nodes, { id: 'u', rows, at: { x: 600, y: 300 } }] });
+    expect(nodeOf(scene, 'p1', 'u').rows).toEqual([
+      { kind: 'label', text: 'Order' }, { kind: 'divider' }, { kind: 'label', text: 'id' }, { kind: 'divider', inset: 4 },
+    ]);
+    expect(nodeOf(scene, 'p1', 'u').lines).toBeUndefined();
+  });
 });

@@ -8,7 +8,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import {
   DEFAULT_PORTS, EDGE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
   layoutOwnsRoute, poolAxisOf, titleIdOf, type DataContainer, type DataEdge, type DataGroup, type DataLane, type DataNode, type DiagramLabel,
-  type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle,
+  type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type Row,
 } from '@weasel-js/diagram';
 
 /** A scene node as the readers see it. */
@@ -63,6 +63,12 @@ const textOf = (scene: ReadScene, id: string): string | undefined => {
   return typeof text === 'string' ? text : undefined;
 };
 
+/** Text rows and divider rows, each at its place. */
+function withDividers(text: readonly { index: number; row: Row }[], dividers: readonly BodyDivider[]): Row[] {
+  const all = [...text, ...dividers.map((d) => ({ index: d.index, row: (d.inset === undefined ? { kind: 'divider' } : { kind: 'divider', inset: d.inset }) as Row }))];
+  return all.sort((a, b) => a.index - b.index).map((e) => e.row);
+}
+
 /** A shape: its outline, text rows, box, role, colors, and the body layout and ports it was built with. */
 export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: DiagramTheme): DataNode {
   const trait = traitOf(node)!;
@@ -77,12 +83,16 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
     fill: colorOf(data.fill), stroke: colorOf(data.stroke), text: colorOf(dataOf(rows[0]).fill),
     strokeWidth: data.stroke?.width as number | undefined, dash: data.stroke?.dash as number[] | undefined,
   }, { ...themed, strokeWidth: themed.strokeWidth ?? NODE_STROKE_WIDTH }, trait.ownStyle);
-  const body = trait.body as { padding: number; gap: number; verticalAlign: DataNode['verticalAlign'] } | undefined;
+  const body = trait.body as BodyLayout | undefined;
+  const dividers = body?.dividers ?? [];
   return {
     id: node.id,
     outline: trait.outline as DataNode['outline'],
-    ...(ownSize
-      ? { rows: rows.map((r) => ({ kind: 'label' as const, text: dataOf(r).text as string, style: { fontSize: dataOf(r).style?.fontSize as number } })) }
+    ...(ownSize || dividers.length > 0
+      ? { rows: withDividers(rows.map((r) => ({
+          index: dataOf(r).bodyRow as number,
+          row: { kind: 'label' as const, text: dataOf(r).text as string, ...(ownSize ? { style: { fontSize: dataOf(r).style?.fontSize as number } } : {}) },
+        })), dividers) }
       : { lines: rows.map((r) => dataOf(r).text as string) }),
     at: moved(pose, page),
     width: pose.width,

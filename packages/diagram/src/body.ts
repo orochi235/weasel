@@ -30,7 +30,10 @@ export type Row =
   | { kind: 'ports'; left?: readonly RowPort[]; right?: readonly RowPort[]; height?: number }
   /** Reserved space a consumer paints into. With a `width`, the body is at
    *  least that wide and the slot's box is that wide, centered in its row. */
-  | { kind: 'slot'; height: number; width?: number; id?: string };
+  | { kind: 'slot'; height: number; width?: number; id?: string }
+  /** A rule across the content box, drawn in the body's own stroke by the
+   *  outline painter. `inset` stops it that far short of each side. */
+  | { kind: 'divider'; inset?: number };
 
 /** A port declared on a row rather than on the node's perimeter. */
 export interface RowPort {
@@ -46,6 +49,7 @@ export interface RowTextStyle {
   fontSize?: number;
   fontFamily?: string;
   bold?: boolean;
+  italic?: boolean;
 }
 
 /** Measures one run of text. Returns its advance width and its line height. */
@@ -96,6 +100,8 @@ const DEFAULT_GAP = 4;
 /** What a row is worth when nothing measures its text, so a body laid out
  *  headlessly is not zero-height. */
 const FALLBACK_LINE = 16;
+/** The height a divider row takes; its rule runs through the middle. */
+export const DIVIDER_HEIGHT = 4;
 
 /** Adapts the kit's `measureText` for a caller holding a 2D context. Pass the
  *  same context the renderer measures with, or the floor will not match what
@@ -105,7 +111,7 @@ export function canvasMeasure(
 ): MeasureRowText {
   return (text, style) => {
     const size = style.fontSize ?? FALLBACK_LINE;
-    ctx.font = `${style.bold === true ? 'bold ' : ''}${size}px ${cssFamilyName(style.fontFamily ?? 'sans-serif')}`;
+    ctx.font = `${style.italic === true ? 'italic ' : ''}${style.bold === true ? 'bold ' : ''}${size}px ${cssFamilyName(style.fontFamily ?? 'sans-serif')}`;
     return { width: ctx.measureText(text).width, height: Math.ceil(size * 1.2) };
   };
 }
@@ -141,7 +147,14 @@ function measureRow(row: Row, measure: MeasureRowText | undefined): { width: num
     }
     case 'slot':
       return { width: row.width ?? 0, height: row.height };
+    case 'divider':
+      return { width: 0, height: DIVIDER_HEIGHT };
   }
+}
+
+/** Each row's height as {@link layoutBody} stacks it, top to bottom. */
+export function rowHeights(spec: BodySpec, measure?: MeasureRowText): number[] {
+  return spec.rows.map((row) => measureRow(row, measure).height);
 }
 
 /**
@@ -190,18 +203,25 @@ export function layoutBody(
   const gap = spec.gap ?? DEFAULT_GAP;
   const inner = contentBox(spec.outline, bounds);
   const width = Math.max(inner.width - padding * 2, 0);
-  const heights = spec.rows.map((row) => measureRow(row, measure).height);
+  const heights = rowHeights(spec, measure);
   const used = heights.reduce((sum, h) => sum + h, 0) + gap * Math.max(heights.length - 1, 0);
   const slack = Math.max(inner.height - padding * 2 - used, 0);
   const share = { top: 0, center: 0.5, bottom: 1 }[spec.verticalAlign ?? 'center'];
   let y = inner.y + padding + slack * share;
   return spec.rows.map((row, index) => {
     const h = heights[index];
-    const w = row.kind === 'slot' && row.width !== undefined ? Math.min(row.width, width) : width;
-    const box: RowBox = { row, index, x: inner.x + padding + (width - w) / 2, y, width: w, height: h };
+    const box: RowBox = row.kind === 'divider'
+      ? { row, index, x: inner.x + (row.inset ?? 0), y, width: Math.max(inner.width - 2 * (row.inset ?? 0), 0), height: h }
+      : rowBox(row, index, inner.x + padding, width, y, h);
     y += h + gap;
     return box;
   });
+}
+
+/** A row other than a divider: the padded width, or a sized slot's width centered in it. */
+function rowBox(row: Row, index: number, x: number, width: number, y: number, height: number): RowBox {
+  const w = row.kind === 'slot' && row.width !== undefined ? Math.min(row.width, width) : width;
+  return { row, index, x: x + (width - w) / 2, y, width: w, height };
 }
 
 /**

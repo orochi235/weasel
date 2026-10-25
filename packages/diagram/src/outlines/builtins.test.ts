@@ -4,8 +4,9 @@ import { boxForContent, contentBox, outlineDetail, outlinePath, type Bounds } fr
 
 const ADDED = [
   'roundRect', 'cylinder', 'document', 'note', 'cloud', 'triangle', 'octagon', 'folder', 'cube', 'actor', 'doubleEllipse',
+  'component', 'doubleRect',
 ] as const;
-const WITH_DETAIL = new Set(['cylinder', 'note', 'folder', 'cube', 'doubleEllipse']);
+const WITH_DETAIL = new Set(['cylinder', 'note', 'folder', 'cube', 'doubleEllipse', 'component', 'doubleRect']);
 
 const BOXES: Bounds[] = [
   { x: 10, y: 20, width: 240, height: 160 },
@@ -84,5 +85,17 @@ describe('octagon and cube', () => {
       expect(got.width).toBeCloseTo(want.width, 6);
       expect(got.height).toBeCloseTo(want.height, 6);
     }
+  });
+});
+
+describe('component and doubleRect', () => {
+  it('keep their content clear of the component glyph and inside the inner border', () => {
+    const b = BOXES[0]!;
+    const glyph = boundsOfPath(outlineDetail('component', b)!);
+    const c = contentBox('component', b);
+    expect(c.x + c.width).toBeLessThanOrEqual(glyph.x);
+    expect(c.x - b.x).toBeCloseTo(b.x + b.width - (c.x + c.width), 6);
+    const inner = boundsOfPath(outlineDetail('doubleRect', b)!);
+    expect(contentBox('doubleRect', b)).toEqual({ x: inner.x, y: inner.y, width: inner.width, height: inner.height });
   });
 });

@@ -3,7 +3,7 @@
  * is drawn — a `buildBody` body whose rows are ordinary text nodes.
  */
 import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
-import type { MeasureRowText, Row } from './body';
+import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
 import { DEFAULT_FONT } from './edgeLabel';
@@ -25,6 +25,10 @@ export interface DiagramStencil {
   icon?: IconRef;
   /** Laid over the style the body is drawn in: a BPMN end event's heavier ring. */
   style?: Partial<NodeStyle>;
+  /** How its body stacks its rows, as `BodySpec`'s fields of the same names. */
+  padding?: number;
+  gap?: number;
+  verticalAlign?: BodySpec['verticalAlign'];
 }
 
 export { FLOWCHART_STENCILS } from './stencils/flowchart';
@@ -67,7 +71,12 @@ export function stencilBuild<TLayer extends string>(
   const id = opts.newId();
   const style = { ...(opts.style ?? DEFAULT_NODE_STYLE), ...stencil.style };
   const at = placedBounds(stencil, bounds);
-  const spec = { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS };
+  const spec: BodySpec = {
+    outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS,
+    ...(stencil.padding !== undefined ? { padding: stencil.padding } : {}),
+    ...(stencil.gap !== undefined ? { gap: stencil.gap } : {}),
+    ...(stencil.verticalAlign !== undefined ? { verticalAlign: stencil.verticalAlign } : {}),
+  };
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(
     spec,
     at,
@@ -76,7 +85,7 @@ export function stencilBuild<TLayer extends string>(
       layer: opts.layer,
       ...(opts.measure ? { measure: opts.measure } : {}),
       body: (trait) => ({
-        diagram: { ...trait, ...bodyLayoutOf(spec, trait) },
+        diagram: { ...trait, ...bodyLayoutOf(spec, trait, opts.measure) },
         fill: { paint: { color: style.fill } },
         stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
       }),

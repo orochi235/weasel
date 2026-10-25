@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/diagram';
 import { writtenPage, type DiagramDocument, type DocumentPage, type WriteOptions } from './document';
 import { Warnings, hex2 } from './graphRead';
+import { rowLines } from './rowLines';
 
 /** A container, pool, lane, or group, as the one kind of box a graph format has. */
 export interface Cluster {
@@ -36,14 +37,7 @@ export interface GraphOut {
 
 /** A node's text, a line per text row. */
 export function nodeLines(node: DataNode, warnings: Warnings, format: string): string[] {
-  if (node.rows === undefined) return [...(node.lines ?? [])];
-  const lines: string[] = [];
-  for (const row of node.rows) {
-    if (row.kind === 'label') lines.push(row.text);
-    else if (row.kind === 'field') lines.push(`${row.label}: ${row.value}`);
-    else warnings.add(`${format} holds only text in a shape; its port rows and slots were dropped.`);
-  }
-  return lines;
+  return rowLines(node, () => warnings.add(`${format} holds only text in a shape; its port rows and slots were dropped.`));
 }
 
 function clusterTree(page: DocumentPage, theme: DiagramTheme, warnings: Warnings, format: string) {

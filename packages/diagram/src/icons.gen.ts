@@ -36,6 +36,15 @@ export type DiagramIconName =
   | 'eventGateway'
   | 'dataObject'
   | 'dataStore'
+  | 'umlClass'
+  | 'umlInterface'
+  | 'umlAbstract'
+  | 'umlPackage'
+  | 'umlNote'
+  | 'umlActor'
+  | 'umlComponent'
+  | 'erdEntity'
+  | 'erdWeakEntity'
   | 'centralTopic'
   | 'mainTopic'
   | 'subtopic'
@@ -100,6 +109,25 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DiagramIconN
     ]
   },
   {
+    "label": "UML",
+    "names": [
+      "umlClass",
+      "umlInterface",
+      "umlAbstract",
+      "umlPackage",
+      "umlNote",
+      "umlActor",
+      "umlComponent"
+    ]
+  },
+  {
+    "label": "ERD",
+    "names": [
+      "erdEntity",
+      "erdWeakEntity"
+    ]
+  },
+  {
     "label": "Mind map",
     "names": [
       "centralTopic",
@@ -145,6 +173,15 @@ declare module '@weasel-js/icons' {
     'diagram:eventGateway': true;
     'diagram:dataObject': true;
     'diagram:dataStore': true;
+    'diagram:umlClass': true;
+    'diagram:umlInterface': true;
+    'diagram:umlAbstract': true;
+    'diagram:umlPackage': true;
+    'diagram:umlNote': true;
+    'diagram:umlActor': true;
+    'diagram:umlComponent': true;
+    'diagram:erdEntity': true;
+    'diagram:erdWeakEntity': true;
     'diagram:centralTopic': true;
     'diagram:mainTopic': true;
     'diagram:subtopic': true;
