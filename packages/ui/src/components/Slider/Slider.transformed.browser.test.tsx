@@ -33,3 +33,13 @@ for (const transform of ['rotate(90deg)', 'rotate(-35deg) scale(0.75)', 'scale(0
     expect(Math.round(onInput.mock.calls.at(-1)![0][0].value)).toBe(75);
   });
 }
+
+test('under a rotate(90deg) ancestor readouts far apart along the rail share one row', () => {
+  const { container } = render(
+    <div style={{ width: 300, margin: 160, transform: 'rotate(90deg)' }}>
+      <Slider min={0} max={100} thumbs={[{ value: 20 }, { value: 80 }]} readoutPlacement="below-thumb" onInput={() => {}} />
+    </div>,
+  );
+  const tops = [...container.querySelectorAll<HTMLElement>('[data-readout="below"]')].map((el) => el.style.top);
+  expect(tops).toEqual(['0px', '0px']);
+});
