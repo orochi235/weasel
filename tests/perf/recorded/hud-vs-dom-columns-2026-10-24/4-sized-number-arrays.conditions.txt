@@ -1,0 +1,8 @@
+82b12fa0e15242c60dd6f121644c3fdd0c50f549
+ M packages/text/src/layout/layoutLines.ts
+ M packages/text/src/layout/layoutRuns.ts
+?? perf-out/
+21:33  up 25 days,  5:42, 1 user, load averages: 3.36 3.78 3.75
+Apple M3 Max
+exit 0
+21:37  up 25 days,  5:46, 1 user, load averages: 3.43 3.19 3.47

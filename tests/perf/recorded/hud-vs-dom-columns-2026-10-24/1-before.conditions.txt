@@ -1,0 +1,7 @@
+a5a1aff5ac97f82f873c3165de4cec0c4d9b53be
+?? packages/text/src/layout/layoutColumns.test.ts
+?? perf-out/
+21:09  up 25 days,  5:18, 1 user, load averages: 3.68 7.34 6.04
+Apple M3 Max
+exit 0
+21:13  up 25 days,  5:23, 1 user, load averages: 3.16 4.79 5.21
