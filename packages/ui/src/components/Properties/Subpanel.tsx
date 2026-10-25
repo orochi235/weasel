@@ -1,8 +1,7 @@
-import { type ReactNode, useId } from 'react';
-import { Disclosure } from '../Disclosure';
+import type { ReactNode } from 'react';
 import { type Motif, MotifFrame } from '../MotifFrame';
 import type { AppearanceProps } from '../appearance';
-import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
+import { type CollapseProps, foldTitle, foldTwisty, useCollapse } from './collapse';
 import s from './Properties.module.css';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 
@@ -44,9 +43,7 @@ export function Subpanel({
   onCollapsedChange,
   twisty,
 }: SubpanelProps) {
-  const bodyId = useId();
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
-  const { folds, folded, toggle } = fold;
   return (
     <MotifFrame
       kind="subpanel"
@@ -54,17 +51,7 @@ export function Subpanel({
       motif={motif}
       leading={leading}
       actions={actions}
-      twisty={
-        folds ? (
-          <Disclosure
-            className={twistyClass(fold)}
-            open={!folded}
-            onToggle={toggle}
-            label={typeof title === 'string' ? title : 'this section'}
-            controls={bodyId}
-          />
-        ) : undefined
-      }
+      twisty={foldTwisty(fold, title)}
       className={propertyMetricClass(s.subpanel, { density, align }, className)}
       disabled={disabled}
       stance={stance}
@@ -72,7 +59,7 @@ export function Subpanel({
       emphasis={emphasis}
       tint={tint}
     >
-      <div id={bodyId} className={s.subpanelBody} hidden={folded}>
+      <div className={s.subpanelBody} {...fold.body}>
         {children}
       </div>
     </MotifFrame>

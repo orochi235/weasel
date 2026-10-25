@@ -131,6 +131,25 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     },
   },
   {
+    // In :where() so a consumer's class restating these slots, as labkit's sidebar section does, outranks them.
+    id: 'sidebar-panel',
+    file: 'packages/ui/src/components/SidebarPanel/SidebarPanel.module.css',
+    selector: ':where(.panel)',
+    fills: true,
+    base: {
+      surface: 'var(--wzl-surface)',
+      'tint-mix': 'var(--wzl-panel-tint-mix)',
+      tint: TINT_BASE,
+      accent: ACCENT_BASE,
+      'title-font': 'var(--wzl-font-ui)',
+      'title-weight': 'var(--wzl-font-weight-bold)',
+      'title-size': 'var(--wzl-font-size-sm)',
+      'title-case': 'uppercase',
+      'title-tracking': '0.05em',
+      'title-color': 'var(--wzl-fg-muted)',
+    },
+  },
+  {
     // A strip between rules: no box, so a stance reaches the fill, the rule and the heading.
     id: 'sidebar-section',
     file: 'packages/labkit/src/chrome/regions/SidebarRegion.less',

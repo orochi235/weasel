@@ -7,7 +7,7 @@ import type {
   SidebarSlotContext,
   TrialChromeContext,
 } from '../types';
-import { Section, type SidebarRegionProps } from './SidebarRegion';
+import { Section, type SidebarRegionProps, undockButton } from './SidebarRegion';
 
 const STRATEGIES = { strip: stripStrategy as never };
 const CONFIG = { axis: 'y', resizable: true, fill: true };
@@ -122,11 +122,7 @@ function Pane<TCtx extends SidebarSlotContext>({
         fill={item.fill}
         collapsed={collapsed}
         onCollapsedChange={(next) => ctx.setSectionCollapsed(c.id, next)}
-        onUndock={
-          ctx.undockPanel && item.undockable !== false
-            ? () => ctx.undockPanel?.(c.id, item.undockAs ?? 'tile')
-            : undefined
-        }
+        trailing={undockButton(ctx, c.id, item)}
       >
         {item.body}
       </Section>

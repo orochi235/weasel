@@ -1,8 +1,7 @@
-import { createContext, type ReactNode, useContext, useId } from 'react';
-import { Disclosure } from '../Disclosure';
+import { createContext, type ReactNode, useContext } from 'react';
 import type { AppearanceProps } from '../appearance';
 import { type Motif, MotifFrame } from '../MotifFrame';
-import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
+import { type CollapseProps, foldTitle, foldTwisty, useCollapse } from './collapse';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import s from './Properties.module.css';
 
@@ -57,9 +56,7 @@ export function PropertyPanel({
   twisty: twistyShown,
 }: PropertyPanelProps) {
   const nested = useContext(PanelNesting);
-  const bodyId = useId();
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty: twistyShown });
-  const { folds, folded, toggle } = fold;
   // Hidden while open, the twisty trails the header: the title sits where it does with no twisty.
   const trailing = twistyShown === 'folded';
   const body = <PanelNesting.Provider value>{children}</PanelNesting.Provider>;
@@ -70,22 +67,12 @@ export function PropertyPanel({
       motif={motif}
       actions={actions}
       twistyAt={trailing ? 'end' : 'start'}
-      twisty={
-        folds ? (
-          <Disclosure
-            className={trailing ? `${twistyClass(fold)} ${s.foldTwistyTrailing}` : twistyClass(fold)}
-            open={!folded}
-            onToggle={toggle}
-            label={typeof title === 'string' ? title : 'this panel'}
-            controls={bodyId}
-          />
-        ) : undefined
-      }
+      twisty={foldTwisty(fold, title, 'this panel', trailing ? s.foldTwistyTrailing : undefined)}
       className={propertyMetricClass(s.panel, { density, align }, className)}
       attrs={{
         'data-nested': nested ? 'true' : undefined,
         'data-selectable': (selectable ?? stance === 'debug') ? 'true' : undefined,
-        'data-collapsed': folded ? 'true' : undefined,
+        'data-collapsed': fold.folded ? 'true' : undefined,
       }}
       stance={stance}
       grade={grade}
@@ -93,8 +80,8 @@ export function PropertyPanel({
       tint={tint}
     >
       {/* Folded contents stay mounted, so a control's local state survives. */}
-      {folds ? (
-        <div id={bodyId} className={s.panelBody} hidden={folded}>
+      {fold.folds ? (
+        <div className={s.panelBody} {...fold.body}>
           {body}
         </div>
       ) : body}

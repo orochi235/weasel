@@ -1,8 +1,7 @@
-import { type MouseEventHandler, type ReactNode, useId } from 'react';
-import { Disclosure } from '../Disclosure';
+import type { MouseEventHandler, ReactNode } from 'react';
 import { type Motif, MotifFrame } from '../MotifFrame';
 import type { AppearanceProps } from '../appearance';
-import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
+import { type CollapseProps, foldTitle, foldTwisty, useCollapse } from './collapse';
 import s from './Properties.module.css';
 import { type PropertyListPack, PropertyNote } from './PropertyList';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
@@ -71,9 +70,7 @@ export function PropertyGroup({
   tint,
   onContextMenu,
 }: PropertyGroupProps) {
-  const bodyId = useId();
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
-  const { folds, folded, toggle } = fold;
   if (hidden) return null;
 
   const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
@@ -84,17 +81,7 @@ export function PropertyGroup({
       motif={motif}
       leading={leading}
       actions={actions}
-      twisty={
-        folds ? (
-          <Disclosure
-            className={twistyClass(fold)}
-            open={!folded}
-            onToggle={toggle}
-            label={typeof title === 'string' ? title : 'this section'}
-            controls={bodyId}
-          />
-        ) : undefined
-      }
+      twisty={foldTwisty(fold, title)}
       className={cls}
       disabled={disabled}
       stance={stance}
@@ -104,7 +91,7 @@ export function PropertyGroup({
       onContextMenu={onContextMenu}
     >
       {description !== undefined && description !== '' && <PropertyNote>{description}</PropertyNote>}
-      <div id={bodyId} className={s.groupBody} hidden={folded}>
+      <div className={s.groupBody} {...fold.body}>
         {children}
       </div>
     </MotifFrame>

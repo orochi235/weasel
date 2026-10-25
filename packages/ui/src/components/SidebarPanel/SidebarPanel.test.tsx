@@ -1,3 +1,4 @@
+import { cssColorLiteral } from '@weasel-js/paint';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
@@ -59,6 +60,72 @@ describe('SidebarPanel', () => {
     expect(sign()).toBe('M3 6.5 H10 M6.5 3 V10');
   });
 
+  it('names its body with aria-controls while open, and nothing while the body is unmounted', () => {
+    const { rerender } = renderWithIcons(
+      <SidebarPanel title="Layers" onToggleCollapse={() => {}}>body</SidebarPanel>,
+    );
+    const id = screen.getByRole('button').getAttribute('aria-controls');
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id!)?.textContent).toBe('body');
+    rerender(<SidebarPanel title="Layers" collapsed onToggleCollapse={() => {}}>body</SidebarPanel>);
+    expect(screen.getByRole('button').hasAttribute('aria-controls')).toBe(false);
+  });
+
+  it('draws trailing controls after the actions and before the close button, folded or not', () => {
+    renderWithIcons(
+      <SidebarPanel
+        title="Path"
+        collapsed
+        onToggleCollapse={() => {}}
+        onHide={() => {}}
+        actions={<button type="button">Switch</button>}
+        trailing={<button type="button">Undock</button>}
+      >
+        body
+      </SidebarPanel>,
+    );
+    const names = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent);
+    expect(names).toEqual(['Path', 'Switch', 'Undock', 'Hide panel']);
+  });
+
+  it('marks a filling panel only while it is open', () => {
+    const { container, rerender } = renderWithIcons(<SidebarPanel title="List" fill>body</SidebarPanel>);
+    const root = () => container.firstElementChild as HTMLElement;
+    expect(root().hasAttribute('data-fill')).toBe(true);
+    rerender(<SidebarPanel title="List" fill collapsed>body</SidebarPanel>);
+    expect(root().hasAttribute('data-fill')).toBe(false);
+  });
+
+  it('hands its header to headerRef, and its parts their classes', () => {
+    let header: HTMLDivElement | null = null;
+    renderWithIcons(
+      <SidebarPanel
+        title="Notes"
+        headerRef={(el) => {
+          header = el;
+        }}
+        headerClassName="bar"
+        titleClassName="head"
+        bodyClassName="inside"
+      >
+        body
+      </SidebarPanel>,
+    );
+    expect(header).not.toBeNull();
+    expect(header!.classList.contains('bar')).toBe(true);
+    expect(screen.getByText('Notes').classList.contains('head')).toBe(true);
+    expect(screen.getByText('body').classList.contains('inside')).toBe(true);
+  });
+
+  it('carries its stance and tint on its root', () => {
+    const { container } = renderWithIcons(
+      <SidebarPanel title="Debug" stance="debug" tint={cssColorLiteral('#224a63')}>body</SidebarPanel>,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.dataset.stance).toBe('debug');
+    expect(root.style.getPropertyValue('--wzl-tint')).toBe('#224a63');
+  });
+
   it('renders the hide button only when onHide is given', () => {
     const onHide = vi.fn();
     const { rerender } = renderWithIcons(<SidebarPanel title="Properties">body</SidebarPanel>);
@@ -77,8 +144,8 @@ describe('SidebarPanel static title', () => {
     renderWithIcons(<SidebarPanel title="Properties">body</SidebarPanel>);
     expect(screen.getByText('Properties').className).toMatch(/titleBox/);
     const css = readFileSync(resolve(__dirname, 'SidebarPanel.module.css'), 'utf8');
-    expect(css).toMatch(/\.titleBox\s*\{[^}]*padding: var\(--wzl-space-2\) var\(--wzl-space-4\);/);
-    expect(css).not.toMatch(/\.titleButton\s*\{[^}]*padding:/);
+    expect(css).toMatch(/:where\(\.titleBox\)\s*\{[^}]*padding: var\(--wzl-space-2\) var\(--wzl-space-4\);/);
+    expect(css).not.toMatch(/\.titleButton\)?\s*\{[^}]*padding:/);
   });
 
   it('gives the collapsible title the same box', () => {

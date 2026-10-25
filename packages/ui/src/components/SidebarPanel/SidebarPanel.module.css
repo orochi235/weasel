@@ -1,20 +1,15 @@
-.panel {
+/* The panel's own look sits in :where(), so a consumer's class on any part
+   outranks it whatever order the stylesheets load in. */
+
+:where(.panel) {
   /* Vertical only: the body spans the panel's full width, and the title row's
      own controls carry the horizontal inset. */
   padding: var(--wzl-space-4) 0;
-  background: var(--wzl-surface);
+  background: var(--_s-fill);
   color: var(--wzl-fg);
 }
 
-.title {
-  font-size: var(--wzl-font-size-sm);
-  font-weight: var(--wzl-font-weight-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--wzl-fg-muted);
-}
-
-.titleRow {
+:where(.titleRow) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -22,43 +17,213 @@
   padding: 0;
 }
 
-/* The title's inset, shared by the static title and the collapse button so the
-   two line up. */
-.titleBox {
+/* The title's inset and type, shared by the static title and the collapse
+   button so the two line up. */
+:where(.titleBox) {
+  flex: 1 1 auto;
   padding: var(--wzl-space-2) var(--wzl-space-4);
+  font-family: var(--_s-title-font);
+  font-size: var(--_s-title-size);
+  font-weight: var(--_s-title-weight);
+  text-transform: var(--_s-title-case);
+  letter-spacing: var(--_s-title-tracking);
+  color: var(--_s-title-color);
 }
 
-.titleButton {
+:where(.title) {
+  min-width: 0;
+}
+
+:where(.titleButton) {
   display: inline-flex;
   align-items: center;
   gap: var(--wzl-space-2);
-  flex: 1 1 auto;
   background: transparent;
   border: 0;
+  line-height: inherit;
   cursor: pointer;
-  color: inherit;
-  font: inherit;
   text-align: left;
 }
-.titleButton:hover {
+:where(.titleButton:hover) {
   color: var(--wzl-fg);
 }
 
-.actions {
+:where(.actions),
+:where(.trailing) {
   display: flex;
   align-items: center;
   gap: var(--wzl-space-2);
-  margin-inline: auto var(--wzl-space-2);
-}
-
-.hideButton {
   margin-inline-end: var(--wzl-space-2);
 }
 
-.panel.collapsed {
+:where(.hideButton) {
+  margin-inline-end: var(--wzl-space-2);
+}
+
+:where(.panel.collapsed) {
   padding-bottom: var(--wzl-space-2);
 }
 
-.body {
+:where(.body) {
   padding: 0;
 }
+
+:where(.panel[data-fill]) {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+:where(.panel[data-fill] > .body) {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* BEGIN GENERATED stance rules: sidebar-panel — `npm run gen:stances`, do not edit. */
+
+:where(.panel) {
+  --wzl-tint: initial;
+}
+
+:where(.panel) {
+  --_s-surface: var(--wzl-surface);
+  --_s-tint-mix: var(--wzl-panel-tint-mix);
+  --_s-tint: var(--wzl-tint, var(--_s-surface));
+  --_s-accent: var(--wzl-tint);
+  --_s-title-font: var(--wzl-font-ui);
+  --_s-title-weight: var(--wzl-font-weight-bold);
+  --_s-title-size: var(--wzl-font-size-sm);
+  --_s-title-case: uppercase;
+  --_s-title-tracking: 0.05em;
+  --_s-title-color: var(--wzl-fg-muted);
+}
+
+:where(.panel)[data-stance='clarify'] {
+  --_s-surface: var(--wzl-stance-clarify-surface, var(--wzl-surface));
+  --_s-tint-mix: var(--wzl-stance-clarify-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-clarify-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-clarify-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-clarify-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-clarify-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-clarify-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-clarify-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-clarify-title-tracking, 0.05em);
+  --_s-title-color: var(--wzl-stance-clarify-title-color, var(--wzl-fg-muted));
+}
+
+:where(.panel)[data-stance='aside'] {
+  --_s-surface: var(--wzl-stance-aside-surface, var(--wzl-surface));
+  --_s-tint-mix: var(--wzl-stance-aside-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-aside-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-aside-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-aside-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-aside-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-aside-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-aside-title-tracking, 0.05em);
+  --_s-title-color: var(--wzl-stance-aside-title-color, var(--wzl-fg-muted));
+}
+
+:where(.panel)[data-stance='advanced'] {
+  --_s-surface: var(--wzl-stance-advanced-surface, var(--wzl-surface));
+  --_s-tint-mix: var(--wzl-stance-advanced-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-advanced-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-advanced-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-advanced-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-advanced-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-advanced-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-advanced-title-tracking, 0.05em);
+  --_s-title-color: var(--wzl-stance-advanced-title-color, var(--wzl-fg-muted));
+}
+
+:where(.panel)[data-stance='debug'] {
+  --_s-surface: var(--wzl-stance-debug-surface, var(--wzl-surface));
+  --_s-tint-mix: var(--wzl-stance-debug-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-debug-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-debug-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-debug-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-debug-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-debug-title-tracking, 0.05em);
+  --_s-title-color: var(--wzl-stance-debug-title-color, var(--wzl-fg-muted));
+}
+
+:where(.panel)[data-stance='preview'] {
+  --_s-surface: var(--wzl-stance-preview-surface, var(--wzl-surface));
+  --_s-tint-mix: var(--wzl-stance-preview-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-preview-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-preview-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-preview-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-preview-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-preview-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-preview-title-tracking, 0.05em);
+  --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg-muted));
+}
+
+:where(.panel)[data-stance='confirm'] {
+  --_s-surface: var(--wzl-stance-confirm-surface, var(--wzl-surface));
+  --_s-tint-mix: var(--wzl-stance-confirm-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-confirm-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-confirm-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-confirm-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-confirm-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-confirm-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-confirm-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-confirm-title-tracking, 0.05em);
+  --_s-title-color: var(--wzl-stance-confirm-title-color, var(--wzl-fg-muted));
+}
+
+:where(.panel)[data-stance='cancel'] {
+  --_s-surface: var(--wzl-stance-cancel-surface, var(--wzl-surface));
+  --_s-tint-mix: var(--wzl-stance-cancel-tint-mix, var(--wzl-panel-tint-mix));
+  --_s-tint: var(--wzl-tint, var(--wzl-stance-cancel-tint, var(--_s-surface)));
+  --_s-accent: var(--wzl-tint, var(--wzl-stance-cancel-accent, var(--wzl-tint)));
+  --_s-title-font: var(--wzl-stance-cancel-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-cancel-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-cancel-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-cancel-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-cancel-title-tracking, 0.05em);
+  --_s-title-color: var(--wzl-stance-cancel-title-color, var(--wzl-fg-muted));
+}
+
+:where(.panel)[data-emphasis='high'] {
+  --_s-title-color: var(--wzl-accent-fg);
+}
+
+:where(.panel)[data-emphasis='low'] {
+  --_s-title-color: var(--wzl-fg-muted);
+}
+
+:where(.panel)[data-grade] {
+  --_s-tint: var(--wzl-tint, var(--wzl-grade));
+  --_s-title-color: var(--wzl-grade);
+  --_s-accent: var(--wzl-tint, var(--wzl-grade));
+}
+
+:where(.panel) {
+  --_s-fill: var(--_s-surface);
+}
+
+:where(.panel)[data-tint],
+:where(.panel)[data-grade],
+:where(.panel)[data-stance] {
+  --_s-fill: color-mix(in oklab, var(--_s-tint) var(--_s-tint-mix), var(--_s-surface));
+}
+
+:where(.panel)[data-tint] {
+  --wzl-accent: var(--_s-accent);
+  --wzl-accent-base: var(--_s-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
+  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+}
+
+/* END GENERATED stance rules: sidebar-panel */
