@@ -82,7 +82,7 @@
     "longestFunction": 145
   },
   "packages/forge/src/shell/tree/StoryTree.tsx": {
-    "longestFunction": 315
+    "longestFunction": 228
   },
   "packages/forge/src/shell/useStoryRegistry.ts": {
     "longestFunction": 186
@@ -295,7 +295,7 @@
     "lines": 425
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "longestFunction": 285
+    "longestFunction": 282
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 143

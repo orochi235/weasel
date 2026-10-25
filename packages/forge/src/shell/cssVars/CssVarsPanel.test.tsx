@@ -215,7 +215,7 @@ describe('CssVarsPanel', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: /^X/ });
     if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
-    fireEvent.click(screen.getByRole('treeitem', { name: 'B' }), { shiftKey: true });
+    fireEvent.click(within(screen.getByRole('treeitem', { name: 'B' })).getByText('B'), { shiftKey: true });
     const second = await openTrial('B');
     await waitFor(() => expect(vars().getByText('X > B')).toBeInTheDocument());
 

@@ -1,15 +1,15 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
-import { DisclosureMark } from '@weasel-js/ui/components/Disclosure';
 import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
-import { type FocusEvent, type KeyboardEvent, type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Tree, type TreeNode as UiTreeNode, type TreeProps } from '@weasel-js/ui/components/Tree';
+import { type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
 import { isGallery, isLab } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
 import { onRevealInTree } from '../treeReveal';
 import { useRoute } from '../useRoute';
-import { buildTree, filterTree, type TreeNode } from './buildTree';
+import { buildTree, filterTree, type TreeNode as StoryNode } from './buildTree';
 import { buildComponents, componentNodes, filterComponents, librariesIn } from './buildComponents';
 import { LibrariesContext } from '../../story/library';
 import { LabBadge } from '../../frame/index/LabBadge';
@@ -29,13 +29,11 @@ export interface StoryTreeProps {
   index: readonly IndexEntry[];
 }
 
-interface Row {
-  key: string;
-  node: TreeNode;
-  parent: string | null;
-}
+type StoryFolder = Extract<StoryNode, { kind: 'folder' }>;
 
-const keyOf = (node: TreeNode): string => (node.kind === 'folder' ? `folder:${node.path}` : `story:${node.entry.id}`);
+const keyOf = (node: StoryNode): string => (node.kind === 'folder' ? `folder:${node.path}` : `story:${node.entry.id}`);
+const pathOf = (folderKey: string): string => folderKey.slice('folder:'.length);
+const hrefOf = (entry: IndexEntry): string => `#/${encodeURIComponent(entry.id)}`;
 
 /** The folder paths above a story's component, and the component's own. */
 function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
@@ -55,7 +53,8 @@ function LibraryBadge({ library }: { library: string }) {
 }
 
 /** What follows a row's label: a Lab badge on a whole screen, then the package. */
-function RowTags({ lab, library }: { lab: boolean; library: string | undefined }) {
+function rowTags(lab: boolean, library: string | undefined): ReactNode {
+  if (!lab && !library) return undefined;
   return (
     <>
       {lab ? <LabBadge className="fg-tree__lab" /> : null}
@@ -74,8 +73,6 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   // Stored as what is *off*, so a library added later is on without anyone
   // going back to tick it.
   const [hidden, setHidden] = usePersistedState<Record<string, boolean>>('fg-tree-libraries', {}, { scope: 'lab' });
-  const [focusKey, setFocusKey] = useState<string | null>(null);
-  const items = useRef(new Map<string, HTMLElement>());
 
   const table = useContext(LibrariesContext);
   const libraries = useMemo(() => librariesIn(index, table), [index, table]);
@@ -113,30 +110,49 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const routed = routable.find((entry) => entry.id === route);
   const routeAncestors = useMemo(() => ancestorsOf(routed), [routed]);
   const filtering = query.trim() !== '';
-  const isOpen = (path: string): boolean =>
-    filtering || (folds[path] ?? routeAncestors.has(path));
+  const openKey = ctx.trials.map((trial) => trial.instrumentName).join('\n');
+  const openIds = useMemo(() => new Set(openKey.split('\n')), [openKey]);
 
-  const rows: Row[] = [];
-  const collect = (nodes: readonly TreeNode[], parent: string | null): void => {
-    for (const node of nodes) {
-      rows.push({ key: keyOf(node), node, parent });
-      if (node.kind === 'folder' && isOpen(node.path)) collect(node.children, keyOf(node));
-    }
-  };
-  collect(shown, null);
-  const active = rows.some((row) => row.key === focusKey) ? focusKey : (rows[0]?.key ?? null);
-
-  const openIds = new Set(ctx.trials.map((trial) => trial.instrumentName));
+  const { nodes, byId, folders: folderIds } = useMemo(() => {
+    const ids = new Map<string, StoryNode>();
+    const folders: string[] = [];
+    const convert = (list: readonly StoryNode[]): UiTreeNode[] =>
+      list.map((node) => {
+        const id = keyOf(node);
+        ids.set(id, node);
+        if (node.kind === 'folder') {
+          folders.push(id);
+          return {
+            id,
+            label: node.label,
+            className: 'fg-tree__folder',
+            href: node.index ? hrefOf(node.index) : undefined,
+            current: !!node.index && openIds.has(node.index.id),
+            trailing: rowTags(!!node.index && isLab(node.index), node.tag),
+            children: convert(node.children),
+          };
+        }
+        return {
+          id,
+          label: node.label ?? node.entry.name,
+          className: 'fg-tree__story',
+          href: hrefOf(node.entry),
+          current: openIds.has(node.entry.id),
+          trailing: rowTags(isLab(node.entry), node.tag),
+        };
+      });
+    return { nodes: convert(shown), byId: ids, folders };
+  }, [shown, openIds]);
+  const expanded = useMemo(
+    () => new Set(folderIds.filter((id) => filtering || (folds[pathOf(id)] ?? routeAncestors.has(pathOf(id))))),
+    [folderIds, filtering, folds, routeAncestors],
+  );
 
   // A filter forces every folder open, so a toggle then would change state nobody can see.
-  const setOpen = (path: string, open: boolean): void => {
-    if (!filtering) setFolds((prev) => ({ ...prev, [path]: open }));
-  };
-
-  const moveTo = (key: string | undefined): void => {
-    if (key === undefined) return;
-    setFocusKey(key);
-    items.current.get(key)?.focus();
+  const onExpandedChange = (next: Set<string>): void => {
+    if (filtering) return;
+    const changed = folderIds.filter((id) => next.has(id) !== expanded.has(id));
+    if (changed.length) setFolds((prev) => ({ ...prev, ...Object.fromEntries(changed.map((id) => [pathOf(id), next.has(id)])) }));
   };
 
   const activate = (entry: IndexEntry, another: boolean): void => {
@@ -155,26 +171,37 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     setRoute(entry.id);
   };
 
-  // A component's row opens its index page as well as its folder; the fold mark alone only folds.
-  const openFolder = (node: Extract<TreeNode, { kind: 'folder' }>, another: boolean): void => {
-    if (!node.index) {
-      setOpen(node.path, !isOpen(node.path));
-      return;
-    }
-    // Selection opens it, and closes it again once the selection moves on; only a manual fold is stored. A
-    // manual close would outrank the selection, so it is dropped.
-    if (folds[node.path] === false) {
-      setFolds(({ [node.path]: _dropped, ...rest }) => rest);
-    }
-    activate(node.index, another);
+  // A component's row opens its index page, which opens its folder; only the fold mark folds it. Selection opens
+  // it, and closes it again once the selection moves on; only a manual fold is stored. The row's activation has
+  // already toggled the fold, so the stored fold goes back to what it was, less a manual close, which would
+  // outrank the selection.
+  const openIndex = (path: string, page: IndexEntry, another: boolean): void => {
+    const was = folds[path];
+    setFolds(({ [path]: _toggled, ...rest }) => (was ? { ...rest, [path]: was } : rest));
+    activate(page, another);
+  };
+
+  const onAction: TreeProps['onAction'] = (id, mods) => {
+    const node = byId.get(id);
+    if (node?.kind === 'story') activate(node.entry, mods.shiftKey);
+    else if (node?.index) openIndex(node.path, node.index, mods.shiftKey);
   };
 
   // A breadcrumb asks for a folder; it is shown the way clicking its row shows it, in the Tree view when the
   // current one has no such folder. The row scrolls itself into view once it has rendered.
+  const treeEl = useRef<HTMLUListElement>(null);
   const scrollTo = useRef<string | null>(null);
+  useEffect(() => {
+    const id = scrollTo.current;
+    if (id == null) return;
+    const row = [...(treeEl.current?.querySelectorAll<HTMLElement>('[data-tree-id]') ?? [])].find((el) => el.dataset.treeId === id);
+    if (!row) return;
+    scrollTo.current = null;
+    (row.firstElementChild as HTMLElement | null)?.scrollIntoView({ block: 'nearest' });
+  });
   const reveal = (path: string): void => {
-    const find = (nodes: readonly TreeNode[], at: string): Extract<TreeNode, { kind: 'folder' }> | undefined => {
-      for (const node of nodes) {
+    const find = (list: readonly StoryNode[], at: string): StoryFolder | undefined => {
+      for (const node of list) {
         if (node.kind !== 'folder') continue;
         if (node.path === at) return node;
         const inner = find(node.children, at);
@@ -182,11 +209,11 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
       }
       return undefined;
     };
-    const nodesOf = (v: View): readonly TreeNode[] =>
+    const nodesOf = (v: View): readonly StoryNode[] =>
       v === 'tree' ? tree : componentNodes(v === 'gallery' ? galleries : components);
     // The current view first; a folder only another view holds switches to it; failing all three, the nearest folder above.
     const order = [view, ...VIEWS.map((item) => item.value).filter((v) => v !== view && enabled(v))];
-    let node: Extract<TreeNode, { kind: 'folder' }> | undefined;
+    let node: StoryFolder | undefined;
     let where: View = view;
     for (let at = path; at && !node; at = at.includes('/') ? at.slice(0, at.lastIndexOf('/')) : '') {
       for (const v of order) {
@@ -204,134 +231,12 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     const segments = found.path.split('/');
     const above = segments.slice(0, -1).map((_, i) => segments.slice(0, i + 1).join('/'));
     setFolds((prev) => ({ ...prev, ...Object.fromEntries(above.map((p) => [p, true])) }));
-    setFocusKey(keyOf(found));
     scrollTo.current = keyOf(found);
-    if (found.index) openFolder(found, false);
+    if (found.index) openIndex(found.path, found.index, false);
     else setFolds((prev) => ({ ...prev, [found.path]: true }));
   };
   // Resubscribed every commit, so the listener always reads this render's view and data.
   useEffect(() => onRevealInTree(reveal));
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    const at = rows.findIndex((row) => row.key === active);
-    const row = rows[at];
-    if (!row) return;
-    const { node } = row;
-    switch (event.key) {
-      case 'ArrowDown':
-        moveTo(rows[at + 1]?.key);
-        break;
-      case 'ArrowUp':
-        moveTo(rows[at - 1]?.key);
-        break;
-      case 'Home':
-        moveTo(rows[0]?.key);
-        break;
-      case 'End':
-        moveTo(rows[rows.length - 1]?.key);
-        break;
-      case 'ArrowRight':
-        if (node.kind !== 'folder') break;
-        if (!isOpen(node.path)) setOpen(node.path, true);
-        else if (rows[at + 1]?.parent === row.key) moveTo(rows[at + 1]?.key);
-        break;
-      case 'ArrowLeft':
-        if (node.kind === 'folder' && isOpen(node.path) && !filtering) setOpen(node.path, false);
-        else moveTo(row.parent ?? undefined);
-        break;
-      case 'Enter':
-      case ' ':
-        if (node.kind === 'story') activate(node.entry, event.shiftKey);
-        else openFolder(node, event.shiftKey);
-        break;
-      default:
-        return;
-    }
-    event.preventDefault();
-  };
-
-  const itemProps = (node: TreeNode, level: number) => {
-    const key = keyOf(node);
-    return {
-      role: 'treeitem',
-      'aria-level': level,
-      tabIndex: key === active ? 0 : -1,
-      ref: (el: HTMLElement | null) => {
-        if (el) items.current.set(key, el);
-        else items.current.delete(key);
-        if (el && scrollTo.current === key) {
-          scrollTo.current = null;
-          el.scrollIntoView({ block: 'nearest' });
-        }
-      },
-      // A folder item contains its children, so their focus bubbles through it.
-      onFocus: (event: FocusEvent) => {
-        if (event.target === event.currentTarget) setFocusKey(key);
-      },
-    };
-  };
-
-  const renderNodes = (nodes: readonly TreeNode[], level: number): ReactNode =>
-    nodes.map((node) => {
-      if (node.kind === 'folder') {
-        const open = isOpen(node.path);
-        return (
-          <div
-            key={keyOf(node)}
-            {...itemProps(node, level)}
-            aria-expanded={open}
-            aria-label={node.label}
-            aria-current={node.index && openIds.has(node.index.id) ? 'true' : undefined}
-            className="fg-tree__node"
-          >
-            <div
-              className="fg-tree__item fg-tree__folder"
-              onClick={(event) => {
-                setFocusKey(keyOf(node));
-                openFolder(node, event.shiftKey);
-              }}
-            >
-              <span
-                aria-hidden="true"
-                className="fg-tree__fold"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setOpen(node.path, !open);
-                }}
-              >
-                <DisclosureMark open={open} />
-              </span>
-              <span className="fg-tree__label">{node.label}</span>
-              <RowTags lab={!!node.index && isLab(node.index)} library={node.tag} />
-            </div>
-            {open ? (
-              <div role="group" className="fg-tree__group">
-                {renderNodes(node.children, level + 1)}
-              </div>
-            ) : null}
-          </div>
-        );
-      }
-      const { entry } = node;
-      return (
-        <a
-          key={keyOf(node)}
-          {...itemProps(node, level)}
-          href={`#/${encodeURIComponent(entry.id)}`}
-          aria-current={openIds.has(entry.id) ? 'true' : undefined}
-          className="fg-tree__item fg-tree__story"
-          onClick={(event) => {
-            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey) return;
-            event.preventDefault();
-            setFocusKey(keyOf(node));
-            activate(entry, event.shiftKey);
-          }}
-        >
-          <span className="fg-tree__label">{node.label ?? entry.name}</span>
-          <RowTags lab={isLab(entry)} library={node.tag} />
-        </a>
-      );
-    });
 
   return (
     <section className="fg-tree">
@@ -374,9 +279,16 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
-      <div role="tree" aria-labelledby={headingId} className="fg-tree__items" onKeyDown={onKeyDown}>
-        {renderNodes(shown, 1)}
-      </div>
+      <Tree
+        ref={treeEl}
+        aria-labelledby={headingId}
+        className="fg-tree__items"
+        nodes={nodes}
+        empty={filtering ? 'No stories match' : 'No stories'}
+        expandedIds={expanded}
+        onExpandedChange={onExpandedChange}
+        onAction={onAction}
+      />
     </section>
   );
 }

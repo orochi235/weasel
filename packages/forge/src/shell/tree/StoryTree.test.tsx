@@ -57,15 +57,22 @@ async function mount(storage: StorageAdapter = createMemoryAdapter()) {
 }
 
 /** The fold mark on a folder's own row, which folds it without opening its index page. */
-const foldOf = (folder: HTMLElement) => folder.querySelector(':scope > .fg-tree__folder > .fg-tree__fold') as HTMLElement;
+const foldOf = (folder: HTMLElement) => folder.querySelector(':scope > :first-child > [data-tree-twisty]') as HTMLElement;
+
+/** A row's accessible name: its label, then any badges after it. */
+const named = (label: string) => new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: |$)`);
+
+/** Clicks a row, as a pointer would: on the row itself, not the treeitem around it and its subtree. */
+const press = (label: string, init?: MouseEventInit) =>
+  fireEvent.click(screen.getByRole('treeitem', { name: named(label) }).firstElementChild as HTMLElement, init);
 
 /** Folders open by their fold marks, so no index page loads on the way to a story. */
 function openFolder(label: string) {
-  const folder = screen.getByRole('treeitem', { name: label });
+  const folder = screen.getByRole('treeitem', { name: named(label) });
   if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(folder));
 }
 
-const item = (scope: HTMLElement, name: string) => within(scope).getByRole('treeitem', { name });
+const item = (scope: HTMLElement, name: string) => within(scope).getByRole('treeitem', { name: named(name) });
 
 afterEach(() => {
   history.replaceState(null, '', '/');
@@ -115,7 +122,7 @@ describe('StoryTree', () => {
     const groups = within(treeEl).getAllByRole('group');
     expect(groups).toHaveLength(1);
     expect(kit).toContainElement(groups[0] as HTMLElement);
-    expect(within(groups[0] as HTMLElement).getByRole('treeitem', { name: 'Button' })).toBeInTheDocument();
+    expect(within(groups[0] as HTMLElement).getByRole('treeitem', { name: named('Button') })).toBeInTheDocument();
   });
 
   it('narrows to matching stories and their folders as the filter is typed', async () => {
@@ -265,12 +272,12 @@ describe('StoryTree', () => {
     await mount();
     openFolder('Kit');
     openFolder('Button');
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }));
+    press('Ghost');
     await waitFor(() => expect(trialsOf(ghost)).toHaveLength(1));
     expect(trialsOf(slider)).toHaveLength(0);
     expect(allTrials()).toHaveLength(1);
     expect(location.hash).toBe(`#/${ghost.id}`);
-    expect(screen.getByRole('treeitem', { name: 'Ghost' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('treeitem', { name: named('Ghost') })).toHaveAttribute('aria-current', 'true');
   });
 
   it('reveals the focused trial when it already runs the clicked story', async () => {
@@ -280,7 +287,7 @@ describe('StoryTree', () => {
     openFolder('Kit');
     openFolder('Slider');
     expect(trialsOf(slider)).toHaveLength(1);
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Default' }));
+    press('Default');
     expect(trialsOf(slider)).toHaveLength(1);
     expect(trialsOf(slider)[0]).toHaveClass('fg-flash');
     expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
@@ -292,7 +299,7 @@ describe('StoryTree', () => {
     openFolder('Kit');
     openFolder('Slider');
     vi.useFakeTimers();
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Default' }));
+    press('Default');
     const trial = trialsOf(slider)[0] as HTMLElement;
     act(() => vi.advanceTimersByTime(599));
     expect(trial).toHaveClass('fg-flash');
@@ -305,9 +312,9 @@ describe('StoryTree', () => {
     openFolder('Kit');
     openFolder('Slider');
     openFolder('Button');
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Default' }), { shiftKey: true });
+    press('Default', { shiftKey: true });
     await waitFor(() => expect(trialsOf(slider)).toHaveLength(2));
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }));
+    press('Ghost');
     await waitFor(() => expect(trialsOf(ghost)).toHaveLength(1));
     expect(trialsOf(slider)).toHaveLength(1);
   });
@@ -316,10 +323,10 @@ describe('StoryTree', () => {
     await mount();
     openFolder('Kit');
     openFolder('Button');
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { shiftKey: true });
+    press('Ghost', { shiftKey: true });
     await waitFor(() => expect(trialsOf(ghost)).toHaveLength(1));
     fireEvent.pointerDown(trialsOf(slider)[0] as HTMLElement);
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Primary' }));
+    press('Primary');
     await waitFor(() => expect(trialsOf(primary)).toHaveLength(1));
     expect(trialsOf(slider)).toHaveLength(0);
     expect(trialsOf(ghost)).toHaveLength(1);
@@ -337,8 +344,8 @@ describe('StoryTree', () => {
       event.preventDefault();
     };
     document.addEventListener('click', record);
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { metaKey: true });
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { ctrlKey: true });
+    press('Ghost', { metaKey: true });
+    press('Ghost', { ctrlKey: true });
     document.removeEventListener('click', record);
     expect(left).toEqual([true, true]);
     expect(trialsOf(ghost)).toHaveLength(0);
@@ -512,16 +519,14 @@ describe('StoryTree galleries', () => {
     );
   }
 
-  const names = () => screen.getAllByRole('treeitem').map((row) => row.getAttribute('aria-label') ?? row.textContent);
-
   it.each(['Components', 'Tree'])('leaves galleries out of the %s view', async (view) => {
     renderWithIcons(<GalleryHarness />);
     await screen.findByRole('tree', { name: 'Stories' });
     fireEvent.click(screen.getByRole('radio', { name: view }));
     if (view === 'Tree') openFolder('Kit');
-    const button = screen.getByRole('treeitem', { name: 'Button' });
+    const button = screen.getByRole('treeitem', { name: named('Button') });
     if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(button));
-    expect(names()).not.toContain('Everything');
+    expect(screen.queryByRole('treeitem', { name: named('Everything') })).toBeNull();
     expect(item(button, 'Primary')).toBeTruthy();
     expect(within(button).queryByRole('treeitem', { name: 'Permutations' })).toBeNull();
   });
@@ -549,18 +554,18 @@ describe('StoryTree galleries', () => {
     expect(screen.getByRole('radio', { name: 'Components' })).toBeDisabled();
     expect(screen.getByRole('radio', { name: 'Tree' })).toBeDisabled();
     expect(screen.getByRole('radio', { name: 'Gallery' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('treeitem', { name: 'Everything' })).toBeTruthy();
+    expect(screen.getByRole('treeitem', { name: named('Everything') })).toBeTruthy();
   });
 
   it('lists every gallery, and only galleries, in the Gallery view', async () => {
     renderWithIcons(<GalleryHarness />);
     await screen.findByRole('tree', { name: 'Stories' });
     fireEvent.click(screen.getByRole('radio', { name: 'Gallery' }));
-    const button = screen.getByRole('treeitem', { name: 'Button' });
+    const button = screen.getByRole('treeitem', { name: named('Button') });
     if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(button));
     expect(item(button, 'Permutations')).toBeTruthy();
     expect(within(button).queryByRole('treeitem', { name: 'Primary' })).toBeNull();
-    expect(screen.getByRole('treeitem', { name: 'Everything' })).toBeTruthy();
+    expect(screen.getByRole('treeitem', { name: named('Everything') })).toBeTruthy();
   });
 });
 
@@ -588,9 +593,9 @@ describe('StoryTree labs', () => {
   it('marks a lab, and each of its stories, with a Lab badge', async () => {
     renderWithIcons(<LabHarness />);
     await screen.findByRole('tree', { name: 'Stories' });
-    const arc = screen.getByRole('treeitem', { name: 'Arc' });
-    const button = screen.getByRole('treeitem', { name: 'Button' });
-    const badge = (row: HTMLElement) => row.querySelector(':scope > .fg-tree__item > .fg-tree__lab');
+    const arc = screen.getByRole('treeitem', { name: named('Arc') });
+    const button = screen.getByRole('treeitem', { name: named('Button') });
+    const badge = (row: HTMLElement) => row.querySelector(':scope > :first-child .fg-tree__lab');
     expect(badge(arc)?.textContent).toBe('Lab');
     expect(badge(button)).toBeNull();
     if (arc.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(arc));
