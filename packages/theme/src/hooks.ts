@@ -386,4 +386,16 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     value: '#a48bd4',
     description: 'Color of the dashed frame a canvas draws around the group it is working inside. Read off the canvas element, so it can be set on it or anything above it.',
   },
+  {
+    name: 'button-pad-x',
+    type: 'dimension',
+    value: 'var(--wzl-space-6)',
+    description: 'Inline padding of a text Button below the container that sets it, at every size. Unset, `--wzl-space-4` at sm and `--wzl-space-6` at md. Icon-only buttons stay square.',
+  },
+  {
+    name: 'button-font-weight',
+    type: 'fontWeight',
+    value: 'var(--wzl-font-weight-medium)',
+    description: 'Font weight of a Button’s label below the container that sets it.',
+  },
 ];

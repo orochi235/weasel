@@ -38,6 +38,8 @@ export interface ToolbarButtonProps {
   disabled?: boolean;
   /** Tooltip text, and the accessible name when `aria-label` is unset. */
   title?: string;
+  /** A key chord, shown after the name in the tooltip. */
+  shortcut?: string;
   /** Required when `children` is an icon with no text of its own. */
   'aria-label'?: string;
   /** `danger` reddens on hover — for actions that discard work. */
@@ -55,6 +57,7 @@ function Button({
   onClick,
   disabled,
   title,
+  shortcut,
   'aria-label': ariaLabel,
   grade,
   iconOnly,
@@ -62,7 +65,15 @@ function Button({
   pressed,
 }: ToolbarButtonProps) {
   const name = ariaLabel ?? title;
-  const common = { variant: 'ghost', onClick, disabled, grade, pressed, tooltip: title } as const;
+  const common = {
+    variant: 'ghost',
+    onClick,
+    disabled,
+    grade,
+    pressed,
+    shortcut,
+    tooltip: shortcut ? undefined : title,
+  } as const;
   return iconOnly ? (
     <UiButton {...common} iconOnly ariaLabel={name ?? ''}>
       {children}
