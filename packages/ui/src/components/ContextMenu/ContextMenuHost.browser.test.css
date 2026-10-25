@@ -1,0 +1,10 @@
+/* A box drawn at twice its size, as a magnifier draws its copy. */
+.wzl-menu-test-box {
+  position: fixed;
+  left: 100px;
+  top: 50px;
+  width: 300px;
+  height: 200px;
+  transform: scale(2);
+  transform-origin: 0 0;
+}

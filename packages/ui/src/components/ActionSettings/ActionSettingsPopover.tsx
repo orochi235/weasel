@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-components';
+import { Dialog as RACDialog } from 'react-aria-components';
+import { Popover } from '../Popover';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import { BarActionButton, type BarActionButtonProps } from '../Bar/BarAction';
 import { PrefsForm } from '../Prefs/PrefsForm';
@@ -31,7 +32,7 @@ export function ActionSettingsPopover({ form, ...button }: ActionSettingsPopover
         <BarActionButton {...button} expanded={shown} onPress={() => setOpen((was) => !was)} />
       </span>
       {ready && provide(
-        <RACPopover
+        <Popover
           triggerRef={trigger}
           isOpen={shown}
           onOpenChange={setOpen}
@@ -43,7 +44,7 @@ export function ActionSettingsPopover({ form, ...button }: ActionSettingsPopover
             {form.schema.name && <p className={s.title}>{form.schema.name}</p>}
             <PrefsForm schema={form.schema} layout="list" values={form.values} mixed={form.mixed} onChange={form.onChange} />
           </RACDialog>
-        </RACPopover>,
+        </Popover>,
       )}
     </>
   );

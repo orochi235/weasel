@@ -1,0 +1,25 @@
+/* A box drawn at some multiple of its size, as a magnifier draws its copy. */
+.wzl-popover-test-box {
+  position: fixed;
+  left: 100px;
+  top: 50px;
+  width: 300px;
+  height: 200px;
+  transform-origin: 0 0;
+}
+
+.wzl-popover-test-box[data-scale='2'] {
+  transform: scale(2);
+}
+
+.wzl-popover-test-box[data-scale='1.5'] {
+  transform: scale(1.5);
+}
+
+.wzl-popover-test-trigger {
+  position: absolute;
+  left: 40px;
+  top: 30px;
+  width: 60px;
+  height: 20px;
+}

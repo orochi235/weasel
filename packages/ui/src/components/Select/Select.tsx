@@ -13,7 +13,6 @@ import {
   Label,
   Button as RACButton,
   SelectValue,
-  Popover as RACPopover,
   ListBox as RACListBox,
   ListBoxItem as RACListBoxItem,
   ListBoxSection as RACListBoxSection,
@@ -24,6 +23,7 @@ import {
   type ListBoxItemProps as RACListBoxItemProps,
   type ValidationResult,
 } from 'react-aria-components';
+import { Popover } from '../Popover';
 import { pastDragThreshold } from '@weasel-js/core';
 import type { FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
@@ -229,7 +229,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           font menu lives here would end its session the moment the menu is
           clicked. */}
       {ready && provide(
-        <RACPopover
+        <Popover
           className={s.popover}
           data-weasel-overlay=""
           placement="bottom start"
@@ -258,7 +258,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
                 )
               : children}
           </RACListBox>
-        </RACPopover>
+        </Popover>
       )}
     </RACSelect>
   );

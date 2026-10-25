@@ -2,13 +2,12 @@ import { useContext, useId, useRef, useState, type ReactNode, type RefObject } f
 import { createPortal } from 'react-dom';
 import {
   DialogTrigger,
-  Popover as RACPopover,
   OverlayArrow,
   Dialog as RACDialog,
   Heading,
   OverlayTriggerStateContext,
-  type PopoverProps as RACPopoverProps,
 } from 'react-aria-components';
+import { Popover, type PopoverProps } from '../Popover';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import { CloseButton } from '../CloseButton';
 import { type AppearanceProps, useAppearance } from '../appearance';
@@ -30,7 +29,7 @@ export { DialogTrigger as CalloutTrigger };
 
 /** Props for {@link Callout}, on top of React Aria's `Popover` props. */
 export type CalloutProps = Omit<
-  WithoutPortalTarget<RACPopoverProps>,
+  WithoutPortalTarget<PopoverProps>,
   'children' | 'className' | 'isNonModal' | 'triggerRef'
 > &
   OverlayPortalProps &
@@ -150,7 +149,7 @@ export function Callout(props: CalloutProps) {
         )}
       {ready && provide(
         <OverlayTriggerStateContext.Provider value={watched}>
-          <RACPopover
+          <Popover
             {...rest}
             triggerRef={anchorRect !== undefined ? anchorRef : triggerRef}
             isNonModal={!modal}
@@ -213,7 +212,7 @@ export function Callout(props: CalloutProps) {
                 </>
               )}
             </CalloutDialog>
-          </RACPopover>
+          </Popover>
         </OverlayTriggerStateContext.Provider>
       )}
     </>

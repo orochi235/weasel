@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Button as RACButton, Dialog as RACDialog, DialogTrigger, Popover as RACPopover } from 'react-aria-components';
+import { Button as RACButton, Dialog as RACDialog, DialogTrigger } from 'react-aria-components';
+import { Popover } from '../Popover';
 import { Icon } from '../../icons/Icon';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import listbox from '../listbox.module.css';
@@ -18,11 +19,11 @@ export function BarOverflow({ label, children, side }: { label: string; children
         <Icon name={icon('more')} size={16} />
       </RACButton>
       {ready && provide(
-        <RACPopover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
+        <Popover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.menu}`} aria-label={label}>
             <BarMarkContext.Provider value={false}>{children}</BarMarkContext.Provider>
           </RACDialog>
-        </RACPopover>
+        </Popover>
       )}
     </DialogTrigger>
   );

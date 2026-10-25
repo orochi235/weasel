@@ -1,0 +1,17 @@
+.magnified {
+  position: relative;
+  width: 200px;
+  height: 120px;
+  padding: 16px;
+  transform: scale(2);
+  transform-origin: 0 0;
+  outline: 1px dashed var(--wzl-border);
+}
+
+.panel {
+  padding: 8px 12px;
+  background: var(--wzl-surface-popover);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  color: var(--wzl-fg);
+}
