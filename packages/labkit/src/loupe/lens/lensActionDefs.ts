@@ -54,6 +54,7 @@ export const LENS_ACTION_IDS = {
   close: 'loupe.close',
   pinned: 'loupe.aim.pinned',
   follow: 'loupe.aim.follow',
+  glass: 'loupe.aim.glass',
   followMove: 'loupe.follow',
   seam: 'loupe.seam',
   live: 'loupe.source.live',
@@ -80,6 +81,7 @@ export const LENS_KEYS: Partial<Record<LensActionId, string>> = {
   'loupe.close': 'Shift+L',
   'loupe.aim.pinned': 'p',
   'loupe.aim.follow': 'f',
+  'loupe.aim.glass': 'b',
   'loupe.source.live': 'v',
   'loupe.source.pixels': 'x',
   'loupe.dpr.next': 'r',
@@ -236,6 +238,10 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
   const follow = on(LENS_ACTION_IDS.follow, 'Aim: follow', (lensId) =>
     api.apply(setAimOps(scene, lensId, 'follow')),
   );
+  const glass = on(LENS_ACTION_IDS.glass, 'Aim: glass', (lensId, s) => {
+    api.apply(setAimOps(scene, lensId, 'glass'));
+    if (s.aim === 'follow') api.unfollow(lensId);
+  });
   // `held`: the reticle keeps following through a drag, which a plain hover stands down for.
   const followMove: Action = {
     id: LENS_ACTION_IDS.followMove,
@@ -254,7 +260,7 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
       },
     },
   };
-  return [add, close, pinned, follow, followMove];
+  return [add, close, pinned, follow, glass, followMove];
 }
 
 /** The lens actions over `api`; `comparisons.opposite` is what the opposite-mode preset compares against. */

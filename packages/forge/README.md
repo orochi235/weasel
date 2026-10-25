@@ -184,7 +184,7 @@ acts on the selected lens, or on the last one added when none is selected:
 | `o` | compare with the opposite mode | `k` | choose a comparison |
 | `Shift+O` | clear the comparison | `s` / `\` / `d` | Swap / Split / Difference |
 | `t` | Token readout | `c` | Contrast readout |
-| `g` | pixel grid | | |
+| `g` | pixel grid | `b` | Glass: the reticle sits under the lens body |
 
 Each binding's id is its action id (`loupe.add`, `loupe.view.split`, …), so a
 binding override can rebind it. Alt+Slash opens a panel listing every key

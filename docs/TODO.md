@@ -912,9 +912,6 @@ only story runner in the repo.
   element, and one outside the box breaks the frame its descendant-of-boundary branch assumes, so the fix is likely
   upstream. RAC's `Tooltip` passes no `getTargetRect` to `useOverlayPosition`, so it is not fixed at all: that too
   wants an upstream prop, or a ui tooltip on `useOverlayPosition` directly.
-- **(P3) Glass is unbuilt as a user-facing aim** (2026-10-21). `setAimOps(scene, id, 'glass')` makes the reticle's
-  pose depend on the body and is tested (`labkit/src/loupe/lens/lensScene.test.ts`), but no lens action switches to it,
-  so the Loupe keymap has no key for it. What is left: a `loupe.aim.glass` action and key in `lensActionDefs.ts`.
 - **(P3) A Live copy of an isolated story is drawn soft at magnification** (2026-10-21, inferred, not seen). A
   `<CanvasStack>` puts the scale an ancestor transform shows it at into its backing density, so an in-document copy
   is sharp at any factor. Inside an isolated story's frame the lens's transform is outside the frame's document,
