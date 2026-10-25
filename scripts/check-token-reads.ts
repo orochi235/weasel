@@ -180,7 +180,7 @@ if (invokedDirectly) {
   const deadFallbacks = findThemeTokenFallbacks(files, await bakedTokens(root));
   for (const o of [...offenders, ...misused, ...deadFallbacks]) console.error(`${o.file}:${o.line}  ${o.name}  ${o.reason}`);
   if (offenders.length > 0) {
-    console.error(`\n${offenders.length} --wzl-* read(s) nothing declares. Point them at a theme token, or add a real override hook to TOKEN_HOOKS in packages/theme/src/hooks.ts.`);
+    console.error(`\n${offenders.length} --wzl-* read(s) nothing declares. Point them at a theme token, or add a real override hook to its family in packages/theme/src/hooks/.`);
   }
   if (misused.length > 0) console.error(`\n${misused.length} text color(s) read an accent fill token.`);
   if (deadFallbacks.length > 0) console.error(`\n${deadFallbacks.length} theme token read(s) carry a fallback. Every theme declares these; drop the fallback.`);
