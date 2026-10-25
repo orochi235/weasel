@@ -2,7 +2,8 @@ import { createMemoryAdapter, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { useLayoutEffect } from 'react';
+import { LabContext, type LabContextValue, TrialIdContext } from '@weasel-js/labkit';
+import { useContext, useLayoutEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ShellConfig } from '../config';
 import { meta, story } from '../story/define';
@@ -10,6 +11,8 @@ import { indexId } from '../story/indexPages';
 import type { IndexEntry } from '../story/types';
 import { FOLLOW_APP } from './globals';
 import { installResizeObserver } from './labHarness';
+import { type CaptureTrials, LoupeCaptureContext } from './loupe/captureContext';
+import { LoupeProvider } from './loupe/CaptureInputs';
 import { type StoryRegistry, useStoryRegistry } from './useStoryRegistry';
 import { Workshop } from './Workshop';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
@@ -112,6 +115,31 @@ describe('useStoryRegistry in the document', () => {
     await waitFor(() => expect(result.current.isReady(xIndex.id)).toBe(true));
     expect(imports['/x.stories.tsx']).toHaveBeenCalledTimes(1);
     expect(result.current.instruments[2]?.title).toBe('X');
+  });
+
+  it("publishes an index page's trial to the Pixels lenses, as a story's", async () => {
+    const { result } = renderHook(() => useStoryRegistry([a, b, xIndex], { frameUrl: '/frame.html', importers: importers() }));
+    const got: { trials: CaptureTrials | null } = { trials: null };
+    function Probe() {
+      const capture = useContext(LoupeCaptureContext);
+      useLayoutEffect(() => {
+        got.trials = capture?.trials ?? null;
+      });
+      return null;
+    }
+    const tree = () => (
+      <LabContext.Provider value={{ instruments: [] } as unknown as LabContextValue}>
+        <LoupeProvider captureBase="/">
+          <Probe />
+          <TrialIdContext.Provider value="trial-x">{result.current.instruments[2]!.render(ctx)}</TrialIdContext.Provider>
+        </LoupeProvider>
+      </LabContext.Provider>
+    );
+    const { rerender } = renderWithIcons(tree());
+    await waitFor(() => expect(result.current.isReady(xIndex.id)).toBe(true));
+    rerender(tree());
+    await waitFor(() => expect(got.trials?.get('trial-x')?.entry.id).toBe(xIndex.id));
+    expect(got.trials?.get('trial-x')?.layout).toBe('fullscreen');
   });
 
 

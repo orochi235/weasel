@@ -140,7 +140,7 @@ describe('a nested view overhanging the view around it', () => {
     const h = mount({ inset: OVERHANG });
     const inset = h.registry().list().find((r) => r.id === 'inset')!;
     const outer: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const [group] = inset.layer.draw({}, outer, { width: 400, height: 300 });
+    const [group] = inset.layer.draw({}, outer, { width: 400, height: 300, dpr: 1 });
     expect(group).toMatchObject({ kind: 'group', clip: { x: 0, y: 0, width: 50, height: 100 } });
     expect((group as GroupDrawCommand).transform![6]).toBe(250);
   });
@@ -199,7 +199,7 @@ describe('a marker of a nested view, drawn in the view around it', () => {
     const panel = h.registry().list().find((r) => r.id === 'panel')!;
     const flat = (cmds: readonly DrawCommand[]): DrawCommand[] =>
       cmds.flatMap((c) => (c.kind === 'group' ? flat(c.children) : [c]));
-    const outline = flat(panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300 }))
+    const outline = flat(panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300, dpr: 1 }))
       .find((c): c is PathDrawCommand => c.kind === 'path' && c.stroke?.dash !== undefined);
     expect(outline?.path.kind).toBe('polygon');
     expect(Array.from((outline!.path as PolygonPath).coords)).toEqual([10, 160, 35, 160, 35, 185, 10, 185]);

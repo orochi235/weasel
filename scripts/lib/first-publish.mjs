@@ -9,6 +9,7 @@
 // `setup-trusted-publishing.mjs` writes.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fetchPackument } from './registry.mjs';
 import { repoRoot } from './workspaces.mjs';
 
 export const PENDING_FILE = join(repoRoot, 'scripts', 'trust-pending.json');
@@ -48,6 +49,29 @@ export function classify(states, pending) {
     }
   }
   return { status, missing, untrusted, stale };
+}
+
+/**
+ * Each name's packument, as `classify` takes them. A registry error (anything
+ * but 200 or 404 after retrying) is fatal unless `warn`, when the name is left
+ * out of `states` and reported in `errors`: `--warn` is the CI gate, where an
+ * npm outage is not a fault of the commit.
+ */
+export async function readStates(names, { warn = false, onEach, ...fetchOpts } = {}) {
+  const states = [];
+  const errors = [];
+  for (const [i, name] of names.entries()) {
+    let state;
+    try {
+      state = { name, packument: await fetchPackument(name, fetchOpts) };
+    } catch (err) {
+      if (!warn) throw err;
+      errors.push({ name, message: err.message });
+    }
+    if (state) states.push(state);
+    onEach?.(i, name, state ?? null);
+  }
+  return { states, errors };
 }
 
 export function addPending(current, names) {

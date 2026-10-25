@@ -57,7 +57,7 @@ describe('CaptureView', () => {
     const applyGlobals = vi.fn();
     const setup: FrameSetup = { applyGlobals };
     const onRendered = vi.fn();
-    const { container } = render(<CaptureView story={story} payload={payload} setup={setup} onRendered={onRendered} />);
+    const { container } = render(<CaptureView subject={{ kind: 'story', story }} payload={payload} setup={setup} onRendered={onRendered} />);
 
     expect(screen.getByText('Clip at 120 in dark, count 3')).toBeTruthy();
 
@@ -80,7 +80,7 @@ describe('CaptureView', () => {
     const labTheme = vi.fn(() => theme);
     const onRendered = vi.fn();
     const dark = { ...payload, lab: { globals: { theme: 'chrome' }, mode: 'dark' as const } };
-    const { container } = render(<CaptureView story={story} payload={dark} setup={{}} labTheme={labTheme} onRendered={onRendered} />);
+    const { container } = render(<CaptureView subject={{ kind: 'story', story }} payload={dark} setup={{}} labTheme={labTheme} onRendered={onRendered} />);
     const box = container.querySelector<HTMLElement>('[data-fg-capture]')!;
     const themed = box.closest<HTMLElement>('[data-wzl-theme]');
     expect(themed?.dataset.wzlTheme).toBe('chrome-test');

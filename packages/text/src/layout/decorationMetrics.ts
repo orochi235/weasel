@@ -71,11 +71,19 @@ export interface DecorationRule {
   run: number;
 }
 
+/** Builds one line's decoration rules from its glyphs, fed in visual order. */
+export interface LineDecorations {
+  /** Take the next glyph. Its fields are read now and not kept. */
+  add(g: PlacedGlyph): void;
+  /** The line's rules. */
+  end(): DecorationRule[];
+}
+
 /**
  * The decoration rules of one line, in visual order; within a stretch,
  * underline then strikethrough then overline.
  *
- * `glyphs` is the whole line in visual order. A rule runs across adjacent
+ * Fed the whole line in visual order. A rule runs across adjacent
  * glyphs whose runs agree on which rules to draw, on the size, face and
  * baseline that place them, and on `paintOf`: the identity of the paint a
  * run's rules wear, or null for a run that draws none. It is built from pen
@@ -83,11 +91,10 @@ export interface DecorationRule {
  * inside the stretch, and two alike runs join without a seam.
  */
 export function lineDecorations(
-  glyphs: readonly PlacedGlyph[],
   runs: readonly ResolvedRun[],
   faceOf: (run: number) => FaceMetrics | undefined,
   paintOf: (run: number) => string | null,
-): DecorationRule[] {
+): LineDecorations {
   interface Stretch {
     run: number;
     style: ResolvedRun;
@@ -111,28 +118,32 @@ export function lineDecorations(
     }
   };
 
-  for (const g of glyphs) {
-    const style = runs[g.run];
-    // Flags first: `paintOf` builds a string, and most text has no rule.
-    const paint = style.underline || style.strikethrough || style.overline ? paintOf(g.run) : null;
-    if (paint === null) {
+  return {
+    add(g) {
+      const style = runs[g.run];
+      // Flags first: `paintOf` builds a string, and most text has no rule.
+      const paint = style.underline || style.strikethrough || style.overline ? paintOf(g.run) : null;
+      if (paint === null) {
+        if (open !== null) close();
+        return;
+      }
+      const face = faceOf(g.run);
+      const joins = open !== null
+        && DECORATION_KINDS.every((kind) => open!.style[kind] === style[kind])
+        && open.style.fontSize === style.fontSize
+        && open.face === face
+        && open.baselineY === g.baselineY
+        && open.paint === paint;
+      if (joins) {
+        open!.x1 = g.x + g.step;
+      } else {
+        close();
+        open = { run: g.run, style, face, paint, baselineY: g.baselineY, x0: g.x, x1: g.x + g.step };
+      }
+    },
+    end() {
       close();
-      continue;
-    }
-    const face = faceOf(g.run);
-    const joins = open !== null
-      && DECORATION_KINDS.every((kind) => open!.style[kind] === style[kind])
-      && open.style.fontSize === style.fontSize
-      && open.face === face
-      && open.baselineY === g.baselineY
-      && open.paint === paint;
-    if (joins) {
-      open!.x1 = g.x + g.step;
-    } else {
-      close();
-      open = { run: g.run, style, face, paint, baselineY: g.baselineY, x0: g.x, x1: g.x + g.step };
-    }
-  }
-  close();
-  return rules;
+      return rules;
+    },
+  };
 }

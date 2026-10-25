@@ -1,18 +1,24 @@
 import { useEffect } from 'react';
+import { intoFrames } from './intoFrames';
 import { probeUnderLens } from './probeUnderLens';
+import { scrollByWheel } from './scrollByWheel';
 
 /** Hands a wheel over a hit box to whatever lies beneath the lens layer, so a
- *  trial's camera still zooms under a lens. The lens itself binds no wheel. */
+ *  trial's camera still zooms and a story's scroller still scrolls under a lens,
+ *  inside an isolated story's frame as well. The lens itself binds no wheel. */
 export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElement | null) {
   useEffect(() => {
     if (!input || !layer) return;
     const onWheel = (e: WheelEvent): void => {
-      const beneath = probeUnderLens(layer, 'beneath', () =>
+      const hit = probeUnderLens(layer, 'beneath', () =>
         document.elementFromPoint(e.clientX, e.clientY),
       );
-      if (!beneath || layer.contains(beneath)) return;
+      if (!hit || layer.contains(hit)) return;
+      const beneath = intoFrames(hit, e.clientX, e.clientY);
       e.stopPropagation();
-      const copy = new WheelEvent('wheel', {
+      // A frame's listeners test the wheel against their own realm's WheelEvent.
+      const View = (beneath.el.ownerDocument.defaultView ?? window) as Window & typeof globalThis;
+      const copy = new View.WheelEvent('wheel', {
         bubbles: true,
         cancelable: true,
         composed: true,
@@ -20,8 +26,8 @@ export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElemen
         deltaY: e.deltaY,
         deltaZ: e.deltaZ,
         deltaMode: e.deltaMode,
-        clientX: e.clientX,
-        clientY: e.clientY,
+        clientX: beneath.x,
+        clientY: beneath.y,
         screenX: e.screenX,
         screenY: e.screenY,
         buttons: e.buttons,
@@ -30,7 +36,8 @@ export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElemen
         altKey: e.altKey,
         metaKey: e.metaKey,
       });
-      if (!beneath.dispatchEvent(copy)) e.preventDefault();
+      // A browser scrolls nothing for the untrusted copy, and the original would scroll the lens's own ancestors.
+      if (!beneath.el.dispatchEvent(copy) || scrollByWheel(beneath.el, copy)) e.preventDefault();
     };
     input.addEventListener('wheel', onWheel, { passive: false });
     return () => input.removeEventListener('wheel', onWheel);

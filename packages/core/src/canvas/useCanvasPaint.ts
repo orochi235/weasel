@@ -7,7 +7,7 @@ import {
 } from 'core/layers/render';
 import type { CanvasDebugSink } from '../debug/types';
 import { beginDebugFrame } from '../debug/useDebugSink';
-import type { CanvasRendererLease } from './canvasRenderer';
+import { resolveDpr, type CanvasRendererLease } from './canvasRenderer';
 import type { CanvasProps } from './canvasProps';
 import type { CanvasElements } from './useCanvasElements';
 import { NO_LAYER_VISIBILITY, type LayerGate } from './useExtraLayers';
@@ -101,7 +101,7 @@ export function useCanvasPaint(
       vis ?? NO_LAYER_VISIBILITY,
       order,
       view,
-      { width: w, height: h },
+      { width: w, height: h, dpr: resolveDpr(dprIn) },
       layerCacheRef.current,
       undefined,
       groups,

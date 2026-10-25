@@ -2,17 +2,20 @@ import { breadcrumb } from './breadcrumb';
 import './shell.css';
 import { useLatest } from '@weasel-js/core';
 import { type RenderContext, TrialIdContext, useLabContext } from '@weasel-js/labkit';
-import { type Dispatch, type RefObject, type SetStateAction, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { type Dispatch, type RefObject, type SetStateAction, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { FrameSetup } from '../frame/FrameController';
 import { IN_VIEW_MARGIN, useNearViewport } from '../frame/useNearViewport';
-import { FRAME_HELLO, type Globals } from '../protocol/messages';
+import { FRAME_HELLO } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { useCssOverrides } from './cssVars/overrides';
 import { closeLink, type Fault, type Link, useFrameLink } from './frameLink';
 import { FramePoolContext, HELLO_TIMEOUT_MS, moveFrame } from './framePool';
 import { effectiveGlobals, GLOBALS_KEY } from './globals';
+import { applyGlobalsTo } from './hostConditions';
 import { useKeptFrame } from './keptFrame';
-import { LiveFrameCopies, useCopyConfig } from './loupe/LiveCopies';
+import { scrollOf } from './loupe/frameScroll';
+import { type LensFrameCopy, LiveFrameCopies, useCopyConfig } from './loupe/LiveCopies';
 import type { Ready } from './readyKey';
 import { TrialFramesContext } from './trialFrames';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
@@ -27,10 +30,14 @@ export interface FrameViewProps {
   ctx: RenderContext<unknown, unknown>;
   /**
    * Makes this view a lens's second copy of the trial's story, in a frame of its own: it takes `id` as its host id,
-   * renders under `globals` with `args` laid over the trial's config, and stays out of the frame pool, the kept
-   * frames, the frame registry and the answer book. It reports no `ready` and swaps no trial.
+   * renders under `globals` with `args` laid over the trial's config, scrolls wherever `main` says the trial's frame
+   * stands, and stays out of the frame pool, the kept frames, the frame registry and the answer book. It reports no
+   * `ready` and swaps no trial.
    */
-  copy?: { id: string; globals: Globals; args: Readonly<Record<string, unknown>> };
+  copy?: LensFrameCopy;
+  /** The workshop's frame setup. A copy's host takes its globals through it, so what it paints behind the copy's
+   *  frame is in the copy's mode rather than the lab's. */
+  setup?: FrameSetup;
 }
 
 interface FrameMount {
@@ -129,6 +136,7 @@ export function FrameView(props: FrameViewProps) {
     src,
     trialId: copy ? null : trialId,
     frames: copy ? null : frames,
+    host: hostRef,
     setFault,
     setPending,
     copy: copy !== undefined,
@@ -163,6 +171,23 @@ export function FrameView(props: FrameViewProps) {
   }, [title]);
 
   useEffect(() => (copy ? undefined : answers.hold(ctx.config)), [answers, ctx.config, copy]);
+
+  const setup = props.setup;
+  const copyId = copy?.id;
+  useLayoutEffect(
+    () => (copyId && setup && hostRef.current ? applyGlobalsTo(hostRef.current, copyId, globals, setup) : undefined),
+    [copyId, globals, setup],
+  );
+
+  // Applied once the copy has rendered, when its document is tall enough to stand where the trial's does.
+  const main = copy?.main;
+  useEffect(() => {
+    if (!main || pending) return undefined;
+    const follow = () => link.current?.channel.send({ type: 'scroll', ...scrollOf(main) });
+    follow();
+    main.addEventListener('scroll', follow, { passive: true });
+    return () => main.removeEventListener('scroll', follow);
+  }, [main, pending, link]);
 
   return (
     <div ref={hostRef} className="fg-frame-host" data-fg-host={copy?.id ?? trialId ?? undefined} data-fg-copy={copy ? '' : undefined}>

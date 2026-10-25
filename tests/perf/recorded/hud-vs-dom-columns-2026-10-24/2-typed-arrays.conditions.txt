@@ -1,0 +1,6 @@
+9a76fb5293d70b2cee4096b3f147514a31490027
+?? perf-out/
+21:16  up 25 days,  5:26, 1 user, load averages: 2.31 3.80 4.73
+Apple M3 Max
+exit 0
+21:21  up 25 days,  5:30, 1 user, load averages: 2.40 3.01 4.12

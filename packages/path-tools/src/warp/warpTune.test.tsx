@@ -44,7 +44,7 @@ function controlsDrawn(options: UseEnvelopeToolOptions, tune: ActionTunings = {}
   );
   act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', shiftKey: true, bubbles: true })); });
   const state = { selection: [asNodeId('a')], multiActive: false, boundsOf: () => null, unionBounds: null, modifiers: {} } as unknown as ChromeState;
-  return (layer as RenderLayer<unknown> | null)?.draw(state, VIEW as never, { width: 64, height: 64 }).length ?? 0;
+  return (layer as RenderLayer<unknown> | null)?.draw(state, VIEW as never, { width: 64, height: 64, dpr: 1 }).length ?? 0;
 }
 
 describe('a warp tool tuned through <SceneCanvas tune>', () => {

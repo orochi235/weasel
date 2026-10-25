@@ -1,10 +1,10 @@
-import { useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import { memo, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
 import type { BarOrientation } from '../Bar';
 import { DockBarContext } from './dockContext';
 import { DOCK_BAR } from './dockDrop';
 import { FloatingLayer } from './floatingLayer';
 import { canEnter, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
-import { useDockDrag, type DockDragView } from './useDockDrag';
+import { useDockDrag, type DockDrag, type DockDragView } from './useDockDrag';
 import s from './ToolbarDock.module.css';
 
 /** Props for {@link ToolbarDock}. */
@@ -57,13 +57,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
   const dragged = view ? byId.get(view.barId) : undefined;
   const empties = dragged ? docks.filter((d) => canEnter(dragged, d) && !(shown.docks[d.id]?.length ?? 0)) : [];
 
-  const draw = (id: string, orientation: BarOrientation): ReactNode => {
-    const bar = byId.get(id);
-    const drawn = bar?.render(orientation);
-    if (!bar || drawn == null || drawn === false) return null;
-    const value = { barId: id, label: bar.label, movable, float: bar.float, ...(movable ? move.handlers(id) : {}) };
-    return <DockBarContext.Provider value={value}>{drawn}</DockBarContext.Provider>;
-  };
+  const draw = barDrawer(byId, movable, move.handlers);
 
   return (
     <div ref={root} className={[s.root, className].filter(Boolean).join(' ')}>
@@ -104,6 +98,24 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
     </div>
   );
 }
+
+/**
+ * Draws a bar with its handle. Each is a memoized element, redrawn only when its bar object, orientation, `movable`
+ * or the handlers change, so the dock's re-render on each frame of a drag redraws no bar.
+ */
+function barDrawer(byId: ReadonlyMap<string, DockBar>, movable: boolean, handlers: DockDrag['handlers']): (id: string, orientation: BarOrientation) => ReactNode {
+  return (id, orientation) => {
+    const bar = byId.get(id);
+    const out = bar?.render(orientation);
+    if (!bar || out == null || out === false) return null;
+    return <DockedBar bar={bar} orientation={orientation} movable={movable} handlers={handlers} />;
+  };
+}
+
+const DockedBar = memo(function DockedBar({ bar, orientation, movable, handlers }: { bar: DockBar; orientation: BarOrientation; movable: boolean; handlers: DockDrag['handlers'] }) {
+  const value = useMemo(() => ({ barId: bar.id, label: bar.label, movable, float: bar.float, ...(movable ? handlers(bar.id) : {}) }), [bar, movable, handlers]);
+  return <DockBarContext.Provider value={value}>{bar.render(orientation)}</DockBarContext.Provider>;
+});
 
 /** The room a lifted bar's slot keeps, so its row holds still under the drag. */
 const holdSize = (view: DockDragView) => ({ '--dock-hold-w': `${view.size.w}px`, '--dock-hold-h': `${view.size.h}px` }) as CSSProperties;

@@ -14,7 +14,7 @@ const host: ViewMarkerHost = {
   setAim: vi.fn(() => true),
 };
 const view: View = { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } };
-const dims = { width: 140, height: 105 };
+const dims = { width: 140, height: 105, dpr: 1 };
 
 describe('createViewMarkerLayer', () => {
   it('draws the source aim in the frame it is handed', () => {

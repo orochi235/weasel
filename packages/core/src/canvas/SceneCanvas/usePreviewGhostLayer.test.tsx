@@ -26,7 +26,7 @@ interface Pose { x: number; y: number; width: number; height: number }
 const COMMITTED_POSE: Pose = { x: 0, y: 0, width: 10, height: 10 };
 const PREVIEW_POSE: Pose = { x: 100, y: 200, width: 10, height: 10 };
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 
 /** drawOne stub: emits a single rect at the pose's (x, y) so the test can
  *  inspect whether the preview pose (not the committed pose) reached the slot. */

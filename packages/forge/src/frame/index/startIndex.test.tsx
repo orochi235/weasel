@@ -52,11 +52,16 @@ function start(options: { render?: IndexRender; setup?: FrameSetup; loaded?: rea
   const container = document.createElement('div');
   document.body.append(container);
   const stop = startIndex({
-    title: 'Kit/Button',
-    description: 'Presses things.',
-    stories: options.loaded ?? stories,
-    descriptions: { 'kit-button--primary': 'The one to press.' },
-    render: options.render ?? null,
+    bundle: {
+      title: 'Kit/Button',
+      library: 'Kit',
+      description: 'Presses things.',
+      galleries: [],
+      labs: [],
+      stories: options.loaded ?? stories,
+      descriptions: { 'kit-button--primary': 'The one to press.' },
+      render: options.render ?? null,
+    },
     channel: frame,
     container,
     ...(options.setup ? { setup: options.setup } : {}),
@@ -104,7 +109,7 @@ describe('startIndex', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const { shell } = start();
     await init(shell);
-    const row = screen.getByRole('region', { name: 'Disabled' });
+    const row = screen.getByRole('region', { name: 'Primary: Disabled' });
     const [off, on] = within(row).getAllByRole('button') as [HTMLButtonElement, HTMLButtonElement];
     expect([off.disabled, on.disabled]).toEqual([false, true]);
     expect(within(row).getByText('true')).toBeInTheDocument();
@@ -127,9 +132,9 @@ describe('startIndex', () => {
     );
     const { shell } = start({ loaded: twins });
     await init(shell);
-    expect(within(screen.getByRole('region', { name: 'One' })).getByRole('region', { name: 'On' })).toBeInTheDocument();
-    expect(within(screen.getByRole('region', { name: 'Two' })).queryByRole('region', { name: 'On' })).toBeNull();
-    expect(within(screen.getByRole('region', { name: 'Three' })).getByRole('region', { name: 'Size' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'One' })).getByRole('region', { name: 'One: On' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Two' })).queryByRole('region', { name: /On$/ })).toBeNull();
+    expect(within(screen.getByRole('region', { name: 'Three' })).getByRole('region', { name: 'Three: Size' })).toBeInTheDocument();
   });
 
   it('keeps a throwing story in its own cell instead of faulting the page', async () => {
@@ -171,7 +176,7 @@ describe('startIndex', () => {
     const custom = screen.getByRole('region', { name: 'Custom' });
     expect(within(custom).getByRole('heading', { name: 'Custom Kit/Button' })).toBeInTheDocument();
     expect(within(custom).getAllByRole('button', { name: 'Go:0' })).toHaveLength(1);
-    expect(within(custom).getByRole('region', { name: 'Disabled' })).toBeInTheDocument();
+    expect(within(custom).getByRole('region', { name: 'Primary: Disabled' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
   });
 

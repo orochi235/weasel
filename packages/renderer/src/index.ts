@@ -75,7 +75,8 @@ export { EFFECT_VERT_SRC, EFFECT_KIT_UNIFORMS } from './effects/effectPrelude';
 export { ShaderCompileError } from './shaders/ShaderProgram';
 export { getProgramSource } from './shaders/registerProgram';
 export type { ShaderProgram, ShaderStage, UniformArray } from './shaders/ShaderProgram';
-export { strokeReachAt, boundsMissRect } from './cullDrawCommands';
+export { boundsMissRect } from './cullDrawCommands';
+export { strokeReachAt } from './paintedBounds';
 export { markerDrawCommands } from './markerCommands';
 export { resolveStrokeLengths, type ResolvedStrokeCommand, type StrokedPathCommand } from './strokeLengths';
 export {

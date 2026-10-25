@@ -104,7 +104,8 @@ export function IndexStory({ story, config: over, label }: IndexStoryProps) {
   );
 }
 
-/** `story` once per value of each boolean and enum control, every other control at its default. */
+/** `story` once per value of each boolean and enum control, every other control at its default. Each row is headed one
+ *  level below the story's `h2`, and named for the story as well, since every story's rows share labels. */
 export function IndexVariants({ story }: { story: LoadedStory }) {
   const rows = useMemo(() => variantRows(story.config), [story]);
   const defaults = useMemo(() => story.config.defaults(), [story]);
@@ -112,8 +113,8 @@ export function IndexVariants({ story }: { story: LoadedStory }) {
   return (
     <div className="fg-index-variants">
       {rows.map((row) => (
-        <section key={row.path} className="fg-index-variants__row" aria-label={row.label}>
-          <h4 className="fg-index-variants__label">{row.label}</h4>
+        <section key={row.path} className="fg-index-variants__row" aria-label={`${story.name}: ${row.label}`}>
+          <h3 className="fg-index-variants__label">{row.label}</h3>
           <div className="fg-index-variants__cells">
             {row.values.map((v) => (
               <IndexStory

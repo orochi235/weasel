@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react';
 import { BarLayout, type BarOrientation } from '../Bar';
 import { ToolbarDock } from './ToolbarDock';
+import { useDockHandle } from './dockContext';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 
 // jsdom lays nothing out. The dock is 800 x 600. The top dock stacks rows 30 px deep from y 0 and the bottom one from
@@ -306,5 +307,32 @@ describe('Alt+Enter on a handle', () => {
     expect(handle('Pin').getAttribute('aria-keyshortcuts')).not.toContain('Alt+Enter');
     key(handle('Pin'));
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('a drag in progress', () => {
+  // Counts every render of each bar: a fresh element from its `render`, or a new handle from the dock's context.
+  const renders: Record<string, number> = {};
+  function Counted({ id, orientation }: { id: string; orientation: BarOrientation }) {
+    renders[id] = (renders[id] ?? 0) + 1;
+    useDockHandle();
+    return bar(id).render(orientation);
+  }
+  const counted = (id: string): DockBar => ({ ...bar(id), render: (o) => <Counted id={id} orientation={o} /> });
+  const offered = [counted('file'), counted('view'), counted('shape')];
+
+  function Counting({ initial }: { initial: ToolbarLayout }) {
+    const [layout, setLayout] = useState(initial);
+    return <ToolbarDock docks={docks} bars={offered} layout={layout} movable onLayoutChange={setLayout} />;
+  }
+
+  it('re-renders no bar as the pointer moves, the floating one included', () => {
+    render(<Counting initial={start([['view', 'shape']], { file: { x: 300, y: 200, anchor: null, orientation: 'horizontal' } })} />);
+    press(handle('File'), [350, 215], [[360, 215], [380, 230]]);
+    const before = { ...renders };
+    for (let i = 1; i <= 5; i++) fireEvent.pointerMove(document, pt(380 + 10 * i, 230 + 10 * i));
+    expect((floating('file') as HTMLElement).style.getPropertyValue('--dock-float-x')).toBe('380px');
+    expect(renders).toEqual(before);
+    release([430, 280]);
   });
 });

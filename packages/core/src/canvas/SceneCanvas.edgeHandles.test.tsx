@@ -176,7 +176,7 @@ describe('edge handles are one decision, keyed on the hit radius', () => {
     const surface = seen.views!.surface()!;
     // One outline, then a fill and a stroke per handle.
     const commands = surface.layers().find((l) => l.id === 'selection-overlay')!
-      .draw({ getChromeState: () => surface.chromeState() }, VIEW, { width: 300, height: 300 }).length;
+      .draw({ getChromeState: () => surface.chromeState() }, VIEW, { width: 300, height: 300, dpr: 1 }).length;
     const painted = (commands - 1) / 2 === 8;
     drag(result.container.querySelector('canvas')!, [side, side / 2], [side + 10, side / 2]);
     const grabbed = (scene.get(id)!.pose as P).width === side + 10;

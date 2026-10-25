@@ -89,7 +89,7 @@ describe('pagesLayer', () => {
   it('paints one filled rect per page, in world space', () => {
     const placed = layoutPages([A, B], { gap: 10 });
     const layer = pagesLayer(placed, { fill: '#ffffff' });
-    const commands = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 10, height: 10 });
+    const commands = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 10, height: 10, dpr: 1 });
     expect(commands).toEqual([
       { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 100, height: 200 }, fill: { paint: { kind: 'solid', color: '#ffffff' } } },
       { kind: 'path', path: { kind: 'rect', x: 110, y: 0, width: 300, height: 100 }, fill: { paint: { kind: 'solid', color: '#ffffff' } } },
@@ -101,7 +101,7 @@ describe('pagesLayer', () => {
     const placed = layoutPages([A, B]);
     const layer = pagesLayer(placed, { fill: (page) => (page.id === 'a' ? '#111111' : '#222222') });
     const fills = layer
-      .draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 10, height: 10 })
+      .draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 10, height: 10, dpr: 1 })
       .map((c) => (c.kind === 'path' ? c.fill : null));
     expect(fills).toEqual([
       { paint: { kind: 'solid', color: '#111111' } },

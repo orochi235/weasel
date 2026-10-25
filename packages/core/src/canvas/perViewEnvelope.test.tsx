@@ -27,7 +27,7 @@ interface Data { label: string }
 interface Pose { x: number; y: number; width: number; height: number }
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 
 function drawOne(_node: Node<Data, 'main', Pose>, pose: Pose): DrawCommand[] {
   return [{

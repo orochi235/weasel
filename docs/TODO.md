@@ -386,13 +386,6 @@ Priority tags:
 - **(P2) The panel's Inherit segment is a text label among icons** (2026-10-21). It wants a glyph
   (`docs/icons.md`).
 
-- **(P2) A lab nested under another surface owner has no `top` buffer unless that owner offers one**
-  (2026-10-21). A `<Lab>` with a surface owner above it takes that owner's `SurfaceCanvases`
-  (`labkit/src/lab/LabSurface.tsx`), and an owner publishing only `over` and `under` leaves
-  `useSurfaceCanvas('top')` null for good, so the lab's lenses paint nothing. `useSurfaceCanvas` now warns
-  in dev when this happens. The fix is for such a lab to make its own `top` canvas when the owner offers
-  no `claimTop`.
-
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
@@ -621,16 +614,18 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) `LabSwitcher` never marks a page whose `href` starts with `./`.** `currentPage` checks that
-  the location ends with the href's document, and `/effects` does not end with `./effects`, so the
-  open page goes unmarked with no warning. bree's lab hit this on 2026-10-24 and dropped the `./`.
-  Resolve each href against the location before comparing.
+- **(P3) A disabled group's or section's tab, or a bar's label, doesn't dim.** Headings and frames do (2026-10-24):
+  `applyPrefConditions` names a disabled section in `disabled` by `prefSectionPath`, and every surface reads it
+  there. `GroupTabs`, `PanelTabs` and `BarLayout` take no `disabled` for their labels.
 
-- **(P3) A section turned off by its `enableIf` doesn't dim its title.** Groups do (`MotifFrame disabled`,
-  2026-10-24), because `applyPrefConditions` names every disabled group in `disabled`. It names no section, since a
-  section's key is not a path, so `SelectionPanel`'s and an object leaf's section frames have nothing to read. Its
-  switch leaf still stays live. The fix is a set of disabled section keys beside `disabled`, or a judge the section
-  renderers can ask.
+- **(P3) A list item's switch field is disabled by the condition it switches.** `prefScopeIn` spares the leaf an
+  owner's `enableIf` reads by comparing the condition's paths with the leaf's full path, but a `from: 'item'`
+  condition names an item-relative path (`on`), so in `phases.2` the field `phases.2.on` stays disabled
+  (`applyPrefEntryConditions`, checked 2026-10-24).
+
+- **(P3) labkit's `configFromPrefs` drops a section's `showIf` and `enableIf`.** A lab built from a property schema
+  turns each top-level section into a labkit section (`options.section`), which holds no condition, so the section
+  neither hides nor disables its rows there.
 
 - **(P3) A schema cannot name one group's motif for a settings form.** `PrefsForm`, `PrefsPane` and
   `SelectionPanel` draw their framed groups through `MotifFrame` (2026-10-24), so an app's `<DefaultMotif>`
@@ -856,10 +851,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (2026-10-23). `useBarReorderKeys` moves by DOM order, while the pointer reorder places by where the
   pointer is, so the two disagree under `dir="rtl"`.
 
-- **(P3) Every docked bar re-renders on each frame of a `ToolbarDock` drag** (2026-10-23). The handle
-  handlers `useDockDrag` gives each bar are built afresh every render, so the dock's context value
-  changes for all of them. While a bar floats, every `SchemaBar` in draw re-renders per pointer move.
-
 - **(P3) A `ToolbarDock` top dock's new-row zone overlaps the side docks' top edges** (2026-10-23).
   The half-row zone above the top dock's first row reaches over the left and right docks, so a drag
   near a side dock's top can land in a new top row.
@@ -867,10 +858,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) In a squeezed `ToolbarDock` row, a short bar loses its only item first** (2026-10-23). Bars
   shrink by their flex basis, so a short bar loses its only item before the others lose theirs.
   Visible in draw on a narrow window.
-
-- **(P3) A second press mid-drag orphans the first drag in `useFloatingPlacement`** (2026-10-23,
-  inherited from labkit's `FloatingPanel`). `startDrag` replaces `drag.current` without canceling the
-  one it held. There is also no hook-level test that a cancel releases the pointer capture.
 
 - **(P3) A bar torn off a `ToolbarDock` remounts in the floating layer** (2026-10-23), so a menu open
   in it closes and a draft typed into one of its fields is lost.
@@ -942,46 +929,24 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) An index page's variant rows fail two accessibility checks** (2026-10-23). Each row's heading is an `h4`
-  directly under the story's `h2`, which skips a level, and the rows of every story share labels such as
-  "Variant" and "Size", so several landmarks on one page have the same name. Both show in the workshop's
-  accessibility panel on any index page with variant rows (`frame/index/IndexPage.tsx`, `IndexVariants`).
 - **(P3) Undo after a drag on a lens's rim zoom waits for the lens canvas to have focus** (2026-10-21). The drag
   leaves focus on the zoom's thumb (`lens/LensZoom.tsx`), and the lens history answers only while its input element
   has focus, so Cmd+Z does nothing until the body is pressed. Two loose ends from the same work: a square body's
   zoom labels nearly touch at the default 160 px (`32×` and `64×`, the end label held inside the track), and a
   `Slider` given a `lineShape` ignores its coordinates, so the square body's zoom is a straight slider placed by
   `.lk-lens-zoom__line` rather than a line track.
-- **(P2) A popover opened in a magnified Live copy lands off by the lens factor.** react-aria's
-  `calculatePosition` places an overlay in client px inside its containing block, and a Live copy is that block
-  scaled by `transform: scale(f)`, so the popover's offset from the copy's corner is multiplied by `f`. Measured in
-  `shell/loupe/live.browser.test.tsx` at `f = 2` (2026-10-21): the copy's trigger spans client y 159 to 202 and the
-  popover opens at y 303 where about 214 is expected, wholly below a 200-px lens at y 80 to 280. Scaling with CSS
-  `zoom` instead places the trigger the same and the popover at y 303 too. The lens clips the popover, so nothing
-  paints over the lab, but it is out of sight. A fix lies in ui's overlay positioning (a container whose scale it
-  undoes) or upstream in react-aria.
-- **(P2) A Pixels lens cannot capture a component's index page** (2026-10-21). It says "Pixels unavailable: this
-  trial shows no story to capture": `trialPayload` (`shell/loupe/capturePayload.ts`) builds a capture from the
-  trial's story entry, and an index page's trial has none. Live shows the page; Pixels and Difference need the capture
-  route to render an index page as it renders a story.
-- **(P2) A lens on a scrolled isolated story shows a different patch than the one under its reticle**
-  (found 2026-10-21). The story's scroll lives inside the frame document, and no protocol message reports it to the
-  shell. So a Live lens's copy frame loads at its own scroll position, where an in-document copy follows its trial's
-  `.fg-story__scroll` (`LensCopy` in `shell/loupe/LiveCopies.tsx`); and a Pixels capture is taken at scroll 0, since
-  the payload's `scroll` is read from a `.fg-story__scroll` a frame host does not have. The fix: the frame reports
-  its scroll to the shell (a new `FromFrame` message), and the shell forwards it to each copy frame of that trial (a
-  new `ToFrame` message that the frame applies to its scroller) and into the capture payload.
+- **(P2) In a magnified Live copy, a popover flips and limits its height against the wrong viewport, and a Tooltip
+  still lands off by the lens factor.** ui's `Popover` (2026-10-24) hands React Aria the trigger's rect in the
+  scaled box's own px (`overlays/blockFrame.ts`), so a popover now opens against its trigger at any scale, and the
+  context menu places itself the same way. React Aria still measures the boundary — the viewport — in client px
+  while placing in the box's px, so at `f = 2` it sees about twice the room there is, flips too late and allows
+  too tall a popover (inferred from `calculatePosition`, not seen). A boundary can only be handed to it as an
+  element, and one outside the box breaks the frame its descendant-of-boundary branch assumes, so the fix is likely
+  upstream. RAC's `Tooltip` passes no `getTargetRect` to `useOverlayPosition`, so it is not fixed at all: that too
+  wants an upstream prop, or a ui tooltip on `useOverlayPosition` directly.
 - **(P3) Glass is unbuilt as a user-facing aim** (2026-10-21). `setAimOps(scene, id, 'glass')` makes the reticle's
   pose depend on the body and is tested (`labkit/src/loupe/lens/lensScene.test.ts`), but no lens action switches to it,
   so the Loupe keymap has no key for it. What is left: a `loupe.aim.glass` action and key in `lensActionDefs.ts`.
-- **(P2) A Live lens with no comparison never tells its readouts the main story changed** (2026-10-21). With nothing
-  compared, Token and Contrast read the main story, but the Live source notifies them from a `MutationObserver` on the
-  lens's own copy (`shell/loupe/liveSource.ts`). A change only the main story shows, such as a hover or a menu opened in
-  it, leaves the readout on its old reading until the lens next renders.
-- **(P2) A story's own scroller cannot be wheel-scrolled under a lens** (2026-10-21). labkit's wheel pass-through
-  (`useWheelPassThrough`) hands the wheel on as a dispatched copy, which is untrusted, and a browser scrolls an element
-  only for a trusted wheel. A camera's wheel zoom answers the copy; a story's native `overflow` scroller under a lens
-  does not move. A fix scrolls the element the copy lands on by its deltas when nothing called `preventDefault`.
 - **(P3) A Live copy of an isolated story is drawn soft at magnification** (2026-10-21, inferred, not seen). A
   `<CanvasStack>` puts the scale an ancestor transform shows it at into its backing density, so an in-document copy
   is sharp at any factor. Inside an isolated story's frame the lens's transform is outside the frame's document,
@@ -990,17 +955,6 @@ only story runner in the repo.
   seen). `CameraInput`'s `clientToWorld`, `worldToClient` and `hostSize` read the host's client rect, which an
   ancestor transform (a `<Stage>`, `<TrialOverview>`) scales, while the stack now draws in its layout px. Nothing
   takes input there today: a lens's copy takes no clicks.
-- **(P2) Two Follow lenses share one reticle hold** (review finding, 2026-10-21). `createApi`
-  (`shell/loupe/ForgeLoupe.tsx`) keeps one `PoseHold` for every Follow lens and each `follow` sets it to the
-  focused lens's reticle alone, so moving the focus to another Follow lens drops the first one's held pose. One hold
-  per lens, released when its lens leaves Follow or closes, fixes it.
-- **(P3) A Live copy of an isolated story is backed by the lab's background, not the compared mode's**
-  (2026-10-21). `.fg-lens-copy > .fg-frame-host` paints `var(--wzl-bg)` as the shell resolves it there, and the
-  compared globals apply inside the copy's frame, not to its host in the shell. A transparent isolated story under
-  an opposite-mode lens shows the lab's background through it.
-- **(P3) The Live source notifies its readers once per DOM mutation** (2026-10-21). Its `MutationObserver` calls every
-  listener on each batch of records, so an animating story keeps Token and Contrast recomputing styles every
-  mutation. Coalesce the notifications to one per frame through `useVisibleRaf`.
 
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
@@ -1196,13 +1150,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) `check:first-publish -- --warn` fails the gate when the registry is down.** The gate runs it
-  with `--warn`, which should only warn, but `fetchPackument` (`scripts/lib/registry.mjs`) throws after
-  its retries on a 5xx, so the step exits 1. On 2026-10-21 npm answered 502 for
-  `@weasel-js/symmetry` alone, on its packument, abbreviated and `/latest` endpoints, while `core`
-  answered 200, and a full run of `main` (7b231aebe) failed on that step with every test green. With
-  `--warn`, a registry error belongs in the warning, not the exit code; the release run, without it,
-  should still stop.
 - **(P3) The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
   Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
   nodes, plausibly because every tab's WebGL goes through one GPU process (inferred, not measured).
@@ -1325,13 +1272,14 @@ only story runner in the repo.
   `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
   layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
   - **With the readout changing every frame the DOM is still the cheaper overlay** once the
-    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 8.41 ms a frame of all
-    threads against 6.12, down from 11.28 (msb-uai, one run of each tree, 2026-10-20; README,
-    "What the HUD allocates"). The garbage is the text re-laid out for every label that changed:
-    6.0 MB a frame, down from 9.7, against the DOM's 0.12. Most of what is left is the layout's
-    own output — `placeLine`'s cells and placed glyphs, `paintRuns`' quads, `measureRuns`'
-    entries — one object per glyph with every number in it boxed. Cutting that means a layout
-    held in typed arrays, or one that a label whose text changed can update rather than rebuild.
+    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 6.61 ms a frame of all
+    threads against 5.91, and 5.3 MB allocated a frame against 0.10 (msb-uai, 2026-10-24; README,
+    "What the HUD allocates"). A layout and its painting now hold their numbers in columns, which
+    cut allocation 12% and left time inside the spread between runs. What is left is a few kinds
+    of per-glyph or per-label garbage, none dominant: the column arrays themselves (924 KB),
+    `measureRuns`' entry per code point (544), the layout cache's structural key, a string of
+    every label's text (about 200), `resolveGlyph`'s result per code point (201), and
+    `resolveTextStyle` per command (206), which the `perf/hud-and-batch` branch skips.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
@@ -1574,9 +1522,6 @@ only story runner in the repo.
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
   Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
   Left open by label drag (2026-10-20).
-- **(P3) `cullDrawCommands` keeps every group with effects.** `contentBounds` already bounds one by
-  `effectsReach`, but that is device pixels and the cull rect is CSS pixels with no pixel ratio to
-  convert by, so culling one needs `cullDrawCommands` to take that ratio (2026-10-21).
 - **(P3) Check `@weasel-js/rig`'s and `@weasel-js/diagram-formats`' trusted-publisher
   registration.** Both are on the registry at 1.11.1 under `latest` and `pre` (`npm view`,
   2026-10-21); whether each is registered as a trusted publisher (`docs/releasing.md`, "Setting up a

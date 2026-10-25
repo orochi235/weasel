@@ -117,6 +117,8 @@ interface Sample extends Cell {
   pass: number;
   /** Bytes allocated per frame, from `HVD_ALLOC`'s profile. */
   allocBytes: number | null;
+  /** The same profile's self bytes per frame, by function. */
+  allocBy: Record<string, number> | null;
   perFrame: Breakdown;
   census: Census;
   frames: number;
@@ -591,7 +593,8 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     }
     const { found: _found, census, ...perFrame } = breakdown;
     const alloc = ALLOC && cell.approach !== 'none' ? await allocProfile(page, FRAMES) : null;
-    samples.push({ ...cell, allocBytes: alloc?.perFrame ?? null, perFrame, census, frames: stats.frames, intervalMs: stats.intervalMs, longFrames: stats.longFrames, gpuTimeMs: stats.gpuTimeMs, load1: os.loadavg()[0], freeIntervalMs: free.intervalMs, freeMissed: free.missed });
+    const allocBy = alloc && Object.fromEntries(alloc.rows.filter((r) => r.self > 0).map((r) => [r.fn, r.self]));
+    samples.push({ ...cell, allocBytes: alloc?.perFrame ?? null, allocBy, perFrame, census, frames: stats.frames, intervalMs: stats.intervalMs, longFrames: stats.longFrames, gpuTimeMs: stats.gpuTimeMs, load1: os.loadavg()[0], freeIntervalMs: free.intervalMs, freeMissed: free.missed });
     const b = perFrame;
     console.log(
       `  ${String(idx + 1).padStart(3)}/${plan.length}  pass ${cell.pass}  ${cell.approach.padEnd(9)}`
@@ -663,6 +666,14 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     if (CENSUS) Object.assign(metrics, censusMetrics(ss.map((s) => s.census), stat));
     const ab = ss.map((s) => s.allocBytes).filter((x): x is number => x !== null).map((x) => Math.round(x));
     if (ab.length) metrics.allocated = metric(med(ab), 'bytes', `median of ${ab.length} sampled heap profiles of ${FRAMES} frames, bytes allocated per frame`, ab);
+    // Every function that allocated in any sample, one sample per profile (0
+    // where it did not show), so a later question about who allocates can be
+    // answered from the file rather than from the console.
+    const bys = ss.map((s) => s.allocBy).filter((x): x is Record<string, number> => x !== null);
+    for (const fn of new Set(bys.flatMap((b) => Object.keys(b)))) {
+      const xs = bys.map((b) => Math.round(b[fn] ?? 0));
+      metrics[`allocSelf ${fn}`] = metric(med(xs), 'bytes', `median of ${xs.length} sampled heap profiles, self bytes allocated per frame`, xs);
+    }
     const id = c.approach === 'none' ? 'none' : `${c.approach} ${c.glyphs} ${c.update} ${c.camera}`;
     const loads = ss.map((s) => +s.load1.toFixed(2));
     metrics.load1 = metric(med(loads), 'load', 'median 1-minute load average as each sample finished', loads);

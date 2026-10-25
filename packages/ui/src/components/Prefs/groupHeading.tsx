@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { isPrefLeaf, prefHeadingKey, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { HiddenBadge, marksHidden } from './hidden';
+import { offTitle } from './offTitle';
 import { prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { selectionAttrs } from './selection';
 import { splitMarks } from './SplitRow';
-import h from './groupHeading.module.css';
 import s from './Prefs.module.css';
 
 type Entry = [key: string, child: PrefLeaf | PrefGroup];
@@ -31,7 +31,7 @@ export interface GroupHeading {
 export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): GroupHeading {
   const entries = Object.entries(group.children);
   const off = ctx.disabled?.has(path) === true;
-  const name = off ? <span className={h.off}>{group.name}</span> : group.name;
+  const name = offTitle(group.name, off);
   const key = prefHeadingKey(group);
   const leaf = key === undefined ? undefined : group.children[key];
   if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || ctx.renderers?.[leaf.kind] || ctx.leaves) {

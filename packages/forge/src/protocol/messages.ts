@@ -72,7 +72,9 @@ export type ToFrame =
   /** Run axe over the story's own subtree. Answered by `a11y` carrying the same `id`. */
   | { type: 'a11y.run'; id: string }
   /** Outlines the elements each `A11yNode.target` reaches, in place of the last ones; an empty list clears. */
-  | { type: 'a11y.highlight'; targets: readonly (readonly string[])[] };
+  | { type: 'a11y.highlight'; targets: readonly (readonly string[])[] }
+  /** Scrolls the frame document to `left`, `top` in CSS px: a lens's copy following its trial's frame. */
+  | { type: 'scroll'; left: number; top: number };
 
 /** A message a story's frame sends the workshop. */
 export type FromFrame =
@@ -86,6 +88,8 @@ export type FromFrame =
   /** Asks the shell to show story `id` in this frame's trial in place of what it shows now. */
   | { type: 'open'; id: string }
   | ({ type: 'a11y'; id: string } & A11yOutcome)
+  /** Where the frame document stands, in CSS px: sent once after `ready`, then whenever it scrolls. */
+  | { type: 'scroll'; left: number; top: number }
   /** `seq`, on a render fault only: how many `init`/`config`/`state`/`globals` messages the frame had received. */
   | { type: 'fault'; phase: FaultPhase; message: string; stack?: string; seq?: number };
 

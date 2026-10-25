@@ -50,14 +50,14 @@ describe('applyPrefConditions keeping what a showIf hides', () => {
     expect([...applied.hidden]).toEqual(['on']);
   });
 
-  it('names the leaves under a hidden section, which has no path of its own', () => {
+  it('names a hidden section by its section path, and the leaves under it', () => {
     const section: PrefSection = {
       name: '',
       members: { 'data.on': flag('On'), look: { name: 'Look', showIf: { path: 'data.on' }, members: { 'data.fill': num('Fill'), 'data.stroke': stroke } } },
     };
     const applied = applyPrefConditions(section, prefJudge(section, () => false), { keepHidden: true });
     expect(applied.shown).toBe(section);
-    expect([...applied.hidden]).toEqual(['data.fill', 'data.stroke', 'data.stroke.width', 'data.stroke.miter']);
+    expect([...applied.hidden]).toEqual(['#look', 'data.fill', 'data.stroke', 'data.stroke.width', 'data.stroke.miter']);
   });
 
   it('keeps an empty group when told to, as before', () => {

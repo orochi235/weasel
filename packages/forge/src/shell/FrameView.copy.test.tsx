@@ -10,6 +10,7 @@ import { createAnswerBook } from './answers';
 import { type FramePool, FramePoolContext } from './framePool';
 import { FrameView } from './FrameView';
 import { connectFrame, flush } from './labHarness';
+import { reportFrameScroll, scrollOf } from './loupe/frameScroll';
 import { type Ready, readyKey } from './readyKey';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { createTrialFrames, type TrialFrames, TrialFramesContext } from './trialFrames';
@@ -22,7 +23,10 @@ const ready: Ready = {
   layout: 'centered',
   viewport: null,
 };
-const COPY = { id: 't1~lens-a', globals: { mode: 'dark' }, args: { label: 'B' } } as const;
+/** The trial's own frame host, whose scroll a copy follows. */
+const main = document.createElement('div');
+main.dataset.fgHost = 't1';
+const COPY = { id: 't1~lens-a', main, globals: { mode: 'dark' }, args: { label: 'B' } } as const;
 
 let frames: TrialFrames;
 let mainSend: (msg: ToFrame) => void;
@@ -55,8 +59,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** A copy of the trial `t1`'s isolated story, with its frame's half of the protocol played by the test. */
-async function mountCopy(): Promise<{ frame: Channel<ToFrame, FromFrame>; sent: ToFrame[]; container: HTMLElement }> {
+/** A copy of the trial `t1`'s isolated story, or with `null` the trial's own view, its frame's half of the protocol
+ *  played by the test. */
+async function mountCopy(copy: typeof COPY | null = COPY): Promise<{ frame: Channel<ToFrame, FromFrame>; sent: ToFrame[]; container: HTMLElement }> {
   const { container } = render(
     <LabContext.Provider value={lab}>
       <FramePoolContext.Provider value={pool}>
@@ -70,7 +75,7 @@ async function mountCopy(): Promise<{ frame: Channel<ToFrame, FromFrame>; sent: 
                 onReady={onReady}
                 descriptionKey={readyKey(ready)}
                 ctx={trial}
-                copy={COPY}
+                {...(copy ? { copy } : {})}
               />
             </StoryGlobalsContext.Provider>
           </TrialIdContext.Provider>
@@ -131,11 +136,47 @@ describe('FrameView copy', () => {
     expect(frames.get('t1').a11y).toBeNull();
   });
 
+  it('scrolls its frame to where the trial’s stands once it has rendered, and again whenever that moves', async () => {
+    reportFrameScroll(main, { left: 5, top: 410 });
+    const { frame, sent } = await mountCopy();
+    expect(sent.filter((m) => m.type === 'scroll')).toEqual([]);
+    frame.send({ type: 'rendered' });
+    await flush();
+    expect(sent.filter((m) => m.type === 'scroll')).toEqual([{ type: 'scroll', left: 5, top: 410 }]);
+    reportFrameScroll(main, { left: 0, top: 90 });
+    await flush();
+    expect(sent.filter((m) => m.type === 'scroll').at(-1)).toEqual({ type: 'scroll', left: 0, top: 90 });
+  });
+
+  it('reports nothing of where its own frame stands', async () => {
+    const { frame, container } = await mountCopy();
+    const host = container.querySelector<HTMLElement>('.fg-frame-host')!;
+    const scrolled = vi.fn();
+    host.addEventListener('scroll', scrolled);
+    frame.send({ type: 'scroll', left: 0, top: 777 });
+    await flush();
+    expect(scrolled).not.toHaveBeenCalled();
+    expect(scrollOf(host)).toEqual({ left: 0, top: 0 });
+  });
+
   it('records no answers in the story’s answer book', async () => {
     const record = vi.spyOn(answers, 'record');
     const { frame } = await mountCopy();
     frame.send({ type: 'answers', answers: { configKey: '{}', hidden: ['label'], errors: {} } });
     await flush();
     expect(record).not.toHaveBeenCalled();
+  });
+});
+
+describe('FrameView', () => {
+  it('records where its frame says it stands, and fires scroll on its host', async () => {
+    const { frame, container } = await mountCopy(null);
+    const host = container.querySelector<HTMLElement>('.fg-frame-host')!;
+    const scrolled = vi.fn();
+    host.addEventListener('scroll', scrolled);
+    frame.send({ type: 'scroll', left: 3, top: 250 });
+    await flush();
+    expect(scrollOf(host)).toEqual({ left: 3, top: 250 });
+    expect(scrolled).toHaveBeenCalledTimes(1);
   });
 });

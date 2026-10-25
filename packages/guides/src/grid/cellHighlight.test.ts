@@ -14,7 +14,7 @@ describe('createCellHighlightLayer', () => {
       spacing: 20,
       getCell: () => ({ col: 2, row: 3 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200, dpr: 1 });
     expect(tree).toHaveLength(1);
     expect(tree[0]).toMatchObject({
       kind: 'path',
@@ -24,7 +24,7 @@ describe('createCellHighlightLayer', () => {
 
   it('draw returns [] when getCell returns null', () => {
     const layer = createCellHighlightLayer({ spacing: 20, getCell: () => null });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     expect(tree).toEqual([]);
   });
 
@@ -34,7 +34,7 @@ describe('createCellHighlightLayer', () => {
       origin: () => ({ x: 5, y: 7 }),
       getCell: () => ({ col: 1, row: 1 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     expect(tree[0]).toMatchObject({
       kind: 'path',
       path: { kind: 'rect', x: 15, y: 17, width: 10, height: 10 },
@@ -47,7 +47,7 @@ describe('createCellHighlightLayer', () => {
       getCell: () => ({ col: 0, row: 0 }),
       fill: { paint: { kind: 'solid', color: '#123456' } },
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     expect(tree[0]).toMatchObject({
       kind: 'path',
       fill: { paint: { kind: 'solid', color: '#123456' } },
@@ -60,7 +60,7 @@ describe('createCellHighlightLayer', () => {
       unitSystem: IMPERIAL_INCHES,
       getCell: () => ({ col: 2, row: 1 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     // 1ft = 12in -> rect at (24, 12, 12, 12).
     expect(tree[0]).toMatchObject({
       kind: 'path',
@@ -73,7 +73,7 @@ describe('createCellHighlightLayer', () => {
       spacing: { x: 20, y: 5 },
       getCell: () => ({ col: 2, row: 3 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200, dpr: 1 });
     expect(tree[0]).toMatchObject({ path: { kind: 'rect', x: 40, y: 15, width: 20, height: 5 } });
   });
 });

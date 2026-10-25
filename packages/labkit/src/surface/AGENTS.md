@@ -124,8 +124,11 @@ buffers, or an expanded tile shows without them.
   `useSurfaceCanvas('top')` claims a third buffer, above `over`, that mounts
   only while something claims it; the lab's lenses are its tenant. It shares
   the same tile rects. A host owning its own surface offers it by publishing
-  `top` and `claimTop` in its `SurfaceCanvases`, or the claim gets null and
-  `useSurfaceCanvas('top')` warns in dev.
+  `top` and `claimTop` in its `SurfaceCanvases`. A `<Lab>` under a host that
+  offers none makes its own on the host's container, as a tile of the host's
+  surface whose registered clear sizes it (`src/lab/LentTopBuffer.tsx`); a
+  tenant outside any lab gets null there, and `useSurfaceCanvas('top')` warns
+  in dev.
 - **A tile that moves without resizing** is handled twice over, and it needs
   both. `Workspace` invalidates rects off the grid's own `node.placementChanged`,
   which catches the move being *ordered*; the surface then keeps measuring until

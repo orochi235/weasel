@@ -66,7 +66,7 @@ function setup(settings?: KitSettingsOverrides) {
     return s && Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v.map((n) => Math.round(n * 100) / 100)]));
   };
   const layers = result.current.overlay as RenderLayer<unknown>[];
-  const painted = (i: number) => layers[i].draw(undefined, VIEW, { width: 400, height: 400 });
+  const painted = (i: number) => layers[i].draw(undefined, VIEW, { width: 400, height: 400, dpr: 1 });
   return { scene, state, stroke, click, skin, painted };
 }
 

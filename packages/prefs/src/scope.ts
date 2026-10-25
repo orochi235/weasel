@@ -11,11 +11,11 @@ import { deferEntryConditions, type PrefConditionJudge } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
-import { PREF_ENTRY, PREF_SCOPE, prefAliasScope, prefScopeIn, prefScopeUnder, type PrefOwner, type PrefScope } from './scopeAt';
+import { PREF_ENTRY, PREF_SCOPE, prefAliasScope, prefScopeIn, prefScopeUnder, prefSectionPath, type PrefOwner, type PrefScope } from './scopeAt';
 import type { PrefUnion } from './union';
 
 export { prefJudge, prefReader, type PrefConditionField, type PrefConditionJudge, type PrefEntry } from './judge';
-export { PREF_ENTRY, PREF_SCOPE, prefScopeAt, prefScopeIn, prefScopeUnder, type PrefOwner, type PrefScope, type PrefScopeAtOptions } from './scopeAt';
+export { PREF_ENTRY, PREF_SCOPE, prefScopeAt, prefScopeIn, prefScopeUnder, prefSectionPath, type PrefOwner, type PrefScope, type PrefScopeAtOptions } from './scopeAt';
 
 const under = (prefix: string, key: string): string => (prefix === '' ? key : `${prefix}.${key}`);
 
@@ -27,7 +27,8 @@ export interface PrefConditionsApplied<T> {
   /**
    * The value path of every leaf that is disabled, a field of an `object` or
    * a `union` leaf included (`'stroke.width'`), and under a {@link PrefGroup}
-   * schema the path of every group that is. A `list`'s or a `map`'s item is
+   * schema the path of every group that is, and of every section by
+   * {@link prefSectionPath}. A `list`'s or a `map`'s item is
    * named once for every entry, with {@link PREF_ENTRY} as the entry's step:
    * `'phases.*'`, and `'phases.*.hold'` for a field of it.
    */
@@ -104,23 +105,30 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: Walk
     return changed ? ({ ...node, variants: next } as PrefLeaf) : node;
   };
 
-  /** A section's members or an object leaf's children, held by `owner`. `prefix` is the object leaf's path, empty in a section schema. */
-  const members = (held: PrefSection['members'], prefix: string, owner: PrefOwner, holds: PrefConditionJudge): PrefSection['members'] => {
+  /** A section's members or an object leaf's children, held by `owner`. `prefix` is the object leaf's path, empty in a
+   *  section schema, and `within` the path a section among them is named under (`prefSectionPath`). */
+  const members = (
+    held: PrefSection['members'], prefix: string, owner: PrefOwner, holds: PrefConditionJudge, within = prefix,
+  ): PrefSection['members'] => {
     let changed = false;
     const out: PrefSection['members'] = {};
     for (const [key, child] of Object.entries(held)) {
       const at = under(prefix, key);
-      const kept = isPrefLeaf(child) ? leaf(child, at, prefScopeIn(owner, at, holds), holds) : section(child, prefix, owner.scope, holds);
+      const kept = isPrefLeaf(child)
+        ? leaf(child, at, prefScopeIn(owner, at, holds), holds)
+        : section(child, prefix, prefSectionPath(within, key), owner.scope, holds);
       changed ||= kept !== child;
       if (kept !== null) out[key] = kept;
     }
     return changed ? out : held;
   };
 
-  const section = (node: PrefSection, prefix: string, above: PrefScope, holds: PrefConditionJudge): PrefSection | null => {
+  const section = (node: PrefSection, prefix: string, path: string, above: PrefScope, holds: PrefConditionJudge): PrefSection | null => {
     const scope = prefScopeUnder(above, node, holds);
     if (!scope.shown && !keepHidden) return null;
-    const kept = members(node.members, prefix, { node, scope, above }, holds);
+    if (!scope.shown) hidden.add(path);
+    if (!scope.enabled) disabled.add(path);
+    const kept = members(node.members, prefix, { node, scope, above }, holds, path);
     if (kept === node.members) return node;
     return Object.keys(kept).length === 0 && !keepEmpty ? null : { ...node, members: kept };
   };

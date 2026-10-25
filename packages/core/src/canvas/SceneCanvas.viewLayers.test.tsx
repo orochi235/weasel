@@ -221,7 +221,7 @@ describe('<CanvasView layerVisibility> hides a layer in that view only', () => {
 
     const panel = registry.list().find((r) => r.id === 'panel')!;
     const outer = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    expect(colorsIn(panel.layer.draw({}, outer, { width: 800, height: 800 }))).toEqual([BASE]);
+    expect(colorsIn(panel.layer.draw({}, outer, { width: 800, height: 800, dpr: 1 }))).toEqual([BASE]);
     expect(panel.target.classifyTarget!({ x: 125, y: 45 })).toEqual({ body: 'empty' });
     expect(panel.target.classifyTarget!({ x: 25, y: 45 }).body).toBe('unselected-body');
 
@@ -277,7 +277,7 @@ describe('the chrome state a layer draws with answers for its own view', () => {
     render(<Host />);
     await nextFrame();
     const panel = registry.list().find((v) => v.id === 'panel')!;
-    panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 800 });
+    panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 800, dpr: 1 });
     expect(said.get('panel')).toBe(false);
     expect(said.get(null)).toBe(true);
   });
@@ -309,7 +309,7 @@ describe('selection chrome stays off a layer a panel hides', () => {
     render(<Host />);
     await nextFrame();
     const panel = registry.list().find((v) => v.id === 'panel')!;
-    const drawn = panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 800 });
+    const drawn = panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 800, dpr: 1 });
     return { panel, drawn: JSON.stringify(drawn) };
   }
 

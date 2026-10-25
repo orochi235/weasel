@@ -34,7 +34,7 @@ interface Pose {
   rotation?: number;
 }
 
-const DIMS = { width: 200, height: 200 };
+const DIMS = { width: 200, height: 200, dpr: 1 };
 
 describe('composeSelectionPose', () => {
   const stored: Record<string, Pose> = {

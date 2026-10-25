@@ -3,8 +3,8 @@ import {
   Button as RACButton,
   Dialog as RACDialog,
   DialogTrigger,
-  Popover as RACPopover,
 } from 'react-aria-components';
+import { Popover } from '../Popover';
 import { INHERIT, usePaintKind, type Inherit, type Paint, type PaintKind } from '@weasel-js/core';
 import type { PaintInherit } from '../PaintInput';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
@@ -91,7 +91,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}
       {ready && provide(
-        <RACPopover className={s.popover} data-weasel-overlay="">
+        <Popover className={s.popover} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.body}`} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
             <PaintInput
               value={value}
@@ -105,7 +105,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
               aria-label={ariaLabel}
             />
           </RACDialog>
-        </RACPopover>
+        </Popover>
       )}
     </DialogTrigger>
   );

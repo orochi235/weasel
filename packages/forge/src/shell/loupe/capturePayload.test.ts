@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { capturePayload, type CapturePayloadInput, CONFIG_UNSENDABLE, STATE_UNSENDABLE, trialPayload } from './capturePayload';
 import type { TrialInputs } from './captureContext';
+import { reportFrameScroll } from './frameScroll';
 import type { TrialHit } from './trialAt';
 
 /** A host whose box jsdom, having no layout, would otherwise report as 0 × 0. */
@@ -62,6 +63,14 @@ describe('capturePayload', () => {
     Object.defineProperty(scroller, 'scrollTop', { value: 340 });
     scrolled.append(scroller);
     expect(capturePayload({ ...input, host: scrolled })).toMatchObject({ scroll: { left: 12, top: 340 } });
+  });
+
+  it("reads where an isolated story's frame last said it stood", () => {
+    const frameHost = host(320, 180);
+    frameHost.dataset.fgHost = 't-isolated';
+    reportFrameScroll(frameHost, { left: 8, top: 520 });
+    const isolated = { ...input, entry: { id: 'ui-a--b', isolate: 'needs a document of its own' }, host: frameHost };
+    expect(capturePayload(isolated)).toMatchObject({ scroll: { left: 8, top: 520 } });
   });
 
   it('carries args, globals, state, the playhead and the vars overrides', () => {

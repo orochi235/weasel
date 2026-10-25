@@ -1,5 +1,5 @@
 import './loupe.css';
-import { effectivePose, type Op, type PoseHold, type RectPose, sceneToAdapter, useLatest } from '@weasel-js/core';
+import { effectivePose, type Op, type PoseHold, type RectPose, sceneToAdapter, useLatest, useVisibleRaf } from '@weasel-js/core';
 import { useLabContext } from '@weasel-js/labkit';
 import {
   addLensOps,
@@ -93,7 +93,15 @@ export function createApi(
   },
 ): LensActionApi<ForgeComparison> {
   let next = 0;
-  let hold: PoseHold<RectPose> | null = null;
+  const holds = new Map<string, PoseHold<RectPose>>();
+  const release = (lensId: string) => {
+    holds.get(lensId)?.drop();
+    holds.delete(lensId);
+  };
+  // An undo, a redo or a write from outside the actions can also take a lens out of Follow.
+  scene.subscribe(() => {
+    for (const lensId of [...holds.keys()]) if (settingsOf(scene, lensId)?.aim !== 'follow') release(lensId);
+  });
   const toBody = (client: LoupePoint, box: DOMRect) => ({ x: client.x - box.left, y: client.y - box.top });
   const apply = (ops: readonly Op[]) => {
     if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
@@ -125,10 +133,11 @@ export function createApi(
       if (lensId === null || !body) return;
       const pose = reticleAt(scene, lensId, toBody(client, body.getBoundingClientRect()));
       if (pose === null) return;
-      hold ??= scene.overrides.hold();
+      const hold = holds.get(lensId) ?? scene.overrides.hold();
+      holds.set(lensId, hold);
       hold.set([[`${lensId}:reticle` as never, pose]]);
     },
-    unfollow: () => hold?.drop(),
+    unfollow: release,
     sourceAvailable: (kind: LensSourceKind) => refs.sources.current[kind]?.status() ?? 'not provided',
     openCompareMenu: (lensId) => refs.compare?.current?.(lensId),
   };
@@ -170,6 +179,23 @@ export function useRemeasure(sources: readonly Remeasurable[], body: HTMLElement
   }, [sources, body, rerender]);
 }
 
+/** Runs the last function handed to it on the next visible frame, once however many arrive before then. */
+function useFrameSchedule(): (run: () => void) => void {
+  const next = useRef<(() => void) | null>(null);
+  const frame = useVisibleRaf(() => {
+    const run = next.current;
+    next.current = null;
+    run?.();
+  });
+  return useCallback(
+    (run: () => void) => {
+      next.current = run;
+      frame.request();
+    },
+    [frame],
+  );
+}
+
 /**
  * The workshop's lenses: the lens canvas over the lab, its actions in the Loupe keymap, the hint for that keymap, a
  * Live source rendering a second copy of whichever story sits under each reticle, and a Pixels source showing a real
@@ -185,9 +211,15 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const pointer = useRef<LoupePoint | null>(null);
   const { focus, onFocusLens } = useLensFocus();
   const conditions = useLatest<LabConditions>({ labValues, mode, declarations, modeGlobal });
+  const onFrame = useFrameSchedule();
   const [live] = useState(() =>
     lenses
-      ? createLiveSource(lenses, resolveComparison, () => ({ base: conditions.current.labValues, ctx: resolveContextOf(conditions.current) }))
+      ? createLiveSource(
+          lenses,
+          resolveComparison,
+          () => ({ base: conditions.current.labValues, ctx: resolveContextOf(conditions.current) }),
+          onFrame,
+        )
       : null,
   );
   const pixels = usePixelsSource(conditions);

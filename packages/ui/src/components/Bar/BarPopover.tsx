@@ -3,8 +3,8 @@ import {
   Button as RACButton,
   Dialog as RACDialog,
   DialogTrigger,
-  Popover as RACPopover,
 } from 'react-aria-components';
+import { Popover } from '../Popover';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
 import f from '../field.module.css';
@@ -45,12 +45,12 @@ export function BarPopover({ label, icon, children, isDisabled, className, porta
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}
       {ready && provide(
-        <RACPopover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
+        <Popover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.popBody}`} aria-label={label}>
             {/* Context crosses the portal, and a side belongs to the curved bar's line, not to what opens from it. */}
             <BarSideContext.Provider value={undefined}><BarMarkContext.Provider value={false}>{children}</BarMarkContext.Provider></BarSideContext.Provider>
           </RACDialog>
-        </RACPopover>
+        </Popover>
       )}
     </DialogTrigger>
   );

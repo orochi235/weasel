@@ -24,7 +24,7 @@ import {
 } from '@weasel-js/font';
 import { outlineGroupMesh, outlineGroupStrokeMesh } from '../glyphOutlineMesh';
 import type { ClipRect } from '../batchClip';
-import { SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
+import { QUAD_STRIDE, SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { DrawContext, GlyphPaintKind } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { drawColorGlyphs } from './colorGlyphs';
@@ -185,7 +185,7 @@ function drawTextGroup(
   } else {
     if (!ensureFontTexture(group.family, group.weight, group.style, ctx.textureCache)) return;
   }
-  if (group.quads.length === 0) return;
+  if (group.quadData.length === 0) return;
 
   const atlasId = group.source === 'canvas'
     ? dynamicPageTextureId(group.page)
@@ -211,13 +211,14 @@ function drawTextGroup(
   let slot = stageGlyphs(ctx, atlasId, fieldScale);
   const rgba = foldColor(ctx, color[0], color[1], color[2], color[3]);
 
-  for (const q of group.quads) {
+  const quads = group.quadData;
+  for (let at = 0; at < quads.length; at += QUAD_STRIDE) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
       slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
     let cut: ClipRect | null | undefined;
-    while (!batch.pushGlyph(q, dx, dy, tanItalic, m, rgba, slot, mode, bold)) {
+    while (!batch.pushGlyph(quads, at, dx, dy, tanItalic, m, rgba, slot, mode, bold)) {
       cut = enterUncut(ctx);
       slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
@@ -285,9 +286,10 @@ function drawPaintedGlyphs(
   // `flushForOwnDraw` put every clip on the stencil, which this draw tests.
   const cut = batch.clip;
   batch.clip = null;
-  for (const q of group.quads) {
+  const quads = group.quadData;
+  for (let at = 0; at < quads.length; at += QUAD_STRIDE) {
     if (batch.wouldOverflow(4)) drawStagedGlyphs(ctx);
-    batch.pushGlyph(q, dx, dy, tanItalic, m, OPAQUE_WHITE, GLYPH_PAINT_ATLAS_UNIT, mode, 0);
+    batch.pushGlyph(quads, at, dx, dy, tanItalic, m, OPAQUE_WHITE, GLYPH_PAINT_ATLAS_UNIT, mode, 0);
   }
   drawStagedGlyphs(ctx);
   batch.clip = cut;
@@ -316,9 +318,10 @@ function glyphScreenBounds(
     if (sy < b.y0) b.y0 = sy;
     if (sy > b.y1) b.y1 = sy;
   };
-  for (const q of group.quads) {
-    const x0 = q.x0 + dx, x1 = q.x1 + dx, y0 = q.y0 + dy, y1 = q.y1 + dy;
-    const base = q.baselineY + dy;
+  const q = group.quadData;
+  for (let at = 0; at < q.length; at += QUAD_STRIDE) {
+    const x0 = q[at] + dx, x1 = q[at + 2] + dx, y0 = q[at + 1] + dy, y1 = q[at + 3] + dy;
+    const base = q[at + 8] + dy;
     const top = (base - y0) * tanItalic;
     const bottom = (base - y1) * tanItalic;
     add(x0 + top, y0);

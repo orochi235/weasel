@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type KeyboardEvent } from 'react';
 import type { MenuController, MenuEntry, MenuSide, Rect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
+import { blockFrame, clientToBlock, containingBlock } from '../../overlays/blockFrame';
 import { MenuRow } from './MenuRow';
 import { menuFieldId } from './MenuValue';
 import s from './ContextMenu.module.css';
@@ -25,14 +26,17 @@ export function MenuPanel(props: {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const size = { w: el.offsetWidth, h: el.offsetHeight };
+    // Placed in client px, and written in the px of the box the panel is fixed in, which a magnifier may draw larger.
+    const frame = blockFrame(containingBlock(el));
+    const size = { w: el.offsetWidth * frame.scaleX, h: el.offsetHeight * frame.scaleY };
     const bounds = { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
     const row = parentRow();
     const at = row ? placeSubmenu(size, row, bounds)
       : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side)
         : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds);
-    el.style.left = `${at.x}px`;
-    el.style.top = `${at.y}px`;
+    const own = clientToBlock(at, frame);
+    el.style.left = `${own.x}px`;
+    el.style.top = `${own.y}px`;
     c.setPanel(level, { x: at.x, y: at.y, w: size.w, h: size.h });
     // Placed once per mount: the host remounts a panel when the row it hangs from changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps

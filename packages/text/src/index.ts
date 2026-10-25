@@ -59,7 +59,7 @@ export type {
   LaidOutCell,
   PlacedGlyph,
 } from './layout/layoutRuns';
-export { paintRuns } from './layout/paintRuns';
+export { paintRuns, QUAD_STRIDE } from './layout/paintRuns';
 export type {
   PaintRunsOpts,
   PaintedRuns,

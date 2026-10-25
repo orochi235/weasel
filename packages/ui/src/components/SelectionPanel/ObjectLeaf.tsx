@@ -7,6 +7,7 @@ import { isPrefLeaf, pairRuns, prefAsBox, prefSectionLeaves, type PrefLeaf, type
 import { MotifFrame } from '../MotifFrame';
 import { FORM_FRAMES } from '../Prefs/frames';
 import { objectRows, type ObjectLeafParts } from '../Prefs/objectRows';
+import { offTitle } from '../Prefs/offTitle';
 import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { renderCells, type LeafCell } from './cells';
 import { objectFieldCell, type ObjectFieldOwner } from './objectField';
@@ -69,6 +70,7 @@ export function ObjectLeaf({
   const pairs = fieldPairs(pref.children, ctx.path);
   const owner: ObjectFieldOwner = { ctx, held, eachObject, pairs, renderers, selectionKey };
 
+  const sectionOff = (path: string): boolean => (ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true);
   const parts: ObjectLeafParts<LeafCell> = {
     path: ctx.path,
     cell: (key, child, surface) => objectFieldCell(owner, key, child, surface),
@@ -86,14 +88,15 @@ export function ObjectLeaf({
       />
     ),
     // Depth is drawn only where a label marks it.
-    frame: (key, section, inner, { labeled, indent }) => [
+    frame: (key, section, inner, { labeled, indent, path }) => [
       prefAsBox(section.as) ? (
-        <MotifFrame key={`group:${key}`} fallback={FORM_FRAMES.labeled} title={labeled ? section.name : undefined} level={5} className={s.objectPanel}>
+        <MotifFrame key={`group:${key}`} fallback={FORM_FRAMES.labeled} title={labeled ? section.name : undefined} level={5} className={s.objectPanel}
+          disabled={sectionOff(path)}>
           <div>{inner}</div>
         </MotifFrame>
       ) : (
         <div key={`group:${key}`} className={labeled && indent ? s.objectGroup : undefined}>
-          {labeled && <h5 className={s.sectionTitle}>{section.name}</h5>}
+          {labeled && <h5 className={s.sectionTitle}>{offTitle(section.name, sectionOff(path))}</h5>}
           {inner}
         </div>
       ),

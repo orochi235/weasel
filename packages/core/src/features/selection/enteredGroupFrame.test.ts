@@ -3,7 +3,7 @@ import type { PathDrawCommand } from '@weasel-js/renderer';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import { createEnteredGroupFrameLayer, ENTERED_FRAME_COLOR } from './enteredGroupFrame';
 
-const DIMS = { width: 200, height: 200 };
+const DIMS = { width: 200, height: 200, dpr: 1 };
 const VIEW = { x: 10, y: 20, scale: { x: 2, y: 2 } };
 
 function entered(id: string | null): EnteredGroupApi {

@@ -5,7 +5,7 @@ import { boundsOfPath } from '@weasel-js/geom';
 import type { PenScratch } from 'tools/builtin/pen';
 import { type PolygonPath, anchorsToPath } from '@weasel-js/geom';
 
-const DIMS = { width: 400, height: 400 };
+const DIMS = { width: 400, height: 400, dpr: 1 };
 
 function setup(kitSettings?: ReturnType<typeof createKitSettingsStore>) {
   const scratch: PenScratch = {

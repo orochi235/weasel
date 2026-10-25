@@ -12,7 +12,7 @@ const S_CURVE: SharedAnchor[] = [
 describe('curve lab curvature comb', () => {
   it.each(Object.values(CURVE_REPS))('draws the engine comb\'s teeth for $kind', (rep) => {
     const layer = createCurvatureCombLayer(rep, () => S_CURVE, 600);
-    const lines = (layer.draw(undefined, VIEW, { width: 400, height: 400 }) as DrawCommand[])
+    const lines = (layer.draw(undefined, VIEW, { width: 400, height: 400, dpr: 1 }) as DrawCommand[])
       .flatMap((cmd) => (cmd.kind === 'path' && cmd.path.kind === 'polygon' && cmd.path.coords.length === 4
         ? [cmd.path.coords] : []));
     const teeth = combTeeth(curvatureSourceOf(rep, S_CURVE), { scale: 600, samplesPerSegment: 65 });

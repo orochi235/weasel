@@ -1,7 +1,7 @@
 import '../../../../../apps/forge/labkitStyles';
 import '../shell.css';
 import './live.browser.test.css';
-import { createMemoryAdapter, TrialIdContext } from '@weasel-js/labkit';
+import { createMemoryAdapter, Lab, TrialIdContext } from '@weasel-js/labkit';
 import { cleanup, screen, waitFor } from '@testing-library/react';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
@@ -12,7 +12,9 @@ import type { FrameSetup } from '../../frame/FrameController';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
 import type { IndexEntry } from '../../story/types';
+import { createAnswerBook } from '../answers';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
+import { storyInstrument } from '../storyInstrument';
 import { StoryTrial } from '../StoryTrial';
 import { Workshop } from '../Workshop';
 import { resolveComparison } from './conditions';
@@ -184,11 +186,15 @@ it('clips a popover opened in the copy to the lens, and paints it in the copy’
   });
   const reference = await screen.findByRole('dialog', { name: 'Reference' });
 
-  // The popover lives in the copy, so the lens clips it: no part of it paints over the lab. Where it lands is off
-  // by the factor: react-aria places it in client px inside a scaled container (docs/TODO.md).
+  // The popover lives in the copy, so the lens clips it: no part of it paints over the lab. It opens against the
+  // copy's trigger, its 12px offset drawn at the lens's factor like the rest of the copy.
   expect(slot.contains(popover)).toBe(true);
   const lens = slot.getBoundingClientRect();
   const box = popover.getBoundingClientRect();
+  const trigger = copyOpen.getBoundingClientRect();
+  const overlay = popover.closest('[data-weasel-overlay]')!.getBoundingClientRect();
+  expect(overlay.top).toBeCloseTo(trigger.bottom + 12 * 2, 0);
+  expect(overlay.left + overlay.width / 2).toBeCloseTo(trigger.left + trigger.width / 2, 0);
   const outside = { x: box.left + box.width / 2, y: Math.max(box.top + 4, lens.bottom + 4) };
   expect(document.elementFromPoint(center(copyOpen).x, center(copyOpen).y)).toBe(copyOpen);
   expect(popover.contains(document.elementFromPoint(outside.x, outside.y))).toBe(false);
@@ -197,4 +203,51 @@ it('clips a popover opened in the copy to the lens, and paints it in the copy’
   expect(fill(popover)).not.toBe('rgba(0, 0, 0, 0)');
   expect(fill(popover)).toBe(fill(reference));
   expect(host.querySelector('[role="dialog"]')).toBeNull();
+});
+
+it('backs a copy of an isolated story with the compared mode’s background, not the lab’s', async () => {
+  const lenses = createLiveLenses();
+  const isolated: IndexEntry = { ...tall, id: 'l--isolated', isolate: 'test' };
+  // A variable, not a literal, so the option reads the same before and after storyInstrument took a setup.
+  const options = { entry: isolated, answers: createAnswerBook(), frameUrl: 'about:blank', onReady: () => {}, setup };
+  const instrument = storyInstrument(options);
+  const { container } = renderWithIcons(
+    <LiveLensesContext.Provider value={lenses}>
+      <StoryGlobalsContext.Provider value={{ mode: 'light' }}>
+        <div className="fg-live-test-host" data-wzl-mode="light">
+          <Lab instruments={[instrument]} defaultInstrument={isolated.id} />
+        </div>
+      </StoryGlobalsContext.Provider>
+      <div className="fg-live-test-slot" />
+      <div className="fg-live-test-backing" data-wzl-mode="dark" />
+      <div className="fg-live-test-backing" data-wzl-mode="light" />
+    </LiveLensesContext.Provider>,
+  );
+  const host = await waitFor(() => {
+    const el = container.querySelector<HTMLElement>('.fg-frame-host:not([data-fg-copy])');
+    if (!el || el.getBoundingClientRect().width === 0) throw new Error('no frame host yet');
+    return el;
+  });
+  const slot = container.querySelector<HTMLElement>('.fg-live-test-slot')!;
+  const source = createLiveSource(lenses, resolveComparison, () => ({
+    base: { mode: 'light' },
+    ctx: { declarations: {}, modeGlobal: 'mode', prefersDark: false, labMode: 'light' },
+  }));
+  source.attach(slot, {
+    lensId: 'a',
+    reticle: center(host),
+    factor: 2,
+    size: { width: 200, height: 200 },
+    conditions: { kind: 'opposite-mode' },
+    dpr: 1,
+  });
+  const copy = await waitFor(() => {
+    const el = slot.querySelector<HTMLElement>('.fg-lens-copy > .fg-frame-host[data-fg-copy]');
+    if (!el) throw new Error('no copy yet');
+    return el;
+  });
+  const fill = (el: Element) => getComputedStyle(el).backgroundColor;
+  const [dark, light] = [...container.querySelectorAll('.fg-live-test-backing')];
+  expect(fill(dark!)).not.toBe(fill(light!));
+  await waitFor(() => expect(fill(copy)).toBe(fill(dark!)));
 });

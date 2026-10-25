@@ -5,7 +5,6 @@ import {
   Label,
   Input as RACInput,
   Button as RACButton,
-  Popover as RACPopover,
   ListBox as RACListBox,
   ListBoxItem as RACListBoxItem,
   Text,
@@ -14,6 +13,7 @@ import {
   type ListBoxItemProps as RACListBoxItemProps,
   type ValidationResult,
 } from 'react-aria-components';
+import { Popover } from '../Popover';
 import type { FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
@@ -179,7 +179,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       )}
       <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
       {ready && provide(
-        <RACPopover className={s.popover} data-weasel-overlay="">
+        <Popover className={s.popover} data-weasel-overlay="">
           <RACListBox
             className={`${listbox.surface} ${listbox.list}`}
             renderEmptyState={() =>
@@ -198,7 +198,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
                 ))
               : children}
           </RACListBox>
-        </RACPopover>
+        </Popover>
       )}
     </RACComboBox>
   );

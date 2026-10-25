@@ -1,5 +1,5 @@
 import type { LayerHit } from '../affordances/types';
-import type { Dims, RenderLayer } from '../core/layers/render';
+import type { Dims, LayerDims, RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { IngestItem } from '@weasel-js/routing';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
@@ -19,7 +19,7 @@ export interface CanvasViewHandle {
   /** Paint the view for one frame of the canvas: its layers through its own
    *  camera, clipped to its rect. For a view added with `paint: false`, whose
    *  host draws it; empty until the view has mounted. */
-  draw(data: unknown, outer: View, dims: Dims): DrawCommand[];
+  draw(data: unknown, outer: View, dims: LayerDims): DrawCommand[];
   /** Stop painting and routing the view. */
   remove(): void;
 }

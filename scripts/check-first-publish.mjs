@@ -14,8 +14,8 @@
 // of the fixed group at the new version, the rest at the old one, and the
 // registry disagreeing with `main`. 1.11.0 stopped 16 of 42 packages in on
 // `menu`, which existed on npm but had never been given a trusted publisher.
-import { classify, readPending } from './lib/first-publish.mjs';
-import { fetchPackument, registryBase } from './lib/registry.mjs';
+import { classify, readPending, readStates } from './lib/first-publish.mjs';
+import { registryBase } from './lib/registry.mjs';
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 
 const warnOnly = process.argv.includes('--warn');
@@ -29,13 +29,16 @@ const LABEL = {
 
 const packages = publishableWorkspaces();
 const pending = readPending();
-const states = [];
-for (const [i, { manifest }] of packages.entries()) {
-  const state = { name: manifest.name, packument: await fetchPackument(manifest.name) };
-  states.push(state);
-  const { status } = classify([state], pending);
-  console.log(`[first-publish] ${i + 1}/${packages.length} ${manifest.name} — ${LABEL[status[manifest.name]]}`);
-}
+const { states, errors } = await readStates(
+  packages.map(({ manifest }) => manifest.name),
+  {
+    warn: warnOnly,
+    onEach: (i, name, state) => {
+      const label = state ? LABEL[classify([state], pending).status[name]] : 'REGISTRY ERROR';
+      console.log(`[first-publish] ${i + 1}/${packages.length} ${name} — ${label}`);
+    },
+  },
+);
 
 const { missing, untrusted, stale } = classify(states, pending);
 
@@ -93,6 +96,15 @@ if (stale.length > 0) {
       'from scripts/trust-pending.json:',
       ...stale.map((n) => `  ${n}`),
     ].join('\n'),
+  );
+}
+
+if (errors.length > 0) {
+  lines.push(
+    `[first-publish] ${errors.length} package(s) could not be checked; the registry answered with an error:`,
+    '',
+    ...errors.map(({ message }) => `  ${message}`),
+    '',
   );
 }
 

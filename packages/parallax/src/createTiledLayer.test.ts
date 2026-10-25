@@ -5,7 +5,7 @@ import type { DrawCommand } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 
-const dims = { width: 400, height: 300 };
+const dims = { width: 400, height: 300, dpr: 1 };
 const unit = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } } as DrawCommand;
 
 function spyLayer(space: 'world' | 'screen' = 'world') {

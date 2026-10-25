@@ -6,7 +6,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { createLongPressFeedbackContribution, type LongPressFeedbackOptions } from './longPressFeedback';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } } as never;
-const DIMS = { width: 400, height: 300 };
+const DIMS = { width: 400, height: 300, dpr: 1 };
 
 function pending(over: Partial<PendingLongPress> = {}): PendingLongPress {
   return {

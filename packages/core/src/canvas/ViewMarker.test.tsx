@@ -22,7 +22,7 @@ type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
 
 const ROOT: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 400, height: 300 };
+const DIMS = { width: 400, height: 300, dpr: 1 };
 const PIP: CanvasViewProps = {
   id: 'pip', bounds: { x: 250, y: 180, w: 140, h: 105 }, defaultView: { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }, paint: false,
 };

@@ -1,9 +1,12 @@
 import '@weasel-js/theme/tokens.css';
+import './ContextMenuHost.browser.test.css';
 import { pref } from '@weasel-js/prefs';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
+import { OverlayPortalProvider } from '../../overlays/portalHost';
 import { lineContrast } from '../../testing/paintedContrast';
 import { ContextMenuHost } from './ContextMenuHost';
 
@@ -81,3 +84,25 @@ for (const mode of ['light', 'dark']) {
     }
   });
 }
+
+function ScaledSetup() {
+  const [box, setBox] = useState<HTMLDivElement | null>(null);
+  return (
+    <div ref={setBox} className="wzl-menu-test-box">
+      {box ? <OverlayPortalProvider container={box}><Setup /></OverlayPortalProvider> : null}
+    </div>
+  );
+}
+
+it('opens the menu at the pointer inside a box drawn at twice its size', async () => {
+  await page.viewport(W, H);
+  host = null;
+  render(<ActionsProvider><ScaledSetup /></ActionsProvider>);
+  await expect.poll(() => host).not.toBeNull();
+  act(() => { host!.open({ menu: 'm', client: { x: 160, y: 110 }, source: 'pointer' }); });
+  const menu = screen.getByRole('menu');
+  expect(menu.closest('.wzl-menu-test-box')).not.toBeNull();
+  const root = menu.getBoundingClientRect();
+  expect(root.left).toBeCloseTo(160, 0);
+  expect(root.top).toBeCloseTo(110, 0);
+});

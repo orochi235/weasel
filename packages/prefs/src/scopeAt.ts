@@ -21,6 +21,14 @@ export interface PrefScope {
  *  each, by every condition that comes to the same for every entry. */
 export const PREF_ENTRY = '*';
 
+/**
+ * The path a section is named by where a set of paths names it, such as `applyPrefConditions`'s `disabled`: `at`, the
+ * path of what holds it, then its key marked so no value path can be the same. `at` is the path of the `object`
+ * leaf holding it, empty at a section root, or the path of the section holding it: `'stroke.#edge'`,
+ * `'#look.#more'`.
+ */
+export const prefSectionPath = (at: string, key: string): string => (at === '' ? `#${key}` : `${at}.#${key}`);
+
 /** The scope a schema's root sits in. */
 export const PREF_SCOPE: PrefScope = Object.freeze({ shown: true, enabled: true });
 

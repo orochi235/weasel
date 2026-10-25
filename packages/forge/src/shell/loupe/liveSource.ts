@@ -38,23 +38,55 @@ function sameRequest(a: LiveRequest | null, b: LiveRequest): boolean {
   );
 }
 
+/** What changes a story's look without moving its DOM: a hover, a focus, a transition ending. */
+const LOOK_EVENTS = ['pointerover', 'pointerout', 'focusin', 'focusout', 'transitionend'] as const;
+
+/** Calls `notify` whenever the element it is pointed at changes; pointing it at null stops it. */
+function watchOf(notify: () => void): (el: HTMLElement | null) => void {
+  const observer = typeof MutationObserver === 'undefined' ? null : new MutationObserver(notify);
+  let watched: HTMLElement | null = null;
+  return (el) => {
+    if (el === watched) return;
+    observer?.disconnect();
+    for (const type of LOOK_EVENTS) watched?.removeEventListener(type, notify);
+    watched = el;
+    if (!el) return;
+    observer?.observe(el, { subtree: true, childList: true, characterData: true, attributes: true });
+    for (const type of LOOK_EVENTS) el.addEventListener(type, notify);
+  };
+}
+
+const now = (run: () => void) => run();
+
 /**
  * A lens showing a second copy of the story under its reticle, rendered by that story's own trial into the lens.
- * `conditions` is read on every measure, so a comparison resolves against the lab as it is then.
+ * `conditions` is read on every measure, so a comparison resolves against the lab as it is then. `schedule` runs the
+ * readers' notification: every change it gathers before running is one notification. The default runs it at once.
  */
 export function createLiveSource(
   lenses: LiveLenses,
   resolve: (c: ForgeComparison | null, base: Globals, ctx: ResolveContext) => ResolvedConditions,
   conditions: () => { base: Globals; ctx: ResolveContext },
+  schedule: (run: () => void) => void = now,
 ): LiveSource {
   const measures = new Set<() => void>();
   const listeners = new Set<() => void>();
+  let due = false;
+  const flush = () => {
+    due = false;
+    for (const listener of [...listeners]) listener();
+  };
+  const notify = () => {
+    if (due) return;
+    due = true;
+    schedule(flush);
+  };
   return {
     kind: 'live',
     produces: 'dom',
     label: () => 'Live',
     status: () => true,
-    // A copy renders after the lens asks for it and changes as its story does; a reader of the copy hears of both.
+    // A reader hears of what it reads: the lens's copy, and with nothing compared, the main story under the reticle.
     subscribe(listener) {
       listeners.add(listener);
       return () => {
@@ -69,13 +101,9 @@ export function createLiveSource(
       empty.className = 'fg-lens-empty';
       empty.hidden = true;
       slot.append(target, empty);
-      const watch =
-        typeof MutationObserver === 'undefined'
-          ? null
-          : new MutationObserver(() => {
-              for (const listener of [...listeners]) listener();
-            });
-      watch?.observe(target, { subtree: true, childList: true, characterData: true, attributes: true });
+      const watchCopy = watchOf(notify);
+      watchCopy(target);
+      const watchStory = watchOf(notify);
       let request: LensSourceRequest<ForgeComparison> = first;
       let posted: LiveRequest | null = null;
       const post = (next: LiveRequest | null) => {
@@ -86,6 +114,7 @@ export function createLiveSource(
       const measure = () => {
         const { lensId, reticle, conditions: compare } = request;
         const hit = trialAt(reticle, doc);
+        watchStory(compare === null ? (hit?.host ?? null) : null);
         empty.hidden = hit !== null;
         if (!hit) {
           post(null);
@@ -113,7 +142,8 @@ export function createLiveSource(
           measure();
         },
         detach() {
-          watch?.disconnect();
+          watchCopy(null);
+          watchStory(null);
           measures.delete(measure);
           lenses.set(liveCellId(request.lensId, request.conditions), null);
           target.remove();

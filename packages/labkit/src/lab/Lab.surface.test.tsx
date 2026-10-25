@@ -11,10 +11,10 @@
 import { act } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
-import { SurfaceContext } from '../surface/SurfaceContext';
+import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import {
   useSurfaceCanvas,
   useSurfaceOptional,
@@ -234,6 +234,78 @@ describe('<Lab> tile round trip', () => {
     expect(paneTileId).not.toBe('pane');
     const rect = frames[frames.length - 1]?.rects.get(paneTileId);
     expect(rect).toEqual({ x: 240, y: 100, w: 320, h: 200 });
+  });
+});
+
+describe('<Lab> under an owner that offers no top buffer', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) =>
+      setTimeout(() => cb(0), 16),
+    );
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => clearTimeout(id));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  let top: HTMLCanvasElement | null = null;
+  const topInstrument = defineInstrument<Record<string, never>, Record<string, never>>({
+    name: 'Top',
+    defaultConfig: () => ({}),
+    initialState: () => ({}),
+    render: function TopProbe() {
+      top = useSurfaceCanvas('top');
+      return null;
+    },
+  });
+
+  /** Publishes `over` and `under` only, as a host with no whole-surface tenant of its own would. */
+  function Host({ children }: { children: ReactNode }) {
+    const surface = useTiledSurface({ onFrame: () => {} });
+    const [canvases] = useState(() => ({
+      over: document.createElement('canvas'),
+      under: document.createElement('canvas'),
+    }));
+    return (
+      <SurfaceContext.Provider value={surface}>
+        <SurfaceCanvasContext.Provider value={canvases}>
+          <div
+            data-testid="host"
+            ref={(el) => {
+              if (!el) return;
+              stubBox(el, 0, 0, 800, 600);
+              surface.containerRef(el);
+            }}
+          >
+            {children}
+          </div>
+        </SurfaceCanvasContext.Provider>
+      </SurfaceContext.Provider>
+    );
+  }
+
+  it("makes its own top buffer on the host's surface, sized to it", async () => {
+    top = null;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { getByTestId } = await renderSettled(
+      <Host>
+        <Lab instruments={[topInstrument]} defaultInstrument="Top" />
+      </Host>,
+      { wrapper: withIcons },
+    );
+    await act(async () => {
+      vi.advanceTimersByTime(64);
+    });
+    // Assigned in a render, so TS narrows it to the null set above.
+    const seenTop = top as HTMLCanvasElement | null;
+    expect(seenTop).not.toBeNull();
+    // On the host's container, which is what the tiles' rects are measured against.
+    expect(seenTop?.parentElement).toBe(getByTestId('host'));
+    expect([seenTop?.width, seenTop?.height]).toEqual([800, 600]);
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 

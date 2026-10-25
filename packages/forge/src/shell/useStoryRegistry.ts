@@ -4,10 +4,10 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { stableStringify } from '../protocol/messages';
+import { loadIndexBundle } from '../story/indexBundle';
 import { indexId, isIndexId } from '../story/indexPages';
 import { type Libraries, TITLE_LIBRARIES } from '../story/library';
-import { taggedIds } from '../story/tags';
-import { indexRenderOf, loadStories } from '../story/load';
+import { loadStories } from '../story/load';
 import type { IndexEntry, LoadedStory } from '../story/types';
 import { type AnswerBook, createAnswerBook } from './answers';
 import { documentInstrument, type Loaded, pendingInstrument } from './documentInstrument';
@@ -142,31 +142,10 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
         });
       };
       if (isIndexId(entry.id)) {
-        const entries = liveRef.current.index.filter((e) => !isIndexId(e.id) && indexId(e.title) === entry.id);
-        const files = [...new Set(entries.map((e) => e.file))];
-        void Promise.all(files.map(importOf))
-          .then(async (mods) => {
-            const byFile = new Map(files.map((file, i) => [file, loadModule(mods[i] ?? {}, entry.title, current.parameters)]));
-            const stories = entries.flatMap(
-              (e) => byFile.get(e.file)?.find((s) => s.exportName === e.exportName) ?? [],
-            );
-            for (const story of stories) await current.prepare?.(story);
-            const result = new Map<string, Loaded>();
-            result.set(entry.id, {
-              kind: 'index',
-              bundle: {
-                title: entry.title,
-                library: liveRef.current.libraries.of(entry),
-                ...(entry.componentDescription === undefined ? {} : { description: entry.componentDescription }),
-                ...(entry.tags === undefined ? {} : { tags: entry.tags }),
-                ...taggedIds(entries),
-                stories,
-                descriptions: Object.fromEntries(entries.flatMap((e) => (e.description ? [[e.id, e.description]] : []))),
-                render: mods.map(indexRenderOf).find((render) => render !== null) ?? null,
-              },
-            });
-            settle([entry.id], result);
-          })
+        const { index: entries, libraries } = liveRef.current;
+        const source = { index: entries, importOf, load: loadModule, parameters: current.parameters, prepare: current.prepare, libraries };
+        void loadIndexBundle(entry.id, source)
+          .then((bundle) => settle([entry.id], new Map<string, Loaded>([[entry.id, { kind: 'index', bundle }]])))
           .catch((error: unknown) => fail([entry.id], error));
         return;
       }
@@ -252,7 +231,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
               generation,
               revision,
               instrument: !inDocument
-                ? storyInstrument({ entry, ready, answers, frameUrl, onReady, globals })
+                ? storyInstrument({ entry, ready, answers, frameUrl, onReady, globals, setup })
                 : had
                   ? documentInstrument({ entry, loaded: had, setup, globals })
                   : pendingInstrument({ entry, globals, load: request, generation, ...(fault ? { fault } : {}) }),

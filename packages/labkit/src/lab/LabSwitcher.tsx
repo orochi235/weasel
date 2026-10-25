@@ -3,6 +3,7 @@ import { MenuButton } from '../passthrough/weasel-ui';
 /** One page in a project's set of labs. */
 export interface LabPage {
   /** The page's own URL, and how the switcher knows which page is open. A
+   *  relative one resolves against the open page, as its link does. A
    *  hash route (`#/dev/tools`) names a page on the current document. */
   href: string;
   label: string;
@@ -41,17 +42,33 @@ function locate(url: string): { doc: string; route: string } {
  *  when the path's hash is that route or one under it. A page without one
  *  ignores the hash, so an in-page anchor does not lose it. */
 export function currentPage(path: string, pages: readonly LabPage[]): number {
-  const here = locate(path);
+  const base = new URL(
+    path,
+    typeof window === 'undefined' ? 'http://lab.invalid' : window.location.origin,
+  );
+  const here = locate(base.pathname + base.search + base.hash);
+  // Each href resolves against the path as its link would, so `./effects` on
+  // `/effects` names `/effects`. One on another origin names no page here.
+  const target = (href: string) => {
+    const to = new URL(href, base);
+    return to.origin === base.origin ? locate(to.pathname + to.search + to.hash) : undefined;
+  };
   const onDoc = (doc: string) => here.doc.endsWith(doc);
   const routed = pages.findIndex((p) => {
     if (!p.href.includes('#')) return false;
-    const page = locate(p.href);
+    const page = target(p.href);
     return (
-      onDoc(page.doc) && (here.route === page.route || here.route.startsWith(`${page.route}/`))
+      page !== undefined &&
+      onDoc(page.doc) &&
+      (here.route === page.route || here.route.startsWith(`${page.route}/`))
     );
   });
   if (routed >= 0) return routed;
-  return pages.findIndex((p) => !p.href.includes('#') && onDoc(locate(p.href).doc));
+  return pages.findIndex((p) => {
+    if (p.href.includes('#')) return false;
+    const page = target(p.href);
+    return page !== undefined && onDoc(page.doc);
+  });
 }
 
 /** A project's lab title, doubling as the way to reach its other labs.

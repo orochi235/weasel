@@ -139,8 +139,8 @@ describe('minimap chrome', () => {
 
   it('paints the indicator only in its own view, as the root camera\'s visible rect', () => {
     const layer = createIndicatorLayer({ viewId: 'minimap', root: () => root });
-    expect(layer.draw({ viewId: null }, FIT, { width: 400, height: 300 })).toEqual([]);
-    const [cmd] = layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80 });
+    expect(layer.draw({ viewId: null }, FIT, { width: 400, height: 300, dpr: 1 })).toEqual([]);
+    const [cmd] = layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80, dpr: 1 });
     expect(cmd).toMatchObject({ kind: 'path', path: { kind: 'rect', x: 100, y: 50, width: 200, height: 150 } });
     // One screen pixel at the minimap's 0.08 scale.
     expect((cmd as { stroke: { width: number } }).stroke.width).toBeCloseTo(12.5);
@@ -149,7 +149,7 @@ describe('minimap chrome', () => {
   it('draws the same command computeIndicatorCommand builds, in a mirrored minimap too', () => {
     const layer = createIndicatorLayer({ viewId: 'minimap', root: () => root, style: { width: 2 } });
     const mirrored = { x: 0, y: 0, scale: { x: -0.08, y: 0.08 } };
-    const [cmd] = layer.draw({ viewId: 'minimap' }, mirrored, { width: 100, height: 80 });
+    const [cmd] = layer.draw({ viewId: 'minimap' }, mirrored, { width: 100, height: 80, dpr: 1 });
     expect(cmd).toEqual(computeIndicatorCommand(root.get(), { width: 400, height: 300 }, { width: 2 }, mirrored));
     expect((cmd as { stroke: { width: number } }).stroke.width).toBeCloseTo(25);
   });
@@ -157,21 +157,21 @@ describe('minimap chrome', () => {
   it('paints the crosshair in views the pointer is not over, at a fixed screen size', () => {
     let pos: ReturnType<ReturnType<typeof createPointerStore>['get']> = { worldX: 500, worldY: 400, viewId: null };
     const layer = createLinkedCursorLayer({ id: 'x', pointer: () => pos, color: () => '#f00' });
-    expect(layer.draw({ viewId: null }, ROOT, { width: 400, height: 300 })).toEqual([]);
-    const inMini = layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80 });
+    expect(layer.draw({ viewId: null }, ROOT, { width: 400, height: 300, dpr: 1 })).toEqual([]);
+    const inMini = layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80, dpr: 1 });
     // Four halo bars under four accent bars.
     expect(inMini).toHaveLength(8);
     // A 9px arm at scale 0.08 spans 112.5 world units.
     expect((inMini[4] as { path: { width: number } }).path.width).toBeCloseTo(112.5);
     pos = null;
-    expect(layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80 })).toEqual([]);
+    expect(layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80, dpr: 1 })).toEqual([]);
   });
 
   it('keeps out of views it was not built for', () => {
     const pos = { worldX: 500, worldY: 400, viewId: 'elsewhere' };
     const layer = createLinkedCursorLayer({ id: 'x', pointer: () => pos, color: () => '#f00', views: [null] });
-    expect(layer.draw({ viewId: null }, ROOT, { width: 400, height: 300 })).toHaveLength(8);
-    expect(layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80 })).toEqual([]);
+    expect(layer.draw({ viewId: null }, ROOT, { width: 400, height: 300, dpr: 1 })).toHaveLength(8);
+    expect(layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80, dpr: 1 })).toEqual([]);
   });
 });
 

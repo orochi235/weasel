@@ -106,6 +106,7 @@ export * from './overlays/portalHost';
 export * from './components/Dialog';
 export * from './components/Tooltip';
 export * from './components/Callout';
+export * from './components/Popover';
 export * from './components/Toast';
 export * from './components/Plot2D';
 export * from './components/CurveEditor';

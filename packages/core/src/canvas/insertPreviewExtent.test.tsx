@@ -20,7 +20,7 @@ import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-j
 import type { Scene } from 'core/scene/types';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 
 type InsertPreview = Extract<OngoingOverlay, { kind: 'insertPreview' }>;
 

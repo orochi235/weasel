@@ -6,7 +6,7 @@ import { DEFAULT_SYMMETRY, HORIZONTAL_AXIS, type SymmetrySpec } from './kinds';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
 const C = { x: 50, y: 50 };
-const DIMS = { width: 400, height: 400 };
+const DIMS = { width: 400, height: 400, dpr: 1 };
 const spec = (over: Partial<SymmetrySpec>): SymmetrySpec => ({ ...DEFAULT_SYMMETRY, ...over });
 const source = (s: SymmetrySpec) => ({ current: () => ({ group: 'g', spec: s, center: C }), subscribe: () => () => {} });
 
@@ -44,7 +44,7 @@ describe('symmetryGuideLayer', () => {
 
   it('draws nothing without an active group', () => {
     const layer = symmetryGuideLayer({ current: () => null, subscribe: () => () => {} });
-    expect(layer.draw(undefined, VIEW, { width: 100, height: 100 })).toEqual([]);
+    expect(layer.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 })).toEqual([]);
   });
 });
 

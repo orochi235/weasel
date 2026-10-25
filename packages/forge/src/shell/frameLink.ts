@@ -14,6 +14,7 @@ import {
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { isGlobalsPath, storyConfig } from './globals';
+import { reportFrameScroll } from './loupe/frameScroll';
 import { type Ready, readyKey } from './readyKey';
 import { type A11yOutcome, type TrialFrames } from './trialFrames';
 import { setRoute } from './useRoute';
@@ -107,6 +108,8 @@ export interface FrameLinkOptions {
   /** The trial whose frame registry entry, reports and swaps this link speaks for; null for none. */
   trialId: string | null;
   frames: TrialFrames | null;
+  /** The view's host, which stands in for its frame's scroller in this document. */
+  host: RefObject<HTMLElement | null>;
   setFault: Dispatch<SetStateAction<Fault | null>>;
   setPending: (pending: boolean) => void;
   /** A lens's copy of the trial's frame: it sends `init` on the first `ready`, and neither reports it nor records answers. */
@@ -120,13 +123,13 @@ export interface FrameLinkOptions {
 
 /** What `receive` and `openLink` read of the view: the hook's options at its last render, and its `init`. */
 interface LinkDeps
-  extends Pick<FrameLinkOptions, 'latest' | 'src' | 'trialId' | 'frames' | 'setFault' | 'setPending' | 'copy'> {
+  extends Pick<FrameLinkOptions, 'latest' | 'src' | 'trialId' | 'frames' | 'host' | 'setFault' | 'setPending' | 'copy'> {
   init: (current: Link) => void;
 }
 
 /** One message from the frame, taken as the view's last commit would. */
 function receive(deps: LinkDeps, current: Link, msg: FromFrame): void {
-  const { latest: latestRef, trialId, frames, setFault, setPending, init, copy } = deps;
+  const { latest: latestRef, trialId, frames, host, setFault, setPending, init, copy } = deps;
   const { ctx: live, answers, onReady } = latestRef.current;
   switch (msg.type) {
     case 'ready': {
@@ -172,6 +175,10 @@ function receive(deps: LinkDeps, current: Link, msg: FromFrame): void {
       current.pending.delete(msg.id);
       break;
     }
+    case 'scroll':
+      // A copy follows its trial's scroll; where it stands itself is nothing anyone reads.
+      if (!copy && host.current) reportFrameScroll(host.current, msg);
+      break;
     case 'open': {
       const { lab: liveLab } = latestRef.current;
       if (!trialId || !liveLab.instruments.some((instrument) => instrument.name === msg.id)) break;
@@ -242,7 +249,7 @@ export function useFrameLink(opts: FrameLinkOptions): {
   adopt(adopted: Link): void;
   link: RefObject<Link | null>;
 } {
-  const { latest: latestRef, src, trialId, frames, setFault, setPending, copy, config, state, globals, descriptionKey } = opts;
+  const { latest: latestRef, src, trialId, frames, host, setFault, setPending, copy, config, state, globals, descriptionKey } = opts;
   const link = useRef<Link | null>(null);
 
   const init = useCallback((current: Link): void => {
@@ -253,7 +260,7 @@ export function useFrameLink(opts: FrameLinkOptions): {
     current.channel.send({ type: 'init', ...current.sent });
   }, [latestRef]);
 
-  const deps: LinkDeps = { latest: latestRef, src, trialId, frames, setFault, setPending, copy, init };
+  const deps: LinkDeps = { latest: latestRef, src, trialId, frames, host, setFault, setPending, copy, init };
   const connect = (frame: HTMLIFrameElement): void => openLink(deps, link, frame);
 
   const adopt = (adopted: Link): void => {

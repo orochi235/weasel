@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
 import type { ComponentDeps } from '../../story/types';
+import { runAxe } from '../a11y';
 import { type IndexEnv, IndexPage } from './IndexPage';
 
 const stories = loadNativeModule(
@@ -128,11 +129,11 @@ describe('IndexPage', () => {
     expect(within(labSection).getByRole('link', { name: 'Screen' }).getAttribute('href')).toBe(`#/${lab?.id}`);
     expect(within(labSection).getByText('Lab')).toBeTruthy();
     expect(labSection.querySelector('.fg-index-cell')).toBeNull();
-    expect(within(labSection).queryByRole('region', { name: 'Dense' })).toBeNull();
+    expect(within(labSection).queryByRole('region', { name: /Dense$/ })).toBeNull();
     const plainSection = screen.getByRole('region', { name: plain?.name ?? '' });
     expect(within(plainSection).queryByText('Lab')).toBeNull();
     expect(plainSection.querySelector('.fg-index-story__main > .fg-index-cell')).not.toBeNull();
-    expect(within(plainSection).getByRole('region', { name: 'Dense' })).toBeTruthy();
+    expect(within(plainSection).getByRole('region', { name: `${plain?.name}: Dense` })).toBeTruthy();
   });
 
   it('heads the path with the package as a badge, in place of a first segment naming it', () => {
@@ -144,6 +145,28 @@ describe('IndexPage', () => {
     expect(container.querySelector('.fg-index__path')?.textContent).toBe('uiPrimitives');
     rerender(<IndexPage env={envOf({ title: 'labkit/Specimen', library: 'labkit' })} render={null} />);
     expect(container.querySelector('.fg-index__path')?.textContent).toBe('labkit');
+  });
+
+  it('nests each variant row under its story’s heading and names it for the story, so axe finds no skipped level or twin landmark', async () => {
+    const twoSets = loadNativeModule(
+      {
+        default: meta({ title: 'ui/Chip' }),
+        Plain: story({
+          config: f.schema({ variant: f.enum('a', ['a', 'b']), size: f.enum('sm', ['sm', 'md']) }),
+          render: () => <p>plain</p>,
+        }),
+        Tinted: story({
+          config: f.schema({ variant: f.enum('a', ['a', 'b']), tint: f.boolean(false) }),
+          render: () => <p>tinted</p>,
+        }),
+      },
+      'ui/Chip',
+    );
+    const { container } = render(<IndexPage env={envOf({ title: 'ui/Chip', stories: twoSets })} render={null} />);
+    const report = await runAxe(container, { page: false });
+    expect(report.violations.map((v) => v.id).filter((id) => id === 'heading-order' || id === 'landmark-unique')).toEqual([]);
+    expect(screen.getByRole('region', { name: 'Plain: Variant' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Tinted: Variant' })).toBeTruthy();
   });
 
   it('shows no dependency section before the graph arrives', () => {

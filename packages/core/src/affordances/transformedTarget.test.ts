@@ -17,7 +17,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 
 const B = { x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 6, transform: [1, 0, 0.8, 1] as const };
 const VIEW = { x: 5, y: -3, scale: { x: 2, y: 2 } };
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 const FRAME = poseFrameOf(B)!;
 
 const state = {

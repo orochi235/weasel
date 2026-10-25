@@ -23,7 +23,7 @@ const B = { x: 10, y: 20, width: 40, height: 20, rotation: Math.PI / 6 };
 const VIEW = { x: 5, y: -3, scale: { x: 4, y: 1 } };
 const DIST = 24;
 const SIZE = 8;
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 const T = viewToTransform(VIEW);
 
 const state = {

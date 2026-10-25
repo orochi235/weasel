@@ -4,7 +4,7 @@ import { buildDebugOverlayCommands, createDebugOverlayLayer } from './createDebu
 import { createDebugSink } from './createDebugSink';
 import type { CreateDebugOverlayLayerOpts } from './index';
 
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 describe('createDebugOverlayLayer', () => {
@@ -32,7 +32,7 @@ describe('createDebugOverlayLayer', () => {
     const sink = createDebugSink({ layers: true });
     sink.recordLayer('grid', 'Grid', 'world', 0);
     const layer = createDebugOverlayLayer({ sink, config: { layers: true } });
-    const tree = layer.draw(null, VIEW, { width: 1000, height: 600 });
+    const tree = layer.draw(null, VIEW, { width: 1000, height: 600, dpr: 1 });
     // Expect the bg rect to be near the right edge of the 1000px canvas.
     const bg = tree.find((c) => c.kind === 'path') as PathDrawCommand;
     expect(bg).toBeDefined();
@@ -61,7 +61,7 @@ describe('createDebugOverlayLayer', () => {
     sink.recordBounds('a', { x: 0, y: 0, width: 10, height: 10 });
     sink.recordOrigin('a', { x: 0, y: 0 });
     const layer = createDebugOverlayLayer({ sink, config: { bounds: true } });
-    const tree = layer.draw(null, VIEW, { width: 200, height: 100 });
+    const tree = layer.draw(null, VIEW, { width: 200, height: 100, dpr: 1 });
     // bounds: 1 path. origins: 0.
     expect(tree.filter((c) => c.kind === 'path')).toHaveLength(1);
   });

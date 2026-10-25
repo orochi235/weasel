@@ -1,0 +1,41 @@
+.lk-wheel-test-host {
+  position: relative;
+  width: 400px;
+  height: 300px;
+}
+
+.lk-wheel-test-outer,
+.lk-wheel-test-inner {
+  overflow: auto;
+}
+
+.lk-wheel-test-outer {
+  position: absolute;
+  inset: 0;
+}
+
+.lk-wheel-test-inner {
+  height: 200px;
+}
+
+.lk-wheel-test-tall {
+  height: 2000px;
+}
+
+// Over the inner scroller, clear of its scrollbar.
+.lk-wheel-test-hit {
+  left: 50px;
+  top: 50px;
+  width: 100px;
+  height: 100px;
+}
+
+// Its border puts the frame's own (0, 0) 10px in from its box.
+.lk-wheel-test-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 10px solid gray;
+}

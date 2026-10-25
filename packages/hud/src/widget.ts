@@ -1,5 +1,5 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { ClaimableGesture, View } from '@weasel-js/core';
+import type { ClaimableGesture, LayerDims, View } from '@weasel-js/core';
 import type { ColorSource } from '@weasel-js/paint';
 import type { ResolvedTheme } from '@weasel-js/theme';
 
@@ -36,7 +36,7 @@ export interface HudContentCtx {
   data: unknown;
   /** The outer view. A painter deriving an inner view starts from this. */
   view: View;
-  dims: { width: number; height: number };
+  dims: LayerDims;
   /** Where the content is painted, in screen-space CSS px. The group the
    *  painter's commands land in carries a clip but no transform, so those
    *  commands are in absolute canvas coordinates — a painter that treats the
