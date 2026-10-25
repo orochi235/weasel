@@ -28,10 +28,10 @@ function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: strin
       pressed={pressed}
       aria-label={label}
       title={shortcut ? `${label} (${shortcut})` : label}
+      icon={showLabel ? <Icon name={icon} size={16} /> : undefined}
       onClick={() => onActivate(ctx)}
     >
-      <Icon name={icon} size={16} />
-      {showLabel ? <span>{label}</span> : null}
+      {showLabel ? label : <Icon name={icon} size={16} />}
     </Toolbar.Button>
   );
 }

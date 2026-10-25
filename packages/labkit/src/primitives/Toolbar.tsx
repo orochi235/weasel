@@ -1,5 +1,8 @@
 import type { MouseEventHandler, ReactNode } from 'react';
-import { useRovingTabIndex } from '../passthrough/weasel-ui';
+import { Button as UiButton } from '@weasel-js/ui/components/Button';
+import { Toolbar as UiToolbar, ToolbarGroup, ToolbarSpacer } from '@weasel-js/ui/components/Toolbar';
+
+export type { ToolbarGroupProps } from '@weasel-js/ui/components/Toolbar';
 
 /** Props for `<Toolbar>`. */
 export interface ToolbarProps {
@@ -9,20 +12,14 @@ export interface ToolbarProps {
   'aria-label'?: string;
 }
 
-/** A horizontal bar of controls. Fill it with `<Toolbar.Title>`,
- *  `<Toolbar.Group>`, `<Toolbar.Button>` and `<Toolbar.Spacer>`. */
+/** A trial's strip of controls: weasel-ui's `Toolbar` at the compact control
+ *  height. Fill it with `<Toolbar.Title>`, `<Toolbar.Group>`,
+ *  `<Toolbar.Button>` and `<Toolbar.Spacer>`. */
 export function Toolbar({ children, 'aria-label': ariaLabel }: ToolbarProps) {
-  const { rootRef, onKeyDown } = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
   return (
-    <div
-      ref={rootRef}
-      className="lk-toolbar"
-      role="toolbar"
-      aria-label={ariaLabel}
-      onKeyDown={onKeyDown}
-    >
+    <UiToolbar className="lk-toolbar" aria-label={ariaLabel}>
       {children}
-    </div>
+    </UiToolbar>
   );
 }
 
@@ -30,36 +27,12 @@ function Title({ children }: { children: ReactNode }) {
   return <span className="lk-toolbar-title">{children}</span>;
 }
 
-/** Props for `<Toolbar.Group>`. */
-export interface ToolbarGroupProps {
-  children: ReactNode;
-  /** Pushes this group, and everything after it, to the far end. */
-  end?: boolean;
-  'aria-label'?: string;
-}
-
-/** Related controls, kept tight and ruled off from their neighbors. Group
- *  rather than separate with repeated `<Toolbar.Spacer>`: consecutive spacers
- *  share the free space, so every gap collapses to the same slack and the bar
- *  reads as one undifferentiated run. */
-function Group({ children, end, 'aria-label': ariaLabel }: ToolbarGroupProps) {
-  return (
-    // biome-ignore lint/a11y/useSemanticElements: a group inside role="toolbar" is the APG pattern; the rule is local and cannot see the parent. <fieldset> means form controls, needs a <legend> to be named, and its UA min-width breaks flex children.
-    <div
-      className={`lk-toolbar-group${end ? ' lk-toolbar-group--end' : ''}`}
-      role="group"
-      aria-label={ariaLabel}
-    >
-      {children}
-    </div>
-  );
-}
-
 /** Props for `<Toolbar.Button>`. */
 export interface ToolbarButtonProps {
   children: ReactNode;
   onClick: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;
+  /** Tooltip text, and the accessible name when `aria-label` is unset. */
   title?: string;
   /** Required when `children` is an icon with no text of its own. */
   'aria-label'?: string;
@@ -67,6 +40,8 @@ export interface ToolbarButtonProps {
   grade?: 'danger';
   /** Square, for a button whose whole content is one glyph. */
   iconOnly?: boolean;
+  /** A glyph ahead of a text label. */
+  icon?: ReactNode;
   /** Makes this a toggle: `aria-pressed`, and held down while true. */
   pressed?: boolean;
 }
@@ -79,40 +54,27 @@ function Button({
   'aria-label': ariaLabel,
   grade,
   iconOnly,
+  icon,
   pressed,
 }: ToolbarButtonProps) {
-  const cls = [
-    'lk-toolbar-button',
-    iconOnly && 'lk-toolbar-button--icon',
-    pressed && 'lk-toolbar-button--pressed',
-  ]
-    .filter(Boolean)
-    .join(' ');
-  return (
-    <button
-      type="button"
-      className={cls}
-      data-grade={grade}
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      aria-label={ariaLabel ?? title}
-      aria-pressed={pressed}
-    >
+  const name = ariaLabel ?? title;
+  const common = { variant: 'ghost', onClick, disabled, grade, pressed, tooltip: title } as const;
+  return iconOnly ? (
+    <UiButton {...common} iconOnly ariaLabel={name ?? ''}>
       {children}
-    </button>
+    </UiButton>
+  ) : (
+    <UiButton {...common} ariaLabel={name} leadingIcon={icon}>
+      {children}
+    </UiButton>
   );
-}
-
-function Spacer() {
-  return <span className="lk-toolbar-spacer" aria-hidden="true" />;
 }
 
 /** A label within a toolbar. */
 Toolbar.Title = Title;
 /** A ruled-off run of related controls. */
-Toolbar.Group = Group;
-/** A button within a toolbar. */
+Toolbar.Group = ToolbarGroup;
+/** A ghost button at the toolbar's height. */
 Toolbar.Button = Button;
 /** Flexible space that pushes what follows to the far end of the toolbar. */
-Toolbar.Spacer = Spacer;
+Toolbar.Spacer = ToolbarSpacer;

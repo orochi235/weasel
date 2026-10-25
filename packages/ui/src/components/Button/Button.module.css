@@ -241,6 +241,12 @@
   background: var(--wzl-surface-hover);
 }
 
+/* A graded ghost stays quiet until pointed at, then shows its grade: a discard in a toolbar reddens on hover. */
+.variant_ghost[data-grade]:hover:not(:disabled) {
+  color: var(--_s-accent);
+  box-shadow: inset 0 0 0 1px var(--_s-accent);
+}
+
 .variant_ghost:active:not(:disabled) {
   background: var(--wzl-surface-pressed);
 }
