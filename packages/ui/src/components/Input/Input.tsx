@@ -5,6 +5,7 @@ import {
   Input as RACInput,
   type TextFieldProps as RACTextFieldProps,
 } from 'react-aria-components';
+import { MIXED_HINT } from '../mixedHint';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import f from '../field.module.css';
 import s from './Input.module.css';
@@ -12,6 +13,9 @@ import s from './Input.module.css';
 /** Props for {@link Input}, on top of React Aria's `TextField` props. */
 export type InputProps = Omit<RACTextFieldProps, 'children' | 'className'> & FieldSlotProps & {
   placeholder?: string;
+  /** The field stands for several values that differ: it reads `Mixed` in
+   *  place of `placeholder` while its value is empty. */
+  mixed?: boolean;
   leadingAdornment?: ReactNode;
   trailingAdornment?: ReactNode;
   className?: string;
@@ -34,6 +38,7 @@ export const Input = forwardRef(function Input(
     description,
     errorMessage,
     placeholder,
+    mixed,
     leadingAdornment,
     trailingAdornment,
     className,
@@ -48,7 +53,7 @@ export const Input = forwardRef(function Input(
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
         {leadingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{leadingAdornment}</span>}
-        <RACInput ref={ref} placeholder={placeholder} />
+        <RACInput ref={ref} placeholder={mixed ? MIXED_HINT : placeholder} />
         {trailingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{trailingAdornment}</span>}
       </div>
       <FieldFoot description={description} errorMessage={errorMessage} />

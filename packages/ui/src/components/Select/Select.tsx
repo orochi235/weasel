@@ -28,6 +28,7 @@ import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 import { Caret } from '../Caret';
 import { optionLabels, withIcon } from '../optionLabels';
+import { MIXED_HINT } from '../mixedHint';
 import type { OptionKey } from '../../optionKey';
 
 /** One option in a {@link Select}'s `options` list. */
@@ -71,6 +72,9 @@ export type SelectPopup = 'over' | 'below';
  */
 export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & FieldSlotProps & {
   placeholder?: string;
+  /** The select stands for several values that differ: nothing is selected,
+   *  and the trigger reads `Mixed` in place of `placeholder`. */
+  mixed?: boolean;
   /**
    * Either pass `options` for a quick render, or `children` for full control.
    * An entry with `title` and `options` of its own is a titled section.
@@ -130,7 +134,8 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     orientation,
     description,
     errorMessage,
-    placeholder,
+    placeholder: placeholderProp,
+    mixed,
     options,
     children,
     selectedKey,
@@ -149,6 +154,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   } = props;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  const placeholder = mixed ? MIXED_HINT : placeholderProp;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pressRef = useRef<Press | null>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
@@ -156,7 +162,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   return (
     <RACSelect
       {...rest}
-      selectedKey={selectedKey}
+      selectedKey={mixed ? null : selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
       className={fieldRootClass({

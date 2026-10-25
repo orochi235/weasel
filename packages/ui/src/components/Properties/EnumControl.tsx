@@ -3,6 +3,7 @@ import { dlog } from '../../dlog';
 import { MenuButton } from '../MenuButton';
 import { Radio, RadioGroup } from '../RadioGroup';
 import { Select } from '../Select';
+import { MIXED_HINT } from '../mixedHint';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { ToggleBar } from '../ToggleBar';
 import type { PropertyEnumFieldProps, PropertyOption } from './fieldTypes';
@@ -45,7 +46,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
   }
   if (p.control === 'menu') {
     const held = current === null ? undefined : p.options.find((o) => o.value === current);
-    const reads = p.mixed ? 'Mixed' : held ? held.label : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'));
+    const reads = p.mixed ? MIXED_HINT : held ? held.label : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'));
     // The button's text is its value, so its name has to carry both.
     const named = p.name === undefined ? undefined : typeof reads === 'string' ? `${p.name}: ${reads}` : p.name;
     return (
@@ -118,7 +119,8 @@ export function EnumControl(p: PropertyEnumFieldProps) {
       triggerId={p.id}
       isDisabled={p.disabled}
       aria-label={p.name}
-      placeholder={p.mixed ? 'Mixed' : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'))}
+      placeholder={p.placeholder ?? (p.unset ? '—' : 'Choose option…')}
+      mixed={p.mixed}
       selectedKey={current}
       options={choices(p).map((o) => ({
         value: o.value,

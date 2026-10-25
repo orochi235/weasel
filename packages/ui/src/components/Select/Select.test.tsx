@@ -364,4 +364,22 @@ describe('Select tooltip', () => {
     keyboardFocusTrigger(screen.getByRole('button'));
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
+
+  describe('mixed', () => {
+    it('shows Mixed in place of the selection and the placeholder', () => {
+      render(<Select label="Color" options={OPTIONS} selectedKey="b" placeholder="—" mixed />);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      expect(trigger).toHaveTextContent('Mixed');
+      expect(trigger).not.toHaveTextContent('Blue');
+    });
+
+    it('marks no row selected, and still commits a pick', () => {
+      const onChange = vi.fn();
+      render(<Select label="Color" options={OPTIONS} selectedKey="b" mixed onSelectionChange={onChange} />);
+      act(() => { fireEvent.click(screen.getByRole('button', { name: /Color/ })); });
+      expect(screen.getByRole('option', { name: 'Blue' })).toHaveAttribute('aria-selected', 'false');
+      fireEvent.click(screen.getByRole('option', { name: 'Blue' }));
+      expect(onChange).toHaveBeenCalledWith('b');
+    });
+  });
 });

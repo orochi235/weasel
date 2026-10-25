@@ -12,6 +12,7 @@ import { paintPreviewCss } from '../../paintPreview';
 import { PaintInput } from '../PaintInput';
 import { ownPaint } from '../PaintInput/PaintInput';
 import listbox from '../listbox.module.css';
+import { MIXED_HINT } from '../mixedHint';
 import s from './PaintField.module.css';
 
 /** Props for {@link PaintField}. `onInput` fires throughout a gesture inside
@@ -43,7 +44,7 @@ export interface PaintFieldProps extends OverlayPortalProps {
 
 /** What the trigger says it is holding. */
 function kindLabel(paint: Paint | Inherit | null | undefined, mixed: boolean, label: string | undefined): string {
-  if (mixed) return 'Mixed';
+  if (mixed) return MIXED_HINT;
   if (paint === INHERIT) return 'Inherit';
   if (paint === null) return 'None';
   if (paint === undefined) return '—';

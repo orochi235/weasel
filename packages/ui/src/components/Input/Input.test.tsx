@@ -11,6 +11,11 @@ describe('Input', () => {
     expect(input.placeholder).toBe('e.g. 120');
   });
 
+  it('reads Mixed over its placeholder when mixed', () => {
+    render(<Input label="Name" placeholder="Untitled" mixed />);
+    expect(screen.getByLabelText('Name')).toHaveAttribute('placeholder', 'Mixed');
+  });
+
   it('fires onChange with the new value as user types', () => {
     const onChange = vi.fn();
     render(<Input label="Name" onChange={onChange} />);
