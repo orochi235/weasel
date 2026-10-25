@@ -184,11 +184,15 @@ it('clips a popover opened in the copy to the lens, and paints it in the copy’
   });
   const reference = await screen.findByRole('dialog', { name: 'Reference' });
 
-  // The popover lives in the copy, so the lens clips it: no part of it paints over the lab. Where it lands is off
-  // by the factor: react-aria places it in client px inside a scaled container (docs/TODO.md).
+  // The popover lives in the copy, so the lens clips it: no part of it paints over the lab. It opens against the
+  // copy's trigger, its 12px offset drawn at the lens's factor like the rest of the copy.
   expect(slot.contains(popover)).toBe(true);
   const lens = slot.getBoundingClientRect();
   const box = popover.getBoundingClientRect();
+  const trigger = copyOpen.getBoundingClientRect();
+  const overlay = popover.closest('[data-weasel-overlay]')!.getBoundingClientRect();
+  expect(overlay.top).toBeCloseTo(trigger.bottom + 12 * 2, 0);
+  expect(overlay.left + overlay.width / 2).toBeCloseTo(trigger.left + trigger.width / 2, 0);
   const outside = { x: box.left + box.width / 2, y: Math.max(box.top + 4, lens.bottom + 4) };
   expect(document.elementFromPoint(center(copyOpen).x, center(copyOpen).y)).toBe(copyOpen);
   expect(popover.contains(document.elementFromPoint(outside.x, outside.y))).toBe(false);

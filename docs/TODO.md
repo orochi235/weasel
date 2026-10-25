@@ -945,14 +945,15 @@ only story runner in the repo.
   zoom labels nearly touch at the default 160 px (`32×` and `64×`, the end label held inside the track), and a
   `Slider` given a `lineShape` ignores its coordinates, so the square body's zoom is a straight slider placed by
   `.lk-lens-zoom__line` rather than a line track.
-- **(P2) A popover opened in a magnified Live copy lands off by the lens factor.** react-aria's
-  `calculatePosition` places an overlay in client px inside its containing block, and a Live copy is that block
-  scaled by `transform: scale(f)`, so the popover's offset from the copy's corner is multiplied by `f`. Measured in
-  `shell/loupe/live.browser.test.tsx` at `f = 2` (2026-10-21): the copy's trigger spans client y 159 to 202 and the
-  popover opens at y 303 where about 214 is expected, wholly below a 200-px lens at y 80 to 280. Scaling with CSS
-  `zoom` instead places the trigger the same and the popover at y 303 too. The lens clips the popover, so nothing
-  paints over the lab, but it is out of sight. A fix lies in ui's overlay positioning (a container whose scale it
-  undoes) or upstream in react-aria.
+- **(P2) In a magnified Live copy, a popover flips and limits its height against the wrong viewport, and a Tooltip
+  still lands off by the lens factor.** ui's `Popover` (2026-10-24) hands React Aria the trigger's rect in the
+  scaled box's own px (`overlays/blockFrame.ts`), so a popover now opens against its trigger at any scale, and the
+  context menu places itself the same way. React Aria still measures the boundary — the viewport — in client px
+  while placing in the box's px, so at `f = 2` it sees about twice the room there is, flips too late and allows
+  too tall a popover (inferred from `calculatePosition`, not seen). A boundary can only be handed to it as an
+  element, and one outside the box breaks the frame its descendant-of-boundary branch assumes, so the fix is likely
+  upstream. RAC's `Tooltip` passes no `getTargetRect` to `useOverlayPosition`, so it is not fixed at all: that too
+  wants an upstream prop, or a ui tooltip on `useOverlayPosition` directly.
 - **(P3) Glass is unbuilt as a user-facing aim** (2026-10-21). `setAimOps(scene, id, 'glass')` makes the reticle's
   pose depend on the body and is tested (`labkit/src/loupe/lens/lensScene.test.ts`), but no lens action switches to it,
   so the Loupe keymap has no key for it. What is left: a `loupe.aim.glass` action and key in `lensActionDefs.ts`.
