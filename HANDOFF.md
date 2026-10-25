@@ -6,7 +6,7 @@ traps from finished arcs are `docs/retained.md`.
 
 ## TODO batch, merged 2026-10-24
 
-Sixteen fixes from `docs/TODO.md` merged to `main` in 0b14563a2, not pushed; each has its own `patch` changeset.
+Sixteen fixes from `docs/TODO.md` merged to `main` in 0b14563a2 and released in 1.13.0 (2026-10-24).
 The branch gate was green (fleet, gate, and post-build). Two changesets say in their prose that they break
 callers: `LensActionApi.unfollow(lensId)` and `cullDrawCommands`/`RenderLayer.draw` taking `LayerDims` (`dpr`).
 
@@ -19,7 +19,7 @@ popovers and context menus in a magnified copy, Live copies now painting `--wzl-
 
 `stance`, `grade`, `emphasis` and `tint` replaced `status`, `tone` and the old stances; the design of
 record is `docs/conventions.md` ("Appearance props"), and the changeset is
-`.changeset/appearance-axes.md`. Merged to `main` (9e3914b0f), not pushed.
+`.changeset/appearance-axes.md`. Merged to `main` (9e3914b0f) and released in 1.13.0.
 
 Slider's `density` became `trackHeight`, `thumbSize` and a `dot` thumb shape (2026-10-24); the slim face was
 dropped on Mike's word.
