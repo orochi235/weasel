@@ -34,28 +34,17 @@
 }
 
 .track {
+  composes: trackSlop from '../sliderSlop.module.css';
   position: relative;
-  height: 6px;
+  box-sizing: border-box;
+  height: var(--wzl-slider-track-h);
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
 }
 
-/* Invisible hit area past the track and each thumb, as on Slider. Both are
-   measured from the padding box, so each 1px border comes back out. */
-.track::before,
-.thumb::before {
-  content: '';
-  position: absolute;
-  inset: calc(-1px - var(--wzl-slider-track-slop));
-}
-
-.thumb::before {
-  inset: calc(-1px - var(--wzl-slider-thumb-slop));
-}
-
 .slider[data-orientation="vertical"] .track {
-  width: 6px;
+  width: var(--wzl-slider-track-h);
   height: 100%;
 }
 
@@ -69,11 +58,13 @@
 }
 
 .thumb {
+  composes: thumbSlop from '../sliderSlop.module.css';
   /* RAC positions the thumb along the track and translates it by half its own
      size on both axes; the cross-axis anchor is ours to set. */
   top: 50%;
-  width: 14px;
-  height: 14px;
+  box-sizing: border-box;
+  width: var(--wzl-slider-thumb-size);
+  height: var(--wzl-slider-thumb-size);
   background: var(--wzl-fg-muted);
   border: 1px solid var(--wzl-border-strong);
   border-radius: 50%;

@@ -16,6 +16,7 @@
 }
 
 .track {
+  composes: trackSlop from '../sliderSlop.module.css';
   position: relative;
   flex: 1;
   min-width: 0;
@@ -30,22 +31,8 @@
    * applied to `.trackInner` instead, which lets thumbs spill freely. */
 }
 
-/* Invisible hit area past the track and each thumb. The thumbs come later in
- * the tree, so a thumb's slop wins where the two overlap. */
-.track::before,
-.thumb::before {
-  content: '';
-  position: absolute;
-  /* Measured from the padding box, so each 1px border comes back out. */
-  inset: calc(-1px - var(--wzl-slider-track-slop));
-}
-
-.thumb::before {
-  inset: calc(-1px - var(--wzl-slider-thumb-slop));
-}
-
 /* A notched thumb draws no border, so its slop needs no 1px back. */
-.notched::before {
+.thumb.notched::before {
   inset: calc(-1 * var(--wzl-slider-thumb-slop));
 }
 
@@ -78,6 +65,7 @@
 
 .thumb {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
+  composes: thumbSlop from '../sliderSlop.module.css';
   position: absolute;
   /* Thumb extends 2px above + below the track for grabbability + visual
    * weight. Track itself stays its natural height; the thumb just spills. */
