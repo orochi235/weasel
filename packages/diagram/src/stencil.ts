@@ -23,6 +23,8 @@ export interface DiagramStencil {
   size: { width: number; height: number };
   rows?: readonly Row[];
   icon?: IconRef;
+  /** Laid over the style the body is drawn in: a BPMN end event's heavier ring. */
+  style?: Partial<NodeStyle>;
 }
 
 export { FLOWCHART_STENCILS } from './stencils/flowchart';
@@ -63,7 +65,7 @@ export function stencilBuild<TLayer extends string>(
   },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
-  const style = opts.style ?? DEFAULT_NODE_STYLE;
+  const style = { ...(opts.style ?? DEFAULT_NODE_STYLE), ...stencil.style };
   const at = placedBounds(stencil, bounds);
   const spec = { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS };
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(

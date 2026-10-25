@@ -86,6 +86,15 @@ describe('stencilBuild', () => {
     expect(colors({ fill: '#fff', stroke: '#333', text: '#111', strokeWidth: 1.5 })).toEqual(['#fff', '#333', 1.5, '#111']);
   });
 
+  it("lays a stencil's own style over the style it is given", () => {
+    const ring = { ...byId('connector'), style: { strokeWidth: 4 } };
+    const [box, text] = insertedNodes(stencilBuild(ring, { x: 0, y: 0, width: 0, height: 0 }, {
+      layer: 'main', newId: idMinter(), style: { fill: '#fff', stroke: '#333', text: '#111', strokeWidth: 1.5 },
+    }).ops as never);
+    expect([box!.data.fill?.paint.color, box!.data.stroke?.paint.color, box!.data.stroke?.width, text!.data.fill?.paint.color])
+      .toEqual(['#fff', '#333', 4, '#111']);
+  });
+
   it('sets its text rows in the face it is given', () => {
     const [, text] = insertedNodes(stencilBuild(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, {
       layer: 'main', newId: idMinter(), font: { fontFamily: 'serif', fontSize: 15 },
@@ -150,6 +159,19 @@ describe('useStencilInsert', () => {
     const { scene, dep } = insertDep({ style: { fill: '#fafafa', stroke: '#222', text: '#000' } });
     const id = dep.commit({ x: 0, y: 0, width: 0, height: 0 }, { kind: stencilKind('process') } as never)!;
     expect((scene.get(id)!.data as { fill: { paint: { color: string } } }).fill.paint.color).toBe('#fafafa');
+  });
+
+  it("keeps a stencil's own stroke width under the style it is given", () => {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children);
+    const heavy = [{ ...byId('connector'), id: 'heavy', style: { strokeWidth: 4 } }];
+    const { result } = renderHook(() => {
+      useDepSource('scene', () => scene as never);
+      useStencilInsert(heavy, { style: { fill: '#fafafa', stroke: '#222', text: '#000' } });
+      return useDepRegistry();
+    }, { wrapper });
+    const id = result.current.get('insert')!.commit({ x: 0, y: 0, width: 0, height: 0 }, { kind: stencilKind('heavy') } as never)!;
+    expect((scene.get(id)!.data as { stroke: { width: number; paint: { color: string } } }).stroke).toMatchObject({ width: 4, paint: { color: '#222' } });
   });
 
   it('draws container stencils, and puts a shape drawn in a lane in that lane', () => {
