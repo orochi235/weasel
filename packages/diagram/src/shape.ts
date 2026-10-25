@@ -21,6 +21,7 @@ import {
   type Fill,
   type Inherit,
 } from '@weasel-js/core';
+import { bodyRules } from './bodyRules';
 import { outlineDetail, outlinePath } from './outline';
 import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
@@ -60,12 +61,14 @@ export function diagramShape<TPose>(
       const divider = header === null || !stroke ? [] : [{ kind: 'path' as const, path: dividerPath(box, header), stroke }];
       const detailPath = stroke ? outlineDetail(outline, box) : null;
       const detail = stroke && detailPath ? [{ kind: 'path' as const, path: detailPath, stroke }] : [];
+      const trait = diagramNodeOf(node, opts.read);
+      const rules = stroke && trait !== null ? bodyRules(trait, box).map((path) => ({ kind: 'path' as const, path, stroke })) : [];
       return [{
         kind: 'path',
         path: outlinePath(outline, box),
         ...(fill ? { fill } : {}),
         ...(stroke ? { stroke } : {}),
-      }, ...detail, ...divider];
+      }, ...detail, ...rules, ...divider];
     },
     // The drawn boundary, so picking and clipping follow the diamond rather
     // than its bounding box.

@@ -81,17 +81,28 @@ export interface DiagramNode {
   ownStyle?: readonly StyleField[];
   /** The parts of its text face the author set by hand, which a theme leaves as they are. */
   ownFont?: readonly FontField[];
-  /** On a built body whose rows are all text: how it stacks them, so it can be laid out again when
-   *  their text changes size. Each row's text node carries its place as `bodyRow`. */
+  /** On a built body whose rows are all text or dividers: how it stacks them, so it can be laid out
+   *  again when their text changes size. Each row's text node carries its place as `bodyRow`. */
   body?: BodyLayout;
 }
 
-/** How a built body stacks its text rows: the `BodySpec` fields its layout reads, and how many rows. */
+/** How a built body stacks its rows: the `BodySpec` fields its layout reads, and how many rows. */
 export interface BodyLayout {
   padding: number;
   gap: number;
   verticalAlign: 'top' | 'center' | 'bottom';
   rows: number;
+  /** Each row's height as last laid out, so the rows can be stacked again at a new size without
+   *  measuring. Absent on a body saved before it was recorded. */
+  heights?: readonly number[];
+  /** The divider rows, by place. The outline painter draws their rules. */
+  dividers?: readonly BodyDivider[];
+}
+
+/** A divider row of a {@link BodyLayout}: its place among the rows, and its `inset`. */
+export interface BodyDivider {
+  index: number;
+  inset?: number;
 }
 
 /** The group half of a {@link DiagramNode}. */

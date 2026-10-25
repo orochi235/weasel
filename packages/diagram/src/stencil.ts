@@ -74,7 +74,7 @@ export function stencilBuild<TLayer extends string>(
       layer: opts.layer,
       ...(opts.measure ? { measure: opts.measure } : {}),
       body: (trait) => ({
-        diagram: { ...trait, ...bodyLayoutOf(spec, trait) },
+        diagram: { ...trait, ...bodyLayoutOf(spec, trait, opts.measure) },
         fill: { paint: { color: style.fill } },
         stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
       }),

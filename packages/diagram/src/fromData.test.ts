@@ -107,7 +107,7 @@ describe('diagramScene', () => {
     });
     const box = containers(specs)[0]!;
     expect(box.data?.diagram).toEqual({
-      outline: 'diamond', ports, pinned: true, body: { padding: 8, gap: 4, verticalAlign: 'center', rows: 1 },
+      outline: 'diamond', ports, pinned: true, body: { padding: 8, gap: 4, verticalAlign: 'center', rows: 1, heights: [17] },
     });
     expect(box.pose).toMatchObject({ x: 500, y: 40 });
   });
