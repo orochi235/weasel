@@ -386,13 +386,6 @@ Priority tags:
 - **(P2) The panel's Inherit segment is a text label among icons** (2026-10-21). It wants a glyph
   (`docs/icons.md`).
 
-- **(P2) A lab nested under another surface owner has no `top` buffer unless that owner offers one**
-  (2026-10-21). A `<Lab>` with a surface owner above it takes that owner's `SurfaceCanvases`
-  (`labkit/src/lab/LabSurface.tsx`), and an owner publishing only `over` and `under` leaves
-  `useSurfaceCanvas('top')` null for good, so the lab's lenses paint nothing. `useSurfaceCanvas` now warns
-  in dev when this happens. The fix is for such a lab to make its own `top` canvas when the owner offers
-  no `claimTop`.
-
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
