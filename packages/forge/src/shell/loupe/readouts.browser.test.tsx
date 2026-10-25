@@ -64,8 +64,8 @@ function loupeKey(body: Element, key: string) {
   press(body, { key });
 }
 
-/** A Workshop showing the story, with one lens added over its text and set to compare against the opposite mode. */
-async function comparedLens() {
+/** A Workshop showing the story, with one lens added over its text, comparing nothing. */
+async function plainLens() {
   history.replaceState(null, '', `${location.pathname}#/r--ink`);
   const { container } = renderWithIcons(
     <div className="fg-readouts-test-workshop">
@@ -89,6 +89,12 @@ async function comparedLens() {
   const body = container.querySelector('.lk-lab__body')!;
   loupeKey(body, 'l');
   await waitFor(() => expect(document.querySelector('.lk-lens-interior')).not.toBeNull());
+  return body;
+}
+
+/** A Workshop showing the story, with one lens added over its text and set to compare against the opposite mode. */
+async function comparedLens() {
+  const body = await plainLens();
   loupeKey(body, 'o');
   await waitFor(() => expect(document.querySelector('.fg-lens-copy [data-fg-copy]:not([data-pending]) .fg-readouts-test-text')).not.toBeNull());
   return body;
@@ -105,6 +111,19 @@ it('reads Token and Contrast from a compared lens’s own copy, under the opposi
   await waitFor(() => expect(document.querySelector('.fg-lens-contrast')?.textContent).toMatch(/^\d+\.\d\d:1 · AA /));
   // No probe is left behind on the layer.
   expect(document.querySelector('.lk-lens-layer')?.hasAttribute('data-probe')).toBe(false);
+});
+
+it('reads a change only the main story shows when the lens compares nothing', async () => {
+  const body = await plainLens();
+  loupeKey(body, 't');
+  await waitFor(() => expect(document.querySelector('.fg-lens-token')?.textContent).toMatch(/^color ← --wzl-fg ← /));
+  // Only the main story changes: the lens's copy, and so the lens itself, render nothing new.
+  document
+    .querySelector('[data-fg-host]:not([data-fg-copy]) .fg-readouts-test-text')!
+    .classList.add('fg-readouts-test-text--strong');
+  await waitFor(() =>
+    expect(document.querySelector('.fg-lens-token')?.textContent).toMatch(/^color ← --wzl-accent-fg ← /),
+  );
 });
 
 it('passes a wheel over a compared lens to what lies beneath it, not to the lens’s copy', async () => {
