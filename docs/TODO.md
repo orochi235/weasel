@@ -608,9 +608,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `applyPrefConditions` names a disabled section in `disabled` by `prefSectionPath`, and every surface reads it
   there. `GroupTabs`, `PanelTabs` and `BarLayout` take no `disabled` for their labels.
 
-- **(P3) labkit's `configFromPrefs` drops a section's `showIf` and `enableIf`.** A lab built from a property schema
-  turns each top-level section into a labkit section (`options.section`), which holds no condition, so the section
-  neither hides nor disables its rows there.
 
 - **(P3) A schema cannot name one group's motif for a settings form.** `PrefsForm`, `PrefsPane` and
   `SelectionPanel` draw their framed groups through `MotifFrame` (2026-10-24), so an app's `<DefaultMotif>`

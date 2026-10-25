@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { f } from './builder';
 import { schemaNodeAtPath } from './path';
 import { resolveConfigSchema } from './resolve';
+import { isLeafEnabled, isLeafVisible } from './visible';
 
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;
@@ -77,6 +78,68 @@ describe('f.prefs', () => {
     expect(resolveConfigSchema(config, []).group.children.gap).toMatchObject({
       kind: 'number',
       name: 'Gap',
+    });
+  });
+
+  describe("a section's conditions", () => {
+    const GATED: PrefSection = {
+      name: '',
+      members: {
+        mode: {
+          kind: 'enum',
+          name: 'Mode',
+          description: '',
+          default: 'a',
+          options: ['a', 'b'],
+        } as PrefLeaf,
+        stroke: {
+          name: 'Stroke',
+          showIf: { path: 'mode', is: 'a' },
+          enableIf: { path: 'data.stroke.on' },
+          members: {
+            'data.stroke.on': {
+              kind: 'boolean',
+              name: 'On',
+              description: '',
+              default: false,
+            } as PrefLeaf,
+            'data.stroke.width': num('Width', {
+              enableIf: { path: 'data.stroke.width', above: -1 },
+            }),
+            more: {
+              name: 'More',
+              members: { 'data.stroke.dash': num('Dash') },
+            },
+          },
+        },
+      },
+    };
+    const resolved = resolveConfigSchema(f.prefs(GATED), []);
+    const config = (mode: string, on: boolean) => ({
+      mode,
+      data: { stroke: { on, width: 1, dash: 0 } },
+    });
+
+    it('hides every leaf in the section while its showIf does not hold', () => {
+      for (const path of ['data.stroke.on', 'data.stroke.width', 'data.stroke.dash']) {
+        expect(isLeafVisible(resolved, path, config('a', true))).toBe(true);
+        expect(isLeafVisible(resolved, path, config('b', true))).toBe(false);
+      }
+      expect(isLeafVisible(resolved, 'mode', config('b', true))).toBe(true);
+    });
+
+    it('disables every leaf in the section while its enableIf does not hold, and keeps the leaf its own condition', () => {
+      for (const path of ['data.stroke.width', 'data.stroke.dash']) {
+        expect(isLeafEnabled(resolved, path, config('a', true))).toBe(true);
+        expect(isLeafEnabled(resolved, path, config('a', false))).toBe(false);
+      }
+      expect(schemaNodeAtPath(resolved.group, 'data.stroke.width')).toMatchObject({
+        enableIf: { all: [{ path: 'data.stroke.on' }, { path: 'data.stroke.width', above: -1 }] },
+      });
+    });
+
+    it('leaves the switch its enableIf reads live, so the section can be turned back on', () => {
+      expect(isLeafEnabled(resolved, 'data.stroke.on', config('a', false))).toBe(true);
     });
   });
 });
