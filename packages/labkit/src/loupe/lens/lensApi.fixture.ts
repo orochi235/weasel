@@ -39,8 +39,8 @@ export function lensApiFixture(): LensActionApi<string> & {
       if (lensId === null) return;
       const pose = reticleAt(scene, lensId, client);
       if (pose === null) return;
-      let hold = holds.get(lensId);
-      if (!hold) holds.set(lensId, (hold = scene.overrides.hold()));
+      const hold = holds.get(lensId) ?? scene.overrides.hold();
+      holds.set(lensId, hold);
       hold.set([[`${lensId}:reticle` as never, pose]]);
     },
     unfollow: (lensId: string) => {

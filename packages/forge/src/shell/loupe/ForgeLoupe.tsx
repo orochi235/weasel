@@ -133,8 +133,8 @@ export function createApi(
       if (lensId === null || !body) return;
       const pose = reticleAt(scene, lensId, toBody(client, body.getBoundingClientRect()));
       if (pose === null) return;
-      let hold = holds.get(lensId);
-      if (!hold) holds.set(lensId, (hold = scene.overrides.hold()));
+      const hold = holds.get(lensId) ?? scene.overrides.hold();
+      holds.set(lensId, hold);
       hold.set([[`${lensId}:reticle` as never, pose]]);
     },
     unfollow: release,
