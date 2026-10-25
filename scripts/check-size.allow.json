@@ -138,7 +138,7 @@
     "longestFunction": 136
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 221
+    "longestFunction": 210
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 197

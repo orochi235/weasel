@@ -212,21 +212,9 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       if (step.tabs) {
         const tabs = step.tabs.flatMap((run) => run.items).filter(drawsAny);
         if (tabs.length === 0) continue;
-        out.push(
-          <GroupTabs
-            key={step.tabs[0]?.items[0]}
-            className="lk-control-tabs"
-            tabs={tabs.map((path) => {
-              const group = schemaNodeAtPath(resolved.group, path) as PrefGroup;
-              return {
-                id: path,
-                name: group.name,
-                disabled: !enabled(path),
-                content: listOf(rows, body(group, path, rows)),
-              };
-            })}
-          />,
-        );
+        const group = (path: string) => schemaNodeAtPath(resolved.group, path) as PrefGroup;
+        const content = (found: PrefGroup, path: string) => listOf(rows, body(found, path, rows));
+        out.push(controlTabs(step.tabs[0]?.items[0], tabs, { group, enabled, content }));
         continue;
       }
       const { items, pair } = step.item;
@@ -292,4 +280,31 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   };
 
   return { body, lift, loosePaths };
+}
+
+/** A run of groups drawn as tabs: one strip of their names, each dimmed while its group is disabled. */
+function controlTabs(
+  key: string | undefined,
+  paths: readonly string[],
+  at: {
+    group: (path: string) => PrefGroup;
+    enabled: (path: string) => boolean;
+    content: (group: PrefGroup, path: string) => ReactNode;
+  },
+): ReactNode {
+  return (
+    <GroupTabs
+      key={key}
+      className="lk-control-tabs"
+      tabs={paths.map((path) => {
+        const group = at.group(path);
+        return {
+          id: path,
+          name: group.name,
+          disabled: !at.enabled(path),
+          content: at.content(group, path),
+        };
+      })}
+    />
+  );
 }
