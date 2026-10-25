@@ -138,6 +138,16 @@ export function placedGlyphOutline(
     }
     return null;
   }
+  return glyphOutlineAt(d, g, dx, dy);
+}
+
+/**
+ * `d`, the em-space outline data of `g`'s glyph, set where the renderer's
+ * outline tier draws it: wound positive, grown for synthetic bold, sheared
+ * for synthetic italic, at the pen `(g.x + dx, g.baselineY + dy)`. For a
+ * caller reading `d` from a source of its own rather than the registered face.
+ */
+export function glyphOutlineAt(d: string, g: PlacedGlyph, dx: number, dy: number): PolygonPath {
   const s = g.fontSize;
   const shear = g.resolved.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
   // The renderer's placement (`mergeGlyphMeshes`): x = pen + (ex - ey·shear)·s.

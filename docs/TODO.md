@@ -166,9 +166,6 @@ Priority tags:
 - **(P3) The `textAlong` items thunk is not memoized.** Every derivation miss, such as each frame of a source
   drag, re-runs `textClusters`.
 
-- **(P3) `packages/pdf/src/textOutlines.ts` places glyph outlines its own way.** Fold it onto the shared
-  glyph-outline helper in `@weasel-js/text`.
-
 - **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
   read as letter spacing (`packages/svg/src/glyphShifts.ts`), and so is a `dx` on a `<text>`
   holding only text. `rotate`, list-valued per-glyph `x` / `y`, and a `dx` on a `<text>` that

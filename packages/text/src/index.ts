@@ -107,6 +107,7 @@ export type { FlagKey, SetFlagResult } from './runs/flagRange';
 
 export { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
 export { syntheticBoldOffset, emboldenGlyphD } from './syntheticBold';
+export { glyphOutlineAt } from './glyphOutlines';
 export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from './textToPath';
 export { textClusters } from './textClusters';
 export type { TextCluster, TextClustersOptions } from './textClusters';

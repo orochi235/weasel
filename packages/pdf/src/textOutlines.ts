@@ -1,7 +1,7 @@
-import { type Path, pathFromD, transformPath } from '@weasel-js/geom';
+import type { Path } from '@weasel-js/geom';
 import { type CommandFill, type CommandStroke, fillHasInk, strokeHasInk } from '@weasel-js/paint';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
-import { emboldenGlyphD, type PlacedGlyph, SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
+import { glyphOutlineAt, type PlacedGlyph } from '@weasel-js/text';
 import type { PageCtx } from './drawCommands';
 
 /** Word breaks a reader copies and searches by: written as glyphs where the face has one, and never ink. */
@@ -28,11 +28,7 @@ export function placedOutline(ctx: PageCtx, g: PlacedGlyph, dx: number, dy: numb
     return null;
   }
   if (d === null) return null;
-  const grown = emboldenGlyphD(d, g.resolved)?.d ?? d;
-  const s = g.fontSize;
-  // Em space is y down, so a point above the baseline has negative y and leans toward +x.
-  const shear = g.resolved.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
-  return transformPath(pathFromD(grown), [s, 0, -shear * s, s, g.x + dx, g.baselineY + dy]);
+  return glyphOutlineAt(d, g, dx, dy);
 }
 
 /** The glyph as a path command painted as its run paints it (or only stroked), or null when the source has no outline for it. */

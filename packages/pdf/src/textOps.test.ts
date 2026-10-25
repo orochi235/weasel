@@ -188,6 +188,25 @@ describe('writeText', () => {
     expect(skipped[0].detail).toContain('U+0048');
   });
 
+  it('winds an outline-drawn glyph positive, as textToPath does, whichever way its face winds it', async () => {
+    const source = (d: string): PdfFontSource => ({ embedding: async () => null, outline: () => d });
+    const area = async (d: string) => {
+      const { content } = await render(textCmd([run('H')]), source(d));
+      const pts = [...content.matchAll(/^(-?[\d.]+) (-?[\d.]+) [ml]$/gm)].map((m) => [Number(m[1]), Number(m[2])]);
+      let a = 0;
+      for (let i = 0; i < pts.length; i++) {
+        const [x0, y0] = pts[i];
+        const [x1, y1] = pts[(i + 1) % pts.length];
+        a += x0 * y1 - x1 * y0;
+      }
+      return a;
+    };
+    const one = await area('M0 0 L0.5 0 L0.5 -0.5 L0 -0.5 Z');
+    const other = await area('M0 0 L0 -0.5 L0.5 -0.5 L0.5 0 Z');
+    expect(one).not.toBe(0);
+    expect(Math.sign(other)).toBe(Math.sign(one));
+  });
+
   it('places an outline-drawn glyph at its pen, sheared for synthetic italic', async () => {
     await registerAtlas('faux');
     const runs = [run('H', { fontFamily: 'faux', fontStyle: 'italic' })];
