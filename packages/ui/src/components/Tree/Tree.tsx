@@ -67,6 +67,9 @@ const STEPS: Partial<Record<string, (i: number, n: number) => number>> = {
  * only toggles. A row with an `href` is a link as well: Cmd, Ctrl and Alt
  * clicks on it, and middle clicks, are the browser's, not activations.
  *
+ * **Sizing.** `--wzl-tree-row-h` sets every row's height, `--wzl-control-h`
+ * when unset; `--wzl-tree-font-size` sets its text.
+ *
  * **Filtering** is the consumer's: narrow `nodes` with `filterTree`, and pass
  * `treeBranchIds` of the result as `expandedIds` so every match shows.
  */
