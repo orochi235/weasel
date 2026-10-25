@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode, type Ref } from 'react';
+import { forwardRef, type InputHTMLAttributes, type ReactNode, type Ref } from 'react';
 import {
   TextField,
   Label,
@@ -14,6 +14,8 @@ import s from './Input.module.css';
 export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spellCheck'> & FieldSlotProps & {
   /** Whether the browser checks the text's spelling, as on a native `<input>`. */
   spellCheck?: boolean | 'true' | 'false';
+  /** The label on a virtual keyboard's enter key, as on a native `<input>`. */
+  enterKeyHint?: InputHTMLAttributes<HTMLInputElement>['enterKeyHint'];
   placeholder?: string;
   /** The field stands for several values that differ: it reads `Mixed` in
    *  place of `placeholder` while its value is empty. */
@@ -45,6 +47,7 @@ export const Input = forwardRef(function Input(
     trailingAdornment,
     className,
     spellCheck,
+    enterKeyHint,
     ...textFieldProps
   } = props;
 
@@ -57,7 +60,7 @@ export const Input = forwardRef(function Input(
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
         {leadingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{leadingAdornment}</span>}
-        <RACInput ref={ref} placeholder={mixed ? MIXED_HINT : placeholder} />
+        <RACInput ref={ref} enterKeyHint={enterKeyHint} placeholder={mixed ? MIXED_HINT : placeholder} />
         {trailingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{trailingAdornment}</span>}
       </div>
       <FieldFoot description={description} errorMessage={errorMessage} />
