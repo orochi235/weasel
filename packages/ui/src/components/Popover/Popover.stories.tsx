@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { Button, Dialog, DialogTrigger } from 'react-aria-components';
-import { UNSAFE_PortalProvider } from 'react-aria';
 import { Popover } from '@weasel-js/ui/components/Popover';
+import { useOverlayPortal } from '@weasel-js/ui/portal-host';
 import s from './Popover.stories.module.css';
 
 const meta: Meta<typeof Popover> = {
@@ -18,19 +18,21 @@ export const InAMagnifiedBox: Story = {
   render: () => {
     function Magnified() {
       const [box, setBox] = useState<HTMLDivElement | null>(null);
+      const { anchor, provide } = useOverlayPortal(box);
       return (
         <div ref={setBox} className={s.magnified}>
+          {anchor}
           {box ? (
-            <UNSAFE_PortalProvider getContainer={() => box}>
-              <DialogTrigger>
-                <Button>Open</Button>
+            <DialogTrigger>
+              <Button>Open</Button>
+              {provide(
                 <Popover placement="bottom" offset={8}>
                   <Dialog aria-label="Popover" className={s.panel}>
                     Opens under its button.
                   </Dialog>
-                </Popover>
-              </DialogTrigger>
-            </UNSAFE_PortalProvider>
+                </Popover>,
+              )}
+            </DialogTrigger>
           ) : null}
         </div>
       );
