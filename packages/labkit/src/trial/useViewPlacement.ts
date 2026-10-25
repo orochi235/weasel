@@ -1,5 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import { type RefObject, useLayoutEffect, useRef } from 'react';
+import { layoutSize } from '../canvas/hostBox';
 import type { ViewportSize } from '../canvas/worldSpec';
 import type { Instrument } from '../instrument/types';
 import { as2DView, as3DView } from '../state/view';
@@ -9,11 +10,6 @@ import { homeView, opensBySize } from './homeView';
  *  it opens does not depend on the size. */
 function sizedInitialView(instrument: Instrument, size: ViewportSize): unknown {
   return opensBySize(instrument) ? homeView(instrument, size) : null;
-}
-
-function measure(el: HTMLElement | null): ViewportSize | null {
-  const r = el?.getBoundingClientRect();
-  return r && r.width > 0 && r.height > 0 ? { width: r.width, height: r.height } : null;
 }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-6;
@@ -48,6 +44,9 @@ interface ViewPlacementOptions {
   presented: boolean;
   /** The element the trial's camera fills. */
   viewport: RefObject<HTMLElement | null>;
+  /** How the camera sizes its element, in the px its `onResize` reports.
+   *  Omitted, its layout size. */
+  measure?: (el: HTMLElement | null) => ViewportSize | null;
 }
 
 /** What {@link useViewPlacement} hands back. */
@@ -74,8 +73,9 @@ export function useViewPlacement({
   setView,
   presented,
   viewport,
+  measure = layoutSize,
 }: ViewPlacementOptions): ViewPlacement {
-  const latest = useLatest({ instrument, view, setView });
+  const latest = useLatest({ instrument, view, setView, measure });
   // The tile's view while presented; `undefined` when nothing was refitted.
   const tileView = useRef<unknown>(undefined);
   const wasPresented = useRef(presented);
@@ -85,13 +85,13 @@ export function useViewPlacement({
   useLayoutEffect(() => {
     if (wasPresented.current === presented) return;
     wasPresented.current = presented;
-    const { instrument: inst, view: current, setView: write } = latest.current;
+    const { instrument: inst, view: current, setView: write, measure: sizeOf } = latest.current;
     if (!presented) {
       if (tileView.current !== undefined) write(tileView.current);
       tileView.current = undefined;
       return;
     }
-    const size = measure(viewport.current);
+    const size = sizeOf(viewport.current);
     const fitted = size ? sizedInitialView(inst, size) : null;
     if (!fitted) return;
     tileView.current = current;

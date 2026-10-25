@@ -109,13 +109,6 @@ Priority tags:
 
 ## Viewport
 
-- **(P3) A `<Stage>` under a scaled ancestor fits its opening view to its client size** (2026-10-25, read in
-  the code, not seen). `Stage`'s `onResize` and `measure()` in `labkit/src/trial/useViewPlacement.ts` read the
-  host's client rect, so under a `scale(2)` ancestor an instrument's `initialView` is handed twice the box,
-  while the stage draws and takes input in its layout px (`CameraInput` through `canvas/hostBox.ts`). A
-  `<CanvasStack>` already reports layout px. `<Orbit>`'s `onResize` reads the same rect, but its whole input
-  space is client px by design, so only an instrument that reads absolute px rather than the aspect would see it.
-
 - **(P3) A drag pan under a scaled host moves the view by the drag in client px** (2026-10-25, read in the
   code, not seen). The dispatcher's `drag.screenDelta` is the raw `clientX`/`clientY` difference
   (`routing/src/interactions/dispatcher/invocationCtx.ts`), and `viewport.dragPan` applies it as view px, so

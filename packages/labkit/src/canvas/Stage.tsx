@@ -6,6 +6,7 @@ import { normalize2DView } from '../state/view';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
 import { type CameraGestures, resolveGestures, touchMode } from './cameraGestures';
+import { layoutSize } from './hostBox';
 import { LinkedCursor } from './LinkedCursor';
 import { DEFAULT_FRAME, type ViewportSize } from './worldSpec';
 
@@ -17,7 +18,9 @@ export interface StageProps {
   onViewChange: (v: ViewTransform) => void;
   minZoom?: number;
   maxZoom?: number;
-  /** Fired whenever the stage's viewport is measured at a non-zero size. */
+  /** Fired whenever the stage's viewport is measured at a non-zero size, in
+   *  its layout px: what the content is drawn and panned in under a scaled
+   *  ancestor. */
   onResize?: (viewport: ViewportSize) => void;
   /** Handed the viewport element, for a consumer tracking the pointer over it. */
   hostRef?: { current: HTMLDivElement | null };
@@ -99,10 +102,8 @@ export function Stage({
     const el = host.current;
     if (!el) return;
     const measure = () => {
-      const rect = el.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        onResizeRef.current?.({ width: rect.width, height: rect.height });
-      }
+      const size = layoutSize(el);
+      if (size) onResizeRef.current?.(size);
       // A viewport that resized cuts its tiles differently without moving one.
       surface?.invalidateRects();
     };

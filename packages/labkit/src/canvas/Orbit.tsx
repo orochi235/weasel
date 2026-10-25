@@ -43,6 +43,7 @@ import {
   touchMode,
 } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
+import { clientSize } from './hostBox';
 import { orbitZoomView } from './orbitZoom';
 import type { ViewportSize } from './worldSpec';
 
@@ -63,7 +64,8 @@ export interface OrbitProps {
    *  projecting into this pane sees the point under the pointer stay put.
    *  Omitted, the camera's own element. */
   viewport?: HTMLElement | null;
-  /** Fired whenever the viewport is measured at a non-zero size. */
+  /** Fired whenever the viewport is measured at a non-zero size, in client
+   *  px, the space its gestures read the pointer in. */
   onResize?: (viewport: ViewportSize) => void;
   /** Handed the camera's element. */
   hostRef?: { current: HTMLDivElement | null };
@@ -121,10 +123,8 @@ export function Orbit({
     const el = areaEl;
     if (!el) return;
     const measure = () => {
-      const rect = el.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        onResizeRef.current?.({ width: rect.width, height: rect.height });
-      }
+      const size = clientSize(el);
+      if (size) onResizeRef.current?.(size);
       // A viewport that resized cuts its tiles differently without moving one.
       surface?.invalidateRects();
     };

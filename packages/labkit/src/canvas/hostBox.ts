@@ -1,4 +1,5 @@
 import type { Point } from '../instrument/types';
+import type { ViewportSize } from './worldSpec';
 
 /**
  * Where an element sits on the page, and how much an ancestor transform — a
@@ -34,6 +35,19 @@ export function hostBox(el: HTMLElement | null | undefined): HostBox | null {
     scaleX,
     scaleY,
   };
+}
+
+/** `el`'s size in its own layout px, or `null` when it has none. */
+export function layoutSize(el: HTMLElement | null | undefined): ViewportSize | null {
+  const box = hostBox(el);
+  return box && box.width > 0 && box.height > 0 ? { width: box.width, height: box.height } : null;
+}
+
+/** `el`'s size as drawn on the page, ancestor transforms included, or `null`
+ *  when it has none. */
+export function clientSize(el: HTMLElement | null | undefined): ViewportSize | null {
+  const r = el?.getBoundingClientRect();
+  return r && r.width > 0 && r.height > 0 ? { width: r.width, height: r.height } : null;
 }
 
 /** A client point as layout px from the box's top-left. */
