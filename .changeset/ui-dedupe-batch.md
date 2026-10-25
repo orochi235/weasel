@@ -10,4 +10,4 @@ Folds several duplicated pieces of weasel-ui into one definition each. No compon
 - Adds `SegmentedSize`, `SegmentedVariant`, and `SEGMENTED_VARIANT_ICONS`, shared by `ToggleBar`, `ButtonBar`, and `OptionsBar`. Each bar's own size and variant types and its `*_VARIANT_ICONS` map are now aliases of these.
 - `SwatchGrid` moves focus with the kit's grid roving rule: Left and Right now wrap and follow right-to-left layout, and Down from a full row lands on the last swatch of a shorter row below it.
 - `CommandPalette` draws each shortcut with `ShortcutKeys`, so its keycaps are lettered in the UI font at normal weight, as every other list of actions shows them.
-- `RangeSlider` sizes its track and thumb from `--wzl-slider-track-h` and `--wzl-slider-thumb-size`, as the kit's other ranges do, so its track is now 4px and its thumb 8px by default instead of a fixed 6px and 14px. `Slider` and `RangeSlider` share one stylesheet for the invisible hit area past the track and each thumb.
+- `Slider` and `RangeSlider` share one stylesheet for the invisible hit area past the track and each thumb.

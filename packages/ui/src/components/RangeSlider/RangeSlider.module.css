@@ -36,15 +36,14 @@
 .track {
   composes: trackSlop from '../sliderSlop.module.css';
   position: relative;
-  box-sizing: border-box;
-  height: var(--wzl-slider-track-h);
+  height: 6px;
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
 }
 
 .slider[data-orientation="vertical"] .track {
-  width: var(--wzl-slider-track-h);
+  width: 6px;
   height: 100%;
 }
 
@@ -62,9 +61,8 @@
   /* RAC positions the thumb along the track and translates it by half its own
      size on both axes; the cross-axis anchor is ours to set. */
   top: 50%;
-  box-sizing: border-box;
-  width: var(--wzl-slider-thumb-size);
-  height: var(--wzl-slider-thumb-size);
+  width: 14px;
+  height: 14px;
   background: var(--wzl-fg-muted);
   border: 1px solid var(--wzl-border-strong);
   border-radius: 50%;
