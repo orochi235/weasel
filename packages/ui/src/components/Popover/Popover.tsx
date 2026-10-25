@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useMemo, useRef } from 'react';
 import { mergeRefs } from 'react-aria';
 import { Popover as RACPopover, type PopoverProps as RACPopoverProps } from 'react-aria-components';
-import { blockFrame, containingBlock, inBlockUnits } from '../../overlays/blockFrame';
+import { targetInBlockUnits } from '../../overlays/blockFrame';
 
 /** Props for {@link Popover}: React Aria's, unchanged. */
 export type PopoverProps = RACPopoverProps;
@@ -21,11 +21,7 @@ export type PopoverProps = RACPopoverProps;
 export const Popover = forwardRef<HTMLElement, PopoverProps>(function Popover({ getTargetRect, ...props }, ref) {
   const own = useRef<HTMLElement | null>(null);
   const targetRect = useCallback(
-    (target: Element) => {
-      const rect = getTargetRect?.(target) ?? target.getBoundingClientRect();
-      const overlay = own.current;
-      return overlay ? inBlockUnits(rect, blockFrame(containingBlock(overlay))) : rect;
-    },
+    (target: Element) => targetInBlockUnits(getTargetRect?.(target) ?? target.getBoundingClientRect(), own.current),
     [getTargetRect],
   );
   const merged = useMemo(() => mergeRefs(own, ref), [ref]);

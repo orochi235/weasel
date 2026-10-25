@@ -875,15 +875,13 @@ only story runner in the repo.
 - **(P3) A square lens body's zoom labels nearly touch at the default 160 px** (2026-10-21). `32×` and `64×` sit
   close together there, the end label held inside the track (`lens/LensZoom.tsx`). The zoom became a line track
   inset 24 px from each edge (2026-10-25), which shortens it, so look again in a browser before picking a fix.
-- **(P2) In a magnified Live copy, a popover flips and limits its height against the wrong viewport, and a Tooltip
-  still lands off by the lens factor.** ui's `Popover` (2026-10-24) hands React Aria the trigger's rect in the
-  scaled box's own px (`overlays/blockFrame.ts`), so a popover now opens against its trigger at any scale, and the
-  context menu places itself the same way. React Aria still measures the boundary — the viewport — in client px
-  while placing in the box's px, so at `f = 2` it sees about twice the room there is, flips too late and allows
-  too tall a popover (inferred from `calculatePosition`, not seen). A boundary can only be handed to it as an
-  element, and one outside the box breaks the frame its descendant-of-boundary branch assumes, so the fix is likely
-  upstream. RAC's `Tooltip` passes no `getTargetRect` to `useOverlayPosition`, so it is not fixed at all: that too
-  wants an upstream prop, or a ui tooltip on `useOverlayPosition` directly.
+- **(P2) In a magnified Live copy, a popover flips and limits its height against the wrong viewport.** ui's
+  `Popover` (2026-10-24) and `Tooltip` (2026-10-25) hand React Aria the trigger's rect in the scaled box's own px
+  (`overlays/blockFrame.ts`), so they open against their trigger at any scale, and the context menu places itself
+  the same way. React Aria still measures the boundary — the viewport — in client px while placing in the box's
+  px, so at `f = 2` it sees about twice the room there is, flips too late and allows too tall a popover (inferred
+  from `calculatePosition`, not seen). A boundary can only be handed to it as an element, and one outside the box
+  breaks the frame its descendant-of-boundary branch assumes, so the fix is likely upstream.
 - **(P3) A Live copy of an isolated story is drawn soft at magnification** (2026-10-21, inferred, not seen). A
   `<CanvasStack>` puts the scale an ancestor transform shows it at into its backing density, so an in-document copy
   is sharp at any factor. Inside an isolated story's frame the lens's transform is outside the frame's document,
