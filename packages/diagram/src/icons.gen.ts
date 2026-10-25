@@ -6,7 +6,16 @@ import { scopedIcon } from '@weasel-js/icons';
 export type DiagramIconName =
   | 'container'
   | 'poolRows'
-  | 'poolColumns';
+  | 'poolColumns'
+  | 'umlClass'
+  | 'umlInterface'
+  | 'umlAbstract'
+  | 'umlPackage'
+  | 'umlNote'
+  | 'umlActor'
+  | 'umlComponent'
+  | 'erdEntity'
+  | 'erdWeakEntity';
 
 /** This package's `icon()`: a bare name means `diagram:<name>`. */
 export const icon = scopedIcon<DiagramIconName>('diagram');
@@ -20,6 +29,25 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DiagramIconN
       "poolRows",
       "poolColumns"
     ]
+  },
+  {
+    "label": "UML",
+    "names": [
+      "umlClass",
+      "umlInterface",
+      "umlAbstract",
+      "umlPackage",
+      "umlNote",
+      "umlActor",
+      "umlComponent"
+    ]
+  },
+  {
+    "label": "ERD",
+    "names": [
+      "erdEntity",
+      "erdWeakEntity"
+    ]
   }
 ];
 
@@ -28,5 +56,14 @@ declare module '@weasel-js/icons' {
     'diagram:container': true;
     'diagram:poolRows': true;
     'diagram:poolColumns': true;
+    'diagram:umlClass': true;
+    'diagram:umlInterface': true;
+    'diagram:umlAbstract': true;
+    'diagram:umlPackage': true;
+    'diagram:umlNote': true;
+    'diagram:umlActor': true;
+    'diagram:umlComponent': true;
+    'diagram:erdEntity': true;
+    'diagram:erdWeakEntity': true;
   }
 }

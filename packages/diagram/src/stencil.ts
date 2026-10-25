@@ -3,7 +3,7 @@
  * is drawn — a `buildBody` body whose rows are ordinary text nodes.
  */
 import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
-import type { MeasureRowText, Row } from './body';
+import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
 import { DEFAULT_FONT } from './edgeLabel';
@@ -23,6 +23,10 @@ export interface DiagramStencil {
   size: { width: number; height: number };
   rows?: readonly Row[];
   icon?: IconRef;
+  /** How its body stacks its rows, as `BodySpec`'s fields of the same names. */
+  padding?: number;
+  gap?: number;
+  verticalAlign?: BodySpec['verticalAlign'];
 }
 
 export { FLOWCHART_STENCILS } from './stencils/flowchart';
@@ -65,7 +69,12 @@ export function stencilBuild<TLayer extends string>(
   const id = opts.newId();
   const style = opts.style ?? DEFAULT_NODE_STYLE;
   const at = placedBounds(stencil, bounds);
-  const spec = { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS };
+  const spec: BodySpec = {
+    outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS,
+    ...(stencil.padding !== undefined ? { padding: stencil.padding } : {}),
+    ...(stencil.gap !== undefined ? { gap: stencil.gap } : {}),
+    ...(stencil.verticalAlign !== undefined ? { verticalAlign: stencil.verticalAlign } : {}),
+  };
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(
     spec,
     at,

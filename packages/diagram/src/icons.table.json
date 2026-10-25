@@ -19,6 +19,60 @@
       "fill": "<path d=\"M3.125 4.375H16.875V15.625H3.125Z\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Containers",
       "tags": []
+    },
+    "umlClass": {
+      "body": "<path d=\"M4.375 1.875H15.625V18.125H4.375ZM4.375 8.125L15.625 8.125M4.375 13.125L15.625 13.125\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M4.375 1.875H15.625V18.125H4.375Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "UML",
+      "tags": []
+    },
+    "umlInterface": {
+      "body": "<path d=\"M6.875 5.625A3.75 3.75 0 1 1 14.375 5.625A3.75 3.75 0 1 1 6.875 5.625ZM10.625 9.375L10.625 18.125\"/>",
+      "fill": "<path d=\"M6.875 5.625A3.75 3.75 0 1 1 14.375 5.625A3.75 3.75 0 1 1 6.875 5.625Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "UML",
+      "tags": []
+    },
+    "umlAbstract": {
+      "body": "<path d=\"M4.375 1.875H15.625V18.125H4.375ZM4.375 8.125L15.625 8.125M4.375 13.125L15.625 13.125M9.375 6.5L10.625 4\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M4.375 1.875H15.625V18.125H4.375Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "UML",
+      "tags": []
+    },
+    "umlPackage": {
+      "body": "<path d=\"M3.125 3.125H9.375V5.625H16.875V16.875H3.125ZM3.125 5.625L9.375 5.625\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M3.125 3.125H9.375V5.625H16.875V16.875H3.125Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "UML",
+      "tags": []
+    },
+    "umlNote": {
+      "body": "<path d=\"M4.375 1.875H10.625L15.625 6.875V18.125H4.375ZM10.625 1.875V6.875H15.625\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M4.375 1.875H10.625L15.625 6.875V18.125H4.375Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "UML",
+      "tags": []
+    },
+    "umlActor": {
+      "body": "<path d=\"M8.125 4.375A2.5 2.5 0 1 1 13.125 4.375A2.5 2.5 0 1 1 8.125 4.375ZM10.625 6.875L10.625 13.125M6.25 9.375L15 9.375M6.875 18.125L10.625 13.125L14.375 18.125\"/>",
+      "fill": "<path d=\"M8.125 4.375A2.5 2.5 0 1 1 13.125 4.375A2.5 2.5 0 1 1 8.125 4.375Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "UML",
+      "tags": []
+    },
+    "umlComponent": {
+      "body": "<path d=\"M5.625 5.625V3.125H18.125V16.875H5.625V14.375M5.625 8.125L5.625 11.875M3.125 5.625H8.125V8.125H3.125ZM3.125 11.875H8.125V14.375H3.125Z\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M5.625 3.125H18.125V16.875H5.625Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "UML",
+      "tags": []
+    },
+    "erdEntity": {
+      "body": "<path d=\"M1.875 3.125H18.125V18.125H1.875ZM1.875 6.875L18.125 6.875M4.375 10.625L13.125 10.625M4.375 14.375L13.125 14.375\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M1.875 3.125H18.125V18.125H1.875Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "ERD",
+      "tags": []
+    },
+    "erdWeakEntity": {
+      "body": "<path d=\"M1.875 4.375H18.125V16.875H1.875ZM5.625 8.125H14.375V13.125H5.625Z\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M1.875 4.375H18.125V16.875H1.875Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "ERD",
+      "tags": []
     }
   }
 }

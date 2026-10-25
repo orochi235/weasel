@@ -6,3 +6,4 @@ export type { DiagramTypeScene, DiagramTypeWriteOptions } from './doc';
 export { diagramTypeEdgeStroke } from './edge';
 export { DIAGRAM_TYPE_DOC_KEY } from './types';
 export type { DiagramType, DiagramTypeDoc, DiagramTypeEdge, RouterName, StencilGroup } from './types';
+export { ERD_TYPE, UML_CLASS_TYPE } from './catalog';
