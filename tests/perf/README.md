@@ -292,42 +292,61 @@ since it traces more categories. The result files are in
 ### What the HUD allocates
 
 `HVD_ALLOC=1` takes a V8 sampling heap profile of one more window per measurement, short-lived
-objects included, and prints bytes a frame by function. With a 5,000-glyph readout changing
-every frame the HUD allocated 9.7 MB a frame against the DOM's 0.11, nearly all of it under
-the renderer's `drawText`, re-laying out every label whose text changed:
+objects included, prints bytes a frame by function, and keeps each function's bytes per sample
+in the result file as `allocSelf <function>`. With a 5,000-glyph readout changing every frame
+the HUD allocates 5.3 MB a frame against the DOM's 0.10, nearly all of it under the renderer's
+`drawText`, re-laying out every label whose text changed.
 
-| Function, self bytes (first fixed-camera sample of each run below) | KB a frame, before | after |
+A layout keeps its code points in columns (`packages/text/src/layout/layoutColumns.ts`): one
+array of numbers and one of references for the whole text, where it used to return a cell and a
+placed glyph per code point with every number boxed. A painting keeps each group's quads in one
+array of numbers, `LaidOutGroup.quadData`, which the renderer draws from. A line's `cells` and
+`glyphs` and a group's `quads` are views built the first time something reads them, and the paint
+path never does. Counted from the shapes rather than measured, a 10-glyph label's layout and
+painting went from about 17 heap objects a glyph (a cell, a placed glyph, and a quad, and a box for
+each of their fractional numbers) to a few arrays for the whole label. Their bytes fell less:
+
+| Function, self KB a frame (median of 4 samples, 5,000 glyphs, fixed camera) | before | after |
 |---|---:|---:|
-| `groupFor`, a group key string per glyph | 2,033 | 283 |
-| `measureRuns`, two entry objects and a closure per code point | 1,323 | 549 |
-| `placeLine`, the cells and placed glyphs a layout returns | 1,019 | 1,005 |
-| `paintRuns`, a quad per glyph | 877 | 896 |
-| `drawTextGroup`, 15 numbers boxed per `pushGlyph` call | 832 | 183 |
-| `lineDecorations`, a paint key per glyph of undecorated text | 581 | 0 |
+| `placeLine`, which wrote a cell and a placed glyph per code point | 1,040 | 139 |
+| `paintRuns`, which wrote a quad object per glyph | 902 | 302 |
+| `slice`, the column and quad arrays, 21 numbers a glyph | 0 | 924 |
+| `measureRuns`, an entry object per code point, discarded once the layout is placed | 549 | 544 |
 
-The cuts: `paintRuns` joins a glyph to the previous glyph's group when nothing its key reads
-has changed, `lineDecorations` reads a run's decoration flags before its paint,
-`measureRuns` fills one entry in place, and `pushGlyph` takes the quad and color as objects,
-since every fractional number passed to a call V8 does not inline is a heap allocation.
-What is left is mostly the layout's own output, whose every numeric field is a boxed number.
+**The columns are plain arrays of numbers, not typed arrays.** V8 holds an array that only ever
+held fractions as unboxed doubles in one object on its own heap, while a typed array's backing
+store is allocated outside it. The typed-array version allocated less on the heap, 4,846 KB a
+frame, but every one of its four main-thread samples sat above every sample before it, 4.80–5.05
+ms against 3.59–4.46, because a label paid for three such stores a frame. An array starts out
+holding integers or nothing and is copied the first time a fraction lands in it, so the columns
+are sliced from a template of fractions at their final size (`doubles` in `layoutColumns.ts`).
 
 All threads plus the pool, ms a frame, median [min–max] of 4 samples, with the allocation
 profile's KB a frame:
 
-| Camera | Glyphs | HUD before | HUD after | DOM |
-|---|---:|---:|---:|---:|
-| fixed  | 2,500 |  7.50 [5.45– 8.71], 4,883 | 5.79 [5.10–6.71], 3,022 | 4.56 [4.46–4.61],  82 |
-| fixed  | 5,000 | 11.28 [9.86–13.06], 9,684 | 8.41 [7.24–9.81], 5,984 | 6.12 [5.29–7.01], 115 |
-| moving | 2,500 |  7.90 [7.43– 8.70], 4,917 | 5.86 [5.20–6.18], 3,066 | 4.86 [4.80–4.99], 114 |
-| moving | 5,000 | 11.48 [10.05–12.49], 9,764 | 8.49 [7.24–9.79], 6,056 | 7.25 [6.91–7.49], 180 |
+| Camera | Glyphs | HUD before | HUD after | HUD before, again | DOM |
+|---|---:|---:|---:|---:|---:|
+| fixed  | 2,500 |  5.84 [4.98– 7.11], 3,006 | 5.13 [4.49–6.26], 2,666 | 6.19 [4.34– 7.13], 3,015 | 4.47 [4.30–4.51],  74 |
+| fixed  | 5,000 |  9.98 [7.33–10.68], 5,981 | 6.61 [6.16–8.19], 5,274 | 7.81 [6.79–10.04], 5,982 | 5.91 [5.45–6.11], 102 |
+| moving | 2,500 |  6.20 [5.07– 7.11], 3,055 | 4.87 [3.50–6.16], 2,699 | 5.18 [4.63– 7.18], 3,058 | 4.60 [4.16–4.93], 104 |
+| moving | 5,000 |  7.54 [7.32– 8.17], 6,074 | 8.31 [6.32–9.08], 5,355 | 8.77 [6.78–10.08], 6,058 | 7.45 [7.31–7.49], 167 |
 
-The pool's GC at 5,000 glyphs on a fixed camera fell from 3.68 ms a frame to 2.61, and the
-HUD's main thread from 5.68 to 3.93. The DOM is still the cheaper overlay: the ranges stay
-apart in every cell but the 5,000-glyph moving one. Measured on msb-uai (Apple M3 Max) on
-2026-10-20, one run of each tree with no other onto job on the node (1-minute load 3.7 and
-3.6 at the start); before is the after tree with the four cuts reverted, and the DOM column
-is the after run. The result files, which name onto's base `b68b7a4e4`, are in
-`recorded/hud-vs-dom-alloc-2026-10-20/`.
+Allocation fell 11–12% in every cell. Time did not move by more than the two before runs
+disagree with each other, so a gain in time is not shown: the pool's GC at 5,000 glyphs on a
+fixed camera was 1.51 ms a frame after against 3.27 and 2.13 before, and on the moving camera
+2.23 against 2.28 and 2.64. The DOM is still the cheaper overlay at 5,000 glyphs on a fixed
+camera, its range below the HUD's in every run. Measured on msb-uai (Apple M3 Max) on 2026-10-24,
+one run of each tree in the order before, after, before again, each with the node to itself
+(1-minute load at the start 3.7, 4.1, and 9.2, the last falling from 19 as the job before it
+ended); before is `a5a1aff5a`, the after tree is `6b4b28a97`, and the DOM column is the after
+run. Those files and the two intermediate runs, with each run's commit and load, are in
+`recorded/hud-vs-dom-columns-2026-10-24/`; `recorded/hud-vs-dom-alloc-2026-10-20/` holds the
+earlier cuts, which took the HUD from 9.7 MB a frame to 6.0.
+
+What is left, at 5,000 glyphs: the column arrays themselves, `measureRuns`' entries (544 KB), the
+cache's structural key, a string of every label's text (`runsKey`, about 200 KB under
+`cachedLayoutRuns`), a resolved glyph per code point (`resolveGlyph`, 201), and the style each
+command resolves (`resolveTextStyle`, 206).
 
 ### Widget command caching
 

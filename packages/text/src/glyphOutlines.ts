@@ -7,7 +7,7 @@ import { paintKey, strokeKey, type Stroke, type Fill } from '@weasel-js/paint';
 import { loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle } from '@weasel-js/font';
 import { pathFromD, pathSignedArea, reversePath, transformPath, type Affine, type PolygonPath } from '@weasel-js/geom';
 import type { PlacedGlyph } from './layout/layoutRuns';
-import { faceOutlineD, glyphQuad } from './layout/paintRuns';
+import { faceOutlineD, hasGlyphQuad } from './layout/paintRuns';
 import type { ResolvedRun } from './runs/resolveRuns';
 import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
 import { emboldenGlyph } from './syntheticBold';
@@ -131,7 +131,7 @@ export function placedGlyphOutline(
 ): PolygonPath | null {
   const d = faceOutlineD(g);
   if (d === null) {
-    if (!blankFallback && glyphQuad(g) !== null) {
+    if (!blankFallback && hasGlyphQuad(g)) {
       const { family, weight, style } = g.resolved.resolved;
       throw new TextOutlinesError('no-outlines', family, weight, style,
         'a fallback face serving some of the text\'s characters has no outlines registered.', caller);

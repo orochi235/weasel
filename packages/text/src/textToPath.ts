@@ -129,13 +129,15 @@ function walkOutlines(
   const rules: PolygonPath[][] = paints.map(() => []);
   const faceOf = runFaces(runs);
   for (const line of laid.lines) {
+    const deco = lineDecorations(runs, faceOf, (run) => String(paintOf[run]));
     for (const g of line.glyphs) {
+      deco.add(g);
       // Asked before the quad: an emoji still waiting for its bake has none.
       if (g.glyph?.color) throw colorGlyphError(runs[g.run], 'textToPath');
       const glyph = placedGlyphOutline(g, dx, dy, 'textToPath');
       if (glyph) parts[paintOf[g.run]]!.push(glyph);
     }
-    for (const r of lineDecorations(line.glyphs, runs, faceOf, (run) => String(paintOf[run]))) {
+    for (const r of deco.end()) {
       rules[paintOf[r.run]]!.push(ruleContour(r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy));
     }
   }

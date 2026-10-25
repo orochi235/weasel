@@ -1265,13 +1265,14 @@ only story runner in the repo.
   `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
   layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
   - **With the readout changing every frame the DOM is still the cheaper overlay** once the
-    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 8.41 ms a frame of all
-    threads against 6.12, down from 11.28 (msb-uai, one run of each tree, 2026-10-20; README,
-    "What the HUD allocates"). The garbage is the text re-laid out for every label that changed:
-    6.0 MB a frame, down from 9.7, against the DOM's 0.12. Most of what is left is the layout's
-    own output — `placeLine`'s cells and placed glyphs, `paintRuns`' quads, `measureRuns`'
-    entries — one object per glyph with every number in it boxed. Cutting that means a layout
-    held in typed arrays, or one that a label whose text changed can update rather than rebuild.
+    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 6.61 ms a frame of all
+    threads against 5.91, and 5.3 MB allocated a frame against 0.10 (msb-uai, 2026-10-24; README,
+    "What the HUD allocates"). A layout and its painting now hold their numbers in columns, which
+    cut allocation 12% and left time inside the spread between runs. What is left is a few kinds
+    of per-glyph or per-label garbage, none dominant: the column arrays themselves (924 KB),
+    `measureRuns`' entry per code point (544), the layout cache's structural key, a string of
+    every label's text (about 200), `resolveGlyph`'s result per code point (201), and
+    `resolveTextStyle` per command (206), which the `perf/hud-and-batch` branch skips.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept

@@ -48,6 +48,7 @@ export {
   layoutRuns,
   cachedLayoutRuns,
   paintRuns,
+  QUAD_STRIDE,
   cachedPaintRuns,
   registerBidi,
   paragraphDirection,
