@@ -1,4 +1,5 @@
 import {
+  type ActionsRegistry,
   commitDeleteToScene,
   createDeleteAction,
   effectivePose,
@@ -34,6 +35,7 @@ import { type LensColors, lensShapes, RIM_PX } from './lensShapes';
 import type { LensDescribeContext, LensSlotProps, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
 import { reticleFollower } from './reticleFollower';
+import { ScopeOf } from './ScopeOf';
 import { useWheelPassThrough } from './useWheelPassThrough';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
@@ -119,7 +121,7 @@ function LensInterior<C>({
   describe: (compare: C, at: LensDescribeContext) => string;
   renderReadouts: ((props: LensReadoutProps<C>) => ReactNode) | undefined;
   onFocus: ((lensId: string) => void) | undefined;
-  /** Hands focus back to the input element, where the lens keys answer. */
+  /** Hands the keys back to the lens canvas and focus to its input element, as a press on a lens would. */
   onRelease: () => void;
   preview: SeamPreview;
 }) {
@@ -271,6 +273,11 @@ export function LensOverlay<C>({
   const canvas = useSurfaceCanvas('top');
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
+  const lensActions = useRef<ActionsRegistry | null>(null);
+  const release = useCallback(() => {
+    lensActions.current?.activate();
+    input?.focus();
+  }, [input]);
   const [colors, setColors] = useState<LensColors | null>(null);
   const { redraw, preview, attachSceneCanvas, actions, selectTool } = useLensCanvas(scene);
   const { container, size } = useLensTile(layer, redraw);
@@ -333,7 +340,7 @@ export function LensOverlay<C>({
                 describe={describe}
                 renderReadouts={renderReadouts}
                 onFocus={onFocusLens}
-                onRelease={() => input?.focus()}
+                onRelease={release}
                 preview={preview}
               />
             ) : null;
@@ -372,7 +379,9 @@ export function LensOverlay<C>({
             inputElement={input}
             actions={actions}
             selectTool={selectTool}
-          />
+          >
+            <ScopeOf into={lensActions} />
+          </SceneCanvas>
         </WeaselProvider>
       ) : null}
     </div>,

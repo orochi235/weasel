@@ -19,17 +19,26 @@ export interface LensZoomProps<C> {
   size: { width: number; height: number };
   /** Called with this lens's id as the zoom writes, so the lens actions land on it after. */
   onFocus?: (lensId: string) => void;
-  /** Called when a press on the zoom ends, to hand focus back to whatever answers the lens keys. */
+  /** Called when a press on the zoom ends, to hand the keys back to the lens canvas: the zoom sits outside it. */
   onRelease?: () => void;
 }
 
 /**
  * A lens body's zoom: a slider across the bottom of its rim, stopping at the factors the zoom keys step through. It
  * writes the factor as those keys do, so the reticle resizes with it, and a whole drag folds into one undo entry.
- * Only its band and thumb take presses; a press anywhere else on the body reaches the body. A press leaves the thumb
- * focused, so `onRelease` takes focus back when it ends; the arrow keys on a thumb reached by Tab keep it.
+ * Only its band and thumb take presses; a press anywhere else on the body reaches the body. A press reaches neither the
+ * lens canvas's input element nor its dispatcher, so `onRelease` hands both back when it ends; the arrow keys on a
+ * thumb reached by Tab keep it.
  */
-export function LensZoom<C>({ scene, lensId, factor, shape, size, onFocus, onRelease }: LensZoomProps<C>) {
+export function LensZoom<C>({
+  scene,
+  lensId,
+  factor,
+  shape,
+  size,
+  onFocus,
+  onRelease,
+}: LensZoomProps<C>) {
   const gesture = useRef(0);
   const pressed = useRef(false);
   const thumbs = useMemo<Thumb[]>(() => [{ value: factor, valueText: `${factor}×` }], [factor]);

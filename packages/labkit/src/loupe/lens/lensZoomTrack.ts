@@ -32,7 +32,10 @@ const ELLIPSE: ZoomTrack = {
 const LINE: ZoomTrack = {
   kind: 'line',
   shape: ({ width, height }) =>
-    lineShape({ x: ZOOM_INSET, y: height - ZOOM_INSET }, { x: Math.max(ZOOM_INSET, width - ZOOM_INSET), y: height - ZOOM_INSET }),
+    lineShape(
+      { x: ZOOM_INSET, y: height - ZOOM_INSET },
+      { x: Math.max(ZOOM_INSET, width - ZOOM_INSET), y: height - ZOOM_INSET },
+    ),
 };
 
 /** The zoom track for a body of `shape` drawn `size` px; a round body under half a px out of true is a circle. */
