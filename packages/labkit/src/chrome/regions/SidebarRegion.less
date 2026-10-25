@@ -1,6 +1,7 @@
 .lk-sidebar-section {
   // Fixed so a body's own sticky header can sit right under the bar.
   --lk-section-bar-h: calc(var(--wzl-control-h-sm) + var(--wzl-space-1) * 2);
+  padding: 0;
   background: var(--_s-fill);
   border-bottom: var(--wzl-border-w) solid var(--_s-border-color);
 
@@ -177,17 +178,11 @@
   display: flex;
   align-items: center;
   height: var(--lk-section-bar-h);
+  margin: 0;
   background: linear-gradient(var(--_s-fill), var(--_s-fill)), var(--wzl-surface);
 }
 
-.lk-sidebar-section__actions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--wzl-space-1);
-}
-
-.lk-sidebar-section__undock {
+.lk-sidebar-section__dock {
   padding: 0 var(--wzl-space-xs);
   border: 0;
   background: transparent;
@@ -201,10 +196,7 @@
 
 .lk-sidebar-section__head {
   flex: 1;
-  width: 100%;
   padding: var(--wzl-space-xs) var(--wzl-space-sm);
-  border: 0;
-  background: transparent;
   color: var(--_s-title-color);
   font-family: var(--_s-title-font);
   font-size: var(--_s-title-size);
@@ -212,6 +204,11 @@
   letter-spacing: var(--_s-title-tracking);
   text-align: left;
   text-transform: var(--_s-title-case);
+}
+
+button.lk-sidebar-section__head {
+  border: 0;
+  background: transparent;
   cursor: pointer;
 
   &:hover {
@@ -228,17 +225,7 @@
 // A filling section is as tall as the pane has left, and no shorter than a few
 // rows: under that the pane scrolls it, as it does every other section.
 .lk-sidebar-section[data-fill] {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
   min-height: calc(var(--lk-section-bar-h) * 8);
-
-  > .lk-sidebar-section__body {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    min-height: 0;
-  }
 
   // The spare height is this one's: the last section stops at its content.
   ~ .lk-sidebar-section:last-child {

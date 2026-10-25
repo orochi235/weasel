@@ -1,4 +1,5 @@
-import { type AppearanceProps, useAppearance } from '@weasel-js/ui/appearance';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
+import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import type { ReactNode, Ref } from 'react';
 import type {
   RegionContribution,
@@ -15,63 +16,63 @@ export interface SidebarRegionProps<TCtx extends SidebarSlotContext = TrialChrom
   region?: string;
 }
 
-/** One titled, folding section: its bar, and its body while it is open. */
+/** A section's undock or dock control, for the trailing edge of its bar. */
+export function DockButton({ title, dock, onPress }: { title: string; dock: boolean; onPress: () => void }) {
+  const label = `${dock ? 'Dock' : 'Undock'} ${title}`;
+  return (
+    <button type="button" className="lk-sidebar-section__dock" aria-label={label} title={label} onClick={onPress}>
+      {dock ? '⇤' : '⧉'}
+    </button>
+  );
+}
+
+/** One titled section: its bar, and its body while it is open. Given no
+ *  `onCollapsedChange`, it does not fold. */
 export function Section({
   title,
-  collapsed,
+  collapsed = false,
   onCollapsedChange,
-  onUndock,
+  trailing,
   actions,
   fill,
   children,
-  stance,
-  grade,
-  emphasis,
-  tint,
   barRef,
+  ...appearance
 }: AppearanceProps & {
   title: string;
   barRef?: Ref<HTMLDivElement>;
   actions?: ReactNode;
+  trailing?: ReactNode;
   fill?: boolean;
-  collapsed: boolean;
-  onCollapsedChange: (collapsed: boolean) => void;
-  onUndock?: () => void;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
   children: ReactNode;
 }) {
   return (
-    <section
+    <SidebarPanel
+      {...appearance}
       className="lk-sidebar-section"
-      data-fill={fill && !collapsed ? '' : undefined}
-      {...useAppearance({ stance, grade, emphasis, tint })}
+      headerClassName="lk-sidebar-section__bar"
+      titleClassName="lk-sidebar-section__head"
+      bodyClassName="lk-sidebar-section__body"
+      headerRef={barRef}
+      title={title}
+      collapsed={collapsed}
+      onToggleCollapse={onCollapsedChange && (() => onCollapsedChange(!collapsed))}
+      actions={actions && !collapsed ? actions : undefined}
+      trailing={trailing}
+      fill={fill}
     >
-      <div className="lk-sidebar-section__bar" ref={barRef}>
-        <button
-          type="button"
-          className="lk-sidebar-section__head"
-          aria-expanded={!collapsed}
-          onClick={() => onCollapsedChange(!collapsed)}
-        >
-          {title}
-        </button>
-        {actions && !collapsed ? (
-          <div className="lk-sidebar-section__actions">{actions}</div>
-        ) : null}
-        {onUndock ? (
-          <button
-            type="button"
-            className="lk-sidebar-section__undock"
-            aria-label={`Undock ${title}`}
-            title={`Undock ${title}`}
-            onClick={onUndock}
-          >
-            ⧉
-          </button>
-        ) : null}
-      </div>
-      {collapsed ? null : <div className="lk-sidebar-section__body">{children}</div>}
-    </section>
+      {children}
+    </SidebarPanel>
   );
+}
+
+/** A docked section's undock control, or nothing where the context offers no tear-out. */
+export function undockButton(ctx: SidebarSlotContext, id: string, item: SidebarSection): ReactNode {
+  const { undockPanel } = ctx;
+  if (!undockPanel || item.undockable === false) return undefined;
+  return <DockButton title={item.title} dock={false} onPress={() => undockPanel(id, item.undockAs ?? 'tile')} />;
 }
 
 /** Lays `sidebar` contributions out as titled, collapsible sections — a
@@ -103,11 +104,7 @@ export function SidebarRegion<TCtx extends SidebarSlotContext = TrialChromeConte
             fill={item.fill}
             collapsed={ctx.collapsedSections[c.id] ?? item.defaultCollapsed ?? false}
             onCollapsedChange={(next) => ctx.setSectionCollapsed(c.id, next)}
-            onUndock={
-              ctx.undockPanel && item.undockable !== false
-                ? () => ctx.undockPanel?.(c.id, item.undockAs ?? 'tile')
-                : undefined
-            }
+            trailing={undockButton(ctx, c.id, item)}
           >
             {item.body}
           </Section>
