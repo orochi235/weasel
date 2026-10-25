@@ -227,6 +227,8 @@ export function runFaces(runs: readonly ResolvedRun[]): (run: number) => FaceMet
   return (run) => faces[run];
 }
 
+const isDecorated = (r: ResolvedRun): boolean => r.underline || r.strikethrough || r.overline;
+
 /** The group the previous glyph joined, and every input its key was built from. */
 interface LastGroup {
   group: LaidOutGroup | null;
@@ -288,7 +290,7 @@ export function paintRuns(
     group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
   };
   const decorations: LaidOutDecoration[] = [];
-  const faceOf = runFaces(runs);
+  const faceOf = runs.some(isDecorated) ? runFaces(runs) : null;
   // A rule is a solid rect with only a fill to paint it.
   const rulePaint = (run: number): string | null =>
     (fillHasInk(runs[run].fill) ? paintKey(runs[run].fill!.paint) : null);
@@ -297,17 +299,17 @@ export function paintRuns(
   // Most text is one group. The first to take a quad gets an array sized for
   // every glyph, trimmed at the end; any other grows as it fills.
   let glyphCount = 0;
-  for (const line of laid.lines) glyphCount += LineBox.span(line)?.count ?? line.glyphs.length;
+  for (const line of laid.lines) glyphCount += LineBox.count(line);
   let sized: LaidOutGroup | null = null;
   let sizedAt = 0;
 
   for (const line of laid.lines) {
     const span = LineBox.span(line);
-    const count = span ? span.count : line.glyphs.length;
-    const rules = lineDecorations(runs, faceOf, rulePaint);
+    const count = LineBox.count(line);
+    const rules = faceOf && lineDecorations(runs, faceOf, rulePaint);
     for (let slot = 0; slot < count; slot++) {
       const g = span ? span.cols.glyph(span.start, span.cols.visual(span.start, slot), cursor) : line.glyphs[slot];
-      rules.add(g);
+      rules?.add(g);
       const run = runs[g.run];
       // Asked before the quad: a dynamic glyph still waiting for its bake has
       // no atlas rect, but its outline is available right now.
@@ -337,6 +339,7 @@ export function paintRuns(
       }
       (group.colorGlyphs as BmFontChar[] | undefined)?.push(g.glyph!);
     }
+    if (!rules) continue;
     for (const rule of rules.end()) {
       const { run, ...rect } = rule;
       decorations.push({ ...rect, fill: runs[run].fill! });

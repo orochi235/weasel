@@ -157,6 +157,11 @@ export class LineBox implements LaidOutLineBox {
     return line instanceof LineBox ? { cols: line.#cols, start: line.#start, count: line.#count } : null;
   }
 
+  /** How many code points the line holds, without building a view. */
+  static count(line: LaidOutLineBox): number {
+    return line instanceof LineBox ? line.#count : line.glyphs.length;
+  }
+
   static #views: PropertyDescriptorMap = {
     cells: lazy('cells', (l: LineBox) => {
       const out: LaidOutCell[] = new Array(l.#count);
