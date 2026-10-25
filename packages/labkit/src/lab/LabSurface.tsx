@@ -14,6 +14,7 @@ import { LightboxLayers } from '../lightbox/LightboxLayers';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { type SurfaceFrame, useTiledSurface } from '../surface/useTiledSurface';
+import { LentTopBuffer } from './LentTopBuffer';
 
 /** Props for `LabSurface`. */
 export interface LabSurfaceProps {
@@ -66,7 +67,8 @@ function useTopBuffer(
  * mounts in the over layer above the over buffer while a tenant claims it.
  *
  * A host that already owns a surface keeps it: a lab embedded in a larger
- * shared-surface app must not open a second GL tenancy.
+ * shared-surface app must not open a second GL tenancy. Where that host
+ * offers no `top`, the lab makes one on the host's container.
  */
 export function LabSurface({ bodyRef, children, contributions }: LabSurfaceProps) {
   const outerSurface = useSurfaceOptional();
@@ -124,13 +126,13 @@ export function LabSurface({ bodyRef, children, contributions }: LabSurfaceProps
   );
 
   const surface = outerSurface ?? ownSurface;
-  const canvases = useMemo(
-    () =>
-      outerSurface
-        ? outerCanvases
-        : { over: ownOver, under: ownUnder, top: top.canvas, claimTop: top.claim },
-    [outerSurface, outerCanvases, ownOver, ownUnder, top.canvas, top.claim],
-  );
+  // A host that offers no `top` gets one from the lab, or the lab's lenses paint nothing.
+  const lendTop = outerSurface !== null && !outerCanvases.claimTop;
+  const canvases = useMemo(() => {
+    const ownTop = { top: top.canvas, claimTop: top.claim };
+    if (!outerSurface) return { over: ownOver, under: ownUnder, ...ownTop };
+    return lendTop ? { ...outerCanvases, ...ownTop } : outerCanvases;
+  }, [outerSurface, outerCanvases, lendTop, ownOver, ownUnder, top.canvas, top.claim]);
   const below = useMemo(() => [underLayer], [underLayer]);
   const above = useMemo(() => [overLayer], [overLayer]);
 
@@ -149,6 +151,9 @@ export function LabSurface({ bodyRef, children, contributions }: LabSurfaceProps
       )}
       {children}
       {contributions ? <OverlayRegion contributions={contributions} /> : null}
+      {outerSurface && lendTop && top.claims > 0 ? (
+        <LentTopBuffer surface={outerSurface} attach={top.attach} />
+      ) : null}
       {outerSurface ? null : (
         <div className="lk-lab__layer lk-lab__layer--over" ref={overLayerRef}>
           <canvas

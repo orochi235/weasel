@@ -4,11 +4,11 @@ import { TrialIdContext } from '../state/context';
 import { SurfaceCanvasContext, SurfaceContext, type SurfaceLayer } from './SurfaceContext';
 import type { SurfaceHandle } from './useTiledSurface';
 
-/** What a tenant asking for the `top` buffer is told when the surface owner above it publishes buffers but offers
- *  no `top`, so the tenant would paint nothing. */
+/** What a tenant asking for the `top` buffer is told when the surface owner directly above it publishes buffers but
+ *  offers no `top`, so the tenant would paint nothing. A `<Lab>` makes its own, so this is a tenant outside one. */
 export const TOP_UNOFFERED =
   "[labkit] useSurfaceCanvas('top'): the surface owner above offers no top buffer, so this tenant paints nothing. " +
-  'An owner offers one by publishing `top` and `claimTop` in its SurfaceCanvases.';
+  'An owner offers one by publishing `top` and `claimTop` in its SurfaceCanvases; a <Lab> between them makes its own.';
 
 /** One of the surface's shared buffers, or null where nothing paints one.
  *  What a tile hands to `paintInto`. See {@link SurfaceLayer} for which to ask
