@@ -2,7 +2,7 @@
  * The scene slot: an adapter's tree as render layers, one per scene layer.
  */
 import type { Path } from '@weasel-js/geom';
-import type { Dims, RenderLayer } from 'core/layers/render';
+import type { Dims, LayerDims, RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { cullDrawCommands, viewToMat3, type DrawCommand } from '@weasel-js/renderer';
@@ -124,8 +124,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
   const { drawOne, derivedPathOf } = withAdapterDerivedPaths(cfg, adapter, toPose);
   const postProcess = cfg.postProcess;
   const finish = cfg.cull
-    ? (cmds: DrawCommand[], view: View, dims: Dims): DrawCommand[] =>
-      cullDrawCommands(cmds, viewToMat3(view), { x: 0, y: 0, width: dims.width, height: dims.height })
+    ? (cmds: DrawCommand[], view: View, dims: LayerDims): DrawCommand[] =>
+      cullDrawCommands(cmds, viewToMat3(view), { x: 0, y: 0, width: dims.width, height: dims.height }, dims.dpr)
     : (cmds: DrawCommand[]): DrawCommand[] => cmds;
   const paintBounds = cfg.cull ? cfg.paintBounds : undefined;
   const culledIn = (view: View, dims: Dims) => paintBounds

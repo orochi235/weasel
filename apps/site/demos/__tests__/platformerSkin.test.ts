@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import type { View } from '@weasel-js/core';
 import { BANDS, backdropBand, drawEnding, drawSky } from '../platformer/skin';
 
-const DIMS = { width: 640, height: 360 };
+const DIMS = { width: 640, height: 360, dpr: 1 };
 
 type Cmd = { kind: string; transform?: Float32Array; children?: Cmd[]; path?: Path };
 type Path = { kind: string; x: number; y: number; width: number; height: number; coords: Float32Array };

@@ -22,7 +22,7 @@ import { createGestureSource } from './dispatcherGestureBounds';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 
 function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
   const map = new Map<string, OngoingHandle>(handles.map((h, i) => [`gid-${i}`, h]));

@@ -65,7 +65,7 @@ function setup(settings?: KitSettingsOverrides) {
     if (!skeleton) return [];
     return [...jointPositions(placeSkeleton(skeleton, node.pose))].map(([n, p]) => [n, Math.round(p.x), Math.round(p.y)]);
   };
-  const painted = () => (result.current.overlay as RenderLayer<unknown>).draw(undefined, VIEW, { width: 400, height: 400 });
+  const painted = () => (result.current.overlay as RenderLayer<unknown>).draw(undefined, VIEW, { width: 400, height: 400, dpr: 1 });
   return { scene, rig, sleeve, state, drag, fire, joints, painted, setTarget: (id: NodeId | null) => { target = id; } };
 }
 

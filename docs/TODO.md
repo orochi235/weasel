@@ -1521,9 +1521,6 @@ only story runner in the repo.
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
   Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
   Left open by label drag (2026-10-20).
-- **(P3) `cullDrawCommands` keeps every group with effects.** `contentBounds` already bounds one by
-  `effectsReach`, but that is device pixels and the cull rect is CSS pixels with no pixel ratio to
-  convert by, so culling one needs `cullDrawCommands` to take that ratio (2026-10-21).
 - **(P3) Check `@weasel-js/rig`'s and `@weasel-js/diagram-formats`' trusted-publisher
   registration.** Both are on the registry at 1.11.1 under `latest` and `pre` (`npm view`,
   2026-10-21); whether each is registered as a trusted publisher (`docs/releasing.md`, "Setting up a

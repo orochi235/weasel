@@ -5,7 +5,7 @@ import type { RenderLayer } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 
 const outer: View = { x: 100, y: 50, scale: { x: 2, y: 2 } };
-const dims = { width: 400, height: 300 };
+const dims = { width: 400, height: 300, dpr: 1 };
 
 function makeSpyLayer(): { layer: RenderLayer<unknown>; draw: ReturnType<typeof vi.fn> } {
   const draw = vi.fn(() => []);

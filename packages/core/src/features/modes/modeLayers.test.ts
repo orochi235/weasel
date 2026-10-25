@@ -11,7 +11,7 @@ const MODES: readonly ModeDefinition[] = [
 ];
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 200, height: 100 };
+const DIMS = { width: 200, height: 100, dpr: 1 };
 
 type Cmd = { kind: string; path: { x: number; y: number; width: number; height: number }; fill: Record<string, unknown> };
 const draw = (layer: ReturnType<typeof workspaceTintLayer>, view = VIEW) => layer.draw(undefined, view, DIMS) as unknown as Cmd[];

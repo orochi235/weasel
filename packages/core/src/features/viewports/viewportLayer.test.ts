@@ -8,7 +8,7 @@ import { viewToMat3 } from '@weasel-js/renderer';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 
 const OUTER: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 600, height: 400 };
+const DIMS = { width: 600, height: 400, dpr: 1 };
 const CANVAS = { left: 100, top: 50 };
 
 /** Source that draws nothing — routing is pure geometry. */
@@ -81,7 +81,7 @@ describe('routing through a viewport', () => {
   it('tracks bounds that move with the canvas size', () => {
     const layer = pip();
     // Same rect-relative point, taller canvas → the rect follows the bottom edge.
-    const tall = { width: 600, height: 500 };
+    const tall = { width: 600, height: 500, dpr: 1 };
     expect(route([layer], { x: 8, y: 332 }, tall)).toEqual({ id: 'pip', point: { x: 250, y: 200 } });
     // The rect moved down with the bottom edge, so the old origin is now above it.
     expect(route([layer], { x: 8, y: 232 }, tall).id).toBeNull();

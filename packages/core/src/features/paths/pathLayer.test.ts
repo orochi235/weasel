@@ -17,7 +17,7 @@ describe('createPathLayer', () => {
       getPath: () => path,
       getFill: () => fill,
     });
-    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     expect(tree).toHaveLength(2);
     expect(tree[0]).toMatchObject({ kind: 'path', path, fill });
     expect(tree[1]).toMatchObject({ kind: 'path', path, fill });
@@ -31,7 +31,7 @@ describe('createPathLayer', () => {
       getFill: () => ({ paint: { kind: 'solid', color: '#f00' } }),
       isHidden: (n) => n.id === 'b',
     });
-    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     expect(tree).toHaveLength(1);
   });
 
@@ -42,7 +42,7 @@ describe('createPathLayer', () => {
       getPath: () => path,
       // no getFill or getStroke
     });
-    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     expect(tree).toHaveLength(0);
   });
 
@@ -54,7 +54,7 @@ describe('createPathLayer', () => {
       getPath: () => path,
       getStroke: () => stroke,
     });
-    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     expect(tree[0]).toMatchObject({ kind: 'path', path, stroke });
   });
 });
@@ -68,7 +68,7 @@ describe('createPathLayer — getVertexColors', () => {
       getPath: () => path,
       getVertexColors: () => colors,
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
     const cmd = out[0] as any;
     expect(cmd.vertexColors).toEqual(colors);
     // Placeholder fill is synthesized so the renderer's gate passes.
@@ -83,7 +83,7 @@ describe('createPathLayer — getVertexColors', () => {
       getFill: () => ({ paint: { color: '#abcdef', opacity: 0.5 } }),
       getVertexColors: () => [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1],
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
     const cmd = out[0] as any;
     expect(cmd.fill).toEqual({ paint: { color: '#abcdef', opacity: 0.5 } });
   });
@@ -98,7 +98,7 @@ describe('createPathLayer — getVertexColors', () => {
       getPath: () => path,
       getVertexColors: () => [1, 0, 0, 1, 0, 1, 0, 1],
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
     expect(out).toHaveLength(0);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
@@ -114,9 +114,9 @@ describe('createPathLayer — getVertexColors', () => {
       getFill: () => ({ paint: { color: '#f00' } }), // Explicit fill so node is rendered despite bad colors
       getVertexColors: () => [1, 0, 0, 1],
     });
-    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
-    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
-    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
+    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
+    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
+    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
@@ -131,7 +131,7 @@ describe('createPathLayer — getStrokeVertexColors', () => {
       getPath: () => path,
       getStrokeVertexColors: () => colors,
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
     const cmd = out[0] as any;
     expect(cmd.stroke.vertexColors).toEqual(colors);
     expect(cmd.stroke.paint).toEqual({ color: '#ffffff' });
@@ -147,7 +147,7 @@ describe('createPathLayer — getStrokeVertexColors', () => {
       getStroke: () => ({ paint: { color: '#000' }, width: 3 }),
       getStrokeVertexColors: () => colors,
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
     const cmd = out[0] as any;
     expect(cmd.stroke.vertexColors).toEqual(colors);
     expect(cmd.stroke.paint).toEqual({ color: '#000' });
@@ -159,7 +159,7 @@ describe('createPathLayer color overrides', () => {
   const triangle = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }]);
   const baseFillColors = [255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255];
   const view = { x: 0, y: 0, scale: { x: 1, y: 1 } } as any;
-  const size = { width: 100, height: 100 };
+  const size = { width: 100, height: 100, dpr: 1 };
 
   it('falls back to the consumer accessor when no override is registered', () => {
     const layer = createPathLayer({

@@ -16,7 +16,7 @@ type P = { x: number; y: number; width: number; height: number };
 type Tools = ReturnType<typeof useTools>;
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 200, height: 200 };
+const DIMS = { width: 200, height: 200, dpr: 1 };
 
 function clickAt(canvas: HTMLCanvasElement, x: number, y: number) {
   const at = (ev: Event) => {

@@ -12,7 +12,7 @@ vi.mock('@weasel-js/core/renderer', async (importOriginal) => ({
 
 const tokens = resolveTheme(weaselTheme, { mode: 'dark' });
 const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const dims = { width: 800, height: 600 };
+const dims = { width: 800, height: 600, dpr: 1 };
 
 function makeElement() {
   const el = document.createElement('canvas');

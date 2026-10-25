@@ -311,7 +311,7 @@ describe('attachMenuHost with a hud drawing in another font', () => {
     const unhud = attachHud(makeApi(el), own, { font: 'Fixture Face', theme: resolveTheme(weaselTheme) });
     const off = attachMenuHost(own, wide, { toCanvas: (p) => p, canvasSize: () => ({ width: 800, height: 600 }) });
     wide.open({ menu: 'wide', client: { x: 10, y: 10 } });
-    layer!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600 });
+    layer!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600, dpr: 1 });
     const advance = FIXTURE_FONT.chars[0]!.xadvance;
     expect(own.widgets()[0]!.bounds.w).toBe(Math.ceil(20 * advance * 13 / FIXTURE_FONT.info.size) + 16 + 48);
     off();

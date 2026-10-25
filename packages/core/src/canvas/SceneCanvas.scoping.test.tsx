@@ -8,7 +8,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 300, height: 300 };
+const DIMS = { width: 300, height: 300, dpr: 1 };
 
 type TData = { label: string };
 type TLayer = 'bg';

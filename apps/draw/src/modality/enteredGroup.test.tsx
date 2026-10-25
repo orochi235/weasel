@@ -116,7 +116,7 @@ describe('the entered group in draw', () => {
     expect(alphaFor('f')).toBe(0.3);
     expect(alphaFor('a')).toBe(1);
     const tint = workspaceTintLayer({ registry: modality.machine.registry, fallback: group.tint });
-    expect(tint.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 40 })).not.toEqual([]);
+    expect(tint.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 40, dpr: 1 })).not.toEqual([]);
     expect(screen.getByText('Group')).toBeTruthy();
     expect(screen.getByText('Logo')).toBeTruthy();
   });

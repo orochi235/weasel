@@ -20,7 +20,7 @@ import type { Affordance } from './types';
 // Tall enough on screen that no corner gives up its inward half (see cornerOf).
 const B = { x: 10, y: 20, width: 40, height: 40, rotation: Math.PI / 5 };
 const VIEW = { x: 5, y: -3, scale: { x: 4, y: 1 } };
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 const T = viewToTransform(VIEW);
 const SIZE = 16;
 

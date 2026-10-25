@@ -246,7 +246,7 @@ function Harness({ layers, onReady }: {
 }
 
 const OUTER: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 300, height: 200 };
+const DIMS = { width: 300, height: 200, dpr: 1 };
 
 describe('<CanvasView> draw contribution', () => {
   it('paints the surface stack through its own camera, clipped to its rect', () => {

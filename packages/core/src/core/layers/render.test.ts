@@ -10,7 +10,7 @@ describe('drawLayers', () => {
     const bCmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 1, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#000' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', draw: () => [aCmd] };
     const b: RenderLayer<unknown> = { id: 'b', label: 'B', space: 'screen', draw: () => [bCmd] };
-    const out = drawLayers([a, b], null, {}, undefined, undefined, { width: 10, height: 10 });
+    const out = drawLayers([a, b], null, {}, undefined, undefined, { width: 10, height: 10, dpr: 1 });
     expect(out).toEqual([aCmd, bCmd]);
   });
 
@@ -22,7 +22,7 @@ describe('drawLayers', () => {
     const c: RenderLayer<unknown> = { id: 'c', label: 'C', space: 'screen', draw: () => [cmd()] };
     const spans: LayerDrawSpan[] = [];
     const out = drawLayers(
-      [a, empty, b, c], null, {}, undefined, undefined, { width: 10, height: 10 },
+      [a, empty, b, c], null, {}, undefined, undefined, { width: 10, height: 10, dpr: 1 },
       undefined, undefined, [{ id: 'bc', layers: ['b', 'c'], effects: [] }], spans,
     );
     expect(spans.map(({ id, start, end }) => ({ id, start, end }))).toEqual([
@@ -36,7 +36,7 @@ describe('drawLayers', () => {
   it('honors the order array', () => {
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', draw: () => [{ kind: 'group', children: [] }] };
     const b: RenderLayer<unknown> = { id: 'b', label: 'B', space: 'screen', draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } }] };
-    const out = drawLayers([a, b], null, {}, ['b', 'a'], undefined, { width: 10, height: 10 });
+    const out = drawLayers([a, b], null, {}, ['b', 'a'], undefined, { width: 10, height: 10, dpr: 1 });
     expect(out[0].kind).toBe('path');
     expect(out[1].kind).toBe('group');
   });
@@ -44,7 +44,7 @@ describe('drawLayers', () => {
   it('skips layers whose visibility is false', () => {
     const draw = vi.fn(() => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } }] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
-    const out = drawLayers([a], null, { a: false }, undefined, undefined, { width: 10, height: 10 });
+    const out = drawLayers([a], null, { a: false }, undefined, undefined, { width: 10, height: 10, dpr: 1 });
     expect(out).toEqual([]);
     expect(draw).not.toHaveBeenCalled();
   });
@@ -52,7 +52,7 @@ describe('drawLayers', () => {
   it('respects defaultVisible: false', () => {
     const draw = vi.fn(() => [] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw, defaultVisible: false };
-    drawLayers([a], null, {}, undefined, undefined, { width: 10, height: 10 });
+    drawLayers([a], null, {}, undefined, undefined, { width: 10, height: 10, dpr: 1 });
     expect(draw).not.toHaveBeenCalled();
   });
 
@@ -61,7 +61,7 @@ describe('drawLayers', () => {
     const shownDraw = vi.fn(() => [] as DrawCommand[]);
     const hidden: RenderLayer<unknown> = { id: 'hidden', label: 'H', draw: hiddenDraw, defaultVisible: true };
     const shown: RenderLayer<unknown> = { id: 'shown', label: 'S', draw: shownDraw, defaultVisible: false };
-    drawLayers([hidden, shown], null, { hidden: false, shown: true }, undefined, undefined, { width: 10, height: 10 });
+    drawLayers([hidden, shown], null, { hidden: false, shown: true }, undefined, undefined, { width: 10, height: 10, dpr: 1 });
     expect(hiddenDraw).not.toHaveBeenCalled();
     expect(shownDraw).toHaveBeenCalled();
   });
@@ -69,7 +69,7 @@ describe('drawLayers', () => {
   it('always draws alwaysOn layers regardless of visibility map', () => {
     const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', alwaysOn: true, draw: () => [cmd] };
-    const out = drawLayers([a], null, { a: false }, undefined, undefined, { width: 10, height: 10 });
+    const out = drawLayers([a], null, { a: false }, undefined, undefined, { width: 10, height: 10, dpr: 1 });
     expect(out).toEqual([cmd]);
   });
 
@@ -77,13 +77,13 @@ describe('drawLayers', () => {
     const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => [cmd] };
     const view = { x: 5, y: 7, scale: { x: 2, y: 2 } };
-    const out = drawLayers([a], null, {}, undefined, view, { width: 10, height: 10 });
+    const out = drawLayers([a], null, {}, undefined, view, { width: 10, height: 10, dpr: 1 });
     expect(out).toEqual([{ kind: 'group', transform: viewToMat3(view), children: [cmd] }]);
   });
 
   it('does not emit an empty group when a world-space layer returns no commands', () => {
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => [] };
-    const out = drawLayers([a], null, {}, undefined, undefined, { width: 10, height: 10 });
+    const out = drawLayers([a], null, {}, undefined, undefined, { width: 10, height: 10, dpr: 1 });
     expect(out).toEqual([]);
   });
 
@@ -92,7 +92,7 @@ describe('drawLayers', () => {
     const bDraw = vi.fn(() => [] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: aDraw };
     const b: RenderLayer<unknown> = { id: 'b', label: 'B', draw: bDraw };
-    drawLayers([a, b], null, {}, ['a'], undefined, { width: 10, height: 10 });
+    drawLayers([a, b], null, {}, ['a'], undefined, { width: 10, height: 10, dpr: 1 });
     expect(aDraw).toHaveBeenCalled();
     expect(bDraw).not.toHaveBeenCalled();
   });
@@ -100,22 +100,22 @@ describe('drawLayers', () => {
   it('unknown ids in order are silently dropped', () => {
     const draw = vi.fn(() => [] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
-    drawLayers([a], null, {}, ['ghost', 'a'], undefined, { width: 10, height: 10 });
+    drawLayers([a], null, {}, ['ghost', 'a'], undefined, { width: 10, height: 10, dpr: 1 });
     expect(draw).toHaveBeenCalledTimes(1);
   });
 
   it('passes view and dims through to draw', () => {
     const draw = vi.fn(() => [] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
-    drawLayers([a], 'data', {}, undefined, { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 320, height: 240 });
-    expect(draw).toHaveBeenCalledWith('data', { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 320, height: 240 });
+    drawLayers([a], 'data', {}, undefined, { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 320, height: 240, dpr: 1 });
+    expect(draw).toHaveBeenCalledWith('data', { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 320, height: 240, dpr: 1 });
   });
 
   it('uses identity view when view is undefined', () => {
     const draw = vi.fn(() => [] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
-    drawLayers([a], null, {}, undefined, undefined, { width: 1, height: 1 });
-    expect(draw).toHaveBeenCalledWith(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 1, height: 1 });
+    drawLayers([a], null, {}, undefined, undefined, { width: 1, height: 1, dpr: 1 });
+    expect(draw).toHaveBeenCalledWith(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 1, height: 1, dpr: 1 });
   });
 });
 
@@ -137,7 +137,7 @@ function countingLayer(id: string, calls: { n: number }): RenderLayer<{ v: numbe
   };
 }
 
-const DIMS = { width: 100, height: 100 };
+const DIMS = { width: 100, height: 100, dpr: 1 };
 
 describe('drawLayers command caching', () => {
   it('reuses the tree when deps are unchanged', () => {
@@ -237,7 +237,7 @@ describe('a layer that throws', () => {
     };
     const onLayerError = vi.fn();
     const out = drawLayers(
-      [bad, good], null, {}, undefined, undefined, { width: 10, height: 10 },
+      [bad, good], null, {}, undefined, undefined, { width: 10, height: 10, dpr: 1 },
       undefined, onLayerError,
     );
     expect(out).toEqual([PATH_CMD]);
@@ -262,7 +262,7 @@ describe('a layer that throws', () => {
     };
     const cache: LayerCommandCache = new Map();
     const onLayerError = vi.fn();
-    const dims = { width: 10, height: 10 };
+    const dims = { width: 10, height: 10, dpr: 1 };
 
     drawLayers([layer], { v: 1 }, {}, undefined, undefined, dims, cache, onLayerError);
     expect(cache.has('a')).toBe(false);

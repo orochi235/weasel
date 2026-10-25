@@ -5,7 +5,7 @@ import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 100, height: 100 };
+const DIMS = { width: 100, height: 100, dpr: 1 };
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
 
 describe('buildSceneLayer hierarchical path', () => {

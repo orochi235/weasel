@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from './DrawCommand';
-import { cullDrawCommands, strokeReachAt } from './cullDrawCommands';
+import { cullDrawCommands } from './cullDrawCommands';
+import { strokeReachAt } from './paintedBounds';
 import { mat3 } from '@weasel-js/geom';
 import { PATH_M, PATH_L, PATH_C } from '@weasel-js/geom';
+import { blur, vignette } from './effects/builtins';
 
 const SCREEN = { x: 0, y: 0, width: 800, height: 600 };
 const paint = { color: '#000000' };
@@ -28,34 +30,34 @@ describe('cullDrawCommands', () => {
   it('drops a path wholly outside the screen and keeps one inside', () => {
     const inside = rect(100, 100);
     const far = rect(5000, 100);
-    expect(cullDrawCommands([inside, far], I, SCREEN)).toEqual([inside]);
+    expect(cullDrawCommands([inside, far], I, SCREEN, 1)).toEqual([inside]);
   });
 
   it('keeps a path whose edge only just reaches in', () => {
     const edge = rect(799.5, 100);
     const above = rect(100, -9.5);
-    expect(cullDrawCommands([edge, above], I, SCREEN)).toEqual([edge, above]);
+    expect(cullDrawCommands([edge, above], I, SCREEN, 1)).toEqual([edge, above]);
   });
 
   it('returns the same array when nothing is dropped', () => {
     const cmds: DrawCommand[] = [rect(10, 10), { kind: 'group', children: [rect(20, 20)] }];
-    expect(cullDrawCommands(cmds, I, SCREEN)).toBe(cmds);
+    expect(cullDrawCommands(cmds, I, SCREEN, 1)).toBe(cmds);
   });
 
   it('keeps a path off-screen whose stroke reaches in', () => {
     // Geometry ends 20px left of the screen; a 12-wide miter stroke reaches
     // up to 4 * 12 = 48 past it.
     const stroked: PathDrawCommand = { ...rect(-30, 100), stroke: { width: 12, paint } };
-    expect(cullDrawCommands([stroked], I, SCREEN)).toEqual([stroked]);
+    expect(cullDrawCommands([stroked], I, SCREEN, 1)).toEqual([stroked]);
     const thin: PathDrawCommand = { ...rect(-100, 100), stroke: { width: 1, paint } };
-    expect(cullDrawCommands([thin], I, SCREEN)).toEqual([]);
+    expect(cullDrawCommands([thin], I, SCREEN, 1)).toEqual([]);
   });
 
   it('resolves a { px } stroke against the accumulated scale', () => {
     // At 0.1x, 20px of stroke is 200 world units, reaching 800 out.
     const zoomedOut = mat3.scaled(I, 0.1, 0.1);
     const stroked: PathDrawCommand = { ...rect(-700, 100), stroke: { width: { px: 20 }, paint } };
-    expect(cullDrawCommands([stroked], zoomedOut, SCREEN)).toEqual([stroked]);
+    expect(cullDrawCommands([stroked], zoomedOut, SCREEN, 1)).toEqual([stroked]);
   });
 
   // At 1:16 the mean scale is 4, so a 30px stroke resolved through it is 7.5
@@ -73,7 +75,7 @@ describe('cullDrawCommands', () => {
       },
       stroke: { width: { px: 30 }, miterLimit: 1, paint },
     };
-    expect(cullDrawCommands([stroked], tall, SCREEN)).toEqual([stroked]);
+    expect(cullDrawCommands([stroked], tall, SCREEN, 1)).toEqual([stroked]);
   });
 
   describe('a stroke carrying a marker', () => {
@@ -92,15 +94,15 @@ describe('cullDrawCommands', () => {
 
     it('keeps a path off-screen whose head reaches in', () => {
       const marked = line({ width: 1, paint, markerEnd: { key: 'arrow', size: 60 } });
-      expect(cullDrawCommands([marked], I, SCREEN)).toEqual([marked]);
-      expect(cullDrawCommands([line({ width: 1, paint })], I, SCREEN)).toEqual([]);
+      expect(cullDrawCommands([marked], I, SCREEN, 1)).toEqual([marked]);
+      expect(cullDrawCommands([line({ width: 1, paint })], I, SCREEN, 1)).toEqual([]);
     });
 
     it('resolves a { px } head against the accumulated scale', () => {
       // At 4x the line sits 240 above the screen, and a 60px head reaches 90.
       const zoomed = mat3.scaled(I, 4, 4);
       const marked = line({ width: 1, paint, markerEnd: { key: 'arrow', size: { px: 60 } } });
-      expect(cullDrawCommands([marked], zoomed, SCREEN)).toEqual([]);
+      expect(cullDrawCommands([marked], zoomed, SCREEN, 1)).toEqual([]);
     });
   });
 
@@ -123,14 +125,14 @@ describe('cullDrawCommands', () => {
     it('measures a { px } head on a world-width line on screen', () => {
       // A 30px head reaches 90px across, where the mean scale made it 22.5.
       const marked = down({ width: 0.1, paint, markerEnd: { key: 'arrow', size: { px: 30 } } });
-      expect(cullDrawCommands([marked], tall, SCREEN)).toEqual([marked]);
+      expect(cullDrawCommands([marked], tall, SCREEN, 1)).toEqual([marked]);
     });
 
     it('measures a world-sized head on a { px } line in world', () => {
       // A 10-unit head reaches 30 world units, 30px across: 10 short of the
       // screen. Taken as screen-sized, it reached 120.
       const marked = down({ width: { px: 1 }, paint, markerEnd: { key: 'arrow', size: 10 } });
-      expect(cullDrawCommands([marked], tall, SCREEN)).toEqual([]);
+      expect(cullDrawCommands([marked], tall, SCREEN, 1)).toEqual([]);
     });
   });
 
@@ -147,7 +149,7 @@ describe('cullDrawCommands', () => {
       },
       fill: { paint: paint },
     };
-    expect(cullDrawCommands([curve], I, SCREEN)).toEqual([curve]);
+    expect(cullDrawCommands([curve], I, SCREEN, 1)).toEqual([curve]);
   });
 
   it('carries group transforms, and bounds a rotation by its corners', () => {
@@ -165,23 +167,50 @@ describe('cullDrawCommands', () => {
       transform: mat3.multiply(mat3.translated(I, 810, 0), rotation((3 * Math.PI) / 4)),
       children: [bar],
     };
-    expect(cullDrawCommands([offscreen, swungIn], I, SCREEN)).toEqual([swungIn]);
+    expect(cullDrawCommands([offscreen, swungIn], I, SCREEN, 1)).toEqual([swungIn]);
   });
 
   it('drops a group whose children all go, and keeps the survivors of one that is split', () => {
     const near = rect(10, 10);
     const split: GroupDrawCommand = { kind: 'group', alpha: 0.5, children: [near, rect(-900, 0)] };
     const gone: GroupDrawCommand = { kind: 'group', children: [rect(-900, 0)] };
-    expect(cullDrawCommands([split, gone], I, SCREEN)).toEqual([{ ...split, children: [near] }]);
+    expect(cullDrawCommands([split, gone], I, SCREEN, 1)).toEqual([{ ...split, children: [near] }]);
   });
 
-  it('keeps a group with effects whole — an effect may move pixels', () => {
-    const shadowed: GroupDrawCommand = {
-      kind: 'group',
-      effects: [{ program: {} as never }],
-      children: [rect(-900, 0)],
-    };
-    expect(cullDrawCommands([shadowed], I, SCREEN)).toEqual([shadowed]);
+  describe('a group with effects', () => {
+    // Six device pixels of reach: two passes, three each.
+    const blurred = (x: number, children: DrawCommand[] = [rect(x, 100)]): GroupDrawCommand => ({
+      kind: 'group', effects: blur({ radius: 3 }), children,
+    });
+
+    it('is kept while its reach crosses the edge, in device pixels', () => {
+      // 5 CSS pixels past the right edge, 1 of them slack: 6 device pixels reach it at DPR 1, not at 2.
+      const near = blurred(805);
+      expect(cullDrawCommands([near], I, SCREEN, 1)).toEqual([near]);
+      expect(cullDrawCommands([near], I, SCREEN, 2)).toEqual([]);
+      const nearer = blurred(803);
+      expect(cullDrawCommands([nearer], I, SCREEN, 2)).toEqual([nearer]);
+    });
+
+    it('is culled far off at any density', () => {
+      for (const dpr of [1, 2]) expect(cullDrawCommands([blurred(-900)], I, SCREEN, dpr)).toEqual([]);
+    });
+
+    it('is kept whole, its children uncut, when it touches the screen', () => {
+      const split = blurred(0, [rect(10, 10), rect(-900, 0)]);
+      expect(cullDrawCommands([split], I, SCREEN, 1)).toEqual([split]);
+    });
+
+    it('measures its reach in screen space, under the group transforms around it', () => {
+      const zoomed: GroupDrawCommand = { kind: 'group', transform: mat3.scaled(I, 4, 4), children: [blurred(202)] };
+      // The rect lands at 808: 6 device pixels at DPR 1 do not reach.
+      expect(cullDrawCommands([zoomed], I, SCREEN, 1)).toEqual([]);
+    });
+
+    it('is kept wherever it is when an effect does not say how far it reaches', () => {
+      const shaded: GroupDrawCommand = { kind: 'group', effects: vignette({ amount: 1 }), children: [rect(-900, 0)] };
+      expect(cullDrawCommands([shaded], I, SCREEN, 2)).toEqual([shaded]);
+    });
   });
 
   it('keeps text and shader commands, which it cannot bound', () => {
@@ -189,7 +218,7 @@ describe('cullDrawCommands', () => {
     const shader = {
       kind: 'shader', program: {}, uniforms: {}, bounds: { x: -5000, y: 0, w: 1, h: 1 },
     } as unknown as DrawCommand;
-    expect(cullDrawCommands([text, shader], I, SCREEN)).toEqual([text, shader]);
+    expect(cullDrawCommands([text, shader], I, SCREEN, 1)).toEqual([text, shader]);
   });
 
   it('bounds images and sprite runs by their quads', () => {
@@ -205,12 +234,12 @@ describe('cullDrawCommands', () => {
       image: {},
       sprites: new Float32Array([-900, 0, 10, 10, 0, 0, 1, 1, 1]),
     } as unknown as DrawCommand;
-    expect(cullDrawCommands([image, sprites, farSprites], I, SCREEN)).toEqual([sprites]);
+    expect(cullDrawCommands([image, sprites, farSprites], I, SCREEN, 1)).toEqual([sprites]);
   });
 
   it('keeps a command whose bounds are not finite numbers', () => {
     const broken = rect(NaN, 0);
-    expect(cullDrawCommands([broken], I, SCREEN)).toEqual([broken]);
+    expect(cullDrawCommands([broken], I, SCREEN, 1)).toEqual([broken]);
   });
 });
 

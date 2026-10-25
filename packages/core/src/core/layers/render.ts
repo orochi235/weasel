@@ -4,18 +4,13 @@ import type { View } from 'core/viewport/view';
 import { groupMembership, wrapGroup, type LayerGroup } from './layerGroup';
 import { DEFAULT_LAYER_RETAIN, retainedId, type LayerRetainPolicy } from './retain';
 import type { RedrawSource } from './redrawSource';
+import type { Dims, LayerDims } from './dims';
 
-export type { LayerGroup, LayerRetainPolicy };
+export type { Dims, LayerDims, LayerGroup, LayerRetainPolicy };
 export { DEFAULT_LAYER_RETAIN };
 export { subscribeToSources, type RedrawSource } from './redrawSource';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-
-/** Canvas size in CSS pixels, so layers don't have to know about DPR. */
-export interface Dims {
-  width: number;
-  height: number;
-}
 
 /**
  * What a layer's `draw` threw, and which layer threw it. A throw that escaped
@@ -66,7 +61,7 @@ export interface RenderLayer<TData> {
    * Emit a DrawCommand tree, in the coordinates `space` names. A world-space
    * layer must NOT apply the view transform itself.
    */
-  draw: (data: TData, view: View, dims: Dims) => DrawCommand[];
+  draw: (data: TData, view: View, dims: LayerDims) => DrawCommand[];
   /**
    * Optional cache key. When present and a `LayerCommandCache` is supplied to
    * `drawLayers`, the layer's previous `DrawCommand[]` is reused as long as
@@ -81,7 +76,7 @@ export interface RenderLayer<TData> {
    * the way world-space layers are** (see `space` below) — include them in
    * `deps` if `draw` reads them.
    */
-  deps?: (data: TData, view: View, dims: Dims) => readonly unknown[];
+  deps?: (data: TData, view: View, dims: LayerDims) => readonly unknown[];
   /** Whether the layer is shown when no explicit visibility entry exists.
    *  Defaults to `true` when absent. */
   defaultVisible?: boolean;
@@ -192,7 +187,7 @@ export function drawLayers<TData>(
   visibility: Record<string, boolean>,
   order: string[] | undefined,
   view: View | undefined,
-  dims: Dims,
+  dims: LayerDims,
   cache?: LayerCommandCache,
   onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
   groups?: readonly LayerGroup[],
@@ -321,7 +316,7 @@ export function drawOneLayer<TData>(
   layer: RenderLayer<TData>,
   data: TData,
   view: View,
-  dims: Dims,
+  dims: LayerDims,
   cache?: LayerCommandCache,
   onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
 ): DrawCommand[] {
@@ -332,7 +327,7 @@ function drawLayerOnce<TData>(
   layer: RenderLayer<TData>,
   data: TData,
   view: View,
-  dims: Dims,
+  dims: LayerDims,
   cache: LayerCommandCache | undefined,
   onLayerError: (failure: LayerDrawFailure) => void,
   retain: LayerRetainPolicy | false,
@@ -368,7 +363,7 @@ function layerCommands<TData>(
   layer: RenderLayer<TData>,
   data: TData,
   view: View,
-  dims: Dims,
+  dims: LayerDims,
   cache: LayerCommandCache | undefined,
 ): DrawCommand[] {
   if (!cache || !layer.deps) return layer.draw(data, view, dims);

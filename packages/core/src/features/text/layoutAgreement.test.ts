@@ -148,7 +148,7 @@ describe('a line longer than its box', () => {
 
   function layerLines(pose: TextPose): number {
     const layer = createTextLayer<TextPose>({ getTexts: () => [pose], getPose: (p) => p });
-    const [cmd] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600 });
+    const [cmd] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600, dpr: 1 });
     return drawnLines(cmd);
   }
 

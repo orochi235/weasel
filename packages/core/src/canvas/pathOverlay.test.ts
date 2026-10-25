@@ -5,7 +5,7 @@ import { createPathOverlay, PATH_OVERLAY_ROLES } from './pathOverlay';
 
 const box: Path = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
 const view = { x: 0, y: 0, scale: { x: 2, y: 2 } };
-const dims = { width: 100, height: 100 };
+const dims = { width: 100, height: 100, dpr: 1 };
 
 describe('createPathOverlay', () => {
   it('draws nothing until it holds paths, then each path in world space', () => {

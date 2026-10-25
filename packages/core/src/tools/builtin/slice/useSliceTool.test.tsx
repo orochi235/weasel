@@ -43,7 +43,7 @@ function setup(opts: Parameters<typeof useSliceTool>[0] = {}, settings?: KitSett
   };
   const click = (x: number, y: number) => fire('slice.addPoint', { pressX: x, pressY: y });
   const layer = () => result.current.overlay as RenderLayer<unknown>;
-  const paint = () => layer().draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 400 });
+  const paint = () => layer().draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 400, dpr: 1 });
   return { tool: () => result.current, actionOf, fire, click, commit, pointer, deps, layer, paint };
 }
 

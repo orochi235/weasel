@@ -103,7 +103,7 @@ export function createViewportLayer<TData, TSource = TData>(
       const b = bounds(outerView, dims);
       // Inner content drawn through `view`, then translated so the inner
       // view's screen origin lines up with the viewport top-left.
-      const innerDims = { width: b.w, height: b.h };
+      const innerDims = { width: b.w, height: b.h, dpr: dims.dpr };
       const children: DrawCommand[] = background
         ? backgroundFillCommands({ kind: 'solid', color: background }, innerDims)
         : [];

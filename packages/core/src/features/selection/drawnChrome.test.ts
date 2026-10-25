@@ -5,7 +5,7 @@ import { asNodeId, type RectPose } from 'core/scene/types';
 import { composeSelectionPose, createSelectionOverlayLayer } from './overlay';
 
 const RED = { kind: 'solid', color: '#f00' } as const;
-const DIMS = { width: 400, height: 400 };
+const DIMS = { width: 400, height: 400, dpr: 1 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function sceneOf() {

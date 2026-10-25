@@ -129,7 +129,7 @@ describe('culling an inheriting node', () => {
       return defaultDrawOne(node, pose, view, ctx);
     };
     buildSceneViewCommands(scene, VIEW, drawOne, undefined, undefined, undefined, undefined, {
-      width: 100, height: 100, paintBounds: defaultPaintBounds,
+      width: 100, height: 100, dpr: 1, paintBounds: defaultPaintBounds,
     });
     expect(drawn).not.toContain('c');
   });

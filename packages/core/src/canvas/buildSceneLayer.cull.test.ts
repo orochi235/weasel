@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildSceneLayer } from './buildSceneLayer';
-import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
+import { blur, type DrawCommand, type PathDrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
-const DIMS = { width: 400, height: 300 };
+const DIMS = { width: 400, height: 300, dpr: 1 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** Every path command in the layer's output, by the node id it came from. */
@@ -116,5 +116,21 @@ describe('buildSceneLayer — cull', () => {
     );
     layer.draw(null, VIEW, DIMS);
     expect(paintedNodeIds(drawOne)).toEqual([far]);
+  });
+
+  it("culls a group with effects by its reach at the frame's density", () => {
+    const scene = createScene<Record<string, never>, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
+    // 5 CSS pixels right of the 400-wide view; the blur reaches 6 device pixels.
+    const blurred: DrawCommand = {
+      kind: 'group',
+      effects: blur({ radius: 3 }),
+      children: [{ kind: 'path', path: { kind: 'rect', x: 405, y: 50, width: 20, height: 20 } }],
+    };
+    const layer = buildSceneLayer<TestNode, Pose>(
+      { cull: true, drawOne: () => [], postProcess: (cmds) => [...cmds, blurred] },
+      sceneToAdapter(scene) as never, () => null, () => null,
+    );
+    expect(layer.draw(null, VIEW, { ...DIMS, dpr: 1 })).toContain(blurred);
+    expect(layer.draw(null, VIEW, { ...DIMS, dpr: 2 })).not.toContain(blurred);
   });
 });

@@ -18,7 +18,7 @@ interface Item {
   derivePath?: (node: unknown, deps: readonly ({ pose: Pose } | undefined)[]) => Path | null;
 }
 
-const DIMS = { width: 400, height: 300 };
+const DIMS = { width: 400, height: 300, dpr: 1 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 const line = (from: Pose, to: Pose): Path => ({

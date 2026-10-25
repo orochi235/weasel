@@ -4,7 +4,7 @@ import type { RenderLayer } from './render';
 import type { DrawCommand } from '@weasel-js/renderer';
 
 const stubView = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const stubDims = { width: 100, height: 100 };
+const stubDims = { width: 100, height: 100, dpr: 1 };
 
 function makeLayer(): RenderLayer<undefined> {
   const drawFn = vi.fn((): DrawCommand[] => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } }]);

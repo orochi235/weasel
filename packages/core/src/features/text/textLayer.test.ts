@@ -8,7 +8,7 @@ interface Node {
   pose: TextPose;
 }
 
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 
 describe('createTextLayer', () => {
   it('has a default id and label', () => {
@@ -79,7 +79,7 @@ describe('createTextLayer', () => {
       getPose: (n) => n.pose,
       isHidden: (n) => n.id === 'a',
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     expect(tree).toHaveLength(1);
     const cmd = tree[0] as { runs: Array<{ text: string }> };
     expect(cmd.runs[0].text).toBe('B');
