@@ -611,11 +611,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `applyPrefConditions` names a disabled section in `disabled` by `prefSectionPath`, and every surface reads it
   there. `GroupTabs`, `PanelTabs` and `BarLayout` take no `disabled` for their labels.
 
-- **(P3) A list item's switch field is disabled by the condition it switches.** `prefScopeIn` spares the leaf an
-  owner's `enableIf` reads by comparing the condition's paths with the leaf's full path, but a `from: 'item'`
-  condition names an item-relative path (`on`), so in `phases.2` the field `phases.2.on` stays disabled
-  (`applyPrefEntryConditions`, checked 2026-10-24).
-
 - **(P3) labkit's `configFromPrefs` drops a section's `showIf` and `enableIf`.** A lab built from a property schema
   turns each top-level section into a labkit section (`options.section`), which holds no condition, so the section
   neither hides nor disables its rows there.

@@ -70,17 +70,18 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: Walk
   const disabled = new Set<string>();
   const hidden = new Set<string>();
 
-  const leaf = (node: PrefLeaf, path: string, above: PrefScope, holds: PrefConditionJudge): PrefLeaf | null => {
+  const leaf = (node: PrefLeaf, path: string, above: PrefScope, holds: PrefConditionJudge, entry?: string): PrefLeaf | null => {
     const own = prefScopeUnder(above, node, holds);
     const scope = node.kind === 'alias' && aliasOver ? prefAliasScope(own, node as PrefAlias, aliasOver, aliasHolds ?? holds) : own;
-    return scope.shown || keepHidden ? inside(node, path, scope, holds, above) : null;
+    return scope.shown || keepHidden ? inside(node, path, scope, holds, above, entry) : null;
   };
 
-  /** `node`, whose scope is `scope` in `above`, without what its own value hides: a field, or part of a list's or a map's item. */
-  const inside = (node: PrefLeaf, path: string, scope: PrefScope, holds: PrefConditionJudge, above = scope): PrefLeaf => {
+  /** `node`, whose scope is `scope` in `above`, without what its own value hides: a field, or part of a list's or a
+   *  map's item. `entry` is the path of the entry it sits in, if any. */
+  const inside = (node: PrefLeaf, path: string, scope: PrefScope, holds: PrefConditionJudge, above = scope, entry?: string): PrefLeaf => {
     if (!scope.shown) hidden.add(path);
     if (!scope.enabled) disabled.add(path);
-    const owner: PrefOwner = { node, scope, above };
+    const owner: PrefOwner = entry === undefined ? { node, scope, above } : { node, scope, above, entry };
     if (node.kind === 'object') {
       const children = members((node as PrefObject).children, path, owner, holds);
       return children === (node as PrefObject).children ? node : ({ ...node, children } as PrefLeaf);
@@ -90,7 +91,8 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: Walk
       // A leaf an app's renderer draws under a built-in's kind may hold no item.
       if (item === undefined) return node;
       // An item is drawn with its entry, so its own `showIf` is not asked.
-      const entry = inside(item, under(path, PREF_ENTRY), prefScopeUnder(scope, { enableIf: item.enableIf }, inItem), inItem);
+      const at = under(path, PREF_ENTRY);
+      const entry = inside(item, at, prefScopeUnder(scope, { enableIf: item.enableIf }, inItem), inItem, scope, at);
       return entry === item ? node : ({ ...node, item: entry } as PrefLeaf);
     }
     if (node.kind !== 'union') return node;
@@ -115,20 +117,22 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: Walk
     for (const [key, child] of Object.entries(held)) {
       const at = under(prefix, key);
       const kept = isPrefLeaf(child)
-        ? leaf(child, at, prefScopeIn(owner, at, holds), holds)
-        : section(child, prefix, prefSectionPath(within, key), owner.scope, holds);
+        ? leaf(child, at, prefScopeIn(owner, at, holds), holds, owner.entry)
+        : section(child, prefix, prefSectionPath(within, key), owner.scope, holds, owner.entry);
       changed ||= kept !== child;
       if (kept !== null) out[key] = kept;
     }
     return changed ? out : held;
   };
 
-  const section = (node: PrefSection, prefix: string, path: string, above: PrefScope, holds: PrefConditionJudge): PrefSection | null => {
+  const section = (
+    node: PrefSection, prefix: string, path: string, above: PrefScope, holds: PrefConditionJudge, entry?: string,
+  ): PrefSection | null => {
     const scope = prefScopeUnder(above, node, holds);
     if (!scope.shown && !keepHidden) return null;
     if (!scope.shown) hidden.add(path);
     if (!scope.enabled) disabled.add(path);
-    const kept = members(node.members, prefix, { node, scope, above }, holds, path);
+    const kept = members(node.members, prefix, entry === undefined ? { node, scope, above } : { node, scope, above, entry }, holds, path);
     if (kept === node.members) return node;
     return Object.keys(kept).length === 0 && !keepEmpty ? null : { ...node, members: kept };
   };
@@ -213,5 +217,5 @@ export function applyPrefEntryConditions(
   const asked: PrefConditionJudge = (condition, field) => !prefConditionReadsItem(condition) || holds(condition, field);
   const walk = leafWalk({ keepEmpty, keepHidden, inItem: ALWAYS });
   const scope = prefScopeUnder(PREF_SCOPE, { enableIf: item.enableIf }, asked);
-  return { item: walk.inside(item, path, scope, asked), disabled: walk.disabled, hidden: walk.hidden };
+  return { item: walk.inside(item, path, scope, asked, PREF_SCOPE, path), disabled: walk.disabled, hidden: walk.hidden };
 }
