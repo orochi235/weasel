@@ -36,8 +36,13 @@ export function useZoneWidth(inside: Element | null, fixed: number | undefined):
       const width = entries[0]?.contentRect.width;
       if (width !== undefined) setMeasured(width);
     });
-    observer.observe(zone);
-    return () => observer.disconnect();
+    // The pane mounts inside windease's own observer callback, and an element observed during that delivery at
+    // the strip's depth is skipped, which Chrome reports as a ResizeObserver loop. Start after it.
+    const start = setTimeout(() => observer.observe(zone), 0);
+    return () => {
+      clearTimeout(start);
+      observer.disconnect();
+    };
   }, [inside, fixed]);
   return fixed ?? measured;
 }

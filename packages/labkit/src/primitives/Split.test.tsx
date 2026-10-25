@@ -146,6 +146,8 @@ describe('Split', () => {
         // The strip renders no pane until it has an extent, and Split measures from a pane.
         await report();
         expect(widths(container)).toEqual(['140px', '160px']);
+        // Split starts observing the zone a task after the pane mounts.
+        await act(() => new Promise((done) => setTimeout(done, 0)));
         await report();
         expect(widths(container)).toEqual(['16px', '160px']);
       } finally {
