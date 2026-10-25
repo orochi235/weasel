@@ -1,0 +1,35 @@
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.listPane,
+.detailPane {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: var(--wzl-space-4);
+}
+
+.listPane {
+  --wzl-tree-selected: color-mix(in srgb, var(--wzl-accent) 28%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+  border-inline-end: 1px solid var(--wzl-line-subtle);
+}
+
+/* Narrow: the list above the detail, each scrolling on its own. */
+@container (width < 480px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .listPane {
+    border-inline-end: none;
+    border-block-end: 1px solid var(--wzl-line-subtle);
+  }
+}

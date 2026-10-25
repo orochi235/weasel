@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIconVariant } from '@weasel-js/core';
+import { RegistryBrowser, type RegistryBrowserPick, type RegistryCategory } from '@weasel-js/devtools';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import s from './RegistryInspector.module.css';
 import { DevShell } from './DevShell';
-import { RegistryTree } from './RegistryTree';
 import { RegistryDetail } from './RegistryDetail';
 import { RegistryProbe, type RegistrySnapshot } from './registryProbe';
 import { collectBundles, collectGestures, countForEntry, collectIcons, collectMeta, collectPropertiesTrait, collectOpKinds, collectPhaseOutputs, collectShapeTrait, collectSlots } from './registryData';
 import type { TreeCategoryNode, TreeEntry } from './registryEntries';
+import { icon } from '../icons.gen';
+
+const entryKey = (e: TreeEntry) => `${e.kind}:${e.id}`;
 
 /** Parse the selected-entry coordinates out of the URL hash. The inspector
  *  encodes the user's selection as `#/dev/registry?kind=<entryKind>&id=<entryId>`
@@ -131,40 +136,61 @@ export function RegistryInspector() {
     return () => window.removeEventListener('hashchange', onHash);
   }, [nodes]);
 
+  const categories: readonly RegistryCategory[] = useMemo(() => nodes.map((n) => ({
+    id: n.id,
+    label: n.label,
+    ...(n.group ? { group: n.group } : {}),
+    entries: n.entries.map((e) => {
+      const count = countForEntry(e, runtime.tools, runtime.actions);
+      return {
+        id: entryKey(e),
+        label: e.label,
+        match: [e.id],
+        trailing: count === undefined
+          ? undefined
+          : <Badge className={s.leafBadge} shape="pill" size="sm" variant="solid">{count}</Badge>,
+      };
+    }),
+  })), [nodes, runtime.tools, runtime.actions]);
+
+  const selectedCategory = selected
+    ? nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id)) ?? null
+    : null;
+  const pick: RegistryBrowserPick | null = selected && selectedCategory
+    ? { category: selectedCategory.id, id: entryKey(selected) }
+    : null;
+
   return (
     <DevShell
       title="Bundle Inspector"
     >
       <div className={s.root}>
         <RegistryProbe onSnapshot={onSnapshot} />
-        <div className={s.layout}>
-          <aside className={s.tree}>
-            <RegistryTree
-              nodes={nodes}
-              selected={selected}
-              onSelect={setSelected}
-              filter={textFilter}
-              onFilterChange={setTextFilter}
-              getCount={(e) => countForEntry(e, runtime.tools, runtime.actions)}
-            />
-          </aside>
-          <section className={s.detail}>
-            {selected
-              ? <RegistryDetail
-                  entry={selected}
-                  tools={runtime.tools}
-                  actions={runtime.actions}
-                  category={nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id)) ?? null}
-                  onNavigate={(t) => {
-                    for (const node of nodes) {
-                      const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
-                      if (hit) { setSelected(hit); return; }
-                    }
-                  }}
-                />
-              : <p className={s.empty}>Select an entry to see details.</p>}
-          </section>
-        </div>
+        <RegistryBrowser
+          categories={categories}
+          selected={pick}
+          onSelect={(p) => {
+            const hit = nodes.find((n) => n.id === p.category)?.entries.find((e) => entryKey(e) === p.id);
+            if (hit) setSelected(hit);
+          }}
+          filter={textFilter}
+          onFilterChange={setTextFilter}
+          filterIcon={<Icon name={icon('ui:search')} />}
+          detail={selected
+            ? <RegistryDetail
+                entry={selected}
+                tools={runtime.tools}
+                actions={runtime.actions}
+                category={selectedCategory}
+                onNavigate={(t) => {
+                  for (const node of nodes) {
+                    const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
+                    if (hit) { setSelected(hit); return; }
+                  }
+                }}
+              />
+            : <p className={s.empty}>Select an entry to see details.</p>}
+        />
       </div>
     </DevShell>
   );

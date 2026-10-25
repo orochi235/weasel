@@ -105,7 +105,7 @@ export function collectOpFactories(): readonly OpFactoryEntry[] {
 const SHAPE_KIND_IDS: readonly string[] = Weasel.KIT_SHAPE_KINDS;
 
 /** Tree-leaf badge count: how many other entries reference this one. Used
- *  by `RegistryTree` to render `(n)` next to leaves where the count is
+ *  by the inspector to render `(n)` next to leaves where the count is
  *  meaningful (e.g. gestures → number of tools binding the channel).
  *  Returns `undefined` for kinds where a count would be 1:1 (icons,
  *  op factories), noisy (tools, actions), or nonsensical. */
