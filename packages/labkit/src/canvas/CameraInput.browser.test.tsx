@@ -21,7 +21,7 @@ function Grab({ into }: { into: { current: CameraContextValue | null } }) {
 function mountScaled(view: ViewTransform, onViewChange = vi.fn(), onHitTest = vi.fn()) {
   const camera: { current: CameraContextValue | null } = { current: null };
   const { container } = render(
-    <div className="scaled-host">
+    <div className="lk-test-scaled-host">
       <CanvasStack
         layers={[]}
         view={view}
