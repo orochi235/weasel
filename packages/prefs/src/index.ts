@@ -51,6 +51,7 @@ export {
   prefReader,
   prefScopeAt,
   prefScopeIn,
+  prefSectionPath,
   prefScopeUnder,
   type PrefConditionField,
   type PrefConditionJudge,

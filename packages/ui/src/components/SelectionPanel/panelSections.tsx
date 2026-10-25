@@ -3,11 +3,12 @@
  * one strip, a `panel` in a box, and the rest as rows under their headings.
  */
 import { Fragment, type ReactNode } from 'react';
-import { prefAsBox, prefTabRuns } from '@weasel-js/prefs';
+import { prefAsBox, prefSectionPath, prefTabRuns } from '@weasel-js/prefs';
 import { BarLayout } from '../Bar/BarLayout';
 import { MotifFrame } from '../MotifFrame';
 import { FORM_FRAMES } from '../Prefs/frames';
 import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
+import { offTitle } from '../Prefs/offTitle';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefDrawsActionRow } from '../Prefs/registeredActions';
 import { pathWithin, RAIL_ATTR, selectionAttrs } from '../Prefs/selection';
@@ -25,6 +26,8 @@ interface DrawnSection {
   framed?: { titled: boolean; inline: ReactNode; rows: ReactNode };
   /** Every row of the section is one a `showIf` hides, and its heading says so. */
   hidden?: boolean;
+  /** The section's `enableIf` turns it off, and its title dims. */
+  off?: boolean;
 }
 
 /** One line of bar forms, with no heading and no row labels. */
@@ -119,6 +122,8 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
   const headControl = only && rowCells({ label: section.name, leaves: [{ ...only, leaf: { ...only.leaf, name: section.name } }] }, scope)[0];
   if (rows.length === 0 && !headControl) return [];
   const headed = sectionHeaded(section);
+  const off = scope.disabled.has(prefSectionPath('', section.key));
+  const title = offTitle(section.name, off);
   // A section hidden whole carries one mark, on its heading; with no heading each of its rows does.
   const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden)) && headControl?.hidden !== false;
   const rowMarks: PanelMarks = whole ? { ...marks, hidden: undefined } : marks;
@@ -136,11 +141,11 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
   );
   const content = (
     <>
-      {headed && !control && <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>}
+      {headed && !control && <h3 className={s.sectionTitle}>{title}{whole && <HiddenBadge />}</h3>}
       {control && (
         // The title dims itself, so the control sits beside it rather than in it, where it would dim too.
         <div className={s.sectionHead}>
-          <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>
+          <h3 className={s.sectionTitle}>{title}{whole && <HiddenBadge />}</h3>
           {control}
         </div>
       )}
@@ -148,7 +153,7 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
     </>
   );
   const inline = whole || control ? <>{whole && <HiddenBadge />}{control}</> : undefined;
-  return [{ section, content, hidden: whole, framed: { titled: headed || Boolean(control), inline, rows: drawnRows } }];
+  return [{ section, content, hidden: whole, off, framed: { titled: headed || Boolean(control), inline, rows: drawnRows } }];
 }
 
 /** The sections in order, each one `selected` can name carrying its key: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
@@ -157,7 +162,7 @@ function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode
   const out: ReactNode[] = [];
   for (const step of prefTabRuns(sections, (drawn) => drawn.section.as === 'tab')) {
     if (!step.tabs) {
-      const { section, content, hidden, framed } = step.item;
+      const { section, content, hidden, off, framed } = step.item;
       const attrs = { ...(sectionNamed(section) ? selectionAttrs(section.key, selectedOnly(marks)) : {}), ...hiddenAttrs(hidden === true) };
       out.push(
         prefAsBox(section.as) && framed ? (
@@ -169,6 +174,7 @@ function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode
             level={3}
             className={s.sectionPanel}
             attrs={attrs}
+            disabled={off}
           >
             {/* One item for the well's column, so its gap falls under the heading and not between rows. */}
             <div>{framed.rows}</div>

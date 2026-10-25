@@ -8,6 +8,7 @@ import { FORM_FRAMES } from './frames';
 import { HiddenBadge, hiddenAttrs } from './hidden';
 import { leafAtValues } from './leafAtValues';
 import { objectRows, type ObjectLeafParts } from './objectRows';
+import { offTitle } from './offTitle';
 import type { PrefRenderContext } from './PrefsRow';
 import s from './Prefs.module.css';
 
@@ -94,8 +95,9 @@ export function ObjectLeaf({
       return content == null ? [] : [{ kind: 'cell' as const, path: `${ctx.path}.${key}`, content }];
     }),
     lead: (key, section) => (section.description ? [<p key={`desc:${key}`} className={s.paneDesc}>{section.description}</p>] : []),
-    frame: (key, section, inner, { labeled }) => {
+    frame: (key, section, inner, { labeled, path }) => {
       if (section.as === 'fragment') return inner;
+      const off = ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true;
       if (prefAsBox(section.as)) {
         return [
           <MotifFrame
@@ -105,12 +107,13 @@ export function ObjectLeaf({
             note={section.description}
             level={4}
             className={`${s.panePanel} ${s.objectPanel}`}
+            disabled={off}
           >
             {inner}
           </MotifFrame>,
         ];
       }
-      const heading = labeled ? [<h4 key={`group:${key}`} className={s.objectGroup}>{section.name}</h4>] : [];
+      const heading = labeled ? [<h4 key={`group:${key}`} className={s.objectGroup}>{offTitle(section.name, off)}</h4>] : [];
       return [...heading, ...parts.lead!(key, section), ...inner];
     },
   };
