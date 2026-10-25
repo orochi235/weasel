@@ -3,6 +3,7 @@ import {
   clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
 } from '@weasel-js/quantity';
 import f from '../field.module.css';
+import { fieldRootClass } from '../Field/fieldSlots';
 import s from './NumberField.module.css';
 import { useStepRepeat } from './useStepRepeat';
 
@@ -172,9 +173,7 @@ export function UnitField({
 
   return (
     <div
-      className={[f.field, f.control, width === 'fit' && `${f.fit} ${s.fit}`, className]
-        .filter(Boolean)
-        .join(' ')}
+      className={fieldRootClass({ width, fit: s.fit, className })}
     >
       <div
         className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}

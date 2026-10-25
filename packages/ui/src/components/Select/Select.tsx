@@ -17,15 +17,12 @@ import {
   ListBoxItem as RACListBoxItem,
   ListBoxSection as RACListBoxSection,
   Header,
-  Text,
-  FieldError,
   type SelectProps as RACSelectProps,
   type ListBoxItemProps as RACListBoxItemProps,
-  type ValidationResult,
 } from 'react-aria-components';
 import { Popover } from '../Popover';
 import { pastDragThreshold } from '@weasel-js/core';
-import type { FieldOrientation } from '../Field/Field';
+import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
@@ -73,16 +70,7 @@ export type SelectPopup = 'over' | 'below';
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
-  label?: ReactNode;
-  /**
-   * `'stacked'` (the default) puts the label above the trigger; `'row'` sets it
-   * beside the trigger at its own width, with any description or error on a
-   * line below. Same vocabulary as {@link Field}'s `orientation`.
-   */
-  orientation?: FieldOrientation;
-  description?: ReactNode;
-  errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & FieldSlotProps & {
   placeholder?: string;
   /**
    * Either pass `options` for a quick render, or `children` for full control.
@@ -140,7 +128,7 @@ export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<obje
 export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const {
     label,
-    orientation = 'stacked',
+    orientation,
     description,
     errorMessage,
     placeholder,
@@ -172,19 +160,21 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
-      className={[
-        f.field,
-        f.control,
-        s.select,
-        width === 'fit' && `${f.fit} ${s.fit}`,
-        variant === 'bare' && s.bare,
-        indicator === 'underline' && s.underlined,
-        indicator === 'none' && s.plain,
-        orientation === 'row' && `${f.row} ${s.row}`,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={fieldRootClass({
+        orientation,
+        width,
+        fit: s.fit,
+        className: [
+          s.select,
+          variant === 'bare' && s.bare,
+          indicator === 'underline' && s.underlined,
+          indicator === 'none' && s.plain,
+          orientation === 'row' && s.row,
+          className,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      })}
     >
       {anchor}
       {label !== undefined && <Label className={f.label}>{label}</Label>}
@@ -216,12 +206,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           {indicator === 'chevron' && <Caret className={s.chevron} />}
         </RACButton>
       </TriggerTooltip>
-      {description !== undefined && (
-        <Text slot="description" className={`${f.hint} ${f.below}`}>
-          {description}
-        </Text>
-      )}
-      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
+      <FieldFoot description={description} errorMessage={errorMessage} />
       {/* `data-weasel-overlay` marks DOM that belongs to this control but
           renders in a portal, outside the subtree the trigger sits in. Any
           consumer reasoning about "did focus leave my component?" via

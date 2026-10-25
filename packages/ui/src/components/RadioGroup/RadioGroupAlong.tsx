@@ -1,5 +1,5 @@
 import { createContext, useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
-import { FieldError, Label, RadioGroup as RACRadioGroup, Text } from 'react-aria-components';
+import { Label, RadioGroup as RACRadioGroup } from 'react-aria-components';
 import { runStationAt, trackRun, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { AlongContext } from '../Along/alongContext';
 import { placeStyle } from '../Along/placeOnRun';
@@ -7,7 +7,7 @@ import { bendAt } from '../Along/runBend';
 import { createRunSlots, RUN_HOST, slotClass, slotOf, useRunSlotHost, type RunSlots } from '../Along/runSlots';
 import { useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds } from '../Along/useRunRow';
-import { fieldClasses } from '../Field/Field';
+import { FieldFoot } from '../Field/fieldSlots';
 import type { RadioGroupProps } from './RadioGroup';
 import s from './RadioGroup.module.css';
 
@@ -44,8 +44,7 @@ export function RadioGroupAlong({ label, description, errorMessage, children, cl
           </AlongContext.Provider>
         </RadioSlotsContext.Provider>
         <span className={s.hint} style={hintStyle(run, host.thickness / 2 + gap)} data-radio-hint="">
-          {description !== undefined && <Text slot="description" className={fieldClasses.hint}>{description}</Text>}
-          <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
+          <FieldFoot description={description} errorMessage={errorMessage} />
         </span>
       </RACRadioGroup>
       <RunEnds row={host} run={run} />

@@ -3,26 +3,14 @@ import {
   TextField,
   Label,
   Input as RACInput,
-  Text,
-  FieldError,
   type TextFieldProps as RACTextFieldProps,
-  type ValidationResult,
 } from 'react-aria-components';
-import type { FieldOrientation } from '../Field/Field';
+import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import f from '../field.module.css';
 import s from './Input.module.css';
 
 /** Props for {@link Input}, on top of React Aria's `TextField` props. */
-export type InputProps = Omit<RACTextFieldProps, 'children' | 'className'> & {
-  label?: ReactNode;
-  /**
-   * `'stacked'` (the default) puts the label above the field; `'row'` sets it
-   * beside the field at its own width, with any description or error on a
-   * line below. Same vocabulary as {@link Field}'s `orientation`.
-   */
-  orientation?: FieldOrientation;
-  description?: ReactNode;
-  errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
+export type InputProps = Omit<RACTextFieldProps, 'children' | 'className'> & FieldSlotProps & {
   placeholder?: string;
   leadingAdornment?: ReactNode;
   trailingAdornment?: ReactNode;
@@ -42,7 +30,7 @@ export const Input = forwardRef(function Input(
 ) {
   const {
     label,
-    orientation = 'stacked',
+    orientation,
     description,
     errorMessage,
     placeholder,
@@ -55,14 +43,7 @@ export const Input = forwardRef(function Input(
   return (
     <TextField
       {...textFieldProps}
-      className={[
-        f.field,
-        f.control,
-        orientation === 'row' && f.row,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={fieldRootClass({ orientation, className })}
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
@@ -70,12 +51,7 @@ export const Input = forwardRef(function Input(
         <RACInput ref={ref} placeholder={placeholder} />
         {trailingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{trailingAdornment}</span>}
       </div>
-      {description !== undefined && (
-        <Text slot="description" className={`${f.hint} ${f.below}`}>
-          {description}
-        </Text>
-      )}
-      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
+      <FieldFoot description={description} errorMessage={errorMessage} />
     </TextField>
   );
 });

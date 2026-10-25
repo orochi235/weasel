@@ -3,23 +3,18 @@ import {
   RadioGroup as RACRadioGroup,
   Radio as RACRadio,
   Label,
-  Text,
-  FieldError,
   type RadioGroupProps as RACRadioGroupProps,
   type RadioProps as RACRadioProps,
-  type ValidationResult,
 } from 'react-aria-components';
 import { useTrackShape } from '../Along/alongContext';
 import { slotClass, useRunSlot } from '../Along/runSlots';
 import { fieldClasses } from '../Field/Field';
+import { FieldFoot, type FieldSlotProps } from '../Field/fieldSlots';
 import { RadioGroupAlong, RadioSlotsContext } from './RadioGroupAlong';
 import s from './RadioGroup.module.css';
 
 /** Props for {@link RadioGroup}, on top of React Aria's `RadioGroup` props. */
-export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className'> & {
-  label?: ReactNode;
-  description?: ReactNode;
-  errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
+export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className'> & Omit<FieldSlotProps, 'orientation'> & {
   children?: ReactNode;
   className?: string;
 };
@@ -41,12 +36,7 @@ export function RadioGroup(props: RadioGroupProps) {
     >
       {label !== undefined && <Label className={s.legend}>{label}</Label>}
       {children}
-      {description !== undefined && (
-        <Text slot="description" className={fieldClasses.hint}>
-          {description}
-        </Text>
-      )}
-      <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
+      <FieldFoot description={description} errorMessage={errorMessage} />
     </RACRadioGroup>
   );
 }

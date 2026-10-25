@@ -1,31 +1,19 @@
-import { forwardRef, type ReactNode, type Ref } from 'react';
+import { forwardRef, type Ref } from 'react';
 import {
   NumberField as RACNumberField,
   Label,
   Input as RACInput,
   Group,
   Button as RACButton,
-  Text,
-  FieldError,
   type NumberFieldProps as RACNumberFieldProps,
-  type ValidationResult,
 } from 'react-aria-components';
-import type { FieldOrientation } from '../Field/Field';
+import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import type { StepperSide } from './UnitField';
 import f from '../field.module.css';
 import s from './NumberField.module.css';
 
 /** Props for {@link NumberField}, on top of React Aria's `NumberField` props. */
-export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className'> & {
-  label?: ReactNode;
-  /**
-   * `'stacked'` (the default) puts the label above the field; `'row'` sets it
-   * beside the field at its own width, with any description or error on a
-   * line below. Same vocabulary as {@link Field}'s `orientation`.
-   */
-  orientation?: FieldOrientation;
-  description?: ReactNode;
-  errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
+export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className'> & FieldSlotProps & {
   /** Hide the up/down stepper buttons. Defaults to false. */
   hideSteppers?: boolean;
   /** Which end of the field the steppers sit at. Defaults to `'start'`. */
@@ -59,7 +47,7 @@ export const NumberField = forwardRef(function NumberField(
 ) {
   const {
     label,
-    orientation = 'stacked',
+    orientation,
     description,
     errorMessage,
     hideSteppers,
@@ -73,15 +61,7 @@ export const NumberField = forwardRef(function NumberField(
   return (
     <RACNumberField
       {...rest}
-      className={[
-        f.field,
-        f.control,
-        width === 'fit' && `${f.fit} ${s.fit}`,
-        orientation === 'row' && f.row,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={fieldRootClass({ orientation, width, fit: s.fit, className })}
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <Group
@@ -96,12 +76,7 @@ export const NumberField = forwardRef(function NumberField(
           </div>
         )}
       </Group>
-      {description !== undefined && (
-        <Text slot="description" className={`${f.hint} ${f.below}`}>
-          {description}
-        </Text>
-      )}
-      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
+      <FieldFoot description={description} errorMessage={errorMessage} />
     </RACNumberField>
   );
 });
