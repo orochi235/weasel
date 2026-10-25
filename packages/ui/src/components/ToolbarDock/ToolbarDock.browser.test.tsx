@@ -208,7 +208,9 @@ test('in a squeezed row, a short bar keeps its only item and the long bars give 
       <ToolbarDock docks={docks} bars={offered} layout={{ docks: { top: [['pick', 'file', 'view']] }, floating: {} }} movable />
     </div>,
   );
-  await expect.poll(() => screen.queryAllByRole('button', { name: 'More' }).length).toBeGreaterThan(0);
+  // A bar re-measures on its next resize notice, so the row settles over a few frames.
+  await expect.poll(() => screen.queryAllByRole('button', { name: 'More' }).length).toBe(2);
+  await expect.poll(() => screen.queryByRole('button', { name: 'Pick 0' })).not.toBeNull();
   const pick = screen.getByRole('toolbar', { name: 'Pick' });
   const slot = document.querySelector('[data-dock-bar="pick"]')!.getBoundingClientRect();
   const item = screen.getByRole('button', { name: 'Pick 0' }).getBoundingClientRect();
