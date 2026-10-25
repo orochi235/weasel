@@ -31,6 +31,13 @@ describe('<CodeBlock>', () => {
     expect(tokenOf('default')?.classList).not.toContain('keyword');
   });
 
+  it('draws an element only for a token that is colored, so a long block stays a small tree', () => {
+    const { container } = render(<CodeBlock code={SOURCE} />);
+    expect(container.querySelector('.plain')).toBeNull();
+    const line = container.querySelector('pre code > span')!;
+    expect([...line.children].every((el) => el.classList.contains('token'))).toBe(true);
+  });
+
   it('paints no color of its own inline, leaving every color to the theme', () => {
     const { container } = render(<CodeBlock code={SOURCE} />);
     expect(container.querySelector('[style*="color"]')).toBeNull();

@@ -52,15 +52,15 @@ export const CodeBlock = memo(function CodeBlock({ code, language = 'tsx', lineN
             <code>
               {tokens.map((line, i) => {
                 const { key: _line, className: lineClass, style: _lineStyle, ...lineProps } = getLineProps({ line });
+                // A plain token has no color, so it is text, not an element: they are a third of a schema literal's.
+                const text = line.map((token, j) => {
+                  if (token.types.length === 1 && token.types[0] === 'plain') return token.content;
+                  const { key: _token, style: _tokenStyle, ...tokenProps } = getTokenProps({ token });
+                  return <span key={j} {...tokenProps} />;
+                });
                 return (
                   <span key={i} {...lineProps} className={`${lineClass} ${s.line}`}>
-                    {lineNumbers && <span className={s.lineNo} aria-hidden>{i + 1}</span>}
-                    <span>
-                      {line.map((token, j) => {
-                        const { key: _token, style: _tokenStyle, ...tokenProps } = getTokenProps({ token });
-                        return <span key={j} {...tokenProps} />;
-                      })}
-                    </span>
+                    {lineNumbers ? <><span className={s.lineNo} aria-hidden>{i + 1}</span><span>{text}</span></> : text}
                   </span>
                 );
               })}
