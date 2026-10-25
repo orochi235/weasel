@@ -978,10 +978,10 @@ only story runner in the repo.
   compared, Token and Contrast read the main story, but the Live source notifies them from a `MutationObserver` on the
   lens's own copy (`shell/loupe/liveSource.ts`). A change only the main story shows, such as a hover or a menu opened in
   it, leaves the readout on its old reading until the lens next renders.
-- **(P2) A story's own scroller cannot be wheel-scrolled under a lens** (2026-10-21). labkit's wheel pass-through
-  (`useWheelPassThrough`) hands the wheel on as a dispatched copy, which is untrusted, and a browser scrolls an element
-  only for a trusted wheel. A camera's wheel zoom answers the copy; a story's native `overflow` scroller under a lens
-  does not move. A fix scrolls the element the copy lands on by its deltas when nothing called `preventDefault`.
+- **(P3) A wheel over a lens above an isolated story reaches nothing in its frame** (2026-10-24, inferred from the
+  code, not seen). `useWheelPassThrough` finds what is beneath with the shell document's `elementFromPoint`, which
+  answers with the `<iframe>` itself, so the copy is dispatched on that element and neither the story's camera nor its
+  scroller in the frame's document sees it. Handing it on means probing and dispatching inside the frame.
 - **(P3) A Live copy of an isolated story is drawn soft at magnification** (2026-10-21, inferred, not seen). A
   `<CanvasStack>` puts the scale an ancestor transform shows it at into its backing density, so an in-document copy
   is sharp at any factor. Inside an isolated story's frame the lens's transform is outside the frame's document,
