@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { Tree, type TreeNode } from './Tree';
-import { TYPEAHEAD_MS } from './useTypeahead';
+import { TYPEAHEAD_MS } from '../../useTypeahead';
 import { REST_MS } from './useRowTip';
 import { HOVER_EXPAND_MS } from './useTreeDrag';
 

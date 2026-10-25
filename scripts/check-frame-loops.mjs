@@ -21,7 +21,7 @@ const ALLOWED = new Map([
   ['packages/forge/src/frame/FrameController.tsx', 'not a loop: a story frame waits for one painted frame after its fonts settle before announcing it rendered'],
   ['packages/text-dom/src/testing/overlayReady.ts', 'test helper, not a loop: waits a bounded number of frames for the edit overlay to mount and settle'],
   ['packages/core/src/canvas/testing/stubCanvasContext.ts', 'test helper, not a loop: waits for one frame so a test can read what the canvas painted'],
-  ['packages/ui/src/components/Tree/Tree.tsx', 'not a loop: a keyboard move waits one frame for its re-render before giving up on moving focus'],
+  ['packages/ui/src/useRowNavigation.ts', 'not a loop: a keyboard move waits one frame for its re-render before giving up on moving focus'],
   ['packages/labkit/src/lab/still.ts', 'not a loop: a still waits a bounded number of frames after its fonts settle before announcing it painted'],
   ['packages/forge/src/vite/watchProbe.ts', ['not a frame loop: the dev server rewrites a probe file in its Node process until the file watcher reports it or a deadline passes', 2]],
   ['packages/core/src/devtools/hook.ts', 'not a loop: a devtools session waits one frame to send the change notices that frame gathered as one'],

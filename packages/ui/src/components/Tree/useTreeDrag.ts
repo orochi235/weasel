@@ -5,7 +5,7 @@ import { resolveDrop, type DropMark, type DropRow, type ResolvedDrop, type TreeD
 import { swallowNextClick, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
 import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
-import { modsOf } from './treeUtils';
+import { modsOf } from '../../useReorderDragList';
 import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
 
 export const HOVER_EXPAND_MS = 600;

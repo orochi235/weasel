@@ -60,6 +60,11 @@ export interface PressModifiers {
   altKey: boolean;
 }
 
+/** The modifiers an event carries, as a press reports them. */
+export function modsOf(e: PressModifiers): PressModifiers {
+  return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
+}
+
 /** A list's convention: Cmd/Ctrl toggles a row, shift ranges from the anchor. */
 export const LIST_KEYS = { toggle: ['meta', 'ctrl'], range: 'shift' } as const;
 

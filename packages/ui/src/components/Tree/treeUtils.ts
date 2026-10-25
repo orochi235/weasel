@@ -1,13 +1,8 @@
 import { useMemo, useState } from 'react';
-import type { PressModifiers } from '../../useReorderDragList';
 import type { TreeNode } from './Tree';
 
 export function textOf(node: TreeNode): string {
   return node.textValue ?? (typeof node.label === 'string' ? node.label : '');
-}
-
-export function modsOf(e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): PressModifiers {
-  return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
 }
 
 export function useControlledSet(

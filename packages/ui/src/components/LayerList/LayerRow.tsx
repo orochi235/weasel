@@ -13,7 +13,6 @@ import { canRename, LockToggle, RowLabel, stop } from './RowParts';
 interface RowProps {
   item: LayerListItem;
   shared: Shared;
-  parentId: string | null;
   /** The row's depth in the treegrid that holds it. */
   level: number;
   /** Drawn in a drag's ghost: no role, no keys, no remove. */
@@ -32,11 +31,11 @@ export function rowContextMenu(shared: Shared, item: LayerListItem, ghosted: boo
 }
 
 /** A layer with no body: one line, and one row of its treegrid. */
-export function Row({ item, shared, parentId, level, ghosted, selected, open, childId, onPointerDown }: RowProps) {
+export function Row({ item, shared, level, ghosted, selected, open, childId, onPointerDown }: RowProps) {
   const { props } = shared;
   const branch = (item.children?.length ?? 0) > 0;
   const [renaming, setRenaming] = useState(false);
-  const keyDown = shared.keys.onKeyDown(item, parentId);
+  const keyDown = shared.keys.onKeyDown(item);
   return (
     <div
       className={[rows.row, s.row, selected ? rows.selected : '', item.nonPrinting ? s.nonPrinting : ''].filter(Boolean).join(' ')}
@@ -185,10 +184,7 @@ function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
     <span className={s.stop} onPointerDown={stop}>
       <CloseButton
         ariaLabel={`Remove ${item.label}`}
-        onClick={() => {
-          shared.keys.onRemoving(item.id);
-          onRemove(item.id);
-        }}
+        onClick={() => onRemove(item.id)}
       />
     </span>
   );
