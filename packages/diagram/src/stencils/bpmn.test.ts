@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath } from '@weasel-js/core';
 import { contentBox, outlineDetail, outlinePath } from '../outline';
-import { BPMN_STENCILS } from './bpmn';
-import { builtNodes, expectLabelUnder, expectStencilsBuild } from './stencilFixture';
+import { BPMN_GROUP, BPMN_STENCILS } from './bpmn';
+import { builtNodes, expectLabelUnder, expectStencilsBuild } from './stencils.fixture';
 
 const byId = (id: string) => BPMN_STENCILS.find((s) => s.id === id)!;
 const SMALL = ['start-event', 'intermediate-event', 'end-event', 'exclusive-gateway', 'parallel-gateway', 'inclusive-gateway', 'event-gateway'];
 
 describe('the bpmn group', () => {
   it('builds every symbol', () => {
-    expectStencilsBuild(BPMN_STENCILS);
+    expectStencilsBuild(BPMN_GROUP);
   });
 
   it('draws events 40px and gateways 50px across, labeled underneath', () => {

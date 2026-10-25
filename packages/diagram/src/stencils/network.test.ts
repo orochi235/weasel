@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { outlineDetail, outlinePath } from '../outline';
-import { NETWORK_STENCILS } from './network';
-import { builtNodes, expectLabelUnder, expectStencilsBuild } from './stencilFixture';
+import { NETWORK_GROUP, NETWORK_STENCILS } from './network';
+import { builtNodes, expectLabelUnder, expectStencilsBuild } from './stencils.fixture';
 
 const LABELED_INSIDE = new Set(['database', 'cloud']);
 
@@ -11,7 +11,7 @@ describe('the network group', () => {
       'server', 'database', 'cloud', 'router', 'switch', 'firewall', 'laptop', 'desktop', 'phone', 'printer', 'user',
       'internet',
     ]);
-    expectStencilsBuild(NETWORK_STENCILS);
+    expectStencilsBuild(NETWORK_GROUP);
   });
 
   it('labels each device under its drawing', () => {
