@@ -964,13 +964,6 @@ only story runner in the repo.
   trial shows no story to capture": `trialPayload` (`shell/loupe/capturePayload.ts`) builds a capture from the
   trial's story entry, and an index page's trial has none. Live shows the page; Pixels and Difference need the capture
   route to render an index page as it renders a story.
-- **(P2) A lens on a scrolled isolated story shows a different patch than the one under its reticle**
-  (found 2026-10-21). The story's scroll lives inside the frame document, and no protocol message reports it to the
-  shell. So a Live lens's copy frame loads at its own scroll position, where an in-document copy follows its trial's
-  `.fg-story__scroll` (`LensCopy` in `shell/loupe/LiveCopies.tsx`); and a Pixels capture is taken at scroll 0, since
-  the payload's `scroll` is read from a `.fg-story__scroll` a frame host does not have. The fix: the frame reports
-  its scroll to the shell (a new `FromFrame` message), and the shell forwards it to each copy frame of that trial (a
-  new `ToFrame` message that the frame applies to its scroller) and into the capture payload.
 - **(P3) Glass is unbuilt as a user-facing aim** (2026-10-21). `setAimOps(scene, id, 'glass')` makes the reticle's
   pose depend on the body and is tested (`labkit/src/loupe/lens/lensScene.test.ts`), but no lens action switches to it,
   so the Loupe keymap has no key for it. What is left: a `loupe.aim.glass` action and key in `lensActionDefs.ts`.

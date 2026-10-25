@@ -183,9 +183,13 @@ export function LiveCopies(props: LiveCopiesProps) {
   return lenses && trialId ? <Copies {...props} lenses={lenses} trialId={trialId} /> : null;
 }
 
-/** What a lens's copy of an isolated story renders: its host id, and the globals and args it renders under. */
+/**
+ * What a lens's copy of an isolated story renders: its host id, the globals and args it renders under, and the trial's
+ * host, whose scroll it follows.
+ */
 export interface LensFrameCopy {
   id: string;
+  main: HTMLElement;
   globals: Globals;
   args: Readonly<Record<string, unknown>>;
 }
@@ -203,7 +207,8 @@ function FrameLensCopy({ request, trialId, trialConfig, children }: Omit<LiveFra
   const globals = useCopyGlobals(request, trialConfig);
   const id = copyId(trialId, request);
   const { args } = request;
-  const copy = useMemo(() => ({ id, globals, args }), [id, globals, args]);
+  const main = request.hit.host;
+  const copy = useMemo(() => ({ id, main, globals, args }), [id, main, globals, args]);
   return <LensPortal request={request}>{children(copy)}</LensPortal>;
 }
 
@@ -214,7 +219,8 @@ function FrameCopies({ lenses, trialId, ...props }: Omit<LiveFrameCopiesProps, '
 
 /**
  * The copies an isolated trial owes the Live lenses over it: each a frame of its own, portaled into its lens, under
- * the lens's globals and args. The trial's frame view renders itself as each copy, through `children`.
+ * the lens's globals and args, following its scroll. The trial's frame view renders itself as each copy, through
+ * `children`.
  */
 export function LiveFrameCopies(props: LiveFrameCopiesProps) {
   const lenses = useContext(LiveLensesContext);

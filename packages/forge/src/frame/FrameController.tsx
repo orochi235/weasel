@@ -176,6 +176,20 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     void fonts.ready.then(afterPaint, afterPaint);
   };
 
+  // The story scrolls the frame document itself; the shell keeps a lens's copy and a capture on the same patch.
+  const scroller = document.scrollingElement ?? document.documentElement;
+  let scrolled: string | null = null;
+  const reportScroll = () => {
+    const left = scroller.scrollLeft;
+    const top = scroller.scrollTop;
+    const key = `${left} ${top}`;
+    if (key === scrolled) return;
+    scrolled = key;
+    send({ type: 'scroll', left, top });
+  };
+  reportScroll();
+  window.addEventListener('scroll', reportScroll, { passive: true });
+
   const audit = async (id: string) => send({ type: 'a11y', id, ...(await auditElement(wrapper)) });
 
   const off = channel.on((msg) => {
@@ -224,11 +238,16 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       case 'a11y.highlight':
         highlighter.show(msg.targets);
         break;
+      case 'scroll':
+        scroller.scrollLeft = msg.left;
+        scroller.scrollTop = msg.top;
+        break;
     }
   });
 
   return () => {
     off();
+    window.removeEventListener('scroll', reportScroll);
     mutations?.disconnect();
     clearTimeout(settleTimer);
     overrides.dispose();

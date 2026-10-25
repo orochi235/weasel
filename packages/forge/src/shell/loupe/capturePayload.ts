@@ -12,7 +12,8 @@ import {
   type ResolvedConditions,
   withArgs,
 } from './conditions';
-import { scrollerOf, type TrialHit } from './trialAt';
+import { scrollOf } from './frameScroll';
+import type { TrialHit } from './trialAt';
 
 export const STATE_UNSENDABLE = "this story's state cannot be sent to a capture";
 export const CONFIG_UNSENDABLE = "this story's config cannot be sent to a capture";
@@ -85,7 +86,6 @@ export function capturePayload(input: CapturePayloadInput): CapturePayload | { u
   const box = { width: host.offsetWidth, height: host.offsetHeight };
   if (!(box.width > 0 && box.height > 0)) return { unavailable: NO_BOX };
   const isolate = entry.isolate !== undefined;
-  const scroller = scrollerOf(host);
   const kept = (config as Record<string, unknown> | null | undefined)?.[PLAYHEAD_KEY];
   return {
     story: entry.id,
@@ -98,7 +98,7 @@ export function capturePayload(input: CapturePayloadInput): CapturePayload | { u
     box,
     layout,
     dpr: clampDpr(resolved.dpr ?? dpr),
-    scroll: { left: scroller?.scrollLeft ?? 0, top: scroller?.scrollTop ?? 0 },
+    scroll: scrollOf(host),
     lab,
     colorScheme,
   };
