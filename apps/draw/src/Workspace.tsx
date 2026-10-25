@@ -40,6 +40,7 @@ import { useColorContext } from './tools/colorContext';
 import { DRAW_FEATURES } from './drawFeatures';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
+import { DRAW_NODE_ROUTING } from './nodeKinds';
 import { usePathDirection } from './usePathDirection';
 import { useSymmetry } from './useSymmetry';
 import { useSpacingHints } from './useSpacingHints';
@@ -189,6 +190,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           view={view}
           onViewChange={onViewChange}
           scene={scene}
+          routing={DRAW_NODE_ROUTING}
           selection={selection}
           defaultTools={DRAW_TOOLS}
           tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool }}

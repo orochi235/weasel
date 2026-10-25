@@ -607,8 +607,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   reaches all of them at once, but a single group can't ask for its own the way labkit's `.motif()` lets a
   `ControlPanel` group. That needs a `PrefGroup` annotation the forms pass as `motif`.
 
-- **(P3) draw's properties panel titles a text-along node "Unknown", and the layers panel shows its id.**
-
 - **(P3) No curved-label component in ui.** `Along/lab/CurvedLabel` (a story) shows the pattern: DOM spans laid
   along an `Along` arc with `placeAlongRun`. A public component over it is not built.
 

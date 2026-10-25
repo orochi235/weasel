@@ -1,7 +1,6 @@
 import {
   getAlpha01,
   inferredNodeProperties,
-  inferredNodeRouting,
   toHex8,
   useOngoingAction,
   withAlpha01
@@ -16,6 +15,7 @@ import type { ReactElement } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
 import { DEFAULT_FILENAME } from './docPersistence';
 import { DOCUMENT_UNITS } from './documentUnits';
+import { DRAW_NODE_ROUTING, drawKindLabel } from './nodeKinds';
 import { WD_RENDERERS } from './paintRenderers';
 import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 import type { PanelChrome, SidebarHost } from './surfaces/types';
@@ -63,11 +63,9 @@ export function PropertiesPanel({ host, chrome }: { host: SidebarHost; chrome: P
           <SelectionPanel
             scene={host.scene}
             selection={host.selection}
-            // WeaselDraw's kinds come from the kit's inferred routing (`text` /
-            // `path` / `image` — no `data.kind` tag), so the panel classifies
-            // with the same entries SceneCanvas applies when `routing` is unset.
             properties={inferredNodeProperties}
-            routing={inferredNodeRouting}
+            routing={DRAW_NODE_ROUTING}
+            kindLabel={drawKindLabel}
             renderers={WD_RENDERERS}
             emptyState={<em className="wd-no-selection">No selection</em>}
           />

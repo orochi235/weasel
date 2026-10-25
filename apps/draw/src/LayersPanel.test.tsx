@@ -132,6 +132,29 @@ describe('LayersPanel — one row at a time', () => {
   });
 });
 
+describe('LayersPanel — path-effect rows', () => {
+  beforeEach(() => {
+    drawPrefs().reset();
+    window.localStorage.clear();
+  });
+
+  it('names an unlabeled effect node by its effect, not its id, and a label still wins', () => {
+    const scene = makeScene();
+    scene.add({
+      id: asNodeId('fx-1'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
+      data: { pathEffect: { kind: 'textAlong' } as never },
+    });
+    scene.add({
+      id: asNodeId('fx-2'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
+      data: { pathEffect: { kind: 'blend' } as never, label: 'Fade' },
+    });
+    renderWithIcons(<Host scene={scene} />);
+    expect(screen.getByText('Text Along Path')).toBeTruthy();
+    expect(screen.queryByText('fx-1')).toBeNull();
+    expect(screen.getByText('Fade')).toBeTruthy();
+  });
+});
+
 describe('layerSwatch', () => {
   it('shows no chip for a node that paints no fill, text included', () => {
     expect(layerSwatch({ text: 'hi' } as WeaselDrawData)).toBeUndefined();
