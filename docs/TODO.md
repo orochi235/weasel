@@ -1105,8 +1105,8 @@ only story runner in the repo.
   The `browser` project fails a test on the notice since 2026-10-25 (`vitest.browser.setup.ts`), after `Split` stopped
   starting its zone observer inside windease's resize delivery, which was the cause in every browser test that raised
   it. The opt-in stories project loads no such guard and still prints it on stderr from passing stories:
-  `LabFullChrome.stories.tsx`'s "All Chrome" and "Undockable Panels", and `SelectionPanel.stories.tsx`'s "Gradient
-  Fill Paint" (fleet run of `fe7082659`). Find which observer is skipped in each, then give the project the same guard. Commit 50ce09b7d (2026-10-25) has a
+  `LabFullChrome.stories.tsx`'s "All Chrome" and "Undockable Panels" in every run, and `SelectionPanel.stories.tsx`'s
+  "Gradient Fill Paint" and `Keycap.stories.tsx` in one run each (fleet runs of `fe7082659` and `bdf51b691`). Find which observer is skipped in each, then give the project the same guard. Commit 50ce09b7d (2026-10-25) has a
   probe for this: it wraps `ResizeObserver` and logs each callback's targets and their depth for the looping frame and
   the next, and the next frame's first callbacks are the skipped ones.
 
