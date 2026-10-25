@@ -1246,6 +1246,10 @@ only story runner in the repo.
   imports 404s, 504s, or never answers (inferred as the cheapest discriminator, not tried). The burst
   shape, many files in under 10 s and then clean, points at a transient server- or browser-side
   event rather than any one file (inferred).
+  The first two bursts came 3 s apart on two different nodes (01:54:21 on studio, 01:54:24 on
+  msb-uai), each serving its own localhost, so what they shared at that moment is the first thing
+  to look for: a sync from this machine into another tree, a network event, or the onto daemons. The
+  logs lived in a session scratchpad and are not kept.
 
 - **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
   `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
