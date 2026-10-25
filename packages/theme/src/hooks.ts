@@ -391,4 +391,10 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     value: 'var(--wzl-control-h)',
     description: 'Height of every row in a Tree below the container that sets it, and of its drag ghost. Unset, the control height.',
   },
+  {
+    name: 'tree-current',
+    type: 'color',
+    value: 'var(--wzl-accent-fg)',
+    description: 'Text color of the Tree row marked `current`, the page or item being shown.',
+  },
 ];
