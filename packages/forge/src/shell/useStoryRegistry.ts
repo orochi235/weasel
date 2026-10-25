@@ -231,7 +231,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
               generation,
               revision,
               instrument: !inDocument
-                ? storyInstrument({ entry, ready, answers, frameUrl, onReady, globals })
+                ? storyInstrument({ entry, ready, answers, frameUrl, onReady, globals, setup })
                 : had
                   ? documentInstrument({ entry, loaded: had, setup, globals })
                   : pendingInstrument({ entry, globals, load: request, generation, ...(fault ? { fault } : {}) }),

@@ -969,10 +969,6 @@ only story runner in the repo.
   seen). `CameraInput`'s `clientToWorld`, `worldToClient` and `hostSize` read the host's client rect, which an
   ancestor transform (a `<Stage>`, `<TrialOverview>`) scales, while the stack now draws in its layout px. Nothing
   takes input there today: a lens's copy takes no clicks.
-- **(P3) A Live copy of an isolated story is backed by the lab's background, not the compared mode's**
-  (2026-10-21). `.fg-lens-copy > .fg-frame-host` paints `var(--wzl-bg)` as the shell resolves it there, and the
-  compared globals apply inside the copy's frame, not to its host in the shell. A transparent isolated story under
-  an opposite-mode lens shows the lab's background through it.
 
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite

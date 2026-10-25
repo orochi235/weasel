@@ -2,7 +2,8 @@ import { breadcrumb } from './breadcrumb';
 import './shell.css';
 import { useLatest } from '@weasel-js/core';
 import { type RenderContext, TrialIdContext, useLabContext } from '@weasel-js/labkit';
-import { type Dispatch, type RefObject, type SetStateAction, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { type Dispatch, type RefObject, type SetStateAction, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { FrameSetup } from '../frame/FrameController';
 import { IN_VIEW_MARGIN, useNearViewport } from '../frame/useNearViewport';
 import { FRAME_HELLO } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
@@ -11,6 +12,7 @@ import { useCssOverrides } from './cssVars/overrides';
 import { closeLink, type Fault, type Link, useFrameLink } from './frameLink';
 import { FramePoolContext, HELLO_TIMEOUT_MS, moveFrame } from './framePool';
 import { effectiveGlobals, GLOBALS_KEY } from './globals';
+import { applyGlobalsTo } from './hostConditions';
 import { useKeptFrame } from './keptFrame';
 import { scrollOf } from './loupe/frameScroll';
 import { type LensFrameCopy, LiveFrameCopies, useCopyConfig } from './loupe/LiveCopies';
@@ -33,6 +35,9 @@ export interface FrameViewProps {
    * `ready` and swaps no trial.
    */
   copy?: LensFrameCopy;
+  /** The workshop's frame setup. A copy's host takes its globals through it, so what it paints behind the copy's
+   *  frame is in the copy's mode rather than the lab's. */
+  setup?: FrameSetup;
 }
 
 interface FrameMount {
@@ -166,6 +171,13 @@ export function FrameView(props: FrameViewProps) {
   }, [title]);
 
   useEffect(() => (copy ? undefined : answers.hold(ctx.config)), [answers, ctx.config, copy]);
+
+  const setup = props.setup;
+  const copyId = copy?.id;
+  useLayoutEffect(
+    () => (copyId && setup && hostRef.current ? applyGlobalsTo(hostRef.current, copyId, globals, setup) : undefined),
+    [copyId, globals, setup],
+  );
 
   // Applied once the copy has rendered, when its document is tall enough to stand where the trial's does.
   const main = copy?.main;
