@@ -13,16 +13,6 @@
   flex-wrap: wrap;
 }
 
-.modes {
-  display: flex;
-  gap: var(--wzl-space-3);
-}
-
-.active {
-  border-color: var(--wzl-accent-strong);
-  background: color-mix(in srgb, var(--wzl-accent-strong) 18%, var(--wzl-surface-raised));
-}
-
 .key {
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 10px;

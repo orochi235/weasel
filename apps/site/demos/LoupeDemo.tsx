@@ -4,9 +4,13 @@ import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
+const MODES: ToggleBarItem<LoupeMode>[] = [{ value: 'vector', label: 'vector' }, { value: 'pixel', label: 'pixel' }];
 
 /** Painted into the framebuffer, not just onto the CSS box behind it: pixel
  *  mode reads the framebuffer back, and a transparent one reads back as
@@ -137,29 +141,23 @@ function Demo() {
   return (
     <>
       <div className="ckd-row">
-        <label>
-          <input type="radio" name="loupe-mode" checked={mode === 'vector'}
-            onChange={() => { setMode('vector'); loupeRef.current?.setMode('vector'); }} />
-          vector
-        </label>
-        <label>
-          <input type="radio" name="loupe-mode" checked={mode === 'pixel'}
-            onChange={() => { setMode('pixel'); loupeRef.current?.setMode('pixel'); }} />
-          pixel
-        </label>
-        <label>
+        <ToggleBar
+          items={MODES}
+          value={mode}
+          onChange={(m) => { if (m) { setMode(m); loupeRef.current?.setMode(m); } }}
+          ariaLabel="Loupe mode"
+          size="sm"
+        />
+        <label className="ckd-field">
           scale
-          <input type="range" min={2} max={16} step={1} value={factor}
+          <InlineRange min={2} max={16} step={1} value={factor}
             onChange={(e) => {
               const f = Number(e.target.value);
               setFactor(f); loupeRef.current?.setFactor(f);
             }} />
           {factor}×
         </label>
-        <label>
-          <input type="checkbox" checked={editing} onChange={(e) => setEditing(e.target.checked)} />
-          edit through the lens
-        </label>
+        <Checkbox isSelected={editing} onChange={setEditing}>edit through the lens</Checkbox>
         <span className="ckd-hint">under the aim point: {color ?? '—'}</span>
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>

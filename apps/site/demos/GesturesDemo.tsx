@@ -12,6 +12,7 @@ import {
 } from '@weasel-js/core';
 import type { ModifierState } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
+import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
 
 /**
  * Gestures showcase — every gesture *form* in `src/interactions/gestures` on one
@@ -31,14 +32,14 @@ const CLICK_TH = 8;   // useDragGesture click-vs-drag dead-zone
 
 type ModeId = 'drag' | 'rect' | 'radial' | 'threshold' | 'handle' | 'drop' | 'click';
 
-const MODES: { id: ModeId; label: string }[] = [
-  { id: 'drag', label: 'drag' },
-  { id: 'rect', label: 'drag-rect' },
-  { id: 'radial', label: 'radial' },
-  { id: 'threshold', label: 'threshold' },
-  { id: 'click', label: 'click vs drag' },
-  { id: 'handle', label: 'local-space' },
-  { id: 'drop', label: 'drag + drop' },
+const MODE_ITEMS: ToggleBarItem<ModeId>[] = [
+  { value: 'drag', label: 'drag' },
+  { value: 'rect', label: 'drag-rect' },
+  { value: 'radial', label: 'radial' },
+  { value: 'threshold', label: 'threshold' },
+  { value: 'click', label: 'click vs drag' },
+  { value: 'handle', label: 'local-space' },
+  { value: 'drop', label: 'drag + drop' },
 ];
 
 const HINTS: Record<ModeId, string> = {
@@ -339,20 +340,13 @@ export function GesturesDemo() {
 
   return (
     <div className="ckd-gestures">
-      <div className="ckd-gestures-modes" role="radiogroup" aria-label="Gesture">
-        {MODES.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            role="radio"
-            aria-checked={mode === m.id}
-            className={`ckd-gestures-mode${mode === m.id ? ' is-active' : ''}`}
-            onClick={() => selectMode(m.id)}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
+      <ToggleBar
+        items={MODE_ITEMS}
+        value={mode}
+        onChange={(id) => id && selectMode(id)}
+        ariaLabel="Gesture"
+        size="sm"
+      />
 
       <div className="ckd-gestures-surface">
         <canvas
