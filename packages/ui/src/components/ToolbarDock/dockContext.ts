@@ -1,4 +1,4 @@
-import { createContext, useContext, type HTMLAttributes, type KeyboardEvent, type PointerEvent } from 'react';
+import { createContext, useContext, useLayoutEffect, type HTMLAttributes, type KeyboardEvent, type PointerEvent } from 'react';
 
 /** What a dock tells the bar it draws: which bar it is, what it is called, and whether it may be moved. */
 export interface DockBarContextValue {
@@ -11,10 +11,18 @@ export interface DockBarContextValue {
   onPointerDown?: (e: PointerEvent<HTMLElement>) => void;
   /** What the handle does with a key: Alt+arrows move the bar, and Alt+Enter floats or docks it. */
   onKeyDown?: (e: KeyboardEvent<HTMLElement>) => void;
+  /** Takes the shortest the bar can be along its line and still draw something past its lead, so a squeezed row leaves it that. */
+  onLeast?: (px: number | undefined) => void;
 }
 
 /** The dock bar a handle sits in; null where a bar draws itself outside a dock, so the handle stays off. */
 export const DockBarContext = createContext<DockBarContextValue | null>(null);
+
+/** Tells the dock drawing this bar, if one is, the shortest the bar can be along its line. */
+export function useReportDockLeast(least: number | undefined): void {
+  const report = useContext(DockBarContext)?.onLeast;
+  useLayoutEffect(() => report?.(least), [report, least]);
+}
 
 /** A movable bar's handle: the bar it moves, and the attributes and handlers its lead spreads. */
 export interface DockHandle {

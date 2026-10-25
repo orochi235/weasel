@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import { memo, useCallback, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { BarOrientation } from '../Bar';
 import { useBarHosts } from './barHosts';
@@ -62,6 +62,8 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
   const hosts = useBarHosts(bars.map((b) => b.id));
   const drawn = (id: string, orientation: BarOrientation) => drawsIn(byId.get(id), orientation);
   const at = orientations(docks, shown, view);
+  const [leasts, setLeasts] = useState<Readonly<Record<string, number>>>({});
+  const setLeast = useCallback((id: string, px: number | undefined) => setLeasts((prev) => (prev[id] === px ? prev : withLeast(prev, id, px))), []);
 
   return (
     <div ref={root} className={[s.root, className].filter(Boolean).join(' ')}>
@@ -82,7 +84,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
                         const lifted = view?.barId === id && view.float !== null;
                         if (!lifted && !drawn(id, orientation)) return null;
                         return (
-                          <div key={id} ref={lifted ? undefined : hosts.attach(id)} className={s.slot} {...{ [DOCK_BAR]: lifted ? undefined : id }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
+                          <div key={id} ref={lifted ? undefined : hosts.attach(id)} className={s.slot} style={lifted ? undefined : leastSize(leasts[id])} {...{ [DOCK_BAR]: lifted ? undefined : id }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
                             {lifted && <div className={s.hold} style={holdSize(view)} />}
                           </div>
                         );
@@ -101,7 +103,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
       {/* Last, so each bar's own effects run once its slot has taken it in. */}
       {[...at].map(([id, orientation]) => {
         const bar = byId.get(id)!;
-        return createPortal(<DockedBar bar={bar} orientation={orientation} movable={movable} handlers={move.handlers} />, hosts.host(id), id);
+        return createPortal(<DockedBar bar={bar} orientation={orientation} movable={movable} handlers={move.handlers} setLeast={setLeast} />, hosts.host(id), id);
       })}
     </div>
   );
@@ -126,10 +128,22 @@ function orientations(docks: readonly DockSpec[], layout: ToolbarLayout, view: D
  * bar object, orientation, `movable` or the handlers change, and the dock's re-render on each frame of a drag redraws
  * no bar.
  */
-const DockedBar = memo(function DockedBar({ bar, orientation, movable, handlers }: { bar: DockBar; orientation: BarOrientation; movable: boolean; handlers: DockDrag['handlers'] }) {
-  const value = useMemo(() => ({ barId: bar.id, label: bar.label, movable, float: bar.float, ...(movable ? handlers(bar.id) : {}) }), [bar, movable, handlers]);
+const DockedBar = memo(function DockedBar({ bar, orientation, movable, handlers, setLeast }: { bar: DockBar; orientation: BarOrientation; movable: boolean; handlers: DockDrag['handlers']; setLeast: (id: string, px: number | undefined) => void }) {
+  const value = useMemo(
+    () => ({ barId: bar.id, label: bar.label, movable, float: bar.float, onLeast: (px: number | undefined) => setLeast(bar.id, px), ...(movable ? handlers(bar.id) : {}) }),
+    [bar, movable, handlers, setLeast],
+  );
   return <DockBarContext.Provider value={value}>{bar.render(orientation)}</DockBarContext.Provider>;
 });
+
+/** `leasts` with bar `id`'s least length set to `px`, or dropped where `px` is undefined. */
+function withLeast(leasts: Readonly<Record<string, number>>, id: string, px: number | undefined): Readonly<Record<string, number>> {
+  const { [id]: _, ...rest } = leasts;
+  return px === undefined ? rest : { ...rest, [id]: px };
+}
+
+/** The least length a squeezed row leaves a bar's slot, so it keeps its only item or its menu button. */
+const leastSize = (px: number | undefined) => (px === undefined ? undefined : ({ '--dock-least': `${px}px` } as CSSProperties));
 
 /** The room a lifted bar's slot keeps, so its row holds still under the drag. */
 const holdSize = (view: DockDragView) => ({ '--dock-hold-w': `${view.size.w}px`, '--dock-hold-h': `${view.size.h}px` }) as CSSProperties;

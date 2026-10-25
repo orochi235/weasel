@@ -814,10 +814,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   one in labkit, and `PrefsPane` has no emptiness check.
 
 
-- **(P3) In a squeezed `ToolbarDock` row, a short bar loses its only item first** (2026-10-23). Bars
-  shrink by their flex basis, so a short bar loses its only item before the others lose theirs.
-  Visible in draw on a narrow window.
-
 - **(P3) ui's stories and tests each declare their own `Register` wrapper round `useAction`** (2026-10-23).
   The labs share `LabActions` (`Along/lab/labActions.tsx`, whose `extra` prop takes a lab's own actions,
   2026-10-25), but the `MenuBar`, `ContextMenuHost`, `KeymapHint`, and `PrefActionButton` stories and

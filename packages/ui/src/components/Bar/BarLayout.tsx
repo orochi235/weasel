@@ -12,7 +12,7 @@ import { useBarReorder } from './useBarReorder';
 import { useBarReorderKeys } from './useBarReorderKeys';
 import { BAR_MORE, useBarOverflow } from './useBarOverflow';
 import { useBarLead } from './barLeadHandle';
-import { DockBarContext } from '../ToolbarDock/dockContext';
+import { DockBarContext, useReportDockLeast } from '../ToolbarDock/dockContext';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
@@ -144,7 +144,8 @@ function BarLine(props: BarLayoutProps) {
   const leading = useBarLead(barLead(props));
 
   const menu = overflow === 'menu';
-  const { bar, kept, natural } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
+  const { bar, kept, natural, least } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
+  useReportDockLeast(least);
   const { line, rest } = splitBarItems(shown, kept);
   const reorder = useBarReorder({ root: bar, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (_, p) => (vertical ? p.clientY : p.clientX) });
   const keys = useBarReorderKeys({ root: bar, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical });

@@ -20,17 +20,23 @@ const SLACK = 0.5;
  * included: what it asks its host for, so that a host sized to its content
  * offers it that much and it opens the menu only once squeezed below it.
  * Undefined until every item has been measured.
+ *
+ * `least` is the shortest the bar can be and still draw something past its
+ * lead: its only item, or the button that opens the rest. A host squeezing
+ * several bars into one line leaves each this much. Undefined until the first
+ * item has been measured.
  */
 export function useBarOverflow(
   on: boolean,
   keys: readonly string[],
   vertical: boolean,
-): { bar: RefObject<HTMLDivElement | null>; kept: number; natural: number | undefined } {
+): { bar: RefObject<HTMLDivElement | null>; kept: number; natural: number | undefined; least: number | undefined } {
   const bar = useRef<HTMLDivElement | null>(null);
   const sizes = useRef(new Map<string, number>());
   const more = useRef(0);
   const [kept, setKept] = useState(Number.POSITIVE_INFINITY);
   const [natural, setNatural] = useState<number | undefined>(undefined);
+  const [least, setLeast] = useState<number | undefined>(undefined);
   const signature = keys.join('\n');
 
   useLayoutEffect(() => {
@@ -51,7 +57,12 @@ export function useBarOverflow(
       setKept(fitting(all, sizes.current, more.current, room));
       const line = lineLength(all, sizes.current, room.gap);
       const lead0 = lead === null ? 0 : along(lead) + (all.length > 0 ? room.gap : 0);
-      setNatural(line === undefined ? undefined : Math.ceil(line + lead0 + frameOf(el, vertical)));
+      const frame = frameOf(el, vertical);
+      setNatural(line === undefined ? undefined : Math.ceil(line + lead0 + frame));
+      const first = all.length === 0 ? 0 : sizes.current.get(all[0]!);
+      // Until the button has been drawn, the first item stands in for it.
+      const end = all.length > 1 && more.current > 0 ? more.current : first;
+      setLeast(end === undefined ? undefined : Math.ceil(end + lead0 + frame));
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
@@ -61,7 +72,7 @@ export function useBarOverflow(
     return () => observer.disconnect();
   }, [on, signature, kept, vertical]);
 
-  return { bar, kept: on ? Math.min(kept, keys.length) : keys.length, natural: on ? natural : undefined };
+  return { bar, kept: on ? Math.min(kept, keys.length) : keys.length, natural: on ? natural : undefined, least: on ? least : undefined };
 }
 
 /** The length of `keys` laid end to end `gap` apart, or undefined while one has never been measured. */
