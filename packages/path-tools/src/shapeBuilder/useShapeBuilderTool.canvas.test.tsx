@@ -71,7 +71,7 @@ function mount() {
   act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'M', code: 'KeyM', shiftKey: true })); });
   const pointer = (type: string, x: number, y: number, init: PointerEventInit = {}) =>
     canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, ...init }));
-  const shown = () => overlay!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 400 }).length;
+  const shown = () => overlay!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 400, dpr: 1 }).length;
   return { ids, applyOps, pointer, shown, select: (next: NodeId[]) => act(() => { selection!.set(next); }) };
 }
 

@@ -3,7 +3,7 @@ import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createChildrenLayer } from './children';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 100, height: 100 };
+const DIMS = { width: 100, height: 100, dpr: 1 };
 
 describe('createChildrenLayer', () => {
   it('iterates getChildren in order, calls drawChild once per id', () => {

@@ -7,7 +7,7 @@ import { createText } from './widgets/text';
 import type { Widget } from './widget';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 400, height: 300 };
+const DIMS = { width: 400, height: 300, dpr: 1 };
 
 function attached() {
   let layer: RenderLayer<unknown> | undefined;

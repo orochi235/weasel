@@ -172,7 +172,7 @@ describe('a group shared by several layers', () => {
     const withGroups = groups?.map((g) => ({ ...g, effects }));
     const draw = () => drawLayers(
       withFx, null, {}, undefined, undefined,
-      { width: 100, height: 50 }, undefined, undefined, withGroups,
+      { width: 100, height: 50, dpr: 1 }, undefined, undefined, withGroups,
     );
     renderer.render(draw());
     recorder.reset();
@@ -210,7 +210,7 @@ describe('a group shared by several layers', () => {
     const { recorder, renderer } = setup([]);
     const cmds = drawLayers(
       IDS.map(plain), null, {}, undefined, undefined,
-      { width: 100, height: 50 }, undefined, undefined,
+      { width: 100, height: 50, dpr: 1 }, undefined, undefined,
       [{ id: 'world', layers: IDS, alpha: 0.5 }],
     );
     renderer.render(cmds);
@@ -225,7 +225,7 @@ describe('a group shared by several layers', () => {
     const { recorder, renderer } = setup([]);
     const cmds = drawLayers(
       IDS.map(plain), null, {}, undefined, undefined,
-      { width: 100, height: 50 }, undefined, undefined,
+      { width: 100, height: 50, dpr: 1 }, undefined, undefined,
       [{ id: 'world', layers: IDS, alpha: 1 }],
     );
     renderer.render(cmds);
@@ -235,7 +235,7 @@ describe('a group shared by several layers', () => {
   it('hands a group composite operator to its bracket', () => {
     const cmds = drawLayers(
       IDS.map(plain), null, {}, undefined, undefined,
-      { width: 100, height: 50 }, undefined, undefined,
+      { width: 100, height: 50, dpr: 1 }, undefined, undefined,
       [{ id: 'world', layers: IDS, composite: 'destination-out' }],
     );
     expect(cmds).toHaveLength(1);
@@ -251,7 +251,7 @@ describe('a group shared by several layers', () => {
     const groups = [{ id: 'world', layers: IDS, effects }];
     const cmds = drawLayers(
       layers, null, {}, undefined, undefined,
-      { width: 100, height: 50 }, undefined, undefined, groups,
+      { width: 100, height: 50, dpr: 1 }, undefined, undefined, groups,
     );
     expect(cmds).toHaveLength(2);
     expect(cmds[0]).toMatchObject({ kind: 'group', effects });

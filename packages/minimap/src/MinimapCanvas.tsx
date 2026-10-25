@@ -16,7 +16,7 @@ import {
 } from '@weasel-js/routing/react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
-import { PointerProviderIfRoot } from '@weasel-js/core';
+import { PointerProviderIfRoot, useDeviceProfile } from '@weasel-js/core';
 import { usePointerPosition } from '@weasel-js/routing/react';
 import {
   MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
@@ -185,6 +185,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   usePublishPointer(localCanvasRef, clientToWorld, id);
 
   const pointer = usePointerPosition();
+  const { dpr } = useDeviceProfile();
   const cursorLayer = useMemo(() => createLinkedCursorLayer({
     id: `${id}.cursor`,
     pointer: () => pointer,
@@ -193,8 +194,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
 
   const extraCommands = useMemo<DrawCommand[]>(() => [
     indicatorCmd,
-    ...cursorLayer.draw({ viewId: id }, fitView, { width, height }),
-  ], [indicatorCmd, cursorLayer, id, fitView, width, height]);
+    ...cursorLayer.draw({ viewId: id }, fitView, { width, height, dpr }),
+  ], [indicatorCmd, cursorLayer, id, fitView, width, height, dpr]);
 
   // `<SceneViewCanvas>` doesn't expose its element except via `canvasRef`, so
   // we route both our internal ref and the consumer's ref through one setter.

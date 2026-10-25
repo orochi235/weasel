@@ -3,7 +3,7 @@ import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { createPiecePreview } from './piecePreview';
 
 const view = { x: 0, y: 0, scale: { x: 2, y: 2 } } as never;
-const dims = { width: 0, height: 0 } as never;
+const dims = { width: 0, height: 0, dpr: 1 } as never;
 
 describe('createPiecePreview', () => {
   it('draws the piece at view scale until the scene changes under it', () => {

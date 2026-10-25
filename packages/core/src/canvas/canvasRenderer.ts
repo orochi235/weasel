@@ -36,6 +36,11 @@ export interface CanvasPaintSize {
   dpr?: number;
 }
 
+/** The density a canvas given `dpr` paints at. */
+export function resolveDpr(dpr: number | undefined): number {
+  return dpr ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
+}
+
 /** How one paint reaches the canvas, beyond its size. */
 export interface CanvasPaintOptions {
   /** Paint a `width × height` tile of a buffer other surfaces share, at this
@@ -137,7 +142,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
   const restored = createEmitter();
   const bind = (canvas: HTMLCanvasElement, size: CanvasPaintSize, options: CanvasPaintOptions = {}): WeaselRenderer | null => {
     const { width, height } = size;
-    const dpr = size.dpr ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
+    const dpr = resolveDpr(size.dpr);
     const tile = options.tile ?? null;
     const shared = tile !== null;
 

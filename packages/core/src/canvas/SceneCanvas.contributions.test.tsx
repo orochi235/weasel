@@ -110,7 +110,7 @@ describe('layer data names the view it draws for', () => {
     const { feature } = makeFeature(probe);
     render(<Harness ambient={[feature]} />);
     const panel = views!.list().find((v) => v.id === 'panel')!;
-    panel.layer.draw({ viewId: null }, ROOT_VIEW, { width: 300, height: 200 });
+    panel.layer.draw({ viewId: null }, ROOT_VIEW, { width: 300, height: 200, dpr: 1 });
     expect(seen).toEqual(['panel']);
   });
 });

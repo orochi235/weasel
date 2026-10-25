@@ -224,7 +224,7 @@ describe('Tab', () => {
 });
 
 describe('focus ring', () => {
-  const draw = (): DrawCommand[] => api._layer!.draw(null, IDENTITY_VIEW, { width: 200, height: 200 }) as DrawCommand[];
+  const draw = (): DrawCommand[] => api._layer!.draw(null, IDENTITY_VIEW, { width: 200, height: 200, dpr: 1 }) as DrawCommand[];
   const ringColor = theme['--wzl-focus-ring'];
   const rings = () => draw().filter((c) =>
     c.kind === 'path' && c.stroke?.paint?.kind === 'solid' && c.stroke.paint.color === ringColor);

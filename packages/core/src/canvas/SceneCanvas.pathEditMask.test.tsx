@@ -38,7 +38,7 @@ const A = asNodeId('a');
 const B = asNodeId('b');
 const C = asNodeId('c');
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 400, height: 400 };
+const DIMS = { width: 400, height: 400, dpr: 1 };
 /** A consumer chrome id visible exactly while the rule context says a path is being edited. */
 const PROBE = 'probe.editing';
 

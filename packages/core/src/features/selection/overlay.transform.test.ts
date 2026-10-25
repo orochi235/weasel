@@ -14,7 +14,7 @@ import type { RectPose } from 'core/scene/types';
 const SKEWED: RectPose = { x: 0, y: 0, width: 100, height: 40, transform: [1, 0, 0.5, 1] };
 const TURNED: RectPose = { ...SKEWED, rotation: Math.PI / 6 };
 const VIEW = { x: 5, y: -3, scale: { x: 2, y: 2 } };
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 
 /** The pose's box corners as drawn, on screen, TL/TR/BR/BL. */
 function drawnCorners(pose: RectPose): { x: number; y: number }[] {

@@ -17,6 +17,12 @@ export interface Dims {
   height: number;
 }
 
+/** What a layer draws into: its size, and the device pixels to the CSS pixel
+ *  the frame is painted at, which is what an effect's reach is measured in. */
+export interface LayerDims extends Dims {
+  dpr: number;
+}
+
 /**
  * What a layer's `draw` threw, and which layer threw it. A throw that escaped
  * the frame loop would take the whole frame with it, every other layer
@@ -66,7 +72,7 @@ export interface RenderLayer<TData> {
    * Emit a DrawCommand tree, in the coordinates `space` names. A world-space
    * layer must NOT apply the view transform itself.
    */
-  draw: (data: TData, view: View, dims: Dims) => DrawCommand[];
+  draw: (data: TData, view: View, dims: LayerDims) => DrawCommand[];
   /**
    * Optional cache key. When present and a `LayerCommandCache` is supplied to
    * `drawLayers`, the layer's previous `DrawCommand[]` is reused as long as
@@ -81,7 +87,7 @@ export interface RenderLayer<TData> {
    * the way world-space layers are** (see `space` below) — include them in
    * `deps` if `draw` reads them.
    */
-  deps?: (data: TData, view: View, dims: Dims) => readonly unknown[];
+  deps?: (data: TData, view: View, dims: LayerDims) => readonly unknown[];
   /** Whether the layer is shown when no explicit visibility entry exists.
    *  Defaults to `true` when absent. */
   defaultVisible?: boolean;
@@ -192,7 +198,7 @@ export function drawLayers<TData>(
   visibility: Record<string, boolean>,
   order: string[] | undefined,
   view: View | undefined,
-  dims: Dims,
+  dims: LayerDims,
   cache?: LayerCommandCache,
   onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
   groups?: readonly LayerGroup[],
@@ -321,7 +327,7 @@ export function drawOneLayer<TData>(
   layer: RenderLayer<TData>,
   data: TData,
   view: View,
-  dims: Dims,
+  dims: LayerDims,
   cache?: LayerCommandCache,
   onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
 ): DrawCommand[] {
@@ -332,7 +338,7 @@ function drawLayerOnce<TData>(
   layer: RenderLayer<TData>,
   data: TData,
   view: View,
-  dims: Dims,
+  dims: LayerDims,
   cache: LayerCommandCache | undefined,
   onLayerError: (failure: LayerDrawFailure) => void,
   retain: LayerRetainPolicy | false,
@@ -368,7 +374,7 @@ function layerCommands<TData>(
   layer: RenderLayer<TData>,
   data: TData,
   view: View,
-  dims: Dims,
+  dims: LayerDims,
   cache: LayerCommandCache | undefined,
 ): DrawCommand[] {
   if (!cache || !layer.deps) return layer.draw(data, view, dims);

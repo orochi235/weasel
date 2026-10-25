@@ -182,7 +182,7 @@ describe('SceneCanvasApi.addView', () => {
   it('paints nothing on the surface when `paint` is false, and hands the host its draw', () => {
     const h = mount({ id: 'lens', bounds: () => LENS, view: () => LENS_VIEW, paint: false });
     const outer: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const cmds = h.handle.draw({}, outer, { width: 400, height: 300 });
+    const cmds = h.handle.draw({}, outer, { width: 400, height: 300, dpr: 1 });
     expect(cmds).toHaveLength(1);
     expect(cmds[0]).toMatchObject({ kind: 'group', clip: { width: LENS.w, height: LENS.h } });
     // Still routed: paint is the host's, input is the surface's.

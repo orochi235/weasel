@@ -67,7 +67,7 @@ describe('a group composite operator', () => {
   it('survives the cull when its children all miss: an empty source still changes the destination', () => {
     const off: DrawCommand = { ...RECT, path: { kind: 'rect', x: 900, y: 900, width: 10, height: 10 } };
     const cmds: DrawCommand[] = [{ kind: 'group', composite: 'destination-in', children: [off] }];
-    expect(cullDrawCommands(cmds, mat3.identity(), { x: 0, y: 0, width: 100, height: 50 })).toBe(cmds);
+    expect(cullDrawCommands(cmds, mat3.identity(), { x: 0, y: 0, width: 100, height: 50 }, 1)).toBe(cmds);
   });
 });
 

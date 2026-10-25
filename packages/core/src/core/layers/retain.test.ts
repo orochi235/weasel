@@ -3,7 +3,7 @@ import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { drawLayers, type LayerCommandCache, type LayerRetainPolicy, type RenderLayer } from './render';
 import type { View } from 'core/viewport/view';
 
-const DIMS = { width: 100, height: 100 };
+const DIMS = { width: 100, height: 100, dpr: 1 };
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const POLICY: LayerRetainPolicy = { minCommands: 3 };
 

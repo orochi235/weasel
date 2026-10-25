@@ -8,7 +8,7 @@ import { viewToMat3 } from '@weasel-js/renderer';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 
 const OUTER: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 600, height: 400 };
+const DIMS = { width: 600, height: 400, dpr: 1 };
 const CANVAS = { left: 100, top: 50 };
 
 /** Source that draws nothing — routing is pure geometry. */

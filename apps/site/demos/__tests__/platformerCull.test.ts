@@ -16,7 +16,7 @@ import {
 
 /** The demo's canvas size and scene, and its scene slot as `<SceneCanvas>`
  *  merges it. */
-const DIMS = { width: 720, height: 405 };
+const DIMS = { width: 720, height: 405, dpr: 1 };
 
 function demoWorld() {
   const game = freshGame();

@@ -8,7 +8,7 @@ import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 400, height: 400 };
+const DIMS = { width: 400, height: 400, dpr: 1 };
 
 function stateWithSingle(): ChromeState {
   return {

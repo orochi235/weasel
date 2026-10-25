@@ -69,7 +69,7 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
   const data = () => scene.get(line)!.data;
   const widths = () => data().stroke?.vertexWidths;
   const overlay = result.current.overlay as RenderLayer<unknown>;
-  const marks = () => overlay.draw(undefined, VIEW, { width: 400, height: 400 }) as DrawCommand[];
+  const marks = () => overlay.draw(undefined, VIEW, { width: 400, height: 400, dpr: 1 }) as DrawCommand[];
   const bounds = () => defaultPaintBounds(scene.get(line)!, scene.get(line)!.pose, VIEW)!;
   return { scene, line, drag, altClick, hover, run, data, widths, marks, bounds };
 }

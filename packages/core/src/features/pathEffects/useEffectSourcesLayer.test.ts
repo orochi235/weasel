@@ -28,7 +28,7 @@ function drawn(hideSources: boolean, selection: readonly NodeId[], foundHidden?:
     ],
   });
   const { result } = renderHook(() => useEffectSourcesLayer(scene));
-  return result.current.draw({ getChromeState: () => ({ selection }) }, VIEW, { width: 200, height: 200 });
+  return result.current.draw({ getChromeState: () => ({ selection }) }, VIEW, { width: 200, height: 200, dpr: 1 });
 }
 
 const strokes = (cmds: readonly DrawCommand[]): DrawCommand[] => cmds.flatMap((c) =>

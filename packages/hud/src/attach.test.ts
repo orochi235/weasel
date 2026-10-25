@@ -79,7 +79,7 @@ describe('attachHud', () => {
       },
     });
     attachHud(api, hud, { font: 'sans-serif' });
-    api._layer?.draw(null, IDENTITY_VIEW, { width: 10, height: 10 });
+    api._layer?.draw(null, IDENTITY_VIEW, { width: 10, height: 10, dpr: 1 });
     expect(seen).toBe('sans-serif');
   });
 
@@ -197,7 +197,7 @@ describe('attachHud', () => {
       attachHud(api, hud, { theme });
       hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
       const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+      const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
       const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { paint: { color: string } } };
       expect(buttonBody.fill.paint.color).toBe('#123456');
     } finally {
@@ -211,7 +211,7 @@ describe('attachHud', () => {
     attachHud(api, hud);
     hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
     const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { paint: { color: string } } };
     expect(buttonBody.fill.paint.color).toBe(resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface-raised']);
   });
@@ -231,7 +231,7 @@ describe('attachHud', () => {
       }],
     });
 
-    const cmds = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300 });
+    const cmds = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300, dpr: 1 });
     expect(cmds[0].kind).toBe('group');
     expect((cmds[0] as { clip?: unknown }).clip).toMatchObject({
       kind: 'rect',
@@ -256,7 +256,7 @@ describe('attachHud', () => {
     hud.window({ id: 'b', x: 200, y: 10, w: 100, h: 80, title: 'B', content: painter });
 
     const kinds = layer
-      .draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300 })
+      .draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300, dpr: 1 })
       .map((c) => c.kind);
     // Interleaving per widget (content, frame, content, frame) would let the
     // second window's content paint over the first window's border.
@@ -273,7 +273,7 @@ describe('attachHud claims', () => {
   });
 
   const IDENTITY = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-  const DIMS = { width: 100, height: 100 };
+  const DIMS = { width: 100, height: 100, dpr: 1 };
 
   function widgetAt(id: string, claims?: readonly ClaimableGesture[]): Widget {
     return {

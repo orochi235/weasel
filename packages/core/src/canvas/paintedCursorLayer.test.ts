@@ -6,7 +6,7 @@ import type { PaintedCursor } from '@weasel-js/cursor';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 
 const VIEW = (scale = 1) => ({ x: 0, y: 0, scale: { x: scale, y: scale } });
-const DIMS = { width: 800, height: 600 };
+const DIMS = { width: 800, height: 600, dpr: 1 };
 
 const BRUSH: PaintedCursor = { kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 20 };
 

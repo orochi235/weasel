@@ -17,7 +17,7 @@ function draw(shown: readonly string[]) {
     getExtensions: () => [extension],
   });
   const envelope = { getIsVisible: () => (id: string) => id === 'path-edit.anchors' || shown.includes(id) };
-  return layer.draw(envelope as never, VIEW, { width: 400, height: 400 }) as DrawCommand[];
+  return layer.draw(envelope as never, VIEW, { width: 400, height: 400, dpr: 1 }) as DrawCommand[];
 }
 
 describe('path-edit overlay balance lines', () => {

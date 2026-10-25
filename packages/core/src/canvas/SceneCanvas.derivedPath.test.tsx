@@ -84,7 +84,7 @@ const { SceneCanvas } = await import('./SceneCanvas');
 
 const pose = (x: number): RectPose => ({ x, y: 0, width: 10, height: 10 });
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DIMS = { width: 300, height: 300 };
+const DIMS = { width: 300, height: 300, dpr: 1 };
 const EXPECTED = linePath({ x: 0, y: 0 }, { x: 100, y: 0 });
 
 /** Two anchors and an edge deriving a line between them. */

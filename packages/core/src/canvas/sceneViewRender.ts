@@ -5,7 +5,7 @@
  */
 
 import type { WeaselRenderer } from '@weasel-js/renderer';
-import { cachedCanvasRenderer, paintCanvas } from './canvasRenderer';
+import { cachedCanvasRenderer, paintCanvas, resolveDpr } from './canvasRenderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
@@ -40,11 +40,12 @@ export interface SceneViewLayers {
   layerOrder?: readonly string[];
 }
 
-/** The view size `buildSceneViewCommands` culls to, and how it bounds a
- *  node's paint before painting it. */
+/** The view size `buildSceneViewCommands` culls to, the density it will be
+ *  painted at, and how it bounds a node's paint before painting it. */
 export interface SceneViewCull<TData, TLayer extends string, TPose> {
   width: number;
   height: number;
+  dpr: number;
   paintBounds?: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>;
 }
 
@@ -176,7 +177,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     derivedPathOf as unknown as Parameters<typeof buildSceneTree>[4],
     culled as Parameters<typeof buildSceneTree>[5],
   );
-  const children = cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect) : tree;
+  const children = cull && cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect, cull.dpr) : tree;
   if (extraCommands && extraCommands.length > 0) {
     for (const cmd of extraCommands) children.push(cmd);
   }
@@ -197,11 +198,11 @@ export function sceneViewFrame<TData, TLayer extends string, TPose>(
 ): DrawCommand[] {
   const {
     scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
-    colorOverrides, cull,
+    colorOverrides, cull, dpr,
   } = args;
   return buildSceneViewCommands(
     scene, view, drawOne, extraCommands, alphaFor, { layerVisibility, layerOrder }, colorOverrides,
-    cull ? { width, height, paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
+    cull ? { width, height, dpr: resolveDpr(dpr), paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
   );
 }
 

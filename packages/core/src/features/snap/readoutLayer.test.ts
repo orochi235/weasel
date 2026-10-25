@@ -5,7 +5,7 @@ import type { SnapMark } from './types';
 
 // World (x, y) lands at (10 + 2x, 20 + 2y) on screen.
 const VIEW = { x: -5, y: -10, scale: { x: 2, y: 2 } } as never;
-const DIMS = { width: 400, height: 400 } as never;
+const DIMS = { width: 400, height: 400, dpr: 1 } as never;
 
 function drawn(marks: readonly SnapMark[]) {
   const store = createSnapOutcomeStore();

@@ -18,7 +18,7 @@ describe('createGuidesLayer', () => {
 
   it('returns [] when there are no guides', () => {
     const layer = createGuidesLayer({ getGuides: () => [] });
-    expect(layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 })).toEqual([]);
+    expect(layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100, dpr: 1 })).toEqual([]);
   });
 
   it('draws a vertical line for an x-axis guide and a horizontal line for a y-axis guide', () => {
@@ -27,7 +27,7 @@ describe('createGuidesLayer', () => {
       { id: 'hy', axis: 'y', offset: 25 },
     ];
     const layer = createGuidesLayer({ getGuides: () => guides });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100, dpr: 1 });
     expect(tree).toHaveLength(2);
 
     expect(tree[0].kind).toBe('path');
@@ -41,7 +41,7 @@ describe('createGuidesLayer', () => {
     const guides: Guide[] = [{ id: 'vx', axis: 'x', offset: 100 }];
     const layer = createGuidesLayer({ getGuides: () => guides });
     // view.x = 30, scale = 2 → screen x = (100 - 30) * 2 = 140.
-    const tree = layer.draw(undefined, { x: 30, y: 0, scale: { x: 2, y: 2 } }, { width: 200, height: 100 });
+    const tree = layer.draw(undefined, { x: 30, y: 0, scale: { x: 2, y: 2 } }, { width: 200, height: 100, dpr: 1 });
     expect(coords(tree[0])).toEqual([140, 0, 140, 100]);
   });
 
@@ -51,7 +51,7 @@ describe('createGuidesLayer', () => {
       { id: 'out', axis: 'x', offset: 1000 },
     ];
     const layer = createGuidesLayer({ getGuides: () => guides });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100, dpr: 1 });
     expect(tree).toHaveLength(1);
   });
 
@@ -62,14 +62,14 @@ describe('createGuidesLayer', () => {
       lineWidth: 2,
       color: '#ff00aa',
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100, dpr: 1 });
     const v = tree[0] as PathDrawCommand;
     expect(v.stroke?.width).toBe(2);
     expect((v.stroke?.paint as { color: string } | undefined)?.color).toBe('#ff00aa');
   });
 
   const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-  const dims = { width: 200, height: 100 };
+  const dims = { width: 200, height: 100, dpr: 1 };
 
   it('draws a guide with a span as a segment with end ticks', () => {
     const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 50, span: { min: 10, max: 60 } }];

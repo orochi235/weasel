@@ -55,7 +55,7 @@ function setup(ids: string[] = ['a', 'b'], opts: Parameters<typeof useShapeBuild
     return handle;
   };
   const painted = () =>
-    ((result.current.overlay as RenderLayer<unknown>).draw(null, VIEW, { width: 100, height: 100 }) as PathDrawCommand[])
+    ((result.current.overlay as RenderLayer<unknown>).draw(null, VIEW, { width: 100, height: 100, dpr: 1 }) as PathDrawCommand[])
       .map((c) => [c.fill?.paint, boundsOfPath(c.path).x, boundsOfPath(c.path).width]);
   const made = () => createPathNode.mock.calls.map(([path, op, src]) => [op, src, boundsOfPath(path).x, boundsOfPath(path).width]);
   return { tool: () => result.current, enabled, fire, drag, painted, made, applyOps };

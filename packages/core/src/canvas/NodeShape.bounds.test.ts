@@ -63,8 +63,8 @@ describe('painter bounds', () => {
         { x: -1000, y: b!.y - 1000, width: 3000, height: 1000 - gap },
         { x: -1000, y: b!.y + b!.height + gap, width: 3000, height: 1000 },
       ];
-      for (const strip of strips) expect(cullDrawCommands(cmds, id, strip), JSON.stringify(strip)).toEqual([]);
-      expect(cullDrawCommands(cmds, id, b!)).not.toEqual([]);
+      for (const strip of strips) expect(cullDrawCommands(cmds, id, strip, 1), JSON.stringify(strip)).toEqual([]);
+      expect(cullDrawCommands(cmds, id, b!, 1)).not.toEqual([]);
     });
   }
 

@@ -46,7 +46,7 @@ describe('<CanvasView> chrome on a parallax layer', () => {
     );
     act(() => { scene.setSelection(['sun' as NodeId]); });
     const outer = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    registry.list()[0]!.layer.draw({}, outer, { width: 300, height: 200 });
+    registry.list()[0]!.layer.draw({}, outer, { width: 300, height: 200, dpr: 1 });
     const chrome = (seen as { getChromeState(): { boundsOf(id: string): Bounds | null } }).getChromeState();
     expect(chrome.boundsOf('sun')).toMatchObject({ x: 20, y: 20, width: 10, height: 10 });
   });
