@@ -85,7 +85,7 @@
     "longestFunction": 315
   },
   "packages/forge/src/shell/useStoryRegistry.ts": {
-    "longestFunction": 207
+    "longestFunction": 186
   },
   "packages/forge/src/vite/depGraph.ts": {
     "longestFunction": 183

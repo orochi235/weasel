@@ -1,6 +1,7 @@
 import '../../shell/shell.css';
 import './CaptureView.browser.test.css';
 import { cleanup, render } from '@testing-library/react';
+import { f } from '@weasel-js/labkit/config';
 import { afterEach, expect, it } from 'vitest';
 import type { IndexBundle } from '../../story/indexBundle';
 import type { LoadedStory } from '../../story/types';
@@ -63,6 +64,7 @@ it("renders an index page's story cells before it says it has painted", async ()
     id: 'ui-tall--cell',
     name: 'Cell',
     exportName: 'Cell',
+    config: f.schema({}) as LoadedStory['config'],
     render: () => <p className="fg-capture-test-cell">cell</p>,
   };
   const bundle: IndexBundle = { title: 'ui/Tall', library: 'ui', galleries: [], labs: [], stories: [cell], descriptions: {}, render: null };
