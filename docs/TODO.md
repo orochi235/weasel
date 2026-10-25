@@ -1155,13 +1155,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) `check:first-publish -- --warn` fails the gate when the registry is down.** The gate runs it
-  with `--warn`, which should only warn, but `fetchPackument` (`scripts/lib/registry.mjs`) throws after
-  its retries on a 5xx, so the step exits 1. On 2026-10-21 npm answered 502 for
-  `@weasel-js/symmetry` alone, on its packument, abbreviated and `/latest` endpoints, while `core`
-  answered 200, and a full run of `main` (7b231aebe) failed on that step with every test green. With
-  `--warn`, a registry error belongs in the warning, not the exit code; the release run, without it,
-  should still stop.
 - **(P3) The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
   Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
   nodes, plausibly because every tab's WebGL goes through one GPU process (inferred, not measured).

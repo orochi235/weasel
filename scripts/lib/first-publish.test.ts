@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error — plain .mjs with no typings; `scripts/` is outside tsconfig's include.
-import { addPending, classify, hasTrustedPublish } from './first-publish.mjs';
+import { addPending, classify, hasTrustedPublish, readStates } from './first-publish.mjs';
 
 // The shapes below are copied from the registry's packuments for
 // `@weasel-js/menu` and `@weasel-js/core` as served on 2026-10-19.
@@ -82,5 +82,43 @@ describe('addPending', () => {
       '@weasel-js/a',
       '@weasel-js/b',
     ]);
+  });
+});
+
+describe('readStates', () => {
+  const answer = (status: number, body: unknown = {}) => async () =>
+    ({ status, json: async () => body }) as Response;
+  const byName = (map: Record<string, () => Promise<Response>>) => async (url: string) =>
+    map[decodeURIComponent(url.slice(url.lastIndexOf('/') + 1))]();
+  const fetch = byName({
+    '@weasel-js/core': answer(200, packument(oidcPublished)),
+    '@weasel-js/symmetry': answer(502),
+  });
+  const opts = { fetch, attempts: 1, delayMs: 0 };
+
+  // On 2026-10-21 npm answered 502 for symmetry alone, and the --warn gate exited 1.
+  it('with warn, reports a registry error instead of throwing', async () => {
+    const { states, errors } = await readStates(['@weasel-js/core', '@weasel-js/symmetry'], {
+      ...opts,
+      warn: true,
+    });
+    expect(states.map((s: { name: string }) => s.name)).toEqual(['@weasel-js/core']);
+    expect(errors).toEqual([{ name: '@weasel-js/symmetry', message: '@weasel-js/symmetry: registry answered 502' }]);
+  });
+
+  it('without warn, a registry error is fatal', async () => {
+    await expect(readStates(['@weasel-js/core', '@weasel-js/symmetry'], opts)).rejects.toThrow(
+      'registry answered 502',
+    );
+  });
+
+  it('reads a 404 as never published, not as an error', async () => {
+    const { states, errors } = await readStates(['@weasel-js/new'], {
+      ...opts,
+      warn: true,
+      fetch: byName({ '@weasel-js/new': answer(404) }),
+    });
+    expect(states).toEqual([{ name: '@weasel-js/new', packument: null }]);
+    expect(errors).toEqual([]);
   });
 });
