@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { probeUnderLens } from './probeUnderLens';
+import { scrollByWheel } from './scrollByWheel';
 
 /** Hands a wheel over a hit box to whatever lies beneath the lens layer, so a
- *  trial's camera still zooms under a lens. The lens itself binds no wheel. */
+ *  trial's camera still zooms and a story's scroller still scrolls under a lens.
+ *  The lens itself binds no wheel. */
 export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElement | null) {
   useEffect(() => {
     if (!input || !layer) return;
@@ -30,7 +32,8 @@ export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElemen
         altKey: e.altKey,
         metaKey: e.metaKey,
       });
-      if (!beneath.dispatchEvent(copy)) e.preventDefault();
+      // A browser scrolls nothing for the untrusted copy, and the original would scroll the lens's own ancestors.
+      if (!beneath.dispatchEvent(copy) || scrollByWheel(beneath, copy)) e.preventDefault();
     };
     input.addEventListener('wheel', onWheel, { passive: false });
     return () => input.removeEventListener('wheel', onWheel);

@@ -68,7 +68,9 @@ synchronous call: `'beneath'` stands the hit boxes down, so a point lands on
 what lies under the lenses, and `'interior'` stands each lens interior up, so a
 point lands on what a source attached there. A wheel over a hit box is handed on
 by `useWheelPassThrough`, which finds what is beneath that way and dispatches a
-copy of the wheel on it; a host's readouts find their element in a lens's copy
+copy of the wheel on it. A browser scrolls nothing for an untrusted copy, so when
+nothing cancels it the hook scrolls the nearest scroller that can move
+(`scrollByWheel`); a host's readouts find their element in a lens's copy
 with `'interior'`. `renderReadouts` is handed `LensReadoutProps`, the slot props
 plus the lens's interior element, so a host never queries the overlay's DOM.
 
