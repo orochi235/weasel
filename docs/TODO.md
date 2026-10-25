@@ -601,12 +601,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-
 - **(P3) A schema cannot name one group's motif for a settings form.** `PrefsForm`, `PrefsPane` and
   `SelectionPanel` draw their framed groups through `MotifFrame` (2026-10-24), so an app's `<DefaultMotif>`
   reaches all of them at once, but a single group can't ask for its own the way labkit's `.motif()` lets a
   `ControlPanel` group. That needs a `PrefGroup` annotation the forms pass as `motif`.
-
 
 - **(P2) Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
@@ -810,8 +808,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (`flatten` in `model.ts`), so a nested `tab` or `panel` loses its `as` while the object leaf
   beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
   one in labkit, and `PrefsPane` has no emptiness check.
-
-
 
 ### WeaselDraw app follow-ups (defer)
 
