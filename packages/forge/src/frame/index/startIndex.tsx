@@ -5,28 +5,15 @@ import { createKitRoot } from '../../kitIcons';
 import type { Channel } from '../../protocol/channel';
 import type { FromFrame, Globals, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
-import type { IndexRender, LoadedStory } from '../../story/types';
+import type { IndexBundle } from '../../story/indexBundle';
 import { runAxe } from '../a11y';
 import type { FrameSetup } from '../FrameController';
 import { createGlobalsTarget } from '../globalsTarget';
-import { type IndexEnv, IndexPage } from './IndexPage';
+import { indexEnvOf } from './indexEnv';
+import { IndexPage } from './IndexPage';
 
 export interface StartIndexOptions {
-  title: string;
-  /** The package the component ships in. */
-  library?: string;
-  description?: string;
-  /** Whether the component is a gallery. */
-  gallery?: boolean;
-  /** The ids of the stories tagged `gallery`. */
-  galleries?: readonly string[];
-  /** The ids of the stories tagged `lab`. */
-  labs?: readonly string[];
-  /** In file order. */
-  stories: readonly LoadedStory[];
-  descriptions: Readonly<Record<string, string>>;
-  /** The component's own page; null for the generated one. */
-  render: IndexRender | null;
+  bundle: IndexBundle;
   channel: Channel<ToFrame, FromFrame>;
   container: HTMLElement;
   setup?: FrameSetup;
@@ -70,24 +57,15 @@ export function startIndex(options: StartIndexOptions): () => void {
 
   const render = (): void => {
     if (!globals) return;
-    const env: IndexEnv = {
-      title: options.title,
-      ...(options.library === undefined ? {} : { library: options.library }),
-      ...(options.description === undefined ? {} : { description: options.description }),
-      stories: options.stories,
-      descriptions: options.descriptions,
-      gallery: options.gallery ?? false,
-      galleries: options.galleries ?? [],
-      labs: options.labs ?? [],
+    const env = indexEnvOf(options.bundle, {
+      graph: null,
       globals,
       decorators: setup.decorators ?? [],
       open: (id) => send({ type: 'open', id }),
-      // A story that throws shows its error in its own cell; the rest of the page is still worth reading.
-      onError: (error) => console.error(error),
-    };
+    });
     root.render(
       <PageBoundary onError={(error) => send({ type: 'fault', phase: 'render', message: message(error) })}>
-        <IndexPage env={env} render={options.render} />
+        <IndexPage env={env} render={options.bundle.render} />
       </PageBoundary>,
     );
   };

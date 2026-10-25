@@ -52,11 +52,16 @@ function start(options: { render?: IndexRender; setup?: FrameSetup; loaded?: rea
   const container = document.createElement('div');
   document.body.append(container);
   const stop = startIndex({
-    title: 'Kit/Button',
-    description: 'Presses things.',
-    stories: options.loaded ?? stories,
-    descriptions: { 'kit-button--primary': 'The one to press.' },
-    render: options.render ?? null,
+    bundle: {
+      title: 'Kit/Button',
+      library: 'Kit',
+      description: 'Presses things.',
+      galleries: [],
+      labs: [],
+      stories: options.loaded ?? stories,
+      descriptions: { 'kit-button--primary': 'The one to press.' },
+      render: options.render ?? null,
+    },
     channel: frame,
     container,
     ...(options.setup ? { setup: options.setup } : {}),

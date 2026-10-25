@@ -1,9 +1,8 @@
 import { openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
 import { indexId, isIndexId } from '../story/indexPages';
-import { TITLE_LIBRARIES } from '../story/library';
-import { isGallery, taggedIds } from '../story/tags';
-import { indexRenderOf, loadStories } from '../story/load';
+import { loadIndexBundle } from '../story/indexBundle';
+import { loadStories } from '../story/load';
 import type { LoadedStory } from '../story/types';
 import { type FrameSetup, reportImportFault, startFrame } from './FrameController';
 import { startIndex } from './index/startIndex';
@@ -87,33 +86,11 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
   const container = document.getElementById('root') ?? document.body;
   try {
     if (isIndexId(id)) {
-      const entries = entriesOf(id);
-      const title = entries[0]?.title;
-      if (title === undefined) throw new Error(`No component with index "${id}"`);
-      const files = [...new Set(entries.map((e) => e.file))];
-      const mods = await Promise.all(files.map(importOf));
-      const loaded = files.map((file, i) => ({
-        file,
-        stories: (options.load ?? loadStories)(mods[i] ?? {}, title, options.setup?.parameters),
-      }));
-      const stories = entries.flatMap(
-        (e) => loaded.find((l) => l.file === e.file)?.stories.find((s) => s.exportName === e.exportName) ?? [],
-      );
-      for (const story of stories) await options.setup?.prepare?.(story);
-      startIndex({
-        title,
-        ...(entries[0]?.componentDescription === undefined ? {} : { description: entries[0].componentDescription }),
-        // The project's library table is the shell config's, which a frame document does not load.
-        library: TITLE_LIBRARIES.of({ file: entries[0]?.file ?? '', title }),
-        gallery: entries.every(isGallery),
-        ...taggedIds(entries),
-        stories,
-        descriptions: Object.fromEntries(entries.flatMap((e) => (e.description ? [[e.id, e.description]] : []))),
-        render: mods.map(indexRenderOf).find((render) => render !== null) ?? null,
-        channel,
-        container,
-        ...(options.setup ? { setup: options.setup } : {}),
-      });
+      const { load, setup } = options;
+      const source = { index: options.index, importOf, load, parameters: setup?.parameters, prepare: setup?.prepare };
+      // The project's library table is the shell config's, which a frame document does not load.
+      const bundle = await loadIndexBundle(id, source);
+      startIndex({ bundle, channel, container, ...(setup ? { setup } : {}) });
       return;
     }
     const entry = options.index.find((e) => e.id === id);

@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../../story/define';
+import { indexId } from '../../story/indexPages';
 import type { CapturePayload } from '../../vite/capture/payload';
 import type { FrameSetup } from '../FrameController';
 import { mountCapture } from './mountCapture';
@@ -23,12 +24,13 @@ const payload: CapturePayload = {
   colorScheme: 'light',
 };
 
-function mount(setup: FrameSetup = {}) {
+function mount(setup: FrameSetup = {}, extra: Partial<Parameters<typeof mountCapture>[0]> = {}) {
   document.body.innerHTML = '<div id="root"></div>';
   mountCapture({
     index: [{ id: ID, title: 'ui/A', name: 'Only', exportName: 'Only', file: FILE }],
     importers: { [FILE]: async () => ({ default: meta({ title: 'ui/A' }), Only: story({ render: () => <p>only</p> }) }) },
     setup,
+    ...extra,
   });
   return window.__forgeCapture!;
 }
@@ -67,6 +69,28 @@ describe('mountCapture', () => {
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
     await expect(capture.render(payload)).rejects.toThrow('the frame config broke');
     quiet.mockRestore();
+  });
+
+  it("renders a component's index page from its index id, its history read from the dependency graph", async () => {
+    const dependencies = vi.fn(async () => ({
+      'ui/A': {
+        source: 'A.tsx',
+        uses: [],
+        usedBy: [],
+        history: { created: '2026-01-02T00:00:00Z', modified: '2026-03-04T00:00:00Z', introduced: '1.0.0', modifiedIn: null },
+      },
+    }));
+    const capture = mount({}, { dependencies } as Partial<Parameters<typeof mountCapture>[0]>);
+    await capture.render({ ...payload, story: indexId('ui/A'), layout: 'fullscreen' });
+    const page = document.querySelector('[data-fg-capture]')!;
+    expect(page.querySelector('h1')?.textContent).toBe('A');
+    expect(page.textContent).toContain('only');
+    expect(page.querySelector('[aria-label="History"]')?.textContent).toContain('1.0.0');
+  });
+
+  it('rejects an index id no story of the index belongs to', async () => {
+    const capture = mount();
+    await expect(capture.render({ ...payload, story: indexId('ui/B') })).rejects.toThrow('No component with index');
   });
 
   it('rejects a story the index does not hold', async () => {

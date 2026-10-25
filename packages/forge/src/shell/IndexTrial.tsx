@@ -1,31 +1,14 @@
 import { TrialIdContext, useLabContext } from '@weasel-js/labkit';
 import { useContext } from 'react';
-import { isGallery } from '../story/tags';
 import type { FrameSetup } from '../frame/FrameController';
-import { type IndexEnv, IndexPage } from '../frame/index/IndexPage';
+import { indexEnvOf } from '../frame/index/indexEnv';
+import { IndexPage } from '../frame/index/IndexPage';
 import type { Globals } from '../protocol/messages';
-import type { IndexRender, LoadedStory } from '../story/types';
+import type { IndexBundle } from '../story/indexBundle';
 import { DependenciesContext } from './dependencies';
 import { LiveCopies } from './loupe/LiveCopies';
 import { TrialHost } from './TrialHost';
 import { setRoute } from './useRoute';
-
-/** A component's index page as the registry loads it: its stories in index order, and the page's own render. */
-export interface IndexBundle {
-  title: string;
-  /** The package the component ships in. */
-  library: string;
-  description?: string;
-  /** The tags every story of the component carries. */
-  tags?: readonly string[];
-  /** The ids of the stories tagged `gallery`. */
-  galleries: readonly string[];
-  /** The ids of the stories tagged `lab`. */
-  labs: readonly string[];
-  stories: readonly LoadedStory[];
-  descriptions: Readonly<Record<string, string>>;
-  render: IndexRender | null;
-}
 
 export interface IndexTrialProps {
   bundle: IndexBundle;
@@ -38,32 +21,14 @@ export function IndexTrial({ bundle, setup, config }: IndexTrialProps) {
   const lab = useLabContext();
   const trialId = useContext(TrialIdContext);
   const graph = useContext(DependenciesContext);
-  const gallery = isGallery(bundle);
-  const dependencies = gallery ? undefined : graph?.[bundle.title];
   const open = (id: string) => {
     if (!trialId || !lab.instruments.some((instrument) => instrument.name === id)) return;
     lab.swapTrial(trialId, id);
     setRoute(id, { inPlace: true });
   };
-  const render = (globals: Globals) => {
-    const env: IndexEnv = {
-      title: bundle.title,
-      library: bundle.library,
-      ...(bundle.description === undefined ? {} : { description: bundle.description }),
-      stories: bundle.stories,
-      descriptions: bundle.descriptions,
-      gallery,
-      galleries: bundle.galleries,
-      labs: bundle.labs,
-      ...(dependencies ? { dependencies } : {}),
-      globals,
-      decorators: setup.decorators ?? [],
-      open,
-      // A story that throws shows its error in its own cell; the rest of the page is still worth reading.
-      onError: (error) => console.error(error),
-    };
-    return <IndexPage env={env} render={bundle.render} />;
-  };
+  const render = (globals: Globals) => (
+    <IndexPage env={indexEnvOf(bundle, { graph, globals, decorators: setup.decorators ?? [], open })} render={bundle.render} />
+  );
   return (
     <>
       <TrialHost layout="fullscreen" setup={setup} config={config}>
