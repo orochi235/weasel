@@ -487,7 +487,7 @@ position as it completes, and align any printed table's numeric columns
 (right-aligned, fixed decimals). Don't pipe a run through `tail`; the result
 file is the output to keep.
 
-Before believing a number, check the traps in the repo's `CLAUDE.md` that
+Before believing a number, check the traps in the repo's `docs/traps/` that
 apply to benchmarks: a loop driven by hover events measures vsync, a shader
 variant the compiler can fold measures nothing, a variant that paints nothing
 measures free, and a single-threaded static server invents load regressions.

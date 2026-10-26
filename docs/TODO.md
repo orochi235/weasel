@@ -492,8 +492,8 @@ Owner tags, after the priority (2026-10-26):
   `narrower`, `tallest` and `shortest` carry two short arrows each, and at 16 device pixels the
   heads close up into dots; `orbit`'s head does the same against its ring. All resolve at 2x.
   They want heads on the pixel grid, or fewer of them (`packages/ui/icons/size.mjs`,
-  `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
-  icons") still use spreads of 36 to 42.
+  `camera.mjs`). The straight arrows drawn before the 45-degree rule in `docs/icons.md` ("Drawing
+  rules") still use spreads of 36 to 42.
 
 ---
 

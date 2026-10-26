@@ -68,7 +68,7 @@ export const MarkedAtProofSize: StoryObj = { render: () => <MarkedSheet size={16
 /** Chrome size — the legibility check, not the design surface. */
 export const AtChromeSize: StoryObj = { render: () => <Sheet size={20} /> };
 
-/** CLAUDE.md ("Drawing icons") requires proofing at this size before shipping
+/** docs/icons.md ("Drawing rules") requires proofing at this size before shipping
  *  a change; a misplaced arrowhead is invisible at 20px. */
 export const AtProofSize: StoryObj = { render: () => <Sheet size={160} proof /> };
 

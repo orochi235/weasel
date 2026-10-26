@@ -99,6 +99,20 @@ on every release. The manifest check guards tarball
 contents: it fails the release if any `exports`/`types` path promises a file that
 `npm pack` would not include.
 
+## Checking a publish
+
+**Don't trust what a publish says it did.** `changeset publish` has twice
+listed a package under "Successfully published" that never reached npm, with no
+error anywhere in the log. `npm run check:published` asks the registry whether
+every workspace's current version is really there, and `npm run
+test:smoke:registry` installs the whole set into an empty tree to catch the
+consumer-facing half — one missing sibling breaks `npm i @weasel-js/core` while
+seventeen versions are perfectly present. Both run in the release workflow after
+the publish; run either by hand to answer "did the last release land?".
+Within an hour of a publish a missing version may only be staged — npm has hidden
+a fresh upload for 55 minutes, and republishing it fails with E409 — so check with
+`npm run check:published -- --wait` before re-dispatching anything.
+
 ## Notes
 
 - The Release workflow's push trigger is path-filtered to `.changeset/*.md`, so
