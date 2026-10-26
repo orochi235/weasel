@@ -929,6 +929,13 @@ only story runner in the repo.
   props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
   whether a matrix story should take args and apply them to every cell.
 
+- **(P3) The Issues panel has no tracker behind it** (2026-10-25). `shell/issues/IssuesPanel.tsx` takes
+  `issues` and `onReport` as props, and the workshop passes neither, so it says "Not connected" and Report stays
+  disabled. Settled so far: GitHub Issues is the tracker, a component's issues are those labeled
+  `forge:<component>`, and a report attaches its story, a link reopening it with the same args and globals, and
+  the branch and commit. A screenshot with the trial's marks on it goes into the issue by pasting it there;
+  never by committing it to the repo. Left to settle: how the workshop reaches GitHub, and whether marks come
+  back (next entry) to draw that screenshot.
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
   no Marks section and no tool rail. The removed wiring — the story as the one
