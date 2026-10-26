@@ -6,7 +6,7 @@
 // wrote, which is why the walk here is our own.
 
 import type {
-  AddNodeSpec, SceneRegistry, SerializedScene, SerializedSceneV1, SpecsFromSerializedOptions,
+  AddNodeSpec, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
 } from '@weasel-js/core';
 import { specsFromSerialized } from '@weasel-js/core';
 import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
@@ -49,7 +49,7 @@ export function reviveTypedArrays<T>(node: T): T {
 /** The document values a persisted snapshot carries, shaped for `useScene`'s `doc` option, or
  *  `undefined` for a snapshot written before it had any. */
 export function docFromSnapshot<TData, TLayer extends string, TPose>(
-  json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
+  json: SavedScene<TData, TLayer, TPose>,
 ): Readonly<Record<string, unknown>> | undefined {
   const { doc } = json;
   return doc !== null && typeof doc === 'object' && !Array.isArray(doc) ? doc : undefined;
@@ -62,7 +62,7 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
  *  `'throw'`; `opts.onSkip` hears each. `revive` rewrites each node's data on
  *  the way in; the default revives typed arrays only. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
-  json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
+  json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
   revive: <T>(node: T) => T = reviveTypedArrays,
   opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},

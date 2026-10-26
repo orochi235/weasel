@@ -1,6 +1,8 @@
 import { useState, useSyncExternalStore } from 'react';
 import {
   SceneCanvas,
+  composeWorldPose,
+  scenePoseAdapter,
   asNodeId,
   easeOutCubic,
   sceneFromJSON,
@@ -68,13 +70,14 @@ export function LayoutDemo() {
       kind: 'mark',
       layer: 'default',
       parent: G,
-      pose: { x: 285, y: 225, width: 30, height: 30 },
+      // In G's frame: G's bottom-right corner.
+      pose: { x: 75, y: 185, width: 30, height: 30 },
       data: { color: TILE_COLORS[tiles % TILE_COLORS.length], isContainer: false },
     });
   };
 
-  // Committed-pose ledger: every tile's live pose + parent, whether it sits in
-  // a container or was dropped outside them all. Because the demo re-renders
+  // Committed-pose ledger: every tile's committed pose in world + parent,
+  // whether it sits in a container or was dropped outside them all. Because the demo re-renders
   // on scene version change, these rows update the instant a drag commits —
   // letting you watch a child reparent and reflow into its destination.
   const rows = scene.roots
@@ -82,7 +85,7 @@ export function LayoutDemo() {
     .filter((id) => !scene.get(id)!.data.isContainer)
     .map((childId) => {
       const child = scene.get(childId)!;
-      const pose = child.pose as P;
+      const pose = composeWorldPose(scenePoseAdapter(scene as never), childId, scene.composition.compose as never) as P;
       return {
         id: childId as string,
         parent: child.parent as string | null,

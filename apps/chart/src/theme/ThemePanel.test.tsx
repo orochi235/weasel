@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { createScene } from '@weasel-js/core';
+import { createScene, type RectPose } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_THEMES, applyDiagramTheme, diagramScene, setDiagramFontSize, withDiagramRegistry, type DiagramTheme,
 } from '@weasel-js/diagram';
@@ -21,7 +21,7 @@ function setup() {
   const scene = createScene({
     systemLayers: [{ id: 'main' }],
     initial: diagramScene({ nodes: [{ id: 'a', lines: ['a'], style: 'accent' }, { id: 'b', lines: ['b'] }], edges: [] }, { theme: paper, layout: 'none' }) as never,
-    registry: withDiagramRegistry(),
+    registry: withDiagramRegistry<RectPose>(),
   }) as unknown as ChartScene;
   applyDiagramTheme(scene, paper);
   const depth = scene.historyIndex();

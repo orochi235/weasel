@@ -68,7 +68,7 @@ function ring(pose: Pose): Path {
 }
 
 const paneScene = (fill: string): SerializedScene<NodeData, string, Pose> => ({
-  version: 2,
+  version: 3,
   systemLayers: [{ id: 'default' }],
   nodes: [
     { id: 'box', kind: 'mark', layer: 'default',

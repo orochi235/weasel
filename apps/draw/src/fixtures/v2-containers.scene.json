@@ -1,0 +1,295 @@
+{
+ "version": 2,
+ "systemLayers": [
+  {
+   "id": "default"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "frame",
+   "kind": "group",
+   "layer": "default",
+   "pose": {
+    "x": 200,
+    "y": 150,
+    "width": 300,
+    "height": 200
+   },
+   "data": {}
+  },
+  {
+   "id": "a",
+   "kind": "mark",
+   "layer": "default",
+   "pose": {
+    "x": 220,
+    "y": 170,
+    "width": 80,
+    "height": 60
+   },
+   "data": {
+    "path": {
+     "kind": "polygon",
+     "commands": [
+      0,
+      1,
+      1,
+      1,
+      4
+     ],
+     "coords": [
+      0,
+      0,
+      80,
+      0,
+      80,
+      60,
+      0,
+      60
+     ],
+     "fillRule": "nonzero"
+    },
+    "fill": {
+     "paint": {
+      "kind": "solid",
+      "color": "#7ab8d4"
+     }
+    },
+    "stroke": {
+     "paint": {
+      "kind": "solid",
+      "color": "#0a3654"
+     },
+     "width": 2
+    },
+    "label": "a"
+   },
+   "parent": "frame"
+  },
+  {
+   "id": "b",
+   "kind": "mark",
+   "layer": "default",
+   "pose": {
+    "x": 340,
+    "y": 230,
+    "width": 100,
+    "height": 80
+   },
+   "data": {
+    "path": {
+     "kind": "polygon",
+     "commands": [
+      0,
+      1,
+      1,
+      1,
+      4
+     ],
+     "coords": [
+      0,
+      0,
+      100,
+      0,
+      100,
+      80,
+      0,
+      80
+     ],
+     "fillRule": "nonzero"
+    },
+    "fill": {
+     "paint": {
+      "kind": "solid",
+      "color": "#d4a574"
+     }
+    },
+    "stroke": {
+     "paint": {
+      "kind": "solid",
+      "color": "#0a3654"
+     },
+     "width": 2
+    },
+    "label": "b"
+   },
+   "parent": "frame"
+  },
+  {
+   "id": "turned",
+   "kind": "group",
+   "layer": "default",
+   "pose": {
+    "x": 600,
+    "y": 150,
+    "width": 200,
+    "height": 120,
+    "rotation": 0.5
+   },
+   "data": {}
+  },
+  {
+   "id": "c",
+   "kind": "mark",
+   "layer": "default",
+   "pose": {
+    "x": 650,
+    "y": 180,
+    "width": 60,
+    "height": 40,
+    "rotation": 0.5
+   },
+   "data": {
+    "path": {
+     "kind": "polygon",
+     "commands": [
+      0,
+      1,
+      1,
+      1,
+      4
+     ],
+     "coords": [
+      0,
+      0,
+      60,
+      0,
+      60,
+      40,
+      0,
+      40
+     ],
+     "fillRule": "nonzero"
+    },
+    "fill": {
+     "paint": {
+      "kind": "solid",
+      "color": "#a48bd4"
+     }
+    },
+    "stroke": {
+     "paint": {
+      "kind": "solid",
+      "color": "#0a3654"
+     },
+     "width": 2
+    },
+    "label": "c"
+   },
+   "parent": "turned"
+  },
+  {
+   "id": "env",
+   "kind": "group",
+   "layer": "default",
+   "pose": {
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+   },
+   "data": {},
+   "dependsOn": "children",
+   "derivePoseKey": "kit:unionOfChildren"
+  },
+  {
+   "id": "d",
+   "kind": "mark",
+   "layer": "default",
+   "pose": {
+    "x": 220,
+    "y": 420,
+    "width": 90,
+    "height": 70
+   },
+   "data": {
+    "path": {
+     "kind": "polygon",
+     "commands": [
+      0,
+      1,
+      1,
+      1,
+      4
+     ],
+     "coords": [
+      0,
+      0,
+      90,
+      0,
+      90,
+      70,
+      0,
+      70
+     ],
+     "fillRule": "nonzero"
+    },
+    "fill": {
+     "paint": {
+      "kind": "solid",
+      "color": "#7fb069"
+     }
+    },
+    "stroke": {
+     "paint": {
+      "kind": "solid",
+      "color": "#0a3654"
+     },
+     "width": 2
+    },
+    "label": "d"
+   },
+   "parent": "env"
+  },
+  {
+   "id": "e",
+   "kind": "mark",
+   "layer": "default",
+   "pose": {
+    "x": 360,
+    "y": 440,
+    "width": 70,
+    "height": 50
+   },
+   "data": {
+    "path": {
+     "kind": "polygon",
+     "commands": [
+      0,
+      1,
+      1,
+      1,
+      4
+     ],
+     "coords": [
+      0,
+      0,
+      70,
+      0,
+      70,
+      50,
+      0,
+      50
+     ],
+     "fillRule": "nonzero"
+    },
+    "fill": {
+     "paint": {
+      "kind": "solid",
+      "color": "#c0392b"
+     }
+    },
+    "stroke": {
+     "paint": {
+      "kind": "solid",
+      "color": "#0a3654"
+     },
+     "width": 2
+    },
+    "label": "e"
+   },
+   "parent": "env"
+  }
+ ]
+}
