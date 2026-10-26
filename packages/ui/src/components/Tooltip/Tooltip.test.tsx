@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { Focusable } from './Focusable';
 import { TooltipTrigger, Tooltip } from './Tooltip';
@@ -75,5 +75,40 @@ describe('Tooltip', () => {
     const tip = screen.getByRole('tooltip');
     expect(tip.querySelector('code')?.textContent).toBe('auto');
     expect(screen.getByTestId('kept').textContent).toBe('`raw`');
+  });
+
+  it("lets an Escape pressed elsewhere through to its target, closing an open tooltip on the way", () => {
+    const onOpenChange = vi.fn();
+    const onEditorKey = vi.fn();
+    render(
+      <>
+        <TooltipTrigger isOpen onOpenChange={onOpenChange}>
+          <Focusable><button type="button">Save</button></Focusable>
+          <Tooltip>Save the document</Tooltip>
+        </TooltipTrigger>
+        <div contentEditable suppressContentEditableWarning data-testid="editor" onKeyDown={(e) => onEditorKey(e.key)} />
+      </>,
+    );
+    const editor = screen.getByTestId('editor');
+    act(() => editor.focus());
+    fireEvent.keyDown(editor, { key: 'Escape' });
+    expect(onEditorKey).toHaveBeenCalledWith('Escape');
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("keeps an Escape pressed on the tooltip's own trigger for the tooltip", () => {
+    const onDocumentKey = vi.fn();
+    document.addEventListener('keydown', onDocumentKey);
+    try {
+      render(<Subject />);
+      const btn = screen.getByRole('button');
+      keyboardFocus(btn);
+      expect(screen.getByRole('tooltip')).toBeTruthy();
+      fireEvent.keyDown(btn, { key: 'Escape' });
+      expect(screen.queryByRole('tooltip')).toBeNull();
+      expect(onDocumentKey.mock.calls.filter(([e]) => (e as KeyboardEvent).key === 'Escape')).toHaveLength(0);
+    } finally {
+      document.removeEventListener('keydown', onDocumentKey);
+    }
   });
 });
