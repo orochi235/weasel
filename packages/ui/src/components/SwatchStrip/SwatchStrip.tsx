@@ -43,7 +43,8 @@ export interface SwatchStripProps {
    *  palette's rows further in, each section's heading or palette picker first on its first ring. Default: the
    *  nearest `Along`'s shape, else none. */
   shape?: TrackShape;
-  /** Where a ring shorter than its run sits. Default: the nearest `Along`'s, else `'center'`. */
+  /** Where a row shorter than its run sits, as on {@link SwatchGrid}. Default: the nearest `Along`'s, else
+   *  `'center'` on a ring and `'start'` in a grid. */
   align?: RunAlign;
   'aria-label'?: string;
   className?: string;
@@ -133,6 +134,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
               options={recentOptions}
               value={currentIn(recentOptions)}
               columns={columns}
+              align={props.align}
               onChange={onChange}
               onAltChange={onAltChange}
             />
@@ -150,6 +152,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
             options={shown.colors}
             value={currentIn(shown.colors)}
             columns={shown.columns ?? columns}
+            align={props.align}
             onChange={onChange}
             onAltChange={onAltChange}
           />

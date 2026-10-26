@@ -1,6 +1,15 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  /* Half-column tracks, so a short last row can sit centered between two columns. */
+  grid-template-columns: repeat(var(--tracks), minmax(0, 1fr));
+}
+
+.grid > .swatch {
+  grid-column-end: span 2;
+}
+
+.grid > .swatch[data-row-lead] {
+  grid-column-start: calc(1 + var(--lead));
 }
 
 .swatch {
