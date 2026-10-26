@@ -3,6 +3,7 @@ import { compactKind, decimalKind, integerKind } from './kinds/plain';
 import { fractionKind, multiplierKind, percentKind, ratioKind, zoomKind } from './kinds/proportion';
 import { bytesKind, currencyKind, durationKind, unitKind } from './kinds/measure';
 import { ordinalKind, romanKind } from './kinds/numeral';
+import { scientificKind } from './kinds/scientific';
 import { infinityParts, infinityWord, readInfinity } from './infinity';
 import { parseNumber } from './number';
 import { amount, displayOf, retag, tag, unitOf, type Display, type Quantity, type Tagged } from './quantity';
@@ -12,7 +13,7 @@ import { unitScale, type Unit, type UnitSystem } from './units';
 // free of side effects and a bundler can drop what nobody imports.
 const BUILTIN: Record<string, DisplayKind<never>> = Object.fromEntries(
   [
-    decimalKind, integerKind, compactKind,
+    decimalKind, integerKind, compactKind, scientificKind,
     percentKind, fractionKind, ratioKind, multiplierKind, zoomKind,
     unitKind, currencyKind, durationKind, bytesKind,
     romanKind, ordinalKind,
