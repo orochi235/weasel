@@ -7,6 +7,9 @@ import { aimSpace2d, type AimOutline, type AimSpace, type ViewAim } from './aim'
 export interface AimSource {
   aim(): ViewAim | null;
   setAim?(aim: ViewAim): void;
+  /** Tells a marker drawing this aim that it changed, so the marker repaints. Without it the marker
+   *  repaints only when something else asks for a redraw. Returns an unsubscribe. */
+  subscribe?(listener: () => void): () => void;
 }
 
 /** How a marker's outline is stroked, in screen px. */
@@ -53,6 +56,11 @@ export function createViewMarkerLayer(props: () => ViewMarkerProps, host: ViewMa
     id: `view-marker:${id}`,
     label: `View marker ${id}`,
     space: 'screen',
+    // Read when the canvas subscribes: a source swapped later is heard once it next resubscribes its layers.
+    subscribe: (listener) => {
+      const { source } = props();
+      return source !== null && typeof source === 'object' && source.subscribe ? source.subscribe(listener) : () => {};
+    },
     draw: (_data, view, dims): DrawCommand[] => {
       const { source, target, style } = props();
       if (source === target) return [];

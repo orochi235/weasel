@@ -35,6 +35,21 @@ describe('createViewMarkerLayer', () => {
     expect(cmd!.path).toEqual(polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 75 }, { x: 0, y: 75 }]));
   });
 
+  it("repaints when an aim handed in by value says it changed", () => {
+    const listeners = new Set<() => void>();
+    const source = {
+      aim: () => rectAim(null, { x: 0, y: 0, width: 400, height: 300 }),
+      subscribe: (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; },
+    };
+    const layer = createViewMarkerLayer(() => ({ id: 'm', source, target: 'pip' }), host);
+    const redraw = vi.fn();
+    const off = layer.subscribe!(redraw);
+    for (const l of listeners) l();
+    expect(redraw).toHaveBeenCalledOnce();
+    off();
+    expect(listeners.size).toBe(0);
+  });
+
   it('draws nothing for a source with no view, or a source that is its own target', () => {
     expect(createViewMarkerLayer(() => ({ id: 'm', source: 'gone', target: 'pip' }), host).draw({}, view, dims)).toEqual([]);
     expect(createViewMarkerLayer(() => ({ id: 'm', source: 'pip', target: 'pip' }), host).draw({}, view, dims)).toEqual([]);
