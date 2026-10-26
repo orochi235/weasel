@@ -66,16 +66,12 @@ export const EDIT = {
       <rect x="6" y="6" width="9" height="9"/>
       <rect x="9" y="9" width="9" height="9"/>
     </g>`,
+  // Flips: a filled trapezoid and its outlined mirror, short edges facing across the middle. Straight edges sit on
+  // whole pixels at 16px (multiples of 1.25), and the outline is a filled ring a pixel wide, so neither blurs.
   flipX: `
-    <g stroke-linecap="butt" stroke-linejoin="miter">
-      <line x1="10" y1="2" x2="10" y2="18" stroke-dasharray="2 1.5"/>
-      <path d="M 8 4 L 3 10 L 8 16 Z"/>
-      <path d="M 12 4 L 17 10 L 12 16 Z" fill="currentColor" stroke="none"/>
-    </g>`,
+    <path d="M1.25 2.5 8.75 6.25 8.75 13.75 1.25 17.5Z" fill="currentColor" stroke="none"/>
+    <path d="M18.75 2.5 11.25 6.25 11.25 13.75 18.75 17.5Z M17.5 4.5225 12.5 7.0225 12.5 12.9775 17.5 15.4775Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,
   flipY: `
-    <g stroke-linecap="butt" stroke-linejoin="miter">
-      <line x1="2" y1="10" x2="18" y2="10" stroke-dasharray="2 1.5"/>
-      <path d="M 4 8 L 10 3 L 16 8 Z"/>
-      <path d="M 4 12 L 10 17 L 16 12 Z" fill="currentColor" stroke="none"/>
-    </g>`,
+    <path d="M17.5 1.25 13.75 8.75 6.25 8.75 2.5 1.25Z" fill="currentColor" stroke="none"/>
+    <path d="M17.5 18.75 13.75 11.25 6.25 11.25 2.5 18.75Z M15.4775 17.5 12.9775 12.5 7.0225 12.5 4.5225 17.5Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,
 };

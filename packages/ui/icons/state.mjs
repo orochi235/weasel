@@ -1,7 +1,8 @@
 import { chevron, onCircle } from '../../icons/scripts/lib/base.mjs';
 
 // ── transport ────────────────────────────────────────────────────────────
-const playTri = `M7.6 5.2 15.6 10 7.6 14.8Z`;
+// Transport glyphs stand as tall as close or search, about 12.5 units; drawn smaller they read as shrunk beside them.
+const playTri = `M6.88 3.76 17.28 10 6.88 16.24Z`;
 
 // ── broadcast ────────────────────────────────────────────────────────────
 // Arcs about the mast's tip, each spanning 70°, at two radii on each side.
@@ -119,14 +120,14 @@ const PAGE_EAR = 11.6;
 const STATE = {
   // transport
   play: `<path d="${playTri}"/>`,
-  pause: `<path d="M7.8 5.2v9.6M12.2 5.2v9.6"/>`,
-  stop: `<rect x="5.6" y="5.6" width="8.8" height="8.8" rx="1.4"/>`,
-  stepForward: `<path d="M6.4 5.4 13 10 6.4 14.6Z"/><path d="M15.2 5.4v9.2"/>`,
-  stepBack: `<path d="M13.6 5.4 7 10 13.6 14.6Z"/><path d="M4.8 5.4v9.2"/>`,
-  rewind: `<path d="M9.6 5.6 3.4 10 9.6 14.4Z"/><path d="M16.6 5.6 10.4 10 16.6 14.4Z"/>`,
-  fastForward: `<path d="M3.4 5.6 9.6 10 3.4 14.4Z"/><path d="M10.4 5.6 16.6 10 10.4 14.4Z"/>`,
+  pause: `<path d="M7.14 3.76v12.48M12.86 3.76v12.48"/>`,
+  stop: `<rect x="4.28" y="4.28" width="11.44" height="11.44" rx="1.82"/>`,
+  stepForward: `<path d="M5.32 4.02 13.9 10 5.32 15.98Z"/><path d="M16.76 4.02v11.96"/>`,
+  stepBack: `<path d="M14.68 4.02 6.1 10 14.68 15.98Z"/><path d="M3.24 4.02v11.96"/>`,
+  rewind: `<path d="M9.6 4.28 2.4 10 9.6 15.72Z"/><path d="M17.6 4.28 10.4 10 17.6 15.72Z"/>`,
+  fastForward: `<path d="M2.4 4.28 9.6 10 2.4 15.72Z"/><path d="M10.4 4.28 17.6 10 10.4 15.72Z"/>`,
   // The playhead, up against the end of what there is.
-  live: `<circle cx="8.2" cy="10" r="2.6" fill="currentColor"/><path d="M15.2 5.4v9.2"/>`,
+  live: `<circle cx="7.66" cy="10" r="3.38" fill="currentColor"/><path d="M16.76 4.02v11.96"/>`,
   record: `<circle cx="10" cy="10" r="5.8"/><circle cx="10" cy="10" r="2.5" fill="currentColor" stroke="none"/>`,
   loop: `
     <path d="M4.2 10.2V8.4a2.4 2.4 0 0 1 2.4-2.4h9"/>
