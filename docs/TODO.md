@@ -528,20 +528,6 @@ Priority tags:
   mirrors every other column across the row it steps along. pgg and p4g need glides whose axes run
   between the lattice's rows, so they want a glide offset the spec does not carry yet.
 
-### `useScene` follow-ups
-
-- **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
-  composition: a child's pose is relative to its container's frame, and moving a container writes
-  one pose. The scene owns it now (`useScene({ composition })`, read everywhere as
-  `scene.composition`), but the default is still the absolute-pose model, where `sceneToAdapter`
-  translates every descendant of a moved container (`cascadingSetPose`,
-  `packages/core/src/canvas/poseCascade.ts`) and `Scene.setPose` on a container leaves its
-  children behind. Making a frame the default deletes that walk and the identity branches beside
-  it. It needs an answer for a scene whose `TPose` is not a rect (`RIGID_POSE_COMPOSITION` reads
-  `x`, `y`, `width`, `height`), and it rewrites every stored child pose as local: `apps/draw`'s
-  saved documents and SVG import, `packages/diagram`'s layouts, and the tests that build a
-  container with children, about ninety files.
-
 ### Container layout strategies
 
 - **(P3) Reparent-on-layout-drop lives in the move action's `layoutDrop` behavior
@@ -553,11 +539,14 @@ Priority tags:
   overflow past the container's last visible line and reports the region through
   `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
   container's bounds. Ruled 2026-10-11: a container's scroll offset is view state, part of the frame
-  the container gives its children, and the document never moves. A scene that composes poses
-  (`useScene({ composition })`) has that frame; an absolute-pose scene has none, and is the
-  default until "A scene composes poses only when asked to" lands. That leaves the offset itself,
-  folded in by painting, picking, selection chrome, move, resize, and snapping with the rest of
-  the frame, and a host that reads `contentExtent` and scrolls.
+  the container gives its children, and the document never moves. Every scene now composes frames
+  (2026-10-26), so what is left is the offset and a host that reads `contentExtent` and scrolls. The
+  offset cannot simply join `scene.composition`: the layout pass and every other writer that stores
+  a pose must keep folding through the unscrolled frame, or scrolling would rewrite children's
+  stored poses. So it is a second, view-side fold over the same frames, read by painting
+  (`buildSceneTree`'s `composePose`), picking, selection chrome, the preview ghost
+  (`resolvePreviews`), and the gestures (`scenePoseFrame`, `sceneGestureFrames`), which must read and
+  write through it alike so a move inside a scrolled container stores the content position.
 
 ### Units
 
