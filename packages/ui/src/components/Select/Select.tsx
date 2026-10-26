@@ -1,6 +1,4 @@
 import {
-  Children,
-  isValidElement,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -17,21 +15,20 @@ import {
   ListBoxItem as RACListBoxItem,
   ListBoxSection as RACListBoxSection,
   Header,
-  Text,
-  FieldError,
   type SelectProps as RACSelectProps,
   type ListBoxItemProps as RACListBoxItemProps,
-  type ValidationResult,
 } from 'react-aria-components';
 import { Popover } from '../Popover';
 import { pastDragThreshold } from '@weasel-js/core';
-import type { FieldOrientation } from '../Field/Field';
+import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 import { Caret } from '../Caret';
+import { optionLabels, withIcon } from '../optionLabels';
+import { MIXED_HINT } from '../mixedHint';
 import type { OptionKey } from '../../optionKey';
 
 /** One option in a {@link Select}'s `options` list. */
@@ -73,17 +70,11 @@ export type SelectPopup = 'over' | 'below';
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
-  label?: ReactNode;
-  /**
-   * `'stacked'` (the default) puts the label above the trigger; `'row'` sets it
-   * beside the trigger at its own width, with any description or error on a
-   * line below. Same vocabulary as {@link Field}'s `orientation`.
-   */
-  orientation?: FieldOrientation;
-  description?: ReactNode;
-  errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & FieldSlotProps & {
   placeholder?: string;
+  /** The select stands for several values that differ: nothing is selected,
+   *  and the trigger reads `Mixed` in place of `placeholder`. */
+  mixed?: boolean;
   /**
    * Either pass `options` for a quick render, or `children` for full control.
    * An entry with `title` and `options` of its own is a titled section.
@@ -140,10 +131,11 @@ export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<obje
 export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const {
     label,
-    orientation = 'stacked',
+    orientation,
     description,
     errorMessage,
-    placeholder,
+    placeholder: placeholderProp,
+    mixed,
     options,
     children,
     selectedKey,
@@ -162,6 +154,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   } = props;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  const placeholder = mixed ? MIXED_HINT : placeholderProp;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pressRef = useRef<Press | null>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
@@ -169,22 +162,24 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   return (
     <RACSelect
       {...rest}
-      selectedKey={selectedKey}
+      selectedKey={mixed ? null : selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
-      className={[
-        f.field,
-        f.control,
-        s.select,
-        width === 'fit' && `${f.fit} ${s.fit}`,
-        variant === 'bare' && s.bare,
-        indicator === 'underline' && s.underlined,
-        indicator === 'none' && s.plain,
-        orientation === 'row' && `${f.row} ${s.row}`,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={fieldRootClass({
+        orientation,
+        width,
+        fit: s.fit,
+        className: [
+          s.select,
+          variant === 'bare' && s.bare,
+          indicator === 'underline' && s.underlined,
+          indicator === 'none' && s.plain,
+          orientation === 'row' && s.row,
+          className,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      })}
     >
       {anchor}
       {label !== undefined && <Label className={f.label}>{label}</Label>}
@@ -208,7 +203,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           {width === 'fit' && (
             <span className={s.sizer} aria-hidden="true">
               {placeholder !== undefined && <span>{placeholder}</span>}
-              {optionLabels(options, children).map((l, i) => (
+              {optionLabels(options, children, SelectSection).map((l, i) => (
                 <span key={i}>{l}</span>
               ))}
             </span>
@@ -216,12 +211,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           {indicator === 'chevron' && <Caret className={s.chevron} />}
         </RACButton>
       </TriggerTooltip>
-      {description !== undefined && (
-        <Text slot="description" className={`${f.hint} ${f.below}`}>
-          {description}
-        </Text>
-      )}
-      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
+      <FieldFoot description={description} errorMessage={errorMessage} />
       {/* `data-weasel-overlay` marks DOM that belongs to this control but
           renders in a portal, outside the subtree the trigger sits in. Any
           consumer reasoning about "did focus leave my component?" via
@@ -398,38 +388,6 @@ function renderOption<T extends OptionKey>(o: SelectOption & { value: T }) {
     <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled} icon={o.icon} textValue={o.textValue}>
       {o.label}
     </SelectItem>
-  );
-}
-
-/**
- * The labels a `width='fit'` trigger measures itself against. In the children
- * form the label sits one element deep, inside a `SelectItem`, or two inside a
- * `SelectSection`.
- */
-function optionLabels(
-  options: ReadonlyArray<SelectOption | SelectOptionGroup<OptionKey>> | undefined,
-  children: ReactNode,
-): ReactNode[] {
-  if (options !== undefined)
-    return options.flatMap((o) =>
-      'options' in o ? o.options.map((g) => withIcon(g.icon, g.label)) : [withIcon(o.icon, o.label)],
-    );
-  return Children.toArray(children).flatMap((c) => {
-    if (!isValidElement<{ children?: ReactNode; icon?: ReactNode }>(c)) return [c];
-    return c.type === SelectSection
-      ? optionLabels(undefined, c.props.children)
-      : [withIcon(c.props.icon, c.props.children)];
-  });
-}
-
-/** A label led by its icon, as a row draws it. */
-function withIcon(icon: ReactNode, label: ReactNode): ReactNode {
-  if (icon === undefined || icon === null) return label;
-  return (
-    <>
-      <span className={s.optionIcon} aria-hidden="true">{icon}</span>
-      {label}
-    </>
   );
 }
 

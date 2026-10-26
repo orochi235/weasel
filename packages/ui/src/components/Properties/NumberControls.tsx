@@ -112,7 +112,8 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       id={p.id}
       className={p.className ? `${s.numberField} ${p.className}` : s.numberField}
       value={known ? (p.value as number) : NaN}
-      placeholder={p.mixed ? 'Mixed' : p.placeholder}
+      placeholder={p.placeholder}
+      mixed={p.mixed}
       minValue={p.min}
       maxValue={p.max}
       endless={p.endless}

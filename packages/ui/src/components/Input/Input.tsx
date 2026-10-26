@@ -1,29 +1,27 @@
-import { forwardRef, type ReactNode, type Ref } from 'react';
+import { forwardRef, type InputHTMLAttributes, type ReactNode, type Ref } from 'react';
 import {
   TextField,
   Label,
   Input as RACInput,
-  Text,
-  FieldError,
   type TextFieldProps as RACTextFieldProps,
-  type ValidationResult,
 } from 'react-aria-components';
-import type { FieldOrientation } from '../Field/Field';
+import { MIXED_HINT } from '../mixedHint';
+import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import f from '../field.module.css';
 import s from './Input.module.css';
 
 /** Props for {@link Input}, on top of React Aria's `TextField` props. */
-export type InputProps = Omit<RACTextFieldProps, 'children' | 'className'> & {
-  label?: ReactNode;
-  /**
-   * `'stacked'` (the default) puts the label above the field; `'row'` sets it
-   * beside the field at its own width, with any description or error on a
-   * line below. Same vocabulary as {@link Field}'s `orientation`.
-   */
-  orientation?: FieldOrientation;
-  description?: ReactNode;
-  errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
+export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spellCheck'> & FieldSlotProps & {
+  /** Whether the browser checks the text's spelling, as on a native `<input>`. */
+  spellCheck?: boolean | 'true' | 'false';
+  /** The label on a virtual keyboard's enter key, as on a native `<input>`. */
+  enterKeyHint?: InputHTMLAttributes<HTMLInputElement>['enterKeyHint'];
+  /** Whether and how typed text is capitalized, as on a native `<input>`. */
+  autoCapitalize?: InputHTMLAttributes<HTMLInputElement>['autoCapitalize'];
   placeholder?: string;
+  /** The field stands for several values that differ: it reads `Mixed` in
+   *  place of `placeholder` while its value is empty. */
+  mixed?: boolean;
   leadingAdornment?: ReactNode;
   trailingAdornment?: ReactNode;
   className?: string;
@@ -42,40 +40,33 @@ export const Input = forwardRef(function Input(
 ) {
   const {
     label,
-    orientation = 'stacked',
+    orientation,
     description,
     errorMessage,
     placeholder,
+    mixed,
     leadingAdornment,
     trailingAdornment,
     className,
+    spellCheck,
+    enterKeyHint,
+    autoCapitalize,
     ...textFieldProps
   } = props;
 
   return (
     <TextField
       {...textFieldProps}
-      className={[
-        f.field,
-        f.control,
-        orientation === 'row' && f.row,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      spellCheck={spellCheck === undefined ? undefined : String(spellCheck)}
+      className={fieldRootClass({ orientation, className })}
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
         {leadingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{leadingAdornment}</span>}
-        <RACInput ref={ref} placeholder={placeholder} />
+        <RACInput ref={ref} enterKeyHint={enterKeyHint} autoCapitalize={autoCapitalize} placeholder={mixed ? MIXED_HINT : placeholder} />
         {trailingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{trailingAdornment}</span>}
       </div>
-      {description !== undefined && (
-        <Text slot="description" className={`${f.hint} ${f.below}`}>
-          {description}
-        </Text>
-      )}
-      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
+      <FieldFoot description={description} errorMessage={errorMessage} />
     </TextField>
   );
 });

@@ -9,7 +9,7 @@ import { renderPrefControl } from '../Prefs/PrefsRow';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { aggregateAttributes, catalogAttributes, isObjectField, setObjectField } from './attrAggregate';
-import { ATTR_RENDERERS, MIXED_HINT } from './attrRenderers';
+import { ATTR_RENDERERS } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { entryHolderAt, keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaRoot } from './schemaEdit';
@@ -178,7 +178,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     ), { group: true }),
     [CONDITION_KIND]: conditionRenderer(schema, ownPaths, item ? (node as PrefList | PrefMap) : undefined, targets, over),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
-      <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}
+      <Input aria-label="Name" value={String(value ?? '')} mixed={mixed} onChange={setValue}
         onBlur={several ? undefined : followName} />
     ),
     [KEY_KIND]: () => (
@@ -187,7 +187,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     ),
     [PATH_KIND]: () => <span className={s.pathText}>{keysOf(path).join('.')}</span>,
     [KIND_KIND]: () => isPrefLeaf(node) && leaf && (
-      <Select aria-label="Kind" selectedKey={choice} placeholder={MIXED_HINT}
+      <Select aria-label="Kind" selectedKey={choice} mixed={choice === null}
         options={kindChoices(kinds, types, node)}
         onSelectionChange={(k) => {
           const dropped = new Set<string>();

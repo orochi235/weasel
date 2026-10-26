@@ -64,29 +64,6 @@
   outline: none;
 }
 
-.option {
-  display: flex;
-  align-items: center;
-  padding: var(--wzl-space-2) var(--wzl-space-4);
-  border-radius: var(--wzl-radius-sm);
-  cursor: pointer;
-  color: var(--wzl-fg);
-  outline: none;
-}
-
-.option[data-focused] {
-  background: var(--wzl-surface-hover);
-}
-
-.option[data-selected] {
-  font-weight: var(--wzl-font-weight-medium);
-}
-
-.option[data-disabled] {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 .empty {
   padding: var(--wzl-space-3) var(--wzl-space-4);
   color: var(--wzl-fg-subtle);

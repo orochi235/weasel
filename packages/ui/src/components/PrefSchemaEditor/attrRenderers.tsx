@@ -7,15 +7,13 @@ import { Select } from '../Select';
 import { NumberText } from './NumberText';
 import { IconAttrField } from './IconAttrField';
 import { UnitEditor } from './UnitAttr';
-import { MIXED_HINT } from './mixedHint';
+import { MIXED_HINT } from '../mixedHint';
 import s from './PrefSchemaEditor.module.css';
 
 /** A number that may be unset: empty text clears it, and text that is not a number is left uncommitted. */
 function OptionalNumber({ ctx }: { ctx: PrefRenderContext }) {
   return <NumberText label={ctx.pref.name} value={ctx.mixed ? undefined : (ctx.value as number | undefined)} placeholder={ctx.mixed ? MIXED_HINT : undefined} onCommit={ctx.setValue} />;
 }
-
-export { MIXED_HINT };
 
 interface Option { value: string; label: string }
 
@@ -98,7 +96,7 @@ export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' 
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
   'enum-options': Object.assign<PrefRenderer, { group: boolean }>((ctx) => <EnumOptions ctx={ctx} />, { group: true }),
   symbol: (ctx) => (
-    <Input className={s.symbol} aria-label={ctx.pref.name} placeholder={ctx.mixed ? MIXED_HINT : undefined}
+    <Input className={s.symbol} aria-label={ctx.pref.name} mixed={ctx.mixed}
       value={typeof ctx.value === 'string' ? ctx.value : ''} onChange={ctx.setValue} />
   ),
 };

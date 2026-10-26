@@ -22,6 +22,13 @@ describe('UnitField', () => {
     expect(field).toHaveAttribute('placeholder', 'Mixed');
   });
 
+  it('shows a mixed field empty, reading Mixed over its placeholder', () => {
+    const { field } = setup({ value: 5, placeholder: 'Width', mixed: true });
+    expect(field).toHaveValue('');
+    expect(field).toHaveAttribute('placeholder', 'Mixed');
+    expect(field).not.toHaveAttribute('aria-valuenow');
+  });
+
   it('commits a typed unit converted to the unit it shows', () => {
     const { onChange, field } = setup();
     fireEvent.change(field, { target: { value: '12mm' } });

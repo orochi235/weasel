@@ -64,6 +64,12 @@ describe('NumberField', () => {
     expect(getInput(container)).toHaveAttribute('placeholder', 'Mixed');
   });
 
+  it('shows a mixed field empty, reading Mixed over its placeholder', () => {
+    const { container } = render(<NumberField aria-label="X" value={4} placeholder="Width" mixed />);
+    expect(getInput(container).value).toBe('');
+    expect(getInput(container)).toHaveAttribute('placeholder', 'Mixed');
+  });
+
   // A proxy: jsdom does no layout, so this pins the attribute the stylesheet orders by.
   it('puts the steppers at the start unless told otherwise', () => {
     const side = (el: HTMLElement) => getInput(el).parentElement!.getAttribute('data-stepper-side');
