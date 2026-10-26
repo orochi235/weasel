@@ -27,6 +27,14 @@ const [first, ...rest] = argv;
 const named = first && !first.startsWith('-');
 const ontoArgs = named ? rest : argv;
 const { commit, branch, tree, drop, git } = openCommitTree(ROOT, named ? first : 'HEAD', 'fleet-');
+const isAncestor = (a, b) => {
+  try {
+    git('merge-base', '--is-ancestor', a, b);
+    return true;
+  } catch {
+    return false;
+  }
+};
 // The throwaway tree is detached, so onto cannot read the branch from it.
 if (branch && !ontoArgs.includes('--branch')) ontoArgs.unshift('--branch', branch);
 
@@ -36,10 +44,16 @@ try {
   const base = git('merge-base', commit, 'origin/main');
   // onto's own check that the tree is still the one it synced cannot tell two sessions on this
   // machine apart, so the suite checks the tree itself: `scripts/fleet-tree.gate.ts`.
-  const files = changedFiles(git('diff', '--raw', '--no-renames', '--no-abbrev', '-z', base, commit));
-  const select = Boolean(branch) && branch !== 'main' && !full;
+  const diff = (from) => changedFiles(git('diff', '--raw', '--no-renames', '--no-abbrev', '-z', from, commit));
+  const files = diff(base);
+  // The node builds the tree on `base`, which must be pushed, but the branch changes only what it
+  // adds to local main: unpushed main commits would otherwise count as the branch's own changes.
+  const local = git('merge-base', commit, 'main');
+  const newer = isAncestor(base, local) ? local : base;
+  const select = Boolean(branch) && branch !== 'main' && !full ? Object.keys(diff(newer)) : undefined;
   armTree(tree, { commit, files, select }, { plan: true });
   console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
+  if (select) console.log(`fleet-test: selecting from the ${select.length} path(s) the branch changes against ${newer.slice(0, 9)}`);
   console.log(
     select
       ? "fleet-test: running the tests the branch reaches, or all of them if it changes one of vitest.config.ts's triggers; --full runs them all"
