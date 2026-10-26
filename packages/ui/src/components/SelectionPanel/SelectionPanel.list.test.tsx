@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { SelectionPanel, type PropertyRenderer } from './index';
 import { renderWithIcons } from '../../testing/withIcons';
@@ -15,7 +15,7 @@ const counts: PrefLeaf = {
 } as PrefLeaf;
 
 function setup(held: unknown[], renderers?: Record<string, PropertyRenderer>) {
-  const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<Data, 'default', Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', counts: held } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: { 'data.counts': counts } } }];
   renderWithIcons(<SelectionPanel scene={scene} selection={{ current: ['a'] } as unknown as SelectionApi} properties={properties} routing={routing} renderers={renderers} />);

@@ -3,7 +3,8 @@
  * containers that mirror the source `<g>` structure — instead of the default
  * single embedded-image node.
  *
- * Leaf data targets the kit's built-in painters. Poses are absolute AABBs, and
+ * Leaf data targets the kit's built-in painters. Poses are world AABBs, which
+ * an inserter makes local to their containers' frames, and
  * the renderer rebases stored geometry into the pose box, so placement and
  * fit-clamping operate on poses alone and never rewrite path coordinates.
  * Stroke widths, dashes, font sizes, and letter spacing live in data, so

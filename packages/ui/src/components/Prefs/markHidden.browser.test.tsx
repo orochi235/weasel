@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { SelectionPanel } from '../SelectionPanel';
@@ -41,7 +41,7 @@ it('dims a hidden row and a hidden group of a form once each, and sets the badge
 });
 
 it('dims a hidden row and a hidden section of a selection panel once each', () => {
-  const scene = createScene<Record<string, unknown>, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<Record<string, unknown>, 'default', Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: {}, data: { on: false } });
   const members: PrefSection['members'] = {
     'data.size': num('Size', { showIf: { path: 'data.on' } }),

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AffordanceHit, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { overlaysOf } from '@weasel-js/routing';
 import { anchorsToPath, PATH_C, PATH_M, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { createScene, createSnapOutcomeStore, editAnchorsAction, type SnapDep } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, createSnapOutcomeStore, editAnchorsAction, type SnapDep } from '@weasel-js/core';
 import {
   createSnapSession2dForTests as createSnapSession2d,
   makeEditAnchorsDepForTests as makeEditAnchorsDep,
@@ -38,7 +38,7 @@ function start(options: HandleSnapOptions | null, path: PolygonPath = curve(), p
     extensions: [createHandleSnapExtension(read)],
   });
   const store = createSnapOutcomeStore();
-  const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const snap: SnapDep = {
     begin: (req) => createSnapSession2d({
       gesture: req.gesture, press: req.press, ids: req.ids ?? [],

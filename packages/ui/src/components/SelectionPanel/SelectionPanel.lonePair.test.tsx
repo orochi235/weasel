@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { effectiveSections } from './model';
@@ -13,7 +13,7 @@ const flag = (name: string, pair?: { with: string; label: string }): PrefLeaf =>
 const routing: NodeRoutingEntry[] = ['thing', 'other'].map((name) => ({ name, matches: (d) => (d as { kind: string }).kind === name }));
 
 function panel(properties: NodePropertiesEntry[], kinds: string[]) {
-  const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   for (const kind of kinds) scene.add({ id: asNodeId(kind), kind: 'mark', layer: 'default', pose: {}, data: { kind, style: {} } });
   return render(<SelectionPanel scene={scene} selection={{ current: kinds.map(asNodeId) }} properties={properties} routing={routing} />);
 }

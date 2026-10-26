@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core';
@@ -372,7 +372,7 @@ describe('computeIndicatorCommand', () => {
 });
 
 it('frames circles through the descriptor', () => {
-  const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   scene.add({ kind: 'mark', layer: 'main', pose: circle(50, 50, 50), data: {} });
   const view = computeFitView(scene, { width: 100, height: 100 }, 'scene', CIRCLE_POSE_DESCRIPTOR);
   expect(view.scale.x).toBeCloseTo(84 / 100, 6);

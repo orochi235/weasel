@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
 import { renderWithIcons } from '../../testing/withIcons';
@@ -26,7 +26,7 @@ const members: PrefSection['members'] = {
 };
 
 function setup(flags: Record<string, boolean>) {
-  const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<Data, 'default', Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', phases: [{ length: 1 }, { length: 2 }], weights: { left: 3 }, ...flags } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];
   renderWithIcons(<SelectionPanel scene={scene} selection={{ current: ['n'] } as unknown as SelectionApi} properties={properties} routing={routing} />);
@@ -72,7 +72,7 @@ describe('SelectionPanel conditions that read the entry', () => {
     'data.named': { kind: 'map', name: 'Named', description: '', default: {}, item: stop } as PrefLeaf,
   };
   const draw = (data: Record<string, unknown>[]) => {
-    const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+    const scene = createScene<Data, 'default', Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
     data.forEach((d, i) => scene.add({ id: asNodeId(`n${i}`), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', ...d } }));
     const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: entries } }];
     renderWithIcons(<SelectionPanel scene={scene} selection={{ current: data.map((_, i) => `n${i}`) } as unknown as SelectionApi} properties={properties} routing={routing} />);
