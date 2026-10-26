@@ -6,6 +6,7 @@ import type { Action } from '../actions/action';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { platformRoleKeys, roleKeysOf } from '../actions/modifierRoles';
+import type { DispatcherContext } from './dispatcherApi';
 import type { GestureFactsStore } from './gestureFacts';
 import { gestureIdFor, isMultiTouchGestureId } from './gestureIds';
 import { isEmptyOngoingHandle, type InFlightGestures } from './inFlightGestures';
@@ -24,13 +25,15 @@ export interface GestureRun {
   viewId(): string | null | undefined;
   /** Whether `'mod'` is Cmd, for the input being handled. */
   isMac(): boolean;
+  /** The host's client-to-surface mapping, for the input being handled. */
+  toLocal(): DispatcherContext['toLocal'];
 }
 
 type Reason = 'commit' | 'cancel';
 type Outcome = 'handled' | 'unhandled';
 
 const ctxFor = (run: GestureRun, event: InputEvent, deps: ActionDeps, gestureId: string): InvocationCtx =>
-  buildInvocationCtx(event, deps, run.viewId(), run.facts.of(gestureId));
+  buildInvocationCtx(event, deps, run.viewId(), run.facts.of(gestureId), run.toLocal());
 
 function runOnEnd(gestureId: string, handle: OngoingHandle, endCtx: InvocationCtx, reason: Reason): void {
   try {

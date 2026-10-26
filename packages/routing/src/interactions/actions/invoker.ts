@@ -103,8 +103,10 @@ export interface InvocationCtx {
     current: Point2;
     delta: Point2;
     /**
-     * Drag delta in client/screen coordinates (CSS pixels from the drag
-     * origin). Use this — never `delta` — for any action whose effect
+     * Drag delta in the surface's own CSS pixels from the drag origin: client
+     * pixels, or through the host's `clientToLocal` where it supplies one, so
+     * a canvas under a scaled ancestor pans with the pointer. Use this — never
+     * `delta` — for any action whose effect
      * mutates the viewport itself (pan, view-zoom), because world-space
      * deltas become self-referential as the view shifts mid-drag.
      *

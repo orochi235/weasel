@@ -54,6 +54,12 @@ export interface DispatcherContext {
    * is, the rest only while it holds them. Absent, every binding is live.
    */
   keyReach?: KeyReach;
+  /**
+   * Maps a client point to the surface's own pixels, for a host drawn under a
+   * CSS transform. `InvocationCtx.drag.screenDelta` is measured through it, so
+   * a pan under a scaled ancestor moves with the pointer. Absent: client pixels.
+   */
+  toLocal?: (clientX: number, clientY: number) => { x: number; y: number };
   /** The keymaps open on this surface. Absent: none can open. */
   keymaps?: KeymapStack;
   /** Which bindings this pass of an input reaches while a keymap is open:
