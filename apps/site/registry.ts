@@ -650,6 +650,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DiagramReorderDemo.tsx',
   },
   {
+    id: 'diagram-drop',
+    title: 'Refusals, container reorder, and palette drops',
+    package: 'diagram',
+    description: "One answer serves every \"may this land here?\" check in DiagramView: true, false for a silent no, or { refuse } with a reason. canConnect, canReparent and canDropItem all give it; over a refusal the canvas draws the target refused and shows the reason beside the pointer, and a release there reports nothing. A container marked reorder: 'x' lets onReorder drag its members along the row, as a group's are. dragItemProps makes the palette's list items sources: onDropItem hears the item, what it landed on, and its index among the container's members, while a bar marks the place.",
+    hint: 'Drag a palette item into the row, or onto the locked shelf. Drag a step along the row. Connect a step to source.',
+    load: () => import('./demos/DiagramDropDemo').then((m) => m.DiagramDropDemo),
+    path: 'apps/site/demos/DiagramDropDemo.tsx',
+  },
+  {
     id: 'diagram-overlays',
     title: 'Diagram overlays',
     package: 'diagram',

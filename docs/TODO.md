@@ -530,6 +530,16 @@ Priority tags:
 
 ### Container layout strategies
 
+- **(P3) A member of a diagram container marked `reorder` cannot be dragged out of it.** The
+  reorder drag (`packages/diagram/src/groupReorder.ts`) takes every body press on a member and moves
+  it only along the axis, so the move's reparent never runs; a group's members have the same limit,
+  but a container's are scene children that could leave. A drag that leaves the container's body
+  could hand off to the move instead (2026-10-26).
+- **(P3) An item carried in with `dragItemProps` draws no ghost of itself over the canvas.** The
+  canvas outlines the target and marks the index (`packages/diagram/src/itemDrop.ts`), and labkit
+  draws its own `DragGhost` for its palette; diagram leaves it to the host. A ghost from the item's
+  own element, or a preview of the shape it would make, would belong beside `startItemDrag`
+  (2026-10-26).
 - **(P3) Reparent-on-layout-drop lives in the move action's `layoutDrop` behavior
   (`actions/move/commit/layoutDrop.ts`), not the strategies' `commitDrop`** (which are pose-only),
   as does choosing the destination container (`<SceneCanvas layoutDropTarget>`,

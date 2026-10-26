@@ -73,7 +73,8 @@ return <SceneCanvas ref={canvasRef} scene={scene} ambient={[contribution]} />;
 
 Dragging one port onto another authors an edge. Which pairs may be joined is
 `canConnect`, which defaults to "a port may not join itself, and two ports that
-both declare a `type` must declare the same one".
+both declare a `type` must declare the same one". It answers a `DropVerdict`
+(see "Refusing a drop with a reason").
 
 A port may name other places it can sit, in `sites`. An edge meeting it takes
 whichever place faces the edge's next point — its first waypoint, or the other
@@ -378,7 +379,33 @@ pointer moves onto an overlay. Edges answer only with `pickEdges`. For DOM
 the view does not hold, `rectOf(id)` on the ref gives a target's client rect
 and `subscribeFrame` says when to read it again.
 
-### Reordering a group's members
+### Refusing a drop with a reason
+
+Every "may this land here?" check answers a `DropVerdict`, the one shape core
+uses too: `true` lands, `false` is a silent no, and `{ refuse: string }` is a
+no the user is told about.
+
+| Check | Asked about |
+|---|---|
+| `canConnect(from, to, moving?)` | a new edge's end, or a selected edge's end being moved (`moving` names it) |
+| `canReparent(ids, container)` | nodes dragged into a container or lane they are not already in, once the diagram's own rules allow it |
+| `canDropItem(item, target)` | an item carried in from a palette (see "Dropping items from a palette") |
+
+Over a `false` the drag behaves as if the target were not there: a port is
+never snapped to, and a container is passed over for the one around it. Over a
+refusal the canvas outlines the target in the `refused` overlay role and shows
+the reason beside the pointer; a release there reports nothing, and a moved
+node goes back where it was.
+
+```tsx
+<DiagramView
+  specs={specs}
+  canConnect={(from, to) => (to.nodeId === 'source' ? { refuse: 'The source takes no inputs' } : true)}
+  canReparent={(_ids, into) => (into === 'shelf' ? { refuse: 'The shelf is locked' } : true)}
+/>
+```
+
+### Reordering a group's or a container's members
 
 A group with `reorder: 'x' | 'y'` lets `onReorder` drag any of its members
 along that axis; a member that is a group carries everything inside it. The
@@ -389,8 +416,46 @@ order given across every rank, so writing the order back is all it takes.
 
 ```tsx
 const data = { nodes, edges, groups: [...rows, { id: 'layers', members: order, reorder: 'y' }] };
-<DiagramView specs={diagramScene(data)} onReorder={({ order }) => setOrder(order)} />
+<DiagramView specs={diagramScene(data)} onReorder={({ parent, order }) => setOrder(order)} />
 ```
+
+A `DataContainer` takes `reorder` the same way, with the same drag, the same
+Alt and arrow key, and the same report: `parent` is the container's id and
+`order` its members in their new order. Nothing moves until the data does, so
+place the members by their order and write it to `members`. A body drag on a
+member of a reorderable container reorders it, so it cannot be dragged out of
+the container that way.
+
+### Dropping items from a palette
+
+A list the host renders outside the canvas becomes a palette with
+`dragItemProps(item)`, spread on each entry: a press carries `item`, any value
+of the host's own, over the page. While it is over the diagram, the shape or
+container it would land on is outlined, and in a container marked `reorder` a
+bar marks its place. Release reports an `ItemDrop` to `onDropItem` and adds
+nothing.
+
+| Field | What it holds |
+|---|---|
+| `item` | the value `dragItemProps` was given |
+| `target` | the shape or the container it was dropped on, or `null` for the bare canvas |
+| `container` | the container or lane that would hold it: the target when that is one, else the one around the pointer; `null` at the top level |
+| `index` | its place among `container`'s members, along the container's `reorder` axis, else in reading order (top to bottom, then left to right); `null` with no container |
+| `at` | the pointer, in world units |
+
+```tsx
+<li {...dragItemProps({ kind: 'blur' })}>Blur</li>
+<DiagramView
+  specs={specs}
+  onDropItem={({ item, container, index }) => insert(item, container, index)}
+  canDropItem={(item, { container }) => (container === 'shelf' ? { refuse: 'The shelf is locked' } : true)}
+/>
+```
+
+Give each entry `touch-action: none` so a touch drag is a carry, not a scroll.
+`startItemDrag(event, item)` starts one from a pointer event of your own, and
+`createItemDropAction` is the canvas half for a `SceneCanvas` of your own; the
+carry travels as `DIAGRAM_ITEM_CARRY`.
 
 ### Stencils
 
@@ -439,7 +504,7 @@ drawn inside a container or a lane becomes its member (`diagramDropParentAt`).
 `containerBuild` returns the ops on their own, and `addLane` and
 `releaseMembers` are the edits as functions.
 
-What a region admits is the `canDropInto` dep's call, and `diagramCanDropInto(scene)`
+What a region admits is the `canDropInto` dep's call, and `diagramCanDropInto(scene, canReparent?)`
 is the one for a diagram: containers and lanes take shapes and containers, a
 pool takes only lanes, and a stencil body, an edge, or a label takes nothing.
 `diagramContainers` returns the lane layer to register and the contribution to
@@ -740,7 +805,8 @@ A pool always has a box: 600 across and 120 along per lane when it gives none
 (`'y'`, rows, by default) at their `size`, and lanes giving none share what
 the pool's box leaves. An edge with an end inside a boxed region ranks against
 the outermost one holding it, and keeps none of layout's route. `pinned`
-leaves a box where it is. Under `theme`, a region naming a `style` role takes
+leaves a box where it is. A container's `reorder` lets `onReorder` drag its
+members along that axis (see "Reordering a group's or a container's members"). Under `theme`, a region naming a `style` role takes
 that role's colors; otherwise a container takes the theme's `container`, a
 pool its `lane.header`, and lanes the `lane.bodies` in turn; titles are set in
 the diagram's face, the theme's when `font` is unset. `router="avoid"`
@@ -1337,7 +1403,7 @@ resize; `rayHit` moves it onto the shape. Don't store outline-relative anchors.
 connect is routing, and lives in the binding's `target`. Which ports a live
 connect may land on cannot be routing — the dispatcher never re-reads the
 affordance under a moving pointer — so `canConnect` filters the candidate set
-instead. Neither is an action body inspecting a hit and bailing.
+instead, and a refusal stays a candidate so it can be drawn refused. Neither is an action body inspecting a hit and bailing.
 
 **A live run does not re-anchor; the one-shot layouts do.** The anchor
 translation keeps a single 300-tick jump from moving the diagram off where the
