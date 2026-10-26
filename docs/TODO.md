@@ -117,14 +117,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Viewport
 
-- **(P3) [agent] A drag pan under a scaled host moves the view by the drag in client px** (2026-10-25, read in the
-  code, not seen). The dispatcher's `drag.screenDelta` is the raw `clientX`/`clientY` difference
-  (`routing/src/interactions/dispatcher/invocationCtx.ts`), and `viewport.dragPan` applies it as view px, so
-  under a `scale(2)` ancestor the content runs twice as far as the pointer. Every other pointer read now
-  honors a host's `clientToLocal` (labkit's `CameraInput` wires one since 2026-10-25, and `<SceneCanvas>`
-  already did); the delta would be the difference of two `toCanvasLocal` points instead, which changes
-  what `screenDelta` means for every view-mutating drag.
-
 - **(P3) [agent] Raw WebGL that skips `useOrbitView` escapes labkit's missing-camera check.** A trial with
   `orbit` undeclared flags a 3D view in the console and with a "no camera" title-bar badge when the
   instrument calls `useOrbitView()` or a three.js `WebGLRenderer` or `WebGPURenderer` lands in it
@@ -138,27 +130,15 @@ Owner tags, after the priority (2026-10-26):
   the canvas's selection where the panel owns one. Its view would need to follow the view under its
   aim the way a `parent` does, without being measured from or cut to that view's rect.
 
-- **(P3) [agent] A view marker drags only where the surface installs the always-on `view.marker.drag` entry.**
-  `actions={null}` and a `tools` takeover both leave it out, so markers paint but stop dragging until
-  the consumer passes `createViewMarkerContribution()` in `ambient` (or the takeover's own `useTools`
-  ambient list). Long-press feedback has the same gap.
+- **(P3) [agent] Long-press feedback is left out under a `tools` takeover.** Its entry needs `attach`
+  and its layer, which run only for `tools.registry` / `ambient` (`useContributionRoles`). The view
+  marker drag installs beside a takeover since 2026-10-26 (`useCanvasTools`' `surface`).
 
-- **(P2) [agent] A view marker claims presses anywhere inside its outline.** That suits a minimap marker in a
-  small picture-in-picture. A marker drawn in a larger frame — a zoomed-out PiP's aim shown in the
-  root — can cover the whole frame and take every press there. Decide between grabbing the interior
-  and grabbing near the rim before arc 3's markers ship
-  (`docs/superpowers/specs/2026-10-21-lens-views-design.md`); until then `interactive={false}` is the
-  escape.
-
-- **(P3) [agent] A marker whose source is an `AimSource` repaints only when something else asks for a
-  redraw.** An aim handed in by value has no way to say it changed. Arc 3's detached
-  `<MinimapCanvas>` draws its marker this way and needs one.
-
-- **(P3) [agent] kernel3d's frustum outlines into a 2D view only as its footprint on z = 0.** In kernel3d's
-  y-up world that plane is a wall facing yaw 0, but a top-down map wants the ground plane. And the
-  outline draws only when all four corner rays meet the plane, so a tilted camera with the horizon in
-  view draws none. Decide which plane 2D and 3D views share, and what a partial footprint draws,
-  before building a 3D minimap (`packages/kernel3d/src/aim.ts`).
+- **(P3) [maintainer] Which plane 2D and 3D views share.** kernel3d's frustum outlines into a 2D view
+  as its footprint on z = 0, which in kernel3d's y-up world is a wall facing yaw 0, where a top-down
+  map wants the ground plane; `aimSpace3d` unprojects onto the same plane. A footprint the plane cuts
+  short now draws the frustum's cut through it, clipped at the far plane (2026-10-26). Settle the
+  plane before building a 3D minimap (`packages/kernel3d/src/aim.ts`).
 
 ---
 
@@ -169,9 +149,6 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [maintainer] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it would change the output of saved documents.
-
-- **(P2) [agent] Cut of an effect with hidden sources deletes them with it.** Whether the clipboard should carry the
-  sources, so a paste is whole, is undecided.
 
 - **(P3) [maintainer] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
   Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is Mike's call.
@@ -330,7 +307,7 @@ Owner tags, after the priority (2026-10-26):
   suspend; and that draw turns on the grid, measurement ends and anchors but not the other path kinds
   ([`docs/snapping.md`](./snapping.md), `packages/core/src/features/snap/`,
   `packages/core/src/features/paths/pathSnap/`).
-- **(P3) [agent] Equal spacing on a turned resize, and where its alignment marks sit.** Decision for the
+- **(P3) [maintainer] Equal spacing on a turned resize, and where its alignment marks sit.** Decision for the
   maintainer (2026-10-18). A resize whose frame turns or skews the box moves no side of its
   axis-aligned extent alone, so `resizeEdges` (`packages/core/src/features/snap/resizeBox.ts`)
   answers no edges and `spacingSnapSource` offers nothing; alignment still runs, but its marks span
@@ -346,12 +323,12 @@ Owner tags, after the priority (2026-10-26):
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) [agent] Some path commands have no icons.** `resamplePath`, the anchor selection commands,
-  `setSpiroKind`, `releaseSpiro`, `setBlendSpine`, `releaseBlendSpine` and draw's own
-  `view.pathDirection` toggle show as text in draw's bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
-  warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
-  `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
-  (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
+- **(P3) [agent] Some path commands have no icons.** The anchor selection commands and
+  `setSpiroKind`'s variants show as text in draw's bar. The warp labs' tool lists borrow
+  `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the warp tools' own glyphs.
+  `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and `core:harmonize`
+  (`packages/core/icons/anchor.mjs`) and `path-tools:spiro` (`packages/path-tools/icons/tools.mjs`)
+  are first drafts, not proofed at high resolution, and `path-tools:resamplePath` is soft at 1x.
 - **(P3) [agent] A puppet warp's bends add anchors.** `warpPath` refits a puppet-warped outline with more
   anchors than its shape needs, and a smoother map does not fix it. Measured with `foldCases.ts` at
   tolerance 0.5 (2026-10-20), the squashed 4-anchor disc refits with 5 anchors under the piecewise-affine
@@ -378,17 +355,10 @@ Owner tags, after the priority (2026-10-26):
 
 ## Rendering & paint
 
-- **(P2) [agent] The panel's Inherit segment is a text label among icons** (2026-10-21). It wants a glyph
-  (`docs/icons.md`).
-
 - **(P3) [agent] Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
   which is a storage question rather than a paint one.
-
-- **(P3) [agent] No marker icons.** `defaultNodeProperties`'s `markerStart` / `markerMid` / `markerEnd`
-  leaves use a labeled `select`, where the sibling stroke enums (`cap`, `join`, `align`, `dash`)
-  are icon toggles. The marker glyphs have to be authored to this repo's icon standard.
 
 - **(P3) [agent] Renderer: geometry far from the origin is still single precision.** The transform stack
   is in doubles, a large model translation is rebased before upload (`setProjAndModel`,
@@ -428,12 +398,10 @@ Owner tags, after the priority (2026-10-26):
 
 ## Text
 
-- **(P2) [agent] The text and sticky tools mount on a canvas that cannot edit text.** Both bind
-  `enterTextEdit`, which needs a `textEdit` dep that only a host wiring `useSceneTextEdit` provides
-  (`apps/site/demos/StickyNotesDemo.tsx` shows the wiring). Without it a click places a node nobody
-  can type into, with no warning. The Shape tools demo leaves both out for this (2026-10-25).
-  Either `<SceneCanvas>` provides a default text editor when a tool binds `enterTextEdit`, or
-  mounting one without the dep warns.
+- **(P2) [agent] `<SceneCanvas>` has no default text editor.** The text and sticky tools bind
+  `enterTextEdit`, and without a host wiring `useSceneTextEdit` a placed node cannot be typed into
+  (`apps/site/demos/StickyNotesDemo.tsx` shows the wiring). The stub `textEdit` dep mounted by default
+  already warns in development when `startEdit` is called (`canvas/deps/textEdit.ts`; read, not run).
 
 - **(P3) [maintainer] The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
@@ -482,18 +450,10 @@ Owner tags, after the priority (2026-10-26):
   synthesized (capitals scaled by x-height over cap height), and a face with an `smcp` feature
   should get its own small-cap glyphs instead.
 
-- **(P3) [agent] Text direction: the Align bar has no segment for `start` / `end`.** Under a stated
-  `direction` they light the edge they resolve to; under `auto`, where each paragraph takes its
-  own from its first strong character, they light nothing. A click on any segment still writes an
-  edge over the reading-order value. Giving them segments of their own takes two glyphs, which
-  have to be drawn and proofed in a browser (`packages/core/icons/text.mjs`).
-
-- **(P3) [agent] Icons: the size family and `orbit` collapse at 16px 1x.** `taller`, `shorter`, `wider`,
-  `narrower`, `tallest` and `shortest` carry two short arrows each, and at 16 device pixels the
-  heads close up into dots; `orbit`'s head does the same against its ring. All resolve at 2x.
-  They want heads on the pixel grid, or fewer of them (`packages/ui/icons/size.mjs`,
-  `camera.mjs`). The straight arrows drawn before the 45-degree rule in `docs/icons.md` ("Drawing
-  rules") still use spreads of 36 to 42.
+- **(P3) [agent] Icons drawn before the 45-degree rule still use spreads of 36 to 42.** The straight
+  arrows in `files.mjs`, `base-glyphs.mjs`, `arrows.mjs`, `state.mjs`, `actions.mjs`, and
+  `camera.mjs`'s dolly, rise and sink (`docs/icons.md`, "Drawing rules"). Separately, `ui:centralTopic`'s
+  ellipse is rough and `path-tools:blend` is gray at 16px 1x.
 
 ---
 
@@ -502,12 +462,13 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [agent] No panel switches a node's declared clip** (2026-10-23). `scene.setClip` writes it as one
   undo step; nothing in a property panel calls it.
 
-- **(P3) [agent] Several hit tests still scan every node or shape linearly.** Marquee, lasso and point picks
-  consult the scene's BVH pick index (`packages/core/src/canvas/pickIndex/`); these do not, and can
-  move onto it: core's `features/text/textHitAt.ts` and `features/measure/measureHit.ts`;
-  `diagram/src/portLayer.ts`, `diagram/src/labelDragLayer.ts`,
-  `labkit/src/loupe/lens/lensHitBoxes.ts`, `findPathSnaps` in `geom/src/snap/pathSnap.ts`, and
-  `boxesOf` in kernel3d's `snap/sources.ts`.
+- **(P3) [agent] Several hit tests still scan every node or shape linearly.** Marquee, lasso, point
+  picks and `findPathSnaps` consult a BVH (`packages/core/src/canvas/pickIndex/`); these do not:
+  core's `features/text/textHitAt.ts`, which needs a pose descriptor plumbed from
+  `useSceneTextEdit`, and `features/measure/measureHit.ts`, which scans only measurement nodes;
+  `diagram/src/portLayer.ts`, `diagram/src/labelDragLayer.ts`, `labkit/src/loupe/lens/lensHitBoxes.ts`;
+  and `boxesOf` in kernel3d's `snap/sources.ts`, whose `world.bounds` is a consumer function with no
+  generation to cache against, so it needs one first.
 
 - **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
   marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
@@ -516,6 +477,8 @@ Owner tags, after the priority (2026-10-26):
   scene, but every pick after a change still walks. Bisect with
   `tests/perf/recorded/pick-index-2026-10-22/across-commits/run.sh` (edit its commit list); the
   raw runs are beside it.
+  The recorded runs' `conditions.txt` show a load average of 5.9–7.4 on keiei's 8 threads, so part of
+  the 3x may be contention: bisect on a quiet node (4,893 commits, about 13 steps).
 
 - **(P3) [maintainer] A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
@@ -531,18 +494,12 @@ Owner tags, after the priority (2026-10-26):
 
 ### Symmetry follow-ups
 
-- **(P3) [agent] pgg and p4g wallpapers.** The `wallpaper` kind (`packages/symmetry/src/kinds.ts`) builds
-  13 of the 17 wallpaper groups from a lattice and a cell, plus pg and pmg from `glide`, which
-  mirrors every other column across the row it steps along. pgg and p4g need glides whose axes run
-  between the lattice's rows, so they want a glide offset the spec does not carry yet.
+- **(P3) [agent] The symmetry lab has no control for `glideRows`** (2026-10-26). A pgg or p4g preset
+  sets it (`SymmetrySpec.glideRows`, `packages/symmetry/src/kinds.ts`) and the lab keeps it, but
+  nothing in `apps/site/demos/SymmetryLabDemo.tsx` turns it on or off.
 
 ### Container layout strategies
 
-- **(P3) [agent] Reparent-on-layout-drop lives in the move action's `layoutDrop` behavior
-  (`actions/move/commit/layoutDrop.ts`), not the strategies' `commitDrop`** (which are pose-only),
-  as does choosing the destination container (`<SceneCanvas layoutDropTarget>`,
-  `LayoutStrategy.dropRegion`). If a strategy needs container-specific reparent semantics, revisit
-  whether `commitDrop` should own it.
 - **(P3) [agent] Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its
   overflow past the container's last visible line and reports the region through
   `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
@@ -602,11 +559,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] A schema cannot name one group's motif for a settings form.** `PrefsForm`, `PrefsPane` and
-  `SelectionPanel` draw their framed groups through `MotifFrame` (2026-10-24), so an app's `<DefaultMotif>`
-  reaches all of them at once, but a single group can't ask for its own the way labkit's `.motif()` lets a
-  `ControlPanel` group. That needs a `PrefGroup` annotation the forms pass as `motif`.
-
 - **(P2) [maintainer] Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
@@ -617,13 +569,15 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Hebrew or Arabic curved bar puts item 1 at the left end while the same bar laid out straight starts on the
   right. Reading order needs an inline direction input, which bears on the `'reading' | 'track'` decision above.
 
-- **(P3) [agent] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
+- **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
   `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
   (median of 12) with a node property schema open: `IconAttrField`'s grid of every registered icon
   (489 cells, about 2,200 elements) costs about 105 ms of it, and highlighting the Export panel's
   two literals about 70 ms (`pre[data-testid=schema-literal]`, about 1,800 elements since
   `CodeBlock` stopped wrapping plain tokens). The rest is spread over every pane. Virtualizing
   either list, or mounting the literal only while its panel is open, changes the UI.
+  The Literal tab is open by default, so mounting the literal only while its panel is open saves nothing
+  (2026-10-26).
 
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -634,8 +588,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   - A color that is not a `readout` shows read-only; neither menu renderer hosts the kit's color
     picker. A swatch submenu, or a picker the DOM menu opens beside its row, would make it editable.
   - The HUD menu draws a text row read-only (`textCommands` in `hud/src/menu/valueRows.ts`): it has
-    no text entry. The DOM menu's text field (`MenuTextValue`) is tested in jsdom and has not been
-    looked at in a browser.
+    no text entry. The DOM menu's text field was checked in a browser
+    (`MenuTextValue.browser.test.tsx`): typed keys reach it, Enter commits without closing, and it fits its row.
   - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
@@ -656,7 +610,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (it needs nothing else from weasel, so it qualifies, and needs a first publish) or
   `@weasel-js/menu` widened and renamed; the first arc moves the list behavior out of `menu` either way.
 
-- **(P3) [agent] Should grid and guide snaps line up the stroke?** Decision for the maintainer.
+- **(P3) [maintainer] Should grid and guide snaps line up the stroke?** Decision for the maintainer.
   `gridSnapSource` and `guideSnapSource` (`packages/guides/src/sources/`) snap the subject's
   `origin` probe, its pose origin, so a rect with a centered stroke 10 wide lands with its stroke's
   outer edge 5 short of the line. Snapping the drawn box instead would put the stroke's edge on it,
@@ -665,18 +619,20 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   to the two sources' `roles` (`'origin'` to `'box'`). Insert and the pen are a different case and
   stay as they are: they snap the pointer, before the node has a stroke to measure.
 
-- **(P3) [agent] The theme prefs form: long token names, and references shown raw.** `apps/theme-editor`'s
-  `#/prefs` page (`ThemePrefs.tsx`) was looked at in Chromium (2026-10-21): the rail pages, a
-  per-mode split color (setting `accent`'s Light member recolors only the light preview), and the
-  preview all work. Left, both seen on the Button page: a long token name such as
-  `BUTTON-PRESSED-SURFACE` wraps mid-name, and its "from theme" tag sits at the label column's right
-  edge, away from the name; and a token whose value refers to another shows the reference as raw
-  text, `var(--btn-glass)`, in a text field. Nothing drives `applyTheme`'s `weights` from an
-  animator either, which is the same gap as the selector weights under "What the split rows in
-  `PrefsForm` left".
+- **(P3) [agent] The theme prefs form: long token names, and references shown raw.** In
+  `apps/theme-editor`'s `#/prefs` page a label too long for its column still breaks mid-name, with its
+  "from theme" tag pushed to the column's right edge (Stance page: `clarify-nested-surface`,
+  `advanced-title-color`); a token's name drops its group's prefix since 348a40013. The cause is in
+  `PropertyRow`, so it hits any long label carrying a hint: the label line is a flex row, and a name
+  that wraps keeps its box's full width. `flex-wrap: wrap` fixes the tag but sends the help glyph to
+  the second line, which fails `PropertyRow.align.browser.test.tsx`'s "a label that wraps keeps its
+  help glyph on its first line". A token whose value refers to another still shows the reference as
+  raw text, `var(--btn-glass)`. Nothing drives `applyTheme`'s `weights` from an animator either, which
+  is the same gap as the selector weights under "What the split rows in `PrefsForm` left".
 
-- **(P3) [agent] What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
-  heading and in a bar cell are tested in jsdom and were never seen. A row that can be split is a
+- **(P3) [agent] What the split rows in `PrefsForm` left.** The split mark in a row's label line has been
+  seen (theme-editor's `DARK` chip beside "from theme", 2026-10-26); the one in a bar cell is tested
+  in jsdom only. A row that can be split is a
   group and no `<label>`, so an app renderer's control on such a leaf has to name itself: the
   toggle that opens the row is a button on the label line, and a `<label>` would hand its name and
   every click on the label's text to that button. Undecided, and a look to settle in a browser:
@@ -711,7 +667,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   panel's header still darkens with `rgba(0, 0, 0, 0.18)`: it sits on a sunken panel, and the
   theme's step toward `fg` would lighten it in dark mode.
 
-- **(P3) [agent] Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
+- **(P3) [recheck] Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
   (2026-10-19) the peek binding takes `opts: { over: true }`, so Alt goes to the loupe under the
   pointer when it goes down and to none if the pointer is over no loupe; nothing re-sends a held key
   when the pointer arrives. Keeping both behaviors with two loupes on a page needs routing to re-send
@@ -746,26 +702,19 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
   size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
 
-- **(P3) [agent] A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
+- **(P3) [recheck] A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
   with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
   condition on its setting. Every surface reads `over`'s values from the config it is handed, and
   a trial's config holds its instrument's alone: where a lab keeps another schema's values (each
   trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
   would need them too.
 
-- **(P3) [agent] An `ActionBar` fills its container's width.** Its `framed="segmented"` strip is a
-  block-level flex box, so in a forge story the horizontal bar's frame runs the stage's full width
-  with its buttons at the start, and the vertical one is a full-width column with its buttons
-  centered (seen in headless Chromium, 2026-10-21).
-  `Bar`'s own vertical stories size it with an `inline-flex` rail around it. Needs a call: whether a
-  segmented strip sizes itself to its buttons, or its host sizes it.
-
 - **(P3) [recheck] An empty fragment takes no drop in the live preview.** It draws nothing
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
   is on would give the preview somewhere to land, and would also move the rows around it.
 
-- **(P3) [agent] `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
+- **(P3) [recheck] `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
   the `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
   export drops all four. A schema is sectioned rather than nested where `f.group` would move its
@@ -787,7 +736,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
 
-- **(P3) [agent] Two control choices are labkit's alone, and two controls draw an enum their own way.**
+- **(P3) [recheck] Two control choices are labkit's alone, and two controls draw an enum their own way.**
   Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
   segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
@@ -873,9 +822,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [agent] A square lens body's zoom labels nearly touch at the default 160 px** (2026-10-21). `32×` and `64×` sit
-  close together there, the end label held inside the track (`lens/LensZoom.tsx`). The zoom became a line track
-  inset 24 px from each edge (2026-10-25), which shortens it, so look again in a browser before picking a fix.
 - **(P2) [agent] In a magnified Live copy, a popover flips and limits its height against the wrong viewport.** ui's
   `Popover` (2026-10-24) and `Tooltip` (2026-10-25) hand React Aria the trigger's rect in the scaled box's own px
   (`overlays/blockFrame.ts`), so they open against their trigger at any scale, and the context menu places itself
@@ -904,7 +850,7 @@ only story runner in the repo.
   the latency everywhere, and whether forge's plugin or each app's vite config sets it. `replacedFile.test.ts` rewrites until served for the
   same reason.
 
-- **(P3) [agent] A story whose `render` takes no args has no controls.** forge reads a
+- **(P3) [recheck] A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
   would read them. `grep 'render: () =>'` lists them. Every story that draws one
@@ -939,14 +885,6 @@ only story runner in the repo.
   the branch covers. Not decided: whether such an edit should save at all, and
   if so as a pin over the one step or as a change to what it follows.
 
-- **(P3, isolated stories only) [agent] Watch in a browser that a story whose `viewport` the index cannot
-  read keeps its frame when first opened.** The stage for a computed size, or a CSF story's
-  `parameters.viewport`, arrives with the frame's `ready`, and labkit's `Trial` then remounts
-  `FrameView` inside a `<Stage>`. The frame now moves to the new view with `moveBefore`
-  (`useKeptFrame`, `packages/forge/src/shell/keptFrame.ts`), tested in jsdom as the same element on
-  the same port, which cannot show that the document did not reload. A browser without
-  `moveBefore` still reloads it once.
-
 - **(P3) [agent] windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders
   only `visible` ones, so the pane is an empty gap with a live separator
@@ -955,18 +893,16 @@ only story runner in the repo.
   again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
   fix belongs in windease; the workaround goes when it lands.
 
+- **(P3) [agent] A forge dev server runs out of memory as package files change.** Every saved package
+  file restarts it through `scripts/vite-prebundle.ts`, and its heap climbs with each restart until it
+  hits the 4 GB limit, about 6 minutes into a session with several agents editing (2026-10-26).
+
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
   `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
   itself fired at once, and a dev server served none of three edits. Every dev server in the repo
   now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
   and the one test that needs a real watcher skips. The cause needs the machine in that state.
-
-- **(P3) [agent] One of forge's two idle `/frame.html` frames reloads with every hot update.** Seen
-  2026-10-19 in headless Chrome on the Button story: each edit reached the page in place, with no
-  reload of the page and no `.wake-badge` in either frame past wake's grace, but the second frame's
-  document was replaced at the instant the update arrived, three edits running. The first frame
-  kept its state. Whether that frame is meant to rebuild on an update is not known.
 
 - **(P3) [agent] wake (`~/src/wake`, not this repo): a server's exit-time release can drop another app's
   registry entry.** `releaseSync` and `releaseExtraSync` in `~/src/wake/src/claim.ts` read the
@@ -976,22 +912,22 @@ only story runner in the repo.
   is gone, so B's next start picks a port as though it had never run. Nothing synchronous can take
   the port lock; either re-read and compare just before the write, or have the next `claim` treat a
   dead holder as released and make the exit-time release a no-op.
+  Fixed on wake's `locked-release` branch (2026-10-26), unmerged; retire it once that merges.
 
 - **(P3) [agent] wake (`~/src/wake`, not this repo): the pill calls a busy server unreachable.** It shows "dev
   server unreachable" whenever `/__wake` takes over 5 s to answer, so a server stalled in a slow
   module load reads the same as a dead one. That is what a fresh site server showed until
   a598e6b2d (2026-10-20) took the demo timestamps' per-file `git log` out of its first load.
+  Fixed on wake's `busy-badge` branch (2026-10-26), unmerged; retire it once that merges.
 
 ---
 
 ## Demos & visual regression
 
-- **(P3) [agent] `segmentsAlong`'s first "a lit end segment fills the well round its cap" case fails
-  intermittently.** In `packages/ui/src/components/segmentsAlong.browser.test.tsx`, only the first
-  parameterized case failed, taking 329 ms where its siblings took 69. That was the full fleet run of
-  `main` at the 2026-10-26 composition merge (`437648aa4`). The same case failed on that branch's
-  first run and passed on its next two. The file touches no scene code. A face or layout read before
-  it settles is the first thing to suspect, as with the `SegmentsArcView` miss.
+- **(P3) [waiting] `segmentsAlong`'s first "a lit end segment fills the well round its cap" case failed
+  intermittently** (full fleet run of `main` at `437648aa4`, 2026-10-26). Since ac92a714c the test waits
+  for `document.fonts.ready` after a first frame; that the face was the cause is inferred, not
+  reproduced. Delete the entry if the next full runs pass it.
 - **(P3) [waiting] `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the
@@ -1030,15 +966,6 @@ only story runner in the repo.
   `test:smoke:consumer` at `scripts/smoke-consumer-bundle.mjs:271` with `signal: 'SIGABRT'` and empty
   stdout and stderr; a rerun of the same commit passed every step. Seen once. A second sighting
   says it is not load.
-
-- **(P3) [agent] SVG text export: lines written without a layout sit half the leading off.** Without
-  `textLayout`, `serializeSvg` writes `dominant-baseline="text-before-edge"`, which puts the face's
-  ascent on the box top, where weasel's layout first puts half the leading. Every line is off by the
-  same amount: in Chromium, Inter at 24px sits 2.28 up at line height 1.4 and 2.52 down at 1.0,
-  every glyph at its laid-out x (`laidLines.browser.test.ts`, 2026-10-21). Closing it needs the
-  face's ascent and descent, which this path lacks when it is the fallback for a face nothing
-  measured; given them, a `dy` on the `<text>` would move the drawing and leave weasel's reader,
-  which reads only `y`, where it is. Undecided whether this path should reach for the metrics.
 
 ---
 
@@ -1091,15 +1018,16 @@ only story runner in the repo.
   with a test failing on purpose, job 401c89a8). This is onto's (`~/src/onto`), not this repo's. Until
   it changes, a browser test can print its own diagnosis with `console.log`, which does reach the log
   (`LabFit.browser.test.tsx` does).
+  Fixed on onto's `logs-both-streams` branch (2026-10-26), unmerged; retire it once that merges and the binary
+  is rebuilt and pushed to the nodes.
 
-- **(P3) [agent] The `forge-stories` project prints "ResizeObserver loop completed with undelivered notifications"** (2026-10-21).
-  The `browser` project fails a test on the notice since 2026-10-25 (`vitest.browser.setup.ts`), after `Split` stopped
-  starting its zone observer inside windease's resize delivery, which was the cause in every browser test that raised
-  it. The opt-in stories project loads no such guard and still prints it on stderr from passing stories:
-  `LabFullChrome.stories.tsx`'s "All Chrome" and "Undockable Panels" in every run, and `SelectionPanel.stories.tsx`'s
-  "Gradient Fill Paint" and `Keycap.stories.tsx` in one run each (fleet runs of `fe7082659` and `bdf51b691`). Find which observer is skipped in each, then give the project the same guard. Commit 50ce09b7d (2026-10-25) has a
-  probe for this: it wraps `ResizeObserver` and logs each callback's targets and their depth for the looping frame and
-  the next, and the next frame's first callbacks are the skipped ones.
+- **(P3) [agent] The `forge-stories` project still raises "ResizeObserver loop completed with undelivered
+  notifications".** The guard is `scripts/vitest-resize-loops.setup.ts`, which names the skipped
+  observers when it fails. Loaded on forge-stories on 2026-10-26 it failed `LabFullChrome.stories.tsx`'s
+  "All Chrome" and "Undockable Panels"; the skipped callbacks were windease's `ContainerHost`,
+  `PropertyRow.tsx:181`, `Slider/useBoxes.ts:38` and `labkit/primitives/splitFloors.ts:28`, all under a
+  story host measuring 414×0. Keycap and SelectionPanel did not loop that run. Fix those, then add the
+  setup to forge-stories' `setupFiles`.
 
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
@@ -1117,7 +1045,7 @@ only story runner in the repo.
   observed), so that file now skips where a probe sees snapped advances. The fix is a Linux node
   (or container) for the `browser` project. (CI's Node 22 leg has a fleet twin since 2026-10-21: `npm run test:fleet:matrix`.)
 
-- **(P3) [agent] Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
+- **(P3) [maintainer] Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
   (8 cores, 24 GB, 7–11 GB of swap) failed `packages/forge/src/timeline/timeline.test.tsx` in five
   full runs, `main` at `416328e36` among them; msb-uai failed it once. Nothing in the tests waits
   on a timer or a load that could be cut: the time is the whole workshop mounting, which is React
@@ -1166,6 +1094,8 @@ only story runner in the repo.
   retrying would rerun groups already finished. The fix reaches a machine when its `onto` binary
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
+  Fixed on onto's `spread-resync` branch (2026-10-26), unmerged; retire it once that merges and the binary
+  is rebuilt and pushed to the nodes.
 
 - **(P3) [agent] The `browser` project spends about a second per file outside its tests.** Alone on teitou
   (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
@@ -1227,12 +1157,11 @@ only story runner in the repo.
   - **Another job on the node.** `onto jobs --internal` shows no other job on msb-uai or studio
     at any of the four moments (studio's long-lived `brick-spot-render` service aside).
 
-  Not known: what the server answered. vite logs neither a 404 nor an aborted request, so the next
-  step is to record it: a Playwright `requestfailed` / `response.status() >= 400` listener on the
-  tester page, printing URL, status and failure text, would say whether the module or one of its
-  imports 404s, 504s, or never answers (inferred as the cheapest discriminator, not tried). The burst
-  shape, many files in under 10 s and then clean, points at a transient server- or browser-side
-  event rather than any one file (inferred).
+  Every failed or 400-and-up module load in either browser project now prints a `weasel-request <epoch
+  ms> <ISO> <status|error> <type> <url>` line to stdout, on the same epoch ms as `browserv`
+  (`watchRequests`, `scripts/vitest-browser-commands.ts`, 2026-10-26), so the next burst's log says
+  what the server answered. The burst shape, many files in under 10 s and then clean, points at a
+  transient server- or browser-side event rather than any one file (inferred).
   The first two bursts came 3 s apart on two different nodes (01:54:21 on studio, 01:54:24 on
   msb-uai), each serving its own localhost, so what they shared at that moment is the first thing
   to look for: a sync from this machine into another tree, a network event, or the onto daemons. The
@@ -1462,46 +1391,15 @@ only story runner in the repo.
     (now) and `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/` (scratch
     counted).
 
-- **(P3) [agent] The pull request benchmark job does not fit its time limit, and its comment shows
-  seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on
-  2026-10-15, outside GitHub: base checkout, `npm ci`, `perf:bench` and `test:perf` on each side,
-  `compare.mjs`, and `pr-comment.mjs --dry-run`. Every step worked. Measured:
-  - **Time.** `test:perf` took 53.8 min on the base and 51.1 on the head, and `perf:bench` about 4
-    min each; checkout to comment was 113 min against the job's `timeout-minutes: 100`.
-    `hud-vs-dom` alone is 27.2 min a run. One full `test:perf` also outruns `perf.yml`'s 45
-    minutes. Not measured on the runner itself (studio, M1 Max), so the overrun there is inferred.
-    Which to change is open: the limits, `hud-vs-dom`'s rounds, or which specs a pull request runs.
-  - **The comment.** `compare.txt` was 536,682 characters; `MAX_COMMENT_CHARS` keeps 60,000, which
-    is `animation-stress` through `flush-noise` in file order. Everything after, `image-quad` and
-    `layer-dispatch` among them, never reaches the pull request. What the comment should hold
-    instead (the largest ratios, one summary line per benchmark) is undecided.
-  - Still unmeasured: whether the base, measured first, reads differently from the head for that
-    reason alone. Result files and logs from that run were not kept.
+- **(P3) [agent] The pull request benchmark job's new run time is unmeasured.** Since 2026-10-26 it runs
+  `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a
+  120-minute limit. Also unmeasured: whether the base, measured first, reads differently from the head
+  for that reason alone.
 
 ## weaselchart
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) [agent] Mermaid and draw-style XML don't know the network, BPMN, or org chart outlines.** Both
-  write `server`, the gateways, and the rest as rectangles with a warning
-  (`packages/diagram-formats`). DOT carries them in a `weasel_outline` attribute; draw-style XML has
-  shape names for most of them, and Mermaid would lose a gateway's marker (2026-10-25).
-- **(P3) [agent] A branch dragged to the other side of a mind map goes back on Auto layout.** `radial`
-  deals branches right and left by graph order, so a re-layout is stable but ignores where a branch
-  was moved. Reading sides from current positions would make a second run move things (2026-10-25).
-- **(P3) [agent] The mind map type glyph thickens at 16px** where its four branches leave the central box
-  (`packages/diagram/icons/mindMap.mjs`) (2026-10-25).
-
-- **(P3) [agent] Two wires can't meet at one audio input in pipeline mode.** `livePlan` sums every wire
-  into an input, but the editor lets a wire join only a free input
-  (`packages/diagram/src/effect/editorHandlers.ts`), so Mix is the only way to combine sounds.
-  Decision needed: whether audio inputs accept several wires, as a port-level flag, or Mix stays
-  the way to combine (2026-10-20).
-- **(P3) [agent] Pipeline mode doesn't drag edge labels yet.** `EffectWire`
-  (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
-  rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
-  Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
-  Left open by label drag (2026-10-20).
 - **(P3) [maintainer] Check `@weasel-js/rig`'s and `@weasel-js/diagram-formats`' trusted-publisher
   registration.** Both are on the registry at 1.11.1 under `latest` and `pre` (`npm view`,
   2026-10-21); whether each is registered as a trusted publisher (`docs/releasing.md`, "Setting up a
@@ -1511,3 +1409,8 @@ only story runner in the repo.
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
   Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
   groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
+
+- **(P3) [agent] The draw.io shape names diagram-formats writes are unchecked in draw.io.** BPMN and
+  network outlines go out as `mxgraph.bpmn.*` / `mxgraph.networks.*` shapes, named from memory
+  (2026-10-26); they round-trip through our own reader, but no file has been opened in draw.io.
+  `globe` still goes out as a rectangle.
