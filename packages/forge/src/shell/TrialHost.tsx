@@ -164,7 +164,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     return () => {
       canceled = true;
     };
-  }, [host, inView, latest]);
+  }, [host, inView, latest, rendered]);
 
   return (
     <div
