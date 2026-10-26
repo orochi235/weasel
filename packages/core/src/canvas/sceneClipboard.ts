@@ -89,10 +89,28 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
       for (const cid of scene.childrenOf(asNodeId(id))) capture(cid);
     }
   };
+  const covered = (id: string): boolean =>
+    idSet.has(id) || scene.ancestorsOf(asNodeId(id)).some((a) => idSet.has(a));
+  // A hidden node cannot be selected, so one that a copied node derives from
+  // comes with it, ahead of it: without it the paste would leave the copy out.
+  const carrying = new Set<string>();
+  const carrySources = (id: string): void => {
+    if (carrying.has(id)) return;
+    carrying.add(id);
+    const n = scene.get(asNodeId(id));
+    if (!n) return;
+    for (const source of sourcesOf(n)) {
+      if (taken.has(source) || covered(source) || scene.get(source)?.hidden !== true) continue;
+      carrySources(source);
+      capture(source, true);
+    }
+    if (hasChildren(n)) for (const cid of scene.childrenOf(asNodeId(id))) carrySources(cid);
+  };
   for (const id of ids) {
     // Dedupe: an id whose ancestor is also selected is already covered
     // by that ancestor's subtree walk.
     if (scene.ancestorsOf(asNodeId(id)).some((a) => idSet.has(a))) continue;
+    carrySources(id);
     capture(id, true);
   }
   return { items };
