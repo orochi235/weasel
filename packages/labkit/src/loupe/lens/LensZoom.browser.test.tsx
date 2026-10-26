@@ -221,3 +221,14 @@ test('a square body’s zoom runs straight along its bottom edge', async () => {
   expect(xs[0]!).toBeGreaterThan(b.left);
   expect(xs.at(-1)!).toBeLessThan(b.right);
 });
+
+test.each(['round', 'square'] as const)('a %s body’s zoom labels stand apart at the default size', async (shape) => {
+  if (shape !== 'round') sceneToAdapter(scene).applyOps(setLensOps(scene, 'a', { shape }), shape);
+  const zoom = await mount();
+  const rects = [...zoom.querySelectorAll('[data-slider-stop-label]')].map((e) => e.getBoundingClientRect());
+  const gaps = rects.slice(1).map((r, i) => {
+    const p = rects[i]!;
+    return Math.max(r.left - p.right, p.left - r.right, r.top - p.bottom, p.top - r.bottom);
+  });
+  for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(4);
+});
