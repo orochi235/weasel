@@ -328,7 +328,7 @@ have made the same paint differ by which route it took.
 
 **A test reaching for "a paint the batch cannot express" wants per-vertex
 colors now.** Five files used a gradient for that; all of them go on passing for
-the wrong reason otherwise. Also in `CLAUDE.md`'s Traps.
+the wrong reason otherwise. Also in `docs/traps/rendering.md`.
 
 ## The measurement instrument, which is the part that misleads
 

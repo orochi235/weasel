@@ -3,7 +3,7 @@
 //
 //   node packages/icons/scripts/gen-icons.mjs
 //
-// Proof a change before committing it: CLAUDE.md ("Drawing icons") requires
+// Proof a change before committing it: docs/icons.md ("Drawing rules") requires
 // inspecting at 240-320px, not at chrome size.
 
 import { existsSync, readdirSync, writeFileSync } from 'node:fs';
