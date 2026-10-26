@@ -10,7 +10,7 @@ export const LensRim = story({
     turn: f.number(0).range(0, 359).step(1).suffix('°').label('Turn'),
     actions: f.number(6).range(1, 10).step(1).label('Actions'),
     overflow: f.enum('scroll', ['scroll', 'menu']).radio().label('Overflow'),
-    boxes: f.boolean(false).label('Debug: outline each item, its glyph, its spot and its up'),
+    boxes: f.boolean(false).label('Debug outlines'),
   }),
   render: ({ config }) => <LensRimView config={config as LensRimConfig} />,
 });

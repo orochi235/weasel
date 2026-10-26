@@ -29,7 +29,7 @@ export const OnAnArc = story({
       size: f.number(D.arc.size).range(160, 420).step(10).suffix('px').label('Box'),
     }).label('Arc'),
     debug: f.group({
-      boxes: f.boolean(D.debug.boxes).label('Outline each item, its glyph, its spot and its up'),
+      boxes: f.boolean(D.debug.boxes).label('Outlines'),
     }).label('Debug'),
   }),
   render: ({ config, setConfig }) => <BarArcView config={config as BarArcConfig} onPreset={(p) => loadInto(setConfig, p.config)} />,
