@@ -160,10 +160,13 @@ describe('dragging a view marker', () => {
     expect(api.current!.isViewAnimating()).toBe(false);
   });
 
-  it("marks a PiP's aim in the root view and drags the PiP's camera", () => {
-    // The PiP shows world (0,0)–(560,420), outlined in the root at the same px.
+  it("marks a PiP's aim in the root view and drags the PiP's camera by its rim", () => {
+    // The PiP shows world (0,0)–(560,420), outlined in the root at the same px: wider than the root, so only
+    // its rim grabs.
     mount({}, { markers: <ViewMarker id="pip-aim" source="pip" target={null} /> });
     drag([20, 20], [30, 20]);
+    expect(pip.current!.getView()).toMatchObject({ x: 0, y: 0 });
+    drag([2, 20], [12, 20]);
     expect(pip.current!.getView()).toMatchObject({ x: 10, y: 0 });
   });
 
