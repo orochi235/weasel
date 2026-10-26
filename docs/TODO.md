@@ -368,14 +368,6 @@ Priority tags:
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
 - **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make, each in the paint it would wear (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas; nor does the keymap have a hold-to-preview form (press shows, release fires, Escape cancels) for any action.
 
----
-- **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
-  line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
-  layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
-  draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
-  another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
-  and the file format waits on that.
-
 ## Rendering & paint
 
 - **(P2) The panel's Inherit segment is a text label among icons** (2026-10-21). It wants a glyph
@@ -434,11 +426,6 @@ Priority tags:
   can type into, with no warning. The Shape tools demo leaves both out for this (2026-10-25).
   Either `<SceneCanvas>` provides a default text editor when a tool binds `enterTextEdit`, or
   mounting one without the dep warns.
-- **(P3) `emboldenGlyph` caches by outline data while its callers pass that data in both windings**
-  (2026-10-25). `glyphOutlines.ts` passes `emGlyph(d)`, wound positive since `glyphOutlineAt` (2026-10-25), and
-  `emboldenGlyphD` passes `pathFromD(d)` as the font wound it, both under the key `growth|join|d`
-  (`packages/text/src/syntheticBold.ts`). If `growRegion` grows a reversed contour inward, whichever caller runs
-  first decides the other's glyph. Read, not run: check with one glyph wound each way, bolded through both paths.
 
 - **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
@@ -830,6 +817,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `toolbarDock.test.tsx` each keep a copy. Sharing it across packages needs a test-only export.
 
 ### WeaselDraw app follow-ups (defer)
+
+- **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
+  line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
+  layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
+  draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
+  another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
+  and the file format waits on that.
 
 - **(P2) Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
   asset, each one's default surface, and where switching lives were picked without anyone using

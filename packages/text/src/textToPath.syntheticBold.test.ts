@@ -17,9 +17,18 @@ import {
 } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { boundsOfPath, pathToCubicContours, pointInPath, PATH_C, PATH_Q, type PolygonPath } from '@weasel-js/geom';
+import {
+  boundsOfPath,
+  pathFromD,
+  pathToCubicContours,
+  pointInPath,
+  reversePath,
+  PATH_C,
+  PATH_Q,
+  type PolygonPath,
+} from '@weasel-js/geom';
 import { textToPath, textToPathsByPaint } from './textToPath';
-import { syntheticBoldOffset } from './syntheticBold';
+import { emboldenGlyph, syntheticBoldOffset } from './syntheticBold';
 
 const INTER = resolve(import.meta.dirname, '../../../assets/fonts/inter');
 const METRICS = JSON.parse(readFileSync(`${INTER}/inter.json`, 'utf8'));
@@ -157,5 +166,31 @@ describe('syntheticBoldOffset — per tier', () => {
     expect(syntheticBoldOffset(resolvedAs('atlas', false))).toBeNull();
     // The outline tier paints geometry, which has no threshold to shift.
     expect(syntheticBoldOffset(resolvedAs('outline', true))).toBeNull();
+  });
+
+  // The cache keys on outline data alone, and its callers pass that data wound either way, so a hit
+  // can hand one caller the other's winding: harmless only if both grow the same region.
+  it('grows a glyph to the same region whichever way it is wound', () => {
+    const ring = pathFromD('M0 0H0.6V0.7H0ZM0.15 0.15V0.55H0.45V0.15Z') as PolygonPath;
+    const bold = resolvedAs('atlas', true);
+    const forward = emboldenGlyph(ring, 'ring-forward', bold);
+    const reversed = emboldenGlyph(reversePath(ring), 'ring-reversed', bold);
+    const fb = boundsOfPath(forward);
+    const rb = boundsOfPath(reversed);
+    expect([rb.x, rb.y, rb.width, rb.height]).toEqual([fb.x, fb.y, fb.width, fb.height].map((v) => expect.closeTo(v, 9)));
+    expect(fb.width).toBeCloseTo(0.6 + 2 * ATLAS_GROWTH, 6);
+    const g = ATLAS_GROWTH;
+    // Just outside the outer edge, inside the grown band, the band's middle, and the hole's shrunken middle.
+    const probes: [number, number, boolean][] = [
+      [-g / 2, 0.35, true],
+      [-2 * g, 0.35, false],
+      [0.075, 0.35, true],
+      [0.15 + g / 2, 0.35, true],
+      [0.3, 0.35, false],
+    ];
+    for (const [x, y, inside] of probes) {
+      expect(pointInPath(forward, x, y)).toBe(inside);
+      expect(pointInPath(reversed, x, y)).toBe(inside);
+    }
   });
 });
