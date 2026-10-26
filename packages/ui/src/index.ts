@@ -86,6 +86,7 @@ export * from './components/FontFamilySelect';
 export * from './components/FontWeightSelect';
 export * from './components/Field';
 export * from './components/Input';
+export * from './components/TextArea';
 export * from './components/Checkbox';
 export * from './components/Switch';
 export * from './components/Tabs';
