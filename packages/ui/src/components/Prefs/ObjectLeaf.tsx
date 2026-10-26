@@ -103,6 +103,7 @@ export function ObjectLeaf({
         return [
           <MotifFrame
             key={`panel:${key}`}
+            motif={section.motif}
             fallback={FORM_FRAMES.labeled}
             title={labeled ? section.name : undefined}
             note={section.description}

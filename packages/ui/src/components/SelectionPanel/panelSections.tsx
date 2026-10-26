@@ -174,6 +174,7 @@ function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode
         prefAsBox(section.as) && framed ? (
           <MotifFrame
             key={section.key}
+            motif={section.motif}
             fallback={FORM_FRAMES.labeled}
             title={framed.titled ? section.name : undefined}
             inline={framed.inline}

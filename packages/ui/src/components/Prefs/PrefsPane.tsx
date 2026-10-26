@@ -214,6 +214,7 @@ function PanePanel({ ctx, group, path, depth }: {
   const named = group.name !== '';
   return (
     <MotifFrame
+      motif={group.motif}
       fallback={FORM_FRAMES.box}
       role="region"
       title={named ? group.name : undefined}

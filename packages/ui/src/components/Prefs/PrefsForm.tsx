@@ -291,6 +291,7 @@ function GroupBody({ ctx, group, path, depth }: {
   return (
     <MotifFrame
       kind={depth === 0 ? 'group' : 'subpanel'}
+      motif={group.motif}
       fallback={depth === 0 ? FORM_FRAMES.column : FORM_FRAMES.nested}
       title={named ? group.name : undefined}
       disabled={head.off}
