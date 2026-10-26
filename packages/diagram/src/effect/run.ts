@@ -3,7 +3,7 @@
  * built, never a new layout. Whatever a run does not touch keeps the spec it
  * had, so a chart fed a run every frame repaints only what changed.
  */
-import { bitmapSrc } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, worldPosesOf, bitmapSrc } from '@weasel-js/core';
 import type { DiagramSpec } from '../fromData';
 import {
   NO_VALUE, PROBLEM_COLOR, previewRowId, shownPorts, stageStyle, uniqueStages, valueRowId, type EffectLookResult,
@@ -158,10 +158,12 @@ function costSpec(stage: DiagramSpec, own: readonly DiagramSpec[], of: EffectSta
   const fill = problem ? { paint: { color: PROBLEM_COLOR } } : titleData.fill ?? { paint: { color: stageStyle(of).text } };
   const width = text.length * fontSize * 0.6;
   const height = Math.ceil(fontSize * 1.2);
-  const box = stage.pose as { x: number; y: number; width: number };
+  // In world: the cost sits at the top level, and the stage's own text is stored in its frame.
+  const world = worldPosesOf([stage, ...own], RIGID_POSE_COMPOSITION);
+  const box = world.get(stage.id as string) as { x: number; y: number; width: number };
   // Above the stage's own text standing over the box too, as a symbol's title does with control from below.
   const top = Math.min(box.y, ...own.flatMap((s) => {
-    const p = s.pose as { y: number; height: number } | undefined;
+    const p = world.get(s.id as string) as { y: number; height: number } | undefined;
     return s !== stage && p !== undefined && p.y + p.height <= box.y ? [p.y] : [];
   }));
   return {

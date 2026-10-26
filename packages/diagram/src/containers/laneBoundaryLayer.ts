@@ -4,6 +4,7 @@
  * stack. Built the way the edge-end handles are: regions with a `null`
  * `targetId`, composed into a layer whose id is the kind a press reports.
  */
+import { worldWith } from '../worldWith';
 import {
   composeAffordanceLayer,
   ellipsePath,
@@ -45,17 +46,20 @@ export function laneScratchOf(hit: { payload?: unknown } | null | undefined): La
 
 type AnyScene = Scene<unknown, string, unknown>;
 
-/** A pool as the affordances see it: its box, the axis it stacks along, and its lanes in order. */
+/** A pool as the affordances see it: its box, the axis it stacks along, and its lanes in order.
+ *  `pose` is as stored, `at` where it draws. */
 export interface PoolLanes {
   id: string;
   axis: 'x' | 'y';
   pose: RectPose;
-  lanes: { id: string; pose: RectPose }[];
+  at: RectPose;
+  lanes: { id: string; pose: RectPose; at: RectPose }[];
 }
 
 /** Every pool in `scene` that is drawn and not locked. */
 export function poolsOf(scene: AnyScene): PoolLanes[] {
   const out: PoolLanes[] = [];
+  const world = worldWith(scene);
   for (const node of scene.renderOrderNodes()) {
     const trait = diagramContainerOf(node);
     if (trait?.role !== 'pool' || scene.isHidden(node.id) || scene.isLocked(node.id)) continue;
@@ -63,7 +67,8 @@ export function poolsOf(scene: AnyScene): PoolLanes[] {
       id: node.id,
       axis: poolAxisOf(trait),
       pose: node.pose as RectPose,
-      lanes: lanesOf(scene, node.id).map((id) => ({ id, pose: scene.get(id)!.pose as RectPose })),
+      at: world(node.id) as RectPose,
+      lanes: lanesOf(scene, node.id).map((id) => ({ id, pose: scene.get(id)!.pose as RectPose, at: world(id) as RectPose })),
     });
   }
   return out;
@@ -127,7 +132,7 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
           out.push({
             id: `${lane.id}:boundary`,
             targetId: null,
-            shape: { kind: 'outline', path: boundaryOf(pool.axis, lane.pose), hitRadiusPx },
+            shape: { kind: 'outline', path: boundaryOf(pool.axis, lane.at), hitRadiusPx },
             cursor,
             strength: 'exclusive',
             claimedKinds: ['pointer'],
@@ -135,7 +140,7 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
           });
         }
         if (addSizePx <= 0) continue;
-        const p = pool.pose;
+        const p = pool.at;
         const end = pool.axis === 'y'
           ? { x: p.x + p.width / 2, y: p.y + p.height, normal: { x: 0, y: 1 } }
           : { x: p.x + p.width, y: p.y + p.height / 2, normal: { x: 1, y: 0 } };

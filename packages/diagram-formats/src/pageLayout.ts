@@ -3,6 +3,7 @@
  * geometry gives them: once, on import, so the scene holds places rather than
  * a layout to run again.
  */
+import { IDENTITY_POSE_COMPOSITION } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import {
   diagramScene, edgeIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
@@ -59,8 +60,9 @@ export function laidOutPage(page: DocumentPage, opts: { theme: DiagramTheme; mea
     nodes: data.nodes.map((n) => (n.at !== undefined ? { ...n, pinned: true } : n)),
     ...(data.containers ? { containers: data.containers.map((c) => (c.box !== undefined ? { ...c, pinned: true } : c)) } : {}),
   };
+  // Read as laid out, in world.
   const specs = diagramScene(pinned, {
-    layout: 'layered', theme: opts.theme, ...(opts.measure ? { measure: opts.measure } : {}),
+    layout: 'layered', theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
     ...(page.direction ? { layoutOptions: { direction: page.direction } } : {}),
   });
   const byId = new Map(specs.map((s) => [s.id as string, s]));

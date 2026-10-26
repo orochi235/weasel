@@ -5,7 +5,8 @@
  * `diagramLayoutOf` reads the same report off a `diagramScene` build.
  */
 import { isBodyOrRegion, isDiagramBody } from './bodyNode';
-import { reconcileSpecs, useLatest, type RectPose, type Scene } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, reconcileSpecs, useLatest, worldPosesOf, type RectPose, type Scene } from '@weasel-js/core';
+import { worldWith } from './worldWith';
 import type { Vec2 } from '@weasel-js/core/math';
 import { useEffect, useRef } from 'react';
 import { diagramContainerOf } from './containers/trait';
@@ -58,9 +59,12 @@ const routeOf = (edge: DiagramEdge): Route => ({ waypoints: edge.waypoints ?? NO
 function readScene(scene: DiagramScene): Standing {
   const nodes = new Map<string, { x: number; y: number; parent: string | null }>();
   const routes = new Map<string, Route>();
+  // Where each stands in world, which is what the data says.
+  const at = worldWith(scene as never);
   for (const n of scene.renderOrderNodes()) {
     if (isDiagramBody(n)) {
-      nodes.set(n.id, { x: n.pose.x, y: n.pose.y, parent: n.parent });
+      const { x, y } = at(n.id) as RectPose;
+      nodes.set(n.id, { x, y, parent: n.parent });
       continue;
     }
     if (diagramContainerOf(n) !== null) continue;
@@ -79,18 +83,19 @@ export function diagramLayoutOf(specs: readonly DiagramSpec[]): { moves: NodeMov
   const moves: NodeMove[] = [];
   const routes: EdgeRoute[] = [];
   const containers: ContainerEdit[] = [];
+  const world = worldPosesOf(specs, RIGID_POSE_COMPOSITION);
   for (const s of specs) {
     const id = s.id;
     if (id === undefined) continue;
     if (isBodyOrRegion(s)) {
       const region = diagramContainerOf(s);
       const pinned = isPinned({ id, kind: s.kind, data: s.data });
+      const { x, y, width, height } = world.get(id)!;
       if (region !== null) {
         if (!pinned && region.role !== 'lane' && region.fitted !== true) {
-          const { x, y, width, height } = s.pose;
           containers.push({ kind: 'box', id, box: { x, y, width, height } });
         }
-      } else if (!pinned) moves.push({ id, x: s.pose.x, y: s.pose.y });
+      } else if (!pinned) moves.push({ id, x, y });
       continue;
     }
     const edge = diagramEdgeOf(s);

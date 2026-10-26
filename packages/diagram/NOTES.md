@@ -18,11 +18,14 @@ not published.
   a demo showed four ports where six were declared and looked correct. A row
   port on a side now takes that side's compass default with it.
 
-- **`Scene.setPose` does not cascade to children.** A diagram's scene keeps the
-  default absolute poses, so moving a container leaves its subtree where it
-  was. `applyLayout` and `layoutPoses` translate the subtree themselves;
-  `sceneToAdapter` does the same walk for an absolute-pose scene, and it is not
-  exported.
+- **A child's pose is in its container's frame.** A body's rows, a
+  container's title, a lane in a pool and a member in a lane are each stored
+  relative to the node holding them, so moving that node writes one pose. The
+  data a diagram is built from, `diagramScene`'s layout, and everything
+  `DiagramView` reports back are in world; `diagramScene` makes each spec local
+  as it returns it (`composition`, `IDENTITY_POSE_COMPOSITION` to read world),
+  and a reader that wants where a node draws reads it through the frames
+  (`worldWith`, `worldPosesOf`, `scenePoseFrame`).
 
 - **Idempotence and anchoring are different properties.** A layout that dumps
   everything at the origin is perfectly idempotent. Deleting the anchor left all

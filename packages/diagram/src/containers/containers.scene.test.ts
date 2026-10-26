@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  commitOps, createScene, editPreset, moveAction, resizeAction, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle,
+  commitOps, createScene, editPreset, scenePoseFrame, moveAction, resizeAction, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle,
   type OngoingInvoker, type RectPose,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -26,9 +26,11 @@ function build(scene: Scene, id: string, at: RectPose): string {
   return built.id;
 }
 
+/** A shape drawn at `at` in world, stored in `parent`'s frame. */
 function shape(scene: Scene, id: string, at: RectPose, parent?: string): void {
+  const pose = scenePoseFrame(scene as never).localUnder((parent ?? null) as NodeId | null, at) as RectPose;
   scene.add({
-    id: id as NodeId, kind: 'mark', layer: 'main', pose: at, data: { diagram: { outline: 'rect' } },
+    id: id as NodeId, kind: 'mark', layer: 'main', pose, data: { diagram: { outline: 'rect' } },
     ...(parent ? { parent: parent as NodeId } : {}),
   });
 }
@@ -40,7 +42,8 @@ function edge(scene: Scene, id: string, from: string, to: string, waypoints: Vec
   });
 }
 
-const pose = (scene: Scene, id: string) => scene.get(id as NodeId)!.pose;
+/** Where `id` draws. */
+const pose = (scene: Scene, id: string) => scenePoseFrame(scene as never).world(id as NodeId) as RectPose;
 const parentOf = (scene: Scene, id: string) => scene.get(id as NodeId)?.parent ?? null;
 
 function drag(scene: Scene, ids: string[], from: Vec2, to: Vec2): OngoingHandle {

@@ -1,7 +1,7 @@
 /**
  * The plain data `diagramScene` reads, and the options and styles it takes.
  */
-import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, RectPose, Stroke } from '@weasel-js/core';
+import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, PoseComposition, RectPose, Stroke } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import type { DiagramEdge } from './edgeTrait';
@@ -273,4 +273,8 @@ export interface DiagramSceneOptions<TLayer extends string = 'main'> {
   /** Styles nodes by their `style` role, and edges, groups and text by the theme, where the
    *  functions above leave them; and its face is the default `font`. */
   theme?: DiagramTheme;
+  /** How the scene the specs go into folds a child's pose into its container's: each
+   *  spec's pose is stored in its container's frame under it. Default
+   *  `RIGID_POSE_COMPOSITION`, a scene's own default. */
+  composition?: PoseComposition<RectPose>;
 }

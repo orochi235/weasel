@@ -1,6 +1,6 @@
 /** The checks every stencil group's test runs on each of its stencils. */
 import { expect, vi } from 'vitest';
-import { boundsOfPath } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, boundsOfPath, worldPosesOf } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import type { ContainerStencil } from '../containers/containerStencils';
 import type { StencilGroup } from '../diagramTypes/types';
@@ -22,11 +22,13 @@ const inside = (inner: Box, outer: Box): boolean =>
   && inner.x + inner.width <= outer.x + outer.width + 1e-6
   && inner.y + inner.height <= outer.y + outer.height + 1e-6;
 
-/** The body and rows `stencil` builds on a click at the origin, as inserted nodes. */
+/** The body and rows `stencil` builds on a click at the origin, as inserted nodes, each posed where it draws. */
 export function builtNodes(stencil: DiagramStencil): Built[] {
   let n = 0;
   const { ops } = stencilBuild(stencil, { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: () => `${stencil.id}${++n}`, measure });
-  return ops.map((op) => (op.args as { node: Built }).node);
+  const nodes = ops.map((op) => (op.args as { node: Built }).node);
+  const world = worldPosesOf(nodes as never, RIGID_POSE_COMPOSITION);
+  return nodes.map((node) => ({ ...node, pose: world.get(node.id) as Box }));
 }
 
 /** Every shape stencil names a registered outline, places at its own size, and lays one node per text row

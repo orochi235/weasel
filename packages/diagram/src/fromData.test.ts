@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene } from '@weasel-js/core';
+import { createScene, type RectPose } from '@weasel-js/core';
 import { DIAGRAM_THEMES } from './theme/themes';
 import { DEFAULT_NODE_STYLE, diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
 import { withDiagramRegistry } from './edge';
@@ -80,7 +80,7 @@ describe('diagramScene', () => {
     const scene = createScene({
       systemLayers: [{ id: 'main' as const }],
       initial: diagramScene(DATA),
-      registry: withDiagramRegistry(),
+      registry: withDiagramRegistry<RectPose>(),
     });
     expect(scene.get('b' as never)).toBeDefined();
   });

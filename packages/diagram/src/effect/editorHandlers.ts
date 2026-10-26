@@ -1,5 +1,6 @@
 /** `EffectEditor`'s edit callbacks: each turns what `DiagramView` reports
  *  into an edit of the latest doc. */
+import { RIGID_POSE_COMPOSITION, worldPosesOf, type PlacedSpec, type RectPose } from '@weasel-js/core';
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
 import type { ContainerEdit, DeleteReport, NodeMove, ReconnectChange, RouteChange } from '../DiagramView';
@@ -44,7 +45,8 @@ export function pinShown(doc: EffectDoc, specs: Shown): EffectDoc {
 /** Each stage's box as drawn, by stage id. */
 export function stageBoxes(doc: EffectDoc, specs: Shown): Map<string, Box> {
   const ids = new Set(doc.pipeline.stages.map((s) => s.id));
-  return new Map(specs.filter((s) => ids.has(s.id as string)).map((s) => [s.id as string, s.pose as Box]));
+  const world = worldPosesOf(specs as readonly PlacedSpec<RectPose>[], RIGID_POSE_COMPOSITION);
+  return new Map(specs.filter((s) => ids.has(s.id as string)).map((s) => [s.id as string, world.get(s.id as string) as Box]));
 }
 
 /** What the handlers read, as of each report. */
@@ -78,7 +80,7 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
       held = false;
       const reports = { moves: drag.moves.splice(0), boxes: drag.boxes.splice(0) };
       const { doc, built, specs, onChange } = now();
-      const boxes = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
+      const boxes = worldPosesOf(specs, RIGID_POSE_COMPOSITION) as Map<string, Box>;
       const out = dragEdit(pinShown(ensureWireIds(doc), specs), built, reports, (id) => boxes.get(id));
       if (out !== null) onChange(out.doc, out.label);
     });

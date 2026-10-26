@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { scenePoseFrame } from '@weasel-js/core';
 import { applyDiagramTheme, setDiagramFontSize } from './applyTheme';
 import { forkTheme, setThemeValue } from './themeEdit';
 import { themedScene } from './themeFixture';
@@ -11,7 +12,8 @@ const sized = (size: number) => setThemeValue(forkTheme(night), ['font', 'size']
 function setup() {
   const scene = themedScene();
   applyDiagramTheme(scene, night);
-  return { scene, box: (id: string) => scene.get(id as never)!.pose as Box };
+  // Where each draws: a row is stored in its body's frame.
+  return { scene, box: (id: string) => scenePoseFrame(scene as never).world(id as never) as Box };
 }
 
 const inside = (inner: Box, outer: Box) =>

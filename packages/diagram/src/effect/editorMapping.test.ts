@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import { diagramScene, edgeIdOf } from '../fromData';
 import { ensureWireIds } from './edit';
 import { editorScene } from './editorMapping';
@@ -35,8 +36,8 @@ describe('editorScene', () => {
 
   it('leaves a pinned stage where it was placed after layout', () => {
     const { data, scene } = editorScene(doc);
-    const blur = diagramScene(data, scene).find((s) => s.id === 'blur')!;
-    expect([(blur.pose as { x: number }).x, (blur.pose as { y: number }).y]).toEqual([40, 60]);
+    const blur = worldPosesOf(diagramScene(data, scene), RIGID_POSE_COMPOSITION).get('blur')!;
+    expect([blur.x, blur.y]).toEqual([40, 60]);
   });
 
   it('maps every drawn edge back to its wire, minting ids as ensureWireIds does', () => {

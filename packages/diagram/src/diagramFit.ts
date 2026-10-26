@@ -4,7 +4,7 @@
  * call to `fit()` — each applied only while the view is still the last fit,
  * except `fit()`, which takes the view back.
  */
-import { fitViewToBounds, useLatest, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, worldPosesOf, fitViewToBounds, useLatest, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { isBodyOrRegion } from './bodyNode';
 import { diagramGroupOf } from './group';
@@ -17,11 +17,13 @@ export interface DiagramFit {
   padding?: number;
 }
 
-type Boxes = readonly { kind: string; pose: unknown; data: unknown }[];
+type Boxes = readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[];
 
 /** The world rect every node box and group box takes, and `extra`, or `null` for none. */
 function diagramBounds(specs: Boxes, extra?: Bounds): Bounds | null {
-  const boxes: Bounds[] = specs.filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
+  const world = worldPosesOf(specs as never, RIGID_POSE_COMPOSITION);
+  const boxes: Bounds[] = specs.filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null)
+    .map((s) => (world.get((s as { id?: string }).id ?? '') ?? s.pose) as RectPose);
   if (extra !== undefined) boxes.push(extra);
   if (boxes.length === 0) return null;
   const x = Math.min(...boxes.map((b) => b.x));

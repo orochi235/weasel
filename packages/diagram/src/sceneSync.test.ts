@@ -131,10 +131,8 @@ describe('useSceneSync with regions', () => {
   it('reports a region moved as its box, beside the moves of what it carried', () => {
     const { scene, onMove, onEditContainer } = synced(REGIONS);
     act(() => {
-      scene.batch('Move', () => {
-        scene.setPose('k' as NodeId, { x: 10, y: 0, width: 200, height: 120 });
-        scene.setPose('a' as NodeId, { ...scene.get('a' as NodeId)!.pose, x: 30 });
-      });
+      // The container carries `a` in its frame.
+      scene.setPose('k' as NodeId, { x: 10, y: 0, width: 200, height: 120 });
     });
     expect(onEditContainer).toHaveBeenCalledWith({ kind: 'box', id: 'k', box: { x: 10, y: 0, width: 200, height: 120 } });
     expect(onMove).toHaveBeenLastCalledWith([{ id: 'a', x: 30, y: 40 }], []);

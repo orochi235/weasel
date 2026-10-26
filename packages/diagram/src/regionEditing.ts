@@ -3,7 +3,8 @@
  * with every commit swapped for a report, and the header double-click.
  */
 import { isDiagramBody } from './bodyNode';
-import type { Contribution, NodeId, RenderLayer, Scene } from '@weasel-js/core';
+import type { Contribution, NodeId, RectPose, RenderLayer, Scene } from '@weasel-js/core';
+import { worldWith } from './worldWith';
 import { diagramContainers, laneResizeFrame, type LaneResize } from './containers/containerActions';
 import { editContainerTitleAction, editContainerTitleBinding } from './containers/containerTitle';
 import { poolsOf } from './containers/laneBoundaryLayer';
@@ -31,14 +32,21 @@ export function laneResizeReports(scene: AnyScene, resize: LaneResize): { lanes:
   const lanes = laneList(scene, pool.id).map((l) => (l.id === resize.laneId ? { ...l, size: resize.size } : l));
   const moves: NodeMove[] = [];
   const boxes: ContainerEdit[] = [];
-  for (const [id, pose] of laneResizeFrame(scene, pool, index, resize.size)) {
-    const node = scene.get(id as NodeId);
-    if (node === undefined) continue;
-    const region = diagramContainerOf(node);
-    const { x, y, width, height } = pose;
-    if (region !== null) {
-      if (region.role === 'container' && region.fitted !== true) boxes.push({ kind: 'box', id, box: { x, y, width, height } });
-    } else if (isDiagramBody(node)) moves.push({ id, x, y });
+  // Reported in world: what a later lane carries moves with it, written or not.
+  const after = worldWith(scene, laneResizeFrame(scene, pool, index, resize.size));
+  const before = worldWith(scene);
+  for (const lane of pool.lanes.slice(index + 1)) {
+    for (const id of descendantsOf(scene, lane.id)) {
+      const node = scene.get(id as NodeId);
+      if (node === undefined) continue;
+      const { x, y, width, height } = after(id) as RectPose;
+      const was = before(id) as RectPose;
+      if (x === was.x && y === was.y) continue;
+      const region = diagramContainerOf(node);
+      if (region !== null) {
+        if (region.role === 'container' && region.fitted !== true) boxes.push({ kind: 'box', id, box: { x, y, width, height } });
+      } else if (isDiagramBody(node)) moves.push({ id, x, y });
+    }
   }
   return { lanes: { kind: 'lanes', pool: pool.id, lanes }, moves, boxes };
 }
@@ -73,4 +81,11 @@ export function regionEditing(
     bindings: [editContainerTitleBinding()],
   };
   return { layer: containers.layer, contributions: [containers.contribution, title] };
+}
+
+/** Every node under `id`, each after its parent. */
+function descendantsOf(scene: AnyScene, id: string): string[] {
+  const out: string[] = [];
+  for (const c of scene.childrenOf(id as NodeId)) out.push(c as string, ...descendantsOf(scene, c as string));
+  return out;
 }
