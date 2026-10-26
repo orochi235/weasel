@@ -132,6 +132,9 @@
   flex: none;
   gap: var(--wzl-space-2);
   font-family: var(--wzl-font-ui);
+  /* Selects and number boxes sit at the size of the small segmented bars beside them. */
+  --wzl-field-h: var(--wzl-control-h-sm);
+  --wzl-field-font-size: var(--wzl-font-size-sm);
 }
 
 .label {
