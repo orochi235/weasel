@@ -31,6 +31,11 @@ test('a padded cell hugs a short specimen, with no room left under it', () => {
   expect(below).toBeCloseTo(parseFloat(style.paddingBottom) + parseFloat(style.borderBottomWidth), 1);
 });
 
+test('a cell draws no frame around its example', () => {
+  const { style } = cell('centered', 40);
+  expect(style.borderTopStyle).toBe('none');
+});
+
 test('a centered cell keeps its minimum and centers a short specimen in it', () => {
   const { stage, specimen } = cell('centered', 40);
   expect(stage.height).toBeGreaterThanOrEqual(96);
