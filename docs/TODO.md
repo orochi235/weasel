@@ -428,6 +428,12 @@ Priority tags:
 
 ## Text
 
+- **(P2) The text and sticky tools mount on a canvas that cannot edit text.** Both bind
+  `enterTextEdit`, which needs a `textEdit` dep that only a host wiring `useSceneTextEdit` provides
+  (`apps/site/demos/StickyNotesDemo.tsx` shows the wiring). Without it a click places a node nobody
+  can type into, with no warning. The Shape tools demo leaves both out for this (2026-10-25).
+  Either `<SceneCanvas>` provides a default text editor when a tool binds `enterTextEdit`, or
+  mounting one without the dep warns.
 - **(P3) `emboldenGlyph` caches by outline data while its callers pass that data in both windings**
   (2026-10-25). `glyphOutlines.ts` passes `emGlyph(d)`, wound positive since `glyphOutlineAt` (2026-10-25), and
   `emboldenGlyphD` passes `pathFromD(d)` as the font wound it, both under the key `growth|join|d`
