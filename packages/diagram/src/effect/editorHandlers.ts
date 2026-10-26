@@ -3,10 +3,10 @@
 import { RIGID_POSE_COMPOSITION, worldPosesOf, type PlacedSpec, type RectPose } from '@weasel-js/core';
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
-import type { ContainerEdit, DeleteReport, NodeMove, ReconnectChange, RouteChange } from '../DiagramView';
+import type { ContainerEdit, DeleteReport, LabelMove, NodeMove, ReconnectChange, RouteChange } from '../DiagramView';
 import type { DataEdge, DiagramSpec } from '../fromData';
 import {
-  addWire, canWire, ensureWireIds, reconnectWire, removeStages, removeWires, setWireRoute,
+  addWire, canWire, ensureWireIds, reconnectWire, removeStages, removeWires, setWireLabel, setWireRoute,
 } from './edit';
 import type { EditorLook, EditorScene } from './editorMapping';
 import { dragEdit, type DragReports } from './groupHandlers';
@@ -118,6 +118,11 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
       }
       const ends = wireEnds(specs, c.edge);
       return ends === undefined ? null : setLookRoute(d, look, id, c.waypoints, ends);
+    }),
+    onMoveLabel: (m: LabelMove) => commit('Move label', (d, b) => {
+      const id = b.wireOf(m.edge);
+      if (id === undefined || (m.placement === null && d.labels?.[id] === undefined)) return null;
+      return setWireLabel(d, id, m.placement);
     }),
     onDelete: (r: DeleteReport) => commit('Delete', (d, b) => {
       // A freed wire id is minted again for the next wire, which would come back picked.
