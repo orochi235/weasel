@@ -1,6 +1,7 @@
 import { configure } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach } from 'vitest';
 import { commands } from 'vitest/browser';
+import './scripts/vitest-request-log.setup.ts';
 
 // Testing Library's `waitFor` and `findBy*` give up after one second, the same default the
 // `browser` project already raises for `expect.poll`.
