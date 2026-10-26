@@ -428,12 +428,6 @@ Priority tags:
 
 ## Text
 
-- **(P3) `emboldenGlyph` caches by outline data while its callers pass that data in both windings**
-  (2026-10-25). `glyphOutlines.ts` passes `emGlyph(d)`, wound positive since `glyphOutlineAt` (2026-10-25), and
-  `emboldenGlyphD` passes `pathFromD(d)` as the font wound it, both under the key `growth|join|d`
-  (`packages/text/src/syntheticBold.ts`). If `growRegion` grows a reversed contour inward, whichever caller runs
-  first decides the other's glyph. Read, not run: check with one glyph wound each way, bolded through both paths.
-
 - **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
   1px in Chromium at DPR 1, and the matrix rows of `scripts/measure-overlay-alignment.config.ts`
