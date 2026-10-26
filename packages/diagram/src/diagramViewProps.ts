@@ -1,6 +1,7 @@
 import type { Contribution, Paint, PlacedPage, RectPose, View } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { CanConnect } from './connect';
+import type { CanReparent } from './containers/canDropInto';
 import type { DiagramContributionOptions } from './contribution';
 import type { DataEdge, DiagramSpec } from './fromData';
 import type { DiagramLabel } from './labelTrait';
@@ -153,8 +154,16 @@ export interface DiagramViewProps {
    *  is set. */
   enableKeybindings?: boolean;
   /** Which ports may be joined. Default: a port may not join itself, and two
-   *  typed ports must share a type. */
+   *  typed ports must share a type. A refusal (`{ refuse }`) draws the port
+   *  refused with its reason beside the pointer; a connect or reconnect
+   *  released there reports nothing. */
   canConnect?: CanConnect;
+  /** Whether a drag may move nodes into a container or lane they are not in,
+   *  asked only of a move the diagram's own rules allow (a pool takes lanes, a
+   *  container takes shapes and containers). `false` passes the container
+   *  over, as if the drop were not on it; a refusal draws it refused with
+   *  its reason beside the pointer, and a release there moves nothing. */
+  canReparent?: CanReparent;
   /** How ports look and answer the pointer, and the router a connect's
    *  preview draws with. */
   portOptions?: Pick<

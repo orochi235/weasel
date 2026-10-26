@@ -180,6 +180,20 @@ describe('createReconnectAction', () => {
     expect(commit).not.toHaveBeenCalled();
   });
 
+  it('refuses a moved `to` end with the reason `canConnect` gives, and commits nothing', () => {
+    const commit = vi.fn();
+    const canConnect = vi.fn((_from: unknown, to: { nodeId: string }) => (to.nodeId === 'C' ? { refuse: 'C is full' } : true));
+    const handle = open({ commit, canConnect }, 'to');
+    handle.onMove!(ctxAt(350, 220));
+    const overlays = overlaysOf(handle);
+    expect(overlays[0]).toMatchObject({ kind: 'polyline', role: 'refused' });
+    expect(overlays).toContainEqual({ kind: 'reason', at: { x: 350, y: 220 }, text: 'C is full' });
+    handle.onEnd!(ctxAt(350, 220), 'commit');
+    expect(commit).not.toHaveBeenCalled();
+    const asked = canConnect.mock.calls as unknown as [{ nodeId: string }, { nodeId: string }, { end: string }][];
+    expect(asked.some(([from, to, moving]) => from.nodeId === 'A' && to.nodeId === 'C' && moving.end === 'to')).toBe(true);
+  });
+
   it('tells `canConnect` which end of which edge it is moving', () => {
     const canConnect = vi.fn(() => true);
     open({ commit: vi.fn(), canConnect }, 'from').onEnd!(ctxAt(350, 220), 'commit');

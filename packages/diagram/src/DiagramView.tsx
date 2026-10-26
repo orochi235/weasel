@@ -13,7 +13,7 @@ import {
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
 import { createSpecRouter } from './avoid/specRoutes';
-import { diagramCanDropInto } from './containers/canDropInto';
+import { diagramCanDropInto, type CanReparent } from './containers/canDropInto';
 import { createSpecHops } from './hops/specHops';
 import { createSpecLabelPlacer } from './labels/specLabels';
 import { useDiagramEditing, withPickableEdges } from './diagramEditing';
@@ -67,7 +67,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 
 function Inner({
   specs: given, router, labels, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
-  onReorder, onEditContainer, connectBodies,
+  onReorder, onEditContainer, connectBodies, canReparent,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, pages, view, onViewChange, className, apiRef,
@@ -166,7 +166,7 @@ function Inner({
         {...(background ? { backgroundFill: background } : {})}
         {...(layers ? { layers } : {})}
       >
-        <DropRules scene={scene} />
+        <DropRules scene={scene} canReparent={canReparent} />
       </SceneCanvas>
       {overlays.map((o) => {
         const key = o.key ?? o.target;
@@ -179,8 +179,13 @@ function Inner({
 const NO_OVERLAYS: readonly never[] = [];
 
 /** Shapes drop only into containers and lanes, and lanes only into pools. A child of `<SceneCanvas>`, so its dep source registers after the canvas's own. */
-function DropRules({ scene }: { scene: Scene<DiagramSceneData, 'main', RectPose> }): null {
-  const canDropInto = useMemo(() => diagramCanDropInto(scene as never), [scene]);
+function DropRules({ scene, canReparent }: { scene: Scene<DiagramSceneData, 'main', RectPose>; canReparent: CanReparent | undefined }): null {
+  const latest = useLatest(canReparent);
+  const asks = canReparent !== undefined;
+  const canDropInto = useMemo(
+    () => diagramCanDropInto(scene as never, asks ? (ids, into) => latest.current?.(ids, into) ?? true : undefined),
+    [scene, asks, latest],
+  );
   useDepSource('canDropInto', () => canDropInto);
   return null;
 }

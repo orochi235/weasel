@@ -41,6 +41,21 @@ describe('diagramCanDropInto', () => {
     expect(can('group', ['shape'])).toBe(true);
   });
 
+  it('asks the host about a structurally allowed reparent, and answers with its verdict', () => {
+    const nodes: Record<string, N & { parent?: string | null }> = { ...NODES, kept: { ...NODES.shape!, id: 'kept', parent: 'box' } };
+    const asked: [readonly string[], string][] = [];
+    const host = diagramCanDropInto({ get: (id: never) => nodes[id as string] }, (ids, into) => {
+      asked.push([ids, into]);
+      return into === 'lane' ? { refuse: 'Lanes are closed' } : true;
+    });
+    expect(host('lane', ['shape'])).toEqual({ refuse: 'Lanes are closed' });
+    expect(host('box', ['shape'])).toBe(true);
+    expect(host('pool', ['shape'])).toBe(false);
+    // A drag within the container a node already sits in is no reparent.
+    expect(host('box', ['kept'])).toBe(true);
+    expect(asked).toEqual([[['shape'], 'lane'], [['shape'], 'box']]);
+  });
+
   it('leaves lanes out of the participants a connector can end on', () => {
     expect(dataKeyReader(NODES.lane!)).toBeNull();
     expect(dataKeyReader(NODES.pool!)).not.toBeNull();
