@@ -11,6 +11,7 @@ import { poseLinearOf } from '@weasel-js/geom';
 import { settleShapeGenerator } from 'features/paths/shapeGenerator';
 import { SHAPE_GENERATOR_SECTIONS } from './shapeGeneratorProperties';
 import { icon } from '../../icons.gen';
+import type { IconRef } from '@weasel-js/icons';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
@@ -110,6 +111,25 @@ const overflowEncoding: PrefBooleanEncoding = {
 };
 
 type MarkerOptions = PrefEnum['options'];
+
+/** The glyph of each built-in marker. A marker a consumer registers has none, and its option reads as text. */
+const MARKER_ICONS: Readonly<Record<string, IconRef>> = {
+  arrow: icon('markerArrow'),
+  'arrow-open': icon('markerArrowOpen'),
+  'arrow-concave': icon('markerArrowConcave'),
+  'triangle-hollow': icon('markerTriangleHollow'),
+  diamond: icon('markerDiamond'),
+  'diamond-hollow': icon('markerDiamondHollow'),
+  circle: icon('markerCircle'),
+  square: icon('markerSquare'),
+  bar: icon('markerBar'),
+  dot: icon('markerDot'),
+  'crow-one': icon('markerCrowOne'),
+  'crow-many': icon('markerCrowMany'),
+  'crow-zero-one': icon('markerCrowZeroOne'),
+  'crow-one-many': icon('markerCrowOneMany'),
+  'crow-zero-many': icon('markerCrowZeroMany'),
+};
 let markerOptionsCache: { generation: number; options: MarkerOptions } | undefined;
 
 /** A `select` rather than a `toggle`: nine options will not fit a segmented
@@ -121,8 +141,8 @@ function markerOptions(): MarkerOptions {
     markerOptionsCache = {
       generation,
       options: [
-        { value: '', label: 'None' },
-        ...listMarkers().map((m) => ({ value: m.id, label: m.id })),
+        { value: '', label: 'None', icon: icon('markerNone') },
+        ...listMarkers().map((m) => ({ value: m.id, label: m.id, icon: MARKER_ICONS[m.id] })),
       ],
     };
   }

@@ -215,6 +215,19 @@ describe('the stroke leaf\'s markers', () => {
     }
   });
 
+  it('draws every built-in marker and None as a glyph, and a registered one as text', () => {
+    const dispose = registerMarker({ ...getMarker('arrow')!, id: 'test-glyphless-marker' });
+    try {
+      const options = (strokeLeaf().children.markerEnd as PrefEnum).options;
+      for (const o of options) {
+        if (o.value === 'test-glyphless-marker') expect(o.icon).toBeUndefined();
+        else expect(o.icon, o.value || 'None').toBe(o.value === '' ? 'core:markerNone' : `core:marker${o.value.replace(/(^|-)([a-z])/g, (_, __, c: string) => c.toUpperCase())}`);
+      }
+    } finally {
+      dispose();
+    }
+  });
+
   it('lists a marker registered after the schemas were built', () => {
     const dispose = registerMarker({ ...getMarker('arrow')!, id: 'test-late-marker' });
     try {

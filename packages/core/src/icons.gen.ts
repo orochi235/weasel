@@ -112,7 +112,23 @@ export type CoreIconName =
   | 'paintMesh'
   | 'paintPattern'
   | 'paintInherit'
-  | 'paintNone';
+  | 'paintNone'
+  | 'markerNone'
+  | 'markerArrow'
+  | 'markerArrowOpen'
+  | 'markerArrowConcave'
+  | 'markerTriangleHollow'
+  | 'markerDiamond'
+  | 'markerDiamondHollow'
+  | 'markerCircle'
+  | 'markerSquare'
+  | 'markerBar'
+  | 'markerDot'
+  | 'markerCrowOne'
+  | 'markerCrowMany'
+  | 'markerCrowZeroOne'
+  | 'markerCrowOneMany'
+  | 'markerCrowZeroMany';
 
 /** This package's `icon()`: a bare name means `core:<name>`. */
 export const icon = scopedIcon<CoreIconName>('core');
@@ -287,6 +303,27 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "paintInherit",
       "paintNone"
     ]
+  },
+  {
+    "label": "Stroke markers",
+    "names": [
+      "markerNone",
+      "markerArrow",
+      "markerArrowOpen",
+      "markerArrowConcave",
+      "markerTriangleHollow",
+      "markerDiamond",
+      "markerDiamondHollow",
+      "markerCircle",
+      "markerSquare",
+      "markerBar",
+      "markerDot",
+      "markerCrowOne",
+      "markerCrowMany",
+      "markerCrowZeroOne",
+      "markerCrowOneMany",
+      "markerCrowZeroMany"
+    ]
   }
 ];
 
@@ -401,5 +438,21 @@ declare module '@weasel-js/icons' {
     'core:paintPattern': true;
     'core:paintInherit': true;
     'core:paintNone': true;
+    'core:markerNone': true;
+    'core:markerArrow': true;
+    'core:markerArrowOpen': true;
+    'core:markerArrowConcave': true;
+    'core:markerTriangleHollow': true;
+    'core:markerDiamond': true;
+    'core:markerDiamondHollow': true;
+    'core:markerCircle': true;
+    'core:markerSquare': true;
+    'core:markerBar': true;
+    'core:markerDot': true;
+    'core:markerCrowOne': true;
+    'core:markerCrowMany': true;
+    'core:markerCrowZeroOne': true;
+    'core:markerCrowOneMany': true;
+    'core:markerCrowZeroMany': true;
   }
 }
