@@ -1,4 +1,4 @@
-import { Children, useCallback, useContext, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { Children, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { mergeProps, OverlayContainer, useOverlayPosition, useTooltip } from 'react-aria';
 import { filterDOMProps } from 'react-aria/filterDOMProps';
 import {
@@ -17,11 +17,12 @@ import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } f
 import { InlineMarkdown } from '../InlineMarkdown';
 import s from './Tooltip.module.css';
 
-/**
- * Props for {@link TooltipTrigger} — React Aria's `TooltipTrigger` props
- * unchanged.
- */
-export type TooltipTriggerProps = TooltipTriggerComponentProps;
+/** Props for {@link TooltipTrigger}: React Aria's `TooltipTrigger` props, and `keepEscape`. */
+export type TooltipTriggerProps = TooltipTriggerComponentProps & {
+  /** Every Escape while the tooltip is open only closes it, as one pressed on the trigger does: for help
+   *  that describes the focused control from elsewhere. Default false. */
+  keepEscape?: boolean;
+};
 
 /**
  * TooltipTrigger with kit defaults: ~600 ms open delay, instant close.
@@ -29,13 +30,41 @@ export type TooltipTriggerProps = TooltipTriggerComponentProps;
  * `<button>`, a `Badge` etc.) must be wrapped in `Focusable` so
  * hover/focus props reach the DOM node.
  *
- * Caveat: while a tooltip is open, react-aria captures the first Escape
- * keydown (document-level, capture phase) to dismiss it — app-level
- * Escape handlers (deselect, cancel gesture) see only the second press.
+ * Escape closes an open tooltip. Pressed on its trigger, that is all it does;
+ * pressed with focus anywhere else — an editor, the canvas — it also reaches
+ * whatever it was pressed in.
  */
 export function TooltipTrigger(props: TooltipTriggerProps) {
-  const { delay = 600, closeDelay = 0, ...rest } = props;
-  return <RACTooltipTrigger delay={delay} closeDelay={closeDelay} {...rest} />;
+  const { delay = 600, closeDelay = 0, onOpenChange, keepEscape = false, ...rest } = props;
+  const [open, setOpen] = useState(false);
+  useEscapePassesThrough(!keepEscape && (props.isOpen ?? open));
+  const changed = useCallback((next: boolean) => {
+    setOpen(next);
+    onOpenChange?.(next);
+  }, [onOpenChange]);
+  return <RACTooltipTrigger delay={delay} closeDelay={closeDelay} {...rest} onOpenChange={changed} />;
+}
+
+/** Whether keyboard focus is on a tooltip's trigger: the element an open tooltip describes. */
+function focusOnTrigger(): boolean {
+  const ids = document.activeElement?.getAttribute('aria-describedby');
+  return !!ids && ids.split(' ').some((id) => document.getElementById(id)?.getAttribute('role') === 'tooltip');
+}
+
+/**
+ * While a tooltip is open, react-aria stops every Escape at the document, to close it. This runs at
+ * the window, ahead of that, and for an Escape pressed away from the trigger turns the stop into a
+ * no-op for that one event: the tooltip still closes, and the key still reaches where it was pressed.
+ */
+function useEscapePassesThrough(open: boolean): void {
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !focusOnTrigger()) e.stopPropagation = () => {};
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [open]);
 }
 
 /** Props for {@link Tooltip}, on top of React Aria's `Tooltip` props. */

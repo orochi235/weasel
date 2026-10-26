@@ -50,9 +50,14 @@ const OUTLINES: Readonly<Record<string, Outline>> = {
   cylinder: 'cylinder', note: 'note', folder: 'folder', tab: 'folder', octagon: 'octagon', triangle: 'triangle', box3d: 'cube',
 };
 
-/** Outlines DOT names differently, or draws as a rounded box. */
-const SHAPE_NAMES: Readonly<Record<string, { shape: string; rounded?: boolean }>> = {
-  stadium: { shape: 'box', rounded: true }, roundRect: { shape: 'box', rounded: true }, trapezoid: { shape: 'trapezium' },
+/** The attribute naming the outline a node really has, where its DOT shape is only an approximation.
+ *  Graphviz ignores attributes it doesn't know, so it draws the shape and a diagram reads the name. */
+export const OUTLINE_ATTR = 'weasel_outline';
+
+/** Outlines DOT names differently, or draws as a rounded box. A stadium shares the rounded box with
+ *  `roundRect`, so it is `marked` to come back as itself. */
+const SHAPE_NAMES: Readonly<Record<string, { shape: string; rounded?: boolean; marked?: true }>> = {
+  stadium: { shape: 'box', rounded: true, marked: true }, roundRect: { shape: 'box', rounded: true }, trapezoid: { shape: 'trapezium' },
   cube: { shape: 'box3d' }, doubleEllipse: { shape: 'doublecircle' },
 };
 
@@ -65,14 +70,14 @@ const SAME_NAMES: ReadonlySet<string> = new Set([
 export function outlineOf(shape: string, styles: readonly string[]): Outline | null {
   const outline = OUTLINES[shape.toLowerCase()];
   if (outline === undefined) return null;
-  return outline === 'rect' && styles.includes('rounded') ? 'stadium' : outline;
+  return outline === 'rect' && styles.includes('rounded') ? 'roundRect' : outline;
 }
 
-/** The shape and the style word an outline writes as; a drawn path as a box,
- *  and a name DOT has no shape for as a box marked `missing`. */
-export function shapeOf(outline: Outline | undefined): { shape: string; rounded?: boolean; missing?: true } {
+/** The shape and the style word an outline writes as; a drawn path as a box, and a name DOT has no
+ *  shape for as a box marked `missing`. `marked` asks for {@link OUTLINE_ATTR}. */
+export function shapeOf(outline: Outline | undefined): { shape: string; rounded?: boolean; missing?: true; marked?: true } {
   if (outline === undefined || typeof outline !== 'string' || outline === 'rect') return { shape: 'box' };
-  return SHAPE_NAMES[outline] ?? (SAME_NAMES.has(outline) ? { shape: outline } : { shape: 'box', missing: true });
+  return SHAPE_NAMES[outline] ?? (SAME_NAMES.has(outline) ? { shape: outline } : { shape: 'box', missing: true, marked: true });
 }
 
 const ARROWS: Readonly<Record<string, MarkerRef | null>> = {

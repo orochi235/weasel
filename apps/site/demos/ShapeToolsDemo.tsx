@@ -11,11 +11,10 @@ import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
 
+// Text and sticky notes need a text editor wired to the canvas; each has a demo of its own that does.
+const TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'sticky' && id !== 'text');
+
 export function ShapeToolsDemo() {
-  // Empty scene; `defaultTools={BUILTIN_TOOL_IDS}` materializes the
-  // full shape toolset (rect / ellipse / line / polygon / star / pencil +
-  // lasso / text / clone) with default `create` callbacks that produce
-  // leaf nodes shaped for the kit's PATH_PAINTER.
   const scene = useScene({
     systemLayers: [{ id: 'default' }],
     initial: [],
@@ -32,7 +31,7 @@ export function ShapeToolsDemo() {
           scene={scene}
           selection={selection}
           features={['pick']}
-          defaultTools={BUILTIN_TOOL_IDS}
+          defaultTools={TOOLS}
           onToolsCreated={setTools}
         />
       </DemoStage>

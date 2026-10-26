@@ -14,7 +14,7 @@ import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions
 import type { ToolsApi } from '../tools/overlayBinding';
 import { SceneCanvas } from './SceneCanvas';
 import type { BaseFeature } from './SceneCanvas/features';
-import { FEATURE_PRESETS } from './SceneCanvas/namedPresets';
+import { BASELINE_ACTION_IDS, FEATURE_PRESETS } from './SceneCanvas/namedPresets';
 import type { CanvasHelpers } from './useViewHelpers';
 
 type P = { x: number; y: number; width: number; height: number; rotation: number };
@@ -77,7 +77,7 @@ function mountWith(preset: BaseFeature) {
   act(() => seen.selection!.set([id]));
   return {
     tools: Object.keys(tools!.registry),
-    actions: seen.actionIds.filter((a) => KIT_STANDARD_ACTION_IDS.includes(a)).sort(),
+    actions: seen.actionIds.filter((a) => KIT_STANDARD_ACTION_IDS.includes(a) && !BASELINE_ACTION_IDS.includes(a)).sort(),
     ambient: [...mounted.ambient],
     isVisible: helpersRef.current!.getIsVisible(),
     unmount: result.unmount,

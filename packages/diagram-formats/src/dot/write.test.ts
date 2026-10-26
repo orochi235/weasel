@@ -126,9 +126,23 @@ describe('writing DOT', () => {
     const { text, warnings } = writeDot(pageOf(data));
     expect(Object.fromEntries(readDot(text).document.pages[0]!.data.nodes.map((n) => [n.id, n.outline ?? 'rect']))).toEqual({
       cylinder: 'cylinder', note: 'note', folder: 'folder', octagon: 'octagon', triangle: 'triangle', cube: 'cube',
-      doubleEllipse: 'doubleEllipse', document: 'rect',
+      doubleEllipse: 'doubleEllipse', document: 'document',
     });
     expect(warnings).toContain('DOT has no shape for some outlines; they were written as boxes.');
+  });
+
+  it('marks a stadium, and an outline DOT has no shape for, so both come back while Graphviz draws boxes', () => {
+    const data: DiagramData = {
+      nodes: (['stadium', 'roundRect', 'server', 'exclusiveGateway'] as const).map((outline) => ({ id: outline, lines: [outline], outline })),
+      edges: [],
+    };
+    const { text } = writeDot(pageOf(data));
+    expect(text).toMatch(/"stadium".*style="rounded,filled".*weasel_outline=stadium/);
+    expect(text).toMatch(/"server".*weasel_outline=server/);
+    expect(text).not.toMatch(/"roundRect".*weasel_outline/);
+    expect(Object.fromEntries(readDot(text).document.pages[0]!.data.nodes.map((n) => [n.id, n.outline]))).toEqual({
+      stadium: 'stadium', roundRect: 'roundRect', server: 'server', exclusiveGateway: 'exclusiveGateway',
+    });
   });
 
   it('round-trips the crow\'s-foot and hollow-triangle heads', () => {

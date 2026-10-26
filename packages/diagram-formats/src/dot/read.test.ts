@@ -45,7 +45,7 @@ describe('reading DOT', () => {
     const { document, warnings } = readDot(fixture('shapes.dot'));
     const outlines = Object.fromEntries(document.pages[0]!.data.nodes.map((n) => [n.id, n.outline]));
     expect(outlines).toEqual({
-      r: 'rect', s: 'stadium', d: 'diamond', e: 'ellipse', plain: 'ellipse', h: 'hexagon', p: 'parallelogram',
+      r: 'rect', s: 'roundRect', d: 'diamond', e: 'ellipse', plain: 'ellipse', h: 'hexagon', p: 'parallelogram',
       t: 'trapezoid', c: 'ellipse', cyl: 'cylinder', n: 'note', html: 'ellipse',
     });
     expect(warnings.some((w) => w.startsWith('DOT shapes read as rectangles'))).toBe(false);

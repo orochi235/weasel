@@ -1,7 +1,7 @@
 import { useRef, type CSSProperties, type ReactElement } from 'react';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import { useTrackShape } from '../Along/alongContext';
-import { SwatchButton, swatchesIn, swatchKeyDown, useSwatchApply } from './SwatchButton';
+import { rowLead, SwatchButton, swatchesIn, swatchKeyDown, useSwatchApply } from './SwatchButton';
 import { SwatchRings } from './SwatchRings';
 import s from './SwatchGrid.module.css';
 
@@ -28,7 +28,8 @@ export interface SwatchGridProps {
   /** A track shape to lay the rows along. A curved one lays each row on a ring of its own, row k shifted k rows in
    *  toward the shape's center of curvature; a line keeps the grid. Default: the nearest `Along`'s shape, else none. */
   shape?: TrackShape;
-  /** Where a ring shorter than its run sits. Default: the nearest `Along`'s, else `'center'`. */
+  /** Where a row shorter than its run sits: a ring on a curved shape, the last row in a grid. Default: the nearest
+   *  `Along`'s, else `'center'` on a ring and `'start'` in a grid. */
   align?: RunAlign;
   'aria-label'?: string;
   className?: string;
@@ -63,13 +64,15 @@ export function SwatchGrid(props: SwatchGridProps): ReactElement {
       />
     );
   }
-  return <SwatchGridLine {...props} />;
+  return <SwatchGridLine {...props} align={props.align ?? along?.align ?? 'start'} />;
 }
 
 function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const { options, value, className } = props;
   const apply = useSwatchApply(props.onChange, props.onAltChange);
   const columns = props.columns ?? 6;
+  const lead = rowLead(options.length, columns, props.align ?? 'start');
+  const lastStart = options.length - (options.length % columns || columns);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const current = value === undefined ? -1 : options.findIndex((o) => o.value === value);
@@ -82,7 +85,7 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
       className={[s.grid, className].filter(Boolean).join(' ')}
       role="group"
       aria-label={props['aria-label']}
-      style={{ '--columns': columns } as CSSProperties}
+      style={{ '--tracks': 2 * columns, '--lead': lead } as CSSProperties}
     >
       {options.map((o, i) => (
         <SwatchButton
@@ -91,7 +94,8 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
           tabStop={i === tabStop}
           current={i === current}
           apply={apply}
-          onKeyDown={swatchKeyDown(i, options, columns, apply, swatches)}
+          onKeyDown={swatchKeyDown(i, options, columns, apply, swatches, lead)}
+          data={{ 'data-row-lead': i === lastStart && lead > 0 ? '' : undefined }}
         />
       ))}
     </div>

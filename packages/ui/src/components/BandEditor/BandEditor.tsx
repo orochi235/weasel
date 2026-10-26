@@ -318,11 +318,11 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
 
   return (
     <div
-      className={[s.root, className].filter(Boolean).join(' ')}
-      role="group"
+      className={[s.root, className].filter(Boolean).join(' ')} role="group"
       aria-label={typeof label === 'string' ? label : undefined}
       aria-labelledby={label !== undefined && typeof label !== 'string' ? labelId : undefined}
       onKeyDown={onRootKeyDown}
+      data-dragging={draft ? ('at' in draft.ghost ? 'seam' : 'band') : undefined}
     >
       {label !== undefined && <div id={labelId} className={s.label}>{label}</div>}
       <Ruler

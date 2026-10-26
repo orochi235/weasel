@@ -44,6 +44,17 @@ describe('marker serialization', () => {
     expect((nodes[0] as { stroke?: { markerStart?: string; markerMid?: string; markerEnd?: string } }).stroke?.markerMid).toBe('square');
     expect((nodes[0] as { stroke?: { markerStart?: string; markerMid?: string; markerEnd?: string } }).stroke?.markerEnd).toBe('arrow');
   });
+
+  it('draws a mid dot centered on refX, as the renderer centers it on the vertex', () => {
+    const out = serializeSvg(line({ markerMid: 'dot' }));
+    const def = /<marker id="dot"[^>]*refX="0"[^>]*><path d="([^"]+)"/.exec(out);
+    expect(def).not.toBeNull();
+    const xs = [...def![1].matchAll(/[ML](-?[\d.]+)/g)].map((m) => Number(m[1]));
+    expect(Math.max(...xs) + Math.min(...xs)).toBeCloseTo(0, 3);
+    const { nodes, warnings } = parseSvg(out);
+    expect(warnings).toEqual([]);
+    expect((nodes[0] as { stroke?: { markerMid?: string } }).stroke?.markerMid).toBe('dot');
+  });
 });
 
 describe('an unregistered marker key', () => {

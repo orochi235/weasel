@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useVisibleRaf } from '@weasel-js/core';
 import {
-  BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack,
+  BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack, shownPorts,
   type BranchChoice, type EffectLook, type EffectPipeline, type EffectRun, type EffectStageRun,
 } from '@weasel-js/diagram/effect';
 import { DemoStage } from './DemoStage';
@@ -120,12 +120,25 @@ function thumbnail(scratch: OffscreenCanvas, hue: number, t: number): ImageBitma
   return scratch.transferToImageBitmap();
 }
 
-/** `runAt(frame)` with a new preview on every output the run reached. */
+/** The hue of the stand-in picture on a stage's preview slot for `port`: its own for an output, and
+ *  for an input, such as Out's, the picture of the stage wired into it. */
+export function pictureOf(stageId: string, port: string): number | undefined {
+  const index = (id: string) => PIPELINE.stages.findIndex((s) => s.id === id);
+  const stage = PIPELINE.stages[index(stageId)];
+  if (stage?.outputs?.some((p) => p.id === port)) return index(stageId) * 47;
+  const from = PIPELINE.wires.find((w) => w.to.stage === stageId && w.to.port === port)?.from;
+  return from === undefined ? undefined : pictureOf(from.stage, from.port);
+}
+
+/** `runAt(frame)` with a new preview on every slot the run reached. */
 function withPreviews(run: EffectRun, scratch: OffscreenCanvas, frame: number): EffectRun {
-  const stages = Object.fromEntries(PIPELINE.stages.flatMap((stage, i): [string, EffectStageRun][] => {
+  const stages = Object.fromEntries(PIPELINE.stages.flatMap((stage): [string, EffectStageRun][] => {
     const ran = run.stages[stage.id];
     if (ran === undefined) return [];
-    const previews = Object.fromEntries((stage.outputs ?? []).map((p): [string, ImageBitmap] => [p.id, thumbnail(scratch, i * 47, frame / 60)]));
+    const previews = Object.fromEntries(shownPorts(stage).flatMap((p): [string, ImageBitmap][] => {
+      const hue = pictureOf(stage.id, p.id);
+      return hue === undefined ? [] : [[p.id, thumbnail(scratch, hue, frame / 60)]];
+    }));
     return [[stage.id, { ...ran, previews }]];
   }));
   return { stages };

@@ -9,7 +9,7 @@ import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Nod
 import type { ImportResult } from '../document';
 import { Membership, Warnings, graphPage } from '../graphRead';
 import { parseDot, type DotGraph, type DotNodeRef, type DotStmt, type DotSubgraph, type DotValue } from './parse';
-import { dashOf, dotColor, labelLines, markerOf, outlineOf, stylesOf } from './values';
+import { dashOf, dotColor, labelLines, markerOf, OUTLINE_ATTR, outlineOf, stylesOf } from './values';
 
 type Attrs = Map<string, DotValue>;
 interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs; edge: Attrs; cluster: string | null }
@@ -19,7 +19,7 @@ const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', Read
   root: new Set(['rankdir', 'label', 'bb']),
   cluster: new Set(['label', 'style', 'color', 'fillcolor', 'bgcolor', 'pencolor', 'fontcolor']),
   plain: new Set(),
-  node: new Set(['label', 'shape', 'style', 'color', 'fillcolor', 'fontcolor', 'penwidth', 'width', 'height', 'pos']),
+  node: new Set([OUTLINE_ATTR, 'label', 'shape', 'style', 'color', 'fillcolor', 'fontcolor', 'penwidth', 'width', 'height', 'pos']),
   edge: new Set(['label', 'color', 'fontcolor', 'penwidth', 'style', 'dir', 'arrowhead', 'arrowtail', 'tailport', 'headport']),
 };
 
@@ -118,7 +118,7 @@ function nodeColors(attrs: Attrs, styles: readonly string[]): Partial<NodeStyle>
 function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
   const styles = stylesOf(str(attrs, 'style'));
   const shape = str(attrs, 'shape') ?? 'ellipse';
-  let outline = outlineOf(shape, styles);
+  let outline = str(attrs, OUTLINE_ATTR) ?? outlineOf(shape, styles);
   if (outline === null) {
     r.warnings.list('DOT shapes read as rectangles', shape);
     outline = 'rect';

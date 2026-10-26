@@ -1,4 +1,5 @@
 import type { CSSProperties, KeyboardEvent, ReactElement } from 'react';
+import type { RunAlign } from '@weasel-js/geom';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import type { SwatchGridOption } from './SwatchGrid';
 import s from './SwatchGrid.module.css';
@@ -28,14 +29,33 @@ export function useSwatchApply(onChange: (value: string | null) => void, onAltCh
   };
 }
 
-/** Where an arrow, Home or End moves focus from swatch `i` of `count`, `columns` to a row; -1 for any other key. */
-export function nextSwatch(key: string, i: number, count: number, columns: number): number {
+/** How far a last row shorter than `columns` sits from the start, in half-columns, for `count` swatches. */
+export function rowLead(count: number, columns: number, align: RunAlign): number {
+  const short = count % columns;
+  if (short === 0 || align === 'start') return 0;
+  return align === 'end' ? 2 * (columns - short) : columns - short;
+}
+
+/** Where an arrow, Home or End moves focus from swatch `i` of `count`, `columns` to a row, the last row shifted
+ *  `lead` half-columns along; -1 for any other key. Up and down move to the swatch over or under this one. */
+export function nextSwatch(key: string, i: number, count: number, columns: number, lead = 0): number {
   const last = count - 1;
+  const lastStart = count - (count % columns || columns);
   switch (key) {
     case 'ArrowLeft': return Math.max(0, i - 1);
     case 'ArrowRight': return Math.min(last, i + 1);
-    case 'ArrowUp': return i - columns >= 0 ? i - columns : i;
-    case 'ArrowDown': return i + columns <= last ? i + columns : i;
+    case 'ArrowUp': {
+      if (i < columns) return i;
+      return i < lastStart ? i - columns : lastStart - columns + Math.floor((lead + 2 * (i - lastStart)) / 2);
+    }
+    case 'ArrowDown': {
+      if (i + columns < lastStart) return i + columns;
+      if (i >= lastStart) return i;
+      // A swatch straddling two columns sits under the left one; under this one is it, or else the one ending halfway.
+      const under = Math.ceil((2 * (i % columns) - lead) / 2);
+      if (under >= 0 && lastStart + under <= last) return lastStart + under;
+      return lead % 2 === 1 && under - 1 >= 0 && lastStart + under - 1 <= last ? lastStart + under - 1 : i;
+    }
     case 'Home': return 0;
     case 'End': return last;
     default: return -1;
@@ -46,7 +66,7 @@ export function nextSwatch(key: string, i: number, count: number, columns: numbe
 export const swatchesIn = (root: Element | null): HTMLElement[] => [...(root?.querySelectorAll<HTMLElement>('[data-swatch]') ?? [])];
 
 /** The key handler of swatch `i`: arrows rove focus among `swatches()`, Shift+Enter applies to the alternate target. */
-export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], columns: number, apply: SwatchApply, swatches: () => HTMLElement[]) {
+export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], columns: number, apply: SwatchApply, swatches: () => HTMLElement[], lead = 0) {
   return (e: KeyboardEvent<HTMLButtonElement>): void => {
     if (e.key === 'Enter') {
       if (e.shiftKey && apply.onAltChange) {
@@ -55,7 +75,7 @@ export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], c
       }
       return;
     }
-    const next = nextSwatch(e.key, i, options.length, columns);
+    const next = nextSwatch(e.key, i, options.length, columns, lead);
     if (next < 0) return;
     e.preventDefault();
     if (next !== i) swatches()[next]?.focus();

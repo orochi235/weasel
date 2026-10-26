@@ -42,6 +42,7 @@ wrapper is stored.
 | `decimal({ places })` | `1,234.57` | `1,234.57` |
 | `integer()` | `42` | `42` |
 | `compact()` | `2.00M` | `2 million` |
+| `scientific({ digits, engineering, form })` | `1.23 × 10⁶`; `engineering` `12.3 × 10³`; `form: 'e'` `1.23e6` | `1.23 times 10 to the power of 6` |
 | `percent()` | `25%` | `25 percent` |
 | `fraction({ maxDenominator, mixed, form })` | `1/12`, `1 1/2`; `form: 'diagonal'` `¹⁄₁₂`; `form: 'stacked'` drawn as MathML | `1 over 12`, `1 and 1 over 2` |
 | `ratio()` | `1:12` | `1 to 12` |

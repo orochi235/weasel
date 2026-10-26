@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
 import { decimal, fraction } from '@weasel-js/quantity';
 import { BandEditor } from './BandEditor';
@@ -186,4 +186,49 @@ test('a fraction label sits three pixels clear of its notch', () => {
   for (const tick of ticks) {
     expect(tick.getBoundingClientRect().top - tick.firstElementChild!.getBoundingClientRect().bottom).toBeCloseTo(3, 0);
   }
+});
+
+describe('BandEditor mid-drag', () => {
+  const THREE = [{ from: 0, data: 'a' }, { from: 40, data: 'b' }, { from: 70, data: 'c' }];
+
+  function dragging(start: 'seam' | 'band') {
+    const view = render(
+      <div style={{ width: 300 }}>
+        <BandEditor value={THREE} min={0} max={100} scale="linear" onChange={() => {}} />
+      </div>,
+    );
+    const target = view.container.querySelector<HTMLElement>(start === 'seam' ? '[data-seam-index="0"]' : '[data-band-index="1"]')!;
+    const box = target.getBoundingClientRect();
+    const y = box.top + box.height / 2;
+    fireEvent.pointerDown(target, { clientX: box.left + box.width / 2, clientY: y, button: 0, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: box.left + box.width / 2 + 20, clientY: y, pointerId: 1 });
+    return { ...view, y };
+  }
+
+  function hitAt(band: Element, y: number): Element {
+    const box = band.getBoundingClientRect();
+    return document.elementFromPoint(box.left + box.width / 2, y)!;
+  }
+
+  // The pointer runs ahead of a dragged seam whenever the seam lags a frame, clamps, or snaps; a band it lands
+  // on took its hover fill for that frame, which read as the bands flickering.
+  test('no band answers the pointer while a seam is dragged, and every band does again after', () => {
+    const { container, y } = dragging('seam');
+    const bands = [...container.querySelectorAll('[data-band-index]')];
+    for (const band of bands) {
+      const hit = hitAt(band, y);
+      expect(hit.closest('[data-band-index]')).toBeNull();
+      expect(getComputedStyle(hit).cursor).toBe('ew-resize');
+    }
+    fireEvent.pointerUp(document, { pointerId: 1 });
+    for (const band of bands) expect(hitAt(band, y).closest('[data-band-index]')).toBe(band);
+  });
+
+  test('a dragged band body keeps the grabbing cursor wherever the pointer goes', () => {
+    const { container, y } = dragging('band');
+    const hit = hitAt(container.querySelector('[data-band-index="2"]')!, y);
+    expect(hit.closest('[data-band-index]')).toBeNull();
+    expect(getComputedStyle(hit).cursor).toBe('grabbing');
+    fireEvent.pointerUp(document, { pointerId: 1 });
+  });
 });

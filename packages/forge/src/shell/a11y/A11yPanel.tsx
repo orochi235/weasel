@@ -1,3 +1,4 @@
+import './A11yPanel.css';
 import {
   Button,
   type LabContribution,
@@ -9,6 +10,7 @@ import num from '@weasel-js/theme/numeric.module.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { A11yFinding, A11yNode } from '../../protocol/messages';
 import { useTrialFrame } from '../trialFrames';
+import { plainReason } from './reasons';
 
 /** Called with the elements an item names while the pointer or focus is on it, and with null when it leaves. */
 type Point = (nodes: readonly A11yNode[] | null) => void;
@@ -32,11 +34,15 @@ function Finding({ finding, point }: { finding: A11yFinding; point: Point }) {
         {finding.impact ? <span className="fg-a11y__impact" data-impact={finding.impact}>{finding.impact}</span> : null}
       </p>
       <ul className="fg-a11y__nodes">
-        {finding.nodes.map((node) => (
-          <li key={`${finding.id}:${node.target.join(',')}`} {...pointAt(point, [node])}>
-            <code>{node.target.join(' ')}</code>
-          </li>
-        ))}
+        {finding.nodes.map((node) => {
+          const reason = plainReason(node.reason);
+          return (
+            <li key={`${finding.id}:${node.target.join(',')}`} {...pointAt(point, [node])}>
+              <code>{node.target.join(' ')}</code>
+              {reason ? <p className="fg-a11y__reason">{reason}</p> : null}
+            </li>
+          );
+        })}
       </ul>
     </li>
   );

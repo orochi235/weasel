@@ -37,7 +37,7 @@ import '@weasel-js/core/style.css';
 
 `useScene` holds the scene: a tree of leaf and container nodes, each carrying your data and a pose. Every change to it is an **op**, which is what makes it undoable. `<SceneCanvas>` renders a scene and routes input to it.
 
-A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from input, and it routes any bindings you add, but it has no tools, no standard actions, no keys and no selection chrome. Behavior comes from presets named in `features`, each independent of the others:
+A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from input, routes any bindings you add, and undoes and redoes whatever changed its scene (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z), but it has no tools, no other standard actions and no selection chrome. Behavior comes from presets named in `features`, each independent of the others:
 
 | Preset | Turns on |
 |---|---|
@@ -49,7 +49,7 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 | `resize` | resize handles |
 | `rotate` | the rotation handle |
 | `transform` | `resize` and `rotate` |
-| `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `edit` | delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
 | `arrange` | align, distribute, reorder, flip |
 | `paths` | pathfinder operations, path editing and anchor editing |
 | `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
@@ -101,7 +101,7 @@ Lower-level surfaces take a narrow **adapter** instead of a scene — a few meth
 
 An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `viewport.dragPan` — paired with the input that triggers it. `<ActionsProvider>` holds the registered descriptors, and the gesture dispatcher matches live input against each one's `defaultBinding` and the active tool's bindings. Keystrokes and pointer gestures take the same path, so a keyboard shortcut and a drag are two bindings on one action rather than two mechanisms.
 
-`<SceneCanvas>` mounts a provider when none is above it and registers the kit-standard actions its `features` presets name — under `draw`, all of them: escape, select-all, delete, duplicate, group and ungroup, undo and redo, flip, nudge, reorder, align, distribute, the pathfinder booleans, path-anchor editing, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `FEATURE_ACTION_IDS` lists which preset registers which, and `COMPOSITE_FEATURES` what `pick`, `transform` and `draw` abbreviate. `insert` comes with the shape tools that bind it. Each name stands for an exported `FeaturePreset` (`selectPreset`, `editPreset`, …), and `features` also takes a package's preset object; `<LeanSceneCanvas>` takes objects only, so an app's bundle holds only the presets it imports.
+`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets name — under `draw`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, path-anchor editing, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers, `FEATURE_ACTION_IDS` which preset registers which, and `COMPOSITE_FEATURES` what `pick`, `transform` and `draw` abbreviate. `insert` comes with the shape tools that bind it. Each name stands for an exported `FeaturePreset` (`selectPreset`, `editPreset`, …), and `features` also takes a package's preset object; `<LeanSceneCanvas>` takes objects only, so an app's bundle holds only the presets it imports.
 
 ### Tuning an action
 

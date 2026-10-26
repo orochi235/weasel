@@ -1,5 +1,7 @@
 import { Fragment, type DragEvent, type ReactNode } from 'react';
-import { toolSetHas, type Tool, type ToolSet, type ToolsApi } from '@weasel-js/core';
+import {
+  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolSetHas, type Tool, type ToolSet, type ToolsApi,
+} from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
@@ -8,45 +10,9 @@ import s from './ToolPalette.module.css';
 import { formatShortcut, type ShortcutInput } from '@weasel-js/gestures';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
+import { groupTools } from './order';
 import { slotsOf, stackIndex, type PaletteSlot } from './stacks';
 import { ToolStack, type StackCycleModifier, type StackMember } from './ToolStack';
-
-const DEFAULT_GROUP_ORDER = ['select', 'shape', 'draw', 'type', 'view'] as const;
-const MISC = 'misc';
-
-function partitionByGroup(list: Tool[]): Map<string, Tool[]> {
-  const groups = new Map<string, Tool[]>();
-  for (const tool of list) {
-    const g = tool.presentation?.group ?? MISC;
-    const bucket = groups.get(g) ?? [];
-    bucket.push(tool);
-    groups.set(g, bucket);
-  }
-  return groups;
-}
-
-function orderedGroupKeys(
-  groups: Map<string, Tool[]>,
-  groupOrder: readonly string[],
-): string[] {
-  const seen = new Set(groups.keys());
-  const ordered: string[] = [];
-  for (const known of groupOrder) {
-    if (seen.has(known)) {
-      ordered.push(known);
-      seen.delete(known);
-    }
-  }
-  // Unknown groups in insertion order (Map preserves it), misc last.
-  for (const key of groups.keys()) {
-    if (seen.has(key) && key !== MISC) {
-      ordered.push(key);
-      seen.delete(key);
-    }
-  }
-  if (seen.has(MISC)) ordered.push(MISC);
-  return ordered;
-}
 
 function toolGlyph(tool: Tool): ReactNode {
   return <Icon name={tool.presentation?.icon ?? icon('core:unknown')} />;
@@ -72,9 +38,14 @@ export interface ToolPaletteProps {
   /**
    * Presentation-group display order. Groups not listed keep their registry
    * insertion order after the listed ones; `misc` always renders last.
-   * Defaults to `['select', 'shape', 'draw', 'type', 'view']`.
+   * Defaults to core's `TOOL_GROUP_ORDER`: selection, navigation, then the
+   * tools that make things.
    */
   groupOrder?: readonly string[];
+  /** Tool display order within each group, by id. Tools not listed keep their
+   *  registry insertion order after the listed ones. Defaults to core's
+   *  `BUILTIN_TOOL_IDS`. */
+  toolOrder?: readonly string[];
   /** Which of the registered tools this palette shows: a tool set, or a test of
    *  each tool; all of them when omitted. Two palettes over one `tools` with
    *  complementary filters split a canvas's tools between two toolbars. */
@@ -113,21 +84,20 @@ const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.t
 export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
-    groupOrder = DEFAULT_GROUP_ORDER, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
+    groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
     columns, onToolDragStart,
   } = props;
   const shows = include === undefined ? () => true
     : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
   const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && shows(t));
-  const groups = partitionByGroup(list);
-  const groupKeys = orderedGroupKeys(groups, groupOrder);
   const horizontal = !columns && orientation === 'horizontal';
   const cls = [s.palette, horizontal && s.horizontal, className].filter(Boolean).join(' ');
 
   const shown = new Map(list.map((t) => [t.id, t]));
   const stackOf = stackIndex(stacks);
   const placed = new Set<readonly string[]>();
-  const slotGroups = groupKeys.map((key) => ({ key, slots: slotsOf(groups.get(key)!, shown, stackOf, placed) }));
+  const slotGroups = groupTools(list, groupOrder, toolOrder)
+    .map(({ key, tools: group }) => ({ key, slots: slotsOf(group, shown, stackOf, placed) }));
   const modeName = modeRegistry ? modeRegistry.current().id : undefined;
   const describe = (tool: Tool): StackMember => {
     const label = tool.presentation?.label ?? tool.id;

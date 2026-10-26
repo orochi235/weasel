@@ -74,7 +74,7 @@ describe('marker registry', () => {
     const ids = listMarkers().map((e) => e.id);
     expect(ids).toEqual(expect.arrayContaining([
       'arrow', 'arrow-open', 'arrow-concave', 'triangle-hollow',
-      'diamond', 'diamond-hollow', 'circle', 'square', 'bar',
+      'diamond', 'diamond-hollow', 'circle', 'square', 'bar', 'dot',
       'crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many',
     ]));
   });

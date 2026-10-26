@@ -44,6 +44,7 @@ export {
   type DecimalDisplay,
   type IntegerDisplay,
 } from './kinds/plain';
+export { scientific, scientificKind, type ScientificDisplay } from './kinds/scientific';
 export {
   CONSTANTS,
   fraction,

@@ -9,7 +9,7 @@
 
 .stroke {
   fill: none;
-  stroke-width: var(--rp-track-height, 24px);
+  stroke-width: var(--rp-band);
 }
 
 .dim {

@@ -2,7 +2,7 @@
 import type { DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../graphWrite';
-import { arrowName, quoteLabel, shapeOf } from './values';
+import { arrowName, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
 
 const RANKDIR: Readonly<Record<LayoutDirection, string | null>> = { down: null, up: 'BT', right: 'LR', left: 'RL' };
 const KEYWORDS = new Set(['node', 'edge', 'graph', 'digraph', 'subgraph', 'strict']);
@@ -24,7 +24,7 @@ const color = (key: string, value: string | undefined) => (value === undefined ?
 const num = (n: number) => String(Math.round(n * 10000) / 10000);
 
 function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
-  const { shape, rounded, missing } = shapeOf(node.outline);
+  const { shape, rounded, missing, marked } = shapeOf(node.outline);
   if (missing) out.warnings.add('DOT has no shape for some outlines; they were written as boxes.');
   const own = changed(nodeStyleIn(out, node), nodeStyleIn(out));
   const styles = [rounded ? 'rounded' : null, 'filled', own.dash !== undefined ? 'dashed' : null].filter((s) => s !== null);
@@ -33,6 +33,7 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
     `label=${quoteLabel(nodeLines(node, out.warnings, 'DOT'))}`,
     shape !== 'box' ? `shape=${shape}` : null,
     styles.length > 1 ? `style="${styles.join(',')}"` : null,
+    marked ? `${OUTLINE_ATTR}=${dotId(node.outline as string)}` : null,
     color('fillcolor', own.fill), color('color', own.stroke), color('fontcolor', own.text),
     own.strokeWidth !== undefined ? `penwidth=${own.strokeWidth}` : null,
     placed ? `pos="${num(node.at!.x + node.width! / 2)},${num(page - node.at!.y - node.height! / 2)}"` : null,

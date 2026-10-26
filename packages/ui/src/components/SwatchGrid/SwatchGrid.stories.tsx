@@ -22,7 +22,7 @@ const PALETTE: SwatchGridOption[] = [
 /** Click applies to the first target; shift-click, right-click or
  *  Shift+Enter to the second. */
 export const Default: Story = {
-  args: { options: PALETTE, columns: 6, 'aria-label': 'Palette' },
+  args: { options: PALETTE, columns: 8, 'aria-label': 'Palette' },
   render: (args) => {
     const [fill, setFill] = useState<string | null>('#4a6fd4ff');
     const [stroke, setStroke] = useState<string | null>('#1a1a1aff');

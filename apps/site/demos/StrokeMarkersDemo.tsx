@@ -61,7 +61,7 @@ const NODES = KEYS.flatMap((key, i) => {
 }).concat([
   row('row-all-three', 40, BELOW, {
     paint: INK, width: 3,
-    markerStart: 'circle', markerMid: 'diamond', markerEnd: 'arrow',
+    markerStart: 'circle', markerMid: 'dot', markerEnd: 'arrow',
   }),
   label('label-all-three', 40, BELOW, 'start / mid / end'),
   // A thick translucent stroke, where the inset is plainly visible: without

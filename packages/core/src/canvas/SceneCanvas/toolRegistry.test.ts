@@ -24,10 +24,13 @@ const NONE = presets();
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('resolveToolRegistry', () => {
-  it('mounts every shape kind the table lists, in table order', () => {
+  const inPaletteOrder = BUILTIN_TOOL_IDS.filter((id) => (KIT_SHAPE_KINDS as readonly string[]).includes(id));
+
+  it('mounts every shape kind the table lists, in palette order', () => {
     expect(KIT_SHAPE_KINDS).toContain('blob');
+    expect(inPaletteOrder).toHaveLength(KIT_SHAPE_KINDS.length);
     const registry = resolveToolRegistry({ builtins, defaultTools: KIT_SHAPE_KINDS, enabled: NONE, patch: null });
-    expect(Object.keys(registry)).toEqual([...KIT_SHAPE_KINDS]);
+    expect(Object.keys(registry)).toEqual(inPaletteOrder);
     for (const id of KIT_SHAPE_KINDS) expect(registry[id]).toBe(builtins[id]);
   });
 
@@ -35,7 +38,7 @@ describe('resolveToolRegistry', () => {
     const registry = resolveToolRegistry({
       builtins, enabled: NONE, patch: Object.fromEntries(KIT_SHAPE_KINDS.map((id) => [id, true as const])),
     });
-    expect(Object.keys(registry)).toEqual([...KIT_SHAPE_KINDS]);
+    expect(Object.keys(registry)).toEqual(inPaletteOrder);
   });
 
   it('mounts the tools a set names, and a set less some of them', () => {
@@ -72,7 +75,7 @@ describe('resolveToolRegistry', () => {
     expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: { own: false } }))).toEqual(['select', 'hand']);
   });
 
-  it('orders built-ins select, hand, then the shape kinds, whatever order they were asked in', () => {
+  it('orders built-ins in palette order, whatever order they were asked in', () => {
     const asked = [...BUILTIN_TOOL_IDS].reverse();
     const registry = resolveToolRegistry({ builtins, defaultTools: asked, enabled: NONE, patch: null });
     expect(Object.keys(registry)).toEqual([...BUILTIN_TOOL_IDS]);

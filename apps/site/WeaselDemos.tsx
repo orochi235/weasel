@@ -6,7 +6,7 @@ import { PageBoundary } from './PageBoundary';
 import { TAGLINE } from './FrontPage/tagline';
 import { VersionPill } from './FrontPage/VersionPill';
 import { Wordmark } from './FrontPage/Wordmark';
-import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
+import { DEMOS_ID, FEATURES_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
 import { isPackagePage } from './Packages/catalog';
 import { SiteNav } from './SiteNav';
 import { DemoFrame } from './DemoFrame';
@@ -20,6 +20,7 @@ const PackagePages = lazy(() => import('./Packages/Packages'));
 const WhatsNew = lazy(() => import('./WhatsNew').then((m) => ({ default: m.WhatsNew })));
 const Releases = lazy(() => import('./Releases').then((m) => ({ default: m.Releases })));
 const GetStarted = lazy(() => import('./FrontPage/GetStarted').then((m) => ({ default: m.GetStarted })));
+const Features = lazy(() => import('./Features/Features').then((m) => ({ default: m.Features })));
 // A development aid only: production carries neither the toggle nor the panel.
 const DemoDevtools = import.meta.env.DEV ? lazy(() => import('./DemoDevtools')) : null;
 
@@ -128,6 +129,7 @@ export function WeaselDemos() {
           ) : null}
           <Suspense fallback={null}>
             {!active && activeId === GET_STARTED_ID ? <GetStarted /> : null}
+            {!active && activeId === FEATURES_ID ? <Features /> : null}
             {!active && activeId === RELEASES_ID ? <Releases /> : null}
             {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={open} /> : null}
             {!active && isPackagePage(activeId) ? <PackagePages id={activeId} /> : null}
