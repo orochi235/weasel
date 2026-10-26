@@ -4,7 +4,7 @@ import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar, type MenuBarProps } from '@weasel-js/ui/components/MenuBar';
 import s from './MenuBar.stories.module.css';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta<typeof MenuBar> = {
   title: 'ui/MenuBar',

@@ -14,7 +14,7 @@ import {
 import { useState } from 'react';
 import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import s from './MeasureReadout.stories.module.css';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type Pt = { x: number; y: number };

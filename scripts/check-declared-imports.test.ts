@@ -18,4 +18,9 @@ describe('isShipped', () => {
     expect(isShipped('packages/renderer/src/testing/glRecorder.ts', own, manifest)).toBe(true);
     expect(isShipped('packages/renderer/src/testing/other.ts', own, manifest)).toBe(false);
   });
+
+  it("does not ship a component's lab, which only its stories reach, but ships labkit's own lab", () => {
+    expect(isShipped('packages/ui/src/components/Along/lab/labActions.tsx', 'packages/ui', {})).toBe(false);
+    expect(isShipped('packages/labkit/src/lab/Lab.tsx', 'packages/labkit', {})).toBe(true);
+  });
 });

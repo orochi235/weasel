@@ -1,17 +1,13 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { type Action, ActionsProvider, useAction } from '@weasel-js/core';
+import { type Action, ActionsProvider } from '@weasel-js/core';
 import { type PrefLeaf, pref } from '@weasel-js/prefs';
+import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlRow } from './ControlRow';
 
 afterEach(cleanup);
-
-function Register({ action }: { action: Action }) {
-  useAction(action);
-  return null;
-}
 
 const act = (id: string, label: string): Action => ({
   id,
@@ -24,8 +20,8 @@ function row(leaf: PrefLeaf, config: Record<string, unknown> = {}) {
   const resolved = resolveConfigSchema(f.schema({}), []);
   return render(
     <ActionsProvider>
-      <Register action={act('front', 'Bring to front')} />
-      <Register action={act('back', 'Send to back')} />
+      <RegisterAction action={act('front', 'Bring to front')} />
+      <RegisterAction action={act('back', 'Send to back')} />
       <ControlRow
         path="x"
         leaf={leaf}

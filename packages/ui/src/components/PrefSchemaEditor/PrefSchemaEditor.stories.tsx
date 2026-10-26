@@ -5,7 +5,7 @@ import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import s from './PrefSchemaEditor.stories.module.css';
 import { icon } from '../../icons.gen';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta<typeof PrefSchemaEditor> = {
   title: 'Primitives/PrefSchemaEditor',

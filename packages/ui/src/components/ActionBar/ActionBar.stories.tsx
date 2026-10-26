@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { icon } from '../../icons.gen';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 function makeAction(opts: {
   id: string;

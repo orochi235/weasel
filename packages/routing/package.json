@@ -21,6 +21,10 @@
       "import": "./dist/internal.js",
       "types": "./dist/internal.d.ts"
     },
+    "./testing/registerAction": {
+      "import": "./dist/testing/registerAction.js",
+      "types": "./dist/testing/registerAction.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {

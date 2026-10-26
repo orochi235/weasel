@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { CommandBar } from '../CommandBar';
 import { drawPrefs } from '../prefs';
@@ -37,15 +38,10 @@ const ACTIONS = [
   action('bringToFront', 'Bring to front', 'reorder'),
 ];
 
-function Register({ a }: { a: Action }) {
-  useAction(a);
-  return null;
-}
-
 function App() {
   return (
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} a={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <div data-testid="strip">
         <CommandBar />
         <StripDock />

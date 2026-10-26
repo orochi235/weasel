@@ -3,7 +3,7 @@ import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { IconRef } from '@weasel-js/icons';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { icon } from '../../../icons.gen';
-import { RegisterActions } from '../../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 /** The actions a lab's bars are built from, in the order a bar of `n` takes them. */
 export const LAB_ACTIONS: readonly { key: string; name: string; glyph: IconRef }[] = [

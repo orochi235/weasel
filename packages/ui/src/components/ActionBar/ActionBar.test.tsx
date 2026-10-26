@@ -18,7 +18,7 @@ import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 import { renderWithIcons } from '../../testing/withIcons';
 import barStyles from '../Bar/Bar.module.css';
-import { RegisterAction, RegisterActions } from '../../testing/registerAction';
+import { RegisterAction, RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 /**
  * Test harness: registers a set of `Action` descriptors on mount via

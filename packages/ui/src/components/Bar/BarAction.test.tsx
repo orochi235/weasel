@@ -7,7 +7,7 @@ import {
 import type { PrefAction } from '@weasel-js/prefs';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { BarAction, BarActionButton } from './BarAction';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 function Host({ actions, children }: { actions: Action[]; children: React.ReactNode }) {
   return (

@@ -6,7 +6,7 @@ import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { icon } from '../../icons.gen';
 import { renderWithIcons } from '../../testing/withIcons';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
 

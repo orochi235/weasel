@@ -6,7 +6,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { actionLeaf, actionLeafKey } from './editorActions';
 import { PrefSchemaEditor, type PrefSchemaEditorProps } from './PrefSchemaEditor';
 import { renderWithIcons } from '../../testing/withIcons';
-import { RegisterAction } from '../../testing/registerAction';
+import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 
 const START: PrefGroup = {
   name: 'Tools',

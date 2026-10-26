@@ -14,7 +14,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import { MeasureReadout } from './MeasureReadout';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 type AnyScene = Scene<unknown, string, unknown>;
 

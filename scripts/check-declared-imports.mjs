@@ -17,7 +17,7 @@ import { SOURCE, importSpecifiers, isBare, packageOf } from './lib/imports.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
 
-const NOT_SHIPPED = /(\.(test|stories|fixture|bench)\.|\.d\.ts$|\/__tests__\/|\/testing\/|\/test\/|\/test-utils\/|\/fixtures\/|test-setup\.)/;
+const NOT_SHIPPED = /(\.(test|stories|fixture|bench)\.|\.d\.ts$|\/__tests__\/|\/testing\/|\/test\/|\/test-utils\/|\/fixtures\/|test-setup\.|\/components\/[^/]+\/lab\/)/;
 // Helpers only test files import, whose names do not say so. Each must exist.
 const TEST_HELPERS = [
   'packages/core/src/interactions/actions/defaults/paintActionTestUtils.ts',
