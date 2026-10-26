@@ -698,7 +698,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'effect-chart-previews',
     title: 'Effect chart, previews',
     package: 'diagram',
-    description: "A run that carries a picture for each output. showPreviews keeps a slot per output on each stage, sized by previewSize, from the first layout, and a run fills it with an ImageBitmap: here a small generated canvas per output, drawn fresh every frame and handed over with transferToImageBitmap. A bitmap handed back unchanged is not uploaded again; one a new run replaces has its texture freed.",
+    description: "A run that carries a picture for each output. showPreviews keeps a slot per output on each stage, and Out, which has none, gets one for what reaches its input, sized by previewSize, from the first layout, and a run fills it with an ImageBitmap: here a small generated canvas per output, drawn fresh every frame and handed over with transferToImageBitmap. A bitmap handed back unchanged is not uploaded again; one a new run replaces has its texture freed.",
     hint: 'When the quality check skips the blur, its slot goes back to an empty frame and fades with the stage.',
     load: () => import('./demos/EffectChartDemo').then((m) => m.EffectChartPreviewDemo),
     path: 'apps/site/demos/EffectChartDemo.tsx',
