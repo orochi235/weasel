@@ -21,6 +21,22 @@ describe('aimOf3d', () => {
     expect(Math.min(...xs)).toBeCloseTo(-8.2843, 3); expect(Math.max(...xs)).toBeCloseTo(8.2843, 3);
     expect(Math.min(...ys)).toBeCloseTo(-4.1421, 3); expect(Math.max(...ys)).toBeCloseTo(4.1421, 3);
   });
+  it('outlines the part of z = 0 it sees when the plane runs off past its far plane or its horizon', () => {
+    // Grazing the plane at about 10 degrees, so the pane's far side looks past it.
+    const grazing: Viewport3d = { ...VP, camera: createCamera({ yaw: 1.4, far: 60 }) };
+    const out = aimOf3d(grazing, 'p').outlineIn(FLAT)!;
+    expect(out.length).toBeGreaterThanOrEqual(3);
+    // The camera's target, the origin, is in view, so the outline holds it.
+    let winding = 0;
+    out.forEach((a, i) => {
+      const b = out[(i + 1) % out.length]!;
+      winding += Math.atan2(a.x * b.y - a.y * b.x, a.x * b.x + a.y * b.y);
+    });
+    expect(Math.abs(winding)).toBeCloseTo(2 * Math.PI, 6);
+    // Nothing past the far plane: every point within `far` of the eye.
+    const eye = aimOf3d(grazing, 'p').extent.eye;
+    for (const p of out) expect(Math.hypot(p.x - eye.x, p.y - eye.y, eye.z)).toBeLessThanOrEqual(60 / Math.cos(Math.PI / 4) + 1e-6);
+  });
   it('answers null in a 2D space behind it', () => {
     const away = { ...VP, camera: createCamera({ target: { x: 0, y: 0, z: -40 } }) };
     expect(aimOf3d(away, 'p').outlineIn(FLAT)).toBeNull();

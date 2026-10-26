@@ -58,6 +58,34 @@ function groundHit(viewport: Viewport3d, point: { x: number; y: number }): Vec3 
   return ray && t !== null ? pointOnRay(ray, t) : null;
 }
 
+/**
+ * Where the frustum meets z = 0, its edges' crossings wound about their middle: the stretch of the plane the camera
+ * sees, cut off at its far plane, so a view with the horizon in it still outlines the ground it shows. `null` when
+ * the frustum meets the plane in less than an area.
+ */
+function footprint(f: Frustum3d): Vec3[] | null {
+  const edges: [Vec3, Vec3][] = [];
+  for (let i = 0; i < 4; i++) {
+    const j = (i + 1) % 4;
+    edges.push([f.near[i]!, f.near[j]!], [f.far[i]!, f.far[j]!], [f.near[i]!, f.far[i]!]);
+  }
+  const hits: Vec3[] = [];
+  for (const [a, b] of edges) {
+    if ((a.z > 0 && b.z > 0) || (a.z < 0 && b.z < 0) || a.z === b.z) continue;
+    const t = a.z / (a.z - b.z);
+    hits.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: 0 });
+  }
+  if (hits.length < 3) return null;
+  const cx = hits.reduce((s, p) => s + p.x, 0) / hits.length;
+  const cy = hits.reduce((s, p) => s + p.y, 0) / hits.length;
+  const around = hits
+    .map((p) => ({ p, a: Math.atan2(p.y - cy, p.x - cx) }))
+    .sort((u, v) => u.a - v.a)
+    .map((u) => u.p)
+    .filter((p, i, all) => i === 0 || Math.hypot(p.x - all[i - 1]!.x, p.y - all[i - 1]!.y) > 1e-9);
+  return around.length >= 3 ? around : null;
+}
+
 function toZ(p: AimPoint): Vec3 {
   return { x: p.x, y: p.y, z: p.z ?? 0 };
 }
@@ -82,13 +110,8 @@ export function aimOf3d(viewport: Viewport3d, viewId: string | null): Aim3d {
     viewport,
     outlineIn(space) {
       if (space.kind === '3d') return projectAll(space, extent.far);
-      const onGround: Vec3[] = [];
-      for (const c of paneCorners(viewport)) {
-        const hit = groundHit(viewport, c);
-        if (!hit) return null;
-        onGround.push(hit);
-      }
-      return projectAll(space, onGround);
+      const onGround = footprint(extent);
+      return onGround && projectAll(space, onGround);
     },
     pannedIn(space, from, to) {
       const a = space.unproject(from);
