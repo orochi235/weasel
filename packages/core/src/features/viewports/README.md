@@ -88,10 +88,10 @@ covering more than three quarters of its frame grabs only that band about its
 rim, so a zoomed-out view's aim drawn across its whole frame leaves the frame's
 presses to the frame. The drag is the `view.marker.drag` action
 (`VIEW_MARKER_DRAG`). That binding comes from an always-on entry the surface
-installs, so `actions={null}` and a `tools` takeover both turn dragging off;
-the marker still paints, and presses fall through to the view's own bindings.
-Passing `createViewMarkerContribution()` in `ambient`, or in a takeover's own
-`useTools` ambient list, turns it back on.
+installs, beside a `tools` takeover too, so only `actions={null}` turns
+dragging off; the marker still paints, and presses fall through to the view's
+own bindings. Passing `createViewMarkerContribution()` in `ambient` turns it
+back on.
 `interactive={false}` turns off one marker, and a by-value source with no
 `setAim` is never draggable.
 

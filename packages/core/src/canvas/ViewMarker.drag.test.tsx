@@ -195,20 +195,20 @@ describe('a surface that installs no marker drag', () => {
     expect(selection!.get()).toEqual([node]);
   });
 
-  it('lets a press on a marker fall through to the view under a tools takeover', () => {
-    mount({ features: ['draw'] }, { takeover: true });
-    drag([300, 200], [310, 210]);
-    expect(onViewChange).not.toHaveBeenCalled();
-    expect(scene.get(node)!.pose).toMatchObject({ x: 220, y: 100 });
-  });
-
   it('drags the marker again under actions={null} given the entry in ambient', () => {
     mount({ features: ['draw'], actions: null, ambient: [createViewMarkerContribution()] });
     drag([300, 200], [310, 210]);
     expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
   });
 
-  it("drags the marker again under a tools takeover given the entry in the takeover's ambient", () => {
+  it("drags the marker under a tools takeover, whose tool set says nothing of markers", () => {
+    mount({ features: ['draw'] }, { takeover: true });
+    drag([300, 200], [310, 210]);
+    expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
+    expect(scene.get(node)!.pose).toMatchObject({ x: 180, y: 60 });
+  });
+
+  it("drags the marker once under a tools takeover that also lists the entry in its ambient", () => {
     mount({ features: ['draw'] }, { takeover: true, markerDrag: true });
     drag([300, 200], [310, 210]);
     expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
