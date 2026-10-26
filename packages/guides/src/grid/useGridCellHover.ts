@@ -14,7 +14,9 @@ import {
   type PlaneUnits,
   type PlaneValue,
 } from '@weasel-js/core';
-import { pointToGridCell } from './pointToGridCell';
+import { pointToGridCell, type GridCell } from './pointToGridCell';
+import type { GridRegion } from './regions';
+import type { GridScopes } from './scopedPitch';
 
 /** Options for `useGridCellHover`. */
 export interface UseGridCellHoverOptions {
@@ -30,9 +32,14 @@ export interface UseGridCellHoverOptions {
   unitSystem?: PlaneUnits;
   /** Origin the cell grid is anchored to, in world units. Default `(0, 0)`. */
   origin?: { x: number; y: number };
+  /** Read `spacing` in these scopes, as `createGridLayer` does: a cell inside
+   *  one of `regions` is on its scope's lattice and carries that `pitch`. */
+  scopes?: GridScopes;
+  /** The containers declaring scopes, read on every pointermove. */
+  regions?: () => readonly GridRegion[];
   /** Fires when the hovered cell changes (including to/from `null`). Use it
    *  to invalidate your layer renderer. */
-  onChange?: (cell: { col: number; row: number } | null) => void;
+  onChange?: (cell: GridCell | null) => void;
   /** Disable the listeners without unmounting. Default `true`. */
   enabled?: boolean;
 }
@@ -40,25 +47,25 @@ export interface UseGridCellHoverOptions {
 /** Return shape of `useGridCellHover`. */
 export interface UseGridCellHoverReturn {
   /** Current hovered cell, or `null` when the pointer is outside the element. */
-  cell: { col: number; row: number } | null;
+  cell: GridCell | null;
   /** Stable callback that returns the current cell — drop straight into
    *  `createCellHighlightLayer({ getCell })`. */
-  getCell: () => { col: number; row: number } | null;
+  getCell: () => GridCell | null;
 }
 
 function cellsEqual(
-  a: { col: number; row: number } | null,
-  b: { col: number; row: number } | null,
+  a: GridCell | null,
+  b: GridCell | null,
 ): boolean {
   if (a === b) return true;
   if (a === null || b === null) return false;
-  return a.col === b.col && a.row === b.row;
+  return a.col === b.col && a.row === b.row && a.pitch?.x === b.pitch?.x && a.pitch?.y === b.pitch?.y;
 }
 
 /** Track which grid cell the pointer is over; pairs with `createCellHighlightLayer`. */
 export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHoverReturn {
-  const [cell, setCell] = useState<{ col: number; row: number } | null>(null);
-  const cellRef = useRef<{ col: number; row: number } | null>(null);
+  const [cell, setCell] = useState<GridCell | null>(null);
+  const cellRef = useRef<GridCell | null>(null);
   const optsRef = useLatest(opts);
 
   const getCell = useCallback(() => cellRef.current, []);
@@ -69,7 +76,7 @@ export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHove
     const el = opts.ref.current;
     if (!el) return;
 
-    const update = (next: { col: number; row: number } | null) => {
+    const update = (next: GridCell | null) => {
       if (cellsEqual(cellRef.current, next)) return;
       cellRef.current = next;
       setCell(next);
@@ -82,7 +89,8 @@ export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHove
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
       const [wx, wy] = screenToWorld(sx, sy, o.view());
-      update(pointToGridCell({ x: wx, y: wy }, o.spacing, o.unitSystem, o.origin));
+      const scoped = o.scopes ? { scopes: o.scopes, ...(o.regions ? { regions: o.regions() } : {}) } : undefined;
+      update(pointToGridCell({ x: wx, y: wy }, o.spacing, o.unitSystem, o.origin, scoped));
     };
     const onLeave = () => update(null);
 

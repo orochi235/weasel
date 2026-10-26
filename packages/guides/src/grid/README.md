@@ -35,9 +35,16 @@ accents alone and then to nothing.
 **Tagged values require `unitSystem` to be supplied** — passing a tagged
 spacing without one is a configuration error, not a silent fallback.
 
-These layers draw one lattice, read against one `unitSystem`. `gridSnapSource`
-alone reads a container's unit scope (`scopes`, through `scopedGridPitch`);
-drawing a scope's lattice inside its container is still open in `docs/TODO.md`.
+Given `scopes` (a `GridScopes`), every grid reader takes its pitch from the
+unit scope it sits in, through `gridPitch`. The grid layer and
+`useGridCellHover` also take `regions`: the containers declaring a scope, each
+a world outline and its scope chain, nested as the containers are.
+`sceneGridRegions` builds them from a scene. The layer draws each region's
+lattice clipped to its outline and cuts it out of the lattice around it, and a
+hovered cell carries the `pitch` of the lattice it is on, which
+`createCellHighlightLayer` draws it at. Every lattice is world-aligned and runs
+through the same anchor, as `gridSnapSource` snaps to it, so a rotated
+container's lattice does not turn with it.
 
 ## Related
 

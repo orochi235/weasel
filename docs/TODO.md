@@ -560,16 +560,12 @@ Priority tags:
 
 ### Units
 
-- **(P3) The drawn grid ignores a container's unit scope.** Grid snapping reads one
-  (`gridSnapSource({ scopes })`), and so does a node's length field (`SelectionPanel`'s `units`,
-  through `prefLeafInScopes`), but `createGridLayer`, `createCellHighlightLayer`,
-  `useGridCellHover`, and `pointToGridCell` in `packages/guides/src/grid` still draw and hit-test
-  one lattice against one `unitSystem`. Drawing a millimeter lattice inside a millimeter
-  sub-assembly is painting work past the pitch, which `scopedGridPitch` already answers: the
-  layer has no scene to find scoped containers in, the root lattice needs clipping out of each
-  one (an even-odd clip of the view with holes, nested per scope), a rotated container wants its
-  lattice turned with its frame, and a hovered cell has to name the lattice it belongs to. The
-  result needs a human eye on the drawn grid at both zoom extremes.
+- **(P3) A rotated container's grid does not turn with it.** A scoped container draws and snaps
+  on its own scope's lattice (`createGridLayer({ scopes, regions })`, `gridSnapSource({ scopes })`),
+  but every lattice is world-aligned and runs through one anchor, so inside a container rotated
+  30° the cells sit square to the page, not to the container. Turning it means turning both
+  readers together: the layer would draw a region's lattice in the container's frame, and
+  `gridSnapSource` would round in that frame, which `SnapCollect` does not carry today.
 
 ---
 

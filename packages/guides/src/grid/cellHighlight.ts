@@ -12,6 +12,7 @@ import {
   type PlaneUnits,
   type PlaneValue,
 } from '@weasel-js/core';
+import type { GridCell } from './pointToGridCell';
 
 /** Options for `createCellHighlightLayer`. */
 export interface CellHighlightLayerOpts {
@@ -21,8 +22,9 @@ export interface CellHighlightLayerOpts {
   unitSystem?: PlaneUnits;
   /** Origin the cell grid is anchored to, in world units. Defaults to (0,0). */
   origin?: () => { x: number; y: number };
-  /** Cell to highlight, or `null` to skip drawing. */
-  getCell: () => { col: number; row: number } | null;
+  /** Cell to highlight, or `null` to skip drawing. A cell carrying its
+   *  lattice's `pitch` (`useGridCellHover` with `scopes`) is drawn at it. */
+  getCell: () => GridCell | null;
   /** Fill for the highlighted cell. Defaults to a soft green. */
   fill?: CommandFill;
 }
@@ -38,7 +40,7 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
     draw: () => {
       const cell = opts.getCell();
       if (!cell) return [];
-      const spacing = resolveAxes(opts.spacing, opts.unitSystem);
+      const spacing = cell.pitch ?? resolveAxes(opts.spacing, opts.unitSystem);
       const o = opts.origin ? opts.origin() : { x: 0, y: 0 };
       const x = o.x + cell.col * spacing.x;
       const y = o.y + cell.row * spacing.y;
