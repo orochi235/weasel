@@ -50,7 +50,7 @@ function wrapInvoker(invoker: Invoker, params: ActionParams): Invoker {
   const wrapped: Invoker = invoker.timing === 'immediate'
     ? { timing: 'immediate', run: (deps, given) => invoker.run(deps, base(given)) }
     : {
-        timing: 'ongoing',
+        ...invoker,
         start: (ctx, opts) => invoker.start(
           ctx.params ? { ...ctx, params: base(ctx.params) } : ctx,
           { ...opts, params: layered(params, opts?.params) },

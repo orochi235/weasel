@@ -14,6 +14,10 @@ import type { InsertLiveGesture } from './live';
 import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
 
+/** How far, in CSS pixels, a drag travels before it draws a shape: past the wobble of a click, so a
+ *  press that drifts a few pixels draws nothing rather than a shape a few pixels wide. */
+export const INSERT_DRAG_THRESHOLD_PX = 8;
+
 /**
  * Drag-to-insert. The node `kind` is read from `opts.params.kind`.
  *
@@ -38,6 +42,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   requires: ['insert', 'insertLive', 'insertInto', 'canDropInto', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
+    dragThresholdPx: INSERT_DRAG_THRESHOLD_PX,
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const begun = beginInsert(ctx, opts);
       if (!begun) return {};

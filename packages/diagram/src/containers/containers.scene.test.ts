@@ -55,7 +55,7 @@ function drag(scene: Scene, ids: string[], from: Vec2, to: Vec2): OngoingHandle 
     world: p, screen: p, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps,
     drag: moving ? { start: from, current: p, delta: { x: p.x - from.x, y: p.y - from.y } } : undefined,
   }) as unknown as InvocationCtx;
-  const handle = (moveAction.invoker as OngoingInvoker).start(at(from, false), { params: { dragThresholdPx: 0 } }) as OngoingHandle;
+  const handle = (moveAction.invoker as OngoingInvoker).start(at(from, false)) as OngoingHandle;
   handle.onMove!(at(to, true));
   handle.onEnd!(at(to, true), 'commit');
   return handle;

@@ -201,6 +201,26 @@ describe('insertAction integration via gesture dispatcher', () => {
     expect(calls).toHaveLength(0);
   });
 
+  it('draws nothing for a press that wobbles short of INSERT_DRAG_THRESHOLD_PX, and draws from the press once past it', () => {
+    const { dep, calls } = makeInsertDep();
+    const { Harness } = buildHarness(dep);
+    const { getByTestId } = render(<Harness />);
+    const canvas = getByTestId('canvas');
+
+    // Past the 4px drag threshold, short of insert's 8px.
+    act(() => { fire(canvas, 'pointerdown', 50, 50); });
+    act(() => { fire(canvas, 'pointermove', 55, 54); });
+    act(() => { fire(canvas, 'pointerup', 55, 54); });
+    expect(calls).toHaveLength(0);
+
+    act(() => { fire(canvas, 'pointerdown', 50, 50); });
+    act(() => { fire(canvas, 'pointermove', 55, 54); });
+    act(() => { fire(canvas, 'pointermove', 62, 58); });
+    act(() => { fire(canvas, 'pointerup', 62, 58); });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].bounds).toEqual({ x: 50, y: 50, width: 12, height: 8 });
+  });
+
   it('reports live gesture bounds mid-drag, before anything is committed', () => {
     // The case `CanvasHelpers.getGestureBounds()` exists for: the shape being
     // drawn has no scene node yet, so no id-keyed lookup can see it.

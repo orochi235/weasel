@@ -7,10 +7,10 @@ import type { MoveBehavior } from '../../gestures/types';
  *  `selectionMoveBindings` threads them into the move bindings. */
 export interface UseMoveOptions<TPose> {
   behaviors?: MoveBehavior<TPose>[];
-  /** Screen travel, in CSS pixels, before the drag moves anything. Default the
-   *  `gestures.dragPx` kit setting, else `DRAG_THRESHOLD_PX`. The dispatcher opens no drag before that, so a
-   *  smaller value has no effect; a larger one holds the selection in place
-   *  until the pointer has gone that far. */
+  /** Screen travel, in CSS pixels, before the drag moves anything: the move bindings'
+   *  `dragThresholdPx`. Default the `gestures.dragPx` kit setting, where every drag opens, so a
+   *  smaller value has no effect; a larger one holds the selection in place until the pointer has
+   *  gone that far. */
   dragThresholdPx?: number;
   /** History label for the committed move. Unset, a behavior's or a layout
    *  drop's own op label names it, else `'Move'`. */

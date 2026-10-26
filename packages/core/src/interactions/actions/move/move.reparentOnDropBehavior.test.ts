@@ -32,7 +32,7 @@ function drop(dx: number, more: { behaviors?: MoveBehavior<unknown>[]; deps?: ob
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle = invoker.start(
     base as unknown as InvocationCtx,
-    { behaviors: more.behaviors ?? [], params: { reparentOnDrop: 'top', dragThresholdPx: 0, onGestureEnd } } as BindingOpts,
+    { behaviors: more.behaviors ?? [], params: { reparentOnDrop: 'top', onGestureEnd } } as BindingOpts,
   );
   const drag = { start: { x: 5, y: 5 }, current: { x: 5 + dx, y: 5 + dx }, delta: { x: dx, y: dx } };
   const at = { ...base, world: drag.current, drag } as unknown as InvocationCtx;

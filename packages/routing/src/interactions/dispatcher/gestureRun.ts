@@ -10,6 +10,7 @@ import type { GestureFactsStore } from './gestureFacts';
 import { gestureIdFor, isMultiTouchGestureId } from './gestureIds';
 import { isEmptyOngoingHandle, type InFlightGestures } from './inFlightGestures';
 import { immediateParams } from './inputFacts';
+import { deferredStart } from './deferredStart';
 import { buildInvocationCtx, uiInvocationCtx } from './invocationCtx';
 import type { InputEvent, MatchResult } from './matcher';
 import type { AttemptResult } from './walk';
@@ -190,7 +191,13 @@ export function invokeAction(
     const gestureId = gestureIdFor(event);
     const roleKeys = roleKeysOf(action.modifierRoles, match.binding.opts?.roles);
     run.facts.begin(gestureId, event, roleKeys && platformRoleKeys(roleKeys, run.isMac()));
-    const handle = action.invoker.start(ctxFor(run, event, deps, gestureId), match.binding.opts);
+    const { invoker } = action;
+    const pressCtx = ctxFor(run, event, deps, gestureId);
+    const begin = () => invoker.start(pressCtx, match.binding.opts);
+    const threshold = match.binding.opts?.dragThresholdPx ?? invoker.dragThresholdPx;
+    const handle = event.kind === 'pointerdown' && threshold !== undefined && threshold > 0
+      ? deferredStart(begin, threshold)
+      : begin();
     // Empty handle = "matched at the binding level but decided at runtime
     // not to handle this gesture" (missing dep, wrong affordance, wrong
     // selection kind, etc.). The widely-used early-return-empty pattern

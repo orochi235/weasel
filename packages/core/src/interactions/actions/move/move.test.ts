@@ -11,7 +11,6 @@ import type { NodeAtPointDep } from '../depSchema';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { RECT_POSE_COMPOSITION } from 'core/scene/composePose';
-import { createKitSettingsStore } from '@weasel-js/react';
 
 /** The reparentOnDrop tests below assert LOCAL rebasing (world pose → local
  *  under the new parent), so their scenes compose. Under the IDENTITY default
@@ -250,68 +249,6 @@ describe('moveAction descriptor', () => {
 
     // No scene writes, no batch.
     expect(scene.poses.get('a')).toEqual({ x: 10, y: 10, width: 10, height: 10 });
-    expect(scene.batchLog).toHaveLength(0);
-  });
-
-  it('params.dragThresholdPx holds the move until the pointer travels that far on screen', () => {
-    const invoker = getOngoingInvoker(moveAction);
-    const { scene, ...ctx } = makeCtx({
-      selectionIds: ['a'],
-      sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
-    });
-    const handle = invoker.start(ctx as InvocationCtx, { params: { dragThresholdPx: 20 } });
-    const frame = (screen: number, world: number): InvocationCtx => ({
-      ...ctx,
-      drag: {
-        start: { x: 0, y: 0 },
-        current: { x: world, y: 0 },
-        delta: { x: world, y: 0 },
-        screenDelta: { x: screen, y: 0 },
-      },
-    });
-
-    handle.onMove!(frame(19, 9.5));
-    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
-    handle.onMove!(frame(20, 10));
-    handle.onMove!(frame(6, 3));
-    handle.onEnd!(frame(6, 3), 'commit');
-    expect(scene.poses.get('a')).toEqual({ x: 3, y: 0, width: 10, height: 10 });
-  });
-
-  it('takes the threshold from the gestures.dragPx kit setting, and params.dragThresholdPx wins over it', () => {
-    const held = (params: Record<string, unknown> | undefined, dragPx: number) => {
-      const invoker = getOngoingInvoker(moveAction);
-      const { scene: _scene, ...ctx } = makeCtx({
-        selectionIds: ['a'],
-        sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
-      });
-      const withKit = { ...ctx, deps: { ...ctx.deps, kitSettings: createKitSettingsStore({ gestures: { dragPx } }) } };
-      const handle = invoker.start(withKit as InvocationCtx, params ? { params } : undefined);
-      handle.onMove!({
-        ...withKit,
-        drag: { start: { x: 0, y: 0 }, current: { x: 12, y: 0 }, delta: { x: 12, y: 0 }, screenDelta: { x: 12, y: 0 } },
-      } as InvocationCtx);
-      return Array.from(handle.previewIds!() ?? []).length === 0;
-    };
-    expect(held(undefined, 20)).toBe(true);
-    expect(held(undefined, 10)).toBe(false);
-    expect(held({ dragThresholdPx: 5 }, 20)).toBe(false);
-  });
-
-  it('a release that never reached params.dragThresholdPx commits nothing', () => {
-    const invoker = getOngoingInvoker(moveAction);
-    const { scene, ...ctx } = makeCtx({
-      selectionIds: ['a'],
-      sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
-    });
-    const handle = invoker.start(ctx as InvocationCtx, { params: { dragThresholdPx: 20 } });
-    const frame: InvocationCtx = {
-      ...ctx,
-      drag: { start: { x: 0, y: 0 }, current: { x: 8, y: 0 }, delta: { x: 8, y: 0 }, screenDelta: { x: 16, y: 0 } },
-    };
-    handle.onMove!(frame);
-    handle.onEnd!(frame, 'commit');
-    expect(scene.poses.get('a')).toEqual({ x: 0, y: 0, width: 10, height: 10 });
     expect(scene.batchLog).toHaveLength(0);
   });
 

@@ -1499,10 +1499,6 @@ only story runner in the repo.
 - **(P3) A branch dragged to the other side of a mind map goes back on Auto layout.** `radial`
   deals branches right and left by graph order, so a re-layout is stable but ignores where a branch
   was moved. Reading sides from current positions would make a second run move things (2026-10-25).
-- **(P3) A stencil tool dragged a few pixels draws a shape a few pixels wide.** The insert action
-  takes any nonzero box as the size, so a click that wobbles makes an 8px class whose rows spill
-  out. Every insert tool shares it; a minimum drag before the box counts would fix them all
-  (2026-10-25).
 - **(P3) The mind map type glyph thickens at 16px** where its four branches leave the central box
   (`packages/diagram/icons/mindMap.mjs`) (2026-10-25).
 

@@ -35,7 +35,7 @@ function drag(
   const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { selection: { get: () => [A] }, scene, ...deps } };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-  const handle = invoker.start(base as unknown as InvocationCtx, { params: { dragThresholdPx: 0, ...params } } as BindingOpts);
+  const handle = invoker.start(base as unknown as InvocationCtx, { params } as BindingOpts);
   const d = { start: { x: 5, y: 5 }, current: { x: to, y: to }, delta: { x: to - 5, y: to - 5 } };
   const at = { ...base, world: d.current, drag: d } as unknown as InvocationCtx;
   handle.onMove!(at);
