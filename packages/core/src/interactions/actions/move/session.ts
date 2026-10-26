@@ -67,6 +67,8 @@ export interface MoveSession {
   readonly verdict: (parent: NodeId) => DropVerdict;
   /** Whether {@link verdict} lets them land. */
   readonly admits: (parent: NodeId) => boolean;
+  /** Whether a `canDropInto` dep is there to refuse with a reason. */
+  readonly mayRefuse: boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
   /** The drag's snapping, begun once the drag passes its threshold; null
@@ -183,6 +185,7 @@ export function beginMove(
     nodeAtPoint: ctx.deps.nodeAtPoint,
     verdict,
     admits: (parent) => verdict(parent) === true,
+    mayRefuse: ctx.deps.canDropInto !== undefined,
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }),
     press,

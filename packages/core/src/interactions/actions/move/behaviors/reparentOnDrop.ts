@@ -19,6 +19,8 @@ export function reparentOnDrop(move: MoveGesture): MoveBehavior<unknown> {
   };
   return {
     onMove(ctx) {
+      // Only a `canDropInto` dep refuses with a reason; without one, the hit-test waits for the release.
+      if (!move.session().mayRefuse) return undefined;
       const at = { x: ctx.pointer.worldX, y: ctx.pointer.worldY };
       const drop = dropAt(at);
       return drop !== null && 'refused' in drop ? { overlays: refusalOverlays(drop.refused, at) } : undefined;
