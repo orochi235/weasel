@@ -9,6 +9,20 @@
   gap: var(--be-gap);
 }
 
+/* Mid-drag the pointer runs ahead of what it drags, onto bands that would take its hover fill and cursor for a
+ * frame; the session listens on the document, so nothing inside needs the pointer until the drag ends. */
+.root[data-dragging] * {
+  pointer-events: none;
+}
+
+.root[data-dragging='seam'] {
+  cursor: ew-resize;
+}
+
+.root[data-dragging='band'] {
+  cursor: grabbing;
+}
+
 .label {
   font: var(--wzl-font-weight-medium) var(--wzl-font-size-sm) / var(--wzl-leading-tight) var(--wzl-font-ui);
   color: var(--wzl-fg-muted);

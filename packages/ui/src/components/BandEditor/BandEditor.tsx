@@ -323,6 +323,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
       aria-label={typeof label === 'string' ? label : undefined}
       aria-labelledby={label !== undefined && typeof label !== 'string' ? labelId : undefined}
       onKeyDown={onRootKeyDown}
+      data-dragging={draft ? ('at' in draft.ghost ? 'seam' : 'band') : undefined}
     >
       {label !== undefined && <div id={labelId} className={s.label}>{label}</div>}
       <Ruler
