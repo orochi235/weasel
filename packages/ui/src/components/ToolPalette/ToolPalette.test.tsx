@@ -93,21 +93,23 @@ describe('ToolPalette', () => {
 });
 
 describe('ToolPalette — grouping', () => {
-  it('renders groups in default order (select, shape, draw, type, view)', () => {
+  it('renders groups in the natural order (select, view, shape, draw, type)', () => {
     const tools = fakeTools([
       fakeTool('text', 'type'),
       fakeTool('select', 'select'),
       fakeTool('hand', 'view'),
       fakeTool('rect', 'shape'),
       fakeTool('pen', 'draw'),
+      fakeTool('lasso', 'select'),
     ]);
     renderWithIcons(<ToolPalette tools={tools} />);
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
       expect.stringContaining('select'),
+      expect.stringContaining('lasso'),
+      expect.stringContaining('hand'),
       expect.stringContaining('rect'),
       expect.stringContaining('pen'),
       expect.stringContaining('text'),
-      expect.stringContaining('hand'),
     ]);
   });
 
@@ -340,7 +342,7 @@ describe('ToolPalette — mode eligibility', () => {
   it('arrow keys skip ineligible tools', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     // DOM order follows group order: select ('select', ineligible here),
-    // anchor-edit ('draw'), hand ('view').
+    // hand ('view'), anchor-edit ('draw').
     const tools = makeTools(selectTool, anchorTool, handTool);
     renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
     const anchorBtn = screen.getByRole('button', { name: /anchor/i });
@@ -361,11 +363,11 @@ describe('ToolPalette — mode eligibility', () => {
     const anchorBtn = screen.getByRole('button', { name: /anchor/i });
     const handBtn = screen.getByRole('button', { name: /hand/i });
 
-    act(() => handBtn.focus());
-    fireEvent.keyDown(handBtn, { key: 'Home' });
-    expect(document.activeElement).toBe(anchorBtn);
-    fireEvent.keyDown(anchorBtn, { key: 'End' });
+    act(() => anchorBtn.focus());
+    fireEvent.keyDown(anchorBtn, { key: 'Home' });
     expect(document.activeElement).toBe(handBtn);
+    fireEvent.keyDown(handBtn, { key: 'End' });
+    expect(document.activeElement).toBe(anchorBtn);
   });
 
   it('the tab stop moves off an ineligible active tool', () => {
@@ -374,9 +376,9 @@ describe('ToolPalette — mode eligibility', () => {
     const tools = makeTools(selectTool, anchorTool, handTool);
     renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
     const selectBtn = screen.getByRole('button', { name: /select/i }) as HTMLButtonElement;
-    const anchorBtn = screen.getByRole('button', { name: /anchor/i }) as HTMLButtonElement;
+    const handBtn = screen.getByRole('button', { name: /hand/i }) as HTMLButtonElement;
     expect(selectBtn.tabIndex).toBe(-1);
-    expect(anchorBtn.tabIndex).toBe(0);
+    expect(handBtn.tabIndex).toBe(0);
   });
 
   it('when modeRegistry is omitted, all tools are eligible (fallback behaviour)', () => {

@@ -28,9 +28,10 @@ export interface ResolveToolRegistryArgs {
  * Built-ins come first, in `BUILTIN_TOOL_IDS` order whatever order they were
  * asked for in, then the presets' own tools in preset order; a patch tool
  * replaces a mounted one where it stands, and any other is appended in patch
- * order. That order is the palette's. Replacing a tool that is mounted only
- * because a preset implies it is the documented way to restyle it, so only a
- * patch tool for an id `defaultTools` also names is warned about.
+ * order. A palette keeps that order for tools its own order does not name.
+ * Replacing a tool that is mounted only because a preset implies it is the
+ * documented way to restyle it, so only a patch tool for an id `defaultTools`
+ * also names is warned about.
  */
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
   const { builtins, enabled, patch, dev = isDev() } = args;

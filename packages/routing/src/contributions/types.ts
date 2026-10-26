@@ -27,8 +27,8 @@ export interface ToolPresentation {
   /** The tool's icon, by qualified name: `icon('rect')` in the package that draws it. */
   icon?: import('@weasel-js/icons').IconRef;
   /** Palette grouping key. Tools sharing a group render contiguously
-   *  with separators between groups. Free-form string; the kit
-   *  recommends 'select' | 'shape' | 'draw' | 'type' | 'view'. */
+   *  with separators between groups. Free-form string; core's
+   *  `TOOL_GROUP_ORDER` names the kit's own groups, in palette order. */
   group?: string;
   /** Display override for the keyboard shortcut. When omitted the palette
    *  derives one from `Tool.keybinding` via its own formatter. */
