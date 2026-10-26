@@ -126,17 +126,12 @@ describe('an SVG text export written without a layout', () => {
     ['right-aligned lines at line height 1', node('Right\nAligned!', { align: 'right', lineHeight: 1 })],
   ];
 
-  // `dominant-baseline="text-before-edge"` sets the ascent on the box top,
-  // where weasel's layout first puts half the leading, so every line here sits
-  // that far from its laid-out baseline. What is checked is that each glyph
-  // lands at its x and that the lines keep the layout's pitch.
+  // `dominant-baseline="text-before-edge"` sets the ascent on the box top, and
+  // a `dy` moves it down by the half leading weasel's layout puts above it.
   for (const [name, n] of CASES) {
-    it(`draws the glyphs of ${name} at the layout's x, its lines at its pitch`, (ctx) => {
+    it(`draws every glyph of ${name} where weasel lays it out`, (ctx) => {
       ctx.skip(snapsAdvances, SNAPPED);
-      const drawn = drawnGlyphs(serializeSvg([n], VIEW));
-      const laid = laidGlyphs(n);
-      const shift = drawn[0].baseline - laid[0].baseline;
-      expectSameGlyphs(drawn.map((g) => ({ ...g, baseline: g.baseline - shift })), laid);
+      expectSameGlyphs(drawnGlyphs(serializeSvg([n], VIEW)), laidGlyphs(n));
     });
   }
 });

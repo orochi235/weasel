@@ -115,6 +115,25 @@ export function scriptMetricsFor(
   return scriptMetrics(faceMetricsOf(resolveFontVariant(family, weight, style)));
 }
 
+/**
+ * How far below the top of a line box a face's ascent starts, CSS's way: half
+ * the leading a line height of `lineHeight` (a multiple of `fontSize`) leaves
+ * around the face's ascent and descent, in the units `fontSize` is in. It is
+ * negative for a face taller than its line. `undefined` when no registered
+ * face of `(family, weight, style)` states its ascent and descent.
+ */
+export function halfLeadingFor(
+  family: string,
+  weight: number,
+  style: FontStyle,
+  fontSize: number,
+  lineHeight: number,
+): number | undefined {
+  const m = faceMetricsOf(resolveFontVariant(family, weight, style));
+  if (m?.ascent === undefined || m.descent === undefined) return undefined;
+  return ((lineHeight - m.ascent - m.descent) / 2) * fontSize;
+}
+
 /** A `TextStyle.fontWeight` as a number: the CSS keywords `bold` and
  *  `normal` read as 700 and 400, anything unparseable as 400. */
 export function numericWeight(w: number | string): number {
