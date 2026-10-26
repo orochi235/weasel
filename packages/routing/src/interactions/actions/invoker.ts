@@ -225,6 +225,9 @@ export interface BindingOpts {
    * id, over the action's defaults and any tuning's.
    */
   roles?: RoleRebinds;
+  /** Screen travel, in CSS pixels, a drag makes before this binding's ongoing action starts, over the
+   *  action's own `dragThresholdPx`. See {@link OngoingInvoker.dragThresholdPx}. */
+  dragThresholdPx?: number;
 }
 
 /** Resolve `BindingOpts.params` to a concrete record (calling the thunk if
@@ -345,6 +348,13 @@ export interface ImmediateInvoker {
 export interface OngoingInvoker {
   timing: 'ongoing';
   start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle;
+  /**
+   * Screen travel, in CSS pixels, a pointer drag makes before the dispatcher calls `start`; a
+   * binding's own `dragThresholdPx` wins over it. Until then the gesture is held for this action and
+   * nothing else takes it, and a release short of it ends the gesture with `start` never called.
+   * Unset, the action starts once the press is a drag at all (`gestures.dragPx`).
+   */
+  dragThresholdPx?: number;
 }
 
 /** Pluggable invocation strategy for an Action. */

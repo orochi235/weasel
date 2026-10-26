@@ -1,7 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { transformPreview } from '../transformFinish';
-import { pastDragThreshold } from '@weasel-js/routing';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
@@ -48,18 +47,13 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
       const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
-      // Where the last move put the pointer, once the drag has passed its
-      // threshold; null until then.
+      // Where the last move put the pointer; null until the first.
       let engaged: { x: number; y: number } | null = null;
       return {
         kind: 'move',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
-          if (!engaged) {
-            const s = moveCtx.drag.screenDelta;
-            if (s && !pastDragThreshold({ clientX: 0, clientY: 0 }, { clientX: s.x, clientY: s.y }, session.dragThresholdPx)) return;
-            session.lifecycle.start(session.ids as unknown as string[]);
-          }
+          if (!engaged) session.lifecycle.start(session.ids as unknown as string[]);
           engaged = moveCtx.world;
           frame = nextFrame(session, readers, moveCtx);
           hold.set(preview.poses());
@@ -67,8 +61,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
           try {
-            // A press that never traveled `dragThresholdPx` was never a move:
-            // its behaviors started, so they are canceled, not asked to commit.
+            // A press that never moved was never a move: its behaviors
+            // started, so they are canceled, not asked to commit.
             if (reason === 'commit' && engaged) {
               committed = commitMove({
                 session,

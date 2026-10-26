@@ -180,7 +180,7 @@ describe('FEATURE_PRESETS', () => {
 
   it('hands the move and rotate options to the entries they configure', () => {
     const [, rotate, move] = presetAmbient(all, { move: { dragThresholdPx: 9 }, rotate: { rotateLabel: 'Spin' } });
-    expect(move.bindings!.find((b) => b.actionId === 'move')!.opts!.params).toMatchObject({ dragThresholdPx: 9 });
+    expect(move.bindings!.find((b) => b.actionId === 'move')!.opts!.dragThresholdPx).toBe(9);
     expect(rotate.bindings![0].opts!.params).toMatchObject({ label: 'Spin' });
   });
 

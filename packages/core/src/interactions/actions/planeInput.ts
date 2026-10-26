@@ -116,7 +116,7 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
     ...action,
     requires,
     invoker: {
-      timing: 'ongoing',
+      ...inner,
       start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
         const plane = livePlane(
           ctx.deps, layerOf(ctx.deps, ctx.drag?.affordance), declared, ctx.drag?.start ?? null,

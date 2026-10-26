@@ -62,10 +62,11 @@ describe('moveAction — onSettled', () => {
       ...base,
       drag: { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 }, screenDelta: { x: dx, y: 0 } },
     }) as unknown as InvocationCtx;
-    const drag = (opts: BindingOpts, dx: number, reason: Reason = 'commit'): void => {
+    /** `dx` null ends the gesture with no move at all. */
+    const drag = (opts: BindingOpts, dx: number | null, reason: Reason = 'commit'): void => {
       const handle = start(moveAction, base as unknown as InvocationCtx, opts);
-      handle.onMove?.(at(dx));
-      handle.onEnd?.(at(dx), reason);
+      if (dx !== null) handle.onMove?.(at(dx));
+      handle.onEnd?.(at(dx ?? 0), reason);
     };
     return { scene, a, drag };
   }
@@ -110,14 +111,14 @@ describe('moveAction — onSettled', () => {
   it('reports false on a release with nothing to write, which asked the behaviors to commit', () => {
     const { drag } = setup();
     const log: string[] = [];
-    drag({ behaviors: [closing(log)] as never, params: { dragThresholdPx: 0 } }, 0);
+    drag({ behaviors: [closing(log)] as never }, 0);
     expect(log).toEqual(['end', 'settled:false']);
   });
 
-  it('reports false on a press that never became a drag, which canceled them', () => {
+  it('reports false on a gesture that ended before it moved, which canceled them', () => {
     const { drag } = setup();
     const log: string[] = [];
-    drag({ behaviors: [closing(log)] as never, params: { dragThresholdPx: 50 } }, 5);
+    drag({ behaviors: [closing(log)] as never }, null);
     expect(log).toEqual(['cancel', 'settled:false']);
   });
 

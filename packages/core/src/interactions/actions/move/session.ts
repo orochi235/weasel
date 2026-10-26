@@ -1,5 +1,5 @@
 import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
-import { DRAG_THRESHOLD_PX, isPathEditPart, resolveParams } from '@weasel-js/routing';
+import { isPathEditPart, resolveParams } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -66,7 +66,6 @@ export interface MoveSession {
   readonly admits: (parent: NodeId) => boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
-  readonly dragThresholdPx: number;
   /** The drag's snapping, begun once the drag passes its threshold; null
    *  with no `snap` dep. */
   readonly snap: SnapSession | null;
@@ -144,8 +143,6 @@ export function beginMove(
     ...(layout ? [layoutDrop(gesture)] : []),
     reparentOnDrop(gesture),
   ];
-  const dragThresholdPx = (params?.['dragThresholdPx'] as number | undefined)
-    ?? ctx.deps.kitSettings?.get('gestures.dragPx') ?? DRAG_THRESHOLD_PX;
   const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
@@ -180,7 +177,6 @@ export function beginMove(
     nodeAtPoint: ctx.deps.nodeAtPoint,
     admits: admitsOf(ctx.deps.canDropInto, ids, scene),
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
-    dragThresholdPx,
     snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }),
     press,
   };

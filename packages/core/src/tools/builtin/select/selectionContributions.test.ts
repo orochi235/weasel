@@ -16,13 +16,11 @@ describe('selectionMoveBindings — binding opts', () => {
     expect(moveBinding?.opts?.behaviors).toEqual([behavior]);
   });
 
-  it('threads move.dragThresholdPx into the move binding params', () => {
+  it('gives the move bindings move.dragThresholdPx, for the dispatcher to hold the drag by', () => {
     const bindings = selectionMoveBindings({ move: { dragThresholdPx: 12 } })
       .filter((b) => b.actionId === 'move');
     expect(bindings.length).toBeGreaterThan(0);
-    for (const b of bindings) {
-      expect((b.opts?.params as Record<string, unknown>)?.dragThresholdPx).toBe(12);
-    }
+    for (const b of bindings) expect(b.opts?.dragThresholdPx).toBe(12);
   });
 
   it('threads the move lifecycle options and expandIds into the move binding params', () => {

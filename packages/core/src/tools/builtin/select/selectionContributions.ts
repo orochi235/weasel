@@ -45,10 +45,10 @@ export function selectionMoveBindings<TPose>(
     const move = options.move ?? {};
     const params: Record<string, unknown> = gestureLifecycleParams({ ...move, label: move.moveLabel });
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
-    if (move.dragThresholdPx !== undefined) params.dragThresholdPx = move.dragThresholdPx;
     if (move.expandIds) params.expandIds = move.expandIds;
     return {
       ...(Object.keys(params).length > 0 ? { params } : {}),
+      ...(move.dragThresholdPx !== undefined ? { dragThresholdPx: move.dragThresholdPx } : {}),
       ...(move.behaviors?.length ? { behaviors: move.behaviors as BindingOpts['behaviors'] } : {}),
     };
   })();

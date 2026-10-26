@@ -158,30 +158,23 @@ describe('moveAction — onGestureStart / onGestureEnd', () => {
     expect(onGestureEnd).toHaveBeenCalledWith(false);
   });
 
-  it('fires neither when the drag never reaches its threshold', () => {
+  it('fires neither when the gesture ends before it moves', () => {
     const { base } = setup();
     const onGestureStart = vi.fn();
     const onGestureEnd = vi.fn();
-    const handle = invoker().start(base as InvocationCtx, {
-      params: { onGestureStart, onGestureEnd, dragThresholdPx: 50 },
-    });
-    handle.onMove!(frame(base, 5));
-    handle.onEnd!(frame(base, 5), 'commit');
+    const handle = invoker().start(base as InvocationCtx, { params: { onGestureStart, onGestureEnd } });
+    handle.onEnd!(frame(base, 0), 'commit');
     expect(onGestureStart).not.toHaveBeenCalled();
     expect(onGestureEnd).not.toHaveBeenCalled();
   });
 });
 
-describe('moveAction — a drag that never reaches its threshold', () => {
+describe('moveAction — a gesture that ends before it moves', () => {
   it('cancels its behaviors and never asks them to end the gesture', () => {
     const { scene, a, base } = setup();
     const behavior = { onStart: vi.fn(), onEnd: vi.fn(() => []), onCancel: vi.fn() };
-    const handle = invoker().start(base as InvocationCtx, {
-      behaviors: [behavior],
-      params: { dragThresholdPx: 50 },
-    });
-    handle.onMove!(frame(base, 5));
-    handle.onEnd!(frame(base, 5), 'commit');
+    const handle = invoker().start(base as InvocationCtx, { behaviors: [behavior] });
+    handle.onEnd!(frame(base, 0), 'commit');
     expect(behavior.onStart).toHaveBeenCalledTimes(1);
     expect(behavior.onEnd).not.toHaveBeenCalled();
     expect(behavior.onCancel).toHaveBeenCalledTimes(1);

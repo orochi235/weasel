@@ -26,7 +26,7 @@ function dropOnto(target: string, deps: object = {}) {
   const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { selection: { get: () => [A] }, scene, nodeAtPoint: () => target, ...deps } };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-  const handle = invoker.start(base as unknown as InvocationCtx, { params: { dragThresholdPx: 0, reparentOnDrop: 'top' } } as BindingOpts);
+  const handle = invoker.start(base as unknown as InvocationCtx, { params: { reparentOnDrop: 'top' } } as BindingOpts);
   const d = { start: { x: 5, y: 5 }, current: { x: 200, y: 200 }, delta: { x: 195, y: 195 } };
   const at = { ...base, world: d.current, drag: d } as unknown as InvocationCtx;
   handle.onMove!(at);
