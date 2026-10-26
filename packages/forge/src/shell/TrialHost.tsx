@@ -78,6 +78,12 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
   const elementRef = useRef<HTMLDivElement | null>(null);
   const inView = useNearViewport(elementRef, IN_VIEW_MARGIN);
   const [pending, setPending] = useState(true);
+  // Settles at the first render below, which an audit waits for: until then the host holds no story to judge.
+  const [rendered] = useState(() => {
+    let resolve!: () => void;
+    const promise = new Promise<void>((r) => { resolve = r; });
+    return { promise, resolve };
+  });
   const latest = useLatest({ onRendered: copy ? undefined : onRendered });
 
   const overridesRef = useHostConditions(host, { hostId, globals, overrides: persisted, setup });
@@ -121,6 +127,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       if (lastVars?.some((v) => v.name === msg.name)) scan();
     };
     const audit = async () => {
+      await rendered.promise;
       const outcome = await auditElement(host, { page: false });
       if (trialId) frames?.reportA11y(trialId, outcome);
       return outcome;
@@ -133,7 +140,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       mutations?.disconnect();
       clearTimeout(settleTimer);
     };
-  }, [host, hostId, trialId, frames, copy, overridesRef]);
+  }, [host, hostId, trialId, frames, copy, overridesRef, rendered]);
 
   // The host is hidden until its first commit has painted with its fonts, so a new trial never shows a jump.
   const announced = useRef(false);
@@ -143,6 +150,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     const done = () => {
       if (canceled) return;
       announced.current = true;
+      rendered.resolve();
       setPending(false);
       latest.current.onRendered?.();
     };

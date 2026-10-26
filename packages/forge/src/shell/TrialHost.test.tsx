@@ -115,6 +115,49 @@ describe('TrialHost', () => {
     await waitFor(() => expect(frames.get('t2').a11y).toEqual(outcome));
   }, 20_000);
 
+  it('waits for its first render before auditing, so an audit asked for on connect sees the story', async () => {
+    let settle!: () => void;
+    const ready = new Promise<void>((resolve) => { settle = resolve; });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+    let report!: (isIntersecting: boolean) => void;
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: (entries: unknown[]) => void) {
+          report = (isIntersecting) => callback([{ isIntersecting, rootBounds: null }]);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const frames = createTrialFrames();
+    try {
+      render(
+        <TrialFramesContext.Provider value={frames}>
+          <TrialIdContext.Provider value="t3">
+            <TrialHost layout="padded" setup={{}} config={{}}>
+              {() => <button type="button">Hi</button>}
+            </TrialHost>
+          </TrialIdContext.Provider>
+        </TrialFramesContext.Provider>,
+      );
+      act(() => report(false));
+      let done = false;
+      const audited = frames.get('t3').audit!().then((outcome) => { done = true; return outcome; });
+      await new Promise((r) => setTimeout(r, 50));
+      expect(done).toBe(false);
+      act(() => report(true));
+      settle();
+      const outcome = await audited;
+      expect(outcome.ok && outcome.report.passes).toBeGreaterThan(0);
+      expect(outcome.ok && outcome.report.violations.some((v) => v.id === 'button-name')).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+      delete (document as { fonts?: unknown }).fonts;
+    }
+  }, 20_000);
+
   it('unhides itself once its first commit has rendered', async () => {
     const onRendered = vi.fn();
     const { container } = render(
