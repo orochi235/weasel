@@ -30,10 +30,14 @@ jobs:
     # The same machine perf.yml uses, for the same reason: a real Metal GPU.
     runs-on: [self-hosted, macOS, ARM64, gpu]
     continue-on-error: true
-    # Two full runs of what perf.yml allows 45 minutes for once.
-    timeout-minutes: 100
+    # On keiei (M2, 8 cores) on 2026-10-15 the whole job took 113 min with every hud-vs-dom approach,
+    # 27 min a side of it; with the HUD alone it should take about 80 (estimated, not measured).
+    timeout-minutes: 120
     env:
       NPM_CONFIG_LOGLEVEL: error
+      # hud-vs-dom's plain DOM, React and DOM-layer approaches run no weasel code a pull request
+      # changes, and are 7 of every 10 cells it measures.
+      HVD_APPROACHES: hud
       BASE_TIP: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
@@ -100,7 +104,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p "$BASE_OUT" "$HEAD_OUT"
-          node tests/perf/compare.mjs "$BASE_OUT" "$HEAD_OUT" | tee "$RUNNER_TEMP/perf-compare.txt"
+          node tests/perf/compare.mjs "$BASE_OUT" "$HEAD_OUT" > "$RUNNER_TEMP/perf-results/compare.txt"
 
       - name: Comment on the pull request
         if: always()
@@ -108,7 +112,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: >
-          node tests/perf/pr-comment.mjs "$RUNNER_TEMP/perf-compare.txt"
+          node tests/perf/pr-comment.mjs "$BASE_OUT" "$HEAD_OUT"
           --pr ${{ github.event.pull_request.number }} --base "$BASE_SHA" --head "$HEAD_SHA"
 
       - name: Upload result files
