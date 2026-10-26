@@ -9,6 +9,8 @@ does `--full`. A change to a manifest, a tsconfig, a setup file, or anything `vi
 runs everything too — the `triggers` list there. A file read at build time rather than imported,
 such as an icon definition a plugin generates from, selects nothing on a branch and is caught only by
 the full run on `main` after the merge. Add such a path to `triggers` once it has slipped through.
+A changed path is one the branch adds to local `main`, or to `origin/main` when that is newer: the
+node builds on the pushed merge-base, but unpushed `main` commits are not the branch's changes.
 
 **Draw is served from `.claude/worktrees/view`, a detached checkout of `main`**, so edits to the
 main checkout don't reload the browser tab mid-session. A local `pre-push` hook runs
