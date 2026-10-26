@@ -77,7 +77,7 @@ describe('grabViewMarker', () => {
 
   it('grabs only near its rim once it covers most of its frame, leaving the frame its presses', () => {
     // The root's 400×300 aim in a frame zoomed in to fill 90% of it.
-    const big = aimSpace2d('pip', { x: 0, y: 0, scale: { x: 0.3, y: 0.3 } }, { width: 126, height: 100, dpr: 1 });
+    const big = aimSpace2d('pip', { x: 0, y: 0, scale: { x: 0.3, y: 0.3 } }, { width: 126, height: 100 });
     expect(grabViewMarker(props, host, big, { x: 60, y: 45 })).toBeNull();
     expect(grabViewMarker(props, host, big, { x: 118, y: 45 })).not.toBeNull();
     expect(grabViewMarker(props, host, big, { x: 122, y: 45 })).not.toBeNull();
