@@ -38,6 +38,8 @@ export interface A11yNode {
   target: readonly string[];
   html: string;
   failureSummary?: string;
+  /** On a node axe could not decide: why, as axe's message key (`bgOverlap`, `pseudoContent`, …) and its own sentence. */
+  reason?: { key?: string; message?: string };
 }
 
 /** One axe rule's outcome on the story, with the elements it names. */

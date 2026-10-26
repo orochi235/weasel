@@ -230,4 +230,34 @@ describe('A11yPanel', () => {
     await flush();
     expect(screen.getByRole('alert').textContent).toContain('boom');
   });
+
+  it('says beside each review item why axe could not decide it', async () => {
+    const frames = createTrialFrames();
+    const reviewed: A11yReport = {
+      ...report,
+      violations: [],
+      incomplete: [
+        {
+          id: 'color-contrast',
+          impact: 'serious',
+          help: 'Elements must meet minimum color contrast ratio thresholds',
+          helpUrl: 'https://dequeuniversity.com/rules/axe/4.10/color-contrast',
+          description: 'Ensures the contrast between foreground and background colors meets WCAG 2 AA thresholds',
+          nodes: [
+            { target: ['#glossy'], html: '<span>Save</span>', reason: { key: 'pseudoContent', message: 'due to a pseudo element' } },
+            { target: ['#odd'], html: '<span>?</span>', reason: { message: 'Could not parse color string wat(1)' } },
+            { target: ['#bare'], html: '<span>x</span>' },
+          ],
+        },
+      ],
+    };
+    frames.connect('t1', { send: vi.fn(), audit: vi.fn(async () => ({ ok: true as const, report: reviewed })) });
+    frames.reportA11y('t1', { ok: true, report: reviewed });
+    panel(frames);
+    await flush();
+    const item = (target: string) => screen.getByText(target).closest('li')!;
+    expect(item('#glossy').textContent).toContain('a ::before or ::after box paints over or behind this text');
+    expect(item('#odd').textContent).toContain('Could not parse color string wat(1)');
+    expect(item('#bare').querySelector('.fg-a11y__reason')).toBeNull();
+  });
 });
