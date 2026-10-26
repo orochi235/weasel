@@ -7,8 +7,7 @@
  * world and writes world looks right for one gesture and drifts on the next,
  * because the stored pose is then read in the parent's frame again.
  *
- * Under `IDENTITY_POSE_COMPOSITION`, the default, local and world are the same
- * value. `core/scene/frameFixture.ts` is the scene where they differ.
+ * Under `IDENTITY_POSE_COMPOSITION` local and world are the same value.
  */
 import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
@@ -61,7 +60,7 @@ export function poseFrame<TPose>(
 }
 
 /** The `poseFrame` a scene-backed action works in, over the scene's own
- *  composition. Under IDENTITY every method is a no-op. */
+ *  composition. */
 export function scenePoseFrame(scene: Scene<unknown, string, unknown>): PoseFrame<unknown> {
   const pc = scene.composition;
   const source = scene as unknown as PoseSource<unknown>;

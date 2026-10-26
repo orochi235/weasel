@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boundsOfPath, findShapeSilhouette, type IngestCtx, type Op, type Path } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, boundsOfPath, findShapeSilhouette, type IngestCtx, type Op, type Path } from '@weasel-js/core';
 import { parseSvg } from './parse';
 import { svgNodesFromKit, type SvgKitTree } from './fromKit';
 import { svgNodesToKitDrafts } from './unpack';
@@ -23,7 +23,7 @@ async function unpacked(svg: string): Promise<Inserted[]> {
     point: { x: 400, y: 300 },
     viewportWorldRect: () => ({ x: 0, y: 0, width: 800, height: 600 }),
     applyOps: (ops: Op[]) => nodes.push(...ops.map((op) => (op.args as { node: Inserted }).node)),
-    scene: { layers: [{ id: 'main' }], mintId: () => `svg-${minted++}` },
+    scene: { layers: [{ id: 'main' }], mintId: () => `svg-${minted++}`, composition: RIGID_POSE_COMPOSITION },
   } as unknown as IngestCtx;
   await unpackSvgFiles([new File([svg], 'a.svg', { type: 'image/svg+xml' })], c);
   return nodes;

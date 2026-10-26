@@ -193,6 +193,7 @@ function sceneSourceOf<TLayer extends string>(
     roots: scene.roots.map(String),
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
     get: (id) => scene.get(id as never),
+    composition: scene.composition,
     isPainted: (id) => {
       const layer = scene.get(id as never)?.layer;
       return layer === undefined || (!hidden.has(String(layer)) && !isAnnotationNode(scene as never, id));

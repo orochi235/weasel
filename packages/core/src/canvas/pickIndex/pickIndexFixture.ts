@@ -6,7 +6,7 @@
 import { linePath, rotateAboutPoint, translate, PATH_L, PATH_M, PATH_Z, type Affine, type Path } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { SelectRegion } from 'core/geometry/regionHit';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -63,7 +63,7 @@ export function mixedScene(seed: number, composed: boolean): AnyScene {
   const r = rng(seed);
   const scene = createScene<unknown, string, unknown>({
     systemLayers: [{ id: 'back', parallax: { pan: 0.25 } }, { id: 'main' }],
-    ...(composed ? { composition: RIGID_POSE_COMPOSITION as never } : {}),
+    composition: composed ? RIGID_POSE_COMPOSITION as never : IDENTITY_POSE_COMPOSITION,
   });
   const id = (s: string) => asNodeId(s);
   const at = () => ({ x: r() * 900, y: r() * 900 });

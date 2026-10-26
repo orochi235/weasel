@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
+import { IDENTITY_POSE_COMPOSITION } from '../core/scene/composeFrame';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import { RECT_POSE_DESCRIPTOR } from '../core/geometry/poseDescriptor';
@@ -119,7 +120,7 @@ describe('scenePoseTarget', () => {
   it('has none for a node that is not there, or whose pose has no axes', () => {
     const { scene } = setup();
     expect(scenePoseTarget(scene, 'nope')).toBeUndefined();
-    const paths = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const paths = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const p = paths.add({ kind: 'mark', layer: 'main', pose: { kind: 'polygon', points: [] }, data: {} });
     expect(scenePoseTarget(paths, p)).toBeUndefined();
   });

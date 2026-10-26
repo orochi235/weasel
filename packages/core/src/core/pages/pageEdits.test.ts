@@ -22,7 +22,7 @@ function setup(doc: PagesDoc = TWO) {
     ...(parent ? { parent } : {}),
   });
   const onA = rect('onA', 10, 10);
-  const child = rect('child', 12, 12, onA);
+  const child = rect('child', 2, 2, onA);
   const onB = rect('onB', 130, 50);
   const gap = rect('gap', 103, 50);
   const link = scene.add({
@@ -55,7 +55,8 @@ describe('pages as a document value', () => {
     expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['b', 'a']);
     expect(x(scene, onB)).toBe(10);
     expect(x(scene, onA)).toBe(130);
-    expect(x(scene, child)).toBe(132);
+    // Stored in onA's frame, which carries it.
+    expect(x(scene, child)).toBe(2);
     expect(x(scene, gap)).toBe(103);
     expect(entries()).toBe(before + 1);
     scene.undo();

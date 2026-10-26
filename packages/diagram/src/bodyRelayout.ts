@@ -93,7 +93,8 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
     const pose = node.pose as Box;
     const grown = sizeToBody(pose, measureBody(spec, measure));
     if (grown !== pose) scene.setPose(id as never, grown as never);
-    for (const box of layoutBody(spec, grown, measure)) {
+    // Rows are stored in the body's own frame.
+    for (const box of layoutBody(spec, { x: 0, y: 0, width: grown.width, height: grown.height }, measure)) {
       const child = rowNodes.get(box.index);
       const at = child === undefined ? undefined : scene.get(child as never)?.pose as Box | undefined;
       if (at === undefined) continue;

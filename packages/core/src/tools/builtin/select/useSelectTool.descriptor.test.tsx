@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
 import { asNodeId } from 'core/scene/types';
@@ -12,7 +13,7 @@ import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/c
 describe('useSelectTool — default pickEvery reads the descriptor', () => {
   it('selects a circle pressed at its center', () => {
     const { result } = renderHook(() => {
-      const scene = useScene<object, 'default', CirclePose>({
+      const scene = useScene<object, 'default', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION,
         systemLayers: [{ id: 'default' }],
         initial: [{ id: asNodeId('c'), kind: 'mark', layer: 'default', pose: circle(50, 50, 10), data: {} }],
       });

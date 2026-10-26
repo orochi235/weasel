@@ -2,7 +2,7 @@
  * Stencils: the shapes a palette offers, as data, and what one becomes when it
  * is drawn — a `buildBody` body whose rows are ordinary text nodes.
  */
-import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, type Op, type RectPose } from '@weasel-js/core';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
@@ -99,8 +99,10 @@ export function stencilBuild<TLayer extends string>(
         : null,
     },
   );
-  const ops = built.specs.map((spec, k) => createInsertOp({
-    node: { ...spec, id: spec.id ?? `${id}/${k}`, parent: spec.parent ?? opts.parent ?? null },
+  // Built in one frame; each row is stored in the body's.
+  const specs = localizeWorldPoses(built.specs.map((spec, k) => ({ ...spec, id: spec.id ?? `${id}/${k}` })), RIGID_POSE_COMPOSITION);
+  const ops = specs.map((spec) => createInsertOp({
+    node: { ...spec, parent: spec.parent ?? opts.parent ?? null },
     label: `Insert ${stencil.label}`,
   }));
   return { id, ops };

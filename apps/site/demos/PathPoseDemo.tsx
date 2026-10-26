@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   asNodeId,
   polygonFromPoints,
   SceneCanvas,
@@ -43,7 +43,7 @@ export function PathPoseDemo() {
   // Path TPose needs the full useScene shape (the trivial form aliases
   // pose === data === item, so item would have to BE a Path — but Path
   // carries no id field).
-  const scene = useScene<{ id: string }, 'default', Path>({
+  const scene = useScene<{ id: string }, 'default', Path>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [{
       kind: 'mark',

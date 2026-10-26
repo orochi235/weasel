@@ -23,7 +23,7 @@ describe('a reloaded snapshot keeps every field it saved', () => {
 
   it('leaves a node as authored when the registry lacks a key it names, and reports the key', () => {
     const json: SerializedScene<unknown, 'main', typeof BOX> = {
-      version: 2,
+      version: 3,
       systemLayers: [{ id: 'main' }],
       nodes: [{ id: 'g', kind: 'group', layer: 'main', pose: BOX, data: {}, copiesFromPoseKey: 'gone' }],
     };

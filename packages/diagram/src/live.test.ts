@@ -1,3 +1,4 @@
+import { scenePoseFrame } from '@weasel-js/core';
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, useLayoutEffect } from 'react';
@@ -238,16 +239,15 @@ describe('useLiveLayout', () => {
   });
 
   it('takes a pinned box out of the frame with its whole subtree', () => {
-    // The defect this guards: the run skips the pinned participant but its
-    // label is an id of its own, so the label was published from the pose the
-    // document still held and slid out of the box the gesture was carrying.
+    // The box's label is stored in its frame, so it goes where the box is shown
+    // and never needs a pose of its own published.
     const { scene: s, b, clock, handle } = live('layered');
     const label = s.add({
-      kind: 'mark', layer: 'main', parent: b, pose: box(204, 34, 10, 6), data: {},
+      kind: 'mark', layer: 'main', parent: b, pose: box(4, 4, 10, 6), data: {},
     });
     act(() => { handle().start(); });
     act(() => { clock.frames(1); });
-    expect(s.overrides.ids()).toContain(label);
+    expect(s.overrides.ids()).not.toContain(label);
 
     // Somebody grabs the box.
     act(() => { s.overrides.set(b, { pose: box(300, 300) }); });
@@ -255,6 +255,7 @@ describe('useLiveLayout', () => {
     expect(s.overrides.ids()).not.toContain(label);
     // The override on the box is the grabber's, and the run leaves it alone.
     expect(s.overrides.get(b)?.pose).toEqual(box(300, 300));
+    expect(scenePoseFrame(s as never).world(label)).toMatchObject({ x: 304, y: 304 });
   });
 
   it('commits a force run once its motion stops', () => {

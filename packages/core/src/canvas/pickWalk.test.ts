@@ -152,7 +152,7 @@ describe('pickWalk — layers', () => {
     });
     scene.add({
       kind: 'mark', layer: 'top', id: asNodeId('kid'), parent: box,
-      pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
+      pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' },
     });
     expect(pickAt(scene, 105, 105)).toEqual(['box', 'kid']);
     scene.setLayerLocked('main', true);
@@ -176,7 +176,7 @@ describe('pickWalk — layers', () => {
     });
     scene.add({
       kind: 'mark', layer: 'top', id: asNodeId('kid'), parent: box,
-      pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
+      pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' },
     });
     scene.setHidden(asNodeId('a'), true);
     scene.setHidden(box, true);
@@ -193,7 +193,7 @@ describe('pickWalk — layers', () => {
     });
     scene.add({
       kind: 'mark', layer: 'top', id: asNodeId('kid'), parent: box,
-      pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
+      pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' },
     });
     scene.setLocked(box, true);
     expect(pickAt(scene, 105, 105)).toEqual([]);

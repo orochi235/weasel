@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PropertyRenderer } from './renderContext';
@@ -20,7 +20,7 @@ const schemaWith = (shadow: Partial<PrefSection> = {}): PrefSection => ({
 const routing: NodeRoutingEntry[] = [{ name: 'thing', matches: () => true }];
 
 function mount(schema: PrefSection, renderers?: Record<string, PropertyRenderer>) {
-  const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { shadow: true, blur: 4 } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema }];
   const view = render(

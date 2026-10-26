@@ -1,6 +1,7 @@
 /** Routes a person drew under `rack` and `lanes`, which place every stage
  *  themselves: each holds only while its wire's ends are where they were
  *  drawn from. */
+import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramScene, edgeIdOf, type DiagramSpec } from '../fromData';
 import { portOf } from '../ports';
@@ -51,9 +52,10 @@ export function wireEnds(specs: readonly DiagramSpec[], edge: string): [Vec2, Ve
   const spec = specs.find((s) => s.id === edge);
   const trait = (spec?.data as { diagram?: EdgeTrait } | undefined)?.diagram;
   const [from, to] = (spec?.dependsOn ?? []) as readonly string[];
+  const world = worldPosesOf(specs, RIGID_POSE_COMPOSITION);
   const point = (node: string | undefined, port: string | undefined) => {
     const n = node === undefined || port === undefined ? undefined : specs.find((s) => s.id === node);
-    return n === undefined ? undefined : portOf({ id: node!, kind: n.kind ?? 'mark', data: n.data }, n.pose, port!)?.point;
+    return n === undefined ? undefined : portOf({ id: node!, kind: n.kind ?? 'mark', data: n.data }, world.get(node!)!, port!)?.point;
   };
   const a = point(from, trait?.from?.port);
   const b = point(to, trait?.to?.port);

@@ -1,7 +1,7 @@
 /**
- * A container dropped into a layout container, on a scene with the default
- * absolute poses: the layout places the container, and its children have to
- * land with it though no drag delta describes where that is.
+ * A container dropped into a layout container: the layout places the
+ * container in world, it is stored in the layout container's frame, and its
+ * children land with it in its own.
  */
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
@@ -47,8 +47,8 @@ describe('moveAction — layout drop of a container', () => {
     handle.onEnd!({ ...base, world: drag.current, drag } as unknown as InvocationCtx, 'commit');
 
     expect(scene.get(group)!.parent).toBe(box);
-    expect(scene.get(group)!.pose).toEqual(slot);
+    expect(scene.get(group)!.pose).toEqual({ ...slot, x: 20, y: 30 });
     expect(scene.get(child)!.parent).toBe(group);
-    expect(scene.get(child)!.pose).toEqual({ x: 125, y: 135, width: 10, height: 10 });
+    expect(scene.get(child)!.pose).toEqual({ x: 5, y: 5, width: 10, height: 10 });
   });
 });

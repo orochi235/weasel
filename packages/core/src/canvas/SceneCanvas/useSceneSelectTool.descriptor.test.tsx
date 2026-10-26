@@ -4,6 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { useScene } from 'core/scene/useScene';
 import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { useSceneSelectTool } from './useSceneSelectTool';
@@ -11,7 +12,7 @@ import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/c
 
 function harness() {
   return renderHook(() => {
-    const scene = useScene<object, 'default', CirclePose>({ systemLayers: [{ id: 'default' }] });
+    const scene = useScene<object, 'default', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
     const adapter = useSceneAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     return {
       scene,

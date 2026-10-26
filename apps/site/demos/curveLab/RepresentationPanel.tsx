@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   ANCHOR_HIT_BASE_PX,
   asNodeId,
   composeAffordanceLayer,
@@ -64,7 +64,7 @@ export function RepresentationPanel({
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const initialPath = useMemo(() => rep.toPath(anchors), []);
-  const scene = useScene<{ kind: 'curve' }, 'default', ReturnType<CurveRepresentation['toPath']>>({
+  const scene = useScene<{ kind: 'curve' }, 'default', ReturnType<CurveRepresentation['toPath']>>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [{
       id: nodeId,

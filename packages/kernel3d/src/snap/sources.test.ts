@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type SnapCollect, type SnapMark } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, type SnapCollect, type SnapMark } from '@weasel-js/core';
 import type { Vec3 } from '@weasel-js/geom/3d';
 import { createCamera } from '../camera';
 import { pose3, type Pose3 } from '../pose3';
@@ -10,7 +10,7 @@ const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
 describe('alignPlaneSource', () => {
   it('offers a plane two boxes share once, and marks it to both', () => {
     // Both boxes have their min x at -0.5.
-    const scene = createScene<object, 'solids', Pose3>({
+    const scene = createScene<object, 'solids', Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'solids' }],
       initial: [pose3({ x: 0, y: 0.5, z: -4 }), pose3({ x: 0, y: 0.5, z: -8 })]
         .map((pose) => ({ kind: 'mark' as const, layer: 'solids' as const, pose, data: {} })),

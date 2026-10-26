@@ -153,7 +153,7 @@ function square(x: number, y: number): PolygonPath {
  */
 describe('hitTestArea — the memoized AABB tracks the scene', () => {
   function movableScene() {
-    const scene = createScene<{ label: string }, 'main', PolygonPath>({
+    const scene = createScene<{ label: string }, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'main' }],
     });
     const id = scene.add({ kind: 'mark', layer: 'main', pose: square(0, 0), data: { label: 'a' } });
@@ -207,7 +207,7 @@ describe('hitTestArea — the memoized AABB tracks the scene', () => {
 
 describe('hitTestArea — rotation and overrides', () => {
   function rectScene(): Scene<unknown, string, unknown> {
-    return createScene<unknown, string, unknown>({
+    return createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'default' }],
       initial: [{
         id: 'r' as NodeId,
@@ -235,7 +235,7 @@ describe('hitTestArea — rotation and overrides', () => {
   });
 
   it('selects an overridden node where the override draws it', () => {
-    const scene = createScene<unknown, string, unknown>({
+    const scene = createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'default' }],
       initial: [{
         id: 'o' as NodeId,
@@ -254,7 +254,7 @@ describe('hitTestArea — rotation and overrides', () => {
 
 describe('hitTestArea — non-rect poses', () => {
   it('fast-rejects and admits circles through a descriptor', () => {
-    const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'mark', layer: 'main', pose: circle(10, 10, 5), data: {} });
     const s = scene;
     expect(hitTestArea(s, { x: 0, y: 0, width: 20, height: 20 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([id]);
@@ -271,7 +271,7 @@ describe('hitTestLassoPolygon', () => {
   const TRIANGLE = [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 0, y: 200 }];
 
   function lassoScene(nodes: Array<{ id: string; pose: unknown; data?: unknown }>) {
-    return createScene<unknown, string, unknown>({
+    return createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'default' }],
       initial: nodes.map((n) => ({
         id: n.id as NodeId, kind: 'mark' as const, layer: 'default', pose: n.pose, data: n.data ?? null,
@@ -348,7 +348,7 @@ describe('intersect flattens curves', () => {
     coords: Float32Array.of(0, 0, 100, 0, 100, 200, 0, 200, 0, 0),
     fillRule: 'nonzero',
   };
-  const lobeScene = () => createScene<unknown, string, unknown>({
+  const lobeScene = () => createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [{ id: 'lobe' as NodeId, kind: 'mark' as const, layer: 'default', pose: lobe, data: null }],
   });
@@ -380,7 +380,7 @@ describe('intersect reads an open subpath by whether it fills', () => {
     coords: Float32Array.of(0, 0, 50, 100, 100, 0),
     fillRule: 'nonzero',
   };
-  const sceneOf = (pose: unknown, data: unknown = null) => createScene<unknown, string, unknown>({
+  const sceneOf = (pose: unknown, data: unknown = null) => createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [{ id: 'vee' as NodeId, kind: 'mark' as const, layer: 'default', pose, data }],
   });
@@ -435,7 +435,7 @@ describe('intersect reads a closed outline by whether it is filled', () => {
   };
   const stroke = { paint: { kind: 'solid', color: '#000000' }, width: 2 };
   const box = { x: 0, y: 0, width: 100, height: 100 };
-  const sceneOf = (pose: unknown, data: unknown) => createScene<unknown, string, unknown>({
+  const sceneOf = (pose: unknown, data: unknown) => createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [{ id: 'sq' as NodeId, kind: 'mark' as const, layer: 'default', pose, data }],
   });

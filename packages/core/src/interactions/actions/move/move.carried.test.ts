@@ -1,8 +1,6 @@
 /**
  * The ids a move leaves to a moving frame are the ones nudge and clone leave
- * to it: everything the drag reaches, less `translateTargets`. Checked under a
- * composing strategy, since under the identity one nothing is carried and the
- * two agree whatever either does.
+ * to it: everything the drag reaches, less `translateTargets`.
  */
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
@@ -76,10 +74,9 @@ describe('move — which ids a moving frame carries', () => {
     expect(sorted(frames.keys())).toEqual(sorted([ids.envelope, ids.inEnvelope, ids.inner]));
   });
 
-  it('carries nothing under the identity strategy', () => {
+  it('writes only the container under the identity strategy, whose containers carry nothing', () => {
     const { scene, ids } = fixture(IDENTITY_POSE_COMPOSITION as PoseComposition<RectPose>);
-    const { carried, frames } = carriedBy(scene, [ids.frame]);
-    expect(carried.size).toBe(0);
-    expect(frames.size).toBe(0);
+    const { written } = carriedBy(scene, [ids.frame]);
+    expect(written).toEqual([ids.frame]);
   });
 });

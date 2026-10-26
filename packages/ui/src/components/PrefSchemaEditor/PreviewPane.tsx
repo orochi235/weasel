@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
-import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { BarMenu, useBarMenuResolver } from '../Bar/BarMenu';
@@ -186,7 +186,7 @@ function sceneOf(schema: PrefSection, over: SchemaRoot | undefined): PreviewScen
     const shown = leaf.kind === 'alias' && over ? prefAliasTarget(leaf as PrefAlias, (at) => prefLeafAt(over, at)) : { path: key, leaf };
     if (shown && shown.leaf.default !== undefined) node = setAtPath(node, shown.path.split('.'), shown.leaf.default) as typeof node;
   }
-  const scene: PreviewScene = createScene({ systemLayers: [{ id: 'default' }] });
+  const scene: PreviewScene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: NODE, kind: 'mark', layer: 'default', pose: node.pose ?? {}, data: node.data ?? {} });
   return scene;
 }

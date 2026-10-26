@@ -9,6 +9,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { SceneCanvas } from '../../canvas/SceneCanvas';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from '../../canvas/surfaceContribution';
 import { FALLBACK_ACCENT } from '../../canvas/accentColor';
@@ -46,7 +47,7 @@ async function holdAndCapture(ambient: SurfaceContribution[], holdMs: number) {
   host.style.height = `${H}px`;
   document.body.appendChild(host);
   root = createRoot(host);
-  const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   flushSync(() => root!.render(createElement(SceneCanvas, {
     scene, layers: {}, width: W, height: H, ambient, longPress: { duration: DURATION },
   } as never)));

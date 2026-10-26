@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   createScene, insertAction, placeAction,
   type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapSource,
 } from '@weasel-js/core';
@@ -24,7 +24,7 @@ function viewport(camera = createCamera({ distance: 12, pitch: 0.4, yaw: 0.3, ta
 }
 
 function worldOf(poses: readonly Pose3[], vp: Viewport3d = viewport()): { world: W; ids: NodeId[] } {
-  const scene: Scene3d<object, 'solids'> = createScene<object, 'solids', Pose3>({
+  const scene: Scene3d<object, 'solids'> = createScene<object, 'solids', Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'solids' }],
     initial: poses.map((pose) => ({ kind: 'mark' as const, layer: 'solids' as const, pose, data: {} })),
   });

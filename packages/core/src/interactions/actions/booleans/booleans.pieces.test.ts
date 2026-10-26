@@ -4,6 +4,7 @@ import { pathFromD, type Path } from '@weasel-js/geom';
 import type { Paint } from '@weasel-js/paint';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { asNodeId, type NodeId } from 'core/scene/types';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
@@ -66,7 +67,7 @@ describe('applyBooleanOp: the source each piece stands in for', () => {
 
 describe('applyBooleanOp: where pieces from several parents land', () => {
   function nested() {
-    const scene = createScene<{ path?: Path }, 'default', Path>({ systemLayers: [{ id: 'default' }] });
+    const scene = createScene<{ path?: Path }, 'default', Path>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
     const add = (id: string, path: Path, parent?: string) => scene.add({
       id: asNodeId(id), kind: 'mark', layer: 'default', pose: path, data: { path },
       ...(parent ? { parent: asNodeId(parent) } : {}),

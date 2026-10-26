@@ -1,4 +1,5 @@
 import { createTransformOp } from 'core/ops/transform';
+import { definesFrame } from 'core/scene/effectivePose';
 import { createReparentOp } from 'core/ops/reparent';
 import type { Op } from 'core/ops/types';
 import type { SnapTarget } from 'core/adapters/types';
@@ -67,12 +68,17 @@ export function snapToContainer<TPose>(args: {
     }
     return slots;
   };
+  // A slot is a world pose; a preview shows it in the frame the node is stored in now.
   const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): BehaviorResult<TPose> => {
-    const start = ctx.origin.get(ctx.draggedIds[0]);
-    const toSlot = start !== undefined ? ctx.offset?.(start, snap.slotPose) : undefined;
+    const id = ctx.draggedIds[0];
+    const start = ctx.origin.get(id);
+    const startWorld = start === undefined ? undefined : ctx.frames?.toWorld(id, start) ?? start;
+    const toSlot = startWorld !== undefined ? ctx.offset?.(startWorld, snap.slotPose) : undefined;
+    const poses = new Map<string, TPose>();
+    for (const [at, slot] of slotsFor(ctx, snap)) poses.set(at, ctx.frames?.toLocal(at, slot) ?? slot);
     return {
       ...(toSlot ? { transform: { kind: 'translate' as const, ...toSlot } } : {}),
-      poses: slotsFor(ctx, snap),
+      poses,
       snap,
     };
   };
@@ -132,15 +138,51 @@ export function snapToContainer<TPose>(args: {
         }
       };
       const slots = slotsFor(ctx, snap);
-      for (const [id, to] of slots) {
+      for (const [id, slot] of slots) {
+        const to = ctx.frames?.toLocalUnder(snap.parentId, slot) ?? slot;
         ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
         reparent(id);
       }
       // A node with no slot of its own lands where the preview drew it.
       const rest = ctx.draggedIds.filter((id) => !slots.has(id));
-      ops.push(...end.translateOps(rest));
-      for (const id of rest) reparent(id);
+      const moved = end.translateOps(rest);
+      ops.push(...moved);
+      for (const id of rest) {
+        const was = ctx.adapter.getParent(id);
+        reparent(id);
+        if (was !== snap.parentId) ops.push(...keptInPlace(ctx, snap.parentId, id, moved, reparentLabel));
+      }
       return ops;
     },
   };
+}
+
+/**
+ * The ops that keep `id`, reparented into `parentId`, where `moved` left it:
+ * its pose made local to the new frame, and through an envelope, the poses of
+ * what shares its frame.
+ */
+function keptInPlace<TPose>(
+  ctx: GestureContext<TPose>,
+  parentId: string,
+  id: string,
+  moved: readonly Op[],
+  label: string,
+): Op[] {
+  const frames = ctx.frames;
+  if (frames === undefined) return [];
+  const translated = new Map(moved.filter((op) => op.name === 'transform')
+    .map((op) => [(op.args as { id: string }).id, (op.args as { to: TPose }).to]));
+  const ops: Op[] = [];
+  const keep = (at: string): void => {
+    const from = translated.get(at) ?? ctx.adapter.getPose(at);
+    ops.push(createTransformOp<TPose>({ id: at, from, to: frames.toLocalUnder(parentId, frames.toWorld(at, from)), label }));
+    const node = ctx.adapter.getNode(at) as { dependsOn?: unknown; derivePose?: unknown } | undefined;
+    if (node === undefined || definesFrame(node)) return;
+    for (const child of ctx.adapter.getNodes()) {
+      if ((child as { parent?: string | null }).parent === at) keep(child.id);
+    }
+  };
+  keep(id);
+  return ops;
 }

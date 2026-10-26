@@ -1,4 +1,5 @@
 import type { PolygonPath } from '@weasel-js/geom';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
@@ -37,7 +38,7 @@ export function lineSource(at: Point, dir: Point): SnapSource {
 
 /** A scene holding one leaf per path, on layer `main`, posed as the path. */
 export function sceneOfPaths(paths: readonly PolygonPath[]): AnyScene {
-  const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
+  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
   for (const pose of paths) scene.add({ kind: 'mark', layer: 'main', data: {}, pose } as never);
   return scene;
 }

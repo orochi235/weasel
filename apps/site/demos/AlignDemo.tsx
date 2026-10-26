@@ -11,7 +11,7 @@ const RECTS = [
 ];
 
 const SCENE = {
-  version: 2,
+  version: 3,
   systemLayers: [{ id: 'default' }],
   nodes: RECTS.map(({ id, color, ...pose }) => ({
     id, kind: 'mark', layer: 'default', pose, data: { fill: { paint: { color } } },

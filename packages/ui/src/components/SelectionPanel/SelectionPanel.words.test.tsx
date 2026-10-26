@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { prefFieldChoices } from '../Prefs';
 import { SelectionPanel } from './SelectionPanel';
@@ -17,7 +17,7 @@ const members: Record<string, PrefLeaf> = {
 };
 
 function setup(section: Partial<PrefSection> = {}) {
-  const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<Data, 'default', Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { size: 3, turn: 1 }, data: { kind: 'thing' } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members, ...section } }];
   return render(<SelectionPanel scene={scene} selection={{ current: ['a'] } as unknown as SelectionApi} properties={properties} routing={routing} />);

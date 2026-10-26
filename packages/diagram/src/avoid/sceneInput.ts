@@ -4,9 +4,8 @@
  * split across pages, with the ports each end may use and its label. A split
  * connector's label, on its first stub, is an obstacle of its own.
  */
-import {
+import { composeWorldPose, scenePoseAdapter,
   AUTO_POSE_DESCRIPTOR,
-  documentPose,
   type PoseDescriptor,
   type Scene,
 } from '@weasel-js/core';
@@ -64,7 +63,7 @@ export function avoidSceneInput<TPose>(
   const pose = (node: SceneNode): TPose => {
     let p = poses.get(node.id);
     if (p === undefined) {
-      p = poseOf?.(node.id) ?? (documentPose(sc, node as never) as TPose);
+      p = poseOf?.(node.id) ?? (composeWorldPose(scenePoseAdapter(sc), node.id, sc.composition.compose) as TPose);
       poses.set(node.id, p);
     }
     return p;

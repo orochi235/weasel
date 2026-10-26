@@ -3,6 +3,7 @@
  * not by its bounding box.
  */
 import { describe, expect, it } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { Node, NodeId } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -20,7 +21,7 @@ const triangle = (dx: number, dy: number) => ({
 });
 
 function build() {
-  const scene = createScene<unknown, string, unknown>({
+  const scene = createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [
       // Polygon pose: the pose is the outline.

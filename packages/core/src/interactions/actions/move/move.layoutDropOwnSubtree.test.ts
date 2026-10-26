@@ -50,6 +50,7 @@ describe('moveAction — a layout container inside the dragged subtree', () => {
     expect(scene.get(group)!.parent).toBe(null);
     expect(scene.get(group)!.pose).toEqual({ x: 5, y: 5, width: 100, height: 100 });
     expect(scene.get(inner)!.parent).toBe(group);
-    expect(scene.get(inner)!.pose).toEqual({ x: 15, y: 15, width: 80, height: 80 });
+    // Carried in the group's frame.
+    expect(scene.get(inner)!.pose).toEqual({ x: 10, y: 10, width: 80, height: 80 });
   });
 });

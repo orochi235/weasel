@@ -10,6 +10,7 @@
  * z-order bug or a node that cannot be clicked, not as a crash.
  */
 import { describe, expect, it } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
 import { createScene } from './scene';
 import { asNodeId } from './types';
 import type { NodeId, Scene } from './types';
@@ -49,7 +50,7 @@ function mulberry32(seed: number): () => number {
 }
 
 function sceneWithLayers(count: number): AnyScene {
-  return createScene<Data, string, unknown>({
+  return createScene<Data, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: Array.from({ length: count }, (_, i) => ({ id: `L${i}` })),
   });
 }

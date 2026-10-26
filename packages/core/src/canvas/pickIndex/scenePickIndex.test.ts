@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { rectRegion } from 'core/geometry/regionHit';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { rectPath } from '@weasel-js/geom';
@@ -21,7 +22,7 @@ type Box = { x: number; y: number; width: number; height: number };
 const A = asNodeId('a');
 
 function sceneWith(pose: Box, extra: Record<string, unknown> = {}, composed = false): AnyScene {
-  const scene = createScene<unknown, string, unknown>({
+  const scene = createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'main' }],
     ...(composed ? { composition: RIGID_POSE_COMPOSITION as never } : {}),
   });
@@ -172,7 +173,7 @@ describe('scenePickIndex freshness', () => {
   });
 
   it('reads candidates out in render order, and walks once they pass half the scene', () => {
-    const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'main' }] }) as AnyScene;
+    const scene = createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as AnyScene;
     // Render order runs against the grid's reading order, so a sort by position would be wrong.
     for (let i = 99; i >= 0; i--) {
       const pose = { x: (i % 10) * 30, y: Math.floor(i / 10) * 30, width: 20, height: 20 };

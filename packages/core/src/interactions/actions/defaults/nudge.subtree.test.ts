@@ -30,16 +30,16 @@ function nudgeRight(scene: Scene<unknown, string, unknown>, selected: NodeId[], 
 const x = (scene: Scene<unknown, string, unknown>, id: NodeId) => (scene.get(id)!.pose as RectPose).x;
 
 describe('nudge on a container', () => {
-  it('moves the children with it when every node stores world coordinates', () => {
+  it('carries the children in its frame, writing only its own pose', () => {
     const scene = makeScene();
     nudgeRight(scene, [G]);
-    expect([x(scene, G), x(scene, A), x(scene, B)]).toEqual([1, 1, 41]);
+    expect([x(scene, G), x(scene, A), x(scene, B)]).toEqual([1, 0, 40]);
   });
 
   it('moves a child once when it is selected along with its container', () => {
     const scene = makeScene();
     nudgeRight(scene, [G, A]);
-    expect([x(scene, G), x(scene, A), x(scene, B)]).toEqual([1, 1, 41]);
+    expect([x(scene, G), x(scene, A), x(scene, B)]).toEqual([1, 0, 40]);
   });
 
   it('undoes the whole subtree in one step', () => {

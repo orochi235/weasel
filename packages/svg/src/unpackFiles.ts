@@ -8,9 +8,11 @@ import { svgNodesToKitDrafts } from './unpack';
 import {
   createInsertOp,
   dwarn,
+  localizeWorldPoses,
   unionAABB,
   type IngestCtx,
   type Op,
+  type PoseComposition,
   type Stroke,
   type StyledRun,
   type TextStyle,
@@ -109,13 +111,18 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         height: p.height * scale,
       });
 
-      const ops: Op[] = drafts.map((d) =>
+      // Measured in world; each pose is stored in its container's frame.
+      const placed = localizeWorldPoses(
+        drafts.map((d) => ({ id: d.id, parent: d.parentId, pose: place(d.pose) })),
+        ctx.scene.composition as PoseComposition<SvgDraftPose>,
+      );
+      const ops: Op[] = drafts.map((d, i) =>
         createInsertOp({
           node: {
             id: d.id,
             kind: d.kind,
             layer,
-            pose: place(d.pose),
+            pose: placed[i]!.pose,
             data: d.kind === 'mark' ? scaleLeafData(d.data, scale) : d.data,
             parent: d.parentId,
             ...(d.clip ? { clip: d.clip } : {}),

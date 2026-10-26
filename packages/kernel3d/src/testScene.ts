@@ -4,7 +4,7 @@
  * like, so its fixture does not say.
  */
 
-import { createScene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
 import { aabbAround, type Aabb } from '@weasel-js/geom/3d';
 import { pose3, aabbOfPose, type Pose3 } from './pose3';
 import type { Node3d, Scene3d } from './deps';
@@ -28,7 +28,7 @@ export function boundsOfTestNode(node: TestNode): Aabb {
 }
 
 export function createTestScene(): TestScene {
-  return createScene<TestData, TestLayer, Pose3>({
+  return createScene<TestData, TestLayer, Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'solids' }],
     initial: [
       { kind: 'mark', layer: 'solids', pose: pose3({ x: -2.2, y: 0.5, z: 0 }), data: {} },

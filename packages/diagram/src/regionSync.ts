@@ -2,6 +2,7 @@
  * The regions half of `DiagramView`'s sync: where each container, pool, and
  * lane stands, and the region edits a change to that is reported as.
  */
+import { worldWith } from './worldWith';
 import type { RectPose, Scene } from '@weasel-js/core';
 import { lanesOf, poolAxisOf } from './containers/containerStencils';
 import { diagramContainerOf } from './containers/trait';
@@ -48,10 +49,11 @@ export function laneList(scene: AnyScene, poolId: string): { id: string; size: n
 export function readRegions(scene: AnyScene): RegionStanding {
   const regions = new Map<string, RegionAt>();
   const pools = new Map<string, { id: string; size: number }[]>();
+  const at = worldWith(scene);
   for (const n of scene.renderOrderNodes()) {
     const trait = diagramContainerOf(n);
     if (trait === null) continue;
-    const { x, y, width, height } = n.pose as RectPose;
+    const { x, y, width, height } = at(n.id) as RectPose;
     regions.set(n.id, { box: { x, y, width, height }, parent: n.parent, fitted: trait.fitted === true });
     if (trait.role === 'pool') pools.set(n.id, laneList(scene, n.id));
   }

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
 import { createScene, sceneFromJSON } from './scene';
 import { documentPose, effectivePose } from './effectivePose';
 import { UNION_OF_CHILDREN, unionOfChildren } from './kitRegistry';
@@ -252,7 +253,7 @@ describe('derived pose — a scene whose poses are not rects', () => {
   const at = (x: number, y: number, z: number): Pose3 => ({ position: [x, y, z] });
 
   function grouped3() {
-    const scene = createScene<object, 'main', Pose3>({ systemLayers: LAYERS });
+    const scene = createScene<object, 'main', Pose3>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: LAYERS });
     const g = scene.add({
       kind: 'group', layer: 'main', pose: at(7, 7, 7), data: {},
       dependsOn: 'children', derivePose: unionOfChildren,

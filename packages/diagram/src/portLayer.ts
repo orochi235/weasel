@@ -1,9 +1,8 @@
 /**
  * The port affordance, composed into a layer and pointed at a scene.
  */
-import {
+import { scenePoseFrame,
   composeAffordanceLayer,
-  effectivePose,
   nodeGates,
   type GatedLayer,
   type RenderLayer,
@@ -46,9 +45,10 @@ export interface ParticipantScene<TPose> {
  * marks keep ports off such a node; the graph reads past them, so a hidden
  * node is still laid out.
  *
- * `effectivePose`, not `node.pose`: an override is what a gesture is currently
+ * Its effective pose, in world: an override is what a gesture is currently
  * showing, and a port that answers from the document pose while its node is
- * mid-drag sits somewhere the user can see the node is not.
+ * mid-drag, or from its pose in its container's frame, sits somewhere the
+ * user can see the node is not.
  *
  * One source answers both the ports and the graph.
  */
@@ -57,12 +57,13 @@ export function sceneParticipants<TPose>(
 ): () => Iterable<ParticipantPose<TPose> & { node: GraphNodeLike }> {
   return function* () {
     const gates = nodeGates(scene as never);
+    const frame = scenePoseFrame(scene as never);
     for (const node of scene.renderOrderNodes()) {
       const hidden = gates.hidden(node.id);
       const locked = gates.locked(node.id);
       yield {
         node: node as GraphNodeLike,
-        pose: effectivePose(scene as never, node as never) as TPose,
+        pose: frame.world(node.id as never) as TPose,
         ...(node.layer !== undefined ? { layer: node.layer } : {}),
         ...(hidden ? { hidden } : {}),
         ...(locked ? { locked } : {}),

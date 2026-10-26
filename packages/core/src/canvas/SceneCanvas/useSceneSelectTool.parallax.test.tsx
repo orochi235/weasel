@@ -81,7 +81,7 @@ describe('useSceneSelectTool — parallax layers', () => {
         systemLayers: [{ id: 'trees', parallax: { pan: 1.3 } }],
         initial: [
           { id: asNodeId('tree'), kind: 'group', layer: 'trees', pose: { x: 400, y: 300, width: 30, height: 50 }, data: { fill: null } },
-          { id: asNodeId('trunk'), kind: 'mark', layer: 'trees', parent: asNodeId('tree'), pose: { x: 410, y: 330, width: 10, height: 20 }, data: {} },
+          { id: asNodeId('trunk'), kind: 'mark', layer: 'trees', parent: asNodeId('tree'), pose: { x: 10, y: 30, width: 10, height: 20 }, data: {} },
         ],
       });
       const adapter = useSceneAdapter(scene);

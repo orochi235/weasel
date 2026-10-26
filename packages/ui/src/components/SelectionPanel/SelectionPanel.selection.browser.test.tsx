@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, test, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
@@ -17,7 +17,7 @@ const properties: NodePropertiesEntry[] = [
 ];
 
 test('a selected row is outlined, and no other', () => {
-  const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
   render(<SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing} selected={['data.tint']} />);
   const outlined = (name: string): boolean => getComputedStyle(screen.getByText(name).closest('[data-pref-path]')!).outlineStyle === 'solid';
@@ -38,7 +38,7 @@ const SECTIONED: PrefSection = {
 };
 
 function sectioned(selected: readonly string[], onSelect?: (path: string) => void) {
-  const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
   render(
     <SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={[{ name: 'thing', schema: SECTIONED }]}

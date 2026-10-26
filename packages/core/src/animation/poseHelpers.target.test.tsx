@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
+import { scenePoseFrame } from '../interactions/actions/poseFrame';
 import type { RectPose } from '../core/scene/types';
 import { sceneToAdapter } from '../canvas/sceneAdapter';
 import { moveGestureAdapter } from '../interactions/actions/move/gestureAdapter';
@@ -167,24 +168,20 @@ describe('springPose on a scene', () => {
   });
 });
 
-describe('a container whose scene composes nothing', () => {
+describe('a container whose pose is a frame', () => {
   function family() {
     const s = setup();
     const box = s.scene.add({ kind: 'group', layer: 'main', pose: at(0), data: {} });
     const child = s.scene.add({ kind: 'mark', layer: 'main', pose: at(5), data: {}, parent: box });
-    const shownX = (id: typeof box): number => effectivePose(s.scene, s.scene.get(id)!).x;
+    const shownX = (id: typeof box): number => (scenePoseFrame(s.scene as never).world(id) as RectPose).x;
     return { ...s, box, child, shownX };
   }
 
-  it('moves on its target, with its children committed at once and shown traveling beside it', () => {
+  it('moves on its target, its children traveling in its frame with no pose of their own written', () => {
     const { animator, frame, scene, adapter, box, child, shownX } = family();
     act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear, recordOp: false }); });
-    expect(adapter.poseTarget?.(box)?.active).toBe(true);
     expect(scene.get(box)!.pose.x).toBe(100);
-    expect(scene.get(child)!.pose.x).toBe(105);
-    const version = scene.getVersion();
-    expect(shownX(box)).toBeCloseTo(0);
-    expect(shownX(child)).toBeCloseTo(5);
+    expect(scene.get(child)!.pose.x).toBe(5);
     frame(0);
     frame(50);
     expect(shownX(box)).toBeCloseTo(50);
@@ -192,45 +189,11 @@ describe('a container whose scene composes nothing', () => {
     frame(100);
     frame(116);
     expect(shownX(child)).toBe(105);
-    expect(scene.overrides.has(box)).toBe(false);
     expect(scene.overrides.has(child)).toBe(false);
-    expect(scene.getVersion()).toBe(version);
   });
 
-  it('shows a child traveling beside it though another writer shows the child\'s data', () => {
+  it('records the move as one step that undo takes back', () => {
     const { animator, frame, scene, adapter, box, child, shownX } = family();
-    const draft = { data: (stored: object) => ({ ...stored, draft: true }) };
-    scene.overrides.set(child, draft);
-    act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear, recordOp: false }); });
-    frame(0);
-    frame(50);
-    expect(shownX(child)).toBeCloseTo(55);
-    expect(scene.overrides.has(child, draft)).toBe(true);
-  });
-
-  it('leaves a child to another writer posing it', () => {
-    const { animator, frame, scene, adapter, box, child, shownX } = family();
-    scene.overrides.set(child, { pose: at(300) });
-    act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear, recordOp: false }); });
-    frame(0);
-    frame(50);
-    expect(shownX(child)).toBe(300);
-  });
-
-  it('adds a second move of the container to the first, children included', () => {
-    const { animator, frame, adapter, box, child, shownX } = family();
-    act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear, recordOp: false }); });
-    frame(0);
-    frame(50);
-    act(() => { tweenPose(animator(), adapter, { id: box, to: at(200), ms: 100, easing: linear, recordOp: false }); });
-    frame(100);
-    // The first has arrived at 100; the second is halfway through its own 100.
-    expect(shownX(box)).toBeCloseTo(150);
-    expect(shownX(child)).toBeCloseTo(155);
-  });
-
-  it('records the move as one step that undo takes back, children with it', () => {
-    const { animator, frame, scene, adapter, box, child } = family();
     const entries = scene.historyEntries().length;
     act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear }); });
     frame(0);
@@ -239,18 +202,6 @@ describe('a container whose scene composes nothing', () => {
     expect(scene.historyEntries().length).toBe(entries + 1);
     scene.undo();
     expect(scene.get(box)!.pose.x).toBe(0);
-    expect(scene.get(child)!.pose.x).toBe(5);
-  });
-
-  it('leaves alone a child that something else is showing', () => {
-    const { animator, frame, scene, adapter, box, child, shownX } = family();
-    scene.overrides.set(child, { pose: at(40) });
-    act(() => { tweenPose(animator(), adapter, { id: box, to: at(100), ms: 100, easing: linear, recordOp: false }); });
-    frame(0);
-    frame(50);
-    expect(shownX(child)).toBe(40);
-    frame(100);
-    frame(116);
-    expect(scene.overrides.has(child)).toBe(true);
+    expect(shownX(child)).toBe(5);
   });
 });

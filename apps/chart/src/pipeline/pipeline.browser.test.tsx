@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { fitViewToBounds, viewToTransform, type RectPose } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, fitViewToBounds, viewToTransform, type RectPose } from '@weasel-js/core';
 import { diagramGroupOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
 import {
   AT_COLOR, EFFECT_MIN_SCALE, IMAGE_STAGE_TYPES, editorScene, mainChain, previewRowId, setLookRoute, stageFromType, wireEnds,
@@ -89,7 +89,7 @@ describe('WeaselChart pipeline mode', () => {
     const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
     const r = canvas.getBoundingClientRect();
     const built = editorScene(doc, 'rack');
-    const specs = diagramScene(built.data, built.scene);
+    const specs = diagramScene(built.data, { ...built.scene, composition: IDENTITY_POSE_COMPOSITION });
     const box = (id: string) => specs.find((s) => s.id === id)!.pose as RectPose;
     // The view the editor opens on: every stage in view, at most at scale 1, from the top-left.
     const all = ['src', 'a', 'b'].map(box);
@@ -128,7 +128,7 @@ describe('WeaselChart pipeline mode', () => {
       places: {},
     };
     const built = editorScene(plain, 'rack');
-    const specs = diagramScene(built.data, built.scene);
+    const specs = diagramScene(built.data, { ...built.scene, composition: IDENTITY_POSE_COMPOSITION });
     const ends = wireEnds(specs, 'w2')!;
     const bend = { x: (ends[0].x + ends[1].x) / 2, y: ends[0].y + 60 };
     localStorage.setItem(PIPELINE_STORAGE_KEY, JSON.stringify(setLookRoute(plain, 'rack', 'w2', [bend], ends)));
@@ -196,7 +196,7 @@ describe('WeaselChart pipeline mode', () => {
       const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
       const r = canvas.getBoundingClientRect();
       const opened = editorScene(RUN_DOC);
-      const boxes = diagramScene(opened.data, opened.scene).filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
+      const boxes = diagramScene(opened.data, { ...opened.scene, composition: IDENTITY_POSE_COMPOSITION }).filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
       const left = Math.min(...boxes.map((b) => b.x));
       const top = Math.min(...boxes.map((b) => b.y));
       const bounds = {
@@ -206,7 +206,7 @@ describe('WeaselChart pipeline mode', () => {
         maxScale: 1, minScale: EFFECT_MIN_SCALE, anchor: 'start',
       }));
       const drawn = editorScene(RUN_DOC, 'nodeGraph', { showValues: false, showPreviews: true });
-      const box = diagramScene(drawn.data, drawn.scene).find((s) => s.id === id)!.pose as RectPose;
+      const box = diagramScene(drawn.data, { ...drawn.scene, composition: IDENTITY_POSE_COMPOSITION }).find((s) => s.id === id)!.pose as RectPose;
       const dpr = canvas.width / r.width;
       const x = Math.round((t.panX + (box.x + box.width * fx + dx) * t.zoom.x) * dpr);
       const y = Math.round((t.panY + (box.y + box.height * fy) * t.zoom.y) * dpr);

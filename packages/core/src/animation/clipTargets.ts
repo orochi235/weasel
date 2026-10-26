@@ -1,6 +1,6 @@
 import type { ClipBinder, Pose, Target } from '@weasel-js/animator';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
-import { scenePoseTarget, type PoseCascade, type PoseTargetScene } from './poseTarget';
+import { scenePoseTarget, type PoseTargetScene } from './poseTarget';
 
 /** Options for `sceneClipTargets`. */
 export interface SceneClipTargetsOptions<TPose> {
@@ -8,7 +8,6 @@ export interface SceneClipTargetsOptions<TPose> {
   rigs?: Readonly<Record<string, { readonly target: Target<Pose> }>>;
   /** As `scenePoseTarget` takes them. */
   descriptor?: PoseDescriptor<TPose>;
-  cascade?: PoseCascade<TPose>;
 }
 
 /**
@@ -22,7 +21,7 @@ export function sceneClipTargets<TPose>(
   options: SceneClipTargetsOptions<TPose> = {},
 ): NonNullable<ClipBinder['target']> {
   return (name) => {
-    if (name.startsWith('pose:')) return scenePoseTarget(scene, name.slice(5), options.descriptor, options.cascade);
+    if (name.startsWith('pose:')) return scenePoseTarget(scene, name.slice(5), options.descriptor);
     if (name.startsWith('rig:')) return options.rigs?.[name.slice(4)]?.target;
     return undefined;
   };

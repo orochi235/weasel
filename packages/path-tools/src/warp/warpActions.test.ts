@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/geom';
 import type { DistortWarp } from '@weasel-js/geom/warp';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   asNodeId, commitOps, createScene, createTransformOp, type RectPose, resolveEditablePathOf, type Scene, selectedPathNodes,
 } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp } from './pathWarp';
@@ -121,7 +121,7 @@ describe('distort', () => {
 
   it('keeps the warp on a polygon pose rotated after it', () => {
     const square = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
-    const scene = createScene<unknown, 'main', unknown>({
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'main' }],
       initial: [{ id: asNodeId('a'), kind: 'mark', layer: 'main', pose: square, data: {} }],
     }) as unknown as S;

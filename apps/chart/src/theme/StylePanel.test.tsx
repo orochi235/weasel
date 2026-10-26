@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { createScene } from '@weasel-js/core';
+import { createScene, type RectPose } from '@weasel-js/core';
 import { DIAGRAM_THEMES, diagramScene, withDiagramRegistry } from '@weasel-js/diagram';
 import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import type { ChartScene } from '../chartDocument';
@@ -16,7 +16,7 @@ function setup(selected: readonly string[]) {
   const scene = createScene({
     systemLayers: [{ id: 'main' }],
     initial: diagramScene({ nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }], edges: [] }, { theme, layout: 'none' }) as never,
-    registry: withDiagramRegistry(),
+    registry: withDiagramRegistry<RectPose>(),
   }) as unknown as ChartScene;
   const view = render(<StylePanel scene={scene} selected={selected} theme={theme} />, { wrapper: iconsWrapper() });
   return { scene, rerender: () => view.rerender(<StylePanel scene={scene} selected={selected} theme={theme} />) };

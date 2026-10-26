@@ -4,7 +4,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { effectivePose } from 'core/scene/effectivePose';
 import type { NodeId, Scene } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
-import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
+import { composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
 import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
@@ -73,7 +73,6 @@ export function captureFrames(
   const carried = new Set<NodeId>();
   const frames = new Map<NodeId, { world: unknown; frameWorld: unknown }>();
   const pc = scene.composition;
-  if (!composesFrames(pc)) return { carried, frames };
   const written = new Set(translateTargets(scene, scenePoseFrame(scene), ids));
   const poseAdapter = scenePoseAdapter(scene);
   for (const id of startPoses.keys()) {

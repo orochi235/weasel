@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, derivedDepOf, effectivePose, type RectPose } from '@weasel-js/core';
+import { scenePoseFrame, RIGID_POSE_COMPOSITION, worldPosesOf, createScene, derivedDepOf, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
 import { diagramScene, edgeIdOf, type DiagramSpec } from '../fromData';
 import { nestGroups } from '../groupTree';
@@ -47,7 +47,7 @@ function load(p: EffectPipeline) {
   const drawn = lanes(p);
   const specs = diagramScene(drawn.data, drawn.scene);
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], initial: specs as never, registry: withDiagramRegistry() });
-  const pose = (id: string) => effectivePose(scene as never, scene.get(id as never)! as never) as Box;
+  const pose = (id: string) => scenePoseFrame(scene as never).world(id as never) as Box;
   const route = (id: string): Pt[] => {
     const path = derivedDepOf(scene as never, id as never)!.path! as { coords: Float32Array };
     return Array.from({ length: path.coords.length / 2 }, (_, i) => ({ x: path.coords[2 * i]!, y: path.coords[2 * i + 1]! }));
@@ -191,7 +191,7 @@ describe('lanes wires', () => {
       const bands = drawn.data.nodes.filter((n) => n.id.startsWith('~lane:')).map((n) => pose(n.id));
       const top = Math.min(...bands.map((b) => b.y));
       const bottom = Math.max(...bands.map((b) => b.y + b.height));
-      const boxOf = (id: string) => specs.find((s) => s.id === id)?.pose as Box | undefined;
+      const boxOf = (id: string) => worldPosesOf(specs, RIGID_POSE_COMPOSITION).get(id) as Box | undefined;
       const groups = nestGroups(uniqueGroups(p), (id) => p.stages.some((s) => s.id === id)).flatMap((g) => {
         const box = boxOf(g.id);
         return box === undefined ? [] : [{ id: g.id, members: g.members, box }];

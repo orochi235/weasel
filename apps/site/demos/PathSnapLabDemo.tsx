@@ -1,4 +1,4 @@
-import { asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid } from '@weasel-js/core';
 import {
   type ConfigOf,
   defineInstrument,
@@ -37,7 +37,7 @@ const box = (id: string, pose: { x: number; y: number; width: number; height: nu
   ({ id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const, parent: null, pose, data });
 
 const createLabScene = () =>
-  createScene<unknown, 'default', unknown>({
+  createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [
       strokeNode('rise', pathFromD('M80 380 L520 50'), '#7fb069'),
