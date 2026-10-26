@@ -28,9 +28,7 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
     return rebaseTransformOp(op, commitAdapter, pc, curParent, toParent);
   };
   // Cross-container drop: reparent each dragged node under the
-  // destination container so its tree position matches its new
-  // visual home. Scene v1's absolute-pose semantics mean the
-  // subsequent pose op still lands the child at the snapped cell.
+  // destination container, then pose it in that container's frame.
   // Every reparent precedes every drop.
   const reparentOps: Op[] = [];
   const dropOps: Op[] = [];

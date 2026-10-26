@@ -10,9 +10,9 @@ import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseRep
 import type { PoseHold, PoseOverride, PoseOverrides, ShownOverride } from './poseOverrideTypes';
 import type { SceneChanges } from './sceneChanges';
 import type {
-  SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1,
+  SavedScene, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1, SerializedSceneV2,
 } from './serializedTypes';
-import type { UseSceneOptions } from './useSceneOptions';
+import type { SceneOptions, UseSceneOptions } from './useSceneOptions';
 import type { SceneDocValues } from './docValues';
 import type { SceneDeclaredFieldSetters } from './declaredFieldSetters';
 import type { SceneEditPasses } from './editPass';
@@ -20,10 +20,10 @@ import type { SceneArrivalHandler } from './arrivalTypes';
 import type { RegisteredOp } from './registeredOp';
 import type { SpecsFromSerializedOptions } from './serialization';
 import type { RectPose } from '../geometry/rectPose';
-export type { RectPose, RegisteredOp, SceneArrivalHandler, UseSceneOptions };
+export type { RectPose, RegisteredOp, SceneArrivalHandler, SceneOptions, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
-export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, ShownOverride, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1 };
+export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, ShownOverride, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1, SerializedSceneV2, SavedScene };
 
 /**
  * # SceneNode — the thing in the scene
@@ -242,7 +242,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   /** The registry this scene resolves node functions against — the consumer's
    *  entries over the kit's. */
   readonly registry: SceneRegistry<TPose, TData, TLayer>;
-  /** See {@link UseSceneOptions.composition}. */
+  /** See {@link SceneOptions.composition}. */
   readonly composition: PoseComposition<TPose>;
   get(id: NodeId): Node<TData, TLayer, TPose> | undefined;
   /** A token for the node `id` names right now, for telling one node from a
@@ -522,10 +522,10 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  undo — which would revert to a state this replaces. Throws on an unsupported version or unknown registry/layer ids; on a
    *  malformed snapshot the scene is left empty or partially populated (callers should treat a
    *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
-   *  always well-formed. `opts` reads the snapshot as `specsFromSerialized` does. */
+   *  always well-formed. `opts` reads it as `specsFromSerialized` does, under the scene's composition. */
   loadState(
-    json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
-    opts?: SpecsFromSerializedOptions<TData, TLayer, TPose>,
+    json: SavedScene<TData, TLayer, TPose>,
+    opts?: Omit<SpecsFromSerializedOptions<TData, TLayer, TPose>, 'composition'>,
   ): void;
 
 }

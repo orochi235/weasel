@@ -13,15 +13,17 @@
 import type { GesturePreviewSource } from '../../canvas/gestureBounds';
 import type { Node, NodeId, Scene } from '../../core/scene/types';
 import { asNodeId } from '../../core/scene/types';
-import { effectivePose } from '../../core/scene/effectivePose';
+import { definesFrame, effectivePose } from '../../core/scene/effectivePose';
+import { composeWorldPose, composesFrames, type PoseAdapter } from '../../core/scene/composeFrame';
 
 /** One node an in-flight gesture is previewing, as {@link resolvePreviews} returns it. */
 export interface PreviewNode<TData, TLayer extends string, TPose> {
   id: NodeId;
   /** The node as committed. */
   node: Node<TData, TLayer, TPose>;
-  /** The pose a source previews, else the node's effective pose — where the
-   *  scene's overrides put it mid-transform. */
+  /** Where the node draws, in world: the pose a source previews, else its
+   *  effective pose — where the scene's overrides put it mid-transform —
+   *  folded through every container's frame, previewed or not. */
   pose: TPose;
   /** The interim data, or the committed one when only the pose is in flight. */
   data: TData;
@@ -30,7 +32,8 @@ export interface PreviewNode<TData, TLayer extends string, TPose> {
    * reflowing into its destination slot. It reads better painted settled.
    */
   opaque: boolean;
-  /** Previewed descendants, so a container's ghost brings its children. */
+  /** Previewed descendants, and those a previewed frame carries, so a
+   *  container's ghost brings its children. */
   children: PreviewNode<TData, TLayer, TPose>[];
 }
 
@@ -51,6 +54,9 @@ function firstNonNull<T>(
  * The previewing subtrees, as roots. A previewed node whose parent is also
  * previewing is a child of that parent's entry rather than a root of its own,
  * which is what lets a caller draw a container and its contents as one thing.
+ * A previewed container whose pose is a frame brings every child it carries,
+ * previewed or not. A source previews a pose in the frame the node is stored
+ * in; each entry's pose is in world.
  *
  * An id with no node is skipped: an insert previews before the node it will
  * create exists.
@@ -75,25 +81,39 @@ export function resolvePreviews<TData, TLayer extends string, TPose>(
     for (const id of settled) opaque.add(id);
   }
 
-  const build = (id: string): PreviewNode<TData, TLayer, TPose> | null => {
+  const composition = scene.composition;
+  const framed = composesFrames(composition);
+  const shown: PoseAdapter<TPose> = {
+    getPose: (id) => firstNonNull<TPose>(list, id, (s, i) => s.previewPose?.(i)) ?? effectivePose(scene, scene.get(asNodeId(id))!),
+    getParent: (id) => scene.get(asNodeId(id))?.parent ?? null,
+    definesFrame: (id) => {
+      const node = scene.get(asNodeId(id));
+      return node === undefined || definesFrame(node);
+    },
+  };
+
+  // `riding`: the frame `id` is stored in is drawn here, which an envelope's
+  // children share with it.
+  const build = (id: string, carriedOpaque = false, riding = false): PreviewNode<TData, TLayer, TPose> | null => {
     const node = scene.get(asNodeId(id));
     if (!node) return null;
-    const pose = firstNonNull<TPose>(list, id, (s, i) => s.previewPose?.(i));
     const data = firstNonNull<TData>(list, id, (s, i) => s.previewData?.(i));
+    const isOpaque = carriedOpaque || opaque.has(id);
+    const carries = framed && (definesFrame(node) || riding);
 
     const children: PreviewNode<TData, TLayer, TPose>[] = [];
     for (const childId of scene.childrenOf(asNodeId(id))) {
-      if (!ids.has(childId)) continue;
-      const child = build(childId);
+      if (!ids.has(childId) && !carries) continue;
+      const child = build(childId, isOpaque && !ids.has(childId), carries);
       if (child) children.push(child);
     }
 
     return {
       id: asNodeId(id),
       node,
-      pose: pose ?? effectivePose(scene, node),
+      pose: composeWorldPose(shown, id, composition.compose),
       data: data ?? node.data,
-      opaque: opaque.has(id),
+      opaque: isOpaque,
       children,
     };
   };

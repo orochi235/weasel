@@ -1,11 +1,12 @@
 /**
  * Bringing a node's descendants along when something writes the node's pose
  * and nothing writes theirs: a layout restacking a container, a drop landing
- * one, a page move. Under absolute poses a descendant stores its own world
- * pose, so it stays behind unless it is written too.
+ * one, a page move. A descendant stored in a frame that moves rides it; one
+ * stored above it, under an envelope, stays behind unless it is written too.
  */
-import { composeWorldPose, composesFrames, frameAtOrAbove, rebaseLocalPose, type PoseAdapter, type PoseComposition } from './composeFrame';
+import { composeWorldPose, frameAtOrAbove, rebaseLocalPose, type PoseAdapter, type PoseComposition } from './composeFrame';
 import { scenePoseAdapter } from './scenePoseAdapter';
+import { definesFrame } from './effectivePose';
 import type { NodeId, Scene } from './types';
 
 /** What carrying reads: the tree, every stored pose, and how poses compose. */
@@ -39,7 +40,6 @@ export function carriedDescendants<TPose>(
   moving: (id: NodeId) => boolean = () => false,
 ): Map<NodeId, TPose> {
   const { poses, composition } = source;
-  const framed = composesFrames(composition);
   const under = new Set<NodeId>([root]);
   const out = new Map<NodeId, TPose>();
   const walk = (at: NodeId): void => {
@@ -47,7 +47,7 @@ export function carriedDescendants<TPose>(
       if (moving(id)) continue;
       under.add(id);
       const parent = poses.getParent(id);
-      const frame = framed ? frameAtOrAbove(poses, parent) : null;
+      const frame = frameAtOrAbove(poses, parent);
       if (frame === null || !under.has(frame as NodeId)) {
         const world = translate(composeWorldPose(poses, id, composition.compose), id);
         if (world !== null) out.set(id, rebaseLocalPose(poses, world, parent, composition.compose, composition.decompose));
@@ -56,5 +56,21 @@ export function carriedDescendants<TPose>(
     }
   };
   walk(root);
+  return out;
+}
+
+/** The nodes whose stored pose is in `id`'s frame: its children, and through
+ *  a child that is an envelope, that child's own. */
+export function heldInFrame(
+  scene: { childrenOf(id: NodeId): readonly NodeId[]; get(id: NodeId): { dependsOn?: unknown; derivePose?: unknown } | undefined },
+  id: NodeId,
+): NodeId[] {
+  const out: NodeId[] = [];
+  for (const c of scene.childrenOf(id)) {
+    const node = scene.get(c);
+    if (!node) continue;
+    out.push(c);
+    if (!definesFrame(node)) out.push(...heldInFrame(scene, c));
+  }
   return out;
 }

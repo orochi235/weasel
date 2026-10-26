@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { keyboardAnchor, menuHitFor, openContextMenu } from './contextMenu';
 
@@ -48,7 +49,7 @@ describe('openContextMenu', () => {
 
 describe('keyboardAnchor', () => {
   it('is the center of the selection bounds', () => {
-    const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'mark', data: {}, layer: 'main', pose: { x: 10, y: 20, width: 100, height: 40 } });
     expect(keyboardAnchor({ scene, selection: { get: () => [id] } } as never)).toEqual({ x: 60, y: 40 });
   });
@@ -72,7 +73,7 @@ describe('menuHitFor', () => {
 
 describe('openContextMenu on a group', () => {
   it('selects the group when the right-click lands on an unselected member', () => {
-    const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const g = scene.add({ kind: 'group', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
     const m = scene.add({ kind: 'mark', data: {}, layer: 'main', parent: g, pose: { x: 0, y: 0, width: 10, height: 10 } });
     const d = deps({ scene, hitAt: () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: m }) }) as {
@@ -85,7 +86,7 @@ describe('openContextMenu on a group', () => {
 
 describe('openContextMenu on a member of a group', () => {
   it("opens the group's menu, not the member's", () => {
-    const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const g = scene.add({ kind: 'group', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
     const m = scene.add({ kind: 'mark', data: {}, layer: 'main', parent: g, pose: { x: 0, y: 0, width: 10, height: 10 } });
     const d = deps({

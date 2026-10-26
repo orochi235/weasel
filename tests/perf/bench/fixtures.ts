@@ -8,6 +8,7 @@ import {
   PATH_M, PATH_L, PATH_C, PATH_Z,
   type PolygonPath, type RectPath,
 } from '@weasel-js/geom';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import type { ResolvedRun } from '@weasel-js/text';
@@ -107,7 +108,7 @@ const LAYERS = [{ id: 'main' as const }];
 
 export function emptyScene(historyLimit = 4): BenchScene {
   let i = 0;
-  return createScene<{ n: number }, 'main', unknown>({
+  return createScene<{ n: number }, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: LAYERS,
     historyLimit,
     generateId: () => asNodeId(`b${(i++).toString(36)}`),
@@ -193,7 +194,7 @@ export type LayeredScene = Scene<{ n: number }, string, unknown>;
  */
 export function layeredScene(count: number, layers: number): LayeredScene {
   let i = 0;
-  const scene = createScene<{ n: number }, string, unknown>({
+  const scene = createScene<{ n: number }, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: Array.from({ length: layers }, (_, l) => ({ id: `L${l}` })),
     historyLimit: 4,
     generateId: () => asNodeId(`b${(i++).toString(36)}`),

@@ -58,15 +58,9 @@ export function commitMove(input: CommitInput): boolean {
   if (dx === 0 && dy === 0) return false;
 
   // No behavior claimed it — translate-only commit, emitted as transform ops
-  // so it routes through the consumer `applyOps` hook (consumer history)
-  // when present, else the scene's own history. Under scene v1's
-  // absolute-pose semantics every node stores world coords
-  // independently, so a container drag must explicitly re-stamp every
-  // cascaded descendant by the same dx/dy — otherwise children stay at
-  // their old absolute positions (visually they snap to the
-  // container's former location).
-  // Translate the data-held geometry by the same (dx,dy). Opt-in via
-  // the geometryProjection seam; a no-op when the dep is absent.
+  // so it routes through the consumer `applyOps` hook when present. A
+  // descendant a moving frame carries is left out; one under an envelope is
+  // translated with it.
   const ops = translateOps(session, [...session.ids, ...session.cascadeIds], { dx, dy });
   return ops.length > 0 && commitOps(ops);
 }

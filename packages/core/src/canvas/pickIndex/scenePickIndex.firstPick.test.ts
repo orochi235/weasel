@@ -4,6 +4,7 @@
  */
 import { expect, it } from 'vitest';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
@@ -11,7 +12,7 @@ import { pointPick } from './pickIndexFixture';
 import { pickIndexBuildCount } from './scenePickIndex';
 
 it('the second pick in a still scene builds, even when the first registered the painters', () => {
-  const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'main' }] }) as Scene<unknown, string, unknown>;
+  const scene = createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as Scene<unknown, string, unknown>;
   scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 20, height: 20 }, data: null } as never);
   const src = scenePickSource(scene, { index: { descriptor: AUTO_POSE_DESCRIPTOR } });
   const q = pointPick(AUTO_POSE_DESCRIPTOR, 10, 10, { x: 1, y: 1 });

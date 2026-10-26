@@ -32,7 +32,7 @@ function chromeBounds(id: string, parallax: { pan: number }) {
   });
   scene.add({
     id: asNodeId('trunk'), kind: 'mark', layer: 'trees', parent: tree,
-    pose: { x: 410, y: 330, width: 10, height: 20 }, data: {},
+    pose: { x: 10, y: 30, width: 10, height: 20 }, data: {},
   });
   scene.add({
     id: asNodeId('bush'), kind: 'mark', layer: 'trees',

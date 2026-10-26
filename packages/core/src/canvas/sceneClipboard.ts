@@ -26,8 +26,6 @@ import type { InsertSite } from './deps/insertSite';
 /** What the seam needs from the adapter it serves. */
 export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
-  /** Whether a stored pose is relative to its container's frame. */
-  composes: boolean;
   worldPoseOf(id: string): TPose;
   /** The nearest frame-defining container at or above `id`. */
   frameAtOrAbove(id: string | null): string | null;
@@ -62,7 +60,6 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
   // world coordinates: every root, and under an envelope root, the nodes
   // sharing the frame the root left behind.
   const poseFor = (n: Node<TData, TLayer, TPose>, isRoot: boolean): TPose => {
-    if (!env.composes) return n.pose;
     if (isRoot) return env.worldPoseOf(n.id);
     const frame = env.frameAtOrAbove(n.parent);
     return frame !== null && taken.has(frame) ? n.pose : env.worldPoseOf(n.id);
@@ -186,11 +183,10 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   // of the pasted cluster.
   const isRoot = (item: Node<TData, TLayer, TPose>): boolean =>
     item.parent === null || !idMap.has(item.parent);
-  // Under a composing strategy a node inside a pasted frame rides it, and
-  // offsetting it as well would move it twice.
+  // A node inside a pasted frame rides it, and offsetting it as well would
+  // move it twice.
   const byId = new Map(src.map((item) => [item.id as string, item]));
   const ridesPastedFrame = (item: Node<TData, TLayer, TPose>): boolean => {
-    if (!env.composes) return false;
     let p = item.parent === null ? undefined : byId.get(item.parent);
     while (p !== undefined) {
       if (definesFrame(p)) return true;
@@ -198,8 +194,6 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
     }
     return false;
   };
-  // Without composition poses are absolute, so the delta applies to EVERY
-  // pasted node.
   let dx = offset.dx;
   let dy = offset.dy;
   if (ctx?.dropPoint) {

@@ -87,45 +87,11 @@ export function liveAxes<TPose>(
   };
 }
 
-/** How a container's pose target carries its descendants, for {@link scenePoseTarget}. */
-export interface PoseCascade<TPose> {
-  /** Commits `pose` to the container, moving its descendants' poses with it. */
-  write(pose: TPose): void;
-  /** The descendants, each at the pose to show it at while the container shows at `pose`. */
-  beside(pose: TPose): Iterable<readonly [NodeId, TPose]>;
-}
-
-/** Shows a moving container's descendants through overrides of their own, and takes them back
- *  as it rests. A descendant something else already poses is left to it. */
-function riders<TPose>(overrides: PoseOverrides<TPose>, cascade: PoseCascade<TPose>): (pose: TPose | null) => void {
-  const riding = new Map<NodeId, PoseOverride<TPose>>();
-  return (pose) => {
-    const seen = new Set<NodeId>();
-    for (const [id, beside] of pose === null ? [] : cascade.beside(pose)) {
-      let entry = riding.get(id);
-      if (!entry) {
-        if (overrides.read(id)?.pose !== undefined) continue;
-        riding.set(id, entry = {});
-        overrides.set(id, entry);
-      }
-      entry.pose = beside;
-      seen.add(id);
-    }
-    for (const [id, entry] of riding) {
-      if (seen.has(id)) continue;
-      overrides.clear(id, entry);
-      riding.delete(id);
-    }
-  };
-}
-
 function build<TPose>(
   opts: PoseTargetOptions<TPose>,
   onRest?: () => void,
   /** Whether something else has written the committed pose since an animation last did. */
   overwritten?: () => boolean,
-  /** Told the pose on screen each time it is shown, and null as the node comes to rest. */
-  ride?: (pose: TPose | null) => void,
 ): Target<TPose> | null {
   const { overrides } = opts;
   const id = opts.id as NodeId;
@@ -142,7 +108,6 @@ function build<TPose>(
     unwatch?.();
     unwatch = null;
     overrides.clear(id, entry);
-    ride?.(null);
     onRest?.();
   };
   const target = createTarget<TPose>({
@@ -167,7 +132,6 @@ function build<TPose>(
           if (installed) rest();
         });
       }
-      ride?.(pose);
     },
     publish: publisherOf(overrides),
   });
@@ -214,15 +178,12 @@ function samePose(a: unknown, b: unknown): boolean {
  * a caller that wants the move in history records its own op first.
  *
  * Undefined for a node that is not in the scene, or whose pose has no axes. `descriptor`
- * defaults to `RECT_POSE_DESCRIPTOR`. With `cascade`, for a container whose descendants hold
- * poses of their own, a commit goes through `cascade.write` and the descendants are shown
- * traveling beside the container. Both are read the first time a node's target is made.
+ * defaults to `RECT_POSE_DESCRIPTOR`, and is read the first time a node's target is made.
  */
 export function scenePoseTarget<TPose>(
   scene: PoseTargetScene<TPose>,
   id: string,
   descriptor?: PoseDescriptor<TPose>,
-  cascade?: PoseCascade<TPose>,
 ): Target<TPose> | undefined {
   let made = sceneTargets.get(scene.overrides);
   if (!made) {
@@ -262,7 +223,7 @@ export function scenePoseTarget<TPose>(
       // The write runs the layout's reflow at once, and a reflow publishes glides to the overrides.
       writing = true;
       try {
-        if (!samePose(n.pose, pose)) scene.untracked(() => (cascade ? cascade.write(pose) : scene.setPose(nid, pose)));
+        if (!samePose(n.pose, pose)) scene.untracked(() => scene.setPose(nid, pose));
       } finally {
         writing = false;
       }
@@ -274,7 +235,7 @@ export function scenePoseTarget<TPose>(
     if (writing) return false;
     const n = scene.get(nid);
     return !!n && mine !== undefined && !samePose(n.pose, mine);
-  }, cascade && riders(scene.overrides, cascade));
+  });
   if (!target) return undefined;
   made.set(id, target as Target<unknown>);
   return target;

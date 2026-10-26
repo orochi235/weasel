@@ -3,7 +3,6 @@ import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
 import { unionBounds } from 'core/geometry/unionBounds';
-import { unionOfChildren, UNION_OF_CHILDREN } from 'core/scene/kitRegistry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
@@ -18,14 +17,9 @@ import { icon } from '../../../icons.gen';
  * under it as a single undoable batch.
  *
  * Grouping never moves a member on screen. The container takes the world
- * envelope of its members' ink; each member is then re-expressed in that
- * container's frame, which is a no-op only when the scene composes poses by
- * identity.
- *
- * Under identity the container's pose is also *derived* from its members, so
- * it tracks one that moves later. Under any other composition that derivation
- * is circular — the members' poses are expressed in the container's own
- * frame — so the container keeps the authored envelope instead.
+ * envelope of its members' ink, and each member is re-expressed in that
+ * container's frame. The container is a frame, so its pose is authored rather
+ * than derived from its members, whose poses are expressed in it.
  */
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
@@ -60,8 +54,6 @@ export const groupAction: Action & { requires: string[] } = {
       const parents = new Set(nodes.map((n) => n.parent));
       const parent = parents.size === 1 ? nodes[0]!.parent : null;
 
-      // Under identity the authored pose is only the fallback (an emptied
-      // group, a lost registry key); the derived union is what the scene shows.
       const d = poseDescriptorOf(deps.poseDescriptor);
       const frame = scenePoseFrame(scene);
       const worlds = new Map<NodeId, unknown>();
@@ -73,8 +65,6 @@ export const groupAction: Action & { requires: string[] } = {
         ? nodes[0]!.pose
         : d.fromBounds(union, nodes[0]!.pose);
       const pose = frame.localUnder(parent, containerWorldPose);
-      const absolutePoses = frame.pc.closure === 'identity';
-      const derive = scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren;
 
       // The container must exist before any child reparents into it, so the
       // insert op is emitted first.
@@ -88,7 +78,6 @@ export const groupAction: Action & { requires: string[] } = {
             pose: pose as unknown,
             data: {} as unknown,
             parent: parent ?? null,
-            ...(absolutePoses ? { dependsOn: 'children', derivePose: derive } : {}),
           } as Node<unknown, string, unknown>,
           label: 'Group',
         }),
@@ -100,7 +89,6 @@ export const groupAction: Action & { requires: string[] } = {
           toParentId: containerId as string,
           label: 'Group',
         }));
-        if (absolutePoses) continue;
         ops.push(createTransformOp<unknown>({
           id: node.id as string,
           from: node.pose,
@@ -147,7 +135,6 @@ export const ungroupAction: Action & { requires: string[] } = {
       if (containers.length === 0) return;
 
       const frame = scenePoseFrame(scene);
-      const absolutePoses = frame.pc.closure === 'identity';
 
       scene.batch('Ungroup', () => {
         const freed: NodeId[] = [];
@@ -165,14 +152,10 @@ export const ungroupAction: Action & { requires: string[] } = {
           // Read every world pose before the first move: the frame resolves
           // through the live scene, and the container is about to leave it.
           const worlds = new Map<NodeId, unknown>();
-          if (!absolutePoses) {
-            for (const childId of children) worlds.set(childId, frame.world(childId));
-          }
+          for (const childId of children) worlds.set(childId, frame.world(childId));
           children.forEach((childId, i) => {
             scene.move(childId, parent, baseIndex < 0 ? undefined : baseIndex + i);
-            if (!absolutePoses) {
-              scene.setPose(childId, frame.localUnder(parent, worlds.get(childId)!) as never);
-            }
+            scene.setPose(childId, frame.localUnder(parent, worlds.get(childId)!) as never);
             freed.push(childId);
           });
 

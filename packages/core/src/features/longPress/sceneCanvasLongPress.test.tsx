@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import { render, act } from '@testing-library/react';
 import type { LongPressState } from '@weasel-js/routing';
 import { SceneCanvas } from '../../canvas/SceneCanvas';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from '../../canvas/surfaceContribution';
 
@@ -19,7 +20,7 @@ beforeEach(() => { vi.useFakeTimers(); });
 afterEach(() => { vi.useRealTimers(); });
 
 function mount(feedback: SurfaceContribution, ambient: SurfaceContribution[] = []) {
-  const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const r = render(
     <SceneCanvas scene={scene} layers={{}} width={400} height={300} longPress={{ feedback }} ambient={ambient} />,
   );

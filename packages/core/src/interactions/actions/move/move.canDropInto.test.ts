@@ -22,7 +22,7 @@ function makeScene(home?: NodeId) {
   if (home) scene.add({ id: home, kind: 'group', layer: 'main', data: {}, pose: { x: -50, y: -50, width: 70, height: 70 } });
   scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: HOME, ...(home ? { parent: home } : {}) });
   scene.add({ id: OUTER, kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 300, height: 300 } });
-  scene.add({ id: INNER, kind: 'group', layer: 'main', parent: OUTER, data: {}, pose: { x: 150, y: 150, width: 100, height: 100 } });
+  scene.add({ id: INNER, kind: 'group', layer: 'main', parent: OUTER, data: {}, pose: { x: 50, y: 50, width: 100, height: 100 } });
   return scene;
 }
 

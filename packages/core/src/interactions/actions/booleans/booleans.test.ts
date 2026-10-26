@@ -8,6 +8,7 @@ import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-
 import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
 import type { Op } from 'core/ops/types';
 import { asNodeId, type NodeId } from 'core/scene/types';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
@@ -322,7 +323,7 @@ describe('applyBooleanOp — z-position from getParent / getChildren', () => {
   // Render order and sibling order disagree inside `g`: `top` and `g0`'s child
   // come first in render order, so a render index is never a sibling index.
   function nested() {
-    const scene = createScene<{ path?: Path }, 'default', Path>({ systemLayers: [{ id: 'default' }] });
+    const scene = createScene<{ path?: Path }, 'default', Path>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
     const add = (id: string, x: number, parent?: string) => scene.add({
       id: asNodeId(id), kind: 'mark', layer: 'default',
       pose: { kind: 'rect', x, y: 0, width: 10, height: 10 },

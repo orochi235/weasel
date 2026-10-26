@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { selectAllAction } from './selectAll';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 
@@ -29,7 +30,7 @@ describe('selectAllAction (behavior)', () => {
   };
 
   const sceneWithHiddenLayer = () => {
-    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' as const }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
@@ -83,7 +84,7 @@ describe('selectAllAction (behavior)', () => {
 
 describe('selectAllAction — the asking view', () => {
   it('leaves out a layer the asking view does not paint, though the scene shows it', () => {
-    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' as const }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });

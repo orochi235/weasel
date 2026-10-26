@@ -11,9 +11,11 @@ export function translateOps(session: MoveSession, ids: Iterable<NodeId>, delta:
     session.scene,
     ids,
     (id) => {
-      if (!session.startPoses.has(id) || session.carried.has(id)) return null;
-      const l = localDelta(session, id, delta.dx, delta.dy);
+      if (!session.startPoses.has(id)) return null;
       const c = session.caught.get(id);
+      // A moving frame carries the drag; a catch mid-glide is the node's own.
+      if (session.carried.has(id)) return c ?? null;
+      const l = localDelta(session, id, delta.dx, delta.dy);
       return c ? { dx: l.dx + c.dx, dy: l.dy + c.dy } : l;
     },
     session.descriptorOf,

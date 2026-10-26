@@ -1,6 +1,7 @@
 /** A rotate snapping through the `snap` dep's one-dimensional angle path. */
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -23,7 +24,7 @@ const PIVOT = { x: 50, y: 50 };
 const RADIUS = 50;
 
 function rig(opts: { rotation?: number; others?: readonly number[]; selected?: readonly number[]; snap?: boolean } = {}) {
-  const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
+  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
   const id = scene.add({
     kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100, rotation: opts.rotation ?? 0 },
   }) as string;

@@ -38,8 +38,9 @@ export interface UseDistributeOptions<TPose> {
   defaultMode?: DistributeMode;
   /** Label passed to applyOps. Default 'Distribute'. */
   label?: string;
-  /** How local poses fold up to world. Default IDENTITY, where the two are
-   *  the same value and the spread runs entirely in stored coordinates. */
+  /** How local poses fold up to world. Default IDENTITY, which takes every
+   *  pose the adapter answers as world; over a scene's adapter, pass
+   *  `scene.composition`. */
   composition?: PoseComposition<TPose>;
 }
 

@@ -3,6 +3,7 @@ import { heldPose } from '../testUtils';
 import { describe, expect, it } from 'vitest';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { pathFromD } from '@weasel-js/geom';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -49,7 +50,7 @@ const alignX = (x: number): SnapSource => ({
 });
 
 function rig(sources: readonly SnapSource[], build: (scene: AnyScene) => string[]) {
-  const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
+  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
   const ids = build(scene);
   const store = createSnapOutcomeStore();
   const begun: SnapBegin[] = [];

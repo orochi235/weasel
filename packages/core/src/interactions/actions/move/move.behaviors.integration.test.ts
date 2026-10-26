@@ -66,7 +66,8 @@ describe('moveAction behavior pipeline', () => {
     handle.onMove!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } }));
     handle.onEnd!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } }), 'commit');
     expect(scene.get(asNodeId(leaf))?.parent).toBe(box);
-    expect(scene.get(asNodeId(leaf))?.pose).toEqual({ x: 210, y: 10, width: 20, height: 20 });
+    // The slot is in world; the box at (200, 0) stores it in its frame.
+    expect(scene.get(asNodeId(leaf))?.pose).toEqual({ x: 10, y: 10, width: 20, height: 20 });
   });
 
   it('snapToContainer previews every dragged node in its own slot, and commits it there', () => {
@@ -93,7 +94,7 @@ describe('moveAction behavior pipeline', () => {
     handle.onEnd!(ctx(scene, [leaf, second], drag), 'commit');
     for (const id of [leaf, second]) {
       expect(scene.get(asNodeId(id))?.parent).toBe(box);
-      expect(scene.get(asNodeId(id))?.pose).toEqual(slots[id]);
+      expect(scene.get(asNodeId(id))?.pose).toEqual({ ...slots[id], x: slots[id]!.x - 200 });
     }
   });
 
@@ -111,9 +112,10 @@ describe('moveAction behavior pipeline', () => {
     const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [group]), opts) as OngoingHandle;
     handle.onMove!(ctx(scene, [group], drag));
     handle.onEnd!(ctx(scene, [group], drag), 'commit');
-    expect(scene.get(asNodeId(group))?.pose).toEqual(target.slotPose);
-    // The group landed (210, 30) from where it started, not the drag's (255, 5).
-    expect(scene.get(asNodeId(child))?.pose).toEqual({ x: 220, y: 40, width: 20, height: 20 });
+    // Landed at the world slot (210, 30), stored in the box's frame, and
+    // carrying its child, whose pose is unchanged.
+    expect(scene.get(asNodeId(group))?.pose).toEqual({ ...target.slotPose, x: 10 });
+    expect(scene.get(asNodeId(child))?.pose).toEqual({ x: 10, y: 10, width: 20, height: 20 });
     expect(scene.get(asNodeId(child))?.parent).toBe(group);
   });
 
@@ -167,7 +169,8 @@ describe('moveAction behavior pipeline', () => {
     handle.onEnd!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } }), 'commit');
     // snapToContainer's onEnd claimed the commit → reparented + slot pose applied.
     expect(scene.get(asNodeId(leaf))?.parent).toBe(box);
-    expect(scene.get(asNodeId(leaf))?.pose).toEqual({ x: 210, y: 10, width: 20, height: 20 });
+    // The slot is in world; the box at (200, 0) stores it in its frame.
+    expect(scene.get(asNodeId(leaf))?.pose).toEqual({ x: 10, y: 10, width: 20, height: 20 });
   });
 
   it('multi-select uniform translate: both leaves move by the same delta (no drift)', () => {

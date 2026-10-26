@@ -1,6 +1,6 @@
 /**
- * Alt-drag clone of a container, on a real scene with the default absolute
- * poses: every node stores world coordinates.
+ * Alt-drag clone of a container, on a real scene: the children are stored in
+ * the container's frame.
  */
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
@@ -48,7 +48,7 @@ function copiesIn(scene: Scene<unknown, string, unknown>): NodeId[] {
 }
 
 describe('cloneAction on a container', () => {
-  it('copies the children under the copied container, each moved by the drag', () => {
+  it('copies the children under the copied container, which carries them by the drag', () => {
     const scene = makeScene();
     cloneBy(scene, [G], 100);
 
@@ -60,9 +60,10 @@ describe('cloneAction on a container', () => {
 
     const kids = scene.childrenOf(newRoots[0]).map((id) => scene.get(id)!);
     expect(kids.map((k) => k.data)).toEqual([{ tag: 'a' }, { tag: 'b' }]);
+    expect(copy.pose).toEqual({ x: 100, y: 0, width: 60, height: 20 });
     expect(kids.map((k) => k.pose)).toEqual([
-      { x: 100, y: 0, width: 20, height: 20 },
-      { x: 140, y: 0, width: 20, height: 20 },
+      { x: 0, y: 0, width: 20, height: 20 },
+      { x: 40, y: 0, width: 20, height: 20 },
     ]);
     // The originals stay put.
     expect(scene.get(A)!.pose).toEqual({ x: 0, y: 0, width: 20, height: 20 });
@@ -81,8 +82,9 @@ describe('cloneAction on a container', () => {
     const scene = makeScene();
     const handle = begin(scene, [G]);
     handle.onMove!(ctxAt(scene, [G], 100));
-    expect([...(handle.previewIds!() ?? [])].sort()).toEqual([A, B, G].sort());
-    expect(handle.previewPose!(B as string)).toEqual({ x: 140, y: 0, width: 20, height: 20 });
+    // The container's ghost carries its children.
+    expect([...(handle.previewIds!() ?? [])]).toEqual([G]);
+    expect(handle.previewPose!(G as string)).toEqual({ x: 100, y: 0, width: 60, height: 20 });
   });
 
   it('undoes as one step', () => {

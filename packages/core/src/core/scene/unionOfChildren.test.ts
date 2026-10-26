@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
 import { UNION_OF_CHILDREN } from 'core/scene/kitRegistry';
@@ -12,7 +13,7 @@ import {
 describe('unionOfChildrenVia', () => {
   it('unions circles through a descriptor', () => {
     const union = unionOfChildrenVia(CIRCLE_POSE_DESCRIPTOR);
-    const scene = createScene<object, 'main', CirclePose>({
+    const scene = createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'main' as const }],
       registry: { derivePose: { [UNION_OF_CHILDREN]: union } },
     });
@@ -27,7 +28,7 @@ describe('unionOfChildrenVia', () => {
 
   it('returns null for an emptied container', () => {
     const union = unionOfChildrenVia(CIRCLE_POSE_DESCRIPTOR);
-    const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' as const }] });
+    const scene = createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' as const }] });
     const g = scene.add({ kind: 'group', layer: 'main', pose: circle(0, 0, 0), data: {} });
     expect(union(scene.get(g)!, [])).toBeNull();
   });

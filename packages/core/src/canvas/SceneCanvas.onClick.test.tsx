@@ -91,7 +91,7 @@ describe('SceneCanvas onClick', () => {
     let child = '' as NodeId;
     const { onClick, click } = setup((scene) => {
       const box = scene.add({ kind: 'group', data: { kind: 'group' }, layer: 'main', pose: { x: 200, y: 200, width: 100, height: 100 } });
-      child = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', parent: box, pose: { x: 220, y: 220, width: 40, height: 40 } });
+      child = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', parent: box, pose: { x: 20, y: 20, width: 40, height: 40 } });
     });
     click(240, 240);
     expect(onClick.mock.calls[0][0]).toEqual({ id: child, kind: expect.any(String) });

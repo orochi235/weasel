@@ -20,23 +20,25 @@ export type PoseClosure = 'identity' | 'translation' | 'rigid';
 
 /** Consumer's pose-composition strategy for hierarchical scenes. `compose`
  *  folds a child's pose (in parent's frame) up to the next frame; `decompose`
- *  is its inverse. Default is IDENTITY — an absolute-pose scene where every
- *  node already stores world coords (parent is grouping-only, no transform). */
+ *  is its inverse. A scene's default is `RIGID_POSE_COMPOSITION`. */
 export interface PoseComposition<TPose> {
   compose(parent: TPose, child: TPose): TPose;
   decompose(parent: TPose, world: TPose): TPose;
   closure: PoseClosure;
 }
 
-/** Default pose-composition strategy: IDENTITY, an absolute-pose scene. */
-export const IDENTITY_POSE_COMPOSITION: PoseComposition<unknown> = {
+/** The absolute-pose strategy: every node stores its world pose, and a
+ *  container groups its children without carrying them — moving it moves
+ *  nothing else. For a scene whose poses have no frame to fold, such as one
+ *  whose readers take every stored pose as world. */
+export const IDENTITY_POSE_COMPOSITION: PoseComposition<never> = {
   compose: (_parent, child) => child,
   decompose: (_parent, world) => world,
   closure: 'identity',
 };
 
 /** Whether `composition` makes a container's pose a frame, so a stored pose
- *  is local to it. False for the absolute-pose model. */
+ *  is local to it. False for `IDENTITY_POSE_COMPOSITION`. */
 export function composesFrames(composition: { closure: PoseClosure }): boolean {
   return composition.closure !== 'identity';
 }
@@ -104,4 +106,33 @@ export function frameAtOrAbove<TPose>(
     cursor = adapter.getParent(cursor);
   }
   return null;
+}
+
+type Compose = (parent: never, child: never) => unknown;
+const memoized = new WeakMap<Compose, Compose>();
+
+/**
+ * `compose`, answering the same object for the same parent and child objects,
+ * one memo per `compose` however often it is asked for. A paint memo keys on
+ * the pose it is handed, and an unchanged child under an unchanged frame must
+ * keep its key from one walk to the next.
+ */
+export function memoizeCompose<TPose>(
+  compose: (parent: TPose, child: TPose) => TPose,
+): (parent: TPose, child: TPose) => TPose {
+  const held = memoized.get(compose as Compose);
+  if (held !== undefined) return held as (parent: TPose, child: TPose) => TPose;
+  const byParent = new WeakMap<object, WeakMap<object, TPose>>();
+  const out = (parent: TPose, child: TPose): TPose => {
+    if (typeof parent !== 'object' || parent === null || typeof child !== 'object' || child === null) {
+      return compose(parent, child);
+    }
+    let byChild = byParent.get(parent);
+    if (byChild === undefined) byParent.set(parent, byChild = new WeakMap());
+    let pose = byChild.get(child);
+    if (pose === undefined) byChild.set(child, pose = compose(parent, child));
+    return pose;
+  };
+  memoized.set(compose as Compose, out as Compose);
+  return out;
 }

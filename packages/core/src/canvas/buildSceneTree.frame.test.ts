@@ -99,7 +99,7 @@ describe('the two world-pose resolvers agree', () => {
   });
 });
 
-describe('a container move carries its children one way, never both', () => {
+describe('a container move writes one pose', () => {
   const MOVED: RectPose = { x: 7, y: 0, width: 100, height: 100, rotation: Math.PI / 2 };
 
   it('leaves the stored child poses alone under a frame, which moves them by itself', () => {
@@ -113,16 +113,12 @@ describe('a container move carries its children one way, never both', () => {
     });
   });
 
-  it('translates the stored child poses when nothing composes', () => {
+  it('leaves the stored child poses where they are when nothing composes', () => {
     const scene = makeFrameFixture(UNCOMPOSED);
     const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
     adapter.setPose(FRAME_FIXTURE_IDS.group, MOVED);
-    expectSamePose(scene.get(FRAME_FIXTURE_IDS.upright)!.pose, {
-      ...FRAME_FIXTURE_LOCAL.a, x: FRAME_FIXTURE_LOCAL.a.x + 7,
-    });
-    expectSamePose(scene.get(FRAME_FIXTURE_IDS.turned)!.pose, {
-      ...FRAME_FIXTURE_LOCAL.b, x: FRAME_FIXTURE_LOCAL.b.x + 7,
-    });
+    expectSamePose(scene.get(FRAME_FIXTURE_IDS.upright)!.pose, FRAME_FIXTURE_LOCAL.a);
+    expectSamePose(scene.get(FRAME_FIXTURE_IDS.turned)!.pose, FRAME_FIXTURE_LOCAL.b);
   });
 });
 

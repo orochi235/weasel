@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
 import { createScene } from './scene';
 import { POSE, makeScene } from './testing/makeScene';
 
@@ -73,7 +74,7 @@ describe('renderOrder with hidden layers', () => {
 });
 
 describe('user-layer mutations', () => {
-  const baseOpts = () => ({ systemLayers: [{ id: 'base' as const }] });
+  const baseOpts = () => ({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'base' as const }] });
 
   it('addLayer appends a user layer to the top by default', () => {
     const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
@@ -127,7 +128,7 @@ describe('user-layer mutations', () => {
   });
 
   it('moveLayer reorders and is undoable', () => {
-    const scene = createScene<{ v: number }, 'base' | 'fx' | 'top', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'fx' | 'top', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' }, { id: 'fx' }, { id: 'top' }],
     });
     scene.moveLayer('top', 0);
@@ -137,7 +138,7 @@ describe('user-layer mutations', () => {
   });
 
   it('moveLayer clamps an out-of-range index', () => {
-    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' }, { id: 'fx' }],
     });
     scene.moveLayer('base', 99);
@@ -146,7 +147,7 @@ describe('user-layer mutations', () => {
 
   it('moveLayer throws if the reorder would push a child below its parent', () => {
     // parent on 'base', child on 'fx' (higher). Moving 'fx' below 'base' is illegal.
-    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' }, { id: 'fx' }],
     });
     const parent = scene.add({ kind: 'group', layer: 'base', pose: { x: 0 }, data: { v: 1 } });
@@ -156,7 +157,7 @@ describe('user-layer mutations', () => {
   });
 
   it('removeLayer drops the record and cascade-deletes tagged nodes', () => {
-    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
@@ -169,7 +170,7 @@ describe('user-layer mutations', () => {
   });
 
   it('removeLayer cascade-deletes a subtree that spans layers', () => {
-    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
@@ -182,7 +183,7 @@ describe('user-layer mutations', () => {
   });
 
   it('removeLayer is undoable — restores the layer and all its nodes in one step', () => {
-    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
@@ -196,7 +197,7 @@ describe('user-layer mutations', () => {
   });
 
   it('removeLayer throws on a system layer', () => {
-    const scene = createScene<{ v: number }, 'base', { x: number }>({
+    const scene = createScene<{ v: number }, 'base', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' }],
     });
     expect(() => scene.removeLayer('base')).toThrow(/system/);
@@ -204,7 +205,7 @@ describe('user-layer mutations', () => {
 
   it('removeLayer keeps layerIndex consistent for surviving layers', () => {
     // 'mid' and 'top' are user layers (added at runtime) so removeLayer is legal.
-    const scene = createScene<{ v: number }, 'base' | 'mid' | 'top', { x: number }>({
+    const scene = createScene<{ v: number }, 'base' | 'mid' | 'top', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'base' }],
     });
     scene.addLayer({ id: 'mid', name: 'Mid' }); // index 1
