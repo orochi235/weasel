@@ -15,6 +15,7 @@
 
 import type { Affine } from './affine';
 
+/** A view's zoom on each axis. */
 export interface Scale2 {
   x: number;
   y: number;

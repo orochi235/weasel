@@ -36,10 +36,9 @@ export function sceneGridRegions(
 ): GridRegion[] {
   const frames = sceneBoxFrames(scene);
   const poses = scenePoseFrame(scene);
-  const boxOutline = (id: NodeId): Point[] | null => {
-    const frame = frames(id);
+  const boxOutline = (id: NodeId, frame: Affine): Point[] => {
     const { width, height } = poses.world(id) as { width: number; height: number };
-    return frame && [[0, 0], [width, 0], [width, height], [0, height]].map(([x, y]) => {
+    return [[0, 0], [width, 0], [width, height], [0, height]].map(([x, y]) => {
       const [wx, wy] = applyToPoint(frame, x!, y!);
       return { x: wx, y: wy };
     });
@@ -53,10 +52,10 @@ export function sceneGridRegions(
   const build = (parent: NodeId | null): GridRegion[] => {
     const out: GridRegion[] = [];
     for (const id of children.get(parent) ?? []) {
-      const outline = outlineOf ? outlineOf(id) : boxOutline(id);
+      const frame = frames(id);
+      const outline = outlineOf ? outlineOf(id) : frame && boxOutline(id, frame);
       if (!outline) continue;
       const inner = build(id);
-      const frame = frames(id);
       out.push({
         outline,
         chain: sceneUnitScopes(scene, id, root, { inclusive: true }),
