@@ -18,6 +18,9 @@ export interface SliderMeasure {
   length: number;
   /** The band's thickness in px. */
   thickness: number;
+  /** How far the slider reaches across its span in px: the band or the stop ticks over it, whichever is thicker.
+   *  What a drag has to clear to drop a thumb. */
+  reach: number;
 }
 
 /** What a slider's pointers and parts ask of the shape it lies along. */
@@ -31,7 +34,7 @@ export interface SliderGeometry {
 
 const OPEN = { open: true };
 
-/** Band thicknesses off the centerline past which a drag drops a thumb. */
+/** Reaches off the centerline past which a drag drops a thumb. */
 export const DROP_OFF = 1.5;
 
 /** A straight, left-to-right geometry along the rail's centerline, in the rail's own px. A pointer is mapped through
@@ -50,7 +53,7 @@ export function lineGeometry(rail: () => HTMLElement | null, frame: () => SVGGra
       const { width, height } = matrixed ? layoutBox(el) : el.getBoundingClientRect();
       const run = trackRun(lineShape({ x: 0, y: height / 2 }, { x: width, y: height / 2 }));
       const { f: g, dist } = run.nearest(p);
-      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: width, thickness: height };
+      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: width, thickness: height, reach: height };
     },
   };
 }
@@ -61,18 +64,31 @@ function acrossAt(run: TrackRun, g: number, p: Point): number {
   return Math.abs((p.x - point.x) * normal.x + (p.y - point.y) * normal.y);
 }
 
-/** Where no stylesheet applies, the band thickness `Slider.module.css` defaults to: half its 14px tick. */
-const UNSTYLED_THICKNESS = 7;
+/** Where no stylesheet applies, the stop tick length `Slider.module.css` defaults to, and its band: half of it. */
+const UNSTYLED_TICK = 14;
+const UNSTYLED_THICKNESS = UNSTYLED_TICK / 2;
+
+/** A px custom property on `style`, or null where it is unset or not in px. */
+function pxProperty(style: CSSStyleDeclaration, name: string): number | null {
+  const value = style.getPropertyValue(name).trim();
+  return /^[\d.]+px$/.test(value) ? Number.parseFloat(value) : null;
+}
 
 /** A band's thickness: the face's stroke width. A px track height is read straight off the custom property, so it is
  *  right where no stylesheet applies; there the face's stroke width is the initial 1px or nothing at all. */
 function thicknessOf(band: SVGElement | null): number {
   if (!band) return UNSTYLED_THICKNESS;
   const style = getComputedStyle(band);
-  const height = style.getPropertyValue('--rp-track-height').trim();
-  if (/^[\d.]+px$/.test(height)) return Number.parseFloat(height);
+  const height = pxProperty(style, '--rp-track-height');
+  if (height !== null) return height;
   const w = Number.parseFloat(style.strokeWidth);
   return w > 1 ? w : UNSTYLED_THICKNESS;
+}
+
+/** What a curved slider reaches across its run: its band, or its stop ticks where they are longer. */
+function reachOf(band: SVGElement | null, thickness: number): number {
+  const tick = band ? pxProperty(getComputedStyle(band), '--rp-tick-length') : null;
+  return Math.max(thickness, tick ?? UNSTYLED_TICK);
 }
 
 /** A geometry along `run`, in the coordinates of the box `band` is drawn across: parts are tipped to the run, pointers
@@ -86,7 +102,8 @@ export function curvedGeometry(run: TrackRun, band: () => SVGGraphicsElement | n
       if (!el) return null;
       const p = boxPoint(el, clientX, clientY);
       const { f: g, dist } = run.nearest(p);
-      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: run.length, thickness: thicknessOf(el) };
+      const thickness = thicknessOf(el);
+      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: run.length, thickness, reach: reachOf(el, thickness) };
     },
   };
 }
