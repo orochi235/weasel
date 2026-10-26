@@ -16,6 +16,8 @@ import { createGridLayer } from '@weasel-js/guides';
 import type { Dims, MoveBehavior, PoseTransitionSeat } from '@weasel-js/core';
 import type { AnimationInfo, Animator, LiveAnimation, PhysicsHandle } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Button } from '@weasel-js/ui/components/Button';
 import styles from './AnimationDemo.module.css';
 import num from '@weasel-js/theme/numeric.module.css';
 import { DemoStage } from './DemoStage';
@@ -187,20 +189,19 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button onClick={() => tweenTo('a', 400, 200)}>Tween A → (400, 200)</button>
-        <button onClick={() => tweenTo('b', 100, 300)}>Tween B → (100, 300)</button>
-        <button onClick={addCard}>Add card</button>
-        <button onClick={addBatch}>Add 5 (staggered fade-in)</button>
-        <button onClick={removeSelected} disabled={selection.current.length === 0}>Remove selected</button>
-        <button onClick={() => scene.undo()} disabled={!scene.canUndo()}>Undo</button>
-        <button onClick={() => scene.redo()} disabled={!scene.canRedo()}>Redo</button>
+        <Button onClick={() => tweenTo('a', 400, 200)}>Tween A → (400, 200)</Button>
+        <Button onClick={() => tweenTo('b', 100, 300)}>Tween B → (100, 300)</Button>
+        <Button onClick={addCard}>Add card</Button>
+        <Button onClick={addBatch}>Add 5 (staggered fade-in)</Button>
+        <Button onClick={removeSelected} disabled={selection.current.length === 0}>Remove selected</Button>
+        <Button onClick={() => scene.undo()} disabled={!scene.canUndo()}>Undo</Button>
+        <Button onClick={() => scene.redo()} disabled={!scene.canRedo()}>Redo</Button>
       </div>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <button onClick={onTogglePause}>{paused ? 'Resume' : 'Pause'} animations</button>
-        <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <Button onClick={onTogglePause}>{paused ? 'Resume' : 'Pause'} animations</Button>
+        <label className="ckd-field">
           time-scale: <span className={num.numeric}>{timeScale.toFixed(2)}×</span>
-          <input
-            type="range"
+          <InlineRange
             min={0}
             max={2}
             step={0.05}

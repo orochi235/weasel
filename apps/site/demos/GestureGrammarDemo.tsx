@@ -20,6 +20,7 @@ import {
   type ParsedRoute,
   type PhaseContext,
 } from '@weasel-js/gestures';
+import { Button } from '@weasel-js/ui/components/Button';
 import s from './GestureGrammarDemo.module.css';
 
 const PRESETS = [
@@ -160,7 +161,7 @@ export function GestureGrammarDemo() {
         />
         <div className={s.presets}>
           {PRESETS.map((p) => (
-            <button key={p} type="button" className="ckd-btn" onClick={() => setRoute(p)}>{p}</button>
+            <Button key={p} onClick={() => setRoute(p)}><code>{p}</code></Button>
           ))}
         </div>
         {'error' in result ? (

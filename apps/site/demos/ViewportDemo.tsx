@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene, textCommandFromRuns, meanScale } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useColorHex } from '@weasel-js/theme/react';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 
 type Layer = 'scene';
@@ -19,6 +21,7 @@ const NODES: Array<{ id: string; pose: Pose; data: Data }> = [
   { id: 'h', pose: { x: 480, y: 380, width: 100, height: 70 }, data: { color: '#7fb069', label: 'H' } },
 ];
 type Boundary = 'none' | 'stop' | 'bounce';
+const BOUNDARIES: Boundary[] = ['none', 'stop', 'bounce'];
 
 export function ViewportDemo() {
   const [boundary, setBoundary] = useState<Boundary>('none');
@@ -45,17 +48,15 @@ export function ViewportDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <label className="ckd-field">
-          <input type="checkbox" checked={inertiaOn} onChange={(e) => setInertiaOn(e.target.checked)} />
-          inertia
-        </label>
+        <Checkbox isSelected={inertiaOn} onChange={setInertiaOn}>inertia</Checkbox>
         <span className="ckd-toolbar-note">boundary:</span>
-        {(['none', 'stop', 'bounce'] as Boundary[]).map((b) => (
-          <label key={b} className="ckd-field">
-            <input type="radio" name="boundary" value={b} checked={boundary === b} onChange={() => setBoundary(b)} disabled={!inertiaOn} />
-            {b}
-          </label>
-        ))}
+        <ToggleBar
+          items={BOUNDARIES.map((b) => ({ value: b, label: b, disabled: !inertiaOn }))}
+          value={boundary}
+          onChange={(b) => b && setBoundary(b)}
+          ariaLabel="Boundary"
+          size="sm"
+        />
         <span className="ckd-hint">
           {boundary !== 'none' && inertiaOn ? '(bounds: x 0–300, y 0–200)' : ''}
         </span>

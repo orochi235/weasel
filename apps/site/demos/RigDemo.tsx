@@ -32,6 +32,9 @@ import type {
   Skeleton,
 } from '@weasel-js/animator';
 import num from '@weasel-js/theme/numeric.module.css';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 340;
@@ -249,27 +252,24 @@ export function RigDemo() {
       <div className="ckd-toolbar">
         <label className="ckd-field">
           blend A → B
-          <input
-            className="ckd-range" type="range" min={0} max={1} step={0.01}
+          <InlineRange
+            min={0} max={1} step={0.01}
             value={blend} onChange={(e) => setBlend(Number(e.target.value))}
           />
           <span className={`ckd-readout ${num.numeric}`}>{blend.toFixed(2)}</span>
         </label>
         <label className="ckd-field">
           reach
-          <input
-            className="ckd-range" type="range" min={0} max={1} step={0.01}
+          <InlineRange
+            min={0} max={1} step={0.01}
             value={reach} onChange={(e) => setReach(Number(e.target.value))}
           />
           <span className={`ckd-readout ${num.numeric}`}>{reach.toFixed(2)}</span>
         </label>
-        <button className="ckd-btn" onClick={() => setPlaying((p) => !p)}>
+        <Button onClick={() => setPlaying((p) => !p)}>
           {playing ? 'stop track' : 'play track'}
-        </button>
-        <label className="ckd-field">
-          <input type="checkbox" checked={labels} onChange={(e) => setLabels(e.target.checked)} />
-          joint labels
-        </label>
+        </Button>
+        <Checkbox isSelected={labels} onChange={setLabels}>joint labels</Checkbox>
         <span className={`ckd-readout ${num.numeric}`}>track u {shownTrackBlend.toFixed(2)}</span>
       </div>
       <DemoStage width={W} height={H}>

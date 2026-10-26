@@ -20,6 +20,7 @@ import {
 } from '@weasel-js/modes';
 import type { Fill } from '@weasel-js/core';
 import { modeShortcuts } from '@weasel-js/routing';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import styles from './ModesDemo.module.css';
 import { DemoStage } from './DemoStage';
@@ -140,20 +141,17 @@ export function ModesDemo() {
   return (
     <div className={styles.demo}>
       <div className={styles.bar}>
-        <div className={styles.modes} role="group" aria-label="Mode">
-          {registry.list().map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={`ckd-btn ${m.id === mode.id ? styles.active : ''}`}
-              aria-pressed={m.id === mode.id}
-              title={m.description}
-              onClick={() => enter(m.id)}
-            >
-              {modeLabel(m)} <kbd className={styles.key}>{m.entry?.shortcut}</kbd>
-            </button>
-          ))}
-        </div>
+        <ToggleBar
+          items={registry.list().map((m) => ({
+            value: m.id,
+            label: <>{modeLabel(m)} <kbd className={styles.key}>{m.entry?.shortcut}</kbd></>,
+            tooltip: m.description,
+          }))}
+          value={mode.id}
+          onChange={(id) => id && enter(id)}
+          ariaLabel="Mode"
+          size="sm"
+        />
         {tools && <ToolPalette tools={tools} orientation="horizontal" modeRegistry={registry} />}
       </div>
 

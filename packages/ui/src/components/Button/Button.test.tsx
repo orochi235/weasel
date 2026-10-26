@@ -179,6 +179,20 @@ function keyboardFocus(el: HTMLElement) {
   act(() => el.focus());
 }
 
+describe('Button DOM passthrough', () => {
+  it('forwards id and data attributes to the button', () => {
+    render(<Button id="save" data-testid="save-btn" data-kind="primary">Save</Button>);
+    const btn = screen.getByTestId('save-btn');
+    expect(btn.id).toBe('save');
+    expect(btn.dataset.kind).toBe('primary');
+  });
+
+  it('keeps its own appearance attributes over a passed one', () => {
+    render(<Button stance="confirm" data-stance="danger">Go</Button>);
+    expect(screen.getByRole('button').getAttribute('data-stance')).toBe('confirm');
+  });
+});
+
 describe('Button tooltip', () => {
   it('shows the shortcut after a string label', () => {
     render(<Button shortcut="⌘S">Save</Button>);

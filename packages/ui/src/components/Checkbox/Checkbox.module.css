@@ -1,17 +1,7 @@
 /* The box itself is `checkbox.module.css`, shared with the property rows; this
    is only the label around it. */
 .checkbox {
-  /* Holds react-aria's hidden input, which otherwise escapes any scrolling ancestor. */
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wzl-space-4);
-  cursor: pointer;
-  font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size);
-  color: var(--wzl-fg);
-  user-select: none;
-  -webkit-user-select: none;
+  composes: toggleLabel from '../toggleLabel.module.css';
 }
 
 /* The box dims itself on :disabled, so only the text is dimmed here. */

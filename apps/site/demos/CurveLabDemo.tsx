@@ -6,6 +6,8 @@ import {
   spiro,
   type SharedAnchor,
 } from '@weasel-js/geom/curves';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Select } from '@weasel-js/ui/components/Select';
 import { CURVE_PRESETS } from './curveLab/presets';
 import { RepresentationPanel, type OverlayFlags } from './curveLab/RepresentationPanel';
 import { DemoStageGroup } from './DemoStage';
@@ -51,35 +53,23 @@ export function CurveLabDemo() {
   return (
     <div className="curve-lab-root">
       <div className="curve-lab-toolbar">
-        <label>
-          Preset:{' '}
-          <select value={presetId} onChange={(e) => onPresetChange(e.currentTarget.value)}>
-            {CURVE_PRESETS.map((p) => (
-              <option key={p.id} value={p.id}>{p.label}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={overlays.anchors}
-            onChange={(e) => { const v = e.currentTarget.checked; setOverlays((o) => ({ ...o, anchors: v })); }}
-          />{' '}anchors
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={overlays.comb}
-            onChange={(e) => { const v = e.currentTarget.checked; setOverlays((o) => ({ ...o, comb: v })); }}
-          />{' '}curvature comb
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={overlays.inflections}
-            onChange={(e) => { const v = e.currentTarget.checked; setOverlays((o) => ({ ...o, inflections: v })); }}
-          />{' '}inflections + extrema
-        </label>
+        <Select
+          label="Preset"
+          orientation="row"
+          width="fit"
+          options={CURVE_PRESETS.map((p) => ({ value: p.id, label: p.label }))}
+          selectedKey={presetId}
+          onSelectionChange={onPresetChange}
+        />
+        <Checkbox isSelected={overlays.anchors} onChange={(v) => setOverlays((o) => ({ ...o, anchors: v }))}>
+          anchors
+        </Checkbox>
+        <Checkbox isSelected={overlays.comb} onChange={(v) => setOverlays((o) => ({ ...o, comb: v }))}>
+          curvature comb
+        </Checkbox>
+        <Checkbox isSelected={overlays.inflections} onChange={(v) => setOverlays((o) => ({ ...o, inflections: v }))}>
+          inflections + extrema
+        </Checkbox>
         <span className="curve-lab-preset-desc">{preset.description}</span>
       </div>
       <DemoStageGroup>

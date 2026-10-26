@@ -10,6 +10,7 @@ import { useAnimator } from '@weasel-js/animator/react';
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Slider } from '@weasel-js/ui/components/Slider';
+import { Button } from '@weasel-js/ui/components/Button';
 import styles from './EasingsDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -145,7 +146,7 @@ export function EasingsDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <button className="ckd-btn" onClick={play}>play all</button>
+        <Button onClick={play}>play all</Button>
         <label className="ckd-field">
           duration
           <div className={styles.slider}>

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { DiagramView, diagramScene, type DataEdge, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
+import { Button } from '@weasel-js/ui/components/Button';
 import { FONT, moved } from './diagram/shared';
 import { DemoStage } from './DemoStage';
 
@@ -35,9 +36,7 @@ export function DiagramLiveDemo() {
   return (
     <div className="ckd-stack">
       <div className="ckd-row">
-        <button
-          type="button"
-          className="ckd-btn"
+        <Button
           onClick={() => {
             if (running) view.current?.live.stop();
             else view.current?.layout('force');
@@ -45,10 +44,10 @@ export function DiagramLiveDemo() {
           }}
         >
           {running ? 'Settle now' : 'Relax'}
-        </button>
-        <button type="button" className="ckd-btn" onClick={() => { view.current?.layout('force'); setRunning(true); }}>
+        </Button>
+        <Button onClick={() => { view.current?.layout('force'); setRunning(true); }}>
           Shake
-        </button>
+        </Button>
       </div>
       <DemoStage width={W} height={H}>
         <DiagramView

@@ -37,11 +37,6 @@
   gap: var(--wzl-space-3);
 }
 
-.presets :global(.ckd-btn) {
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 12px;
-}
-
 .error {
   margin: 0;
   color: var(--wzl-fg-muted);

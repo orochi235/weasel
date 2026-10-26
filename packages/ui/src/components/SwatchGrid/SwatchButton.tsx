@@ -1,5 +1,6 @@
 import type { CSSProperties, KeyboardEvent, ReactElement } from 'react';
 import type { RunAlign } from '@weasel-js/geom';
+import { inlineDirection, rovingTarget } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import type { SwatchGridOption } from './SwatchGrid';
 import s from './SwatchGrid.module.css';
@@ -29,6 +30,8 @@ export function useSwatchApply(onChange: (value: string | null) => void, onAltCh
   };
 }
 
+const GRID_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
+
 /** How far a last row shorter than `columns` sits from the start, in half-columns, for `count` swatches. */
 export function rowLead(count: number, columns: number, align: RunAlign): number {
   const short = count % columns;
@@ -36,14 +39,12 @@ export function rowLead(count: number, columns: number, align: RunAlign): number
   return align === 'end' ? 2 * (columns - short) : columns - short;
 }
 
-/** Where an arrow, Home or End moves focus from swatch `i` of `count`, `columns` to a row, the last row shifted
- *  `lead` half-columns along; -1 for any other key. Up and down move to the swatch over or under this one. */
+/** Where Up or Down moves focus from swatch `i` of `count`, `columns` to a row, the last row shifted
+ *  `lead` half-columns along: to the swatch over or under this one. -1 for any other key. */
 export function nextSwatch(key: string, i: number, count: number, columns: number, lead = 0): number {
   const last = count - 1;
   const lastStart = count - (count % columns || columns);
   switch (key) {
-    case 'ArrowLeft': return Math.max(0, i - 1);
-    case 'ArrowRight': return Math.min(last, i + 1);
     case 'ArrowUp': {
       if (i < columns) return i;
       return i < lastStart ? i - columns : lastStart - columns + Math.floor((lead + 2 * (i - lastStart)) / 2);
@@ -56,8 +57,6 @@ export function nextSwatch(key: string, i: number, count: number, columns: numbe
       if (under >= 0 && lastStart + under <= last) return lastStart + under;
       return lead % 2 === 1 && under - 1 >= 0 && lastStart + under - 1 <= last ? lastStart + under - 1 : i;
     }
-    case 'Home': return 0;
-    case 'End': return last;
     default: return -1;
   }
 }
@@ -75,10 +74,12 @@ export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], c
       }
       return;
     }
-    const next = nextSwatch(e.key, i, options.length, columns, lead);
-    if (next < 0) return;
+    if (!GRID_KEYS.has(e.key)) return;
     e.preventDefault();
-    if (next !== i) swatches()[next]?.focus();
+    const next = e.key === 'ArrowUp' || e.key === 'ArrowDown'
+      ? nextSwatch(e.key, i, options.length, columns, lead)
+      : rovingTarget(i, e.key, options.map(() => true), 'horizontal', inlineDirection(e.currentTarget));
+    if (next !== null && next !== i) swatches()[next]?.focus();
   };
 }
 

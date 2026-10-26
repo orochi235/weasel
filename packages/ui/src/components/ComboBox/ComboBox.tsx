@@ -1,4 +1,4 @@
-import { Children, isValidElement, useContext, type KeyboardEvent, type ReactNode } from 'react';
+import { useContext, type KeyboardEvent, type ReactNode } from 'react';
 import {
   ComboBox as RACComboBox,
   ComboBoxStateContext,
@@ -7,16 +7,14 @@ import {
   Button as RACButton,
   ListBox as RACListBox,
   ListBoxItem as RACListBoxItem,
-  Text,
-  FieldError,
   type ComboBoxProps as RACComboBoxProps,
   type ListBoxItemProps as RACListBoxItemProps,
-  type ValidationResult,
 } from 'react-aria-components';
 import { Popover } from '../Popover';
-import type { FieldOrientation } from '../Field/Field';
+import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
+import { optionLabels } from '../optionLabels';
 import type { OptionKey } from '../../optionKey';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
@@ -56,16 +54,7 @@ const admitEverything = () => true;
  * Props for {@link ComboBox}, on top of React Aria's `ComboBox` props, with
  * the selection key narrowed to the option value type.
  */
-export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
-  label?: ReactNode;
-  /**
-   * `'stacked'` (the default) puts the label above the field; `'row'` sets it
-   * beside the field at its own width, with any description or error on a
-   * line below. Same vocabulary as {@link Field}'s `orientation`.
-   */
-  orientation?: FieldOrientation;
-  description?: ReactNode;
-  errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
+export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & FieldSlotProps & {
   placeholder?: string;
   options?: ReadonlyArray<ComboBoxOption & { value: T }>;
   children?: ReactNode;
@@ -110,7 +99,7 @@ export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<
 export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) {
   const {
     label,
-    orientation = 'stacked',
+    orientation,
     description,
     errorMessage,
     placeholder,
@@ -146,15 +135,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
         onSelectionChange?.(k as T | null);
         if (k !== null) onCommit?.({ source: 'option', key: k as T });
       }}
-      className={[
-        f.field,
-        f.control,
-        width === 'fit' && `${f.fit} ${s.fit}`,
-        orientation === 'row' && f.row,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={fieldRootClass({ orientation, width, fit: s.fit, className })}
     >
       {anchor}
       {label !== undefined && <Label className={f.label}>{label}</Label>}
@@ -172,12 +153,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
           </span>
         )}
       </ComboBoxFrame>
-      {description !== undefined && (
-        <Text slot="description" className={`${f.hint} ${f.below}`}>
-          {description}
-        </Text>
-      )}
-      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
+      <FieldFoot description={description} errorMessage={errorMessage} />
       {ready && provide(
         <Popover className={s.popover} data-weasel-overlay="">
           <RACListBox
@@ -246,20 +222,6 @@ function ComboBoxFrame({
   );
 }
 
-/**
- * The labels a `width='fit'` input measures itself against. In the children
- * form the label sits one element deep, inside a `ComboBoxItem`.
- */
-function optionLabels(
-  options: ReadonlyArray<ComboBoxOption> | undefined,
-  children: ReactNode,
-): ReactNode[] {
-  if (options !== undefined) return options.map((o) => o.label);
-  return Children.toArray(children).map((c) =>
-    isValidElement<{ children?: ReactNode }>(c) ? c.props.children : c,
-  );
-}
-
 /** Props for {@link ComboBoxItem}, on top of React Aria's `ListBoxItem` props. */
 export type ComboBoxItemProps = Omit<RACListBoxItemProps, 'className'> & {
   className?: string;
@@ -267,5 +229,5 @@ export type ComboBoxItemProps = Omit<RACListBoxItemProps, 'className'> & {
 
 /** One row in a {@link ComboBox}'s filtered list. */
 export function ComboBoxItem({ className, ...rest }: ComboBoxItemProps) {
-  return <RACListBoxItem {...rest} className={[s.option, className].filter(Boolean).join(' ')} />;
+  return <RACListBoxItem {...rest} className={[listbox.option, className].filter(Boolean).join(' ')} />;
 }

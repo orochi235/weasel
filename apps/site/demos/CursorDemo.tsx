@@ -7,6 +7,7 @@ import {
   resolveCursorTier,
   type CursorGlyphName,
 } from '@weasel-js/cursor';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './CursorDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -72,8 +73,8 @@ export function CursorDemo() {
       <div className={s.controls}>
         <label className={s.control}>
           Size
-          <input
-            type="range" min={16} max={256} step={1} value={size}
+          <InlineRange
+            min={16} max={256} step={1} value={size}
             className={s.slider}
             data-testid="size"
             onChange={(e) => setSize(Number(e.target.value))}

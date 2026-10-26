@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { ForceGraphDemo } from '../ForceGraphDemo';
 import { GRAPH_SIZES, makeGraph } from '../forceGraph/graph';
 import { DEMOS_BY_ID } from '../../registry';
@@ -35,11 +35,13 @@ describe('makeGraph', () => {
 describe('ForceGraphDemo', () => {
   it('switches to the largest graph from its size control', () => {
     render(<ForceGraphDemo />);
-    const select = screen.getByLabelText('Nodes') as HTMLSelectElement;
-    expect(select.value).toBe(String(GRAPH_SIZES[0].count));
+    const label = (n: number) => n.toLocaleString('en-US');
+    const trigger = screen.getByRole('button', { name: /Nodes/ });
+    expect(trigger.textContent).toContain(label(GRAPH_SIZES[0].count));
     const largest = GRAPH_SIZES[GRAPH_SIZES.length - 1];
-    fireEvent.change(select, { target: { value: String(largest.count) } });
-    expect(select.value).toBe(String(largest.count));
+    act(() => { fireEvent.click(trigger); });
+    fireEvent.click(screen.getByRole('option', { name: label(largest.count) }));
+    expect(screen.getByRole('button', { name: /Nodes/ }).textContent).toContain(label(largest.count));
     expect(screen.getByText(new RegExp(`${largest.links.toLocaleString('en-US')} edges`))).toBeInTheDocument();
   });
 

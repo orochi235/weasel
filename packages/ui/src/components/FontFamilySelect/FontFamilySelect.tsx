@@ -53,8 +53,8 @@ export function FontFamilySelect(props: FontFamilySelectProps) {
     <Select<string>
       className={className}
       options={options}
-      selectedKey={mixed ? null : (value ?? null)}
-      placeholder={mixed ? 'Mixed' : undefined}
+      selectedKey={value ?? null}
+      mixed={mixed}
       isDisabled={props.isDisabled}
       onSelectionChange={onChange}
       aria-label={props['aria-label'] ?? 'Font'}

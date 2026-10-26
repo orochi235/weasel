@@ -32,7 +32,15 @@ interface Painting {
  * Both hang off the layout weakly and hold no reference back to it, so
  * neither keeps one the layout cache has let go.
  */
-const own = new WeakMap<readonly ResolvedRun[], WeakMap<LaidOutRuns, Painting>>();
+const own = new WeakMap<readonly ResolvedRun[], WeakMap<LaidOutRuns, OwnPainting>>();
+
+/** A runs array's own painting, and the threshold it was last asked for at.
+ *  The runs fix every paint, so an unchanged threshold and glyph generation
+ *  is a hit with no key built. */
+interface OwnPainting {
+  painting: Painting;
+  min: number | undefined;
+}
 const shared = new WeakMap<LaidOutRuns, Map<string, Painting>>();
 
 /**
@@ -80,17 +88,23 @@ export function cachedPaintRuns(
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
   const generation = glyphGeneration();
-  const key = variantKey(runs, opts);
-  const fresh = (p: Painting | undefined): p is Painting =>
-    p !== undefined && p.generation === generation && p.key === key;
-
   let byLayout = own.get(runs);
   if (byLayout === undefined) {
     byLayout = new WeakMap();
     own.set(runs, byLayout);
   }
   const mine = byLayout.get(laid);
-  if (fresh(mine)) return mine.painted;
+  if (mine !== undefined && mine.min === opts.outlineMinSize && mine.painting.generation === generation) {
+    return mine.painting.painted;
+  }
+
+  const key = variantKey(runs, opts);
+  const fresh = (p: Painting | undefined): p is Painting =>
+    p !== undefined && p.generation === generation && p.key === key;
+  if (mine !== undefined && fresh(mine.painting)) {
+    mine.min = opts.outlineMinSize;
+    return mine.painting.painted;
+  }
 
   let byKey = shared.get(laid);
   if (byKey === undefined) {
@@ -103,6 +117,6 @@ export function cachedPaintRuns(
   if (!fresh(painting)) painting = { generation, key, painted: paintRuns(laid, runs, opts) };
   if (byKey.size >= PAINT_CACHE_VARIANT_LIMIT) byKey.delete(byKey.keys().next().value!);
   byKey.set(key, painting);
-  byLayout.set(laid, painting);
+  byLayout.set(laid, { painting, min: opts.outlineMinSize });
   return painting.painted;
 }

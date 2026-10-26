@@ -66,7 +66,8 @@ describe('RangeSlider', () => {
     );
     const trackSlop = px('--wzl-slider-track-slop');
     const thumbSlop = px('--wzl-slider-thumb-slop');
-    const thumb = container.querySelector(`.${rs.thumb}`)!;
+    // `composes` makes rs.thumb a list of class names; select by its own one.
+    const thumb = container.querySelector(`.${rs.thumb.split(' ')[0]}`)!;
     const track = thumb.parentElement!;
     const r = track.getBoundingClientRect();
     const x = r.left + r.width * 0.1;

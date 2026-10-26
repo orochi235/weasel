@@ -200,7 +200,7 @@ describe('LensSlot and LensChrome', () => {
         <Both settings={settings()} sources={{ live: live.source }} />
       </ActionsProvider>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Pixels' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Pixels' }));
     expect(ran).toHaveBeenCalledTimes(1);
   });
 
@@ -241,10 +241,38 @@ describe('LensSlot and LensChrome', () => {
         sources={{ live: live.source, pixels: pixels.source }}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Live' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Pixels' }).getAttribute('aria-pressed')).toBe(
-      'false',
+    expect(screen.getByRole('radio', { name: 'Live' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Pixels' })).not.toBeChecked();
+  });
+
+  it('asks again for the pressed source when it stands in for the one wanted', () => {
+    const live = fakeSource('live');
+    const pixels = fakeSource('pixels', { status: 'install playwright' });
+    const ran = vi.fn();
+    function Spy() {
+      const registry = useActionsRegistry();
+      useEffect(
+        () =>
+          registry?.register({
+            id: 'loupe.source.live',
+            label: 'Source: live',
+            invoker: { timing: 'immediate', run: ran },
+          } satisfies Action),
+        [registry],
+      );
+      return null;
+    }
+    render(
+      <ActionsProvider>
+        <Spy />
+        <Both
+          settings={settings({ source: 'pixels' })}
+          sources={{ live: live.source, pixels: pixels.source }}
+        />
+      </ActionsProvider>,
     );
+    fireEvent.click(screen.getByRole('radio', { name: 'Live' }));
+    expect(ran).toHaveBeenCalledTimes(1);
   });
 
   it('sends no update for the remount StrictMode forces', () => {
@@ -297,7 +325,7 @@ describe('LensSlot and LensChrome', () => {
         {chromeOf('b')}
       </ActionsProvider>,
     );
-    fireEvent.click(within(screen.getByTestId('chrome-b')).getByRole('button', { name: 'Pixels' }));
+    fireEvent.click(within(screen.getByTestId('chrome-b')).getByRole('radio', { name: 'Pixels' }));
     expect(landed).toEqual(['b']);
   });
 });

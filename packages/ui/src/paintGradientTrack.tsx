@@ -1,6 +1,7 @@
 import type { ReactNode, CSSProperties } from 'react';
 import type { TrackCtx } from './components/Slider';
 import { GradientCurve } from './paintGradientCurve';
+import { sampledCssStops } from './paintPreview';
 
 /**
  * Options for {@link paintGradientTrack}.
@@ -42,12 +43,7 @@ export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => 
     if (ctx.along) {
       return <GradientCurve ctx={ctx} gradient={gradient} samples={samples} activeRange={activeRange} hatch={{ ...DEFAULT_HATCH, ...hatch }} />;
     }
-    const stops: string[] = [];
-    for (let i = 0; i <= samples; i++) {
-      const t = i / samples;
-      stops.push(`${gradient(t)} ${ctx.fractionToPosition(t)}`);
-    }
-    const baseGradient = `linear-gradient(to right, ${stops.join(', ')})`;
+    const baseGradient = `linear-gradient(to right, ${sampledCssStops(gradient, samples, ctx.fractionToPosition)})`;
 
     const layers: string[] = [];
     if (activeRange) {

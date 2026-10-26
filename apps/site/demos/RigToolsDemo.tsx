@@ -14,6 +14,8 @@ import {
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import { createRigEditState, useRigTools } from '@weasel-js/rig';
 import num from '@weasel-js/theme/numeric.module.css';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 320;
@@ -78,14 +80,14 @@ export function RigToolsDemo() {
       <div className="ckd-toolbar">
         <label className="ckd-field">
           bend
-          <input
-            className="ckd-range" type="range" min={0} max={1.4} step={0.01}
+          <InlineRange
+            min={0} max={1.4} step={0.01}
             value={bend} onChange={(e) => setBend(Number(e.target.value))}
           />
           <span className={`ckd-readout ${num.numeric}`}>{bend.toFixed(2)}</span>
         </label>
-        <button className="ckd-btn" onClick={reweigh}>weigh from bones</button>
-        <button className="ckd-btn" onClick={() => scene.undo()}>undo</button>
+        <Button onClick={reweigh}>weigh from bones</Button>
+        <Button onClick={() => scene.undo()}>undo</Button>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas

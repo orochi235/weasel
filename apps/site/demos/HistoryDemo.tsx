@@ -1,5 +1,7 @@
 import { useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { createHistory, type HistoryEntry, type Journal, type Op } from '@weasel-js/history';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Button } from '@weasel-js/ui/components/Button';
 import s from './HistoryDemo.module.css';
 
 interface Chip {
@@ -139,13 +141,11 @@ export function HistoryDemo() {
       </div>
 
       <div className={s.controls}>
-        <button type="button" className="ckd-btn" onClick={add}>Add</button>
-        <button type="button" className="ckd-btn" onClick={remove} disabled={!chip}>Remove</button>
+        <Button onClick={add}>Add</Button>
+        <Button onClick={remove} disabled={!chip}>Remove</Button>
         <label className="ckd-field">
           hue
-          <input
-            type="range"
-            className="ckd-range"
+          <InlineRange
             min={0}
             max={359}
             value={chip?.hue ?? 0}
@@ -156,19 +156,19 @@ export function HistoryDemo() {
           <span className={s.readout}>{chip ? chip.hue : ''}</span>
         </label>
         <span className={s.sep} />
-        <button type="button" className="ckd-btn" onClick={() => step('undo')} disabled={!active.canUndo()}>Undo</button>
-        <button type="button" className="ckd-btn" onClick={() => step('redo')} disabled={!active.canRedo()}>Redo</button>
+        <Button onClick={() => step('undo')} disabled={!active.canUndo()}>Undo</Button>
+        <Button onClick={() => step('redo')} disabled={!active.canRedo()}>Redo</Button>
       </div>
 
       <div className={s.controls}>
         {journal ? (
           <>
-            <button type="button" className="ckd-btn" onClick={() => end('commit')}>Commit session</button>
-            <button type="button" className="ckd-btn" onClick={() => end('cancel')}>Discard session</button>
+            <Button onClick={() => end('commit')}>Commit session</Button>
+            <Button onClick={() => end('cancel')}>Discard session</Button>
             <span className={s.hint}>Undo and redo now step inside the session.</span>
           </>
         ) : (
-          <button type="button" className="ckd-btn" onClick={begin}>Begin edit session</button>
+          <Button onClick={begin}>Begin edit session</Button>
         )}
       </div>
 

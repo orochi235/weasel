@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PaletteLab } from './PaletteLab';
@@ -23,17 +23,22 @@ describe('<PaletteLab> action rail', () => {
     expect(buttons.map((b) => b.textContent?.trim())).toEqual(['Undo', 'Redo', 'Reset']);
   });
 
-  it('titles undo and redo with their shortcuts', () => {
+  it('titles undo and redo with their shortcuts', async () => {
+    const user = userEvent.setup();
     renderWithIcons(<PaletteLab />);
-    expect(within(rail()).getByRole('button', { name: 'Undo' })).toHaveAttribute(
-      'title',
-      'Undo (⌘Z)',
-    );
-    expect(within(rail()).getByRole('button', { name: 'Redo' })).toHaveAttribute(
-      'title',
-      'Redo (⇧⌘Z)',
-    );
+    // A disabled button takes no focus and shows no tooltip, so give each one history first.
+    await user.click(screen.getByRole('radio', { name: 'Light' }));
+    expect(await tooltipOf('Undo')).toContain('Undo (⌘Z)');
+    await user.click(within(rail()).getByRole('button', { name: 'Undo' }));
+    expect(await tooltipOf('Redo')).toContain('Redo (⇧⌘Z)');
   });
+
+  /** RAC opens a tooltip only on keyboard focus, so enter keyboard modality first. */
+  async function tooltipOf(name: string): Promise<string | null> {
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => within(rail()).getByRole('button', { name }).focus());
+    return (await screen.findByRole('tooltip')).textContent;
+  }
 
   it('disables undo and redo until there is history to move through', async () => {
     const user = userEvent.setup();

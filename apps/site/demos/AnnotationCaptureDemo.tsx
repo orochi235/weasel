@@ -12,6 +12,7 @@ import '@weasel-js/labkit/styles.css';
 import { createEmitter } from '@weasel-js/registry';
 import { createRef, useCallback, useSyncExternalStore } from 'react';
 import 'windease/styles.css';
+import { Button } from '@weasel-js/ui/components/Button';
 
 const CONTENT = { w: 240, h: 160 };
 const paneRef = createRef<HTMLDivElement>();
@@ -76,12 +77,12 @@ function CapturePanel() {
 
   return (
     <div className="ckd-capture-panel">
-      <button type="button" data-testid="capture-png" onClick={() => run('png')}>
+      <Button onClick={() => run('png')}>
         Capture PNG ×4
-      </button>
-      <button type="button" data-testid="capture-svg" onClick={() => run('svg')}>
+      </Button>
+      <Button onClick={() => run('svg')}>
         Capture SVG
-      </button>
+      </Button>
       {shot ? (
         <img
           src={shot.url}

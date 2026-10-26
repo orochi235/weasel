@@ -16,6 +16,8 @@ import type {
   SceneCanvasApi,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { Button } from '@weasel-js/ui/components/Button';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -64,8 +66,6 @@ export function DebugOverlayDemo() {
   // One object URL at a time: revoke the last when a new one replaces it or the demo unmounts.
   useEffect(() => () => { if (shot) URL.revokeObjectURL(shot.url); }, [shot]);
 
-  const toggle = (k: DebugFeature) =>
-    setEnabled((e) => ({ ...e, [k]: !e[k] }));
   const allOn = () =>
     setEnabled(Object.fromEntries(Object.keys(NONE).map((k) => [k, true])) as Record<DebugFeature, boolean>);
   const allOff = () => setEnabled(NONE);
@@ -94,20 +94,17 @@ export function DebugOverlayDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        {FEATURES.map((f) => (
-          <button
-            key={f.key}
-            className="ckd-btn"
-            aria-pressed={enabled[f.key]}
-            title={f.help}
-            onClick={() => toggle(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
-        <button className="ckd-btn" onClick={allOn}>all on</button>
-        <button className="ckd-btn" onClick={allOff}>all off</button>
-        <button className="ckd-btn" onClick={snapshot} disabled={!debug}>snapshot</button>
+        <ToggleBar
+          mode="multiple"
+          items={FEATURES.map((f) => ({ value: f.key, label: f.label, tooltip: f.help }))}
+          value={FEATURES.filter((f) => enabled[f.key]).map((f) => f.key)}
+          onChange={(on) => setEnabled({ ...NONE, ...Object.fromEntries(on.map((k) => [k, true])) })}
+          ariaLabel="Debug overlays"
+          size="sm"
+        />
+        <Button onClick={allOn}>all on</Button>
+        <Button onClick={allOff}>all off</Button>
+        <Button onClick={snapshot} disabled={!debug}>snapshot</Button>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={['view', 'pick', 'move', 'transform']}

@@ -30,6 +30,9 @@ export type ButtonBase = {
   style?: ButtonHTMLAttributes<HTMLButtonElement>['style'];
   children?: ReactNode;
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
+  id?: string;
+  /** Passed through to the `<button>`, for test ids and consumer hooks. */
+  [data: `data-${string}`]: string | undefined;
 } & AppearanceProps & SegmentTooltipFields;
 
 /** A button with a visible label, which names it. */
@@ -112,7 +115,9 @@ export const Button = forwardRef(function Button(
     onClick,
     shortcut,
     tooltip,
+    id,
   } = props;
+  const dataAttrs = Object.fromEntries(Object.entries(props).filter(([k]) => k.startsWith('data-')));
 
   const cls = [
     s.button,
@@ -137,8 +142,10 @@ export const Button = forwardRef(function Button(
     >
       <button
         ref={ref}
+        id={id}
         type={type}
         className={cls}
+        {...dataAttrs}
         {...appearance}
         style={appearance.style || style ? { ...appearance.style, ...style } : undefined}
         disabled={disabled}

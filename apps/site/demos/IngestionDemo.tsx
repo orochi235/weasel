@@ -7,6 +7,7 @@ import {
   type SceneCanvasApi,
   type ContentHandlerEntry,
 } from '@weasel-js/core';
+import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
@@ -35,12 +36,12 @@ export function IngestionDemo() {
   return (
     <div className="ckd-shape-tools-demo">
       <div className="ckd-toolbar">
-        <button onClick={async () => {
+        <Button onClick={async () => {
           const files = await openFilePicker({ accept: 'image/*', multiple: true });
           ref.current?.ingest(files);
         }}>
           Insert image…
-        </button>
+        </Button>
         <span className="ckd-readout">{readout}</span>
       </div>
       <DemoStage width={W} height={H}>

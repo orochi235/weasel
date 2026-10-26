@@ -12,6 +12,7 @@ import type {
   DebugConfig,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
 const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
@@ -57,12 +58,11 @@ export function PathPoseDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <button
-          className="ckd-btn"
+        <Button
           onClick={() => setDebugIdx((i) => (i + 1) % DEBUG_STATES.length)}
         >
           Debug overlay: {DEBUG_STATES[debugIdx].label}
-        </button>
+        </Button>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas

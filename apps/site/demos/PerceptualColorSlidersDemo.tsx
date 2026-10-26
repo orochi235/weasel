@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { chromaAt, oklchToHex, type ChromaCurve } from '@weasel-js/ui/color';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
+import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { Dims, RenderLayer } from '@weasel-js/core';
@@ -14,6 +15,11 @@ type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
  *  sliders, plus the diagram's range-line annotations. Tied together so
  *  the slider constraints and the visualization stay in sync. */
 type BoundsMode = 'unconstrained' | 'default' | 'conservative';
+const BOUNDS_MODES: ToggleBarItem<BoundsMode>[] = [
+  { value: 'unconstrained', label: 'unconstrained' },
+  { value: 'default', label: 'default' },
+  { value: 'conservative', label: 'conservative' },
+];
 type ChromaBounds = { cTop: [number, number]; cPeak: [number, number]; cBot: [number, number] };
 type LBounds = { dark: [number, number]; light: [number, number] };
 
@@ -53,50 +59,6 @@ function curveOf(p: RampParams): ChromaCurve {
 function colorAtIndex(idx: number, p: RampParams): string {
   const L = lAtIndex(idx, p.lRange);
   return oklchToHex(L, chromaAt(L, curveOf(p)), p.hue);
-}
-
-/** Three-way segmented toggle for bounds mode. Single-selection radio
- *  group styled as inline buttons. */
-function BoundsModeToggle({ mode, onChange }: { mode: BoundsMode; onChange: (m: BoundsMode) => void }) {
-  const options: BoundsMode[] = ['unconstrained', 'default', 'conservative'];
-  return (
-    <div role="radiogroup" aria-label="OKLCH bounds mode" style={{ display: 'flex', marginBottom: 10, border: '1px solid var(--wzl-border)', borderRadius: 4, overflow: 'hidden', width: 'fit-content' }}>
-      {options.map((opt, i) => {
-        const active = mode === opt;
-        return (
-          <label
-            key={opt}
-            role="radio"
-            aria-checked={active}
-            tabIndex={active ? 0 : -1}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowRight' || e.key === 'ArrowDown') onChange(options[(i + 1) % options.length]);
-              else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') onChange(options[(i - 1 + options.length) % options.length]);
-            }}
-            style={{
-              padding: '4px 10px',
-              fontSize: 11,
-              fontFamily: 'ui-monospace, monospace',
-              cursor: 'pointer',
-              background: active ? 'var(--wzl-accent)' : 'transparent',
-              color: active ? 'var(--wzl-fg-on-accent)' : 'var(--wzl-fg-muted)',
-              borderLeft: i === 0 ? 'none' : '1px solid var(--wzl-border)',
-              userSelect: 'none',
-            }}
-          >
-            <input
-              type="radio"
-              name="bounds-mode"
-              checked={active}
-              onChange={() => onChange(opt)}
-              style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
-            />
-            {opt}
-          </label>
-        );
-      })}
-    </div>
-  );
 }
 
 /** Output swatch: row of color tiles, one per index. */
@@ -358,7 +320,14 @@ export function PerceptualColorSlidersDemo() {
 
       <div style={{ position: 'sticky', top: 16 }}>
         <h3 style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--wzl-fg-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>C as function of L</h3>
-        <BoundsModeToggle mode={boundsMode} onChange={changeBoundsMode} />
+        <ToggleBar
+          className={s.boundsMode}
+          items={BOUNDS_MODES}
+          value={boundsMode}
+          onChange={(m) => m && changeBoundsMode(m)}
+          ariaLabel="OKLCH bounds mode"
+          size="sm"
+        />
         <ChromaCurveDiagram params={params} bounds={chromaBounds} />
         <div style={{ fontSize: 10, color: 'var(--wzl-fg-subtle)', marginTop: 8, lineHeight: 1.4 }}>
           Triangle interior rendered via <code>PathDrawCommand.vertexColors</code> — each corner carries its OKLCH color, the kit's <code>pathFillVColor</code> shader interpolates across. Dashed range tracks show each thumb's allowed slide range; the toggle above adjusts the L and chroma slider bounds together.

@@ -297,7 +297,6 @@ function PaintPanel({
           <div className="ckd-field">
             <span>Width</span>
             <InlineRange
-              className="ckd-range"
               value={width}
               min={1}
               max={20}
@@ -316,7 +315,6 @@ function PaintPanel({
           <div className="ckd-field">
             <span>Taper</span>
             <InlineRange
-              className="ckd-range"
               value={taper}
               min={1}
               max={40}

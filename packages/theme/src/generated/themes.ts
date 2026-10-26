@@ -2280,7 +2280,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "checker-a": {
         "value": "{border}",
         "type": "color",
-        "description": "One square of the transparency checker drawn under a paint that is empty, mixed or translucent. Paint it as repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%) 50% / var(--wzl-checker-size) var(--wzl-checker-size)."
+        "description": "One square of the transparency checker drawn under a paint that is empty, mixed or translucent. weasel-ui builds the checker layer once, in components/checker.module.css: compose its `checker` class and paint with var(--wzl-checker-layer)."
       },
       "checker-b": {
         "value": "{surface}",
@@ -3528,7 +3528,7 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "checker-a": {
         "type": "color",
         "value": "{border}",
-        "description": "One square of the transparency checker drawn under a paint that is empty, mixed or translucent. Paint it as repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%) 50% / var(--wzl-checker-size) var(--wzl-checker-size)."
+        "description": "One square of the transparency checker drawn under a paint that is empty, mixed or translucent. weasel-ui builds the checker layer once, in components/checker.module.css: compose its `checker` class and paint with var(--wzl-checker-layer)."
       },
       "checker-b": {
         "type": "color",

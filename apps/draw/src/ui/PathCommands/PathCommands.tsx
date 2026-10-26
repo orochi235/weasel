@@ -6,6 +6,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { useActionsRegistry, useLatest, useOngoingAction } from '@weasel-js/core';
 import { BarPopover } from '@weasel-js/ui/components/Bar';
+import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
 
@@ -24,7 +25,7 @@ export function PathCommands(): ReactElement {
   const [distance, setDistance] = useState(0);
 
   return (
-    <div className="wd-commandbar-group">
+    <Toolbar.Group className="wd-commandbar-group">
       <BarPopover label="Simplify">
         <Slider
           className={s.slider}
@@ -63,6 +64,6 @@ export function PathCommands(): ReactElement {
           renderReadout={readout}
         />
       </BarPopover>
-    </div>
+    </Toolbar.Group>
   );
 }

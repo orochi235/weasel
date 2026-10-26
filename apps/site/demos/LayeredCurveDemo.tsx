@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { LayeredCurveEditor, createFunctionLayer, type ControlPoint, type CurveLayer, type FunctionLayerState } from '@weasel-js/ui/components/CurveEditor';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 
 /**
  * The rim → contour curve of a beveled solid of revolution, as two function
@@ -153,8 +154,7 @@ export function LayeredCurveDemo() {
       <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
           bevel width (b):
-          <input
-            type="range"
+          <InlineRange
             min={0.05}
             max={0.95}
             step={0.01}

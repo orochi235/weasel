@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
 import { ToggleBar, type ToggleBarItem, type ToggleBarSize, type ToggleBarVariant } from '../ToggleBar/ToggleBar';
-import { icon } from '../../icons.gen';
+import { COLOR_MODES } from '../colorModes';
 import { Icon } from '../../icons/Icon';
 
 /** Props for {@link ColorModeControl}. */
@@ -16,11 +16,12 @@ export interface ColorModeControlProps {
 }
 
 function items(glyph: number): ToggleBarItem<ColorModePreference>[] {
-  return [
-    { value: 'auto', label: <Icon name={icon('modeAuto')} size={glyph} />, ariaLabel: 'Auto', tooltip: 'Auto — follow the system' },
-    { value: 'light', label: <Icon name={icon('modeLight')} size={glyph} />, ariaLabel: 'Light', tooltip: 'Light' },
-    { value: 'dark', label: <Icon name={icon('modeDark')} size={glyph} />, ariaLabel: 'Dark', tooltip: 'Dark' },
-  ];
+  return COLOR_MODES.map((m) => ({
+    value: m.value,
+    label: <Icon name={m.glyph} size={glyph} />,
+    ariaLabel: m.label,
+    tooltip: m.hint ? `${m.label} — ${m.hint}` : m.label,
+  }));
 }
 
 const ITEMS = { sm: items(12), md: items(14) };

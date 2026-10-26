@@ -112,7 +112,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   };
 
   const [yLo, yHi] = valueRange(state.keys);
-  const ticks = size.width > 0 ? tickTimes(win, size.width, TICK_SPACING_PX) : [];
+  const ticks = tickTimes(win, size.width, TICK_SPACING_PX).values;
 
   return (
     <div ref={hostRef} className={s.graphHost}>

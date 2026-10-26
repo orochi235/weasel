@@ -1,0 +1,75 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/hud-vs-dom.spec.ts --reporter=list
+
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+HUD vs DOM overlay — 1280x800, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Max, Unspecified Version)
+GPU timer query: available
+20 measurements (2 configurations, each approach twice a pass, + 2 baselines, x 2 passes), 120 frames each
+load at start 2.9 2.2 2.1 on 10 cores
+onto: plan 20 measurements
+
+    1/20  pass 1  none          0 glyphs  static       fixed   main   0.39  (js  0.20 style  0.00 layout  0.00 paint  0.07)  comp  0.27  raster  0.00  gpu-proc  2.10  total   2.77 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.28  load    2.7      5s
+onto: progress 1/20
+    2/20  pass 1  hud        2500 glyphs  static       fixed   main   0.90  (js  0.74 style  0.00 layout  0.00 paint  0.06)  comp  0.26  raster  0.00  gpu-proc  1.88  total   3.03 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.31  load    2.5     10s
+onto: progress 2/20
+    3/20  pass 1  dom        2500 glyphs  static       fixed   main   0.28  (js  0.13 style  0.00 layout  0.00 paint  0.05)  comp  0.16  raster  0.00  gpu-proc  0.99  total   1.43 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    2.3     15s
+onto: progress 3/20
+    4/20  pass 1  dom        2500 glyphs  static       fixed   main   0.27  (js  0.13 style  0.00 layout  0.00 paint  0.05)  comp  0.16  raster  0.00  gpu-proc  0.98  total   1.41 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    2.2     19s
+onto: progress 4/20
+    5/20  pass 1  hud        2500 glyphs  static       fixed   main   0.74  (js  0.60 style  0.00 layout  0.00 paint  0.05)  comp  0.16  raster  0.00  gpu-proc  1.11  total   2.01 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.26  load    2.0     24s
+onto: progress 5/20
+    6/20  pass 1  hud        5000 glyphs  static       fixed   main   1.30  (js  1.15 style  0.00 layout  0.00 paint  0.06)  comp  0.16  raster  0.00  gpu-proc  1.09  total   2.55 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.33  load    2.1     29s
+onto: progress 6/20
+    7/20  pass 1  dom        5000 glyphs  static       fixed   main   0.29  (js  0.14 style  0.00 layout  0.00 paint  0.06)  comp  0.17  raster  0.00  gpu-proc  1.01  total   1.47 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    2.8     34s
+onto: progress 7/20
+    8/20  pass 1  dom        5000 glyphs  static       fixed   main   0.29  (js  0.14 style  0.00 layout  0.00 paint  0.05)  comp  0.17  raster  0.00  gpu-proc  1.00  total   1.46 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.19  load    3.6     39s
+onto: progress 8/20
+    9/20  pass 1  hud        5000 glyphs  static       fixed   main   1.30  (js  1.14 style  0.00 layout  0.00 paint  0.06)  comp  0.17  raster  0.00  gpu-proc  1.13  total   2.61 ms/frame  interval 16.66 (traced 16.67)  missed   0  gpu  0.32  load    4.2     44s
+onto: progress 9/20
+   10/20  pass 1  none          0 glyphs  static       fixed   main   0.40  (js  0.19 style  0.00 layout  0.00 paint  0.08)  comp  0.21  raster  0.00  gpu-proc  1.43  total   2.04 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.24  load    4.0     49s
+onto: progress 10/20
+   11/20  pass 2  none          0 glyphs  static       fixed   main   0.38  (js  0.18 style  0.00 layout  0.00 paint  0.08)  comp  0.21  raster  0.00  gpu-proc  1.42  total   2.01 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.24  load    3.7     53s
+onto: progress 11/20
+   12/20  pass 2  dom        2500 glyphs  static       fixed   main   0.30  (js  0.14 style  0.00 layout  0.00 paint  0.06)  comp  0.18  raster  0.00  gpu-proc  1.09  total   1.57 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    4.3     58s
+onto: progress 12/20
+   13/20  pass 2  hud        2500 glyphs  static       fixed   main   0.82  (js  0.67 style  0.00 layout  0.00 paint  0.05)  comp  0.16  raster  0.00  gpu-proc  1.12  total   2.10 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.29  load    4.2     63s
+onto: progress 13/20
+   14/20  pass 2  hud        2500 glyphs  static       fixed   main   0.78  (js  0.62 style  0.00 layout  0.00 paint  0.06)  comp  0.17  raster  0.00  gpu-proc  1.16  total   2.10 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.27  load    4.2     68s
+onto: progress 14/20
+   15/20  pass 2  dom        2500 glyphs  static       fixed   main   0.28  (js  0.13 style  0.00 layout  0.00 paint  0.05)  comp  0.15  raster  0.00  gpu-proc  1.01  total   1.44 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    4.0     73s
+onto: progress 15/20
+   16/20  pass 2  dom        5000 glyphs  static       fixed   main   0.26  (js  0.12 style  0.00 layout  0.00 paint  0.05)  comp  0.15  raster  0.00  gpu-proc  0.93  total   1.34 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    3.9     78s
+onto: progress 16/20
+   17/20  pass 2  hud        5000 glyphs  static       fixed   main   1.19  (js  1.06 style  0.00 layout  0.00 paint  0.05)  comp  0.14  raster  0.00  gpu-proc  0.96  total   2.29 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.34  load    3.6     82s
+onto: progress 17/20
+   18/20  pass 2  hud        5000 glyphs  static       fixed   main   1.15  (js  1.02 style  0.00 layout  0.00 paint  0.05)  comp  0.14  raster  0.00  gpu-proc  0.96  total   2.25 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.35  load    3.4     87s
+onto: progress 18/20
+   19/20  pass 2  dom        5000 glyphs  static       fixed   main   0.26  (js  0.12 style  0.00 layout  0.00 paint  0.05)  comp  0.15  raster  0.00  gpu-proc  0.95  total   1.36 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    3.2     92s
+onto: progress 19/20
+   20/20  pass 2  none          0 glyphs  static       fixed   main   0.39  (js  0.18 style  0.00 layout  0.00 paint  0.07)  comp  0.20  raster  0.00  gpu-proc  1.39  total   1.98 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.24  load    3.0     97s
+onto: progress 20/20
+
+HUD vs DOM overlay — 1280x800, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Max, Unspecified Version)
+Per frame, ms; median of 4 samples (ABBA x 2), spread = max - min.
+Baseline (background scene alone): main 0.39, all threads 2.02.
+
+**static, camera fixed**: main thread / all threads / untraced frame interval, median [spread of all threads]
+
+| glyphs | hud | dom |
+|---:|---:|---:|
+| 2500 |   0.80 /   2.10 / 16.67 [1.02] |   0.28 /   1.43 / 16.67 [0.16] |
+| 5000 |   1.25 /   2.42 / 16.67 [0.36] |   0.27 /   1.41 / 16.67 [0.14] |
+perf result: perf-out/hud-vs-dom-static-2026-10-24T15-00-51Z.json
+  ✓  1 tests/perf/hud-vs-dom.spec.ts:514:1 › hud vs dom: text over the canvas, per frame (1.6m)
+
+  1 passed (1.7m)
