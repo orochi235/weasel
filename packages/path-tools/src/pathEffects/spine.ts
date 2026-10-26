@@ -12,6 +12,7 @@ import {
 import { PATH_EFFECTS_GROUP } from './actions';
 import { releasedOps, takenOps } from './hiding';
 import { closesLoop } from './retarget';
+import { icon } from '../icons.gen';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -41,6 +42,7 @@ const SET_LABEL = 'Set Spine';
 export const setBlendSpineAction: Action & { requires: string[] } = {
   id: 'setBlendSpine',
   label: SET_LABEL,
+  icon: icon('setBlendSpine'),
   group: PATH_EFFECTS_GROUP,
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps'],
@@ -85,6 +87,7 @@ const RELEASE_LABEL = 'Release Spine';
 export const releaseBlendSpineAction: Action & { requires: string[] } = {
   id: 'releaseBlendSpine',
   label: RELEASE_LABEL,
+  icon: icon('releaseBlendSpine'),
   group: PATH_EFFECTS_GROUP,
   requires: ['selection', 'scene', 'applyOps'],
   invoker: {

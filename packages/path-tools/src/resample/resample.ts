@@ -4,6 +4,7 @@
  */
 import { resamplePath, type ResamplePathOptions } from '@weasel-js/geom';
 import { livePathEdit, reshapeOps } from '@weasel-js/core';
+import { icon } from '../icons.gen';
 
 const LABEL = 'Resample';
 
@@ -43,6 +44,7 @@ function resampleOptions(count: number, params: Readonly<Record<string, unknown>
 export const resamplePathAction = livePathEdit({
   id: 'resamplePath',
   label: LABEL,
+  icon: icon('resamplePath'),
   param: 'count',
   initial: 0,
   edit: ({ path }, count, params) => resamplePath(path, resampleOptions(count, params)),

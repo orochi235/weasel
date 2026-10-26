@@ -9,6 +9,7 @@ import {
   type NodeId, type Op, type SceneNode,
 } from '@weasel-js/core';
 import { respiroWithKind, spiroOf, withoutSpiro } from './spiroShape';
+import { icon } from '../icons.gen';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
@@ -93,6 +94,7 @@ const RELEASE_LABEL = 'Convert to path';
 export const releaseSpiroAction: Action & { requires: string[] } = {
   id: 'releaseSpiro',
   label: RELEASE_LABEL,
+  icon: icon('releaseSpiro'),
   tags: pathOperationTags('command'),
   group: 'spiro',
   requires: ['selection', 'scene', 'applyOps', 'editAnchors'],

@@ -20,6 +20,10 @@ export type PathToolsIconName =
   | 'extend'
   | 'girth'
   | 'spiro'
+  | 'resamplePath'
+  | 'releaseSpiro'
+  | 'setBlendSpine'
+  | 'releaseBlendSpine'
   | 'reversePath'
   | 'setPathStart'
   | 'cornerRadius'
@@ -58,6 +62,10 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
   {
     "label": "Commands",
     "names": [
+      "resamplePath",
+      "releaseSpiro",
+      "setBlendSpine",
+      "releaseBlendSpine",
       "reversePath",
       "setPathStart",
       "cornerRadius",
@@ -88,6 +96,10 @@ declare module '@weasel-js/icons' {
     'path-tools:extend': true;
     'path-tools:girth': true;
     'path-tools:spiro': true;
+    'path-tools:resamplePath': true;
+    'path-tools:releaseSpiro': true;
+    'path-tools:setBlendSpine': true;
+    'path-tools:releaseBlendSpine': true;
     'path-tools:reversePath': true;
     'path-tools:setPathStart': true;
     'path-tools:cornerRadius': true;
