@@ -109,6 +109,15 @@ export function releasesFromChangelogs(sources: readonly ChangelogSource[]): Rel
     }
   }
 
+  // A prerelease is a step toward its release, so once that release is out it reads as part of it.
+  for (const [version, entries] of [...byVersion]) {
+    const release = byVersion.get(version.split('-')[0]);
+    if (version.includes('-') && release) {
+      for (const [id, entry] of entries) if (!release.has(id)) release.set(id, entry);
+      byVersion.delete(version);
+    }
+  }
+
   const releases: Release[] = [];
   for (const [version, entries] of byVersion) {
     releases.push({ version, entries: finishEntries(entries) });

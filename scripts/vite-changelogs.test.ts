@@ -83,6 +83,32 @@ describe('releasesFromChangelogs', () => {
   it('carries the bump level from the section heading', () => {
     expect(releases.find((r) => r.version === '1.1.0')!.entries[0].level).toBe('minor');
   });
+
+  it('folds a prerelease into its release once that is out, and keeps it alone until then', () => {
+    const text = `# @weasel-js/core
+
+## 2.1.0-rc.0
+
+### Patch Changes
+
+- ccc0003: Next candidate.
+
+## 2.0.0
+
+### Patch Changes
+
+- bbb0002: In the release.
+
+## 2.0.0-rc.0
+
+### Patch Changes
+
+- aaa0001: In the candidate.
+`;
+    const folded = releasesFromChangelogs([{ pkg: 'core', text }]);
+    expect(folded.map((r) => r.version)).toEqual(['2.1.0-rc.0', '2.0.0']);
+    expect(folded[1].entries.map((e) => e.id)).toEqual(['bbb0002', 'aaa0001']);
+  });
 });
 
 describe('splitSummary', () => {
