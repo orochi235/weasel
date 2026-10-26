@@ -10,6 +10,10 @@ afterEach(cleanup);
 const frame = () => new Promise((r) => requestAnimationFrame(r));
 
 async function settle() {
+  // The first case is the one that loads the face: a frame lays the text out and starts it, and a layout read
+  // before it arrives measures the fallback's widths.
+  await frame();
+  await document.fonts.ready;
   let last = '';
   for (let i = 0; i < 30; i++) {
     await frame();
