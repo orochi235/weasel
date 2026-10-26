@@ -54,3 +54,16 @@ it("draws ActionBar's strip, and a schema bar's, as ActionBar's own rule did", (
     expect(getComputedStyle(bar).userSelect).toBe('none');
   }
 });
+
+it('sizes a segmented strip to its buttons, across a block host and down a column one', () => {
+  renderWithIcons(
+    <div style={{ inlineSize: 600 }}>
+      <Bar schema={schema} label="Row" framed="segmented" />
+      <Bar schema={schema} label="Column" framed="segmented" orientation="vertical" />
+    </div>,
+  );
+  for (const name of ['Row', 'Column']) {
+    const bar = screen.getByRole('toolbar', { name });
+    expect(bar.getBoundingClientRect().width).toBeLessThan(200);
+  }
+});
