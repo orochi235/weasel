@@ -52,7 +52,11 @@ export interface DropParentScene {
   readonly roots: readonly string[];
   childrenOf(id: never): readonly string[];
   get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; pose: unknown } | undefined;
+  /** How a child's stored pose joins its parent's. Absent, poses are world poses. */
+  readonly composition?: { compose(parent: never, child: never): unknown };
 }
+
+type Rect = { x: number; y: number; width: number; height: number };
 
 /**
  * The innermost container or lane whose body holds `point`, that would admit
@@ -66,18 +70,21 @@ export function diagramDropParentAt(
 ): string | null {
   if (role === 'pool' || role === 'lane') return null;
   let best: string | null = null;
-  const walk = (ids: readonly string[]): void => {
+  const compose = scene.composition?.compose;
+  const walk = (ids: readonly string[], frame: Rect | null): void => {
     for (const id of ids) {
       const node = scene.get(id as never);
       if (node === undefined) continue;
+      const pose = node.pose as Rect;
+      const world = frame === null || compose === undefined ? pose : compose(frame as never, pose as never) as Rect;
       const trait = diagramContainerOf(node);
-      const b = bodyBox(node.pose as { x: number; y: number; width: number; height: number }, trait?.header);
+      const b = bodyBox(world, trait?.header);
       const inside = point.x >= b.x && point.x < b.x + b.width && point.y >= b.y && point.y < b.y + b.height;
       if (!inside) continue;
       if (trait?.role === 'container' || trait?.role === 'lane') best = id;
-      walk(scene.childrenOf(id as never));
+      walk(scene.childrenOf(id as never), world);
     }
   };
-  walk(scene.roots);
+  walk(scene.roots, null);
   return best;
 }

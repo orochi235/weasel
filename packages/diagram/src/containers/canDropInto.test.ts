@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { dataKeyReader } from '../trait';
-import { diagramCanDropInto } from './canDropInto';
+import { createScene, type RectPose } from '@weasel-js/core';
+import { withDiagramRegistry } from '../edge';
+import { diagramScene } from '../fromData';
+import { diagramCanDropInto, diagramDropParentAt } from './canDropInto';
 
 type N = { id: string; kind: 'mark' | 'group'; data: unknown };
 const region = (id: string, role: string): N =>
@@ -59,5 +62,22 @@ describe('diagramCanDropInto', () => {
   it('leaves lanes out of the participants a connector can end on', () => {
     expect(dataKeyReader(NODES.lane!)).toBeNull();
     expect(dataKeyReader(NODES.pool!)).not.toBeNull();
+  });
+});
+
+describe('diagramDropParentAt', () => {
+  it('finds a container nested in another where it is drawn, its pose being in its parent\'s frame', () => {
+    const specs = diagramScene({
+      nodes: [],
+      edges: [],
+      containers: [
+        { id: 'outer', role: 'container', members: ['inner'], box: { x: 100, y: 100, width: 400, height: 300 }, pinned: true },
+        { id: 'inner', role: 'container', box: { x: 300, y: 200, width: 150, height: 150 }, pinned: true },
+      ],
+    }, { layout: 'none' });
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    for (const spec of specs) scene.add(spec as never);
+    expect(diagramDropParentAt(scene as never, { x: 400, y: 300 }, null)).toBe('inner');
+    expect(diagramDropParentAt(scene as never, { x: 150, y: 300 }, null)).toBe('outer');
   });
 });
