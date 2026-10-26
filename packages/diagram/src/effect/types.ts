@@ -44,6 +44,9 @@ export interface EffectPort {
   /** Default the id. */
   label?: string;
   type: string;
+  /** An input that takes any number of wires, which a runner combines: the
+   *  audio runner sums them, as Web Audio does. Default one wire. */
+  many?: boolean;
 }
 
 /** A connection from one stage's output to another stage's input. */
