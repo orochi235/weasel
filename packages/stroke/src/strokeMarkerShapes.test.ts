@@ -13,13 +13,13 @@ describe('built-in marker geometry', () => {
   it('ships the whole documented vocabulary', () => {
     expect(BUILTIN_MARKERS.map((m) => m.id)).toEqual([
       'arrow', 'arrow-open', 'arrow-concave', 'triangle-hollow',
-      'diamond', 'diamond-hollow', 'circle', 'square', 'bar',
+      'diamond', 'diamond-hollow', 'circle', 'square', 'bar', 'dot',
       'crow-one', 'crow-many', 'crow-zero-one', 'crow-one-many', 'crow-zero-many',
     ]);
   });
 
-  it('puts every leading edge exactly on the anchor', () => {
-    for (const entry of BUILTIN_MARKERS) {
+  it('puts every terminator\'s leading edge exactly on the anchor', () => {
+    for (const entry of BUILTIN_MARKERS.filter((m) => m.id !== 'dot')) {
       const path = entry.path(ctx) as PolygonPath;
       let maxX = -Infinity;
       for (let i = 0; i < path.coords.length; i += 2) maxX = Math.max(maxX, path.coords[i]);
@@ -28,6 +28,12 @@ describe('built-in marker geometry', () => {
       // a square's anchor is the midpoint of its leading edge, not a corner.
       expect(maxX, `${entry.id} leading edge is not on the anchor`).toBeCloseTo(0, 6);
     }
+  });
+
+  it('centers the dot on its anchor and runs the line to it', () => {
+    const xs = [...(byId('dot').path(ctx) as PolygonPath).coords].filter((_, i) => i % 2 === 0);
+    expect(Math.max(...xs) + Math.min(...xs)).toBeCloseTo(0, 6);
+    expect(byId('dot').inset ?? 0).toBe(0);
   });
 
   it('gives closed heads an inset and open heads none', () => {

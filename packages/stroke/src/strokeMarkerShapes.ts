@@ -1,8 +1,9 @@
 /**
  * The kit's built-in stroke-marker vocabulary.
  *
- * Every entry is authored with its anchor at the origin and pointing +X, so
- * the line arrives from -X and no geometry sits at positive X. Coordinates are
+ * Every terminator is authored with its anchor at the origin and pointing +X,
+ * so the line arrives from -X and no geometry sits at positive X. `dot` is the
+ * exception: it is centered on its anchor, for `markerMid`. Coordinates are
  * in units of `MarkerCtx.size`, which defaults to the resolved stroke width —
  * one definition is therefore correct at any line weight.
  *
@@ -71,7 +72,7 @@ const CROW = { reads: [], fill: 'none', outline: { width: 1 } } as const;
 
 /** The markers the registry is seeded with: `arrow`, `arrow-open`,
  *  `arrow-concave`, `triangle-hollow`, `diamond`, `diamond-hollow`, `circle`,
- *  `square`, `bar`, and the crow's-foot family `crow-one`, `crow-many`,
+ *  `square`, `bar`, `dot`, and the crow's-foot family `crow-one`, `crow-many`,
  *  `crow-zero-one`, `crow-one-many`, and `crow-zero-many`. */
 export const BUILTIN_MARKERS: readonly MarkerEntry[] = [
   {
@@ -141,6 +142,12 @@ export const BUILTIN_MARKERS: readonly MarkerEntry[] = [
     fill: 'none',
     outline: { width: 1 },
     path: ({ size }: MarkerCtx) => poly([0, -1.5, 0, 1.5], size, false),
+  },
+  {
+    id: 'dot',
+    reads: [],
+    inset: 0,
+    path: ({ size }: MarkerCtx) => circle(0, 1.2, size),
   },
   // Nearest the anchor is the maximum (one or many), behind it the minimum.
   {

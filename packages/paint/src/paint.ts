@@ -83,7 +83,7 @@ export type StrokeAlign = 'center' | 'inner' | 'outer';
 export type KitMarkerKey =
   | 'arrow' | 'arrow-open' | 'arrow-concave' | 'triangle-hollow'
   | 'diamond' | 'diamond-hollow'
-  | 'circle' | 'square' | 'bar'
+  | 'circle' | 'square' | 'bar' | 'dot'
   | 'crow-one' | 'crow-many' | 'crow-zero-one' | 'crow-one-many' | 'crow-zero-many';
 /** A marker shape's key: a built-in {@link KitMarkerKey} or a consumer-registered name. */
 export type MarkerKey = KitMarkerKey | (string & {});
@@ -164,7 +164,9 @@ export interface Stroke {
    *  along the line (SVG's `auto-start-reverse`, as the only behavior). */
   markerStart?: MarkerRef;
   /** Marker at every interior authored vertex, on the bisector of the
-   *  incoming and outgoing directions. Never insets the stroke. */
+   *  incoming and outgoing directions. Never insets the stroke. The head's
+   *  anchor sits on the vertex, so a terminator such as `diamond` trails
+   *  back from it; `dot` is the built-in centered on its vertex. */
   markerMid?: MarkerRef;
   /** Marker at the last vertex of each open subpath. */
   markerEnd?: MarkerRef;
