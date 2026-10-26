@@ -1,22 +1,26 @@
 /**
- * Which members a reorderable group holds, and what moves with each. Plain
- * reads of the scene; `groupReorder.ts` builds a reorder's slots from them.
+ * Which members a reorderable group or container holds, and what moves with
+ * each. Plain reads of the scene; `groupReorder.ts` builds a reorder's slots
+ * from them.
  */
 import type { Bounds } from '@weasel-js/core';
+import { diagramContainerOf, titleIdOf } from './containers/trait';
+import { diagramEdgeOf } from './edgeTrait';
 import { diagramAnchorOf, diagramGroupOf } from './group';
 import { diagramLabelOf } from './labelTrait';
 
 /** The scene reads a reorder makes. */
 export interface ReorderScene {
-  get(id: string): { id: string; data: unknown; dependsOn?: unknown } | undefined;
+  get(id: string): { id: string; data: unknown; dependsOn?: unknown; parent?: string | null } | undefined;
   renderOrderNodes(): Iterable<{ id: string; data: unknown; dependsOn?: unknown }>;
   /** A container's children, which a reorder carries with it. Absent, every node is a leaf. */
   childrenOf?(id: string): readonly string[];
 }
 
-/** A group whose members are carried along one axis, and the member a press picked up. */
+/** A group or container whose members are carried along one axis, and the member a press picked up. */
 export interface ReorderTarget {
-  group: string;
+  /** The group's or the container's id. */
+  parent: string;
   axis: 'x' | 'y';
   member: string;
   /** The group's members, in the order they stand along the axis. */
@@ -39,18 +43,35 @@ function holders(scene: ReorderScene): Map<string, string> {
   return out;
 }
 
-/** The members of group `group`, the way {@link holders} counts them. */
-function membersOf(scene: ReorderScene, group: string): string[] {
-  return depsOf(scene.get(group)).filter((id) => {
-    const node = scene.get(id);
-    return node !== undefined && diagramLabelOf(node) === null;
+/** The members of `holder`, the way {@link holderOf} counts them: a group's, or a container's children but its title. */
+function membersOf(scene: ReorderScene, holder: string): string[] {
+  const node = scene.get(holder);
+  const ids = node !== undefined && diagramGroupOf(node) !== null
+    ? depsOf(node)
+    : (scene.childrenOf?.(holder) ?? []).filter((id) => id !== titleIdOf(holder));
+  return ids.filter((id) => {
+    const member = scene.get(id);
+    return member !== undefined && diagramLabelOf(member) === null && diagramEdgeOf(member) === null;
   });
 }
 
+/** The group box directly holding `id`, else the container it is a child of. */
+function holderOf(scene: ReorderScene, held: ReadonlyMap<string, string>, id: string): string | undefined {
+  const group = held.get(id);
+  if (group !== undefined) return group;
+  const parent = scene.get(id)?.parent;
+  const node = parent == null ? undefined : scene.get(parent);
+  return node !== undefined && diagramContainerOf(node)?.role === 'container' ? node.id : undefined;
+}
+
+const axisOf = (node: { data: unknown }): 'x' | 'y' | undefined =>
+  diagramGroupOf(node)?.reorder ?? diagramContainerOf(node)?.reorder;
+
 /**
- * The reorderable group a press on `id` carries a member of: the nearest
- * group above `id` with `reorder` set, and its member on the way up — `id`
- * itself, or the group holding it. `null` when no group above it reorders.
+ * The reorderable group or container a press on `id` carries a member of: the
+ * nearest one above `id` with `reorder` set, and its member on the way up —
+ * `id` itself, or the group or container holding it. `null` when none above
+ * it reorders.
  */
 export function reorderTargetOf(
   scene: ReorderScene,
@@ -58,15 +79,15 @@ export function reorderTargetOf(
   boxOf: (id: string) => Bounds | null,
 ): ReorderTarget | null {
   const held = holders(scene);
-  for (let member = id, group = held.get(id); group !== undefined; member = group, group = held.get(group)) {
-    const axis = diagramGroupOf(scene.get(group)!)?.reorder;
+  for (let member = id, holder = holderOf(scene, held, id); holder !== undefined; member = holder, holder = holderOf(scene, held, holder)) {
+    const axis = axisOf(scene.get(holder)!);
     if (axis === undefined) continue;
     const start = (m: string) => {
       const box = boxOf(m);
       return box === null ? 0 : axis === 'x' ? box.x : box.y;
     };
-    const members = membersOf(scene, group).sort((a, b) => start(a) - start(b));
-    return { group, axis, member, members };
+    const members = membersOf(scene, holder).sort((a, b) => start(a) - start(b));
+    return { parent: holder, axis, member, members };
   }
   return null;
 }

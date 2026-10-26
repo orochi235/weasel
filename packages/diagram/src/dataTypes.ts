@@ -149,6 +149,11 @@ export interface DataContainer {
   members?: readonly string[];
   /** A pool's lanes, in the order they stack. */
   lanes?: readonly DataLane[];
+  /** Lets a container's members be dragged along this axis among each other
+   *  with `onReorder`, which hears the container and its members in their
+   *  new order, as a group's do. Nothing moves until the members do: write
+   *  the order to `members`, and place them by it. Not for a pool. */
+  reorder?: 'x' | 'y';
   /** The axis a pool stacks its lanes along: `'y'` for rows. Default `'y'`. */
   axis?: 'x' | 'y';
   /** Where it stands and how big it is, in world units. A pool's size along
