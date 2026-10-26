@@ -111,4 +111,21 @@ describe('Tooltip', () => {
       document.removeEventListener('keydown', onDocumentKey);
     }
   });
+
+  it('keeps every Escape for the tooltip with keepEscape, wherever focus is', () => {
+    const onEditorKey = vi.fn();
+    render(
+      <>
+        <TooltipTrigger isOpen keepEscape>
+          <Focusable><button type="button">Save</button></Focusable>
+          <Tooltip>Save the document</Tooltip>
+        </TooltipTrigger>
+        <input data-testid="field" onKeyDown={(e) => onEditorKey(e.key)} />
+      </>,
+    );
+    const field = screen.getByTestId('field');
+    act(() => field.focus());
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(onEditorKey).not.toHaveBeenCalled();
+  });
 });

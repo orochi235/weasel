@@ -17,11 +17,12 @@ import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } f
 import { InlineMarkdown } from '../InlineMarkdown';
 import s from './Tooltip.module.css';
 
-/**
- * Props for {@link TooltipTrigger} — React Aria's `TooltipTrigger` props
- * unchanged.
- */
-export type TooltipTriggerProps = TooltipTriggerComponentProps;
+/** Props for {@link TooltipTrigger}: React Aria's `TooltipTrigger` props, and `keepEscape`. */
+export type TooltipTriggerProps = TooltipTriggerComponentProps & {
+  /** Every Escape while the tooltip is open only closes it, as one pressed on the trigger does: for help
+   *  that describes the focused control from elsewhere. Default false. */
+  keepEscape?: boolean;
+};
 
 /**
  * TooltipTrigger with kit defaults: ~600 ms open delay, instant close.
@@ -34,9 +35,9 @@ export type TooltipTriggerProps = TooltipTriggerComponentProps;
  * whatever it was pressed in.
  */
 export function TooltipTrigger(props: TooltipTriggerProps) {
-  const { delay = 600, closeDelay = 0, onOpenChange, ...rest } = props;
+  const { delay = 600, closeDelay = 0, onOpenChange, keepEscape = false, ...rest } = props;
   const [open, setOpen] = useState(false);
-  useEscapePassesThrough(props.isOpen ?? open);
+  useEscapePassesThrough(!keepEscape && (props.isOpen ?? open));
   const changed = useCallback((next: boolean) => {
     setOpen(next);
     onOpenChange?.(next);
