@@ -85,6 +85,8 @@ export type CoreIconName =
   | 'textAlignCenter'
   | 'textAlignRight'
   | 'textAlignJustify'
+  | 'textAlignStart'
+  | 'textAlignEnd'
   | 'textAlignTop'
   | 'textAlignMiddle'
   | 'textAlignBottom'
@@ -269,6 +271,8 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "textAlignCenter",
       "textAlignRight",
       "textAlignJustify",
+      "textAlignStart",
+      "textAlignEnd",
       "textAlignTop",
       "textAlignMiddle",
       "textAlignBottom"
@@ -410,6 +414,8 @@ declare module '@weasel-js/icons' {
     'core:textAlignCenter': true;
     'core:textAlignRight': true;
     'core:textAlignJustify': true;
+    'core:textAlignStart': true;
+    'core:textAlignEnd': true;
     'core:textAlignTop': true;
     'core:textAlignMiddle': true;
     'core:textAlignBottom': true;

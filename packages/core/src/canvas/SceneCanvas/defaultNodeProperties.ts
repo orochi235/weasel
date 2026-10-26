@@ -3,7 +3,6 @@ import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS, shapeKindInfo } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
-import { resolveAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { minSizeOf, type MinSize } from 'core/scene/minSize';
 import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
@@ -69,21 +68,6 @@ const markerEncoding: PrefEnumEncoding = {
 const italicEncoding: PrefBooleanEncoding = {
   read: (stored) => stored === 'italic',
   write: (on) => (on ? 'italic' : undefined),
-};
-
-/** `TextStyle.align` read as the edge that paints, or as `justify`. The model
- *  also holds the reading-order pair `start` / `end`, which name an edge only
- *  under a stated `direction`. Under `auto` each paragraph takes its own from
- *  its text, so no segment is lit. A click writes the edge. */
-const alignEncoding: PrefEnumEncoding = {
-  read: (stored, style) => {
-    if (stored === 'start' || stored === 'end') {
-      const direction = style?.direction;
-      return direction === 'ltr' || direction === 'rtl' ? resolveAlign(stored, direction) : undefined;
-    }
-    return stored as string | undefined;
-  },
-  write: (edge) => edge,
 };
 
 const DEFAULT_NIB = { angle: Math.PI / 6, ratio: 0.25 };
@@ -326,7 +310,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
                         direction: { kind: 'enum', name: 'Direction', description: 'Reading direction. Auto takes each paragraph\'s from its first strong character.', absentIsDefault: true, default: 'auto', control: 'toggle', options: [{ value: 'auto', label: 'Auto', short: ['Auto'] }, { value: 'ltr', label: 'Left to right', short: ['LTR'] }, { value: 'rtl', label: 'Right to left', short: ['RTL'] }] },
                         // Last, so the box's vertical alignment — a field of
                         // the node rather than of its style — follows it.
-                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', absentIsDefault: true, default: 'left', control: 'toggle', encoding: alignEncoding, options: [{ value: 'left', label: 'Left', icon: icon('textAlignLeft') }, { value: 'center', label: 'Center', icon: icon('textAlignCenter') }, { value: 'right', label: 'Right', icon: icon('textAlignRight') }, { value: 'justify', label: 'Justify', icon: icon('textAlignJustify') }] },
+                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', absentIsDefault: true, default: 'left', control: 'toggle', options: [{ value: 'left', label: 'Left', icon: icon('textAlignLeft') }, { value: 'center', label: 'Center', icon: icon('textAlignCenter') }, { value: 'right', label: 'Right', icon: icon('textAlignRight') }, { value: 'justify', label: 'Justify', icon: icon('textAlignJustify') }, { value: 'start', label: 'Start', icon: icon('textAlignStart') }, { value: 'end', label: 'End', icon: icon('textAlignEnd') }] },
                       },
                     },
                   },
