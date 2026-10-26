@@ -143,32 +143,46 @@ export function snapToContainer<TPose>(args: {
         ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
         reparent(id);
       }
-      // A node with no slot of its own lands where the preview drew it, then
-      // keeps that place in the target's frame, with what shares its own.
+      // A node with no slot of its own lands where the preview drew it.
       const rest = ctx.draggedIds.filter((id) => !slots.has(id));
       const moved = end.translateOps(rest);
       ops.push(...moved);
-      const translated = new Map(moved.filter((op) => op.name === 'transform')
-        .map((op) => [(op.args as { id: string }).id, (op.args as { to: TPose }).to]));
-      const restore = (id: string): void => {
-        const frames = ctx.frames;
-        if (frames === undefined) return;
-        const from = translated.get(id) ?? ctx.adapter.getPose(id);
-        ops.push(createTransformOp<TPose>({
-          id, from, to: frames.toLocalUnder(snap.parentId, frames.toWorld(id, from)), label: reparentLabel,
-        }));
-        const node = ctx.adapter.getNode(id) as { dependsOn?: unknown; derivePose?: unknown } | undefined;
-        if (node === undefined || definesFrame(node)) return;
-        for (const child of ctx.adapter.getNodes()) {
-          if ((child as { parent?: string | null }).parent === id) restore(child.id);
-        }
-      };
       for (const id of rest) {
         const was = ctx.adapter.getParent(id);
         reparent(id);
-        if (was !== snap.parentId) restore(id);
+        if (was !== snap.parentId) ops.push(...keptInPlace(ctx, snap.parentId, id, moved, reparentLabel));
       }
       return ops;
     },
   };
+}
+
+/**
+ * The ops that keep `id`, reparented into `parentId`, where `moved` left it:
+ * its pose made local to the new frame, and through an envelope, the poses of
+ * what shares its frame.
+ */
+function keptInPlace<TPose>(
+  ctx: GestureContext<TPose>,
+  parentId: string,
+  id: string,
+  moved: readonly Op[],
+  label: string,
+): Op[] {
+  const frames = ctx.frames;
+  if (frames === undefined) return [];
+  const translated = new Map(moved.filter((op) => op.name === 'transform')
+    .map((op) => [(op.args as { id: string }).id, (op.args as { to: TPose }).to]));
+  const ops: Op[] = [];
+  const keep = (at: string): void => {
+    const from = translated.get(at) ?? ctx.adapter.getPose(at);
+    ops.push(createTransformOp<TPose>({ id: at, from, to: frames.toLocalUnder(parentId, frames.toWorld(at, from)), label }));
+    const node = ctx.adapter.getNode(at) as { dependsOn?: unknown; derivePose?: unknown } | undefined;
+    if (node === undefined || definesFrame(node)) return;
+    for (const child of ctx.adapter.getNodes()) {
+      if ((child as { parent?: string | null }).parent === at) keep(child.id);
+    }
+  };
+  keep(id);
+  return ops;
 }
