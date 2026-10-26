@@ -82,7 +82,10 @@ unique per surface. Two contributions declaring the same id throw; a second
 painting and taking presses.
 
 Dragging a marker pans its source: a press inside its outline, or within
-`VIEW_MARKER_HIT_SLOP_PX` of it, starts the `view.marker.drag` action
+`VIEW_MARKER_HIT_SLOP_PX` of it, starts a drag. A marker
+covering more than three quarters of its frame grabs only that band about its
+rim, so a zoomed-out view's aim drawn across its whole frame leaves the frame's
+presses to the frame. The drag is the `view.marker.drag` action
 (`VIEW_MARKER_DRAG`). That binding comes from an always-on entry the surface
 installs, so `actions={null}` and a `tools` takeover both turn dragging off;
 the marker still paints, and presses fall through to the view's own bindings.

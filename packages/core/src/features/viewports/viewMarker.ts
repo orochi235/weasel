@@ -27,8 +27,8 @@ export interface ViewMarkerProps {
   /** Screen px. Default: stroke `#ffffff`, width 1, dash [2, 3]. */
   style?: ViewMarkerStyle;
   /** Default true: dragging the marker edits the source's aim. A source with no writer is never interactive.
-   *  A marker grabs its whole interior plus {@link VIEW_MARKER_HIT_SLOP_PX}, so one covering much of its
-   *  frame takes every press there; `false` opts out. */
+   *  A marker grabs its interior plus {@link VIEW_MARKER_HIT_SLOP_PX} while it covers at most three quarters
+   *  of its frame, and past that only a band that wide either side of its rim, so the frame keeps its presses. */
   interactive?: boolean;
 }
 
@@ -83,10 +83,14 @@ export interface ViewMarkerGrab {
 /** A press this many screen px outside the outline still counts. */
 export const VIEW_MARKER_HIT_SLOP_PX = 4;
 
+/** The share of its frame a marker can cover and still grab its interior. */
+const INTERIOR_MAX_COVER = 0.75;
+
 /**
  * The grab for a press at frame px `at` in `space`, the marker's target, or
  * `null` when the marker is not interactive, its source has no writer or no
- * aim, or `at` is not on its outline or within {@link VIEW_MARKER_HIT_SLOP_PX} of it. A surface with views
+ * aim, or `at` is not on its outline or within {@link VIEW_MARKER_HIT_SLOP_PX} of it — of its rim alone, for a
+ * marker covering most of its frame (see {@link ViewMarkerProps.interactive}). A surface with views
  * calls this itself; a canvas with none, such as a detached minimap, calls it to route a press to its marker.
  */
 export function grabViewMarker(
@@ -103,7 +107,9 @@ export function grabViewMarker(
   if (!write) return null;
   const startAim = markerSourceAim(source, host);
   const outline = startAim?.outlineIn(space);
-  if (!startAim || !outline || !outlineHolds(outline, at, VIEW_MARKER_HIT_SLOP_PX)) return null;
+  if (!startAim || !outline) return null;
+  const interior = polygonArea(outline) <= INTERIOR_MAX_COVER * space.size.width * space.size.height;
+  if (!outlineHolds(outline, at, VIEW_MARKER_HIT_SLOP_PX, interior)) return null;
   return {
     markerId: id,
     moveTo: (world) => {
@@ -114,8 +120,18 @@ export function grabViewMarker(
   };
 }
 
-function outlineHolds(outline: AimOutline, p: { x: number; y: number }, slop: number): boolean {
-  if (pointInPolygon(outline.flatMap((q) => [q.x, q.y]), p.x, p.y)) return true;
+function polygonArea(outline: AimOutline): number {
+  let twice = 0;
+  for (let i = 0; i < outline.length; i++) {
+    const a = outline[i]!;
+    const b = outline[(i + 1) % outline.length]!;
+    twice += a.x * b.y - b.x * a.y;
+  }
+  return Math.abs(twice) / 2;
+}
+
+function outlineHolds(outline: AimOutline, p: { x: number; y: number }, slop: number, interior: boolean): boolean {
+  if (interior && pointInPolygon(outline.flatMap((q) => [q.x, q.y]), p.x, p.y)) return true;
   for (let i = 0; i < outline.length; i++) {
     const a = outline[i]!;
     const b = outline[(i + 1) % outline.length]!;
