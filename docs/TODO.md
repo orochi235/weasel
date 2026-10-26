@@ -994,6 +994,12 @@ only story runner in the repo.
   `main` at the 2026-10-26 composition merge (`437648aa4`). The same case failed on that branch's
   first run and passed on its next two. The file touches no scene code. A face or layout read before
   it settles is the first thing to suspect, as with the `SegmentsArcView` miss.
+- **(P3) `rowHelp.browser.test.tsx`'s "a click on a described row's control opens no help" fails
+  under load.** In `packages/ui/src/components/Properties/rowHelp.browser.test.tsx`, the click on
+  the Author input timed out at 45 s because the row's open help tooltip covered it and intercepted
+  the pointer. It failed in both full fleet runs of the `diagram-drop-refuse` branch on 2026-10-26
+  (at `8b14236e5` and `b8893e8e6`, both on teitou), which touch no ui code, and passed 3 of 3 alone on
+  the fleet. A tooltip that has not closed before the next click is the first thing to suspect.
 - **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the
