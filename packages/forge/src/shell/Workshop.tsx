@@ -20,6 +20,7 @@ import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CssVarsChrome } from './cssVars/cssVarsChrome';
 import { KeysChrome } from './keys/keysChrome';
 import { infoItem } from './info/infoItem';
+import { issuesSection } from './issues/IssuesPanel';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { ForgeLoupe } from './loupe/ForgeLoupe';
@@ -175,6 +176,7 @@ export function Workshop(props: WorkshopProps) {
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
       ...(showsCssVars ? cssVarsChrome : []),
       A11Y_SECTION,
+      issuesSection(index),
       ...keysChrome,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]

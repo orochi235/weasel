@@ -1,0 +1,22 @@
+.frame {
+  --_frame-h: auto;
+  display: flex;
+  padding: var(--wzl-space-2) var(--wzl-field-pad-x);
+  line-height: 1.4;
+}
+
+.frame textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+.frame textarea::placeholder {
+  color: var(--wzl-fg-subtle);
+}
