@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { View } from '@weasel-js/core';
+import { boundsOfPath } from '@weasel-js/geom';
 import { guideHandles, symmetryGuideLayer, type SymmetryHandlePress } from './guide';
 import { handleChange } from './handleDrag';
 import { DEFAULT_SYMMETRY, HORIZONTAL_AXIS, type SymmetrySpec } from './kinds';
@@ -30,6 +31,15 @@ describe('guideHandles', () => {
     const [step] = guideHandles(spec({ kind: 'repeat', angle: 0, spacing: 30 }), C, VIEW, 64);
     expect(step).toEqual({ handle: 'step', at: { x: 160, y: 100 } });
   });
+
+  it('gives a wallpaper a handle at its first step and its first row', () => {
+    const wall = spec({ kind: 'wallpaper', angle: 0, spacing: 30, rowAngle: Math.PI / 2, rowSpacing: 20 });
+    expect(guideHandles(wall, C, VIEW, 64)).toEqual([
+      { handle: 'step', at: { x: 160, y: 100 } },
+      { handle: 'row', at: { x: 100, y: 140 } },
+      { handle: 'center', at: { x: 100, y: 100 } },
+    ]);
+  });
 });
 
 describe('symmetryGuideLayer', () => {
@@ -40,6 +50,13 @@ describe('symmetryGuideLayer', () => {
     expect(hit?.initialScratch).toEqual({ handle: 'center', group: 'g' });
     expect(layer.hitTest!(82, 50, undefined, VIEW, DIMS)?.initialScratch).toEqual({ handle: 'angle', group: 'g' });
     expect(layer.hitTest!(120, 50, undefined, VIEW, DIMS)).toBeNull();
+  });
+
+  it('outlines a wallpaper\'s extent', () => {
+    const wall = spec({ kind: 'wallpaper', extent: { x: -10, y: -20, width: 30, height: 40 } });
+    const draws = symmetryGuideLayer(source(wall)).draw(undefined, VIEW, DIMS);
+    const outline = draws.find((d) => d.kind === 'path' && d.stroke?.dash);
+    expect(outline?.kind === 'path' && boundsOfPath(outline.path)).toMatchObject({ x: 80, y: 60, width: 60, height: 80 });
   });
 
   it('draws nothing without an active group', () => {
@@ -54,19 +71,27 @@ describe('handleChange', () => {
 
   it('moves the center by the drag, through the snap', () => {
     const snap = { ...id, point: (p: { x: number; y: number }) => ({ x: Math.round(p.x / 10) * 10, y: p.y }) };
-    expect(handleChange(press('center'), { center: C }, { x: 0, y: 0 }, { x: 14, y: 3 }, snap))
+    expect(handleChange(press('center'), { center: C, spec: DEFAULT_SYMMETRY }, { x: 0, y: 0 }, { x: 14, y: 3 }, snap))
       .toEqual({ center: { x: 60, y: 53 } });
   });
 
   it('turns the axis to point at the pointer, through the snap', () => {
     const step = { ...id, angle: (theta: number) => Math.round(theta / (Math.PI / 12)) * (Math.PI / 12) };
-    expect(handleChange(press('angle'), { center: C }, C, { x: 60, y: 51 }, id).spec!.angle).toBeCloseTo(Math.atan2(1, 10));
-    expect(handleChange(press('angle'), { center: C }, C, { x: 60, y: 51 }, step).spec!.angle).toBeCloseTo(0);
+    expect(handleChange(press('angle'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 60, y: 51 }, id).spec!.angle).toBeCloseTo(Math.atan2(1, 10));
+    expect(handleChange(press('angle'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 60, y: 51 }, step).spec!.angle).toBeCloseTo(0);
   });
 
   it('sets a repeat\'s direction and spacing from its step handle', () => {
-    const out = handleChange(press('step'), { center: C }, C, { x: 50, y: 90 }, id);
+    const out = handleChange(press('step'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 50, y: 90 }, id);
     expect(out.spec!.angle).toBeCloseTo(Math.PI / 2);
     expect(out.spec!.spacing).toBeCloseTo(40);
+  });
+
+  it('sets a wallpaper\'s row angle, from its step direction, and row spacing from its row handle', () => {
+    const origin = { center: C, spec: spec({ kind: 'wallpaper', angle: 0.25 }) };
+    const out = handleChange(press('row'), origin, C, { x: 50, y: 90 }, id);
+    expect(out.spec!.rowAngle).toBeCloseTo(Math.PI / 2 - 0.25);
+    expect(out.spec!.rowSpacing).toBeCloseTo(40);
+    expect(out.spec!.angle).toBeUndefined();
   });
 });

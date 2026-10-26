@@ -1,6 +1,7 @@
 import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods, type Action, type InvocationCtx, type NodeId, type OngoingHandle } from '@weasel-js/core';
 import type { SymmetryChange, SymmetryController } from './controller';
 import type { SymmetryHandlePress } from './guide';
+import type { SymmetrySpec } from './kinds';
 import type { Point } from '@weasel-js/geom';
 
 /** The id of the action that drags a guide handle. */
@@ -17,7 +18,7 @@ export interface SymmetryHandleSnap {
 /** The change one frame of a handle drag makes, from where the press began. */
 export function handleChange(
   press: SymmetryHandlePress,
-  origin: { center: Point },
+  origin: { center: Point; spec: SymmetrySpec },
   from: Point,
   to: Point,
   snap: SymmetryHandleSnap,
@@ -28,14 +29,17 @@ export function handleChange(
   const dx = to.x - origin.center.x;
   const dy = to.y - origin.center.y;
   const angle = snap.angle(Math.atan2(dy, dx));
+  const length = Math.max(1, Math.hypot(dx, dy));
   if (press.handle === 'angle') return { spec: { angle } };
-  return { spec: { angle, spacing: Math.max(1, Math.hypot(dx, dy)) } };
+  if (press.handle === 'row') return { spec: { rowAngle: angle - origin.spec.angle, rowSpacing: length } };
+  return { spec: { angle, spacing: length } };
 }
 
 /**
  * Drag a handle of the active group's guide: the center moves the group's
  * center, through a `point` session of the `snap` dep; the knob turns the
- * axis, and a repeat's step handle sets both its direction and its spacing,
+ * axis, a step handle sets a repeat's or a wallpaper's direction and
+ * spacing, and a row handle a wallpaper's row angle and row spacing, all
  * through a `rotate` session about the center, so the axis meets the
  * canvas's angle targets and `snap.constrain` (Shift) holds it to 15° steps.
  * Without a `snap` dep nothing snaps. The drag lands as one undo step, and

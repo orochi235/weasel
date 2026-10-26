@@ -1,7 +1,7 @@
 # @weasel-js/symmetry
 
-Live symmetry groups. A symmetry group is a container whose mirrored, rotated
-and repeated copies are drawn from its real children rather than stored, so
+Live symmetry groups. A symmetry group is a container whose mirrored, rotated,
+repeated, and tiled copies are drawn from its real children rather than stored, so
 editing a child reaches every copy, and a click on a copy selects the child it
 copies.
 
@@ -28,8 +28,30 @@ top and bottom.
 | `radial` | `count - 1` turns, evenly spaced | `count` |
 | `kaleidoscope` | the radial turns, and a mirror through each wedge | `count`, `angle` |
 | `repeat` | `count - 1` steps of `spacing` along `angle`, every other one mirrored under `glide` | `count`, `spacing`, `angle`, `glide` |
+| `wallpaper` | the `cell` kind about every lattice point inside `extent`, every other column mirrored under `glide` | `cell`, `cellAngle`, `spacing`, `angle`, `rowSpacing`, `rowAngle`, `extent`, `glide`, and what the cell reads |
 
-`SYMMETRY_KINDS` holds them as a table, and a new kind is a row in it.
+`SYMMETRY_KINDS` holds them as a table, and a new kind is a row in it. Each
+row also names its `pointGroup`: the copies that keep the center where it is,
+which a path edit keeps the path symmetric under. That is every copy for a kind
+that turns or reflects, a wallpaper's cell, and none for a repeat.
+
+## Wallpapers
+
+A wallpaper repeats its contents over a lattice. One step runs `spacing` along
+`angle`, and one row runs `rowSpacing` along `angle + rowAngle`. A lattice has
+no last copy, so the spec's `extent` says where it stops: a box measured from
+the center, with a copy at every lattice point inside it. Past
+`MAX_WALLPAPER_COPIES` the points nearest the center are kept. At each point
+the `cell` kind is drawn, its axis turned `cellAngle` from `angle`.
+
+`wallpaperSpec(name, spacing)` gives the fields for a named wallpaper group,
+and `WALLPAPER_GROUPS` lists them: p1, p2, pm, pg, cm, pmm, pmg, cmm, p4, p4m,
+p3, p3m1, p31m, p6, and p6m. pgg and p4g are missing, since their glides run
+between the lattice's rows rather than along them.
+
+```ts
+symmetry.update(id, { spec: { ...wallpaperSpec('p4m', 80), extent: { x: -320, y: -240, width: 640, height: 480 } } });
+```
 
 ## Use
 
@@ -44,7 +66,8 @@ symmetry.create({ center: { x: 300, y: 200 }, symmetry: { kind: 'kaleidoscope', 
 `symmetry.contribution` does three things on the canvas:
 
 - It draws the active group's guide: the mirror lines, and the handles that
-  move the center, turn the axis, and stretch a repeat. The axis snaps to
+  move the center, turn the axis, and stretch a repeat or a wallpaper's step
+  and row. A wallpaper's guide also outlines its extent and dots its lattice. The axis snaps to
   quarter turns and other nodes' angles, Shift holds it to 15° steps, and
   Ctrl suspends snapping.
 - It answers core's `insertInto` dep, so every tool draws into the active

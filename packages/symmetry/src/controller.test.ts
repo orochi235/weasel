@@ -104,6 +104,12 @@ describe('the contribution\'s deps', () => {
     sym.update(group, { spec: { kind: 'repeat', count: 4 } });
     expect(sym.contribution.deps!.pathSymmetry!(() => undefined)!.transforms(leaf)).toEqual([]);
   });
+
+  it('answers a wallpaper\'s cell for anchor edits, not its lattice', () => {
+    const { sym, group, leaf } = setup();
+    sym.update(group, { spec: { kind: 'wallpaper', cell: 'both' } });
+    expect(sym.contribution.deps!.pathSymmetry!(() => undefined)!.transforms(leaf)).toHaveLength(3);
+  });
 });
 
 describe('bake', () => {
