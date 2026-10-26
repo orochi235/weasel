@@ -125,7 +125,7 @@ export function useCanvasTools(args: {
 /**
  * The presets' ambient bindings, and the standard actions the canvas
  * registers. The bindings are not tools and sit outside `tools`, so they apply
- * under a takeover too. An action is registered when an enabled preset brings
+ * under a takeover too. An action is registered when it is in `baseline`, when an enabled preset brings
  * it, or when it is in `pool` and a tool or contribution on this canvas binds
  * it: a tool brings the actions it routes to, so `defaultTools={['rect']}`
  * works under any preset.
@@ -134,17 +134,21 @@ export function useFeatureBindings(args: {
   enabled: EnabledPresets;
   /** Actions registered only when something binds them. */
   pool: readonly Action[];
+  /** Actions registered whatever is on. */
+  baseline?: readonly Action[];
   tools: Pick<ToolsApi, 'registry' | 'ambient'>;
   move: FeatureBindingOptions['move'];
   rotate: FeatureBindingOptions['rotate'];
 }): { contributions: Contribution[]; standardActions: Action[] } {
-  const { enabled, pool, tools, move, rotate } = args;
+  const { enabled, pool, baseline, tools, move, rotate } = args;
   const contributions = useMemo<Contribution[]>(
     () => presetAmbient(enabled, { move, rotate }),
     [enabled, move, rotate],
   );
   const standardActions = useMemo(() => {
-    const out = presetActions(enabled);
+    const own = presetActions(enabled);
+    const ownIds = new Set(own.map((a) => a.id));
+    const out = [...(baseline ?? []).filter((a) => !ownIds.has(a.id)), ...own];
     const have = new Set(out.map((a) => a.id));
     const bound = new Set<string>();
     for (const entry of [...Object.values(tools.registry), ...tools.ambient, ...contributions]) {
@@ -157,7 +161,7 @@ export function useFeatureBindings(args: {
       }
     }
     return out;
-  }, [enabled, pool, tools, contributions]);
+  }, [enabled, pool, baseline, tools, contributions]);
   return { contributions, standardActions };
 }
 

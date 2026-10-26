@@ -1,7 +1,7 @@
 /**
  * The behavior presets `<SceneCanvas features>` composes. A bare canvas renders
- * its scene and keeps a selection nothing sets; every behavior beyond that is
- * turned on by a preset.
+ * its scene, keeps a selection nothing sets, and undoes and redoes whatever
+ * changed it; every behavior beyond that is turned on by a preset.
  *
  * A preset is a {@link FeaturePreset} object: the actions, tools, bindings,
  * chrome, and contributions one behavior brings. Core's own are named
@@ -119,6 +119,9 @@ export interface NamedPresets {
  *  resolves, if any, and the actions it registers once a tool binds them. */
 export interface PresetSource {
   readonly named: NamedPresets | null;
+  /** Actions every canvas registers whatever its presets: undo and redo, since anything that changes
+   *  the scene — a preset's action, a tool, the host — leaves history to step through. */
+  readonly baseline?: readonly Action[];
   /** Actions registered only when a tool or contribution binds them. */
   readonly pool: readonly Action[];
 }

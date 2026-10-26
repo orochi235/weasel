@@ -40,7 +40,7 @@ export function useSceneCanvasTools(args: {
     onToolsCreated: props.onToolsCreated,
   });
   const { contributions, standardActions } = useFeatureBindings({
-    enabled, pool: args.presetSource.pool,
+    enabled, pool: args.presetSource.pool, baseline: args.presetSource.baseline,
     tools,
     move: args.move as FeatureBindingOptions['move'],
     rotate: (props.selectTool?.rotate || undefined) as FeatureBindingOptions['rotate'],

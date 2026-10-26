@@ -12,6 +12,7 @@ import type { ToolsApi } from '../tools/overlayBinding';
 import { LeanSceneCanvas } from './LeanSceneCanvas';
 import { SceneCanvas } from './SceneCanvas';
 import type { FeaturePreset } from './SceneCanvas/features';
+import { baselineActions } from './SceneCanvas/presets/baseline';
 import { selectPreset } from './SceneCanvas/presets/select';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 
@@ -63,14 +64,14 @@ describe('a preset object', () => {
 });
 
 describe('<LeanSceneCanvas>', () => {
-  it('registers what its presets carry and nothing a name would have', () => {
+  it('registers undo, redo, and what its presets carry, and nothing a name would have', () => {
     const seen: Seen = { actionIds: [], dep: undefined };
     render(
       <LeanSceneCanvas scene={scene()} width={100} height={100} features={[selectPreset, mine]}>
         <Probe into={seen} />
       </LeanSceneCanvas>,
     );
-    const expected = [...(selectPreset.actions ?? []), go].map((a) => a.id).sort();
+    const expected = [...baselineActions, ...(selectPreset.actions ?? []), go].map((a) => a.id).sort();
     const kitOrMine = (id: string) => KIT_STANDARD_ACTION_IDS.includes(id) || id === 'mine.go';
     expect(seen.actionIds.filter(kitOrMine).sort()).toEqual(expected);
   });

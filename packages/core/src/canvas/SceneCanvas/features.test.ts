@@ -17,7 +17,7 @@ import {
   CORE_NAMED_PRESETS,
   FEATURE_ACTION_IDS,
   FEATURE_PRESETS,
-  TOOL_DRIVEN_ACTION_IDS,
+  BASELINE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS,
 } from './namedPresets';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
 import { BUILTIN_TOOL_IDS } from './props';
@@ -35,12 +35,13 @@ const actionIds = (features: readonly FeatureEntry[]) => new Set(presetActions(r
 const action = (id: string): Action => ({ id, label: id, invoker: { timing: 'immediate', run: () => {} } }) as Action;
 
 describe('FEATURE_ACTION_IDS', () => {
-  it('places every kit-standard action under exactly one preset, or leaves it to its tools', () => {
+  it('places every kit-standard action under exactly one preset, the baseline, or its tools', () => {
     const owners = new Map<string, string[]>();
     for (const [feature, ids] of Object.entries(FEATURE_ACTION_IDS)) {
       for (const id of ids) owners.set(id, [...(owners.get(id) ?? []), feature]);
     }
     for (const id of TOOL_DRIVEN_ACTION_IDS) owners.set(id, [...(owners.get(id) ?? []), 'tool']);
+    for (const id of BASELINE_ACTION_IDS) owners.set(id, [...(owners.get(id) ?? []), 'baseline']);
 
     for (const id of KIT_STANDARD_ACTION_IDS) {
       expect(owners.get(id), id).toHaveLength(1);

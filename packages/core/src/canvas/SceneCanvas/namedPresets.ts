@@ -11,6 +11,7 @@ import { ingestPreset } from './presets/ingest';
 import { pathsPreset } from './presets/paths';
 import { selectPreset } from './presets/select';
 import { toolDrivenActions } from './presets/toolDriven';
+import { baselineActions } from './presets/baseline';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 import { viewPreset } from './presets/view';
 
@@ -52,13 +53,17 @@ export const FEATURE_ACTION_IDS = Object.fromEntries(
  */
 export const TOOL_DRIVEN_ACTION_IDS: readonly string[] = toolDrivenActions.map((a) => a.id);
 
-/** Every kit-standard action: each core preset's, in table order, then the
+/** The kit-standard actions every canvas registers, preset or none: undo and redo. */
+export const BASELINE_ACTION_IDS: readonly string[] = baselineActions.map((a) => a.id);
+
+/** Every kit-standard action: the baseline, each core preset's in table order, then the
  *  tool-driven ones. */
 export const KIT_STANDARD_ACTIONS: readonly Action[] = [
+  ...baselineActions,
   ...BASE_FEATURES.flatMap((f) => FEATURE_PRESETS[f].actions ?? []),
   ...toolDrivenActions,
 ];
 
 /** What `<SceneCanvas>` resolves `features` through: every core name, and
  *  every kit-standard action for its tools to bring. */
-export const CORE_PRESET_SOURCE: PresetSource = { named: CORE_NAMED_PRESETS, pool: KIT_STANDARD_ACTIONS };
+export const CORE_PRESET_SOURCE: PresetSource = { named: CORE_NAMED_PRESETS, pool: KIT_STANDARD_ACTIONS, baseline: baselineActions };

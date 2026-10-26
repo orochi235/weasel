@@ -99,11 +99,11 @@ const xOf = (scene: Scene<D, L, P>, id: NodeId) => (scene.get(id)!.pose as P).x;
 const kitIds = (ids: string[]) => ids.filter((i) => KIT_STANDARD_ACTION_IDS.includes(i));
 
 describe('a bare <SceneCanvas>', () => {
-  it('registers no tool and no kit action, and mounts without an active tool', () => {
+  it('registers no tool and no kit action but undo and redo, and mounts without an active tool', () => {
     const { seen, tools } = mount();
     expect(tools().active).toBe(null);
     expect(Object.keys(tools().registry)).toEqual([]);
-    expect(kitIds(seen.actionIds)).toEqual([]);
+    expect(kitIds(seen.actionIds)).toEqual(['undo', 'redo']);
     expect(seen.actionIds.filter((i) => i.startsWith('tool.'))).toEqual([]);
   });
 
@@ -158,6 +158,15 @@ describe('<SceneCanvas features>', () => {
   it("'pick' + 'move' drags an unselected body to move it", () => {
     const { canvas, id, scene } = mount({ features: ['pick', 'move'] });
     drag(canvas, [10, 10], [40, 10]);
+    expect(xOf(scene, id)).toBe(30);
+  });
+
+  it("undoes a move without 'edit', since every canvas has undo and redo", () => {
+    const { canvas, id, scene } = mount({ features: ['pick', 'move'] });
+    drag(canvas, [10, 10], [40, 10]);
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true })); });
+    expect(xOf(scene, id)).toBe(0);
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true })); });
     expect(xOf(scene, id)).toBe(30);
   });
 

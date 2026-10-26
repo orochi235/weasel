@@ -12,7 +12,6 @@ import { setFillAction } from 'interactions/actions/defaults/setFill';
 import { setFillOpacityAction } from 'interactions/actions/defaults/setFillOpacity';
 import { setStrokeAction } from 'interactions/actions/defaults/setStroke';
 import { setStrokeOpacityAction } from 'interactions/actions/defaults/setStrokeOpacity';
-import { redoAction, undoAction } from 'interactions/actions/defaults/undoRedo';
 import {
   clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction,
 } from 'interactions/actions/clipboard/action';
@@ -20,7 +19,7 @@ import { transformAgainAction } from 'interactions/actions/transform-again/actio
 import type { FeaturePreset } from '../features';
 
 /**
- * Undo and redo, delete, duplicate, group and ungroup, nudge, select-all,
+ * Delete, duplicate, group and ungroup, nudge, select-all,
  * Escape, the context menu, cancel-gesture, cut, copy, and paste, fill and
  * stroke, and their keys.
  *
@@ -34,7 +33,7 @@ export const editPreset: FeaturePreset = {
   actions: [
     escapeAction, contextMenuAction, cancelGestureAction, selectAllAction, duplicateAction,
     transformAgainAction,
-    deleteAction, groupAction, ungroupAction, undoAction, redoAction,
+    deleteAction, groupAction, ungroupAction,
     nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction,
     setFillAction, setStrokeAction, setFillOpacityAction, setStrokeOpacityAction,
     clipboardCutAction, clipboardCopyAction, clipboardPasteAction, clipboardPasteEventAction,
