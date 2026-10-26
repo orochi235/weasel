@@ -1,6 +1,6 @@
 import type { Paint, TexturePaint } from '@weasel-js/paint';
 import {
-  resolveTextStyle,
+  DEFAULT_TEXT_STYLE,
   type LaidOutGroup,
   type LaidOutDecoration,
   verticalAlignOffset,
@@ -55,10 +55,13 @@ import { type ScreenRect, renderPaintToScratch, bindScratchPaint } from './scrat
 export const OUTLINE_MIN_SCREEN_PX = 48;
 
 export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
-  const style = resolveTextStyle(cmd.style);
-  const lineHeight = style.lineHeight;
-  const align = cmd.align ?? style.align;
-  const direction = cmd.direction ?? style.direction;
+  // Read field by field rather than through `resolveTextStyle`, which builds a
+  // whole resolved style per command per frame and needs four of its fields.
+  const style = cmd.style;
+  const lineHeight = style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight;
+  const align = cmd.align ?? style.align ?? DEFAULT_TEXT_STYLE.align;
+  const direction = cmd.direction ?? style.direction ?? DEFAULT_TEXT_STYLE.direction;
+  const tabSize = style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize;
   const maxWidth = cmd.maxWidth ?? Infinity;
 
   // Screen threshold → world threshold: a 12px label at 8× zoom is 96 screen
@@ -69,7 +72,7 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     : undefined;
 
   const laid = cachedLayoutRuns(cmd.runs, {
-    maxWidth, alignWidth: cmd.width, lineHeight, align, direction, tabSize: style.tabSize, justify: cmd.justify,
+    maxWidth, alignWidth: cmd.width, lineHeight, align, direction, tabSize, justify: cmd.justify,
   });
   const { groups, decorations } = cachedPaintRuns(laid, cmd.runs, { outlineMinSize });
   // Decorations are checked too: text whose glyphs are all ink-free — every

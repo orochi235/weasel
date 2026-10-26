@@ -54,7 +54,7 @@
 
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
+import { layoutBidi, resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
 import { refId } from './refId';
 
@@ -70,6 +70,22 @@ interface Entry {
   /** `generation` when this entry was filled. */
   generation: number;
   byVariant: Map<string, LaidOutRuns>;
+  /** The options and layout of the last lookup, compared field by field
+   *  before any key is built: a command drawn every frame with the same
+   *  options would otherwise build its variant key string every frame. */
+  last: LastLookup | null;
+}
+
+interface LastLookup {
+  maxWidth: number; alignWidth: number | undefined; lineHeight: number; align: LayoutRunsOpts['align'];
+  justify: boolean | undefined; direction: LayoutRunsOpts['direction']; tabSize: number | undefined;
+  bidi: ReturnType<typeof layoutBidi>; laid: LaidOutRuns;
+}
+
+function sameLookup(l: LastLookup, opts: LayoutRunsOpts): boolean {
+  return l.maxWidth === opts.maxWidth && l.alignWidth === opts.alignWidth
+    && l.lineHeight === opts.lineHeight && l.align === opts.align && l.justify === opts.justify
+    && l.direction === opts.direction && l.tabSize === opts.tabSize && l.bidi === layoutBidi(opts);
 }
 
 let cache = new WeakMap<readonly ResolvedRun[], Entry>();
@@ -116,16 +132,19 @@ export function cachedLayoutRuns(
   const fonts = faceGeneration();
   let entry = cache.get(runs);
   if (entry === undefined) {
-    entry = { generation: fonts, byVariant: new Map() };
+    entry = { generation: fonts, byVariant: new Map(), last: null };
     cache.set(runs, entry);
   } else if (entry.generation !== fonts) {
     entry.generation = fonts;
     entry.byVariant.clear();
+    entry.last = null;
+  } else if (entry.last !== null && sameLookup(entry.last, opts)) {
+    return entry.last.laid;
   }
 
   const key = variantKey(opts);
   const hit = entry.byVariant.get(key);
-  if (hit !== undefined) return hit;
+  if (hit !== undefined) return remember(entry, opts, hit);
 
   if (structuralGeneration !== fonts) {
     structural.clear();
@@ -147,6 +166,14 @@ export function cachedLayoutRuns(
 
   if (entry.byVariant.size >= LAYOUT_CACHE_VARIANT_LIMIT) entry.byVariant.clear();
   entry.byVariant.set(key, laid);
+  return remember(entry, opts, laid);
+}
+
+function remember(entry: Entry, opts: LayoutRunsOpts, laid: LaidOutRuns): LaidOutRuns {
+  entry.last = {
+    maxWidth: opts.maxWidth, alignWidth: opts.alignWidth, lineHeight: opts.lineHeight, align: opts.align,
+    justify: opts.justify, direction: opts.direction, tabSize: opts.tabSize, bidi: layoutBidi(opts), laid,
+  };
   return laid;
 }
 

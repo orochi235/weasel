@@ -99,6 +99,19 @@ describe('cachedPaintRuns', () => {
       expect(above.groups.map((g) => g.source)).toEqual(['outline']);
     });
 
+    it('paints for the threshold asked, back and forth across a run size', () => {
+      // A repeated threshold is a hit with no key built, so the threshold
+      // moving back has to be told apart from it.
+      const runs = [run('AB', 16)];
+      const laid = cachedLayoutRuns(runs, OPTS);
+      const below = cachedPaintRuns(laid, runs, { outlineMinSize: 20 });
+      expect(cachedPaintRuns(laid, runs, { outlineMinSize: 20 })).toBe(below);
+      expect(cachedPaintRuns(laid, runs, { outlineMinSize: 12 }).groups.map((g) => g.source)).toEqual(['outline']);
+      expect(cachedPaintRuns(laid, runs, { outlineMinSize: 20 })).toBe(below);
+      expect(cachedPaintRuns(laid, runs, { outlineMinSize: 25 })).toBe(below);
+      expect(cachedPaintRuns(laid, runs, { outlineMinSize: 12 }).groups.map((g) => g.source)).toEqual(['outline']);
+    });
+
     it('distinguishes "no threshold" from a threshold above every run', () => {
       // They differ for a stroked run, which only a threshold moves to outlines.
       const runs = [{ ...run('AB', 16), stroke: { paint: { color: '#f00' }, width: 1 } }];
