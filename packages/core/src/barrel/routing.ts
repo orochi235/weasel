@@ -143,6 +143,7 @@ export type {
   ViewApi,
 } from '../interactions/actions/depSchema';
 export type { GeometryProjection } from '../interactions/actions/geometryProjection';
+export { refusalOf, type DropRefusal, type DropVerdict } from '../interactions/actions/dropVerdict';
 export {
   useResizePolicy,
   type UseResizePolicyOptions,

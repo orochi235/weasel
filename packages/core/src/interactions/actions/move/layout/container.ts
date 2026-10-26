@@ -9,6 +9,7 @@ import type { LayoutDep } from '../../depSchema';
 import { planeOf } from '../../planeInput';
 import type { MoveSession } from '../session';
 import { carryDragged, type DraggedChild } from './dragged';
+import { refusalOf } from '../../dropVerdict';
 
 export interface Bounds4 { x: number; y: number; width: number; height: number }
 export function pointInBounds(b: Bounds4, at: { x: number; y: number }): boolean {
@@ -24,6 +25,8 @@ export interface Candidate {
   depth: number;
   /** The edited plane into this container's. */
   plane: PlaneMap | null;
+  /** The reason it refuses the drop, when it does: it still blocks the containers around it. */
+  refused?: string;
 }
 
 /** Whether a world point falls in a drop region, which is authored relative to
@@ -101,8 +104,10 @@ export function pickContainer(
     const plane = planeOf(session.view, node.layer);
     const at = plane ? toPlane(plane, center) : center;
     if (!testInside(id, worldPose, worldAABB, layout, at)) return;
-    if (!session.admits(id)) return;
-    if (layout.acceptsDrop) {
+    const verdict = session.verdict(id);
+    if (verdict === false) return;
+    const refused = refusalOf(verdict);
+    if (refused === null && layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: worldAABB };
       for (const c of dragged) if (!layout.acceptsDrop(arg, carryDragged(session, c, plane).arg)) return;
     }
@@ -113,6 +118,7 @@ export function pickContainer(
       zPath,
       depth: zPath.length,
       plane,
+      ...(refused !== null ? { refused } : {}),
     });
   };
   const walk = (parentId: NodeId | null, parentPath: number[]): void => {
