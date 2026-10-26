@@ -20,6 +20,7 @@ import { useDiagramEditing, withPickableEdges } from './diagramEditing';
 import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
 import { withDiagramRegistry } from './edge';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
+import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
 import { useDiagramFit } from './diagramFit';
@@ -67,7 +68,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 
 function Inner({
   specs: given, router, labels, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
-  onReorder, onEditContainer, connectBodies, canReparent,
+  onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, pages, view, onViewChange, className, apiRef,
@@ -130,6 +131,8 @@ function Inner({
     onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel, onReorder, onResize, onEditContainer, onMove,
     connectBodies, canConnect, portOptions, ambient: extraAmbient,
   });
+  const itemDrop = useItemDrop(source, { onDropItem, canDropItem });
+  const ambient = useMemo(() => (itemDrop === null ? editing.ambient : [...editing.ambient, itemDrop]), [editing.ambient, itemDrop]);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas === null) return;
@@ -153,7 +156,7 @@ function Inner({
         features={features}
         {...(resizes ? { selectTool } : {})}
         enableKeybindings={enableKeybindings ?? edits}
-        ambient={editing.ambient}
+        ambient={ambient}
         actions={editing.actions}
         onClick={onClick}
         {...(onHover ? { onHover } : {})}

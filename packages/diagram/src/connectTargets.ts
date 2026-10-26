@@ -85,6 +85,17 @@ export function bodyAt<TPose>(
   return hit;
 }
 
+/** A refused end's marks: its shape's box outlined refused, and the reason at the pointer. */
+function refusalMarks(box: { x: number; y: number; width: number; height: number } | null, at: Vec2, reason: string): OngoingOverlay[] {
+  const out: OngoingOverlay[] = [];
+  if (box !== null) {
+    const { x, y, width, height } = box;
+    out.push({ kind: 'polyline', points: [{ x, y }, { x: x + width, y }, { x: x + width, y: y + height }, { x, y: y + height }, { x, y }], role: 'refused' });
+  }
+  out.push({ kind: 'reason', at: { x: at.x, y: at.y }, text: reason });
+  return out;
+}
+
 /** What {@link createTargets} needs from the connect action's options. */
 export interface TargetOptions<TPose> extends PortsOptions<TPose> {
   participants: ParticipantSource<TPose>;
@@ -103,8 +114,35 @@ export interface Landing {
 }
 
 /** One resolver for what a connect lands on, and the port each end is drawn
- *  to, shared by the preview and the commit. */
+ *  to, shared by the preview and the commit, with what it paints on the way. */
 export function createTargets<TPose>(opts: TargetOptions<TPose>) {
+  const resolver = createResolver(opts);
+  const { landing, preview, boxOf } = resolver;
+
+  /**
+   * What a connect paints with the pointer at `at`: the run `preview` routes,
+   * as a connector, or over an end that refuses it, refused, with that end's
+   * shape outlined refused and the reason at the pointer.
+   */
+  function overlays(
+    route: Router,
+    fixed: ConnectEnd,
+    at: Vec2,
+    view: ConnectView,
+    moving: 'from' | 'to' = 'to',
+    waypoints: readonly Vec2[] = [],
+  ): OngoingOverlay[] {
+    const points = preview(route, fixed, at, view, moving, waypoints);
+    const hit = landing(fixed, at, view);
+    const run: OngoingOverlay[] = points.length < 2 ? [] : [{ kind: 'polyline', points, role: hit?.refuse != null ? 'refused' : 'connector' }];
+    if (hit === null || hit.refuse === null) return run;
+    return [...run, ...refusalMarks(boxOf(hit.end.nodeId), at, hit.refuse)];
+  }
+
+  return { ...resolver, overlays };
+}
+
+function createResolver<TPose>(opts: TargetOptions<TPose>) {
   const portOpts: PortsOptions<TPose> = {
     ...(opts.geometry ? { geometry: opts.geometry } : {}),
     ...(opts.read ? { read: opts.read } : {}),
@@ -205,33 +243,12 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
       : route({ from: free, to: anchored, waypoints });
   }
 
-  /**
-   * What a connect paints with the pointer at `at`: the {@link preview} run,
-   * as a connector, or over an end that refuses it, refused, with that end's
-   * shape outlined refused and the reason at the pointer.
-   */
-  function overlays(
-    route: Router,
-    fixed: ConnectEnd,
-    at: Vec2,
-    view: ConnectView,
-    moving: 'from' | 'to' = 'to',
-    waypoints: readonly Vec2[] = [],
-  ): OngoingOverlay[] {
-    const points = preview(route, fixed, at, view, moving, waypoints);
-    const refuse = landing(fixed, at, view);
-    const out: OngoingOverlay[] = [];
-    if (points.length >= 2) out.push({ kind: 'polyline', points, role: refuse?.refuse != null ? 'refused' : 'connector' });
-    if (refuse === null || refuse.refuse === null) return out;
-    const participant = participantOf(refuse.end.nodeId);
-    if (participant !== undefined) {
-      const { x, y, width, height } = geometry.getBounds(participant.pose);
-      const box = [{ x, y }, { x: x + width, y }, { x: x + width, y: y + height }, { x, y: y + height }, { x, y }];
-      out.push({ kind: 'polyline', points: box, role: 'refused' });
-    }
-    out.push({ kind: 'reason', at: { x: at.x, y: at.y }, text: refuse.refuse });
-    return out;
+  /** The world box of `nodeId`'s participant, or `null`. */
+  function boxOf(nodeId: string): { x: number; y: number; width: number; height: number } | null {
+    const participant = participantOf(nodeId);
+    return participant === undefined ? null : geometry.getBounds(participant.pose);
   }
 
-  return { target, landing, portFor, preview, overlays };
+  return { target, landing, portFor, preview, boxOf };
 }
+

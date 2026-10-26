@@ -44,7 +44,7 @@ function holders(scene: ReorderScene): Map<string, string> {
 }
 
 /** The members of `holder`, the way {@link holderOf} counts them: a group's, or a container's children but its title. */
-function membersOf(scene: ReorderScene, holder: string): string[] {
+export function membersOf(scene: ReorderScene, holder: string): string[] {
   const node = scene.get(holder);
   const ids = node !== undefined && diagramGroupOf(node) !== null
     ? depsOf(node)
