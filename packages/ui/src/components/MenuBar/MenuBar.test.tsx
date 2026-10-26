@@ -4,7 +4,7 @@ import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from './MenuBar';
 import { menuBarTitles } from './menuBarTitles';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
 

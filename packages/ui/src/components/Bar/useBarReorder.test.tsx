@@ -7,7 +7,7 @@ import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Bar } from './Bar';
 import { BAR_IN, BAR_UNIT } from './barOrder';
 import { useBarReorder } from './useBarReorder';
-import { RegisterAction } from '../../testing/registerAction';
+import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 
 // jsdom lays nothing out: every marked unit is 40 px wide, side by side along x in document order, so a top-level
 // cell and the buttons inside it stand at successive slots. Every other box is empty at the origin.

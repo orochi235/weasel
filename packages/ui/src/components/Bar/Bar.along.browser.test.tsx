@@ -11,7 +11,7 @@ import { Slider, type Thumb } from '../Slider';
 import { renderWithIcons } from '../../testing/withIcons';
 import { icon } from '../../icons.gen';
 import { Bar, type BarProps } from './Bar';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const KEYS = ['undo', 'redo', 'flipX', 'flipY', 'front', 'back'] as const;
 const NAMES = ['Undo', 'Redo', 'Flip across', 'Flip down', 'Bring to front', 'Send to back'];

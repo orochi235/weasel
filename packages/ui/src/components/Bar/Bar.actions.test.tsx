@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Bar } from './Bar';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
 

@@ -5,7 +5,7 @@ import type { PrefAction } from '@weasel-js/prefs';
 import { BarAction } from '@weasel-js/ui/components/Bar';
 import s from './Bar.stories.module.css';
 import { icon } from '../../icons.gen';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta<typeof BarAction> = {
   title: 'ui/Bar/BarAction',

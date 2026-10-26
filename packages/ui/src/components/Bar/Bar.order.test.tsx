@@ -5,7 +5,7 @@ import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Bar } from './Bar';
 import { movedOrder } from './barOrder';
-import { RegisterAction } from '../../testing/registerAction';
+import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
 

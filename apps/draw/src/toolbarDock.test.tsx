@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, type Action } from '@weasel-js/core';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 import { CommandBar } from './CommandBar';
 import { drawPrefs } from './prefs';
 import { StripDock } from './surfaces/StripSurfaces';
@@ -29,15 +30,10 @@ const ACTIONS: Action[] = [
   { id: 'bringToFront', label: 'Bring to front', group: 'reorder', invoker: { timing: 'immediate', run: () => {} } },
 ];
 
-function Register({ a }: { a: Action }) {
-  useAction(a);
-  return null;
-}
-
 function App() {
   return (
     <ActionsProvider>
-      {ACTIONS.map((a) => <Register key={a.id} a={a} />)}
+      <RegisterActions actions={ACTIONS} />
       <CommandBar />
       <StripDock>
         <div data-testid="workspace" />

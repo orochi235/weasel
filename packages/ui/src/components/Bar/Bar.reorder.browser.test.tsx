@@ -8,7 +8,7 @@ import { arcShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Bar, type BarProps } from './Bar';
 import s from './Bar.reorder.browser.test.module.css';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const KEYS = ['a', 'b', 'c', 'd'] as const;
 let presses: string[] = [];

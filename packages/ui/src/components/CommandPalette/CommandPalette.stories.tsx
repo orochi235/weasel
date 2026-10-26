@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ActionDisabledReason, ActionsProvider, type Action } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const run = (id: string) => () => { console.log(`[CommandPalette story] ${id}`); };
 

@@ -3,7 +3,7 @@ import { packagePreset } from '../../scripts/tsup-preset';
 
 export default defineConfig(
   packagePreset({
-    entry: { index: 'src/index.ts', react: 'src/react.ts', internal: 'src/internal.ts' },
+    entry: { index: 'src/index.ts', react: 'src/react.ts', internal: 'src/internal.ts', 'testing/registerAction': 'src/testing/registerAction.tsx' },
     external: ['react', 'react-dom'],
   }),
 );

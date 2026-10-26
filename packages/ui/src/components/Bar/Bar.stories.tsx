@@ -8,7 +8,7 @@ import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import s from './Bar.stories.module.css';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta<typeof Bar> = {
   title: 'ui/Bar/Bar',

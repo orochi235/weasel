@@ -823,12 +823,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
   one in labkit, and `PrefsPane` has no emptiness check.
 
-- **(P3) Four tests outside ui still declare their own `Register` wrapper round `useAction`** (2026-10-25).
-  ui's stories and tests share `RegisterAction` (`packages/ui/src/testing/registerAction.tsx`), which is not
-  shipped, so labkit's `controls/ControlRow.actions.test.tsx`, core's
-  `interactions/dispatcher/viewport.safari.integration.test.tsx`, and draw's `surfaces/surfaces.test.tsx` and
-  `toolbarDock.test.tsx` each keep a copy. Sharing it across packages needs a test-only export.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P2) Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which

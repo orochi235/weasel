@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { ActionsProvider, asNodeId, createScene, type Action, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import { pref, type PrefLeaf } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
-import { RegisterAction } from '../../testing/registerAction';
+import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
 

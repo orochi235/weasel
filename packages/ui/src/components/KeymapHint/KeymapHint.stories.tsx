@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { useState } from 'react';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const ACTIONS: readonly Action[] = [
   { id: 'zoomIn', label: 'Zoom in' },

@@ -5,7 +5,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { icon } from '../../icons.gen';
 import { Bar } from './Bar';
 import { renderWithIcons } from '../../testing/withIcons';
-import { RegisterAction } from '../../testing/registerAction';
+import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 
 const schema: PrefGroup = {
   name: 'Text',

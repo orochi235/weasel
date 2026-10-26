@@ -6,7 +6,7 @@ import {
 import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/ContextMenu';
 import s from './ContextMenuHost.stories.module.css';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta = { title: 'ui/ContextMenu' };
 export default meta;

@@ -6,7 +6,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { ActionBar } from '../ActionBar';
 import { CommandPalette } from '../CommandPalette';
 import { renderWithIcons } from '../../testing/withIcons';
-import { RegisterAction } from '../../testing/registerAction';
+import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
 beforeAll(() => {

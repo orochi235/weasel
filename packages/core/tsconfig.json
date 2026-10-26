@@ -128,6 +128,8 @@
       "@weasel-js/routing": ["../routing/src/index.ts"],
       "@weasel-js/routing/react": ["../routing/src/react.ts"],
       "@weasel-js/routing/internal": ["../routing/src/internal.ts"],
+      "@weasel-js/routing/testing/registerAction": ["../routing/src/testing/registerAction.tsx"],
+      "@weasel-js/routing/testing/*": ["../routing/src/testing/*"],
       "@weasel-js/select": ["../select/src/index.ts"],
       "@weasel-js/simulation": ["../simulation/src/index.ts"],
       "@weasel-js/simulation/react": ["../simulation/src/react.ts"],

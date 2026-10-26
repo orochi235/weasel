@@ -13,7 +13,7 @@ import {
 import { isApplePlatform } from '@weasel-js/gestures';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar, type MenuAccessChord } from './MenuBar';
-import { RegisterActions } from '../../testing/registerAction';
+import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 /** Every dispatcher mounted, by its options: how the test reaches the registry the bar's own dispatcher reads. */
 const mounted = vi.hoisted(() => [] as UseGestureDispatcherOptions[]);
