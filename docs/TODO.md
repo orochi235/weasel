@@ -978,6 +978,12 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) `segmentsAlong`'s first "a lit end segment fills the well round its cap" case fails
+  intermittently.** In `packages/ui/src/components/segmentsAlong.browser.test.tsx`, only the first
+  parameterized case failed, taking 329 ms where its siblings took 69. That was the full fleet run of
+  `main` at the 2026-10-26 composition merge (`437648aa4`). The same case failed on that branch's
+  first run and passed on its next two. The file touches no scene code. A face or layout read before
+  it settles is the first thing to suspect, as with the `SegmentsArcView` miss.
 - **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the
