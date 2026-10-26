@@ -1,0 +1,14 @@
+/* The label a `Checkbox` or a `Switch` wraps round its control and its text. */
+.toggleLabel {
+  /* Holds the Switch's react-aria hidden input, which otherwise escapes any scrolling ancestor. */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  cursor: pointer;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size);
+  color: var(--wzl-fg);
+  user-select: none;
+  -webkit-user-select: none;
+}

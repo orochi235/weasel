@@ -1,6 +1,7 @@
 import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentPlaceProps } from '../segmentedRow';
+import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
@@ -17,9 +18,9 @@ export type ButtonBarItem<V extends string | number = string> = {
 } & SegmentTooltipFields;
 
 /** Segment height and type scale for an {@link ButtonBar}. */
-export type ButtonBarSize = 'sm' | 'md';
+export type ButtonBarSize = SegmentedSize;
 /** Visual treatment of an {@link ButtonBar}. */
-export type ButtonBarVariant = 'default' | 'minimal' | 'flat';
+export type ButtonBarVariant = SegmentedVariant;
 
 /** Props for {@link ButtonBar}. */
 export type ButtonBarProps<V extends string | number = string> = {

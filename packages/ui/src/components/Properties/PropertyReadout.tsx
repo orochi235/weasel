@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { INHERIT, paintKindOf } from '@weasel-js/core';
 import { qty } from '@weasel-js/quantity';
+import { solidColorOf } from '../paintValue';
 import { stepDisplay } from './NumberControls';
 import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldTypes';
 import s from './PropertyReadout.module.css';
@@ -38,7 +39,7 @@ function readoutBody(p: PropertyControlProps): ReactNode {
       if (p.value === null) return 'None';
       if (p.value === undefined) return none();
       if (p.value === INHERIT) return 'Inherit';
-      const solid = p.value.kind === undefined || p.value.kind === 'solid' ? (p.value as { color: string }).color : undefined;
+      const solid = solidColorOf(p.value);
       if (solid !== undefined) return <><Swatch color={solid} />{solid}</>;
       return paintKindOf(p.value)?.label ?? p.value.kind;
     }

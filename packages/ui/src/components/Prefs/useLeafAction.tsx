@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { actionItems, actionShortcuts, useActionsRegistry, type ActionItem } from '@weasel-js/core';
+import { actionItems, useActionsRegistry, type ActionItem } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { actionIcon } from '../../icons/actionIcon';
-import { formatShortcut } from '@weasel-js/gestures';
+import { actionShortcutText } from '../actionShortcutText';
 import { useActionStates } from '../ActionBar/useActionStates';
 import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
 import { useRegisteredActions } from './registeredActions';
@@ -70,7 +70,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
       },
       label,
       icon,
-      shortcut: item ? (item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0])) : undefined,
+      shortcut: item ? actionShortcutText(item) : undefined,
       disabled: disabled || (item !== undefined && !shown.enabled),
       disabledReason: item && !shown.enabled && shown.reason !== undefined ? (DEFAULT_REASON_LABELS[shown.reason] ?? shown.reason) : undefined,
       active: shown.active,

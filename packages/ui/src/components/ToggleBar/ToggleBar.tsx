@@ -1,6 +1,7 @@
 import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentPlaceProps, type SegmentState } from '../segmentedRow';
+import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -14,9 +15,9 @@ export type ToggleBarItem<V extends string | number = string> = {
 } & SegmentTooltipFields;
 
 /** Segment height and type scale for a {@link ToggleBar}. */
-export type ToggleBarSize = 'sm' | 'md';
+export type ToggleBarSize = SegmentedSize;
 /** Visual treatment of a {@link ToggleBar}. */
-export type ToggleBarVariant = 'default' | 'minimal' | 'flat';
+export type ToggleBarVariant = SegmentedVariant;
 
 /** What a {@link ToggleBar} takes whichever selection mode it is in. */
 export type ToggleBarCommonProps = {

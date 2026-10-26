@@ -6,6 +6,7 @@ import { Fragment, type ReactNode } from 'react';
 import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { selectionAttrs } from '../Prefs/selection';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
+import { LabeledRow } from './LabeledRow';
 import type { PropertyRenderer } from './renderContext';
 import type { PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
@@ -76,10 +77,10 @@ export function objectFieldRows(
         {entry.controls}
       </div>
     ) : (
-      <div key={entry.key} className={s.row} {...attrs(entry)} {...hiddenAttrs(marked(entry))} {...(entry.disabled ? { 'data-disabled': '' } : {})}>
-        <span className={s.rowLabel} title={entry.title}>{entry.label}{marked(entry) && <HiddenBadge />}</span>
-        <span className={s.rowControls}>{entry.controls}</span>
-      </div>
+      <LabeledRow key={entry.key} label={entry.label} title={entry.title} marked={marked(entry)} disabled={entry.disabled}
+        attrs={{ ...attrs(entry), ...hiddenAttrs(marked(entry)) }}>
+        {entry.controls}
+      </LabeledRow>
     ),
   );
 }

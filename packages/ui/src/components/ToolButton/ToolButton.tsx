@@ -1,6 +1,5 @@
 import type { DragEvent, MouseEvent, PointerEvent, ReactNode, RefObject } from 'react';
-import { Focusable } from '../Tooltip/Focusable';
-import { Tooltip, TooltipTrigger } from '../Tooltip';
+import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
 import s from './ToolButton.module.css';
 
 /** Props for {@link ToolButton}. */
@@ -52,33 +51,30 @@ export function ToolButton(props: ToolButtonProps) {
     icon, label, shortcut, active, disabled, ariaDisabled,
     onClick, onDragStart, title, className, menu,
   } = props;
-  const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
+  const content = segmentTooltipContent({ tooltip: title, shortcut, label }) ?? label;
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
-    <TooltipTrigger isDisabled={disabled}>
-      <Focusable isDisabled={disabled}>
-        <button
-          ref={menu?.ref}
-          id={menu?.id}
-          type="button"
-          className={cls}
-          aria-haspopup={menu ? 'menu' : undefined}
-          aria-expanded={menu ? menu.expanded : undefined}
-          onPointerDown={menu?.onPointerDown}
-          aria-current={active ? 'true' : undefined}
-          aria-disabled={ariaDisabled ? 'true' : undefined}
-          disabled={disabled}
-          onClick={onClick}
-          draggable={onDragStart ? true : undefined}
-          onDragStart={onDragStart}
-        >
-          <span className={s.icon} aria-hidden="true">{icon}</span>
-          <span className={s.label}>{label}</span>
-          {shortcut && <span className={s.shortcut}>{shortcut}</span>}
-          {menu && <span className={s.menuMark} aria-hidden="true" />}
-        </button>
-      </Focusable>
-      <Tooltip>{resolvedTitle}</Tooltip>
-    </TooltipTrigger>
+    <SegmentTooltip content={content} disabled={disabled}>
+      <button
+        ref={menu?.ref}
+        id={menu?.id}
+        type="button"
+        className={cls}
+        aria-haspopup={menu ? 'menu' : undefined}
+        aria-expanded={menu ? menu.expanded : undefined}
+        onPointerDown={menu?.onPointerDown}
+        aria-current={active ? 'true' : undefined}
+        aria-disabled={ariaDisabled ? 'true' : undefined}
+        disabled={disabled}
+        onClick={onClick}
+        draggable={onDragStart ? true : undefined}
+        onDragStart={onDragStart}
+      >
+        <span className={s.icon} aria-hidden="true">{icon}</span>
+        <span className={s.label}>{label}</span>
+        {shortcut && <span className={s.shortcut}>{shortcut}</span>}
+        {menu && <span className={s.menuMark} aria-hidden="true" />}
+      </button>
+    </SegmentTooltip>
   );
 }
