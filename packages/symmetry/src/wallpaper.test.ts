@@ -76,6 +76,13 @@ describe('wallpaper', () => {
     expect(ms.map((m) => at(m, C.x, C.y + 5))).toEqual([{ x: C.x + 100, y: C.y - 5 }, { x: C.x + 200, y: C.y + 5 }]);
   });
 
+  it('mirrors every other row instead under glideRows, putting the glide axes between rows', () => {
+    const ms = symmetryTransforms(square({ glide: true, glideRows: true, extent: { x: -50, y: -50, width: 200, height: 200 } }), C);
+    expect(ms.map((m) => at(m, C.x, C.y + 5))).toEqual([
+      { x: C.x + 100, y: C.y + 5 }, { x: C.x, y: C.y + 95 }, { x: C.x + 100, y: C.y + 95 },
+    ]);
+  });
+
   it('draws nothing from a lattice that has collapsed onto a line', () => {
     expect(symmetryTransforms(square({ rowAngle: 0 }), C)).toEqual([]);
     expect(symmetryTransforms(square({ spacing: 0 }), C)).toEqual([]);
@@ -116,9 +123,43 @@ describe('WALLPAPER_GROUPS', () => {
     },
   );
 
-  it('names the seventeen groups less the two with glides off the lattice\'s rows', () => {
+  it('names all seventeen groups', () => {
     expect(Object.keys(WALLPAPER_GROUPS).sort()).toEqual([
-      'cm', 'cmm', 'p1', 'p2', 'p3', 'p31m', 'p3m1', 'p4', 'p4m', 'p6', 'p6m', 'pg', 'pm', 'pmg', 'pmm',
+      'cm', 'cmm', 'p1', 'p2', 'p3', 'p31m', 'p3m1', 'p4', 'p4g', 'p4m', 'p6', 'p6m', 'pg', 'pgg', 'pm', 'pmg', 'pmm',
     ]);
+  });
+
+  /** The reflections and the 4-fold turns among `name`'s copies near the center. */
+  function opposites(name: WallpaperGroup) {
+    const spec: SymmetrySpec = {
+      ...DEFAULT_SYMMETRY, angle: 0.3, ...wallpaperSpec(name, 50), extent: { x: -400, y: -400, width: 800, height: 800 },
+    };
+    const near = symmetryTransforms(spec, C).filter((m) => Math.hypot(m[4] - C.x, m[5] - C.y) < 200);
+    const flips = near.filter((m) => m[0] * m[3] - m[1] * m[2] < 0);
+    // A reflection's square is the identity; a glide's is a translation.
+    const mirrors = flips.filter((m) => same(multiply(m, m), ID));
+    // A quarter turn fixes one point, which is where it turns about.
+    const quarters = near.filter((m) => Math.abs(m[0]) < 1e-9 && m[0] * m[3] - m[1] * m[2] > 0);
+    const centers = quarters.map((m) => {
+      const [a, b, c, d, e, f] = m;
+      const det = (1 - a) * (1 - d) - b * c;
+      return { x: ((1 - d) * e + c * f) / det, y: (b * e + (1 - a) * f) / det };
+    });
+    return { flips, mirrors, centers };
+  }
+
+  it('pgg reflects only by glides', () => {
+    const { flips, mirrors } = opposites('pgg');
+    expect(flips.length).toBeGreaterThan(0);
+    expect(mirrors).toEqual([]);
+  });
+
+  it('p4g has mirrors, and none of them passes through a quarter turn\'s center', () => {
+    const { mirrors, centers } = opposites('p4g');
+    expect(mirrors.length).toBeGreaterThan(0);
+    expect(centers.length).toBeGreaterThan(0);
+    for (const m of mirrors) {
+      for (const c of centers) expect(at(m, c.x, c.y)).not.toEqual(at(ID, c.x, c.y));
+    }
   });
 });

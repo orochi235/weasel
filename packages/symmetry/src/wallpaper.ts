@@ -61,8 +61,8 @@ export function latticePoints(spec: SymmetrySpec, limit = MAX_WALLPAPER_COPIES +
 
 /** A wallpaper group's name, in the crystallographers' short notation. */
 export type WallpaperGroup =
-  | 'p1' | 'p2' | 'pm' | 'pg' | 'cm' | 'pmm' | 'pmg' | 'cmm'
-  | 'p4' | 'p4m' | 'p3' | 'p3m1' | 'p31m' | 'p6' | 'p6m';
+  | 'p1' | 'p2' | 'pm' | 'pg' | 'cm' | 'pmm' | 'pmg' | 'pgg' | 'cmm'
+  | 'p4' | 'p4m' | 'p4g' | 'p3' | 'p3m1' | 'p31m' | 'p6' | 'p6m';
 
 /** The spec fields that make a wallpaper one of the groups. `rowRatio` is the
  *  row spacing as a multiple of the step's. */
@@ -71,6 +71,7 @@ export interface WallpaperPreset {
   readonly count?: number;
   readonly cellAngle?: number;
   readonly glide?: boolean;
+  readonly glideRows?: boolean;
   readonly rowAngle: number;
   readonly rowRatio: number;
 }
@@ -80,12 +81,14 @@ const RECTANGLE = { rowAngle: Math.PI / 2, rowRatio: 0.75 };
 // A row offset by half a step: the rectangle with a point at its middle.
 const CENTERED = { rowAngle: Math.atan2(0.8, 0.5), rowRatio: Math.hypot(0.5, 0.8) };
 const SQUARE = { rowAngle: Math.PI / 2, rowRatio: 1 };
+// A square turned an eighth: rows offset by half a step, half a step apart.
+const CENTERED_SQUARE = { rowAngle: Math.PI / 4, rowRatio: Math.SQRT1_2 };
 const HEXAGON = { rowAngle: Math.PI / 3, rowRatio: 1 };
 
 /**
- * Every wallpaper group a lattice and a cell can make: each one's cell, and a
- * lattice it fits. pgg and p4g are missing, since their glides run between
- * the lattice's rows rather than along them.
+ * The seventeen wallpaper groups, each as a cell and a lattice it fits. pgg
+ * and p4g mirror alternate rows of a centered lattice, which puts their glide
+ * axes between the rows and off the cell's centers.
  */
 export const WALLPAPER_GROUPS: Readonly<Record<WallpaperGroup, WallpaperPreset>> = {
   p1: { cell: 'none', ...OBLIQUE },
@@ -95,9 +98,11 @@ export const WALLPAPER_GROUPS: Readonly<Record<WallpaperGroup, WallpaperPreset>>
   cm: { cell: 'mirror', ...CENTERED },
   pmm: { cell: 'both', ...RECTANGLE },
   pmg: { cell: 'point', glide: true, ...RECTANGLE },
+  pgg: { cell: 'point', glide: true, glideRows: true, ...CENTERED },
   cmm: { cell: 'both', ...CENTERED },
   p4: { cell: 'radial', count: 4, ...SQUARE },
   p4m: { cell: 'kaleidoscope', count: 4, ...SQUARE },
+  p4g: { cell: 'radial', count: 4, glide: true, glideRows: true, ...CENTERED_SQUARE },
   p3: { cell: 'radial', count: 3, ...HEXAGON },
   p3m1: { cell: 'kaleidoscope', count: 3, cellAngle: Math.PI / 2, ...HEXAGON },
   p31m: { cell: 'kaleidoscope', count: 3, ...HEXAGON },
@@ -115,6 +120,7 @@ export function wallpaperSpec(name: WallpaperGroup, spacing: number): Partial<Sy
     ...(p.count !== undefined ? { count: p.count } : {}),
     cellAngle: p.cellAngle ?? 0,
     glide: p.glide ?? false,
+    glideRows: p.glideRows ?? false,
     spacing,
     rowAngle: p.rowAngle,
     rowSpacing: spacing * p.rowRatio,

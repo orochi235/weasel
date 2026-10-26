@@ -41,6 +41,10 @@ export interface SymmetrySpec {
    *  along, a glide reflection. For `wallpaper`, every other column is, across
    *  the row it steps along. */
   glide: boolean;
+  /** `wallpaper` only: the glide mirrors every other row rather than every
+   *  other column, so on a lattice whose rows are offset its axes run between
+   *  the rows. pgg and p4g need it. Absent means columns. */
+  glideRows?: boolean;
   /** `wallpaper` only: what each lattice point draws about itself. */
   cell: WallpaperCell;
   /** `wallpaper` only: radians the cell's axis turns from `angle`. */
@@ -155,7 +159,7 @@ export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = {
       for (const p of latticePoints(s, Math.floor((MAX_WALLPAPER_COPIES + 1) / cell.length))) {
         const home = p.i === 0 && p.j === 0;
         const step = translate(p.x, p.y);
-        const to = glide && p.i % 2 !== 0 ? multiply(step, glide) : step;
+        const to = glide && (s.glideRows ? p.j : p.i) % 2 !== 0 ? multiply(step, glide) : step;
         for (const g of cell) {
           if (home) {
             if (g !== ID) out.push(g);
