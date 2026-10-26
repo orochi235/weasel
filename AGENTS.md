@@ -39,7 +39,7 @@ repo. It indexes the canonical docs rather than restating them.
 
 ## Layout
 
-- `packages/core/src/` — the kit (`@weasel-js/core`). Paths live under `packages/core/src/features/paths/`.
+- `packages/core/src/` — the kit (`@weasel-js/core`). Paths live under `packages/core/src/domains/paths/`.
 - `packages/*` — bundled-into-core sub-packages (`svg`, `history`, `modes`,
   `ui`, `hud`, `theme`, `geom`, …). Not independently published; see
   `CONTRIBUTING.md`. Some carry their own scoped `AGENTS.md` (e.g. `labkit`).

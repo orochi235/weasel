@@ -19,8 +19,8 @@ import type { PoseDescriptor } from '../resize/geometry';
 import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { shapeSources } from '../selectionSubtree';
 import type { SnapBegin, SnapSession } from '../snapDep';
-import { inputSession } from 'features/snap/session2d';
-import { SNAP_ANGLE_STEP } from 'features/snap/roles';
+import { inputSession } from 'domains/snap/session2d';
+import { SNAP_ANGLE_STEP } from 'domains/snap/roles';
 
 /** One rotated node as the press found it, in the plane the pointer's angle
  *  is read in. */

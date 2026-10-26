@@ -14,9 +14,9 @@ import { publishPreviews } from 'canvas/publishPreviews';
 import { effectivePose } from 'core/scene/effectivePose';
 import { pathEffectNode } from 'core/scene/pathEffects/derive';
 import { createScene } from 'core/scene/scene';
-import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
+import { resolveEditablePathOf, storeEditablePath } from 'domains/paths/editablePath';
 import { asNodeId, type RectPose } from 'core/scene/types';
-import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from 'features/pathEffects';
+import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from 'domains/pathEffects';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
 import { editAnchorsAction } from './action';
 

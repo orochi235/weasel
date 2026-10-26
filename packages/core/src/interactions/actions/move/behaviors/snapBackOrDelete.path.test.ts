@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { snapBackOrDelete } from './snapBackOrDelete';
-import { polygonFromPoints, pathOriginProjection, type Path } from 'features/paths';
+import { polygonFromPoints, pathOriginProjection, type Path } from 'domains/paths';
 import type { GestureContext } from '../../../gestures/types';
 import { moveEnd } from '../../testUtils';
 

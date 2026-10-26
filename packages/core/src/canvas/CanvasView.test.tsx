@@ -16,7 +16,7 @@ import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { createSelectionOverlayLayer } from 'features/selection/overlay';
+import { createSelectionOverlayLayer } from 'domains/selection/overlay';
 import { ViewInputsProvider } from './viewInputs';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { DeviceProfileProvider } from 'core/device/useDeviceProfile';

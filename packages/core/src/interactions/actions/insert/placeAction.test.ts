@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { createScene } from 'core/scene/scene';
-import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
+import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
 import type { InsertDep, SnapDep } from '../depSchema';
 import { insertAction } from './action';
 import { placeAction } from './placeAction';

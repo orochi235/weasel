@@ -9,8 +9,8 @@ import { SEGMENT_HIT_PX } from 'interactions/actions/defaults/segmentUnder';
 import { ANCHOR_CLICK_PX } from 'interactions/actions/defaults/anchorEditing';
 import {
   ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_CLOSE_HIT_PX,
-} from 'features/paths/penPreviewLayer';
-import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
+} from 'domains/paths/penPreviewLayer';
+import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
 
 const ms = { scale: 1, suffix: 'ms' };

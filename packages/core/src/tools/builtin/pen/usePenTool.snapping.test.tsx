@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { type PolygonPath, pathFromD, pathToAnchors } from '@weasel-js/geom';
-import { pathSnapSource } from 'features/paths/pathSnap/pathSnapSource';
-import { gridSource } from 'features/snap/testing/sessionDep';
+import { pathSnapSource } from 'domains/paths/pathSnap/pathSnapSource';
+import { gridSource } from 'domains/snap/testing/sessionDep';
 import { setup } from './testing/penHarness';
 
 // The real layer, recorded: the pen keeps its state to itself, and the one
 // place it hands that object out is to the preview layer that paints from it.
-vi.mock('features/paths/penPreviewLayer', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('features/paths/penPreviewLayer')>();
+vi.mock('domains/paths/penPreviewLayer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('domains/paths/penPreviewLayer')>();
   return { ...actual, createPenPreviewLayer: vi.fn(actual.createPenPreviewLayer) };
 });
 

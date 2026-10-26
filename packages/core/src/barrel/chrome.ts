@@ -17,7 +17,7 @@ export type {
 // ─── The entered group: the group a press resolves inside of ────────────────
 export { createEnteredGroup, useEnteredGroup } from '../canvas/deps/enteredGroup';
 export type { EnteredGroupApi } from '../canvas/deps/enteredGroup';
-export { createEnteredGroupScope } from '../features/selection/enteredGroupScope';
+export { createEnteredGroupScope } from '../domains/selection/enteredGroupScope';
 
 // --- Selection ambient context --------------------------------------------
 export {
@@ -122,7 +122,7 @@ export {
   resolveVisibility,
   buildChromeCtx,
   useHoverTracking,
-} from '../features/chrome-caps';
+} from '../domains/chrome-caps';
 export type {
   ChromeCtx,
   ChromeId,
@@ -135,7 +135,7 @@ export type {
   BuildChromeCtxArgs,
   UseHoverTrackingArgs,
   HoverTracking,
-} from '../features/chrome-caps';
+} from '../domains/chrome-caps';
 
 // ─── Selection overlay: outlines, handles, composer ─────────────────────────
 export {
@@ -143,11 +143,11 @@ export {
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
   createSelectionOverlayLayer,
-} from '../features/selection';
+} from '../domains/selection';
 export type {
   ComposeSelectionPoseOpts,
   SelectionOutlineLayerOpts,
   SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
   SelectionHandleStyle,
-} from '../features/selection';
+} from '../domains/selection';

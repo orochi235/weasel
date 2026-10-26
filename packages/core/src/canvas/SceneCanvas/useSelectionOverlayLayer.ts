@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import type { RenderLayer } from 'core/layers/render';
-import { createSelectionOverlayLayer, rotationBadgeOf } from 'features/selection/overlay';
+import { createSelectionOverlayLayer, rotationBadgeOf } from 'domains/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { DrawnBoundsScene } from '../drawnBounds';
 import { isCustomEntry, type CustomLayerEntry, type SelectionOverlaySlotConfig } from '../layerSlots';

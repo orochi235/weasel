@@ -42,8 +42,8 @@ import type { Action } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { EditAnchorsDep, SnapDep } from '../depSchema';
 import type { SnapBegin, SnapMods, SnapSession } from '../snapDep';
-import { inputSession } from 'features/snap/session2d';
-import { SNAP_ROLES, snapMods } from 'features/snap/roles';
+import { inputSession } from 'domains/snap/session2d';
+import { SNAP_ROLES, snapMods } from 'domains/snap/roles';
 import { ActionDisabledReason, isAnchorOrControl, resolveParams, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import {
   anchorAt,
@@ -65,7 +65,7 @@ import { finishPathEditFrame, pathEditPreview } from './preview';
 import {
   claimWheel, dragWeights, endExtensionDrags, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
 } from './extensionDrags';
-import type { PathEditDrag } from 'features/paths/pathEditExtension';
+import type { PathEditDrag } from 'domains/paths/pathEditExtension';
 import { pathEditToolActive } from '../defaults/pathEditTools';
 import { editedPathSymmetries } from './symmetry';
 import { pathOperationTags } from '../pathGestureTags';

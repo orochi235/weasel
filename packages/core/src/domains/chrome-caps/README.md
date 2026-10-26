@@ -15,7 +15,7 @@ chrome-caps gives each user-visible chrome element a **stable id** and puts the
 `isVisible(id)`, so visible-is-hittable holds by construction rather than by
 discipline:
 
-- `features/selection/overlay.ts` — paints `selection.outline`,
+- `domains/selection/overlay.ts` — paints `selection.outline`,
   `selection.resize-handles`, `selection.rotation-handle`
 - `canvas/affordanceAt.ts` — hit-tests the same three ids
 - `affordances/composeAffordanceLayer.ts` — filters regions by `a.id`

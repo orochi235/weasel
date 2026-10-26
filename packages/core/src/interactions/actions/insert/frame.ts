@@ -1,7 +1,7 @@
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import { resolveParams } from '@weasel-js/routing';
-import { snapMods } from 'features/snap/roles';
+import { snapMods } from 'domains/snap/roles';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { InsertPoint } from '../../gestures/types';
 import { computeBounds, effectiveOriginMode } from './geometry';

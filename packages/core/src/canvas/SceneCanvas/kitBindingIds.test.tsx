@@ -25,9 +25,9 @@ import * as symmetry from '@weasel-js/symmetry';
 import { createModeRegistry } from '@weasel-js/modes';
 import { createScene } from 'core/scene/scene';
 import * as builtins from 'tools/builtin';
-import { createMeasurements } from 'features/measure/measurements';
-import { measurementsContribution } from 'features/measure/measureContribution';
-import { modeTriggers } from 'features/modes/modeTriggers';
+import { createMeasurements } from 'domains/measure/measurements';
+import { measurementsContribution } from 'domains/measure/measureContribution';
+import { modeTriggers } from 'domains/modes/modeTriggers';
 import { buildToolActivateBindings, makeToolActivateAction } from 'interactions/actions/defaults/toolActivate';
 import { makeToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 

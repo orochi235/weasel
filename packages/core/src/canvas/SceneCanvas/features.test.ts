@@ -21,7 +21,7 @@ import {
 } from './namedPresets';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
 import { BUILTIN_TOOL_IDS } from './props';
-import { defaultVisibilityRules, never } from 'features/chrome-caps';
+import { defaultVisibilityRules, never } from 'domains/chrome-caps';
 import {
   SELECTION_MOVE_ID,
   SELECTION_RESIZE_ID,

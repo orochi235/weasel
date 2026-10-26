@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
-import { modeTriggers } from 'features/modes/modeTriggers';
+import { modeTriggers } from 'domains/modes/modeTriggers';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';

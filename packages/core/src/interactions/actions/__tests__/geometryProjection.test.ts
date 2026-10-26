@@ -11,7 +11,7 @@
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
 import type { Affine, Path } from '@weasel-js/geom';
-import { transformPath, rectPath, boundsOfPath } from 'features/paths';
+import { transformPath, rectPath, boundsOfPath } from 'domains/paths';
 import { nudgeRightAction } from '../defaults/nudge';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';

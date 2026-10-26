@@ -5,7 +5,7 @@ import type { DepRegistry } from '@weasel-js/routing/react';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
-import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
+import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
 import type { SnapBegin, SnapDep } from '../snapDep';
 import { insertAction } from './action';
 import { placeAction } from './placeAction';

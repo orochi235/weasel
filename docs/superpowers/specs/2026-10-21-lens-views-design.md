@@ -1,7 +1,7 @@
 # Lenses as views: aims and markers in core, `@weasel-js/lens` on top
 
 **Status: Arc 1 built 2026-10-21 (core aims, held side, markers; kernel3d aims): see
-`packages/core/src/features/viewports/README.md`. Arcs 2–3 unbuilt.** Delete this doc once they land,
+`packages/core/src/domains/viewports/README.md`. Arcs 2–3 unbuilt.** Delete this doc once they land,
 keeping anything durable in the packages' own READMEs.
 
 **For** whoever plans and builds arcs 2–3. **Answers:** what a lens is in weasel; what moves out of

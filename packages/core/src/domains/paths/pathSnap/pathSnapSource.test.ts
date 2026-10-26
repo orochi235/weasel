@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { SnapBegin, SnapMods } from 'interactions/actions/snapDep';
-import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
-import { createSession2d } from 'features/snap/session2d';
-import type { SnapCollect, SnapSource } from 'features/snap/types';
+import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
+import { createSession2d } from 'domains/snap/session2d';
+import type { SnapCollect, SnapSource } from 'domains/snap/types';
 import { ownGeometryAt, pathSnapSource, type PathSnapSourceOptions } from './pathSnapSource';
 import { createSceneSnapIndexer } from './sceneIndex';
 

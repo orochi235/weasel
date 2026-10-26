@@ -33,7 +33,7 @@ import {
   pathIntersect,
   pathSubtract,
   transformPath,
-} from 'features/paths';
+} from 'domains/paths';
 import type { Path } from '@weasel-js/geom';
 import { splitPathBySegment } from '@weasel-js/geom/booleans';
 

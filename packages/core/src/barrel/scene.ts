@@ -144,4 +144,4 @@ export { isAnnotationLayer, isAnnotationNode, annotationLayerIds, type Annotatio
 // ─── Whether a node is shown and in reach ────────────────────────────────────
 export { nodeGates, isNodeHidden, isNodeLocked, hidesSubtree } from 'core/scene/nodeGates';
 export type { NodeGates, GateSource, GatedNode, GatedLayer } from 'core/scene/nodeGates';
-export * from '../features/measure';
+export * from '../domains/measure';

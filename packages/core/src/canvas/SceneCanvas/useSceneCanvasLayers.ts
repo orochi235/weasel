@@ -6,9 +6,9 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
-import type { PathEditState } from 'features/paths/pathEditState';
-import { usePathEditOverlayLayer } from 'features/paths/usePathEdit';
-import type { rotationBadgeOf } from 'features/selection/overlay';
+import type { PathEditState } from 'domains/paths/pathEditState';
+import { usePathEditOverlayLayer } from 'domains/paths/usePathEdit';
+import type { rotationBadgeOf } from 'domains/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { HierarchicalAdapter } from '../buildSceneTree';
 import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
@@ -21,17 +21,17 @@ import type { SceneCanvasLayers } from './props';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { useDepartureGhostLayer } from './useDepartureGhostLayer';
-import { useEffectSourcesLayer } from 'features/pathEffects/useEffectSourcesLayer';
+import { useEffectSourcesLayer } from 'domains/pathEffects/useEffectSourcesLayer';
 import type { Departures } from '../../animation/departures';
 import { usePoseTransition, type PoseTransitionSeat } from '../../animation/poseTransition';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
 import { drawnBoundsScene } from '../derivedPath';
-import { useEnteredGroupFrameLayer } from 'features/selection/enteredGroupFrame';
+import { useEnteredGroupFrameLayer } from 'domains/selection/enteredGroupFrame';
 import type { EnteredGroupApi } from '../deps/enteredGroup';
-import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
-import { createSnapReadoutLayer } from 'features/snap/readoutLayer';
-import type { SnapReadoutStyle } from 'features/snap/types';
+import { createSnapOutcomeStore, type SnapOutcomeStore } from 'domains/snap/outcomeStore';
+import { createSnapReadoutLayer } from 'domains/snap/readoutLayer';
+import type { SnapReadoutStyle } from 'domains/snap/types';
 
 /**
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over

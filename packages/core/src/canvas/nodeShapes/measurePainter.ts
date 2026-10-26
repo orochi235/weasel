@@ -2,7 +2,7 @@ import { polylineFromPoints } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
-import { measureEndsOf, type MeasurePoint } from 'features/measure/measurement';
+import { measureEndsOf, type MeasurePoint } from 'domains/measure/measurement';
 import { paintsPose } from './poseBox';
 
 /** Screen-px half-length of the tick across each end of a measurement. */

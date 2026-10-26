@@ -5,7 +5,7 @@ import { insertRepositionAction } from './repositionAction';
 import type { InsertDep, InsertExtras, InsertLive } from '../depSchema';
 import type { NodeId } from 'core/scene/types';
 import { createScene } from 'core/scene/scene';
-import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
+import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
 
 type Bounds = { x: number; y: number; width: number; height: number };
 

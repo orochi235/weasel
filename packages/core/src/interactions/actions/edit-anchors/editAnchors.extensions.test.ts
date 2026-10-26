@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { AffordanceHit, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import { overlaysOf } from '@weasel-js/routing';
 import { PATH_C, PATH_L, PATH_M, PATH_Z, pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
-import type { PathEditDrag, PathEditDragStart, PathEditExtension } from 'features/paths/pathEditExtension';
+import type { PathEditDrag, PathEditDragStart, PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { EditAnchorsDep } from '../depSchema';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
 import { editAnchorsAction } from './action';

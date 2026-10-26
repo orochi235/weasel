@@ -17,7 +17,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { GesturePreviewSource } from './gestureBounds';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
-import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
+import { createPathEditingOverlayLayer } from 'domains/paths/pathEditingOverlayLayer';
 import { chromeAffordances } from './affordanceAt';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';

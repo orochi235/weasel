@@ -9,7 +9,7 @@ import type {
   PathEditDragStart,
   PathEditExtension,
   PathEditHandleMove,
-} from 'features/paths/pathEditExtension';
+} from 'domains/paths/pathEditExtension';
 
 type Point = { x: number; y: number };
 type Wheel = { deltaX: number; deltaY: number; deltaZ: number };

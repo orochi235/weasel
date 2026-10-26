@@ -4,7 +4,7 @@ import { pathFromD } from '@weasel-js/geom';
 import { pathEffectNode } from 'core/scene/pathEffects/derive';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
-import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from 'features/pathEffects';
+import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from 'domains/pathEffects';
 import { enterPathEditAction } from './enterPathEdit';
 
 function run(opts: { selected: string[]; editable: string[]; under: string | null }) {

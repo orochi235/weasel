@@ -168,7 +168,7 @@
       "@weasel-js/ui/floating": ["../ui/src/floating/index.ts"],
       "@weasel-js/ui/testing/*": ["../ui/src/testing/*"],
       "core/*": ["./src/core/*"],
-      "features/*": ["./src/features/*"],
+      "domains/*": ["./src/domains/*"],
       "affordances/*": ["./src/affordances/*"],
       "interactions/*": ["./src/interactions/*"],
       "tools/*": ["./src/tools/*"],

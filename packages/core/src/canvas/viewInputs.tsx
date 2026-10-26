@@ -12,10 +12,10 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
-import type { ChromeCaps } from 'features/chrome-caps/useChromeCaps';
+import type { ChromeCaps } from 'domains/chrome-caps/useChromeCaps';
 import type { PickView } from './SceneCanvas/useSceneSelectTool';
 
-export type { ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
+export type { ViewRuleInputs } from 'domains/chrome-caps/useChromeCaps';
 
 /**
  * @internal Provided by the surface, consumed by `<CanvasView>`.

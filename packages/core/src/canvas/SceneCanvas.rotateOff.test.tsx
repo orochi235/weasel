@@ -13,7 +13,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { isRotateHandle } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { always } from 'features/chrome-caps';
+import { always } from 'domains/chrome-caps';
 
 type D = { kind: 'rect' };
 type L = 'main';

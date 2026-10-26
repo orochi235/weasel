@@ -21,13 +21,13 @@ Two facts drive most of what follows.
 
 ### A. Left over from path editing
 
-The state landed: `features/paths/pathEditState.ts` holds the editing id, the selected anchors, and
+The state landed: `domains/paths/pathEditState.ts` holds the editing id, the selected anchors, and
 the marquee, and its `getEditingId` is the one rule (the node exists, is selected, and the mode
 permits anchor editing) the dep, the anchor overlay, the suppressed set, `editingAnchors`, and the
 shift-click lock all read. `SceneCanvas.pathEditMask.test.tsx` pins it.
 
 - **The anchor hit-test is still not preview-aware.** `liveEditablePath`
-  (`features/paths/editablePath.ts`) is what the overlay draws from. The two hit-test sites,
+  (`domains/paths/editablePath.ts`) is what the overlay draws from. The two hit-test sites,
   `GestureDispatcherMounter.tsx` and `CanvasView.tsx`, take the committed path from the dep and call
   `pathFromPlane` on it through `anchorStateFrom`'s `toCamera(id, path)` callback. Routing them
   through `liveEditablePath` means changing that callback's contract in both files at once, and
@@ -42,7 +42,7 @@ shift-click lock all read. `SceneCanvas.pathEditMask.test.tsx` pins it.
 
 ### D. Left over from the chrome-caps rule context
 
-The assembly landed: `features/chrome-caps/useChromeCaps.ts` builds the context, derives
+The assembly landed: `domains/chrome-caps/useChromeCaps.ts` builds the context, derives
 `multiActive`, and writes the mode gate once.
 
 - **`buildChromeCtx`, `BuildChromeCtxArgs`, and `ChromeCtx` are public and nothing in the kit calls
@@ -128,8 +128,8 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 
 ## (a) Biggest simplifications, ranked
 
-1. Landed: path-edit state, mask, live path, and overlay to `features/paths` (A).
-2. Landed: chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
+1. Landed: path-edit state, mask, live path, and overlay to `domains/paths` (A).
+2. Landed: chrome-caps rule context to `domains/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
 3. Landed: the mounters are hooks, called from one `SceneCanvasInput` component ahead of the canvas's children (E).
 4. Landed: one camera, made in SceneCanvas and handed to `<Canvas>` (F).
 5. Landed: ingestion hook (J).

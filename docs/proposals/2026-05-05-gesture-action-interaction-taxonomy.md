@@ -154,7 +154,7 @@ src/interactions/
     setPathCoord.ts     # NEW: extracted from edit-anchors
     delete/ nudge/ duplicate/ clipboard/ ...
   feedback/             # NEW: shared rendering primitives
-    dragGhost.ts        # translucent ghost layer factory (already exists at features/drag/dragGhost — possibly relocate)
+    dragGhost.ts        # translucent ghost layer factory (already exists at domains/drag/dragGhost — possibly relocate)
     marqueeRect.ts      # selection-rectangle layer factory
     snapIndicator.ts    # snap-target highlight layer factory
     handleAffordance.ts # corner/edge handle visuals (already in selection-overlay)
@@ -192,7 +192,7 @@ emerge.
   by another consumer; otherwise it's pure overhead. Today
   `translatePose` would have three callers (move, clone, nudge);
   `dragGhost` already has ~four (move, resize, rotate, clone) but
-  via `features/drag/dragGhost` rather than a named feedback module.
+  via `domains/drag/dragGhost` rather than a named feedback module.
   Real but modest payoff.
 
 - **Where do behaviors live?** (See the table above.) This is the
@@ -236,7 +236,7 @@ biting:
   `useClone` (delegates to behavior). Two callers is not enough to
   motivate extracting `translatePose` as a shared primitive.
 - Feedback duplication is broadest (four+ callers re-implement
-  drag-ghost rendering), but `features/drag/dragGhost` already
+  drag-ghost rendering), but `domains/drag/dragGhost` already
   partially addresses it. The remaining duplication is in the
   *plumbing* (publishing the overlay through `setOverlay`
   callbacks) more than in the visuals.

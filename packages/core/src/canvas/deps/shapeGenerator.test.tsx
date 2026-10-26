@@ -12,7 +12,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { useInsertDepSource } from './insert';
 import { useEditAnchorsDepSource } from './editAnchors';
 import { inferredNodeProperties, defaultNodeProperties } from '../SceneCanvas/defaultNodeProperties';
-import { shapeGeneratorOf } from 'features/paths/shapeGenerator';
+import { shapeGeneratorOf } from 'domains/paths/shapeGenerator';
 
 type Node = { id: string; pose: { x: number; y: number; width: number; height: number }; data: Record<string, unknown> };
 

@@ -20,7 +20,7 @@ export default defineConfig({
         ...browser.test,
         name: 'overlay-alignment',
         provide: { overlayAlignmentMatrix: true },
-        include: ['packages/core/src/features/text/overlayAlignment.browser.test.tsx'],
+        include: ['packages/core/src/domains/text/overlayAlignment.browser.test.tsx'],
         browser: {
           ...browser.test.browser,
           instances: browsers.flatMap((name) => dprs.map((dpr) => ({

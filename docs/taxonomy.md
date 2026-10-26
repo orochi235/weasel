@@ -661,7 +661,7 @@ The vocabulary kit authors use when extending or organizing the kit.
 
 ### Feature
 
-A directory under `packages/core/src/features/<name>/` that bundles related primitives sharing a
+A directory under `packages/core/src/domains/<name>/` that bundles related primitives sharing a
 domain. Examples: `selection`, `text`, `paths`, `ingestion`, `modes`,
 `viewports`. Not a runtime concept — an organizing principle
 for the repo. Distinct from a [Contribution](#contribution) (which
@@ -700,7 +700,7 @@ kit's internal partial order.
 
 **Feature-authoring guide.** When adding or restructuring a feature:
 
-1. **Each feature is a directory under `packages/core/src/features/<name>/`.**
+1. **Each feature is a directory under `packages/core/src/domains/<name>/`.**
 
 2. **Each feature has an `index.ts` barrel.** The barrel re-exports the feature's public primitives — every hook, layer factory, exported type, or helper a consumer or another feature might import. Internal helpers stay un-exported (or are exported only through deeper paths if needed for internal cross-feature wiring).
 
@@ -758,7 +758,7 @@ they fit.
   `SelectionApi`, `useSelection`, `ChromeState`, `MULTI_RESIZE_TARGET_ID` —
   is core (`packages/core/src/core/selection/`), because affordances and tools
   both read it and the layering runs `core` → `affordances` → `tools` →
-  `features`. What sits in `packages/core/src/features/selection/` is the part
+  `features`. What sits in `packages/core/src/domains/selection/` is the part
   built *on* that protocol: the overlay render layers, and the ambient
   `SelectionContext`. The feature barrel covers those two and says so; moving
   the protocol up to join them would invert the layering.
@@ -1039,7 +1039,7 @@ combined `createSelectionOverlayLayer`. The overlay reads overlay-aware pose
 lookups (live gesture pose wins over committed adapter pose) so handles track
 objects during a drag. The selection overlay is screen-space-constant for handle
 sizes but world-space for object positions. See
-`packages/core/src/features/selection/overlay.ts`. The
+`packages/core/src/domains/selection/overlay.ts`. The
 kit-level affordance factories (`createCornerResizeAffordance`,
 `createRotationAffordance`) render the same chrome via reusable primitives;
 `createSelectionOverlayLayer` is the legacy presentational helper, and

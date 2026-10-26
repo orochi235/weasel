@@ -7,7 +7,7 @@ import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
-import type { ViewAim } from '../features/viewports/aim';
+import type { ViewAim } from '../domains/viewports/aim';
 import type { Target } from '@weasel-js/animator';
 import type { Animator } from '@weasel-js/animator';
 

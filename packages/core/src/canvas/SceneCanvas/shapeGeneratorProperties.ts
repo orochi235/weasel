@@ -1,6 +1,6 @@
 import type { PrefSection } from '@weasel-js/prefs';
 import { decimal } from '@weasel-js/quantity';
-import { SHAPE_COUNT_RANGE, STAR_RATIO_RANGE } from 'features/paths/shapeGenerator';
+import { SHAPE_COUNT_RANGE, STAR_RATIO_RANGE } from 'domains/paths/shapeGenerator';
 
 const WHOLE = decimal({ maxPlaces: 2, grouping: false });
 

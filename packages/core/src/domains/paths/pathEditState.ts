@@ -9,7 +9,7 @@ import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
 import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
 import type { PathEditExtension, PathEditMark } from './pathEditExtension';
 import type { NodeId, Scene } from 'core/scene/types';
-import { effectSourceFor } from 'features/pathEffects/effectSources';
+import { effectSourceFor } from 'domains/pathEffects/effectSources';
 
 /** A world-coord rect. */
 export interface AnchorMarquee {

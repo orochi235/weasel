@@ -21,7 +21,7 @@ import { boxFrame } from './boxFrame';
 import { localToWorld } from 'core/geometry/targetFrame';
 import { outsetBox } from 'core/geometry/inkExtents';
 import type { SnapBegin, SnapSession } from '../snapDep';
-import { inputSession } from 'features/snap/session2d';
+import { inputSession } from 'domains/snap/session2d';
 
 /** The box the drag resizes, as the press found it. */
 export interface ResizeBox {

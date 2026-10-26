@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { RenderLayer } from 'core/layers/render';
 import { gateLayer } from 'core/layers/gateLayer';
-import { createViewportLayer } from 'features/viewports/viewportLayer';
+import { createViewportLayer } from 'domains/viewports/viewportLayer';
 
 function source() {
   const listeners = new Set<() => void>();

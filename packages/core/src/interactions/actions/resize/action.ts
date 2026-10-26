@@ -9,7 +9,7 @@ import { nextFrame } from './frame';
 import { beginResize, type ResizeFrame } from './session';
 import { unitsOfBox } from './replay';
 import { recordTransform } from '../transform-again/memory';
-import { SNAP_ROLES } from 'features/snap/roles';
+import { SNAP_ROLES } from 'domains/snap/roles';
 
 /** Options for {@link createResizeAction}. */
 export interface ResizeActionOptions {

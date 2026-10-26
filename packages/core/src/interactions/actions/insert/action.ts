@@ -3,7 +3,7 @@ import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '
 import { resolveParams } from '@weasel-js/routing';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';
-import { SNAP_ROLES } from 'features/snap/roles';
+import { SNAP_ROLES } from 'domains/snap/roles';
 import { runBehaviorSettled } from '../gestureLifecycle';
 import { inPlane, insertLayer } from '../planeInput';
 import { copiesWithin } from 'canvas/copiesAbove';

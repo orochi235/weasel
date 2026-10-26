@@ -4,7 +4,7 @@ import type { Path } from '@weasel-js/geom';
 import type { ResizeAnchor } from '@weasel-js/routing';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { SnapGesture, SnapMark, SnapSource } from 'features/snap/types';
+import type { SnapGesture, SnapMark, SnapSource } from 'domains/snap/types';
 
 type Point = { x: number; y: number };
 

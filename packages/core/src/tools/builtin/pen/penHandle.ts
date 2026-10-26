@@ -1,7 +1,7 @@
 /** The pen's handle drag: the modifiers it reads, and where it puts the handle. */
 import { roleReader, type InvocationCtx, type ModifierRoles } from '@weasel-js/routing';
-import { SNAP_AXIS_STEP, SNAP_ROLES, snapMods } from 'features/snap/roles';
-import { inputSession } from 'features/snap/session2d';
+import { SNAP_AXIS_STEP, SNAP_ROLES, snapMods } from 'domains/snap/roles';
+import { inputSession } from 'domains/snap/session2d';
 import type { SnapBegin } from 'interactions/actions/snapDep';
 import type { PenScratch } from './usePenTool';
 

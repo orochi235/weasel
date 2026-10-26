@@ -7,8 +7,8 @@ import { act, cleanup, render } from '@testing-library/react';
 import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
-import type { SceneCanvasSnap } from 'features/snap/types';
-import type { SnapReadoutDep } from 'features/snap/readoutDep';
+import type { SceneCanvasSnap } from 'domains/snap/types';
+import type { SnapReadoutDep } from 'domains/snap/readoutDep';
 import { SceneCanvas } from './SceneCanvas';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));

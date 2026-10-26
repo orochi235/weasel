@@ -3,9 +3,9 @@ import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import type { Measurements } from 'features/measure/measurements';
-import { measureCreateAction, measurePickAtAction } from 'features/measure/measureGestures';
-import { MEASURE_ACTION_IDS } from 'features/measure/actionIds';
+import type { Measurements } from 'domains/measure/measurements';
+import { measureCreateAction, measurePickAtAction } from 'domains/measure/measureGestures';
+import { MEASURE_ACTION_IDS } from 'domains/measure/actionIds';
 import { icon } from '../../../icons.gen';
 
 /** Options for `useMeasureTool`. */

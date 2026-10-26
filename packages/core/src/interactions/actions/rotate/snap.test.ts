@@ -4,9 +4,9 @@ import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/ro
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
-import { rotationSnapSource } from 'features/snap/rotationSource';
-import { sceneSession2d } from 'features/snap/sceneSession2d';
+import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
+import { rotationSnapSource } from 'domains/snap/rotationSource';
+import { sceneSession2d } from 'domains/snap/sceneSession2d';
 import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';
 import { rotateAction } from './action';

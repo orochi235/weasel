@@ -18,7 +18,7 @@ import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
 import type { SnapSession } from '../snapDep';
-import { lazySnapSession } from 'features/snap/lazySession';
+import { lazySnapSession } from 'domains/snap/lazySession';
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
  *  default) preserves the legacy translate-only commit. `'top'` lands the

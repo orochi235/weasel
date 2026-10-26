@@ -4,7 +4,7 @@ import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import type { Scene } from 'core/scene/types';
-import type { PathEditExtension, PathTransformFinishCtx } from 'features/paths/pathEditExtension';
+import type { PathEditExtension, PathTransformFinishCtx } from 'domains/paths/pathEditExtension';
 import { transformOps } from './pathEditCommits';
 
 const poly = (...pts: [number, number][]) => polygonFromPoints(pts.map(([x, y]) => ({ x, y }))) as PolygonPath;

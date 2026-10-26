@@ -5,7 +5,7 @@ import { registerOpFactory } from './registry';
  *  whether it is closed, and the parameters it was generated from. They move
  *  as one so a parametric shape and its baked path never disagree. */
 export interface SetPathFields {
-  path: unknown;     // Path | RectPath; left unknown so kit doesn't depend on features/paths/types here
+  path: unknown;     // Path | RectPath; left unknown so kit doesn't depend on domains/paths/types here
   closed: boolean;
   params: unknown;
 }

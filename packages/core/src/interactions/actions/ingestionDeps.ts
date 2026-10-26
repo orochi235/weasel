@@ -28,7 +28,7 @@ export interface SvgIngestOptions {
  *  `@weasel-js/svg`; see {@link SvgIngestOptions.unpack}. */
 export type SvgUnpacker = (
   files: File[],
-  ctx: import('../../features/ingestion/contentHandlers').IngestCtx,
+  ctx: import('../../domains/ingestion/contentHandlers').IngestCtx,
 ) => Promise<void>;
 
 /**

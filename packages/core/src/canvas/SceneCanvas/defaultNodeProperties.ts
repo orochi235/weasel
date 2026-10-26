@@ -8,7 +8,7 @@ import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { minSizeOf, type MinSize } from 'core/scene/minSize';
 import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
 import { poseLinearOf } from '@weasel-js/geom';
-import { settleShapeGenerator } from 'features/paths/shapeGenerator';
+import { settleShapeGenerator } from 'domains/paths/shapeGenerator';
 import { SHAPE_GENERATOR_SECTIONS } from './shapeGeneratorProperties';
 import { icon } from '../../icons.gen';
 

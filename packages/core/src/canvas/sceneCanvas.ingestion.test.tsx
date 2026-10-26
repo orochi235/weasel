@@ -21,18 +21,18 @@ import {
   registerContentHandler,
   _resetContentHandlersForTests,
   type ContentHandlerEntry,
-} from 'features/ingestion/contentHandlers';
-import { _resetKitContentHandlersForTests } from 'features/ingestion/registerKitHandlers';
+} from 'domains/ingestion/contentHandlers';
+import { _resetKitContentHandlersForTests } from 'domains/ingestion/registerKitHandlers';
 import {
   __setImageMeasureForTests,
   __setFileToDataUriForTests,
   _resetImageHandlerSeamsForTests,
-} from 'features/ingestion/imageHandler';
+} from 'domains/ingestion/imageHandler';
 import {
   __setSvgMeasureForTests,
   _resetSvgHandlerSeamsForTests,
-} from 'features/ingestion/svgHandler';
-import { createTextHandler } from 'features/ingestion/textHandler';
+} from 'domains/ingestion/svgHandler';
+import { createTextHandler } from 'domains/ingestion/textHandler';
 import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
 
 type D = { image?: { src: string } };

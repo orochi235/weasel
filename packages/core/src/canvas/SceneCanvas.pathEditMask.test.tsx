@@ -14,7 +14,7 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
-import { editingAnchors } from 'features/chrome-caps';
+import { editingAnchors } from 'domains/chrome-caps';
 import { SceneCanvas } from './SceneCanvas';
 import { useOptionalViewInputs, type SurfaceViewInputs } from './viewInputs';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
