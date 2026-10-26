@@ -31,16 +31,18 @@ const floatingNote = (() => {
   return { d: sheet + fold + line(at(11), at(15), at(21), at(15)) + line(at(11), at(21), at(19), at(21)), fill: sheet };
 })();
 
-/** The mind map type itself: a central topic with a branch curving out to an underlined topic at each corner. */
+/** The mind map type itself: a central topic with a branch out to an underlined topic at each corner. Each branch
+ *  leaves the hub's corner along its normal at 45 degrees; leaving a side tangent to it, the four merged into the
+ *  hub's walls at 16px. */
 const mindMap = (() => {
   const hub = roundRect(at(11), at(13), at(21), at(19), at(2));
+  const k = Math.SQRT1_2 * at(2);
   const branch = (sx, sy) => {
-    const x0 = 10 + sx * (at(21) - 10);
-    const y0 = at(16);
-    const x1 = 10 + sx * (at(26) - 10);
-    const y1 = at(16) + sy * (at(25) - at(16));
-    const x2 = 10 + sx * (at(29) - 10);
-    return `M${P(x0, y0)}C${P(x0 + sx * at(2), y0)} ${P(x1 - sx * at(2), y1)} ${P(x1, y1)}H${n(x2)}`;
+    const x0 = 10 + sx * (at(19) - 10 + k);
+    const y0 = at(16) + sy * (at(1) + k);
+    const y1 = at(16) + sy * at(9);
+    const x1 = x0 + sx * Math.abs(y1 - y0);
+    return `M${P(x0, y0)}L${P(x1, y1)}H${n(10 + sx * (at(30) - 10))}`;
   };
   return { d: hub + branch(1, -1) + branch(1, 1) + branch(-1, -1) + branch(-1, 1), fill: hub };
 })();
