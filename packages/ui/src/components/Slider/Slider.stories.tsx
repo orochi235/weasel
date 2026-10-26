@@ -278,7 +278,7 @@ function ZoomAlongALensRimStory({ args }: { args: CurvedStoryArgs }) {
 
 /** A lens's zoom along its bottom rim: detents at 2×, 4×, 8× and 16×, the labels hanging outside the circle. */
 export const ZoomAlongALensRim: Story = {
-  args: { min: 2, max: 16, stops: ZOOM_STOPS, spacing: 'even', snap: 'strict', readoutPlacement: 'below-thumb' },
+  args: { min: 2, max: 16, stops: ZOOM_STOPS, spacing: 'even', snap: 'strict', readoutPlacement: 'below-thumb', trackHeight: undefined },
   argTypes: FIXED_DOMAIN,
   render: (args) => <ZoomAlongALensRimStory args={args} />,
 };

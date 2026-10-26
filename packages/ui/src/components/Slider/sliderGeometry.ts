@@ -61,14 +61,18 @@ function acrossAt(run: TrackRun, g: number, p: Point): number {
   return Math.abs((p.x - point.x) * normal.x + (p.y - point.y) * normal.y);
 }
 
-/** A band's thickness: the track height it inherits, else 24px. A custom property computes to the text it was given, so
- *  a px height is read there and any other from the stroke width it sets, which is 1px wherever the stylesheet is absent. */
+/** Where no stylesheet applies, the band thickness `Slider.module.css` defaults to: half its 14px tick. */
+const UNSTYLED_THICKNESS = 7;
+
+/** A band's thickness: the face's stroke width. A px track height is read straight off the custom property, so it is
+ *  right where no stylesheet applies; there the face's stroke width is the initial 1px or nothing at all. */
 function thicknessOf(band: SVGElement | null): number {
-  if (!band) return 24;
+  if (!band) return UNSTYLED_THICKNESS;
   const style = getComputedStyle(band);
   const height = style.getPropertyValue('--rp-track-height').trim();
-  const w = /^[\d.]+px$/.test(height) ? Number.parseFloat(height) : height ? Number.parseFloat(style.strokeWidth) : Number.NaN;
-  return w > 0 ? w : 24;
+  if (/^[\d.]+px$/.test(height)) return Number.parseFloat(height);
+  const w = Number.parseFloat(style.strokeWidth);
+  return w > 1 ? w : UNSTYLED_THICKNESS;
 }
 
 /** A geometry along `run`, in the coordinates of the box `band` is drawn across: parts are tipped to the run, pointers

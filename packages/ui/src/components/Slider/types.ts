@@ -152,7 +152,8 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
    *  ends say, as a curve is; with no shape the slider keeps the straight
    *  layout. */
   shape?: TrackShape;
-  /** The track's height: a number in px, or a CSS length such as `var(--wzl-slider-track-h)`. */
+  /** The track's height: a number in px, or a CSS length such as `var(--wzl-slider-track-h)`. On a curve it defaults to
+   *  half the stop ticks' length, which `--rp-tick-length` sets (14px). */
   trackHeight?: number | string;
   /** The thumb's width, and a dot's height: a number in px, or a CSS length. */
   thumbSize?: number | string;

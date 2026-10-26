@@ -108,8 +108,8 @@ describe('Slider on a curve', () => {
     expect(values(far.onInput)[0]).toBeCloseTo(50 + (12 / run.length) * 100, 5);
   });
 
-  // The band's stroke-width is the 24px fallback in jsdom, so the boundary sits 36px off the arc.
-  test.each([[37, true], [35, false]])('dragging %ipx out from the arc removes the thumb: %s', (off, removed) => {
+  // jsdom applies no stylesheet, so the band is the 7px unstyled default and the boundary sits 10.5px off the arc.
+  test.each([[11, true], [10, false]])('dragging %ipx out from the arc removes the thumb: %s', (off, removed) => {
     const onRemoveThumb = vi.fn(() => true);
     const { thumbs, onChange } = mount({ thumbs: [{ value: 50 }], onRemoveThumb });
     const { point, normal } = run.at(0.5);

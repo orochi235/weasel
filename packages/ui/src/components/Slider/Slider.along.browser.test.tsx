@@ -65,6 +65,35 @@ test('every tick and the thumb sit on the arc', async () => {
   for (const el of [...ticks, thumb]) expect(Math.abs(dist(mid(el), c) - RADIUS)).toBeLessThanOrEqual(1);
 });
 
+/** A tick's length across the run: its untransformed height. */
+const tickLength = (el: HTMLElement) => el.offsetHeight;
+const strokeOf = (el: Element) => parseFloat(getComputedStyle(el).strokeWidth);
+const band = (all: (sel: string) => HTMLElement[]) => all('[data-slider-band]')[0]!.parentElement!;
+const face = (all: (sel: string) => HTMLElement[]) => band(all).lastElementChild!;
+
+test('by default the band is half as thick as the ticks across it', async () => {
+  const { all } = await mount();
+  const tick = tickLength(all('[data-slider-tick]')[0]!);
+  expect(tick).toBeGreaterThan(0);
+  expect(strokeOf(face(all))).toBeCloseTo(tick / 2, 1);
+});
+
+test('an explicit track height wins over the default, and the ticks keep their length', async () => {
+  const before = tickLength((await mount()).all('[data-slider-tick]')[0]!);
+  cleanup();
+  const { all } = await mount({ trackHeight: 20 });
+  expect(strokeOf(face(all))).toBe(20);
+  expect(tickLength(all('[data-slider-tick]')[0]!)).toBe(before);
+});
+
+test('the hit band and the thumb reach past the ticks, not just the thinner band', async () => {
+  const { all, thumb } = await mount();
+  const tick = tickLength(all('[data-slider-tick]')[0]!);
+  const slop = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wzl-slider-track-slop'));
+  expect(strokeOf(all('[data-slider-band]')[0]!)).toBeCloseTo(tick + 2 * slop, 1);
+  expect(thumb.offsetHeight).toBeGreaterThan(tick);
+});
+
 test('the minimum is on the left: values read left to right along the bottom rim', async () => {
   const { box, all } = await mount();
   const c = circleCenter(box);

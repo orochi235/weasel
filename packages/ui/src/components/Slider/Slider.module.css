@@ -244,6 +244,10 @@
  * place along the shape (`--at-x`, `--at-y`), tipped to it (`--at-angle`).
  * Only the band's stroke and the thumbs take pointers. */
 .curved {
+  /* The band is half as thick as the stop ticks across it unless a track height is given;
+   * the reach, ticks included, sizes what must clear or cover the whole band. */
+  --rp-band: var(--rp-track-height, calc(var(--rp-tick-length, 14px) / 2));
+  --rp-band-reach: max(var(--rp-band), var(--rp-tick-length, 14px));
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -265,19 +269,19 @@
 
 .bandSlop {
   stroke: transparent;
-  stroke-width: calc(var(--rp-track-height, 24px) + 2 * var(--wzl-slider-track-slop));
+  stroke-width: calc(var(--rp-band-reach) + 2 * var(--wzl-slider-track-slop));
   pointer-events: stroke;
   cursor: var(--rp-track-cursor, crosshair);
 }
 
 .bandEdge {
   stroke: var(--wzl-border);
-  stroke-width: calc(var(--rp-track-height, 24px) + 2px);
+  stroke-width: calc(var(--rp-band) + 2px);
 }
 
 .bandFace {
   stroke: var(--wzl-surface-sunken);
-  stroke-width: var(--rp-track-height, 24px);
+  stroke-width: var(--rp-band);
 }
 
 .paintLayer {
@@ -297,7 +301,7 @@
 }
 
 .curved .thumb {
-  height: calc(var(--rp-track-height, 24px) + 4px);
+  height: calc(var(--rp-band-reach) + 4px);
   pointer-events: auto;
 }
 
@@ -306,7 +310,7 @@
 }
 
 .curved .tick {
-  height: calc(var(--rp-track-height, 24px) * 0.6);
+  height: var(--rp-tick-length, 14px);
 }
 
 .curved .stopLabels {
@@ -317,7 +321,7 @@
 
 /* Down the run's normal, past the band: outside the circle on a bottom arc. */
 .curved .stopLabel {
-  transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + 0.5lh)) var(--upright);
+  transform: var(--on-run) translateY(calc(var(--rp-band-reach) / 2 + var(--wzl-space-xs) + 0.5lh)) var(--upright);
 }
 
 .readoutsAlong {
@@ -337,5 +341,5 @@
 
 /* Below the stop labels' line, one row per step of --row. */
 .readoutsAlong > .readoutAlong {
-  transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + (var(--row, 0) + 1.5) * 1lh)) var(--upright);
+  transform: var(--on-run) translateY(calc(var(--rp-band-reach) / 2 + var(--wzl-space-xs) + (var(--row, 0) + 1.5) * 1lh)) var(--upright);
 }
