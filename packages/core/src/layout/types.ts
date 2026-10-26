@@ -154,6 +154,9 @@ export interface LayoutStrategy<TPose> {
     target: DropTarget<TPose> | null,
   ): Map<string, TPose>;
 
+  /** The drop's pose ops only. Reparenting the dragged nodes into the container, and choosing which container
+   *  takes the drop (`dropRegion`, `<SceneCanvas layoutDropTarget>`), belong to the move action's `layoutDrop`
+   *  behavior, so no strategy can reparent differently. */
   commitDrop(
     container: LayoutContainer,
     children: ReadonlyArray<LayoutChild<TPose>>,
