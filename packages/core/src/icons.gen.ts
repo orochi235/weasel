@@ -111,6 +111,7 @@ export type CoreIconName =
   | 'paintConic'
   | 'paintMesh'
   | 'paintPattern'
+  | 'paintInherit'
   | 'paintNone';
 
 /** This package's `icon()`: a bare name means `core:<name>`. */
@@ -283,6 +284,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "paintConic",
       "paintMesh",
       "paintPattern",
+      "paintInherit",
       "paintNone"
     ]
   }
@@ -397,6 +399,7 @@ declare module '@weasel-js/icons' {
     'core:paintConic': true;
     'core:paintMesh': true;
     'core:paintPattern': true;
+    'core:paintInherit': true;
     'core:paintNone': true;
   }
 }

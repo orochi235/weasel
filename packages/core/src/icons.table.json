@@ -537,6 +537,11 @@
       "group": "Stroke and paint",
       "tags": []
     },
+    "paintInherit": {
+      "body": "<path d=\"M2.8571 2.8571H8.5714V8.5714H2.8571Z\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M5 8.5714V13.5714H10.7143\"/><path d=\"M10.7143 10.7143H16.4286V16.4286H10.7143Z\" stroke-linejoin=\"miter\"/>",
+      "group": "Stroke and paint",
+      "tags": []
+    },
     "paintNone": {
       "body": "<path d=\"M3.4 3.4H16.6V16.6H3.4Z\"/><path d=\"M3.4 16.6L16.6 3.4\" stroke=\"var(--wzl-danger, #d94a3f)\" stroke-width=\"1.8\" stroke-linecap=\"butt\"/>",
       "group": "Stroke and paint",
