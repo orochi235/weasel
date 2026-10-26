@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { useDebouncedText } from './fields';
+import { useDebouncedText } from './useDebouncedText';
 
 beforeEach(() => {
   vi.useFakeTimers();

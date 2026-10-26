@@ -696,7 +696,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
   `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
-  `.lk-toolbar-button`'s `danger` reddens on hover, which a ghost `Button` has no way to do;
   `SidebarRegion`'s section head and undock button against `SidebarPanel`, which takes no
   `actions`, no undock control, no stance, and no `fill`; `LabHeader`'s bare "Add trial" button,
   which sets its own baseline so its label lines up with the title and would lose that as a

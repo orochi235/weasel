@@ -12,7 +12,7 @@ describe('Toolbar', () => {
     );
     expect(screen.getByText('My Lab')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
-    expect((container.firstChild as HTMLElement).className).toBe('lk-toolbar');
+    expect(container.firstChild).toHaveClass('lk-toolbar');
   });
 
   test('Title uses lk-toolbar-title class', () => {
@@ -122,10 +122,10 @@ describe('Toolbar keyboard contract', () => {
     const user = userEvent.setup();
     threeButtons();
     await user.tab();
-    expect(screen.getByTitle('Undo')).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Undo' })).toHaveFocus();
     await user.keyboard('{ArrowRight}');
-    expect(screen.getByTitle('Redo')).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Redo' })).toHaveFocus();
     await user.keyboard('{ArrowRight}{ArrowRight}');
-    expect(screen.getByTitle('Undo')).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Undo' })).toHaveFocus();
   });
 });
