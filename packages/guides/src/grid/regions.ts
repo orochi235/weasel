@@ -30,17 +30,10 @@ export function sceneGridRegions(
   root: UnitScope,
   outlineOf: (id: NodeId) => readonly Point[] | null,
 ): GridRegion[] {
-  const scoped = (id: NodeId) => scene.get(id)?.units !== undefined;
-  const enclosing = (id: NodeId): NodeId | null => {
-    for (let at = scene.get(id)?.parent ?? null; at !== null; at = scene.get(at)?.parent ?? null) {
-      if (scoped(at)) return at;
-    }
-    return null;
-  };
   const children = new Map<NodeId | null, NodeId[]>();
   for (const id of scene.nodes.keys()) {
-    if (!scoped(id)) continue;
-    const parent = enclosing(id);
+    if (scene.get(id)?.units === undefined) continue;
+    const parent = scopeOwner(scene, id);
     children.set(parent, [...(children.get(parent) ?? []), id]);
   }
   const build = (parent: NodeId | null): GridRegion[] => {
@@ -58,6 +51,15 @@ export function sceneGridRegions(
     return out;
   };
   return build(null);
+}
+
+/** The nearest container above `id` declaring a unit scope, or `null` for
+ *  the root's: whose lattice `id` sits on. `inclusive` counts `id` itself. */
+export function scopeOwner(scene: ScopedScene, id: NodeId, inclusive = false): NodeId | null {
+  for (let at = inclusive ? id : scene.get(id)?.parent ?? null; at !== null; at = scene.get(at)?.parent ?? null) {
+    if (scene.get(at)?.units !== undefined) return at;
+  }
+  return null;
 }
 
 /** The innermost region holding `point`, or `null` outside them all. */
