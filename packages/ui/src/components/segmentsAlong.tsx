@@ -1,5 +1,5 @@
 import { Fragment, useId, useLayoutEffect, useMemo, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
-import { clamp, trackRun, trackShapeD, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { clamp, runStationAt, trackRun, trackShapeD, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { AlongContext } from './Along/alongContext';
 import { useItemLengths, useRunGap } from './Along/useItemLengths';
 import { RunBand, RunEnds, useRunRow } from './Along/useRunRow';
@@ -34,7 +34,7 @@ export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
   const run = useMemo(() => trackRun(shape), [shape]);
   const lengths = useItemLengths(root, segments.map((segment) => segment.key), segmentKeyOf);
   const gap = useRunGap(root);
-  const pad = useInlinePad(root);
+  const { pad, cap } = useWellEnds(root);
   const sizes = segments.map((segment) => lengths.get(segment.key) ?? 0);
   const row = useRunRow({ root, keyOf: segmentKeyOf, run, lengths: sizes, gap, align });
   const well = variant === 'default';
@@ -55,7 +55,7 @@ export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
   return (
     <div ref={root as RefObject<HTMLDivElement>} onKeyDown={roving.onKeyDown} {...row.rootProps} className={rootCls} role={role} aria-label={ariaLabel} style={style} data-shape={shape.kind} data-variant={variant} data-size={size}>
       <RunBand row={row} shape={shape} />
-      {well && segments.length > 0 && <Well run={run} pad={pad} states={segments.map((segment) => segment.state)} stretches={stretches} />}
+      {well && segments.length > 0 && <Well run={run} pad={pad} cap={cap} states={segments.map((segment) => segment.state)} stretches={stretches} />}
       <AlongContext.Provider value={null}>{wrap ? wrap(drawn) : drawn}</AlongContext.Provider>
       <RunEnds row={row} run={run} />
     </div>
@@ -68,19 +68,28 @@ function shapeAt(run: TrackRun, d: number): number {
   return run.reversed ? run.to - g * (run.to - run.from) : run.from + g * (run.to - run.from);
 }
 
-/** SVG path data for the stretch `lo..hi` px along `run`, cut to the run. */
+/** SVG path data for the stretch `lo..hi` px along `run`, carried on straight past either end of it. */
 function stretchD(run: TrackRun, { lo, hi }: Stretch): string {
-  return trackShapeD(run.shape, shapeAt(run, lo), shapeAt(run, hi));
+  const length = run.length;
+  if (length <= 0) return trackShapeD(run.shape, shapeAt(run, lo), shapeAt(run, hi));
+  const on = trackShapeD(run.shape, shapeAt(run, Math.max(lo, 0)), shapeAt(run, Math.min(hi, length)));
+  const xy = (d: number): string => {
+    const { x, y } = runStationAt(run, d).point;
+    return `${x} ${y}`;
+  };
+  return `${lo < 0 ? `M ${xy(lo)} L` : 'M'}${on.slice(1)}${hi > length ? ` L ${xy(hi)}` : ''}`;
 }
 
-/** The well a curved row's segments sit in, stroked along the run from the first segment to the last and `pad` past
- *  each, with each lit segment's stretch stroked over it inside the well's rim. */
-function Well({ run, pad, states, stretches }: { run: TrackRun; pad: number; states: readonly SegmentState[]; stretches: readonly Stretch[] }): ReactElement {
+/** The well a curved row's segments sit in, stroked from the first segment on the run to the last and `pad` past each,
+ *  with each lit segment's stretch stroked over it inside the well's rim. A lit segment at either end of the well runs on
+ *  `cap` past it, under the rim's round cap, which the mask then cuts it to. */
+function Well({ run, pad, cap, states, stretches }: { run: TrackRun; pad: number; cap: number; states: readonly SegmentState[]; stretches: readonly Stretch[] }): ReactElement {
   const mask = `wzl-well-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const last = stretches.length - 1;
-  const outer = { lo: stretches[0]!.lo - pad, hi: stretches[last]!.hi + pad };
-  // An end segment's stroke runs on under the rim's round cap, which the mask then cuts it to.
-  const lit = (i: number): Stretch => ({ lo: i === 0 ? -Infinity : stretches[i]!.lo, hi: i === last ? Infinity : stretches[i]!.hi });
+  const shown = { lo: Math.max(stretches[0]!.lo, 0), hi: Math.min(stretches[last]!.hi, run.length) };
+  const outer = { lo: shown.lo - pad, hi: shown.hi + pad };
+  const lit = ({ lo, hi }: Stretch): Stretch | null =>
+    hi <= shown.lo || lo >= shown.hi ? null : { lo: lo <= shown.lo ? outer.lo - cap : lo, hi: hi >= shown.hi ? outer.hi + cap : hi };
   return (
     <svg className={s.well} aria-hidden="true">
       <defs>
@@ -90,24 +99,35 @@ function Well({ run, pad, states, stretches }: { run: TrackRun; pad: number; sta
       </defs>
       <path className={s.wellTrack} d={stretchD(run, outer)} />
       <g mask={`url(#${mask})`}>
-        {states.map((state, i) => (state === 'off' ? null : <path key={i} className={state === 'on' ? s.lit : s.mixed} data-lit={state} d={stretchD(run, lit(i))} />))}
+        {states.map((state, i) => {
+          const stretch = state === 'off' ? null : lit(stretches[i]!);
+          return stretch && <path key={i} className={state === 'on' ? s.lit : s.mixed} data-lit={state} d={stretchD(run, stretch)} />;
+        })}
       </g>
     </svg>
   );
 }
 
-/** `root`'s inline-start padding in px, read once it is laid out and again when it resizes: the well's rim. */
-function useInlinePad(root: RefObject<HTMLElement | null>): number {
+/** The well's ends in px, read once `root` is laid out and again when it or its first segment resizes: `pad`, its
+ *  inline-start padding, is how far the well runs past its end segments, and `cap`, a segment's thickness, covers the
+ *  rim's round cap. */
+function useWellEnds(root: RefObject<HTMLElement | null>): { pad: number; cap: number } {
   const [pad, setPad] = useState(0);
+  const [cap, setCap] = useState(0);
   useLayoutEffect(() => {
     const el = root.current;
     if (el === null) return;
-    const measure = (): void => setPad(Number.parseFloat(getComputedStyle(el).paddingInlineStart) || 0);
+    const segment = el.querySelector<HTMLElement>(`[${SEGMENT}]`);
+    const measure = (): void => {
+      setPad(Number.parseFloat(getComputedStyle(el).paddingInlineStart) || 0);
+      setCap(segment?.offsetHeight ?? 0);
+    };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
     observer.observe(el);
+    if (segment) observer.observe(segment);
     return () => observer.disconnect();
   }, [root]);
-  return pad;
+  return { pad, cap };
 }
