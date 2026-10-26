@@ -1013,18 +1013,9 @@ only story runner in the repo.
   fleet runs of the test on 2026-10-21. The fleet sweep's failures of this
   test were a different thing, pixels read from the frame before the repaint, fixed 2026-10-21.
 
-- **(P2) Visual Regression stays red on `main` until six baselines are captured.** Run the
-  "Visual Regression — Update Baselines" workflow and commit these from its artifact; every other
-  spec passes. Each one changed on purpose (checked against CI's captures, 2026-10-21):
-  - `diagram-nodes.png`, `diagram-edges.png`: fd3875dc1 moved `DiagramView`'s `className` onto a
-    new box around the canvas, so the demos' 1px `.ckd-canvas` border now sits outside the canvas,
-    which reads 638×358 rather than 640×360. Offset by that pixel, the old baselines differ by
-    0.32% and 0.39% (limit 0.4%): body text centered in 10da7a020 and moved edge labels.
-  - `hud-context-menu-light.png`, `hud-context-menu-dark.png`: c4e499e30 lists each reorder
-    action's two variants (Bring to Front and Send to Back appear), and b14dec111, 4a446579f and
-    58e558da6 draw shortcuts, rounded corners, a shadow and row icons.
-  - `effect-chart.png`, `effect-chart-rack.png`: never captured. Their `maxDiffRatio` of 0.004
-    was copied from `diagram.spec.ts`; set it from the first captures.
+- **(P3) `effect-chart.spec.ts`'s `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`.** Its
+  baselines were first captured on 2026-10-26 (CI run 40266349908); once a few CI runs have compared
+  against them, set the ratio from the diffs they report.
 
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
