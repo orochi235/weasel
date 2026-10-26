@@ -85,8 +85,7 @@
     "react": ">=18",
     "react-dom": ">=18",
     "@weasel-js/animator": "1.13.0",
-    "@weasel-js/core": "1.13.0",
-    "@weasel-js/routing": "1.13.0"
+    "@weasel-js/core": "1.13.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
