@@ -10,6 +10,10 @@ const frame = () => new Promise((r) => requestAnimationFrame(r));
 
 /** Frames until the segments stop moving: their lengths are measured after the first paint. */
 async function settle() {
+  // A label measured before the web font arrives is narrower, and segments laid out from it hold still until it lands.
+  // The first frame's layout is what asks for the font.
+  await frame();
+  await document.fonts.ready;
   let last = '';
   for (let i = 0; i < 30; i++) {
     await frame();
