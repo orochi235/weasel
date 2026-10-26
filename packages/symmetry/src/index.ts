@@ -1,7 +1,11 @@
 export {
   DEFAULT_SYMMETRY, HORIZONTAL_AXIS, SYMMETRY_KINDS, VERTICAL_AXIS, mirrorAcross, symmetryTransforms, turnAbout,
-  type SymmetryKind, type SymmetryKindDef, type SymmetrySpec,
+  type SymmetryExtent, type SymmetryKind, type SymmetryKindDef, type SymmetrySpec, type WallpaperCell,
 } from './kinds';
+export {
+  MAX_WALLPAPER_COPIES, WALLPAPER_GROUPS, latticePoints, wallpaperSpec,
+  type LatticePoint, type WallpaperGroup, type WallpaperPreset,
+} from './wallpaper';
 export {
   SYMMETRY_CLIP_KEY, SYMMETRY_COPIES_KEY, centerOfPose, editSymmetries, isSymmetryGroup, poseAtCenter, readGroup,
   specOfData, symmetryCopies, symmetryGroupOf, symmetryGroupSpec, symmetryRegistry,

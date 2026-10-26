@@ -523,9 +523,10 @@ Priority tags:
 
 ### Symmetry follow-ups
 
-- **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
-  (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
-  the container's pose, so it would need an extent to tile within, which the spec would carry.
+- **(P3) pgg and p4g wallpapers.** The `wallpaper` kind (`packages/symmetry/src/kinds.ts`) builds
+  13 of the 17 wallpaper groups from a lattice and a cell, plus pg and pmg from `glide`, which
+  mirrors every other column across the row it steps along. pgg and p4g need glides whose axes run
+  between the lattice's rows, so they want a glide offset the spec does not carry yet.
 
 ### `useScene` follow-ups
 
