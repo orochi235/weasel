@@ -3,10 +3,11 @@ export const FRONT_ID = '';
 export const GET_STARTED_ID = '__get_started';
 export const WHATS_NEW_ID = '__whats_new';
 export const RELEASES_ID = '__releases';
+export const FEATURES_ID = '__features';
 /** Whichever demo the sidebar lists first; a link can name it without loading the registry. */
 export const DEMOS_ID = '__demos';
 
-const PAGE_IDS = new Set([GET_STARTED_ID, WHATS_NEW_ID, RELEASES_ID]);
+const PAGE_IDS = new Set([GET_STARTED_ID, FEATURES_ID, WHATS_NEW_ID, RELEASES_ID]);
 
 /**
  * The page a URL hash names: a built-in page, a demo or a package page — which

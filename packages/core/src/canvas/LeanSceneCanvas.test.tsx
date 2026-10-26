@@ -12,7 +12,7 @@ import type { ToolsApi } from '../tools/overlayBinding';
 import { LeanSceneCanvas } from './LeanSceneCanvas';
 import { SceneCanvas } from './SceneCanvas';
 import type { FeaturePreset } from './SceneCanvas/features';
-import { baselineActions } from './SceneCanvas/presets/baseline';
+import { BASELINE_ACTIONS } from './SceneCanvas/presets/baseline';
 import { selectPreset } from './SceneCanvas/presets/select';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 
@@ -71,7 +71,7 @@ describe('<LeanSceneCanvas>', () => {
         <Probe into={seen} />
       </LeanSceneCanvas>,
     );
-    const expected = [...baselineActions, ...(selectPreset.actions ?? []), go].map((a) => a.id).sort();
+    const expected = [...BASELINE_ACTIONS, ...(selectPreset.actions ?? []), go].map((a) => a.id).sort();
     const kitOrMine = (id: string) => KIT_STANDARD_ACTION_IDS.includes(id) || id === 'mine.go';
     expect(seen.actionIds.filter(kitOrMine).sort()).toEqual(expected);
   });

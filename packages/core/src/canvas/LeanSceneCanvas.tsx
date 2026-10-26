@@ -5,9 +5,9 @@ import { renderSceneCanvas } from './SceneCanvas';
 import type { FeaturePreset, PresetSource } from './SceneCanvas/features';
 import type { SceneCanvasProps } from './SceneCanvas/props';
 import { toolDrivenActions } from './SceneCanvas/presets/toolDriven';
-import { baselineActions } from './SceneCanvas/presets/baseline';
+import { BASELINE_ACTIONS } from './SceneCanvas/presets/baseline';
 
-const LEAN_SOURCE: PresetSource = { named: null, pool: toolDrivenActions, baseline: baselineActions };
+const LEAN_SOURCE: PresetSource = { named: null, pool: toolDrivenActions, baseline: BASELINE_ACTIONS };
 
 /** Props for {@link LeanSceneCanvas}: `<SceneCanvas>`'s, with `features`
  *  taking preset objects only. */

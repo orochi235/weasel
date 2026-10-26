@@ -146,9 +146,11 @@ export type {
 } from '../canvas/SceneCanvas/features';
 export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from '../canvas/SceneCanvas';
 export {
-  BUILTIN_TOOLS, SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
+  BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
+  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
 } from '../canvas/SceneCanvas';
-export { BASELINE_ACTION_IDS, COMPOSITE_FEATURES, FEATURE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
+export { BASELINE_ACTION_IDS, COMPOSITE_FEATURES, FEATURE_ACTION_IDS, FEATURE_PRESETS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
+export { BASELINE_ACTIONS } from '../canvas/SceneCanvas/presets/baseline';
 export { viewPreset } from '../canvas/SceneCanvas/presets/view';
 export { selectPreset } from '../canvas/SceneCanvas/presets/select';
 export { movePreset, outlinePreset, resizePreset, rotatePreset } from '../canvas/SceneCanvas/presets/transform';
