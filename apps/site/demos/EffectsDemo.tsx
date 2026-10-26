@@ -3,6 +3,8 @@ import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import { blur, vignette, type DrawCommand, type Effect } from '@weasel-js/renderer';
 import num from '@weasel-js/theme/numeric.module.css';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
 
 const W = 720;
@@ -91,8 +93,7 @@ export function EffectsDemo() {
       <div className="ckd-controls">
         <label className="ckd-control">
           Blur radius
-          <input
-            type="range"
+          <InlineRange
             min={0}
             max={24}
             step={1}
@@ -101,14 +102,7 @@ export function EffectsDemo() {
           />
           <output className={num.numeric}>{radius}</output>
         </label>
-        <label className="ckd-control">
-          <input
-            type="checkbox"
-            checked={vignetted}
-            onChange={(e) => setVignetted(e.target.checked)}
-          />
-          Vignette
-        </label>
+        <Checkbox isSelected={vignetted} onChange={setVignetted}>Vignette</Checkbox>
       </div>
     </div>
   );

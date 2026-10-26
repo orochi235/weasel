@@ -11,6 +11,8 @@ import { useAnimator } from '@weasel-js/animator/react';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
 import type { Scene, SerializedScene } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import sceneJson from './data/layout.scene.json';
 import { DemoStage } from './DemoStage';
 
@@ -117,11 +119,8 @@ export function LayoutDemo() {
           <LayoutsTakeDrops scene={scene} />
         </SceneCanvas>
       </DemoStage>
-      <button className="ckd-btn" onClick={addTile} disabled={tiles >= 4}>add tile</button>
-      <label className="ckd-field">
-        <input type="checkbox" checked={animate} onChange={(e) => setAnimate(e.target.checked)} />
-        animate reflow
-      </label>
+      <Button onClick={addTile} disabled={tiles >= 4}>add tile</Button>
+      <Checkbox isSelected={animate} onChange={setAnimate}>animate reflow</Checkbox>
       <ul className="ld-ledger">
         {rows.map((row) => (
           <li

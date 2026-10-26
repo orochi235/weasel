@@ -563,37 +563,6 @@ a:hover { text-decoration: underline; }
   align-items: flex-start;
 }
 
-.ckd-gestures-modes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wzl-space-2);
-}
-
-.ckd-gestures-mode {
-  appearance: none;
-  background: var(--wzl-surface-sunken);
-  border: 1px solid var(--wzl-border);
-  color: var(--wzl-fg-muted);
-  padding: var(--wzl-space-2) var(--wzl-space-5);
-  font-size: calc(var(--wzl-font-size-sm) + 1px);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.ckd-gestures-mode:hover {
-  color: var(--wzl-fg);
-  border-color: var(--wzl-border-strong);
-}
-
-.ckd-gestures-mode.is-active {
-  background: var(--wzl-accent);
-  border-color: var(--wzl-accent-strong);
-  color: var(--wzl-fg-on-accent);
-  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
-  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-}
-
 .ckd-gestures-surface {
   position: relative;
   width: 520px;
@@ -827,32 +796,6 @@ a:hover { text-decoration: underline; }
   gap: 5px;
   margin-bottom: 7px;
 }
-.ckd-release-pkg {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 1px 7px;
-  border: 1px solid var(--wzl-border-strong);
-  border-radius: var(--wzl-radius-pill);
-  background: var(--wzl-surface-sunken);
-  color: var(--wzl-fg-muted);
-  font-size: var(--wzl-font-size-sm);
-  font-family: inherit;
-}
-.ckd-release-pkg.is-filter {
-  cursor: pointer;
-}
-.ckd-release-pkg.is-filter:hover {
-  border-color: var(--wzl-accent-strong);
-  color: var(--wzl-fg);
-}
-.ckd-release-pkg.is-filter.is-on {
-  border-color: var(--wzl-accent);
-  background: var(--wzl-accent);
-  color: var(--wzl-fg-on-accent);
-  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
-  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-}
 .ckd-release-pkg-n {
   opacity: 0.66;
 }
@@ -953,29 +896,6 @@ a:hover { text-decoration: underline; }
 .ckd-release.is-unreleased .ckd-release-date { font-style: italic; }
 
 /* ---------- Timeline / Rig / Audio demo controls ---------- */
-.ckd-btn {
-  padding: var(--wzl-space-2) var(--wzl-space-6);
-  font-size: calc(var(--wzl-font-size-sm) + 1px);
-  cursor: pointer;
-  background: var(--wzl-surface-raised);
-  color: var(--wzl-fg);
-  border: 1px solid var(--wzl-border-strong);
-  border-radius: var(--wzl-radius-sm);
-}
-.ckd-btn:hover:not(:disabled) { border-color: var(--wzl-accent); }
-.ckd-btn:disabled { opacity: 0.45; cursor: default; }
-
-/* A button that reads as text, not chrome. */
-.ckd-btn--text {
-  padding: var(--wzl-space-2) 0;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  background: none;
-  border: none;
-  border-radius: 0;
-  color: var(--wzl-accent-fg);
-}
-.ckd-btn--text:hover:not(:disabled) { color: var(--wzl-fg); }
 
 .ckd-field {
   display: flex;
@@ -986,13 +906,10 @@ a:hover { text-decoration: underline; }
 }
 .ckd-field:has(input:disabled) { opacity: 0.45; }
 
-/* A `.ckd-btn` that holds a state: a feature toggle, a mode. */
-.ckd-btn[aria-pressed='true'] {
-  background-image: linear-gradient(var(--wzl-surface-pressed), var(--wzl-surface-pressed));
-  font-weight: 600;
-}
-
-.ckd-range { width: 130px; }
+/* InlineRange fills its row, and these rows are sized by their content, so it takes a width here. */
+.ckd-field > input[type='range'],
+.ckd-control > input[type='range'] { flex: none; width: 130px; }
+.ckd-bus > input[type='range'] { flex: none; width: 100px; }
 
 .ckd-panel-title {
   padding: var(--wzl-space-3) var(--wzl-space-4);
@@ -1045,7 +962,6 @@ a:hover { text-decoration: underline; }
   padding: var(--wzl-space-4);
   border-bottom: 1px solid var(--wzl-border);
 }
-.ckd-bus .ckd-range { width: 100px; }
 
 .ckd-panel-wide { width: 300px; }
 .ckd-panel-plain { border: 0; }

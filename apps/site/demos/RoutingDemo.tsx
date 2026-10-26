@@ -20,6 +20,7 @@ import {
   type Rule,
   type Tool,
 } from '@weasel-js/routing';
+import { Button } from '@weasel-js/ui/components/Button';
 import s from './RoutingDemo.module.css';
 
 interface Box { id: NodeId; x: number; y: number; color: number }
@@ -350,22 +351,12 @@ export function RoutingDemo() {
   return (
     <div className={s.demo}>
       <div className={s.controls}>
-        <button
-          type="button"
-          className={`ckd-btn ${flags.hand ? s.active : ''}`}
-          aria-pressed={flags.hand}
-          onClick={() => setFlag('hand', !flags.hand)}
-        >
+        <Button pressed={flags.hand} onClick={() => setFlag('hand', !flags.hand)}>
           Hand tool active
-        </button>
-        <button
-          type="button"
-          className={`ckd-btn ${flags.locked ? s.active : ''}`}
-          aria-pressed={flags.locked}
-          onClick={() => setFlag('locked', !flags.locked)}
-        >
+        </Button>
+        <Button pressed={flags.locked} onClick={() => setFlag('locked', !flags.locked)}>
           Locked mode
-        </button>
+        </Button>
         <span className={`${s.tag} ${flags.space ? s.on : ''}`}>Space held: hand at hotkey tier</span>
       </div>
 

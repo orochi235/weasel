@@ -7,6 +7,7 @@ import {
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
+import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
 interface NodeData { color: string; pin: 'screen' | 'world' | 'none' }
@@ -48,7 +49,7 @@ export function PanZoomDemo() {
         <span className={`ckd-readout ${num.numeric}`}>
           view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) · scale: ({view.scale.x.toFixed(2)}, {view.scale.y.toFixed(2)})
         </span>
-        <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</button>
+        <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</Button>
         <span className="ckd-toolbar-note">
           H = hand · hold space = momentary · ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0
         </span>

@@ -11,12 +11,6 @@
   flex-wrap: wrap;
 }
 
-.field {
-  display: flex;
-  gap: var(--wzl-space-3);
-  align-items: center;
-}
-
 .hint {
   color: var(--wzl-fg-subtle);
 }

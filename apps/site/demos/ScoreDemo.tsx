@@ -5,6 +5,8 @@ import {
 } from '@weasel-js/audio';
 import type { AudioEngine, Score, ScoreMood, ScoreParams, ScoreState } from '@weasel-js/audio';
 import { scoreRoll } from './score/scoreRoll';
+import { Button } from '@weasel-js/ui/components/Button';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './ScoreDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -88,16 +90,11 @@ export function ScoreDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <button className={`ckd-btn ${s.pick}`} onClick={toggle} aria-pressed={heard !== null}>
-          {heard ? 'stop' : 'play'}
-        </button>
+        <Button pressed={heard !== null} onClick={toggle}>{heard ? 'stop' : 'play'}</Button>
         {scoreCues.map((c) => (
-          <button
-            key={c.name} className={`ckd-btn ${s.pick}`} aria-pressed={sameMood(mood, c.mood)}
-            onClick={() => steer(c.mood)}
-          >
+          <Button key={c.name} pressed={sameMood(mood, c.mood)} onClick={() => steer(c.mood)}>
             {c.name}
-          </button>
+          </Button>
         ))}
         <span className={s.bar} data-testid="bar">
           {heard ? `bar ${heard.bar + 1}, ${heard.cueBar + 1} into the cue` : 'stopped'}
@@ -131,8 +128,8 @@ export function ScoreDemo() {
               <div className="ckd-panel-title">{axis}</div>
               <div className={s.slider}>
                 <span>{low}</span>
-                <input
-                  className={s.range} type="range" aria-label={axis} min={min} max={1} step={0.05}
+                <InlineRange
+                  aria-label={axis} min={min} max={1} step={0.05}
                   value={mood[axis]} onChange={(e) => steer({ ...mood, [axis]: Number(e.target.value) })}
                 />
                 <span>{high}</span>

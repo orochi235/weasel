@@ -13,6 +13,8 @@ import {
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 300;
@@ -97,23 +99,23 @@ export function SkinDemo() {
       <div className="ckd-toolbar">
         <label className="ckd-field">
           elbow
-          <input
-            className="ckd-range" type="range" min={0} max={2.3} step={0.01} disabled={playing}
+          <InlineRange
+            min={0} max={2.3} step={0.01} disabled={playing}
             value={angle} onChange={(e) => setAngle(Number(e.target.value))}
           />
           <span className={`ckd-readout ${num.numeric}`}>{angle.toFixed(2)}</span>
         </label>
         <label className="ckd-field">
           falloff power
-          <input
-            className="ckd-range" type="range" min={1} max={12} step={0.5}
+          <InlineRange
+            min={1} max={12} step={0.5}
             value={power} onChange={(e) => setPower(Number(e.target.value))}
           />
           <span className={`ckd-readout ${num.numeric}`}>{power.toFixed(1).padStart(4)}</span>
         </label>
-        <button className="ckd-btn" onClick={() => setPlaying((p) => !p)}>
+        <Button onClick={() => setPlaying((p) => !p)}>
           {playing ? 'stop' : 'play'}
-        </button>
+        </Button>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas

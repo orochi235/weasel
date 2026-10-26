@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import RELEASES from 'virtual:changelogs';
 import num from '@weasel-js/theme/numeric.module.css';
+import { Button } from '@weasel-js/ui/components/Button';
 import { ReleaseSection } from './ReleaseSection';
 
 /** The filter lives in the query string, not the hash: the hash is the app's
@@ -93,25 +94,14 @@ export function Releases() {
         </p>
 
         <div className="ckd-release-filter" role="group" aria-label="Filter by package">
-          <button
-            type="button"
-            className={`ckd-release-pkg is-filter${selected.length === 0 ? ' is-on' : ''}`}
-            aria-pressed={selected.length === 0}
-            onClick={() => setSelected([])}
-          >
+          <Button size="sm" pressed={selected.length === 0} onClick={() => setSelected([])}>
             All
-          </button>
+          </Button>
           {counts.map(([name, count]) => (
-            <button
-              key={name}
-              type="button"
-              className={`ckd-release-pkg is-filter${selected.includes(name) ? ' is-on' : ''}`}
-              aria-pressed={selected.includes(name)}
-              onClick={() => toggle(name)}
-            >
+            <Button key={name} size="sm" pressed={selected.includes(name)} onClick={() => toggle(name)}>
               {name}
               <span className={`ckd-release-pkg-n ${num.numeric}`}>{count}</span>
-            </button>
+            </Button>
           ))}
         </div>
 

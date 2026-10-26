@@ -9,6 +9,7 @@ import {
   type DiagramViewApi,
 } from '@weasel-js/diagram';
 import { elkPlanner } from '@weasel-js/diagram-elk';
+import { Button } from '@weasel-js/ui/components/Button';
 import { FONT, moved, PORTS, routed } from './diagram/shared';
 import { DemoStage } from './DemoStage';
 
@@ -63,9 +64,9 @@ export function DiagramElkDemo() {
     <div className="ckd-stack">
       <div className="ckd-row">
         {CHOICES.map(([name, layout]) => (
-          <button key={name} type="button" className="ckd-btn" onClick={() => view.current?.layout(layout)}>
+          <Button key={name} onClick={() => view.current?.layout(layout)}>
             {name}
-          </button>
+          </Button>
         ))}
       </div>
       <DemoStage width={640} height={400}>

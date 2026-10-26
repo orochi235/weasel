@@ -8,6 +8,7 @@ import {
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
@@ -34,6 +35,7 @@ const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 type SortKey = 'index' | 'asc' | 'desc' | 'shuffle';
+const SORT_KEYS: SortKey[] = ['index', 'asc', 'desc', 'shuffle'];
 
 function sortItems(items: readonly Item[], key: SortKey): Item[] {
   const arr = [...items];
@@ -111,17 +113,14 @@ function D3SortableDemoInner() {
     <div className="ckd-demo">
       <div className="ckd-toolbar">
         <span className="ckd-toolbar-note">order:</span>
-        {(['index', 'asc', 'desc', 'shuffle'] as SortKey[]).map((k) => (
-          <button
-            key={k}
-            onClick={() => setSortKey(k === 'shuffle' && sortKey === 'shuffle' ? 'index' : k)}
-            className="ckd-btn"
-            aria-pressed={sortKey === k}
-            disabled={animating && sortKey === k}
-          >
-            {k}
-          </button>
-        ))}
+        <ToggleBar
+          items={SORT_KEYS.map((k) => ({ value: k, label: k, disabled: animating && sortKey === k }))}
+          value={sortKey}
+          onChange={(k) => setSortKey(k ?? 'index')}
+          allowDeselect
+          ariaLabel="Order"
+          size="sm"
+        />
         <span className="ckd-hint">
           d3Bind → join → transition().duration(600).ease(easeInOutCubic).delay(i × 30)
           {animating ? ' · animating…' : ''}

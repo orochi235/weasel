@@ -4,6 +4,7 @@ import {
   BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack, shownPorts,
   type BranchChoice, type EffectLook, type EffectPipeline, type EffectRun, type EffectStageRun,
 } from '@weasel-js/diagram/effect';
+import { Select } from '@weasel-js/ui/components/Select';
 import { DemoStage } from './DemoStage';
 
 const image = (id: string, label?: string) => ({ id, type: 'image', ...(label ? { label } : {}) });
@@ -216,12 +217,14 @@ export function EffectChartBranchDemo() {
   const options = useMemo(() => ({ branch }), [branch]);
   return (
     <div className="ckd-stack">
-      <label className="ckd-row">
-        branch symbol{' '}
-        <select value={branch} onChange={(e) => setBranch(e.target.value as BranchChoice)}>
-          {CHOICES.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </label>
+      <Select
+        label="branch symbol"
+        orientation="row"
+        width="fit"
+        options={CHOICES.map((c) => ({ value: c, label: c }))}
+        selectedKey={branch}
+        onSelectionChange={setBranch}
+      />
       <DemoStage width={W} height={H}>
         <EffectChart
           pipeline={BRANCHES}

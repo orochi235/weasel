@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
+import { Button } from '@weasel-js/ui/components/Button';
 import styles from './CanvasViewDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -88,7 +89,7 @@ export function CanvasViewDemo() {
     <PointerContextProvider>
       <div className={styles.demo}>
         <div className={styles.header}>
-          <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</button>
+          <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</Button>
           <PointerReadout />
         </div>
         <DemoStage width={W} height={H}>

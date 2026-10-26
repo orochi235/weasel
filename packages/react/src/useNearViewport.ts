@@ -1,12 +1,10 @@
 import { type RefObject, useEffect, useState } from 'react';
 
-/** How far past the viewport a trial's story stays mounted, so a small scroll back does not reload it. */
-export const IN_VIEW_MARGIN = '50%';
-
 /**
- * Whether `ref`'s element lies within `margin` of its document's viewport; true where the browser cannot say.
+ * Whether `ref`'s element lies within `margin` (a CSS `rootMargin`) of its document's viewport; true where the
+ * browser cannot say. It follows the element both ways: it turns false again once the element moves away.
  * Decided by where the element is, not by whether any of it shows: `isIntersecting` is false too for an element an
- * `overflow` ancestor clips away, as a narrow lab tile does to its content while the tiling changes. `initial` is
+ * `overflow` ancestor clips away, as a narrow tile does to its content while the tiling changes. `initial` is
  * the answer before the browser has given one: false for content too costly to mount everywhere at once.
  */
 export function useNearViewport(ref: RefObject<Element | null>, margin: string, initial = true): boolean {

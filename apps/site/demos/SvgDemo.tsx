@@ -9,6 +9,7 @@ import {
   type SvgKitLeafData,
   type SvgKitPose,
 } from '@weasel-js/svg';
+import { Button } from '@weasel-js/ui/components/Button';
 import s from './SvgDemo.module.css';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 
@@ -154,15 +155,9 @@ function SvgRoundTrip() {
           <div className={s.source}>
             <div className={s.presets}>
               {PRESETS.map((p) => (
-                <button
-                  key={p.name}
-                  type="button"
-                  className="ckd-btn"
-                  aria-pressed={source === p.svg}
-                  onClick={() => setSource(p.svg)}
-                >
+                <Button key={p.name} size="sm" pressed={source === p.svg} onClick={() => setSource(p.svg)}>
                   {p.name}
-                </button>
+                </Button>
               ))}
             </div>
             <textarea
