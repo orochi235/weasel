@@ -127,7 +127,7 @@ export {
   visualBoundsViaDescriptor,
 } from '../interactions/actions/align';
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
-export { scenePoseFrame } from '../interactions/actions/poseFrame';
+export { sceneBoxFrames, scenePoseFrame } from '../interactions/actions/poseFrame';
 export { moveNodes, moveNodesOps, MOVE_NODES_REQUIRES } from '../interactions/actions/moveNodes';
 export type { PoseFrame } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';

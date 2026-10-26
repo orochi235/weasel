@@ -10,6 +10,7 @@
  * Under `IDENTITY_POSE_COMPOSITION`, the default, local and world are the same
  * value. `core/scene/frameFixture.ts` is the scene where they differ.
  */
+import { boxFrameOf, type Affine } from '@weasel-js/geom';
 import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import {
@@ -77,4 +78,12 @@ export function scenePoseFrame(scene: Scene<unknown, string, unknown>): PoseFram
     },
   };
   return poseFrame(adapter, pc);
+}
+
+/** Each node's box frame in world, `boxFrameOf` its world pose: where a
+ *  container's children are laid out, and its own grid runs. `null` for a
+ *  node missing from `scene` or whose pose is not a box. */
+export function sceneBoxFrames(scene: Scene<unknown, string, unknown>): (id: string) => Affine | null {
+  const frame = scenePoseFrame(scene);
+  return (id) => (scene.get(id as NodeId) === undefined ? null : boxFrameOf(frame.world(id as NodeId)));
 }
