@@ -12,15 +12,14 @@ import {
   type DrawCommand,
   type RenderLayer,
   type CommandStroke,
-  resolveStrokeWidth,
   type PlaneUnits,
   type PlaneValue,
-  pxExtent,
   viewportWorldRect,
   type Dims,
   type View,
 } from '@weasel-js/core';
-import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { applyToPoint, invert, mat3, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { hasArea, lattice, onLattice, type LatticeStyles, type Rect } from './lattice';
 import type { GridRegion } from './regions';
 import { gridPitch, type GridScopes } from './scopedPitch';
 
@@ -39,8 +38,8 @@ export interface GridLayerOpts {
    *  system outside every region, and each region's own scope inside it. */
   scopes?: GridScopes;
   /** The containers drawing their own scope's lattice, read every paint,
-   *  each cut out of the lattice around it. Read only with `scopes`;
-   *  `sceneGridRegions` builds them from a scene. */
+   *  each cut out of the lattice around it and drawn in its own `frame`.
+   *  Read only with `scopes`; `sceneGridRegions` builds them from a scene. */
   regions?: () => readonly GridRegion[];
   /**
    * The area to cover, in world units, read every paint with that paint's
@@ -61,9 +60,7 @@ export interface GridLayerOpts {
   };
 }
 
-type Rect = { x: number; y: number; width: number; height: number };
 type Point = { x: number; y: number };
-type Styles = { line: CommandStroke; accent: CommandStroke; sub: CommandStroke };
 
 // Defaults express weight via opacity rather than a fixed dark color so the
 // grid reads correctly against any background fill (kit demos use a neutral
@@ -82,12 +79,9 @@ const DEFAULT_SUB: CommandStroke = {
   width: 1,
 };
 
-/** Closest, in CSS pixels, a line family is drawn; denser ones are left out. */
-const MIN_SCREEN_SPACING = 4;
-
 /** Build a `RenderLayer` that draws a world-space grid with optional accent lines and subdivisions. */
 export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
-  const styles: Styles = {
+  const styles: LatticeStyles = {
     line: opts.style?.line ?? DEFAULT_LINE,
     accent: opts.style?.accent ?? DEFAULT_ACCENT,
     sub: opts.style?.sub ?? DEFAULT_SUB,
@@ -106,100 +100,21 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       const regions = opts.scopes && opts.regions ? opts.regions() : [];
       if (regions.length === 0) return root;
 
-      // Every lattice runs through the root's anchor, as snapping reads it.
+      // A region with no frame runs through the root's anchor, as snapping reads it.
       const anchor = opts.bounds ? { x: b.x, y: b.y } : { x: 0, y: 0 };
       const area = opts.bounds ? b : shown;
       const children: DrawCommand[] = [{ kind: 'group', clip: withHoles(rectOutline(b), regions), children: root }];
       const visit = (r: GridRegion): void => {
         const pitch = gridPitch(opts.spacing, opts.unitSystem, opts.scopes, r.chain);
-        const box = intersect(outlineBox(r.outline), area);
-        if (hasArea(box)) {
-          const lines = lattice(onLattice(box, pitch, every, anchor), pitch, opts, view, styles);
-          if (lines.length) children.push({ kind: 'group', clip: withHoles(r.outline, r.regions ?? []), children: lines });
-        }
+        const lines = regionLattice(r, area, (box, frame) =>
+          lattice(onLattice(box, pitch, every, frame ? { x: 0, y: 0 } : anchor), pitch, opts, view, styles, frame));
+        if (lines.length) children.push({ kind: 'group', clip: withHoles(r.outline, r.regions ?? []), children: lines });
         for (const inner of r.regions ?? []) visit(inner);
       };
       for (const r of regions) visit(r);
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       return children;
     },
-  };
-}
-
-// Written so a non-finite extent, which a zero view scale gives, fails it too.
-function hasArea(r: Rect): boolean {
-  return r.width > 0 && r.height > 0 && Number.isFinite(r.width) && Number.isFinite(r.height);
-}
-
-/** One lattice of pitch `spacing` across `b`: its sub-lines, cell lines and accents. */
-function lattice(b: Rect, spacing: Point, opts: GridLayerOpts, view: View, styles: Styles): DrawCommand[] {
-  const { accentEvery, subdivisions } = opts;
-  const x0 = b.x;
-  const y0 = b.y;
-  const x1 = b.x + b.width;
-  const y1 = b.y + b.height;
-  // Every line is axis-aligned, so its width runs along one screen axis
-  // and one pixel of it is exactly that axis's extent.
-  const px = pxExtent(1, view.scale);
-
-  const children: DrawCommand[] = [];
-
-  const pushSegment = (sx: number, sy: number, ex: number, ey: number, s: CommandStroke): void => {
-    const path: PolygonPath = {
-      kind: 'polygon',
-      commands: new Uint8Array([PATH_M, PATH_L]),
-      coords: new Float32Array([sx, sy, ex, ey]),
-      fillRule: 'nonzero',
-    };
-    const across = sx === ex ? px.x : px.y;
-    children.push({
-      kind: 'path',
-      path,
-      stroke: { ...s, width: resolveStrokeWidth(s.width ?? 1, 1) * across },
-    });
-  };
-
-  // One family of parallel lines `step` apart, leaving out every
-  // `skipEvery`th (the ones a coarser family draws), and none at all once
-  // they would sit closer than MIN_SCREEN_SPACING on screen.
-  const family = (axis: 'x' | 'y', step: number, skipEvery: number, s: CommandStroke): void => {
-    if (!(step * Math.abs(view.scale[axis]) >= MIN_SCREEN_SPACING)) return;
-    const [from, to] = axis === 'x' ? [x0, x1] : [y0, y1];
-    for (let k = 0; from + k * step <= to + 1e-9; k++) {
-      if (skipEvery > 0 && k % skipEvery === 0) continue;
-      const at = from + k * step;
-      if (axis === 'x') pushSegment(at, y0, at, y1, s);
-      else pushSegment(x0, at, x1, at, s);
-    }
-  };
-
-  const accentOn = accentEvery !== undefined && accentEvery > 0;
-  for (const axis of ['x', 'y'] as const) {
-    // Sub-lines first so cell lines paint on top, accents last of all.
-    if (subdivisions && subdivisions > 1) family(axis, spacing[axis] / subdivisions, subdivisions, styles.sub);
-  }
-  for (const axis of ['x', 'y'] as const) family(axis, spacing[axis], accentOn ? accentEvery : 0, styles.line);
-  if (accentOn) {
-    for (const axis of ['x', 'y'] as const) family(axis, spacing[axis] * accentEvery, 0, styles.accent);
-  }
-  return children;
-}
-
-/**
- * Grow `r` outward to whole periods of the lattice through `anchor`, so the
- * first line drawn sits on a multiple of the pitch from it, and of the accent
- * pitch for accents.
- */
-function onLattice(r: Rect, spacing: Point, accentEvery: number, anchor: Point): Rect {
-  const px = spacing.x * accentEvery;
-  const py = spacing.y * accentEvery;
-  const x = anchor.x + Math.floor((r.x - anchor.x) / px) * px;
-  const y = anchor.y + Math.floor((r.y - anchor.y) / py) * py;
-  return {
-    x,
-    y,
-    width: anchor.x + Math.ceil((r.x + r.width - anchor.x) / px) * px - x,
-    height: anchor.y + Math.ceil((r.y + r.height - anchor.y) / py) * py - y,
   };
 }
 
@@ -225,6 +140,30 @@ function withHoles(outline: readonly Point[], holes: readonly GridRegion[]): Pol
     commands.push(PATH_Z);
   }
   return { kind: 'polygon', commands: new Uint8Array(commands), coords: new Float32Array(coords), fillRule: 'evenodd' };
+}
+
+/**
+ * What `draw` gives for the part of `area` inside `r`, as `r` draws it: in
+ * its `frame`, through it, or in world where it has none. A frame with no
+ * inverse draws nothing.
+ */
+function regionLattice(
+  r: GridRegion, area: Rect, draw: (box: Rect, frame?: GridRegion['frame']) => DrawCommand[],
+): DrawCommand[] {
+  if (!r.frame) {
+    const box = intersect(outlineBox(r.outline), area);
+    return hasArea(box) ? draw(box) : [];
+  }
+  const back = invert(r.frame);
+  if (!back) return [];
+  const local = (ps: readonly Point[]) => outlineBox(ps.map((p) => {
+    const [x, y] = applyToPoint(back, p.x, p.y);
+    return { x, y };
+  }));
+  const box = intersect(local(r.outline), local(rectOutline(area)));
+  if (!hasArea(box)) return [];
+  const lines = draw(box, r.frame);
+  return lines.length ? [{ kind: 'group', transform: mat3.fromAffine(r.frame), children: lines }] : [];
 }
 
 function outlineBox(outline: readonly Point[]): Rect {

@@ -59,7 +59,8 @@ function cellsEqual(
 ): boolean {
   if (a === b) return true;
   if (a === null || b === null) return false;
-  return a.col === b.col && a.row === b.row && a.pitch?.x === b.pitch?.x && a.pitch?.y === b.pitch?.y;
+  return a.col === b.col && a.row === b.row && a.pitch?.x === b.pitch?.x && a.pitch?.y === b.pitch?.y
+    && (a.frame === b.frame || (!!a.frame && !!b.frame && a.frame.every((v, i) => v === b.frame![i])));
 }
 
 /** Track which grid cell the pointer is over; pairs with `createCellHighlightLayer`. */

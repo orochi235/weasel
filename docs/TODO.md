@@ -558,15 +558,6 @@ Priority tags:
   folded in by painting, picking, selection chrome, move, resize, and snapping with the rest of
   the frame, and a host that reads `contentExtent` and scrolls.
 
-### Units
-
-- **(P3) A rotated container's grid does not turn with it.** A scoped container draws and snaps
-  on its own scope's lattice (`createGridLayer({ scopes, regions })`, `gridSnapSource({ scopes })`),
-  but every lattice is world-aligned and runs through one anchor, so inside a container rotated
-  30° the cells sit square to the page, not to the container. Turning it means turning both
-  readers together: the layer would draw a region's lattice in the container's frame, and
-  `gridSnapSource` would round in that frame, which `SnapCollect` does not carry today.
-
 ---
 
 ## Animation
