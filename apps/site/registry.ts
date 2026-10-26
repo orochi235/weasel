@@ -1215,6 +1215,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ResizeSnapDemo.tsx',
   },
   {
+    id: 'scoped-grid',
+    title: 'Scoped grid',
+    package: 'guides',
+    description: 'A container declaring its own unit scope (`GroupNode.units`) draws its own grid. `sceneGridRegions` hands `createGridLayer` every such container, and inside the millimeter sub-assembly the grid is a 2 mm lattice cut out of the 20 px one around it. `gridSnapSource` reads the same scopes, so a node inside snaps on the lattice drawn under it.',
+    hint: 'Drag the green rectangle inside the sub-assembly and the orange one outside it. Zoom with the wheel to see each lattice thin out.',
+    load: () => import('./demos/ScopedGridDemo').then((m) => m.ScopedGridDemo),
+    path: 'apps/site/demos/ScopedGridDemo.tsx',
+  },
+  {
     id: 'layout',
     title: 'Layout',
     package: 'guides',

@@ -1,8 +1,8 @@
 import {
-  asNodeId, resolveAxes, sceneSharedUnitScopes, sceneUnitScopes,
+  asNodeId, sceneSharedUnitScopes, sceneUnitScopes,
   type PerAxis, type PlaneMap, type PlaneUnits, type PlaneValue, type SnapCollect, type SnapSource,
 } from '@weasel-js/core';
-import { scopedGridPitch, type GridScopes } from '../grid/scopedPitch';
+import { gridPitch, scopedGridPitch, type GridScopes } from '../grid/scopedPitch';
 import { roundToGridOn } from '../strategies/onPlane';
 import { axisLine } from './lines';
 
@@ -30,7 +30,7 @@ export interface GridSnapSourceOptions {
  */
 export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
   const { scopes } = opts;
-  const rootPitch = scopes ? scopedGridPitch(opts.spacing, scopes, [scopes.root]) : resolveAxes(opts.spacing, opts.unitSystem);
+  const rootPitch = gridPitch(opts.spacing, opts.unitSystem, scopes);
   const pitchFor = (q: SnapCollect): PerAxis<number> => {
     if (!scopes || !q.scene) return rootPitch;
     if (q.ids?.length) return scopedGridPitch(opts.spacing, scopes, sceneSharedUnitScopes(q.scene, q.ids.map(asNodeId), scopes.root));

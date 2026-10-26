@@ -8,5 +8,6 @@ export { createGridLayer } from './layer';
 export type { GridLayerOpts } from './layer';
 export { createCellHighlightLayer } from './cellHighlight';
 export type { CellHighlightLayerOpts } from './cellHighlight';
-export { pointToGridCell } from './pointToGridCell';
-export { scopedGridPitch, type GridScopes } from './scopedPitch';
+export { pointToGridCell, type GridCell, type GridScoping } from './pointToGridCell';
+export { sceneGridRegions, regionAt, type GridRegion, type GridRegionScene } from './regions';
+export { gridPitch, scopedGridPitch, type GridScopes } from './scopedPitch';

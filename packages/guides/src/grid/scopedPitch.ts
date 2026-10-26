@@ -1,4 +1,4 @@
-import { resolveScoped, type PerAxis, type PlaneValue, type UnitScope } from '@weasel-js/core';
+import { resolveAxes, resolveScoped, type PerAxis, type PlaneUnits, type PlaneValue, type UnitScope } from '@weasel-js/core';
 
 /** How a grid reads the unit scopes a scene's containers declare
  *  (`GroupNode.units`). */
@@ -38,4 +38,18 @@ export function scopedGridPitch(spacing: PlaneValue, scopes: GridScopes, chain: 
     }
   };
   return { x: on('x'), y: on('y') };
+}
+
+/**
+ * A grid's pitch in world units: read in `chain` (the root alone by default)
+ * when `scopes` is given, else against `unitSystem`. What every grid reader
+ * that takes both asks.
+ */
+export function gridPitch(
+  spacing: PlaneValue,
+  unitSystem: PlaneUnits | undefined,
+  scopes: GridScopes | undefined,
+  chain?: readonly UnitScope[],
+): PerAxis<number> {
+  return scopes ? scopedGridPitch(spacing, scopes, chain ?? [scopes.root]) : resolveAxes(spacing, unitSystem);
 }
