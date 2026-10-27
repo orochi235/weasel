@@ -13,19 +13,19 @@
  * pins held where they are, so a round costs about what a local/global round
  * does and the pins land exactly.
  */
-import { solveSplit } from './arapSystem';
 import type { Piece } from './arapPiece';
 import { descent, dot, forget, type StepMemory } from './lbfgs';
 
-/** Each rest triangle's inverse edge matrix, four entries per triangle, and its area. */
+/** Each rest triangle's inverse edge matrix, four entries per triangle, its area, and its winding (+1, -1, or 0 when flat). */
 export interface RestFrames {
   inv: Float64Array;
   area: Float64Array;
+  side: Int8Array;
 }
 
 export function restFrames(rest: Float64Array, tris: Int32Array): RestFrames {
   const nt = tris.length / 3;
-  const inv = new Float64Array(4 * nt), area = new Float64Array(nt);
+  const inv = new Float64Array(4 * nt), area = new Float64Array(nt), side = new Int8Array(nt);
   for (let t = 0; t < nt; t++) {
     const a = tris[3 * t], b = tris[3 * t + 1], c = tris[3 * t + 2];
     const ux = rest[2 * b] - rest[2 * a], uy = rest[2 * b + 1] - rest[2 * a + 1];
@@ -34,8 +34,9 @@ export function restFrames(rest: Float64Array, tris: Int32Array): RestFrames {
     if (det === 0) continue;
     inv.set([vy / det, -vx / det, -uy / det, ux / det], 4 * t);
     area[t] = Math.abs(det) / 2;
+    side[t] = Math.sign(det);
   }
-  return { inv, area };
+  return { inv, area, side };
 }
 
 /** The share of the way to the nearest flattening a step may go. */
@@ -60,11 +61,11 @@ function jacobian(piece: Piece, pos: Float64Array, t: number, J: Float64Array): 
 
 /** How far along `d` from `pos` the first triangle flattens, or Infinity when none does. */
 export function flipBound(piece: Piece, pos: Float64Array, d: Float64Array): number {
-  const { tris, rest } = piece;
+  const { tris, frames } = piece;
   let bound = Infinity;
   for (let t = 0; t < tris.length; t += 3) {
     const a = tris[t], b = tris[t + 1], c = tris[t + 2];
-    const side = Math.sign((rest[2 * b] - rest[2 * a]) * (rest[2 * c + 1] - rest[2 * a + 1]) - (rest[2 * b + 1] - rest[2 * a + 1]) * (rest[2 * c] - rest[2 * a]));
+    const side = frames.side[t / 3];
     if (side === 0) continue;
     const ux = pos[2 * b] - pos[2 * a], uy = pos[2 * b + 1] - pos[2 * a + 1];
     const vx = pos[2 * c] - pos[2 * a], vy = pos[2 * c + 1] - pos[2 * a + 1];
@@ -85,8 +86,11 @@ function smallestPositiveRoot(c0: number, c1: number, c2: number): number {
   const disc = c1 * c1 - 4 * c2 * c0;
   if (disc < 0) return Infinity;
   const q = -0.5 * (c1 + Math.sign(c1 || 1) * Math.sqrt(disc));
-  const roots = [q / c2, c0 / q].filter((s) => s > 0 && Number.isFinite(s));
-  return roots.length ? Math.min(...roots) : Infinity;
+  const r1 = q / c2, r2 = c0 / q;
+  let least = Infinity;
+  if (r1 > 0 && r1 < least) least = r1;
+  if (r2 > 0 && r2 < least) least = r2;
+  return least;
 }
 
 /** The softened area: `d` itself well above `eps`, small and positive below zero. */
@@ -113,15 +117,19 @@ export function energyTerms(piece: Piece): EnergyTerms {
  * there too; an infinite energy leaves them partly written.
  */
 export function untangleEnergy(piece: Piece, pos: Float64Array, eps: number, terms?: EnergyTerms): number {
-  const J = new Float64Array(4);
-  const { area } = piece.frames;
+  const { tris, frames: { area, inv: m } } = piece;
   let E = 0;
   for (let t = 0; t < area.length; t++) {
-    if (!jacobian(piece, pos, t, J)) continue;
-    const d = J[0] * J[3] - J[1] * J[2];
+    if (area[t] === 0) continue;
+    const a = tris[3 * t], b = tris[3 * t + 1], cc = tris[3 * t + 2], i = 4 * t;
+    const ux = pos[2 * b] - pos[2 * a], uy = pos[2 * b + 1] - pos[2 * a + 1];
+    const vx = pos[2 * cc] - pos[2 * a], vy = pos[2 * cc + 1] - pos[2 * a + 1];
+    const j0 = ux * m[i] + vx * m[i + 2], j1 = ux * m[i + 1] + vx * m[i + 3];
+    const j2 = uy * m[i] + vy * m[i + 2], j3 = uy * m[i + 1] + vy * m[i + 3];
+    const d = j0 * j3 - j1 * j2;
     const c = chi(d, eps);
     if (!(c > 0)) return Infinity;
-    const shape = area[t] * (J[0] * J[0] + J[1] * J[1] + J[2] * J[2] + J[3] * J[3] + AREA * (d * d + 1));
+    const shape = area[t] * (j0 * j0 + j1 * j1 + j2 * j2 + j3 * j3 + AREA * (d * d + 1));
     if (terms) { terms.shape[t] = shape; terms.det[t] = d; }
     E += shape / c;
   }
@@ -153,24 +161,26 @@ export function leastArea(piece: Piece, pos: Float64Array): number {
 }
 
 function gradient(piece: Piece, pos: Float64Array, eps: number): Float64Array {
-  const { tris, frames } = piece;
+  const { tris, frames: { area, inv: m } } = piece;
   const g = new Float64Array(pos.length);
-  const J = new Float64Array(4);
-  for (let t = 0; t < frames.area.length; t++) {
-    if (!jacobian(piece, pos, t, J)) continue;
-    const d = J[0] * J[3] - J[1] * J[2];
+  for (let t = 0; t < area.length; t++) {
+    if (area[t] === 0) continue;
+    const a = tris[3 * t], b = tris[3 * t + 1], cc = tris[3 * t + 2], i = 4 * t;
+    const ux = pos[2 * b] - pos[2 * a], uy = pos[2 * b + 1] - pos[2 * a + 1];
+    const vx = pos[2 * cc] - pos[2 * a], vy = pos[2 * cc + 1] - pos[2 * a + 1];
+    const j0 = ux * m[i] + vx * m[i + 2], j1 = ux * m[i + 1] + vx * m[i + 3];
+    const j2 = uy * m[i] + vy * m[i + 2], j3 = uy * m[i + 1] + vy * m[i + 3];
+    const d = j0 * j3 - j1 * j2;
     const root = Math.sqrt(eps * eps + d * d);
     const c = (d + root) / 2;
-    const A = frames.area[t];
-    const top = J[0] * J[0] + J[1] * J[1] + J[2] * J[2] + J[3] * J[3] + AREA * (d * d + 1);
+    const A = area[t];
+    const top = j0 * j0 + j1 * j1 + j2 * j2 + j3 * j3 + AREA * (d * d + 1);
     const dc = root === 0 ? 0.5 : (1 + d / root) / 2;
     // dE/dJ = (2 J + 2 AREA d cof J) / c - top dc cof J / c², cof J being d's own gradient.
     const s = (2 * A) / c, r = A * ((2 * AREA * d) / c - (top * dc) / (c * c));
-    const g0 = s * J[0] + r * J[3], g1 = s * J[1] - r * J[2], g2 = s * J[2] - r * J[1], g3 = s * J[3] + r * J[0];
-    const m = frames.inv, i = 4 * t;
+    const g0 = s * j0 + r * j3, g1 = s * j1 - r * j2, g2 = s * j2 - r * j1, g3 = s * j3 + r * j0;
     const gux = g0 * m[i] + g1 * m[i + 1], gvx = g0 * m[i + 2] + g1 * m[i + 3];
     const guy = g2 * m[i] + g3 * m[i + 1], gvy = g2 * m[i + 2] + g3 * m[i + 3];
-    const a = tris[3 * t], b = tris[3 * t + 1], cc = tris[3 * t + 2];
     g[2 * b] += gux; g[2 * b + 1] += guy; g[2 * cc] += gvx; g[2 * cc + 1] += gvy;
     g[2 * a] -= gux + gvx; g[2 * a + 1] -= guy + gvy;
   }
@@ -220,14 +230,7 @@ export function untangleRound(
     const f = freeOf[i];
     if (f >= 0) { gf[2 * f] = g[2 * i]; gf[2 * f + 1] = g[2 * i + 1]; }
   }
-  const precondition = (q: Float64Array) => {
-    const bx = new Float64Array(nf), by = new Float64Array(nf);
-    for (let f = 0; f < nf; f++) { bx[f] = q[2 * f]; by[f] = q[2 * f + 1]; }
-    const x = solveSplit(step2, () => 0, bx), y = solveSplit(step2, () => 0, by);
-    const out = new Float64Array(2 * nf);
-    for (let f = 0; f < nf; f++) { out[2 * f] = x[f]; out[2 * f + 1] = y[f]; }
-    return out;
-  };
+  const precondition = (q: Float64Array) => step2.factored.solvePair(q);
   let df = descent(memory, gf, precondition);
   let slope = dot(gf, df);
   if (!(slope < 0)) {
@@ -246,8 +249,9 @@ export function untangleRound(
     for (let i = 0; i < next.length; i++) next[i] = pos[i] + s * d[i];
     const e = untangleEnergy(piece, next, eps, terms);
     if (e <= energy + ARMIJO * s * slope) {
-      let moved = 0;
-      for (let i = 0; i < d.length; i += 2) moved = Math.max(moved, s * Math.hypot(d[i], d[i + 1]));
+      let far = 0;
+      for (let i = 0; i < d.length; i += 2) far = Math.max(far, d[i] * d[i] + d[i + 1] * d[i + 1]);
+      const moved = s * Math.sqrt(far);
       memory.lastGrad = gf;
       memory.lastStep = df.map((v) => s * v);
       return { pos: next, energy: e, terms, moved };
