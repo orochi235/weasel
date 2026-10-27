@@ -3,7 +3,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { HudDrawCtx } from '../widget';
 import type { MenuTextEntry } from '@weasel-js/menu';
 import { DEFAULT_MENU_METRICS as m, drawPanel, OPENED_VALUES } from './drawPanel';
-import { composeEdit, editKey, insertText, startEdit, type EditMods, type HudTextEdit } from './textEdit';
+import { composeEdit, editKey, editMods, insertText, startEdit, type EditMods, type HudTextEdit } from './textEdit';
 
 const entry: MenuTextEntry = { kind: 'text', key: 'name', label: 'Name', value: undefined, set: vi.fn() };
 
@@ -28,7 +28,7 @@ describe('editKey', () => {
     expect(shown(run('abc', ['ArrowLeft']))).toBe('ab|c');
     expect(shown(run('abc', ['Home', 'ArrowLeft']))).toBe('|abc');
     expect(shown(run('abc', ['Home', 'ArrowRight', 'End', 'ArrowRight']))).toBe('abc|');
-    expect(shown(run('abc', [['ArrowLeft', { mod: true }]]))).toBe('|abc');
+    expect(shown(run('abc', [['ArrowLeft', { line: true }]]))).toBe('|abc');
   });
 
   it('types and deletes at the caret', () => {
@@ -54,25 +54,45 @@ describe('editKey', () => {
     expect(run('abc', [['z', { mod: true }]])!.draft).toBe('abc');
   });
 
-  it('moves by a word with Alt, collapsing a selection first, and selects by a word with Alt+Shift', () => {
-    const alt = { alt: true };
+  it('moves by a word, collapsing a selection first, and selects by a word with Shift', () => {
+    const alt = { word: true };
     expect(shown(run('one two  three', [['ArrowLeft', alt]]))).toBe('one two  |three');
     expect(shown(run('one two  three', [['ArrowLeft', alt], ['ArrowLeft', alt]]))).toBe('one |two  three');
     expect(shown(run('one, two', ['Home', ['ArrowRight', alt], ['ArrowRight', alt]]))).toBe('one, two|');
     expect(shown(run('héllo wörld', ['Home', ['ArrowRight', alt]]))).toBe('héllo| wörld');
-    const sel = run('ab cd ef', [['ArrowLeft', { shift: true }], ['ArrowLeft', { shift: true, alt: true }]])!;
+    const sel = run('ab cd ef', [['ArrowLeft', { shift: true }], ['ArrowLeft', { shift: true, word: true }]])!;
     expect([sel.caret, sel.anchor]).toEqual([6, 8]);
     expect(editKey(sel, 'ArrowLeft', alt).edit).toMatchObject({ caret: 3, anchor: 3 });
   });
 
-  it('deletes a word with Alt+Backspace and Alt+Delete, or the selection when there is one', () => {
-    const alt = { alt: true };
+  it('deletes a word back or forward, or the selection when there is one', () => {
+    const alt = { word: true };
     expect(shown(run('one two  three', [['Backspace', alt]]))).toBe('one two  |');
     expect(shown(run('one two  three', [['Backspace', alt], ['Backspace', alt]]))).toBe('one |');
     expect(shown(run('one, two', ['Home', ['Delete', alt]]))).toBe('|, two');
     expect(shown(run('one, two', ['Home', ['Delete', alt], ['Delete', alt]]))).toBe('|');
     expect(shown(run('ab cd', [['ArrowLeft', { shift: true }], ['Backspace', alt]]))).toBe('ab c|');
     expect(shown(run('ab', ['Home', ['Backspace', alt]]))).toBe('|ab');
+  });
+
+  it('deletes to the start or end of the line, or the selection when there is one', () => {
+    const line = { line: true, mod: true };
+    expect(shown(run('one two', ['ArrowLeft', 'ArrowLeft', ['Backspace', line]]))).toBe('|wo');
+    expect(shown(run('one two', ['Home', 'ArrowRight', ['Delete', line]]))).toBe('o|');
+    expect(shown(run('ab cd', [['ArrowLeft', { shift: true }], ['Backspace', line]]))).toBe('ab c|');
+  });
+
+  it('reads Cmd by the line and Option by the word on Apple, and Ctrl by the word elsewhere', () => {
+    const k = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
+    expect(editMods({ ...k, metaKey: true }, true)).toEqual({ shift: false, mod: true, line: true, word: false });
+    expect(editMods({ ...k, altKey: true }, true)).toEqual({ shift: false, mod: false, line: false, word: true });
+    expect(editMods({ ...k, ctrlKey: true }, false)).toEqual({ shift: false, mod: true, word: true });
+    expect(editMods({ ...k, altKey: true }, false)).toEqual({ shift: false, mod: false, word: false });
+    // AltGr arrives as Ctrl+Alt and types a character.
+    expect(editMods({ ...k, ctrlKey: true, altKey: true }, false)).toEqual({ shift: false });
+    expect(shown(run('a', [['@', editMods({ ...k, ctrlKey: true, altKey: true }, false)]]))).toBe('a@|');
+    expect(shown(run('one two', [['Backspace', editMods({ ...k, ctrlKey: true }, false)]]))).toBe('one |');
+    expect(run('abc', [['a', editMods({ ...k, ctrlKey: true }, false)]])).toMatchObject({ anchor: 0, caret: 3 });
   });
 
   it('holds a composition in place of the selection until it is entered', () => {

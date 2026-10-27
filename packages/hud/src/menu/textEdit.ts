@@ -1,4 +1,5 @@
 import type { MenuController, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
+import { isApplePlatform } from '@weasel-js/gestures';
 
 /** A text row being typed into in a HUD menu: which row, what has been typed so far, and the caret and the other
  *  end of the selection, as code-point offsets into `draft`. `anchor` equals `caret` when nothing is selected.
@@ -11,9 +12,21 @@ export interface HudTextEdit {
   preedit?: string;
 }
 
-/** The modifiers a key arrives with: `shift` extends the selection, `mod` (Ctrl or Cmd) selects all on `a` and moves
- *  to an end on an arrow, and `alt` moves an arrow, or deletes with Backspace or Delete, by a word. */
-export interface EditMods { shift?: boolean; mod?: boolean; alt?: boolean }
+/** What the modifiers a key arrives with ask for: `shift` extends the selection, `mod` (Ctrl or Cmd) selects all on
+ *  `a` and holds any other character, `line` takes an arrow, Backspace or Delete to the end of the line, and `word`
+ *  takes them by a word. */
+export interface EditMods { shift?: boolean; mod?: boolean; line?: boolean; word?: boolean }
+
+/** The modifiers held for a key, read as the platform's text fields read them: on Apple, Cmd works by the line and
+ *  Option by the word; elsewhere Ctrl works by the word, and Ctrl with Alt is AltGr, typing a character. */
+export function editMods(
+  evt: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, apple = isApplePlatform(),
+): EditMods {
+  const shift = evt.shiftKey;
+  if (apple) return { shift, mod: evt.ctrlKey || evt.metaKey, line: evt.metaKey, word: evt.altKey };
+  if (evt.ctrlKey && evt.altKey) return { shift };
+  return { shift, mod: evt.ctrlKey || evt.metaKey, word: evt.ctrlKey };
+}
 
 const WORD = /[\p{L}\p{N}\p{M}_]/u;
 
@@ -77,9 +90,9 @@ function moveTo(edit: HudTextEdit, to: number, extend: boolean): HudTextEdit {
 function moveFor(edit: HudTextEdit, key: string, mods: EditMods): number | undefined {
   const n = Array.from(edit.draft).length;
   const [from, to] = selectionOf(edit);
-  if (key === 'Home' || (key === 'ArrowLeft' && mods.mod)) return 0;
-  if (key === 'End' || (key === 'ArrowRight' && mods.mod)) return n;
-  if (mods.alt && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+  if (key === 'Home' || (key === 'ArrowLeft' && mods.line)) return 0;
+  if (key === 'End' || (key === 'ArrowRight' && mods.line)) return n;
+  if (mods.word && (key === 'ArrowLeft' || key === 'ArrowRight')) {
     const dir = key === 'ArrowLeft' ? -1 : 1;
     const start = mods.shift ? edit.caret : dir < 0 ? from : to;
     return wordStop(Array.from(edit.draft), start, dir);
@@ -91,23 +104,25 @@ function moveFor(edit: HudTextEdit, key: string, mods: EditMods): number | undef
 }
 
 /** What one key does to an edit: the edit it leaves, null once Enter or Escape ends it, and on Enter the text to
- *  write. A character replaces the selection, Backspace and Delete take it or the character (with Alt, the word)
- *  either side of the caret, and the arrows, Home and End move the caret; any other key is held and ignored. */
+ *  write. A character replaces the selection, Backspace and Delete take it or the character (or the word, or the
+ *  rest of the line) either side of the caret, and the arrows, Home and End move the caret; any other key is held
+ *  and ignored. */
 export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { edit: HudTextEdit | null; commit?: string } {
   if (key === 'Enter') return { edit: null, commit: edit.draft };
   if (key === 'Escape') return { edit: null };
   const to = moveFor(edit, key, mods);
   if (to !== undefined) return { edit: moveTo(edit, to, mods.shift === true) };
-  if (mods.mod) {
-    return { edit: key.toLowerCase() === 'a' ? { ...edit, anchor: 0, caret: Array.from(edit.draft).length } : edit };
-  }
   const [from, end] = selectionOf(edit);
   if ((key === 'Backspace' || key === 'Delete') && from !== end) return { edit: splice(edit, from, end, '') };
+  const chars = Array.from(edit.draft);
   if (key === 'Backspace') {
-    const start = mods.alt ? wordStop(Array.from(edit.draft), from, -1) : Math.max(0, from - 1);
+    const start = mods.line ? 0 : mods.word ? wordStop(chars, from, -1) : Math.max(0, from - 1);
     return { edit: splice(edit, start, from, '') };
   }
-  if (key === 'Delete') return { edit: splice(edit, from, mods.alt ? wordStop(Array.from(edit.draft), from, 1) : from + 1, '') };
+  if (key === 'Delete') {
+    return { edit: splice(edit, from, mods.line ? chars.length : mods.word ? wordStop(chars, from, 1) : from + 1, '') };
+  }
+  if (mods.mod) return { edit: key.toLowerCase() === 'a' ? { ...edit, anchor: 0, caret: chars.length } : edit };
   if (Array.from(key).length === 1) return { edit: splice(edit, from, end, key) };
   return { edit };
 }

@@ -8,7 +8,7 @@ import { DEFAULT_MENU_METRICS, drawPanel, rowAt, rowLayout, type MenuIcons, type
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
 import { caretAt, caretX, chipAt } from './valueRows';
-import { createTextEditor } from './textEdit';
+import { createTextEditor, editMods } from './textEdit';
 import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
 
@@ -143,7 +143,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
 
   const key = (evt: HudKeyEvent): boolean => {
     if (evt.type !== 'keydown') return false;
-    if (typing.key(evt.key, { shift: evt.shiftKey, mod: evt.ctrlKey || evt.metaKey, alt: evt.altKey })) return true;
+    if (typing.key(evt.key, editMods(evt))) return true;
     const level = c.stack().length - 1;
     const at = c.stack()[level];
     const row = at == null ? undefined : c.entriesAt(level)[at];
