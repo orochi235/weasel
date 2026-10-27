@@ -290,9 +290,9 @@ export function cachedLayoutRuns(
 export function dropRuns(runs: readonly ResolvedRun[]): void {
   const entry = cache.get(runs);
   forgetPaintRuns(runs);
-  if (entry === undefined) return;
-  cache.delete(runs);
-  disown(entry.variants);
+  // Emptied rather than deleted: deleting from a WeakMap shrinks its table,
+  // and a readout's next runs grow it straight back, every frame.
+  if (entry !== undefined) disown(entry.variants);
 }
 
 function structuralLayout(

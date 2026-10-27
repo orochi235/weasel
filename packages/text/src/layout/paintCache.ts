@@ -168,8 +168,12 @@ function handOut(p: Painting, use: CacheUse): PaintedRuns {
 /** Forget the painting held for `runs`, which `dropRuns` was told will not be
  *  drawn again. */
 export function forgetPaintRuns(runs: readonly ResolvedRun[]): void {
-  own.delete(runs);
+  // Pointed at no layout rather than deleted, as `dropRuns` empties its entry.
+  const mine = own.get(runs);
+  if (mine !== undefined) mine.laid = NO_LAYOUT;
 }
+
+const NO_LAYOUT: LaidOutRuns = { lines: [], bounds: { width: 0, height: 0 } };
 
 /** Drop every painting of `laid`, which no caller can reach any more, giving
  *  the quad arrays of those no caller kept back to the pool. */
