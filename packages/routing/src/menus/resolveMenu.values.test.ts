@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
+import type { MenuColorEntry, MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { percent } from '@weasel-js/quantity';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
@@ -84,7 +84,21 @@ describe('resolveSchemaMenu: number leaves', () => {
 });
 
 describe('resolveSchemaMenu: color and string leaves', () => {
-  it('draws a color as a row showing it, readout or not', () => {
+  it('draws a color as a row that writes it, offering opacity when the leaf has alpha', () => {
+    const src = valued({ fill: '#336699' });
+    const e = only(resolveSchemaMenu(menu({ fill: pref.color('Fill', '#000000', { alpha: true }) }), src));
+    expect(e).toMatchObject({ kind: 'color', key: 'fill', label: 'Fill', value: '#336699', alpha: true });
+    (e as MenuColorEntry).set!('#ff000080');
+    expect(src.onChange).toHaveBeenCalledWith('fill', '#ff000080');
+  });
+
+  it('draws a color read-only when it is a readout', () => {
+    const e = only(resolveSchemaMenu(menu({ fill: pref.color('Fill', '', { readout: true }) }), valued({ fill: '#336699' })));
+    expect(e).toMatchObject({ kind: 'color', value: '#336699' });
+    expect(e).not.toHaveProperty('set');
+  });
+
+  it('draws a color as a row showing it, readout or not, when nothing writes it', () => {
     const es = resolveSchemaMenu(menu({
       picked: pref.color('Color', '', { readout: true }),
       fill: pref.color('Fill', '#000000'),

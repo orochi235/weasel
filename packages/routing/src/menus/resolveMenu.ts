@@ -188,10 +188,17 @@ const textAt = (ctx: Ctx, path: string): string | undefined => {
   return typeof v === 'string' && v !== '' ? v : undefined;
 };
 
-/** A color row: read-only, whether or not the leaf is a readout. */
+/** A color row, which writes the color unless the leaf is a readout or nothing writes it. */
 function colorRows(ctx: Ctx, leaf: PrefColor, key: string, path: string, off: boolean): MenuEntry[] {
-  if (!ctx.src.values) return [];
-  return [{ kind: 'color', key, label: leaf.name, ...withAccess(leaf.access), ...(off ? { disabled: true } : {}), value: textAt(ctx, path) }];
+  const { values, onChange } = ctx.src;
+  if (!values) return [];
+  return [{
+    kind: 'color', key, label: leaf.name, ...withAccess(leaf.access),
+    ...(off ? { disabled: true } : {}),
+    value: textAt(ctx, path),
+    ...(leaf.alpha ? { alpha: true } : {}),
+    ...(leaf.readout || !onChange ? {} : { set: (color: string) => onChange(path, color) }),
+  }];
 }
 
 /** A string row is edited in place; a readout, or one nothing writes, reads as its name and value, as an enum readout does. */
@@ -281,8 +288,8 @@ function tidy(entries: MenuEntry[]): MenuEntry[] {
  * Draw a prefs schema as menu entries. Action leaves become items from the
  * registry (one per variant for a parametric action), an `actions` leaf one
  * item per action in its group, a boolean a checked item, an enum radio
- * rows, and a number and a string a row edited in place (all through `src.values`/`src.onChange`);
- * a color shows as a swatch, read-only, and so does a string as a disabled row when it is a readout
+ * rows, and a number, a string and a color a row edited in place (all through `src.values`/`src.onChange`);
+ * a color shows read-only, and a string as a disabled row, when it is a readout
  * or nothing writes it. A group drawn `as` a
  * `menu`, `page`, `tab`, or `panel` is a submenu, and any other group's rows
  * sit inline between separators. Paint, field, compound, and app-defined leaves are left out.

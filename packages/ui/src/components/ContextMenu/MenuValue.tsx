@@ -1,10 +1,9 @@
 import { useRef, useState, useSyncExternalStore } from 'react';
 import {
-  menuNumberDisplay, type MenuColorEntry, type MenuController, type MenuNumberEntry, type MenuTextEntry,
+  menuNumberDisplay, type MenuController, type MenuNumberEntry, type MenuTextEntry,
 } from '@weasel-js/menu';
 import { Input } from '../Input';
 import { UnitField } from '../NumberField/UnitField';
-import { Swatch } from '../Properties/PropertyReadout';
 import s from './ContextMenu.module.css';
 
 /** The id of the field inside number or text row `rowId`, which the panel focuses on Enter. */
@@ -36,12 +35,6 @@ export function MenuNumberValue({ entry: e, rowId, controller: c }: {
       {e.suffix !== undefined && (value === undefined || Number.isFinite(value)) && <span className={s.unit}>{e.suffix}</span>}
     </span>
   );
-}
-
-/** A color row's swatch and hex, or a dash for none. */
-export function MenuColorValue({ entry: e }: { entry: MenuColorEntry }) {
-  if (e.value === undefined) return <span className={`${s.value} ${s.unit}`}>—</span>;
-  return <span className={s.value}><Swatch color={e.value} />{e.value}</span>;
 }
 
 /** A text row's field, edited in place: what is typed is written on Enter or blur, and Escape puts back what the

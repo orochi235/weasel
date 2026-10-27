@@ -82,15 +82,20 @@ export interface MenuNumberEntry {
   set(value: number): void;
 }
 
-/** A row showing a color. Nothing edits it from the menu. */
+/** A row showing a color, edited from the menu when it has a `set`: the menu stays open while it changes. Its
+ *  controller's `colorValue` is what it holds now. A renderer with no color picker draws it read-only. */
 export interface MenuColorEntry {
   kind: 'color';
   key: string;
   label: string;
   disabled?: boolean;
   access?: string;
-  /** A CSS color, `#rrggbb` or `#rrggbbaa`. `undefined` for none. */
+  /** What it held when the menu opened, a CSS color: `#rrggbb` or `#rrggbbaa`. `undefined` for none. */
   value: string | undefined;
+  /** Offer opacity, and write `#rrggbbaa`. */
+  alpha?: boolean;
+  /** Absent, the row is read-only. */
+  set?(value: string): void;
 }
 
 /** A row holding a line of text that is edited in place: the menu stays open while it changes. Its

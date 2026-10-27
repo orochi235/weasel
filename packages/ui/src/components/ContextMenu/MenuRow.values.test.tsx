@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import type { MenuColorEntry, MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import { percent } from '@weasel-js/quantity';
 import { OpenPanels } from './ContextMenuHost';
 
@@ -100,7 +100,69 @@ describe('a number row in a DOM menu', () => {
 });
 
 describe('a color row in a DOM menu', () => {
-  it('is a disabled menu item showing a swatch and the hex', () => {
+  function openColor(extra: Partial<MenuColorEntry> = {}) {
+    const set = vi.fn();
+    const close = vi.fn();
+    const entries: MenuEntry[] = [
+      { kind: 'item', key: 'cut', label: 'Cut', run: () => {} },
+      { kind: 'color', key: 'fill', label: 'Fill', value: '#336699', set, ...extra },
+    ];
+    render(<OpenPanels open={{ seq: 1, entries, client: { x: 0, y: 0 }, source: 'keyboard' }} close={close} />);
+    return { set, close, menu: screen.getByRole('menu'), row: screen.getByRole('menuitem', { name: /^Fill/ }) };
+  }
+  const picker = () => screen.queryByRole('dialog', { name: 'Fill color' });
+  const swatchInput = () => screen.getByLabelText('Fill', { selector: 'input[type="color"]' });
+
+  it('opens the color field in a popover when pressed, and writes what it commits without closing', () => {
+    const { set, close, row } = openColor();
+    expect(row).not.toHaveAttribute('aria-disabled');
+    expect(row).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(picker()).toBeNull();
+    fireEvent.click(row);
+    expect(picker()).not.toBeNull();
+    expect(row).toHaveAttribute('aria-expanded', 'true');
+    act(() => {
+      fireEvent.pointerDown(swatchInput());
+      fireEvent.input(swatchInput(), { target: { value: '#ff0000' } });
+      fireEvent.change(swatchInput());
+    });
+    expect(set).toHaveBeenCalledExactlyOnceWith('#ff0000');
+    expect(row.textContent).toContain('#ff0000');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('opens on Enter while highlighted, and Escape closes only the popover', () => {
+    const { close, menu, row } = openColor();
+    key(menu, 'ArrowDown');
+    expect(menu.getAttribute('aria-activedescendant')).toBe(row.id);
+    key(menu, 'Enter');
+    expect(picker()).not.toBeNull();
+    key(swatchInput(), 'Escape');
+    expect(picker()).toBeNull();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('offers opacity when the entry has alpha', () => {
+    const { row } = openColor({ alpha: true });
+    fireEvent.click(row);
+    expect(within(picker()!).getByRole('slider')).toBeInTheDocument();
+  });
+
+  it('stays open when the window blurs while its color input has focus', () => {
+    const { close, row } = openColor();
+    fireEvent.click(row);
+    act(() => { swatchInput().focus(); });
+    act(() => { window.dispatchEvent(new Event('blur')); });
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('opens nothing while disabled', () => {
+    const { row } = openColor({ disabled: true });
+    fireEvent.click(row);
+    expect(picker()).toBeNull();
+  });
+
+  it('is a disabled menu item showing a swatch and the hex when it has no set', () => {
     const { close } = open();
     const row = screen.getByRole('menuitem', { name: /^Color\s*#336699$/ });
     expect(row).toHaveAttribute('aria-disabled', 'true');
