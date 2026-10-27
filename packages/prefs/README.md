@@ -107,6 +107,20 @@ is what a transition between two options shows on the way:
 store.get('gap', { weights: { 'look.mode': { dark: 0.25, light: 0.75 } } });
 ```
 
+`prefWeightAxes` lays weights out as numbers, the `axes` an `@weasel-js/animator` target takes, so an
+animation carries the read from one option to the other. `applyTheme`'s `weights` have the same shape:
+
+```ts
+let weights: PrefWeights = { 'look.mode': { dark: 1, light: 0 } };
+const target = createTarget({
+  get: () => weights,
+  set: (next) => { weights = next; },
+  axes: prefWeightAxes({ 'look.mode': ['dark', 'light'] }),
+  show: (now) => draw(store.get('gap', { weights: now })),
+});
+animator.tween({ target, to: { 'look.mode': { dark: 0, light: 1 } }, ms: 300 });
+```
+
 A number blends linearly and a color blends in OKLCH. Every other kind takes
 its heaviest alternative, the first option on a tie; `blends` in the open
 options says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })`
