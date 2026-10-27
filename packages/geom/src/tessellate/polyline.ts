@@ -29,9 +29,10 @@ export interface Polyline {
 /** Options for `extractPolylines`. */
 export interface ExtractOptions {
   flattenTolerance?: number;
-  /** Most a curve may turn, in radians, between two flattened vertices.
-   *  Unbounded when unset. */
-  maxTurn?: number;
+  /** How far out from the path its outermost edge sits, as a stroke's half
+   *  width does. Flattening keeps that edge within `flattenTolerance` of the
+   *  true one too. Unset, only the path itself is. */
+  offset?: number;
 }
 
 /** Flatten each contour of a path to a straight-segment polyline, carrying the
@@ -155,7 +156,7 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
           prevX, prevY,
           coords[coordIdx], coords[coordIdx + 1],
           coords[coordIdx + 2], coords[coordIdx + 3],
-          tolerance, pts!, arcAccum, opts.maxTurn,
+          tolerance, pts!, arcAccum, opts.offset,
         );
         pushCurveAnchors(segStart, arcAccum, total, target);
         prevAnchor = target;
@@ -171,7 +172,7 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
           coords[coordIdx], coords[coordIdx + 1],
           coords[coordIdx + 2], coords[coordIdx + 3],
           coords[coordIdx + 4], coords[coordIdx + 5],
-          tolerance, pts!, arcAccum, opts.maxTurn,
+          tolerance, pts!, arcAccum, opts.offset,
         );
         pushCurveAnchors(segStart, arcAccum, total, target);
         prevAnchor = target;

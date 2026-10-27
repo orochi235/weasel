@@ -17,13 +17,20 @@ const vertexCount = (width: number) =>
 
 describe('stroke flattening', () => {
   it('flattens a thick stroke more finely than a thin one', () => {
-    expect(vertexCount(12)).toBeGreaterThan(vertexCount(1) * 1.5);
+    expect(vertexCount(12)).toBeGreaterThan(vertexCount(1));
   });
 
-  it('bounds the turn only once half the width passes the tolerance', () => {
-    expect(strokeFlattening(0.5, 1).maxTurn).toBeUndefined();
-    expect(strokeFlattening(0.5, 1.2).maxTurn).toBeGreaterThan(0);
-    expect(strokeFlattening(0.5, 1, [1, 4]).maxTurn).toBeGreaterThan(0);
+  it('holds the edges to the tolerance only once half the widest width passes it', () => {
+    expect(strokeFlattening(0.5, 1).offset).toBeUndefined();
+    expect(strokeFlattening(0.5, 1.2).offset).toBe(0.6);
+    expect(strokeFlattening(0.5, 1, [1, 4]).offset).toBe(2);
+  });
+
+  it('flattens gentle bends on the fill\'s vertices even when the stroke is thick', () => {
+    let d = 'M0 0';
+    for (let i = 0; i < 64; i++) d += `C${i * 3 + 1} 0.3 ${i * 3 + 2} 0.3 ${i * 3 + 3} 0`;
+    const waves = pathFromD(d);
+    expect(extractPolylines(waves, strokeFlattening(0.5, 4))).toEqual(extractPolylines(waves));
   });
 
   it('flattens a thin stroke on the same vertices as its fill', () => {

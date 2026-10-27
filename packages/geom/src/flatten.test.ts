@@ -67,11 +67,11 @@ describe('flattenCubic', () => {
   // The closing curve of a shape whose thick stroke showed facets at this
   // bend: its second control point sits on its end, and the distance test
   // alone stepped round the bend 43° at a time.
-  it('turns at most twice maxTurn at any vertex through a tight bend', () => {
+  const bend = (offset: number) => {
     const out = [330.058868, 433.518829];
     flattenCubicWithArcLen(
       330.058868, 433.518829, 229.857391, 287.381653, 288.02124, 332.57312, 288.02124, 332.57312,
-      0.5, out, [], Math.PI / 18,
+      0.5, out, [], offset,
     );
     let worst = 0;
     for (let i = 2; i + 2 < out.length; i += 2) {
@@ -79,7 +79,22 @@ describe('flattenCubic', () => {
       const b = Math.atan2(out[i + 3] - out[i + 1], out[i + 2] - out[i]);
       worst = Math.max(worst, Math.abs(Math.atan2(Math.sin(b - a), Math.cos(b - a))));
     }
-    expect(worst * 180 / Math.PI).toBeLessThanOrEqual(20);
+    return worst * 180 / Math.PI;
+  };
+
+  it('turns less at each vertex the farther out the edges it keeps in tolerance', () => {
+    expect(bend(0)).toBeGreaterThan(40);
+    expect(bend(6)).toBeLessThan(bend(0));
+    expect(bend(20)).toBeLessThan(bend(6));
+    expect(bend(100)).toBeLessThanOrEqual(10);
+  });
+
+  it('adds no vertices where edges that far out are already in tolerance', () => {
+    const plain: number[] = [];
+    const edged: number[] = [];
+    flattenCubicWithArcLen(0, 0, 1, 0.3, 2, 0.3, 3, 0, 0.5, plain, []);
+    flattenCubicWithArcLen(0, 0, 1, 0.3, 2, 0.3, 3, 0, 0.5, edged, [], 2);
+    expect(edged).toEqual(plain);
   });
 });
 

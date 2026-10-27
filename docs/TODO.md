@@ -274,13 +274,10 @@ Owner tags, after the priority (2026-10-26):
   against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
   paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`).
 
-- **(P3) [agent] A thick stroke's 10° flattening cap subdivides wiggles smaller than the stroke is wide.**
-  2026-10-14's ab9ea7afa caps a thick stroke's flattening at 10° of turn per vertex, so the 4-wide benchmark
-  stroke flattens to 1258 points where the fill takes 474, and the 512-curve case spends 10034 points:
-  `tessellateStroke` takes 1.50 ms at 64 curves and 12.56 ms at 512, against 0.48 and 1.65 before (studio,
-  2026-10-27, `tests/perf/recorded/tessellate-bench-2026-10-21/studio/`). Decide whether the cap should still
-  apply below the stroke's width. The same run, now the `BASELINE.md` rows, has the mesh cache's hit at 209 ns
-  against 42 ns at the 2026-09-29 baseline, which neither deliberate cost explains; not bisected.
+- **(P3) [agent] The mesh cache's hit got five times slower between 2026-09-29 and 2026-10-27.** `getMesh hit` in
+  `tests/perf/bench/BASELINE.md` reads 209 ns, against 42 ns at the 2026-09-29 baseline (studio, both;
+  `tests/perf/recorded/tessellate-bench-2026-10-21/studio/`). The deliberate tessellation costs since then are in the
+  miss path, not the hit, so they do not explain it. Not bisected.
 
 ---
 

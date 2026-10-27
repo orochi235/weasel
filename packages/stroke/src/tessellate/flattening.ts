@@ -3,15 +3,13 @@ import type { VertexWidth } from '@weasel-js/paint';
 import type { ExtractOptions } from '@weasel-js/geom/tessellate';
 import { widestStrokeWidth } from './vertexWidths';
 
-/** Most a thick stroke's centerline turns between flattened vertices: 10°. */
-const STROKE_MAX_TURN = Math.PI / 18;
-
 /**
  * How a stroke flattens its path. Every flattened vertex is a join on edges
- * half a width out, so a bend the distance tolerance passes in 40° steps reads
- * as facets once the stroke is thick. A stroke no wider than twice the
- * tolerance keeps the fill's vertices exactly: finer ones could leave a gap
- * between its inner edge and the fill's chords, which a wider one covers.
+ * half a width out, so the edges are held to the tolerance as well as the
+ * path: a bend the path's tolerance passes in 40° steps reads as facets once
+ * the stroke is thick. A stroke no wider than twice the tolerance keeps the
+ * fill's vertices exactly: finer ones could leave a gap between its inner edge
+ * and the fill's chords, which a wider one covers.
  */
 export function strokeFlattening(
   flattenTolerance: number | undefined,
@@ -20,5 +18,5 @@ export function strokeFlattening(
 ): ExtractOptions {
   const tolerance = flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE;
   const widest = widestStrokeWidth(width, vertexWidths);
-  return widest / 2 > tolerance ? { flattenTolerance, maxTurn: STROKE_MAX_TURN } : { flattenTolerance };
+  return widest / 2 > tolerance ? { flattenTolerance, offset: widest / 2 } : { flattenTolerance };
 }

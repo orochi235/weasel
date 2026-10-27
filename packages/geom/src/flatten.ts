@@ -53,19 +53,22 @@ function distPointToSegment(px: number, py: number, ax: number, ay: number, bx: 
   return Math.abs((px - ax) * dy - (py - ay) * dx) / Math.sqrt(len2);
 }
 
-/** Whether a control polygon turns `maxTurn` radians or less in all, skipping
- *  zero-length legs. Its turn bounds the turn of the curve it controls, so it
- *  bounds the corner a chord standing in for that curve can leave. */
-function turnsWithin(
+/** Whether edges `offset` out from a curve stay within `tolerance` of the true
+ *  ones when a chord stands in for it. An edge sits on a circle `offset` wider
+ *  than the curve's, so it strays by that radius times `1 - cos(turn / 2)`; the
+ *  control polygon bounds the turn, and its length over the turn the radius. */
+function edgesWithin(
   x0: number, y0: number, x1: number, y1: number,
   x2: number, y2: number, x3: number, y3: number,
-  maxTurn: number,
+  offset: number, tolerance: number,
 ): boolean {
-  let turn = legTurn(x1 - x0, y1 - y0, x2 - x1, y2 - y1);
-  if (turn > maxTurn) return false;
-  turn += legTurn(x2 - x1, y2 - y1, x3 - x2, y3 - y2);
+  let turn = legTurn(x1 - x0, y1 - y0, x2 - x1, y2 - y1)
+    + legTurn(x2 - x1, y2 - y1, x3 - x2, y3 - y2);
   if (x2 === x1 && y2 === y1) turn += legTurn(x1 - x0, y1 - y0, x3 - x2, y3 - y2);
-  return turn <= maxTurn;
+  if (turn === 0) return true;
+  if (turn >= Math.PI) return false;
+  const length = Math.hypot(x1 - x0, y1 - y0) + Math.hypot(x2 - x1, y2 - y1) + Math.hypot(x3 - x2, y3 - y2);
+  return (length / turn + offset) * (1 - Math.cos(turn / 2)) <= tolerance;
 }
 
 /** Angle between two legs; zero when either has no length. */
@@ -160,8 +163,8 @@ function flattenQuadraticRec(
  * Like `flattenCubic` but also appends to `arcOut`, for each new flattened
  * point, its *cumulative distance from the segment start* — not a normalized
  * fraction. The caller divides each by the segment's total flattened arc
- * length to yield t ∈ (0, 1]. `maxTurn`, in radians, also bounds how far each
- * piece's control polygon may turn.
+ * length to yield t ∈ (0, 1]. With `offset`, each piece is also fine enough
+ * that edges that far out from it stay within the tolerance.
  */
 export function flattenCubicWithArcLen(
   x0: number, y0: number,
@@ -171,14 +174,14 @@ export function flattenCubicWithArcLen(
   tolerance: number,
   out: number[],
   arcOut: number[],
-  maxTurn = Infinity,
+  offset = 0,
 ): number {
   if (!finite8(x0, y0, x1, y1, x2, y2, x3, y3)) {
     out.push(x3, y3);
     arcOut.push(0);
     return 0;
   }
-  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, usableTolerance(tolerance), maxTurn, out, arcOut, 0, 0);
+  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, usableTolerance(tolerance), offset, out, arcOut, 0, 0);
 }
 
 function flattenCubicArcRec(
@@ -187,7 +190,7 @@ function flattenCubicArcRec(
   x2: number, y2: number,
   x3: number, y3: number,
   tolerance: number,
-  maxTurn: number,
+  offset: number,
   out: number[],
   arcOut: number[],
   accum: number,
@@ -196,7 +199,7 @@ function flattenCubicArcRec(
   const d1 = distPointToSegment(x1, y1, x0, y0, x3, y3);
   const d2 = distPointToSegment(x2, y2, x0, y0, x3, y3);
   const flat = Math.max(d1, d2) <= tolerance
-    && (maxTurn === Infinity || turnsWithin(x0, y0, x1, y1, x2, y2, x3, y3, maxTurn));
+    && (offset === 0 || edgesWithin(x0, y0, x1, y1, x2, y2, x3, y3, offset, tolerance));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
     const lastX = out.length >= 2 ? out[out.length - 2] : x0;
     const lastY = out.length >= 2 ? out[out.length - 1] : y0;
@@ -212,8 +215,8 @@ function flattenCubicArcRec(
   const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
   const x123 = (x12 + x23) * 0.5, y123 = (y12 + y23) * 0.5;
   const x0123 = (x012 + x123) * 0.5, y0123 = (y012 + y123) * 0.5;
-  accum = flattenCubicArcRec(x0, y0, x01, y01, x012, y012, x0123, y0123, tolerance, maxTurn, out, arcOut, accum, depth + 1);
-  accum = flattenCubicArcRec(x0123, y0123, x123, y123, x23, y23, x3, y3, tolerance, maxTurn, out, arcOut, accum, depth + 1);
+  accum = flattenCubicArcRec(x0, y0, x01, y01, x012, y012, x0123, y0123, tolerance, offset, out, arcOut, accum, depth + 1);
+  accum = flattenCubicArcRec(x0123, y0123, x123, y123, x23, y23, x3, y3, tolerance, offset, out, arcOut, accum, depth + 1);
   return accum;
 }
 
@@ -228,14 +231,14 @@ export function flattenQuadraticWithArcLen(
   tolerance: number,
   out: number[],
   arcOut: number[],
-  maxTurn = Infinity,
+  offset = 0,
 ): number {
   if (!finite6(x0, y0, x1, y1, x2, y2)) {
     out.push(x2, y2);
     arcOut.push(0);
     return 0;
   }
-  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, usableTolerance(tolerance), maxTurn, out, arcOut, 0, 0);
+  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, usableTolerance(tolerance), offset, out, arcOut, 0, 0);
 }
 
 function flattenQuadraticArcRec(
@@ -243,7 +246,7 @@ function flattenQuadraticArcRec(
   x1: number, y1: number,
   x2: number, y2: number,
   tolerance: number,
-  maxTurn: number,
+  offset: number,
   out: number[],
   arcOut: number[],
   accum: number,
@@ -251,7 +254,7 @@ function flattenQuadraticArcRec(
 ): number {
   const d = distPointToSegment(x1, y1, x0, y0, x2, y2);
   const flat = d <= tolerance
-    && (maxTurn === Infinity || turnsWithin(x0, y0, x1, y1, x2, y2, x2, y2, maxTurn));
+    && (offset === 0 || edgesWithin(x0, y0, x1, y1, x2, y2, x2, y2, offset, tolerance));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
     const lastX = out.length >= 2 ? out[out.length - 2] : x0;
     const lastY = out.length >= 2 ? out[out.length - 1] : y0;
@@ -264,8 +267,8 @@ function flattenQuadraticArcRec(
   const x01 = (x0 + x1) * 0.5, y01 = (y0 + y1) * 0.5;
   const x12 = (x1 + x2) * 0.5, y12 = (y1 + y2) * 0.5;
   const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
-  accum = flattenQuadraticArcRec(x0, y0, x01, y01, x012, y012, tolerance, maxTurn, out, arcOut, accum, depth + 1);
-  accum = flattenQuadraticArcRec(x012, y012, x12, y12, x2, y2, tolerance, maxTurn, out, arcOut, accum, depth + 1);
+  accum = flattenQuadraticArcRec(x0, y0, x01, y01, x012, y012, tolerance, offset, out, arcOut, accum, depth + 1);
+  accum = flattenQuadraticArcRec(x012, y012, x12, y12, x2, y2, tolerance, offset, out, arcOut, accum, depth + 1);
   return accum;
 }
 
