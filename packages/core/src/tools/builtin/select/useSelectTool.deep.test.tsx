@@ -42,7 +42,7 @@ function harness(
     const sel = useSelection({ mode: 'multi' });
     const adapter = sceneToAdapter(scene, { selection: sel });
     const options = scenePicking
-      ? { pickEvery: (x: number, y: number) => pickWalk(scenePickSource(scene), adapterPointQuery(AUTO_POSE_DESCRIPTOR, false)(x, y, 0)) }
+      ? { pickEvery: ({ x, y }: { x: number; y: number }) => pickWalk(scenePickSource(scene), adapterPointQuery(AUTO_POSE_DESCRIPTOR, false)(x, y, 0)) }
       : {};
     return { tool: useSelectTool(adapter as never, options as never), sel };
   });

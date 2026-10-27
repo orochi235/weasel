@@ -35,42 +35,42 @@ const tester = nestedHitTester(adapter, {
 
 describe('nestedHitTester', () => {
   it('pickOutermost returns outermost ancestor for a leaf hit', () => {
-    expect(tester.pickOutermost(60, 60)).toBe('g1'); // hits leaf 'a', resolves to g1
-    expect(tester.pickOutermost(140, 100)).toBe('g1'); // hits b1 → g1 (outermost)
+    expect(tester.pickOutermost({ x: 60, y: 60 })).toBe('g1'); // hits leaf 'a', resolves to g1
+    expect(tester.pickOutermost({ x: 140, y: 100 })).toBe('g1'); // hits b1 → g1 (outermost)
   });
 
   it('pickOutermost returns null on empty space', () => {
-    expect(tester.pickOutermost(0, 0)).toBeNull();
-    expect(tester.pickOutermost(500, 500)).toBeNull();
+    expect(tester.pickOutermost({ x: 0, y: 0 })).toBeNull();
+    expect(tester.pickOutermost({ x: 500, y: 500 })).toBeNull();
   });
 
   it('pickOutermost skips group bodies (no leaf under cursor → null)', () => {
     // (45,45) is inside g1 but not inside any leaf — should miss.
-    expect(tester.pickOutermost(45, 45)).toBeNull();
+    expect(tester.pickOutermost({ x: 45, y: 45 })).toBeNull();
   });
 
   it('pickBest without alt matches pickOutermost (outermost)', () => {
-    expect(tester.pickBest(140, 100, false, [])).toBe('g1');
-    expect(tester.pickBest(140, 100, false, ['g2'])).toBe('g1');
+    expect(tester.pickBest({ x: 140, y: 100 }, false, [])).toBe('g1');
+    expect(tester.pickBest({ x: 140, y: 100 }, false, ['g2'])).toBe('g1');
   });
 
   it('pickBest with alt + empty selection drills to leaf', () => {
-    expect(tester.pickBest(140, 100, true, [])).toBe('b1');
-    expect(tester.pickBest(60, 60, true, [])).toBe('a');
+    expect(tester.pickBest({ x: 140, y: 100 }, true, [])).toBe('b1');
+    expect(tester.pickBest({ x: 60, y: 60 }, true, [])).toBe('a');
   });
 
   it('pickBest with alt steps one level deeper than deepest selected ancestor', () => {
     // chain over b1 is [g1, g2, b1]. With g1 selected → step to g2.
-    expect(tester.pickBest(140, 100, true, ['g1'])).toBe('g2');
+    expect(tester.pickBest({ x: 140, y: 100 }, true, ['g1'])).toBe('g2');
     // With g2 selected → step to b1.
-    expect(tester.pickBest(140, 100, true, ['g2'])).toBe('b1');
+    expect(tester.pickBest({ x: 140, y: 100 }, true, ['g2'])).toBe('b1');
     // With b1 selected (already deepest) → stay at b1.
-    expect(tester.pickBest(140, 100, true, ['b1'])).toBe('b1');
+    expect(tester.pickBest({ x: 140, y: 100 }, true, ['b1'])).toBe('b1');
   });
 
   it('pickBest returns null on empty space', () => {
-    expect(tester.pickBest(0, 0, false, [])).toBeNull();
-    expect(tester.pickBest(0, 0, true, ['g1'])).toBeNull();
+    expect(tester.pickBest({ x: 0, y: 0 }, false, [])).toBeNull();
+    expect(tester.pickBest({ x: 0, y: 0 }, true, ['g1'])).toBeNull();
   });
 
   it('uses the supplied pose descriptor for non-rect poses', () => {
@@ -89,7 +89,7 @@ describe('nestedHitTester', () => {
         poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
       },
     );
-    expect(t.pickOutermost(100, 100)).toBe('c');
-    expect(t.pickOutermost(150, 100)).toBeNull();
+    expect(t.pickOutermost({ x: 100, y: 100 })).toBe('c');
+    expect(t.pickOutermost({ x: 150, y: 100 })).toBeNull();
   });
 });

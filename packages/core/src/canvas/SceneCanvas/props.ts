@@ -184,7 +184,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
        *  the live alt state + current selection so consumers can implement
        *  alt-cycling through an overlapping stack. Default: top-most hit
        *  (alt ignored). */
-      pickBest?: (worldX: number, worldY: number, alt: boolean, sel: readonly string[]) => string | null;
+      pickBest?: (world: import('@weasel-js/routing').WorldPoint, alt: boolean, sel: readonly string[]) => string | null;
     };
 
     /** Consumer node factories for the `insert` action, keyed by tool `kind`.

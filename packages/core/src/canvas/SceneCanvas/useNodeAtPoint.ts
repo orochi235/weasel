@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { makeGetNodeAtPoint, type NodeAtPointHit } from '../getNodeAtPoint';
 import type { PickView } from './useSceneSelectTool';
+import type { WorldPoint } from '@weasel-js/routing';
 
-export type NodeAtPoint = (wx: number, wy: number, view?: PickView | null) => NodeAtPointHit | null;
+export type NodeAtPoint = (world: WorldPoint, view?: PickView | null) => NodeAtPointHit | null;
 
 /**
  * The node under a world point with its routing kind, resolved through the
@@ -10,7 +11,7 @@ export type NodeAtPoint = (wx: number, wy: number, view?: PickView | null) => No
  * and tool routing all name the node a click selects.
  */
 export function useNodeAtPoint<TData>(args: {
-  pickBest: ((wx: number, wy: number, view?: PickView | null) => string | null) | undefined;
+  pickBest: ((world: WorldPoint, view?: PickView | null) => string | null) | undefined;
   /** A caller's `geometry.pickEvery` can answer an id the scene does not hold. */
   nodes: { getNode(id: string): { kind: string; data: TData } | null | undefined };
   kindOf: ((node: { kind: string; data: TData }) => string) | undefined;

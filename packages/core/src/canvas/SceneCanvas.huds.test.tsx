@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import { SceneCanvas } from './SceneCanvas';
+import type { WorldPoint } from '@weasel-js/routing';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -56,7 +57,7 @@ describe('<SceneCanvas> HUDs', () => {
   });
 
   it('both readouts convert the pointer through the clientToWorld prop', async () => {
-    const pickEvery = vi.fn((_wx: number, _wy: number): string[] => []);
+    const pickEvery = vi.fn((_world: WorldPoint): string[] => []);
     const container = await mount(
       <SceneCanvas
         scene={makeScene()}
@@ -73,7 +74,7 @@ describe('<SceneCanvas> HUDs', () => {
       Object.defineProperties(ev, { clientX: { value: 0 }, clientY: { value: 0 } });
       document.dispatchEvent(ev);
     });
-    expect(pickEvery).toHaveBeenCalledWith(1000, 2000);
+    expect(pickEvery).toHaveBeenCalledWith({ x: 1000, y: 2000 });
     expect(container.textContent).toContain('(1000.0, 2000.0)');
   });
 });

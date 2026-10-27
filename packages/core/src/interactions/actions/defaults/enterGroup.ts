@@ -9,7 +9,7 @@ type Box = { x: number; y: number; width: number; height: number };
 /** What `group.enter` reads: the node under a point and the tree above it. */
 export interface EnterGroupOptions {
   /** The node under the point, before any group above it is considered. */
-  pickHit: (worldX: number, worldY: number) => string | null;
+  pickHit: (world: WorldPoint) => string | null;
   tree: PressTargetTree;
 }
 
@@ -47,7 +47,7 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
   const targetAt = (deps: ActionDeps | undefined, p: WorldPoint | undefined): string | null => {
     const entered = deps?.enteredGroup;
     if (!entered || !p) return null;
-    const hit = opts.pickHit(p.x, p.y);
+    const hit = opts.pickHit(p);
     if (hit === null) return null;
     const target = pressTarget(opts.tree, hit, entered.get());
     return (opts.tree.getNode(target) as { kind?: string } | undefined)?.kind === 'group' ? target : null;

@@ -1,6 +1,7 @@
 import { worldPoseLookup } from 'core/scene/composePose';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
+import type { WorldPoint } from '@weasel-js/routing';
 
 /** @internal */
 interface HitAdapter<TNode extends { id: string }, TPose> {
@@ -30,19 +31,14 @@ export interface NestedHitTester {
   /** Outermost-ancestor pick. Suitable as the chrome-level `pickEvery`: a
    *  casual click selects the whole top-level ancestor. Returns `null` on
    *  empty space. */
-  pickOutermost: (worldX: number, worldY: number) => string | null;
+  pickOutermost: (world: WorldPoint) => string | null;
   /** Alt-aware selection-update pick. Without `alt`, returns the outermost
    *  ancestor (same as `pickOutermost`). With `alt`, returns one level
    *  deeper than the deepest currently-selected ancestor in the leaf's
    *  chain — repeated alt-clicks step ancestor → descendant → leaf. With
    *  `alt` and nothing in the chain selected, jumps straight to the leaf.
    *  Plug into `useSelectTool({ pickBest })`. */
-  pickBest: (
-    worldX: number,
-    worldY: number,
-    alt: boolean,
-    selection: readonly string[],
-  ) => string | null;
+  pickBest: (world: WorldPoint, alt: boolean, selection: readonly string[]) => string | null;
 }
 
 /** Build hit-testers that respect containers: a plain click selects the
@@ -66,7 +62,7 @@ export function nestedHitTester<TNode extends { id: string }, TPose>(
     return chain;
   };
 
-  const hitLeaf = (wx: number, wy: number): string | null => {
+  const hitLeaf = ({ x: wx, y: wy }: WorldPoint): string | null => {
     const objs = adapter.getNodes();
     for (let i = objs.length - 1; i >= 0; i--) {
       const o = objs[i];
@@ -81,18 +77,13 @@ export function nestedHitTester<TNode extends { id: string }, TPose>(
     return null;
   };
 
-  const pickOutermost = (wx: number, wy: number): string | null => {
-    const leaf = hitLeaf(wx, wy);
+  const pickOutermost = (world: WorldPoint): string | null => {
+    const leaf = hitLeaf(world);
     return leaf === null ? null : ancestorChain(leaf)[0];
   };
 
-  const pickBest = (
-    wx: number,
-    wy: number,
-    alt: boolean,
-    selection: readonly string[],
-  ): string | null => {
-    const leaf = hitLeaf(wx, wy);
+  const pickBest = (world: WorldPoint, alt: boolean, selection: readonly string[]): string | null => {
+    const leaf = hitLeaf(world);
     if (leaf === null) return null;
     const chain = ancestorChain(leaf);
     if (!alt) return chain[0];

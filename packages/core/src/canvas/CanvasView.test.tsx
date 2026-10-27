@@ -538,7 +538,7 @@ describe('<CanvasView> hit-testing', () => {
     adapter: undefined,
     geometry: AUTO_POSE_DESCRIPTOR,
     boundsOf: (id: string) => POSES[id] ?? null,
-    pickBest: (wx: number, wy: number) => {
+    pickBest: ({ x: wx, y: wy }: { x: number; y: number }) => {
       for (const [id, b] of Object.entries(POSES)) {
         if (wx >= b.x && wx < b.x + b.width && wy >= b.y && wy < b.y + b.height) return id;
       }

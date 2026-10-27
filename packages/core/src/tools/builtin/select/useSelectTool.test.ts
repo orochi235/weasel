@@ -196,7 +196,7 @@ describe('useSelectTool', () => {
     const tool = mount({ pickEvery: () => ['leaf', 'group-1'], pickBest });
     const sel = selectionStub([]);
     press(tool, sel.api);
-    expect(pickBest).toHaveBeenCalledWith(50, 50, false, []);
+    expect(pickBest).toHaveBeenCalledWith({ x: 50, y: 50 }, false, []);
     expect(sel.applyClick).toHaveBeenCalledWith('group-1', NO_MODS);
   });
 
@@ -211,7 +211,7 @@ describe('useSelectTool', () => {
     const pickBest = vi.fn(() => 'sub');
     const tool = mount({ pickEvery: () => ['outer', 'sub'], pickBest });
     press(tool, selectionStub(['outer']).api, { mods: { alt: true } });
-    expect(pickBest).toHaveBeenCalledWith(50, 50, true, ['outer']);
+    expect(pickBest).toHaveBeenCalledWith({ x: 50, y: 50 }, true, ['outer']);
   });
 
   it('shift-press forwards the modifier to applyClick and skips the defer', () => {

@@ -8,7 +8,7 @@ import type { BodyClassification } from '@weasel-js/gestures';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { View } from 'core/viewport/view';
-import type { AffordanceHit } from '@weasel-js/routing';
+import type { AffordanceHit, WorldPoint } from '@weasel-js/routing';
 import type { Affordance, CommonAffordanceScratch, LayerHit } from 'affordances/types';
 import { hitAffordanceRegions, type AffordanceRegionHit } from 'affordances/hitAffordanceRegions';
 import { createCornerResizeAffordance } from 'affordances/cornerResize';
@@ -128,7 +128,7 @@ export function anchorStateFrom(
  */
 export function buildAffordanceAt(
   opts: BuildAffordanceAtOptions,
-): (worldPoint: { x: number; y: number }) => AffordanceHit | null {
+): (worldPoint: WorldPoint) => AffordanceHit | null {
   const { getChromeState, getView, getIsVisible } = opts;
   const affordances = opts.affordances ?? chromeAffordances(opts);
 
@@ -177,12 +177,12 @@ function toAffordanceHit(hit: AffordanceRegionHit): AffordanceHit {
  */
 export function buildClassifyTarget(
   getSelection: () => readonly string[],
-  pickBest: (wx: number, wy: number) => string | null,
+  pickBest: (world: WorldPoint) => string | null,
   kindOfNode?: (id: string) => string | undefined,
   doubleClickNames?: (hitId: string) => string,
-): (worldPoint: { x: number; y: number }) => BodyClassification {
-  return function classifyTarget({ x: wx, y: wy }) {
-    const hitId = pickBest(wx, wy);
+): (worldPoint: WorldPoint) => BodyClassification {
+  return function classifyTarget(world) {
+    const hitId = pickBest(world);
     if (!hitId) return { body: 'empty' };
     const sel = getSelection();
     const classify = (id: string) => ({

@@ -5,6 +5,7 @@
 import { useCallback, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
+import type { WorldPoint } from '@weasel-js/routing';
 import type { DebugConfig } from '../../debug/types';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { CursorCoordsHud } from '../CursorCoordsHud';
@@ -27,9 +28,9 @@ export interface DevHudsProps {
    *  pane of the shared surface sits in. */
   detachedInput: HTMLElement | null | undefined;
   viewRef: RefObject<View>;
-  pickEvery: (worldX: number, worldY: number) => readonly string[];
+  pickEvery: (world: WorldPoint) => readonly string[];
   /** The id a bare click at this point would select. */
-  pickBest: (worldX: number, worldY: number) => string | null;
+  pickBest: (world: WorldPoint) => string | null;
 }
 
 export function DevHuds(props: DevHudsProps) {
@@ -43,11 +44,11 @@ export function DevHuds(props: DevHudsProps) {
   // identity changes, so it gets two that never do.
   const pickersRef = useLatest({ pickEvery: props.pickEvery, pickBest: props.pickBest });
   const pickEvery = useCallback(
-    (wx: number, wy: number): readonly string[] => pickersRef.current.pickEvery(wx, wy),
+    (world: WorldPoint): readonly string[] => pickersRef.current.pickEvery(world),
     [pickersRef],
   );
   const pickBest = useCallback(
-    (wx: number, wy: number): string | null => pickersRef.current.pickBest(wx, wy),
+    (world: WorldPoint): string | null => pickersRef.current.pickBest(world),
     [pickersRef],
   );
 

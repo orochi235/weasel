@@ -34,23 +34,23 @@ function harness(camera: View = CAMERA) {
 describe('useSceneSelectTool — parallax layers', () => {
   it('picks a plane node where it is painted', () => {
     const r = harness();
-    expect(r.current.pickEvery(310, 10)).toEqual(['hill']);
+    expect(r.current.pickEvery({ x: 310, y: 10 })).toEqual(['hill']);
   });
 
   it('does not pick a plane node where its pose sits in the camera world', () => {
     const r = harness();
-    expect(r.current.pickEvery(10, 10)).toEqual([]);
+    expect(r.current.pickEvery({ x: 10, y: 10 })).toEqual([]);
   });
 
   it('leaves nodes on camera-locked layers where they were', () => {
     const r = harness();
-    expect(r.current.pickEvery(305, 105)).toEqual(['crate']);
+    expect(r.current.pickEvery({ x: 305, y: 105 })).toEqual(['crate']);
   });
 
   it('picks for the camera the caller names over the surface one', () => {
     const r = harness();
     // At the origin camera the plane has not moved at all.
-    expect(r.current.pickEvery(10, 10, { x: 0, y: 0, scale: { x: 1, y: 1 } })).toEqual(['hill']);
+    expect(r.current.pickEvery({ x: 10, y: 10 }, { x: 0, y: 0, scale: { x: 1, y: 1 } })).toEqual(['hill']);
   });
 
   it('reports a plane node\'s bounds in the camera world, so chrome lands on the ink', () => {
@@ -71,8 +71,8 @@ describe('useSceneSelectTool — parallax layers', () => {
       return useSceneSelectTool({ scene, adapter, getView: () => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }) });
     });
     expect(result.current.boundsOf('sun')).toEqual({ x: 0, y: 0, width: 20, height: 20 });
-    expect(result.current.pickEvery(15, 15)).toEqual(['sun']);
-    expect(result.current.pickEvery(30, 30)).toEqual([]);
+    expect(result.current.pickEvery({ x: 15, y: 15 })).toEqual(['sun']);
+    expect(result.current.pickEvery({ x: 30, y: 30 })).toEqual([]);
   });
 
   it('picks a container and its child through the plane', () => {
@@ -88,8 +88,8 @@ describe('useSceneSelectTool — parallax layers', () => {
       return useSceneSelectTool({ scene, adapter, getView: () => ({ x: 100, y: 0, scale: { x: 1, y: 1 } }) });
     });
     // The plane has moved 130 to the camera's 100: the trunk paints at 380..390.
-    expect(result.current.pickEvery(385, 340)).toEqual(['tree', 'trunk']);
-    expect(result.current.pickEvery(415, 340)).toEqual([]);
+    expect(result.current.pickEvery({ x: 385, y: 340 })).toEqual(['tree', 'trunk']);
+    expect(result.current.pickEvery({ x: 415, y: 340 })).toEqual([]);
     expect(result.current.boundsOf('tree')).toEqual({ x: 370, y: 300, width: 30, height: 50 });
   });
 });
@@ -111,8 +111,8 @@ describe('useSceneSelectTool — a container and its child on different planes',
       return useSceneSelectTool({ scene, adapter, getView: () => ZOOMED, geometry: { pickTolerancePx: 0 } });
     });
     // The kid paints over camera 0..100, the box's clip over 0..50.
-    expect(result.current.pickEvery(40, 40)).toEqual(['box', 'kid']);
-    expect(result.current.pickEvery(70, 70)).toEqual([]);
+    expect(result.current.pickEvery({ x: 40, y: 40 })).toEqual(['box', 'kid']);
+    expect(result.current.pickEvery({ x: 70, y: 70 })).toEqual([]);
   });
 });
 

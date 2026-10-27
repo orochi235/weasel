@@ -225,14 +225,14 @@ export function CanvasView(props: CanvasViewProps): null {
 
   const classifyTarget = useMemo(() => buildClassifyTarget(
     () => selectionNow().get(),
-    (wx, wy) => {
+    (world) => {
       const i = inputsRef.current;
       // This view's camera: the dispatcher converted with `clientToWorldHere`,
       // and a screen-pixel tolerance needs the scale that produced it. The
       // layer gate is this view's too, never the surface's.
       const frame = { ...camera(), layerIsPainted };
-      if (i?.pickBest) return i.pickBest(wx, wy, frame);
-      const ids = i?.pickEvery?.(wx, wy, frame) ?? [];
+      if (i?.pickBest) return i.pickBest(world, frame);
+      const ids = i?.pickEvery?.(world, frame) ?? [];
       return ids.length > 0 ? ids[ids.length - 1]! : null;
     },
     (id) => inputsRef.current?.kindOfNode?.(id),

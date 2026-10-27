@@ -48,7 +48,7 @@ describe('doubleClickTarget', () => {
 });
 
 describe('buildClassifyTarget — what a double-click names', () => {
-  const pickBest = (wx: number) => (wx < 50 ? 'leaf' : wx < 100 ? 'bare' : null);
+  const pickBest = ({ x: wx }: { x: number }) => (wx < 50 ? 'leaf' : wx < 100 ? 'bare' : null);
   const classify = buildClassifyTarget(
     () => ['outer'], pickBest, (id) => KIND[id], (id) => doubleClickTarget(id, tree()),
   );

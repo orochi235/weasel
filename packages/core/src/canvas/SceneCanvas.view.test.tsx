@@ -302,7 +302,7 @@ describe('SceneCanvas view read during the first commit', () => {
       useEffect(() => {
         seen.dep = registry.get('view')?.get();
         seen.camera = apiRef.current?.camera.target.read();
-        seen.picked = inputs?.pickEvery?.(NEAR.x, NEAR.y);
+        seen.picked = inputs?.pickEvery?.(NEAR);
       // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
       return null;

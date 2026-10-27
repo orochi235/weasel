@@ -40,9 +40,9 @@ describe('pick tolerance converts against the camera the point came from', () =>
     });
 
     // 2 world units past the right edge.
-    expect(result.current.pickEvery(12, 5)).toHaveLength(1);
+    expect(result.current.pickEvery({ x: 12, y: 5 })).toHaveLength(1);
     // The same point through a 8× camera: the slop is 0.5 world units, so it misses.
-    expect(result.current.pickEvery(12, 5, { scale: { x: 8, y: 8 } })).toHaveLength(0);
+    expect(result.current.pickEvery({ x: 12, y: 5 }, { scale: { x: 8, y: 8 } })).toHaveLength(0);
   });
 
   it('a view hit-tests against its own camera', () => {
@@ -58,7 +58,7 @@ describe('pick tolerance converts against the camera the point came from', () =>
       geometry: AUTO_POSE_DESCRIPTOR as never,
       boundsOf: undefined,
       selectionApi: { current: [], get: () => [], set: () => {} } as never,
-      pickBest: (_wx: number, _wy: number, view?: { scale: { x: number; y: number } } | null) => {
+      pickBest: (_world: unknown, view?: { scale: { x: number; y: number } } | null) => {
         seen.push(view);
         return null;
       },

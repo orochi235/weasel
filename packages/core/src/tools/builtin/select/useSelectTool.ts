@@ -7,7 +7,7 @@ import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../../overlayBinding';
-import type { Action } from '@weasel-js/routing';
+import type { Action, WorldPoint } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { pressTarget } from '../pressTarget';
@@ -27,20 +27,15 @@ export { MULTI_RESIZE_TARGET_ID };
 /** Options for `useSelectTool`: how a point resolves to nodes, how a click
  *  chooses among them, and the appearance of the marquee. */
 export interface UseSelectToolOptions<TPose> {
-  /** Return ids of all objects whose painted body covers (worldX, worldY).
+  /** Return ids of all objects whose painted body covers `world`.
    *  Order doesn't matter — the tool collapses parent/child overlap via
    *  `pickTopMostHit`. When omitted, defaults to an AABB-vs-point walk of
    *  the adapter's tree using the pose descriptor. Override for tighter
    *  shapes (path / polygon hit-tests). */
-  pickEvery?: (worldX: number, worldY: number) => string[];
+  pickEvery?: (world: WorldPoint) => string[];
   /** Optional alt-aware selection-update hit returning the single id the
    *  click should act on. */
-  pickBest?: (
-    worldX: number,
-    worldY: number,
-    alt: boolean,
-    selection: readonly string[],
-  ) => string | null;
+  pickBest?: (world: WorldPoint, alt: boolean, selection: readonly string[]) => string | null;
   /** How to read poses for the default `pickEvery`. Default
    *  `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
@@ -150,14 +145,14 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   const d = (options.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const preciseLeaves = options.leafPicking === 'silhouette';
   const tolerance = options.pickTolerance ?? 0;
-  const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
+  const pickEveryFn = options.pickEvery ?? ((world: WorldPoint): string[] => {
     const camera = options.getView?.() ?? null;
     const planeOf = camera ? scenePlaneOf(adapter.getLayers?.(), camera) : null;
     return pickWalk<TPose>(adapterPickSource(adapter, {
       ...(options.alphaOf ? { alphaOf: options.alphaOf } : {}),
       ...(options.layerIsPainted ? { layerIsPainted: options.layerIsPainted } : {}),
       ...(planeOf ? { planeOf } : {}),
-    }), adapterPointQuery(d, preciseLeaves)(worldX, worldY, tolerance));
+    }), adapterPointQuery(d, preciseLeaves)(world.x, world.y, tolerance));
   });
 
   const pickEveryRef = useLatest(pickEveryFn);
@@ -172,12 +167,10 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   const adapterRef = useLatest(adapter);
 
   // The node under a point, before any group above it is considered.
-  const pickHit = useCallback((
-    worldX: number, worldY: number, alt: boolean, sel: readonly string[],
-  ): string | null => {
+  const pickHit = useCallback((world: WorldPoint, alt: boolean, sel: readonly string[]): string | null => {
     const opts = optionsRef.current;
-    if (opts.pickBest) return opts.pickBest(worldX, worldY, alt, sel);
-    const ids = pickEveryRef.current(worldX, worldY);
+    if (opts.pickBest) return opts.pickBest(world, alt, sel);
+    const ids = pickEveryRef.current(world);
     if (ids.length === 0) return null;
     return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
   }, [optionsRef, pickEveryRef, adapterRef]);
@@ -216,7 +209,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const opts = optionsRef.current;
 
         const sel = selection.get();
-        const hit = pickHit(p.worldX, p.worldY, mods.alt, sel);
+        const hit = pickHit({ x: p.worldX, y: p.worldY }, mods.alt, sel);
 
         if (hit === null) {
           pressRef.current = { deferredClickId: null };

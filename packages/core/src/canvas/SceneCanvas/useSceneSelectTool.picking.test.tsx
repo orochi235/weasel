@@ -55,7 +55,7 @@ function harness(picking?: 'pose' | 'shape', settings?: KitSettingsOverrides) {
       ...(picking ? { geometry: { picking } } : {}),
     });
   }, settings ? { wrapper: ({ children }: { children: ReactNode }) => <KitSettingsProvider value={settings}>{children}</KitSettingsProvider> } : undefined);
-  return (x: number, y: number) => result.current.pickEvery(x, y);
+  return (x: number, y: number) => result.current.pickEvery({ x, y });
 }
 
 describe('useSceneSelectTool — pick tolerance', () => {
@@ -82,9 +82,9 @@ describe('useSceneSelectTool — hidden layers', () => {
       return { scene, tool: useSceneSelectTool({ scene, adapter }) };
     });
 
-    expect(result.current.tool.pickEvery(10, 10)).toEqual(['hidden-node']);
+    expect(result.current.tool.pickEvery({ x: 10, y: 10 })).toEqual(['hidden-node']);
     act(() => { result.current.scene.setLayerVisible('bg', false); });
-    expect(result.current.tool.pickEvery(10, 10)).toEqual([]);
+    expect(result.current.tool.pickEvery({ x: 10, y: 10 })).toEqual([]);
   });
 });
 
@@ -143,12 +143,12 @@ describe('useSceneSelectTool — pose overrides', () => {
 
   it('picks where the override draws the node', () => {
     const result = overrideHarness();
-    expect(result.current.tool.pickEvery(205, 205)).toEqual(['under']);
+    expect(result.current.tool.pickEvery({ x: 205, y: 205 })).toEqual(['under']);
   });
 
   it('stops picking where the document pose used to be', () => {
     const result = overrideHarness();
-    expect(result.current.tool.pickEvery(5, 5)).toEqual([]);
+    expect(result.current.tool.pickEvery({ x: 5, y: 5 })).toEqual([]);
   });
 
   it('reports bounds at the override, so chrome follows the paint', () => {
@@ -195,14 +195,14 @@ describe('useSceneSelectTool — ancestor clips', () => {
   it('does not pick a leaf the container clips away', () => {
     // The point is inside the leaf's own box and outside the clip.
     const r = clipHarness([50, 50, 50, 50], { x: -5, y: -5, width: 20, height: 20 });
-    expect(r.current.pickEvery(0, 0)).not.toContain('inner');
+    expect(r.current.pickEvery({ x: 0, y: 0 })).not.toContain('inner');
   });
 
   it('still picks a leaf inside the clip', () => {
     // Paired with the case above: the clip is smaller than the container's
     // box, so passing documents a clip pass rather than a bare AABB pass.
     const r = clipHarness([-20, -20, 40, 40], { x: -5, y: -5, width: 10, height: 10 });
-    expect(r.current.pickEvery(0, 0)).toContain('inner');
+    expect(r.current.pickEvery({ x: 0, y: 0 })).toContain('inner');
   });
 });
 
@@ -234,11 +234,11 @@ describe('useSceneSelectTool — stroke reach', () => {
 
   it('picks a point inside a thick outer stroke, outside the pose box', () => {
     // The stroke reaches 20 world units past the edge; -10 is in its ink.
-    expect(strokedHarness().current.pickEvery(-10, 50)).toContain('boxed');
+    expect(strokedHarness().current.pickEvery({ x: -10, y: 50 })).toContain('boxed');
   });
 
   it('still rejects a point past the stroke', () => {
-    expect(strokedHarness().current.pickEvery(-40, 50)).not.toContain('boxed');
+    expect(strokedHarness().current.pickEvery({ x: -40, y: 50 })).not.toContain('boxed');
   });
 });
 
@@ -281,11 +281,11 @@ describe('useSceneSelectTool — derived nodes', () => {
   }
 
   it('picks a derived edge along the line it paints', () => {
-    expect(derivedHarness().current.tool.pickEvery(100, 0)).toContain('edge');
+    expect(derivedHarness().current.tool.pickEvery({ x: 100, y: 0 })).toContain('edge');
   });
 
   it('does not pick a derived edge away from the line', () => {
-    expect(derivedHarness().current.tool.pickEvery(100, 60)).not.toContain('edge');
+    expect(derivedHarness().current.tool.pickEvery({ x: 100, y: 60 })).not.toContain('edge');
   });
 
   it('follows its dependencies when one of them moves', () => {
@@ -293,7 +293,7 @@ describe('useSceneSelectTool — derived nodes', () => {
     act(() => {
       result.current.scene.setPose(asNodeId('b'), { x: 0, y: 200, width: 10, height: 10 });
     });
-    expect(result.current.tool.pickEvery(100, 0)).not.toContain('edge');
-    expect(result.current.tool.pickEvery(0, 100)).toContain('edge');
+    expect(result.current.tool.pickEvery({ x: 100, y: 0 })).not.toContain('edge');
+    expect(result.current.tool.pickEvery({ x: 0, y: 100 })).toContain('edge');
   });
 });

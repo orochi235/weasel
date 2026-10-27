@@ -22,6 +22,7 @@ import { drawnBoundsOf } from 'canvas/drawnBounds';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { scenePointQuery } from './scenePointQuery';
 import type { SceneCanvasGeometry } from './geometryProps';
+import type { WorldPoint } from '@weasel-js/routing';
 
 /**
  * Default grab slop around a shape's outline, in screen pixels.
@@ -87,7 +88,7 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
      *  the live alt state + current selection so consumers can implement
      *  alt-cycling through an overlapping stack. Default: top-most hit
      *  (alt ignored). Forwarded verbatim to `useSelectTool`. */
-    pickBest?: (worldX: number, worldY: number, alt: boolean, sel: readonly string[]) => string | null;
+    pickBest?: (world: WorldPoint, alt: boolean, sel: readonly string[]) => string | null;
     /** Forwarded verbatim to `useSelectTool`. See
      *  `UseSelectToolOptions.extendClickLocked`. */
     extendClickLocked?: () => boolean;
@@ -116,12 +117,12 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
   selectTool: ReturnType<typeof useSelectTool<Node<TData, TLayer, TPose>, TPose>>;
   /** Every id under the world point, back-to-front (topmost last), from the
    *  caller's `geometry.pickEvery` or the pose-walk default. */
-  pickEvery: (worldX: number, worldY: number, view?: PickView | null) => string[];
+  pickEvery: (world: WorldPoint, view?: PickView | null) => string[];
   /** Single-best hit under the world point, or null. Runs `pickEvery` then
    *  collapses parent/child overlap via `pickTopMostHit` — matches the id
    *  the select tool's pointerdown classifier would settle on for a bare
    *  click. The canvas's `getNodeAtPoint` resolves through it. */
-  pickBest: (worldX: number, worldY: number, view?: PickView | null) => string | null;
+  pickBest: (world: WorldPoint, view?: PickView | null) => string | null;
   /** World-space AABB of `id`, or null. Same as what the selection overlay +
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
    *  `affordanceAt` thunk without re-deriving it. `view` is the camera the
@@ -207,8 +208,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
 
   const wiredPickBest = useMemo(() => {
-    return (wx: number, wy: number, view?: PickView | null): string | null => {
-      const ids = wiredHitBody(wx, wy, view);
+    return (world: WorldPoint, view?: PickView | null): string | null => {
+      const ids = wiredHitBody(world, view);
       return pickTopMostHit(ids, adapter as unknown as PickTopMostHitAdapter);
     };
   }, [wiredHitBody, adapter]);
@@ -236,7 +237,7 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   alphaOf: ((id: string) => number) | undefined;
   layerIsPainted: ((layer: string) => boolean) | undefined;
   isPointerInteractive: ((id: string) => boolean) | undefined;
-}): (wx: number, wy: number, view?: PickView | null) => string[] {
+}): (world: WorldPoint, view?: PickView | null) => string[] {
   const {
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
     alphaOf, layerIsPainted, isPointerInteractive,
@@ -249,9 +250,9 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   // `pose.rotation` directly (the kit's one rotation convention), so rotated
   // shapes pick against their rendered, rotated body without a per-demo override.
   const walk = useMemo(() => {
-    return (wx: number, wy: number, view?: PickView | null): string[] => {
+    return (world: WorldPoint, view?: PickView | null): string[] => {
       if (pickEveryProp) {
-        const r = pickEveryProp(wx, wy);
+        const r = pickEveryProp(world);
         if (r == null) return [];
         return Array.isArray(r) ? r : [r];
       }
@@ -268,14 +269,14 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
         ...(camera ? { camera } : {}),
       });
       const pointQuery = scenePointQuery<TPose>(d as PoseDescriptor<unknown>, shapePicking, pickTolerancePx);
-      return pickWalk<TPose>(src, pointQuery(wx, wy, asked?.scale ?? { x: 1, y: 1 }));
+      return pickWalk<TPose>(src, pointQuery(world.x, world.y, asked?.scale ?? { x: 1, y: 1 }));
     };
   }, [scene, pickEveryProp, shapePicking, pickTolerancePx, getView,
       alphaOf, layerIsPainted, d]);
   const wiredHitBody = useMemo(() => {
     if (!isPointerInteractive) return walk;
-    return (wx: number, wy: number, view?: PickView | null): string[] =>
-      walk(wx, wy, view).filter((id) => isPointerInteractive(id) !== false);
+    return (world: WorldPoint, view?: PickView | null): string[] =>
+      walk(world, view).filter((id) => isPointerInteractive(id) !== false);
   }, [walk, isPointerInteractive]);
   return wiredHitBody;
 }

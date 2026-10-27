@@ -36,6 +36,6 @@ describe('useSceneSelectTool — non-rect poses', () => {
     const { result } = harness();
     let id = '';
     act(() => { id = result.current.scene.add({ kind: 'mark', layer: 'default', pose: circle(10, 10, 5), data: {} }); });
-    expect(result.current.tool.pickEvery(10, 10)).toEqual([id]);
+    expect(result.current.tool.pickEvery({ x: 10, y: 10 })).toEqual([id]);
   });
 });

@@ -53,7 +53,7 @@ function harness(picking: 'pose' | 'shape') {
     const adapter = useSceneAdapter(scene);
     return useSceneSelectTool({ scene, adapter, geometry: { picking } });
   });
-  return (p: { x: number; y: number }) => result.current.pickEvery(p.x, p.y, { scale: SCALE });
+  return (p: { x: number; y: number }) => result.current.pickEvery({ x: p.x, y: p.y }, { scale: SCALE });
 }
 
 describe.each(['pose', 'shape'] as const)('pick slop under 4:1 zoom, rotated node (%s)', (picking) => {
@@ -89,7 +89,7 @@ describe('picking a { px } outline under 4:1 zoom', () => {
       const adapter = useSceneAdapter(scene);
       return useSceneSelectTool({ scene, adapter });
     });
-    return (x: number, y: number) => result.current.pickEvery(x, y, { scale: SCALE });
+    return (x: number, y: number) => result.current.pickEvery({ x, y }, { scale: SCALE });
   }
 
   it('takes a pointer just inside the reach across and down', () => {
