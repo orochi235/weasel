@@ -31,6 +31,9 @@ export function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle):
   el.style.textRendering = isCanvasFont(style.fontFamily) ? '' : 'geometricPrecision';
   el.style.lineHeight = String(style.lineHeight);
   applyOverlayDirection(el, style);
+  // The browser's CSS `text-transform` and its spell checker read it.
+  if (style.lang) el.lang = style.lang;
+  else el.removeAttribute('lang');
   const decorations: string[] = [];
   if (style.underline) decorations.push('underline');
   if (style.strikethrough) decorations.push('line-through');

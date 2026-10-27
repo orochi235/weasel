@@ -9,7 +9,7 @@
  */
 
 import { faceMetricsOf, resolveFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
-import type { RunSourceMap } from './textTransform';
+import { caseLocale, type RunSourceMap } from './textTransform';
 
 /** The CSS `font-variant-caps` keywords the run model carries. `normal` is an
  *  explicit override: a run can turn off small caps it would inherit. */
@@ -39,9 +39,9 @@ export function smallCapsScaleFor(family: string, weight: number, style: FontSty
 }
 
 /** Whether small caps draws `ch` as a smaller capital: whether it has a
- *  capital other than itself. */
-export function isSmallCapsLetter(ch: string): boolean {
-  return ch.toUpperCase() !== ch;
+ *  capital other than itself under `lang`, a BCP 47 tag. */
+export function isSmallCapsLetter(ch: string, lang?: string): boolean {
+  return ch.toLocaleUpperCase(caseLocale(lang)) !== ch;
 }
 
 /** A run's drawn text under small caps. `small[i]` says whether UTF-16 unit
@@ -55,9 +55,11 @@ export interface SmallCapsText {
 /**
  * Apply small caps to a run's drawn text. `srcMap` is the map `textTransform`
  * already produced for it, if any; the result's map composes the two, so
- * each drawn unit still names the source character it came from.
+ * each drawn unit still names the source character it came from. Capitals
+ * are `lang`'s, so `i` is drawn `İ` under `tr`.
  */
-export function smallCapsText(text: string, srcMap?: RunSourceMap): SmallCapsText {
+export function smallCapsText(text: string, srcMap?: RunSourceMap, lang?: string): SmallCapsText {
+  const locale = caseLocale(lang);
   let out = '';
   const small: boolean[] = [];
   const starts: number[] = [];
@@ -66,8 +68,9 @@ export function smallCapsText(text: string, srcMap?: RunSourceMap): SmallCapsTex
   let anySmall = false;
   let at = 0;
   for (const ch of text) {
-    const shrink = isSmallCapsLetter(ch);
-    const piece = shrink ? ch.toUpperCase() : ch;
+    const capital = ch.toLocaleUpperCase(locale);
+    const shrink = capital !== ch;
+    const piece = shrink ? capital : ch;
     if (piece.length !== ch.length) resized = true;
     anySmall ||= shrink;
     const start = srcMap ? srcMap.starts[at] : at;

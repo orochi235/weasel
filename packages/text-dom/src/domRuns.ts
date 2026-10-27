@@ -112,7 +112,7 @@ export function domToRuns(parent: HTMLElement): StyledRun[] {
 /** What a run inherits from its node, for the overlay's small caps: which
  *  runs have it, and the face and transform that decide their pieces. */
 export type OverlayRunBase = Pick<
-  ResolvedTextStyle, 'fontFamily' | 'fontWeight' | 'fontStyle' | 'textTransform' | 'fontVariantCaps'
+  ResolvedTextStyle, 'fontFamily' | 'fontWeight' | 'fontStyle' | 'textTransform' | 'fontVariantCaps' | 'lang'
 >;
 
 /** The custom property carrying a small-caps run's scale down to its pieces. */
@@ -120,9 +120,11 @@ export const SMALL_CAPS_SCALE_PROPERTY = '--weasel-small-caps';
 
 /** A run's source text cut where small caps changes size, per `smallCapsText`
  *  over the text as `transform` draws it. */
-function smallCapsPieces(text: string, transform: TextTransform): Array<{ text: string; small: boolean }> {
-  const [shown] = transformRunTexts([text], [transform]);
-  const caps = smallCapsText(shown.text, shown.srcMap);
+function smallCapsPieces(
+  text: string, transform: TextTransform, lang: string | undefined,
+): Array<{ text: string; small: boolean }> {
+  const [shown] = transformRunTexts([text], [transform], [lang]);
+  const caps = smallCapsText(shown.text, shown.srcMap, lang);
   const small = new Array<boolean>(text.length).fill(false);
   caps.small?.forEach((s, i) => {
     if (s) small[caps.srcMap ? caps.srcMap.starts[i] : i] = true;
@@ -139,9 +141,9 @@ function smallCapsPieces(text: string, transform: TextTransform): Array<{ text: 
 }
 
 /** Replace `span`'s children with `text`, its small-caps letters in pieces. */
-function writeSmallCaps(span: HTMLElement, text: string, transform: TextTransform): void {
+function writeSmallCaps(span: HTMLElement, text: string, transform: TextTransform, lang: string | undefined): void {
   span.replaceChildren();
-  for (const p of smallCapsPieces(text, transform)) {
+  for (const p of smallCapsPieces(text, transform, lang)) {
     if (!p.small) { appendOverlayText(span, p.text); continue; }
     const piece = document.createElement('span');
     piece.setAttribute('data-small-caps', '');
@@ -172,7 +174,7 @@ export function runsToDom(
         run.italic ? 'italic' : base.fontStyle,
       );
       span.style.setProperty(SMALL_CAPS_SCALE_PROPERTY, String(scale));
-      writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform);
+      writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform, run.lang ?? base.lang);
     } else {
       appendOverlayText(span, run.text);
     }
@@ -201,6 +203,7 @@ export function runsToDom(
     if (run.fill === null) span.style.color = '#000';
     if (run.stroke !== undefined) span.setAttribute(STROKE_ATTR, JSON.stringify(run.stroke));
     if (run.rotate != null) span.setAttribute(ROTATE_ATTR, String(run.rotate));
+    if (run.lang) span.lang = run.lang;
     // Decoration goes on the span as an inline style rather than `<u>`/`<s>`
     // wrappers: one representation for `domToRuns` to unwrap, and one element
     // per run so the caret-offset walkers stay flat.
@@ -236,8 +239,8 @@ function sourceText(el: Element): string {
 }
 
 /** Whether `span`'s children are the pieces `writeSmallCaps` would write. */
-function piecesMatch(span: HTMLElement, transform: TextTransform): boolean {
-  const want = smallCapsPieces(sourceText(span), transform);
+function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string | undefined): boolean {
+  const want = smallCapsPieces(sourceText(span), transform, lang);
   const have: Array<{ text: string; small: boolean }> = [];
   for (const n of span.childNodes) {
     let small: boolean;
@@ -262,13 +265,16 @@ function piecesMatch(span: HTMLElement, transform: TextTransform): boolean {
  */
 export function normalizeSmallCaps(parent: HTMLElement): boolean {
   let changed = false;
-  const visit = (el: HTMLElement, variant: FontVariantCaps, transform: TextTransform): void => {
+  const visit = (
+    el: HTMLElement, variant: FontVariantCaps, transform: TextTransform, inherited: string | undefined,
+  ): void => {
     const v = cssFontVariant(el) ?? variant;
     const tt = el.style.textTransform;
     const t = TRANSFORMS.has(tt) ? (tt as TextTransform) : transform;
+    const lang = el.hasAttribute('lang') ? el.lang || undefined : inherited;
     if (el.hasAttribute('data-run')) {
       if (v === 'small-caps') {
-        if (!piecesMatch(el, t)) { writeSmallCaps(el, sourceText(el), t); changed = true; }
+        if (!piecesMatch(el, t, lang)) { writeSmallCaps(el, sourceText(el), t, lang); changed = true; }
       } else if (el.querySelector('[data-small-caps]')) {
         const text = sourceText(el);
         el.replaceChildren();
@@ -277,8 +283,8 @@ export function normalizeSmallCaps(parent: HTMLElement): boolean {
       }
       return;
     }
-    for (const child of el.children) if (child instanceof HTMLElement) visit(child, v, t);
+    for (const child of el.children) if (child instanceof HTMLElement) visit(child, v, t, lang);
   };
-  visit(parent, 'normal', 'none');
+  visit(parent, 'normal', 'none', undefined);
   return changed;
 }

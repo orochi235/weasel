@@ -37,6 +37,7 @@ export interface StyleState {
   fontScale?: number;
   textTransform?: TextTransform;
   fontVariantCaps?: FontVariantCaps;
+  lang?: string;
 }
 
 export const TRANSFORMS: ReadonlySet<string> = new Set(['none', 'uppercase', 'lowercase', 'capitalize']);
@@ -154,6 +155,8 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
     if (TRANSFORMS.has(tt)) next.textTransform = tt as TextTransform;
     const fv = cssFontVariant(el);
     if (fv) next.fontVariantCaps = fv;
+    // Empty states the language is unknown, which the run model reads as none.
+    if (el.hasAttribute('lang')) next.lang = el.lang || undefined;
     // The attribute holds the run's family; the CSS holds the face it maps to.
     const family = el.getAttribute('data-font-family') ?? el.style.fontFamily;
     if (family) next.fontFamily = family;
@@ -199,7 +202,8 @@ export function styleEquals(a: StyleState, b: StyleState): boolean {
     a.baselineShift === b.baselineShift &&
     a.fontScale === b.fontScale &&
     a.textTransform === b.textTransform &&
-    a.fontVariantCaps === b.fontVariantCaps
+    a.fontVariantCaps === b.fontVariantCaps &&
+    a.lang === b.lang
   );
 }
 
@@ -229,6 +233,7 @@ export function toRun(text: string, style: StyleState): StyledRun {
   if (style.fontScale != null) run.fontScale = style.fontScale;
   if (style.textTransform != null) run.textTransform = style.textTransform;
   if (style.fontVariantCaps != null) run.fontVariantCaps = style.fontVariantCaps;
+  if (style.lang) run.lang = style.lang;
   return run;
 }
 

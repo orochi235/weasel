@@ -213,6 +213,20 @@ describe('useTextEdit — alignment on the overlay', () => {
     expect(overlay.style.getPropertyValue('unicode-bidi')).toBe('');
   });
 
+  it("states the text's language, which the browser's text-transform reads", () => {
+    const h = makeTrackingHarness([{ text: 'istanbul' }], { fontSize: 16, lang: 'tr', textTransform: 'uppercase' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.getAttribute('lang')).toBe('tr');
+  });
+
+  it('states no language when the style has none', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.hasAttribute('lang')).toBe(false);
+  });
+
   it('lets each paragraph find its own direction when the style states none', () => {
     const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16 });
     const { result } = renderHook(() => useTextEdit(h.opts));

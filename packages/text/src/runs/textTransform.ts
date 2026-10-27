@@ -53,12 +53,25 @@ const TITLE: ReadonlyMap<number, string> = new Map<number, string>([
   [0x1ff2, 'Ὼͅ'], [0x1ff4, 'Ώͅ'], [0x1ff7, 'ῼ͂'],
 ]);
 
-function titlecase(ch: string): string {
+function titlecase(ch: string, locale: string | undefined): string {
   const cp = ch.codePointAt(0)!;
   // Greek with ypogegrammeni: the titlecase form keeps the iota subscript,
   // where uppercase spells it out as a capital iota.
   if (cp >= 0x1f80 && cp <= 0x1faf) return String.fromCodePoint(cp | 0x8);
-  return TITLE.get(cp) ?? ch.toUpperCase();
+  return TITLE.get(cp) ?? ch.toLocaleUpperCase(locale);
+}
+
+/**
+ * `lang` as a locale case mapping accepts: undefined for none, and for a tag
+ * `Intl` rejects, which `toLocaleUpperCase` would throw on.
+ */
+export function caseLocale(lang: string | undefined): string | undefined {
+  if (!lang) return undefined;
+  try {
+    return Intl.getCanonicalLocales(lang)[0];
+  } catch {
+    return undefined;
+  }
 }
 
 const WORD_FALLBACK = /[\p{L}\p{N}][\p{L}\p{N}\p{M}\p{Pc}'’]*/gu;
@@ -86,31 +99,36 @@ function alignsPerCodePoint(
   return n === whole.length;
 }
 
-const upper = (ch: string): string => ch.toUpperCase();
-const lower = (ch: string): string => ch.toLowerCase();
-
 /**
  * Apply each run's transform to its text. `texts[i]` is transformed by
  * `transforms[i]`; the runs are read as one paragraph, so final sigma and
  * `capitalize`'s word starts see across run boundaries — a word split by
  * styling still gets one capital.
  *
- * Mappings are the locale-independent ones JavaScript's `toUpperCase` /
- * `toLowerCase` implement, which include `ß` → `SS` and final sigma.
+ * Mappings are JavaScript's `toLocaleUpperCase` / `toLocaleLowerCase` under
+ * `langs[i]`, a BCP 47 tag, so `i` uppercases to `İ` under `tr`; absent is
+ * the locale-independent mapping. Both include `ß` → `SS` and final sigma.
  * `capitalize` titlecases the first code point of each word when it has a
  * case to change, and leaves every other character as it was.
  */
 export function transformRunTexts(
   texts: readonly string[],
   transforms: readonly TextTransform[],
+  langs: readonly (string | undefined)[] = [],
 ): TransformedRunText[] {
   if (transforms.every((t) => t === 'none')) return texts.map((text) => ({ text }));
 
+  const locales = texts.map((_, i) => caseLocale(langs[i]));
+  // The paragraph is mapped whole under one locale; a run in another maps
+  // code point by code point under its own.
+  const shared = locales.every((l) => l === locales[0]) ? locales[0] : undefined;
+  const upper = (ch: string, l = shared): string => ch.toLocaleUpperCase(l);
+  const lower = (ch: string, l = shared): string => ch.toLocaleLowerCase(l);
   const full = texts.join('');
   // Lowercasing is contextual (final sigma), so the per-code-point pieces are
   // read out of the whole paragraph's mapping wherever the two align.
-  const wholeUpper = transforms.includes('uppercase') ? full.toUpperCase() : '';
-  const wholeLower = transforms.includes('lowercase') ? full.toLowerCase() : '';
+  const wholeUpper = transforms.includes('uppercase') ? full.toLocaleUpperCase(shared) : '';
+  const wholeLower = transforms.includes('lowercase') ? full.toLocaleLowerCase(shared) : '';
   const upperAligned = wholeUpper !== '' && alignsPerCodePoint(texts, wholeUpper, upper);
   const lowerAligned = wholeLower !== '' && alignsPerCodePoint(texts, wholeLower, lower);
   const starts = transforms.includes('capitalize') ? wordStarts(full) : null;
@@ -122,6 +140,8 @@ export function transformRunTexts(
   for (let i = 0; i < texts.length; i++) {
     const source = texts[i];
     const t = transforms[i] ?? 'none';
+    const locale = locales[i];
+    const own = locale === shared;
     let text = '';
     const srcStarts: number[] = [];
     const srcEnds: number[] = [];
@@ -132,11 +152,11 @@ export function transformRunTexts(
       const lo = lower(ch);
       let piece = ch;
       if (t === 'uppercase') {
-        piece = upperAligned ? wholeUpper.slice(upOff, upOff + up.length) : up;
+        piece = upperAligned && own ? wholeUpper.slice(upOff, upOff + up.length) : upper(ch, locale);
       } else if (t === 'lowercase') {
-        piece = lowerAligned ? wholeLower.slice(lowOff, lowOff + lo.length) : lo;
-      } else if (t === 'capitalize' && starts!.has(base + local) && up !== ch) {
-        piece = titlecase(ch);
+        piece = lowerAligned && own ? wholeLower.slice(lowOff, lowOff + lo.length) : lower(ch, locale);
+      } else if (t === 'capitalize' && starts!.has(base + local) && upper(ch, locale) !== ch) {
+        piece = titlecase(ch, locale);
       }
       upOff += up.length;
       lowOff += lo.length;

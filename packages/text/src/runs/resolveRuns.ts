@@ -192,7 +192,11 @@ export function resolveRuns(
   let transformed = false;
   for (const r of runs) if ((r.textTransform ?? style.textTransform) !== 'none') transformed = true;
   const shown = transformed
-    ? transformRunTexts(runs.map((r) => r.text), runs.map((r) => r.textTransform ?? style.textTransform))
+    ? transformRunTexts(
+      runs.map((r) => r.text),
+      runs.map((r) => r.textTransform ?? style.textTransform),
+      runs.map((r) => r.lang ?? style.lang),
+    )
     : null;
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i];
@@ -217,7 +221,7 @@ export function resolveRuns(
     if (smallCaps && shapesWithFeature(fontFamily, fontWeight, fontStyle, 'smcp')) {
       fontFeatures = SMALL_CAPS_FEATURES;
     } else if (smallCaps) {
-      const caps = smallCapsText(text, srcMap);
+      const caps = smallCapsText(text, srcMap, run.lang ?? style.lang);
       text = caps.text;
       srcMap = caps.srcMap;
       if (caps.small) {

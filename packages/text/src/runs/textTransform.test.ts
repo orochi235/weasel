@@ -73,4 +73,25 @@ describe('transformRunTexts', () => {
     const out = transformRunTexts(['ab ', 'cd ', 'eß'], ['none', 'uppercase', 'capitalize']);
     expect(out.map((r) => r.text)).toEqual(['ab ', 'CD ', 'Eß']);
   });
+
+  it('maps case in each run\'s language', () => {
+    expect(transformRunTexts(['istanbul'], ['uppercase'], ['tr'])[0].text).toBe('İSTANBUL');
+    expect(transformRunTexts(['IŞIK'], ['lowercase'], ['tr'])[0].text).toBe('ışık');
+    expect(transformRunTexts(['izmir ili'], ['capitalize'], ['tr'])[0].text).toBe('İzmir İli');
+    expect(transformRunTexts(['i', 'i'], ['uppercase', 'uppercase'], ['tr', 'en']).map((r) => r.text))
+      .toEqual(['İ', 'I']);
+  });
+
+  it('keeps the source map true where a language changes a mapping\'s length', () => {
+    // Untailored, İ lowercases to i plus a combining dot; Turkish drops the dot.
+    expect(one('İx', 'lowercase').srcMap).toEqual({ length: 2, starts: [0, 0, 1], ends: [1, 1, 2] });
+    expect(transformRunTexts(['İx'], ['lowercase'], ['tr'])[0]).toEqual({ text: 'ix' });
+    const sharp = transformRunTexts(['aßi'], ['uppercase'], ['tr'])[0];
+    expect(sharp.text).toBe('ASSİ');
+    expect(sharp.srcMap).toEqual({ length: 3, starts: [0, 1, 1, 2], ends: [1, 2, 2, 3] });
+  });
+
+  it('maps a tag Intl rejects as no language', () => {
+    expect(transformRunTexts(['i'], ['uppercase'], ['not a tag!'])[0].text).toBe('I');
+  });
 });

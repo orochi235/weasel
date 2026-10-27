@@ -55,6 +55,7 @@ export function textXml(
   if (style?.fontWeight != null) attrs.push(`font-weight="${escapeAttr(String(style.fontWeight))}"`);
   if (style?.fontStyle && style.fontStyle !== 'normal') attrs.push(`font-style="${style.fontStyle}"`);
   if (style?.fontVariantCaps === 'small-caps') attrs.push('font-variant="small-caps"');
+  if (style?.lang) attrs.push(`xml:lang="${escapeAttr(style.lang)}"`);
   const direction = svgDirection(style, node.text);
   // A stated `ltr` is written too: absent reads back as the text's own direction.
   if (direction === 'rtl' || style?.direction === 'ltr') attrs.push(`direction="${direction}"`);
@@ -154,6 +155,7 @@ function runAttrs(
   // `normal` included: on a run it overrides small caps the node passes down.
   if (run.fontVariantCaps) attrs.push(`font-variant="${run.fontVariantCaps}"`);
   if (run.fontFamily) attrs.push(`font-family="${escapeAttr(run.fontFamily)}"`);
+  if (run.lang) attrs.push(`xml:lang="${escapeAttr(run.lang)}"`);
   // A percentage `font-size` is relative to the parent's, which is what
   // `fontScale` means; an absolute `fontSize` wins over it.
   //

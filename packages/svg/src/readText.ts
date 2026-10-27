@@ -12,6 +12,7 @@ import { readLength } from './lengths';
 import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, writtenByWeasel } from './tspanLines';
 import { LAID_ATTR } from './laidLines';
 import { readRuns } from './readRuns';
+import { inheritedLang } from './textLang';
 import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
@@ -107,6 +108,8 @@ export function parseTextElement(
 
   const leafStyle = deriveStyle(style, el);
   const textStyle = readTextStyle(leafStyle, onWarn);
+  const lang = inheritedLang(el);
+  if (lang) textStyle.lang = lang;
   const textPaint = readTextPaint(leafStyle, gradients, onWarn, isNonScalingStroke(el));
   const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
 

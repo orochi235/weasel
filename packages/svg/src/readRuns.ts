@@ -7,6 +7,7 @@ import { type Piece, placeTspanRun, TextShifts } from './glyphShifts';
 import { type Moves, movesOf, NO_MOVES, raiseRuns, risesOver, TextMoves } from './glyphRises';
 import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { fontSizeOf } from './fontSize';
+import { ownLang } from './textLang';
 import type { GradientTable } from './gradients';
 import { deriveStyle, ownProp, ownValue, resolveCurrentColor, type StyleContext } from './cascade';
 import { readProperty } from './properties';
@@ -116,6 +117,8 @@ function readTspanRun(
   if (transform) run.textTransform = transform;
   const variant = ownValue(el, 'font-variant', onWarn);
   if (variant) run.fontVariantCaps = variant;
+  const lang = ownLang(el)?.trim();
+  if (lang) run.lang = lang;
   const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
     const parsed = readProperty('fill', fillAttr);

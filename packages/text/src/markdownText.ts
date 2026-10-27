@@ -89,13 +89,15 @@ export function layoutMarkdown(
 ): LayoutResult {
   if (runs.length === 0) return { lines: [], width: 0, height: 0 };
   // No caret reads this layout, so the transformed text simply replaces the source.
-  const shown = transformRunTexts(runs.map((r) => r.text), runs.map((r) => r.textTransform ?? 'none'));
+  const shown = transformRunTexts(
+    runs.map((r) => r.text), runs.map((r) => r.textTransform ?? 'none'), runs.map((r) => r.lang),
+  );
   // Small caps splits a run where its size changes, marking the small pieces.
   const segs: Segment[] = [];
   runs.forEach((r, i) => {
     const text = shown[i].text;
     if (r.fontVariantCaps !== 'small-caps') { segs.push(text === r.text ? r : { ...r, text }); return; }
-    const caps = smallCapsText(text);
+    const caps = smallCapsText(text, undefined, r.lang);
     if (!caps.small) { segs.push({ ...r, text: caps.text }); return; }
     let at = 0;
     for (const piece of caps.text) {

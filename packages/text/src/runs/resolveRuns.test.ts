@@ -245,6 +245,12 @@ describe('resolveRuns text-transform', () => {
     expect(run.text).toBe('ASS');
     expect(run.srcMap).toEqual({ length: 2, starts: [0, 1, 1], ends: [1, 2, 2] });
   });
+
+  it("transforms in the run's language: its own, else the node's", () => {
+    const style = resolveTextStyle({ textTransform: 'uppercase', lang: 'tr' });
+    const out = resolveRuns([{ text: 'i' }, { text: 'i', lang: 'en' }], style);
+    expect(out.map((r) => r.text)).toEqual(['İ', 'I']);
+  });
 });
 
 describe('resolveRuns small caps', () => {
@@ -265,6 +271,13 @@ describe('resolveRuns small caps', () => {
     const out = resolveRuns([{ text: 'ab' }, { text: 'cd', fontVariantCaps: 'normal' }], style);
     expect(out.map((r) => r.text)).toEqual(['AB', 'cd']);
     expect(out[1].sizeMap).toBeUndefined();
+  });
+
+  it("draws a letter's capital in the run's language", () => {
+    const style = resolveTextStyle({ fontSize: 20, fontVariantCaps: 'small-caps', lang: 'tr' });
+    const [run] = resolveRuns([{ text: 'ıi' }], style);
+    expect(run.text).toBe('Iİ');
+    expect(run.sizeMap).toEqual([small, small]);
   });
 
   it('carries no size map for a run with nothing to shrink', () => {
