@@ -1,4 +1,4 @@
-import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { forEachSegment, originOf, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, worldCoords, type PolygonPath } from '@weasel-js/geom';
 
 /** A single anchor on a `PolygonPath`, with its incoming/outgoing bezier
  *  control points (when present). `coordIndex` points at the anchor's own
@@ -29,7 +29,8 @@ export interface PathAnchor {
  *  anchor: its control becomes the first anchor's `controlIn`, the way
  *  `pathToAnchors` reads it, so the two walkers count alike. */
 export function enumerateAnchors(path: PolygonPath): PathAnchor[] {
-  const { commands, coords } = path;
+  const { commands } = path;
+  const coords = worldCoords(path);
   const anchors: PathAnchor[] = [];
   let lastAnchor: PathAnchor | null = null;
   let firstInSubpath: PathAnchor | null = null;
@@ -87,12 +88,13 @@ function foldClosingCurve(anchors: PathAnchor[], first: PathAnchor | null, last:
   first.controlIn = last.controlIn;
 }
 
-/** Mutate `coords` in-place: write `(x, y)` at `coordIndex`, return a new
- *  PolygonPath sharing the same commands but with a fresh coords buffer. */
+/** A new PolygonPath sharing `path`'s commands, with the point at `coordIndex`
+ *  moved to `(x, y)` in the path's own space, in a fresh coords buffer. */
 export function withCoord(path: PolygonPath, coordIndex: number, x: number, y: number): PolygonPath {
   const next = new Float32Array(path.coords);
-  next[coordIndex] = x;
-  next[coordIndex + 1] = y;
+  const o = originOf(path);
+  next[coordIndex] = x - o.x;
+  next[coordIndex + 1] = y - o.y;
   return { ...path, coords: next };
 }
 

@@ -13,6 +13,7 @@ import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, forEachSegment } from '../comma
 import { nearestOnCubic, nearestOnLine } from '../nearest';
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
+import { worldCoords } from './pathOrigin';
 import { compactCorners, cornerSpecAt, withoutCorners, type CornerSpec } from './cornerSpec';
 
 /** One anchor of an editable path: its on-curve point plus the two control
@@ -41,7 +42,8 @@ export interface PenAnchor {
 export function pathToAnchors(
   path: PolygonPath,
 ): { anchors: PenAnchor[][]; closed: boolean[] } {
-  const { commands, coords } = path;
+  const { commands } = path;
+  const coords = worldCoords(path);
   const anchors: PenAnchor[][] = [];
   const closed: boolean[] = [];
   let current: PenAnchor[] | null = null;
@@ -120,7 +122,9 @@ function foldClosingCurve(sub: PenAnchor[]): void {
  *   - Both adjacent handles absent → straight L segment.
  *   - Either handle present → C segment, with missing handles defaulting to
  *     the anchor point itself (degenerate but valid; renders as a near-line).
- * Given `like`, the path being reshaped, the result keeps its fill rules.
+ * Given `like`, the path being reshaped, the result keeps its fill rules and
+ * its origin; without it, the result is measured from the origin `originFor`
+ * picks for its points, if any.
  */
 export function anchorsToPath(
   anchors: PenAnchor[][],
@@ -128,6 +132,8 @@ export function anchorsToPath(
   like?: PolygonPath,
 ): PolygonPath {
   const b = new PathBuilder();
+  if (like?.origin) b.setOrigin(like.origin.x, like.origin.y);
+  else if (!like) b.autoOrigin();
   for (let s = 0; s < anchors.length; s++) {
     const sub = anchors[s];
     if (sub.length === 0) continue;

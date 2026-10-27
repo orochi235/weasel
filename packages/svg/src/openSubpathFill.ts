@@ -4,7 +4,7 @@
  * them by subpath.
  */
 
-import { fillsOpenSubpaths, rotateAboutPoint, splitByClosure, splitSubpaths, type PolygonPath } from '@weasel-js/geom';
+import { fillsOpenSubpaths, rotateAboutPoint, splitByClosure, splitSubpaths, worldCoords, type PolygonPath } from '@weasel-js/geom';
 import { pathBounds } from './serializeBounds';
 import type { SvgGroupNode, SvgPaint, SvgPathNode, SvgStroke } from './types';
 
@@ -28,8 +28,9 @@ const isClosed = (part: PolygonPath): boolean => splitByClosure(part).open === n
 
 function samePath(a: PolygonPath, b: PolygonPath): boolean {
   if (a === b) return true;
-  return a.commands.length === b.commands.length && a.coords.length === b.coords.length
-    && a.commands.every((c, i) => c === b.commands[i]) && a.coords.every((v, i) => v === b.coords[i]);
+  const ac = worldCoords(a), bc = worldCoords(b);
+  return a.commands.length === b.commands.length && ac.length === bc.length
+    && a.commands.every((c, i) => c === b.commands[i]) && ac.every((v, i) => v === bc[i]);
 }
 
 /** One `<path>` of the result: a part of the node's path, and what paints it. */

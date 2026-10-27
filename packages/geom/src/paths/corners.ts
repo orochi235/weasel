@@ -177,6 +177,8 @@ function expand(path: PolygonPath): ResolvedCorners {
   const contours = decodeContours(path);
   if (!contours) return { path: withoutCorners(path), anchorSources: null };
   const e = new Emitter();
+  // The contours are in the path's own space; the expansion is stored measured from its origin again.
+  if (path.origin) e.b.setOrigin(path.origin.x, path.origin.y);
   for (const c of contours) emitContour(e, c, contourCuts(path, c));
   const { commands, coords } = e.b.build();
   return {

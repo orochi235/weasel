@@ -4,7 +4,7 @@ import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react
 import { renderHook, act } from '@testing-library/react';
 import { usePenTool } from '../usePenTool';
 import { createPenPreviewLayer } from 'domains/paths/penPreviewLayer';
-import type { PolygonPath } from '@weasel-js/geom';
+import { worldCoords, type PolygonPath } from '@weasel-js/geom';
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ModifierState } from 'core/modifierState';
 import type { Op } from 'core/ops/types';
@@ -67,7 +67,7 @@ function standInScene(paths: Record<string, PolygonPath>) {
   // finds nothing.
   const hitTestArea = vi.fn((b: { x: number; y: number; width: number; height: number }) =>
     Object.keys(scene).filter((id) => {
-      const c = scene[id].coords;
+      const c = worldCoords(scene[id]);
       for (let i = 0; i + 1 < c.length; i += 2) {
         if (c[i] >= b.x && c[i] <= b.x + b.width && c[i + 1] >= b.y && c[i + 1] <= b.y + b.height) return true;
       }

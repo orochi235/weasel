@@ -13,6 +13,7 @@
 import { rectToContour } from '../box';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path, PathFillRule, PolygonPath, RectPath } from '../path';
+import { originFor } from './pathOrigin';
 
 /** Fluent builder for `PolygonPath`; hides the `Uint8Array`/`Float32Array` encoding behind move/line/curve/close calls. */
 export class PathBuilder {
@@ -20,6 +21,7 @@ export class PathBuilder {
   private xs: number[] = [];
   private fillRule: PathFillRule = 'nonzero';
   private origin: { x: number; y: number } | undefined;
+  private auto = false;
 
   /** Seed a builder with an existing `PolygonPath`. Useful for extending
    *  an in-flight path with another segment (e.g. appending a cubic to
@@ -55,6 +57,16 @@ export class PathBuilder {
       this.xs[i + 1] += oy - y;
     }
     this.origin = x === 0 && y === 0 ? undefined : { x, y };
+    return this;
+  }
+
+  /**
+   * At `build`, if no origin was set, measure the coords from the one
+   * `originFor` picks for them: none while they stay within
+   * `ORIGIN_THRESHOLD` of 0. For a producer whose points may land far out.
+   */
+  autoOrigin(): this {
+    this.auto = true;
     return this;
   }
 
@@ -101,6 +113,10 @@ export class PathBuilder {
   }
 
   build(): PolygonPath {
+    if (this.auto && !this.origin) {
+      const o = originFor(this.xs);
+      if (o) this.setOrigin(o.x, o.y);
+    }
     return {
       kind: 'polygon',
       commands: new Uint8Array(this.cmds),

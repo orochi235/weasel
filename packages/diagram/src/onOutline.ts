@@ -11,6 +11,7 @@
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, flattenCubic, type Path } from '@weasel-js/core/math';
 import { outlinePath, type Bounds, type Outline } from './outline';
 import type { Port } from './types';
+import { worldCoords, type PolygonPath } from '@weasel-js/geom';
 
 /** Curve flattening tolerance, in world units. Finer than a port is wide. */
 const TOLERANCE = 0.25;
@@ -27,7 +28,8 @@ function flattenPath(path: Path): number[] {
     return [x, y, x + w, y, x + w, y + h, x, y + h, x, y];
   }
   const out: number[] = [];
-  const { commands, coords } = path as { commands: Uint8Array; coords: Float32Array };
+  const { commands } = path as PolygonPath;
+  const coords = worldCoords(path as PolygonPath);
   let ci = 0;
   let cx = 0;
   let cy = 0;

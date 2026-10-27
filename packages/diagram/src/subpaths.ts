@@ -14,7 +14,10 @@ export function subpathOf(path: Path, index: number): Path | null {
     if (i === commands.length || cmd === PATH_M) {
       if (seen === index) {
         if (start === 0 && i === commands.length) return path;
-        return { kind: 'polygon', fillRule: path.fillRule, commands: commands.slice(start, i), coords: coords.slice(startCoord, coord) };
+        return {
+          kind: 'polygon', fillRule: path.fillRule, commands: commands.slice(start, i), coords: coords.slice(startCoord, coord),
+          ...(path.origin ? { origin: path.origin } : {}),
+        };
       }
       seen++;
       start = i;

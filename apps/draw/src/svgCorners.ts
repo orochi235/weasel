@@ -63,7 +63,10 @@ export function pathWithCorners(drawn: Path, attrs: Record<string, string> | und
   } catch {
     return drawn;
   }
-  const spec: PolygonPath = { ...withoutCorners(drawn), commands: bare.commands, coords: bare.coords, corners };
+  const { origin: _drawnFrom, ...look } = withoutCorners(drawn);
+  const spec: PolygonPath = {
+    ...look, commands: bare.commands, coords: bare.coords, ...(bare.origin ? { origin: bare.origin } : {}), corners,
+  };
   const from = boundsOfPath(spec);
   const to = boundsOfPath(drawn);
   const size = Math.max(to.width, to.height);

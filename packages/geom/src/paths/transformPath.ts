@@ -3,6 +3,7 @@ import { transformCoords } from '../affine';
 import { PathBuilder } from './builder';
 import type { Path, PolygonPath } from '../path';
 import { scaleCorners } from './cornerSpec';
+import { coordsFrom, originFor } from './pathOrigin';
 
 /** Below this, a matrix's rotation and shear terms are rounding left by
  *  composing transforms (a half turn's sine is 1.2e-16), not a slant. */
@@ -12,8 +13,12 @@ const AXIS_ALIGNED_EPSILON = 1e-9;
  *
  * Axis-aligned maps (no rotation/shear: `m[1]` and `m[2]` within 1e-9 of 0) keep a
  * `RectPath` a rect, normalizing negative extent (mirror). Rotation or
- * shear promotes the rect's four corners to a `PolygonPath`. */
-export function transformPath(path: Path, m: Affine): Path {
+ * shear promotes the rect's four corners to a `PolygonPath`.
+ *
+ * With `autoOrigin`, a polygon that had no origin and lands past
+ * `ORIGIN_THRESHOLD` is measured from the one `originFor` picks, so the
+ * map's doubles survive the float32 coords. */
+export function transformPath(path: Path, m: Affine, opts: TransformPathOptions = {}): Path {
   const [a, b, c, d, e, f] = m;
   if (path.kind === 'rect') {
     if (Math.abs(b) < AXIS_ALIGNED_EPSILON && Math.abs(c) < AXIS_ALIGNED_EPSILON) {
@@ -38,16 +43,28 @@ export function transformPath(path: Path, m: Affine): Path {
       .lineTo(path.x, path.y + path.height)
       .close()
       .build();
-    return transformPolygon(poly, m);
+    return transformPolygon(poly, m, opts);
   }
-  return transformPolygon(path, m);
+  return transformPolygon(path, m, opts);
 }
 
-function transformPolygon(path: PolygonPath, m: Affine): PolygonPath {
+/** Options for {@link transformPath}. */
+export interface TransformPathOptions {
+  /** Give a far-out result with no origin one. Default false. */
+  autoOrigin?: boolean;
+}
+
+function transformPolygon(path: PolygonPath, m: Affine, opts: TransformPathOptions): PolygonPath {
   // A corner radius scales as a length does: by the map's mean scale.
   const scaled = scaleCorners(path, Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])));
   const o = path.origin;
-  if (o === undefined) return { ...scaled, coords: Float32Array.from(transformCoords(path.coords, m)) };
+  if (o === undefined) {
+    const mapped = transformCoords(path.coords, m);
+    const picked = opts.autoOrigin ? originFor(mapped) : undefined;
+    return picked
+      ? { ...scaled, coords: coordsFrom(picked, mapped), origin: picked }
+      : { ...scaled, coords: Float32Array.from(mapped) };
+  }
   // The translation moves the origin, in doubles; the coords take only the
   // linear part, so they stay offsets from it.
   const [a, b, c, d, e, f] = m;

@@ -7,6 +7,7 @@ import type { PolygonPath } from '../path';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
 import type { AnchorSet } from './anchorEdits';
 import type { Point } from './cubicMath';
+import { worldCoords } from './pathOrigin';
 
 /**
  * Where a point of an edited path came from: point `a` of the path before the edit, or for a
@@ -40,7 +41,8 @@ const keyOf = (p: Point): string => `${p.x},${p.y}`;
 function heldBy(path: PolygonPath, set: AnchorSet): Held[][] {
   const coords = new Float32Array(path.coords.length);
   for (let i = 0; i < coords.length; i++) coords[i] = i >> 1;
-  const indexed = pathToAnchors({ ...path, coords }).anchors;
+  const { origin: _indicesHaveNone, ...bare } = path;
+  const indexed = pathToAnchors({ ...bare, coords }).anchors;
   return indexed.map((sub, s) => {
     // No two index points coincide, so a closing curve the real walk folded is unfolded here.
     if (sub.length === set.anchors[s].length + 1) sub[0].inHandle = sub.pop()!.inHandle;
@@ -55,7 +57,7 @@ export function anchorPointIndices(path: PolygonPath): number[] {
 
 /** For each point `anchorsToPath` writes for `set`: the flat index of the anchor it belongs to,
  *  times 3, plus 0 for the anchor's own point, 1 for its in handle, and 2 for its out handle. */
-function writtenFrom(set: AnchorSet): Float32Array {
+function writtenFrom(set: AnchorSet): Float32Array | Float64Array {
   let flat = 0;
   const coded = set.anchors.map((sub) => sub.map((a) => {
     const k = 3 * flat++;
@@ -65,7 +67,7 @@ function writtenFrom(set: AnchorSet): Float32Array {
       ...(a.outHandle ? { outHandle: at(k + 2) } : {}),
     };
   }));
-  return anchorsToPath(coded, set.closed).coords;
+  return worldCoords(anchorsToPath(coded, set.closed));
 }
 
 /** The nearest anchor of `sub` from `i`, stepping by `step`, that the path before the edit

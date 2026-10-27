@@ -8,7 +8,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, ImmediateParams, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
-import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors } from '@weasel-js/geom';
+import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors, worldCoords } from '@weasel-js/geom';
 import { createPenPreviewLayer, penReachOf } from 'domains/paths/penPreviewLayer';
 import { resolveEditablePathOf } from 'domains/paths/editablePath';
 import type { Op } from 'core/ops/types';
@@ -637,8 +637,8 @@ function pathsNear(
 }
 
 function samePath(a: PolygonPath, b: PolygonPath): boolean {
-  if (a.commands.length !== b.commands.length || a.coords.length !== b.coords.length) return false;
+  const ac = worldCoords(a), bc = worldCoords(b);
+  if (a.commands.length !== b.commands.length || ac.length !== bc.length) return false;
   for (let i = 0; i < a.commands.length; i++) if (a.commands[i] !== b.commands[i]) return false;
-  for (let i = 0; i < a.coords.length; i++) if (a.coords[i] !== b.coords[i]) return false;
-  return true;
+  return ac.every((v, i) => v === bc[i]);
 }

@@ -26,6 +26,7 @@ import { diagramNodeOf, type DiagramNodeReader } from '../trait';
 import { labelFitOps } from './fit';
 import { placeLabels, type PlaceLabel, type PlaceLabelsOptions, type PlaceRoute } from './place';
 import { labelCenter } from './station';
+import { pathPoint } from '@weasel-js/geom';
 
 /** Options for {@link installLabelPlacement} and `useLabelPlacement`. */
 export interface LabelPlacementOptions<TPose> extends PlaceLabelsOptions {
@@ -60,7 +61,7 @@ function runsOf(path: Path | null): Vec2[][] {
   const runs: Vec2[][] = [];
   for (let i = 0; i < path.commands.length; i++) {
     if (path.commands[i] === PATH_M || runs.length === 0) runs.push([]);
-    runs[runs.length - 1]!.push({ x: path.coords[2 * i]!, y: path.coords[2 * i + 1]! });
+    runs[runs.length - 1]!.push(pathPoint(path, i));
   }
   return runs.filter((r) => r.length >= 2);
 }

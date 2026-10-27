@@ -14,6 +14,7 @@ import {
 import { nestGroups } from '../groupTree';
 import { labelCenter } from '../label';
 import { portSitesOf } from '../ports';
+import { worldCoords } from '@weasel-js/geom';
 
 export type Box = { x: number; y: number; width: number; height: number };
 
@@ -312,7 +313,7 @@ export function routeWires(
   });
   // Each wire, as the boxes of its drawn segments, for the labels of the others to keep off.
   const segments = routes.map(({ path }) => {
-    const c = path?.kind === 'polygon' ? path.coords : [];
+    const c = path?.kind === 'polygon' ? worldCoords(path) : [];
     return Array.from({ length: Math.max(0, c.length / 2 - 1) }, (_, i): Box => {
       const [x0, y0, x1, y1] = [c[2 * i]!, c[2 * i + 1]!, c[2 * i + 2]!, c[2 * i + 3]!];
       return { x: Math.min(x0, x1) - 1, y: Math.min(y0, y1) - 1, width: Math.abs(x1 - x0) + 2, height: Math.abs(y1 - y0) + 2 };

@@ -19,6 +19,7 @@ import { subpathOf } from '../subpaths';
 import { themeLabelStyle } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
 import { offPageTagId, offPageTagOf, type OffPageSplit } from './trait';
+import { worldCoords } from '@weasel-js/geom';
 
 /** How a tag is drawn: its face, its text color, and the box behind the text. */
 export interface OffPageTagLook {
@@ -96,7 +97,7 @@ export function offPageTagSpecs<TLayer extends string>(
 function stubTip(path: Parameters<typeof subpathOf>[0], end: 'from' | 'to'): { tip: Vec2; out: Vec2 } | null {
   const stub = subpathOf(path, end === 'from' ? 0 : 1);
   if (stub === null || stub.kind !== 'polygon' || stub.coords.length < 4) return null;
-  const c = stub.coords;
+  const c = worldCoords(stub);
   const n = c.length;
   const [tip, base] = end === 'from'
     ? [{ x: c[n - 2]!, y: c[n - 1]! }, { x: c[0]!, y: c[1]! }]

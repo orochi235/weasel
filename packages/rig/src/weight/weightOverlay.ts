@@ -1,4 +1,4 @@
-import { ellipsePath } from '@weasel-js/geom';
+import { ellipsePath, worldCoords } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from '@weasel-js/core';
 import { viewToTransform } from '@weasel-js/core';
@@ -48,8 +48,9 @@ export function createWeightOverlay(source: {
           total = new Array<number>(path.coords.length >> 1).fill(0);
           for (const joint in skin) skin[joint].forEach((w, i) => { if (i < total!.length) total![i] += w; });
         }
-        for (let i = 0; 2 * i + 1 < path.coords.length; i++) {
-          const [x, y] = worldToScreen(path.coords[2 * i], path.coords[2 * i + 1], t);
+        const at = worldCoords(path);
+        for (let i = 0; 2 * i + 1 < at.length; i++) {
+          const [x, y] = worldToScreen(at[2 * i], at[2 * i + 1], t);
           const share = total && total[i] > 0 ? (weights?.[i] ?? 0) / total[i] : 0;
           out.push({
             kind: 'path',

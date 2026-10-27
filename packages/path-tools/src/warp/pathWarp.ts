@@ -18,7 +18,9 @@ import {
   identity,
   invert,
   multiply,
+  originOf,
   poseFrameOf,
+  worldCoords,
   type Affine,
   type PolygonPath,
 } from '@weasel-js/geom';
@@ -101,12 +103,14 @@ export function storedPathOf(node: EditableShape): { path: PolygonPath; toWorld:
 function sameUnder(a: PolygonPath, m: Affine, b: PolygonPath): boolean {
   if (a.coords.length !== b.coords.length || a.commands.length !== b.commands.length) return false;
   const bb = boundsOfPath(b);
-  // Stored paths are float32, so the slack scales with their distance from the origin.
-  const tol = 1e-3 * Math.max(1, Math.abs(bb.x) + bb.width, Math.abs(bb.y) + bb.height);
-  for (let i = 0; i + 1 < a.coords.length; i += 2) {
-    const x = m[0] * a.coords[i] + m[2] * a.coords[i + 1] + m[4];
-    const y = m[1] * a.coords[i] + m[3] * a.coords[i + 1] + m[5];
-    if (Math.abs(x - b.coords[i]) > tol || Math.abs(y - b.coords[i + 1]) > tol) return false;
+  // Stored paths are float32, so the slack scales with their distance from the point they are measured from.
+  const o = originOf(b);
+  const tol = 1e-3 * Math.max(1, Math.abs(bb.x - o.x) + bb.width, Math.abs(bb.y - o.y) + bb.height);
+  const ac = worldCoords(a), bc = worldCoords(b);
+  for (let i = 0; i + 1 < ac.length; i += 2) {
+    const x = m[0] * ac[i] + m[2] * ac[i + 1] + m[4];
+    const y = m[1] * ac[i] + m[3] * ac[i + 1] + m[5];
+    if (Math.abs(x - bc[i]) > tol || Math.abs(y - bc[i + 1]) > tol) return false;
   }
   return true;
 }
@@ -127,7 +131,7 @@ export function resolvePathWarp(node: EditableShape | null | undefined): Resolve
   const made = heldWarpResult(held);
   let toStorage: Affine | null = held.frame;
   if (!sameUnder(made, toStorage, stored.path)) {
-    toStorage = made.coords.length === stored.path.coords.length ? fitAffine(made.coords, stored.path.coords) : null;
+    toStorage = made.coords.length === stored.path.coords.length ? fitAffine(worldCoords(made), worldCoords(stored.path)) : null;
     if (!toStorage || !sameUnder(made, toStorage, stored.path)) return null;
   }
   return { held, toWorld: multiply(stored.toWorld, toStorage) };

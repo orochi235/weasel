@@ -3,7 +3,7 @@
  * selecting one, Delete removing it, and every edit finished so they hold —
  * a whole-node transform too, for the links tying the nodes it moves.
  */
-import { pathAnchorPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
+import { pathAnchorPoints, worldCoords, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep, PathEditExtension, PathEditTarget } from '@weasel-js/core';
 import { finishLinkedEdit, finishLinkedTransform, registerConstraintLinkShape } from './constraintLinks';
 import { constraintGlyphs, constraintMarkAt, type ConstraintGlyphStyle } from './constraintGlyphs';
@@ -47,7 +47,7 @@ const conflictCache = new WeakMap<readonly PathConstraint[], { key: string; conf
 
 /** {@link conflictsIn} for `path`, answered from the cache when the list and its anchors are as last asked. */
 function conflictsOf(path: PolygonPath, constraints: readonly PathConstraint[], axisAngle: number): ReadonlySet<number> {
-  const key = `${axisAngle};${Array.from(path.commands).join(',')};${Array.from(path.coords).join(',')}`;
+  const key = `${axisAngle};${Array.from(path.commands).join(',')};${Array.from(worldCoords(path)).join(',')}`;
   const hit = conflictCache.get(constraints);
   if (hit?.key === key) return hit.conflicts;
   const conflicts = new Set(conflictsIn(path, constraints, axisAngle));

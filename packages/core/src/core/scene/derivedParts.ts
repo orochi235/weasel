@@ -9,7 +9,9 @@
  * long as the path does — in the derivation's memo.
  */
 import type { InheritedPaint } from './inheritedPaint';
-import { pathToCubicContours, cubicContoursToPath, type Path, type PolygonPath } from '@weasel-js/geom';
+import {
+  coordsFrom, cubicContoursToPath, pathToCubicContours, worldCoords, type Path, type PolygonPath,
+} from '@weasel-js/geom';
 import {
   resolveFill, resolveStroke, type Fill, type Inherit, type PaintedFill, type PaintedStroke, type Stroke,
 } from '@weasel-js/paint';
@@ -67,17 +69,20 @@ function concatPaths(paths: readonly Path[]): PolygonPath {
     commands += p.commands.length;
     coords += p.coords.length;
   }
+  // Every part is measured from the first one's origin.
+  const origin = polys[0]?.origin;
   const out: PolygonPath = {
     kind: 'polygon',
     commands: new Uint8Array(commands),
     coords: new Float32Array(coords),
     fillRule: 'nonzero',
+    ...(origin ? { origin } : {}),
   };
   let ci = 0;
   let xi = 0;
   for (const p of polys) {
     out.commands.set(p.commands, ci);
-    out.coords.set(p.coords, xi);
+    out.coords.set(p.origin === origin ? p.coords : coordsFrom(origin, worldCoords(p)), xi);
     ci += p.commands.length;
     xi += p.coords.length;
   }

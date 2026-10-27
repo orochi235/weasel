@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { PATH_C, PATH_M, PATH_Z, polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
+import {
+  PATH_C, PATH_M, PATH_Z, PathBuilder, polygonFromPoints, worldCoords, type PolygonPath,
+} from '@weasel-js/geom';
 import { resolveSkeleton } from './resolveSkeleton';
 import { motionsFromRest, skinPath } from './skin';
 import { IDENTITY_JOINT, type Pose, type Skeleton } from './types';
@@ -40,6 +42,14 @@ describe('skinPath', () => {
     close(out[0], [50, 0]);
     close(out[1], [100, 0]);
     close(out[2], [100, 50]);
+  });
+
+  it('skins a path measured from an origin where the origin puts it, and keeps the origin', () => {
+    const measured = new PathBuilder().setOrigin(40, 0).moveTo(50, 0).lineTo(100, 0).lineTo(150, 0).build();
+    const out = skinPath(measured, { shoulder: [1, 0, 0], elbow: [0, 1, 1] }, motions(QUARTER));
+    expect(out.origin).toEqual({ x: 40, y: 0 });
+    const world = worldCoords(out);
+    close([world[4], world[5]], [100, 50]);
   });
 
   it('puts a point between where each of its joints alone would carry it, by weight', () => {

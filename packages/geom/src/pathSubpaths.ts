@@ -7,6 +7,7 @@ import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic } from './fla
 import { fillsOpenSubpaths } from './openFill';
 import type { PolygonPath } from './path';
 import { resolveCorners } from './paths/corners';
+import { worldCoords } from './paths/pathOrigin';
 
 /**
  * `path` flattened to interleaved `[x, y, …]` runs, sorted by whether each
@@ -18,7 +19,9 @@ export function flatSubpaths(
   path: PolygonPath,
   tolerance: number,
 ): { closed: number[][]; open: number[][] } {
-  const { commands, coords } = resolveCorners(path);
+  const drawn = resolveCorners(path);
+  const { commands } = drawn;
+  const coords = worldCoords(drawn);
   const closed: number[][] = [];
   const open: number[][] = [];
   let sub: number[] = [];

@@ -14,6 +14,7 @@ import { resolveCrossings, type FlattenedContours } from '../tessellate/crossing
 import { nestRings } from '../tessellate/nesting';
 import type { ArapMesh } from './arap';
 import { refineTriangulation } from './refine';
+import { addOrigin } from '../paths/pathOrigin';
 
 /** A puppet's mesh, and the vertex standing for each pin. */
 export interface PuppetMesh extends ArapMesh {
@@ -40,6 +41,7 @@ interface Region {
 
 function ringsOf(path: PolygonPath, tolerance: number): { flat: FlattenedContours; filled: (w: number) => boolean } {
   const flat = flattenPolygon(path, tolerance);
+  addOrigin(path, flat.coords);
   if (path.fillRule === 'evenodd') return { flat, filled: (w) => w % 2 !== 0 };
   const crossed = resolveCrossings(flat);
   const nonzero = (w: number) => w !== 0;

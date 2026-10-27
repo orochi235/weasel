@@ -9,6 +9,7 @@ import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../comma
 import type { Path, PathFillRule, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { resolveCorners } from './corners';
+import { worldCoords } from './pathOrigin';
 
 /** One cubic segment, `[x0, y0, x1, y1, x2, y2, x3, y3]`, and whether it was
  *  drawn straight. A straight one keeps its controls at its thirds, so it
@@ -63,7 +64,9 @@ export function pathToCubicContours(path: Path): CubicContour[] {
     if (current.segs.length > 0) out.push(current);
     current = null;
   };
-  const { commands, coords } = resolveCorners(path);
+  const drawn = resolveCorners(path);
+  const { commands } = drawn;
+  const coords = worldCoords(drawn);
   forEachSegment(commands, coords, (cmd, ci, px, py, _i, opens) => {
     if (opens) {
       current = { segs: [], closed: false };

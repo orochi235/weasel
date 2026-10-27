@@ -115,14 +115,15 @@ interface ParseState {
  * command letters are skipped (and reported via `onWarn` when provided); the
  * builder still returns whatever valid commands preceded them. Data that does
  * not begin with a moveto builds an empty path, and a command with the wrong
- * number of arguments ends the path before it, as SVG renders both.
+ * number of arguments ends the path before it, as SVG renders both. Data that
+ * reaches past `ORIGIN_THRESHOLD` builds a path measured from an origin.
  */
 export function pathFromD(
   d: string,
   onWarn?: (message: string) => void,
 ): ReturnType<PathBuilder['build']> {
   const tokens = tokenize(d);
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   const st: ParseState = {
     x: 0, y: 0, startX: 0, startY: 0,
     lastCubicCtrl: null, lastQuadCtrl: null,

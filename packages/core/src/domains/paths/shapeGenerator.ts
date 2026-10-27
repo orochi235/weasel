@@ -16,6 +16,8 @@ import {
   regularPolygonPath,
   starPath,
   transformPath,
+  originOf,
+  worldCoords,
   worldEditToStorage,
   type PathInWorldPose,
   type PolygonPath,
@@ -109,12 +111,14 @@ function pathMatches(path: unknown, g: ShapeGenerator): boolean {
   const u = boundsOfPath(unit);
   const b = boundsOfPath(p);
   const m = boxToBox(u.x, u.y, u.width, u.height, b.x, b.y, b.width, b.height);
-  // Paths store float32 coordinates, so the slack scales with how far they are from the origin.
-  const tol = 1e-4 * Math.max(1, Math.abs(b.x) + b.width, Math.abs(b.y) + b.height);
+  // Paths store float32 coordinates, so the slack scales with how far they are from the point they are measured from.
+  const o = originOf(p);
+  const tol = 1e-4 * Math.max(1, Math.abs(b.x - o.x) + b.width, Math.abs(b.y - o.y) + b.height);
+  const at = worldCoords(p);
   for (let i = 0; i + 1 < unit.coords.length; i += 2) {
     const x = m[0] * unit.coords[i] + m[4];
     const y = m[3] * unit.coords[i + 1] + m[5];
-    if (Math.abs(x - p.coords[i]) > tol || Math.abs(y - p.coords[i + 1]) > tol) return false;
+    if (Math.abs(x - at[i]) > tol || Math.abs(y - at[i + 1]) > tol) return false;
   }
   return true;
 }
