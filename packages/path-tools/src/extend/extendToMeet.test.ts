@@ -48,7 +48,7 @@ describe('extendToMeetAction', () => {
 
   it('given a click, extends only the end of the stroke nearest it', () => {
     const { deps, batches } = setup({ seg: 'M13 0 H17', w1: 'M10 -10 V10', w2: 'M20 -10 V10' });
-    run(extendToMeetAction, deps, { pressX: 14, pressY: 1, radiusPx: 3 });
+    run(extendToMeetAction, deps, { press: { x: 14, y: 1 }, radiusPx: 3 });
     expect(poseOf(batches[0].ops[0])).toEqual([10, 0, 17, 0]);
     expect(extendToMeetAction.enabled!(deps, { x: 14, y: 1 })).toBe(true);
   });

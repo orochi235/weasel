@@ -122,9 +122,9 @@ describe('useBoneTool', () => {
   it('picks the joint under a click and clears on a click elsewhere', () => {
     const t = setup();
     t.drag([120, 150], [200, 150]);
-    t.fire('bone.pick', { pressX: 118, pressY: 151 });
+    t.fire('bone.pick', { press: { x: 118, y: 151 } });
     expect(t.state.active()).toBe('joint');
-    t.fire('bone.pick', { pressX: 300, pressY: 300 });
+    t.fire('bone.pick', { press: { x: 300, y: 300 } });
     expect(t.state.active()).toBeNull();
   });
 
@@ -147,7 +147,7 @@ describe('useBoneTool', () => {
     expect(t.fire('bone.remove')).toBe(false);
     expect(t.fire('bone.clear')).toBe(false);
     t.setTarget(null);
-    expect(t.fire('bone.pick', { pressX: 0, pressY: 0 })).toBe(false);
+    expect(t.fire('bone.pick', { press: { x: 0, y: 0 } })).toBe(false);
     expect(t.drag([0, 0], [10, 10])).toEqual({});
   });
 });

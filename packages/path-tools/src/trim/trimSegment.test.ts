@@ -35,7 +35,7 @@ describe('trimPathAction', () => {
 
   it('removes the clicked piece between two crossings, in one undo step', () => {
     const { deps, batches } = setup({ line: 'M0 0 H30', ...walls });
-    run(trimPathAction, deps, { pressX: 15, pressY: 2, radiusPx: 3 });
+    run(trimPathAction, deps, { press: { x: 15, y: 2 }, radiusPx: 3 });
     expect(batches).toHaveLength(1);
     expect(batches[0].label).toBe('Trim segment');
     expect(poseOf(batches[0].ops[0])).toEqual([0, 0, 10, 0, 20, 0, 30, 0]);
@@ -43,20 +43,20 @@ describe('trimPathAction', () => {
 
   it('trims the topmost stroke under the click', () => {
     const { deps, batches } = setup({ line: 'M0 0 H30', ...walls });
-    run(trimPathAction, deps, { pressX: 20, pressY: 6 });
+    run(trimPathAction, deps, { press: { x: 20, y: 6 } });
     expect((batches[0].ops[0].args as { id: string }).id).toBe('w2');
   });
 
   it('deletes a stroke with nothing left of it', () => {
     const { deps, batches, selection } = setup({ stub: 'M10 0 H20', ...walls }, ['stub']);
-    run(trimPathAction, deps, { pressX: 15, pressY: 0, radiusPx: 3 });
+    run(trimPathAction, deps, { press: { x: 15, y: 0 }, radiusPx: 3 });
     expect(batches[0].ops[0].name).toBe('delete');
     expect(selection.set).toHaveBeenCalledWith([]);
   });
 
   it("plans from a hover's pointer what the click would cut, and cuts nothing", () => {
     const { deps, batches } = setup({ line: 'M0 0 H30', ...walls });
-    const plan = planTrim(deps, { worldX: 15, worldY: 2, radiusPx: 3 })!;
+    const plan = planTrim(deps, { world: { x: 15, y: 2 }, radiusPx: 3 })!;
     expect(plan.target.id).toBe('line');
     expect(Array.from(plan.result.removed.coords)).toEqual([10, 0, 20, 0]);
     expect(batches).toHaveLength(0);
@@ -68,7 +68,7 @@ describe('trimPathAction', () => {
       id: asNodeId('box'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 30, height: 20 }, data: { tag: 1 }, parent: null,
     });
     // The walls are drawn first, so the box is topmost under the click.
-    run(trimPathAction, deps, { pressX: 15, pressY: 1, radiusPx: 3 });
+    run(trimPathAction, deps, { press: { x: 15, y: 1 }, radiusPx: 3 });
     expect(batches).toHaveLength(1);
     const set = batches[0].ops.find((op) => op.name === 'setData')!;
     expect((set.args as { from: unknown }).from).toEqual({ tag: 1 });
@@ -80,8 +80,8 @@ describe('trimPathAction', () => {
 
   it('does nothing off every stroke, or on one nothing crosses', () => {
     const { deps, batches } = setup({ line: 'M0 0 H30', lone: 'M0 50 H30', ...walls });
-    run(trimPathAction, deps, { pressX: 15, pressY: 25 });
-    run(trimPathAction, deps, { pressX: 15, pressY: 50 });
+    run(trimPathAction, deps, { press: { x: 15, y: 25 } });
+    run(trimPathAction, deps, { press: { x: 15, y: 50 } });
     expect(batches).toHaveLength(0);
   });
 });

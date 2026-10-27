@@ -17,9 +17,9 @@ describe('ActionsRegistry.trigger', () => {
     };
     const { registry } = new ActionsNode(null, true, () => null);
     registry.register(rightHalf);
-    expect(registry.trigger('test.right-half', { worldX: 5, worldY: 7 })).toBe(true);
-    expect(registry.trigger('test.right-half', { worldX: -5, worldY: 7 })).toBe(false);
-    expect(registry.trigger('test.right-half', { worldX: 5 })).toBe(false);
+    expect(registry.trigger('test.right-half', { world: { x: 5, y: 7 } })).toBe(true);
+    expect(registry.trigger('test.right-half', { world: { x: -5, y: 7 } })).toBe(false);
+    expect(registry.trigger('test.right-half', {})).toBe(false);
     expect(seen).toEqual([{ x: 5, y: 7 }, { x: -5, y: 7 }, undefined]);
     expect(run).toHaveBeenCalledTimes(1);
   });

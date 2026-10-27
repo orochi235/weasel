@@ -161,11 +161,11 @@ describe('picking and the current measurement', () => {
     rig.measure({ x: 0, y: 0 }, { x: 100, y: 0 });
     rig.measure({ x: 0, y: 50 }, { x: 100, y: 50 });
     const [a, b] = rig.ids();
-    rig.run(MEASURE_ACTION_IDS.pickAt, { pressX: 50, pressY: 2 });
+    rig.run(MEASURE_ACTION_IDS.pickAt, { press: { x: 50, y: 2 } });
     expect(rig.ms.picked.get()).toBe(a);
-    rig.run(MEASURE_ACTION_IDS.pickAt, { pressX: 50, pressY: 49 });
+    rig.run(MEASURE_ACTION_IDS.pickAt, { press: { x: 50, y: 49 } });
     expect(rig.ms.picked.get()).toBe(b);
-    rig.run(MEASURE_ACTION_IDS.pickAt, { pressX: 50, pressY: 25 });
+    rig.run(MEASURE_ACTION_IDS.pickAt, { press: { x: 50, y: 25 } });
     expect(rig.ms.picked.get()).toBeNull();
   });
 
@@ -175,12 +175,12 @@ describe('picking and the current measurement', () => {
     rig.measure({ x: 0, y: 2 }, { x: 100, y: 2 });
     const [a, b] = rig.ids();
     rig.scene.setHidden(b!, true);
-    rig.run(MEASURE_ACTION_IDS.pickAt, { pressX: 50, pressY: 2 });
+    rig.run(MEASURE_ACTION_IDS.pickAt, { press: { x: 50, y: 2 } });
     expect(rig.ms.picked.get()).toBe(a);
     rig.scene.setHidden(b!, false);
     rig.scene.setLocked(b!, true);
     rig.ms.picked.set(null);
-    rig.run(MEASURE_ACTION_IDS.pickAt, { pressX: 50, pressY: 2 });
+    rig.run(MEASURE_ACTION_IDS.pickAt, { press: { x: 50, y: 2 } });
     expect(rig.ms.picked.get()).toBe(a);
   });
 
@@ -198,7 +198,7 @@ describe('picking and the current measurement', () => {
   it('leaves the content selection alone when a measurement is picked', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 100, y: 0 });
-    rig.run(MEASURE_ACTION_IDS.pickAt, { pressX: 50, pressY: 1 });
+    rig.run(MEASURE_ACTION_IDS.pickAt, { press: { x: 50, y: 1 } });
     expect(rig.selection.get()).toEqual([rig.box]);
   });
 });

@@ -67,7 +67,7 @@ function harness(initial: UseSceneOptions<unknown, 'default', Pose>['initial']) 
     if (a.invoker?.timing !== 'immediate') throw new Error(`${id} not immediate`);
     const invoker = a.invoker;
     act(() => {
-      invoker.run(deps(), point ? { worldX: point.x, worldY: point.y, mods: NO_MODS } : {});
+      invoker.run(deps(), point ? { world: { x: point.x, y: point.y }, mods: NO_MODS } : {});
     });
   };
   return {

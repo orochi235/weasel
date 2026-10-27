@@ -44,7 +44,7 @@ function setup(rows = 5, rotation = 0) {
 }
 
 const wheel = (deps: ActionDeps, at: { x: number; y: number }, deltaY: number, swapAxis = false): void | 'pass' =>
-  (containerScrollAction.invoker as ImmediateInvoker).run(deps, { worldX: at.x, worldY: at.y, deltaX: 0, deltaY, swapAxis });
+  (containerScrollAction.invoker as ImmediateInvoker).run(deps, { world: { x: at.x, y: at.y }, deltaX: 0, deltaY, swapAxis });
 
 describe('containerScrollAction', () => {
   it('reads the range from the strategy\'s contentExtent', () => {

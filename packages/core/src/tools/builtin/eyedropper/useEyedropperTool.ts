@@ -7,6 +7,7 @@ import type { ToolKeybinding } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {
@@ -54,10 +55,10 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
       invoker: {
         timing: 'immediate' as const,
         run: (deps, params) => {
-          const p = params as { pressX?: number; pressY?: number } | undefined;
-          if (p?.pressX === undefined || p.pressY === undefined) return;
+          const press = (params as ImmediateParams | undefined)?.press;
+          if (!press) return;
           const nodeAtPoint = deps.nodeAtPoint;
-          const id = nodeAtPoint?.({ x: p.pressX, y: p.pressY }) ?? null;
+          const id = nodeAtPoint?.(press) ?? null;
           if (id === null) return;
           onPickRef.current(colorOfRef.current(id));
         },

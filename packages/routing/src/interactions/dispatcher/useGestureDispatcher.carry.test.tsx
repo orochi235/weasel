@@ -86,7 +86,7 @@ describe('useGestureDispatcher — carry channel', () => {
     move('pointermove', 50, 50);
     move('pointerup', 150, 160);
     expect(run).toHaveBeenCalledOnce();
-    expect(run.mock.calls[0]![1]).toMatchObject({ worldX: 50, worldY: 60, carry: PAYLOAD });
+    expect(run.mock.calls[0]![1]).toMatchObject({ world: { x: 50, y: 60 }, carry: PAYLOAD });
     expect(onEnd).toHaveBeenCalledWith(expect.objectContaining({ taken: true }));
   });
 
@@ -162,7 +162,7 @@ describe('useGestureDispatcher — carry channel', () => {
       move('pointermove', 120, 120);
       move('pointerup', 170, 120);
       expect(run).toHaveBeenCalledOnce();
-      expect(run.mock.calls[0]![1]).toMatchObject({ worldX: 70, bodyTarget: 'selected-body', carry: PAYLOAD });
+      expect(run.mock.calls[0]![1]).toMatchObject({ world: { x: 70 }, bodyTarget: 'selected-body', carry: PAYLOAD });
     });
 
     it('starts an ongoing binding when the carry moves onto its target, not where it came over', () => {

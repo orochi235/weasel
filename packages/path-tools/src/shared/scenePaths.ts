@@ -6,15 +6,14 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Path } from '@weasel-js/geom';
 import { type NodeId, nodeOutline, type PathNode, resolveEditablePathOf, type SceneNode } from '@weasel-js/core';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
 /** Default reach of a click from the stroke it acts on, in screen pixels. */
 export const DEFAULT_STROKE_REACH_PX = 6;
 
-type PressParams = {
-  pressX?: number; pressY?: number; worldX?: number; worldY?: number; radiusPx?: number;
-} | undefined;
+type PressParams = (ImmediateParams & { radiusPx?: number }) | undefined;
 
 /** A world point, and how far from it a stroke may be in world units. */
 export interface StrokePress {
@@ -26,11 +25,11 @@ export interface StrokePress {
  *  reach, `radiusPx` at the view's scale; null with neither point. */
 export function pressOf(deps: ActionDeps, params: unknown): StrokePress | null {
   const p = params as PressParams;
-  const x = p?.pressX ?? p?.worldX, y = p?.pressY ?? p?.worldY;
-  if (x === undefined || y === undefined) return null;
+  const at = p?.press ?? p?.world;
+  if (!at) return null;
   const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
   const radius = (p?.radiusPx ?? DEFAULT_STROKE_REACH_PX) / Math.max(Math.abs(scale.x), Math.abs(scale.y));
-  return { at: { x, y }, radius };
+  return { at, radius };
 }
 
 function renderOrder(deps: ActionDeps | undefined): readonly AnyNode[] {

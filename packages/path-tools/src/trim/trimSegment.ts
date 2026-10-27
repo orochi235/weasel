@@ -31,7 +31,7 @@ export function planTrim(
  * between the nearest crossings on either side — with any other node's
  * outline, or with itself — as `trimPathAt` cuts it. The topmost stroke
  * within `radiusPx` of the press (default 6) is the one trimmed; a stroke
- * with nothing left is deleted. Params: `pressX`, `pressY` in world space,
+ * with nothing left is deleted. Params: `press`, a world point,
  * which a click binding supplies.
  */
 export const trimPathAction: Action & { requires: string[] } = {

@@ -47,7 +47,7 @@ describe('convertSegmentAt', () => {
     const t = setup();
     expect(convertSegmentAtAction.enabled!(t.deps, { x: 140, y: 120 })).toBe(true);
     expect(convertSegmentAtAction.enabled!(t.deps, { x: 120, y: 120 })).toBe(ActionDisabledReason.NotApplicable);
-    run(convertSegmentAtAction, t.deps, { worldX: 140, worldY: 120 });
+    run(convertSegmentAtAction, t.deps, { world: { x: 140, y: 120 } });
     const [, b, c] = t.anchors();
     expect(b.outHandle?.y).toBeCloseTo(100 + 40 / 3, 4);
     expect(c.inHandle?.y).toBeCloseTo(140 - 40 / 3, 4);

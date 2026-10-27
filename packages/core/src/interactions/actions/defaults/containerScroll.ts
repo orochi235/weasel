@@ -13,6 +13,7 @@ import { scenePoseAdapter, sceneViewPoseAdapter } from 'core/scene/scenePoseAdap
 import type { NodeId, Scene } from 'core/scene/types';
 import { wheelPan } from 'core/viewport/wheelHandler';
 import { poseDescriptorOf } from '../poseDescriptorDep';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -147,13 +148,12 @@ export const containerScrollAction: Action & { requires: string[] } = {
     run(deps, params) {
       const scene = sceneOf(deps);
       const view = deps.view?.get();
-      const x = params?.worldX as number | undefined;
-      const y = params?.worldY as number | undefined;
-      if (!scene || !view || x === undefined || y === undefined) return 'pass';
+      const world = (params as ImmediateParams | undefined)?.world;
+      if (!scene || !view || !world) return 'pass';
       const delta = { deltaX: (params?.deltaX as number | undefined) ?? 0, deltaY: (params?.deltaY as number | undefined) ?? 0 };
       // The pan's own conversion, from a view at the origin: how far the wheel moves in world units.
       const by = wheelPan({ x: 0, y: 0, scale: view.scale }, delta, { swapAxis: params?.swapAxis === true });
-      for (const hit of scrollablesAt(scene, { x, y }, poseDescriptorOf(deps.poseDescriptor))) {
+      for (const hit of scrollablesAt(scene, world, poseDescriptorOf(deps.poseDescriptor))) {
         const from = scene.scroll.get(hit.id) ?? { x: 0, y: 0 };
         const to = { x: clamp(from.x + by.x, hit.range.x), y: clamp(from.y + by.y, hit.range.y) };
         if (to.x === from.x && to.y === from.y) continue;

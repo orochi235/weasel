@@ -47,6 +47,7 @@ import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudge
 import { icon } from '../../../icons.gen';
 import { pathEditToolActive } from './pathEditTools';
 import { pathOperationTags } from '../pathGestureTags';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
 export const ANCHOR_CLICK_PX = 10;
@@ -147,9 +148,9 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
     run: (deps, params) => {
       const dep = depOf(deps);
       if (!dep) return;
-      const wx = params?.worldX as number | undefined;
-      const wy = params?.worldY as number | undefined;
-      if (typeof wx !== 'number' || typeof wy !== 'number') return;
+      const world = (params as ImmediateParams | undefined)?.world;
+      if (!world) return;
+      const { x: wx, y: wy } = world;
       const worldPath = worldPathOf(dep);
       if (!worldPath) return;
 
@@ -279,9 +280,9 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
     run: (deps, params) => {
       const dep = depOf(deps);
       if (!dep) return;
-      const wx = params?.worldX as number | undefined;
-      const wy = params?.worldY as number | undefined;
-      if (typeof wx !== 'number' || typeof wy !== 'number') return;
+      const world = (params as ImmediateParams | undefined)?.world;
+      if (!world) return;
+      const { x: wx, y: wy } = world;
       const worldPath = worldPathOf(dep);
       if (!worldPath) return;
 

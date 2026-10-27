@@ -18,6 +18,7 @@ import { diagramEdgeOf } from './edgeTrait';
 import { LABEL_DERIVE_POSE } from './label';
 import { labelScratchOf, labelUnder } from './labelDragLayer';
 import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel } from './labelTrait';
+import type { ImmediateParams } from '@weasel-js/core';
 
 /** The face an edge label is set in: the diagram's, two sizes down. */
 export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });
@@ -142,8 +143,10 @@ export function editEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const world = { x: Number(params?.worldX), y: Number(params?.worldY) };
-        const pressed = labelScratchOf((params as { affordance?: { payload?: unknown } } | undefined)?.affordance);
+        const p = params as ImmediateParams | undefined;
+        const world = p?.world;
+        if (!world) return;
+        const pressed = labelScratchOf(p.affordance as { payload?: unknown } | undefined);
         const edgeId = pressed?.edgeId ?? edgeUnder(deps, world);
         if (edgeId === null) return;
         const ctx = { world, modifiers: { alt: false, shift: false, meta: false, ctrl: false }, deps } as InvocationCtx;

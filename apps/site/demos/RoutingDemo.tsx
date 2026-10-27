@@ -13,6 +13,7 @@ import {
   routesForSpec,
   type Action,
   type DispatcherContext,
+  type ImmediateParams,
   type InputEvent,
   type ModifierState,
   type NodeId,
@@ -65,7 +66,10 @@ function normalize(r: Rect): Rect {
 
 function makeActions(get: () => Board, set: (b: Board) => void): Action[] {
   const needsSelection = () => (get().selected.length > 0 ? true : ActionDisabledReason.SelectionRequired);
-  const at = (p?: Record<string, unknown>) => boxAt(get(), p?.worldX as number, p?.worldY as number);
+  const at = (p?: Record<string, unknown>) => {
+    const world = (p as ImmediateParams | undefined)?.world;
+    return world ? boxAt(get(), world.x, world.y) : undefined;
+  };
 
   return [
     {

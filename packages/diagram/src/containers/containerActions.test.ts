@@ -91,7 +91,7 @@ describe('the add-lane action', () => {
     const h = pool();
     const action = createAddLaneAction({ scene: h.scene as never });
     const affordance = { payload: { targetId: h.poolId, poolId: h.poolId } satisfies LaneScratch };
-    (action.invoker as ImmediateInvoker).run({ scene: h.scene } as never, { worldX: 0, worldY: 0, affordance } as never);
+    (action.invoker as ImmediateInvoker).run({ scene: h.scene } as never, { world: { x: 0, y: 0 }, affordance } as never);
     expect(lanesOf(h.scene as never, h.poolId)).toHaveLength(3);
     expect(pose(h.scene, h.poolId)).toMatchObject({ height: 360 });
   });

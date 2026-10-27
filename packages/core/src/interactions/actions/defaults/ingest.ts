@@ -17,7 +17,7 @@
  * otherwise reject Cmd+V paste and macOS Option-drag drops outright.
  *
  * The dispatcher merges event data into `params`: `items` (IngestItem[]),
- * `via` ('drop' | 'paste'), plus `worldX`/`worldY` for drops. Absent
+ * `via` ('drop' | 'paste'), plus `world` for drops. Absent
  * coords → `point: null`; handlers pick their own placement policy.
  */
 import type { Action } from '@weasel-js/routing';
@@ -29,6 +29,7 @@ import type { IngestItem } from '@weasel-js/routing';
 import { previewIngest } from 'domains/ingestion/ghost';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { MOVE_NODES_REQUIRES } from '../moveNodes';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 export const ANY_INGEST_MODS = {
   alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional',
@@ -64,10 +65,7 @@ export function ingestFromEvent(
   if (!ingestion || !insert || !scene || !selection) return;
   const applyOps = deps.applyOps;
 
-  const point =
-    typeof params?.worldX === 'number' && typeof params?.worldY === 'number'
-      ? { x: params.worldX as number, y: params.worldY as number }
-      : null;
+  const point = (params as ImmediateParams | undefined)?.world ?? null;
 
   const ctx: IngestCtx = {
     point,

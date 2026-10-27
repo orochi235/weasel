@@ -8,6 +8,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { asNodeId } from 'core/scene/types';
 import type { Point } from '@weasel-js/geom';
 import { pressTarget } from 'tools/builtin/pressTarget';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** World center of the selection's bounds, else of the visible canvas. */
 export function keyboardAnchor(deps: ActionDeps): Point | null {
@@ -70,9 +71,9 @@ export function openContextMenu(
 ): boolean {
   const host = deps.menuHost;
   if (!host) return false;
-  const p = params ?? {};
-  if (typeof p.clientX === 'number' && typeof p.worldX === 'number') {
-    const world = { x: p.worldX, y: p.worldY as number };
+  const p: ImmediateParams = params ?? {};
+  if (typeof p.clientX === 'number' && p.world) {
+    const world = p.world;
     const { hit, select } = menuHitFor(deps, world);
     if (select) deps.selection?.set([asNodeId(select)]);
     return host.open({

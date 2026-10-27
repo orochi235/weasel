@@ -45,7 +45,7 @@ describe('an insert into a mark that canDropInto admits', () => {
     const deps = buildDepsFromRequires(placeAction, reg);
     const invoker = placeAction.invoker!;
     if (invoker.timing !== 'immediate') throw new Error('expected immediate');
-    invoker.run(deps, { kind: 'rect', worldX: 5, worldY: 5, size: { width: 10, height: 10 } });
+    invoker.run(deps, { kind: 'rect', world: { x: 5, y: 5 }, size: { width: 10, height: 10 } });
     expect(begun.at(-1)?.parent).toBe(MARK);
   });
 });

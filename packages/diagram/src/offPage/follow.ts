@@ -15,6 +15,7 @@ import {
 } from '@weasel-js/core';
 import { diagramEdgeOf } from '../edgeTrait';
 import { offPageTagOf } from './trait';
+import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action that follows an off-page tag to its far page. */
 export const FOLLOW_OFF_PAGE_ACTION_ID = 'diagram.followOffPage';
@@ -82,7 +83,8 @@ export function createFollowOffPageAction(opts: FollowOffPageOptions = {}): Acti
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const world = { x: Number(params?.worldX), y: Number(params?.worldY) };
+        const world = (params as ImmediateParams | undefined)?.world;
+        if (!world) return;
         const target = tagUnder(deps, world);
         if (target === null) return;
         follow(target, { world, modifiers: { alt: false, shift: false, meta: false, ctrl: false }, deps } as InvocationCtx);

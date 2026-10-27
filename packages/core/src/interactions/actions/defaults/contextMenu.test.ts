@@ -19,7 +19,7 @@ function deps(over: Record<string, unknown> = {}) {
 describe('openContextMenu', () => {
   it('selects an unselected body first, then opens for the hit', () => {
     const d = deps() as { menuHost: { open: ReturnType<typeof vi.fn> }; selection: { set: ReturnType<typeof vi.fn> } };
-    openContextMenu(d as never, { worldX: 5, worldY: 6, clientX: 50, clientY: 60 });
+    openContextMenu(d as never, { world: { x: 5, y: 6 }, clientX: 50, clientY: 60 });
     expect(d.selection.set).toHaveBeenCalledWith(['b']);
     expect(d.menuHost.open).toHaveBeenCalledWith({
       hit: { bodyTarget: 'selected-body', bodyKind: 'rect' },
@@ -29,7 +29,7 @@ describe('openContextMenu', () => {
   it('leaves the selection alone on empty canvas', () => {
     const d = deps() as { selection: { set: ReturnType<typeof vi.fn> } };
     (d as unknown as { hitAt: ReturnType<typeof vi.fn> }).hitAt.mockReturnValue({ bodyTarget: 'empty' });
-    openContextMenu(d as never, { worldX: 5, worldY: 6, clientX: 50, clientY: 60 });
+    openContextMenu(d as never, { world: { x: 5, y: 6 }, clientX: 50, clientY: 60 });
     expect(d.selection.set).not.toHaveBeenCalled();
   });
   it('opens from the keyboard at the selection, highlighted', () => {
@@ -42,7 +42,7 @@ describe('openContextMenu', () => {
     }));
   });
   it('does nothing without a menu host', () => {
-    expect(openContextMenu(deps({ menuHost: undefined }) as never, { worldX: 0, worldY: 0, clientX: 0, clientY: 0 })).toBe(false);
+    expect(openContextMenu(deps({ menuHost: undefined }) as never, { world: { x: 0, y: 0 }, clientX: 0, clientY: 0 })).toBe(false);
   });
 
 });
@@ -79,7 +79,7 @@ describe('openContextMenu on a group', () => {
     const d = deps({ scene, hitAt: () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: m }) }) as {
       selection: { set: ReturnType<typeof vi.fn> };
     };
-    openContextMenu(d as never, { worldX: 5, worldY: 5, clientX: 50, clientY: 60 });
+    openContextMenu(d as never, { world: { x: 5, y: 5 }, clientX: 50, clientY: 60 });
     expect(d.selection.set).toHaveBeenCalledWith([g]);
   });
 });
@@ -94,7 +94,7 @@ describe('openContextMenu on a member of a group', () => {
       hitAt: () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: m }),
       kindOfNode: (id: string) => (id === g ? 'group' : 'rect'),
     }) as { menuHost: { open: ReturnType<typeof vi.fn> } };
-    openContextMenu(d as never, { worldX: 5, worldY: 5, clientX: 50, clientY: 60 });
+    openContextMenu(d as never, { world: { x: 5, y: 5 }, clientX: 50, clientY: 60 });
     expect(d.menuHost.open).toHaveBeenCalledWith(expect.objectContaining({
       hit: { bodyTarget: 'selected-body', bodyKind: 'group' },
     }));

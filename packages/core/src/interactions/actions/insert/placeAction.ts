@@ -6,9 +6,10 @@ import { enterInsertedText } from './commit';
 import { insertParent } from './parent';
 import { insertKind } from './shape';
 import { minSizeOf } from 'core/scene/minSize';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
-const CLICK_FIELDS = ['worldX', 'worldY', 'pressX', 'pressY', 'affordance', 'mods'] as const;
+const CLICK_FIELDS = ['world', 'press', 'affordance', 'mods'] as const;
 
 const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
 
@@ -41,9 +42,9 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       const size = asked && min
         ? { width: Math.max(asked.width, min.width), height: Math.max(asked.height, min.height) }
         : asked;
-      const x = params?.['worldX'];
-      const y = params?.['worldY'];
-      if (!dep || !size || typeof x !== 'number' || typeof y !== 'number') return;
+      const world = (params as ImmediateParams | undefined)?.world;
+      if (!dep || !size || !world) return;
+      const { x, y } = world;
       if (!(size.width > 0 && size.height > 0)) return;
 
       deps.selection?.clear();

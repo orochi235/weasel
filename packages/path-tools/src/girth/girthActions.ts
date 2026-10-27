@@ -7,6 +7,7 @@ import {
   anchorNormals, draggedWidth, gripAt, isWidthSet, movedSide, storedWith, widthEdgeAt, widthPointNear, widthsOf,
   widthTargetAt, type WidthGrip, type WidthTarget,
 } from './widthEdit';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -148,12 +149,12 @@ export function createGirthActions(env: GirthEnv): Action[] {
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const p = params as { pressX?: number; pressY?: number } | undefined;
+          const press = (params as ImmediateParams | undefined)?.press;
           const at = found(deps, env);
-          if (!at || p?.pressX === undefined || p.pressY === undefined) return;
-          const target = widthTargetAt(at.scene, p.pressX, p.pressY, at.scale, at.reach);
+          if (!at || !press) return;
+          const target = widthTargetAt(at.scene, press.x, press.y, at.scale, at.reach);
           if (!target) return;
-          const index = widthPointNear(target, p.pressX, p.pressY, at.reach);
+          const index = widthPointNear(target, press.x, press.y, at.reach);
           const widths = widthsOf(target, pathToAnchors(target.path).anchors.flat().length);
           if (index < 0 || !isWidthSet(widths[index])) return;
           widths[index] = NaN;
@@ -173,10 +174,10 @@ export function createGirthActions(env: GirthEnv): Action[] {
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const p = params as { worldX?: number; worldY?: number } | undefined;
+          const world = (params as ImmediateParams | undefined)?.world;
           const at = found(deps, env);
-          if (!at || p?.worldX === undefined || p.worldY === undefined) return;
-          const hit = widthEdgeAt(at.scene, p.worldX, p.worldY, at.scale, at.reach);
+          if (!at || !world) return;
+          const hit = widthEdgeAt(at.scene, world.x, world.y, at.scale, at.reach);
           if (!hit) {
             dropGrab(env);
             return;

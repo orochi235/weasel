@@ -5,7 +5,7 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
+import type { ActionDeps, ImmediateParams, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
 import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors } from '@weasel-js/geom';
@@ -372,15 +372,15 @@ export function usePenTool(
         invoker: {
           timing: 'immediate' as const,
           run: (deps, params) => {
-            const p = params as { pressX?: number; pressY?: number; mods?: ModifierState } | undefined;
-            if (p?.pressX === undefined || p.pressY === undefined) return;
+            const p = params as ImmediateParams | undefined, press = p?.press;
+            if (!press) return;
             // The press point, not the release: a click may drift up to the
             // drag threshold.
-            if (pickUpEndpoint(deps, p.pressX, p.pressY)) {
+            if (pickUpEndpoint(deps, press.x, press.y)) {
               trail.update(deps);
               return;
             }
-            const { x: wx, y: wy, hit } = placeAt(deps, p.pressX, p.pressY, p.mods ?? NO_KEYS);
+            const { x: wx, y: wy, hit } = placeAt(deps, press.x, press.y, p.mods ?? NO_KEYS);
             const scratch = s();
 
             // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`

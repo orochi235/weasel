@@ -68,7 +68,7 @@ describe('useEyedropperTool', () => {
     const onPick = vi.fn();
     const colorOf = vi.fn((id: string) => (id === 'r1' ? '#ff0000' : null));
     const { result } = renderHook(() => useEyedropperTool({ onPick, colorOf }));
-    run(result.current, depsHitting('r1'), { pressX: 5, pressY: 5 });
+    run(result.current, depsHitting('r1'), { press: { x: 5, y: 5 } });
     expect(colorOf).toHaveBeenCalledWith('r1');
     expect(onPick).toHaveBeenCalledExactlyOnceWith('#ff0000');
   });
@@ -83,7 +83,7 @@ describe('useEyedropperTool', () => {
     const deps = {
       nodeAtPoint: (p: { x: number; y: number }) => { seen.push(p); return 'r1' as NodeId; },
     } as unknown as ActionDeps;
-    run(result.current, deps, { pressX: 10, pressY: 10, worldX: 13, worldY: 13 });
+    run(result.current, deps, { press: { x: 10, y: 10 }, world: { x: 13, y: 13 } });
     expect(seen).toEqual([{ x: 10, y: 10 }]);
   });
 
@@ -92,7 +92,7 @@ describe('useEyedropperTool', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick, colorOf: () => null }),
     );
-    run(result.current, depsHitting('r1'), { pressX: 0, pressY: 0 });
+    run(result.current, depsHitting('r1'), { press: { x: 0, y: 0 } });
     expect(onPick).toHaveBeenCalledWith(null);
   });
 
@@ -101,7 +101,7 @@ describe('useEyedropperTool', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick, colorOf: () => '#fff' }),
     );
-    run(result.current, depsHitting(null), { pressX: 0, pressY: 0 });
+    run(result.current, depsHitting(null), { press: { x: 0, y: 0 } });
     expect(onPick).not.toHaveBeenCalled();
   });
 
@@ -110,7 +110,7 @@ describe('useEyedropperTool', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick, colorOf: () => '#fff' }),
     );
-    run(result.current, {} as ActionDeps, { pressX: 0, pressY: 0 });
+    run(result.current, {} as ActionDeps, { press: { x: 0, y: 0 } });
     expect(onPick).not.toHaveBeenCalled();
   });
 
@@ -136,7 +136,7 @@ describe('useEyedropperTool', () => {
       { initialProps: { onPick: onPick1, colorOf: () => '#111' } },
     );
     rerender({ onPick: onPick2, colorOf: () => '#222' });
-    run(result.current, depsHitting('r1'), { pressX: 0, pressY: 0 });
+    run(result.current, depsHitting('r1'), { press: { x: 0, y: 0 } });
     expect(onPick1).not.toHaveBeenCalled();
     expect(onPick2).toHaveBeenCalledWith('#222');
   });
@@ -150,7 +150,7 @@ describe('useEyedropperTool', () => {
       return null;
     }
     renderThenAbandon(committed, abandoned, (onPick) => createElement(Probe, { onPick }));
-    run(tool!, depsHitting('r1'), { pressX: 1, pressY: 1 });
+    run(tool!, depsHitting('r1'), { press: { x: 1, y: 1 } });
     expect(abandoned).not.toHaveBeenCalled();
     expect(committed).toHaveBeenCalledExactlyOnceWith('#abc');
   });

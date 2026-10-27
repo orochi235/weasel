@@ -1,7 +1,6 @@
 import type { Action, WorldPoint } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-
-type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
+import type { ImmediateParams } from '@weasel-js/routing';
 
 export interface SelectDeepOptions {
   /** The node under the point, past every group. Locked nodes are the
@@ -27,11 +26,11 @@ export function createSelectDeepAction(opts: SelectDeepOptions): Action {
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const p = params as { worldX?: number; worldY?: number; mods?: Mods } | undefined;
+        const p = params as ImmediateParams | undefined;
         const selection = deps.selection;
-        if (!selection || p?.worldX === undefined || p.worldY === undefined) return;
+        if (!selection || !p?.world) return;
         const shift = p.mods?.shift === true;
-        const hit = opts.pickHit({ x: p.worldX, y: p.worldY }, p.mods?.alt === true, selection.get());
+        const hit = opts.pickHit(p.world, p.mods?.alt === true, selection.get());
         opts.settled();
         if (hit === null || (shift && opts.extendLocked())) return;
         selection.applyClick(hit as NodeId, { ctrl: false, meta: false, shift });

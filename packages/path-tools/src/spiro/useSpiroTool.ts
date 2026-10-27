@@ -8,6 +8,7 @@ import { createPointerFollower, defineTool, pointSnap, snapMods, type Tool } fro
 import { icon } from '../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
 import { spiroNodeData } from './spiroShape';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Options for {@link useSpiroTool}. */
 export interface UseSpiroToolOptions {
@@ -82,12 +83,13 @@ function spiroActions(host: SpiroActionsHost): Action[] {
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const p = params as { pressX?: number; pressY?: number; kind?: unknown; mods?: ModifierState } | undefined;
-          if (p?.pressX === undefined || p.pressY === undefined) return;
+          const p = params as (ImmediateParams & { kind?: unknown }) | undefined;
+          const press = p?.press;
+          if (!press) return;
           followed = deps;
           follower.follow(deps.pointer);
           const mods = snapMods({ modifiers: p.mods ?? NO_KEYS });
-          const at = snaps.place(deps.snap, { x: p.pressX, y: p.pressY }, mods, s().points.at(-1)).point;
+          const at = snaps.place(deps.snap, press, mods, s().points.at(-1)).point;
           if (nearFirst(at.x, at.y)) return commit(deps, true);
           const kind: SpiroKind = isSpiroKind(p.kind) ? p.kind : 'smooth';
           s().points.push({ x: at.x, y: at.y, kind });

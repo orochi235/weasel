@@ -26,7 +26,7 @@ function sceneWithEdge(withLabel = false): Sc {
 
 function runOn(action: ReturnType<typeof editEdgeLabelAction>, deps: ActionDeps, at = { x: 150, y: 20 }) {
   if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
-  action.invoker.run(deps, { worldX: at.x, worldY: at.y });
+  action.invoker.run(deps, { world: { x: at.x, y: at.y } });
 }
 
 const depsOf = (scene: Sc, extra: object = {}, under: string | null = 'e1') =>
@@ -131,7 +131,7 @@ describe('editEdgeLabelAction', () => {
     const action = editEdgeLabelAction({ commit });
     if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
     const payload = { targetId: 'e1/label', labelId: 'e1/label', edgeId: 'e1' };
-    action.invoker.run(depsOf(scene, {}, null), { worldX: -500, worldY: -500, affordance: { payload } });
+    action.invoker.run(depsOf(scene, {}, null), { world: { x: -500, y: -500 }, affordance: { payload } });
     expect(commit).toHaveBeenCalledWith('e1', expect.anything());
   });
 

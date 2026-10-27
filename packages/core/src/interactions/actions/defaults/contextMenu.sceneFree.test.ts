@@ -16,7 +16,7 @@ function deps(matches = true) {
 describe('menu.context with only menuHost, view and worldToClient', () => {
   it('opens at a right-click, for the event’s world point', () => {
     const d = deps();
-    openContextMenu(d as never, { clientX: 50, clientY: 60, worldX: 5, worldY: 6 });
+    openContextMenu(d as never, { clientX: 50, clientY: 60, world: { x: 5, y: 6 } });
     expect(d.menuHost.open).toHaveBeenCalledWith({
       hit: {}, client: { x: 50, y: 60 }, world: { x: 5, y: 6 }, source: 'pointer',
     });

@@ -255,7 +255,7 @@ describe('createRouteEditAction', () => {
 describe('createRemoveWaypointAction', () => {
   const run = (opts: Partial<RouteEditOptions<Rect>>, edgeId: string, handle: RouteHandle, waypoints: Vec2[] = []) =>
     (createRemoveWaypointAction<Rect>({ participants: participants(waypoints), selected: () => [edgeId], ...opts }).invoker as ImmediateInvoker)
-      .run({} as never, { worldX: handle.at.x, worldY: handle.at.y, affordance: press(edgeId, handle) });
+      .run({} as never, { world: { x: handle.at.x, y: handle.at.y }, affordance: press(edgeId, handle) });
 
   it('removes a waypoint on a double-click of its dot', () => {
     const commit = vi.fn();

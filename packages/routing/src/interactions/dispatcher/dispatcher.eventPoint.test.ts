@@ -49,7 +49,7 @@ describe('invocation coordinates', () => {
   it('gives a click\u2019s ctx the click\u2019s own world point', () => {
     const ctx = ctxFor(
       { kind: 'click' },
-      { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, ...noMods },
+      { kind: 'click', x: 3, y: 4, press: { x: 1, y: 2 }, ...noMods },
     );
     expect(ctx.world).toEqual({ x: 3, y: 4 });
   });
@@ -72,7 +72,7 @@ describe('invocation coordinates', () => {
 
 describe('enabled() sees where the event landed', () => {
   const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
-  const click: InputEvent = { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, ...noMods };
+  const click: InputEvent = { kind: 'click', x: 3, y: 4, press: { x: 1, y: 2 }, ...noMods };
 
   it('hands a click’s world point to the gate', () => {
     const enabled = vi.fn().mockReturnValue(true);
@@ -128,7 +128,7 @@ describe('enabled() sees where the event landed', () => {
     expect(dispatcher.resolveOnly(altClick(1, 0), ctx)?.actionId).toBe('near');
   });
 
-  it('hands a wheel its world point, and its immediate invoker the same point as worldX/worldY', () => {
+  it('hands a wheel its world point, and its immediate invoker the same point as `world`', () => {
     const enabled = vi.fn().mockReturnValue(true);
     const run = vi.fn();
     const action: Action = {
@@ -139,6 +139,6 @@ describe('enabled() sees where the event landed', () => {
       makeCtx({ actions: makeRegistry([action]) }),
     );
     expect(enabled.mock.calls[0][1]).toEqual({ x: 7, y: 8 });
-    expect(run.mock.calls[0][1]).toMatchObject({ worldX: 7, worldY: 8, deltaY: 5 });
+    expect(run.mock.calls[0][1]).toMatchObject({ world: { x: 7, y: 8 }, deltaY: 5 });
   });
 });

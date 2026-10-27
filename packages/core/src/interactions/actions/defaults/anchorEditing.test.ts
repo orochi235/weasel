@@ -113,7 +113,7 @@ describe('deleteAnchors', () => {
 describe('cutPathAtAnchor', () => {
   it('opens a closed subpath at the clicked anchor', () => {
     const { dep, commits } = depOverPath(triangle());
-    immediate(cutPathAtAnchorAction).run(dep2(dep), { worldX: 10, worldY: 0 });
+    immediate(cutPathAtAnchorAction).run(dep2(dep), { world: { x: 10, y: 0 } });
     expect(commits).toHaveLength(1);
     const decoded = pathToAnchors(commits[0].path);
     expect(decoded.closed[0]).toBe(false);
@@ -124,7 +124,7 @@ describe('cutPathAtAnchor', () => {
 
   it('ignores a click that is not near any anchor', () => {
     const { dep, commits } = depOverPath(triangle());
-    immediate(cutPathAtAnchorAction).run(dep2(dep), { worldX: 500, worldY: 500 });
+    immediate(cutPathAtAnchorAction).run(dep2(dep), { world: { x: 500, y: 500 } });
     expect(commits).toHaveLength(0);
   });
 
@@ -211,7 +211,7 @@ describe('clearSelection / selectAnchor handoff', () => {
   it('selectAnchor takes the click while a path is in edit mode', () => {
     const { dep } = depOverPath(triangle());
     expect(selectAnchorAction.enabled?.(dep2(dep))).toBe(true);
-    immediate(selectAnchorAction).run(dep2(dep), { worldX: 10, worldY: 0, additive: false });
+    immediate(selectAnchorAction).run(dep2(dep), { world: { x: 10, y: 0 }, additive: false });
     expect([...dep.selectedAnchors]).toEqual([1]);
   });
 });
@@ -279,9 +279,9 @@ describe('anchor click slop is in screen pixels', () => {
   it('zoomed in, a click 5 world units (40 px) from an anchor misses it', () => {
     const { dep, commits } = depOverPath(triangle());
     const deps = depsWith({ editAnchors: dep, view: viewAt(8) });
-    immediate(selectAnchorAction).run(deps, { worldX: 15, worldY: 0, additive: false });
+    immediate(selectAnchorAction).run(deps, { world: { x: 15, y: 0 }, additive: false });
     expect([...dep.selectedAnchors]).toEqual([]);
-    immediate(cutPathAtAnchorAction).run(deps, { worldX: 15, worldY: 0 });
+    immediate(cutPathAtAnchorAction).run(deps, { world: { x: 15, y: 0 } });
     expect(commits).toHaveLength(0);
   });
 
@@ -289,7 +289,7 @@ describe('anchor click slop is in screen pixels', () => {
     const { dep } = depOverPath(triangle());
     const kitSettings = createKitSettingsStore({ targets: { anchorClickPx: 45 } });
     immediate(selectAnchorAction).run(
-      depsWith({ editAnchors: dep, view: viewAt(8), kitSettings }), { worldX: 15, worldY: 0, additive: false },
+      depsWith({ editAnchors: dep, view: viewAt(8), kitSettings }), { world: { x: 15, y: 0 }, additive: false },
     );
     expect([...dep.selectedAnchors]).toEqual([1]);
   });
@@ -297,7 +297,7 @@ describe('anchor click slop is in screen pixels', () => {
   it('zoomed out, a click 50 world units (5 px) from an anchor hits it', () => {
     const { dep } = depOverPath(triangle());
     const deps = depsWith({ editAnchors: dep, view: viewAt(0.1) });
-    immediate(selectAnchorAction).run(deps, { worldX: 60, worldY: 0, additive: false });
+    immediate(selectAnchorAction).run(deps, { world: { x: 60, y: 0 }, additive: false });
     expect([...dep.selectedAnchors]).toEqual([1]);
   });
 });

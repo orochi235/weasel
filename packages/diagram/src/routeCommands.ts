@@ -10,6 +10,7 @@ import { commitRouteToScene, type RouteEdit, type RouteEditOptions } from './way
 import { WAYPOINT_HIT_PX, routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
 import { avoid } from './edge';
 import { removeSegment, removeWaypoint, unpinSegment, type RouteHandle } from './waypoints';
+import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action that removes a waypoint, straightens a segment, or unpins an
  *  `avoid` connector's segment, on a double-click of its handle. */
@@ -60,8 +61,10 @@ export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>)
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const world = { x: Number(params?.worldX), y: Number(params?.worldY) };
-        const pressed = waypointScratchOf((params as { affordance?: { payload?: unknown } } | undefined)?.affordance);
+        const p = params as ImmediateParams | undefined;
+        const world = p?.world;
+        if (!world) return;
+        const pressed = waypointScratchOf(p.affordance as { payload?: unknown } | undefined);
         const route = pressed === null ? null : routeOf(pressed.edgeId);
         const waypoints = pressed === null || route === null ? null : removalOf(route, pressed.handle);
         const edit = pressed !== null && waypoints !== null ? { edgeId: pressed.edgeId, waypoints } : removalAt(deps, world);

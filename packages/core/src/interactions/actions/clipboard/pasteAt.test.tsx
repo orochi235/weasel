@@ -53,9 +53,9 @@ describe('paste at a point', () => {
     expect(dropPoints).toEqual([{ worldX: 1, worldY: 2 }]);
   });
 
-  it('clipboard.paste forwards worldX/worldY params', () => {
+  it('clipboard.paste forwards its `world` param', () => {
     const { clipboard, dropPoints } = setup(hover);
-    act(() => { run({ clipboard } as unknown as ActionDeps, at); });
+    act(() => { run({ clipboard } as unknown as ActionDeps, { world: { x: at.worldX, y: at.worldY } }); });
     expect(dropPoints).toEqual([at]);
   });
 

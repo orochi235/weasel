@@ -79,14 +79,14 @@ describe('anchor edits on a skinned path', () => {
 
   it('gives an inserted point weights between its neighbors\'', () => {
     const t = setup();
-    t.run(insertPathAnchorAction, { worldX: 110, worldY: 100 });
+    t.run(insertPathAnchorAction, { world: { x: 110, y: 100 } });
     expect(t.scene.get(t.id)!.data.path.coords).toHaveLength(10);
     expect(t.skin()).toEqual({ a: [1, 0.75, 0, 0, 1], b: [0, 0.25, 1, 1, 0] });
   });
 
   it('carries weights around with the points of a cut subpath', () => {
     const t = setup();
-    t.run(cutPathAtAnchorAction, { worldX: 140, worldY: 140 });
+    t.run(cutPathAtAnchorAction, { world: { x: 140, y: 140 } });
     expect(t.skin()).toEqual({ a: [0, 1, 1, 0, 0], b: [1, 0, 0, 1, 1] });
   });
 });

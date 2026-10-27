@@ -20,6 +20,7 @@ import { editAnchorSetTracked, insertAnchorOnSegment } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { segmentUnder } from './segmentUnder';
 import { pathOperationTags } from '../pathGestureTags';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 const INSERT_CURSOR: CursorSpec = { glyph: 'penPlus', fallback: 'crosshair' };
 
@@ -34,9 +35,9 @@ export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'immediate',
     run(deps, params) {
-      const wx = params?.worldX as number | undefined;
-      const wy = params?.worldY as number | undefined;
-      if (typeof wx !== 'number' || typeof wy !== 'number') return;
+      const world = (params as ImmediateParams | undefined)?.world;
+      if (!world) return;
+      const { x: wx, y: wy } = world;
       const under = segmentUnder(deps, wx, wy);
       if (!under) return;
       const { dep, path, hit } = under;

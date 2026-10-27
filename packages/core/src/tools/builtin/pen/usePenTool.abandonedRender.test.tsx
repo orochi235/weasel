@@ -21,8 +21,8 @@ describe('usePenTool — abandoned renders', () => {
       if (invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);
       act(() => { invoker.run(deps, params); });
     };
-    run('pen.placeAnchor', { pressX: 0, pressY: 0 });
-    run('pen.placeAnchor', { pressX: 50, pressY: 0 });
+    run('pen.placeAnchor', { press: { x: 0, y: 0 } });
+    run('pen.placeAnchor', { press: { x: 50, y: 0 } });
     run('pen.finish');
     expect(adapter.addNode).toHaveBeenCalledTimes(1);
     expect(adapter.setSelection).toHaveBeenCalledWith([adapter.ids[0]]);

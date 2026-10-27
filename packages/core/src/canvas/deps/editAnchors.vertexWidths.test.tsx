@@ -77,7 +77,7 @@ function setup() {
 describe('anchor edits on a stroke with a width per anchor', () => {
   it('gives an inserted anchor a width between its neighbors\', each side on its own', () => {
     const t = setup();
-    t.run(insertPathAnchorAction, { worldX: 110, worldY: 100 });
+    t.run(insertPathAnchorAction, { world: { x: 110, y: 100 } });
     expect(t.widths()).toEqual([2, { left: 1, right: 1.5 }, PAIR, 6, NaN]);
   });
 

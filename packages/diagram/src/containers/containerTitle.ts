@@ -11,6 +11,7 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import { diagramContainerOf, headerBox } from './trait';
+import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action a double-click on a region's header runs. */
 export const EDIT_CONTAINER_TITLE_ACTION_ID = 'diagram.editContainerTitle';
@@ -40,7 +41,8 @@ export function editContainerTitleAction(commit: (id: string) => void): Action {
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const id = regionHeaderAt(deps, { x: Number(params?.worldX), y: Number(params?.worldY) });
+        const world = (params as ImmediateParams | undefined)?.world;
+        const id = world ? regionHeaderAt(deps, world) : null;
         if (id !== null) commit(id);
       },
     },

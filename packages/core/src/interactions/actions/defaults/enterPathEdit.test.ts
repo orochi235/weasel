@@ -14,7 +14,7 @@ function run(opts: { selected: string[]; editable: string[]; under: string | nul
     selection: { get: () => opts.selected },
     nodeAtPoint: () => opts.under,
   };
-  (enterPathEditAction.invoker as ImmediateInvoker).run(deps as never, { worldX: 5, worldY: 5 });
+  (enterPathEditAction.invoker as ImmediateInvoker).run(deps as never, { world: { x: 5, y: 5 } });
   return setEditingId;
 }
 
@@ -48,7 +48,7 @@ describe('enterPathEdit', () => {
         { ...pathEffectNode({ kind: 'textAlong', hideSources: true }, [asNodeId('t'), asNodeId('p')], 'main', PATH_EFFECT_DERIVATIONS), id: asNodeId('fx') },
       ],
     });
-    const invoke = (params: { worldX: number; worldY: number } | undefined, under: string | null) => {
+    const invoke = (params: { world: { x: number; y: number } } | undefined, under: string | null) => {
       const setEditingId = vi.fn();
       const deps = {
         editAnchors: { getEditablePath: (id: string) => (id === 'p' ? {} : null), setEditingId },
@@ -65,11 +65,11 @@ describe('enterPathEdit', () => {
     });
 
     it('leaves a double-click on the effect itself to its text', () => {
-      expect(invoke({ worldX: 5, worldY: 5 }, 'fx')).not.toHaveBeenCalled();
+      expect(invoke({ world: { x: 5, y: 5 } }, 'fx')).not.toHaveBeenCalled();
     });
 
     it('enters no path edit on a double-click between its glyphs, where nothing is under the pointer', () => {
-      expect(invoke({ worldX: 40, worldY: 45 }, null)).not.toHaveBeenCalled();
+      expect(invoke({ world: { x: 40, y: 45 } }, null)).not.toHaveBeenCalled();
     });
   });
 });

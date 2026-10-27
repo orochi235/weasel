@@ -237,7 +237,7 @@ describe('immediate params for affordance-carrying kinds', () => {
       { kind: 'contextMenu' },
       { kind: 'contextmenu', x: 3, y: 4, affordance, ...noMods },
     );
-    expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
+    expect(params).toMatchObject({ world: { x: 3, y: 4 }, affordance });
   });
 
   it('a longpress invoker sees world coords and the affordance', () => {
@@ -245,7 +245,7 @@ describe('immediate params for affordance-carrying kinds', () => {
       { kind: 'longPress' },
       { kind: 'longpress', x: 3, y: 4, affordance, ...noMods },
     );
-    expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
+    expect(params).toMatchObject({ world: { x: 3, y: 4 }, affordance });
   });
 
   it('a wheel invoker sees the affordance alongside the deltas', () => {
@@ -269,14 +269,14 @@ describe('immediate params for affordance-carrying kinds', () => {
       { kind: 'doubleClick' },
       { kind: 'doubleclick', x: 3, y: 4, affordance, ...noMods },
     );
-    expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
+    expect(params).toMatchObject({ world: { x: 3, y: 4 }, affordance });
   });
 
   it('a click invoker keeps its press point', () => {
     const params = paramsFor(
       { kind: 'click' },
-      { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, affordance, ...noMods },
+      { kind: 'click', x: 3, y: 4, press: { x: 1, y: 2 }, affordance, ...noMods },
     );
-    expect(params).toMatchObject({ worldX: 3, worldY: 4, pressX: 1, pressY: 2, affordance });
+    expect(params).toMatchObject({ world: { x: 3, y: 4 }, press: { x: 1, y: 2 }, affordance });
   });
 });

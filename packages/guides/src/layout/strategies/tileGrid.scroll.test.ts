@@ -36,7 +36,7 @@ describe('a scrolling tileGrid', () => {
     expect(shown().y).toBe(100);
     const deps = { scene, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), set: () => {} } } as unknown as ActionDeps;
     expect(containerScrollAction.enabled!(deps, { x: 50, y: 50 })).toBe(true);
-    run(deps, { worldX: 50, worldY: 50, deltaX: 0, deltaY: 500 });
+    run(deps, { world: { x: 50, y: 50 }, deltaX: 0, deltaY: 500 });
     expect(scene.scroll.get(G)).toEqual({ x: 0, y: 50 });
     expect(shown().y).toBe(50);
     expect(scene.get(last)!.pose).toEqual(stored);

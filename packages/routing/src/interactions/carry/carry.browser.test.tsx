@@ -77,7 +77,7 @@ it('a release over the surface reaches its carry binding while no move reaches t
     targetPosition: { x: 40, y: 60 },
   });
   expect(dropped).toHaveBeenCalledOnce();
-  expect(dropped.mock.calls[0]![0]).toMatchObject({ worldX: 40, worldY: 60, carry: { type: 'test/part', value: 'a' } });
+  expect(dropped.mock.calls[0]![0]).toMatchObject({ world: { x: 40, y: 60 }, carry: { type: 'test/part', value: 'a' } });
   expect(onEnd).toHaveBeenCalledWith(expect.objectContaining({ taken: true }));
   expect(moved).not.toHaveBeenCalled();
 });

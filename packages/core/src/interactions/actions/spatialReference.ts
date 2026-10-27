@@ -3,6 +3,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PointerContextValue } from '@weasel-js/routing/react';
 import type { PoseFrame } from './poseFrame';
 import type { DrawnBoxes } from './drawnBoxes';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /**
  * A world-space place a selection transform lines up against — what align
@@ -53,7 +54,7 @@ export function resolveSpatialReference(
 }
 
 /** The sources an immediate action resolves a reference from. A click's
- *  `worldX`/`worldY` params outrank the `pointer` dep. */
+ *  `world` param outranks the `pointer` dep. */
 export function actionReferenceSources(
   params: Record<string, unknown> | undefined,
   pointer: PointerContextValue | undefined,
@@ -63,9 +64,8 @@ export function actionReferenceSources(
 ): SpatialReferenceSources {
   return {
     pointer: () => {
-      if (typeof params?.worldX === 'number' && typeof params.worldY === 'number') {
-        return { x: params.worldX, y: params.worldY };
-      }
+      const world = (params as ImmediateParams | undefined)?.world;
+      if (world) return world;
       const p = pointer?.get();
       return p ? p.world : null;
     },

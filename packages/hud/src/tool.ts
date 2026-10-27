@@ -5,6 +5,7 @@ import { attachHud, type AttachHudOptions } from './attach';
 import type { Hud } from './hud';
 import { hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
 import { claimsOf, type Widget, type HudPointerEvent } from './widget';
+import type { ImmediateParams } from '@weasel-js/core';
 
 /** What the HUD layer's `hitTest` resolves and hands to the actions below. */
 export interface HudHitPayload {
@@ -62,10 +63,10 @@ function pressAction(): Action {
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const p = params as { worldX?: number; worldY?: number; affordance?: unknown } | undefined;
+        const p = params as ImmediateParams | undefined;
         const widget = widgetIn(p?.affordance);
-        if (!widget || p?.worldX === undefined || p.worldY === undefined) return;
-        const [x, y] = toScreen(deps, p.worldX, p.worldY);
+        if (!widget || !p?.world) return;
+        const [x, y] = toScreen(deps, p.world.x, p.world.y);
         widget.onPointer({ type: 'down', x, y, native: null } satisfies HudPointerEvent);
       },
     },
@@ -80,10 +81,10 @@ function releaseAction(): Action {
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const p = params as { pressX?: number; pressY?: number; worldX?: number; worldY?: number; affordance?: unknown } | undefined;
+        const p = params as ImmediateParams | undefined;
         const widget = widgetIn(p?.affordance);
-        if (!widget || p?.worldX === undefined || p.worldY === undefined) return;
-        const [x, y] = toScreen(deps, p.worldX, p.worldY);
+        if (!widget || !p?.world) return;
+        const [x, y] = toScreen(deps, p.world.x, p.world.y);
         widget.onPointer({ type: 'up', x, y, native: null } satisfies HudPointerEvent);
       },
     },
@@ -139,10 +140,10 @@ function pointAction(
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const p = params as { worldX?: number; worldY?: number; affordance?: unknown } | undefined;
+        const p = params as ImmediateParams | undefined;
         const widget = widgetIn(p?.affordance);
-        if (!widget || p?.worldX === undefined || p.worldY === undefined) return;
-        const [x, y] = toScreen(deps, p.worldX, p.worldY);
+        if (!widget || !p?.world) return;
+        const [x, y] = toScreen(deps, p.world.x, p.world.y);
         widget.onPointer({ type, x, y, native: null } satisfies HudPointerEvent);
       },
     },

@@ -1,6 +1,7 @@
 import type { Action, GestureBinding, ModSpec, NodeId, Scene, SnapMark, SnapOutcomeStore, SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
 import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
+import type { ImmediateParams } from '@weasel-js/core';
 
 
 /** Options for `distanceReadout`. */
@@ -78,16 +79,16 @@ export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceRead
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const p = params as { show?: boolean; worldX?: number; worldY?: number } | undefined;
+        const p = params as (ImmediateParams & { show?: boolean }) | undefined;
         const { selection, scene, nodeAtPoint, poseDescriptor, snapReadout } = deps;
         if (snapReadout !== undefined) store = snapReadout.store;
         const ids = selection?.get() ?? [];
-        if (p?.show !== true || p.worldX === undefined || p.worldY === undefined
+        if (p?.show !== true || p.world === undefined
           || scene === undefined || nodeAtPoint === undefined || ids.length === 0) {
           show(EMPTY);
           return;
         }
-        const hit = nodeAtPoint({ x: p.worldX, y: p.worldY }, subtreeOf(scene, ids));
+        const hit = nodeAtPoint(p.world, subtreeOf(scene, ids));
         const from = worldUnionOf(scene, ids, { poseDescriptor });
         const [to] = hit === null ? [] : worldBoundsOf(scene, [hit], { poseDescriptor });
         show(from === null || to === undefined ? EMPTY : measureDistances(from, to));

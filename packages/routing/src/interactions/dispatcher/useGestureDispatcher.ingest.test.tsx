@@ -91,8 +91,7 @@ describe('useGestureDispatcher — ingest channels', () => {
     expect(items).toHaveLength(1);
     expect(items[0].mime).toBe('image/png');
     expect(params.via).toBe('drop');
-    expect(params.worldX).toBe(12);
-    expect(params.worldY).toBe(34);
+    expect(params.world).toEqual({ x: 12, y: 34 });
   });
 
   it('dragover adds the dropover class; dragleave and drop remove it', async () => {
@@ -152,8 +151,7 @@ describe('useGestureDispatcher — ingest channels', () => {
     const items = params.items as IngestItem[];
     expect(items).toHaveLength(1);
     expect(params.via).toBe('paste');
-    expect(params.worldX).toBeUndefined();
-    expect(params.worldY).toBeUndefined();
+    expect(params.world).toBeUndefined();
   });
 
   it('paste from an editable target is ignored', async () => {

@@ -33,7 +33,7 @@ function makeSelection(ids: string[]) {
  *  params with the click's world and press points laid under them. */
 function click(params: Record<string, unknown>, deps: Partial<ActionDeps>, at = { x: 100, y: 50 }) {
   if (placeAction.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
-  placeAction.invoker.run(deps as ActionDeps, { worldX: at.x, worldY: at.y, pressX: at.x, pressY: at.y, ...params });
+  placeAction.invoker.run(deps as ActionDeps, { world: { x: at.x, y: at.y }, press: { x: at.x, y: at.y }, ...params });
 }
 
 describe('placeAction — a minimum size', () => {

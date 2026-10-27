@@ -45,6 +45,7 @@ import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 import { clientToHost, hostBox, hostToClient } from './hostBox';
 import type { ViewportSize, WorldFrame } from './worldSpec';
+import type { ImmediateParams } from '@weasel-js/core';
 
 /** The view id the stage publishes its pointer under. */
 export const STAGE_VIEW_ID = 'stage';
@@ -277,9 +278,9 @@ function CameraDispatch({
       invoker: {
         timing: 'immediate',
         run: (_deps, params) => {
-          const p = params as { worldX?: number; worldY?: number } | undefined;
-          if (p?.worldX === undefined || p.worldY === undefined) return;
-          onTapRef.current?.(frameLocalToWorld({ x: p.worldX, y: p.worldY }, frameRef.current));
+          const world = (params as ImmediateParams | undefined)?.world;
+          if (!world) return;
+          onTapRef.current?.(frameLocalToWorld(world, frameRef.current));
         },
       },
     };

@@ -301,7 +301,7 @@ describe('createSnap: a 3D insert', () => {
     };
     const click = projectPoint({ x: 1.3, y: 0, z: -0.8 }, vp)!;
     (placeAction.invoker as ImmediateInvoker).run(deps as never, {
-      kind: 'rect', size: { width: 40, height: 30 }, worldX: click.x, worldY: click.y,
+      kind: 'rect', size: { width: 40, height: 30 }, world: { x: click.x, y: click.y },
     });
     const f = minted as Footprint | null;
     expect(f).not.toBeNull();

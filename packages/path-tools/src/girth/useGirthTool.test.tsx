@@ -64,8 +64,8 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
     if (invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);
     invoker.run(deps, params);
   };
-  const altClick = (x: number, y: number) => run('girth.clear', { pressX: x, pressY: y, mods: { alt: true } });
-  const hover = (x: number, y: number) => run('girth.hover', { worldX: x, worldY: y });
+  const altClick = (x: number, y: number) => run('girth.clear', { press: { x, y }, mods: { alt: true } });
+  const hover = (x: number, y: number) => run('girth.hover', { world: { x, y } });
   const data = () => scene.get(line)!.data;
   const widths = () => data().stroke?.vertexWidths;
   const overlay = result.current.overlay as RenderLayer<unknown>;
