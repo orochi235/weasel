@@ -116,10 +116,12 @@ export interface GroupDrawCommand {
    * frame that does not draw its id. The renderer's `retainBudget` caps what
    * they hold together.
    *
-   * Ignored, and the children drawn straight through, on a group that owns a
-   * surface anyway (`effects`, `isolate`, `composite`), inside another such
-   * surface, or over a tree holding a `composite` other than `source-over`,
-   * which reads pixels a retained surface does not have.
+   * A group with `effects` or `isolate` keeps the pixels its own surface
+   * composites, effects run, so a still frame runs none of its passes.
+   *
+   * Ignored, and the group drawn as usual, inside another retained group, or
+   * where it or anything in it composites with something other than
+   * `source-over`, which reads pixels a retained surface does not have.
    */
   retain?: string;
   children: DrawCommand[];

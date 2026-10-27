@@ -15,6 +15,8 @@ interface Surface {
   key: RetainedKey | null;
   stamp: readonly unknown[];
   frame: number;
+  /** Samples a pixel of the scratch buffer it was drawn in. */
+  samples: number;
 }
 
 /** A retained group's kept pixels: `texture` covers `rect` of the drawing
@@ -38,19 +40,21 @@ export interface RetainedDraw {
  * buffer its group can paint; a change of the drawing buffer's size drops
  * them all.
  *
- * The budget counts the surfaces, which are what is kept. The multisampled
- * scratch buffer they are drawn in is transient: as large as the largest
- * surface it has drawn, so never past one canvas-sized buffer, and freed
- * after the first frame that redraws nothing. Counting it against the budget
- * spent half the default at 4x on a buffer a still frame never touches.
+ * The budget counts the surfaces, which are what is kept. The scratch buffer
+ * they are drawn in is transient: as large as the largest surface it has
+ * drawn, so never past one canvas-sized buffer, and freed after the first
+ * frame that redraws nothing. Counting it against the budget spent half the
+ * default at 4x on a buffer a still frame never touches. A surface composited
+ * into a single-sampled buffer is drawn single-sampled, to match what drawing
+ * it there leaves, in a second scratch buffer kept the same way.
  */
 export class RetainedSurfaces {
   private readonly gl: WebGL2RenderingContext;
   private budget: number;
   private readonly samples: number;
   private readonly surfaces = new Map<string, Surface>();
-  /** Shared: retained draws never nest. */
-  private scratch: Scratch | null = null;
+  /** By sample count. Shared: retained draws never nest. */
+  private readonly scratches = new Map<number, Scratch>();
   private width = 0;
   private height = 0;
   private frame = 0;
@@ -69,7 +73,9 @@ export class RetainedSurfaces {
 
   /** GPU memory held now, scratch buffer included. */
   get bytes(): number {
-    return this.keptBytes() + (this.scratch ? this.scratchBytes(this.scratch.width, this.scratch.height) : 0);
+    let n = this.keptBytes();
+    for (const [samples, held] of this.scratches) n += held.width * held.height * Math.max(1, samples) * 8;
+    return n;
   }
 
   /** Change the budget. Lowered below what the surfaces hold, every surface
@@ -91,11 +97,12 @@ export class RetainedSurfaces {
   }
 
   /** `id`'s pixels if they were drawn under `key`, in a drawing buffer
-   *  `width × height` device pixels. */
-  lookup(id: string, width: number, height: number, key: RetainedKey): RetainedPixels | null {
+   *  `width × height` device pixels, and sampled as `reserve` would. */
+  lookup(id: string, width: number, height: number, key: RetainedKey, multisample = true): RetainedPixels | null {
     this.fitTo(width, height);
     const surface = this.surfaces.get(id);
-    if (!surface?.key || !sameKey(surface.key, key) || !sameStamp(surface.stamp, this.stamp)) return null;
+    if (!surface?.key || surface.samples !== (multisample ? this.samples : 0)) return null;
+    if (!sameKey(surface.key, key) || !sameStamp(surface.stamp, this.stamp)) return null;
     surface.frame = this.frame;
     this.composited++;
     return pixelsOf(surface);
@@ -103,12 +110,14 @@ export class RetainedSurfaces {
 
   /** Somewhere to draw `id` this frame, covering `rect` of a drawing buffer
    *  `width × height` device pixels, or `null` when that would take the total
-   *  past the budget. */
-  reserve(id: string, width: number, height: number, rect: DeviceRect): RetainedDraw | null {
+   *  past the budget. Drawn multisampled as the default framebuffer is, or
+   *  single-sampled when `multisample` is false. */
+  reserve(id: string, width: number, height: number, rect: DeviceRect, multisample = true): RetainedDraw | null {
     this.fitTo(width, height);
     const existing = this.surfaces.get(id);
     const empty = rect.width === 0 || rect.height === 0;
-    const held = this.scratch;
+    const samples = multisample ? this.samples : 0;
+    const held = this.scratches.get(samples);
     const scratchW = Math.max(held?.width ?? 0, empty ? 0 : rect.width);
     const scratchH = Math.max(held?.height ?? 0, empty ? 0 : rect.height);
     const after = this.keptBytes() + rectBytes(rect) - (existing ? rectBytes(existing.rect) : 0);
@@ -116,12 +125,13 @@ export class RetainedSurfaces {
       this.declined++;
       return null;
     }
-    const surface = existing ?? { gl: null, rect, key: null, stamp: [], frame: this.frame };
+    const surface = existing ?? { gl: null, rect, key: null, stamp: [], frame: this.frame, samples };
     this.surfaces.set(id, surface);
     this.fitSurface(surface, rect);
     surface.frame = this.frame;
+    surface.samples = samples;
     this.redrawn++;
-    const scratch = surface.gl ? this.scratchFor(scratchW, scratchH) : null;
+    const scratch = surface.gl ? this.scratchFor(samples, scratchW, scratchH) : null;
     return {
       fbo: scratch?.fbo ?? null,
       commit: (key) => {
@@ -138,23 +148,24 @@ export class RetainedSurfaces {
     this.declined++;
   }
 
-  /** Free every surface no group asked for this frame, and the scratch
-   *  buffer once this frame redrew nothing or it is larger than every surface
-   *  left needs. */
+  /** Free every surface no group asked for this frame, and a scratch buffer
+   *  once this frame redrew nothing or it is larger than every surface drawn
+   *  in it that is left needs. */
   endFrame(): void {
-    let needW = 0;
-    let needH = 0;
+    const need = new Map<number, { w: number; h: number }>();
     for (const [id, surface] of this.surfaces) {
       if (surface.frame === this.frame) {
-        needW = Math.max(needW, surface.rect.width);
-        needH = Math.max(needH, surface.rect.height);
+        const n = need.get(surface.samples) ?? { w: 0, h: 0 };
+        need.set(surface.samples, { w: Math.max(n.w, surface.rect.width), h: Math.max(n.h, surface.rect.height) });
         continue;
       }
       this.deleteSurface(surface);
       this.surfaces.delete(id);
     }
-    const oversized = this.scratch && (this.scratch.width > needW || this.scratch.height > needH);
-    if (this.redrawn === 0 || oversized) this.dropScratch();
+    for (const [samples, held] of this.scratches) {
+      const n = need.get(samples) ?? { w: 0, h: 0 };
+      if (this.redrawn === 0 || held.width > n.w || held.height > n.h) this.dropScratch(samples);
+    }
   }
 
   /** Drop everything: on dispose, and on context loss, where the handles are
@@ -162,7 +173,7 @@ export class RetainedSurfaces {
   releaseAll(): void {
     for (const surface of this.surfaces.values()) this.deleteSurface(surface);
     this.surfaces.clear();
-    this.dropScratch();
+    for (const samples of [...this.scratches.keys()]) this.dropScratch(samples);
   }
 
   private fitTo(width: number, height: number): void {
@@ -178,16 +189,15 @@ export class RetainedSurfaces {
     return n;
   }
 
-  private scratchBytes(width: number, height: number): number {
-    return width * height * Math.max(1, this.samples) * 8;
-  }
-
-  /** The scratch buffer at `width × height`, reallocated if it is not. */
-  private scratchFor(width: number, height: number): Scratch {
-    const held = this.scratch;
+  /** The scratch buffer with `samples` at `width × height`, reallocated if
+   *  it is not. */
+  private scratchFor(samples: number, width: number, height: number): Scratch {
+    const held = this.scratches.get(samples);
     if (held && held.width === width && held.height === height) return held;
-    this.dropScratch();
-    return (this.scratch = createScratch(this.gl, width, height, this.samples));
+    this.dropScratch(samples);
+    const scratch = createScratch(this.gl, width, height, samples);
+    this.scratches.set(samples, scratch);
+    return scratch;
   }
 
   /** Give `surface` a texture the size of `rect`, or none for an empty one,
@@ -205,9 +215,10 @@ export class RetainedSurfaces {
     surface.gl = null;
   }
 
-  private dropScratch(): void {
-    if (this.scratch) deleteScratch(this.gl, this.scratch);
-    this.scratch = null;
+  private dropScratch(samples: number): void {
+    const held = this.scratches.get(samples);
+    if (held) deleteScratch(this.gl, held);
+    this.scratches.delete(samples);
   }
 }
 

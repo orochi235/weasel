@@ -532,8 +532,6 @@ export class WeaselRenderer {
       deviceWidth: device.width,
       deviceHeight: device.height,
       restoreTargetRect: () => this.applyTarget(),
-      viewportWithin: (rect) => gl.viewport(
-        own.x + rect.x, own.y + own.height - rect.y - rect.height, rect.width, rect.height),
       paintResources: this.paintResources,
       stats: counters,
     };

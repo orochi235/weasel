@@ -1,6 +1,6 @@
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 import { compositeProgramId } from '../effects/composite';
-import { readsBackdrop } from '../effects/compositeOp';
+import { isOwnComposite, readsBackdrop } from '../effects/compositeOp';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import type { RetainedClip, RetainedKey } from '../retain/retainedKey';
 import { contentBounds, type DeviceRect } from '../retain/contentBounds';
@@ -13,6 +13,10 @@ import { flushBatch } from './flushBatch';
 type Dispatch = (ctx: DrawContext, cmd: DrawCommand) => void;
 
 const COMPOSITE_AS_DRAWN = { alpha: 1, colorMatrix: IDENTITY_COLOR_MATRIX };
+
+/** The scratch buffer as a render target: retained draws share it, so one
+ *  cannot be drawn inside another. */
+const scratchTargets = new WeakSet<object>();
 
 /**
  * Draw a group carrying `retain` from the pixels it left last time, drawing
@@ -31,7 +35,9 @@ const COMPOSITE_AS_DRAWN = { alpha: 1, colorMatrix: IDENTITY_COLOR_MATRIX };
  * The surface covers only the device pixels the group can paint
  * (`contentBounds`), drawn under the canvas's own projection through a
  * viewport offset by the rect's corner, and composited as a quad over that
- * rect alone.
+ * rect alone. A group that owns a surface of its own draws it, effects
+ * and all, into the retained one. Inside a group's effects buffer it composites
+ * into that buffer instead, at the same offset.
  */
 export function drawRetainedGroup(
   ctx: DrawContext, cmd: GroupDrawCommand, ownsSurface: boolean, dispatch: Dispatch,
@@ -40,7 +46,8 @@ export function drawRetainedGroup(
   const width = ctx.deviceWidth;
   const height = ctx.deviceHeight;
   if (!store || !width || !height) return false;
-  if (ownsSurface || ctx.renderTarget || readsBackdrop(cmd.children)) {
+  const inScratch = ctx.renderTarget != null && scratchTargets.has(ctx.renderTarget);
+  if (inScratch || isOwnComposite(cmd.composite) || readsBackdrop(cmd.children)) {
     store.decline();
     return false;
   }
@@ -57,18 +64,26 @@ export function drawRetainedGroup(
     viewMatrix: ctx.viewMatrix,
     screenMatrix: ctx.screenMatrix,
     clips,
+    effects: cmd.effects,
+    isolate: cmd.isolate === true,
   };
-  let pixels = store.lookup(id, width, height, key);
+  // A buffer a group's effects draw in is single-sampled, and so is a
+  // surface standing in for drawing into it.
+  const multisample = !ctx.renderTarget;
+  let pixels = store.lookup(id, width, height, key, multisample);
   if (!pixels) {
-    const rect = contentBounds(cmd.children, ctx.state.transform, clips, width / ctx.widthCss, width, height);
-    const draw = store.reserve(id, width, height, rect);
+    // A group that owns a surface draws it inside this one, under the stack
+    // and clips just pushed: its own buffer composites with what it owes.
+    const drawn = ownsSurface ? [{ kind: 'group' as const, effects: cmd.effects, isolate: cmd.isolate, children: cmd.children }] : cmd.children;
+    const rect = contentBounds(drawn, ctx.state.transform, clips, width / ctx.widthCss, width, height);
+    const draw = store.reserve(id, width, height, rect, multisample);
     if (!draw) {
       ctx.state.pop();
       return false;
     }
     // Staged geometry belongs to the buffer underneath.
     flushBatch(ctx);
-    if (draw.fbo) drawInto(ctx, cmd.children, clips, draw.fbo, rect, dispatch);
+    if (draw.fbo) drawInto(ctx, drawn, clips, draw.fbo, rect, dispatch);
     pixels = draw.commit(key);
   }
   ctx.state.pop();
@@ -77,11 +92,15 @@ export function drawRetainedGroup(
   if (!texture) return true;
   flushBatch(ctx);
   const composite = ctx.ensureProgram?.(compositeProgramId()) ?? null;
-  if (composite && ctx.viewportWithin) {
+  if (composite) {
     applyClipTest(ctx, 0);
-    ctx.viewportWithin(rect);
+    const target = ctx.renderTarget ?? null;
+    const [ox, oy] = (target ? target.fragOrigin : ctx.fragOrigin) ?? [0, 0];
+    ctx.gl.viewport(ox + rect.x, oy + height - rect.y - rect.height, rect.width, rect.height);
     drawFullscreenQuad(ctx, composite, texture, rect.width, rect.height, undefined, COMPOSITE_AS_DRAWN);
-    ctx.restoreTargetRect?.();
+    if (!target) ctx.restoreTargetRect?.();
+    else if (target.restore) target.restore();
+    else ctx.gl.viewport(0, 0, width, height);
   }
   return true;
 }
@@ -96,6 +115,7 @@ function drawInto(
   const gl = ctx.gl;
   const width = ctx.deviceWidth!;
   const height = ctx.deviceHeight!;
+  const parentTarget = ctx.renderTarget ?? null;
   const parentClipDepth = ctx.clipDepth;
   const parentClipStack = ctx.clipStack;
   const parentBatchClip = ctx.drawBatch.clip;
@@ -110,7 +130,9 @@ function drawInto(
     gl.scissor(0, 0, rect.width, rect.height);
     gl.enable(gl.SCISSOR_TEST);
   };
-  ctx.renderTarget = { fbo, restore, fragOrigin: [-rect.x, rect.y + rect.height - height] };
+  const target = { fbo, restore, fragOrigin: [-rect.x, rect.y + rect.height - height] as const };
+  scratchTargets.add(target);
+  ctx.renderTarget = target;
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
   restore();
@@ -123,6 +145,6 @@ function drawInto(
   ctx.clipDepth = parentClipDepth;
   ctx.clipStack = parentClipStack;
   ctx.drawBatch.clip = parentBatchClip;
-  ctx.renderTarget = null;
+  ctx.renderTarget = parentTarget;
   returnToRenderTarget(ctx, width, height, scissorWasOn);
 }

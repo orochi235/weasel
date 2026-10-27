@@ -342,10 +342,10 @@ function drawLayerOnce<TData>(
   }
   if (cmds.length === 0) return [];
   const effects = layer.effects && layer.effects.length > 0 ? layer.effects : undefined;
-  const kept = retain && !effects && cache ? retainedId(layer, cache, view, retain) : undefined;
+  const kept = retain && cache ? retainedId(layer, cache, view, retain) : undefined;
   const marked = kept ? { retain: kept } : {};
   if ((layer.space ?? 'world') === 'screen') {
-    if (effects) return [{ kind: 'group', effects, children: cmds }];
+    if (effects) return [{ kind: 'group', effects, ...marked, children: cmds }];
     return kept ? [{ kind: 'group', ...marked, children: cmds }] : cmds;
   }
   return [{ kind: 'group', transform: viewToMat3(view), ...(effects ? { effects } : {}), ...marked, children: cmds }];

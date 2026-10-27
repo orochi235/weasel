@@ -109,9 +109,6 @@ export interface DrawContext {
    *  owns that rect — see `WeaselRenderer.applyTarget` — and a second copy of
    *  its y-flip here would be a second thing to keep in step. */
   restoreTargetRect?(): void;
-  /** Set the viewport to `rect` of the renderer's own rect, in device pixels
-   *  from its top left. `restoreTargetRect` undoes it. */
-  viewportWithin?(rect: { x: number; y: number; width: number; height: number }): void;
   /** Where a registered paint kind renders for atlas glyphs to sample. Absent
    *  without a renderer behind the context, and then such glyphs draw
    *  nothing. */
