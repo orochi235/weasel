@@ -218,6 +218,13 @@ A node is text when `options.isText(data)` says so (default: `data.text` is a
 string), and the returned `isTextNode(id)` asks the same question by id, for
 `TextEditDep.isTextNode`.
 
+`<SceneCanvas>` mounts one of these itself, so a canvas needs no wiring for the
+text and sticky tools to open an edit, nor, with the `edit` feature, for a
+double-click to. Its `textEditor` prop takes the same options, or `false` for
+none. It stands down for a host's own: a `useSceneTextEdit` whose container
+holds the canvas, or a `textEdit` dep registered by a child. A host wires its
+own for character controls, which read the edit's `selection` and styling.
+
 ### `useClipboardOps(options)`
 
 Logic-only clipboard: `copy` / `cut` / `paste` over the adapter clipboard seam
