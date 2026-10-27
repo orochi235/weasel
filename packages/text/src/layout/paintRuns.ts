@@ -144,7 +144,7 @@ export function glyphOutlineD(
   const d = faceOutlineD(g);
   if (d === null) return null;
   const { family, weight, style } = g.resolved.resolved;
-  const key = `${family}|${weight}|${style}|${g.cp}`;
+  const key = g.shaped ? `${family}|${weight}|${style}|#${g.shaped.key}` : `${family}|${weight}|${style}|${g.cp}`;
   // Synthetic italic is a shear, exact on geometry, and the renderer applies
   // it. Synthetic bold is an SDF threshold shift, so the face's own outline
   // would be lighter: it is grown by the distance the shift moves the edge.
@@ -154,11 +154,12 @@ export function glyphOutlineD(
 }
 
 /**
- * Em-space outline of `g` in the face it resolved to, whichever tier draws it,
- * or `null` when it has none: a color glyph, or a slot the layout left empty,
+ * Em-space outline of `g` in the face it resolved to, whichever tier draws it
+ * — its shaped cluster's, when its run was shaped — or `null` when it has none: a color glyph, or a slot the layout left empty,
  * which has no width to draw in and would land on top of its neighbor.
  */
 export function faceOutlineD(g: PlacedGlyph): string | null {
+  if (g.shaped) return g.shaped.d;
   if (g.glyph?.color) return null;
   const { family, weight, style } = g.resolved.resolved;
   if (g.resolved.source !== 'outline' && g.glyph === null) return null;

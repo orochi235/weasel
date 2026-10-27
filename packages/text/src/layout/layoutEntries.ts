@@ -6,6 +6,9 @@
  * code point: where the canvas tier draws a color glyph for it, that glyph
  * sits in the slot of the cluster's closing code point, and the code points
  * before it are slots with nothing in them.
+ *
+ * A run a shaper shapes takes its glyphs from the shaping instead, a cluster
+ * at a time (`shapedRuns.ts`), and its kerning is already in their advances.
  */
 import {
   glyphIn, metricsOf, resolveColorCluster, resolveFontVariant, resolveGlyph, warnNoMetrics,
@@ -14,6 +17,8 @@ import {
 import { graphemeEnds } from '../measure/graphemes';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
+import type { ShapedCluster, TextShaper } from './shaperSeam';
+import { shapeRun, type ShapedSlot } from './shapedRuns';
 import type { TabStop } from './tabStops';
 
 /** A mark that takes no width of its own, which kerning reads through. */
@@ -54,6 +59,9 @@ export interface Entry {
   kerningBefore: number;
   /** Set on a tab, whose `advance` is known only once its line is. */
   tab?: TabStop;
+  /** What it draws when its run was shaped; null when it was not, and its
+   *  glyph is the one its code point maps to. */
+  shaped: ShapedCluster | null;
   /** See `LaidOutCell.drawsInk`. */
   drawsInk: boolean;
 }
@@ -70,9 +78,12 @@ export interface Entry {
  * of a HUD readout's garbage. They are then valid only until the next call
  * given the same pool. A pool keeps at most `POOL_MAX` of them. With `into`,
  * the list returned is that array, emptied and refilled.
+ *
+ * With `shaper`, a run whose face it can read is shaped, and its code points
+ * draw what the shaping gave them.
  */
 export function measureRuns(
-  runs: readonly ResolvedRun[], tabSize: number, pool?: Entry[], into?: Entry[],
+  runs: readonly ResolvedRun[], tabSize: number, pool?: Entry[], into?: Entry[], shaper: TextShaper | null = null,
 ): Entry[] {
   const entries: Entry[] = into ?? [];
   entries.length = 0;
@@ -95,6 +106,7 @@ export function measureRuns(
     const runBase = srcIndex;
     const map = run.srcMap;
     const clusterEnds = graphemeEnds(run.text, CLUSTER_ENDS);
+    const shaped = shapeRun(run, resolved, shaper);
     let cluster = 0;
     let clusterStart = 0;
     /** The color glyph of the cluster being walked, when it has one. */
@@ -103,6 +115,7 @@ export function measureRuns(
 
     for (const ch of run.text) {
       const cp = ch.codePointAt(0)!;
+      const slot = shaped?.[at];
       const fontSize = run.sizeMap ? run.sizeMap[at] : run.fontSize;
       if (at === clusterStart) {
         color = resolveColorCluster(
@@ -158,6 +171,9 @@ export function measureRuns(
           prev = blank;
           entries.push(prev);
         }
+      } else if (slot !== undefined) {
+        entries.push(shape(blank, slot, tracking));
+        prev = undefined;
       } else {
         const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp, true, HIT);
         const entry = hit ? ink(blank, hit, kerningBefore, tracking) : blank;
@@ -188,7 +204,8 @@ function blankEntry(
   if (!e) {
     const made: Entry = {
       run, cp, fontSize, lineSize, baselineShift, rotate, srcIndex, srcEnd, clusterEnd, resolved, metrics,
-      font: null, glyph: null, advance: 0, tracking: 0, kerningBefore: 0, tab: undefined, drawsInk: false,
+      font: null, glyph: null, advance: 0, tracking: 0, kerningBefore: 0, tab: undefined, shaped: null,
+      drawsInk: false,
     };
     if (pool && i < POOL_MAX) pool[i] = made;
     return made;
@@ -196,7 +213,7 @@ function blankEntry(
   e.run = run; e.cp = cp; e.fontSize = fontSize; e.lineSize = lineSize; e.baselineShift = baselineShift;
   e.rotate = rotate; e.srcIndex = srcIndex; e.srcEnd = srcEnd; e.clusterEnd = clusterEnd; e.resolved = resolved; e.metrics = metrics;
   e.font = null; e.glyph = null; e.advance = 0; e.tracking = 0; e.kerningBefore = 0; e.tab = undefined;
-  e.drawsInk = false;
+  e.shaped = null; e.drawsInk = false;
   return e;
 }
 
@@ -214,6 +231,15 @@ function ink(e: Entry, hit: ResolvedGlyph, kerning: number, tracking: number): E
   return e;
 }
 
+/** Fill the empty slot `e` with what shaping gave its code point, in place. */
+function shape(e: Entry, slot: ShapedSlot, tracking: number): Entry {
+  e.shaped = slot.cluster;
+  e.advance = slot.advance * e.fontSize;
+  e.tracking = tracking;
+  e.drawsInk = slot.cluster.d !== null;
+  return e;
+}
+
 /**
  * One line's entries with each bracket in a right-to-left stretch painting as
  * its mirror (UAX #9 L4). `levels` holds the line's resolved level per entry.
@@ -221,6 +247,11 @@ function ink(e: Entry, hit: ResolvedGlyph, kerning: number, tracking: number): E
  * The outline tier reads the code point directly; the atlas tiers need the
  * other glyph looked up, which may come from another tier, and a face without
  * it keeps the unmirrored one. The advance stays the one the wrap measured.
+ *
+ * A shaped entry already shows the mirror when it was shaped right to left.
+ * Where that disagrees with its level — a bracket shaped with the text on one
+ * side of it and resolved to the direction of the other — it gives up its
+ * shaped glyph for its code point's own.
  */
 export function mirrorEntries(
   entries: readonly Entry[],
@@ -229,7 +260,13 @@ export function mirrorEntries(
   runs: readonly ResolvedRun[],
 ): Entry[] {
   return entries.map((entry, pos) => {
-    if (levels[pos] % 2 === 0) return entry;
+    const odd = levels[pos] % 2 === 1;
+    if (entry.shaped !== null && entry.shaped.rtl !== odd) {
+      const flipped = mirror(entry.cp);
+      if (flipped !== null && flipped !== entry.cp) entry = { ...entry, shaped: null };
+    }
+    if (!odd) return entry;
+    if (entry.shaped !== null) return entry;
     const cp = mirror(entry.cp);
     if (cp === null || cp === entry.cp) return entry;
     if (entry.font === null) return { ...entry, cp };

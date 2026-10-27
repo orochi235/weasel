@@ -29,7 +29,7 @@
  * already asks of its array.
  *
  * Under either, one entry per distinct `(maxWidth, alignWidth, lineHeight,
- * align, direction, bidi engine, tab size)`. Position is deliberately absent:
+ * align, direction, bidi engine, shaper, tab size)`. Position is deliberately absent:
  * `layoutRuns` emits origin-relative geometry and `drawText` translates at
  * upload, so a text node dragged across the page keeps hitting the same entry.
  * So is everything that only changes what is drawn — a run's fill, stroke and
@@ -58,7 +58,7 @@
 
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { layoutBidi, type LayoutRunsOpts } from './layoutOpts';
+import { layoutBidi, layoutShaper, type LayoutRunsOpts } from './layoutOpts';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
 import { DEFAULT_TAB_SIZE } from './tabStops';
 
@@ -74,7 +74,7 @@ export const LAYOUT_CACHE_STRUCTURAL_LIMIT = 64;
 interface Variant {
   maxWidth: number; alignWidth: number; lineHeight: number; align: LayoutRunsOpts['align'];
   justify: boolean; direction: NonNullable<LayoutRunsOpts['direction']>; tabSize: number;
-  bidi: ReturnType<typeof layoutBidi>; laid: LaidOutRuns;
+  bidi: ReturnType<typeof layoutBidi>; shaper: ReturnType<typeof layoutShaper>; laid: LaidOutRuns;
 }
 
 interface Entry {
@@ -105,14 +105,15 @@ function matches(v: Variant, opts: LayoutRunsOpts, bidi: Variant['bidi']): boole
     && same(v.lineHeight, opts.lineHeight) && v.align === opts.align
     && v.justify === (opts.justify === true || opts.align === 'justify')
     && v.direction === (opts.direction ?? 'auto') && same(v.tabSize, opts.tabSize ?? DEFAULT_TAB_SIZE)
-    && v.bidi === bidi;
+    && v.bidi === bidi && v.shaper === layoutShaper(opts);
 }
 
 function variant(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Variant {
   return {
     maxWidth: opts.maxWidth, alignWidth: opts.alignWidth ?? opts.maxWidth, lineHeight: opts.lineHeight,
     align: opts.align, justify: opts.justify === true || opts.align === 'justify',
-    direction: opts.direction ?? 'auto', tabSize: opts.tabSize ?? DEFAULT_TAB_SIZE, bidi, laid,
+    direction: opts.direction ?? 'auto', tabSize: opts.tabSize ?? DEFAULT_TAB_SIZE, bidi,
+    shaper: layoutShaper(opts), laid,
   };
 }
 
@@ -145,6 +146,7 @@ function runsHash(runs: readonly ResolvedRun[]): number {
     h = mixNum(h, r.baselineShift);
     h = mixNum(h, r.rotate ?? 0);
     h = mixNum(h, r.strutSize ?? -1);
+    h = mix(h, r.fontFeatures?.length ?? 0);
   }
   return h;
 }
@@ -153,6 +155,13 @@ function sameNums(a: readonly number[] | undefined, b: readonly number[] | undef
   if (a === b) return true;
   if (a === undefined || b === undefined || a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) if (!same(a[i], b[i])) return false;
+  return true;
+}
+
+function sameStrs(a: readonly string[] | undefined, b: readonly string[] | undefined): boolean {
+  if (a === b) return true;
+  if ((a?.length ?? 0) !== (b?.length ?? 0)) return false;
+  for (let i = 0; i < (a?.length ?? 0); i++) if (a![i] !== b![i]) return false;
   return true;
 }
 
@@ -166,7 +175,8 @@ function sameRuns(a: readonly ResolvedRun[], b: readonly ResolvedRun[]): boolean
     if (x.text !== y.text || x.fontFamily !== y.fontFamily || !same(x.fontSize, y.fontSize)
       || !same(x.fontWeight, y.fontWeight) || x.fontStyle !== y.fontStyle
       || !same(x.letterSpacing, y.letterSpacing) || !same(x.baselineShift, y.baselineShift)
-      || !same(x.strutSize, y.strutSize) || !same(x.rotate ?? 0, y.rotate ?? 0) || !sameNums(x.sizeMap, y.sizeMap)) return false;
+      || !same(x.strutSize, y.strutSize) || !same(x.rotate ?? 0, y.rotate ?? 0) || !sameNums(x.sizeMap, y.sizeMap)
+      || !sameStrs(x.fontFeatures, y.fontFeatures)) return false;
     // Ends follow from starts and the length, so the two pin the cells.
     const sx = x.srcMap, sy = y.srcMap;
     if (sx !== sy && (sx === undefined || sy === undefined || sx.length !== sy.length

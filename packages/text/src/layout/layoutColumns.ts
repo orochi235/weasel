@@ -18,6 +18,7 @@
 import type { BmFont, BmFontChar, GlyphMetrics, ResolveResult } from '@weasel-js/font';
 import type { Entry } from './layoutEntries';
 import type { LaidOutCell, LaidOutLineBox, PlacedGlyph } from './layoutRuns';
+import type { ShapedCluster } from './shaperSeam';
 
 /** Numbers per code point: pen x, step, the glyph's own advance, its size,
  *  its baseline, its source span, code point, bidi level, the two flags, its
@@ -26,9 +27,9 @@ const NUM = 13;
 const X = 0, STEP = 1, ADVANCE = 2, FONT_SIZE = 3, BASELINE = 4;
 const SRC_INDEX = 5, SRC_END = 6, CP = 7, LEVEL = 8, FLAGS = 9, RUN = 10, VISUAL = 11, ROTATE = 12;
 const DRAWS_INK = 1, CLUSTER_END = 2;
-/** References per code point: the serving tier, its metrics, the atlas, and
- *  the glyph's record there. */
-const REF = 4;
+/** References per code point: the serving tier, its metrics, the atlas, the
+ *  glyph's record there, and what a shaper gave it. */
+const REF = 5;
 
 /** Longest array {@link doubles} copies from its template rather than builds. */
 const TEMPLATE_LIMIT = 1 << 16;
@@ -67,6 +68,7 @@ export class LayoutColumns {
     num[n + LEVEL] = level; num[n + RUN] = e.run; num[n + ROTATE] = e.rotate;
     num[n + FLAGS] = (e.drawsInk ? DRAWS_INK : 0) | (e.clusterEnd ? CLUSTER_END : 0);
     ref[r] = e.resolved; ref[r + 1] = e.metrics; ref[r + 2] = e.font; ref[r + 3] = e.glyph;
+    ref[r + 4] = e.shaped;
   }
 
   /** Lengthen code point `i`'s step by `by`: the kerning the pen takes after it. */
@@ -99,6 +101,7 @@ export class LayoutColumns {
     out.metrics = ref[r + 1] as GlyphMetrics;
     out.font = ref[r + 2] as BmFont | null;
     out.glyph = ref[r + 3] as BmFontChar | null;
+    out.shaped = ref[r + 4] as ShapedCluster | null;
     out.x = num[n + X];
     out.baselineY = num[n + BASELINE];
     out.advance = num[n + ADVANCE];
@@ -131,7 +134,7 @@ export function blankGlyph(): PlacedGlyph {
   return {
     run: 0, cell: 0, cp: 0, fontSize: 0.5,
     resolved: null as unknown as ResolveResult, metrics: null as unknown as GlyphMetrics,
-    font: null, glyph: null, x: 0.5, baselineY: 0.5, advance: 0.5, step: 0.5, rotate: 0.5,
+    font: null, glyph: null, shaped: null, x: 0.5, baselineY: 0.5, advance: 0.5, step: 0.5, rotate: 0.5,
   };
 }
 
