@@ -19,7 +19,7 @@
     "longestFunction": 162
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "longestFunction": 233
+    "longestFunction": 232
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 516
@@ -116,7 +116,7 @@
     "longestFunction": 228
   },
   "packages/kernel3d/src/deps.ts": {
-    "longestFunction": 161
+    "longestFunction": 148
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
     "longestFunction": 178
@@ -141,7 +141,7 @@
     "longestFunction": 210
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 197
+    "longestFunction": 192
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
