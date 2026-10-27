@@ -5,6 +5,7 @@ import {
   SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type SpritesDrawCommand,
 } from './DrawCommand';
 import { effectsReach } from './effects/types';
+import { textBox } from './textBounds';
 
 /** Matches the tessellator's default. */
 const DEFAULT_MITER_LIMIT = 4;
@@ -37,6 +38,8 @@ export function commandBox(cmd: DrawCommand, m: GlMat3, scale: number): ScreenBo
     case 'image':
     case 'sprites':
       return paintedBox(cmd, m) ?? ANYWHERE;
+    case 'text':
+      return textBox(cmd, m) ?? EMPTY;
     default:
       return ANYWHERE;
   }
