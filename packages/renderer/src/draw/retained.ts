@@ -3,7 +3,10 @@ import { compositeProgramId } from '../effects/composite';
 import { isOwnComposite, readsBackdrop } from '../effects/compositeOp';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import type { RetainedClip, RetainedKey } from '../retain/retainedKey';
-import { contentBounds, type DeviceRect } from '../retain/contentBounds';
+import { boxWithin, contentBox, type DeviceRect } from '../retain/contentBounds';
+import { movesWithView } from '../retain/movesWithView';
+import type { RetainedPixels } from '../retain/RetainedSurfaces';
+import { mat3 } from '@weasel-js/geom';
 import type { DrawContext } from './drawContext';
 import { drawFullscreenQuad, returnToRenderTarget } from './effects';
 import { applyClipTest } from './stencil';
@@ -38,6 +41,11 @@ const scratchTargets = new WeakSet<object>();
  * rect alone. A group that owns a surface of its own draws it, effects
  * and all, into the retained one. Inside a group's effects buffer it composites
  * into that buffer instead, at the same offset.
+ *
+ * On the default framebuffer, a group whose pixels move with its transform
+ * (`movesWithView`) may be composited from a surface drawn before a pan,
+ * moved; `RetainedSurfaces.lookup` decides when. A surface reaching past the
+ * buffer for that is drawn under a projection aimed at its own rect.
  */
 export function drawRetainedGroup(
   ctx: DrawContext, cmd: GroupDrawCommand, ownsSurface: boolean, dispatch: Dispatch,
@@ -70,20 +78,29 @@ export function drawRetainedGroup(
   // A buffer a group's effects draw in is single-sampled, and so is a
   // surface standing in for drawing into it.
   const multisample = !ctx.renderTarget;
-  let pixels = store.lookup(id, width, height, key, multisample);
-  if (!pixels) {
-    // A group that owns a surface draws it inside this one, under the stack
-    // and clips just pushed: its own buffer composites with what it owes.
-    const drawn = ownsSurface ? [{ kind: 'group' as const, effects: cmd.effects, isolate: cmd.isolate, children: cmd.children }] : cmd.children;
-    const rect = contentBounds(drawn, ctx.state.transform, clips, width / ctx.widthCss, width, height);
-    const draw = store.reserve(id, width, height, rect, multisample);
+  // A group that owns a surface draws it inside this one, under the stack
+  // and clips just pushed: its own buffer composites with what it owes.
+  const drawn = ownsSurface ? [{ kind: 'group' as const, effects: cmd.effects, isolate: cmd.isolate, children: cmd.children }] : cmd.children;
+  const scale = width / ctx.widthCss;
+  const pans = multisample && movesWithView(drawn, ctx.viewMatrix !== undefined);
+  const found = store.lookup(id, width, height, key, multisample, pans ? scale : undefined);
+  let pixels: RetainedPixels;
+  if (found.kind === 'through') {
+    ctx.state.pop();
+    return false;
+  }
+  if (found.kind === 'kept') {
+    pixels = found.pixels;
+  } else {
+    const box = contentBox(drawn, ctx.state.transform, clips, scale);
+    const draw = store.reserve(id, width, height, boxWithin(box, found.window), multisample, pans ? { box, window: found.window } : undefined);
     if (!draw) {
       ctx.state.pop();
       return false;
     }
     // Staged geometry belongs to the buffer underneath.
     flushBatch(ctx);
-    if (draw.fbo) drawInto(ctx, drawn, clips, draw.fbo, rect, dispatch);
+    if (draw.fbo) drawInto(ctx, drawn, clips, draw.fbo, draw.rect, dispatch);
     pixels = draw.commit(key);
   }
   ctx.state.pop();
@@ -119,14 +136,20 @@ function drawInto(
   const parentClipDepth = ctx.clipDepth;
   const parentClipStack = ctx.clipStack;
   const parentBatchClip = ctx.drawBatch.clip;
+  const parentProjection = ctx.projection;
   const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
   ctx.clipDepth = 0;
   ctx.clipStack = [];
   ctx.drawBatch.clip = null;
-  // The whole drawing buffer's viewport, slid so `rect`'s bottom-left corner
-  // lands on the scratch buffer's; the scissor keeps the rest of it out.
+  // Inside the buffer, its whole viewport slid so `rect`'s bottom-left corner
+  // lands on the scratch buffer's, and the scissor keeps the rest out: the
+  // projection is the frame's own, so the pixels are too. Reaching past it,
+  // a viewport over `rect` alone under a projection aimed at it.
+  const inside = rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height;
+  if (!inside) ctx.projection = windowProjection(rect, width / ctx.widthCss);
   const restore = (): void => {
-    gl.viewport(-rect.x, rect.y + rect.height - height, width, height);
+    if (inside) gl.viewport(-rect.x, rect.y + rect.height - height, width, height);
+    else gl.viewport(0, 0, rect.width, rect.height);
     gl.scissor(0, 0, rect.width, rect.height);
     gl.enable(gl.SCISSOR_TEST);
   };
@@ -145,6 +168,14 @@ function drawInto(
   ctx.clipDepth = parentClipDepth;
   ctx.clipStack = parentClipStack;
   ctx.drawBatch.clip = parentBatchClip;
+  ctx.projection = parentProjection;
   ctx.renderTarget = parentTarget;
   returnToRenderTarget(ctx, width, height, scissorWasOn);
+}
+
+/** Screen→clip aimed at `rect`, device pixels, of a buffer `scale` device
+ *  pixels to the CSS pixel. */
+function windowProjection(rect: DeviceRect, scale: number): Float32Array {
+  const toClip = mat3.screenToClip(rect.width / scale, rect.height / scale);
+  return mat3.toUniform(mat3.translated(toClip, -rect.x / scale, -rect.y / scale));
 }

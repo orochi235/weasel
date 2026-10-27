@@ -45,7 +45,7 @@ describe('align bound with a reference', () => {
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true })); });
     expect(xs()).toEqual([10, 10]);
 
-    act(() => { pointer.set({ worldX: 30, worldY: 5, viewId: null }); });
+    act(() => { pointer.set({ world: { x: 30, y: 5 }, viewId: null }); });
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'L', shiftKey: true, bubbles: true })); });
     expect(xs()).toEqual([30, 30]);
   });

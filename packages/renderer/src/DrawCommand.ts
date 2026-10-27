@@ -101,6 +101,16 @@ export interface GroupDrawCommand {
    * So `children` must not be mutated once drawn, the rule a layer's cached
    * commands already follow.
    *
+   * A move that only translates everything above the group — a pan — by a
+   * whole number of device pixels composites the surface moved instead, while
+   * what it drew covers the buffer; past that it is drawn again with a margin
+   * of an eighth of the buffer each side. A move by a fraction of a pixel is
+   * drawn straight through until it holds a frame. Not for a group holding a
+   * custom shader, a paint in screen units, a texture paint on text, or a
+   * group with effects, isolation or its own composite: none of those moves
+   * with the transform, so they are drawn straight through while it moves,
+   * as a layer whose margin does not fit `retainBudget` is.
+   *
    * The composite matches drawing the group to within 8-bit rounding, except
    * at a pixel where an edge of the group crosses an edge drawn beneath it: the
    * surface is resolved from its samples before it meets the canvas, so the

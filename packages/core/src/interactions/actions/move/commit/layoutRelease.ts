@@ -2,8 +2,8 @@ import { createReparentOp } from 'core/ops/reparent';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { asNodeId, type NodeId } from 'core/scene/types';
-import { composeWorldPose, rebaseLocalPose, type PoseAdapter } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter } from 'core/scene/composePose';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { LayoutChild, LayoutContainer } from '../../../../layout/types';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import { groupBySourceContainer } from '../layout/dropPass';
@@ -35,9 +35,7 @@ function releaseFrom(
   if (!srcLayout?.releaseDrop) return { ops: releasedOps, released };
   const srcContainer: LayoutContainer = {
     id: srcId,
-    bounds: session.projection.getBounds(
-      composeWorldPose(commitAdapter, srcId, pc.compose),
-    ),
+    bounds: session.projection.getBounds(composeChildFrame(commitAdapter, srcId, pc.compose)),
   };
   // What the container is left holding — grown back as each
   // release puts one of its own home again.
@@ -88,7 +86,7 @@ export function layoutReleaseOps(
   const exitOps: Op[] = [];
   if (session.layout) {
     const pc = session.pc;
-    const commitAdapter = scenePoseAdapter(session.scene);
+    const commitAdapter = sceneViewPoseAdapter(session.scene);
     const sources = groupBySourceContainer(
       session.ids.map((id) => ({
         id,

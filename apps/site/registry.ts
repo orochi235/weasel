@@ -1242,6 +1242,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/LayoutDemo.tsx',
   },
   {
+    id: 'scrolling-grid',
+    title: 'Scrolling grid',
+    package: 'guides',
+    description: 'A `tileGrid({ overflow: \'scroll\' })` holding more tiles than its 3 × 2 cells: the extras take cells past its last row, and the grid\'s `clip: \'outline\'` hides them. The wheel over the grid scrolls its content through `scene.scroll`, clamped to the strategy\'s `contentExtent`; anywhere else it pans the view. The scroll offset is view state, part of the frame the grid gives its tiles, so painting, picking and a drag all see the tiles where they are shown while no stored pose changes, and a tile dragged inside the scrolled grid stores its content position.',
+    hint: 'Scroll the wheel over the grid to bring the hidden rows in, then drag a tile to another cell.',
+    load: () => import('./demos/ScrollingGridDemo').then((m) => m.ScrollingGridDemo),
+    path: 'apps/site/demos/ScrollingGridDemo.tsx',
+  },
+  {
     id: 'svg',
     title: 'SVG round trip',
     package: 'svg',

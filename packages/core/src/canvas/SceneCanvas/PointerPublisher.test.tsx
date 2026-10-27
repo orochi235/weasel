@@ -62,10 +62,10 @@ describe('SceneCanvas — auto-wires PointerContext getDropPoint', () => {
     // jsdom's getBoundingClientRect returns zeros and default view is identity,
     // so clientX/Y maps 1:1 to world coords.
     pointerMoveAt(canvas, 42, 17);
-    expect(probedCtx!.getDropPoint()).toEqual({ worldX: 42, worldY: 17, viewId: null });
+    expect(probedCtx!.getDropPoint()).toEqual({ world: { x: 42, y: 17 }, viewId: null });
     // A second move updates the same ref.
     pointerMoveAt(canvas, 100, 200);
-    expect(probedCtx!.getDropPoint()).toEqual({ worldX: 100, worldY: 200, viewId: null });
+    expect(probedCtx!.getDropPoint()).toEqual({ world: { x: 100, y: 200 }, viewId: null });
     // pointerleave clears.
     fireEvent.pointerLeave(canvas);
     expect(probedCtx!.getDropPoint()).toBeNull();
@@ -80,7 +80,7 @@ describe('SceneCanvas — auto-wires PointerContext getDropPoint', () => {
     Object.defineProperty(move, 'clientX', { value: 300 });
     Object.defineProperty(move, 'clientY', { value: 9 });
     fireEvent(document.body, move);
-    expect(probedCtx!.getDropPoint()).toEqual({ worldX: 300, worldY: 9, viewId: null });
+    expect(probedCtx!.getDropPoint()).toEqual({ world: { x: 300, y: 9 }, viewId: null });
   });
 
   it('reports nothing for a drag that began outside the canvas', () => {

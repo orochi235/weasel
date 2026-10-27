@@ -1,10 +1,9 @@
-import type { Action, ActionDeps } from '@weasel-js/routing';
+import type { Action, ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { NodeId } from 'core/scene/types';
 import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
 
-type Point = { x: number; y: number };
 type Box = { x: number; y: number; width: number; height: number };
 
 /** What `group.enter` reads: the node under a point and the tree above it. */
@@ -19,7 +18,7 @@ export interface LeaveGroupOptions {
   boxOf: (id: string) => Box | null;
 }
 
-const inside = (b: Box, p: Point) =>
+const inside = (b: Box, p: WorldPoint) =>
   p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
 
 /**
@@ -29,7 +28,7 @@ const inside = (b: Box, p: Point) =>
 export function leaveGroupsOutside(
   entered: EnteredGroupApi,
   boxOf: LeaveGroupOptions['boxOf'],
-  p: Point,
+  p: WorldPoint,
 ): void {
   for (let id = entered.get(); id !== null; id = entered.get()) {
     const box = boxOf(id);
@@ -45,7 +44,7 @@ export function leaveGroupsOutside(
  * falls through to text editing, path editing and the mode triggers.
  */
 export function createEnterGroupAction(opts: EnterGroupOptions): Action {
-  const targetAt = (deps: ActionDeps | undefined, p: Point | undefined): string | null => {
+  const targetAt = (deps: ActionDeps | undefined, p: WorldPoint | undefined): string | null => {
     const entered = deps?.enteredGroup;
     if (!entered || !p) return null;
     const hit = opts.pickHit(p.x, p.y);

@@ -35,6 +35,9 @@ export interface WheelEvent extends EventModifiers {
   deltaY: number;
   clientX: number;
   clientY: number;
+  /** The world point under the pointer, when the source knows it. */
+  x?: number;
+  y?: number;
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;

@@ -72,7 +72,7 @@ export function RangeSlider(props: RangeSliderProps) {
           </div>
         )}
         <SliderTrack className={s.track}>
-          {({ state }) => {
+          {({ state, orientation }) => {
             // Single-thumb: fill from start to thumb. Multi-thumb: fill
             // between adjacent thumbs (simplest = between first and last).
             const fillStart = state.values.length > 1 ? state.getThumbPercent(0) * 100 : 0;
@@ -82,7 +82,11 @@ export function RangeSlider(props: RangeSliderProps) {
                 <div
                   data-range-fill
                   className={s.fill}
-                  style={{ insetInlineStart: `${fillStart}%`, insetInlineEnd: `${100 - fillEnd}%` }}
+                  style={
+                    orientation === 'vertical'
+                      ? { bottom: `${fillStart}%`, top: `${100 - fillEnd}%` }
+                      : { insetInlineStart: `${fillStart}%`, insetInlineEnd: `${100 - fillEnd}%` }
+                  }
                 />
                 {state.values.map((_, i) => (
                   <SliderThumb key={i} index={i} className={s.thumb} />

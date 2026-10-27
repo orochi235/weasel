@@ -191,6 +191,8 @@ function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltInd
   getNodeShapes();
   const version = scene.getVersion();
   const overrides = scene.overrides.getGeneration();
+  // Boxed where each node is painted, which a container's scroll moves.
+  const scrolled = scene.scroll?.getGeneration() ?? 0;
   const memo = nodeMemoGeneration();
   const markers = markerGeneration();
   let perScene = CACHE.get(scene);
@@ -199,7 +201,7 @@ function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltInd
   if (cache === undefined) perScene.set(descriptor, (cache = createSettledCache()));
   // Boxed as shown, so a data override that grows a node's ink is met where it is painted.
   const order = nodesAsShown(scene.overrides, scene.renderOrderNodes()) as unknown as Order;
-  const index = cache.read([version, overrides, memo, markers], () => build(scene, descriptor, order));
+  const index = cache.read([version, overrides, scrolled, memo, markers], () => build(scene, descriptor, order));
   index?.rankBy(order);
   return index;
 }

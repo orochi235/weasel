@@ -5,7 +5,7 @@ import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { planeToPlane } from 'core/viewport/parallax';
 import { rebaseLocalPose } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import { carryPose, planeOf } from '../../planeInput';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession, ReparentOnDrop } from '../session';
@@ -69,7 +69,7 @@ export function reparentOps(
   delta: { dx: number; dy: number },
 ): Op[] {
   const { scene, pc, view } = session;
-  const adapter = scenePoseAdapter(scene);
+  const adapter = sceneViewPoseAdapter(scene);
   const label = session.lifecycle.label;
   const ops: Op[] = [];
   // The destination's children as each op will find them: an earlier root's

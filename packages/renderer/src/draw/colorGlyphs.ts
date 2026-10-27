@@ -1,4 +1,5 @@
 import { isSolidPaint } from '@weasel-js/paint';
+import { mat3, rotateAboutPoint } from '@weasel-js/geom';
 import {
   colorPageTextureId, sharpColorPageTextureId, sharperColorGlyph, syncColorPageTexture, syncSharpColorPageTexture,
   DYNAMIC_PAGE_SIZE as PAGE_SIZE,
@@ -49,8 +50,12 @@ export function drawColorGlyphs(ctx: DrawContext, group: LaidOutGroup, dx: numbe
       restage();
     }
     let cut: ClipRect | null | undefined;
+    // A turned glyph's quad is still its upright box, drawn through the turn.
+    const qm = q.rotate
+      ? mat3.multiply(m, mat3.fromAffine(rotateAboutPoint(q.penX + dx, q.baselineY + dy, (q.rotate * Math.PI) / 180)))
+      : m;
     while (!batch.pushQuad(
-      q.x0 + dx, q.y0 + dy, q.x1 - q.x0, q.y1 - q.y0, m,
+      q.x0 + dx, q.y0 + dy, q.x1 - q.x0, q.y1 - q.y0, qm,
       q.u0, q.v0, q.u1, q.v1, opacity * tint[3], slot, tint[0], tint[1], tint[2],
     )) {
       cut = enterUncut(ctx);
@@ -85,7 +90,7 @@ function sharper(
       x0, y0, x1: x0 + (g.width / k) * texel, y1: y0 + (g.height / k) * texel,
       u0: g.x / PAGE_SIZE, v0: g.y / PAGE_SIZE,
       u1: (g.x + g.width) / PAGE_SIZE, v1: (g.y + g.height) / PAGE_SIZE,
-      baselineY: q.baselineY,
+      baselineY: q.baselineY, penX: q.penX, rotate: q.rotate,
     },
     atlasId: sharpColorPageTextureId(g.page),
   };

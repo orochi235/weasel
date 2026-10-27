@@ -90,3 +90,34 @@ export function quatFromAxisAngle(axis: Vec3, angle: number): Quat {
   const s = Math.sin(half);
   return [a.x * s, a.y * s, a.z * s, Math.cos(half)];
 }
+
+/** The rotation `a` after `b`: `quatRotate(quatMultiply(a, b), v)` is
+ *  `quatRotate(a, quatRotate(b, v))`. */
+export function quatMultiply(a: Quat, b: Quat): Quat {
+  const [ax, ay, az, aw] = a;
+  const [bx, by, bz, bw] = b;
+  return [
+    aw * bx + ax * bw + ay * bz - az * by,
+    aw * by - ax * bz + ay * bw + az * bx,
+    aw * bz + ax * by - ay * bx + az * bw,
+    aw * bw - ax * bx - ay * by - az * bz,
+  ];
+}
+
+/** The inverse of a unit quaternion: the same rotation undone. */
+export function quatConjugate(q: Quat): Quat {
+  return [-q[0], -q[1], -q[2], q[3]];
+}
+
+/** `v` rotated by the unit quaternion `q`. */
+export function quatRotate(q: Quat, v: Vec3): Vec3 {
+  const [x, y, z, w] = q;
+  const tx = 2 * (y * v.z - z * v.y);
+  const ty = 2 * (z * v.x - x * v.z);
+  const tz = 2 * (x * v.y - y * v.x);
+  return {
+    x: v.x + w * tx + (y * tz - z * ty),
+    y: v.y + w * ty + (z * tx - x * tz),
+    z: v.z + w * tz + (x * ty - y * tx),
+  };
+}

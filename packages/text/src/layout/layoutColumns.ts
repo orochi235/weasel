@@ -21,10 +21,10 @@ import type { LaidOutCell, LaidOutLineBox, PlacedGlyph } from './layoutRuns';
 
 /** Numbers per code point: pen x, step, the glyph's own advance, its size,
  *  its baseline, its source span, code point, bidi level, the two flags, its
- *  run, and the logical index of the glyph at this visual slot. */
-const NUM = 12;
+ *  run, the logical index of the glyph at this visual slot, and its turn. */
+const NUM = 13;
 const X = 0, STEP = 1, ADVANCE = 2, FONT_SIZE = 3, BASELINE = 4;
-const SRC_INDEX = 5, SRC_END = 6, CP = 7, LEVEL = 8, FLAGS = 9, RUN = 10, VISUAL = 11;
+const SRC_INDEX = 5, SRC_END = 6, CP = 7, LEVEL = 8, FLAGS = 9, RUN = 10, VISUAL = 11, ROTATE = 12;
 const DRAWS_INK = 1, CLUSTER_END = 2;
 /** References per code point: the serving tier, its metrics, the atlas, and
  *  the glyph's record there. */
@@ -64,7 +64,7 @@ export class LayoutColumns {
     num[n + X] = x; num[n + STEP] = step; num[n + ADVANCE] = e.advance;
     num[n + FONT_SIZE] = e.fontSize; num[n + BASELINE] = baselineY;
     num[n + SRC_INDEX] = e.srcIndex; num[n + SRC_END] = e.srcEnd; num[n + CP] = e.cp;
-    num[n + LEVEL] = level; num[n + RUN] = e.run;
+    num[n + LEVEL] = level; num[n + RUN] = e.run; num[n + ROTATE] = e.rotate;
     num[n + FLAGS] = (e.drawsInk ? DRAWS_INK : 0) | (e.clusterEnd ? CLUSTER_END : 0);
     ref[r] = e.resolved; ref[r + 1] = e.metrics; ref[r + 2] = e.font; ref[r + 3] = e.glyph;
   }
@@ -103,6 +103,7 @@ export class LayoutColumns {
     out.baselineY = num[n + BASELINE];
     out.advance = num[n + ADVANCE];
     out.step = num[n + STEP];
+    out.rotate = num[n + ROTATE];
     return out;
   }
 
@@ -130,12 +131,9 @@ export function blankGlyph(): PlacedGlyph {
   return {
     run: 0, cell: 0, cp: 0, fontSize: 0.5,
     resolved: null as unknown as ResolveResult, metrics: null as unknown as GlyphMetrics,
-    font: null, glyph: null, x: 0.5, baselineY: 0.5, advance: 0.5, step: 0.5,
+    font: null, glyph: null, x: 0.5, baselineY: 0.5, advance: 0.5, step: 0.5, rotate: 0.5,
   };
 }
-
-/** What a line box carries besides its cells and glyphs. */
-export type LineFields = Omit<LaidOutLineBox, 'cells' | 'glyphs'>;
 
 /**
  * A line box whose `cells` and `glyphs` are code points `[start, start +
@@ -154,9 +152,12 @@ export class LineBox implements LaidOutLineBox {
   readonly #start: number;
   readonly #count: number;
 
-  constructor(f: LineFields, cols: LayoutColumns, start: number, count: number) {
-    this.x0 = f.x0; this.y0 = f.y0; this.x1 = f.x1; this.y1 = f.y1;
-    this.baselineY = f.baselineY; this.srcEnd = f.srcEnd; this.justified = f.justified;
+  constructor(
+    x0: number, y0: number, x1: number, y1: number, baselineY: number, srcEnd: number, justified: boolean,
+    cols: LayoutColumns, start: number, count: number,
+  ) {
+    this.x0 = x0; this.y0 = y0; this.x1 = x1; this.y1 = y1;
+    this.baselineY = baselineY; this.srcEnd = srcEnd; this.justified = justified;
     this.#cols = cols; this.#start = start; this.#count = count;
     Object.defineProperties(this, LineBox.#views);
   }

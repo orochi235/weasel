@@ -8,6 +8,20 @@ export interface PoseAdapter<TPose> {
    *  means every node is one. A container whose pose derives from its children
    *  is not: its children share its frame, so the fold passes over it. */
   definesFrame?(id: string): boolean;
+  /** The frame `id` gives its children, from `world`, the frame its own pose
+   *  folds to. Absent means `world` itself. A view that scrolls a container's
+   *  content answers the frame moved by that offset (`scrolledFrames`); the
+   *  document's own readers and writers never carry it. */
+  childFrame?(id: string, world: TPose): TPose;
+}
+
+/** How far a container's content is scrolled, in the container's own axes:
+ *  its children are shown at their stored poses moved by minus this. `z` is
+ *  for a pose with a third axis, and a 2D composition ignores it. */
+export interface ScrollOffset {
+  readonly x: number;
+  readonly y: number;
+  readonly z?: number;
 }
 
 /**
@@ -25,6 +39,11 @@ export interface PoseComposition<TPose> {
   compose(parent: TPose, child: TPose): TPose;
   decompose(parent: TPose, world: TPose): TPose;
   closure: PoseClosure;
+  /** `frame` with its content scrolled by `offset`: the frame a child composed
+   *  under it lands where `compose(frame, child)` would put the child moved by
+   *  minus `offset` in `frame`'s own axes. Absent, a container's content cannot
+   *  be scrolled under this composition. */
+  scroll?(frame: TPose, offset: ScrollOffset): TPose;
 }
 
 /** The absolute-pose strategy: every node stores its world pose, and a
@@ -66,10 +85,29 @@ export function composeWorldPose<TPose>(
   }
   // chain is [id, parent, grandparent, ..., root]; fold from the root down.
   let world = adapter.getPose(chain[chain.length - 1]);
+  const childFrame = adapter.childFrame;
   for (let i = chain.length - 2; i >= 0; i--) {
-    world = compose(world, adapter.getPose(chain[i]));
+    const frame = childFrame === undefined ? world : childFrame.call(adapter, chain[i + 1], world);
+    world = compose(frame, adapter.getPose(chain[i]));
   }
   return world;
+}
+
+/** World pose of the frame `id`'s children are expressed in: its own world
+ *  pose, through the adapter's `childFrame` when it has one and `id` is a
+ *  frame. */
+export function composeChildFrame<TPose>(
+  adapter: PoseAdapter<TPose>,
+  id: string,
+  compose: (parent: TPose, child: TPose) => TPose,
+): TPose {
+  return childFrameAt(adapter, id, composeWorldPose(adapter, id, compose));
+}
+
+/** The frame `id` gives its children when its own pose folds to `world`. */
+export function childFrameAt<TPose>(adapter: PoseAdapter<TPose>, id: string, world: TPose): TPose {
+  if (adapter.childFrame === undefined || !(adapter.definesFrame?.(id) ?? true)) return world;
+  return adapter.childFrame(id, world);
 }
 
 /**
@@ -89,7 +127,7 @@ export function rebaseLocalPose<TPose>(
 ): TPose {
   const frame = frameAtOrAbove(adapter, newParentId);
   if (frame === null) return worldPose;
-  return decompose(composeWorldPose(adapter, frame, compose), worldPose);
+  return decompose(composeChildFrame(adapter, frame, compose), worldPose);
 }
 
 /** The nearest node at or above `id` whose pose is a frame, or `null` for the

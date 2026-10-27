@@ -1,11 +1,10 @@
 import { findPathSnap, findPathSnaps, PATH_SNAP_KINDS, type PathSnapKind } from '@weasel-js/geom';
+import type { WorldPoint } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import type { SnapSource } from 'domains/snap/types';
 import { PATH_SNAP_LABELS } from './glyphs';
 import { sceneSnapIndex } from './sceneIndex';
-
-type Point = { x: number; y: number };
 
 /** Options for `pathSnapSource`. */
 export interface PathSnapSourceOptions {
@@ -60,11 +59,11 @@ export function pathSnapSource(opts: PathSnapSourceOptions = {}): SnapSource {
  *  no mark. */
 export function ownGeometryAt(
   scene: Pick<Scene<unknown, string, unknown>, 'nodes' | 'layers' | 'getVersion'>,
-  press: Point,
+  press: WorldPoint,
   ids: readonly string[],
   scale: { x: number; y: number },
   reachPx = DEFAULT_SNAP_PX,
-): Point | null {
+): WorldPoint | null {
   const { ids: owners, index } = sceneSnapIndex(scene);
   const own = new Set(ids);
   const hit = findPathSnap(index, press, {

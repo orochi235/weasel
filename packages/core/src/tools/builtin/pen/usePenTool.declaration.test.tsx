@@ -30,9 +30,9 @@ describe('usePenTool', () => {
     expect(cursor()).toMatch(/^url\("data:image\/svg\+xml,/);
     expect(cursor()).toMatch(/, crosshair$/);
     p.click(0, 0); p.click(100, 0); p.click(100, 100);
-    act(() => { pointer.set({ worldX: 3, worldY: 3, viewId: null }); });
+    act(() => { pointer.set({ world: { x: 3, y: 3 }, viewId: null }); });
     expect(cursor()).toBe('pointer');
-    act(() => { pointer.set({ worldX: 40, worldY: 40, viewId: null }); });
+    act(() => { pointer.set({ world: { x: 40, y: 40 }, viewId: null }); });
     expect(cursor()).toMatch(/, crosshair$/);
   });
 

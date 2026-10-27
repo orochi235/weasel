@@ -17,6 +17,7 @@ import { resolveTheme, weaselTheme, type ColorSourceContext, type ResolvedTheme 
 import { hudColor } from './colors';
 import { hideVisually, mirrorFocusedTree } from './accessibleMirror';
 import { createLayerDeps } from './layerDeps';
+import { wireTextInput } from './textInputHost';
 
 /** Options for `attachHud`. */
 export interface AttachHudOptions {
@@ -304,7 +305,9 @@ function wireFocus(
     if (liveFocused()?.onKey?.(keyEvent(e, 'keyup'))) e.preventDefault();
   };
 
-  const onBlur = () => { hud.focus(null); };
+  // Keys and DOM focus on the hidden input a widget's text edit types through count as the canvas's.
+  const text = wireTextInput(element, hud, { keydown: onKeyDown, keyup: onKeyUp, blur: () => { hud.focus(null); } });
+  const onBlur = (e: FocusEvent) => { if (e.relatedTarget !== text.input) hud.focus(null); };
 
   const region = createLiveRegion(element.ownerDocument);
   const unsubscribe = hud.subscribeFocus((w) => {
@@ -323,6 +326,7 @@ function wireFocus(
     element.removeEventListener('blur', onBlur);
     unsubscribe();
     unmirror();
+    text.detach();
     region.remove();
   };
 }

@@ -182,7 +182,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
       };
       const run = pts.map(toScreen);
       const at = live.pointer()?.get();
-      if (at) run.push(toScreen({ x: at.worldX, y: at.worldY }));
+      if (at) run.push(toScreen(at.world));
       const stroke = OVERLAY_ROLE_STROKES['cut'];
       const r = kitSettings.get('targets.sliceVertexRadiusPx') ?? VERTEX_RADIUS_PX;
       const out: DrawCommand[] = [];

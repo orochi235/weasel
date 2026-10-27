@@ -178,20 +178,22 @@ export function placeTspanRun(
   onWarn: (m: string) => void,
   inherited: Inherited = { dx: [], raw: null },
 ): number {
-  const own = readList(tspan, 'dx', onWarn);
+  // A list the text's `x` list was merged with is already in `inherited`.
+  const own = inherited.merged ? [] : readList(tspan, 'dx', onWarn);
   const borrows = own.length < inherited.dx.length;
   // Name the text in a message about a list that is all the text's.
   const theirs = borrows && own.length === 0;
   return placeRun({
     tag: theirs ? 'text' : tspan.tagName.toLowerCase(),
     dx: borrows ? [...own, ...inherited.dx.slice(own.length)] : own,
-    x: readList(tspan, 'x', onWarn),
+    x: inherited.merged ? [] : readList(tspan, 'x', onWarn),
     raw: { dx: theirs ? inherited.raw : tspan.getAttribute('dx'), x: tspan.getAttribute('x') },
   }, run, lines, style, onWarn);
 }
 
-/** A stretch of a `<text>`'s `dx` list, and the list as written. */
-export interface Inherited { dx: readonly number[]; raw: string | null }
+/** A stretch of a `<text>`'s `dx` list, and the list as written. `merged`
+ *  says the stretch already holds the tspan's own `x` and `dx` lists. */
+export interface Inherited { dx: readonly number[]; raw: string | null; merged?: boolean }
 
 /** One of a `<text>`'s runs, and the `<tspan>` it came from, or `null` for bare text. */
 export interface Piece { tspan: Element | null; run: StyledRun }
@@ -199,18 +201,31 @@ export interface Piece { tspan: Element | null; run: StyledRun }
 /**
  * A `<text>`'s `x` list folded into its `dx` list, as `foldPositions` folds a
  * run's, or the reason it cannot be. The glyphs it places are measured
- * together, through every run they fall in, in `style`, the text's own.
+ * together, through every run they fall in, in `style`, the text's own. Each
+ * glyph takes its `x` and `dx` from its own `<tspan>` where that has a value
+ * for it, and otherwise from the text, as SVG does; `reached` is how many
+ * glyphs the lists were merged over.
  */
 function foldTextPositions(
-  x: readonly number[], dx: readonly number[], pieces: readonly Piece[], style: TextStyle,
-): number[] | string {
+  x: readonly number[], dx: readonly number[], pieces: readonly Piece[], style: TextStyle, onWarn: (m: string) => void,
+): { dx: number[]; reached: number } | string {
   const reached: StyledRun[] = [];
+  const xs: (number | undefined)[] = [];
+  const dxs: number[] = [];
   for (let at = 0, k = 0; at < x.length && k < pieces.length; k++) {
     const { tspan, run } = pieces[k]!;
-    const own = tspan && (['x', 'dx'] as const).find((n) => tspan.hasAttribute(n));
-    if (own) return `a <tspan> it reaches has its own ${own}`;
+    if (tspan?.hasAttribute('x') && (tspan.hasAttribute('y') || tspan.hasAttribute('dy'))) {
+      return 'a <tspan> it reaches may start a line of its own';
+    }
+    const ownX = tspan ? readList(tspan, 'x', onWarn) : [];
+    const ownDx = tspan ? readList(tspan, 'dx', onWarn) : [];
+    const n = Array.from(run.text).length;
+    for (let i = 0; i < n; i++) {
+      xs.push(i < ownX.length ? ownX[i] : x[at + i]);
+      dxs.push(i < ownDx.length ? ownDx[i]! : dx[at + i] ?? 0);
+    }
     reached.push(run);
-    at += Array.from(run.text).length;
+    at += n;
   }
   const rtl = style.direction === 'rtl';
   const resolved = resolveTextStyle(style);
@@ -219,18 +234,23 @@ function foldTextPositions(
     direction: rtl ? 'rtl' : 'ltr', tabSize: resolved.tabSize,
   });
   const line = lines.length === 1 ? lines[0]! : null;
-  const glyphs = reached.reduce((n, r) => n + Array.from(r.text).length, 0);
+  const glyphs = xs.length;
   if (!line || line.cells.length !== glyphs || !(line.x1 > line.x0)) return 'no loaded face measures its glyphs';
   if (!allRead(line.cells, rtl)) {
     return 'in right-to-left text it is read only where a bidi engine says every glyph reads right to left';
   }
-  const placed = Math.min(x.length, glyphs);
   const pens = pensOf(line, rtl);
-  const pen = (i: number): number => pens[i]!;
-  const at = (i: number): number => x[i]! + (dx[i] ?? 0);
-  return Array.from({ length: Math.max(dx.length, placed) }, (_, i) => (
-    i === 0 || i >= placed ? dx[i] ?? 0 : at(i) - at(i - 1) - (pen(i) - pen(i - 1))
+  // Where each glyph's pen lands: placed by its `x`, or carried on from the one before.
+  const at: number[] = [];
+  for (let i = 0; i < glyphs; i++) {
+    const own = xs[i];
+    at.push(own !== undefined ? own + dxs[i]! : at[i - 1]! + pens[i]! - pens[i - 1]! + dxs[i]!);
+  }
+  // The first glyph moves the text from its own `x`, which places it.
+  const out = Array.from({ length: Math.max(dx.length, glyphs) }, (_, i) => (
+    i >= glyphs ? dx[i] ?? 0 : i === 0 ? at[0]! - x[0]! : at[i]! - at[i - 1]! - (pens[i]! - pens[i - 1]!)
   ));
+  return { dx: out, reached: glyphs };
 }
 
 /**
@@ -243,6 +263,8 @@ export class TextShifts {
   private readonly dx: number[];
   private readonly raw: string | null;
   private at = 0;
+  /** How many glyphs the text's `x` list was merged over with their tspans' own lists. */
+  private merged = 0;
 
   constructor(
     text: Element, private readonly onWarn: (m: string) => void, pieces: readonly Piece[] = [], style: TextStyle = {},
@@ -260,11 +282,12 @@ export class TextShifts {
     if (x.length < 2) return;
     const folded = collapsible
       ? 'its text has white space SVG collapses, which moves the glyphs the list names'
-      : foldTextPositions(x, this.dx, pieces, style);
+      : foldTextPositions(x, this.dx, pieces, style, onWarn);
     if (typeof folded === 'string') {
       onWarn(`<text x="${text.getAttribute('x')?.trim()}"> positions each glyph; only the first value is read: ${folded}`);
     } else {
-      this.dx = folded;
+      this.dx = folded.dx;
+      this.merged = folded.reached;
     }
   }
 
@@ -272,8 +295,9 @@ export class TextShifts {
   take(run: StyledRun): Inherited {
     const n = Array.from(run.text).length;
     const out = this.dx.slice(this.at, this.at + n);
+    const merged = this.at < this.merged;
     this.at += n;
-    return { dx: out.some((v) => v !== 0) ? out : [], raw: this.raw };
+    return { dx: out.some((v) => v !== 0) ? out : [], raw: this.raw, ...(merged ? { merged } : {}) };
   }
 
   /** Add a bare text run of the `<text>` to `lines`, spaced by its stretch of the list. */

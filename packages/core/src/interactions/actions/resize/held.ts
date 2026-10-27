@@ -48,7 +48,7 @@ export function holdInPlace(
     const stored = previews.get(h.frame);
     if (stored === undefined) continue;
     const above = poseFrame.parentWorld(h.frame);
-    previews.set(id, decompose(above === null ? stored : compose(above, stored), h.world));
+    previews.set(id, decompose(poseFrame.childFrame(h.frame, above === null ? stored : compose(above, stored)), h.world));
   }
   return previews;
 }

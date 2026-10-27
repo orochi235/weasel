@@ -1,16 +1,18 @@
 import type { MenuController, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
 
 /** A text row being typed into in a HUD menu: which row, what has been typed so far, and the caret and the other
- *  end of the selection, as code-point offsets into `draft`. `anchor` equals `caret` when nothing is selected. */
+ *  end of the selection, as code-point offsets into `draft`. `anchor` equals `caret` when nothing is selected.
+ *  `preedit` is an input method's text still being composed, shown in place of the selection; absent with none. */
 export interface HudTextEdit {
   entry: MenuTextEntry;
   draft: string;
   caret: number;
   anchor: number;
+  preedit?: string;
 }
 
 /** The modifiers a key arrives with: `shift` extends the selection, `mod` (Ctrl or Cmd) selects all on `a` and moves
- *  to an end on an arrow, and `alt` moves an arrow by a word. */
+ *  to an end on an arrow, and `alt` moves an arrow, or deletes with Backspace or Delete, by a word. */
 export interface EditMods { shift?: boolean; mod?: boolean; alt?: boolean }
 
 const WORD = /[\p{L}\p{N}\p{M}_]/u;
@@ -40,7 +42,28 @@ export function selectionOf(edit: HudTextEdit): [number, number] {
 function splice(edit: HudTextEdit, from: number, to: number, text: string): HudTextEdit {
   const chars = Array.from(edit.draft);
   const caret = from + Array.from(text).length;
-  return { ...edit, draft: [...chars.slice(0, from), text, ...chars.slice(to)].join(''), caret, anchor: caret };
+  const { preedit: _, ...rest } = edit;
+  return { ...rest, draft: [...chars.slice(0, from), text, ...chars.slice(to)].join(''), caret, anchor: caret };
+}
+
+/** `edit` composing `text`, or with no composition when `text` is empty. */
+export function composeEdit(edit: HudTextEdit, text: string): HudTextEdit {
+  const { preedit: _, ...rest } = edit;
+  return text ? { ...rest, preedit: text } : rest;
+}
+
+/** `edit` with `text` in place of the selection and any composition, as a finished composition enters it. */
+export function insertText(edit: HudTextEdit, text: string): HudTextEdit {
+  const [from, to] = selectionOf(edit);
+  return splice(edit, from, to, text);
+}
+
+/** What `edit` shows: its preedit, if any, typed in place of the selection, and the span the preedit covers. */
+export function shownEdit(edit: HudTextEdit): { edit: HudTextEdit; preedit?: [number, number] } {
+  if (!edit.preedit) return { edit };
+  const [from] = selectionOf(edit);
+  const shown = insertText(edit, edit.preedit);
+  return { edit: shown, preedit: [from, shown.caret] };
 }
 
 /** `edit` with the caret at `to`, dragging the selection's far end along unless `extend`. */
@@ -68,8 +91,8 @@ function moveFor(edit: HudTextEdit, key: string, mods: EditMods): number | undef
 }
 
 /** What one key does to an edit: the edit it leaves, null once Enter or Escape ends it, and on Enter the text to
- *  write. A character replaces the selection, Backspace and Delete take it or the character either side of the
- *  caret, and the arrows, Home and End move the caret; any other key is held and ignored. */
+ *  write. A character replaces the selection, Backspace and Delete take it or the character (with Alt, the word)
+ *  either side of the caret, and the arrows, Home and End move the caret; any other key is held and ignored. */
 export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { edit: HudTextEdit | null; commit?: string } {
   if (key === 'Enter') return { edit: null, commit: edit.draft };
   if (key === 'Escape') return { edit: null };
@@ -79,8 +102,12 @@ export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { 
     return { edit: key.toLowerCase() === 'a' ? { ...edit, anchor: 0, caret: Array.from(edit.draft).length } : edit };
   }
   const [from, end] = selectionOf(edit);
-  if (key === 'Backspace') return { edit: from !== end ? splice(edit, from, end, '') : from > 0 ? splice(edit, from - 1, from, '') : edit };
-  if (key === 'Delete') return { edit: splice(edit, from, from !== end ? end : end + 1, '') };
+  if ((key === 'Backspace' || key === 'Delete') && from !== end) return { edit: splice(edit, from, end, '') };
+  if (key === 'Backspace') {
+    const start = mods.alt ? wordStop(Array.from(edit.draft), from, -1) : Math.max(0, from - 1);
+    return { edit: splice(edit, start, from, '') };
+  }
+  if (key === 'Delete') return { edit: splice(edit, from, mods.alt ? wordStop(Array.from(edit.draft), from, 1) : from + 1, '') };
   if (Array.from(key).length === 1) return { edit: splice(edit, from, end, key) };
   return { edit };
 }
@@ -113,6 +140,18 @@ export function createTextEditor(c: Pick<MenuController, 'textValue' | 'setText'
     },
     /** End the edit keeping what was typed, as a blur does, unless it is `e`'s. */
     leave(e?: MenuEntry) { if (edit && edit.entry !== e) end(edit.draft); },
+    /** Show `text` as an input method's composition in progress; '' clears it. */
+    compose(text: string) {
+      if (!edit || (edit.preedit ?? '') === text) return;
+      edit = composeEdit(edit, text);
+      changed();
+    },
+    /** Enter `text` without a key, as a finished composition does. */
+    insert(text: string) {
+      if (!edit) return;
+      edit = insertText(edit, text);
+      changed();
+    },
     /** Feed a key to the edit; false when nothing is being typed. */
     key(key: string, mods: EditMods = {}): boolean {
       if (!edit) return false;

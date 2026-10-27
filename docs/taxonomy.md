@@ -808,6 +808,11 @@ Shape is generic (`TPose`). Common shapes: rect (`{x, y, width, height}`),
 (world-frame for root objects). A scene's `composition` folds them to world,
 which `getWorldPose` reads; the default, `RIGID_POSE_COMPOSITION`, makes a rect
 container's pose a frame, and a scene of another pose names its own.
+A container's **scroll offset** (`scene.scroll`) is view state, part of the
+frame it gives its children (ruled 2026-10-11): the view-side fold — painting,
+picking, chrome, previews, gestures — shows its children moved by minus it and
+writes back through it, while the layout pass and other document writers fold
+through the unscrolled frame (`core/scene/scrollOffsets.ts`).
 See `packages/core/src/core/geometry/poseDescriptor.ts` (`RotatedPose`) and
 `packages/geom/src/path.ts` (`Path`).
 

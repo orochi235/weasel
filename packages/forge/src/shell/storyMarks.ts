@@ -88,9 +88,16 @@ export function storyMarks(hosts: StoryHosts): AnnotationsCapability<unknown, un
           ref,
           content,
           shown,
-          base: () => {
-            if (!ref.current) throw new Error('[forge] the story has no host to capture');
-            return captureHost(ref.current);
+          // Out of view, a host holds no content; it is rendered for the capture rather than scrolled to, which
+          // would move the reader's view.
+          base: async () => {
+            const release = await hosts.show(trial.id);
+            try {
+              if (!ref.current) throw new Error('[forge] the story has no host to capture');
+              return captureHost(ref.current);
+            } finally {
+              release();
+            }
           },
         },
       ];

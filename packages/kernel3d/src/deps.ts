@@ -38,10 +38,11 @@ import { worldPickIndex } from './pickIndex';
 import { projectAabbToScreen } from './screen';
 import { createSession3d } from './snap/session3d';
 
-import { DEFAULT_UP, boundsOfNode, type Node3d, type World3d } from './world';
+import { DEFAULT_UP, measuredBoxAt, type Node3d, type World3d } from './world';
 
 export type { Viewport3d, ViewportSource } from './project';
 export type { NodeBounds, Node3d, Scene3d, World3d } from './world';
+export { worldPoseOf } from './world';
 
 /**
  * The plane through `p` that faces the camera.
@@ -200,7 +201,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
           // The pose arriving here is often an in-flight override rather than
           // `node.pose`, so the consumer is asked about that pose on this node
           // rather than about the node as committed.
-          d = build((pose) => boundsOfNode(world, { ...node, pose }));
+          d = build((pose) => measuredBoxAt(world, node, pose));
           specialized.set(node, d);
         }
         return d;

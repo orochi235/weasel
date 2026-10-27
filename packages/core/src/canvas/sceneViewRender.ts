@@ -106,7 +106,7 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   layers: SceneViewLayers = {},
 ): HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose> {
-  const { getNode, getChildren, getPose, composePose } = sceneToAdapter(scene);
+  const { getNode, getChildren, getPose, composePose, childFrame } = sceneToAdapter(scene);
   return {
     getLayers: () =>
       paintedSceneLayers(scene.layers, layers)
@@ -115,6 +115,7 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
     getChildren,
     getPose,
     ...(composePose ? { composePose } : {}),
+    ...(childFrame ? { childFrame } : {}),
   };
 }
 

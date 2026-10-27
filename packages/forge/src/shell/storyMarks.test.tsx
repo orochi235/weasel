@@ -1,5 +1,5 @@
 import { TrialIdContext } from '@weasel-js/labkit';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
@@ -170,5 +170,40 @@ describe('TrialHost', () => {
     expect(hosts.ref('t4').current).toBe(host);
     unmount();
     expect(hosts.ref('t4').current).toBeNull();
+  });
+
+  /** An IntersectionObserver that always reports its element far from the viewport. */
+  class FarObserver {
+    constructor(private readonly report: IntersectionObserverCallback) {}
+    observe(el: Element) {
+      const entry = { target: el, isIntersecting: false, rootBounds: null } as unknown as IntersectionObserverEntry;
+      this.report([entry], this as unknown as IntersectionObserver);
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+
+  it('renders a story out of view for an export of its marks, and unmounts it again after', async () => {
+    const real = globalThis.IntersectionObserver;
+    globalThis.IntersectionObserver = FarObserver as unknown as typeof IntersectionObserver;
+    cleanups.push(() => {
+      globalThis.IntersectionObserver = real;
+    });
+    const hosts = createStoryHosts();
+    const { container, unmount } = render(
+      <StoryHostsContext.Provider value={hosts}>
+        <TrialIdContext.Provider value="t6">
+          <TrialHost layout="padded" setup={{}} config={{}}>
+            {() => <p>far away</p>}
+          </TrialHost>
+        </TrialIdContext.Provider>
+      </StoryHostsContext.Provider>,
+    );
+    cleanups.push(unmount);
+    await waitFor(() => expect(container.textContent).toBe(''));
+    const base = await storyMarks(hosts).targets(null, {}, { id: 't6', view: null })[0]!.base!();
+    if (base.kind !== 'svg') throw new Error('not svg');
+    expect(parse(base.markup).documentElement.textContent).toContain('far away');
+    await waitFor(() => expect(container.textContent).toBe(''));
   });
 });

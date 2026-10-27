@@ -165,7 +165,7 @@ describe('camera input', () => {
     );
     const host = container.querySelector('.lk-canvas-stack') as HTMLElement;
     act(() => pointer(host, 'pointermove', 40, 30, 0));
-    expect(store.get()).toEqual({ worldX: 20, worldY: -15, viewId: 'stage' });
+    expect(store.get()).toEqual({ world: { x: 20, y: -15 }, viewId: 'stage' });
   });
 
   it('reads, writes and clamps through the committed props, never an abandoned render', () => {

@@ -10,10 +10,13 @@ here touches WebGL.
 ```ts
 import { createScene } from '@weasel-js/core';
 import {
-  createCamera, createNodeAtPoint, createPoseDescriptor, pose3, type Pose3,
+  POSE3_COMPOSITION, createCamera, createNodeAtPoint, createPoseDescriptor, pose3, type Pose3,
 } from '@weasel-js/kernel3d';
 
-const scene = createScene<MyData, 'solids', Pose3>({ systemLayers: [{ id: 'solids' }] });
+const scene = createScene<MyData, 'solids', Pose3>({
+  composition: POSE3_COMPOSITION,
+  systemLayers: [{ id: 'solids' }],
+});
 const world = { scene, viewport: () => ({ camera, width, height }) };
 
 // Every dep takes its camera from a thunk. That is the whole trick: the
@@ -66,12 +69,27 @@ depth. Two consequences:
   is the mean of the two the rectangle gives it, and it reads `scale` as world
   extents — the unit-primitive assumption `aabbOfPose` makes by default.
 
+## Containers
+
+`POSE3_COMPOSITION` stores a child's pose in its container's frame: moving,
+turning or scaling a container carries everything under it. It is exact when a
+container's scale is uniform; under a non-uniform one a turned child keeps its
+own axes rather than shearing, which a `Pose3` cannot hold.
+
+Every world read folds a node's pose up through its containers first: picking,
+the marquee, snap targets and what a move drags. A renderer does the same with
+`worldPoseOf(scene, id)`, which also honors a gesture's in-flight pose; drawing
+`node.pose` draws a nested node at its container-relative position.
+
 ## The bounds seam
 
-`World3d.bounds` is how a consumer says how big a node is. The kernel's default
-carries a unit cube by the pose; override it when a primitive knows better. A
-sphere is the case that forces the seam to be shaped this way — its box is the
-same under every rotation, and no transform of a local box reproduces that.
+`World3d.bounds` is how a consumer says how big a node is. It is handed the node
+at its world pose and answers a world box, or `null` for a node that occupies
+nothing, which is then never picked or snapped to. The kernel's default carries
+a unit cube by a mark's pose and gives a group no box; override it when a
+primitive knows better, or when a container draws. A sphere is the case that
+forces the seam to be shaped this way — its box is the same under every
+rotation, and no transform of a local box reproduces that.
 
 ## Aims
 

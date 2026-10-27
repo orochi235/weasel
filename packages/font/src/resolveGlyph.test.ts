@@ -69,6 +69,20 @@ describe('metricsOf', () => {
     expect([m.ascent, m.descent]).toEqual([40, 8]);
   });
 
+  it('reads a face measured again in place', () => {
+    registerCanvasFont('Dyn');
+    const resolved = resolveFontVariant('Dyn', 400, 'normal');
+    const m = metricsOf(resolved)!;
+    const font = resolved.dynamicFace!.font;
+    expect([m.ascent, m.descent]).toEqual([40, 8]);
+    font.faceMetrics = { ascent: 30 / BAKE_SIZE, descent: 6 / BAKE_SIZE };
+    expect(m.ascent).toBeCloseTo(30);
+    expect(m.descent).toBeCloseTo(6);
+    font.faceMetrics = undefined;
+    font.common.base = 33;
+    expect([m.ascent, m.descent]).toEqual([33, undefined]);
+  });
+
   it('is one object per face, and none for a miss', async () => {
     await registerTestFont('inter');
     expect(metricsOf(resolveFontVariant('inter', 400, 'normal')))

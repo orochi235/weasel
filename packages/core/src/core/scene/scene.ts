@@ -1,5 +1,6 @@
 import { withKitRegistry } from './kitRegistry';
 import { createPoseOverrides } from './poseOverrides';
+import { createScrollOffsets } from './scrollOffsets';
 import { createArrivalWindow } from './arrivalWindow';
 import { documentReads, sceneMutators } from './sceneMutators';
 import { createNotifier } from './notifier';
@@ -63,9 +64,8 @@ function buildScene<TData, TLayer extends string, TPose>(
 ): Scene<TData, TLayer, TPose> {
   if (layers.length === 0) throw new Error('Scene: systemLayers must declare at least one layer');
 
-  // The kit's own registry entries sit under the consumer's, so a snapshot
-  // carrying a kit-attached function (a grouped container's derived pose)
-  // reloads in any scene, not only one whose consumer registered the key.
+  // The kit's own registry entries sit under the consumer's, so a snapshot carrying a kit-attached
+  // function (a grouped container's derived pose) reloads in any scene, not only one that registered it.
   const registry = withKitRegistry(options.registry ?? {});
 
   const doc = createSceneState<TData, TLayer, TPose>(registry, layers, () => arrivals.layoutDeclared(), initialDoc);
@@ -89,9 +89,9 @@ function buildScene<TData, TLayer extends string, TPose>(
   // A selection change is a scene change to every subscriber.
   selection.subscribe(notifier.notify);
 
-  /** Ephemeral per-node overrides. Deliberately not part of `state`: not
-   *  document content, never reaches `toJSON`, and never touches history. */
+  /** Ephemeral, deliberately not part of `state`: not document content, never in `toJSON` or history. */
   const overrides = createPoseOverrides<TPose, TData>((id) => state.nodes.get(id), doc.store.invalidateDependents);
+  const scroll = createScrollOffsets();
 
   const recording = createSceneRecording({
     notifier,
@@ -144,19 +144,20 @@ function buildScene<TData, TLayer extends string, TPose>(
     onPoseWrite: poseWrites.subscribe,
 
     overrides,
+    scroll,
 
     getSelection: selection.get,
     setSelection: (ids) => selection.set([...ids]),
 
     loadState(json, opts) {
-      // Validate + map up front (throws before we touch live state on a bad
-      // version or unknown registry key).
+      // Validate + map up front: throws on a bad version or registry key before live state is touched.
       const specs = specsFromSerialized(json, registry, { composition: scene.composition, ...opts });
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
       // Ephemeral, and every id is a new node after this.
       overrides.clearAll();
+      scroll.clearAll();
       doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));

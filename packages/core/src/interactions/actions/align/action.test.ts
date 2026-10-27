@@ -277,7 +277,7 @@ describe('align reference', () => {
   it("'pointer' falls back to the pointer dep's position", () => {
     const { scene, current } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    const pointer = { get: () => ({ worldX: 70, worldY: 50, viewId: null }) };
+    const pointer = { get: () => ({ world: { x: 70, y: 50 }, viewId: null }) };
     runWith(alignCenterYAction, { selection, scene, pointer }, { to: 'pointer' });
     expect(current.a).toMatchObject({ y: 45 });
     expect(current.b).toMatchObject({ y: 40 });

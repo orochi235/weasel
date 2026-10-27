@@ -1,4 +1,5 @@
 import { applyToPoint, invert } from '@weasel-js/geom';
+import type { WorldPoint } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import { nodeDescriptors, poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
@@ -15,7 +16,7 @@ type Point = { x: number; y: number };
 export function sceneProbeReads(args: {
   scene: Scene<unknown, string, unknown>;
   boxes: DrawnBoxes;
-  geometryAt?: (press: Point, ids: readonly string[]) => Point | null;
+  geometryAt?: (press: WorldPoint, ids: readonly string[]) => WorldPoint | null;
   /** How a pose's origin is read. Default `AUTO_ORIGIN_PROJECTION`. */
   originProjection?: OriginProjection<unknown>;
 }): ProbeReads {

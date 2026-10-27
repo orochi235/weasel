@@ -31,6 +31,8 @@ export interface Entry {
   lineSize: number;
   /** How far its run is raised off the line's baseline. */
   baselineShift: number;
+  /** Its run's `rotate`, in degrees: how far the glyph turns about its pen. */
+  rotate: number;
   /** UTF-16 span of the source character it was drawn from. */
   srcIndex: number;
   srcEnd: number;
@@ -66,10 +68,14 @@ export interface Entry {
  * needed, so a caller that is done with them before it measures again
  * allocates none: the entries of a label re-laid out every frame were a tenth
  * of a HUD readout's garbage. They are then valid only until the next call
- * given the same pool. A pool keeps at most `POOL_MAX` of them.
+ * given the same pool. A pool keeps at most `POOL_MAX` of them. With `into`,
+ * the list returned is that array, emptied and refilled.
  */
-export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?: Entry[]): Entry[] {
-  const entries: Entry[] = [];
+export function measureRuns(
+  runs: readonly ResolvedRun[], tabSize: number, pool?: Entry[], into?: Entry[],
+): Entry[] {
+  const entries: Entry[] = into ?? [];
+  entries.length = 0;
   /** The entry the next one kerns against; none across a break, a tab, or a
    *  run with no metrics. */
   let prev: Entry | undefined;
@@ -88,7 +94,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?
     }
     const runBase = srcIndex;
     const map = run.srcMap;
-    const clusterEnds = graphemeEnds(run.text);
+    const clusterEnds = graphemeEnds(run.text, CLUSTER_ENDS);
     let cluster = 0;
     let clusterStart = 0;
     /** The color glyph of the cluster being walked, when it has one. */
@@ -124,7 +130,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?
       const blank = blankEntry(
         pool, entries.length, runIndex, cp, fontSize, Math.max(run.fontSize, run.strutSize ?? 0),
         // Optional on the authored run type; absent, every y would go NaN.
-        run.baselineShift ?? 0, srcStart, srcEnd, clusterEnd, resolved, metrics,
+        run.baselineShift ?? 0, run.rotate ?? 0, srcStart, srcEnd, clusterEnd, resolved, metrics,
       );
 
       if (color) {
@@ -163,6 +169,9 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?
   return entries;
 }
 
+/** The cluster ends of the run being measured, refilled for each. */
+const CLUSTER_ENDS: number[] = [];
+
 /** What `resolveGlyph` answers into, which `ink` copies out of at once. */
 const HIT: ResolvedGlyph = { resolved: null as unknown as ResolveResult, metrics: null as unknown as GlyphMetrics, advance: 0, font: null, glyph: null };
 
@@ -172,20 +181,20 @@ const POOL_MAX = 4096;
 /** An entry with nothing in it — no glyph, no width — as `pool[i]` rewritten, or a new one. */
 function blankEntry(
   pool: Entry[] | undefined, i: number, run: number, cp: number, fontSize: number, lineSize: number,
-  baselineShift: number, srcIndex: number, srcEnd: number, clusterEnd: boolean,
+  baselineShift: number, rotate: number, srcIndex: number, srcEnd: number, clusterEnd: boolean,
   resolved: ResolveResult, metrics: GlyphMetrics,
 ): Entry {
   const e = pool?.[i];
   if (!e) {
     const made: Entry = {
-      run, cp, fontSize, lineSize, baselineShift, srcIndex, srcEnd, clusterEnd, resolved, metrics,
+      run, cp, fontSize, lineSize, baselineShift, rotate, srcIndex, srcEnd, clusterEnd, resolved, metrics,
       font: null, glyph: null, advance: 0, tracking: 0, kerningBefore: 0, tab: undefined, drawsInk: false,
     };
     if (pool && i < POOL_MAX) pool[i] = made;
     return made;
   }
   e.run = run; e.cp = cp; e.fontSize = fontSize; e.lineSize = lineSize; e.baselineShift = baselineShift;
-  e.srcIndex = srcIndex; e.srcEnd = srcEnd; e.clusterEnd = clusterEnd; e.resolved = resolved; e.metrics = metrics;
+  e.rotate = rotate; e.srcIndex = srcIndex; e.srcEnd = srcEnd; e.clusterEnd = clusterEnd; e.resolved = resolved; e.metrics = metrics;
   e.font = null; e.glyph = null; e.advance = 0; e.tracking = 0; e.kerningBefore = 0; e.tab = undefined;
   e.drawsInk = false;
   return e;

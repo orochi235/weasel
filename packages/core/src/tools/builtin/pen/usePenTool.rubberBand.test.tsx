@@ -13,7 +13,7 @@ vi.mock('domains/paths/penPreviewLayer', async (importOriginal) => {
 
 describe('usePenTool', () => {
   describe('rubber band and close hint', () => {
-    const at = (x: number, y: number) => ({ worldX: x, worldY: y, viewId: null });
+    const at = (x: number, y: number) => ({ world: { x, y }, viewId: null });
 
     it('trails the pointer once an anchor is placed, through the snap dep', () => {
       const pointer = createPointerStore();

@@ -3,6 +3,7 @@
  * outline, then each anchor's handles and marker.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
+import type { WorldPoint } from '@weasel-js/routing';
 import {
   circlePath, linePath, pathToAnchors, resolveCorners, squarePath, type PenAnchor, type PolygonPath, type View,
 } from '@weasel-js/geom';
@@ -52,7 +53,7 @@ export const DEFAULT_OVERLAY_STYLE: Required<PathEditingOverlayStyle> = {
 
 type Point = { x: number; y: number };
 
-export function worldToScreen(p: Point, view: View): Point {
+export function worldToScreen(p: WorldPoint, view: View): Point {
   return { x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y };
 }
 

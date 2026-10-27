@@ -1,7 +1,7 @@
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
 import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import { carriedDescendants, sceneCarrySource } from 'core/scene/carryDescendants';
 import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import type { LayoutChild, LayoutContainer } from '../../../../layout/types';
@@ -37,7 +37,7 @@ function placeAll(
   probeOffset: { x: number; y: number },
 ): { placements: LayoutPlacement[]; destReflow: Map<NodeId, unknown> } | null {
   const { scene, pc } = session;
-  const poseAdapter = scenePoseAdapter(scene);
+  const poseAdapter = sceneViewPoseAdapter(scene);
   const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));
   const layout = dest.layout;
   // The container state the placements run against, advanced by each one.
@@ -79,7 +79,7 @@ function sourceReflow(
   session: MoveSession, dragged: readonly DraggedChild[], destId: string,
 ): Map<string, unknown> {
   const { scene, pc, projection: d } = session;
-  const poseAdapter = scenePoseAdapter(scene);
+  const poseAdapter = sceneViewPoseAdapter(scene);
   // Source reflow (cross-container) → fold changed leftovers into previews.
   // One pass per container the selection left behind, with everything that
   // left it withdrawn at once.
@@ -120,7 +120,7 @@ function reflowCarry(
   session: MoveSession, id: NodeId, world: unknown, moving: (id: NodeId) => boolean,
 ): Map<NodeId, unknown> {
   const { scene, pc, projection: d } = session;
-  const a = d.getBounds(composeWorldPose(scenePoseAdapter(scene), id as string, pc.compose));
+  const a = d.getBounds(composeWorldPose(sceneViewPoseAdapter(scene), id as string, pc.compose));
   const b = d.getBounds(world);
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -136,7 +136,7 @@ export function runDropPass(
 ): DropPass | null {
   if (!session.layout) return null;
   const { scene, pc } = session;
-  const poseAdapter = scenePoseAdapter(scene);
+  const poseAdapter = sceneViewPoseAdapter(scene);
   const dragged = gatherDragged(session, delta);
   if (dragged.length === 0) return null;
   const dropCenter = selectionCenter(session, dragged);
@@ -154,7 +154,7 @@ export function runDropPass(
     return { dropCenter, pass: null, reflow: new Map(), refused: { id: dest.id, bounds: dest.bounds, reason: dest.refused } };
   }
 
-  const container: LayoutContainer = { id: dest.id as string, bounds: dest.bounds };
+  const container: LayoutContainer = { id: dest.id as string, bounds: dest.content };
   const placed = placeAll(session, dest, container, dragged, probeOffset);
   if (!placed) return { dropCenter, pass: null, reflow: new Map() };
 

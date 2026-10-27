@@ -96,6 +96,10 @@ export interface DrawContext {
    *  in device pixels: a custom shader's `u_fragOrigin` while
    *  `renderTarget` is `null`. Absent, `[0, 0]`. */
   fragOrigin?: readonly [number, number];
+  /** Screen→clip for a target covering a window other than the drawing
+   *  buffer, as `mat3.toUniform` makes it; absent, the frame's own. Set while
+   *  a retained surface reaching past the buffer is drawn. */
+  projection?: GlMat3;
   /** Where groups carrying `retain` keep their pixels between frames. Absent
    *  without a renderer behind the context, and then they draw straight
    *  through. */

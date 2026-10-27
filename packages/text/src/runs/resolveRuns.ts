@@ -68,6 +68,9 @@ export interface ResolvedRun {
    * `fontSize`.
    */
   strutSize?: number;
+  /** Degrees each glyph turns, clockwise about its pen on the baseline.
+   *  Absent is upright. */
+  rotate?: number;
 }
 
 /** What one script preset expands to. */
@@ -163,6 +166,9 @@ export function resolveRunFace(
   };
 }
 
+/** What an absent optional field spreads, rather than a new `{}` a run. */
+const NOTHING = Object.freeze({});
+
 /** Resolve each run's styling against the node's text style, filling in
  *  everything the run left inherited. `viewScale` resolves a run's own
  *  `{ px }` size or spacing; the inherited ones arrived already resolved on
@@ -173,13 +179,15 @@ export function resolveRuns(
   viewScale = 1,
 ): ResolvedRun[] {
   const out: ResolvedRun[] = [];
-  const shown = transformRunTexts(
-    runs.map((r) => r.text),
-    runs.map((r) => r.textTransform ?? style.textTransform),
-  );
+  let transformed = false;
+  for (const r of runs) if ((r.textTransform ?? style.textTransform) !== 'none') transformed = true;
+  const shown = transformed
+    ? transformRunTexts(runs.map((r) => r.text), runs.map((r) => r.textTransform ?? style.textTransform))
+    : null;
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i];
-    let { text, srcMap } = shown[i];
+    let text = shown ? shown[i].text : run.text;
+    let srcMap = shown?.[i].srcMap;
     const scriptKey = run.script ?? style.script;
     const { fontFamily, fontWeight, fontStyle } = resolveRunFace(run, style);
     const script = scriptKey ? scriptMetricsFor(fontFamily, fontWeight, fontStyle)[scriptKey] : undefined;
@@ -204,10 +212,10 @@ export function resolveRuns(
     }
     out.push({
       text,
-      ...(srcMap ? { srcMap } : {}),
+      ...(srcMap ? { srcMap } : NOTHING),
       fontFamily,
       fontSize,
-      ...(sizeMap ? { sizeMap } : {}),
+      ...(sizeMap ? { sizeMap } : NOTHING),
       fontWeight,
       fontStyle,
       fill: run.fill !== undefined ? run.fill : style.fill,
@@ -215,7 +223,7 @@ export function resolveRuns(
       // rather than adding to it — there is only one outline to paint.
       ...((run.stroke ?? style.stroke) !== undefined
         ? { stroke: run.stroke ?? style.stroke }
-        : {}),
+        : NOTHING),
       letterSpacing: run.letterSpacing !== undefined
         ? resolveScreenLength(run.letterSpacing, viewScale)
         : style.letterSpacing,
@@ -224,7 +232,8 @@ export function resolveRuns(
       strikethrough: run.strikethrough || style.strikethrough,
       overline: run.overline || style.overline,
       baselineShift: shiftEm * style.fontSize,
-      ...(relative ? { strutSize: style.fontSize } : {}),
+      ...(relative ? { strutSize: style.fontSize } : NOTHING),
+      ...(run.rotate && Number.isFinite(run.rotate) ? { rotate: run.rotate } : NOTHING),
     });
   }
   return out;

@@ -4,8 +4,8 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { effectivePose } from 'core/scene/effectivePose';
 import type { NodeId, Scene } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
-import { composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { composeChildFrame, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
 import { invertPlane, planeOf } from '../planeInput';
@@ -74,7 +74,7 @@ export function captureFrames(
   const frames = new Map<NodeId, { world: unknown; frameWorld: unknown }>();
   const pc = scene.composition;
   const written = new Set(translateTargets(scene, scenePoseFrame(scene), ids));
-  const poseAdapter = scenePoseAdapter(scene);
+  const poseAdapter = sceneViewPoseAdapter(scene);
   for (const id of startPoses.keys()) {
     if (!written.has(id)) {
       carried.add(id);
@@ -84,7 +84,7 @@ export function captureFrames(
     if (frame === null) continue;
     frames.set(id, {
       world: composeWorldPose(poseAdapter, id as string, pc.compose),
-      frameWorld: composeWorldPose(poseAdapter, frame, pc.compose),
+      frameWorld: composeChildFrame(poseAdapter, frame, pc.compose),
     });
   }
   return { carried, frames };

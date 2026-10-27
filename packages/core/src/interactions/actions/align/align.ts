@@ -142,7 +142,7 @@ export function useAlign<TPose>(
     const target = alignTargetBounds(bounds, to, {
       pointer: () => {
         const p = pointerRef.current?.get();
-        return p ? { x: p.worldX, y: p.worldY } : null;
+        return p ? p.world : null;
       },
       nodeBounds: (id) => boxOf(id, frame.world(id)),
     });

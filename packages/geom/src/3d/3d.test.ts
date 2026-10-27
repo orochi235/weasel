@@ -20,7 +20,10 @@ import {
   normalize,
   perspective,
   pointOnRay,
+  quatConjugate,
   quatFromAxisAngle,
+  quatMultiply,
+  quatRotate,
   scale,
   sub,
   transformAabb,
@@ -323,5 +326,23 @@ describe('closest points', () => {
     const box = aabbOfPoints([{ x: 1, y: -2, z: 3 }, { x: -1, y: 5, z: 0 }]);
     expectVecClose(box.min, { x: -1, y: -2, z: 0 });
     expectVecClose(box.max, { x: 1, y: 5, z: 3 });
+  });
+});
+
+describe('quaternions', () => {
+  const qa = quatFromAxisAngle({ x: 0.3, y: 1, z: -0.2 }, 1.1);
+  const qb = quatFromAxisAngle({ x: 1, y: -0.4, z: 0.5 }, -0.7);
+  const v: Vec3 = { x: 0.8, y: -1.3, z: 2.1 };
+
+  it('rotates as the matrix compose builds does', () => {
+    expectVecClose(quatRotate(qa, v), transformPoint(compose({ x: 0, y: 0, z: 0 }, qa, { x: 1, y: 1, z: 1 }), v), 12);
+  });
+
+  it('multiplies to the rotation of b then a', () => {
+    expectVecClose(quatRotate(quatMultiply(qa, qb), v), quatRotate(qa, quatRotate(qb, v)), 12);
+  });
+
+  it('undoes a rotation with its conjugate', () => {
+    expectVecClose(quatRotate(quatConjugate(qa), quatRotate(qa, v)), v, 12);
   });
 });

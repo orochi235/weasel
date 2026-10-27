@@ -2,7 +2,7 @@ import type { NodeId } from 'core/scene/types';
 import { poseDescriptorForNode, translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { toPlane, type PlaneMap } from 'core/viewport/parallax';
 import { composeWorldPose } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { LayoutDragged } from '../../../../layout/types';
 import { carryPose, invertPlane, planeOf } from '../../planeInput';
 import { grabbedPoseAdapter, planeDelta } from '../delta';
@@ -18,7 +18,7 @@ export interface DraggedChild {
 export function gatherDragged(session: MoveSession, delta: { dx: number; dy: number }): DraggedChild[] {
   const scene = session.scene;
   const pc = session.pc;
-  const poseAdapter = scenePoseAdapter(scene);
+  const poseAdapter = sceneViewPoseAdapter(scene);
   const { dx, dy } = delta;
   // Each dragged preview in WORLD: compose the committed start pose up the
   // parent chain, then add the world drag delta (same math as `applyReparent`).

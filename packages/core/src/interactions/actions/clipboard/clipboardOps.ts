@@ -4,7 +4,7 @@ import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { InsertAdapter, PasteOmission } from 'core/adapters/types';
 import type { ClipboardSnapshot } from './types';
-import { usePointerContext } from '@weasel-js/routing/react';
+import { usePointerContext, type PointerWorldPos } from '@weasel-js/routing/react';
 import { dwarn } from 'debug/flag';
 import { materializePaste } from './materializePaste';
 import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText } from './wireFormat';
@@ -57,6 +57,9 @@ export interface UseClipboardOpsReturn {
 
 const EMPTY: ClipboardSnapshot = { items: [] };
 
+const dropPointOf = (p: PointerWorldPos): { worldX: number; worldY: number } | null =>
+  p ? { worldX: p.world.x, worldY: p.world.y } : null;
+
 /** In-memory copy/paste of selections via `InsertAdapter.snapshotSelection` / `commitPaste`. */
 export function useClipboardOps<TNode extends { id: string }>(
   adapter: InsertAdapter<TNode>,
@@ -70,7 +73,7 @@ export function useClipboardOps<TNode extends { id: string }>(
   // (no provider in scope) and no caller-supplied thunk together mean
   // "no drop point" — paste uses the cascade offset instead.
   const pointerCtx = usePointerContext();
-  const effectiveGetDropPoint = getDropPoint ?? pointerCtx?.getDropPoint;
+  const effectiveGetDropPoint = getDropPoint ?? (pointerCtx ? () => dropPointOf(pointerCtx.get()) : undefined);
   const clipboardRef = useRef<ClipboardSnapshot>(EMPTY);
   // Keep callbacks stable across renders.
   const adapterRef = useLatest(adapter);

@@ -144,6 +144,14 @@ describe('new typography keys', () => {
     expect(resolveTextStyle({}).script).toBeUndefined();
     expect('script' in resolveTextStyle({ fontSize: 12 })).toBe(false);
   });
+
+  it('carries a stroke only when one is painted, with or without a style', () => {
+    const stroke = { paint: { kind: 'solid' as const, color: '#f00' }, width: 1 };
+    expect(resolveTextStyle({}, { stroke }).stroke).toBe(stroke);
+    expect(resolveTextStyle(undefined, { stroke }).stroke).toBe(stroke);
+    expect('stroke' in resolveTextStyle({})).toBe(false);
+    expect('stroke' in resolveTextStyle(undefined, { fill: { paint: { kind: 'solid', color: '#0f0' } } })).toBe(false);
+  });
 });
 
 describe('resolveTextStyle screen-pixel sizes', () => {

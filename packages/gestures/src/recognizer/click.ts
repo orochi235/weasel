@@ -42,7 +42,7 @@ export function composeClick(
   limits: DoubleClickLimits = { maxMs: DOUBLE_CLICK_MAX_MS, maxPx: DOUBLE_CLICK_MAX_PX },
 ): ReleaseOutcome {
   const evs = clickEvents(down, up);
-  const world = { x: up.worldX, y: up.worldY };
+  const { world } = up;
   dispatch(evs.click);
   observer.click?.(world);
 

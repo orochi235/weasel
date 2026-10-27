@@ -50,7 +50,7 @@ describe('RetainedSurfaces', () => {
     expect(store.bytes).toBe(40 * 30 * 4 + 10 * 10 * 4 + 40 * 30 * 8);
 
     store.beginFrame([]);
-    expect(store.lookup('small', W, H, k)).not.toBeNull();
+    expect(store.lookup('small', W, H, k)).toMatchObject({ kind: 'kept' });
     store.endFrame();
     expect(store.bytes).toBe(10 * 10 * 4);
   });
@@ -64,7 +64,7 @@ describe('RetainedSurfaces', () => {
     const k = key();
     expect(draw.commit(k).texture).toBeNull();
     expect(rec.calls.some((c) => c.name === 'texImage2D' || c.name === 'createRenderbuffer')).toBe(false);
-    expect(store.lookup('gone', W, H, k)).toMatchObject({ texture: null });
+    expect(store.lookup('gone', W, H, k)).toMatchObject({ kind: 'kept', pixels: { texture: null } });
     expect(store.bytes).toBe(0);
   });
 
@@ -86,7 +86,7 @@ describe('RetainedSurfaces', () => {
     expect(store.bytes).toBe(40 * 30 * 4 + 40 * 30 * 8);
 
     store.beginFrame([]);
-    expect(store.lookup('a', W, H, k)).not.toBeNull();
+    expect(store.lookup('a', W, H, k)).toMatchObject({ kind: 'kept' });
     store.endFrame();
     expect(store.bytes).toBe(40 * 30 * 4);
     expect(rec.calls.filter((c) => c.name === 'deleteRenderbuffer')).toHaveLength(2);

@@ -25,6 +25,7 @@ import { useHostConditions } from './hostConditions';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryScroller } from './StoryScroller';
 import { useStoryHost } from './storyHosts';
+import { afterPaint, useStoryShow } from './storyShow';
 import { TrialFramesContext } from './trialFrames';
 
 /** Props for `TrialHost`. */
@@ -64,7 +65,7 @@ function StoryContent({ host, children }: { host: HTMLElement; children: ReactNo
 /**
  * One story's box in the workshop document: what a frame document was, as an element. It applies the globals to
  * itself, keeps its CSS variable overrides on itself, contains fixed-position descendants and portals, reports its
- * vars and audits to the trial's frame registry, and unmounts its content while out of view.
+ * vars and audits to the trial's frame registry, and unmounts its content while out of view unless something holds it shown.
  */
 export function TrialHost({ layout, setup, config, children, hostRef, onRendered, copy }: TrialHostProps) {
   const trialId = useContext(TrialIdContext);
@@ -79,6 +80,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const elementRef = useRef<HTMLDivElement | null>(null);
   const inView = useNearViewport(elementRef, IN_VIEW_MARGIN);
+  const { live, show } = useStoryShow(host, inView);
   const [pending, setPending] = useState(true);
   // Settles at the first render below, which an audit waits for: until then the host holds no story to judge.
   const [rendered] = useState(() => {
@@ -144,30 +146,18 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     };
   }, [host, hostId, trialId, frames, copy, overridesRef, rendered]);
 
-  useStoryHost(trialId, copy ? null : host);
+  useStoryHost(trialId, copy ? null : host, show);
   // The host is hidden until its first commit has painted with its fonts, so a new trial never shows a jump.
   const announced = useRef(false);
   useEffect(() => {
-    if (!host || !inView || announced.current) return;
-    let canceled = false;
-    const done = () => {
-      if (canceled) return;
+    if (!host || !live || announced.current) return;
+    return afterPaint(host, () => {
       announced.current = true;
       rendered.resolve();
       setPending(false);
       latest.current.onRendered?.();
-    };
-    const { fonts } = host.ownerDocument;
-    if (!fonts) {
-      done();
-      return;
-    }
-    const afterPaint = () => requestAnimationFrame(done);
-    void fonts.ready.then(afterPaint, afterPaint);
-    return () => {
-      canceled = true;
-    };
-  }, [host, inView, latest, rendered]);
+    });
+  }, [host, live, latest, rendered]);
 
   return (
     <div
@@ -182,7 +172,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       data-fg-layout={layout}
       data-pending={pending || undefined}
     >
-      <StoryScroller>{host && inView ? <StoryContent host={host}>{children(globals)}</StoryContent> : null}</StoryScroller>
+      <StoryScroller>{host && live ? <StoryContent host={host}>{children(globals)}</StoryContent> : null}</StoryScroller>
     </div>
   );
 }

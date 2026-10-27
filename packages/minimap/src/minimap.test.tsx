@@ -155,7 +155,7 @@ describe('minimap chrome', () => {
   });
 
   it('paints the crosshair in views the pointer is not over, at a fixed screen size', () => {
-    let pos: ReturnType<ReturnType<typeof createPointerStore>['get']> = { worldX: 500, worldY: 400, viewId: null };
+    let pos: ReturnType<ReturnType<typeof createPointerStore>['get']> = { world: { x: 500, y: 400 }, viewId: null };
     const layer = createLinkedCursorLayer({ id: 'x', pointer: () => pos, color: () => '#f00' });
     expect(layer.draw({ viewId: null }, ROOT, { width: 400, height: 300, dpr: 1 })).toEqual([]);
     const inMini = layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80, dpr: 1 });
@@ -168,7 +168,7 @@ describe('minimap chrome', () => {
   });
 
   it('keeps out of views it was not built for', () => {
-    const pos = { worldX: 500, worldY: 400, viewId: 'elsewhere' };
+    const pos = { world: { x: 500, y: 400 }, viewId: 'elsewhere' };
     const layer = createLinkedCursorLayer({ id: 'x', pointer: () => pos, color: () => '#f00', views: [null] });
     expect(layer.draw({ viewId: null }, ROOT, { width: 400, height: 300, dpr: 1 })).toHaveLength(8);
     expect(layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80, dpr: 1 })).toEqual([]);
@@ -186,17 +186,17 @@ describe('linked cursor', () => {
     const entry = createLinkedCursorContribution();
     const detach = entry.attach!(api, { get: ((name: string) => (name === 'pointer' ? store : undefined)) as never });
     // Over this surface's own camera: nothing to show here.
-    store.set({ worldX: 1, worldY: 1, viewId: null });
+    store.set({ world: { x: 1, y: 1 }, viewId: null });
     expect(api.requestRedraw).not.toHaveBeenCalled();
     // Over another surface's view: shows, and follows.
-    store.set({ worldX: 2, worldY: 2, viewId: 'minimap' });
-    store.set({ worldX: 3, worldY: 3, viewId: 'minimap' });
+    store.set({ world: { x: 2, y: 2 }, viewId: 'minimap' });
+    store.set({ world: { x: 3, y: 3 }, viewId: 'minimap' });
     expect(api.requestRedraw).toHaveBeenCalledTimes(2);
     // Leaves: one more to clear it.
     store.set(null);
     expect(api.requestRedraw).toHaveBeenCalledTimes(3);
     detach();
-    store.set({ worldX: 4, worldY: 4, viewId: 'minimap' });
+    store.set({ world: { x: 4, y: 4 }, viewId: 'minimap' });
     expect(api.requestRedraw).toHaveBeenCalledTimes(4); // the detach's own clear, no more
   });
 });

@@ -8,7 +8,7 @@
  */
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { AnchorSet, PointOrigin, PolygonPath, View } from '@weasel-js/geom';
-import type { OngoingOverlay } from '@weasel-js/routing';
+import type { OngoingOverlay, WorldPoint } from '@weasel-js/routing';
 import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
 import type { SnapDep } from 'interactions/actions/snapDep';
 import type { PathRepresentation } from './pathRepresentation';
@@ -60,8 +60,6 @@ export interface PathEditPart {
   standoff?: { px: number; normal: { x: number; y: number } };
 }
 
-type Point = { x: number; y: number };
-
 /** An anchor or handle drag on the open path, as it starts. */
 export interface PathEditDragStart extends Omit<PathEditTarget, 'node'> {
   /** The node's committed pose and data; null when it cannot be read. */
@@ -98,7 +96,7 @@ export interface PathEditDrag {
   /** For a handle drag, where the handle goes, given `to`: where the pointer
    *  and the locks in force put it. Extensions answer in turn, each from the
    *  last one's answer. */
-  handle?(to: Point, move: PathEditHandleMove): Point;
+  handle?(to: WorldPoint, move: PathEditHandleMove): WorldPoint;
   /** A wheel turned while the drag is in flight. Return true to claim it;
    *  the drag then redoes its last move. */
   wheel?(wheel: { deltaX: number; deltaY: number; deltaZ: number }): boolean;

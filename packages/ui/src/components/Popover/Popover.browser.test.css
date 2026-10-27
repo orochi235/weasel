@@ -70,3 +70,8 @@
 .wzl-popover-test-scroller-content[data-holder='filter'] {
   filter: opacity(1);
 }
+
+/* Content tall enough that the page itself scrolls. */
+.wzl-popover-test-page {
+  height: 3000px;
+}

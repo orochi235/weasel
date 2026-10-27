@@ -11,6 +11,7 @@ import { multiply, poseFrameInverseOf, poseFrameOf, type Path } from '@weasel-js
 import { asNodeId } from 'core/scene/types';
 import { definesFrame, derivedDepOf, effectivePose } from 'core/scene/effectivePose';
 import { composesFrames, composeWorldPose, type PoseAdapter } from 'core/scene/composeFrame';
+import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
 import { inheritedPaintIn, type InheritedPaint } from 'core/scene/inheritedPaint';
 import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
@@ -64,7 +65,8 @@ function sceneOverridePathOf<TData, TLayer extends string, TPose>(
 /**
  * `(node) => the pose it is painted at`: the slot's `toPose` of the node as the scene shows
  * it if it has one, else the scene's effective pose, folded through the parent chain when
- * the scene's composition makes a stored pose local to its container.
+ * the scene's composition makes a stored pose local to its container, and through each
+ * container's scroll offset.
  */
 export function scenePaintedPoseOf<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -74,7 +76,7 @@ export function scenePaintedPoseOf<TData, TLayer extends string, TPose>(
     ? sceneShownToPose(scene, toPose)
     : (node: Node<TData, TLayer, TPose>) => effectivePose(scene, node);
   if (!composesFrames(scene.composition)) return local;
-  const chain: PoseAdapter<TPose> = {
+  const chain: PoseAdapter<TPose> = viewPoseAdapter(scene, {
     getPose: (id) => {
       const n = scene.get(asNodeId(id));
       return n ? local(n) : (undefined as unknown as TPose);
@@ -84,7 +86,7 @@ export function scenePaintedPoseOf<TData, TLayer extends string, TPose>(
       const n = scene.get(asNodeId(id));
       return n === undefined || definesFrame(n);
     },
-  };
+  } as PoseAdapter<TPose>);
   return (node) => composeWorldPose(chain, node.id, scene.composition.compose);
 }
 

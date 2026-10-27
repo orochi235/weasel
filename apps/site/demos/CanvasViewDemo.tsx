@@ -71,7 +71,7 @@ function PointerReadout() {
   const p = usePointerPosition();
   return (
     <span className={styles.readout}>
-      {p ? `${p.viewId ?? 'canvas'} → (${p.worldX.toFixed(0)}, ${p.worldY.toFixed(0)})` : '—'}
+      {p ? `${p.viewId ?? 'canvas'} → (${p.world.x.toFixed(0)}, ${p.world.y.toFixed(0)})` : '—'}
     </span>
   );
 }

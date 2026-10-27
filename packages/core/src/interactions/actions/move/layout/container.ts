@@ -2,8 +2,8 @@ import { pointInPath } from '@weasel-js/geom';
 import type { NodeId, Scene } from 'core/scene/types';
 import { poseDescriptorForNode } from 'core/geometry/poseDescriptor';
 import { toPlane, type PlaneMap } from 'core/viewport/parallax';
-import { composeWorldPose } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { childFrameAt, composeWorldPose } from 'core/scene/composePose';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { DropRegion, LayoutContainer, LayoutStrategy } from '../../../../layout/types';
 import type { LayoutDep } from '../../depSchema';
 import { planeOf } from '../../planeInput';
@@ -19,7 +19,12 @@ export function pointInBounds(b: Bounds4, at: { x: number; y: number }): boolean
 type Layout = LayoutStrategy<unknown>;
 export interface Candidate {
   id: NodeId;
+  /** The container's body in world: what the pointer is tested against. */
   bounds: Bounds4;
+  /** Its content's frame in world, `bounds` moved by its scroll offset: the
+   *  `LayoutContainer.bounds` its strategy is handed, so the slots it places
+   *  agree with its children as they are shown. */
+  content: Bounds4;
   layout: LayoutStrategy<unknown>;
   zPath: number[];
   depth: number;
@@ -80,7 +85,7 @@ export function pickContainer(
   if (!layoutDep) return null;
   const scene = session.scene;
   const pc = session.pc;
-  const poseAdapter = scenePoseAdapter(scene);
+  const poseAdapter = sceneViewPoseAdapter(scene);
   const d = session.projection;
   const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));
   const candidates: Candidate[] = [];
@@ -107,13 +112,15 @@ export function pickContainer(
     const verdict = session.verdict(id);
     if (verdict === false) return;
     const refused = refusalOf(verdict);
+    const content = poseDescriptorForNode(d, node).getBounds(childFrameAt(poseAdapter, id as string, worldPose));
     if (refused === null && layout.acceptsDrop) {
-      const arg: LayoutContainer = { id: id as string, bounds: worldAABB };
+      const arg: LayoutContainer = { id: id as string, bounds: content };
       for (const c of dragged) if (!layout.acceptsDrop(arg, carryDragged(session, c, plane).arg)) return;
     }
     candidates.push({
       id,
       bounds: worldAABB,
+      content,
       layout,
       zPath,
       depth: zPath.length,

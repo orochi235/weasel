@@ -20,8 +20,11 @@ function caretCells(cells: readonly LaidOutCell[]): LaidOutCell[] {
   for (const c of cells) {
     const prev = out[out.length - 1];
     if (prev && (!prev.clusterEnd || (prev.srcIndex === c.srcIndex && prev.srcEnd === c.srcEnd))) {
-      const x0 = Math.min(prev.x, c.x);
-      const x1 = Math.max(prev.x + prev.advance, c.x + c.advance);
+      // A zero-width cell (a combining mark) sits where the pen was before
+      // kerning pulled the next glyph back, so it must not stretch the span.
+      const [x0, x1] = c.advance === 0 ? [prev.x, prev.x + prev.advance]
+        : prev.advance === 0 ? [c.x, c.x + c.advance]
+        : [Math.min(prev.x, c.x), Math.max(prev.x + prev.advance, c.x + c.advance)];
       out[out.length - 1] = {
         ...prev, x: x0, advance: x1 - x0,
         srcIndex: Math.min(prev.srcIndex, c.srcIndex), srcEnd: Math.max(prev.srcEnd, c.srcEnd),

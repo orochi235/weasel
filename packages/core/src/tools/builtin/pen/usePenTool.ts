@@ -329,8 +329,8 @@ export function usePenTool(
       // A handle drag snaps through its own session, and hides the rubber band.
       if (!at || s.draggingHandleAt !== null) snaps.stop();
       s.cursor = !at ? null
-        : s.draggingHandleAt !== null ? { x: at.worldX, y: at.worldY }
-          : snaps.trail(followed?.snap, { x: at.worldX, y: at.worldY }, s.current?.anchors.at(-1));
+        : s.draggingHandleAt !== null ? { ...at.world }
+          : snaps.trail(followed?.snap, at.world, s.current?.anchors.at(-1));
       const first = s.current && s.current.anchors.length >= 3 ? s.current.anchors[0] : null;
       s.closeHintActive = first !== null && s.cursor !== null && withinPxRadius(
         first.x - s.cursor.x, first.y - s.cursor.y,

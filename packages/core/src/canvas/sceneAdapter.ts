@@ -35,6 +35,7 @@ import {
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
 import { memoizeCompose } from 'core/scene/composeFrame';
+import { scrolledFrames } from 'core/scene/scrollOffsets';
 import { insertSite } from './deps/insertSite';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
@@ -86,6 +87,10 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       /** Present only when a composing strategy is configured; the render
        *  walk feature-detects it. */
       composePose?(parent: TPose, child: TPose): TPose;
+      /** The frame a container gives its children, scrolled by the scene's
+       *  `scroll` offset — see `PoseAdapter.childFrame`. Present only when the
+       *  composition can scroll. */
+      childFrame?(id: string, world: TPose): TPose;
       getSelection(): string[];
       setSelection(ids: string[]): void;
       insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
@@ -150,13 +155,12 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const poseBounds = (p: TPose, node: unknown): Bounds =>
     visualBoundsViaDescriptor(p, poseDescriptorForNode(d, node));
   const translate = (p: TPose, dx: number, dy: number, node?: unknown): TPose =>
-    translatePoseViaDescriptor(
-      p, dx, dy, node === undefined ? d : poseDescriptorForNode(d, node),
-    );
+    translatePoseViaDescriptor(p, dx, dy, node === undefined ? d : poseDescriptorForNode(d, node));
 
   const composition = scene.composition;
   const composes = composesFrames(composition);
   const compose = memoizeCompose(composition.compose);
+  const childFrame = composes ? scrolledFrames(scene) : undefined;
   const pickOpts: ScenePickSourceOptions<unknown> = {};
   // The asking view's layer gate and camera, over the adapter's own options.
   const pickOptsFor = (view: RegionPickView | undefined): ScenePickSourceOptions<unknown> =>
@@ -195,6 +199,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // Only present when it would do something: the render walk skips the fold
     // entirely when this is absent, which is the absolute-pose path.
     ...(composes ? { composePose: compose } : {}),
+    ...(childFrame ? { childFrame } : {}),
     poseTarget: (id, descriptor) => scenePoseTarget(scene, id, descriptor ?? d),
     getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
     subscribeLayers: (listener) => scene.subscribe(listener),

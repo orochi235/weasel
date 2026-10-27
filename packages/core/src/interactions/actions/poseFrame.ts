@@ -8,11 +8,18 @@
  * because the stored pose is then read in the parent's frame again.
  *
  * Under `IDENTITY_POSE_COMPOSITION` local and world are the same value.
+ *
+ * A scene-backed frame reads world as the view shows it, a scrolled
+ * container's content moved by its offset, and writes back through the same
+ * fold, so a pose an action stores is the content position.
  */
 import { boxFrameOf, type Affine } from '@weasel-js/geom';
 import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
+import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import {
+  childFrameAt,
+  composeChildFrame,
   composeWorldPose,
   frameAtOrAbove,
   rebaseLocalPose,
@@ -28,8 +35,11 @@ export interface PoseFrame<TPose> {
   world(id: NodeId): TPose;
   /** The node whose frame `id` is stored in, or `null` for the root frame. */
   frame(id: NodeId): NodeId | null;
-  /** World pose of the frame `id` is stored in, or `null` for the root frame. */
+  /** World pose of the frame `id` is stored in, or `null` for the root frame:
+   *  the container's `childFrame`, scrolled where the view scrolls it. */
   parentWorld(id: NodeId): TPose | null;
+  /** The frame `id` gives its children when its own pose folds to `world`. */
+  childFrame(id: NodeId, world: TPose): TPose;
   /** `worldPose` expressed in `id`'s own parent frame — what `setPose` stores. */
   local(id: NodeId, worldPose: TPose): TPose;
   /** `worldPose` expressed under `parentId`'s frame. For a node about to be
@@ -51,8 +61,9 @@ export function poseFrame<TPose>(
     },
     parentWorld: (id) => {
       const frame = frameAtOrAbove(adapter, adapter.getParent(id as string));
-      return frame === null ? null : composeWorldPose(adapter, frame, pc.compose);
+      return frame === null ? null : composeChildFrame(adapter, frame, pc.compose);
     },
+    childFrame: (id, world) => childFrameAt(adapter, id as string, world),
     local: (id, worldPose) =>
       rebaseLocalPose(adapter, worldPose, adapter.getParent(id as string), pc.compose, pc.decompose),
     localUnder: (parentId, worldPose) =>
@@ -61,11 +72,11 @@ export function poseFrame<TPose>(
 }
 
 /** The `poseFrame` a scene-backed action works in, over the scene's own
- *  composition. */
+ *  composition, read and written through the view's scrolled frames. */
 export function scenePoseFrame(scene: Scene<unknown, string, unknown>): PoseFrame<unknown> {
   const pc = scene.composition;
   const source = scene as unknown as PoseSource<unknown>;
-  const adapter: PoseAdapter<unknown> = {
+  const adapter: PoseAdapter<unknown> = viewPoseAdapter(scene, {
     getPose: (id) => {
       const node = scene.get(id as NodeId);
       return node === undefined ? { x: 0, y: 0, width: 0, height: 0 } : effectivePose(source, node);
@@ -75,7 +86,7 @@ export function scenePoseFrame(scene: Scene<unknown, string, unknown>): PoseFram
       const node = scene.get(id as NodeId);
       return node === undefined || definesFrame(node);
     },
-  };
+  } as PoseAdapter<unknown>);
   return poseFrame(adapter, pc);
 }
 

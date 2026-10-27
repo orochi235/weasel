@@ -2,7 +2,7 @@
  * The locks on a control-handle drag — its angle, its length, or both — and
  * the guide that shows which one is holding.
  */
-import { roleReader, type ModifierRoles, type ModifierState, type OngoingOverlay } from '@weasel-js/routing';
+import { roleReader, type ModifierRoles, type ModifierState, type OngoingOverlay, type WorldPoint } from '@weasel-js/routing';
 import { handleAlongItsAngle, handleAtItsLength } from '@weasel-js/geom';
 import type { HandleLocks } from './params';
 
@@ -47,7 +47,7 @@ export function locksInForce(
 }
 
 /** The handle dragged toward `pointer` under `locks`. */
-export function lockHandle(press: HandlePress, pointer: Point, locks: HandleLocks): LockedHandle {
+export function lockHandle(press: HandlePress, pointer: WorldPoint, locks: HandleLocks): LockedHandle {
   const { anchor, handle } = press;
   const len = dist(anchor, handle);
   if (locks.angle && locks.length) return { to: { ...handle }, guide: lineGuide(anchor, handle, len) };

@@ -4,11 +4,18 @@
  * `onto do --kind bench -- npx tsx packages/geom/src/warp/warp.bench.ts --label <what changed>`.
  * Prints each case as it finishes and appends every run's raw timings, with
  * the machine and its load, to `warp.bench.runs.jsonl` beside this file.
+ *
+ * A record's `sha` is the commit measured, or null when the tree was not one:
+ * onto places uncommitted files over HEAD, so HEAD names the commit only when
+ * the tree is clean, or when a launcher armed it (`armTree` in
+ * `scripts/lib/fleet-tree.mjs`) and it matches. `head` and `dirty` say what
+ * the tree held either way. A sync that lands mid-run voids the rest.
  */
 import { execSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { cpus, hostname, loadavg } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { checkTree, treeReport, treeStamp } from '../../../../scripts/lib/fleet-tree.mjs';
 import type { PolygonPath } from '../path';
 import { PathBuilder } from '../paths/builder';
 import { pathToAnchors } from '../paths/anchors';
@@ -79,7 +86,17 @@ const fmt = (v: number) => v.toFixed(2).padStart(7);
 
 const labelAt = process.argv.indexOf('--label');
 const label = labelAt >= 0 ? process.argv[labelAt + 1] : '';
-const sha = (() => { try { return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim(); } catch { return null; } })();
+const ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
+const git = (args: string) => execSync(`git ${args}`, { cwd: ROOT, encoding: 'utf8' }).trim();
+const head = git('rev-parse HEAD');
+const dirty = git('status --porcelain').split('\n').filter(Boolean).length;
+const armed = checkTree(ROOT, process.env);
+if (armed.armed && armed.problems.length > 0) {
+  process.stderr.write(`${treeReport(armed).text}\n`);
+  process.exit(1);
+}
+const sha = armed.armed ? armed.commit : dirty === 0 ? head : null;
+const stamp = treeStamp(ROOT);
 const machine = { host: hostname(), cpus: cpus().length, cpu: cpus()[0]?.model, load: loadavg() };
 const runs = fileURLToPath(new URL('./warp.bench.runs.jsonl', import.meta.url));
 const cases = [discSquash, barS, starPull];
@@ -87,7 +104,11 @@ const cases = [discSquash, barS, starPull];
 cases.forEach((c, i) => {
   const solve = solveCase(c);
   const refit = refitCase(c);
-  const record = { date: new Date().toISOString(), label, sha, machine, case: c.name, ...solve, ...refit };
+  if (treeStamp(ROOT) !== stamp) {
+    process.stderr.write(`the tree changed during the run (${stamp} → ${treeStamp(ROOT)}); nothing from ${c.name} on is recorded\n`);
+    process.exit(1);
+  }
+  const record = { date: new Date().toISOString(), label, sha, head, dirty, machine, case: c.name, ...solve, ...refit };
   appendFileSync(runs, JSON.stringify(record) + '\n');
   process.stdout.write(
     `${i + 1}/${cases.length} ${c.name.padEnd(11)} ${String(solve.vertices).padStart(4)} vertices  `

@@ -150,17 +150,6 @@ export class LineTracker {
 export const holdsOnlyText = (el: Element): boolean =>
   !Array.from(el.childNodes).some((child) => child.nodeType === 1 /* ELEMENT_NODE */);
 
-/** Report a `rotate` on a `<text>` or `<tspan>` that is not all zeros, which
- *  import does not read. The other glyph positioning lists are read by
- *  `glyphShifts` and `glyphRises`, which report what they cannot read. */
-export function warnUnreadPositions(el: Element, onWarn: (message: string) => void): void {
-  const tag = el.tagName.toLowerCase();
-  const rotate = el.getAttribute('rotate')?.trim() ?? '';
-  if (rotate.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
-    onWarn(`<${tag} rotate="${rotate}"> is not read; the glyphs keep their own angle`);
-  }
-}
-
 /** Whether two runs differ in nothing but their text. */
 function sameStyle(a: StyledRun, b: StyledRun): boolean {
   const style = (run: StyledRun): string => JSON.stringify(

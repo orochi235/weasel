@@ -6,8 +6,10 @@ import s from './overlayFrame.module.css';
  * and against. Placing against the body from inside a positioned container, React Aria shifts an overlay sideways
  * as though the viewport's corner sat at the container's (react-aria 3.52.1); inside a scaled box it also reads the
  * viewport, and the container height a top placement's `bottom` counts from, in client px. As the overlay's
- * containing block and boundary both, the frame answers all of them in its own px: its `getBoundingClientRect`
- * reports its own size, at the corner React Aria's page-offset arithmetic takes for the viewport's.
+ * containing block, and through a boundary element kept inside it, the frame answers all of them in its own px: each
+ * one's `getBoundingClientRect` reports the frame's size, at the corner React Aria's page-offset arithmetic takes
+ * for the viewport's. The boundary is a separate, absolute element because React Aria reads a fixed boundary's raw
+ * rect as its offset from the container, which that corner would put off by the page's scroll.
  *
  * In an unscaled container the frame is fixed; in a scaled one it is absolute, since a scale written as `zoom`
  * resizes a fixed descendant without containing it. Either way it is cut to the part of the viewport that no
@@ -16,6 +18,7 @@ import s from './overlayFrame.module.css';
  */
 const FRAMES = new WeakMap<Element, HTMLElement>();
 const SIZES = new WeakMap<HTMLElement, { width: number; height: number }>();
+const BOUNDARIES = new WeakMap<HTMLElement, HTMLElement>();
 
 const isFrame = (el: Element): el is HTMLElement => el instanceof HTMLElement && SIZES.has(el);
 
@@ -82,20 +85,36 @@ function fixedBlockFrom(el: Element): Element | null {
   return null;
 }
 
+/** Make `el` report `frame`'s size at the viewport corner React Aria's page offsets read as 0. */
+function measureAsFrame(el: HTMLElement, frame: HTMLElement): void {
+  Object.defineProperty(el, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => {
+      const { width, height } = SIZES.get(frame)!;
+      const root = frame.ownerDocument.documentElement;
+      return new DOMRect(root.clientLeft - root.scrollLeft, root.clientTop - root.scrollTop, width, height);
+    },
+  });
+}
+
 function createFrame(doc: Document): HTMLElement {
   const frame = doc.createElement('div');
   frame.className = s.frame;
   frame.dataset.weaselOverlayFrame = '';
   SIZES.set(frame, { width: 0, height: 0 });
-  Object.defineProperty(frame, 'getBoundingClientRect', {
-    configurable: true,
-    value: () => {
-      const { width, height } = SIZES.get(frame)!;
-      const root = doc.documentElement;
-      return new DOMRect(root.clientLeft - root.scrollLeft, root.clientTop - root.scrollTop, width, height);
-    },
-  });
+  measureAsFrame(frame, frame);
+  const boundary = doc.createElement('div');
+  boundary.className = s.boundary;
+  boundary.setAttribute('aria-hidden', 'true');
+  measureAsFrame(boundary, frame);
+  frame.appendChild(boundary);
+  BOUNDARIES.set(frame, boundary);
   return frame;
+}
+
+/** The element to hand React Aria as the `boundaryElement` of an overlay placed in `frame`: the frame's own area. */
+export function frameBoundary(frame: HTMLElement): HTMLElement {
+  return BOUNDARIES.get(frame)!;
 }
 
 /**

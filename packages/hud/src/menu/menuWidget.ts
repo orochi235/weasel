@@ -1,12 +1,13 @@
-import { createMenuController, withLinks, type Rect } from '@weasel-js/menu';
+import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
-import { createRevision, type HudAccessibleTree, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
+import { createEmitter } from '@weasel-js/registry';
+import { createRevision, type HudAccessibleTree, type HudTextInput, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
 import { accessibleMenu } from './accessibleMenu';
-import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuIcons, type MenuMetrics } from './drawPanel';
+import { DEFAULT_MENU_METRICS, drawPanel, rowAt, rowLayout, type MenuIcons, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
-import { caretAt, chipAt } from './valueRows';
+import { caretAt, caretX, chipAt } from './valueRows';
 import { createTextEditor } from './textEdit';
 import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
@@ -47,11 +48,34 @@ function union(panels: readonly Rect[]): WidgetBounds {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
+/** The edit `typing` runs as a widget's text input: its caret's place on the canvas, read off `panels()`, and its
+ *  composition. `measure` gives the width of a run of a row's text. */
+function menuTextInput(
+  c: Pick<MenuController, 'entriesAt'>, typing: ReturnType<typeof createTextEditor>, panels: () => readonly Rect[],
+  m: MenuMetrics, measure: (text: string) => number, subscribe: HudTextInput['subscribe'],
+): HudTextInput {
+  const read = () => {
+    const edit = typing.current();
+    const ps = panels();
+    for (let level = 0; edit && level < ps.length; level++) {
+      const entries = c.entriesAt(level);
+      const i = entries.indexOf(edit.entry);
+      if (i < 0) continue;
+      const p = ps[level]!, r = rowLayout(entries, m)[i]!;
+      const x = p.x + caretX(edit, p.w, m, measure);
+      return { rect: { x, y: p.y + r.y, w: Math.max(1, p.x + p.w - x), h: r.h }, label: edit.entry.label };
+    }
+    return null;
+  };
+  return { read, subscribe, compose: typing.compose, insert: typing.insert };
+}
+
 /** A widget that draws `open` as one panel per open level, driven by a menu controller it owns. */
 export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const m = opts.metrics ?? DEFAULT_MENU_METRICS;
   const measure = opts.measure ?? measureLabel;
-  const rev = createRevision(opts.onChange);
+  const edits = createEmitter();
+  const rev = createRevision(() => { opts.onChange(); edits.emit(); });
   const pickers = withColorPickers(
     withLinks(opts.open.entries, (href) => window.location.assign(href)), opts.palette ?? DEFAULT_MENU_PALETTE, () => c,
   );
@@ -141,6 +165,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     focusRing: false,
     accessibleName: 'Context menu',
     accessibleTree,
+    textInput: menuTextInput(c, typing, () => panels, m, (s) => measure(s, m.fontSize, family ?? ''), edits.subscribe),
     deps: (ctx) => [...rev.deps(), ctx.defaultFont, faceGeneration(), opts.icons?.getVersion()],
     draw: (ctx) => {
       family = ctx.defaultFont;

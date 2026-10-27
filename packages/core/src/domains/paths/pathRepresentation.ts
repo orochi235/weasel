@@ -7,7 +7,7 @@
  * through which path edit shows and edits the form. Where none is on, path
  * edit edits the drawn path, and the edit drops the form.
  */
-import type { ActionDeps, OngoingHandle } from '@weasel-js/routing';
+import type { ActionDeps, OngoingHandle, WorldPoint } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
 import type { PathEditExtension } from './pathEditExtension';
 
@@ -50,7 +50,7 @@ export interface PathRepresentation {
    * representation that has this takes every segment press, in place of
    * Bend segment.
    */
-  segmentPress?(deps: ActionDeps, at: Point): (() => OngoingHandle) | null;
+  segmentPress?(deps: ActionDeps, at: WorldPoint): (() => OngoingHandle) | null;
 }
 
 /** The form `data` holds, or null. */

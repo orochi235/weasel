@@ -2,7 +2,7 @@
  * The path-edit extensions' share of an anchor or handle drag: the anchors
  * that follow it, where a dragged handle goes, the wheel, and what they draw.
  */
-import type { OngoingOverlay } from '@weasel-js/routing';
+import type { OngoingOverlay, WorldPoint } from '@weasel-js/routing';
 import { translateAnchorBy, type AnchorSet } from '@weasel-js/geom';
 import type {
   PathEditDrag,
@@ -11,7 +11,6 @@ import type {
   PathEditHandleMove,
 } from 'domains/paths/pathEditExtension';
 
-type Point = { x: number; y: number };
 type Wheel = { deltaX: number; deltaY: number; deltaZ: number };
 
 /** Each extension's share of the drag `start` describes, in extension order. */
@@ -46,7 +45,7 @@ export function translateWeighted(set: AnchorSet, weights: ReadonlyMap<number, n
 }
 
 /** Where a dragged handle goes once every extension has placed it in turn. */
-export function placeHandle(drags: readonly PathEditDrag[], to: Point, move: PathEditHandleMove): Point {
+export function placeHandle(drags: readonly PathEditDrag[], to: WorldPoint, move: PathEditHandleMove): WorldPoint {
   let at = to;
   for (const drag of drags) if (drag.handle) at = drag.handle(at, move);
   return at;

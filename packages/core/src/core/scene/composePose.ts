@@ -17,12 +17,15 @@ import {
   composeWorldPose,
   frameAtOrAbove,
   rebaseLocalPose,
+  composeChildFrame,
+  childFrameAt,
   type PoseAdapter,
   type PoseClosure,
   type PoseComposition,
+  type ScrollOffset,
 } from 'core/scene/composeFrame';
-export { IDENTITY_POSE_COMPOSITION, composesFrames, composeWorldPose, frameAtOrAbove, rebaseLocalPose };
-export type { PoseAdapter, PoseClosure, PoseComposition };
+export { IDENTITY_POSE_COMPOSITION, childFrameAt, composeChildFrame, composesFrames, composeWorldPose, frameAtOrAbove, rebaseLocalPose };
+export type { PoseAdapter, PoseClosure, PoseComposition, ScrollOffset };
 
 /**
  * `compose` for axis-aligned rectangles under a translation-only hierarchy.
@@ -130,12 +133,28 @@ export function decomposeRigidPose<TPose extends RectPose>(parent: TPose, world:
   return withRotation({ ...world, x: ux - parent.x - world.width / 2, y: uy - parent.y - world.height / 2 }, (world.rotation ?? 0) - pr);
 }
 
+/** `scroll` for `composeRectPose`: the frame moved by minus `offset`. */
+export function scrollRectPose<TPose extends RectPose>(frame: TPose, offset: ScrollOffset): TPose {
+  return translateRectPose(frame, -offset.x, -offset.y);
+}
+
+/** `scroll` for `composeRigidPose`: the frame moved by minus `offset` taken
+ *  through its own rotation and `transform`, so content scrolls along the
+ *  container's axes however it is turned. */
+export function scrollRigidPose<TPose extends RectPose>(frame: TPose, offset: ScrollOffset): TPose {
+  const m = poseFrameOf(frame);
+  if (!m) return scrollRectPose(frame, offset);
+  const [a, b, c, d] = m;
+  return translateRectPose(frame, -(a * offset.x + c * offset.y), -(b * offset.x + d * offset.y));
+}
+
 /** Translation-only composition over `RectPose`. What a scene wants when a
  *  container groups its children but never turns them. */
 export const RECT_POSE_COMPOSITION: PoseComposition<RectPose> = {
   compose: composeRectPose,
   decompose: decomposeRectPose,
   closure: 'translation',
+  scroll: scrollRectPose,
 };
 
 /** Composition over `RectPose` where a container's pose is a frame: rotating
@@ -144,6 +163,7 @@ export const RIGID_POSE_COMPOSITION: PoseComposition<RectPose> = {
   compose: composeRigidPose,
   decompose: decomposeRigidPose,
   closure: 'rigid',
+  scroll: scrollRigidPose,
 };
 
 /**

@@ -21,10 +21,11 @@ function graphemeSegmenter(): Intl.Segmenter | null {
 /**
  * UTF-16 offsets just past each grapheme cluster of `text`, ascending — the
  * last is `text.length`. Without `Intl.Segmenter` every code point is its own
- * cluster.
+ * cluster. With `into`, that array is emptied, refilled and returned.
  */
-export function graphemeEnds(text: string): number[] {
-  const out: number[] = [];
+export function graphemeEnds(text: string, into?: number[]): number[] {
+  const out = into ?? [];
+  out.length = 0;
   // Nothing below U+0300 extends a cluster except the LF of a CRLF, so text
   // made only of those is one cluster per code unit without asking.
   if (!NEEDS_SEGMENTING.test(text)) {

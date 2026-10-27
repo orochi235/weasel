@@ -15,6 +15,7 @@ import type { Node, NodeId, Scene } from '../../core/scene/types';
 import { asNodeId } from '../../core/scene/types';
 import { definesFrame, effectivePose } from '../../core/scene/effectivePose';
 import { composeWorldPose, composesFrames, type PoseAdapter } from '../../core/scene/composeFrame';
+import { viewPoseAdapter } from '../../core/scene/scrollOffsets';
 
 /** One node an in-flight gesture is previewing, as {@link resolvePreviews} returns it. */
 export interface PreviewNode<TData, TLayer extends string, TPose> {
@@ -23,7 +24,8 @@ export interface PreviewNode<TData, TLayer extends string, TPose> {
   node: Node<TData, TLayer, TPose>;
   /** Where the node draws, in world: the pose a source previews, else its
    *  effective pose — where the scene's overrides put it mid-transform —
-   *  folded through every container's frame, previewed or not. */
+   *  folded through every container's frame, previewed or not, and scrolled
+   *  as the view scrolls it. */
   pose: TPose;
   /** The interim data, or the committed one when only the pose is in flight. */
   data: TData;
@@ -83,14 +85,14 @@ export function resolvePreviews<TData, TLayer extends string, TPose>(
 
   const composition = scene.composition;
   const framed = composesFrames(composition);
-  const shown: PoseAdapter<TPose> = {
+  const shown: PoseAdapter<TPose> = viewPoseAdapter(scene, {
     getPose: (id) => firstNonNull<TPose>(list, id, (s, i) => s.previewPose?.(i)) ?? effectivePose(scene, scene.get(asNodeId(id))!),
     getParent: (id) => scene.get(asNodeId(id))?.parent ?? null,
     definesFrame: (id) => {
       const node = scene.get(asNodeId(id));
       return node === undefined || definesFrame(node);
     },
-  };
+  } as PoseAdapter<TPose>);
 
   // `riding`: the frame `id` is stored in is drawn here, which an envelope's
   // children share with it.

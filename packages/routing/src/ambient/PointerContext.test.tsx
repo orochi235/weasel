@@ -7,10 +7,10 @@ describe('pointer store', () => {
     const store = createPointerStore();
     const fn = vi.fn();
     store.subscribe(fn);
-    store.set({ worldX: 1, worldY: 2, viewId: null });
-    store.set({ worldX: 1, worldY: 2, viewId: null });
+    store.set({ world: { x: 1, y: 2 }, viewId: null });
+    store.set({ world: { x: 1, y: 2 }, viewId: null });
     expect(fn).toHaveBeenCalledTimes(1);
-    store.set({ worldX: 1, worldY: 2, viewId: 'mini' });
+    store.set({ world: { x: 1, y: 2 }, viewId: 'mini' });
     store.set(null);
     store.set(null);
     expect(fn).toHaveBeenCalledTimes(3);
@@ -22,7 +22,7 @@ describe('pointer store', () => {
     const fn = vi.fn();
     const off = store.subscribe(fn);
     off();
-    store.set({ worldX: 0, worldY: 0, viewId: null });
+    store.set({ world: { x: 0, y: 0 }, viewId: null });
     expect(fn).not.toHaveBeenCalled();
   });
 });
@@ -37,8 +37,8 @@ describe('usePointerPosition', () => {
       return null;
     }
     render(<PointerContextProvider><Probe /></PointerContextProvider>);
-    act(() => store!.set({ worldX: 3, worldY: 4, viewId: 'v' }));
-    expect(seen.at(-1)).toEqual({ worldX: 3, worldY: 4, viewId: 'v' });
+    act(() => store!.set({ world: { x: 3, y: 4 }, viewId: 'v' }));
+    expect(seen.at(-1)).toEqual({ world: { x: 3, y: 4 }, viewId: 'v' });
   });
 
   it('answers null outside a provider', () => {

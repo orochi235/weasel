@@ -208,4 +208,27 @@ describe('caretIndexAt', () => {
     expect(caretIndexAt(20, 5, p)).toBe(2);
     warn.mockRestore();
   });
+
+  it('spans a letter and its zero-width mark to the kerned glyph after them, not past it', async () => {
+    // A face whose acute has no advance: `A` takes the -1 kern into `B`, so
+    // its cell is 0..22, while the mark sits at 23, where `A`'s glyph ends.
+    const marked = {
+      ...FIXTURE_FONT,
+      chars: [
+        ...FIXTURE_FONT.chars,
+        { id: 0x301, x: 64, y: 0, width: 6, height: 6, xoffset: -8, yoffset: 0, xadvance: 0, page: 0 },
+      ],
+    };
+    const fetchFixture = global.fetch;
+    global.fetch = vi.fn().mockImplementation((url: string) => (url.endsWith('.json')
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve(marked) })
+      : fetchFixture(url))) as typeof fetch;
+    await registerFont('marked', {}, '/fonts/marked.json', '/fonts/marked.png');
+    _resetLayoutCacheForTests();
+    const p = textPose({ text: 'A\u0301B', style: { fontFamily: 'marked', fontSize: SIZE } });
+    // The cluster's midpoint is 11; spanning 0..23 put it at 11.5.
+    expect(caretIndexAt(10.75, 5, p)).toBe(0);
+    expect(caretIndexAt(11.25, 5, p)).toBe(2);
+  });
 });
+

@@ -2,6 +2,7 @@
  *  the marks a session draws for what it met. */
 
 import type { ProbeRole, SnapTier } from '@weasel-js/geom/nd';
+import type { WorldPoint } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
@@ -109,10 +110,10 @@ export interface SnapCollect<P = Point> {
 /** What a rotate or handle drag asks a source for, once per frame. Angles
  *  are radians about `pivot`, in the frame `rotationOf` reads. */
 export interface AngleCollect {
-  pivot: Point;
+  pivot: WorldPoint;
   /** Where the gesture was pressed: its distance from `pivot` is the radius
    *  the default marks are drawn at. */
-  press: Point;
+  press: WorldPoint;
   /** The angle at press. */
   theta0: number;
   /** The unsnapped angle now. */

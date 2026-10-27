@@ -16,6 +16,7 @@ import type { SceneOptions, UseSceneOptions } from './useSceneOptions';
 import type { SceneDocValues } from './docValues';
 import type { SceneDeclaredFieldSetters } from './declaredFieldSetters';
 import type { SceneEditPasses } from './editPass';
+import type { SceneScroll } from './scrollOffsets';
 import type { SceneArrivalHandler } from './arrivalTypes';
 import type { RegisteredOp } from './registeredOp';
 import type { SpecsFromSerializedOptions } from './serialization';
@@ -234,13 +235,12 @@ export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = s
  * default; `TLayer` is the union of layer names.
  */
 export interface Scene<TData, TLayer extends string, TPose = RectPose>
-  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters {
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters, SceneScroll {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
   readonly layers: readonly LayerRecord<TLayer>[];
-  /** The registry this scene resolves node functions against — the consumer's
-   *  entries over the kit's. */
+  /** The registry this scene resolves node functions against — the consumer's entries over the kit's. */
   readonly registry: SceneRegistry<TPose, TData, TLayer>;
   /** See {@link SceneOptions.composition}. */
   readonly composition: PoseComposition<TPose>;

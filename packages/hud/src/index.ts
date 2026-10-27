@@ -9,6 +9,7 @@ export type {
   HudKeyEvent,
   HudAccessibleNode,
   HudAccessibleTree,
+  HudTextInput,
 } from './widget';
 export { DEFAULT_WIDGET_CLAIMS, claimsOf, isFocusable } from './widget';
 export type { HudHost } from './host';

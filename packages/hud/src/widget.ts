@@ -195,6 +195,10 @@ export interface Widget {
    *  the HUD mirrors as hidden DOM beside the canvas, with the node marked `active` as the
    *  canvas's active descendant. `subscribe` hears each change to the tree. */
   readonly accessibleTree?: HudAccessibleTree;
+  /** The text the widget is having typed into it, if it ever does. While this widget holds focus and
+   *  `read` gives an edit, the HUD backs it with a hidden DOM input at that spot, which takes the
+   *  canvas's DOM focus so an input method can compose into it. Keys still arrive through `onKey`. */
+  readonly textInput?: HudTextInput;
   /** Key input while this widget is focused. Return `true` for a key the
    *  widget handled: it then never reaches the canvas's key bindings. Return
    *  `false` and the key falls through to them as if nothing were focused. */
@@ -223,6 +227,20 @@ export interface HudAccessibleNode {
   /** Set on a node that opens a menu: whether it is open. */
   expanded?: boolean;
   children?: readonly HudAccessibleNode[];
+}
+
+/** A text edit a widget runs, as {@link Widget.textInput} declares it. */
+export interface HudTextInput {
+  /** While an edit runs, where its caret is in canvas CSS pixels and what the edited field is called; null between
+   *  edits. */
+  read(): { rect: WidgetBounds; label?: string } | null;
+  /** Hear each change to what `read` gives. Returns an unsubscribe. */
+  subscribe(fn: () => void): () => void;
+  /** The input method's text still being composed, shown in place of the selection; '' once there is none. */
+  compose(text: string): void;
+  /** Text entered without a key: a finished composition, or a character from the platform's picker. Ends any
+   *  composition. */
+  insert(text: string): void;
 }
 
 /** A widget's accessibility tree and how to hear it change. */

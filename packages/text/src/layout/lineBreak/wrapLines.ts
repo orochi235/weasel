@@ -37,15 +37,27 @@ export function wrapLines(
   maxWidth: number,
   widthOf: (start: number, end: number) => number,
 ): WrappedLine[] {
+  const lines: WrappedLine[] = [];
+  wrapSpans(cps, maxWidth, widthOf, (start, end, wrapped) => { lines.push({ start, end, wrapped }); });
+  return lines;
+}
+
+/** {@link wrapLines}, handing each line to `emit` in order rather than
+ *  building an object for it. */
+export function wrapSpans(
+  cps: ArrayLike<number>,
+  maxWidth: number,
+  widthOf: (start: number, end: number) => number,
+  emit: (start: number, end: number, wrapped: boolean) => void,
+): void {
   const n = cps.length;
   const breaks = Number.isFinite(maxWidth) ? lineBreakOpportunities(cps) : null;
-  const lines: WrappedLine[] = [];
   let start = 0;
   let i = 0;
   while (i < n) {
     const cp = cps[i];
     if (isHardLineBreak(cp)) {
-      lines.push({ start, end: i, wrapped: false });
+      emit(start, i, false);
       i += cp === 13 && cps[i + 1] === 10 ? 2 : 1;
       start = i;
       continue;
@@ -59,11 +71,10 @@ export function wrapLines(
       j++;
     }
     if (breaks && i > start && widthOf(start, ink) > maxWidth) {
-      lines.push({ start, end: i, wrapped: true });
+      emit(start, i, true);
       start = i;
     }
     i = j;
   }
-  if (start < n) lines.push({ start, end: n, wrapped: false });
-  return lines;
+  if (start < n) emit(start, n, false);
 }

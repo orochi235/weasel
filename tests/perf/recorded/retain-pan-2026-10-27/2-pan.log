@@ -1,0 +1,121 @@
+  waiting for room
+teitou  chosen: 16.0 cores free, 47.4G available (npm: 5 past runs, worst 1.9 cores / 2.6G)
+  msb-uai  scored 1.90 against teitou's 7.08
+  keiei    scored 0.51 against teitou's 7.08
+  orochi   refuses rotation
+  studio   it wants the node to itself, and job a5fd281f is running there
+  base   41a013b7
+  delta  17 file(s), 7 deleted
+  sent   5 new file(s), 12 already there
+  updated weasel on teitou at 41a013b7 + 29 uncommitted file(s)
+  job    08a45310 on teitou
+
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/retain-pan.spec.ts
+
+onto: agent-todos-5 is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+Running 1 test using 1 worker
+
+
+Retained pan — 1280x800 at dpr 2, on ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version); 72 cells
+
+    1/72  run 1   4 x  300  control          0.395 ms/frame  mean    1.664  max    4.050  cpu   0.135  kept    0 redrawn   0 through    0
+    2/72  run 1   4 x  300  submitPan        1.405 ms/frame  mean    2.815  max    5.810  cpu   0.840  kept    0 redrawn   0 through    0
+    3/72  run 1   4 x  300  retainedPan      0.855 ms/frame  mean    2.200  max    5.145  cpu   0.165  kept  164 redrawn   0 through    0
+    4/72  run 1   4 x  300  retainedFrac     0.760 ms/frame  mean    2.494  max    5.705  cpu   0.800  kept    0 redrawn   0 through  164
+    5/72  run 1   4 x  300  retainedFixed    1.280 ms/frame  mean    2.597  max    5.185  cpu   0.775  kept    0 redrawn   0 through  164
+    6/72  run 1   4 x  300  retainedStill    1.240 ms/frame  mean    2.495  max    5.835  cpu   0.180  kept  164 redrawn   0 through    0
+    7/72  run 1   4 x 1000  control          0.135 ms/frame  mean    1.488  max    3.295  cpu   0.125  kept    0 redrawn   0 through    0
+    8/72  run 1   4 x 1000  submitPan        3.190 ms/frame  mean    4.934  max    8.665  cpu   2.580  kept    0 redrawn   0 through    0
+    9/72  run 1   4 x 1000  retainedPan      1.010 ms/frame  mean    2.449  max    5.260  cpu   0.180  kept  164 redrawn   0 through    0
+   10/72  run 1   4 x 1000  retainedFrac     3.945 ms/frame  mean    5.343  max    9.635  cpu   2.565  kept    0 redrawn   0 through  164
+   11/72  run 1   4 x 1000  retainedFixed    3.145 ms/frame  mean    4.951  max    8.360  cpu   2.535  kept    0 redrawn   0 through  164
+   12/72  run 1   4 x 1000  retainedStill    0.500 ms/frame  mean    2.035  max    5.020  cpu   0.140  kept  164 redrawn   0 through    0
+   13/72  run 1  16 x  300  control          0.160 ms/frame  mean    1.409  max    3.965  cpu   0.085  kept    0 redrawn   0 through    0
+   14/72  run 1  16 x  300  submitPan        3.780 ms/frame  mean    5.303  max    9.400  cpu   2.905  kept    0 redrawn   0 through    0
+   15/72  run 1  16 x  300  retainedPan      3.770 ms/frame  mean    5.047  max    9.020  cpu   2.575  kept    0 redrawn   0 through  656
+   16/72  run 1  16 x  300  retainedFrac     3.730 ms/frame  mean    5.032  max    9.730  cpu   2.395  kept    0 redrawn   0 through  656
+   17/72  run 1  16 x  300  retainedFixed    3.070 ms/frame  mean    4.774  max    9.235  cpu   2.460  kept    0 redrawn   0 through  656
+   18/72  run 1  16 x  300  retainedStill    2.175 ms/frame  mean    3.809  max    8.460  cpu   0.125  kept  656 redrawn   0 through    0
+   19/72  run 1  16 x 1000  control          0.075 ms/frame  mean    0.850  max    2.555  cpu   0.040  kept    0 redrawn   0 through    0
+   20/72  run 1  16 x 1000  submitPan        8.510 ms/frame  mean    9.232  max   12.445  cpu   5.715  kept    0 redrawn   0 through    0
+   21/72  run 1  16 x 1000  retainedPan      8.160 ms/frame  mean    9.168  max   13.900  cpu   5.405  kept    0 redrawn   0 through  656
+   22/72  run 1  16 x 1000  retainedFrac     7.990 ms/frame  mean    8.880  max   12.265  cpu   5.320  kept    0 redrawn   0 through  656
+   23/72  run 1  16 x 1000  retainedFixed    7.465 ms/frame  mean    8.678  max   12.795  cpu   5.405  kept    0 redrawn   0 through  656
+   24/72  run 1  16 x 1000  retainedStill    2.180 ms/frame  mean    3.097  max    5.060  cpu   0.090  kept  656 redrawn   0 through    0
+   25/72  run 2   4 x  300  control          0.185 ms/frame  mean    1.410  max    2.825  cpu   0.115  kept    0 redrawn   0 through    0
+   26/72  run 2   4 x  300  submitPan        1.070 ms/frame  mean    2.723  max    5.855  cpu   0.900  kept    0 redrawn   0 through    0
+   27/72  run 2   4 x  300  retainedPan      0.645 ms/frame  mean    2.096  max    5.915  cpu   0.140  kept  164 redrawn   0 through    0
+   28/72  run 2   4 x  300  retainedFrac     1.280 ms/frame  mean    2.765  max    6.300  cpu   0.765  kept    0 redrawn   0 through  164
+   29/72  run 2   4 x  300  retainedFixed    1.080 ms/frame  mean    2.683  max    5.430  cpu   0.710  kept    0 redrawn   0 through  164
+   30/72  run 2   4 x  300  retainedStill    0.630 ms/frame  mean    2.074  max    4.150  cpu   0.120  kept  164 redrawn   0 through    0
+   31/72  run 2   4 x 1000  control          0.385 ms/frame  mean    1.871  max    4.050  cpu   0.110  kept    0 redrawn   0 through    0
+   32/72  run 2   4 x 1000  submitPan        4.250 ms/frame  mean    5.365  max    9.730  cpu   2.880  kept    0 redrawn   0 through    0
+   33/72  run 2   4 x 1000  retainedPan      0.700 ms/frame  mean    2.141  max    4.585  cpu   0.160  kept  164 redrawn   0 through    0
+   34/72  run 2   4 x 1000  retainedFrac     4.155 ms/frame  mean    5.364  max    8.125  cpu   3.130  kept    0 redrawn   0 through  164
+   35/72  run 2   4 x 1000  retainedFixed    3.555 ms/frame  mean    5.067  max    9.320  cpu   3.075  kept    0 redrawn   0 through  164
+   36/72  run 2   4 x 1000  retainedStill    0.740 ms/frame  mean    2.148  max    4.735  cpu   0.140  kept  164 redrawn   0 through    0
+   37/72  run 2  16 x  300  control          0.100 ms/frame  mean    1.617  max    4.140  cpu   0.070  kept    0 redrawn   0 through    0
+   38/72  run 2  16 x  300  submitPan        3.615 ms/frame  mean    5.083  max    9.000  cpu   2.420  kept    0 redrawn   0 through    0
+   39/72  run 2  16 x  300  retainedPan      3.555 ms/frame  mean    5.220  max    9.170  cpu   2.450  kept    0 redrawn   0 through  656
+   40/72  run 2  16 x  300  retainedFrac     4.005 ms/frame  mean    5.306  max    9.045  cpu   2.440  kept    0 redrawn   0 through  656
+   41/72  run 2  16 x  300  retainedFixed    4.085 ms/frame  mean    5.323  max    8.935  cpu   2.490  kept    0 redrawn   0 through  656
+   42/72  run 2  16 x  300  retainedStill    2.580 ms/frame  mean    3.880  max    6.880  cpu   0.105  kept  656 redrawn   0 through    0
+   43/72  run 2  16 x 1000  control          0.105 ms/frame  mean    0.917  max    2.435  cpu   0.040  kept    0 redrawn   0 through    0
+   44/72  run 2  16 x 1000  submitPan        8.045 ms/frame  mean    8.733  max   13.300  cpu   5.260  kept    0 redrawn   0 through    0
+   45/72  run 2  16 x 1000  retainedPan      7.700 ms/frame  mean    8.328  max   12.395  cpu   5.285  kept    0 redrawn   0 through  656
+   46/72  run 2  16 x 1000  retainedFrac     7.820 ms/frame  mean    8.538  max   13.595  cpu   5.215  kept    0 redrawn   0 through  656
+   47/72  run 2  16 x 1000  retainedFixed    7.630 ms/frame  mean    8.513  max   13.190  cpu   5.065  kept    0 redrawn   0 through  656
+   48/72  run 2  16 x 1000  retainedStill    1.940 ms/frame  mean    3.066  max    6.000  cpu   0.095  kept  656 redrawn   0 through    0
+   49/72  run 3   4 x  300  control          0.230 ms/frame  mean    1.567  max    5.850  cpu   0.115  kept    0 redrawn   0 through    0
+   50/72  run 3   4 x  300  submitPan        1.215 ms/frame  mean    2.798  max    7.405  cpu   1.350  kept    0 redrawn   0 through    0
+   51/72  run 3   4 x  300  retainedPan      0.610 ms/frame  mean    2.015  max    4.215  cpu   0.165  kept  164 redrawn   0 through    0
+   52/72  run 3   4 x  300  retainedFrac     1.475 ms/frame  mean    2.826  max    5.365  cpu   1.120  kept    0 redrawn   0 through  164
+   53/72  run 3   4 x  300  retainedFixed    1.315 ms/frame  mean    2.916  max    7.360  cpu   0.905  kept    0 redrawn   0 through  164
+   54/72  run 3   4 x  300  retainedStill    0.805 ms/frame  mean    2.240  max    5.540  cpu   0.165  kept  164 redrawn   0 through    0
+   55/72  run 3   4 x 1000  control          0.200 ms/frame  mean    1.478  max    3.915  cpu   0.055  kept    0 redrawn   0 through    0
+   56/72  run 3   4 x 1000  submitPan        3.055 ms/frame  mean    4.562  max   10.120  cpu   1.945  kept    0 redrawn   0 through    0
+   57/72  run 3   4 x 1000  retainedPan      0.635 ms/frame  mean    2.003  max    4.735  cpu   0.085  kept  164 redrawn   0 through    0
+   58/72  run 3   4 x 1000  retainedFrac     2.945 ms/frame  mean    4.668  max    8.125  cpu   1.955  kept    0 redrawn   0 through  164
+   59/72  run 3   4 x 1000  retainedFixed    2.990 ms/frame  mean    4.611  max    7.910  cpu   1.975  kept    0 redrawn   0 through  164
+   60/72  run 3   4 x 1000  retainedStill    0.730 ms/frame  mean    2.040  max    4.085  cpu   0.090  kept  164 redrawn   0 through    0
+   61/72  run 3  16 x  300  control          0.115 ms/frame  mean    1.230  max    3.670  cpu   0.065  kept    0 redrawn   0 through    0
+   62/72  run 3  16 x  300  submitPan        3.825 ms/frame  mean    5.033  max    8.430  cpu   2.290  kept    0 redrawn   0 through    0
+   63/72  run 3  16 x  300  retainedPan      3.545 ms/frame  mean    4.671  max    7.850  cpu   2.440  kept    0 redrawn   0 through  656
+   64/72  run 3  16 x  300  retainedFrac     3.375 ms/frame  mean    4.639  max    8.735  cpu   2.265  kept    0 redrawn   0 through  656
+   65/72  run 3  16 x  300  retainedFixed    3.725 ms/frame  mean    4.718  max    8.395  cpu   2.340  kept    0 redrawn   0 through  656
+   66/72  run 3  16 x  300  retainedStill    2.775 ms/frame  mean    4.121  max    7.460  cpu   0.105  kept  656 redrawn   0 through    0
+   67/72  run 3  16 x 1000  control          0.120 ms/frame  mean    0.878  max    3.060  cpu   0.035  kept    0 redrawn   0 through    0
+   68/72  run 3  16 x 1000  submitPan        8.795 ms/frame  mean    9.079  max   11.815  cpu   5.635  kept    0 redrawn   0 through    0
+   69/72  run 3  16 x 1000  retainedPan      8.350 ms/frame  mean    8.896  max   12.330  cpu   5.680  kept    0 redrawn   0 through  656
+   70/72  run 3  16 x 1000  retainedFrac     8.245 ms/frame  mean    8.905  max   13.055  cpu   5.505  kept    0 redrawn   0 through  656
+   71/72  run 3  16 x 1000  retainedFixed    7.780 ms/frame  mean    8.581  max   11.855  cpu   5.490  kept    0 redrawn   0 through  656
+   72/72  run 3  16 x 1000  retainedStill    2.480 ms/frame  mean    3.270  max    6.105  cpu   0.090  kept  656 redrawn   0 through    0
+
+Retained pan — 1280x800 at dpr 2, on ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)
+ms per frame, median of 3 runs of the median single-frame sample less the least frame that draws.
+
+| layers | cmds | control | submit pan | retained pan | retained frac | retained fixed | retained still | pan / submit |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|  4 |  300 |   0.230 |   1.215 |   0.645 |   1.280 |   1.280 |   0.805 |  0.531 |
+|  4 | 1000 |   0.200 |   3.190 |   0.700 |   3.945 |   3.145 |   0.730 |  0.219 |
+| 16 |  300 |   0.115 |   3.780 |   3.555 |   3.730 |   3.725 |   2.580 |  0.940 |
+| 16 | 1000 |   0.105 |   8.510 |   8.160 |   7.990 |   7.630 |   2.180 |  0.959 |
+perf result: tests/perf/recorded/retain-pan-2026-10-27/2-pan.json
+  ✓  1 tests/perf/retain-pan.spec.ts:60:1 › retained layers through a pan (36.0s)
+
+  1 passed (37.2s)
+  6 files  267.1 KiB  → 5 already local (181.9 KiB)
+  fetching 1 files (85.2 KiB)
+  [1/1] 2-pan.json  85.2 KiB
+  ✓ 1 files, 85.2 KiB in 0s
+  note   output left on teitou: 1 file not home yet, so nothing was cleared
+  note   weasel on teitou still holds what the job wrote; the next sync resets it

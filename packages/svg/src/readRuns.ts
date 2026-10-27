@@ -1,7 +1,8 @@
 /** Reading the runs of a `<text>`: its text and its `<tspan>` children. */
 
 import { type StyledRun, type TextStyle, resolveScreenLength } from '@weasel-js/core';
-import { holdsOnlyText, joinLines, type LineTracker, statesLines, warnUnreadPositions } from './tspanLines';
+import { holdsOnlyText, joinLines, type LineTracker, statesLines } from './tspanLines';
+import { TextTurns, turnRuns, turnsOf } from './glyphTurns';
 import { type Piece, placeTspanRun, TextShifts } from './glyphShifts';
 import { type Moves, movesOf, NO_MOVES, raiseRuns, risesOver, TextMoves } from './glyphRises';
 import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
@@ -17,7 +18,7 @@ const glyphCount = (text: string): number => Array.from(text).length;
  * The element's runs, with a `\n` wherever a `<tspan>` opens a new line:
  * text nodes become plain runs, and `<tspan>` elements become runs carrying
  * their attribute overrides. Glyphs moved off their line are raised or
- * lowered by `baselineShift`. `lead` is how far a leading `dx` moves the text.
+ * lowered by `baselineShift`, and turned glyphs take `rotate`. `lead` is how far a leading `dx` moves the text.
  */
 export function readRuns(
   el: Element,
@@ -31,6 +32,9 @@ export function readRuns(
   const runLines: StyledRun[][] = [[]];
   const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
   const moves = new TextMoves(el, onWarn);
+  const turns = new TextTurns(el, onWarn);
+  const turn = (text: string, own?: readonly number[]): void =>
+    turnRuns(runLines[runLines.length - 1], turns.take(glyphCount(text), own));
   const raise = (text: string, own: Moves, inherited: Moves, placed: boolean): void =>
     raiseRuns(runLines[runLines.length - 1], risesOver(Array.from(text), own, inherited, tracker, placed), fontSize, textStyle);
   let leading = 0;
@@ -40,6 +44,7 @@ export function readRuns(
     if (t) {
       lead = placeTspanRun(el, { text: t, ...inheritedShift }, runLines, textStyle, onWarn);
       raise(t, NO_MOVES, moves.take(glyphCount(t)), false);
+      turn(t);
     }
   } else {
     // Every run is read before any is placed: the text's `x` list is folded
@@ -47,7 +52,6 @@ export function readRuns(
     const pieces = Array.from(el.childNodes).flatMap((child): Piece[] => {
       if (child.nodeType === 1 && (child as Element).tagName.toLowerCase() === 'tspan') {
         const sp = child as Element;
-        warnUnreadPositions(sp, onWarn);
         return [{ tspan: sp, run: readTspanRun(sp, gradients, leafStyle, onWarn) }];
       }
       if (child.nodeType === 1) onWarn(`<text> child <${(child as Element).tagName}> not supported; flattening text content`);
@@ -60,6 +64,7 @@ export function readRuns(
       if (!sp) {
         lead += shifts.place(run, runLines, textStyle);
         raise(run.text, NO_MOVES, moves.take(glyphCount(run.text)), false);
+        turn(run.text);
         continue;
       }
       const inherited = moves.take(glyphCount(run.text));
@@ -71,6 +76,7 @@ export function readRuns(
       else for (let n = 0; n < lines; n++) runLines.push([]);
       lead += placeTspanRun(sp, run, runLines, textStyle, onWarn, shifts.take(run));
       raise(run.text, movesOf(sp, onWarn), inherited, true);
+      turn(run.text, turnsOf(sp, onWarn));
     }
   }
   if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);

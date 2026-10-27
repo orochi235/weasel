@@ -312,7 +312,7 @@ describe('flip about a reference', () => {
 
   it("pivot 'pointer' reads the pointer dep when no click carried a point", () => {
     const scene = makeStubScene(initial);
-    const pointer = { get: () => ({ worldX: 0, worldY: 20, viewId: null }) };
+    const pointer = { get: () => ({ world: { x: 0, y: 20 }, viewId: null }) };
     runFlip({ selection: makeSelection(['a']), scene, pointer }, { axis: 'y', pivot: 'pointer' });
     expect(scene.poses.get('a')).toEqual({ x: 0, y: 30, width: 10, height: 10 });
   });

@@ -278,7 +278,7 @@ describe('a long-press', () => {
     h.down(1, 5, touch);
     expect(h.holds).toEqual([{
       pointerId: 1, pointerType: 'touch', startedAt: 40, duration: LONG_PRESS_MS,
-      press: { target: undefined, clientX: 5, clientY: 0, worldX: 105, worldY: 100, ...MODS },
+      press: { target: undefined, clientX: 5, clientY: 0, world: { x: 105, y: 100 }, ...MODS },
     }]);
     h.clock.advance(LONG_PRESS_MS);
     expect(h.holds).toHaveLength(2);

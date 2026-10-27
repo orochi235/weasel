@@ -18,6 +18,7 @@ import {
 } from '@weasel-js/font';
 import { outlineGroupMesh, outlineGroupStrokeMesh } from '../glyphOutlineMesh';
 import type { ClipRect } from '../batchClip';
+import { glyphCorners } from '../glyphCorners';
 import { QUAD_STRIDE, SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { DrawContext, GlyphPaintKind } from './drawContext';
 import { drawTriangles } from './drawTriangles';
@@ -308,15 +309,10 @@ function glyphScreenBounds(
     if (sy > b.y1) b.y1 = sy;
   };
   const q = group.quadData;
+  const c: number[] = [];
   for (let at = 0; at < q.length; at += QUAD_STRIDE) {
-    const x0 = q[at] + dx, x1 = q[at + 2] + dx, y0 = q[at + 1] + dy, y1 = q[at + 3] + dy;
-    const base = q[at + 8] + dy;
-    const top = (base - y0) * tanItalic;
-    const bottom = (base - y1) * tanItalic;
-    add(x0 + top, y0);
-    add(x1 + top, y0);
-    add(x1 + bottom, y1);
-    add(x0 + bottom, y1);
+    glyphCorners(q, at, dx, dy, tanItalic, c);
+    for (let k = 0; k < 8; k += 2) add(c[k], c[k + 1]);
   }
   return b;
 }

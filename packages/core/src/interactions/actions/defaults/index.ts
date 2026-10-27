@@ -60,6 +60,8 @@ export { editAnchorsAction } from '../edit-anchors/action';
 export { lassoSelectAction } from '../lasso-select/action';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
+export { containerScrollAction, scrollRange, scrollableAt } from './containerScroll';
+export type { ScrollRange } from './containerScroll';
 export { viewportZoomAction, makeViewportZoomAction, type ViewportZoomOptions } from './viewportZoom';
 export { viewportDragPanAction } from './viewportDragPan';
 export { enterTextEditAction } from './enterTextEdit';

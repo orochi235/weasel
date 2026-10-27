@@ -14,11 +14,12 @@ import { createEmitter } from '@weasel-js/registry';
 import {
   createContext, useContext, useState, useSyncExternalStore, type ReactNode,
 } from 'react';
+import type { WorldPoint } from '../interactions/actions/invoker';
 
-/** World-space pointer position and the view it is over — a
- *  view id, or `null` for a surface's own camera. `null` as a whole when the
- *  pointer is over no publishing surface. */
-export type PointerWorldPos = { worldX: number; worldY: number; viewId: string | null } | null;
+/** The pointer's position in the space `clientToWorld` maps into, and the
+ *  view it is over — a view id, or `null` for a surface's own camera. `null`
+ *  as a whole when the pointer is over no publishing surface. */
+export type PointerWorldPos = { world: WorldPoint; viewId: string | null } | null;
 
 /** A pointer store: the latest position, a way to publish one, and change notification. */
 export interface PointerContextValue {
@@ -30,13 +31,13 @@ export interface PointerContextValue {
   subscribe(fn: () => void): () => void;
   /** Bumps on every change. */
   getVersion(): number;
-  /** `get()` as a stable thunk, for hooks taking a drop-point option. */
+  /** `get()` as a stable thunk. */
   readonly getDropPoint: () => PointerWorldPos;
 }
 
 function samePos(a: PointerWorldPos, b: PointerWorldPos): boolean {
   if (a === null || b === null) return a === b;
-  return a.worldX === b.worldX && a.worldY === b.worldY && a.viewId === b.viewId;
+  return a.world.x === b.world.x && a.world.y === b.world.y && a.viewId === b.viewId;
 }
 
 /** A pointer store with no provider around it. */

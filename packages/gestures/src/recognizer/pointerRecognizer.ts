@@ -228,7 +228,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       if (!rec?.buffered) return {};
       const at = world(s);
       const up = {
-        target: s.target, clientX: s.clientX, clientY: s.clientY, worldX: at.x, worldY: at.y, ...modifiersOf(s),
+        target: s.target, clientX: s.clientX, clientY: s.clientY, world: { x: at.x, y: at.y }, ...modifiersOf(s),
       };
       return composeClick(rec.down, up, clicks, () => happenedAt(s), (ev) => sink.dispatch(ev), observer, doubleClick());
     },
