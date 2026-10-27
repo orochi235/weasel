@@ -23,6 +23,14 @@ describe('tessellate (RectPath)', () => {
     expect(Array.from(mesh.vertices)).toEqual([0, 0, -10, 0, -10, -10, 0, -10]);
     expect(mesh.indices.length).toBe(6);
   });
+
+  it('measures a rect far from 0 from an origin, so its corners keep their fractions', () => {
+    const FAR = 262_144;
+    const mesh = tessellate({ kind: 'rect', x: FAR + 0.3, y: 0.3, width: 1, height: 1 });
+    expect(mesh.origin).toEqual({ x: FAR + 1, y: 1 });
+    expect(mesh.vertices[0]! + mesh.origin!.x).toBeCloseTo(FAR + 0.3, 6);
+    expect(tessellate({ kind: 'rect', x: 1, y: 1, width: 1, height: 1 }).origin).toBeUndefined();
+  });
 });
 
 describe('tessellate (PolygonPath, single-contour, no curves)', () => {
