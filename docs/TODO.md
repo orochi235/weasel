@@ -43,19 +43,14 @@ Owner tags, after the priority (2026-10-26):
   `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
   2026-10-11). If they do move, the package is `images`; `ingest` was turned down.
 
-- **(P3) [agent] The action pipeline's coordinates are 2D — what is left.** `WorldPoint` (`@weasel-js/routing`) types
-  `InvocationCtx.world`, the dispatcher's hooks, the `nodeAtPoint`, `lassoSelect`, `insert` and `snap` dep
-  payloads, the pointer store's `PointerWorldPos.world`, and the pointer points in core's snap, paths and
-  edit-anchors code. Still untyped by it: the pick functions (`pickEvery`, `pickBest`, `pickHit`,
-  `pickOutermost` take positional `(worldX, worldY)` across `viewInputs`, `useSceneGestureDispatcher`,
-  `getNodeAtPoint`, `affordanceAt`, `nestedHit`, `selectDeep`, `enterGroup`, `useSelectTool`,
-  `PickHud`/`DevHuds` and `<SceneCanvas>` props); the binding params bag's flat `worldX`/`worldY`/`pressX`/
-  `pressY`, which every click action reads and `ClickEvent.pressX`/`pressY` feed; and `planeInput.ts`'s
-  `pressedAt`. The camera is the 2D `View`, and kernel3d declares `camera3d` beside it by design. Not a blocker
-  for another kernel: the 3D lab drives core's dispatcher unchanged.
-- **(P3) [agent] About 20 local `Point` aliases in core duplicate geom's.** `type Point = { x: number; y: number }` is
-  redeclared across the snap domain, `resolveOverlays`, `insertPreviewExtent`, `brushOverlay`, `planeInput`
-  and `handleDrag`; one definition should serve them.
+- **(P3) [agent] The binding params bag's points are flat scalars.** `immediateParams` (routing `inputFacts.ts`) hands
+  immediate invokers `worldX`/`worldY` and a click's `pressX`/`pressY`, and about 25 actions across core,
+  path-tools, rig, hud, guides, minimap, labkit, diagram and symmetry cast `params` to read them. Other code also
+  writes the scalars: `resolveMenu`'s trigger point, `planeInput`'s plane remap, `useCanvasIngestion`,
+  `ActionsProvider`'s `pointOf` for `enabled`, and about 60 tests that call invokers directly. Replace them with
+  `world`/`press` as `WorldPoint` under one exported params type, readers and writers in the same change; the bag
+  is `Record<string, unknown>`, so only tests catch a missed reader. The camera is the 2D `View`, and kernel3d
+  declares `camera3d` beside it by design.
 
 - **(P3) [recheck] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
@@ -66,12 +61,9 @@ Owner tags, after the priority (2026-10-26):
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) [agent] A click on a node inside a 3D container selects the node, not the container.** In 2D the select
-  tool picks the outermost container; whether kernel3d should match is untested and unhandled since
-  `POSE3_COMPOSITION` shipped (2026-10-27).
-- **(P3) [agent] labkit's 3D lab example draws stored poses.** `packages/labkit/examples/3d-lab/renderer3d.ts`
-  reads `node.pose`, not `worldPoseOf`, so under containers it would draw nested nodes in the wrong place. Its
-  scene has no containers today.
+- **(P3) [agent] labkit's 3D lab cannot enter a container.** `packages/labkit/examples/3d-lab` wires `useSelectTool` by
+  hand rather than through `<SceneCanvas>`, so it lacks the group-entry contribution: a click selects the
+  outermost container, but a double-click cannot enter one. Its scene has no containers today.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -120,15 +112,6 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [recheck] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
-
-- **(P3) [agent] svg import: a `<text>` per-glyph `x` list is not read where a `<tspan>` it reaches has both an `x`
-  and a `y` or `dy`** (`foldTextPositions` in `packages/svg/src/glyphShifts.ts`), because that tspan may open a
-  new line and the fold measures one line.
-- **(P3) [agent] svg import warns about collapsing white space under `xml:space="preserve"`.** The `dx`, `dy` and
-  `rotate` list checks in `glyphShifts.ts`, `glyphRises.ts` and `glyphTurns.ts` do not read
-  `preservesSpace`, so a list over preserved white space is reported and not read.
-- **(P3) [agent] The DOM text editor drops a run's `rotate` and `stroke` on an edit.** `packages/text-dom/src/domRuns.ts`
-  has no slot for either when it turns runs into spans and back.
 
 ### Path editing tricks
 
@@ -287,20 +270,19 @@ Owner tags, after the priority (2026-10-26):
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) [agent] A folded puppet warp spends most of its injective rounds polishing a map that is already injective.**
-  After `e23101bb7` the bar S takes 41 rounds and the disc squash 18 (`warp.bench.ts`, raw runs in
-  `warp.bench.runs.jsonl`). Of those, 19 on the bar and 15 on the disc run at eps 0 after nothing is turned over,
-  until two rounds in a row move the map less than 1e-4 of its size (`SETTLED`, `CALM_ROUNDS` in `arap.ts`).
-  L-BFGS steps there are usually cut to half length by the line search, or stopped at 80% of the nearest
-  flattening. A looser stop, or a step not held back by nearly-flat triangles, is what is left; either changes
-  the final map, so the fold test's refit anchor counts (5 and 11) will move.
 - **(P3) [recheck] WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
 ### Pathfinder follow-ups (post-v1)
 
 - **(P3) [agent] Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
-- **(P3) [agent] True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
+- **(P3) [agent] Curve-preserving divide, crop, trim, merge and face pieces.** `pathUnion`/`pathIntersect`/
+  `pathSubtract`/`pathExclude` keep curves (`packages/geom/src/booleans/curveBoolean.ts`, 2026-10-27), but
+  `pathDividePieces`, `pathFacePieces`, `pathCropPieces`, `pathTrim` and `pathMerge` still go through
+  `pathToMultiPolygon` and `arrangementFaces`, so their pieces are straight-line. The cut-and-classify step
+  (`curveEdges.ts`, `curveClassify.ts`) already knows which operands cover each side of every edge, so faces are
+  its loops grouped by which inputs cover them. Coincident outlines (shared edges, the same circle twice) still
+  fall back to flattening: the classifier detects them but does not resolve them.
 
 ## Rendering & paint
 
@@ -434,12 +416,10 @@ Owner tags, after the priority (2026-10-26):
   `diagram-drop` demo a straight `filter → mix` edge strikes through the two boxes dropped between them.
   Painting edges under nodes needs an edge between a container's fill and its members, or the edge hidden
   under the container; the alternative is `router="avoid"` in the demo. A pick between those (2026-10-26).
-- **(P3) [agent] A container's wheel scroll never hands the wheel on at the end of its range.** `containerScrollAction`
-  (`container.scroll`, 2026-10-27) always takes the wheel over a scrollable container, because its
-  `enabled()` gets no delta; it also measures a turned container's range on its axis-aligned box.
-- **(P3) [agent] A connector into a scrolled container is untested.** A derived node works out its pose from the
-  document positions, while its painted path uses the scrolled positions of the nodes it connects; painting and
-  hit testing are believed to agree (inferred, not tested).
+- **(P3) [agent] The layout pass hands a strategy a turned container's box unturned but its children turned.**
+  `frameOf` in `packages/core/src/core/scene/layoutPass.ts` gives a strategy the container's bounds as an
+  axis-aligned box while its children arrive in rotated world poses, the frame mix-up `scrollRange` had until
+  2026-10-27 (inferred from the code, not tested).
 
 ---
 
@@ -495,10 +475,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
-
-- **(P3) [agent] Cmd+Backspace does nothing in a HUD menu's text row.** macOS deletes to the start of the line;
-  `createTextEditor` (`hud/src/menu/textEdit.ts`) binds Alt+Backspace and Alt+Delete to word deletion
-  (2026-10-27) and nothing to Cmd.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -981,11 +957,12 @@ only story runner in the repo.
   own package that way, so most of each package would stay unbundled. forge got its gain by moving
   its stories onto package specifiers first (2026-10-21); the tests would need the same.
 
-- **(P3) [agent] `Lab.messages.test.tsx` hung once for 20 s in a fleet run.** "reports its state as it starts,
-  on a change, and when asked" timed out on studio (0.4 of 10 cores busy) in the batch-5 gate at 9d51e9d04
-  (2026-10-27), where it takes 62 ms locally; its retry then counted one state report too many, presumably
-  the timed-out attempt's lab still answering the query. It passed in the four full fleet runs before it.
-  What it waited on is unknown: the next sighting wants the attempt's stack at the timeout.
+- **(P3) [agent] labkit's Lab-mounting tests stall for 20 s on the fleet now and then.** `Lab.messages.test.tsx`'s
+  "reports its state as it starts, on a change, and when asked" timed out on studio (0.4 of 10 cores busy) in
+  the batch-5 gate at 9d51e9d04, where it takes 62 ms locally, and its retry counted one state report too many,
+  presumably the timed-out attempt's lab still answering. `TrialTransport.test.tsx`'s "shares the chosen speed
+  between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both
+  2026-10-27). What they wait on is unknown: the next sighting wants the attempt's stack at the timeout.
 
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
@@ -1118,16 +1095,16 @@ only story runner in the repo.
     `straightRgb`, the flat varyings) is not broken down. On msb-uai the last two of eight runs
     ran 2.5–4 times slower in both passes, every variant alike; the spec keeps the fastest run,
     so they do not reach a figure. Result files: `tests/perf/recorded/fill-rate-batch-2026-10-19/`.
-  - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
-    turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
-    why a slanted edge cannot be cut). The stencil itself costs about 2.2 us a push and pop around a
-    pattern rect, 2.4 at 8 leaves, clipping to a quad with one slanted edge (`clip-cost.spec.ts`,
-    2026-10-17); on 2026-10-06 the same spec read 4.9 and 7.9 with a rect clip, so shape and date
-    are not separated. The stencil reference is state, so one draw cannot test two
-    depths; putting such a clip in the run means deciding coverage in the fragment shader, from
-    half-planes a vertex names. That has to agree with the stencil where an item that draws for
-    itself sits under the same clip, at pixel centers on an edge and per sample on a multisampled
-    target, and only a browser can say whether it does.
+  - **A convex clip stays in the run only on a single-sampled target** (`batchHull.ts`, 2026-10-27): a
+    turned rect or a convex polygon of up to 8 edges is tested per fragment against half-planes snapped to
+    1/16 px, and the stencil, when needed, is drawn from the same corners. `hullClip.browser.test.ts`
+    (SwiftShader) and `clip-cost.spec.ts` (teitou, ANGLE Metal, 0 differing pixels) pin the agreement. 512
+    slanted clips on a single-sampled canvas: 32 draws and 0.46 ms a frame, against 1536 draws and 14.93 ms on
+    the stencil (`tests/perf/recorded/hull-clip-2026-10-27/`). What still flushes: every such clip on a
+    multisampled target, which is the browser default (WebGL2 has no `gl_SampleMask`, and scaling alpha by
+    sample coverage leaves the color beneath showing at the clip edge where layers stack, inferred from the
+    blend math); a non-convex or curved clip; nesting past 8 planes; a clip inside a retained or effect target;
+    and a rect clip with a slanted item crossing it, which needs rect clips snapped to the same grid.
   - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
     reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and
     made a frame of 20,000 stroked rects 30% slower, with both renderers interleaved in one page.
@@ -1225,33 +1202,40 @@ only story runner in the repo.
 
 - **(P3) [agent] Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is drawn once into
   its own texture and composited (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the policy is
-  `packages/core/src/core/layers/retain.ts`; `<Canvas retain>` sets the threshold and budget). Each surface
-  covers only the device pixels its layer can paint. A custom shader with its own vertex shader, one reading
-  `gl_FragCoord` without declaring `u_fragOrigin`, and effects with no `reach` still get a canvas-sized surface
-  (16 MB at 1280x800 and dpr 2). Layers with effects are retained since 4c0141f5a, and a world layer is retained
-  through a pan since f9282f7bf: its surface is composited moved by whole device pixels and drawn again with a
-  margin of an eighth of the buffer each side (`PAN_MARGIN`). Left:
+  `packages/core/src/core/layers/retain.ts`; `<Canvas retain>` sets the threshold and budget). A world layer is
+  retained through a pan by compositing its surface moved whole device pixels, drawn again with a margin of an
+  eighth of the buffer each side (`PAN_MARGIN`); since 7b048f4bf that includes layers holding effects that set
+  `reach`, isolated groups and composite groups. Left:
 
   - **The budget still caps canvas-sized layers at about 16, and fills before a pan needs margins.**
     `retainBudget` (256 MB default) counts only kept surfaces. A frame that redraws can hold the budget plus one
-    multisampled scratch buffer, now up to 1.56 times the canvas for a margin surface (205 MB at 4x
-    multisampling, 2560x1600), plus a single-sampled one inside an effects buffer. Drawing in tiles would cap
-    the scratch, but each tile dispatches the children again unless they are culled per tile. At 16
-    canvas-sized layers no margin fits and a pan falls back to drawing them straight through
+    multisampled scratch buffer, up to 1.56 times the canvas for a margin surface (205 MB at 4x, 2560x1600).
+    Drawing in tiles would cap the scratch, but each tile dispatches the children again unless they are culled
+    per tile. At 16 canvas-sized layers no margin fits and a pan draws them straight through
     (`tests/perf/recorded/retain-pan-2026-10-27/`). Open: whether the default should scale with the drawing
     buffer, and whether to give margins to some layers rather than none.
-  - **A pan by fractions of a device pixel never reuses a surface** (kit inertia, most trackpad momentum); such
-    a layer is drawn straight through until the view holds. Reusing one needs resampling, which is not exact.
-  - **Pan retaining is opted out for layers holding a shader, a screen-unit paint or effects.** Screen units are
-    the gradient and pattern default, so most real world layers holding a gradient opt out. Effects run in
-    buffers clamped to the drawing buffer; growing those to the margin would let a blurred layer follow a pan.
+  - **Screen-unit paints opt a layer out of pan retaining, correctly** (2026-10-27): such a paint stays put on
+    the canvas while the geometry pans through it, so a moved surface would carry stale colors. The only exact
+    exception is a pan along which the paint is constant (a linear gradient panned along its stripes, a pattern
+    by whole tiles). Authored paints in the repo are mostly `bounds`/`local`/`world`, which do follow a pan.
+  - **Still opted out of pan retaining:** custom shaders, texture paints on text (the paint scratch is clamped
+    to the drawing buffer), and effects with no `reach`.
   - **An effects layer uses the same 250-command threshold** as any other, though its passes cost far more than
-    its commands, so a low-count blurred layer is not retained unless it sets `retain: true`. Measure before
-    changing it.
+    its commands. Measure before changing it.
   - **The threshold** was left at 250 after measurement (`tests/perf/layer-dispatch.spec.ts`; result files in
     `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`).
-- **(P3) [agent] The perf specs are not linted.** `tests/perf/*.spec.ts` break `no-console` (`layer-dispatch.spec.ts`
-  among them), but `npm run lint` covers only `packages` and `apps`.
+- **(P3) [maintainer] Whether core snaps the view's translation to whole device pixels.** A pan by fractions of a
+  device pixel (kit inertia, most trackpad momentum) never reuses a retained surface: the layer is drawn straight
+  through and its surface redrawn once the view holds. Resampling was ruled out (2026-10-27: a 1-device-px
+  hairline at a half-pixel offset becomes two half-strength pixels and pops sharp at rest). The exact option is to
+  snap the translation core draws with to whole device pixels, which leaves drawn and hit-tested positions up to
+  half a device pixel apart for every consumer.
+- **(P3) [agent] `resolveInto` leaves the default framebuffer bound.** `packages/renderer/src/retain/surfaceGl.ts`
+  binds framebuffer `null` after its blit; `retained.ts` rebinds after it since 7b048f4bf, but any other caller
+  inherits the wrong target.
+- **(P3) [agent] Inside an effects buffer, a retained group and a texture-painted text stop at the drawing buffer.**
+  A retained group's surface and the text paint scratch are clamped to the drawing buffer, so their content just
+  past the edge does not feed a blur around them, unlike a direct draw (2026-10-27).
 
 - **(P3) [agent] The pull request benchmark job's new run time is unmeasured.** Since 2026-10-26 it runs
   `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a
