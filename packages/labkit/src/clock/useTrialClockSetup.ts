@@ -1,4 +1,4 @@
-import { holdAt } from '@weasel-js/clock';
+import { holdAt, type PlayheadHold } from '@weasel-js/clock';
 import { useContext, useEffect, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
@@ -7,6 +7,7 @@ import type { TrialRecord } from '../state/types';
 import { ClockRegistryContext } from './contexts';
 import {
   type ClockCapability,
+  type ClockPosition,
   clockPosition,
   createTrialClock,
   type TrialClockHandle,
@@ -19,6 +20,10 @@ interface Held {
   /** Where a reopened clock stood, when its first span could not hold it. */
   reopenAt: number | null;
 }
+
+/** The time `position` showed, under the origin it ran at. */
+const shownAt = (position: ClockPosition, spec: ClockCapability): number =>
+  (position.origin ?? spec.origin ?? 0) + position.elapsed;
 
 const shape = (s: ClockCapability): string =>
   `${s.duration}|${s.origin ?? 0}|${s.loop ?? false}|${s.speed}`;
@@ -66,7 +71,7 @@ export function useTrialClockSetup({
     if (!held.current) {
       const at = seeded.current ? undefined : record.clock;
       const made = createTrialClock(spec, at);
-      const saved = at ? (spec.origin ?? 0) + at.elapsed : null;
+      const saved = at ? shownAt(at, spec) : null;
       held.current = {
         handle: made,
         declared: shape(spec),
@@ -90,15 +95,41 @@ export function useTrialClockSetup({
     return clocks.register(record.id, handle, onLab ? undefined : target);
   }, [clocks, handle, record.id, target, onLab]);
 
-  const duration = useRef<number | undefined>(undefined);
-  duration.current = spec?.duration;
+  const declaredSpec = useRef<ClockCapability | null>(null);
+  declaredSpec.current = spec;
+  // The position this hook last wrote, or seeded from; any other is a load from outside, as a snapshot's.
+  const written = useRef<ClockPosition | undefined>(record.clock);
   useEffect(() => {
     if (!handle || onLab) return;
     const { clock } = handle;
-    return clock.subscribe(() =>
-      updateTrialClock(record.id, clockPosition(clock, duration.current)),
-    );
+    return clock.subscribe(() => {
+      const position = clockPosition(
+        clock,
+        declaredSpec.current?.duration,
+        declaredSpec.current?.origin,
+      );
+      written.current = position;
+      updateTrialClock(record.id, position);
+    });
   }, [handle, onLab, record.id, updateTrialClock]);
+
+  const loaded = record.clock;
+  const loadHold = useRef<PlayheadHold | null>(null);
+  useEffect(() => {
+    if (!handle || onLab || !loaded || loaded === written.current) return;
+    written.current = loaded;
+    const declaredNow = declaredSpec.current;
+    if (!declaredNow) return;
+    loadHold.current?.release();
+    loadHold.current = holdAt(handle, shownAt(loaded, declaredNow));
+  }, [handle, onLab, loaded]);
+  useEffect(
+    () => () => {
+      loadHold.current?.release();
+      loadHold.current = null;
+    },
+    [handle],
+  );
 
   useEffect(() => {
     const entry = held.current;

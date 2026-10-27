@@ -207,6 +207,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         config: clonedConfig,
         state: serializedState,
         auto: [...(trial.auto ?? [])],
+        ...(trial.clock ? { clock: { ...trial.clock } } : {}),
         savedAt,
       };
       set((s) => ({ savedSnapshots: [...s.savedSnapshots, snapshot] }));
@@ -231,6 +232,8 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         trials: s.trials.map((w) => {
           if (w.id !== trialId) return w;
           const loaded: TrialRecord = { ...w, state: restoredState, config: snapshot.config };
+          // A fresh object each load, so the trial's clock tells it from its own writes.
+          if (snapshot.clock) loaded.clock = { ...snapshot.clock };
           if (snapshot.auto === undefined) return loaded;
           delete loaded.auto;
           if (snapshot.auto.length > 0) loaded.auto = [...snapshot.auto];
