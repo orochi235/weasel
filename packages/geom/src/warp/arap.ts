@@ -13,7 +13,8 @@
  * re-solved as the pins move.
  */
 import { buildPiece, placePiece, rigidRound, similaritySolve, type Piece } from './arapPiece';
-import { nextEps, startingEps, turnedOver, untangleEnergy, untangleRound } from './injective';
+import { energyAt, leastOf, nextEps, startingEps, turnedOver, untangleEnergy, untangleRound } from './injective';
+import { stepMemory } from './lbfgs';
 
 /** A triangle mesh at rest: interleaved `x, y` vertices and vertex-index triples. */
 export interface ArapMesh {
@@ -64,6 +65,9 @@ export const ARAP_ROUNDS = 5;
 export const ARAP_INJECTIVE_ROUNDS = 100;
 /** A round moving no vertex farther than this share of the piece's size ends the rounds. */
 const SETTLED = 1e-4;
+/** Settled injective rounds in a row that end the pass: one short step of a
+ *  limited-memory descent is often followed by a long one. */
+const CALM_ROUNDS = 2;
 
 /** The mesh's connected pieces: vertex lists and triangle lists. */
 function piecesOf(mesh: ArapMesh): { verts: number[]; tris: number[] }[] {
@@ -173,22 +177,23 @@ export function createArapSolver(mesh: ArapMesh, pinned: readonly number[]): Ara
       if (tangled.some(Boolean)) {
         const state = solved.map((piece, k) => {
           const eps = tangled[k] ? startingEps(piece, pos[k]) : 0;
-          return { pos: pos[k], eps, energy: tangled[k] ? untangleEnergy(piece, pos[k], eps) : 0, live: tangled[k] };
+          return { pos: pos[k], eps, energy: tangled[k] ? untangleEnergy(piece, pos[k], eps) : 0, live: tangled[k], memory: stepMemory(), calm: 0 };
         });
         let r = 1;
         for (; r <= injective && state.some((s) => s.live); r++) {
           solved.forEach((piece, k) => {
             const s = state[k];
             if (!s.live) return;
-            const step = untangleRound(piece, s.pos, s.eps, s.energy);
+            const step = untangleRound(piece, s.pos, s.eps, s.energy, s.memory);
             const settled = step.moved <= SETTLED * piece.size || s.energy - step.energy <= SETTLED * step.energy;
             s.pos = step.pos;
             if (s.eps > 0) {
-              s.eps = nextEps(piece, s.pos, s.eps, s.energy, step.energy);
-              s.energy = untangleEnergy(piece, s.pos, s.eps);
+              s.eps = nextEps(leastOf(step.terms), s.eps, s.energy, step.energy);
+              s.energy = energyAt(step.terms, s.eps);
             } else {
               s.energy = step.energy;
-              s.live = !settled;
+              s.calm = settled ? s.calm + 1 : 0;
+              s.live = s.calm < CALM_ROUNDS;
             }
             placePiece(piece, s.pos, out);
           });

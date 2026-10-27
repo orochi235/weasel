@@ -33,6 +33,15 @@ describe.each([discSquash, barS])('a hard puppet warp: $name', (c) => {
     expect(backwardStretches(c, puppetMap(c.shape, c.pins))).toBe(0);
   });
 
+  // The preconditioned gradient alone took 28 and 51 rounds (2026-10-19).
+  it('untangles in a few dozen rounds at most', () => {
+    const { targets, solver } = solved(c);
+    let rounds = 0;
+    solver.solve(targets, { trace: (s) => { if (s.stage === 'injective') rounds = s.round; } });
+    expect(rounds).toBeGreaterThan(0);
+    expect(rounds).toBeLessThanOrEqual(c === discSquash ? 20 : 48);
+  });
+
   it('folds without the injective pass, which is what the pass is for', () => {
     const { mesh, targets, solver } = solved(c);
     expect(invertedTriangles(mesh, solver.solve(targets, { iterations: 0, injectiveIterations: 0 }))).toBeGreaterThan(0);
@@ -65,9 +74,8 @@ it('leaves a mesh at rest where it is', () => {
   at.forEach((x, i) => expect(x).toBeCloseTo(mesh.vertices[i], 9));
 });
 
-// The fewest a greedy search over the warped curve itself finds at tolerance 0.5 is 5 and 10; the
-// refit split at the worst sample took 6 and 22 (2026-10-26).
-it.each([{ c: discSquash, anchors: 6 }, { c: barS, anchors: 11 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
+// The refit that split at the worst sample took 6 and 22 here (2026-10-26).
+it.each([{ c: discSquash, anchors: 4 }, { c: barS, anchors: 10 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
   const out = warpPath(c.shape, puppetMap(c.shape, c.pins), { tolerance: 0.5 });
   expect(pathToAnchors(out).anchors[0]).toHaveLength(anchors);
 });

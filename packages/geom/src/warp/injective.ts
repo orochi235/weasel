@@ -9,11 +9,13 @@
  * a line search that never lets a triangle flatten keeps the map injective.
  * Each step is the energy's gradient carried through the rigid step's edge
  * system, already factored (the quadratic proxy of Kovalsky, Galun and Lipman,
- * 2016), with the pins held where they are, so a round costs about what a
- * local/global round does and the pins land exactly.
+ * 2016), and bent by the curvature the last few steps saw (`lbfgs`), with the
+ * pins held where they are, so a round costs about what a local/global round
+ * does and the pins land exactly.
  */
 import { solveSplit } from './arapSystem';
 import type { Piece } from './arapPiece';
+import { descent, dot, forget, type StepMemory } from './lbfgs';
 
 /** Each rest triangle's inverse edge matrix, four entries per triangle, and its area. */
 export interface RestFrames {
@@ -90,8 +92,27 @@ function smallestPositiveRoot(c0: number, c1: number, c2: number): number {
 /** The softened area: `d` itself well above `eps`, small and positive below zero. */
 const chi = (d: number, eps: number) => (d + Math.sqrt(eps * eps + d * d)) / 2;
 
-/** The untangling energy at `pos`; at `eps` 0, infinite once a triangle has turned over or flattened. */
-export function untangleEnergy(piece: Piece, pos: Float64Array, eps: number): number {
+/**
+ * Each triangle's share of the untangling energy before the softened area
+ * divides it, and its Jacobian determinant: enough to read the energy again
+ * at another softening, and the least area, without another pass.
+ */
+export interface EnergyTerms {
+  shape: Float64Array;
+  det: Float64Array;
+}
+
+export function energyTerms(piece: Piece): EnergyTerms {
+  const n = piece.frames.area.length;
+  return { shape: new Float64Array(n), det: new Float64Array(n).fill(Infinity) };
+}
+
+/**
+ * The untangling energy at `pos`; at `eps` 0, infinite once a triangle has
+ * turned over or flattened. With `terms`, each triangle's terms are recorded
+ * there too; an infinite energy leaves them partly written.
+ */
+export function untangleEnergy(piece: Piece, pos: Float64Array, eps: number, terms?: EnergyTerms): number {
   const J = new Float64Array(4);
   const { area } = piece.frames;
   let E = 0;
@@ -100,9 +121,25 @@ export function untangleEnergy(piece: Piece, pos: Float64Array, eps: number): nu
     const d = J[0] * J[3] - J[1] * J[2];
     const c = chi(d, eps);
     if (!(c > 0)) return Infinity;
-    E += (area[t] * (J[0] * J[0] + J[1] * J[1] + J[2] * J[2] + J[3] * J[3] + AREA * (d * d + 1))) / c;
+    const shape = area[t] * (J[0] * J[0] + J[1] * J[1] + J[2] * J[2] + J[3] * J[3] + AREA * (d * d + 1));
+    if (terms) { terms.shape[t] = shape; terms.det[t] = d; }
+    E += shape / c;
   }
   return E;
+}
+
+/** The energy `terms` were recorded for, read at softening `eps`. */
+export function energyAt(terms: EnergyTerms, eps: number): number {
+  let E = 0;
+  for (let t = 0; t < terms.shape.length; t++) if (terms.shape[t] > 0) E += terms.shape[t] / chi(terms.det[t], eps);
+  return E;
+}
+
+/** The smallest determinant among `terms`. */
+export function leastOf(terms: EnergyTerms): number {
+  let least = Infinity;
+  for (let t = 0; t < terms.det.length; t++) if (terms.det[t] < least) least = terms.det[t];
+  return least;
 }
 
 /** The smallest Jacobian determinant over the piece's triangles at `pos`: below zero where one has turned over. */
@@ -152,50 +189,71 @@ export function startingEps(piece: Piece, pos: Float64Array): number {
 
 /**
  * The softening for the next round, after a round took the energy from
- * `before` to `after` (both at `eps`): small enough that it keeps pressing a
+ * `before` to `after` (both at `eps`) and left `least` the smallest
+ * determinant: small enough that it keeps pressing a
  * turned triangle towards positive area, never below zero, and zero once
  * every triangle has some.
  */
-export function nextEps(piece: Piece, pos: Float64Array, eps: number, before: number, after: number): number {
-  const least = leastArea(piece, pos);
+export function nextEps(least: number, eps: number, before: number, after: number): number {
   const sigma = Math.max(1 - after / before, 0.1);
   const mu = (1 - sigma) * chi(least, eps);
   return least < mu ? 2 * Math.sqrt(mu * (mu - least)) : 0;
 }
 
 /**
- * One round of descent from `pos` at softening `eps`, the pins held. At `eps`
- * 0 the step stops short of flattening any triangle. Returns the new positions,
- * their energy at `eps`, and the farthest any vertex moved.
+ * One round of descent from `pos` at softening `eps`, the pins held, along
+ * the limited-memory BFGS direction `memory` builds over the edge system:
+ * the preconditioned gradient alone crawls, taking each round a step a
+ * barely squeezed triangle allows and no farther. At `eps` 0 the step stops
+ * short of flattening any triangle. Returns the new positions, their energy
+ * at `eps` and its terms, and the farthest any vertex moved.
  */
-export function untangleRound(piece: Piece, pos: Float64Array, eps: number, energy: number): { pos: Float64Array; energy: number; moved: number } {
+export function untangleRound(
+  piece: Piece, pos: Float64Array, eps: number, energy: number, memory: StepMemory,
+): { pos: Float64Array; energy: number; terms: EnergyTerms; moved: number } {
   const { pinOf, freeOf, step2 } = piece;
+  const terms = energyTerms(piece);
   const g = gradient(piece, pos, eps);
   const nf = step2.coupling.length;
-  const bx = new Float64Array(nf), by = new Float64Array(nf);
-  for (let i = 0; i < pinOf.length; i++) {
-    if (freeOf[i] >= 0) { bx[freeOf[i]] = -g[2 * i]; by[freeOf[i]] = -g[2 * i + 1]; }
-  }
-  const dx = solveSplit(step2, () => 0, bx);
-  const dy = solveSplit(step2, () => 0, by);
-  const d = new Float64Array(pos.length);
-  let slope = 0;
+  const gf = new Float64Array(2 * nf);
   for (let i = 0; i < pinOf.length; i++) {
     const f = freeOf[i];
-    if (f < 0) continue;
-    d[2 * i] = dx[f]; d[2 * i + 1] = dy[f];
-    slope += g[2 * i] * dx[f] + g[2 * i + 1] * dy[f];
+    if (f >= 0) { gf[2 * f] = g[2 * i]; gf[2 * f + 1] = g[2 * i + 1]; }
+  }
+  const precondition = (q: Float64Array) => {
+    const bx = new Float64Array(nf), by = new Float64Array(nf);
+    for (let f = 0; f < nf; f++) { bx[f] = q[2 * f]; by[f] = q[2 * f + 1]; }
+    const x = solveSplit(step2, () => 0, bx), y = solveSplit(step2, () => 0, by);
+    const out = new Float64Array(2 * nf);
+    for (let f = 0; f < nf; f++) { out[2 * f] = x[f]; out[2 * f + 1] = y[f]; }
+    return out;
+  };
+  let df = descent(memory, gf, precondition);
+  let slope = dot(gf, df);
+  if (!(slope < 0)) {
+    forget(memory);
+    df = precondition(gf).map((v) => -v);
+    slope = dot(gf, df);
+  }
+  const d = new Float64Array(pos.length);
+  for (let i = 0; i < pinOf.length; i++) {
+    const f = freeOf[i];
+    if (f >= 0) { d[2 * i] = df[2 * f]; d[2 * i + 1] = df[2 * f + 1]; }
   }
   let s = eps > 0 ? 1 : Math.min(1, FLIP_MARGIN * flipBound(piece, pos, d));
   const next = new Float64Array(pos.length);
   for (; s > 1e-12; s /= 2) {
     for (let i = 0; i < next.length; i++) next[i] = pos[i] + s * d[i];
-    const e = untangleEnergy(piece, next, eps);
+    const e = untangleEnergy(piece, next, eps, terms);
     if (e <= energy + ARMIJO * s * slope) {
       let moved = 0;
       for (let i = 0; i < d.length; i += 2) moved = Math.max(moved, s * Math.hypot(d[i], d[i + 1]));
-      return { pos: next, energy: e, moved };
+      memory.lastGrad = gf;
+      memory.lastStep = df.map((v) => s * v);
+      return { pos: next, energy: e, terms, moved };
     }
   }
-  return { pos, energy, moved: 0 };
+  forget(memory);
+  untangleEnergy(piece, pos, eps, terms);
+  return { pos, energy, terms, moved: 0 };
 }
