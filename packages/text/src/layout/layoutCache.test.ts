@@ -215,6 +215,32 @@ describe('cachedLayoutRuns', () => {
   });
 });
 
+describe('what the structural key compares', () => {
+  it('matches runs equal field by field, copied maps included', () => {
+    // Compared by content, not by the identity of the arrays inside a run.
+    const r = { ...run('SS'), srcMap: { length: 1, starts: [0, 0], ends: [1, 1] }, sizeMap: [16, 11.2] };
+    const a = cachedLayoutRuns([r], OPTS);
+    const copy = { ...r, srcMap: { ...r.srcMap, starts: [0, 0], ends: [1, 1] }, sizeMap: [16, 11.2] };
+    expect(cachedLayoutRuns([copy], OPTS)).toBe(a);
+    expect(cachedLayoutRuns([{ ...copy, sizeMap: [16, 12] }], OPTS)).not.toBe(a);
+    expect(cachedLayoutRuns([{ ...copy, srcMap: { length: 1, starts: [0, 1], ends: [1, 1] } }], OPTS)).not.toBe(a);
+  });
+
+  it('tells apart runs whose count differs and whose text splits differently', () => {
+    const one = cachedLayoutRuns([run('ab')], OPTS);
+    expect(cachedLayoutRuns([run('a'), run('b')], OPTS)).not.toBe(one);
+    expect(cachedLayoutRuns([run('ab'), run('')], OPTS)).not.toBe(one);
+  });
+
+  it('treats an option left at its default as the default stated', () => {
+    const runs = [run('hello world')];
+    const base = cachedLayoutRuns(runs, OPTS);
+    expect(cachedLayoutRuns(runs, { ...OPTS, tabSize: 8, direction: 'auto', justify: false })).toBe(base);
+    const justified = cachedLayoutRuns(runs, { ...OPTS, align: 'justify' });
+    expect(cachedLayoutRuns([run('hello world')], { ...OPTS, align: 'justify', justify: true })).toBe(justified);
+  });
+});
+
 describe('what the key has to tell apart', () => {
   it('lays out again when only `direction` changes', () => {
     const runs = [run('hello')];

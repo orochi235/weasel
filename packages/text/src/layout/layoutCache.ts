@@ -17,12 +17,16 @@
  * compare. `kit:text`'s memoized `paint` hands back a stable array per node,
  * so the renderer stays on this path.
  *
- * **Structure**, in a bounded `Map`, for every caller that cannot. Measuring
+ * **Structure**, in a bounded list, for every caller that cannot. Measuring
  * a pose resolves its style and allocates a fresh `ResolvedRun[]` each call,
  * so an identity-keyed cache could never hold anything for it — and those
- * callers run on the drag path, once per pose change. Serializing the runs is
- * real work, unlike the pointer compare above, which is exactly why it is
- * second: an identity hit never pays for it.
+ * callers run on the drag path, once per pose change. The runs are hashed,
+ * and a matching hash compared field by field with the runs that filled the
+ * entry, which it holds. No key is built: a HUD readout whose text changes
+ * every frame misses here every frame, and a string key was a string of
+ * every label's text a frame for the collector. Those held runs are why a
+ * run must not be mutated once laid out, the promise the identity key
+ * already asks of its array.
  *
  * Under either, one entry per distinct `(maxWidth, alignWidth, lineHeight,
  * align, direction, bidi engine, tab size)`. Position is deliberately absent:
@@ -47,16 +51,16 @@
  *
  * Variants per runs array are capped and evicted wholesale, matching
  * `outlineMeshCache`: the refill cost is one layout, and the bookkeeping would
- * cost more than the misses it avoids. The structural map cannot ride an
- * array's lifetime the way the `WeakMap` does — nothing collects its keys —
- * so it is a real LRU with a hard entry count.
+ * cost more than the misses it avoids. The structural list cannot ride an
+ * array's lifetime the way the `WeakMap` does, so it is a real LRU with a
+ * hard entry count.
  */
 
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { layoutBidi, resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
+import { layoutBidi, type LayoutRunsOpts } from './layoutOpts';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
-import { refId } from './refId';
+import { DEFAULT_TAB_SIZE } from './tabStops';
 
 /** Distinct option combinations held for one runs array before the whole set
  *  is dropped. Sized for "a few views onto the same text". */
@@ -66,54 +70,108 @@ export const LAYOUT_CACHE_VARIANT_LIMIT = 8;
  *  is dropped. Sized for "every text node visible on a page, plus slack". */
 export const LAYOUT_CACHE_STRUCTURAL_LIMIT = 64;
 
-interface Entry {
-  /** `generation` when this entry was filled. */
-  generation: number;
-  byVariant: Map<string, LaidOutRuns>;
-  /** The options and layout of the last lookup, compared field by field
-   *  before any key is built: a command drawn every frame with the same
-   *  options would otherwise build its variant key string every frame. */
-  last: LastLookup | null;
-}
-
-interface LastLookup {
-  maxWidth: number; alignWidth: number | undefined; lineHeight: number; align: LayoutRunsOpts['align'];
-  justify: boolean | undefined; direction: LayoutRunsOpts['direction']; tabSize: number | undefined;
+/** One option combination, defaults filled in, and the layout made with it. */
+interface Variant {
+  maxWidth: number; alignWidth: number; lineHeight: number; align: LayoutRunsOpts['align'];
+  justify: boolean; direction: NonNullable<LayoutRunsOpts['direction']>; tabSize: number;
   bidi: ReturnType<typeof layoutBidi>; laid: LaidOutRuns;
 }
 
-function sameLookup(l: LastLookup, opts: LayoutRunsOpts): boolean {
-  return l.maxWidth === opts.maxWidth && l.alignWidth === opts.alignWidth
-    && l.lineHeight === opts.lineHeight && l.align === opts.align && l.justify === opts.justify
-    && l.direction === opts.direction && l.tabSize === opts.tabSize && l.bidi === layoutBidi(opts);
+interface Entry {
+  /** `faceGeneration()` when this entry was filled. */
+  generation: number;
+  /** Most recently matched first. */
+  variants: Variant[];
+}
+
+/** A layout held against the content of the runs that made it. */
+interface Structural extends Variant {
+  hash: number;
+  runs: readonly ResolvedRun[];
+  /** When it was last read, for the eviction. */
+  used: number;
 }
 
 let cache = new WeakMap<readonly ResolvedRun[], Entry>();
-let structural = new Map<string, LaidOutRuns>();
+let structural: Structural[] = [];
 let structuralGeneration = -1;
+let clock = 0;
 
-function variantKey(opts: LayoutRunsOpts): string {
-  const o = resolveLayoutOpts(opts);
-  return `${o.maxWidth}|${o.alignWidth}|${o.lineHeight}|${o.align}|${o.justify ? 'j' : ''}`
-    + `|${o.direction}|${o.bidi ? refId(o.bidi) : ''}|${o.tabSize}`;
+/** `a === b`, with NaN equal to itself, as the string key this replaced had it. */
+const same = (a: number | undefined, b: number | undefined): boolean => a === b || (a !== a && b !== b);
+
+function matches(v: Variant, opts: LayoutRunsOpts, bidi: Variant['bidi']): boolean {
+  return same(v.maxWidth, opts.maxWidth) && same(v.alignWidth, opts.alignWidth ?? opts.maxWidth)
+    && same(v.lineHeight, opts.lineHeight) && v.align === opts.align
+    && v.justify === (opts.justify === true || opts.align === 'justify')
+    && v.direction === (opts.direction ?? 'auto') && same(v.tabSize, opts.tabSize ?? DEFAULT_TAB_SIZE)
+    && v.bidi === bidi;
 }
 
-/**
- * Everything about `runs` that changes the layout. The two author-supplied
- * strings are length-prefixed so neither can forge a neighbouring field by
- * containing a separator; every other term is a number or an enum.
- */
-function runsKey(runs: readonly ResolvedRun[]): string {
-  let out = '';
+function variant(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Variant {
+  return {
+    maxWidth: opts.maxWidth, alignWidth: opts.alignWidth ?? opts.maxWidth, lineHeight: opts.lineHeight,
+    align: opts.align, justify: opts.justify === true || opts.align === 'justify',
+    direction: opts.direction ?? 'auto', tabSize: opts.tabSize ?? DEFAULT_TAB_SIZE, bidi, laid,
+  };
+}
+
+function mix(h: number, n: number): number {
+  return Math.imul(h ^ n, 0x01000193);
+}
+
+function mixNum(h: number, x: number): number {
+  return mix(h, x === (x | 0) ? x : Math.round(x * 4096));
+}
+
+function mixStr(h: number, s: string): number {
+  h = mix(h, s.length);
+  for (let i = 0; i < s.length; i++) h = mix(h, s.charCodeAt(i));
+  return h;
+}
+
+/** A hash of everything about `runs` that changes the layout: what
+ *  {@link sameRuns} compares. Built without allocating, so a miss costs a walk
+ *  of the text and nothing for the collector. */
+function runsHash(runs: readonly ResolvedRun[]): number {
+  let h = mix(0x811c9dc5, runs.length);
   for (const r of runs) {
-    out += `${r.text.length}:${r.text}|${r.fontFamily.length}:${r.fontFamily}`
-      + `|${r.fontSize}|${r.fontWeight}|${r.fontStyle}|${r.letterSpacing}`
-      + `|${r.baselineShift}|${r.strutSize ?? ''}`
-      // Ends follow from starts and the length, so the two pin the cells.
-      + `|${r.srcMap ? `${r.srcMap.length}:${r.srcMap.starts.join(',')}` : ''}`
-      + `|${r.sizeMap ? r.sizeMap.join(',') : ''}|`;
+    h = mixStr(h, r.text);
+    h = mixStr(h, r.fontFamily);
+    h = mixNum(h, r.fontSize);
+    h = mixNum(h, r.fontWeight);
+    h = mix(h, r.fontStyle === 'italic' ? 1 : 0);
+    h = mixNum(h, r.letterSpacing);
+    h = mixNum(h, r.baselineShift);
+    h = mixNum(h, r.strutSize ?? -1);
   }
-  return out;
+  return h;
+}
+
+function sameNums(a: readonly number[] | undefined, b: readonly number[] | undefined): boolean {
+  if (a === b) return true;
+  if (a === undefined || b === undefined || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (!same(a[i], b[i])) return false;
+  return true;
+}
+
+/** Whether `a` and `b` lay out alike. A run's paint and decorations are left
+ *  out; `cachedPaintRuns` keys on those. */
+function sameRuns(a: readonly ResolvedRun[], b: readonly ResolvedRun[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i], y = b[i];
+    if (x === y) continue;
+    if (x.text !== y.text || x.fontFamily !== y.fontFamily || !same(x.fontSize, y.fontSize)
+      || !same(x.fontWeight, y.fontWeight) || x.fontStyle !== y.fontStyle
+      || !same(x.letterSpacing, y.letterSpacing) || !same(x.baselineShift, y.baselineShift)
+      || !same(x.strutSize, y.strutSize) || !sameNums(x.sizeMap, y.sizeMap)) return false;
+    // Ends follow from starts and the length, so the two pin the cells.
+    const sx = x.srcMap, sy = y.srcMap;
+    if (sx !== sy && (sx === undefined || sy === undefined || sx.length !== sy.length
+      || !sameNums(sx.starts, sy.starts))) return false;
+  }
+  return true;
 }
 
 /**
@@ -130,56 +188,61 @@ export function cachedLayoutRuns(
   opts: LayoutRunsOpts,
 ): LaidOutRuns {
   const fonts = faceGeneration();
+  const bidi = layoutBidi(opts);
   let entry = cache.get(runs);
   if (entry === undefined) {
-    entry = { generation: fonts, byVariant: new Map(), last: null };
+    entry = { generation: fonts, variants: [] };
     cache.set(runs, entry);
   } else if (entry.generation !== fonts) {
     entry.generation = fonts;
-    entry.byVariant.clear();
-    entry.last = null;
-  } else if (entry.last !== null && sameLookup(entry.last, opts)) {
-    return entry.last.laid;
-  }
-
-  const key = variantKey(opts);
-  const hit = entry.byVariant.get(key);
-  if (hit !== undefined) return remember(entry, opts, hit);
-
-  if (structuralGeneration !== fonts) {
-    structural.clear();
-    structuralGeneration = fonts;
-  }
-  const structuralK = `${runsKey(runs)}\0${key}`;
-  let laid = structural.get(structuralK);
-  if (laid !== undefined) {
-    // Re-insert to move it to the young end; `Map` iterates in insertion order,
-    // which is what makes `keys().next()` the least recently used.
-    structural.delete(structuralK);
+    entry.variants.length = 0;
   } else {
-    laid = layoutRuns(runs, opts);
-    if (structural.size >= LAYOUT_CACHE_STRUCTURAL_LIMIT) {
-      structural.delete(structural.keys().next().value!);
+    const vs = entry.variants;
+    for (let i = 0; i < vs.length; i++) {
+      const v = vs[i];
+      if (!matches(v, opts, bidi)) continue;
+      for (let k = i; k > 0; k--) vs[k] = vs[k - 1];
+      vs[0] = v;
+      return v.laid;
     }
   }
-  structural.set(structuralK, laid);
 
-  if (entry.byVariant.size >= LAYOUT_CACHE_VARIANT_LIMIT) entry.byVariant.clear();
-  entry.byVariant.set(key, laid);
-  return remember(entry, opts, laid);
+  const laid = structuralLayout(runs, opts, bidi, fonts);
+  const vs = entry.variants;
+  if (vs.length >= LAYOUT_CACHE_VARIANT_LIMIT) vs.length = 0;
+  vs.unshift(variant(opts, bidi, laid));
+  return laid;
 }
 
-function remember(entry: Entry, opts: LayoutRunsOpts, laid: LaidOutRuns): LaidOutRuns {
-  entry.last = {
-    maxWidth: opts.maxWidth, alignWidth: opts.alignWidth, lineHeight: opts.lineHeight, align: opts.align,
-    justify: opts.justify, direction: opts.direction, tabSize: opts.tabSize, bidi: layoutBidi(opts), laid,
-  };
+function structuralLayout(
+  runs: readonly ResolvedRun[], opts: LayoutRunsOpts, bidi: Variant['bidi'], fonts: number,
+): LaidOutRuns {
+  if (structuralGeneration !== fonts) {
+    structural = [];
+    structuralGeneration = fonts;
+  }
+  const hash = runsHash(runs);
+  let oldest = 0;
+  for (let i = 0; i < structural.length; i++) {
+    const s = structural[i];
+    if (s.hash === hash && matches(s, opts, bidi) && sameRuns(s.runs, runs)) {
+      s.used = ++clock;
+      return s.laid;
+    }
+    if (s.used < structural[oldest].used) oldest = i;
+  }
+  const laid = layoutRuns(runs, opts);
+  const filled = variant(opts, bidi, laid) as Structural;
+  filled.hash = hash; filled.runs = runs; filled.used = ++clock;
+  if (structural.length < LAYOUT_CACHE_STRUCTURAL_LIMIT) structural.push(filled);
+  else structural[oldest] = filled;
   return laid;
 }
 
 /** Test helper. Do not call from product code. */
 export function _resetLayoutCacheForTests(): void {
   cache = new WeakMap();
-  structural = new Map();
+  structural = [];
   structuralGeneration = -1;
+  clock = 0;
 }
