@@ -99,6 +99,7 @@
       "@weasel-js/labkit/weasel-canvas": ["../labkit/src/passthrough/weasel-canvas.ts"],
       "@weasel-js/labkit/styles.css": ["../labkit/src/styles.less"],
       "@weasel-js/labkit/loupe": ["../labkit/src/loupe/index.ts"],
+      "@weasel-js/labkit/testing/*": ["../labkit/src/testing/*"],
       "@weasel-js/loupe": ["../loupe/src/index.ts"],
       "@weasel-js/menu": ["../menu/src/index.ts"],
       "@weasel-js/minimap": ["../minimap/src/index.ts"],

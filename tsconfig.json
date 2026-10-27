@@ -112,6 +112,7 @@
       "@weasel-js/labkit/weasel-canvas": ["./packages/labkit/src/passthrough/weasel-canvas.ts"],
       "@weasel-js/labkit/styles.css": ["./packages/labkit/src/styles.less"],
       "@weasel-js/labkit/loupe": ["./packages/labkit/src/loupe/index.ts"],
+      "@weasel-js/labkit/testing/*": ["./packages/labkit/src/testing/*"],
       "@weasel-js/loupe": ["./packages/loupe/src/index.ts"],
       "@weasel-js/menu": ["./packages/menu/src/index.ts"],
       "@weasel-js/minimap": ["./packages/minimap/src/index.ts"],
