@@ -28,7 +28,6 @@ export function loadedFrom(trial: TrialRecord, snapshot: SavedSnapshot, hooks: I
   const reg = hooks.serializers[snapshot.instrumentName];
   const state = reg?.deserialize ? reg.deserialize(snapshot.state, snapshot.config) : snapshot.state;
   const loaded: TrialRecord = { ...trial, state, config: snapshot.config };
-  // A fresh object each load, so the trial's clock tells it from its own writes.
   if (snapshot.clock) loaded.clock = { ...snapshot.clock };
   if (snapshot.auto === undefined) return loaded;
   delete loaded.auto;

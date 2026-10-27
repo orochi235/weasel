@@ -23,7 +23,7 @@ const timed: Instrument = {
   name: 'Timed',
   defaultConfig: () => ({}),
   initialState: () => ({}),
-  clock: { duration: 3000 },
+  clock: { duration: 3000, start: 700 },
   render: (ctx) => (
     <>
       <Readout />
@@ -52,5 +52,15 @@ describe('a trial clock in a snapshot', () => {
     const saved = lab!.savedSnapshots[0]!;
     act(() => lab!.loadSnapshot(trialId, saved.id));
     expect(shown()).toBe('1200');
+  });
+  it('comes back where it rested when saved before it ever moved', async () => {
+    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, { wrapper: withIcons });
+    expect(shown()).toBe('700');
+    const trialId = lab!.trials[0]!.id;
+    act(() => lab!.saveSnapshot(trialId, 'rest'));
+    fireEvent.click(screen.getByRole('button', { name: 'seek' }));
+    expect(shown()).toBe('1200');
+    act(() => lab!.loadSnapshot(trialId, lab!.savedSnapshots[0]!.id));
+    expect(shown()).toBe('700');
   });
 });
