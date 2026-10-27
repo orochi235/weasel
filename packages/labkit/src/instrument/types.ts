@@ -43,7 +43,7 @@ export interface RenderContext<TS = unknown, TC = unknown> {
     visibleLayers: readonly string[];
     /**
      * Where the pointer is over this trial, in the instrument's world:
-     * `get()` answers `{ worldX, worldY, viewId }`, where `viewId` is
+     * `get()` answers `{ world, viewId }`, where `viewId` is
      * `'stage'` over the trial's own camera and `'overview'` over its
      * `<TrialOverview>`, or `null` when it is over neither. A key handler
      * reading it works over either view. An orbit has no world point under

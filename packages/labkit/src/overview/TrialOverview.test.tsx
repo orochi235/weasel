@@ -105,8 +105,8 @@ describe('<TrialOverview>', () => {
     await act(async () => pointer(h.box, 'pointermove', 100, 75, 0));
     const p = h.store()?.get();
     expect(p?.viewId).toBe('overview');
-    expect(p?.worldX).toBeCloseTo(200);
-    expect(p?.worldY).toBeCloseTo(150);
+    expect(p?.world.x).toBeCloseTo(200);
+    expect(p?.world.y).toBeCloseTo(150);
     expect(h.container.querySelector('.lk-stage .lk-linked-cursor')).not.toBeNull();
   });
 

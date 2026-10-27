@@ -19,7 +19,7 @@ function afterAThrow(subscribe: (fn: () => void) => unknown, change: () => void)
 describe('a subscriber that throws does not stop the ones after it', () => {
   it('in a pointer store', () => {
     const store = createPointerStore();
-    afterAThrow(store.subscribe, () => store.set({ worldX: 1, worldY: 2, viewId: null }));
+    afterAThrow(store.subscribe, () => store.set({ world: { x: 1, y: 2 }, viewId: null }));
   });
 
   it('in a long-press store', () => {

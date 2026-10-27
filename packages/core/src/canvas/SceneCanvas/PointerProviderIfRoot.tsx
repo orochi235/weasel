@@ -48,7 +48,7 @@ export function usePointerPublisher(
       if (!api) return;
       const target = registry?.resolver.at(pointerId, clientX, clientY);
       const [worldX, worldY] = worldPointAt(api, target, clientX, clientY);
-      ctx.set({ worldX, worldY, viewId: target?.id ?? null });
+      ctx.set({ world: { x: worldX, y: worldY }, viewId: target?.id ?? null });
     };
     const onMove = (e: PointerEvent): void => publish(e.pointerId, e.clientX, e.clientY);
     const held = heldPointers(el);

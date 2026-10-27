@@ -113,7 +113,7 @@ describe('<SceneCanvas clientToWorld>', () => {
   it('publishes the pointer position converted with the override', () => {
     const { pointer, fire } = mount();
     fire('pointermove');
-    expect(pointer.get()).toEqual({ worldX: 150, worldY: 125, viewId: null });
+    expect(pointer.get()).toEqual({ world: { x: 150, y: 125 }, viewId: null });
   });
 
   it('finds the hovered node at the point the override converts to', () => {

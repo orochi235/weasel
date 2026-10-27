@@ -89,7 +89,7 @@ export function createLinkedCursorLayer(opts: {
       const p = pointer();
       const here = viewIdOf(data);
       if (!p || p.viewId === here || (views && !views.includes(here))) return [];
-      const { halo, bars } = crosshairRects(p.worldX, p.worldY, 1 / view.scale.x);
+      const { halo, bars } = crosshairRects(p.world.x, p.world.y, 1 / view.scale.x);
       const rect = (r: CrosshairRect, c: string): DrawCommand => ({
         kind: 'path',
         path: { kind: 'rect', x: r.x, y: r.y, width: r.w, height: r.h },

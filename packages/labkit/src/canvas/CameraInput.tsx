@@ -347,7 +347,7 @@ export function usePublishPointer(
     if (!el || !store) return;
     const onMove = (e: PointerEvent): void => {
       const w = frameLocalToWorld(toLocal.current(e.clientX, e.clientY), frameRef.current);
-      store.set({ worldX: w.x, worldY: w.y, viewId });
+      store.set({ world: { x: w.x, y: w.y }, viewId });
     };
     const onLeave = (e: PointerEvent): void => {
       if (e.buttons !== 0) return;
@@ -370,7 +370,7 @@ export function pointerElsewhere(
   frame: WorldFrame,
 ): Point | null {
   if (!p || p.viewId === viewId) return null;
-  return frameLocalToWorld({ x: p.worldX, y: p.worldY }, frame);
+  return frameLocalToWorld(p.world, frame);
 }
 
 export type { ViewportSize };

@@ -67,7 +67,7 @@ export function actionReferenceSources(
         return { x: params.worldX, y: params.worldY };
       }
       const p = pointer?.get();
-      return p ? { x: p.worldX, y: p.worldY } : null;
+      return p ? p.world : null;
     },
     nodeBounds: (id) => (scene.get(id) === undefined
       ? null

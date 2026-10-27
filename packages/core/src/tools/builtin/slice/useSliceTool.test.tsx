@@ -224,7 +224,7 @@ describe('useSliceTool — pending-cut preview', () => {
     const s = setup();
     s.click(10, 10);
     s.click(50, 10);
-    s.pointer.set({ worldX: 50, worldY: 80, viewId: null });
+    s.pointer.set({ world: { x: 50, y: 80 }, viewId: null });
     const cmds = s.paint() as Array<{ kind: string; path: { coords?: Float32Array }; stroke?: unknown }>;
     const run = cmds.find((c) => c.stroke)!;
     expect(Array.from(run.path.coords!)).toEqual([10, 10, 50, 10, 50, 80]);
@@ -237,11 +237,11 @@ describe('useSliceTool — pending-cut preview', () => {
     const off = s.layer().subscribe!(heard);
     s.click(10, 10);
     expect(heard).toHaveBeenCalledTimes(1);
-    s.pointer.set({ worldX: 30, worldY: 30, viewId: null });
+    s.pointer.set({ world: { x: 30, y: 30 }, viewId: null });
     expect(heard).toHaveBeenCalledTimes(2);
     s.fire('slice.cancel');
     heard.mockClear();
-    s.pointer.set({ worldX: 40, worldY: 40, viewId: null });
+    s.pointer.set({ world: { x: 40, y: 40 }, viewId: null });
     expect(heard).not.toHaveBeenCalled();
     off();
   });

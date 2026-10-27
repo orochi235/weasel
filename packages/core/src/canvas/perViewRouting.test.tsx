@@ -62,10 +62,10 @@ describe('pointer world coordinates follow the view under the cursor', () => {
     const h = mount();
     // Outside the panel: the canvas's own identity camera.
     pointerMoveAt(h.canvas, 42, 17);
-    expect(h.pointerCtx().get()).toEqual({ worldX: 42, worldY: 17, viewId: null });
+    expect(h.pointerCtx().get()).toEqual({ world: { x: 42, y: 17 }, viewId: null });
     // Inside it: panel-local (50, 10) through a 2× camera at (1000, 2000).
     pointerMoveAt(h.canvas, 150, 10);
-    expect(h.pointerCtx().get()).toEqual({ worldX: 1025, worldY: 2005, viewId: 'panel' });
+    expect(h.pointerCtx().get()).toEqual({ world: { x: 1025, y: 2005 }, viewId: 'panel' });
   });
 });
 

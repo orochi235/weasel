@@ -581,16 +581,16 @@ describe('<MinimapCanvas> — linked cursor', () => {
     fireEvent(h.canvas, pointerEvent(h.canvas, 'pointerMove', { x: 50, y: 50, buttons: 0 }));
     const fv = computeFitView(makeScene(), { width: 100, height: 100 }, 'scene', identityPoseBounds);
     expect(h.store().get()).toEqual({
-      worldX: fv.x + 50 / fv.scale.x, worldY: fv.y + 50 / fv.scale.y, viewId: 'minimap',
+      world: { x: fv.x + 50 / fv.scale.x, y: fv.y + 50 / fv.scale.y }, viewId: 'minimap',
     });
   });
 
   it('draws a crosshair while the pointer is over another surface, and none for its own', async () => {
     const h = mountShared();
     const idle = lastRoot().children.length;
-    await act(async () => { h.store().set({ worldX: 50, worldY: 50, viewId: null }); await frame(); });
+    await act(async () => { h.store().set({ world: { x: 50, y: 50 }, viewId: null }); await frame(); });
     expect(lastRoot().children.length).toBe(idle + 8);
-    await act(async () => { h.store().set({ worldX: 50, worldY: 50, viewId: 'minimap' }); await frame(); });
+    await act(async () => { h.store().set({ world: { x: 50, y: 50 }, viewId: 'minimap' }); await frame(); });
     expect(lastRoot().children.length).toBe(idle);
   });
 });

@@ -252,7 +252,7 @@ describe('useAlign reference', () => {
 
   it("'pointer' reads the surrounding pointer store", () => {
     const store = createPointerStore();
-    store.set({ worldX: 30, worldY: 0, viewId: null });
+    store.set({ world: { x: 30, y: 0 }, viewId: null });
     const wrapper = ({ children }: { children: ReactNode }) =>
       createElement(PointerContextProvider, { store, children });
     const helpers = makeRectAdapter(['a', 'b'], poses);

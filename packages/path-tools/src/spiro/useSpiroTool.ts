@@ -56,7 +56,7 @@ function spiroActions(host: SpiroActionsHost): Action[] {
     if (scratch.points.length === 0) follower.unfollow();
     const at = scratch.points.length > 0 ? follower.pointer()?.get() ?? null : null;
     if (!at) snaps.stop();
-    const p = at ? snaps.trail(followed?.snap, { x: at.worldX, y: at.worldY }, scratch.points.at(-1)) : null;
+    const p = at ? snaps.trail(followed?.snap, at.world, scratch.points.at(-1)) : null;
     scratch.cursor = p ? { ...p, kind: 'smooth' } : null;
     scratch.closeHint = p !== null && nearFirst(p.x, p.y);
     host.repaint();

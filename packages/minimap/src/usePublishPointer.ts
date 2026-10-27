@@ -17,7 +17,7 @@ export function usePublishPointer(
     if (!el || !pointerStore) return;
     const onMove = (e: PointerEvent): void => {
       const w = clientToWorld(e.clientX, e.clientY);
-      pointerStore.set({ worldX: w.x, worldY: w.y, viewId });
+      pointerStore.set({ world: { x: w.x, y: w.y }, viewId });
     };
     const onLeave = (e: PointerEvent): void => {
       if (e.buttons !== 0) return;
