@@ -61,13 +61,14 @@ export function PlayheadReadout({
   start?: number;
 }): ReactElement {
   const shown = Math.min(Math.max(playhead, start), start + duration);
+  const widest = [seconds(start), seconds(start + duration)].reduce((a, b) => (b.length > a.length ? b : a));
   return (
     <span className={s.time}>
       <span data-testid="timeline-time">
         {seconds(shown)} / {seconds(duration)}
       </span>
       <span className={s.sizer} aria-hidden="true">
-        <span>{seconds(duration)} / {seconds(duration)}</span>
+        <span>{widest} / {seconds(duration)}</span>
       </span>
     </span>
   );

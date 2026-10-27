@@ -53,6 +53,15 @@ describe('Transport', () => {
     expect(bar).toHaveAttribute('aria-valuemax', '2500');
   });
 
+  it('sizes the readout for the widest playhead it can show', () => {
+    renderWithIcons(
+      <Transport {...props} start={-500} duration={3000} playhead={-500} />,
+    );
+    const readout = screen.getByTestId('timeline-time').textContent ?? '';
+    const sizer = screen.getByTestId('timeline-time').parentElement?.querySelector('[aria-hidden="true"]')?.textContent ?? '';
+    expect(sizer.length).toBeGreaterThanOrEqual(readout.length);
+  });
+
   it('reflects the loop state on the toggle', () => {
     renderWithIcons(<Transport {...props} loop />);
     expect(screen.getByRole('switch', { name: /loop/i })).toBeChecked();
@@ -100,7 +109,7 @@ describe('Transport', () => {
   });
 
   it('speaks the rate rather than the detent index', () => {
-    renderWithIcons(<Transport {...props} rate={4} />);
+    const { container } = renderWithIcons(<Transport {...props} rate={4} />);
     expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4 times');
   });
 
