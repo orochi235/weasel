@@ -11,6 +11,8 @@ import { resolveLayoutExits } from '../layout/exits';
 import type { MoveSession } from '../session';
 import { translateOps, unreleasedIds } from '../translate';
 import { rebaseTransformOp } from './rebase';
+import { poseDescriptorForNode } from 'core/geometry/poseDescriptor';
+import { boxOf, containerView, draggedInView, opInWorld } from '../layout/view';
 
 function releaseFrom(
   session: MoveSession,
@@ -29,13 +31,16 @@ function releaseFrom(
     const id = (op.args as { id?: string } | undefined)?.id;
     if (id === undefined) return op;
     const parent = session.scene.get(asNodeId(id))?.parent ?? null;
-    return rebaseTransformOp(op, commitAdapter, pc, parent, parent);
+    return rebaseTransformOp(opInWorld(view, op), commitAdapter, pc, parent, parent);
   };
   const srcLayout = session.layout?.getLayout(srcId);
-  if (!srcLayout?.releaseDrop) return { ops: releasedOps, released };
+  const srcNode = session.scene.get(asNodeId(srcId));
+  if (!srcLayout?.releaseDrop || !srcNode) return { ops: releasedOps, released };
+  const g = poseDescriptorForNode(session.projection, srcNode);
+  const view = containerView(pc, g, composeWorldPose(commitAdapter, srcId, pc.compose));
   const srcContainer: LayoutContainer = {
     id: srcId,
-    bounds: session.projection.getBounds(composeChildFrame(commitAdapter, srcId, pc.compose)),
+    bounds: boxOf(g, view.toStrategy(composeChildFrame(commitAdapter, srcId, pc.compose))),
   };
   // What the container is left holding — grown back as each
   // release puts one of its own home again.
@@ -44,21 +49,22 @@ function releaseFrom(
       .filter((cid) => !leaving.has(cid))
       .map((cid) => ({
         id: cid as string,
-        pose: composeWorldPose(commitAdapter, cid as string, pc.compose),
+        pose: view.toStrategy(composeWorldPose(commitAdapter, cid as string, pc.compose)),
       }));
   for (const id of leaving) {
     const startWorld = composeWorldPose(
       grabbedPoseAdapter(session, commitAdapter), id as string, pc.compose,
     );
-    const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
+    const dragged = draggedInView(view, {
       id: id as string,
       originPose: startWorld,
       pose: draggedWorldPose(session, grabbedPoseAdapter(session, commitAdapter), id, { dx, dy }),
       sourceContainerId: srcId,
     });
+    const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, dragged);
     if (ops === null) continue;
     released.push(id);
-    let landed: unknown = startWorld;
+    let landed: unknown = dragged.originPose;
     for (const op of ops) {
       const a = op.args as { id?: string; to?: unknown };
       if (op.name === 'transform' && a.id === (id as string)) landed = a.to;

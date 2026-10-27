@@ -7,6 +7,7 @@ import type { Point } from '../paths/cubicMath';
 import { EPS } from '../scalar';
 import { fillsOpenSubpaths } from '../openFill';
 import { resolveCorners } from '../paths/corners';
+import { worldCoords } from '../paths/pathOrigin';
 import { type Contour, evalSeg, derivSeg, reverseContour, sideCoeffs, signChanges } from './contourSegments';
 
 /** The contours a fill of `path` covers: an open subpath closes implicitly
@@ -46,7 +47,7 @@ export function parseSubpaths(given: Path, implicitClose = true): Subpath[] {
     cur = [];
     pen = start;
   };
-  const c = path.coords;
+  const c = worldCoords(path);
   let k = 0;
   for (const cmd of path.commands) {
     if (cmd === PATH_M) {

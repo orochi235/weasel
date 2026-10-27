@@ -13,6 +13,12 @@ export const groupNodeRouting: NodeRoutingEntry = {
   matches: (_data, node) => node?.kind === 'group',
 };
 
+/** Routes a boolean group (`booleanGroupFields`) as `'boolean'`: its data holds no path of its own. */
+export const booleanGroupRouting: NodeRoutingEntry = {
+  name: 'boolean',
+  matches: (_data, node) => node?.consumesChildren === true,
+};
+
 /**
  * Routing classifiers for the kit's built-in shape kinds
  * (`KIT_SHAPE_KINDS`): each entry matches `data.kind === '<name>'`. Routing
@@ -41,6 +47,7 @@ export const defaultNodeRouting: readonly NodeRoutingEntry[] = KIT_SHAPE_KINDS.m
  */
 export const inferredNodeRouting: readonly NodeRoutingEntry[] = [
   groupNodeRouting,
+  booleanGroupRouting,
   { name: 'text', matches: isTextData },
   { name: 'path', matches: (d) => isObj(d) && d.path != null },
   { name: 'image', matches: (d) => isObj(d) && d.image != null },

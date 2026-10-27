@@ -8,7 +8,7 @@ import { asNodeId } from 'core/scene/types';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
 
 interface Obj { id: string; x: number; y: number }
-type Pt = { worldX: number; worldY: number };
+type Pt = { x: number; y: number };
 type Run = (deps: ActionDeps, params?: Record<string, unknown>) => void;
 
 function setup(getDropPoint?: () => Pt | null) {
@@ -38,8 +38,8 @@ function setup(getDropPoint?: () => Pt | null) {
 const run = (clipboardPasteAction.invoker as unknown as { run: Run }).run;
 
 describe('paste at a point', () => {
-  const at = { worldX: 300, worldY: 400 };
-  const hover = () => ({ worldX: 1, worldY: 2 });
+  const at = { x: 300, y: 400 };
+  const hover = () => ({ x: 1, y: 2 });
 
   it('paste(at) hands the point to commitPaste, ignoring getDropPoint', () => {
     const { clipboard, dropPoints } = setup(hover);
@@ -50,18 +50,18 @@ describe('paste at a point', () => {
   it('paste() still reads getDropPoint', () => {
     const { clipboard, dropPoints } = setup(hover);
     act(() => { clipboard.paste(); });
-    expect(dropPoints).toEqual([{ worldX: 1, worldY: 2 }]);
+    expect(dropPoints).toEqual([{ x: 1, y: 2 }]);
   });
 
   it('clipboard.paste forwards its `world` param', () => {
     const { clipboard, dropPoints } = setup(hover);
-    act(() => { run({ clipboard } as unknown as ActionDeps, { world: { x: at.worldX, y: at.worldY } }); });
+    act(() => { run({ clipboard } as unknown as ActionDeps, { world: { x: at.x, y: at.y } }); });
     expect(dropPoints).toEqual([at]);
   });
 
   it('clipboard.paste without params falls back to getDropPoint', () => {
     const { clipboard, dropPoints } = setup(hover);
     act(() => { run({ clipboard } as unknown as ActionDeps, {}); });
-    expect(dropPoints).toEqual([{ worldX: 1, worldY: 2 }]);
+    expect(dropPoints).toEqual([{ x: 1, y: 2 }]);
   });
 });

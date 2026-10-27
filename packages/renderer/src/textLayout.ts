@@ -19,7 +19,9 @@ const out = { laid: null as unknown as LaidOutRuns, dx: 0, dy: 0 };
  * lands: its position plus the `verticalAlign` shift. The layout is the cached
  * one, so drawing and bounding a command share it.
  *
- * The result is overwritten by the next call: read it, don't keep it.
+ * The result is overwritten by the next call: read it, don't keep it. Nor is
+ * the layout kept: it is asked for as `'read'`, so the cache may give its
+ * arrays to another layout once nothing files it.
  */
 export function laidOutText(cmd: TextDrawCommand): Readonly<LaidOutText> {
   // Read field by field rather than through `resolveTextStyle`, which builds a
@@ -32,7 +34,7 @@ export function laidOutText(cmd: TextDrawCommand): Readonly<LaidOutText> {
   opts.direction = cmd.direction ?? style.direction ?? DEFAULT_TEXT_STYLE.direction;
   opts.tabSize = style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize;
   opts.justify = cmd.justify;
-  const laid = cachedLayoutRuns(cmd.runs, opts);
+  const laid = cachedLayoutRuns(cmd.runs, opts, 'read');
   // Applied at upload time, not baked in: a cached layout that absorbed either
   // offset would gain another one every frame and slide off the page.
   out.laid = laid;

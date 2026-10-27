@@ -17,12 +17,14 @@ import {
   useDepSource,
   useGestureDispatcher,
   useSelectTool,
+  type InsertDep,
   type NodeId,
   type Tool,
 } from '@weasel-js/core';
 import { createCamera, createNodeAtPoint, screenBoxOf, type Viewport3d } from '@weasel-js/kernel3d';
 import { STACK, aabbOfSolid, createSolidScene, type SolidNode } from './scene3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
+import { useBoxInsert } from './insert3d';
 
 const VIEWPORT: Viewport3d = {
   camera: createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }),
@@ -32,7 +34,9 @@ const VIEWPORT: Viewport3d = {
 
 function mount() {
   const scene = createSolidScene();
-  const out: { entry: GroupEntry3d | null; selection: readonly NodeId[] } = { entry: null, selection: [] };
+  const out: { entry: GroupEntry3d | null; selection: readonly NodeId[]; insert: InsertDep | null } = {
+    entry: null, selection: [], insert: null,
+  };
   const world = {
     scene,
     viewport: () => VIEWPORT,
@@ -62,6 +66,7 @@ function mount() {
     const entry = useGroupEntry3d(world, viewport, worldPick, () => {});
     out.entry = entry;
     useDepSource('nodeAtPoint', () => entry.pick);
+    out.insert = useBoxInsert(scene, viewport);
 
     const select = useSelectTool({
       getNode: (id: string) => scene.get(id as NodeId),
@@ -146,5 +151,16 @@ describe("the lab's container", () => {
     act(() => out.entry!.entered.enter(STACK));
     expect(out.entry!.pick(at)).toBeNull();
     expect(out.entry!.boxOf(STACK)).not.toBeNull();
+  });
+
+  it('puts a box drawn while it is entered into it, and one drawn outside at the top', () => {
+    const { scene, out } = mount();
+    const drag = { x: 380, y: 280, width: 40, height: 40 };
+    const outside = out.insert!.commit(drag, { kind: 'rect' })!;
+    expect(scene.get(outside)!.parent ?? null).toBeNull();
+    act(() => out.entry!.entered.enter(STACK));
+    const inside = out.insert!.commit(drag, { kind: 'rect' })!;
+    expect(scene.get(inside)!.parent).toBe(STACK);
+    expect([...scene.childrenOf(STACK)]).toContain(inside);
   });
 });

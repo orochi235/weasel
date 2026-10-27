@@ -11,17 +11,29 @@ import type { TextDrawCommand } from '@weasel-js/renderer';
 import { dashLength } from '@weasel-js/stroke';
 import { glyphTurn, type PlacedGlyph, SYNTHETIC_ITALIC_RADIANS, syntheticBoldOffset } from '@weasel-js/text';
 import { solidColor } from './color';
+import { utf16Hex } from './fonts/toUnicode';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import type { EmbeddedFont } from './fonts/embedFont';
 import { num } from './num';
 import { isNative, resolveStroke, strokeStyleOps } from './strokeOps';
 import { isSpace, outlineCommand, placedOutline, skipGlyph } from './textOutlines';
 
+/** What one placed code point draws in a text object. */
+export interface SegmentGlyph {
+  g: PlacedGlyph;
+  /** Each glyph and where it sits, in ems from the code point's pen, y down: one at the pen
+   *  unless a shaper set its cluster. */
+  glyphs: readonly { gid: number; x: number; y: number }[];
+  /** Text a reader takes the glyphs for, in place of what `/ToUnicode` maps them to; set when
+   *  that mapping cannot give back the code point's cluster. */
+  actual?: string;
+}
+
 /** Glyphs one text object draws: one line, run, face, size and baseline. */
 export interface TextSegment {
   font: EmbeddedFont;
   line: number;
-  glyphs: { g: PlacedGlyph; gid: number }[];
+  glyphs: SegmentGlyph[];
 }
 
 const FILL = 0;
@@ -55,7 +67,9 @@ function inkBox(seg: TextSegment, dx: number, dy: number): Path {
 
 /**
  * `BT … ET` for the segment: its glyphs at their laid-out x, the gap between what the font
- * advances and what the layout stepped written as a TJ adjustment.
+ * advances and what the layout stepped written as a TJ adjustment. A glyph a shaper set off the
+ * baseline is raised with `Ts`, and a cluster `/ToUnicode` cannot give back is marked with its
+ * text as `/ActualText` (`spansOf`).
  */
 function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy: number): void {
   const { out } = ctx;
@@ -69,22 +83,48 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
   // A turned glyph then turns about its pen.
   const [cos, sin] = glyphTurn(first.rotate);
   out.op('Tm', cos * s, sin * s, s * (cos * shear + sin), s * (sin * shear - cos), first.x + dx, first.baselineY + dy);
-  const parts: string[] = [];
+  let parts: string[] = [];
   let hex = '';
   let pen = 0;
-  for (const { g, gid } of seg.glyphs) {
-    const adjust = num((pen - (g.x - first.x) / s) * 1000);
-    if (adjust !== '0') {
-      if (hex) parts.push(`<${hex}>`);
-      hex = '';
-      parts.push(adjust);
-      pen -= Number(adjust) / 1000;
+  let rise = '0';
+  const flush = () => {
+    if (hex) parts.push(`<${hex}>`);
+    if (parts.length > 0) out.op('TJ', `[${parts.join(' ')}]`);
+    parts = [];
+    hex = '';
+  };
+  for (const { g, glyphs, actual } of seg.glyphs) {
+    for (const span of spansOf(glyphs, actual)) {
+      if (span.text !== undefined) {
+        flush();
+        out.op('BDC', '/Span', `<</ActualText <${span.text ? `FEFF${utf16Hex(span.text)}` : ''}>>>`);
+      }
+      for (const { gid, x, y } of span.glyphs) {
+        // Text space is y up, so a glyph the shaper moved down is a negative rise.
+        const at = num(-y);
+        if (at !== rise) {
+          flush();
+          out.op('Ts', (rise = at));
+        }
+        const adjust = num((pen - ((g.x - first.x) / s + x)) * 1000);
+        if (adjust !== '0') {
+          if (hex) parts.push(`<${hex}>`);
+          hex = '';
+          parts.push(adjust);
+          pen -= Number(adjust) / 1000;
+        }
+        hex += gid.toString(16).toUpperCase().padStart(4, '0');
+        pen += seg.font.widthOf(gid) / 1000;
+      }
+      if (span.text !== undefined) {
+        flush();
+        out.op('EMC');
+      }
     }
-    hex += gid.toString(16).toUpperCase().padStart(4, '0');
-    pen += seg.font.widthOf(gid) / 1000;
   }
-  parts.push(`<${hex}>`);
-  out.op('TJ', `[${parts.join(' ')}]`);
+  flush();
+  // Ts outlives ET, as all of the text state does.
+  if (rise !== '0') out.op('Ts', 0);
   out.op('ET');
 }
 
@@ -179,4 +219,19 @@ export async function writeSegment(
   }
   textObject(ctx, seg, paintsFill ? (strokeColor || bold ? FILL_STROKE : FILL) : STROKE, dx, dy);
   out.op('Q');
+}
+
+type Placed = SegmentGlyph['glyphs'][number];
+
+/**
+ * A code point's glyphs in the spans its text is marked with. A cluster marked with its text
+ * keeps it on its glyphs on the baseline, and its glyphs off the baseline are marked with no
+ * text after them: an extractor sets a span's text from its first glyph's start to its last
+ * one's end, and a raised mark at either end moves the text off its line.
+ */
+function spansOf(glyphs: readonly Placed[], actual: string | undefined): { text?: string; glyphs: readonly Placed[] }[] {
+  if (actual === undefined) return [{ glyphs }];
+  const on = glyphs.filter((p) => p.y === 0);
+  if (on.length === 0 || on.length === glyphs.length) return [{ text: actual, glyphs }];
+  return [{ text: actual, glyphs: on }, { text: '', glyphs: glyphs.filter((p) => p.y !== 0) }];
 }

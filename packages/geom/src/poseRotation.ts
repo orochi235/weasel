@@ -8,6 +8,7 @@
  */
 import { forEachSegment, pathCommandCoordCount, PATH_L, PATH_M, PATH_Z } from './commands';
 import type { Path, PolygonPath } from './path';
+import { transformPath } from './paths/transformPath';
 
 /** Pivot (`cx`, `cy`) and angle resolved from a pose's rotation convention. */
 export interface PoseRotation {
@@ -45,6 +46,9 @@ export function rotatePathAround(path: Path, cx: number, cy: number, rotation: n
 function rotatePolygon(path: PolygonPath, cx: number, cy: number, rotation: number): PolygonPath {
   const cos = Math.cos(rotation);
   const sin = Math.sin(rotation);
+  if (path.origin) {
+    return transformPath(path, [cos, sin, -sin, cos, cx - cx * cos + cy * sin, cy - cx * sin - cy * cos]) as PolygonPath;
+  }
   const { commands, coords } = path;
   const next = new Float32Array(coords.length);
   forEachSegment(commands, coords, (cmd, ci) => {

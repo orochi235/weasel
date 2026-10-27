@@ -157,6 +157,11 @@ class SlotDep<TPose> implements DerivedDep<TPose> {
   get inherited(): InheritedPaint | undefined {
     return inheritedPaintIn(this.ctx.scene, this.node);
   }
+
+  // Every pose this lookup answers is the painted one, so a child needs no rebase.
+  get children(): readonly (DerivedDep<TPose> | undefined)[] {
+    return this.ctx.childrenOf(this.node.id).map(this.ctx.lookup);
+  }
 }
 
 /** Whether something outside `node`'s data says what path it shows: it derives one, or a

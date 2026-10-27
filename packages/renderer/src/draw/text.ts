@@ -62,7 +62,7 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
 
   const { laid, dx, dy } = laidOutText(cmd);
   paintOpts.outlineMinSize = outlineMinSize;
-  const { groups, decorations } = cachedPaintRuns(laid, cmd.runs, paintOpts);
+  const { groups, decorations } = cachedPaintRuns(laid, cmd.runs, paintOpts, 'read');
   // Decorations are checked too: text whose glyphs are all ink-free — every
   // one still awaiting a dynamic-atlas bake, say — produces no groups at all
   // while still carrying a rule that has to be drawn.

@@ -5,9 +5,9 @@ import {
 } from '@weasel-js/core';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath, parsePoints, polylineToPath,
-  polygonToPath,
+  polygonToPath, AUTO_ORIGIN,
 } from './shapes';
-import { hasOpenSubpath } from '@weasel-js/geom';
+import { hasOpenSubpath, worldCoords } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { readLength } from './lengths';
 
@@ -46,7 +46,7 @@ export function lowerLeaf(
       return null;
     }
     const raw = pathFromD(d, onWarn);
-    const transformed = transformPath(raw, m);
+    const transformed = transformPath(raw, m, AUTO_ORIGIN);
     // Reconstitute axis-aligned rectangles so a `{ kind: 'rect' }` source
     // node round-trips back into a `{ kind: 'rect' }` parsed node.
     if (transformed.kind === 'polygon') {
@@ -74,7 +74,7 @@ function polygonToRectIfAxisAligned(p: PolygonPath): Path | null {
   if (cmds[0] !== PATH_M) return null;
   if (cmds[1] !== PATH_L || cmds[2] !== PATH_L || cmds[3] !== PATH_L) return null;
   if (cmds[4] !== PATH_Z) return null;
-  const c = p.coords;
+  const c = worldCoords(p);
   if (c.length !== 8) return null;
   const x0 = c[0], y0 = c[1];
   const x1 = c[2], y1 = c[3];

@@ -1,6 +1,6 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { PolygonPath } from '@weasel-js/geom';
+import { worldCoords, type PolygonPath } from '@weasel-js/geom';
 import type { Op } from '@weasel-js/history';
 import { createSetDataOp } from '@weasel-js/core';
 import type { NodeId, Scene } from '@weasel-js/core';
@@ -70,7 +70,7 @@ function dab(env: WeightEnv, deps: ActionDeps, joint: string, x: number, y: numb
   const radius = sceneReach(deps, env.radiusPx());
   let next: Map<NodeId, Skin> | null = null;
   for (const { id, path, skin } of weighedPaths(env)) {
-    const hits = brushWeights(path.coords, x, y, radius, skin[joint], mode);
+    const hits = brushWeights(worldCoords(path), x, y, radius, skin[joint], mode);
     if (hits.size === 0) continue;
     next ??= new Map(env.painted());
     next.set(id, setWeights(skin, path.coords.length >> 1, joint, hits));

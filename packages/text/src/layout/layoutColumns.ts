@@ -19,6 +19,7 @@ import type { BmFont, BmFontChar, GlyphMetrics, ResolveResult } from '@weasel-js
 import type { Entry } from './layoutEntries';
 import type { LaidOutCell, LaidOutLineBox, PlacedGlyph } from './layoutRuns';
 import type { ShapedCluster } from './shaperSeam';
+import { giveDoubles, giveRefs, takeDoubles, takeRefs } from './arrayPool';
 
 /** Numbers per code point: pen x, step, the glyph's own advance, its size,
  *  its baseline, its source span, code point, bidi level, the two flags, its
@@ -31,30 +32,35 @@ const DRAWS_INK = 1, CLUSTER_END = 2;
  *  glyph's record there, and what a shaper gave it. */
 const REF = 5;
 
-/** Longest array {@link doubles} copies from its template rather than builds. */
-const TEMPLATE_LIMIT = 1 << 16;
-/** All fractions, so V8 holds its elements as unboxed doubles, and `slice`
- *  hands a copy that kind. An array that starts out empty or holding integers
- *  is copied again the first time a fraction lands in it. */
-let template: number[] = [0.5];
-
-/** A new array of `n` numbers, held as unboxed doubles from the start. Its
- *  contents are placeholders for the caller to overwrite. */
-export function doubles(n: number): number[] {
-  if (n > TEMPLATE_LIMIT) return new Array<number>(n).fill(0.5);
-  while (template.length < n) template = template.concat(template);
-  return template.slice(0, n);
-}
+const EMPTY_NUM: number[] = [];
+const EMPTY_REF: unknown[] = [];
 
 /** Every code point of one layout. Index `i` is a code point's place in the
  *  text, in logical order, newlines left out. */
 export class LayoutColumns {
-  readonly num: number[];
-  readonly ref: unknown[];
+  num: number[];
+  ref: unknown[];
+  /** The layout cache's record of who can still reach this layout: runs
+   *  arrays it is filed under, whether its structural list holds it, and
+   *  whether any caller was handed it to keep. Only a layout with none of the
+   *  three gives its arrays back. */
+  owners = 0;
+  listed = false;
+  pinned = false;
 
   constructor(size: number) {
-    this.num = doubles(size * NUM);
-    this.ref = new Array<unknown>(size * REF);
+    this.num = takeDoubles(size * NUM);
+    this.ref = takeRefs(size * REF);
+  }
+
+  /** Give the arrays back to the pool. A line box still reading these columns
+   *  afterwards reads nothing, rather than another layout's numbers. */
+  recycle(): void {
+    giveDoubles(this.num);
+    this.ref.fill(undefined);
+    giveRefs(this.ref);
+    this.num = EMPTY_NUM;
+    this.ref = EMPTY_REF;
   }
 
   /** Store code point `i`: entry `e`, set at `x` on a baseline at `baselineY`,
@@ -169,6 +175,11 @@ export class LineBox implements LaidOutLineBox {
    *  them without building the views; null for a line built by hand. */
   static span(line: LaidOutLineBox): { cols: LayoutColumns; start: number; count: number } | null {
     return line instanceof LineBox ? { cols: line.#cols, start: line.#start, count: line.#count } : null;
+  }
+
+  /** The columns a line reads, without the object {@link span} builds. */
+  static columns(line: LaidOutLineBox): LayoutColumns | null {
+    return line instanceof LineBox ? line.#cols : null;
   }
 
   /** How many code points the line holds, without building a view. */

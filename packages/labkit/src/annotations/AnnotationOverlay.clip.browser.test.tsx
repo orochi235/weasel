@@ -56,8 +56,15 @@ const Clipped = defineInstrument<Record<string, never>, Record<string, never>>({
 
 type Pixel = [number, number, number];
 
-/** A screenshot's pixels along a line, in viewport px. */
-async function line(x0: number, y0: number, x1: number, y1: number): Promise<Pixel[]> {
+/** Samples a screenshot's pixels along a line, in viewport px. */
+type Line = (x0: number, y0: number, x1: number, y1: number) => Pixel[];
+
+/**
+ * One screenshot, to sample as many lines as an attempt checks. Each takes a round trip to
+ * Playwright, which on a fleet node running the suite beside it took long enough that four in one
+ * `waitFor` attempt outlasted its 5 s timeout before the first attempt settled.
+ */
+async function shot(): Promise<Line> {
   // With `save: false` the call resolves to the base64 string alone.
   const base64 = (await page.screenshot({ base64: true, save: false })) as unknown as string;
   const img = new Image();
@@ -66,18 +73,20 @@ async function line(x0: number, y0: number, x1: number, y1: number): Promise<Pix
   const c = document.createElement('canvas');
   c.width = img.width;
   c.height = img.height;
-  const g = c.getContext('2d') as CanvasRenderingContext2D;
+  const g = c.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
   g.drawImage(img, 0, 0);
   const scale = img.width / window.innerWidth;
-  const out: Pixel[] = [];
-  const steps = Math.round(Math.max(x1 - x0, y1 - y0));
-  for (let i = 0; i <= steps; i++) {
-    const x = Math.round((x0 + ((x1 - x0) * i) / steps) * scale);
-    const y = Math.round((y0 + ((y1 - y0) * i) / steps) * scale);
-    const d = g.getImageData(x, y, 1, 1).data;
-    out.push([d[0] ?? 0, d[1] ?? 0, d[2] ?? 0]);
-  }
-  return out;
+  return (x0, y0, x1, y1) => {
+    const out: Pixel[] = [];
+    const steps = Math.round(Math.max(x1 - x0, y1 - y0));
+    for (let i = 0; i <= steps; i++) {
+      const x = Math.round((x0 + ((x1 - x0) * i) / steps) * scale);
+      const y = Math.round((y0 + ((y1 - y0) * i) / steps) * scale);
+      const d = g.getImageData(x, y, 1, 1).data;
+      out.push([d[0] ?? 0, d[1] ?? 0, d[2] ?? 0]);
+    }
+    return out;
+  };
 }
 
 /** A mouse drag over `input` in eight steps, one a frame, in viewport px. */
@@ -155,16 +164,14 @@ test('a mark is cut where its target is, and takes no press past it', async () =
 
   await waitFor(
     async () => {
+      const line = await shot();
       // Drawn where it was dragged: its right edge crosses the middle row 20px
       // in from the target's right, and its top edge runs along the visible part.
-      expect(not(BLUE, await line(x0 - 8, mid, x0 + 8, mid))).toBeGreaterThan(0);
-      const top = await line(shown.left + 40, y1 - 8, shown.left + 40, y1 + 8);
-      expect(not(BLUE, top)).toBeGreaterThan(0);
+      expect(not(BLUE, line(x0 - 8, mid, x0 + 8, mid))).toBeGreaterThan(0);
+      expect(not(BLUE, line(shown.left + 40, y1 - 8, shown.left + 40, y1 + 8))).toBeGreaterThan(0);
       // And nothing of it over what sits beside the target.
-      const along = await line(whole.left + 2, y1, shown.left - 2, y1);
-      expect(not(GREEN, along)).toBe(0);
-      const across = await line(x1, whole.top + 2, x1, whole.bottom - 2);
-      expect(not(GREEN, across)).toBe(0);
+      expect(not(GREEN, line(whole.left + 2, y1, shown.left - 2, y1))).toBe(0);
+      expect(not(GREEN, line(x1, whole.top + 2, x1, whole.bottom - 2))).toBe(0);
     },
     { timeout: 5000 },
   );
@@ -226,8 +233,8 @@ test('a mark on scrolled content moves with it as its target scrolls', async () 
   expect((stored.y + stored.h) * el.scrollHeight).toBeCloseTo(170, -1);
 
   const x = box.left + 120;
-  const across = (y: number) => line(x, box.top + y - 6, x, box.top + y + 6);
-  await waitFor(async () => expect(not(BLUE, await across(140))).toBeGreaterThan(0), {
+  const across = (line: Line, y: number) => line(x, box.top + y - 6, x, box.top + y + 6);
+  await waitFor(async () => expect(not(BLUE, across(await shot(), 140))).toBeGreaterThan(0), {
     timeout: 5000,
   });
 
@@ -236,8 +243,9 @@ test('a mark on scrolled content moves with it as its target scrolls', async () 
   // The bottom edge has risen by the scroll, and nothing is left where it was.
   await waitFor(
     async () => {
-      expect(not(BLUE, await across(80))).toBeGreaterThan(0);
-      expect(not(BLUE, await across(140))).toBe(0);
+      const line = await shot();
+      expect(not(BLUE, across(line, 80))).toBeGreaterThan(0);
+      expect(not(BLUE, across(line, 140))).toBe(0);
     },
     { timeout: 5000 },
   );

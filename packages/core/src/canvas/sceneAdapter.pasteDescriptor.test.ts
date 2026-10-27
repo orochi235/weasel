@@ -34,7 +34,7 @@ describe('commitPaste reads a node through its own pose descriptor', () => {
 
   it('to find the corner a drop point lands on', () => {
     const { adapter, snapshot } = setup();
-    const [pasted] = adapter.commitPaste!(snapshot, { dx: 0, dy: 0 }, { dropPoint: { worldX: 200, worldY: 50 } });
+    const [pasted] = adapter.commitPaste!(snapshot, { dx: 0, dy: 0 }, { dropPoint: { x: 200, y: 50 } });
     // Its box starts at x = 110, so landing that on 200 moves the pose by 90.
     expect(pasted.pose).toMatchObject({ x: 100, y: 50 });
   });

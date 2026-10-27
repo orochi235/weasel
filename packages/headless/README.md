@@ -1,8 +1,8 @@
 # @weasel-js/headless
 
 Component behavior with no substrate: what a DOM component and a canvas-drawn widget both run,
-each drawing it its own way. Today that is a list's roving highlight and typeahead. No React, no
-DOM.
+each drawing it its own way. Today that is a list's roving highlight and typeahead, and keyboard
+focus as one contract. No React, no DOM.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -39,6 +39,14 @@ function onKey(rows: readonly Row[], key: string): void {
 A list's shape says which items the highlight can land on (`canStop`), which arrows move it
 (`orientation`, vertical by default) and whether it wraps at the ends (`wrap`, on by default).
 `@weasel-js/menu` runs every menu level on these.
+
+## Focus
+
+`FocusScope<T>` is keyboard focus over a set of targets, whatever draws them: which one is
+focused, whether its ring shows, `focus`, `moveFocus` through a `tabOrder`, and
+`subscribeFocus`. A `@weasel-js/hud` HUD is one over its widgets, and `@weasel-js/ui`'s
+`domFocusScope(root)` is one over the elements under `root`, so code that moves focus is
+written once for both. `tabSort` and `tabStep` are the order and the step both use.
 
 ## License
 

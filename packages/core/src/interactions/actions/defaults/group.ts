@@ -106,8 +106,12 @@ export const groupAction: Action & { requires: string[] } = {
   enabled: requiresSelection,
 };
 
+/** Whether ungrouping `node` dissolves it: a group, or a boolean group, which releases its operands. */
+const dissolves = (node: { kind: string; consumesChildren?: boolean } | undefined): boolean =>
+  node?.kind === 'group' || node?.consumesChildren === true;
+
 /**
- * Dissolves each selected group by reparenting its children up to the
+ * Dissolves each selected group, or boolean group, by reparenting its children up to the
  * container's own parent (preserving z-order) and removing the now-empty
  * container, as a single undoable batch. Selected marks, children or not, are
  * ignored. The freed children become the new selection, and nothing moves on
@@ -131,7 +135,7 @@ export const ungroupAction: Action & { requires: string[] } = {
       const ids = selection.get();
       if (ids.length === 0) return;
 
-      const containers = ids.filter((id) => scene.get(id as NodeId)?.kind === 'group');
+      const containers = ids.filter((id) => dissolves(scene.get(id as NodeId)));
       if (containers.length === 0) return;
 
       const frame = scenePoseFrame(scene);
@@ -140,7 +144,7 @@ export const ungroupAction: Action & { requires: string[] } = {
         const freed: NodeId[] = [];
         for (const containerId of containers) {
           const container = scene.get(containerId as NodeId);
-          if (!container || container.kind !== 'group') continue;
+          if (!container || !dissolves(container)) continue;
 
           const parent = container.parent ?? null;
           const baseIndex =
@@ -168,7 +172,7 @@ export const ungroupAction: Action & { requires: string[] } = {
   enabled: (deps) => {
     const selection = deps?.selection;
     const scene = deps?.scene;
-    const any = selection?.get().some((id) => scene?.get(id as NodeId)?.kind === 'group');
+    const any = selection?.get().some((id) => dissolves(scene?.get(id as NodeId)));
     return any ? true : ActionDisabledReason.NotApplicable;
   },
 };

@@ -34,6 +34,7 @@ import type {
   Matrix, SvgGroupNode, SvgImageNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
 import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
+import { asBooleanLeaf, booleanGroupSvg, derivedPathIn } from './booleanGroup';
 
 /** A leaf's box: where it is drawn, and the frame its box-relative paints
  *  resolve against. */
@@ -212,6 +213,9 @@ export interface SvgKitTreeNode {
   /** The node's copies, as the kit's `SceneNode.copiesFromPose` draws them:
    *  each is written as a transformed group of its children. */
   copiesFromPose?(pose: SvgKitPose, node: never): readonly Matrix[] | null;
+  /** The kit's `SceneNode.consumesChildren`: a boolean group, written as the
+   *  path it derives then a hidden `<g>` of its children (`SvgGroupNode.boolean`). */
+  consumesChildren?: boolean;
 }
 
 /** The read side of a scene that {@link svgNodesFromKit} walks. A kit
@@ -223,6 +227,9 @@ export interface SvgKitTree<TId extends string = string> {
   childrenOf(id: TId): readonly TId[];
   get(id: TId): SvgKitTreeNode | undefined;
   readonly composition?: { compose(parent: never, child: never): unknown };
+  /** The path a node derives, in the frame its children are stored in. A kit
+   *  `Scene` needs none: its document is read for it. */
+  derivedPathOf?(id: TId): Path | null;
 }
 
 /** Options for {@link svgNodesFromKit}. */
@@ -290,7 +297,11 @@ export function svgNodesFromKit<TId extends string>(
     }
     return frame;
   };
-  const lower = (id: TId, node: SvgKitTreeNode, up: UpPaint, frame: SvgKitPose | null): SvgNode | null => {
+  const lower = (id: TId, stored: SvgKitTreeNode, up: UpPaint, frame: SvgKitPose | null): SvgNode | null => {
+    const booleans = stored.consumesChildren === true;
+    const node = booleans
+      ? asBooleanLeaf(stored, derivedPathIn(tree, id), (box) => (compose && frame ? compose(frame, box) : box))
+      : stored;
     const own = node.data as SvgKitLeafData | null;
     const isGroup = node.kind === 'group';
     const self = isGroup ? null : markInherits(
@@ -315,6 +326,10 @@ export function svgNodesFromKit<TId extends string>(
     const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
     const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
     const paint = groupPaintFromKit(own, below, node.pose);
+    if (booleans) {
+      const g = booleanGroupSvg(self, emitChildren(), own, paint);
+      return mark ? mark(id, g) : g;
+    }
     // The clip travels with each copy, so it goes inside the transform.
     const copied = (): SvgGroupNode[] => copies.map((transform) => ({ kind: 'group', transform, children: [content()] }));
     const withCopies = (g: SvgGroupNode): SvgGroupNode => (copies.length === 0 ? g : { kind: 'group', children: [g, ...copied()] });

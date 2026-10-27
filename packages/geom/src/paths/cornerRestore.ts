@@ -187,6 +187,7 @@ function foldContour(c: Contour, runs: readonly Run[], specs: readonly (CornerSp
 
 function write(contours: readonly Rebuilt[], result: PolygonPath): PolygonPath {
   const b = new PathBuilder();
+  if (result.origin) b.setOrigin(result.origin.x, result.origin.y);
   const specs: (CornerSpec | null)[] = [];
   for (const { nodes, segs, closed } of contours) {
     b.moveTo(nodes[0]!.at.x, nodes[0]!.at.y);

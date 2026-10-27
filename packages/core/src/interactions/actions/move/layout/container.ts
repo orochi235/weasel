@@ -10,6 +10,8 @@ import { planeOf } from '../../planeInput';
 import type { MoveSession } from '../session';
 import { carryDragged, type DraggedChild } from './dragged';
 import { refusalOf } from '../../dropVerdict';
+import type { StrategyView } from 'core/scene/strategyView';
+import { boxOf, containerView, draggedInView } from './view';
 
 export interface Bounds4 { x: number; y: number; width: number; height: number }
 export function pointInBounds(b: Bounds4, at: { x: number; y: number }): boolean {
@@ -21,10 +23,12 @@ export interface Candidate {
   id: NodeId;
   /** The container's body in world: what the pointer is tested against. */
   bounds: Bounds4;
-  /** Its content's frame in world, `bounds` moved by its scroll offset: the
-   *  `LayoutContainer.bounds` its strategy is handed, so the slots it places
-   *  agree with its children as they are shown. */
+  /** Its content's frame, `bounds` moved by its scroll offset, in `view`'s
+   *  space: the `LayoutContainer.bounds` its strategy is handed, so the slots
+   *  it places agree with its children as they are shown. */
   content: Bounds4;
+  /** The container as its strategy sees it: upright, in its own frame. */
+  view: StrategyView<unknown>;
   layout: LayoutStrategy<unknown>;
   zPath: number[];
   depth: number;
@@ -105,22 +109,27 @@ export function pickContainer(
     const node = scene.get(id);
     if (!node) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
-    const worldAABB = poseDescriptorForNode(d, node).getBounds(worldPose);
+    const g = poseDescriptorForNode(d, node);
+    const worldAABB = g.getBounds(worldPose);
     const plane = planeOf(session.view, node.layer);
     const at = plane ? toPlane(plane, center) : center;
     if (!testInside(id, worldPose, worldAABB, layout, at)) return;
     const verdict = session.verdict(id);
     if (verdict === false) return;
     const refused = refusalOf(verdict);
-    const content = poseDescriptorForNode(d, node).getBounds(childFrameAt(poseAdapter, id as string, worldPose));
+    const view = containerView(pc, g, worldPose);
+    const content = boxOf(g, view.toStrategy(childFrameAt(poseAdapter, id as string, worldPose)));
     if (refused === null && layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: content };
-      for (const c of dragged) if (!layout.acceptsDrop(arg, carryDragged(session, c, plane).arg)) return;
+      for (const c of dragged) {
+        if (!layout.acceptsDrop(arg, draggedInView(view, carryDragged(session, c, plane).arg))) return;
+      }
     }
     candidates.push({
       id,
       bounds: worldAABB,
       content,
+      view,
       layout,
       zPath,
       depth: zPath.length,

@@ -1,3 +1,4 @@
+import { tabSort, tabStep, type FocusScope, type FocusScopeOptions } from '@weasel-js/headless';
 import { createEmitter } from '@weasel-js/registry';
 import { isFocusable, type Widget } from './widget';
 import type { HudHost } from './host';
@@ -8,13 +9,8 @@ import { createLabel, type LabelOptions, type LabelWidget } from './widgets/labe
 import { createButton, type ButtonOptions, type ButtonWidget } from './widgets/button';
 import { createWindow, type WindowOptions, type WindowWidget } from './widgets/window/window';
 
-/** How a focus change came about. */
-export interface HudFocusOptions {
-  /** Whether the focused widget should show a focus ring — the HUD's
-   *  `:focus-visible`. Keyboard moves show one; a press does not. Default
-   *  `false` for {@link Hud.focus}, `true` for {@link Hud.moveFocus}. */
-  readonly visible?: boolean;
-}
+/** How a focus change came about: whether the focused widget shows its ring. */
+export type HudFocusOptions = FocusScopeOptions;
 
 /**
  * A HUD: an ordered set of widgets drawn in screen space over the canvas, and
@@ -24,8 +20,10 @@ export interface HudFocusOptions {
  *
  * A HUD holds no GL state of its own. It becomes visible by binding to a host
  * — normally through `attachHud`.
+ *
+ * Its keyboard focus is a headless `FocusScope` over its widgets, the contract a DOM subtree's focus answers too.
  */
-export interface Hud {
+export interface Hud extends FocusScope<Widget> {
   add(widget: Widget): void;
   remove(widget: Widget): void;
   widgets(): readonly Widget[];
@@ -40,21 +38,13 @@ export interface Hud {
   readonly attached: boolean;
   /** The widget holding keyboard focus, or null. One per HUD. */
   readonly focused: Widget | null;
-  /** Whether the focused widget shows its focus ring. */
-  readonly focusVisible: boolean;
   /** Focus `widget`, or blur with `null`. Returns whether `widget` now holds
    *  focus — false when it is not in this HUD or cannot take focus
    *  (see `isFocusable`), in which case focus is unchanged. */
   focus(widget: Widget | null, options?: HudFocusOptions): boolean;
-  /** Move focus one step through {@link tabOrder}. From nothing, `'next'`
-   *  lands on the first widget and `'prev'` on the last; stepping past either
-   *  end blurs and returns null, which is where focus leaves the HUD. */
-  moveFocus(direction: 'next' | 'prev', options?: HudFocusOptions): Widget | null;
   /** The widgets Tab visits, in order: those declaring `tabOrder` first,
    *  ascending, then the rest in the order they were added. */
   tabOrder(): Widget[];
-  /** Run `fn` whenever the focused widget changes. Returns an unsubscribe. */
-  subscribeFocus(fn: (focused: Widget | null) => void): () => void;
   /** Create a rect widget, add it to the HUD, and wire onChange → markDirty. */
   rect(opts: RectOptions): RectWidget;
   /** Create a text widget, add it to the HUD, and wire onChange → markDirty. */
@@ -98,12 +88,7 @@ export function createHud(): Hud {
     requestRedraw();
   };
 
-  const tabOrder = (): Widget[] => {
-    const order = list.filter(isFocusable);
-    // Array.prototype.sort is stable, so ties and the undeclared keep list order.
-    return order.sort((a, b) =>
-      (a.tabOrder ?? Number.POSITIVE_INFINITY) - (b.tabOrder ?? Number.POSITIVE_INFINITY));
-  };
+  const tabOrder = (): Widget[] => tabSort(list.filter(isFocusable), (w) => w.tabOrder);
 
   /** Every path that takes a widget out of the list, so a focused one is
    *  always blurred on the way out. */
@@ -167,27 +152,9 @@ export function createHud(): Hud {
       return true;
     },
     moveFocus(direction, options) {
-      const visible = options?.visible ?? true;
-      const order = tabOrder();
-      let at: number;
-      if (focused === null) {
-        at = direction === 'next' ? 0 : order.length - 1;
-      } else {
-        // A focused widget that has since been hidden is out of the order;
-        // step from where it sits in the list instead.
-        const here = order.indexOf(focused);
-        if (here !== -1) {
-          at = here + (direction === 'next' ? 1 : -1);
-        } else {
-          const pos = list.indexOf(focused);
-          const after = order.findIndex((w) => list.indexOf(w) > pos);
-          at = direction === 'next'
-            ? (after === -1 ? order.length : after)
-            : (after === -1 ? order.length : after) - 1;
-        }
-      }
-      const next = order[at] ?? null;
-      setFocus(next, visible);
+      // A focused widget hidden since it took focus is out of the order; it steps from where it sits in the list.
+      const next = tabStep(tabOrder(), focused, direction, (a, b) => list.indexOf(a) < list.indexOf(b));
+      setFocus(next, options?.visible ?? true);
       return next;
     },
     tabOrder,

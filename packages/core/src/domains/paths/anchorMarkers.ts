@@ -5,7 +5,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { WorldPoint } from '@weasel-js/routing';
 import {
-  circlePath, linePath, pathToAnchors, resolveCorners, squarePath, type PenAnchor, type PolygonPath, type View, type Point,
+  circlePath, linePath, pathToAnchors, resolveCorners, squarePath, worldCoords, type PenAnchor, type PolygonPath, type View, type Point,
 } from '@weasel-js/geom';
 import type { AnchorMarkerShape } from './pathRepresentation';
 
@@ -58,13 +58,15 @@ export function worldToScreen(p: WorldPoint, view: View): Point {
 /** `path`, its corners expanded, with every coordinate carried to screen
  *  through `view`: a radius left on it would stay in world units. */
 function onScreen(path: PolygonPath, view: View): PolygonPath {
-  path = resolveCorners(path);
-  const coords = new Float32Array(path.coords.length);
+  const resolved = resolveCorners(path);
+  const world = worldCoords(resolved);
+  const { origin: _measuredFrom, ...drawn } = resolved;
+  const coords = new Float32Array(world.length);
   for (let i = 0; i < coords.length; i += 2) {
-    coords[i] = (path.coords[i] - view.x) * view.scale.x;
-    coords[i + 1] = (path.coords[i + 1] - view.y) * view.scale.y;
+    coords[i] = (world[i] - view.x) * view.scale.x;
+    coords[i + 1] = (world[i + 1] - view.y) * view.scale.y;
   }
-  return { ...path, coords };
+  return { ...drawn, coords };
 }
 
 /** Whether `sub[i]` sits closer to a neighbor along its subpath than `px` on screen. */

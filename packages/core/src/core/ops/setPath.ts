@@ -1,5 +1,6 @@
 import type { Op } from './types';
 import { registerOpFactory } from './registry';
+import { originOf, type PolygonPath } from '@weasel-js/geom';
 
 /** The geometry fields a `setPath` op replaces together — the path itself,
  *  whether it is closed, and the parameters it was generated from. They move
@@ -72,9 +73,11 @@ function pathEqual(a: unknown, b: unknown): boolean {
   const bo = b as { kind?: string };
   if (ao.kind !== bo.kind) return false;
   if (ao.kind === 'rect') return shallowEqual(a, b);
-  // polygon: compare commands + coords arrays
-  const aa = a as { commands: ArrayLike<number>; coords: ArrayLike<number> };
-  const bb = b as { commands: ArrayLike<number>; coords: ArrayLike<number> };
+  // polygon: compare origin, commands and coords
+  const aa = a as PolygonPath;
+  const bb = b as PolygonPath;
+  const oa = originOf(aa), ob = originOf(bb);
+  if (oa.x !== ob.x || oa.y !== ob.y) return false;
   if (aa.commands.length !== bb.commands.length) return false;
   if (aa.coords.length !== bb.coords.length) return false;
   for (let i = 0; i < aa.commands.length; i++) if (aa.commands[i] !== bb.commands[i]) return false;

@@ -9,6 +9,14 @@ export interface EmbeddedFont {
   readonly ref: PdfRef;
   /** The glyph id for `cp`, recorded for `/W` and `/ToUnicode`; `null` when the face has no glyph for it. */
   use(cp: number): number | null;
+  /**
+   * Records glyph `gid`, which a shaper chose, for `/W`, and for `/ToUnicode` as standing for
+   * `text` unless an earlier use claimed it; without `text` it stands for nothing new. False
+   * for `.notdef`.
+   */
+  useGlyph(gid: number, text?: string): boolean;
+  /** The text `/ToUnicode` reads glyph `gid` back as, so far. */
+  readsAs(gid: number): string | undefined;
   /** A glyph's advance in 1000/em units. */
   widthOf(gid: number): number;
 }
@@ -30,8 +38,10 @@ function subsetTag(gids: Iterable<number>): string {
 }
 
 class Face implements EmbeddedFont {
-  /** Glyph id to the first codepoint that asked for it. */
-  readonly used = new Map<number, number>();
+  /** Every glyph drawn, for `/W` and the subset. */
+  readonly used = new Set<number>();
+  /** Glyph id to the first text it was drawn for. */
+  readonly unicode = new Map<number, string>();
   private fontRef: PdfRef | undefined;
   private written = false;
 
@@ -49,10 +59,19 @@ class Face implements EmbeddedFont {
 
   use(cp: number): number | null {
     const gid = this.emb.glyphIndexOf(cp);
-    if (gid === null || gid === 0) return null;
-    if (!this.used.has(gid)) this.used.set(gid, cp);
+    return gid !== null && this.useGlyph(gid, String.fromCodePoint(cp)) ? gid : null;
+  }
+
+  useGlyph(gid: number, text?: string): boolean {
+    if (gid === 0) return false;
+    this.used.add(gid);
+    if (text !== undefined && !this.unicode.has(gid)) this.unicode.set(gid, text);
     this.fontRef ??= this.objects.alloc();
-    return gid;
+    return true;
+  }
+
+  readsAs(gid: number): string | undefined {
+    return this.unicode.get(gid);
   }
 
   widthOf(gid: number): number {
@@ -68,10 +87,10 @@ class Face implements EmbeddedFont {
     const descriptor = objects.alloc();
     const cid = objects.alloc();
     const toUnicode = objects.alloc();
-    const program = this.subset ? subsetTrueType(emb.sfnt, this.used.keys()) : new Uint8Array(emb.sfnt);
-    const fontName = this.subset ? `${subsetTag(this.used.keys())}+${this.baseFont}` : this.baseFont;
+    const program = this.subset ? subsetTrueType(emb.sfnt, this.used) : new Uint8Array(emb.sfnt);
+    const fontName = this.subset ? `${subsetTag(this.used)}+${this.baseFont}` : this.baseFont;
     objects.streamDeflated(file, { Length1: program.byteLength }, program);
-    objects.streamDeflated(toUnicode, {}, encoder.encode(toUnicodeCMap(this.used)));
+    objects.streamDeflated(toUnicode, {}, encoder.encode(toUnicodeCMap(this.unicode)));
     objects.set(descriptor, {
       Type: name('FontDescriptor'),
       FontName: name(fontName),
@@ -85,7 +104,7 @@ class Face implements EmbeddedFont {
       FontFile2: file,
     });
     const widths: (number | number[])[] = [];
-    for (const gid of [...this.used.keys()].sort((a, b) => a - b)) widths.push(gid, [this.widthOf(gid)]);
+    for (const gid of [...this.used].sort((a, b) => a - b)) widths.push(gid, [this.widthOf(gid)]);
     objects.set(cid, {
       Type: name('Font'),
       Subtype: name('CIDFontType2'),

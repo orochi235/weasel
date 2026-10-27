@@ -41,6 +41,9 @@ export {
 } from './paths/builder';
 export { boundsOfPath } from './paths/bounds';
 export {
+  ORIGIN_THRESHOLD, addOrigin, coordsFrom, originFor, originOf, pathPoint, worldCoords,
+} from './paths/pathOrigin';
+export {
   cornerCuts, cornerFrameAt, cornerFrames, remapPerAnchor, resolveCorners,
   resolveCornersWithSources, type CornerCut, type CornerFrame, type ResolvedCorners,
 } from './paths/corners';
@@ -59,7 +62,7 @@ export {
 } from './paths/cornerShape';
 export { unionBoundsPath } from './paths/unionBoundsPath';
 export { translatePath, scalePathToBounds } from './paths/transform';
-export { transformPath } from './paths/transformPath';
+export { transformPath, type TransformPathOptions } from './paths/transformPath';
 export { composePath, decomposePath } from './paths/compose';
 export { splitSubpaths } from './paths/splitSubpaths';
 export { hasOpenSubpath, splitByClosure } from './paths/splitByClosure';

@@ -13,6 +13,7 @@ import type {
   Fill,
   StrokeNib,
   VertexWidth,
+  BooleanShapeOp,
 } from '@weasel-js/core';
 
 /**
@@ -166,6 +167,11 @@ export interface SvgGroupNode {
    *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
    *  back as `display="none"`. */
   hidden?: boolean;
+  /** Set on the `<g>` of a boolean group's children, which follows the path
+   *  the group draws: the operation that path is of them. Written as
+   *  `data-weasel-boolean`; `parseSvg` keeps such a `<g>` hidden even without
+   *  `keepHidden`. */
+  boolean?: BooleanShapeOp;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }

@@ -11,7 +11,7 @@
  * exports as.
  */
 
-import type { Fill, NodeClip, Page, PlacedPage, TextStyle } from '@weasel-js/core';
+import type { BooleanShapeOp, Fill, NodeClip, Page, PlacedPage, TextStyle } from '@weasel-js/core';
 import { pagesBounds, resolveFill, resolveStroke } from '@weasel-js/core';
 import {
   svgImageFromKit,
@@ -220,7 +220,7 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * the file carries one; the caller maps it to the minted `NodeId`.
  */
 export type SceneDraft =
-  | { kind: 'mark'; id: string; parentId: string | null; obj: Obj; clip?: NodeClip; hidden?: true }
+  | { kind: 'mark'; id: string; parentId: string | null; obj: Obj; clip?: NodeClip; hidden?: true; boolean?: BooleanShapeOp }
   | { kind: 'group'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
   | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; clip?: NodeClip; hidden?: true } & EffectAttrs);
 
@@ -301,7 +301,9 @@ export function svgNodesToSceneDrafts(
   return drafts.map((d): SceneDraft => {
     const hidden = d.hidden ? { hidden: true as const } : {};
     const clip = d.clip ? { clip: d.clip } : {};
-    if (d.kind === 'mark') return { kind: 'mark', id: d.id, parentId: d.parentId, obj: d.data, ...clip, ...hidden };
+    if (d.kind === 'mark') {
+      return { kind: 'mark', id: d.id, parentId: d.parentId, obj: d.data, ...clip, ...hidden, ...(d.boolean ? { boolean: d.boolean } : {}) };
+    }
     const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data, ...clip, ...hidden };
     const effect = effects.get(d.id);
     return effect === undefined ? { kind: 'group', ...group } : { kind: 'effect', ...group, ...effect };

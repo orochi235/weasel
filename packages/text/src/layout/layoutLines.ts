@@ -4,7 +4,8 @@
  * have had their say.
  */
 import type { LineOrder } from './bidiLines';
-import { doubles, LineBox, type LayoutColumns } from './layoutColumns';
+import { doubles } from './arrayPool';
+import { LineBox, type LayoutColumns } from './layoutColumns';
 import type { Entry } from './layoutEntries';
 import { hangs, wrapSpans } from './lineBreak/wrapLines';
 import { tabAdvance, widthWithTabs } from './tabStops';

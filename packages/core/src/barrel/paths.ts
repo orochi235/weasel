@@ -328,6 +328,7 @@ export {
   PATHFINDER_KEYMAP,
   PATHFINDER_KEYMAP_ID,
   PATHFINDER_LEADER,
+  makeBooleanGroup,
 } from '../interactions/actions/booleans';
 export type {
   BooleanOp,

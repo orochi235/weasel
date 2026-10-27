@@ -88,7 +88,7 @@ export const clipboardPasteAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps, params) => {
       const world = (params as ImmediateParams | undefined)?.world;
-      deps.clipboard?.paste(world ? { worldX: world.x, worldY: world.y } : undefined);
+      deps.clipboard?.paste(world);
     },
   },
   enabled: (deps) => {

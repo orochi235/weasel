@@ -8,6 +8,7 @@ import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../comma
 import { cubicEvalAt, splitCubicAt } from '../curve';
 import type { PolygonPath } from '../path';
 import type { Point } from './cubicMath';
+import { worldCoords } from './pathOrigin';
 
 /** One segment as a cubic; a line has its controls on its ends. */
 export interface Seg {
@@ -34,7 +35,8 @@ const lineSeg = (a: Point, b: Point): Seg => ({ line: true, p0: a, c1: a, c2: b,
 /** `path` as contours, or null when a command opens a subpath with no `M`,
  *  where the anchor walkers and this one would count differently. */
 export function decodeContours(path: PolygonPath): Contour[] | null {
-  const { commands, coords } = path;
+  const { commands } = path;
+  const coords = worldCoords(path);
   const out: Contour[] = [];
   let cur: Contour | null = null;
   let flat = 0;

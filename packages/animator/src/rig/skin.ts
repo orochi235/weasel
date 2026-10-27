@@ -1,4 +1,6 @@
-import { mat3, PATH_L, PATH_M, PATH_Z, type GlMat3, type Path, type PolygonPath } from '@weasel-js/geom';
+import {
+  coordsFrom, mat3, PATH_L, PATH_M, PATH_Z, worldCoords, type GlMat3, type Path, type PolygonPath,
+} from '@weasel-js/geom';
 import { resolveSkeleton } from './resolveSkeleton';
 import type { Skeleton } from './types';
 
@@ -51,7 +53,7 @@ export function skinnable(path: Path): PolygonPath {
  */
 export function skinPath(path: Path, skin: Skin, motions: ReadonlyMap<string, GlMat3>): PolygonPath {
   const rest = skinnable(path);
-  const from = rest.coords;
+  const from = worldCoords(rest);
   const count = from.length >> 1;
   const sum = new Float64Array(from.length);
   const total = new Float64Array(count);
@@ -70,11 +72,11 @@ export function skinPath(path: Path, skin: Skin, motions: ReadonlyMap<string, Gl
       total[i] += w;
     }
   }
-  const coords = new Float32Array(from.length);
+  const moved = new Float64Array(from.length);
   for (let i = 0; i < count; i++) {
     const t = total[i];
-    coords[2 * i] = t > 0 ? sum[2 * i] / t : from[2 * i];
-    coords[2 * i + 1] = t > 0 ? sum[2 * i + 1] / t : from[2 * i + 1];
+    moved[2 * i] = t > 0 ? sum[2 * i] / t : from[2 * i];
+    moved[2 * i + 1] = t > 0 ? sum[2 * i + 1] / t : from[2 * i + 1];
   }
-  return { ...rest, coords };
+  return { ...rest, coords: coordsFrom(rest.origin, moved) };
 }

@@ -27,6 +27,8 @@ export function translatePath(path: Path, dx: number, dy: number): Path {
 }
 
 function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): PolygonPath {
+  const o = path.origin;
+  if (o) return { ...path, coords: path.coords.slice(), origin: { x: o.x + dx, y: o.y + dy } };
   const next = new Float32Array(path.coords.length);
   const { commands, coords } = path;
   forEachSegment(commands, coords, (cmd, ci) => {

@@ -8,6 +8,8 @@
 import { glyphGeneration } from '@weasel-js/font';
 import { paintKey, strokeKey } from '@weasel-js/paint';
 import type { ResolvedRun } from '../runs/resolveRuns';
+import { giveDoubles } from './arrayPool';
+import type { CacheUse } from './layoutCache';
 import type { LaidOutRuns } from './layoutRuns';
 import { paintRuns, type PaintedRuns, type PaintRunsOpts } from './paintRuns';
 
@@ -26,6 +28,9 @@ interface Painting {
   bucket: number;
   runs: readonly ResolvedRun[] | null;
   painted: PaintedRuns;
+  /** Whether a caller was handed it to keep, which bars its quad arrays from
+   *  going back to the pool with its layout. */
+  pinned: boolean;
 }
 
 /**
@@ -102,23 +107,26 @@ function keyOf(p: Painting): string {
  * threshold's effect, and the glyphs available are what they were. `laid` must
  * be the layout of `runs`, as for `paintRuns`.
  *
- * **The result is shared and must be treated as immutable.**
+ * **The result is shared and must be treated as immutable.** `use` is as for
+ * `cachedLayoutRuns`: a `'read'` painting's quads go back to the pool with its
+ * layout.
  */
 export function cachedPaintRuns(
   laid: LaidOutRuns,
   runs: readonly ResolvedRun[],
   opts: PaintRunsOpts = {},
+  use: CacheUse = 'keep',
 ): PaintedRuns {
   const generation = glyphGeneration();
   const min = opts.outlineMinSize;
   const mine = own.get(runs);
   const mineHere = mine !== undefined && mine.laid === laid && mine.painting.generation === generation;
-  if (mineHere && mine.min === min) return mine.painting.painted;
+  if (mineHere && mine.min === min) return handOut(mine.painting, use);
 
   const bucket = outlineBucket(runs, min);
   if (mineHere && mine.painting.bucket === bucket) {
     mine.min = min;
-    return mine.painting.painted;
+    return handOut(mine.painting, use);
   }
 
   let list = shared.get(laid);
@@ -136,9 +144,11 @@ export function cachedPaintRuns(
       if (p.generation === generation) painting = p;
       break;
     }
-    if (painting === null) painting = { generation, key, bucket, runs: null, painted: paintRuns(laid, runs, opts) };
+    if (painting === null) {
+      painting = { generation, key, bucket, runs: null, painted: paintRuns(laid, runs, opts), pinned: false };
+    }
   } else {
-    painting = { generation, key: null, bucket, runs, painted: paintRuns(laid, runs, opts) };
+    painting = { generation, key: null, bucket, runs, painted: paintRuns(laid, runs, opts), pinned: false };
   }
   if (list.length >= PAINT_CACHE_VARIANT_LIMIT) list.shift();
   list.push(painting);
@@ -147,5 +157,34 @@ export function cachedPaintRuns(
   } else {
     own.set(runs, { laid, painting, min });
   }
-  return painting.painted;
+  return handOut(painting, use);
 }
+
+function handOut(p: Painting, use: CacheUse): PaintedRuns {
+  if (use === 'keep') p.pinned = true;
+  return p.painted;
+}
+
+/** Forget the painting held for `runs`, which `dropRuns` was told will not be
+ *  drawn again. */
+export function forgetPaintRuns(runs: readonly ResolvedRun[]): void {
+  own.delete(runs);
+}
+
+/** Drop every painting of `laid`, which no caller can reach any more, giving
+ *  the quad arrays of those no caller kept back to the pool. */
+export function recyclePaintings(laid: LaidOutRuns): void {
+  const list = shared.get(laid);
+  if (list === undefined) return;
+  shared.delete(laid);
+  for (const p of list) {
+    if (p.pinned) continue;
+    for (const group of p.painted.groups) {
+      if (group.quadData.length === 0) continue;
+      giveDoubles(group.quadData as number[]);
+      group.quadData = EMPTY;
+    }
+  }
+}
+
+const EMPTY: readonly number[] = [];

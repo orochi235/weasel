@@ -1,4 +1,4 @@
-import type { Path, PathSnapTarget } from '@weasel-js/geom';
+import { worldCoords, type Path, type PathSnapTarget } from '@weasel-js/geom';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { poseOutline } from 'core/geometry/regionHit';
 import type { Node } from 'core/scene/types';
@@ -32,7 +32,7 @@ export function nodeSnapGeometry(node: Node<unknown, string, unknown>): NodeSnap
 /** The center of a box outline: a rect, or the four corners a turned one has. */
 function boxCenter(path: Path): { x: number; y: number } | null {
   if (path.kind === 'rect') return { x: path.x + path.width / 2, y: path.y + path.height / 2 };
-  const c = path.coords;
+  const c = worldCoords(path);
   if (c.length < 8) return null;
   return { x: (c[0] + c[4]) / 2, y: (c[1] + c[5]) / 2 };
 }

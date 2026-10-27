@@ -19,6 +19,7 @@ import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic } from '../flatten';
 import { fillsOpenSubpaths } from '../openFill';
 import type { Path, PolygonPath } from '../path';
 import { resolveCorners } from '../paths/corners';
+import { coordsFrom, originFor, worldCoords } from '../paths/pathOrigin';
 
 /** A `[x, y]` 2-tuple. */
 export type Pair = [number, number];
@@ -60,7 +61,8 @@ export function pathToMultiPolygon(
   // Where `Z` returns the pen, and so where a command after it starts.
   let startX = 0, startY = 0;
   let ci = 0;
-  const { commands, coords } = path;
+  const { commands } = path;
+  const coords = worldCoords(path);
 
   const fillsOpen = fillsOpenSubpaths(path);
   const finalizeCurrent = (closed = fillsOpen) => {
@@ -259,7 +261,7 @@ export function multiPolygonToPath(mp: MultiPolygon): PolygonPath {
     }
   }
   const commands = new Uint8Array(nCmds);
-  const coords = new Float32Array(nCoords);
+  const world = new Float64Array(nCoords);
   let ci = 0;
   let pi = 0;
   for (const poly of mp) {
@@ -267,15 +269,16 @@ export function multiPolygonToPath(mp: MultiPolygon): PolygonPath {
       if (ring.length < 4) continue;
       const unique = ring.length - 1;
       commands[ci++] = PATH_M;
-      coords[pi++] = ring[0][0];
-      coords[pi++] = ring[0][1];
+      world[pi++] = ring[0][0];
+      world[pi++] = ring[0][1];
       for (let k = 1; k < unique; k++) {
         commands[ci++] = PATH_L;
-        coords[pi++] = ring[k][0];
-        coords[pi++] = ring[k][1];
+        world[pi++] = ring[k][0];
+        world[pi++] = ring[k][1];
       }
       commands[ci++] = PATH_Z;
     }
   }
-  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
+  const origin = originFor(world);
+  return { kind: 'polygon', commands, coords: coordsFrom(origin, world), fillRule: 'nonzero', ...(origin ? { origin } : {}) };
 }

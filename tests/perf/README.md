@@ -320,7 +320,7 @@ store is allocated outside it. The typed-array version allocated less on the hea
 frame, but every one of its four main-thread samples sat above every sample before it, 4.80–5.05
 ms against 3.59–4.46, because a label paid for three such stores a frame. An array starts out
 holding integers or nothing and is copied the first time a fraction lands in it, so the columns
-are sliced from a template of fractions at their final size (`doubles` in `layoutColumns.ts`).
+are sliced from a template of fractions at their final size (`doubles` in `arrayPool.ts`).
 
 All threads plus the pool, ms a frame, median [min–max] of 4 samples, with the allocation
 profile's KB a frame:
@@ -383,11 +383,31 @@ Allocation fell 19–21% in every cell; main-thread time moved inside its spread
 msb-uai on 2026-10-27, one run of each tree, at `0f80b7626` and at `c5e74cfb6` with only this
 round's commits on it. The runs are in `recorded/hud-vs-dom-alloc-2026-10-27-round3/`.
 
-What is left, at 5,000 glyphs: the column and quad arrays (`slice`, 869 KB), which the layout and
-paint caches hold; `layoutRuns`' own garbage (255: the line boxes and the result); `paintRuns`
-(179) and `groupFor` (87), building the groups a painting returns; `placeLine` (133, the line
-box); `resolveFontVariantInternal` (96, a result object and two key strings a run); and
-`resolveTextStyle` and `resolveRuns` building the new command (73 and 67).
+A fourth round stopped allocating the column and quad arrays. A layout gives its arrays, and its
+paintings their quads, to a pool for the next text of the same size once nothing can reach it: no
+runs array files it, the structural list has evicted it, and every caller handed it asked to read
+rather than keep it (`'read'`, the last argument to `cachedLayoutRuns` and `cachedPaintRuns`). The
+renderer reads; a HUD text widget calls `dropRuns` on the runs it replaces. KB allocated a frame
+and renderer main thread in ms a frame, median [min–max] of 4 samples:
+
+| Camera | Glyphs | HUD before | HUD after | DOM after |
+|---|---:|---:|---:|---:|
+| fixed  | 2,500 | 1,358, 2.04 [1.63–2.42] |   991, 1.96 [1.64–2.09] |  73, 2.06 [1.67–2.46] |
+| fixed  | 5,000 | 2,684, 3.27 [3.24–4.03] | 1,950, 3.31 [2.84–3.35] | 106, 3.23 [2.72–3.89] |
+| moving | 2,500 | 1,406, 2.32 [2.16–2.46] | 1,034, 2.02 [1.87–2.20] | 107, 2.52 [2.28–2.78] |
+| moving | 5,000 | 2,776, 3.46 [3.26–3.84] | 2,029, 3.33 [3.08–3.50] | 169, 4.00 [3.73–4.51] |
+
+Allocation fell 26–27% in every cell, and `slice` left the profile. A gain in time is not shown:
+three later runs of near-identical trees put the HUD at 5,000 glyphs on the moving camera at 3.23,
+4.14 and 4.33 ms. Measured on msb-uai on 2026-10-27, one run of each tree, at `22472a12b` and
+`f645651dd`; those and the later runs are in `recorded/hud-vs-dom-recycle-2026-10-27/`.
+
+What is left, at 5,000 glyphs: `placeLine` (242 KB, the line box) and `layoutRuns` (174, the
+lines array and the result); `paintRuns` (177) and `groupFor` (88), building the groups a
+painting returns; 179 under `dropRuns`, which nothing it visibly does should allocate and which
+an in-process Node profile of the same loop does not show; `resolveFontVariantInternal` (95, a
+result object and two key strings a run); and `resolveTextStyle` and `resolveRuns` building the
+new command (74 and 69).
 
 ### A still HUD through `drawLayers`
 

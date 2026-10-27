@@ -3,12 +3,13 @@ import { toPlane } from 'core/viewport/parallax';
 import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
 import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import { carriedDescendants, sceneCarrySource } from 'core/scene/carryDescendants';
-import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
+import { poseDescriptorForNode, translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import type { LayoutChild, LayoutContainer } from '../../../../layout/types';
 import type { MoveSession } from '../session';
 import { pickContainer, type Candidate } from './container';
 import { carryDragged, gatherDragged, selectionCenter, type DraggedChild } from './dragged';
 import type { DropPass, LayoutPlacement } from './types';
+import { boxOf, containerView, draggedInView, pointInView } from './view';
 
 /** Dragged ids grouped by the container they are leaving, skipping any that
  *  stay put (`exclude` is the destination) or that had no container. */
@@ -39,11 +40,12 @@ function placeAll(
   const { scene, pc } = session;
   const poseAdapter = sceneViewPoseAdapter(scene);
   const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));
-  const layout = dest.layout;
-  // The container state the placements run against, advanced by each one.
+  const { layout, view } = dest;
+  // The container state the placements run against, advanced by each one,
+  // in the strategy's space.
   const working: LayoutChild<unknown>[] = scene.childrenOf(dest.id).map((cid) => ({
     id: cid as string,
-    pose: composeWorldPose(poseAdapter, cid as string, pc.compose),
+    pose: view.toStrategy(composeWorldPose(poseAdapter, cid as string, pc.compose)),
   }));
   const setWorking = (id: string, pose: unknown): void => {
     const at = working.findIndex((c) => c.id === id);
@@ -56,20 +58,23 @@ function placeAll(
   const destPlane = dest.plane;
   for (const edited of dragged) {
     const dc = carryDragged(session, edited, destPlane);
+    const arg = draggedInView(view, dc.arg);
     const children = working.map((c) => ({ ...c }));
-    const targets = layout.getDropTargets(container, children, dc.arg);
+    const targets = layout.getDropTargets(container, children, arg);
     const probe = { x: edited.center.x + probeOffset.x, y: edited.center.y + probeOffset.y };
-    const target = layout.snap.pickTarget(targets, destPlane ? toPlane(destPlane, probe) : probe);
+    const g = poseDescriptorForNode(session.projection, scene.get(edited.id)!);
+    const at = pointInView(view, g, dc.arg.pose, destPlane ? toPlane(destPlane, probe) : probe);
+    const target = layout.snap.pickTarget(targets, at);
     // All-or-nothing: a container that cannot take every member takes none
     // rather than splitting the selection between two homes.
     if (!target) return null;
-    placements.push({ dragged: dc.arg, children, target });
-    const poses = layout.reflowPoses(container, children, dc.arg, target);
+    placements.push({ dragged: arg, children, target });
+    const poses = layout.reflowPoses(container, children, arg, target);
     for (const [cid, pose] of poses) {
       setWorking(cid, pose);
-      if (!draggedIds.has(asNodeId(cid))) destReflow.set(asNodeId(cid), pose);
+      if (!draggedIds.has(asNodeId(cid))) destReflow.set(asNodeId(cid), view.toWorld(pose));
     }
-    setWorking(dc.arg.id, poses.get(dc.arg.id) ?? target.pose);
+    setWorking(arg.id, poses.get(arg.id) ?? target.pose);
   }
   return { placements, destReflow };
 }
@@ -93,17 +98,17 @@ function sourceReflow(
     const srcLayout = layoutDep.getLayout(srcId);
     const srcNode = scene.get(asNodeId(srcId));
     if (!srcLayout || !srcNode) continue;
-    const srcContainer: LayoutContainer = {
-      id: srcId,
-      bounds: d.getBounds(composeWorldPose(poseAdapter, srcId, pc.compose)),
-    };
+    const g = poseDescriptorForNode(d, srcNode);
+    const view = containerView(pc, g, composeWorldPose(poseAdapter, srcId, pc.compose));
+    const srcContainer: LayoutContainer = { id: srcId, bounds: boxOf(g, view.upright) };
     const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(srcId))
       .filter((cid) => !leaving.has(cid))
       .map((cid) => ({
         id: cid as string,
-        pose: composeWorldPose(poseAdapter, cid as string, pc.compose),
+        pose: view.toStrategy(composeWorldPose(poseAdapter, cid as string, pc.compose)),
       }));
-    for (const [cid, pose] of srcLayout.childPoses(srcContainer, srcChildren)) {
+    for (const [cid, placed] of srcLayout.childPoses(srcContainer, srcChildren)) {
+      const pose = view.toWorld(placed);
       const cur = d.getBounds(composeWorldPose(poseAdapter, cid, pc.compose));
       const next = d.getBounds(pose);
       const same = cur.x === next.x && cur.y === next.y
@@ -185,7 +190,9 @@ export function runDropPass(
 
   return {
     dropCenter,
-    pass: { layout: dest.layout, container, placements: placed.placements, sourceReflow: leftovers, reflowIds },
+    pass: {
+      layout: dest.layout, container, view: dest.view, placements: placed.placements, sourceReflow: leftovers, reflowIds,
+    },
     reflow,
   };
 }

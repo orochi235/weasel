@@ -4,7 +4,8 @@ import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { InsertAdapter, PasteOmission } from 'core/adapters/types';
 import type { ClipboardSnapshot } from './types';
-import { usePointerContext, type PointerWorldPos } from '@weasel-js/routing/react';
+import type { WorldPoint } from '@weasel-js/routing';
+import { usePointerContext } from '@weasel-js/routing/react';
 import { dwarn } from 'debug/flag';
 import { materializePaste } from './materializePaste';
 import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText } from './wireFormat';
@@ -28,7 +29,7 @@ export interface UseClipboardOpsOptions {
    *  as `ctx.dropPoint`; adapters typically use it as the cluster origin
    *  (ignoring `offset`). When null/undefined, the hook falls back to the
    *  existing cascade-offset behavior. */
-  getDropPoint?: () => { worldX: number; worldY: number } | null;
+  getDropPoint?: () => WorldPoint | null;
   /** Produce the OS-clipboard flavor map for a copied snapshot. Keys are MIME
    *  types, values the serialized payload. The kit default emits
    *  `application/x-weasel-clipboard+json` plus `text/plain` carrying the
@@ -51,14 +52,11 @@ export type ClipboardFlavors = Record<string, string | Promise<string>>;
 export interface UseClipboardOpsReturn {
   copy(): void;
   /** Paste at `at` when given; otherwise at the drop point, else the cascade offset. */
-  paste(at?: { worldX: number; worldY: number }): void;
+  paste(at?: WorldPoint): void;
   isEmpty(): boolean;
 }
 
 const EMPTY: ClipboardSnapshot = { items: [] };
-
-const dropPointOf = (p: PointerWorldPos): { worldX: number; worldY: number } | null =>
-  p ? { worldX: p.world.x, worldY: p.world.y } : null;
 
 /** In-memory copy/paste of selections via `InsertAdapter.snapshotSelection` / `commitPaste`. */
 export function useClipboardOps<TNode extends { id: string }>(
@@ -73,7 +71,7 @@ export function useClipboardOps<TNode extends { id: string }>(
   // (no provider in scope) and no caller-supplied thunk together mean
   // "no drop point" — paste uses the cascade offset instead.
   const pointerCtx = usePointerContext();
-  const effectiveGetDropPoint = getDropPoint ?? (pointerCtx ? () => dropPointOf(pointerCtx.get()) : undefined);
+  const effectiveGetDropPoint = getDropPoint ?? (pointerCtx ? () => pointerCtx.get()?.world ?? null : undefined);
   const clipboardRef = useRef<ClipboardSnapshot>(EMPTY);
   // Keep callbacks stable across renders.
   const adapterRef = useLatest(adapter);
@@ -104,7 +102,7 @@ export function useClipboardOps<TNode extends { id: string }>(
     if (flavors) void writeOsClipboard(flavors);
   }, [adapterRef, optsRef]);
 
-  const paste = useCallback((at?: { worldX: number; worldY: number }) => {
+  const paste = useCallback((at?: WorldPoint) => {
     const cb = clipboardRef.current;
     if (cb.items.length === 0) return;
     const a = adapterRef.current;

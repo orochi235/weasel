@@ -13,6 +13,7 @@ import { createInsertOp } from 'core/ops/create';
 import { createSetSelectionOp } from 'core/ops/select';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
+import type { WorldPoint } from '@weasel-js/routing';
 import type { ClipboardSnapshot, InsertAdapter, PasteCtx, PasteOmission } from 'core/adapters/types';
 
 /** Shared paste materialization: offset policy → commitPaste → the op batch
@@ -23,7 +24,7 @@ export function materializePaste<TNode extends { id: string }>(
   snapshot: ClipboardSnapshot,
   opts: {
     currentSelection: string[];
-    dropPoint?: { worldX: number; worldY: number } | null;
+    dropPoint?: WorldPoint | null;
     /** Told what the paste left out and why, when it left anything out —
      *  including a paste that made nothing. */
     onOmitted?: (omitted: PasteOmission[]) => void;

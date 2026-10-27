@@ -25,6 +25,10 @@ export interface DerivedDep<TPose, TData = unknown, TLayer extends string = stri
    *  `undefined` when it inherits nothing. A dependency built by hand rather
    *  than by the scene may leave it out, and then inherits nothing. */
   readonly inherited?: InheritedPaint;
+  /** Its children, as dependencies in the frame its own pose is in: what a
+   *  derivation reading through a group to its contents walks. Resolved on
+   *  each read; absent where the lookup cannot list them. */
+  readonly children?: readonly (DerivedDep<TPose, TData, TLayer> | undefined)[];
 }
 
 /** `F` with its parameters checked bivariantly, as a method's are, so that a

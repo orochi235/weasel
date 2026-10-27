@@ -1,5 +1,6 @@
 import type { NodeId } from 'core/scene/types';
 import type { MoveRefusal } from '../refusal';
+import type { StrategyView } from 'core/scene/strategyView';
 import type {
   LayoutStrategy,
   LayoutContainer,
@@ -8,7 +9,8 @@ import type {
   DropTarget as LayoutDropTarget,
 } from '../../../../layout/types';
 
-/** Where one dragged child landed, and the container state it landed against.
+/** Where one dragged child landed, and the container state it landed against,
+ *  in the strategy's space (`LayoutPass.view`).
  *  Holding the snapshot is what lets the commit replay the same sequence the
  *  preview showed, rather than re-deriving it from a scene the earlier
  *  placements never wrote to. */
@@ -24,6 +26,8 @@ export interface LayoutPlacement {
 export interface LayoutPass {
   layout: LayoutStrategy<unknown>;
   container: LayoutContainer;
+  /** The container as the strategy sees it; its `toWorld` takes what `commitDrop` returns to world. */
+  view: StrategyView<unknown>;
   placements: LayoutPlacement[];
   /** Source-container leftovers that actually moved (id → new pose). */
   sourceReflow: Map<string, unknown>;

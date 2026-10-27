@@ -41,7 +41,7 @@ function stubAdapter() {
     commitPaste: vi.fn((
       clipboard: { items: unknown[] },
       _offset?: { dx: number; dy: number },
-      _ctx?: { dropPoint?: { worldX: number; worldY: number } },
+      _ctx?: { dropPoint?: { x: number; y: number } },
     ) => clipboard.items.map((n, i) => ({ ...(n as object), id: `paste-${i}` }))),
   };
 }

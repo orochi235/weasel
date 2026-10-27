@@ -1,10 +1,13 @@
-import { type AddNodeSpec, localizeWorldPoses, pathEffectNode, registeredPathEffects } from '@weasel-js/core';
+import {
+  type AddNodeSpec, type BooleanShapeOp, booleanGroupFields, localizeWorldPoses, pathEffectNode, registeredPathEffects,
+} from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { DEFAULT_BG_COLOR } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { reportSvgWarnings } from './fileNotices';
 import { firstPageSize, onePage, replacePages } from './pages/drawPages';
 import { leafOfObj } from './svgImport';
+import type { Obj } from './svgObj';
 import { parsedToDoc, pickSvgFileNamed, type SceneDraft, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 
 type OnWarn = (warning: ParseResult['warnings'][number]) => void;
@@ -20,6 +23,12 @@ function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; draft
   for (const w of parsed.warnings) onWarn(w);
   let seq = 0;
   return { parsed, drafts: svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`) };
+}
+
+/** A boolean group read back: the paint it was written in, its path left to the derivation. */
+function booleanOfObj(obj: Obj, op: BooleanShapeOp) {
+  const { pose, data: { path: _path, ...data } } = leafOfObj(obj);
+  return { ...booleanGroupFields<WeaselDrawPose>(), pose, data: { ...data, boolean: op } };
 }
 
 /**
@@ -55,7 +64,7 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
     }
     if (draft.kind === 'effect' && !parents.has(draft.id)) continue;
     const node = draft.kind === 'mark'
-      ? { kind: 'mark' as const, ...leafOfObj(draft.obj) }
+      ? { kind: 'mark' as const, ...(draft.boolean ? booleanOfObj(draft.obj, draft.boolean) : leafOfObj(draft.obj)) }
       : { kind: 'group' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
     specs.push({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
   }

@@ -5,7 +5,8 @@
  */
 import { pointAlongPath, type Path, type Vec2 } from '@weasel-js/core/math';
 import {
-  PATH_C, PATH_L, PATH_Q, forEachSegment, measurePath, nearestOnCubic, nearestOnLine, nearestOnQuadratic, type CurveNearest,
+  PATH_C, PATH_L, PATH_Q, forEachSegment, measurePath, nearestOnCubic, nearestOnLine, nearestOnQuadratic, worldCoords,
+  type CurveNearest,
 } from '@weasel-js/geom';
 import type { DiagramLabel, LabelSpot } from '../labelTrait';
 import { subpathOf } from '../subpaths';
@@ -16,7 +17,8 @@ const NAMED = { start: 0, mid: 0.5, end: 1 } as const;
  *  `null` for a path with no segment to stand on. */
 function nearestStation(path: Path, near: Vec2): { point: Vec2; tangent: Vec2 } | null {
   if (path.kind !== 'polygon') return null;
-  const { commands, coords } = path;
+  const { commands } = path;
+  const coords = worldCoords(path);
   let best: CurveNearest | null = null;
   let heading: Vec2 = { x: 1, y: 0 };
   forEachSegment(commands, coords, (cmd, ci, x0, y0) => {

@@ -12,6 +12,8 @@ import {
   PATH_C,
   PATH_Q,
   PATH_Z,
+  PathBuilder,
+  worldCoords,
   type PolygonPath,
 } from '@weasel-js/geom';
 
@@ -160,5 +162,18 @@ describe('a closed subpath whose last curve returns to its start', () => {
   it('keeps a closing curve that stops short of the start as its own anchor', () => {
     const short = path([PATH_M, PATH_L, PATH_C, PATH_Z], [0, 0, 10, 0, 10, 5, 1, 5, 1, 0]);
     expect(enumerateAnchors(short)).toHaveLength(3);
+  });
+});
+
+describe('a path measured from an origin', () => {
+  const FAR = 262_144;
+  const far = new PathBuilder().setOrigin(FAR, 0).moveTo(FAR + 0.3, 1).lineTo(FAR + 1.3, 1).lineTo(FAR + 1.3, 2).build();
+
+  it('enumerates anchors in the path\'s own space and writes a moved one back from its origin', () => {
+    const anchors = enumerateAnchors(far);
+    expect(anchors[1].x).toBeCloseTo(FAR + 1.3, 6);
+    const moved = withCoord(far, anchors[1].coordIndex, FAR + 1.8, 1);
+    expect(moved.origin).toEqual(far.origin);
+    expect(worldCoords(moved)[2]).toBeCloseTo(FAR + 1.8, 6);
   });
 });

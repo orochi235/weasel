@@ -10,6 +10,7 @@
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path } from '../path';
 import { resolveCorners } from './corners';
+import { worldCoords } from './pathOrigin';
 
 const num = (n: number): string => (Number.isFinite(n) ? String(Math.round(n * 1e6) / 1e6) : '0');
 
@@ -21,7 +22,7 @@ export function pathToD(given: Path): string {
     return `M${num(x)} ${num(y)}h${num(width)}v${num(height)}h${num(-width)}Z`;
   }
   const cmds = path.commands;
-  const xs = path.coords;
+  const xs = worldCoords(path);
   const out: string[] = [];
   let ci = 0;
   for (let i = 0; i < cmds.length; i++) {

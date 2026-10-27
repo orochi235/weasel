@@ -35,6 +35,7 @@ import { parseImageElement, parseCroppedImage } from './readImage';
 import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
 import { groupPaint, inheritsFrom, NO_GROUP_PAINT, viewportPaintFrom, type GroupPaintFrom } from './groupPaint';
+import { booleanAttrOf } from './booleanGroup';
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
@@ -66,10 +67,7 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
 
   const namespaces = opts.namespaces ?? {};
   // Build a URI → prefix index for fast lookup during traversal.
-  const uriToPrefix = new Map<string, string>();
-  for (const [prefix, uri] of Object.entries(namespaces)) {
-    uriToPrefix.set(uri, prefix);
-  }
+  const uriToPrefix = new Map(Object.entries(namespaces).map(([prefix, uri]) => [uri, prefix]));
 
   const documentMeta = collectDocumentMeta(root, uriToPrefix);
 
@@ -239,7 +237,7 @@ function parseChildren(
     const ns = el.namespaceURI;
     if ((ns && ns !== 'http://www.w3.org/2000/svg') || isStrokeOutline(el)) continue;
     const hidden = isHiddenElement(el, style);
-    if (hidden && !keepHidden) continue;
+    if (hidden && !keepHidden && booleanAttrOf(el).boolean === undefined) continue;
     const node = unwrapStrokeGroup(el, parseElement(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden));
     if (!node) continue;
     const parsed = Array.isArray(node) ? node : [node];
@@ -378,7 +376,7 @@ function parseGroup(
   const paint = groupPaint(el, from, childStyle, childCtm, gradients, onWarn);
   const children = parseChildren(el, childCtm, childStyle, paint.children, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const opacity = ownValue(el, 'opacity');
-  const group: SvgNode = { kind: 'group', children, ...paint.paint };
+  const group: SvgNode = { kind: 'group', children, ...paint.paint, ...booleanAttrOf(el) };
   const clip = clipFor(el, childCtm, clips, onWarn);
   if (clip) group.clip = clip;
   if (opacity != null) group.opacity = opacity;

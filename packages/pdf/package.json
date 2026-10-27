@@ -27,6 +27,9 @@
     "@weasel-js/stroke": "1.13.0",
     "@weasel-js/text": "1.13.0"
   },
+  "devDependencies": {
+    "@weasel-js/shape": "1.13.0"
+  },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": {

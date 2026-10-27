@@ -137,6 +137,7 @@ export { pickActiveSection, useScrollSpy } from './useScrollSpy';
 export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollSpy';
 export { rovingGridTarget, rovingTarget, useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingDirection, RovingOrientation, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
+export { domFocusScope } from './domFocusScope';
 export type {
   ReorderItem,
   UseReorderDragListOptions,

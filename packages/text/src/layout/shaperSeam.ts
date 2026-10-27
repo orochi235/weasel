@@ -57,4 +57,8 @@ export interface ShapedCluster {
   glyphs: readonly { gid: number; x: number; y: number }[];
   /** Whether it was shaped right to left. */
   rtl: boolean;
+  /** The text the cluster's glyphs stand for, in logical order: what a reader
+   *  copies or searches for when it reads them back. Empty on a code point
+   *  another one draws. */
+  text: string;
 }

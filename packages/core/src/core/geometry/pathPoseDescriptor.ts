@@ -1,9 +1,11 @@
 import {
   boxToBox,
   boundsOfPath,
+  coordsFrom,
   lerpCorners,
   translatePath,
   transformPath,
+  worldCoords,
   type Path,
 } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -37,10 +39,10 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
       };
     }
     if (a.kind === 'polygon' && b.kind === 'polygon' && a.coords.length === b.coords.length) {
-      const next = new Float32Array(a.coords.length);
-      for (let i = 0; i < a.coords.length; i++) {
-        next[i] = a.coords[i] + (b.coords[i] - a.coords[i]) * t;
-      }
+      const aw = worldCoords(a), bw = worldCoords(b);
+      const mid = new Float64Array(aw.length);
+      for (let i = 0; i < aw.length; i++) mid[i] = aw[i] + (bw[i] - aw[i]) * t;
+      const next = coordsFrom(a.origin, mid);
       const { corners: _a, ...bare } = a;
       const corners = lerpCorners(a.corners, b.corners, t);
       return corners ? { ...bare, coords: next, corners } : { ...bare, coords: next };
@@ -69,17 +71,18 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
     }
     return {
       count: like.coords.length,
-      to: (p) => (p.kind === 'polygon' ? Array.from(p.coords) : []),
-      from: (a) => ({ ...like, coords: Float32Array.from(a as ArrayLike<number>) }),
+      to: (p) => (p.kind === 'polygon' ? Array.from(worldCoords(p)) : []),
+      from: (a) => ({ ...like, coords: coordsFrom(like.origin, a as ArrayLike<number>) }),
       add: (p, d) => {
         if (p.kind !== 'polygon') return p;
-        const coords = new Float32Array(p.coords.length);
-        for (let i = 0; i < coords.length; i++) coords[i] = p.coords[i]! + d[i]!;
-        return { ...like, coords };
+        const moved = Float64Array.from(worldCoords(p));
+        for (let i = 0; i < moved.length; i++) moved[i]! += d[i]!;
+        return { ...like, coords: coordsFrom(like.origin, moved) };
       },
       write: (p, out, at) => {
         if (p.kind !== 'polygon') return;
-        for (let i = 0; i < p.coords.length; i++) out[at + i] = p.coords[i]!;
+        const world = worldCoords(p);
+        for (let i = 0; i < world.length; i++) out[at + i] = world[i]!;
       },
     };
   },

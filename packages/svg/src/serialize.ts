@@ -26,6 +26,7 @@ import {
 } from './variableWidthSvg';
 import { textXml } from './serializeText';
 import { prettyXml } from './prettyXml';
+import { BOOLEAN_ATTR } from './booleanGroup';
 
 /**
  * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
@@ -216,6 +217,7 @@ function groupXml(
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
+  if (node.boolean) attrs.push(`${BOOLEAN_ATTR}="${node.boolean}"`);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const head = attrs.length > 0
     ? `<g ${attrs.join(' ')}${metaAttrs}>`

@@ -3,6 +3,7 @@ import type { ParallaxOpts } from '../viewport/parallax';
 import type { View } from '../viewport/view';
 import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import type { Target } from '@weasel-js/animator';
+import type { WorldPoint } from '@weasel-js/routing';
 
 /**
  * Opaque clipboard payload: the kit never inspects entries. The adapter both
@@ -31,7 +32,7 @@ export interface PasteOmission {
 
 /** What `commitPaste` is told beyond the snapshot and the offset. */
 export interface PasteCtx {
-  dropPoint?: { worldX: number; worldY: number };
+  dropPoint?: WorldPoint;
   /** Called once per copied node the paste leaves out. */
   onOmit?: (omission: PasteOmission) => void;
 }

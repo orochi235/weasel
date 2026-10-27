@@ -7,7 +7,7 @@
  * dragged or derived node is.
  */
 import { deriveRecorded, emptyDepRecord, sameDeps, type DepRecord } from './depMemo';
-import type { PoseComposition } from './composeFrame';
+import { composesFrames, type PoseComposition } from './composeFrame';
 import { carryDepPath, depFrameRebase, pathAsPainted } from './depFrame';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
@@ -275,6 +275,16 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
   get inherited(): InheritedPaint | undefined {
     const { source, reading } = this;
     return inheritedPaintIn(reading === 'effective' ? shownLookup(source) : source, this.posed);
+  }
+
+  get children(): readonly (DerivedDep<TPose> | undefined)[] {
+    const { source, reading } = this;
+    const pc = source.composition;
+    const compose = pc && composesFrames(pc) && definesFrame(this.posed) ? pc.compose : null;
+    return source.childrenOf(this.posed.id).map((id) => {
+      const dep = depIn(source, id, reading);
+      return dep === undefined || compose === null ? dep : new RebasedDep(dep, compose(this.pose, dep.pose));
+    });
   }
 }
 

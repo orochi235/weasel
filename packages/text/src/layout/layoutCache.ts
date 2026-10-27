@@ -54,12 +54,23 @@
  * cost more than the misses it avoids. The structural list cannot ride an
  * array's lifetime the way the `WeakMap` does, so it is a real LRU with a
  * hard entry count.
+ *
+ * ### Giving arrays back
+ *
+ * A layout's columns and its paintings' quads go back to a pool for the next
+ * text of the same size once nothing can reach them: `dropRuns` has removed
+ * every runs array filing it, the structural list has evicted it, and every
+ * call handed it passed `'read'`. One `'keep'` handout pins it for good. That
+ * is what lets a readout rewritten every frame, whose widget drops the runs it
+ * replaces and whose renderer only reads, lay out into last frame's arrays.
  */
 
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { layoutBidi, layoutShaper, type LayoutRunsOpts } from './layoutOpts';
+import { LineBox, type LayoutColumns } from './layoutColumns';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
+import { forgetPaintRuns, recyclePaintings } from './paintCache';
 import { DEFAULT_TAB_SIZE } from './tabStops';
 
 /** Distinct option combinations held for one runs array before the whole set
@@ -106,6 +117,42 @@ function matches(v: Variant, opts: LayoutRunsOpts, bidi: Variant['bidi']): boole
     && v.justify === (opts.justify === true || opts.align === 'justify')
     && v.direction === (opts.direction ?? 'auto') && same(v.tabSize, opts.tabSize ?? DEFAULT_TAB_SIZE)
     && v.bidi === bidi && v.shaper === layoutShaper(opts);
+}
+
+/** What a call means to do with the layout it is handed: `'keep'` may hold
+ *  it, or anything in it, for as long as it likes; `'read'` is done with it
+ *  before its next call into the text caches, and keeps nothing of it. */
+export type CacheUse = 'keep' | 'read';
+
+const columnsOf = (laid: LaidOutRuns): LayoutColumns | null =>
+  (laid.lines.length > 0 ? LineBox.columns(laid.lines[0]) : null);
+
+function handOut(laid: LaidOutRuns, use: CacheUse): LaidOutRuns {
+  if (use === 'keep') {
+    const cols = columnsOf(laid);
+    if (cols !== null) cols.pinned = true;
+  }
+  return laid;
+}
+
+/** Give `laid`'s arrays, and those of its paintings, back to the pool once
+ *  nothing can reach it: no runs array files it, the structural list has let
+ *  it go, and every caller handed it was only reading. */
+function release(laid: LaidOutRuns): void {
+  const cols = columnsOf(laid);
+  if (cols === null || cols.owners > 0 || cols.listed || cols.pinned) return;
+  recyclePaintings(laid);
+  cols.recycle();
+}
+
+function disown(vs: Variant[]): void {
+  for (const v of vs) {
+    const cols = columnsOf(v.laid);
+    if (cols === null) continue;
+    cols.owners--;
+    release(v.laid);
+  }
+  vs.length = 0;
 }
 
 function variant(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Variant {
@@ -193,10 +240,15 @@ function sameRuns(a: readonly ResolvedRun[], b: readonly ResolvedRun[]): boolean
  * applies position and `verticalAlign` while packing vertices rather than by
  * shifting the layout, precisely so it can be handed the same object every
  * frame.
+ *
+ * `use` is `'read'` for a caller done with the result before its next call
+ * into these caches, keeping nothing of it, which lets the cache recycle the
+ * layout's arrays later; see "Giving arrays back".
  */
 export function cachedLayoutRuns(
   runs: readonly ResolvedRun[],
   opts: LayoutRunsOpts,
+  use: CacheUse = 'keep',
 ): LaidOutRuns {
   const fonts = faceGeneration();
   const bidi = layoutBidi(opts);
@@ -206,7 +258,7 @@ export function cachedLayoutRuns(
     cache.set(runs, entry);
   } else if (entry.generation !== fonts) {
     entry.generation = fonts;
-    entry.variants.length = 0;
+    disown(entry.variants);
   } else {
     const vs = entry.variants;
     for (let i = 0; i < vs.length; i++) {
@@ -214,21 +266,40 @@ export function cachedLayoutRuns(
       if (!matches(v, opts, bidi)) continue;
       for (let k = i; k > 0; k--) vs[k] = vs[k - 1];
       vs[0] = v;
-      return v.laid;
+      return handOut(v.laid, use);
     }
   }
 
   const laid = structuralLayout(runs, opts, bidi, fonts);
   const vs = entry.variants;
-  if (vs.length >= LAYOUT_CACHE_VARIANT_LIMIT) vs.length = 0;
+  if (vs.length >= LAYOUT_CACHE_VARIANT_LIMIT) disown(vs);
   vs.unshift(variant(opts, bidi, laid));
-  return laid;
+  const cols = columnsOf(laid);
+  if (cols !== null) cols.owners++;
+  return handOut(laid, use);
+}
+
+/**
+ * Forget what the caches hold for `runs`, which its caller will not lay out
+ * again: a readout replacing its text drops the runs it drew last. A layout no
+ * other runs array or caller can reach gives its arrays to the next layout of
+ * the same size, so text rewritten every frame stops allocating them.
+ *
+ * Passing `runs` again afterwards is only a cache miss.
+ */
+export function dropRuns(runs: readonly ResolvedRun[]): void {
+  const entry = cache.get(runs);
+  forgetPaintRuns(runs);
+  if (entry === undefined) return;
+  cache.delete(runs);
+  disown(entry.variants);
 }
 
 function structuralLayout(
   runs: readonly ResolvedRun[], opts: LayoutRunsOpts, bidi: Variant['bidi'], fonts: number,
 ): LaidOutRuns {
   if (structuralGeneration !== fonts) {
+    for (const s of structural) unlist(s);
     structural = [];
     structuralGeneration = fonts;
   }
@@ -242,12 +313,24 @@ function structuralLayout(
     }
     if (s.used < structural[oldest].used) oldest = i;
   }
+  // Evicted before laying out, so the new layout can take its arrays.
+  const full = structural.length >= LAYOUT_CACHE_STRUCTURAL_LIMIT;
+  if (full) unlist(structural[oldest]);
   const laid = layoutRuns(runs, opts);
   const filled = variant(opts, bidi, laid) as Structural;
   filled.hash = hash; filled.runs = runs; filled.used = ++clock;
-  if (structural.length < LAYOUT_CACHE_STRUCTURAL_LIMIT) structural.push(filled);
-  else structural[oldest] = filled;
+  const cols = columnsOf(laid);
+  if (cols !== null) cols.listed = true;
+  if (full) structural[oldest] = filled;
+  else structural.push(filled);
   return laid;
+}
+
+function unlist(s: Structural): void {
+  const cols = columnsOf(s.laid);
+  if (cols === null) return;
+  cols.listed = false;
+  release(s.laid);
 }
 
 /** Test helper. Do not call from product code. */

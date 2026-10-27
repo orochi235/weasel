@@ -16,6 +16,7 @@ import {
   pathfinderCropAction, pathfinderDivideAction, pathfinderExcludeAction, pathfinderIntersectAction,
   pathfinderMergeAction, pathfinderSubtractAction, pathfinderTrimAction, pathfinderUnionAction,
 } from 'interactions/actions/booleans/action';
+import { makeBooleanGroupAction } from 'interactions/actions/booleans/booleanGroupAction';
 import { createOutlinesAction } from 'interactions/actions/outlines/createOutlinesAction';
 import { outlineStrokeAction } from 'interactions/actions/outlines/outlineStrokeAction';
 import {
@@ -38,6 +39,7 @@ export const pathsPreset: FeaturePreset = {
     deleteAnchorsAction,
     pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction, pathfinderExcludeAction,
     pathfinderDivideAction, pathfinderCropAction, pathfinderTrimAction, pathfinderMergeAction,
+    makeBooleanGroupAction,
     createOutlinesAction, outlineStrokeAction,
     editAnchorsAction,
     enterPathEditAction, exitPathEditAction, insertPathAnchorAction, bendSegmentAction,

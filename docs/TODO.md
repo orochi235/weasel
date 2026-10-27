@@ -43,10 +43,6 @@ Owner tags, after the priority (2026-10-26):
   `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
   2026-10-11). If they do move, the package is `images`; `ingest` was turned down.
 
-- **(P3) [agent] The clipboard's paste point is still flat.** `useClipboardOps`' `paste(at)` and `getDropPoint`, and the
-  adapter's `dropPoint`, take `{ worldX, worldY }` where the dispatcher's points are `WorldPoint`s since
-  2026-10-27.
-
 - **(P3) [recheck] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
   the header while its body is fixed as the surface buffers plus a `Workspace` of trials.
@@ -55,9 +51,6 @@ Owner tags, after the priority (2026-10-26):
   with labkit's per-trial store and persistence beside its own, and a trial titlebar beside its own
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
-
-- **(P3) [agent] A box drawn in labkit's 3D lab while a container is entered does not go into it.** The lab registers no
-  `insertInto` dep, and its insert ignores one (2026-10-27).
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -269,13 +262,9 @@ Owner tags, after the priority (2026-10-26):
 
 ### Pathfinder follow-ups (post-v1)
 
-- **(P3) [agent] Boolean groups: the rest.** Core has boolean groups (`booleanGroupFields`, `consumesChildren`,
-  2026-10-27). Still open: SVG export writes the children as separate visible shapes, because a derived path is not
-  visible to `svgNodesFromKit`; it should write the result path, with the children in a `<g>` carrying a marker
-  attribute so import can rebuild the group. Also: a WeaselDraw "Make boolean group" command or a Pathfinder
-  modifier, and a control to switch the operation; Ungroup / release for a boolean group; a group placed inside a
-  boolean group counts as no operand (a derivation cannot see grandchildren); an outline of the children while the
-  group is entered (they are not drawn, so only selection chrome shows where they are).
+- **(P3) [agent] An empty boolean group does not survive SVG.** A boolean group whose result is empty exports as just
+  its hidden children, with no result path, so it imports back as a plain hidden group rather than a boolean group
+  (2026-10-27).
 
 ## Rendering & paint
 
@@ -289,13 +278,14 @@ Owner tags, after the priority (2026-10-26):
   fleet, and all three fail with `bindGradient` handing over the unrebased inverse (2026-10-21).
   Still float32 for a consumer's own stage, which has no origin to rebase against: the model (`u_view` on a
   shader command, `u_model` in a registered paint kind) and the paint matrix a registered kind asks for
-  (`PaintBindContext.spaceInverse`). A path's coordinates can now be measured from `PolygonPath.origin`
-  (2026-10-27), and the renderer, `tessellate`, `tessellateStroke`, `markerHeads`, `strokeToPath`,
-  `transformPath` and `boundsOfPath` honor it. Every other reader of `coords` still reads them as if the origin
-  were 0: hit-testing (`regionHit`), anchor editing and `pathToAnchors`, the booleans, `pathToD` and SVG export,
-  scene serialization, and the path-tools. Nothing produces a path with an origin yet: the pen tool, SVG import
-  and shape generators would have to build one with `PathBuilder.setOrigin`. A rect drawn on its own
-  (`tessellateRect`) is still built from float32 corners.
+  (`PaintBindContext.spaceInverse`). A path's coordinates can be measured from `PolygonPath.origin`
+  (2026-10-27), and every reader of `coords` adds it through `worldCoords`/`pathPoint`
+  (`geom/src/paths/pathOrigin.ts`). The pen tool, `pathFromD`, the booleans and SVG import give a path past
+  `ORIGIN_THRESHOLD` (2^14) an origin of its own. Three cases still write float32 world coords far out:
+  `transformPath` by default (resize, `pathInWorld`), an SVG element's own non-rotation `transform`, which
+  `svg/src/parse.ts` bakes in without `autoOrigin`, and `concatParts` in `text/src/glyphOutlines.ts`, which drops
+  an origin; apps/site's `CompoundPathsDemo` reads coords raw. A rect drawn on its own (`tessellateRect`) is still
+  built from float32 corners.
 
 - **(P3) [agent] The tessellate rows of `tests/perf/bench/BASELINE.md` predate two deliberate costs.**
   Bisected on studio (2026-10-19), the node that measured the 2026-09-29 rows, which still
@@ -359,19 +349,23 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/shape`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType
-  or OpenType bytes. Text drawn from an atlas (baked or canvas) is still laid out one code point at a time, because
-  atlases look glyphs up by code point and cannot draw a shaped glyph index. Open pieces:
-  - PDF export embeds glyphs by code point (`packages/pdf/src/fonts/embedFont.ts`, `glyphIndexOf(cp)`), so shaped
-    text exports unshaped. `PlacedGlyph.shaped.glyphs` already carries the glyph indices and positions it would
-    need.
+  or OpenType bytes, and PDF export writes shaped glyphs by index since 966c37fdc. Text drawn from an atlas (baked or
+  canvas) is still laid out one code point at a time, because atlases look glyphs up by code point and cannot draw
+  a shaped glyph index. Open pieces:
   - A ligature that spans several grapheme clusters puts its whole advance on its first code point, so a caret
     inside it lands at its end. Splitting the advance across its grapheme ends needs the cluster's drawing
-    direction.
+    direction: right to left, the opening code point is rightmost, so its glyphs must shift left by the other
+    shares (`clusterSlot` in `packages/text/src/layout/shapedRuns.ts`).
   - Script pieces are cut over a fixed list of scripts. Any other script is one piece, and its direction is
     guessed from the right-to-left Unicode blocks.
-  - Language is never set, so locale-specific forms (Serbian, Urdu digits) are not selected.
+  - Language is never set, so locale-specific forms (Serbian, Urdu digits) are not selected. Runs carry no
+    language at all: it needs a `lang` on the run and style, carried through `resolveRuns` and the layout cache
+    key, a `language` argument on `TextShaper.shape`, and the HarfBuzz buffer's language set from it.
   - harfbuzzjs awaits at its module's top level, so a bundler targeting below ES2022 fails on it; whether Vite
     pre-bundling loses its `.wasm` is unchecked (the README advises `optimizeDeps.exclude`).
+  - PDF export of a mark that is its own cluster (Arabic fatha) reads back in poppler with a space before it,
+    because the mark is set off the baseline. pdf.js ignores `/ActualText`, so it reads a cluster's unmapped
+    glyphs as control characters (`\u0007`) and drops some raised dots.
 
 ---
 
@@ -416,11 +410,6 @@ Owner tags, after the priority (2026-10-26):
   `diagram-drop` demo a straight `filter → mix` edge strikes through the two boxes dropped between them.
   Painting edges under nodes needs an edge between a container's fill and its members, or the edge hidden
   under the container; the alternative is `router="avoid"` in the demo. A pick between those (2026-10-26).
-- **(P3) [agent] A drop into a turned layout container reads the container's box unturned.** The layout pass shows a
-  strategy a turned container in its own frame since 2026-10-27 (`strategyView` in `layoutPass.ts`), but the drag
-  hooks (`getDropTargets`, `reflowPoses`, `commitDrop`, in `interactions/actions/move/layout/dropPass.ts` and
-  `commit/layoutDrop.ts`) still get its axis-aligned box beside children in turned world poses, so a drop preview
-  or commit into a rotated grid or stack is off its axes (inferred from the code, not tested).
 
 ---
 
@@ -484,13 +473,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
 - **(P4) [agent] A headless-component layer shared by DOM and WebGL chrome.** `@weasel-js/headless` (added
-  2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type
-  (`rovingKey`, `stepStop`, `typeaheadStep`), and `@weasel-js/menu` runs each menu level on it; ui's `MenuPanel`
-  and hud's `drawPanel` draw that menu, and a hud widget's `accessibleTree` is the substrate-neutral description its
-  DOM mirror is built from. Left, in order: focus that means one thing whether it is DOM focus or `hud.focus`; a
+  2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type (`rovingKey`,
+  `stepStop`, `typeaheadStep`), and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
+  `@weasel-js/menu` runs each menu level on the list half, ui's `useRowNavigation` types ahead through it, `Hud` is a
+  `FocusScope<Widget>`, and ui's `domFocusScope(root)` is the same contract over DOM elements. Left, in order: a
   measure/draw contract a DOM component and a hud widget both implement; then porting a button and a list onto it.
-  The list port should fold ui's `useRowNavigation`/`useTypeahead` onto `headless`: it is a second typeahead that
-  does not cycle on a repeated letter, and it reads `tree.typeaheadMs` where `headless` takes a `resetMs`.
+  The list port should also move ui's arrow/Home/End stepping onto `rovingKey`: `useRowNavigation`'s `STEPS` and
+  `useRovingTabIndex`'s `rovingTarget` are two more copies of it. A page that has both DOM controls and a hud canvas
+  still joins the two at `attach.ts`'s `wireFocus`, not through `FocusScope`.
 - **(P2) [maintainer] Publish `@weasel-js/headless` and `@weasel-js/shape` for the first time.** Both were added
   2026-10-27; each needs a first publish by hand, then `setup-trusted-publishing.mjs` and a committed
   `trust-pending.json` (`docs/releasing.md`). Until then `check:first-publish` fails the release job.
@@ -964,10 +954,7 @@ only story runner in the repo.
   presumably the timed-out attempt's lab still answering. `TrialTransport.test.tsx`'s "shares the chosen speed
   between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both
   2026-10-27). What they wait on is unknown: the next sighting wants the attempt's stack at the timeout.
-  In the browser project, `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is, and
-  takes no press past it" timed out in `waitFor` on studio in the batch-7 gate at c6f0578c5, after passing at
-  5257af1db, whose labkit code is the same (2026-10-27). Its `Lab.messages` run at 041b87fa7 also failed once on
-  play rate ("plays with the controls left off").
+  `Lab.messages`'s run at 041b87fa7 also failed once on play rate ("plays with the controls left off").
 
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
@@ -1029,16 +1016,16 @@ only story runner in the repo.
   logs lived in a session scratchpad and are not kept.
 
 - **(P2) [agent] HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.** With the readout
-  changing every frame the HUD allocates 2.52 MB a frame at 5,000 glyphs on a fixed camera against the DOM's 0.10
-  (msb-uai, 2026-10-27, down from 3.17; `tests/perf/hud-vs-dom.spec.ts`, README "What the HUD allocates").
-  Line breaking, painting's group slots, an atlas face's descent and the empty objects spread while resolving are
-  gone. What is left: the column and quad arrays (`slice`, 869 KB), which the layout and paint caches hold;
-  `layoutRuns`' line boxes and result (255); `paintRuns` and `groupFor` building the returned groups (179, 87);
-  `placeLine`'s line box (133); `resolveFontVariantInternal`'s result object and two key strings per run (96;
-  caching it per font entry would change result identity); `resolveTextStyle` and `resolveRuns` building the
-  command (73, 67). Glyph rotation added two numbers per quad and one per column, which these figures predate
-  (about +24 bytes a glyph, inferred from the shapes, not measured). A still HUD drawn through `drawLayers`
-  costs the main thread what the DOM does (README, "A still HUD through `drawLayers`").
+  changing every frame the HUD allocates 1.95 MB a frame at 5,000 glyphs on a fixed camera against the DOM's 0.10
+  (msb-uai, 2026-10-27, down from 2.68; `tests/perf/hud-vs-dom.spec.ts`, README "What the HUD allocates"). A
+  layout's column and quad arrays now go back to a pool once no runs array files it, the structural list has evicted
+  it, and every caller only read it. What is left: `placeLine`'s line box and `layoutRuns`' lines and result (242,
+  174 KB); `paintRuns` and `groupFor` building the returned groups (177, 88); 179 under `dropRuns`, which nothing it
+  visibly does should allocate and an in-process Node profile of the same loop does not show;
+  `resolveFontVariantInternal`'s result object and two key strings per run (95; caching it per font entry would
+  change result identity); `resolveTextStyle` and `resolveRuns` building the command (74, 69). Main-thread time did
+  not move clearly: three later runs put moving 5,000 glyphs at 3.23–4.33 ms against 3.46 before. A still HUD drawn
+  through `drawLayers` costs the main thread what the DOM does (README, "A still HUD through `drawLayers`").
 
 - **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
