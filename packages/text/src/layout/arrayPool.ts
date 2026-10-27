@@ -26,23 +26,30 @@ export function doubles(n: number): number[] {
 /** Most elements held across both pools: 2 MB of numbers. */
 export const ARRAY_POOL_LIMIT = 1 << 18;
 
-const nums = new Map<number, number[][]>();
-const refs = new Map<number, unknown[][]>();
+/** Arrays of one length. `n` counts the live ones, so emptying the bucket
+ *  never shrinks `items`: popping did, and refilling it reallocated every
+ *  frame. */
+interface Bucket<T> { items: (T[] | undefined)[]; n: number }
+
+const nums = new Map<number, Bucket<number>>();
+const refs = new Map<number, Bucket<unknown>>();
 let held = 0;
 
-function take<T>(pool: Map<number, T[][]>, n: number): T[] | undefined {
-  const list = pool.get(n);
-  if (list === undefined || list.length === 0) return undefined;
+function take<T>(pool: Map<number, Bucket<T>>, n: number): T[] | undefined {
+  const b = pool.get(n);
+  if (b === undefined || b.n === 0) return undefined;
   held -= n;
-  return list.pop();
+  const a = b.items[--b.n];
+  b.items[b.n] = undefined;
+  return a;
 }
 
-function give<T>(pool: Map<number, T[][]>, a: T[]): void {
+function give<T>(pool: Map<number, Bucket<T>>, a: T[]): void {
   const n = a.length;
   if (n === 0 || held + n > ARRAY_POOL_LIMIT) return;
-  let list = pool.get(n);
-  if (list === undefined) pool.set(n, (list = []));
-  list.push(a);
+  let b = pool.get(n);
+  if (b === undefined) pool.set(n, (b = { items: [], n: 0 }));
+  b.items[b.n++] = a;
   held += n;
 }
 
