@@ -190,6 +190,8 @@ function runAttrs(
   for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
   // `none` included: on a run it overrides a transform the node would pass down.
   if (run.textTransform) attrs.push(`style="text-transform:${run.textTransform}"`);
+  // One value turns every glyph of the tspan: a glyph past a list's end takes its last.
+  if (run.rotate) attrs.push(`rotate="${trimNumber(run.rotate)}"`);
   return attrs;
 }
 

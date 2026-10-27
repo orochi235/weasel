@@ -9,7 +9,7 @@ import { multiply, parseTransform, isIdentity } from './transform';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
-import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, warnUnreadPositions, writtenByWeasel } from './tspanLines';
+import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, writtenByWeasel } from './tspanLines';
 import { LAID_ATTR } from './laidLines';
 import { readRuns } from './readRuns';
 import { mapFillPaint } from './fillPaint';
@@ -102,7 +102,6 @@ export function parseTextElement(
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
   // The box is built in the element's own coordinates and then taken through
   // the whole transform at once, by `placeNode`.
-  warnUnreadPositions(el, onWarn);
   const ax = readLength(el, 'x', 'x', 0, onWarn);
   const ay = readLength(el, 'y', 'y', 0, onWarn);
 
