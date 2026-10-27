@@ -1,10 +1,12 @@
+import { applyToPoint, invert } from '@weasel-js/geom';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import { nodeDescriptors, poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
-import { scenePoseFrame } from 'interactions/actions/poseFrame';
+import { sceneBoxFrames, scenePoseFrame } from 'interactions/actions/poseFrame';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_ORIGIN_PROJECTION, type OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { ProbeReads } from './probes2d';
+import type { SnapFrame } from './types';
 
 type Point = { x: number; y: number };
 
@@ -41,6 +43,21 @@ export function sceneRotations(
     const d = descriptorOf(id);
     if (!d.withRotation || !d.getRotation || d.supportsRotation?.(node.pose) === false) return undefined;
     return d.getRotation(frame.world(id as NodeId));
+  };
+}
+
+/** Each node's box frame, as `SnapCollect.frameOf` hands it to a source. */
+export function sceneSnapFrames(scene: Scene<unknown, string, unknown>): (id: string) => SnapFrame | undefined {
+  const boxes = sceneBoxFrames(scene);
+  return (id) => {
+    const m = boxes(id);
+    if (!m) return undefined;
+    const back = invert(m);
+    const through = (t: typeof m, p: Point): Point => {
+      const [x, y] = applyToPoint(t, p.x, p.y);
+      return { x, y };
+    };
+    return { toWorld: (p) => through(m, p), toLocal: (p) => (back ? through(back, p) : null) };
   };
 }
 

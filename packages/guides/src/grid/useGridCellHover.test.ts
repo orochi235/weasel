@@ -130,4 +130,20 @@ describe('useGridCellHover — abandoned renders', () => {
     act(() => { fire(el, 'pointermove', { clientX: 25, clientY: 7 }); });
     expect(getCell!()).toEqual({ col: 2, row: 0 });
   });
+
+  it('reports a move between two regions whose cells share a column and row', () => {
+    const el = makeEl();
+    const ref = createRef<HTMLElement>();
+    (ref as { current: HTMLElement }).current = el;
+    const onChange = vi.fn();
+    const root = { system: { base: 'u', units: { u: 1 } } };
+    const box = (x: number) => [{ x, y: 0 }, { x: x + 100, y: 0 }, { x: x + 100, y: 100 }, { x, y: 100 }];
+    const regions = [0, 100].map((x) => ({ outline: box(x), chain: [root], frame: [1, 0, 0, 1, x, 0] as const }));
+    renderHook(() =>
+      useGridCellHover({ ref, view: () => identityView, spacing: 10, scopes: { root }, regions: () => regions, onChange }),
+    );
+    act(() => { fire(el, 'pointermove', { clientX: 25, clientY: 5 }); });
+    act(() => { fire(el, 'pointermove', { clientX: 125, clientY: 5 }); });
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
 });

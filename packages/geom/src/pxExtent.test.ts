@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { pxExtent, scaleDelta, withinPxBox, withinPxRadius } from './pxExtent';
+import { rotate } from './affine';
+import { pxExtent, pxExtentInFrame, scaleDelta, withinPxBox, withinPxRadius } from './pxExtent';
 import { meanScale } from './meanScale';
 
 const UNIFORM = { x: 2, y: 2 };
@@ -19,6 +20,23 @@ describe('pxExtent', () => {
 
   it('uses magnitude, so a flipped axis keeps a positive extent', () => {
     expect(pxExtent(8, { x: -4, y: 1 })).toEqual({ x: 2, y: 8 });
+  });
+});
+
+describe('pxExtentInFrame', () => {
+  it('agrees with pxExtent for a frame that only turns', () => {
+    const a = pxExtentInFrame(8, SQUISHED, rotate(0.4));
+    const b = pxExtent(8, SQUISHED, 0.4);
+    expect(a.x).toBeCloseTo(b.x, 12);
+    expect(a.y).toBeCloseTo(b.y, 12);
+  });
+
+  it('measures in the frame\'s own units', () => {
+    expect(pxExtentInFrame(8, UNIFORM, [2, 0, 0, 0.5, 7, 9])).toEqual({ x: 2, y: 8 });
+  });
+
+  it('is zero on both axes for a singular frame', () => {
+    expect(pxExtentInFrame(8, UNIFORM, [1, 0, 0, 0, 0, 0])).toEqual({ x: 0, y: 0 });
   });
 });
 
