@@ -173,10 +173,12 @@ reader for chrome, and declares nothing.
 A trial whose instrument leaves `orbit` undeclared and draws 3D anyway has a
 camera nothing labkit owns can move, and Clone, Reset, and the zoom controls
 pass it by. In development it warns once per instrument and marks its title
-bar "no camera". It learns of a 3D view two ways: a `useOrbitView()` call, and
+bar "no camera". It learns of a 3D view three ways: a `useOrbitView()` call;
 a three.js `WebGLRenderer` whose canvas sits in the trial's DOM — three
-announces each one on `__THREE_DEVTOOLS__`, which `src/trial/threeWatch.ts`
-defines or joins. Declaring `orbit` in any form ends it:
+announces each one on `__THREE_DEVTOOLS__`, which `src/trial/watch3d.ts`
+defines or joins; and WebGL depth testing turned on for a canvas there, which
+weasel's own 2D renderer never does. A raw WebGPU view is not seen. Declaring
+`orbit` in any form ends it:
 
 | Declared | Meaning |
 |---|---|

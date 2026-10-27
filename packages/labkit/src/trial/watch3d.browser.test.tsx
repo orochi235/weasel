@@ -12,8 +12,9 @@ import type { Instrument, OrbitCapability } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import type { LabMode } from '../state/types';
 
-// The jsdom suite fires three's devtools announcement by hand; this one builds
-// real renderers, so it fails if three stops announcing or moves `domElement`.
+// The jsdom suite fires three's devtools announcement and fakes a WebGL context; this one builds real
+// renderers and contexts, so it fails if three stops announcing or moves `domElement`, or if `enable` stops
+// going through the context prototype.
 
 type Kind = 'webgl' | 'webgpu';
 
@@ -136,6 +137,46 @@ describe('a real three.js renderer under a declared `orbit`', () => {
     mount(threeLab('webgl', orbit));
     // The watcher retries for a second while a canvas joins the DOM.
     await new Promise((r) => setTimeout(r, 1300));
+    expect(cameraWarnings()).toEqual([]);
+    expect(badge()).toBeNull();
+  });
+});
+
+/** A hand-written WebGL view on a real context, with depth testing on or off. */
+function RawGl({ depth }: { depth: boolean }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const gl = ref.current?.getContext('webgl2');
+    if (!gl) return;
+    if (depth) gl.enable(gl.DEPTH_TEST);
+    else gl.disable(gl.DEPTH_TEST);
+  }, [depth]);
+  return <canvas ref={ref} width={120} height={80} />;
+}
+
+function rawLab(depth: boolean): Instrument {
+  return {
+    name: `Raw${++made}`,
+    defaultConfig: () => ({}),
+    initialState: () => ({}),
+    render: () => <RawGl depth={depth} />,
+  } as Instrument;
+}
+
+describe('raw WebGL in a trial with no `orbit`', () => {
+  it('warns once it turns on depth testing, and marks the title bar', async () => {
+    const instrument = rawLab(true);
+    mount(instrument);
+    await waitFor(() => expect(cameraWarnings()).toHaveLength(1));
+    expect(String(cameraWarnings()[0]?.[0])).toContain(
+      `"${instrument.name}" draws a 3D view (WebGL with depth testing)`,
+    );
+    await waitFor(() => expect(badge()).not.toBeNull());
+  });
+
+  it('says nothing of a context with depth testing off', async () => {
+    mount(rawLab(false));
+    await new Promise((r) => setTimeout(r, 300));
     expect(cameraWarnings()).toEqual([]);
     expect(badge()).toBeNull();
   });

@@ -1,8 +1,8 @@
 import { isDev } from '@weasel-js/react';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import type { Instrument } from '../instrument/types';
-import { installThreeWatch, watchThree } from './threeWatch';
 import { type TrialOrbit, TrialOrbitContext } from './useTrialOrbit';
+import { install3dWatch, watch3d } from './watch3d';
 
 /** Tells the trial around it that a 3D view is drawn there, and how. */
 const OrbitViewContext = createContext<((how: string) => void) | null>(null);
@@ -44,8 +44,9 @@ function warnOfNoCamera(instrument: Instrument, how: string): void {
 /**
  * Provides a trial's orbit to `useTrialOrbit` and `useOrbitView`. In
  * development it also watches for a 3D view drawn in a trial whose instrument
- * leaves `orbit` undeclared — through `useOrbitView`, or a three.js renderer
- * in its DOM — and warns once per instrument and marks the title bar.
+ * leaves `orbit` undeclared — through `useOrbitView`, a three.js renderer in
+ * its DOM, or WebGL depth testing on a canvas there — and warns once per
+ * instrument and marks the title bar.
  */
 export function TrialOrbitProvider({
   orbit,
@@ -60,7 +61,7 @@ export function TrialOrbitProvider({
 }) {
   const undeclared = instrument.orbit === undefined && isDev();
   // Ahead of the instrument's effects, which is where a renderer is built.
-  if (undeclared) installThreeWatch();
+  if (undeclared) install3dWatch();
   const [missing, setMissing] = useState<string | null>(null);
   const declare = useCallback(
     (how: string) => {
@@ -71,7 +72,7 @@ export function TrialOrbitProvider({
     [undeclared, instrument],
   );
   useEffect(
-    () => (undeclared ? watchThree(trialId, () => declare('a three.js renderer')) : undefined),
+    () => (undeclared ? watch3d(trialId, declare) : undefined),
     [undeclared, trialId, declare],
   );
   return (

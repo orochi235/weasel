@@ -1,7 +1,7 @@
 /**
- * A trial learns that it draws 3D from `useOrbitView`, or from a three.js
- * renderer drawing into its DOM; drawing 3D through no `orbit` warns, and
- * marks the title bar.
+ * A trial learns that it draws 3D from `useOrbitView`, from a three.js
+ * renderer drawing into its DOM, or from WebGL depth testing turned on for a
+ * canvas there; drawing 3D through no `orbit` warns, and marks the title bar.
  */
 
 import { act, waitFor } from '@testing-library/react';
@@ -29,7 +29,17 @@ import { as3DView } from '../state/view';
 import { useOrbitView } from './useOrbitView';
 import type { TrialOrbit } from './useTrialOrbit';
 
+/** jsdom has no WebGL: a context with only the calls the depth watch reads. Defined before any trial
+ *  mounts, as a browser's is before labkit loads. */
+const DEPTH_TEST = 0x0b71;
+class FakeGl {
+  constructor(readonly canvas: HTMLCanvasElement) {}
+  enable(_cap: number): void {}
+  disable(_cap: number): void {}
+}
+
 beforeAll(() => {
+  (globalThis as { WebGL2RenderingContext?: unknown }).WebGL2RenderingContext = FakeGl;
   const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
@@ -191,6 +201,36 @@ describe('a three.js renderer in a trial', () => {
   it('is ignored outside any trial', async () => {
     await renderSettled(<ThreeScene />);
     await new Promise((r) => setTimeout(r, 300));
+    expect(cameraWarnings()).toEqual([]);
+  });
+});
+
+/** A hand-written WebGL view: its own canvas and context, no labkit hook. `depth` turns depth testing on, as a
+ *  3D view does; without it the canvas is drawn the way weasel's 2D renderer draws one, depth testing off. */
+function RawGl({ depth }: { depth: boolean }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const gl = new FakeGl(ref.current as HTMLCanvasElement);
+    if (depth) gl.enable(DEPTH_TEST);
+    else gl.disable(DEPTH_TEST);
+  }, [depth]);
+  return <canvas ref={ref} />;
+}
+
+describe('raw WebGL in a trial', () => {
+  it('counts as a 3D view once it turns on depth testing', async () => {
+    await mount(solid('RawDepth', undefined, <RawGl depth />));
+    await waitFor(() => expect(cameraWarnings()).toHaveLength(1));
+    expect(String(cameraWarnings()[0]?.[0])).toMatch(
+      /"RawDepth" draws a 3D view \(WebGL with depth testing\)/,
+    );
+    await waitFor(() => expect(badge()).not.toBeNull());
+  });
+
+  it('says nothing of a canvas drawn without depth testing, or under a declared orbit', async () => {
+    await mount(solid('RawFlat', undefined, <RawGl depth={false} />));
+    await mount(solid('RawOwned', false, <RawGl depth />));
+    await new Promise((r) => setTimeout(r, 50));
     expect(cameraWarnings()).toEqual([]);
   });
 });
