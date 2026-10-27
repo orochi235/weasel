@@ -32,13 +32,19 @@ const menus: Asset[] = DRAW_MENUS.map((m) => {
   return { id: `menu:${m.id}`, label, kind: 'layout', over: PREFS_ID, root: drawnAs(m.menu, 'menu', label) };
 });
 
+/** The app-defined leaf kinds the surface assets draw with their own code, which needs the running editor. */
+export const DRAW_LEAF_KINDS: readonly string[] = [...new Set(SURFACE_ASSETS.flatMap((a) => [
+  ...Object.keys(a.renderers?.panel ?? {}),
+  ...Object.keys(a.renderers?.bar ?? {}),
+]))];
+
 const nodes: Asset[] = defaultNodeProperties.map((e) => ({
   id: `node:${e.name}`, label: `Node: ${e.name}`, kind: 'schema', root: e.schema,
 }));
 
 /**
  * Every schema WeaselDraw ships, as one workspace: its preferences and each node's properties as dialogs, and its
- * toolbar, panel, menu bar, and context-menu assets as layouts. Panels drawn by their own code have no schema and are left out.
+ * toolbar, panel, menu bar, and context-menu assets as layouts.
  */
 export const DRAW_WORKSPACE: Workspace = {
   assets: [{ id: PREFS_ID, label: 'WeaselDraw preferences', kind: 'schema', root: PREFS }, ...nodes, ...surfaces, menuBar, ...menus],

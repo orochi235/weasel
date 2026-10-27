@@ -42,6 +42,17 @@ describe('AssetsPage', () => {
     expect(within(tree()).getByText('reorder')).toBeInTheDocument();
   });
 
+  it.each([['Colors', 'Colors'], ['Properties', 'Selection'], ['Simplify and Offset', 'Simplify']])(
+    'previews %s with a note where the app draws a leaf itself',
+    (label, leaf) => {
+      renderWithIcons(<AssetsPage />);
+      fireEvent.click(asset(label));
+      const preview = within(screen.getByRole('region', { name: 'Live preview' }));
+      expect(preview.getByText(`${leaf}: drawn by WeaselDraw`)).toBeInTheDocument();
+      expect(preview.queryByText(/no renderer/)).toBeNull();
+    },
+  );
+
   it('lists the menu bar, and shows its titles in the structure tree', () => {
     renderWithIcons(<AssetsPage />);
     fireEvent.click(asset('Menu bar'));
