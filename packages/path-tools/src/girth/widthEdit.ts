@@ -164,10 +164,11 @@ export function gripAt(hit: WidthEdgeHit): WidthGrip | null {
   const count = anchorPoints(target.path).length;
   const widths = widthsOf(target, count);
   const factor = edge.factor > 0.05 ? edge.factor : 1;
-  const base = { target, side: edge.side, normal: { x: edge.nx, y: edge.ny }, factor };
+  const base = { target, side: edge.side, factor };
   if (hit.index !== null) {
     const start = vertexHalfWidths(widths[hit.index], target.fallback);
-    return { ...base, path: target.path, widths, index: hit.index, at: hit.at, inserted: false, start };
+    const normal = sideNormal(anchorNormals(target.path)[hit.index], edge);
+    return { ...base, normal, path: target.path, widths, index: hit.index, at: hit.at, inserted: false, start };
   }
   const set = pathToAnchors(target.path);
   const seg = nearestSegmentT(set.anchors, edge.x, edge.y, set.closed);
@@ -180,7 +181,16 @@ export function gripAt(hit: WidthEdgeHit): WidthGrip | null {
   if (!next || inserted < 0) return null;
   const start = { left: edge.left / factor, right: edge.right / factor };
   widths.splice(inserted, 0, widths.some(isWidthSet) ? vertexWidthFromSides(start.left, start.right) : NaN);
-  return { ...base, path: next.path, widths, index: inserted, at: anchorPoints(next.path)[inserted], inserted: true, start };
+  const normal = sideNormal(anchorNormals(next.path)[inserted], edge);
+  return { ...base, normal, path: next.path, widths, index: inserted, at: anchorPoints(next.path)[inserted], inserted: true, start };
+}
+
+/** The path's own normal at a width point, turned toward the grabbed edge. The
+ *  hit's normal is the flattened chord's, which tilts off the curve's by up to
+ *  half the turn the flattening allows. */
+function sideNormal(normal: Point | undefined, edge: StrokeEdgeHit): Point {
+  if (!normal) return { x: edge.nx, y: edge.ny };
+  return normal.x * edge.nx + normal.y * edge.ny < 0 ? { x: -normal.x, y: -normal.y } : normal;
 }
 
 /** The grabbed edge's distance from the path after the pointer has moved
