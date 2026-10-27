@@ -217,6 +217,15 @@ describe('resolveRuns screen-pixel sizes', () => {
 });
 
 describe('resolveRuns text-transform', () => {
+  it('gives an untransformed run its own text and no optional field it did not ask for', () => {
+    const [run] = resolveRuns([{ text: 'aß' }], resolveTextStyle({}));
+    expect(run.text).toBe('aß');
+    expect(Object.keys(run)).toEqual([
+      'text', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fill', 'letterSpacing',
+      'underline', 'strikethrough', 'overline', 'baselineShift',
+    ]);
+  });
+
   it("applies a run's transform to its text", () => {
     const style = resolveTextStyle({});
     const out = resolveRuns([{ text: 'ab ' }, { text: 'cd', textTransform: 'uppercase' }], style);
