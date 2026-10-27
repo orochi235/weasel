@@ -77,29 +77,33 @@ clipboard, no drop or paste, and no selection chrome. The gesture dispatcher is
 mounted, so a binding a consumer adds — an `ambient` entry, a tool, an action
 with a `defaultBinding` — routes as usual, with no base tool ahead of it.
 
-Behavior is turned on by naming presets in `features`. Each is independent:
+Behavior is turned on by naming presets in `features`. A preset can include
+others, and naming it turns those on too; any of them can also be named alone:
 
 | Preset | Registers |
 |---|---|
-| `view` | wheel pan and zoom, pinch, the zoom keys; the hand tool, held on Space |
-| `select` | the select tool, as the initial active tool and Escape's return target |
+| `view` | wheel pan and zoom, pinch, the zoom keys; the hand tool (`tools:view`), held on Space |
+| `select` | the select and lasso tools (`tools:select`), the select tool as the initial active tool and Escape's return target |
 | `outline` | the selection outline, whichever tool sets the selection |
 | `pick` | `select` and `outline` |
 | `move` | ambient drag-to-move and Alt-drag-to-clone bindings |
 | `resize` | the resize handles, drawn and bound |
 | `rotate` | the rotation handle, drawn and bound |
 | `transform` | `resize` and `rotate` |
-| `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cancel-gesture, clipboard, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
-| `arrange` | align, distribute, reorder, flip |
-| `paths` | pathfinder operations, path-edit entry, anchor editing |
+| `edit` | `escape` (Escape, cancel-gesture), `contextMenu`, `selectAll`, `duplicate` (with transform-again), `delete`, `group`, `nudge`, `style` (fill and stroke), `clipboard`; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `arrange` | `flip`, `reorder`, `align`, `distribute` |
+| `paths` | `anchorKeys` (anchor nudge and delete, Escape out of path edit, each tried ahead of its node-level twin), `pathfinder`, `outlines`, `pathEdit`, `pathCommands` |
 | `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
-| `draw` | every preset above |
+| `draw` | every preset above but `pick` and `transform`, whose parts it names itself |
+| `tools:shape`, `tools:draw`, `tools:type`, `tools:page` | the tools that make things: shapes, the pen and pencil, text and the sticky note, the page slicer |
 
-`FEATURE_ACTION_IDS` is the table of which kit action each preset registers,
-and `COMPOSITE_FEATURES` of what `pick`, `transform` and `draw` abbreviate.
-Each name stands for a `FeaturePreset` object (`selectPreset`, `pathsPreset`,
-…), and `features` takes those objects, or a package's own, beside the names;
-`docs/extending.md` ("Presets") has the shape. A
+A preset holding only actions, tools, and includes is a bundle; one with any
+other role (an ambient binding, chrome, an ordering rule) is an atom, whose
+parts only work together. `FEATURE_ACTION_IDS` is the table of which kit
+action each preset registers itself, and `describePresets` gives every preset
+as data. Each name stands for a `FeaturePreset` object (`selectPreset`,
+`pathsPreset`, …), and `features` takes those objects, or a package's own,
+beside the names; `docs/extending.md` ("Presets") has the shape. A
 canvas supplying its own select tool names `outline` rather than `pick`, so the
 built-in one is not mounted beside it.
 Passing `viewport` implies `view`; the prop only configures it. A tool brings
