@@ -9,6 +9,8 @@ import {
   actionItems,
   asNodeId,
   createScene,
+  PAGES_DOC_KEY,
+  pagesOf,
   useActionsRegistry,
   type ActionsRegistry,
 } from '@weasel-js/core';
@@ -32,7 +34,11 @@ afterEach(() => {
 });
 
 function seededScene(): DrawScene {
-  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+  const letter = { width: 816, height: 1056 };
+  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
+    systemLayers: [{ id: 'default' }],
+    doc: { [PAGES_DOC_KEY]: { pages: [{ id: 'page-1', ...letter }, { id: 'page-2', ...letter }] } },
+  });
   for (const id of ['a', 'b']) {
     scene.add({
       kind: 'mark', layer: 'default', id: asNodeId(id),
@@ -51,7 +57,7 @@ function setup() {
     paperSize: 'letter',
     backgroundColor: '#ffffff',
     setFilename: vi.fn(),
-    setPaperSize: vi.fn(),
+    showFirstPage: vi.fn(),
     setBackgroundColor: vi.fn(),
   };
   let registry: ActionsRegistry | null = null;
@@ -81,20 +87,22 @@ describe('useFileCommands', () => {
       .toEqual([['file.new:letter', 'US Letter'], ['file.new:a4', 'A4'], ['file.new:legal', 'Legal']]);
   });
 
-  it('New at a size empties the document in one undo entry and sets the size', () => {
+  it('New at a size empties the document to one page of that size, in one undo entry, and shows it', () => {
     const { registry, scene, target } = setup();
     act(() => { registry.trigger('file.new', { size: 'a4' }); });
     expect(scene.renderOrder()).toEqual([]);
-    expect(target.setPaperSize).toHaveBeenCalledWith('a4');
+    expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 794, height: 1123 }]);
+    expect(target.showFirstPage).toHaveBeenCalledOnce();
     act(() => { scene.undo(); });
     expect(scene.renderOrder()).toHaveLength(2);
+    expect(pagesOf(scene)?.pages.map((p) => p.id)).toEqual(['page-1', 'page-2']);
   });
 
-  it('New with no size empties the document and keeps the paper size', () => {
-    const { registry, scene, target } = setup();
+  it('New with no size empties the document to one page of the shown paper size', () => {
+    const { registry, scene } = setup();
     act(() => { registry.trigger('file.new'); });
     expect(scene.renderOrder()).toEqual([]);
-    expect(target.setPaperSize).not.toHaveBeenCalled();
+    expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 816, height: 1056 }]);
   });
 
   it('Open and Import hand the picker the document', () => {
@@ -124,7 +132,7 @@ describe('useFileCommands', () => {
   it('finds the paper sizes in the command palette by typing "new"', () => {
     Element.prototype.scrollIntoView = () => {};
     const scene = seededScene();
-    const target = { scene, filename: 'a', paperSize: 'letter', backgroundColor: '#fff', setFilename: vi.fn(), setPaperSize: vi.fn(), setBackgroundColor: vi.fn() } as FileCommandsTarget;
+    const target = { scene, filename: 'a', paperSize: 'letter', backgroundColor: '#fff', setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn() } as FileCommandsTarget;
     // The palette snapshots the registry when it opens, so open it after the commands register.
     function Host() {
       useFileCommands(target);

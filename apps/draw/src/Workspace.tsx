@@ -7,9 +7,9 @@ import {
   SceneCanvas,
   type SceneCanvasApi,
   type SelectionApi,
+  type PlacedPage,
   type ToolsApi,
   transformPath,
-  useCanvasSize,
   type UseSceneTextEditReturn,
   useMeasureTool,
   type View,
@@ -22,7 +22,6 @@ import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { type ReactElement, type RefObject, useMemo } from 'react';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
-import { PAPER_PRESETS } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { useInsertPaint } from './insertPaint';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
@@ -32,8 +31,7 @@ import type { UseModalityReturn } from './modality/useModality';
 import { useModeId } from './modality/useModeId';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
-import { TextEditDepPublisher, usePageFit, usePaperLayer, useSinglePage } from '@editor/index';
-import type { PaperSizeKey } from './paperSizes';
+import { type DocPages, TextEditDepPublisher, usePaperLayer } from '@editor/index';
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
 import { useColorContext } from './tools/colorContext';
@@ -68,7 +66,13 @@ export interface WorkspaceProps {
   textEdit: UseSceneTextEditReturn;
   view: View;
   onViewChange: (view: View) => void;
-  paperSize: PaperSizeKey;
+  /** The workspace's measured size, which the canvas fills. */
+  hostDims: { width: number; height: number };
+  pages: DocPages;
+  /** The page the grid, the symmetry center and the mode tint go by: the one in view, or the last that was. */
+  shownPage: Pick<PlacedPage, 'x' | 'y' | 'width' | 'height'>;
+  /** Fits the view to the shown page, for `viewport.recenter`. */
+  recenter: () => void;
   backgroundColor: string;
   onToolsCreated: (tools: ToolsApi) => void;
   onCanvas: (api: SceneCanvasApi | null) => void;
@@ -77,17 +81,15 @@ export interface WorkspaceProps {
 }
 
 /**
- * The workspace: the striped area holding the canvas, which fills it, with the document page
+ * The workspace: the striped area holding the canvas, which fills it, with the document's pages
  * drawn on the canvas as a world-space layer.
  */
 export function Workspace(props: WorkspaceProps): ReactElement {
-  const { scene, selection, modality, hostRef, textEdit, view, onViewChange, backgroundColor } = props;
+  const { scene, selection, modality, hostRef, textEdit, view, onViewChange, backgroundColor, hostDims, recenter } = props;
   const { machine } = modality;
-  const page = PAPER_PRESETS[props.paperSize];
-  const hostDims = useCanvasSize(hostRef);
-  const recenter = usePageFit(hostDims, props.paperSize, page, onViewChange);
+  const page = props.shownPage;
 
-  const paperLayer = usePaperLayer(useSinglePage(page), backgroundColor);
+  const paperLayer = usePaperLayer(props.pages.placed, backgroundColor);
   const grid = useGrid(page, backgroundColor);
   const spacingHints = useSpacingHints();
   const pathDirection = usePathDirection();
@@ -103,10 +105,10 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   // Bolder than the modes' own 0.12 so it reads through the stripes.
   const workspaceTint = useMemo(() => workspaceTintLayer({
     registry: machine.registry,
-    page: () => ({ x: 0, y: 0, width: page.width, height: page.height }),
+    page: () => ({ x: page.x, y: page.y, width: page.width, height: page.height }),
     intensity: 0.4,
     fallback: group.tint,
-  }), [machine, page.width, page.height, group.tint]);
+  }), [machine, page.x, page.y, page.width, page.height, group.tint]);
 
   const modeId = useModeId(machine);
   const targetLabel = useModeTargetLabel(machine, scene);

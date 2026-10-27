@@ -1,9 +1,28 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { RIGID_POSE_COMPOSITION, composeWorldPose, createScene, type RectPose } from '@weasel-js/core';
 import V2_CONTAINERS from './fixtures/v2-containers.scene.json';
-import { loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
+import { DOC_KEY } from './docPersistence';
+import { loadInitial, loadInitialDoc, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
 afterEach(() => localStorage.clear());
+
+describe('draw document values', () => {
+  it('starts a fresh drawing as one Letter page', () => {
+    expect(loadInitialDoc()).toEqual({ 'core:pages': { pages: [{ id: 'page-1', width: 816, height: 1056 }] } });
+  });
+
+  it('brings back the pages a drawing saved', () => {
+    const pages = { pages: [{ id: 'page-1', width: 794, height: 1123 }, { id: 'page-2', name: 'Back', width: 816, height: 1056 }] };
+    localStorage.setItem(LS_KEY, JSON.stringify({ version: 2, nodes: [], doc: { 'core:pages': pages } }));
+    expect(loadInitialDoc()['core:pages']).toEqual(pages);
+  });
+
+  it('opens a drawing saved before pages as one page of the paper size its settings kept', () => {
+    localStorage.setItem(LS_KEY, JSON.stringify({ version: 2, nodes: [] }));
+    localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'old.svg', backgroundColor: '#fff', paperSize: 'legal' }));
+    expect(loadInitialDoc()['core:pages']).toEqual({ pages: [{ id: 'page-1', width: 816, height: 1344 }] });
+  });
+});
 
 describe('draw scene loading', () => {
   it('starts with the welcome rectangle when nothing, or not a drawing, is saved', () => {

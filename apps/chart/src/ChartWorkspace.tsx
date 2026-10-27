@@ -1,6 +1,6 @@
 import {
   SceneCanvas, isTextData, useCanvasSize, useScene, useSceneTextEdit, useSelection,
-  type PlacedPage, type SceneCanvasApi, type Tool, type ToolsApi, type View,
+  type SceneCanvasApi, type Tool, type ToolsApi, type View,
 } from '@weasel-js/core';
 import { diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
@@ -17,7 +17,7 @@ import {
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
 import { NewChart } from './NewChartDialog';
 import { ChartPageStrip } from './pages/ChartPageStrip';
-import { PAGE_FIT_PADDING, useChartPages, type ChartPages } from './pages/useChartPages';
+import { PAGE_FIT_PADDING, useChartPages } from './pages/useChartPages';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
 import { StylePanel } from './theme/StylePanel';
@@ -42,14 +42,6 @@ const isEditableText = (data: ChartData): boolean => isTextData(data) && offPage
 /** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */
 const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool);
 
-/** The page the grid covers: the one in view, or the last one that was while the view is between pages. */
-function useGridPage(pages: ChartPages): PlacedPage | typeof FALLBACK_PAGE {
-  const [last, setLast] = useState<string | null>(null);
-  if (pages.current !== null && pages.current !== last) setLast(pages.current);
-  const id = pages.current ?? last;
-  return pages.placed.find((p) => p.id === id) ?? pages.placed[0] ?? FALLBACK_PAGE;
-}
-
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {
   const [initial] = useState(loadChartSession);
@@ -72,7 +64,7 @@ export function ChartWorkspace(): ReactElement {
   useExportCommands(scene, pages);
   const recenter = usePageFit(dims, 'chart', pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
   const paperLayer = usePaperLayer(pages.placed, theme.page);
-  const { gridLayer, snap, features } = useChartSnap(useGridPage(pages), theme.page);
+  const { gridLayer, snap, features } = useChartSnap(pages.shown ?? FALLBACK_PAGE, theme.page);
   const layers = useMemo(() => ({
     paper: { layer: paperLayer, before: 'grid' },
     ...(gridLayer ? { grid: { layer: gridLayer } } : {}),

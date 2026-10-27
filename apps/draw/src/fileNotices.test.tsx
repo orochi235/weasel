@@ -40,7 +40,7 @@ describe('opening and importing an SVG', () => {
   };
   const target = () => ({
     scene: newScene(),
-    setFilename: vi.fn(), setPaperSize: vi.fn(), setBackgroundColor: vi.fn(),
+    setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn(),
   });
 
   it('toasts what Open could not read, and stays quiet about a clean file', async () => {

@@ -1,9 +1,10 @@
 import { type AddNodeSpec, localizeWorldPoses, pathEffectNode, registeredPathEffects } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
-import { DEFAULT_BG_COLOR } from './docPersistence';
+import { DEFAULT_BG_COLOR, PAPER_PRESETS } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { reportSvgWarnings } from './fileNotices';
 import type { PaperSizeKey } from './paperSizes';
+import { firstPageSize, resetPages } from './pages/drawPages';
 import { leafOfObj } from './svgImport';
 import { parsedToDoc, pickSvgFileNamed, type SceneDraft, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 
@@ -68,7 +69,9 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
 /**
  * Open an SVG file as the document: the scene's nodes are removed and the
  * file's take their place, in one undo entry. The document takes the file's
- * name and its background, or white when it has none.
+ * name and its background, or white when it has none, and becomes one page of
+ * the paper size the file declares, or of its first page's size when it
+ * declares none.
  */
 export function openSvgText(
   scene: DrawScene,
@@ -78,8 +81,10 @@ export function openSvgText(
 ): OpenedSvg {
   const { parsed, drafts } = parseDrafts(text, onWarn);
   const doc = parsedToDoc(parsed);
+  const size = doc.paperSize ? PAPER_PRESETS[doc.paperSize] : firstPageSize(scene);
   scene.batch('Open', () => {
     scene.removeMany([...scene.renderOrder()]);
+    resetPages(scene, size);
     addDrafts(scene, drafts);
   });
   return {
@@ -102,8 +107,9 @@ export function importSvgText(scene: DrawScene, text: string, onWarn: OnWarn = (
 export interface OpenSvgTarget {
   scene: DrawScene;
   setFilename(name: string): void;
-  setPaperSize(size: PaperSizeKey): void;
   setBackgroundColor(color: string): void;
+  /** Fit the view to the document's first page, once it has been replaced. */
+  showFirstPage(): void;
 }
 
 /**
@@ -117,8 +123,8 @@ export async function openSvgFile(target: OpenSvgTarget): Promise<void> {
   const opened = openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w));
   reportSvgWarnings('Opened', warnings);
   target.setFilename(opened.filename);
-  if (opened.paperSize) target.setPaperSize(opened.paperSize);
   target.setBackgroundColor(opened.backgroundColor);
+  target.showFirstPage();
 }
 
 /**

@@ -64,7 +64,7 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useDebugCommands();
   useFileCommands({
     scene: storyScene, filename: 'story', paperSize: 'letter', backgroundColor: '#ffffff',
-    setFilename: noop, setPaperSize: noop, setBackgroundColor: noop,
+    setFilename: noop, showFirstPage: noop, setBackgroundColor: noop,
   });
   return <>{children}</>;
 }

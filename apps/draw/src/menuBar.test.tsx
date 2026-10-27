@@ -11,6 +11,7 @@ import {
   useActionsRegistry,
   type ActionsRegistry,
   type ToolsApi,
+  pagesOf,
 } from '@weasel-js/core';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
@@ -51,13 +52,12 @@ function setup() {
     pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
   });
-  const setPaperSize = vi.fn();
   let registry: ActionsRegistry | null = null;
   let tools: ToolsApi | null = null;
   function Probe() {
     useFileCommands({
       scene, filename: 'a', paperSize: 'letter', backgroundColor: '#ffffff',
-      setFilename: vi.fn(), setPaperSize, setBackgroundColor: vi.fn(),
+      setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn(),
     });
     registry = useActionsRegistry();
     return null;
@@ -76,7 +76,7 @@ function setup() {
     { wrapper: withIcons },
   );
   return {
-    commands, setPaperSize, scene,
+    commands, scene,
     registry: registry as unknown as ActionsRegistry,
     tools: () => tools as unknown as ToolsApi,
   };
@@ -135,7 +135,7 @@ describe('DRAW_MENU_BAR', () => {
     act(() => { fireEvent.click(menu().getByRole('menuitem', { name: /^New/ })); });
     expect(labels()).toEqual(['US Letter', 'A4', 'Legal']);
     act(() => { fireEvent.click(menu().getByRole('menuitem', { name: 'A4' })); });
-    expect(t.setPaperSize).toHaveBeenCalledWith('a4');
+    expect(pagesOf(t.scene)?.pages[0]).toMatchObject({ width: 794, height: 1123 });
   });
 
   it('runs the action a row names', () => {

@@ -1,10 +1,11 @@
 export { downloadBlob, pickFile } from './fileIO';
 export { describeFileWarnings, reportFileWarnings, type FileDeed } from './fileWarnings';
-export { usePaperLayer, useSinglePage, type PageSize } from './paperLayer';
+export { usePaperLayer, type PageSize } from './paperLayer';
 export { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
 export { readStored, writeSession, type SessionEntry } from './sessionStore';
 export { useAutosave, type AutosaveOptions, type SessionWrite } from './useAutosave';
 export { usePageFit } from './usePageFit';
+export { usePages, type DocPages } from './usePages';
 export { useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
 export { TextEditDepPublisher } from './TextEditDepPublisher';
 export { usePageGrid, type PageGridOptions } from './usePageGrid';

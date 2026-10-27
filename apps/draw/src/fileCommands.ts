@@ -1,12 +1,13 @@
 import { useCommand } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { importSvgFile, openSvgFile, type OpenSvgTarget } from './openSvg';
-import { isPaperSize, PAPER_SIZES } from './paperSizes';
+import { resetPages } from './pages/drawPages';
+import { isPaperSize, PAPER_PRESETS, PAPER_SIZES } from './paperSizes';
 import { saveSvgFile, type SavedDoc } from './saveSvg';
 
 export const FILE_ACTIONS = { new: 'file.new', open: 'file.open', import: 'file.import', save: 'file.save' } as const;
 
-/** New, opening onto one row per paper size, in the File menu. */
+/** New, opening onto one row per paper size, in the File menu. A new document is one page. */
 export const FILE_NEW_MENU: PrefGroup = pref.group(
   'New',
   { sizes: pref.action(FILE_ACTIONS.new) },
@@ -25,11 +26,13 @@ export function useFileCommands(target: FileCommandsTarget): void {
   const { scene } = target;
   useCommand(FILE_ACTIONS.new, 'New', (params) => {
     const size = params?.size;
-    if (isPaperSize(size)) target.setPaperSize(size);
+    const paper = PAPER_PRESETS[isPaperSize(size) ? size : target.paperSize];
     // The batch is what names the entry and captures the prior selection.
     scene.batch('New document', () => {
       scene.removeMany([...scene.renderOrder()]);
+      resetPages(scene, paper);
     });
+    target.showFirstPage();
   }, { variants: NEW_VARIANTS, tags: ['new', 'document'] });
   useCommand(FILE_ACTIONS.open, 'Open…', () => { void openSvgFile(target); });
   useCommand(FILE_ACTIONS.import, 'Import…', () => { void importSvgFile(scene); });

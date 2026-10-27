@@ -1,12 +1,12 @@
-import { buildSceneViewCommands, defaultDrawOne, type RenderLayer } from '@weasel-js/core';
-import { usePaperLayer, useSinglePage, type PageSize } from '@editor/index';
+import { buildSceneViewCommands, defaultDrawOne, type PlacedPage, type RenderLayer } from '@weasel-js/core';
+import { usePaperLayer } from '@editor/index';
 import { useMemo } from 'react';
 import type { DrawScene } from './drawDocument';
 
-/** What the loupe magnifies: the page and the scene on top of it. The scene half projects inside
+/** What the loupe magnifies: the pages and the scene on top of them. The scene half projects inside
  *  `buildSceneViewCommands`, which is what `space: 'screen'` says about it. */
-export function useLoupeSource(scene: DrawScene, page: PageSize, backgroundColor: string): RenderLayer<unknown>[] {
-  const paperLayer = usePaperLayer(useSinglePage(page), backgroundColor);
+export function useLoupeSource(scene: DrawScene, pages: readonly PlacedPage[], backgroundColor: string): RenderLayer<unknown>[] {
+  const paperLayer = usePaperLayer(pages, backgroundColor);
   return useMemo<RenderLayer<unknown>[]>(() => [
     paperLayer,
     {
