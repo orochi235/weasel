@@ -83,7 +83,7 @@
       "tags": []
     },
     "resamplePath": {
-      "body": "<path d=\"M3.125 15.625A6.875 6.875 0 0 1 16.875 15.625\" stroke-width=\"1\"/><rect x=\"1.875\" y=\"14.375\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"3.8886\" y=\"9.5136\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.75\" y=\"7.5\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"13.6114\" y=\"9.5136\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15.625\" y=\"14.375\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M2.5 13.75A7.5 7.5 0 0 1 17.5 13.75\" stroke-width=\"1\"/><rect x=\"1.25\" y=\"12.5\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"3.75\" y=\"7.5\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.75\" y=\"5\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"13.75\" y=\"7.5\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"16.25\" y=\"12.5\" width=\"2.5\" height=\"2.5\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Commands",
       "tags": []
     },

@@ -1,3 +1,4 @@
+import { chevron, GRID_HEAD, px } from '../../icons/scripts/lib/base.mjs';
 // Drawn from core's anchorIcons components.
 
 // Nudge anchors: a hatched block pushed by a two-ring pulse behind it, pointing the way it moves. At 16px a unit is
@@ -14,11 +15,12 @@ const nudge = (turn) => `
     </g>`;
 
 export const ANCHOR = {
+  // A corner on the pixel diagonal, its anchor three pixels square, and arrows on pixel row 2 closing on it.
   retractHandles: `
-    <path d="M3 17 L10 7 L17 17"/>
-    <path d="M2.5 5 H6.5 M5 3.5 L6.5 5 L5 6.5" stroke-width="1"/>
-    <path d="M17.5 5 H13.5 M15 3.5 L13.5 5 L15 6.5" stroke-width="1"/>
-    <rect x="8.5" y="5.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
+    <path d="M${px(1)} ${px(12)} L${px(7)} ${px(6)} L${px(13)} ${px(12)}"/>
+    <path d="M${px(0)} ${px(2)} H${px(4)} M${px(14)} ${px(2)} H${px(10)}" stroke-width="1.25"/>
+    <path d="${chevron([px(4), px(2)], [1, 0], ...GRID_HEAD)}${chevron([px(10), px(2)], [-1, 0], ...GRID_HEAD)}" stroke-width="1.25"/>
+    <rect x="${px(6) - 0.625}" y="${px(5) - 0.625}" width="3.75" height="3.75" fill="currentColor" stroke="none"/>`,
   symmetricHandles: `
     <path d="M3 17 C3 10 6 8 10 8 S17 10 17 17"/>
     <path d="M3.5 8 H16.5" stroke-width="1"/>
