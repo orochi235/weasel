@@ -11,8 +11,7 @@ const OVERLAP = 0.5;
 
 /** The stretch of the run's shape between run fractions `a` and `b`, as path data. */
 function stretchD(run: TrackRun, a: number, b: number): string {
-  const f = (g: number) => run.reversed ? run.to - g * (run.to - run.from) : run.from + g * (run.to - run.from);
-  const [lo, hi] = [f(a), f(b)].sort((x, y) => x - y) as [number, number];
+  const [lo, hi] = [run.toShape(a), run.toShape(b)].sort((x, y) => x - y) as [number, number];
   return trackShapeD(run.shape, Math.max(0, lo), Math.min(1, hi));
 }
 

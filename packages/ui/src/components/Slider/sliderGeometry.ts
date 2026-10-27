@@ -26,6 +26,8 @@ export interface SliderMeasure {
 /** What a slider's pointers and parts ask of the shape it lies along. */
 export interface SliderGeometry {
   readonly curved: boolean;
+  /** The inline direction values run in: from the right end under `'rtl'`. */
+  readonly direction: 'ltr' | 'rtl';
   /** The style that puts a part at `g` along the span. */
   place(g: number): CSSProperties;
   /** Null before the slider is mounted. */
@@ -37,12 +39,14 @@ const OPEN = { open: true };
 /** Reaches off the centerline past which a drag drops a thumb. */
 export const DROP_OFF = 1.5;
 
-/** A straight, left-to-right geometry along the rail's centerline, in the rail's own px. A pointer is mapped through
- *  the screen matrix of `frame`, an SVG drawn across the rail, so a rotated ancestor maps it back. */
-export function lineGeometry(rail: () => HTMLElement | null, frame: () => SVGGraphicsElement | null): SliderGeometry {
+/** A straight geometry along the rail's centerline, in the rail's own px, its values running from the right end under
+ *  `'rtl'`. A pointer is mapped through the screen matrix of `frame`, an SVG drawn across the rail, so a rotated ancestor
+ *  maps it back. */
+export function lineGeometry(rail: () => HTMLElement | null, frame: () => SVGGraphicsElement | null, direction: 'ltr' | 'rtl' = 'ltr'): SliderGeometry {
   return {
     curved: false,
-    place: (g) => ({ left: `${g * 100}%` }),
+    direction,
+    place: (g) => ({ left: `${(direction === 'rtl' ? 1 - g : g) * 100}%` }),
     measure: (clientX, clientY) => {
       const el = rail();
       if (!el) return null;
@@ -51,7 +55,7 @@ export function lineGeometry(rail: () => HTMLElement | null, frame: () => SVGGra
       const matrixed = f?.getScreenCTM?.() ? f : null;
       const p = boxPoint(matrixed ?? el, clientX, clientY);
       const { width, height } = matrixed ? layoutBox(el) : el.getBoundingClientRect();
-      const run = trackRun(lineShape({ x: 0, y: height / 2 }, { x: width, y: height / 2 }));
+      const run = trackRun(lineShape({ x: 0, y: height / 2 }, { x: width, y: height / 2 }), 0, 1, { direction });
       const { f: g, dist } = run.nearest(p);
       return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: width, thickness: height, reach: height };
     },
@@ -96,6 +100,7 @@ function reachOf(band: SVGElement | null, thickness: number): number {
 export function curvedGeometry(run: TrackRun, band: () => SVGGraphicsElement | null): SliderGeometry {
   return {
     curved: true,
+    direction: run.direction,
     place: (g) => placeOnRun(run, g),
     measure: (clientX, clientY) => {
       const el = band();

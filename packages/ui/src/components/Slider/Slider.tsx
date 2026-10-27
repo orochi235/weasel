@@ -21,6 +21,9 @@ export type { BoundsCtx, SliderProps, SliderStop, Thumb, ThumbRenderCtx, ThumbSh
  * readouts follow the shape, and values still run left to right after any flip. `aria-orientation` is left off
  * on a curve.
  *
+ * Under a computed `direction` of `rtl`, straight or curved, its values run from the right end, and ArrowRight steps
+ * down and ArrowLeft up, as a native range input's do.
+ *
  * A thumb's `value` may be tagged: it is placed by its amount, shown and
  * spoken through its own display where it carries one, and handed back with
  * its unit and display around the new number.

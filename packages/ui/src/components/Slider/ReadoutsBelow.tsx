@@ -1,4 +1,4 @@
-import { type ReactNode, useLayoutEffect, useRef } from 'react';
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef } from 'react';
 import s from './Slider.module.css';
 import { GAP, staggerRows } from './staggerRows';
 
@@ -27,7 +27,7 @@ function stagger(row: HTMLElement): void {
  * Each thumb's readout under it. A readout that would overlap one to its left steps down to the first row where
  * it fits, so thumbs close together keep every readout legible.
  */
-export function ReadoutsBelow({ readouts }: { readouts: readonly Readout[] }) {
+export function ReadoutsBelow({ readouts, place }: { readouts: readonly Readout[]; place: (fraction: number) => CSSProperties }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   // Positions depend on rendered text widths, so they are measured and written after layout, every render.
@@ -46,7 +46,7 @@ export function ReadoutsBelow({ readouts }: { readouts: readonly Readout[] }) {
   return (
     <div ref={ref} className={s.readoutsBelow}>
       {readouts.map((r, i) => (
-        <span key={i} data-readout="below" className={s.readoutBelow} style={{ left: `${r.fraction * 100}%` }}>
+        <span key={i} data-readout="below" className={s.readoutBelow} style={place(r.fraction)}>
           {r.content}
         </span>
       ))}

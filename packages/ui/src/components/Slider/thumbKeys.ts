@@ -19,13 +19,15 @@ export interface ThumbKeyArgs<T extends Thumb> {
   range: readonly [number, number] | undefined;
   onInput: (next: T[]) => void;
   onChange: ((next: T[]) => void) | undefined;
+  /** Under `'rtl'` the horizontal arrows are mirrored, as the values run from the right end. */
+  direction: 'ltr' | 'rtl';
 }
 
 /** The keydown handler for thumb `index`: arrows, page keys, Home and End move its value. */
 export function onThumbKeyDown<T extends Thumb>(a: ThumbKeyArgs<T>) {
   const { thumbs, stops, min, max, step, constraint } = a;
   return (index: number) => (e: ReactKeyboardEvent) => {
-    const move = keyMoveOf(e);
+    const move = keyMoveOf(e, a.direction);
     if (!move) return;
     const range = a.range ?? [min, max];
     const stepSize = defaultStep(step, range[0], range[1]);

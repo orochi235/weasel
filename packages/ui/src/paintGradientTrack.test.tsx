@@ -63,6 +63,15 @@ describe('paintGradientTrack', () => {
     expect(bg.match(/repeating-linear-gradient/g)?.length).toBe(2);
   });
 
+  it('right to left, runs the ramp from the right and dims the low end there', () => {
+    const rtl: TrackCtx = { ...ctx, shape: trackRun(lineShape({ x: 0, y: 12 }, { x: 200, y: 12 }), 0, 1, { direction: 'rtl' }), fractionToPosition: (f) => `rail(${f})` };
+    const renderTrack = paintGradientTrack({ gradient: () => '#888', samples: 2, activeRange: [0.25, 1] });
+    const bg = (renderTrack(rtl) as ReactElement<{ style: CSSProperties }>).props.style.background as string;
+    expect(bg).toContain('linear-gradient(to left');
+    expect(bg).toMatch(/right 0 \/ rail\(0\.25\) 100%/);
+    expect(bg).not.toMatch(/left 0 \//);
+  });
+
   it('omits overlays when activeRange covers full range', () => {
     const renderTrack = paintGradientTrack({
       gradient: () => '#888',
