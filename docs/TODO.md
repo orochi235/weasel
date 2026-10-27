@@ -1104,9 +1104,11 @@ only story runner in the repo.
   shipped rule would have given 2–5 workers or no overlap at all. At 58f8810f9 (2026-10-26, studio, 2.1
   busy) it gave 4: the browser projects finished in 338 s and the jsdom ones in 479 s, while the sweep's
   R 3–4 runs at 6–7 workers took 347–357 s for the whole suite (other commits; inferred, not compared
-  head to head). The busy cut does keep a co-scheduled onto job from being oversubscribed, so the
-  question is how much of the reading to subtract: measure the shipped rule against `cores - reserve` on
-  studio, a pass each first, and keep every run's raw numbers in the sweep's file.
+  head to head). Head to head on studio at 58f8810f9 (2026-10-26, one pass each, both in
+  `scripts/bench-overlap-reserve.runs.jsonl`): the shipped rule's 4 workers took 495 s launcher to
+  finish with 10 timed-out tests retried; `cores - 3`'s 7 workers took 562 s with none, its browser side
+  slowed from 338 s to 482 s. So the cut is not costing time there; whether 5–6 workers would keep the
+  retries away without slowing the browser side is the next pass.
 
 - **(P3) [agent] The `browser` project spends about a second per file outside its tests.** Alone on teitou
   (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
