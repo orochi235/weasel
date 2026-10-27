@@ -164,6 +164,20 @@ describe('useRowNavigation', () => {
     expect(document.activeElement).toBe(row('banana'));
   });
 
+  it('cycles through the rows a repeated letter starts, and builds a prefix from different letters', () => {
+    const rows = ['apple', 'avocado', 'banana', 'apricot'].map((id) => ({ id }));
+    render(<List rows={rows} opts={{ textOf: (id) => id }} />);
+    act(() => row('banana').focus());
+    key('a');
+    expect(document.activeElement).toBe(row('apricot'));
+    key('a');
+    expect(document.activeElement).toBe(row('apple'));
+    key('a');
+    expect(document.activeElement).toBe(row('avocado'));
+    key('p');
+    expect(document.activeElement).toBe(row('apricot'));
+  });
+
   it('activates with Enter and Space, carrying the modifiers', () => {
     const onActivate = vi.fn();
     render(<List rows={FLAT} opts={{ onActivate }} />);

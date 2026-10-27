@@ -156,18 +156,10 @@ interface KeyCtx {
 /** What a key on a row does; the returned function says whether it handled the key. */
 function rowKeyHandler({ rows, opts, typeahead, focus, focusLater, go }: KeyCtx): (id: string, e: KeyboardEvent) => boolean {
   const typeAhead = (key: string, from: number): boolean => {
-    const text = typeahead.type(key);
-    const want = text.toLowerCase();
-    // A fresh first letter looks past the current row; a longer prefix may still match it.
-    const start = text.length === 1 ? from + 1 : from;
-    for (let k = 0; k < rows.length; k++) {
-      const row = rows[(start + k) % rows.length]!;
-      if (opts.textOf!(row.id).toLowerCase().startsWith(want)) {
-        focus(row.id);
-        return true;
-      }
-    }
-    return false;
+    const hit = typeahead.type(rows, from, key, { label: (r) => opts.textOf!(r.id) });
+    if (hit === null) return false;
+    focus(rows[hit]!.id);
+    return true;
   };
 
   /** Right and Left in a tree; `false` for a key that does nothing here. */
