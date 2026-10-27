@@ -84,7 +84,9 @@ describe('<TrialTransport>', () => {
   });
 
   it('reverses and scrubs a seekable clock', async () => {
-    await mount({ duration: 1000, rate: 1 });
+    // Reversed from mid-span: a clock running backward stops at 0, which a stalled worker reaches from near it.
+    await mount({ duration: 3_600_000, rate: 1 });
+    act(() => c().seek(1_800_000));
     act(() => {
       fireEvent.click(screen.getByRole('switch', { name: 'Reverse' }));
     });
@@ -92,7 +94,7 @@ describe('<TrialTransport>', () => {
     act(() => {
       fireEvent.keyDown(screen.getByRole('slider', { name: 'Position' }), { key: 'End' });
     });
-    expect(c().elapsed).toBe(1000);
+    expect(c().elapsed).toBe(3_600_000);
   });
 
   it('offers neither on a clock that only runs forward', async () => {

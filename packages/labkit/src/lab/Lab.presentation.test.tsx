@@ -93,7 +93,7 @@ describe('<Lab present>', () => {
   });
 });
 
-const timed: Instrument = { ...stub, name: 'Timed', clock: { duration: 1000 } };
+const timed: Instrument = { ...stub, name: 'Timed', clock: { duration: 3_600_000 } };
 
 describe('a presented trial’s play controls', () => {
   const mountTimed = (props: Partial<LabProps> = {}) =>

@@ -6,6 +6,7 @@ import { regionTakes, polygonRegion, rectRegion } from './regionHit';
 import { pathPoseDescriptor } from './pathPoseDescriptor';
 import { pathFromParts } from 'core/scene/derivedParts';
 import { createScene, sceneFromJSON } from 'core/scene/scene';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { SavedScene } from 'core/scene/types';
 
 const FAR = 262_144;
@@ -32,7 +33,7 @@ describe('core readers of a path measured from an origin', () => {
     const a = square(), b = square(1);
     const mid = pathPoseDescriptor.lerp!(a, b, 0.5) as PolygonPath;
     expect(worldCoords(mid)[0]).toBeCloseTo(X + 0.5, 6);
-    const axes = pathPoseDescriptor.axes!(a);
+    const axes = pathPoseDescriptor.axes!(a)!;
     const values = axes.to(b);
     expect(values[0]).toBeCloseTo(X + 1, 6);
     const back = axes.from(values) as PolygonPath;
@@ -50,8 +51,8 @@ describe('core readers of a path measured from an origin', () => {
   });
 
   it('saves and loads a path pose with its origin', () => {
-    const scene = createScene<unknown, 'main', PolygonPath>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'shape', layer: 'main', pose: square(), data: null });
+    const scene = createScene<unknown, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: square(), data: null });
     const text = JSON.stringify(scene.toJSON(), typedArrayReplacer);
     const saved = reviveTypedArrays(JSON.parse(text)) as SavedScene<unknown, 'main', PolygonPath>;
     const loaded = sceneFromJSON(saved);
