@@ -54,7 +54,7 @@ interface Mounted {
 const PANEL = { x: 250, y: 250, w: 150, h: 150 };
 const PANEL_VIEW = { x: 1000, y: 1000, scale: { x: 2, y: 2 } };
 
-async function mount(opts: { panel?: boolean } = {}): Promise<Mounted> {
+async function mount(opts: { panel?: boolean; panelHides?: boolean } = {}): Promise<Mounted> {
   let hud!: Hud;
   let scene!: ReturnType<typeof useScene<Data, string, Pose>>;
   const ref = React.createRef<SceneCanvasApi>();
@@ -80,7 +80,10 @@ async function mount(opts: { panel?: boolean } = {}): Promise<Mounted> {
     });
     return (
       <SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]}>
-        {opts.panel ? <CanvasView id="panel" bounds={PANEL} defaultView={PANEL_VIEW} /> : null}
+        {opts.panel ? (
+          <CanvasView id="panel" bounds={PANEL} defaultView={PANEL_VIEW}
+            {...(opts.panelHides ? { layerVisibility: { 'scene:default': false } } : {})} />
+        ) : null}
       </SceneCanvas>
     );
   }
@@ -206,6 +209,13 @@ describe('a loupe aimed over a view', () => {
       ['pointerup', PRESS.x + 40, PRESS.y],
     ]);
     expect(m.pose('p')).toMatchObject({ x: 1020, y: 1020 });
+  });
+
+  it('passes over a layer the view hides, as the view does', async () => {
+    const m = await mount({ panel: true, panelHides: true });
+    await openLoupe(m, 'interactive');
+    await press(m.canvas, [['pointerdown', PRESS.x, PRESS.y], ['pointerup', PRESS.x, PRESS.y]]);
+    expect(m.selection()).toEqual([]);
   });
 });
 
