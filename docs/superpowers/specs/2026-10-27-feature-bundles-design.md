@@ -1,6 +1,7 @@
 # Feature bundles
 
-**Status: designed 2026-10-27, unbuilt.** Nothing below exists in the tree yet.
+**Status (2026-10-27): runtime, reflection, toolkit builder, and inspector built on `feature-bundles`; the
+editor's Bundles asset is in progress.**
 
 For whoever builds or reviews the rework of `<SceneCanvas features>` presets. It answers how actions,
 tools, and the code that binds them get grouped into small units, how presets are composed from those
@@ -28,13 +29,13 @@ bundles. The starting split, which the editor exists to rearrange:
 |---|---|
 | `edit` (21 actions) | bundle `edit` including `escape` (escape, cancel gesture), `contextMenu`, `selectAll`, `duplicate` (duplicate, transform again), `delete`, `group` (group, ungroup), `nudge` (4), `style` (fill, stroke, both opacities), `clipboard` (cut, copy, paste, paste event) |
 | `arrange` (11) | bundle `arrange` including `flip`, `reorder` (2), `align` (6), `distribute` (2) |
-| `paths` (34, `refines: ['edit']`) | atom `anchorKeys` (anchor nudge ×4, delete anchors; `refines: ['nudge', 'delete']`) and bundles `pathfinder` (8 booleans, boolean group), `outlines` (2), `pathEdit` (the 14 enter/exit/anchor/handle/segment actions), `pathCommands` (simplify, offset, snip, join) |
+| `paths` (34, `refines: ['edit']`) | atom `anchorKeys` (anchor nudge ×4, delete anchors, and the two Escape exits from path edit and its tool; `refines: ['nudge', 'delete', 'escape']`) and bundles `pathfinder` (8 booleans, boolean group), `outlines` (2), `pathEdit` (the 12 enter/anchor/handle/segment actions), `pathCommands` (simplify, offset, snip, join) |
 | `view`, `select`, `ingest` | bundles, unchanged in content |
 | `outline`, `move`, `resize`, `rotate` | atoms, unchanged |
 
 `refines` is code, so it only appears on atoms. `anchorKeys` names the bundles whose keys it must be
-tried ahead of; an atom's `refines` may name a bundle id, and resolution places the atom ahead of
-every atom and action that bundle brings.
+tried ahead of; a bundle is a preset like any other, so resolution places the atom ahead of it with no
+special case.
 
 **Tool bundles.** One per `ToolSet`, by the set's id: `tools:select` (select, lasso), `tools:view`
 (hand), `tools:shape`, `tools:draw`, `tools:type`, `tools:page`. `ToolSet`s stay: they are palette
@@ -55,8 +56,8 @@ preset per tool family). guides' `createGridPreset` and `createSpacingHintsPrese
 
 ## Reflection
 
-Core exports `describePresets(presets)`, returning one record per preset reachable from the ones
-given, `includes` followed:
+Core exports `describePresets(sources)`, where `sources` maps a package name to its presets, returning
+one record per preset reachable from them, `includes` followed, each after the presets it includes:
 
 ```ts
 interface PresetDescription {
