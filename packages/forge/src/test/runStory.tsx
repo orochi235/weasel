@@ -75,10 +75,9 @@ export async function runStory(
 
   const container = document.createElement('div');
   // The workshop gives a story's viewport to its stage, a box of that size, not to the window.
-  if (story.viewport) {
-    container.style.width = `${story.viewport.width}px`;
-    container.style.height = `${story.viewport.height}px`;
-  }
+  if (story.viewport) container.style.width = `${story.viewport.width}px`;
+  // Without one the stage still fills the workshop's preview: an auto height lays a filling story out 0 tall.
+  container.style.height = story.viewport ? `${story.viewport.height}px` : '100vh';
   document.body.append(container);
   let root: Root | undefined;
   /** Returns what unmounting threw, having released everything else regardless. */

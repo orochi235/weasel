@@ -48,6 +48,7 @@ const BROWSER_TESTS = ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser
 const BROWSER_SETUP = './vitest.browser.setup.ts';
 // Both browser projects print every module load that fails: see the command it calls.
 const REQUEST_LOG_SETUP = './scripts/vitest-request-log.setup.ts';
+const RESIZE_LOOPS_SETUP = './scripts/vitest-resize-loops.setup.ts';
 // Every vmThreads project needs it: see the file.
 const RETRY_REALM_SETUP = './scripts/vitest-retry-realm.setup.ts';
 
@@ -344,7 +345,7 @@ export default defineConfig({
           name: 'forge-stories',
           retry: RETRY_TIMEOUTS,
           include: forgeStories,
-          setupFiles: [REQUEST_LOG_SETUP],
+          setupFiles: [REQUEST_LOG_SETUP, RESIZE_LOOPS_SETUP],
           browser: {
             enabled: true,
             provider: playwright(),
