@@ -6,7 +6,7 @@
  */
 
 import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
-import type { Scene, SceneNode } from '@weasel-js/core';
+import type { NodeId, Scene, SceneNode } from '@weasel-js/core';
 import { aabbAround, type Aabb } from '@weasel-js/geom/3d';
 import { aabbOfPose, pose3, type Pose3 } from '@weasel-js/kernel3d';
 
@@ -43,6 +43,10 @@ export function aabbOfSolid(pose: Pose3, kind: SolidKind): Aabb {
   return aabbOfPose(pose);
 }
 
+/** The lab's one container. Under the identity composition its solids'
+ *  poses are world poses, and its own pose is only where it sits. */
+export const STACK = 'stack' as NodeId;
+
 export function createSolidScene(): SolidScene {
   return createScene<SolidData, SolidLayer, Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'solids' }],
@@ -64,6 +68,28 @@ export function createSolidScene(): SolidScene {
         layer: 'solids',
         pose: pose3({ x: 2.2, y: 0.75, z: -1 }, { x: 1, y: 1.5, z: 1 }),
         data: { kind: 'box', color: '#6fbf73' },
+      },
+      // A container: a click selects the stack, a double-click enters it.
+      {
+        id: STACK,
+        kind: 'group',
+        layer: 'solids',
+        pose: pose3({ x: 0.4, y: 0, z: 2.6 }),
+        data: { kind: 'box', color: '#000000' },
+      },
+      {
+        kind: 'mark',
+        layer: 'solids',
+        parent: STACK,
+        pose: pose3({ x: 0.4, y: 0.4, z: 2.6 }, { x: 0.8, y: 0.8, z: 0.8 }),
+        data: { kind: 'box', color: '#b07fd0' },
+      },
+      {
+        kind: 'mark',
+        layer: 'solids',
+        parent: STACK,
+        pose: pose3({ x: 0.4, y: 1.15, z: 2.6 }, { x: 0.7, y: 0.7, z: 0.7 }),
+        data: { kind: 'sphere', color: '#d0b07f' },
       },
     ],
   });

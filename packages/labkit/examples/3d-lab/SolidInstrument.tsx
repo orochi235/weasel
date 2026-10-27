@@ -64,6 +64,7 @@ import {
   aabbOfSolid, createSolidScene, type Pose3, type SolidNode, type SolidScene,
 } from './scene3d';
 import { useBoxTool } from './tools3d';
+import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */
@@ -118,6 +119,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const showChromeRef = useLatest(config.showChrome);
   /** One draw record per node, kept across frames and patched from the feed. */
   const drawsRef = useRef(new Map<NodeId, SolidRecord>());
+  /** Read by the painter for the boxes it outlines; set once the deps exist below. */
+  const groupEntryRef = useRef<GroupEntry3d | null>(null);
 
   const viewportSource = useCallback(
     (): Viewport3d => ({
@@ -158,7 +161,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     () => ({
       scene,
       viewport: viewportSource,
-      bounds: (node: SolidNode) => aabbOfSolid(node.pose, node.data.kind),
+      // A container only groups its solids: it occupies nothing of its own.
+      bounds: (node: SolidNode) => (node.kind === 'group' ? null : aabbOfSolid(node.pose, node.data.kind)),
     }),
     [scene, viewportSource],
   );
@@ -204,17 +208,18 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       };
       // Boxes come back in the client space the deps work in; the renderer
       // draws inside the tile, so they land back at the pane's own origin.
-      const chrome: ChromeBox[] = showChromeRef.current
-        ? selectionRef.current
-            .map((id) => screenBoxOf(world, id, viewport))
-            .filter((box): box is ChromeBox => box !== null)
-            .map((box) => ({
-              ...box,
-              x: box.x - originRef.current.x,
-              y: box.y - originRef.current.y,
-              tint: 'selection' as const,
-            }))
+      // A container's box spans its solids. The entered one is outlined as a
+      // gesture is, so it reads apart from the selection inside it.
+      const boxOf = (id: NodeId) => groupEntryRef.current?.boxOf(id) ?? screenBoxOf(world, id, viewport);
+      const entered = groupEntryRef.current?.entered.get() ?? null;
+      const outlined: Array<[NodeId, ChromeBox['tint']]> = showChromeRef.current
+        ? selectionRef.current.map((id): [NodeId, ChromeBox['tint']] => [id, 'selection'])
         : [];
+      if (entered !== null) outlined.push([entered, 'gesture']);
+      const chrome: ChromeBox[] = outlined.flatMap(([id, tint]) => {
+        const box = boxOf(id);
+        return box ? [{ ...box, x: box.x - originRef.current.x, y: box.y - originRef.current.y, tint }] : [];
+      });
 
       // A marquee sweep and a box-drag, read off the same handles the ghosts
       // come from. `resolveOverlays` hands back world geometry, which this
@@ -265,11 +270,19 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [selectionRef],
   );
 
-  const nodeAtPoint = useMemo(() => createNodeAtPoint(world), [world]);
-  const areaSelect = useMemo(
-    () => createAreaSelect(world, selectionApi),
-    [world, selectionApi],
-  );
+  // Every pick below goes through the entered group's scope: outside it,
+  // nothing takes a hit and a press lands on empty canvas.
+  const worldPick = useMemo(() => createNodeAtPoint(world), [world]);
+  const groupEntry = useGroupEntry3d(world, viewportSource, worldPick, repaint);
+  useEffect(() => {
+    groupEntryRef.current = groupEntry;
+  }, [groupEntry]);
+  const nodeAtPoint = groupEntry.pick;
+  const { reachable } = groupEntry;
+  const areaSelect = useMemo(() => {
+    const all = createAreaSelect(world, selectionApi);
+    return { ...all, hitTestArea: (rect: Parameters<typeof all.hitTestArea>[0]) => all.hitTestArea(rect).filter(reachable) };
+  }, [world, selectionApi, reachable]);
   const insert = useMemo(
     () =>
       createInsert({
@@ -364,8 +377,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         ['orbit', orbit as Tool],
         ['box', box as Tool],
         [selectionMove.id, selectionMove],
+        [groupEntry.contribution.id, groupEntry.contribution],
       ]),
-    [select, orbit, box, selectionMove],
+    [select, orbit, box, selectionMove, groupEntry.contribution],
   );
 
   const activeTool = useActiveToolContext();

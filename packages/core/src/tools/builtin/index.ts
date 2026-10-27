@@ -24,6 +24,11 @@ export {
   type SelectionTransformOptions,
   type SelectionRotateOptions,
 } from './select';
+export {
+  createGroupEntryContribution, useGroupEntryContribution, GROUP_ENTRY_ID,
+} from './select/groupEntry';
+export type { EnterGroupOptions, LeaveGroupOptions } from '../../interactions/actions/defaults/enterGroup';
+export type { PressTargetTree } from './pressTarget';
 // `useResizeTool` and the legacy `useResize` hook are deleted. Resize is
 // dispatcher-driven via `resizeAction` + the `resizePolicy` dep (constraints,
 // point snap, group expansion); pose geometry comes from `poseDescriptor`.

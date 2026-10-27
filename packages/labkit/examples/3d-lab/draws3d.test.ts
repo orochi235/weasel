@@ -77,7 +77,7 @@ describe('solidsToDraw', () => {
     const scene = createSolidScene();
     const solids = frameOf(scene, new Map());
 
-    expect(solids).toHaveLength(scene.renderOrderNodes().length);
+    expect(solids).toHaveLength(scene.renderOrderNodes().filter((n) => n.kind !== 'group').length);
     expect(solids.some((s) => s.ghost)).toBe(false);
   });
 
