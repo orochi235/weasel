@@ -2,12 +2,20 @@ import { LabShell } from '@weasel-js/labkit';
 import { openPrefsSync, prefValueAtPath, type PrefGroup, type PrefsStore } from '@weasel-js/prefs';
 import { usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
-import { themeAxisPath, themeFromPrefs, themePrefsSchema, themePrefsSelection, themePrefsValues } from '@weasel-js/theme/prefs';
+import {
+  themeAxisPath,
+  themeFromPrefs,
+  themePrefsReferences,
+  themePrefsSchema,
+  themePrefsSelection,
+  themePrefsValues,
+} from '@weasel-js/theme/prefs';
 import { weaselTheme, type Theme } from '@weasel-js/theme';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { LABS, THEME_PREFS_LAB } from '../../shared/labs';
 import { ThemePreview } from './ThemePreview';
+import { tokenReferenceRenderer } from './TokenReference';
 import styles from './ThemePrefs.module.css';
 
 export interface ThemePrefsProps {
@@ -31,6 +39,12 @@ export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter 
   const { mode: _mode, ...selection } = themePrefsSelection(store);
   const axis = themeAxisPath('');
   const tokens = (path: string): boolean => !path.startsWith(axis);
+  // A reference followed to its token selects that token's row, which opens its page and brings it into view.
+  const [opened, setOpened] = useState<readonly string[]>([]);
+  const renderers = useMemo(
+    () => ({ string: tokenReferenceRenderer(themePrefsReferences(store.schema), (path) => setOpened([path])) }),
+    [store],
+  );
   return (
     <LabShell title="Theme prefs" pages={LABS} path={THEME_PREFS_LAB.href}>
       <div className={styles.layout}>
@@ -49,6 +63,8 @@ export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter 
             canInherit={tokens}
             onAutoChange={(path, next) => (next ? reset(path) : set(path, prefValueAtPath(values, path)))}
             inheritHint={() => 'from theme'}
+            renderers={renderers}
+            selected={opened}
           />
         </div>
         <div className={styles.preview}>
