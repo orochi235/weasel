@@ -33,7 +33,8 @@ function attached() {
   const hud = createHud();
   attachHud(api, hud, { font: 'sans-serif' });
   const paint = (dims = DIMS) => layer!.draw(null, VIEW, { ...dims });
-  return { hud, paint };
+  const layerDeps = (dims = DIMS) => layer!.deps!(null, VIEW, { ...dims });
+  return { hud, paint, layerDeps };
 }
 
 function plain(extra: Partial<Widget> = {}): Widget {
@@ -160,6 +161,16 @@ describe('attachHud: widget command cache', () => {
     value = 2;
     paint(); paint();
     expect(draw).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives its layer deps that hold while no widget changed, so a canvas can skip it', () => {
+    const { hud, layerDeps } = attached();
+    const label = hud.text({ id: 't', x: 10, y: 10, text: 'static label', fontSize: 14 });
+    const held = layerDeps();
+    expect(layerDeps()).toBe(held);
+    label.setText('changed');
+    expect(layerDeps()).not.toBe(held);
+    expect(layerDeps({ ...DIMS, width: 500 })).not.toBe(held);
   });
 
   it('rebuilds a widget that declares no deps on every repaint', () => {

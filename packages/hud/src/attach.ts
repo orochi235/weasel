@@ -16,6 +16,7 @@ import type { HudHitPayload } from './tool';
 import { resolveTheme, weaselTheme, type ColorSourceContext, type ResolvedTheme } from '@weasel-js/theme';
 import { hudColor } from './colors';
 import { hideVisually, mirrorFocusedTree } from './accessibleMirror';
+import { createLayerDeps } from './layerDeps';
 
 /** Options for `attachHud`. */
 export interface AttachHudOptions {
@@ -92,10 +93,13 @@ export function attachHud(
   const cache = new WeakMap<Widget, CachedFrame>();
   const frameCommands = (w: Widget, ctx: HudDrawCtx, focus: number) => cachedCommands(cache, w, ctx, focus);
 
+  const layerDeps = createLayerDeps(hud);
+  const depsCtx: HudDrawCtx = { dims: { width: 0, height: 0 }, defaultFont, tokens: theme, color };
   const layer: RenderLayer<unknown> = {
     id: 'weasel-hud',
     label: 'HUD',
     space: 'screen',
+    deps: (_data, _view, dims) => { depsCtx.dims = dims; return layerDeps(depsCtx); },
     draw: (data, view, dims): DrawCommand[] => {
       const ctx = { dims, defaultFont, tokens: theme, color };
       const out: DrawCommand[] = [];
