@@ -1,0 +1,52 @@
+{
+  "name": "@weasel-js/shape",
+  "version": "1.13.0",
+  "description": "OpenType text shaping for weasel through HarfBuzz: contextual forms, ligatures, reordering and mark placement for Arabic, the Indic scripts, Thai and the rest. Font bytes and text in, positioned glyphs out; no renderer and no scene graph.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "harfbuzzjs": "1.6.4"
+  },
+  "devDependencies": {
+    "@weasel-js/bidi": "1.13.0",
+    "@weasel-js/font": "1.13.0",
+    "@weasel-js/text": "1.13.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsup"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/shape"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
