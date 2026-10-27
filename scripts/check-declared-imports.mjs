@@ -22,6 +22,7 @@ const NOT_SHIPPED = /(\.(test|stories|fixture|bench)\.|\.d\.ts$|\/__tests__\/|\/
 const TEST_HELPERS = [
   'packages/core/src/interactions/actions/defaults/paintActionTestUtils.ts',
   'packages/forge/src/shell/labHarness.ts',
+  'packages/forge/src/timeline/workshopHarness.tsx',
   'packages/storage/src/adapterContract.ts',
 ];
 const BUILTINS = new Set(builtinModules);
