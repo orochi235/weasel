@@ -10,6 +10,7 @@ import {
   mergeLayersWithDefaults,
 } from './SceneCanvas';
 import { defaultPaintBounds } from './defaultDrawOne';
+import { layersOverPresets } from './SceneCanvas/mergeLayers';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -230,6 +231,16 @@ describe('SceneCanvas defaults', () => {
       const merged = mergeLayersWithDefaults({ scene: null, selectionOverlay: null });
       expect(merged.scene).toBeNull();
       expect(merged.selectionOverlay).toBeNull();
+    });
+
+    it('lays the consumer\'s layers over the presets\', null included', () => {
+      const layer = (id: string) => ({ layer: { id, label: id, draw: () => [] } });
+      const presets = { grid: layer('preset-grid'), ruler: layer('preset-ruler') };
+      expect(layersOverPresets({}, undefined)).toBeUndefined();
+      expect(layersOverPresets(presets, undefined)).toEqual(presets);
+      const mine = layer('mine');
+      expect(layersOverPresets(presets, { grid: mine })).toEqual({ grid: mine, ruler: presets.ruler });
+      expect(layersOverPresets(presets, { grid: null })).toEqual({ grid: null, ruler: presets.ruler });
     });
 
     it('passes through custom layer keys (unknown slots) unchanged', () => {

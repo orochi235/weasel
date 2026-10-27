@@ -61,11 +61,9 @@ Interactions are **actions** — descriptors registered into an actions registry
 
 ```tsx
 import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection } from '@weasel-js/core';
-import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
+import { createGridPreset } from '@weasel-js/guides';
 
-const W = 800, H = 600;
-const grid = createGridLayer({ spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) });
-const snap = { sources: [gridSnapSource({ spacing: 20 })] };
+const grid = createGridPreset({ spacing: 20 });
 
 export function Editor() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: [] });
@@ -76,14 +74,12 @@ export function Editor() {
   // standard keyboard actions (Cmd+A, Cmd+Z, Delete, …), all snapping to the grid:
   return (
     <SceneCanvas
-      width={W}
-      height={H}
+      width={800}
+      height={600}
       scene={scene}
       selection={selection}
-      features={['draw']}
+      features={['draw', grid]}
       defaultTools={BUILTIN_TOOL_IDS}
-      snap={snap}
-      layers={{ grid: { layer: grid } }}
     />
   );
 }

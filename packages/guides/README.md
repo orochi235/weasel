@@ -27,24 +27,24 @@ A grid you can see and snap to:
 
 ```tsx
 import { SceneCanvas } from '@weasel-js/core';
-import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
+import { createGridPreset } from '@weasel-js/guides';
 
-const grid = createGridLayer({ spacing: 20, bounds: () => ({ x: 0, y: 0, width: 800, height: 600 }) });
-const snap = { sources: [gridSnapSource({ spacing: 20 })] };
+const grid = createGridPreset({ spacing: 20 });
 
-<SceneCanvas
-  /* … */
-  snap={snap}
-  layers={{ grid: { layer: grid } }}
-/>;
+<SceneCanvas /* … */ features={['draw', grid]} />;
 ```
 
-The grid source snaps every snapping gesture — move, resize, insert, the pen —
-and, being a fallback, gives way on any axis a real target in reach claims.
+The preset draws the grid in the `grid` slot and snaps every snapping gesture
+to it — move, resize, insert, the pen — and, being a fallback, its snap gives
+way on any axis a real target in reach claims. It takes every `createGridLayer`
+option, and `snap: false` to draw without snapping. The layer and the snap
+source it is built from, `createGridLayer` and `gridSnapSource`, go to
+`<SceneCanvas layers>` and `snap.sources` on their own where a canvas wants
+only one of them.
 
 | Area | Exports |
 |---|---|
-| Grid | `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `pointToGridCell`, `roundToCell` |
+| Grid | `createGridPreset`, `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `pointToGridCell`, `roundToCell` |
 | Guides | `useGuides`, `createGuidesLayer`, `deriveAlignmentGuides`, `matchSpacing`, `measureGaps`, `siblingBounds`, `worldBoundsOf`, `worldUnionOf` |
 | Snap sources | `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource`, `spacingSnapSource`, for `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources` |
 | Spacing hints | `createSpacingHintsPreset` (below), `distanceReadout`, `measureDistances` |

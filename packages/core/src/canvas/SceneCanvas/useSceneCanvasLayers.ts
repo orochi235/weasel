@@ -16,8 +16,9 @@ import { createSlopsDebugLayer } from '../slopsDebugLayer';
 import { useTargetBasePx } from 'core/device/useTargetBasePx';
 import { targetSizesPx } from 'core/device/targets';
 import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
-import { mergeLayersWithDefaults } from './mergeLayers';
+import { layersOverPresets, mergeLayersWithDefaults } from './mergeLayers';
 import type { SceneCanvasLayers } from './props';
+import type { EnabledPresets } from './features';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { useDepartureGhostLayer } from './useDepartureGhostLayer';
@@ -33,17 +34,11 @@ import { createSnapOutcomeStore, type SnapOutcomeStore } from 'domains/snap/outc
 import { createSnapReadoutLayer } from 'domains/snap/readoutLayer';
 import type { SnapReadoutStyle } from 'domains/snap/types';
 
-/**
- * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
- * the kit defaults, with the scene and selection-overlay slots built, and the
- * canvas's own layers anchored around them. Removed nodes leave just above
- * the scene, the preview ghost above them, a selected path effect's hidden sources above that, the dispatcher's
- * overlay (marquee, lasso) above those, and the
- * anchor overlay above the selection chrome.
- */
-export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: {
+interface SceneCanvasLayersArgs<TData, TLayer extends string, TPose> {
   /** `<SceneCanvas layers>`. Omitted, the result is the full default set. */
   layers: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined;
+  /** The enabled presets' layers, beneath `layers`: a slot both name is `layers`'. */
+  presetLayers: EnabledPresets['layers'];
   /** The device profile's, which sizes the default handles. */
   targetScale: number;
   scene: Scene<TData, TLayer, TPose>;
@@ -69,7 +64,19 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** `selectTool`'s `handleHitRadius` and `resize.edgeHandles`, resolved here into
    *  the one {@link ResizeHandleLayout} the overlay paints and the hit-test reads. */
   selectTool?: { handleHitRadius?: number; resize?: { edgeHandles?: boolean } };
-}): {
+}
+
+/**
+ * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
+ * the kit defaults, with the scene and selection-overlay slots built, and the
+ * canvas's own layers anchored around them. Removed nodes leave just above
+ * the scene, the preview ghost above them, a selected path effect's hidden sources above that, the dispatcher's
+ * overlay (marquee, lasso) above those, and the
+ * anchor overlay above the selection chrome.
+ */
+export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
+  args: SceneCanvasLayersArgs<TData, TLayer, TPose>,
+): {
   layers: CanvasLayers;
   /** Where the selection overlay paints its rotate badge, or null. */
   rotationBadge: ReturnType<typeof rotationBadgeOf>;
@@ -87,8 +94,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
 
   const baseSizes = useTargetBasePx();
   const merged = useMemo(
-    () => mergeLayersWithDefaults(args.layers, targetScale, baseSizes),
-    [args.layers, targetScale, baseSizes],
+    () => mergeLayersWithDefaults(layersOverPresets(args.presetLayers, args.layers), targetScale, baseSizes),
+    [args.layers, args.presetLayers, targetScale, baseSizes],
   );
 
   const { config: sceneSlot, layers: sceneLayers } = useSceneSlotLayers({

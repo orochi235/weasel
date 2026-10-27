@@ -210,3 +210,16 @@ describe('FEATURE_PRESETS', () => {
     }
   });
 });
+
+describe('EnabledPresets.layers', () => {
+  const entry = (id: string) => ({ layer: { id, label: id, draw: () => [] } });
+
+  it('collects each preset\'s layers by slot, a later preset winning a slot both name', () => {
+    const a: FeaturePreset = { id: 'a', layers: { grid: entry('a-grid'), ruler: entry('a-ruler') } };
+    const b: FeaturePreset = { id: 'b', layers: { grid: entry('b-grid') } };
+    const { layers } = resolve([a, b]);
+    expect(layers.grid!.layer.id).toBe('b-grid');
+    expect(layers.ruler!.layer.id).toBe('a-ruler');
+    expect(resolve(['draw']).layers).toEqual({});
+  });
+});
