@@ -73,6 +73,7 @@ export function drawRetainedGroup(
     clips,
     effects: cmd.effects,
     isolate: cmd.isolate === true,
+    window: ctx.renderTarget?.window,
   };
   // A buffer a group's effects draw in is single-sampled, and so is a
   // surface standing in for drawing into it.
@@ -91,8 +92,11 @@ export function drawRetainedGroup(
   if (found.kind === 'kept') {
     pixels = found.pixels;
   } else {
+    // Inside an effects buffer, what it holds, which may reach past the
+    // drawing buffer: a blur there reads what lies just past the edge.
+    const window = key.window ?? found.window;
     const box = contentBox(drawn, ctx.state.transform, clips, scale);
-    const draw = store.reserve(id, width, height, boxWithin(box, found.window), multisample, pans ? { box, window: found.window } : undefined);
+    const draw = store.reserve(id, width, height, boxWithin(box, window), multisample, pans ? { box, window } : undefined);
     if (!draw) {
       ctx.state.pop();
       return false;
