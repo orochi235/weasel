@@ -4,7 +4,9 @@
 import type { Point2 } from '@weasel-js/routing';
 
 /**
- * Dep for `enterTextEditAction`.
+ * Dep for `enterTextEditAction`. `<SceneCanvas>` answers it with its own
+ * editor (its `textEditor` prop); a host with an editor of its own, one
+ * driving character controls, publishes it instead.
  *
  * Wrap the return value of `useTextEdit` / `useSceneTextEdit` to source this
  * dep. The `isTextNode` predicate is optional — when absent the action fires

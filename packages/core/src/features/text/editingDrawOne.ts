@@ -9,10 +9,10 @@ export type EditingDrawOne = <TNode extends Node<unknown, string, unknown>>(
   node: TNode, pose: unknown, view?: View, ctx?: NodePaintCtx,
 ) => DrawCommand[];
 
-/** `defaultDrawOne`, less the text commands of the node `editingId` names. */
-export function drawOneEditing(editingId: string | null): EditingDrawOne {
+/** `base`, `defaultDrawOne` by default, less the text commands of the node `editingId` names. */
+export function drawOneEditing(editingId: string | null, base: EditingDrawOne = defaultDrawOne): EditingDrawOne {
   return (node, pose, view, ctx) => {
-    const out = defaultDrawOne(node, pose, view, ctx);
+    const out = base(node, pose, view, ctx);
     return node.id === editingId ? withoutText(out) : out;
   };
 }

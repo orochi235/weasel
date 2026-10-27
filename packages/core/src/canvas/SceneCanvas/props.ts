@@ -514,4 +514,4 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * nor picked here. See `CanvasProps.layerOrder`.
      */
     layerOrder?: string[];
-  } & SceneCanvasPointerProps & SceneCanvasActionProps;
+  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps;

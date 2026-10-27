@@ -10,13 +10,14 @@
  * Consumers with non-rect poses should drop down to raw `useTextEdit` and
  * supply their own `getScreenPose`.
  */
-import { useCallback, useEffect, useMemo, useRef, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { asNodeId } from '../../core/scene/types';
 import { scenePaintedPoseOf } from '../../canvas/derivedPath';
 import type { Scene } from '../../core/scene/types';
 import { drawOneEditing, type EditingDrawOne } from './editingDrawOne';
 import { textHitAt } from './textHitAt';
+import { registerHostTextEditor } from './hostTextEditors';
 import { editedData, sceneTextDrafts } from './sceneTextDrafts';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
@@ -117,6 +118,9 @@ function resolveView(view: View | (() => View) | undefined): View | undefined {
   return typeof view === 'function' ? view() : view;
 }
 
+/** What `onDoubleClick` reads of the event: a React or a DOM `MouseEvent`. */
+export type TextEditDoubleClick = Pick<MouseEvent, 'target' | 'clientX' | 'clientY'>;
+
 /** Return shape extends `UseTextEditReturn` with an `onDoubleClick`
  *  binding for the canvas container. Double-clicking inside a text
  *  node enters edit mode with the caret seeded at the clicked glyph. */
@@ -124,7 +128,7 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
   /** Bind to the element wrapping `<SceneCanvas>` (the same element
    *  passed as `container`, or any ancestor that receives the dblclick
    *  bubble). Starts an edit on the top-most text node under the cursor. */
-  onDoubleClick: (e: MouseEvent<HTMLElement>) => void;
+  onDoubleClick: (e: TextEditDoubleClick) => void;
   /** The `isText` option asked of the node with this id: what
    *  `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
   isTextNode: (id: string) => boolean;
@@ -159,8 +163,24 @@ function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: 
 }
 
 /** Wire double-click-to-edit text on a scene: mounts a DOM editing overlay
- *  over the node being edited and writes the result back as an undoable op. */
+ *  over the node being edited and writes the result back as an undoable op.
+ *  `<SceneCanvas>`'s own editor stands down for any canvas inside `container`. */
 export function useSceneTextEdit<
+  TData extends DefaultTextData,
+  TLayer extends string,
+  TPose extends RectPose = RectPose,
+>(
+  scene: Scene<TData, TLayer, TPose>,
+  container: HTMLElement | null,
+  options: UseSceneTextEditOptions<TData> = {},
+): UseSceneTextEditReturn {
+  useEffect(() => (container ? registerHostTextEditor(container) : undefined), [container]);
+  return useSceneTextEditor(scene, container, options);
+}
+
+/** `useSceneTextEdit` without announcing itself as a host's editor: what
+ *  `<SceneCanvas>` mounts as its own. */
+export function useSceneTextEditor<
   TData extends DefaultTextData,
   TLayer extends string,
   TPose extends RectPose = RectPose,
@@ -247,7 +267,7 @@ export function useSceneTextEdit<
     },
   });
 
-  const onDoubleClick = useCallback((e: MouseEvent<HTMLElement>) => {
+  const onDoubleClick = useCallback((e: TextEditDoubleClick) => {
     // The dblclick bubbles from the canvas up to any wrapping container; the
     // element it started on is what the click coordinates are relative to.
     const canvas = e.target instanceof HTMLElement ? e.target : null;

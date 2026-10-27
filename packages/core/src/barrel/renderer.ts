@@ -203,6 +203,7 @@ export type { StarPoint } from '../tools/builtin/star/useStarTool';
 export type { UseSceneTrivialOptions } from '../core/scene/useScene';
 export type {
   DefaultTextData,
+  TextEditDoubleClick,
   UseSceneTextEditReturn,
 } from '../features/text/useSceneTextEdit';
 export type { EditingDrawOne } from '../features/text/editingDrawOne';
