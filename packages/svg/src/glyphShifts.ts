@@ -16,12 +16,14 @@ import { resolveLength } from './lengths';
 
 /** White space SVG's default handling would drop or fold, which moves every
  *  glyph after it to another place in the list. */
-const COLLAPSIBLE = /^\s|\s$|\s\s|[\n\t\r]/;
+export const COLLAPSIBLE = /^\s|\s$|\s\s|[\n\t\r]/;
 
-function readList(el: Element, name: 'x' | 'dx', onWarn: (m: string) => void): number[] {
+/** A glyph positioning list: `x`, `dx`, `y` or `dy`. */
+export function readList(el: Element, name: 'x' | 'dx' | 'y' | 'dy', onWarn: (m: string) => void): number[] {
   const raw = el.getAttribute(name)?.trim();
   if (!raw) return [];
-  return raw.split(/[\s,]+/).map((v) => resolveLength(v, el, name, 'x', 0, onWarn));
+  const axis = name.endsWith('x') ? 'x' : 'y';
+  return raw.split(/[\s,]+/).map((v) => resolveLength(v, el, name, axis, 0, onWarn));
 }
 
 /** The lists one run is placed by, and where they were written. */

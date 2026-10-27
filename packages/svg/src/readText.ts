@@ -9,22 +9,18 @@ import { multiply, parseTransform, isIdentity } from './transform';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
-import { fontSizeOf } from './fontSize';
-import {
-  DEFAULT_LINE_HEIGHT, holdsOnlyText, joinLines, LINE_HEIGHT_ATTR, LineTracker, statesLines, warnUnreadPositions,
-} from './tspanLines';
+import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, warnUnreadPositions } from './tspanLines';
 import { LAID_ATTR } from './laidLines';
-import { placeTspanRun, TextShifts } from './glyphShifts';
-import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
+import { readRuns } from './readRuns';
 import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import type { GradientTable } from './gradients';
 import {
-  deriveStyle, ownProp, ownValue, resolveCurrentColor, styleValue, type StyleContext,
+  deriveStyle, ownValue, resolveCurrentColor, styleValue, type StyleContext,
 } from './cascade';
 import { readProperty } from './properties';
-import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke } from './readPaint';
+import { readStroke, isNonScalingStroke, coreStroke } from './readPaint';
 
 /** Average glyph advance as a fraction of the em. Sans-serif Latin runs
  *  0.5–0.6; erring wide is the safer miss. */
@@ -187,107 +183,6 @@ export function parseTextElement(
   if (opacity != null) node.opacity = opacity;
   placeTextNode(node, multiply(ctm, localTransform), onWarn);
   return node;
-}
-
-/**
- * The element's runs, with a `\n` wherever a `<tspan>` opens a new line:
- * text nodes become plain runs, and `<tspan>` elements become runs carrying
- * their attribute overrides.
- */
-function readRuns(
-  el: Element,
-  tracker: LineTracker,
-  inheritedShift: Pick<StyledRun, 'script' | 'baselineShift'>,
-  textStyle: TextStyle,
-  gradients: GradientTable,
-  leafStyle: StyleContext,
-  onWarn: (m: string) => void,
-): { runs: StyledRun[]; lead: number } {
-  const runLines: StyledRun[][] = [[]];
-  let leading = 0;
-  let lead = 0;
-  if (holdsOnlyText(el) && (el.hasAttribute('dx') || el.hasAttribute('x'))) {
-    const t = el.textContent ?? '';
-    if (t) lead = placeTspanRun(el, { text: t, ...inheritedShift }, runLines, textStyle, onWarn);
-  } else for (let i = 0, shifts = new TextShifts(el, onWarn); i < el.childNodes.length; i++) {
-    const child = el.childNodes[i];
-    if (child.nodeType === 3 /* TEXT_NODE */) {
-      const t = child.textContent ?? '';
-      if (!t) continue;
-      lead += shifts.place({ text: t, ...inheritedShift }, runLines, textStyle);
-    } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
-      const sp = child as Element;
-      if (sp.tagName.toLowerCase() !== 'tspan') {
-        onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
-        const t = sp.textContent ?? '';
-        if (t) lead += shifts.place({ text: t, ...inheritedShift }, runLines, textStyle);
-        continue;
-      }
-      warnUnreadPositions(sp, onWarn);
-      const afterText = runLines.some((line) => line.some((r) => r.text.trim() !== ''));
-      const lines = tracker.startsLine(sp, afterText);
-      // A tspan opening the text steps down from nothing, so it breaks no
-      // line unless it says how many it stepped.
-      if (runLines.length === 1 && runLines[0].length === 0 && statesLines(sp)) leading = lines;
-      else for (let n = 0; n < lines; n++) runLines.push([]);
-      const run = readTspanRun(sp, gradients, leafStyle, onWarn);
-      lead += placeTspanRun(sp, run, runLines, textStyle, onWarn, shifts.take(run));
-    }
-  }
-  if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
-  return { runs: joinLines(runLines, leading), lead };
-}
-
-function readTspanRun(
-  el: Element,
-  gradients: GradientTable,
-  style: StyleContext,
-  onWarn: (m: string) => void,
-): StyledRun {
-  const text = el.textContent ?? '';
-  const run: StyledRun = { text };
-  const fw = ownValue(el, 'font-weight', onWarn);
-  // 700 is the bold flag's own spelling; any other weight is the run's.
-  if (fw === 'bold' || fw === 'bolder' || fw === 700) run.bold = true;
-  else if (fw === 'normal') run.fontWeight = 400;
-  else if (typeof fw === 'number') run.fontWeight = fw;
-  if (ownValue(el, 'font-style', onWarn) === 'italic') run.italic = true;
-  const ff = ownValue(el, 'font-family', onWarn);
-  if (ff) run.fontFamily = ff;
-  const size = ownValue(el, 'font-size', onWarn);
-  if (size?.fontSize != null) run.fontSize = size.fontSize;
-  if (size?.fontScale != null) run.fontScale = size.fontScale;
-  const tspanStyle = deriveStyle(style, el);
-  const ls = ownValue(el, 'letter-spacing', onWarn, fontSizeOf(tspanStyle));
-  if (ls != null) run.letterSpacing = ls;
-  const shift = ownValue(el, 'baseline-shift', onWarn);
-  if (shift?.script != null) run.script = shift.script;
-  if (shift?.baselineShift != null) run.baselineShift = shift.baselineShift;
-  const decoration = ownValue(el, 'text-decoration', onWarn);
-  if (decoration?.underline) run.underline = true;
-  if (decoration?.strikethrough) run.strikethrough = true;
-  if (decoration?.overline) run.overline = true;
-  const transform = ownValue(el, 'text-transform', onWarn);
-  if (transform) run.textTransform = transform;
-  const variant = ownValue(el, 'font-variant', onWarn);
-  if (variant) run.fontVariantCaps = variant;
-  const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
-  if (fillAttr) {
-    const parsed = readProperty('fill', fillAttr);
-    if (parsed?.kind === 'none') {
-      run.fill = null;
-    } else if (parsed?.kind === 'solid') {
-      run.fill = { paint: { kind: 'solid', color: parsed.color } };
-    } else if (parsed?.kind === 'ref') {
-      const paint = gradients.get(parsed.id);
-      if (paint) run.fill = { paint };
-      else if (parsed.fallback) run.fill = { paint: { kind: 'solid', color: parsed.fallback.color } };
-    }
-  }
-  // Own attributes only — see `ownStrokeStyle`.
-  const stroke = coreStroke(readStroke(ownStrokeStyle(el, tspanStyle), gradients, onWarn, isNonScalingStroke(el)));
-  if (stroke) run.stroke = stroke;
-  return run;
 }
 
 function readTextStyle(

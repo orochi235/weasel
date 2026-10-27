@@ -64,36 +64,40 @@ export function linesXml(pieces: readonly LinePiece[], x: number, pitch: number)
 /** The line height a `<text>` has when nothing states one. */
 export const DEFAULT_LINE_HEIGHT = 1.2;
 
-/** Tracks the `y` the current line was placed at, to tell a tspan that moves
- *  down from one that only moves sideways along the same line, and how far
- *  down each new line was placed. */
+/** Tracks the pen's `y` through a `<text>`: where the current line's baseline
+ *  is, how far a glyph moved off it, and how far down each new line was
+ *  placed. */
 export class LineTracker {
-  private y: string | null;
-  /** Where the current line sits, in user units. */
+  /** The current line's baseline, in user units. */
+  private lineY: number;
+  /** Where the pen is, in user units. */
   private at: number;
   private readonly pitches: number[] = [];
 
   constructor(text: Element, private readonly onWarn: (message: string) => void) {
-    this.y = text.getAttribute('y');
-    this.at = readLength(text, 'y', 'y', 0, onWarn);
+    this.at = this.lineY = readLength(text, 'y', 'y', 0, onWarn);
   }
 
+  /** How far the pen sits above the current line's baseline, in user units. */
+  get rise(): number { return this.lineY - this.at; }
+
+  /** Move the pen to `y`, when given, and then down by `dy`. */
+  move(y: number | undefined, dy: number): void { this.at = (y ?? this.at) + dy; }
+
   /** How many lines down `tspan` opens a new line, or 0 when it stays on the
-   *  current one. Call once per tspan, in order. `afterText` is whether any
-   *  text precedes it: the first line's own placement is not a pitch. */
-  startsLine(tspan: Element, afterText: boolean): number {
-    const y = tspan.getAttribute('y');
-    const movedY = y != null && y !== this.y;
-    if (y != null) this.y = y;
-    const from = this.at;
-    const dy = readLength(tspan, 'dy', 'y', 0, this.onWarn);
-    this.at = (y != null ? readLength(tspan, 'y', 'y', from, this.onWarn) : from) + dy;
-    if (!(movedY || dy !== 0)) return 0;
-    if (!tspan.hasAttribute('x')) {
-      const name = dy !== 0 ? 'dy' : 'y';
-      this.onWarn(`<tspan ${name}="${tspan.getAttribute(name)}"> is not read: it moves glyphs off the line without starting a new one`);
-      return 0;
-    }
+   *  current one. A tspan opens one when it has its own `x` and puts the pen
+   *  off the line's baseline; without an `x` it only moves its glyphs off the
+   *  line. `inherited` is the enclosing `<text>`'s `y` and `dy` for the
+   *  tspan's first glyph, used where the tspan has none of its own. Call once
+   *  per tspan, in order. `afterText` is whether any text precedes it: the
+   *  first line's own placement is not a pitch. */
+  startsLine(tspan: Element, afterText: boolean, inherited: { y?: number; dy?: number } = {}): number {
+    const from = this.lineY;
+    const y = tspan.hasAttribute('y') ? readLength(tspan, 'y', 'y', this.at, this.onWarn) : inherited.y;
+    const dy = tspan.hasAttribute('dy') ? readLength(tspan, 'dy', 'y', 0, this.onWarn) : inherited.dy ?? 0;
+    this.move(y, dy);
+    if (!tspan.hasAttribute('x') || Math.abs(this.at - from) < 1e-9) return 0;
+    this.lineY = this.at;
     // `0` is a line a layout wrapped onto: it moves down and breaks nothing.
     const stated = Number(tspan.getAttribute(LINES_ATTR) ?? NaN);
     const lines = Number.isInteger(stated) && stated >= 0 ? stated : 1;
@@ -125,18 +129,16 @@ export const holdsOnlyText = (el: Element): boolean =>
   !Array.from(el.childNodes).some((child) => child.nodeType === 1 /* ELEMENT_NODE */);
 
 /** Report the glyph positioning on a `<text>` or `<tspan>` that import does
- *  not read: every value after the first in a `y` list, a `rotate` that is
- *  not all zeros, and on a `<text>` holding a `<tspan>` every `x` after the
- *  first. A `dx` list, and an `x` list on a `<tspan>` or on a `<text>`
- *  holding only text, are `glyphShifts`' to read or report. */
+ *  not read: a `rotate` that is not all zeros, and on a `<text>` holding a
+ *  `<tspan>` every `x` after the first. `dx`, `y` and `dy` lists, and an `x`
+ *  list on a `<tspan>` or on a `<text>` holding only text, are read by
+ *  `glyphShifts` and `glyphRises`, which report what they cannot read. */
 export function warnUnreadPositions(el: Element, onWarn: (message: string) => void): void {
   const tag = el.tagName.toLowerCase();
-  const own = tag === 'tspan' || holdsOnlyText(el);
-  for (const name of own ? ['y', 'dy'] : ['x', 'y', 'dy']) {
-    const raw = el.getAttribute(name)?.trim() ?? '';
-    const rest = raw.split(/[\s,]+/).slice(1);
-    if (name === 'dy' ? rest.some((v) => parseFloat(v) !== 0) : rest.length > 0) {
-      onWarn(`<${tag} ${name}="${raw}"> positions each glyph; only the first value is read`);
+  if (tag === 'text' && !holdsOnlyText(el)) {
+    const raw = el.getAttribute('x')?.trim() ?? '';
+    if (raw.split(/[\s,]+/).length > 1) {
+      onWarn(`<text x="${raw}"> positions each glyph; only the first value is read`);
     }
   }
   const rotate = el.getAttribute('rotate')?.trim() ?? '';

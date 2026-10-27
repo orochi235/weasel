@@ -93,16 +93,6 @@ describe('lines of text written as positioned tspans', () => {
     expect(warnings).toEqual([expect.stringMatching(/<tspan x="10 20 30">/)]);
   });
 
-  it('reports a dy list, and a tspan moved off the line without starting a new one', () => {
-    const list = text('<text x="10" y="5"><tspan dy="0 3 0">abc</tspan></text>');
-    expect(list.warnings).toEqual([expect.stringMatching(/<tspan dy="0 3 0"> positions each glyph/)]);
-    const raised = text('<text x="10" y="20">a<tspan dy="-5">b</tspan></text>');
-    expect(raised.node.text).toBe('ab');
-    expect(raised.warnings).toEqual([expect.stringMatching(/<tspan dy="-5"> is not read/)]);
-    const placed = text('<text x="10" y="20">a<tspan y="12">b</tspan></text>');
-    expect(placed.warnings).toEqual([expect.stringMatching(/<tspan y="12"> is not read/)]);
-  });
-
   it('reports the rotate it does not read', () => {
     const { warnings } = text('<text x="10" y="5" rotate="45"><tspan rotate="10">a</tspan><tspan rotate="0">b</tspan></text>');
     expect(warnings).toEqual([
