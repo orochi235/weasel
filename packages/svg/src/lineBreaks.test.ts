@@ -26,6 +26,19 @@ describe('hard line breaks on export', () => {
     expect(back(n).node.style?.lineHeight).toBe(1.5);
   });
 
+  it('states the line height of a single line, which has no pitch to show it', () => {
+    const n = node('one', { style: { fontSize: 10, lineHeight: 1.5 } });
+    expect(serializeSvg([n])).toContain('data-weasel-line-height="1.5"');
+    expect(back(n).node.style?.lineHeight).toBe(1.5);
+    expect(back(node('one', { style: { fontSize: 10, lineHeight: 1.2 } })).node.style?.lineHeight).toBe(1.2);
+  });
+
+  it('reads the pitch over a stated line height the lines no longer keep', () => {
+    const { nodes } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><text font-size="10" data-weasel-line-height="1.5">'
+      + 'one<tspan x="0" dy="20">two</tspan></text></svg>');
+    expect((nodes[0] as SvgTextNode).style?.lineHeight).toBe(2);
+  });
+
   it('sends each line back to the anchor point', () => {
     expect(body(node('one\ntwo', { style: { fontSize: 10, align: 'center' } })))
       .toBe('one<tspan x="60" dy="12">two</tspan>');

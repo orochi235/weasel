@@ -17,8 +17,8 @@ import { escapeText } from './xmlEscape';
  */
 export const LINES_ATTR = 'data-weasel-lines';
 
-/** The `<text>` attribute stating its line height where its lines' pitch
- *  cannot, because a layout placed them. */
+/** The `<text>` attribute stating its line height, which its lines' pitch
+ *  cannot where there is one line or a layout placed them. */
 export const LINE_HEIGHT_ATTR = 'data-weasel-line-height';
 
 /** Whether `tspan` says how many lines it steps down. */
@@ -98,17 +98,18 @@ export class LineTracker {
 
   /**
    * The line height the lines were pitched at, as a multiple of `fontSize`:
-   * `undefined` for a single line, or for lines at the default pitch. The
-   * model holds one line height, so uneven pitches give their mean, which
-   * keeps the block's height.
+   * `stated` for a single line or for lines pitched as it says, otherwise
+   * `undefined` at the default pitch. The model holds one line height, so
+   * uneven pitches give their mean, which keeps the block's height.
    */
-  lineHeight(fontSize: number): number | undefined {
+  lineHeight(fontSize: number, stated?: number): number | undefined {
     const { pitches } = this;
-    if (pitches.length === 0 || !(fontSize > 0)) return undefined;
+    if (pitches.length === 0 || !(fontSize > 0)) return stated;
     const mean = pitches.reduce((sum, p) => sum + p, 0) / pitches.length;
     if (pitches.some((p) => Math.abs(p - mean) > 1e-3 * fontSize)) {
       this.onWarn('<text> lines are pitched unevenly; they take the mean pitch as one line height');
     }
+    if (stated !== undefined && Math.abs(mean - stated * fontSize) <= 1e-3 * fontSize) return stated;
     const lineHeight = Math.round((mean / fontSize) * 1e6) / 1e6;
     return Math.abs(lineHeight - DEFAULT_LINE_HEIGHT) < 1e-6 ? undefined : lineHeight;
   }

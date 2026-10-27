@@ -134,7 +134,8 @@ export function parseTextElement(
   const tracker = new LineTracker(el, onWarn);
   const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle, gradients, leafStyle, onWarn);
   const plain = runs.map((r) => r.text).join('');
-  const pitched = laid ? numberAttr(el, LINE_HEIGHT_ATTR) : tracker.lineHeight(fontSize);
+  const stated = numberAttr(el, LINE_HEIGHT_ATTR);
+  const pitched = laid ? stated : tracker.lineHeight(fontSize, stated);
   if (pitched !== undefined) textStyle.lineHeight = pitched;
   const lineHeight = textStyle.lineHeight ?? DEFAULT_LINE_HEIGHT;
 
@@ -326,8 +327,8 @@ function readTextStyle(
   if (transform && transform !== 'none') out.textTransform = transform;
   const variant = styleValue(style, 'font-variant', onWarn);
   if (variant === 'small-caps') out.fontVariantCaps = variant;
-  // `lineHeight` is read from the lines' pitch, or from `data-weasel-line-height`
-  // on laid-out lines, by the caller.
+  // `lineHeight` is read from the lines' pitch and `data-weasel-line-height`
+  // by the caller.
   // Edit-overlay-only chrome (`caretColor`, `selectionBackground`,
   // `selectionColor`) is intentionally not persisted — those are UI state,
   // not document content.

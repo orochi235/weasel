@@ -98,10 +98,9 @@ export function textXml(
     if (!layout) warn(`text aligned to the ${node.verticalAlign} of its box is written top-aligned: SVG text has`
       + ' no box, so other readers draw it at the top (weasel reads the alignment back)');
   }
-  // `lineHeight` has no attribute: the lines' `dy` states it, and a caller that
-  // wants it on a single line carries it in `meta`. Laid-out lines are pitched
-  // by their tallest run, so there the attribute states it.
-  if (layout && style?.lineHeight != null) attrs.push(`${LINE_HEIGHT_ATTR}="${trimNumber(style.lineHeight)}"`);
+  // The lines' `dy` shows the pitch to every reader, but a single line has
+  // none, and laid-out lines are pitched by their tallest run.
+  if (style?.lineHeight != null) attrs.push(`${LINE_HEIGHT_ATTR}="${trimNumber(style.lineHeight)}"`);
   if (node.fill !== undefined) {
     const paint = node.fill?.paint;
     if (!paint) attrs.push('fill="none"');
