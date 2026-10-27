@@ -25,8 +25,8 @@ import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraReg
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
-import { ClockRegistryContext, TrialClockContext } from '../clock/contexts';
-import { clockPosition, createTrialClock } from '../clock/trialClock';
+import { TrialClockContext, TrialRootContext } from '../clock/contexts';
+import { useTrialClockSetup } from '../clock/useTrialClockSetup';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
@@ -130,7 +130,6 @@ function TrialRuntime({
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
-  const updateTrialClock = useStore(store, (s) => s.updateTrialClock);
   const updateTrialAnnotations = useStore(store, (s) => s.updateTrialAnnotations);
   const labToolId = useStore(store, (s) => s.activeToolId);
   const setLabTool = useStore(store, (s) => s.setLabTool);
@@ -158,30 +157,9 @@ function TrialRuntime({
     [instrument.canvas, layerVisibility],
   );
 
-  // Read once: `record.clock` is where a reopened trial's clock stood, and the
-  // clock is the truth from then on. A swap mounts a new trial under a new id.
-  // A trial on the lab's clock holds the lab's: the lab keeps where it stands.
-  const clocks = useContext(ClockRegistryContext);
-  const spec = instrument.clock;
-  const [clockHandle] = useState(() => {
-    if (spec === 'lab') {
-      if (!clocks?.shared)
-        throw new Error(
-          `[labkit] instrument "${instrument.name}" plays on the lab's clock, and its <Lab> declares no \`clock\``,
-        );
-      return clocks.shared;
-    }
-    return spec ? createTrialClock(spec, record.clock) : null;
-  });
-  useEffect(() => {
-    if (!clockHandle || !clocks) return;
-    return clocks.register(record.id, clockHandle);
-  }, [clocks, clockHandle, record.id]);
-  useEffect(() => {
-    if (!clockHandle || spec === 'lab') return;
-    const { clock } = clockHandle;
-    return clock.subscribe(() => updateTrialClock(record.id, clockPosition(clock, spec?.duration)));
-  }, [clockHandle, spec, record.id, updateTrialClock]);
+  const rootRef = useRef<HTMLElement | null>(null);
+  const clockTarget = useCallback(() => rootRef.current, []);
+  const clockHandle = useTrialClockSetup({ instrument, config, record, store, target: clockTarget });
   const ticks = useMemo(
     () => (clockHandle ? (fn: () => void) => clockHandle.onFrame(() => fn()) : undefined),
     [clockHandle],
@@ -481,29 +459,31 @@ function TrialRuntime({
     <TrialIdProvider trialId={record.id}>
       <TrialOrbitProvider orbit={cam.orbit} instrument={instrument} trialId={record.id}>
         <TrialClockContext.Provider value={clockHandle}>
-          <AnnotationsContext.Provider value={instrument.annotations ? provided : null}>
-            <CameraWheelContext.Provider value={wheelSlot}>
-              <TrialChrome
-                job={jobCap ? job : undefined}
-                loupe={loupeBindings}
-                trialId={record.id}
-                record={record}
-                instrument={instrument}
-                isLastTrial={isLast}
-                undoBindings={undoBindings}
-                setConfig={setConfig}
-                trialChrome={extraChrome}
-                chrome={chrome}
-                suppress={suppress}
-                activeToolId={resolvedToolId}
-                setActiveTool={setActiveTool}
-              >
-                {scopedBody}
-                {annotationOverlays}
-                <PresentedTransport trialId={record.id} />
-              </TrialChrome>
-            </CameraWheelContext.Provider>
-          </AnnotationsContext.Provider>
+          <TrialRootContext.Provider value={rootRef}>
+            <AnnotationsContext.Provider value={instrument.annotations ? provided : null}>
+              <CameraWheelContext.Provider value={wheelSlot}>
+                <TrialChrome
+                  job={jobCap ? job : undefined}
+                  loupe={loupeBindings}
+                  trialId={record.id}
+                  record={record}
+                  instrument={instrument}
+                  isLastTrial={isLast}
+                  undoBindings={undoBindings}
+                  setConfig={setConfig}
+                  trialChrome={extraChrome}
+                  chrome={chrome}
+                  suppress={suppress}
+                  activeToolId={resolvedToolId}
+                  setActiveTool={setActiveTool}
+                >
+                  {scopedBody}
+                  {annotationOverlays}
+                  <PresentedTransport trialId={record.id} />
+                </TrialChrome>
+              </CameraWheelContext.Provider>
+            </AnnotationsContext.Provider>
+          </TrialRootContext.Provider>
         </TrialClockContext.Provider>
       </TrialOrbitProvider>
     </TrialIdProvider>

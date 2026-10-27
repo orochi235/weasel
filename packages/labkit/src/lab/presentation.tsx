@@ -1,6 +1,7 @@
 import type { ClockRegistry } from '@weasel-js/clock';
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand/react';
+import { TrialRootContext } from '../clock/contexts';
 import type { LabStore } from '../state/store';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { type PresentationMessageOptions, usePresentationMessages } from './presentationMessages';
@@ -149,7 +150,15 @@ export function usePresentedTrial(trialId: string): {
 } {
   const presented = useIsPresented(trialId);
   const surface = useSurfaceOptional();
-  const [el, ref] = useState<HTMLElement | null>(null);
+  const [el, setEl] = useState<HTMLElement | null>(null);
+  const root = useContext(TrialRootContext);
+  const ref = useCallback(
+    (node: HTMLElement | null) => {
+      setEl(node);
+      if (root) root.current = node;
+    },
+    [root],
+  );
   useLayoutEffect(() => {
     if (!presented || !el || !surface) return;
     surface.scope(el);
