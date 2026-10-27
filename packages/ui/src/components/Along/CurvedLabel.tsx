@@ -4,6 +4,8 @@ import { TOP_HALF } from './Along';
 import type { AlongArc, RunAlign } from './alongContext';
 import { placeStyle } from './placeOnRun';
 import { useBoxShape, type BoxShape } from './useBoxShape';
+import { useInlineDirection } from './useReadingRun';
+import { visualGraphemes } from './visualGraphemes';
 import on from './onRun.module.css';
 import s from './CurvedLabel.module.css';
 
@@ -28,16 +30,18 @@ const graphemes = (text: string): string[] => (segmenter ? [...segmenter.segment
 
 /**
  * A line of text laid along an arc or a track shape of the box it fills, one span per grapheme, each centered on its
- * place and tipped to the track. The text reads left to right and upright whichever way the shape runs; the center
+ * place and tipped to the track. The text reads upright whichever way the shape runs, its graphemes in the order the
+ * bidi algorithm shows them under its computed `direction`, which also says which end `align` starts from; the center
  * of each glyph box sits on the track, so `shift` lifts the text clear of a line drawn along it. It takes its font
  * and color from its parent, takes no pointer input, and is named by `text` as one image.
  */
 export function CurvedLabel({ text, arc = TOP_HALF, shape, align = 'center', offset = 0, shift = 0, className }: CurvedLabelProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
-  const chars = useMemo(() => graphemes(text), [text]);
+  const direction = useInlineDirection(root);
+  const chars = useMemo(() => visualGraphemes(graphemes(text), direction), [text, direction]);
   const [lengths, setLengths] = useState<readonly number[]>([]);
   const made = useBoxShape(root, arc, shape);
-  const run = useMemo(() => trackRun(made), [made]);
+  const run = useMemo(() => trackRun(made, 0, 1, { direction }), [made, direction]);
 
   useLayoutEffect(() => {
     const spans = [...(root.current?.children ?? [])] as HTMLElement[];
