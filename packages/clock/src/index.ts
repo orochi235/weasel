@@ -7,7 +7,7 @@
 export { clockPosition, createClock } from './clock';
 export { holdAt, type PlayheadHold } from './hold';
 export { CLOCK_RATES } from './rates';
-export { type ClockRegistry, createClockRegistry } from './registry';
+export { type ClockRegistry, type ClockTarget, createClockRegistry } from './registry';
 export type {
   Clock,
   ClockedMix,

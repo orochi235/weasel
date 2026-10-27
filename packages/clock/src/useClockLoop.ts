@@ -4,8 +4,8 @@ import type { ClockRegistry } from './registry';
 import type { ClockHandle } from './types';
 
 /** Whether `handle` is out of sight: not the shared clock, every registration of
- *  it names an element, and none intersects the viewport. An element not yet
- *  resolved, or not yet reported, counts as seen. */
+ *  it names an element, and none intersects the viewport. A target not yet
+ *  resolved, not an element, or not yet reported counts as seen. */
 function outOfSight(
   registry: ClockRegistry,
   handle: ClockHandle,
@@ -16,7 +16,7 @@ function outOfSight(
   if (targets.length === 0) return false;
   return targets.every((target) => {
     const el = target();
-    return el !== null && seen.get(el) === false;
+    return el instanceof Element && seen.get(el) === false;
   });
 }
 
@@ -31,7 +31,7 @@ function syncObserved(
   for (const handle of registry.all()) {
     for (const target of registry.targets(handle)) {
       const el = target();
-      if (el) named.add(el);
+      if (el instanceof Element) named.add(el);
     }
   }
   for (const el of [...seen.keys()]) {
