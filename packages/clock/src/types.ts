@@ -71,7 +71,8 @@ export interface Clock {
   /** Signed: 0 pauses and a negative rate plays backward. A write changes speed
    *  at once and replaces any ramp. */
   rate: number;
-  /** Passes, as `ClockSpec.loop`. */
+  /** Passes, as `ClockSpec.loop`. A write that shortens the run past `elapsed`
+   *  keeps the time within the pass, in the last pass left. */
   loop: boolean | number;
   /** Move `rate` to `to` linearly over `over` real ms; position stays continuous. */
   ramp(to: number, over: number): void;
@@ -115,14 +116,15 @@ export interface ClockHandle {
   /** Back to where it opened, at the declared rate — a Reset,
    *  allowed on a clock that is not seekable. */
   reset(): void;
-  /** Takes up `spec`'s `duration`, `origin`, `loop` and `speed`. The shown
-   *  time (`origin + elapsed`) is kept and clamped to the new run; play state
-   *  and rate are left alone. Notifies like a seek. Unlike assigning
-   *  `duration`, this does not keep `phase`. */
+  /** Takes up `spec`'s `duration`, `origin` and `speed`, and its `loop` when
+   *  that differs from the last declaration's. Keeps the pass and the time
+   *  shown within it (`origin` plus ms into the pass), clamped to the new pass
+   *  and run; play state and rate are left alone. Notifies like a seek. Unlike
+   *  assigning `duration`, this does not keep `phase`. */
   declare(spec: ClockSpec): void;
   /** Replaces the declared `duration` and `origin` with `span`'s, where it
    *  gives them, until called with `null`; a later `declare` changes what lies
-   *  under it, not the override. Keeps the shown time, clamped, like `declare`. */
+   *  under it, not the override. Keeps the pass and shown time like `declare`. */
   override(span: { duration?: number; origin?: number } | null): void;
   /** Called after each sync that moved the clock or followed a change. */
   onFrame(fn: (elapsed: number, pass: number) => void): () => void;

@@ -17,19 +17,31 @@ DOM. `useClockLoop`, the one frame loop that syncs a registry's clocks, is in
 
 ## Shown time
 
-A clock's shown time is `origin + elapsed`. `origin` (in `ClockSpec`) is where
-the run starts on the timeline; `elapsed` is how far it has moved since.
-`ClockHandle.declare` sets the time a caller wants shown and `override` replaces
-it for a while; a time declared onto a pass boundary reads as the end of the
-pass before it.
+A clock's shown time is `origin` plus how far it stands into its pass.
+`origin` (in `ClockSpec`) is where a pass starts on the timeline. On a looping
+clock the shown time is per pass: `shownInPass` reads it, and a time on a pass
+boundary reads as the end of the pass before.
 
-`holdAt` pins a clock at a position. Its limit: a foreign seek to exactly the
-held, clamped value looks the same as the hold's own, so it does not release it.
+`ClockHandle.declare(spec)` takes up a new `duration`, `origin` and `speed`,
+and `loop` when the declared `loop` changed since the last declaration, so a
+loop toggled since survives an edit that only moves the span. It keeps the pass
+and the shown time within it, clamped to the new pass and run.
+`ClockHandle.override(span)` replaces the declared `duration` and `origin` until
+called with `null`, keeping the shown time the same way; a `declare` under it
+changes what lies beneath.
+
+`holdAt(handle, shown)` pauses a clock at a time shown within a pass, placed in
+the first pass, and keeps placing it there as the span moves; a time past the
+pass's end waits at the end until the span reaches it. Its limit: a foreign
+seek to exactly the held, clamped value looks the same as the hold's own, so it
+does not release it.
 
 ## Visibility
 
-A registry runs one frame loop for all its clocks. A clock is gated, meaning
-not advanced, only when all three hold:
+A registry runs one frame loop for all its clocks. `register(id, handle,
+target)` may name a target, which resolves the element showing the clock, and
+`targets(handle)` lists them. A clock is gated, meaning not advanced, only when
+all three hold:
 
 - it is not the registry's shared clock;
 - every registration of it gave a visibility target;
