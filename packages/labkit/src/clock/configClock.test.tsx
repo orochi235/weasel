@@ -15,7 +15,7 @@ import { TrialTransport } from './TrialTransport';
 
 let lab: LabContextValue | null = null;
 let store: LabStore | null = null;
-let rootOfClock: Element | null | undefined;
+let rootOfClock: object | null | undefined;
 
 function Probe() {
   lab = useLabContext();
