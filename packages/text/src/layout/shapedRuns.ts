@@ -49,7 +49,7 @@ export function shapeRun(
   if (shaper === null) return null;
   const face = shapeableBytes(resolved);
   if (face === null) return null;
-  const glyphs = shaper.shape(face, run.text, run.fontFeatures);
+  const glyphs = shaper.shape(face, run.text, run.fontFeatures, run.lang);
   let slots = slotsOf.get(glyphs);
   if (slots) return slots;
   slots = slotsFor(shaper, face, run.text, glyphs);

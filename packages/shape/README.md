@@ -28,7 +28,8 @@ and is laid out as before; so is a face loaded from WOFF, whose bytes HarfBuzz c
 Right-to-left text also needs the bidi engine, which puts its letters in visual order.
 
 With a shaper registered, `fontVariantCaps: 'small-caps'` on a face that has an `smcp`
-feature draws the face's small capitals rather than shrunken capitals.
+feature draws the face's small capitals rather than shrunken capitals, and `lang` (a BCP 47
+tag, `'sr'`, `'ur'`) on a run or a node's style selects the face's forms for that language.
 
 ## Using it alone
 
@@ -41,7 +42,8 @@ for (const g of shaper.shape(fontBytes, 'بيت')) {
 ```
 
 `shape` cuts the text where its script changes and shapes each piece in that script's
-direction, then returns the glyphs in logical order. `glyphD` is em-space SVG path data, y
+direction, then returns the glyphs in logical order. Its optional fourth argument is a BCP 47
+language tag. `glyphD` is em-space SVG path data, y
 down. Pass the same `ArrayBuffer` for the same face every time: the parsed face is held
 against it.
 

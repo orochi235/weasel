@@ -57,6 +57,7 @@ const STYLE_KEYS = [
   'textTransform',
   'fontVariantCaps',
   'rotate',
+  'lang',
 ] as const satisfies readonly StyleKey[];
 
 // A key missing from STYLE_KEYS is invisible to every function here.

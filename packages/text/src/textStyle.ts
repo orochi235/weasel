@@ -108,6 +108,12 @@ export interface TextStyle {
    * have had. Absent is ordinary text.
    */
   script?: 'super' | 'sub';
+  /**
+   * The text's language, as a BCP 47 tag (`'sr'`, `'ur-PK'`), which every run
+   * inherits: a shaper draws the face's forms for it. Absent draws the face's
+   * default forms.
+   */
+  lang?: string;
 }
 
 /** `TextStyle` with all fields filled in from defaults — what the renderer actually consumes. */
@@ -135,6 +141,8 @@ export interface ResolvedTextStyle {
   fontVariantCaps: FontVariantCaps;
   /** Absent is ordinary text. */
   script?: 'super' | 'sub';
+  /** Absent is no language: the face's default forms. */
+  lang?: string;
   /** Absent means no outline — unlike the other fields, this one has no
    *  default to fall back to. See {@link TextPaint.stroke}. */
   stroke?: Stroke;
@@ -251,6 +259,7 @@ export function resolveTextStyle(
     textTransform: style.textTransform ?? DEFAULT_TEXT_STYLE.textTransform,
     fontVariantCaps: style.fontVariantCaps ?? DEFAULT_TEXT_STYLE.fontVariantCaps,
     ...(style.script !== undefined ? { script: style.script } : NOTHING),
+    ...(style.lang ? { lang: style.lang } : NOTHING),
     ...(stroke !== undefined ? { stroke } : NOTHING),
   };
 }

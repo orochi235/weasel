@@ -24,10 +24,10 @@ afterAll(() => unregister());
 
 const OPTS: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left', bidi };
 
-function lay(text: string, family: string, opts: Partial<LayoutRunsOpts> = {}, caps = false) {
+function lay(text: string, family: string, opts: Partial<LayoutRunsOpts> = {}, caps = false, lang?: string) {
   const runs = resolveRuns(
     [{ text, ...(caps ? { fontVariantCaps: 'small-caps' as const } : {}) }],
-    resolveTextStyle({ fontFamily: family, fontSize: 100 }, { fill: DEFAULT_TEXT_FILL }),
+    resolveTextStyle({ fontFamily: family, fontSize: 100, lang }, { fill: DEFAULT_TEXT_FILL }),
   );
   const laid = layoutRuns(runs, { ...OPTS, ...opts });
   return { runs, laid, painted: paintRuns(laid, runs) };
@@ -82,5 +82,12 @@ describe('layout shaped by HarfBuzz', () => {
     expect(runs[0].fontFeatures).toEqual(['smcp']);
     const smallB = shaper.shape(LATIN, 'b', ['smcp'])[0].gid;
     expect(drawnGids(painted)[1]).toEqual([smallB]);
+  });
+
+  it('draws the forms of the node\'s language: a Sindhi meem', () => {
+    const plain = drawnGids(lay('م', 'shape-ar').painted);
+    const sindhi = drawnGids(lay('م', 'shape-ar', {}, false, 'sd').painted);
+    expect(sindhi).toEqual([[shaper.shape(ARABIC, 'م', [], 'sd')[0].gid]]);
+    expect(sindhi).not.toEqual(plain);
   });
 });

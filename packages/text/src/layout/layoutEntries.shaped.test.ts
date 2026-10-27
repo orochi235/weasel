@@ -38,11 +38,14 @@ async function settle(family: string): Promise<void> {
 }
 
 /** A shaper answering `script[text]`, and drawing glyph `g` moved by `(x, y)` as `g<g>@x,y`. */
-function fakeShaper(script: Record<string, ShapedGlyph[]>, features: string[][] = []): TextShaper {
+function fakeShaper(
+  script: Record<string, ShapedGlyph[]>, features: string[][] = [], languages: (string | undefined)[] = [],
+): TextShaper {
   return {
-    shape: (face, text, f = []) => {
+    shape: (face, text, f = [], language) => {
       expect(face).toBe(SFNT);
       features.push([...f]);
+      languages.push(language);
       const out = script[text];
       if (!out) throw new Error(`no shaping scripted for ${JSON.stringify(text)}`);
       return out;
@@ -157,6 +160,22 @@ describe('layoutRuns with a shaper', () => {
     const out = layoutAndPaint(runs, OPTS);
     expect(features.at(-1)).toEqual(['smcp']);
     expect(out.lines[0].cells[1].advance).toBeCloseTo(40, 9);
+  });
+
+  it('shapes each run in its language: its own, else the node\'s', async () => {
+    registerFace('lang');
+    await settle('lang');
+    const languages: (string | undefined)[] = [];
+    unregister = registerShaper(fakeShaper({ a: [glyph(1, 0, 0.5)], b: [glyph(2, 0, 0.5)] }, [], languages));
+
+    const style = resolveTextStyle({ fontFamily: 'lang', fontSize: 100, lang: 'sr' }, { fill: DEFAULT_TEXT_FILL });
+    const runs = resolveRuns([{ text: 'a' }, { text: 'b', lang: 'ur' }], style);
+    expect(runs.map((r) => r.lang)).toEqual(['sr', 'ur']);
+    layoutAndPaint(runs, OPTS);
+    expect(languages.slice(-2)).toEqual(['sr', 'ur']);
+
+    layoutAndPaint(runsOf('a', 'lang'), OPTS);
+    expect(languages.at(-1)).toBeUndefined();
   });
 
   it('synthesizes small caps when nothing will shape the run', async () => {

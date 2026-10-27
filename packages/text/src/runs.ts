@@ -84,6 +84,12 @@ export interface StyledRun {
    * different angle per glyph is a run per glyph.
    */
   rotate?: number;
+  /**
+   * The run's language, as a BCP 47 tag (`'sr'`, `'ur-PK'`): a shaper draws
+   * the face's forms for it, such as Serbian Cyrillic italics or Urdu digits.
+   * Overrides the node's own; absent inherits it.
+   */
+  lang?: string;
 }
 
 /** Normalize the two accepted spellings of text content — a plain string or

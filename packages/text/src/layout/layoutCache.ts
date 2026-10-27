@@ -194,6 +194,7 @@ function runsHash(runs: readonly ResolvedRun[]): number {
     h = mixNum(h, r.rotate ?? 0);
     h = mixNum(h, r.strutSize ?? -1);
     h = mix(h, r.fontFeatures?.length ?? 0);
+    h = mixStr(h, r.lang ?? '');
   }
   return h;
 }
@@ -223,7 +224,7 @@ function sameRuns(a: readonly ResolvedRun[], b: readonly ResolvedRun[]): boolean
       || !same(x.fontWeight, y.fontWeight) || x.fontStyle !== y.fontStyle
       || !same(x.letterSpacing, y.letterSpacing) || !same(x.baselineShift, y.baselineShift)
       || !same(x.strutSize, y.strutSize) || !same(x.rotate ?? 0, y.rotate ?? 0) || !sameNums(x.sizeMap, y.sizeMap)
-      || !sameStrs(x.fontFeatures, y.fontFeatures)) return false;
+      || !sameStrs(x.fontFeatures, y.fontFeatures) || x.lang !== y.lang) return false;
     // Ends follow from starts and the length, so the two pin the cells.
     const sx = x.srcMap, sy = y.srcMap;
     if (sx !== sy && (sx === undefined || sy === undefined || sx.length !== sy.length

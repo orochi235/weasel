@@ -78,7 +78,10 @@ describe('cachedLayoutRuns', () => {
     const tracked = cachedLayoutRuns([{ ...run('hello world'), letterSpacing: 3 }], OPTS);
     const bold = cachedLayoutRuns([{ ...run('hello world'), fontWeight: 700 }], OPTS);
     const raised = cachedLayoutRuns([{ ...run('hello world'), baselineShift: 4 }], OPTS);
-    for (const variant of [bigger, tracked, bold, raised]) {
+    const serbian = cachedLayoutRuns([{ ...run('hello world'), lang: 'sr' }], OPTS);
+    const urdu = cachedLayoutRuns([{ ...run('hello world'), lang: 'ur' }], OPTS);
+    expect(urdu).not.toBe(serbian);
+    for (const variant of [bigger, tracked, bold, raised, serbian]) {
       expect(variant).not.toBe(base);
     }
   });
