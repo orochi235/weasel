@@ -122,10 +122,9 @@ Owner tags, after the priority (2026-10-26):
   each glyph's value from the nearest ancestor that has one, and merging that per glyph is not done, so it
   warns and reads only the first value. Like every `x` list, it also needs a loaded face to measure the
   glyphs.
-- **(P3) [agent] A laid-out cell's `advance` may leave out the kerning at a run boundary.** With the fixture font at
-  32, A then B in two runs gives A's cell an `advance` of 23 while the gap between the two cells' `x` is 22,
-  the kerned width; `LaidOutCell`'s doc says a cell's advance includes the kerning before the next glyph
-  (`packages/text`, measured 2026-10-26, cause not traced). svg import reads the pen gap instead.
+- **(P3) [agent] A caret cluster across a zero-width mark spans one unit too far.** `caretCells` (`hitTest.ts`) merges
+  A, a combining mark and a kerned B into one cell spanning 0..23 rather than 0..22, because the mark's cell
+  starts at 23: the mark keeps an advance of 0 and A takes the kerning (2026-10-27).
 
 ### Path editing tricks
 
@@ -284,14 +283,16 @@ Owner tags, after the priority (2026-10-26):
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) [agent] A folded puppet warp's bar S spends its rounds on the softening schedule.** Since `b43c94c9d`
-  the injective pass takes L-BFGS steps (`packages/geom/src/warp/lbfgs.ts`): the disc squash takes 17 rounds
-  and the bar S 45, 26 of them with the softening above zero. That schedule (`nextEps` in `injective.ts`,
-  Garanzha's, sigma floor 0.1) shrinks it about 7% a round from 2.1. A floor of 0.3 fails to untangle, several
-  steps per softening take more rounds, and dropping the softening once nothing is turned over takes 60. An
-  L-BFGS round costs about 30 µs more than a plain one, so the bar's solve rose from 6.2 to 6.7 ms on keiei
-  while the disc's fell from 5.0 to 4.1 (`warp.bench.ts`, runs in `warp.bench.runs.jsonl`). A faster schedule
-  that still untangles, or a cheaper round, is what is left.
+- **(P3) [agent] A folded puppet warp spends most of its injective rounds polishing a map that is already injective.**
+  After `e23101bb7` the bar S takes 41 rounds and the disc squash 18 (`warp.bench.ts`, raw runs in
+  `warp.bench.runs.jsonl`). Of those, 19 on the bar and 15 on the disc run at eps 0 after nothing is turned over,
+  until two rounds in a row move the map less than 1e-4 of its size (`SETTLED`, `CALM_ROUNDS` in `arap.ts`).
+  L-BFGS steps there are usually cut to half length by the line search, or stopped at 80% of the nearest
+  flattening. A looser stop, or a step not held back by nearly-flat triangles, is what is left; either changes
+  the final map, so the fold test's refit anchor counts (5 and 11) will move.
+- **(P3) [agent] `warp.bench.ts` records the node's tree as the commit it measured.** It writes `git rev-parse HEAD`
+  as each run's `sha`, which on an onto node is not the commit under test; the 2026-10-27 runs are told apart by
+  their `label`.
 - **(P3) [recheck] WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
@@ -393,14 +394,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] Ports are still read every frame for painting.** Port hit tests go through an index since
-  2026-10-26 (`packages/diagram/src/keyedIndex.ts`), but painting still calls every port's `regions()` each
-  frame.
-- **(P3) [agent] When to build a hit-test index is decided in three places.** The rule that a source's first
-  query after a change scans and records its generation, and the second at that generation builds the index,
-  is copied in core's `scenePickIndex`, diagram's `keyedIndex.ts` and kernel3d's `snap/boxIndex.ts`
-  (2026-10-26). One helper should own it.
-
 - **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
   marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
   8.97 ms at 394b86d43 (medians, keiei, one session, 2026-10-22); the pick-index branch's own full
@@ -495,9 +488,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
 
-- **(P3) [agent] `RangeSlider` may disagree with `Slider` in a right-to-left page.** It is built on React Aria,
-  which takes direction from its locale rather than the computed `dir` that `Slider` reads since 2026-10-26
-  (inferred, not checked).
+- **(P3) [agent] A vertical `RangeSlider`'s fill runs across its track.** With `orientation="vertical"` the fill is
+  laid on the inline axis (`inset-inline-start`/`end`), so it runs across the track rather than along it
+  (predates 2026-10-27, when the fill moved off physical `left`/`right`).
 
 - **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
   `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
@@ -512,14 +505,16 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) [agent] A HUD menu's text row has no IME composition, and a press does not place its caret.**
-  `createTextEditor` (`hud/src/menu/textEdit.ts`) takes keydown characters only, so a composed character
-  (CJK, dead keys) cannot be entered; the canvas has no hidden input to receive
-  `compositionstart`/`compositionupdate`. A press on the row starts an edit with the caret at the end; there is
-  no Alt+arrow word movement either.
-- **(P3) [agent] A menu item cannot keep its menu open.** `choose` (`packages/menu`) closes the menu before running
-  the item, so a HUD color swatch applies and closes where the hex row applies and stays open. It needs an
-  item flag that keeps the menu open.
+- **(P3) [agent] A HUD menu's text row has no IME composition.** `createTextEditor` (`hud/src/menu/textEdit.ts`) takes
+  keydown characters only, so a composed character (CJK, dead keys) cannot be entered. The fix is a hidden
+  `<input>` placed at the row and focused while an edit runs, feeding `compositionupdate` (drawn as preedit) and
+  `compositionend` (inserted) into the editor. That reaches past the menu into `attach.ts`: focus moving from the
+  canvas to the input fires the canvas `blur`, which calls `hud.focus(null)`; keys land on the input, not the
+  canvas `keydown` listener; and a `Widget` has no DOM access to ask for an input. It needs a `Widget` hook for
+  an active text edit (its rect and composition callbacks), `attach.ts` owning the input and treating its focus
+  as the canvas's, and keydowns with `isComposing` or keyCode 229 ignored. text-dom's `useTextEdit` composes on
+  its own contentEditable overlay, which cannot be reused here. Alt+Backspace and Alt+Delete still delete one
+  character, not a word.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -679,16 +674,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
 
-- **(P3) [agent] Multi-page documents in draw.** Core has pages end to end (`packages/core/src/core/pages/`, and
-  "Page" in `docs/concepts.md`): the page list is the `core:pages` document value, the edits in
-  `pageEdits.ts` move each page's nodes with it in one undo entry, and `PageTabs` (`@weasel-js/ui`) is
-  the strip. weaselchart uses all of it. draw still paints one page from `paperSize`. Left, in order:
-  1. draw's document keeps its pages under `core:pages` where it keeps `paperSize`
-     (`useDocumentState.ts`, `docPersistence.ts`), and `usePageFit` fits the current page.
-  2. A `PageTabs` strip in draw, and `viewport.recenter` on the current page.
-  3. SVG save and export per page: `svgInterop.ts` keeps one paper size under `wd:`, and
-     `svgExport.ts` writes one `viewBox`.
-
 ---
 
 ### Domain bundles
@@ -724,10 +709,11 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [agent] A fixed overlay frame costs scroll range under a transformed ancestor.** Since 2026-10-26
-  popovers in a positioned container portal into a `position: fixed` frame (`packages/ui/src/overlays/overlayFrame.ts`),
-  which adds no scroll range, except where a `transform`, `filter` or `contain` ancestor inside a scrolling
-  element is the containing block for fixed elements: there the frame acts as an absolute box again.
+- **(P3) [agent] The overlay frame's boundary may be off by the page's own scroll.** Its `getBoundingClientRect`
+  override (`packages/ui/src/overlays/overlayFrame.ts`) reports a corner of `clientLeft − scrollLeft`,
+  `clientTop − scrollTop`, and for a fixed frame React Aria reads that rect as the offset between container and
+  boundary, so once the page itself is scrolled the boundary may be off by that scroll (inferred from React Aria
+  3.52.1's `calculatePosition`; every browser test runs with the page unscrolled).
 
 - **(P3) [recheck] On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
@@ -764,11 +750,12 @@ only story runner in the repo.
   the branch and commit. A screenshot with the trial's marks on it goes into the issue by pasting it there;
   never by committing it to the repo. Left to settle: how the workshop reaches GitHub, and whether marks come
   back (next entry) to draw that screenshot.
-- **(P3) [agent] A drawing tool over a marked forge story takes the wheel.** With any tool but the pointer active,
-  the marks' input box sits over the story and takes wheel events, and forge has no camera to hand them to, so
-  the story cannot scroll until the pointer is picked.
-- **(P3) [agent] A forge mark export can come out transparent.** The export's copy of the story keeps `data-pending`,
-  so a story captured before its first paint draws nothing.
+- **(P3) [agent] A pending forge story host swallows the marks' wheel.** A story host still marked `data-pending`
+  has `pointer-events: none`, so the wheel's under-the-pointer lookup (`packages/labkit/src/annotations/wheelScroll.ts`)
+  skips it and its inner scroller, and a wheel during that window does nothing.
+- **(P3) [agent] A forge story never near the viewport exports blank.** `TrialHost` renders a story's content only
+  near the viewport, so a mark export of one that never was captures an empty host: the opaque story
+  background, with nothing on it.
 
 - **(P3) [recheck] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
@@ -1082,21 +1069,16 @@ only story runner in the repo.
   logs lived in a session scratchpad and are not kept.
 
 - **(P2) [agent] HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
-  `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
-  layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **With the readout changing every frame the DOM is still the cheaper overlay** once the
-    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 6.61 ms a frame of all
-    threads against 5.91, and 5.3 MB allocated a frame against 0.10 (msb-uai, 2026-10-24; README,
-    "What the HUD allocates"). A layout and its painting now hold their numbers in columns, which
-    cut allocation 12% and left time inside the spread between runs. What is left is a few kinds
-    of per-glyph or per-label garbage, none dominant: the column arrays themselves (919 KB a frame),
-    the layout cache's structural key (`runsKey`, 202), `frameCommands`' string of every label's text
-    (193), `groupFor` (305), `breakLines` (203), and `resolveTextStyle` per command (100), which the
-    `perf/hud-and-batch` branch skips: 4.48 MB a frame in all (teitou, 2026-10-26, from 5.20).
-  - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
-    at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
-    layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
-    out of it.
+  `tests/perf/hud-vs-dom.spec.ts` (`tests/perf/README.md`, "What the HUD allocates"). With the readout changing
+  every frame the HUD allocates 3.15 MB a frame at 5,000 glyphs on a fixed camera against the DOM's 0.10
+  (msb-uai, 2026-10-27, down from 4.51). Every key string is gone. What is left: the column and quad arrays
+  (`slice`, 916 KB), `layoutRuns`' code point list and line boxes (298), `breakLines` (206, including a copy of
+  the entry that opens each line), `paintRuns` (214), `resolveRuns`/`resolveTextStyle` building the new command
+  (155, 100), `placeLine` (153), and `glyphMetrics`' `get descent` returning a boxed number on each read (122).
+  - **A static HUD should now be skippable, not yet measured.** `attachHud`'s layer declares `deps` that hold
+    while no widget changed, so a canvas reuses the layer and, past 250 commands, retains it. The spec draws the
+    HUD layer by calling `layer.draw` directly, so it cannot see this; routing its static HUD cell through
+    `drawLayers` with a command cache would price it.
 
 - **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
