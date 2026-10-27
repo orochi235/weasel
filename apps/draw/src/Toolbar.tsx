@@ -4,6 +4,7 @@ import {
   type ClipboardDep,
   type ClipboardSnapshot,
   type NodeId,
+  type PlacedPage,
   useClipboardOps,
   useDepSource,
   useOptionalDepRegistry,
@@ -36,6 +37,8 @@ export interface ToolbarProps {
   paperSize: PaperSizeKey;
   /** Fit the view to the first page, after New or Open replaces the document. */
   showFirstPage: () => void;
+  /** The page Export Page writes. */
+  page: PlacedPage | null;
   filename: string;
   setFilename: (name: string) => void;
   backgroundColor: string;
@@ -46,7 +49,7 @@ export interface ToolbarProps {
 
 export function Toolbar({
   scene, selection,
-  paperSize, showFirstPage,
+  paperSize, showFirstPage, page,
   filename, setFilename, backgroundColor, setBackgroundColor, menus,
 }: ToolbarProps): ReactElement {
   // A paste lands where a draw would: in the entered group, say.
@@ -102,7 +105,7 @@ export function Toolbar({
   }), [clipboard]);
   useDepSource('clipboard', () => clipboardDep);
   useDebugCommands();
-  useFileCommands({ scene, filename, paperSize, backgroundColor, setFilename, setBackgroundColor, showFirstPage });
+  useFileCommands({ scene, filename, paperSize, page, backgroundColor, setFilename, setBackgroundColor, showFirstPage });
 
   return (
     <>

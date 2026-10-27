@@ -23,7 +23,7 @@ export function firstPageSize<TData, TLayer extends string, TPose>(scene: Scene<
   return first ? { width: first.width, height: first.height } : PAPER_PRESETS[DEFAULT_PAPER_SIZE];
 }
 
-/** Make the scene's pages one page of `size`. Call inside the batch that replaces the document. */
-export function resetPages<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, size: PageSize): void {
-  scene.doc.set(PAGES_DOC_KEY, onePage(size));
+/** Make `pages` the scene's pages, moving nothing. Call inside the batch that replaces the document. */
+export function replacePages<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, pages: PagesDoc): void {
+  scene.doc.set(PAGES_DOC_KEY, pages);
 }

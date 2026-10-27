@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { asNodeId, createScene, PAGES_DOC_KEY, pagesOf, solid, type NodeId } from '@weasel-js/core';
+import { asNodeId, createScene, PAGES_DOC_KEY, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { importSvgText, openSvgFile, openSvgText } from './openSvg';
 import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
@@ -50,7 +50,7 @@ describe('openSvgText', () => {
 
   it('opens as one page of the paper size the file declares, in the Open entry', () => {
     const scene = sceneWithOneShape();
-    expect(openSvgText(scene, svg(TWO, 'wd:paperSize="a4"'), 'a.svg').paperSize).toBe('a4');
+    openSvgText(scene, svg(TWO, 'wd:paperSize="a4"'), 'a.svg');
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 794, height: 1123 }]);
     scene.undo();
     expect(pagesOf(scene)?.pages).toHaveLength(2);
@@ -58,7 +58,7 @@ describe('openSvgText', () => {
 
   it('opens a file that declares no paper size as one page of the first page\'s size', () => {
     const scene = sceneWithOneShape();
-    expect(openSvgText(scene, svg(TWO), 'a.svg').paperSize).toBeUndefined();
+    openSvgText(scene, svg(TWO), 'a.svg');
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 816, height: 1344 }]);
   });
 
@@ -92,7 +92,7 @@ describe('a clipped group', () => {
 });
 
 describe('Save then Open: a mark with children', () => {
-  const PAGE = { filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff' } as const;
+  const PAGE = { filename: 'page', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor: '#ffffff' } as const;
   const rect = (w: number, h: number) => ({ kind: 'rect' as const, x: 0, y: 0, width: w, height: h });
 
   /** A group holding a red mark that holds two blue ones; `clip` is the red mark's. */

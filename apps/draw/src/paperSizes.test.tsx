@@ -14,7 +14,7 @@ const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ sys
 
 function FileCommands() {
   useFileCommands({
-    scene, filename: '', paperSize: 'letter', backgroundColor: '#ffffff',
+    scene, filename: '', paperSize: 'letter', page: null, backgroundColor: '#ffffff',
     setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn(),
   });
   return null;
@@ -42,6 +42,6 @@ describe('paper sizes', () => {
     expect(loadDoc().paperSize).toBe(key);
     localStorage.removeItem(DOC_KEY);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="${SWILL_NAMESPACES.wd}" wd:paperSize="${key}"/>`;
-    expect(parsedToDoc(parseSvg(svg, { namespaces: SWILL_NAMESPACES })).paperSize).toBe(key);
+    expect(parsedToDoc(parseSvg(svg, { namespaces: SWILL_NAMESPACES })).pages).toEqual([{ id: 'page-1', ...PAPER_PRESETS[key] }]);
   });
 });

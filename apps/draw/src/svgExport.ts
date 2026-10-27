@@ -7,6 +7,7 @@
 import {
   type Fill,
   type Path,
+  type PlacedPage,
   type Scene,
   type Stroke,
   boundsOfPath,
@@ -45,7 +46,6 @@ import {
   sceneToSvgNodes,
   SWILL_NAMESPACES,
   type SceneSource,
-  type WeaselDrawPaperSize,
 } from './svgInterop';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import type { EffectObj } from './svgEffects';
@@ -139,12 +139,10 @@ function effectToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string
 export interface SceneToSvgOptions {
   /** Document filename — used as the `<title>` element. */
   filename: string;
-  /** Paper size key. Round-trips via `wd:paperSize`. */
-  paperSize: WeaselDrawPaperSize;
-  /** Paper dimensions in CSS px (the document's viewBox + width/height). */
-  paperWidth: number;
-  paperHeight: number;
-  /** Background fill. Emitted as a leading `<path>` filling the viewBox.
+  /** Every page, placed. The `viewBox` is the box around them, and the list
+   *  round-trips as `wd:page` elements. */
+  pages: readonly PlacedPage[];
+  /** Background fill. Emitted as a leading `<path>` filling each page.
    *  Omitted when the color is white (`#ffffff` / `#fff`). */
   backgroundColor: string;
   /** Told what the SVG cannot carry the way the canvas draws it. */
@@ -237,17 +235,53 @@ export function sceneToSvgString<TLayer extends string>(
   // Background — prepend so it paints first (SVG paint order is document
   // order). Omit when white-equivalent to keep the file small.
   if (!WHITE.test(opts.backgroundColor)) {
-    nodes.push(backgroundSvgNode(opts.backgroundColor, opts.paperWidth, opts.paperHeight));
+    for (const page of opts.pages) nodes.push(backgroundSvgNode(opts.backgroundColor, page));
   }
 
   nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene))));
 
   return serializeWarm(nodes, {
-    ...docToSerializeOptions({
-      title: opts.filename,
-      size: { width: opts.paperWidth, height: opts.paperHeight },
-      paperSize: opts.paperSize,
-    }),
+    ...docToSerializeOptions({ title: opts.filename, pages: opts.pages }),
+    ...(opts.onWarn ? { onWarn: opts.onWarn } : {}),
+  });
+}
+
+export interface PageToSvgOptions {
+  /** The `<title>`; none when absent. */
+  title?: string;
+  /** As {@link SceneToSvgOptions.backgroundColor}, for the one page. */
+  backgroundColor: string;
+  onWarn?: (message: string) => void;
+}
+
+const overlaps = (a: { x: number; y: number; width: number; height: number }, b: typeof a): boolean =>
+  a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
+
+/**
+ * Serialize one page of a WeaselDraw scene to an SVG document string: its
+ * `viewBox` is the page's rect, so what crosses the edge is cut there, and a
+ * root lying wholly off the page is left out. It is an export, not a save:
+ * it carries no page list.
+ */
+export function pageToSvgString<TLayer extends string>(
+  scene: DrawScene<TLayer>,
+  page: PlacedPage,
+  opts: PageToSvgOptions,
+): Promise<string> {
+  const poseOf = poseOfIn(scene);
+  const roots = scene.roots.map(String).filter((id) => {
+    const box = unionAABB([poseOf(id)]);
+    return box !== null && overlaps(box, page);
+  });
+  const nodes: SvgNode[] = WHITE.test(opts.backgroundColor) ? [] : [backgroundSvgNode(opts.backgroundColor, page)];
+  nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOf), roots));
+  const { x, y, width, height } = page;
+  return serializeWarm(nodes, {
+    viewBox: { x, y, width, height },
+    width,
+    height,
+    ...(opts.title ? { title: opts.title } : {}),
+    namespaces: SWILL_NAMESPACES,
     ...(opts.onWarn ? { onWarn: opts.onWarn } : {}),
   });
 }

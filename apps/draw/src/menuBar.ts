@@ -15,7 +15,7 @@ const run = (ids: Record<string, string>): PrefGroup =>
 export const DRAW_MENU_BAR: PrefGroup = pref.group('Menu bar', {
   file: menu('File', 'f', {
     open: pref.group('', { new: FILE_NEW_MENU, open: act(FILE_ACTIONS.open), import: act(FILE_ACTIONS.import) }),
-    save: run({ save: FILE_ACTIONS.save }),
+    save: run({ save: FILE_ACTIONS.save, exportPage: FILE_ACTIONS.exportPage }),
   }),
   edit: menu('Edit', 'e', {
     history: run({ undo: 'undo', redo: 'redo' }),

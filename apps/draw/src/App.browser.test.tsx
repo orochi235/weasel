@@ -138,9 +138,9 @@ describe('WeaselDraw', () => {
   it('opens File from its title, with Save showing its shortcut', async () => {
     await mountApp();
     await userEvent.click(page.getByRole('menuitem', { name: 'File' }));
-    await expect.poll(menuRows).toHaveLength(4);
+    await expect.poll(menuRows).toHaveLength(5);
     const rows = menuRows();
-    ['New', 'Open…', 'Import…', 'Save'].forEach((label, i) => expect(rows[i]!.startsWith(label)).toBe(true));
+    ['New', 'Open…', 'Import…', 'Save', 'Export Page as SVG…'].forEach((label, i) => expect(rows[i]!.startsWith(label)).toBe(true));
     expect(rows[3]).toMatch(/S$/);
     expect(rows[3]).not.toBe('Save');
   });

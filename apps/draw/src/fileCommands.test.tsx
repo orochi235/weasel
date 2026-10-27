@@ -11,6 +11,7 @@ import {
   createScene,
   PAGES_DOC_KEY,
   pagesOf,
+  placedPagesOf,
   useActionsRegistry,
   type ActionsRegistry,
 } from '@weasel-js/core';
@@ -18,10 +19,10 @@ import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
 import { importSvgFile, openSvgFile } from './openSvg';
-import { saveSvgFile } from './saveSvg';
+import { exportPageSvgFile, saveSvgFile } from './saveSvg';
 import { withIcons } from './testIcons';
 
-vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
+vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}), exportPageSvgFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
 
 beforeAll(() => {
@@ -55,6 +56,7 @@ function setup() {
     scene,
     filename: 'a',
     paperSize: 'letter',
+    page: placedPagesOf(scene)[1]!,
     backgroundColor: '#ffffff',
     setFilename: vi.fn(),
     showFirstPage: vi.fn(),
@@ -113,11 +115,21 @@ describe('useFileCommands', () => {
     expect(importSvgFile).toHaveBeenCalledWith(scene);
   });
 
-  it('Save writes the latest filename, size and background', () => {
+  it('Save writes the latest filename and background', () => {
     const { registry, scene, target, rerender } = setup();
     rerender({ ...target, filename: 'b' });
     act(() => { registry.trigger('file.save'); });
-    expect(saveSvgFile).toHaveBeenCalledWith(scene, { filename: 'b', paperSize: 'letter', backgroundColor: '#ffffff' });
+    expect(saveSvgFile).toHaveBeenCalledWith(scene, { filename: 'b', backgroundColor: '#ffffff' });
+  });
+
+  it('Export Page writes the page in view, and nothing with none', () => {
+    const { registry, scene, target, rerender } = setup();
+    act(() => { registry.trigger('file.exportPage'); });
+    expect(exportPageSvgFile).toHaveBeenCalledWith(scene, target.page, { filename: 'a', backgroundColor: '#ffffff' });
+    vi.mocked(exportPageSvgFile).mockClear();
+    rerender({ ...target, page: null });
+    act(() => { registry.trigger('file.exportPage'); });
+    expect(exportPageSvgFile).not.toHaveBeenCalled();
   });
 
   it('mod+S saves, and keeps the browser from saving the page', () => {
@@ -132,7 +144,7 @@ describe('useFileCommands', () => {
   it('finds the paper sizes in the command palette by typing "new"', () => {
     Element.prototype.scrollIntoView = () => {};
     const scene = seededScene();
-    const target = { scene, filename: 'a', paperSize: 'letter', backgroundColor: '#fff', setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn() } as FileCommandsTarget;
+    const target = { scene, filename: 'a', paperSize: 'letter', page: null, backgroundColor: '#fff', setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn() } as FileCommandsTarget;
     // The palette snapshots the registry when it opens, so open it after the commands register.
     function Host() {
       useFileCommands(target);
