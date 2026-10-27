@@ -4,9 +4,9 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Agent TODO batches 2–8, merged 2026-10-26/27 (not pushed)
+## Agent TODO batches 2–9, merged 2026-10-26/27 (not pushed)
 
-Seven batches of `[agent]` entries from `docs/TODO.md` merged to `main`, the last as 0125be239. Each went
+Eight batches of `[agent]` entries from `docs/TODO.md` merged to `main`, the last as f7caf4e16. Each went
 through a branch gate (fleet with the gate test, and post-build) before its merge and a fleet run of `main`
 after. Every batch's TODO commit retires what landed, rewrites what is left, and files what the agents
 found. The calls made without a ruling are in each commit body; the ones most likely to want a say:
@@ -16,6 +16,9 @@ found. The calls made without a ruling are in each commit body; the ones most li
   a repeated letter, as menus do.
 - The default retain budget is 384 MiB (was 256), with surfaces drawn in 1024-px tiles.
 - New packages `@weasel-js/headless` and `@weasel-js/shape` (HarfBuzz).
+- `transformPath` gives a far-out result an origin by default (`autoOrigin: false` opts out); a multi-cluster
+  ligature's advance is split evenly, not by the face's caret list; rect clips on a single-sampled target snap
+  to 1/16 px (batch 9).
 
 **Needs Mike before the next release:** first-publish `@weasel-js/headless` and `@weasel-js/shape`
 (`docs/TODO.md`, P2 [maintainer]); `check:first-publish` fails the release job until then. Also filed for
@@ -23,7 +26,8 @@ him: whether core snaps the view's translation to whole device pixels.
 
 **Breaking for callers** (said in each changeset, all `patch`): pick functions take a `WorldPoint`;
 `PointerWorldPos` is `{ world, viewId }`; immediate actions' params carry `world`/`press` points; the
-clipboard's paste point is a `WorldPoint`; the packed glyph quad is 11 numbers; `TrackRun.toShape` is required.
+clipboard's paste point is a `WorldPoint`; the packed glyph quad is 11 numbers; `TrackRun.toShape` is required;
+`ClipEntry.uncutHulls` is required.
 
 **Not seen in a browser by a person:** most of it. The redrawn path and warp glyphs (wall, zone `weasel`,
 5FEDE721) and the boolean-group glyph (702ADFE6) want a look.
