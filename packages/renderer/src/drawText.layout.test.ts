@@ -148,6 +148,24 @@ describe('drawText and the alignment box', () => {
     expect(captured[captured.length - 1].result.lines[0].cells[1].x).toBeCloseTo(eight / 4, 5);
   });
 
+  it('lays each of two commands drawn in a row out with its own box and stops', () => {
+    // The options handed to the layout cache are one object refilled per
+    // command, so the second must not inherit what only the first stated.
+    const base = bottomAlignedText() as Extract<DrawCommand, { kind: 'text' }>;
+    const first: DrawCommand = {
+      ...base, verticalAlign: undefined, align: 'right', width: 400,
+      style: { ...base.style, tabSize: 2 }, runs: [{ ...base.runs[0], text: '\tB', underline: false }],
+    };
+    const second: DrawCommand = { ...base, verticalAlign: undefined, runs: [{ ...base.runs[0], text: '\tB', underline: false }] };
+    r.render([second]);
+    const alone = captured[captured.length - 1].result;
+    r.render([first, second]);
+    const [a, b] = captured.slice(-2).map((c) => c.result);
+    expect(a.lines[0].x1).toBeCloseTo(400, 5);
+    expect(b).toBe(alone);
+    expect(b.lines[0].x0).toBe(0);
+  });
+
   it('resolves a reading-order alignment against the command\'s direction', () => {
     const base = bottomAlignedText() as Extract<DrawCommand, { kind: 'text' }>;
     const cmd: DrawCommand = {
