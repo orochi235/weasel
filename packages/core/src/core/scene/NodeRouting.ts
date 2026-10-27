@@ -17,6 +17,8 @@ export interface NodeRoutingEntry {
 export interface RoutedNode {
   /** The node's structural kind: `'mark'` or `'group'`. */
   readonly kind?: string;
+  /** Set on a boolean group: see `booleanGroupFields`. */
+  readonly consumesChildren?: boolean;
 }
 
 /**

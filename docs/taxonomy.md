@@ -898,7 +898,8 @@ reaches one only while that node, or a group inside it, is entered; it is entere
 The boolean group is the kit's one (`booleanGroupFields`): a mark deriving its path from its
 children (`booleanOfChildren`, the operation in `data.boolean`) and its pose as their envelope,
 painted in its own fill and stroke and picked by that ink. It is a mark, not a group, because
-it draws and is hit as one shape.
+it draws and is hit as one shape. Make Boolean Group (`pathfinder.booleanGroup`) wraps a selection in
+one, and Ungroup releases one as it dissolves a group.
 
 **A node clips its children only when it declares a clip** (decided 2026-10-22): its
 `clipFromPose` when it has one, else its outline when it sets `clip: 'outline'`. That outline

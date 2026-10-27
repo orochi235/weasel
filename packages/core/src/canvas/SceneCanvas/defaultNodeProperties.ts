@@ -205,6 +205,14 @@ const STROKE_LEAF: PrefLeaf = {
   },
 };
 
+/** A boolean group's operation over its children, back to front. */
+const BOOLEAN_SECTION: PrefSection = {
+  name: 'Boolean',
+  members: {
+    'data.boolean': { kind: 'enum', name: 'Operation', description: 'What the group draws of its children: their union, their overlap, the backmost less the rest, or where an odd number overlap.', absentIsDefault: true, default: 'union', control: 'toggle', options: [{ value: 'union', label: 'Unite', icon: icon('union') }, { value: 'intersect', label: 'Intersect', icon: icon('intersect') }, { value: 'subtract', label: 'Minus Front', icon: icon('subtract') }, { value: 'exclude', label: 'Exclude', icon: icon('exclude') }] },
+  },
+};
+
 /** A box side's floor: the node's `data.minSize`, which resize and insert hold it to as well. */
 const minSizeAt = (side: keyof MinSize): PrefBoundAt => (read) => minSizeOf({ minSize: read('data.minSize') })?.[side];
 
@@ -225,11 +233,12 @@ const LAYOUT: PrefSection = {
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
  *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
  *  `useBuiltinShapeTools`). */
-function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = {}): PrefSection {
+function shapeSchema(opts: { text?: boolean; generators?: readonly string[]; boolean?: boolean } = {}): PrefSection {
   return {
     name: 'Properties',
     members: {
       layout: LAYOUT,
+      ...(opts.boolean ? { boolean: BOOLEAN_SECTION } : {}),
       ...Object.fromEntries((opts.generators ?? []).map((g) => [g, SHAPE_GENERATOR_SECTIONS[g]])),
       // What the node *is* outranks how it is painted: a text node's copy is
       // the first thing an editor reaches for.
@@ -337,7 +346,7 @@ function shapeEntry(name: string): NodePropertiesEntry {
   const generators = GENERATED_KINDS[name];
   return {
     name,
-    schema: shapeSchema({ text: shapeKindInfo(name)?.text ?? false, ...(generators ? { generators } : {}) }),
+    schema: shapeSchema({ text: shapeKindInfo(name)?.text ?? false, boolean: name === 'boolean', ...(generators ? { generators } : {}) }),
     ...(generators ? { settle: settleShapeGenerator } : {}),
   };
 }

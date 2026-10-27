@@ -25,6 +25,7 @@ export const DRAW_NODE_ROUTING: readonly NodeRoutingEntry[] = [
 /** The Properties panel's title for a routing kind. */
 export function drawKindLabel(kind: string): string {
   if ((EFFECT_KINDS as readonly string[]).includes(kind)) return effectName(kind as EffectKind);
+  if (kind === 'boolean') return 'Boolean group';
   return kind.length === 0 ? kind : kind[0]!.toUpperCase() + kind.slice(1);
 }
 

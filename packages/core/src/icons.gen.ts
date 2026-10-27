@@ -54,6 +54,7 @@ export type CoreIconName =
   | 'divide'
   | 'crop'
   | 'trim'
+  | 'booleanGroup'
   | 'merge'
   | 'join'
   | 'bridge'
@@ -215,6 +216,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "divide",
       "crop",
       "trim",
+      "booleanGroup",
       "merge"
     ]
   },
@@ -383,6 +385,7 @@ declare module '@weasel-js/icons' {
     'core:divide': true;
     'core:crop': true;
     'core:trim': true;
+    'core:booleanGroup': true;
     'core:merge': true;
     'core:join': true;
     'core:bridge': true;

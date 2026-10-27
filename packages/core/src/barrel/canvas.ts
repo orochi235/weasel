@@ -78,7 +78,7 @@ export {
   type NodeRouting,
   type RoutedNode,
 } from '../core/scene/NodeRouting';
-export { defaultNodeRouting, groupNodeRouting, inferredNodeRouting } from '../canvas/SceneCanvas/defaultNodeRouting';
+export { booleanGroupRouting, defaultNodeRouting, groupNodeRouting, inferredNodeRouting } from '../canvas/SceneCanvas/defaultNodeRouting';
 export { createNodeProperties } from '../core/scene/NodeProperties';
 export { minSizeOf, type MinSize } from '../core/scene/minSize';
 export type { NodeProperties, NodePropertiesEntry } from '../core/scene/NodeProperties';

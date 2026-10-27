@@ -11,3 +11,4 @@ export {
 } from './custom';
 export { PATHFINDER_STROKES } from './action';
 export { PATHFINDER_KEYMAP, PATHFINDER_KEYMAP_ID, PATHFINDER_LEADER } from './keymap';
+export { makeBooleanGroup } from './booleanGroupAction';
