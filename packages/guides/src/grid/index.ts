@@ -11,3 +11,5 @@ export type { CellHighlightLayerOpts } from './cellHighlight';
 export { pointToGridCell, type GridCell, type GridScoping } from './pointToGridCell';
 export { sceneGridRegions, regionAt, type GridRegion } from './regions';
 export { gridPitch, scopedGridPitch, type GridScopes } from './scopedPitch';
+export { createGridPreset } from './preset';
+export type { GridPresetOptions } from './preset';

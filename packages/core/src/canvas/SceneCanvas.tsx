@@ -103,7 +103,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const frameColor = useChromeColor(internalCanvasRef, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR);
   const { editor: textEditor, layers } = useCanvasTextEditor(scene as Scene<TData, string, unknown>, internalCanvasRef, props);
   const layered = useSceneCanvasLayers({
-    layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
+    layers, presetLayers: enabled.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
     poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,

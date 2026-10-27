@@ -10,6 +10,7 @@ World-space grid rendering, cell hover tracking, and cell-snap helpers.
 | `cellHighlight.ts` | `createCellHighlightLayer` — highlights one cell (snap-target preview). Stack alongside the grid layer. |
 | `useGridCellHover.ts` | Pointer → hovered cell tracking. |
 | `roundToCell.ts` | Scalar quantizer. |
+| `preset.ts` | `createGridPreset` — the grid layer and `gridSnapSource` on one spacing, as a `<SceneCanvas features>` preset. |
 
 ## World space, not screen space
 

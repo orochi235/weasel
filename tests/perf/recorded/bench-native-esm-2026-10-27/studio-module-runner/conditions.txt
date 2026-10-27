@@ -1,0 +1,8 @@
+start: 2026-10-27T23:02:45Z
+commit: 5e6c3593b0e60b808c9d3d86f5ca4499c68dd657 dirty-paths: 3
+config: tests/perf/vitest.bench.config.ts at 7ebac8de0
+cpu: Apple M1 Max (10 threads, 32 GB)
+node: v26.8.1
+load before: { 3.79 3.26 4.27 }
+load after: { 2.32 2.58 3.66 }
+end: 2026-10-27T23:07:36Z
