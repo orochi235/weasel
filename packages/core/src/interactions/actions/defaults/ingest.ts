@@ -23,7 +23,7 @@
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason, type ActionDeps } from '@weasel-js/routing';
 import {
-  couldClaim, runIngest, type ContentHandlerEntry, type IngestCtx, type RunIngestOptions,
+  couldClaim, handlersFor, runIngest, type ContentHandlerEntry, type IngestCtx, type RunIngestOptions,
 } from 'domains/ingestion/contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
 import { previewIngest } from 'domains/ingestion/ghost';
@@ -38,11 +38,17 @@ export const ANY_INGEST_MODS = {
  *  that moves what it inserts with `moveNodes`; an action calling it declares these. */
 export const INGEST_REQUIRES = ['insert', 'ingestion', 'snap', ...MOVE_NODES_REQUIRES] as const;
 
+/** The handlers an arrival on the canvas whose deps these are routes through: the
+ *  canvas's own and kit ones (the `ingestion` dep's `handlers`), and the registry's. */
+export function canvasHandlers(deps: ActionDeps | undefined): ContentHandlerEntry[] {
+  return handlersFor(deps?.ingestion?.handlers);
+}
+
 /**
  * Route one drop or paste event's dispatcher params through the content
  * handlers: builds the `IngestCtx` from the action's deps and calls
  * `runIngest`. `opts` is `runIngest`'s, so an action accepting only some
- * content passes `handlers`.
+ * content passes `handlers`; without them, {@link canvasHandlers}.
  */
 export function ingestFromEvent(
   deps: ActionDeps,
@@ -86,7 +92,7 @@ export function ingestFromEvent(
   // Fire-and-forget: handler errors are caught inside runIngest, but a
   // malformed item (non-string mime via untyped JS) can still throw in
   // the matching path — keep the rejection out of the event loop.
-  runIngest(items, ctx, opts).catch((err) => console.warn('weasel ingest:', err));
+  runIngest(items, ctx, opts?.handlers ? opts : { ...opts, handlers: canvasHandlers(deps) }).catch((err) => console.warn('weasel ingest:', err));
 }
 
 /** `Action.enabled` for an action that routes what an event carries through
@@ -112,9 +118,9 @@ export const ingestAction: Action & { requires: string[] } = {
     run: (deps, params) => ingestFromEvent(deps, params),
   },
   // Asked by the dispatcher while an OS drag hovers: a ghost box per thing the drop would insert.
-  preview: (deps, params) => previewIngest(deps, params),
+  preview: (deps, params) => previewIngest(deps, params, canvasHandlers(deps)),
   // No `eligible` rule: external-content arrival is mode-agnostic. The
   // listener-level editable-target guard already keeps text-editing pastes
   // away from the scene.
-  enabled: (_deps, _at, carried) => claimable(carried),
+  enabled: (deps, _at, carried) => claimable(carried, canvasHandlers(deps)),
 };

@@ -4,12 +4,13 @@ import type { InsertAdapter } from 'core/adapters/types';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import { useCallback, useEffect, useMemo } from 'react';
 import { dwarn } from '../../debug';
-import { registerContentHandler, type ContentHandlerEntry } from './contentHandlers';
-import { acquireKitContentHandlers } from './registerKitHandlers';
+import { admitHandlerMimes, type ContentHandlerEntry } from './contentHandlers';
+import { kitHandlersFor, type KitHandlersOption } from './kitHandlers';
 
 /** What `useCanvasIngestion` reads of `<SceneCanvas ingestion>`. */
 export interface CanvasIngestionOptions {
   handlers?: ContentHandlerEntry[];
+  kitHandlers?: KitHandlersOption;
   clipboard?: {
     reviver?: ClipboardIngestCtx['reviver'];
     enabled?: boolean;
@@ -23,10 +24,13 @@ export interface CanvasIngestion {
   /** For the `ingestion` dep. Absent, so the kit weasel-JSON handler declines, when
    *  `clipboard.enabled` is false or the adapter cannot `commitPaste`. */
   clipboard: ClipboardIngestCtx | undefined;
+  /** For the `ingestion` dep: this canvas's own handlers and the kit's it keeps. */
+  handlers: readonly ContentHandlerEntry[];
 }
 
 /**
- * One canvas's share of ingestion: its content handlers for as long as it is mounted, the
+ * One canvas's share of ingestion: its content handlers and the kit's it keeps, which run on
+ * it alone and admit the string flavors they name while it is mounted, the
  * clipboard seam pastes re-materialize through, and the imperative `ingest`, which triggers
  * the `ingest` action so its deps resolve as they do on the dispatcher path.
  *
@@ -37,13 +41,15 @@ export function useCanvasIngestion(
   getRegistry: () => ActionsRegistry | null,
   options: CanvasIngestionOptions | undefined,
 ): CanvasIngestion {
-  // The kit's default handlers are refcounted across mounted canvases.
-  const handlers = options?.handlers;
-  useEffect(() => {
-    const disposers = [acquireKitContentHandlers()];
-    for (const h of handlers ?? []) disposers.push(registerContentHandler(h));
-    return () => disposers.forEach((d) => d());
-  }, [handlers]);
+  const own = options?.handlers;
+  const kit = options?.kitHandlers;
+  // Keyed by value, so an inline `{ omit: [...] }` does not rebuild the list every render.
+  const omitted = kit === false ? null : typeof kit === 'object' ? kit.omit.join('\n') : '';
+  const handlers = useMemo(
+    () => [...(own ?? []), ...kitHandlersFor(omitted === null ? false : { omit: omitted.split('\n') })],
+    [own, omitted],
+  );
+  useEffect(() => admitHandlerMimes(handlers), [handlers]);
 
   const reviver = options?.clipboard?.reviver;
   const enabled = options?.clipboard?.enabled !== false;
@@ -74,5 +80,5 @@ export function useCanvasIngestion(
     return ran;
   }, [registryOf]);
 
-  return { ingest, clipboard };
+  return { ingest, clipboard, handlers };
 }

@@ -9,7 +9,7 @@ import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
-import type { ContentHandlerEntry } from 'domains/ingestion';
+import type { ContentHandlerEntry, KitHandlersOption } from 'domains/ingestion';
 import type { SceneCanvasSnap } from 'domains/snap/types';
 import type { SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
@@ -204,9 +204,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** External-content ingestion (OS drop / clipboard paste / picker).
      *
-     *  - `handlers` — consumer content handlers registered for this canvas's
-     *    lifetime (priority 0 by default — they beat the kit's `image/*` /
-     *    `image/svg+xml` handlers at -100/-90).
+     *  - `handlers` — content handlers for this canvas alone, priority 0 by default, above
+     *    the kit's. One for every canvas on the page goes through `registerContentHandler`.
+     *  - `kitHandlers` — which kit handlers it keeps (`KitHandlersOption`); default all.
      *  - `resolveSrc` — overrides the image handler's `data:`-URI embed (e.g.
      *    upload to an asset store, return the URL).
      *  - `svg.unpack` — makes the kit SVG handler parse dropped SVG files into
@@ -218,10 +218,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *    rather than letting them fall through. Also governs Cmd/Ctrl+V under
      *    the `edit` preset; the rest takes the `ingest` preset.
      *
-     *  Memoize `handlers` and `clipboard.reviver`: an inline array literal
-     *  re-registers the handlers on every render. */
+     *  Memoize `handlers` and `clipboard.reviver`: inline literals rebuild them every render. */
     ingestion?: {
       handlers?: ContentHandlerEntry[];
+      kitHandlers?: KitHandlersOption;
       resolveSrc?: (file: File) => Promise<string>;
       svg?: SvgIngestOptions;
       clipboard?: {

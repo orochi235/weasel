@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { ActionsRegistry } from '@weasel-js/routing';
+import { itemTypesFromDataTransfer, type ActionsRegistry } from '@weasel-js/routing';
 import type { InsertAdapter } from 'core/adapters/types';
 import { getContentHandlers } from './contentHandlers';
 import { useCanvasIngestion, type CanvasIngestionOptions } from './useCanvasIngestion';
@@ -99,15 +99,35 @@ describe('useCanvasIngestion: clipboard', () => {
 });
 
 describe('useCanvasIngestion: handlers', () => {
-  it('registers the kit handlers and the canvas’s own, and takes its own back on unmount', () => {
-    const idsNow = () => getContentHandlers().map((h) => h.id);
-    const before = idsNow();
-    const entry = { id: 'app:x', match: 'application/x', handle: () => {} };
-    const { unmount } = mount({ options: { handlers: [entry] } });
-    expect(idsNow()).toContain('app:x');
-    expect(idsNow()).toContain('kit:image');
+  const entry = { id: 'app:x', match: 'application/x', handle: () => {} };
+  const ids = (handlers: readonly { id: string }[]) => handlers.map((h) => h.id);
+
+  it('are the canvas’s own and every kit handler, and none goes in the page-wide registry', () => {
+    const before = ids(getContentHandlers());
+    const { result } = mount({ options: { handlers: [entry] } });
+    expect(ids(result.current.handlers)).toEqual(['app:x', 'kit:image', 'kit:svg', 'kit:weasel-json', 'kit:text']);
+    expect(ids(getContentHandlers())).toEqual(before);
+  });
+
+  it('kitHandlers false keeps only the canvas’s own; omit drops the ids named', () => {
+    expect(ids(mount({ options: { handlers: [entry], kitHandlers: false } }).result.current.handlers)).toEqual(['app:x']);
+    expect(ids(mount({ options: { kitHandlers: { omit: ['kit:text'] } } }).result.current.handlers))
+      .toEqual(['kit:image', 'kit:svg', 'kit:weasel-json']);
+  });
+
+  it('keeps one list across renders while the omit list is the same', () => {
+    const { result, rerender } = mount({ options: { kitHandlers: { omit: ['kit:text'] } } });
+    const first = result.current.handlers;
+    rerender({ options: { kitHandlers: { omit: ['kit:text'] } } });
+    expect(result.current.handlers).toBe(first);
+  });
+
+  it('admits the exact MIMEs its handlers name while mounted', () => {
+    const own = { id: 'app:shape', match: 'application/x-app-shape', handle: () => {} };
+    const drag = { items: [{ kind: 'string', type: own.match }], types: [own.match] } as unknown as DataTransfer;
+    const { unmount } = mount({ options: { handlers: [own] } });
+    expect(itemTypesFromDataTransfer(drag)).toEqual([{ pending: 'string', mime: own.match }]);
     unmount();
-    expect(idsNow()).toEqual(before);
-    expect(before).not.toContain('app:x');
+    expect(itemTypesFromDataTransfer(drag)).toEqual([]);
   });
 });

@@ -123,7 +123,7 @@ export function CanvasView(props: CanvasViewProps): null {
   }), [camera, rectNow, setViewFromInput, layerIsPainted]);
 
   // Paste placement is a camera question, so it is this view's when the paste
-  // routed here. The rest of the dep — `resolveSrc`, `svg`, `clipboard` — is
+  // routed here. The rest of the dep — `resolveSrc`, `svg`, `clipboard`, `handlers` — is
   // the surface's one wiring, read live off the canvas registry.
   const ingestionApi = useMemo<IngestionDep>(() => {
     const base = (): IngestionDep | undefined => depRegistryRef.current?.get('ingestion');
@@ -131,7 +131,7 @@ export function CanvasView(props: CanvasViewProps): null {
       viewportWorldRect: () => viewportWorldRect(camera(), sizeOf(rectNow())),
       get resolveSrc() { return base()?.resolveSrc; },
       get svg() { return base()?.svg; },
-      get clipboard() { return base()?.clipboard; },
+      get clipboard() { return base()?.clipboard; }, get handlers() { return base()?.handlers; },
     };
   }, [camera, rectNow, depRegistryRef]);
 

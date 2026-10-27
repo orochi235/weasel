@@ -11,7 +11,7 @@ DataTransfer / ClipboardData / File[]
    IngestItem[]                       ← normalized, source-agnostic
         │  runIngest(items, ctx)
         ▼
-   registered ContentHandlers         ← first one that claims an item wins
+   the canvas's handlers + registry   ← first one that claims an item wins
         ▼
    scene ops
 ```
@@ -46,18 +46,22 @@ from a string) and the world point. `ingest` answers with a ghost
 for the strings, placed as `placement.ts` would place them, drawn through the
 `previewPaths` dep.
 
-`registerContentHandler` is the extension point — register your own to handle a
-domain format (a `.dxf`, a CSV that becomes a table) before the kit's fallbacks.
+A canvas routes an arrival through its own handlers (`<SceneCanvas
+ingestion={{ handlers }}>`), the kit handlers it keeps (`ingestion.kitHandlers`:
+`false`, or `{ omit: ['kit:text'] }`), and the page-wide registry
+(`registerContentHandler`), all ordered by priority. The first two belong to that
+canvas alone, so turning a kit handler off on one canvas leaves the rest alone.
+The `ingestion` dep carries the canvas's list (`IngestionDep.handlers`);
+`canvasHandlers(deps)` in the `ingest` action merges it with the registry. Either
+is how to handle a domain format (a `.dxf`, a CSV that becomes a table) before the
+kit's fallbacks.
 
 A drop or paste keeps the string flavors in `INGEST_STRING_MIMES` and drops the
 rest, except any exact MIME a registered handler names in `match` or `types`:
-those are admitted for as long as the handler stays registered
-(`admitIngestMime` in `@weasel-js/routing`). So a drag from the app's own UI can
-carry its payload under a type of its own, as weaselchart's Shapes panel does.
-
-`acquireKitContentHandlers` is refcounted registration for mounted canvases:
-several canvases can be mounted at once without registering the kit handlers
-several times, and the last unmount cleans up.
+those are admitted for as long as the handler stays registered, or the canvas
+holding it stays mounted (`admitIngestMime` in `@weasel-js/routing`, which is
+page-wide). So a drag from the app's own UI can carry its payload under a type of
+its own, as weaselchart's Shapes panel does.
 
 ## Files
 
@@ -69,7 +73,7 @@ materializes items before any handler is asked.
 | --- | --- |
 | `contentHandlers.ts` | Registry, `runIngest`, `IngestCtx`. |
 | `openFilePicker.ts` | Programmatic file picker → the same `IngestItem[]`. |
-| `registerKitHandlers.ts` | Refcounted default registration. |
+| `kitHandlers.ts` | The kit handlers and the `kitHandlers` option. |
 | `placement.ts` | Where arriving content lands: on the point or the viewport center, cascading. |
 | `ghost.ts` | What a drag in flight would land as, for `ingest`'s preview. |
 | `*Handler.ts` | The built-in handlers above. |

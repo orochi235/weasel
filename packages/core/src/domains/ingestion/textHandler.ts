@@ -48,6 +48,6 @@ export function createTextHandler(opts: TextHandlerOptions = {}): ContentHandler
   };
 }
 
-/** Turns pasted or dropped plain text into a text node sized to the string. Every mounted
- *  canvas registers it, so a canvas with the `ingest` feature takes text. */
+/** Turns pasted or dropped plain text into a text node sized to the string. A kit handler, so a
+ *  canvas with the `ingest` feature takes text unless its `ingestion.kitHandlers` omits it. */
 export const kitTextHandler: ContentHandlerEntry = createTextHandler();

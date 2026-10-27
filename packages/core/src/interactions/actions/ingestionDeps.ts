@@ -67,4 +67,9 @@ export interface IngestionDep {
   /** Clipboard-paste seam for the kit weasel-JSON handler.
    *  Live accessor, same caveat as `resolveSrc`. */
   clipboard?: ClipboardIngestCtx;
+  /** The canvas's own content handlers and the kit's it keeps (SceneCanvas's
+   *  `ingestion.handlers` and `ingestion.kitHandlers`). An arrival routes
+   *  through these and the page-wide registry's. Absent reads as none.
+   *  Live accessor, same caveat as `resolveSrc`. */
+  handlers?: readonly import('../../domains/ingestion/contentHandlers').ContentHandlerEntry[];
 }

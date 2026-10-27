@@ -73,6 +73,7 @@ export interface SceneCanvasInputProps {
     ready: boolean;
   };
   ingestionClipboard: SceneStandardActionsInputs['ingestionClipboard'];
+  ingestionHandlers: SceneStandardActionsInputs['ingestionHandlers'];
   /** The enabled presets' snap sources. */
   snapSources: readonly SnapSource[];
   /** The outcome store the canvas's readout layer draws. */
@@ -106,6 +107,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf, reachable: picking.reachable,
     viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state,
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
+    ingestionHandlers: p.ingestionHandlers,
     snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: snapRegistry, store: p.snapStore },
   });
 

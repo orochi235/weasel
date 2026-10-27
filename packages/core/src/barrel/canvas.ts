@@ -118,11 +118,10 @@ export type {
 
 // ─── External-content ingestion ──────────────────────────────────────────────
 // OS file drop / clipboard paste / file picker → content-handler registry.
-// `runIngest`, `getContentHandlers`, `kitImageHandler`, and the refcounted
-// kit-handler registration are deliberately NOT exported — consumers reach
-// the pipeline via `<SceneCanvas ingestion={…}>` and `SceneCanvasApi.ingest`.
-// `kitTextHandler` is registered by default like the others, and stays exported
-// for code that names it in a `handlers` list.
+// `runIngest`, `getContentHandlers` and `kitImageHandler` are deliberately NOT
+// exported — consumers reach the pipeline via `<SceneCanvas ingestion={…}>` and
+// `SceneCanvasApi.ingest`. `kitTextHandler` is a kit handler like the others, and
+// stays exported for code that names it in a `handlers` list.
 export {
   registerContentHandler,
   openFilePicker,
@@ -132,6 +131,7 @@ export type {
   ContentHandlerEntry,
   IngestCtx,
   IngestItem,
+  KitHandlersOption,
   OpenFilePickerOptions,
 } from '../domains/ingestion';
 

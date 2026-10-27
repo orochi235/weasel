@@ -22,7 +22,6 @@ import {
   _resetContentHandlersForTests,
   type ContentHandlerEntry,
 } from 'domains/ingestion/contentHandlers';
-import { _resetKitContentHandlersForTests } from 'domains/ingestion/registerKitHandlers';
 import {
   __setImageMeasureForTests,
   __setFileToDataUriForTests,
@@ -70,7 +69,6 @@ beforeAll(() => {
 
 beforeEach(() => {
   _resetContentHandlersForTests();
-  _resetKitContentHandlersForTests();
   _resetImageHandlerSeamsForTests();
   _resetSvgHandlerSeamsForTests();
 });
@@ -78,9 +76,6 @@ beforeEach(() => {
 function makeScene(): Scene<D, L, P> {
   return createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
 }
-
-const kitImageCount = () =>
-  getContentHandlers().filter((h) => h.id === 'kit:image').length;
 
 function imageNodes(scene: Scene<D, L, P>) {
   return scene.roots
@@ -98,37 +93,15 @@ const RESOLVE_SRC_INGESTION = { resolveSrc: async () => 'https://cdn/x.png' };
 const UNPACK_INGESTION = { svg: { unpack: unpackSvgFiles } };
 const CLIPBOARD_DISABLED_INGESTION = { clipboard: { enabled: false } };
 
-describe('SceneCanvas ingestion — handler registration lifecycle', () => {
-  it('two mounted canvases share one refcounted kit:image handler', () => {
-    const a = render(<SceneCanvas features={['draw']} scene={makeScene()} layers={{}} width={64} height={64} />);
-    expect(kitImageCount()).toBe(1);
-    const b = render(<SceneCanvas features={['draw']} scene={makeScene()} layers={{}} width={64} height={64} />);
-    expect(kitImageCount()).toBe(1);
-
-    // Unmounting the FIRST mount must not strand the survivor without an
-    // image handler (the refcount, not id-dedup, guarantees this).
-    a.unmount();
-    expect(kitImageCount()).toBe(1);
-    b.unmount();
-    expect(kitImageCount()).toBe(0);
-  });
-
-  it('ingestion.handlers register on mount and dispose on unmount', () => {
-    const entry: ContentHandlerEntry = {
-      id: 'app:test',
-      match: 'text/plain',
-      handle: vi.fn(),
-    };
+describe('SceneCanvas ingestion — handlers belong to the canvas', () => {
+  it('mounting a canvas puts nothing in the page-wide registry', () => {
+    const entry: ContentHandlerEntry = { id: 'app:test', match: 'text/plain', handle: vi.fn() };
     const { unmount } = render(
       <SceneCanvas features={['draw']} scene={makeScene()} layers={{}} width={64} height={64}
         ingestion={{ handlers: [entry] }} />,
     );
-    expect(getContentHandlers().some((h) => h.id === 'app:test')).toBe(true);
-    // Consumer priority (default 0) sorts ahead of the kit's -100.
-    const ids = getContentHandlers().map((h) => h.id);
-    expect(ids.indexOf('app:test')).toBeLessThan(ids.indexOf('kit:image'));
+    expect(getContentHandlers()).toEqual([]);
     unmount();
-    expect(getContentHandlers().some((h) => h.id === 'app:test')).toBe(false);
   });
 });
 
@@ -507,15 +480,14 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
   });
 
-  it('edit alone runs no handler another canvas registered', async () => {
+  it('edit alone runs no handler another canvas holds', async () => {
     const handle = vi.fn();
-    // A bare canvas registers its `ingestion.handlers` and binds no paste, so
+    // A bare canvas holds its `ingestion.handlers` and binds no paste, so
     // only the edit canvas answers the event.
     render(
       <SceneCanvas scene={makeScene()} layers={{}} width={64} height={64}
         ingestion={{ handlers: [{ id: 'app:text', match: 'text/plain', handle }] }} />,
     );
-    expect(getContentHandlers().some((h) => h.id === 'app:text')).toBe(true);
     const { scene } = mount(['edit']);
     paste({ text: NODE_TEXT });
     paste({ text: 'plain words' });
@@ -581,5 +553,61 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     paste({ text: 'plain words' });
     await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(1));
     off();
+  });
+
+  const NO_TEXT = { kitHandlers: { omit: ['kit:text'] } };
+  const NO_KIT = { kitHandlers: false };
+  const textNodesOf = (scene: Scene<D, L, P>) => scene.roots.map((id) => scene.get(id)!)
+    .filter((n) => typeof (n.data as { text?: string }).text === 'string');
+
+  it('a canvas that omits kit:text takes no plain text, while another canvas still does', async () => {
+    const quiet = makeScene();
+    const ref = createRef<SceneCanvasApi>();
+    render(
+      <SceneCanvas features={['ingest']} scene={quiet} layers={{}} width={64} height={64} ref={ref}
+        ingestion={NO_TEXT} />,
+    );
+    const otherRef = createRef<SceneCanvasApi>();
+    const other = makeScene();
+    render(<SceneCanvas features={['ingest']} scene={other} layers={{}} width={64} height={64} ref={otherRef} />);
+
+    act(() => { ref.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
+    act(() => { otherRef.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
+    await vi.waitFor(() => expect(textNodesOf(other)).toHaveLength(1));
+    await settle();
+    expect(quiet.roots).toHaveLength(0);
+    // It keeps the kit handlers it did not omit.
+    act(() => { ref.current!.ingest([pngFile()]); });
+    await vi.waitFor(() => expect(imageNodes(quiet)).toHaveLength(1));
+  });
+
+  it('kitHandlers false refuses a drag only a kit handler would take', () => {
+    const { container } = render(
+      <SceneCanvas features={['ingest']} scene={makeScene()} layers={{}} width={64} height={64}
+        ingestion={NO_KIT} />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    expect(dragOver(canvas, 'image/png').defaultPrevented).toBe(false);
+  });
+
+  it('one canvas’s own handler runs on it and not on another canvas', async () => {
+    const handle = vi.fn();
+    const ownRef = createRef<SceneCanvasApi>();
+    const own = { handlers: [{ id: 'app:pdf', match: 'application/pdf', handle }] };
+    render(
+      <SceneCanvas features={['ingest']} scene={makeScene()} layers={{}} width={64} height={64} ref={ownRef}
+        ingestion={own} />,
+    );
+    const otherRef = createRef<SceneCanvasApi>();
+    const { container } = render(
+      <SceneCanvas features={['ingest']} scene={makeScene()} layers={{}} width={64} height={64} ref={otherRef} />,
+    );
+    const pdf = () => new File(['%PDF'], 'a.pdf', { type: 'application/pdf' });
+    expect(dragOver(container.querySelector('canvas')!, 'application/pdf').defaultPrevented).toBe(false);
+    act(() => { otherRef.current!.ingest([pdf()]); });
+    await settle();
+    expect(handle).not.toHaveBeenCalled();
+    act(() => { ownRef.current!.ingest([pdf()]); });
+    await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(1));
   });
 });
