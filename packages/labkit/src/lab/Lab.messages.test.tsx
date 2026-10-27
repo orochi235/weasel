@@ -72,6 +72,7 @@ function hostFor(live: () => boolean) {
 }
 
 const it = base.extend<{ host: ReturnType<typeof hostFor> }>({
+  // biome-ignore lint/correctness/noEmptyPattern: vitest reads a fixture's dependencies from this pattern
   host: async ({}, provide) => {
     let live = true;
     await provide(hostFor(() => live));
