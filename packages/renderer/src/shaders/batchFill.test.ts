@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   BATCH_VERT_SRC, BATCH_FRAG_SRC, BATCH_MATRICES_FRAG_SRC, BATCH_FILL_UNIFORMS, BATCH_FILL_ATTRIBUTES,
   BATCH_TEXTURE_SLOTS, BATCH_MATRIX_SLOTS, WHITE_SLOT, RAMP_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
-  PAINT_MODE_CONIC, PAINT_MODE_IMAGE, packSlot, withMatrix, paintModeOf, matrixOf,
+  PAINT_MODE_CONIC, PAINT_MODE_IMAGE, packSlot, withMatrix, withHull, paintModeOf, matrixOf, hullOf,
 } from './batchFill';
 import { FLOATS_PER_VERTEX } from '../drawBatch';
+import { HULL_PLANES, HULL_POOL } from '../batchHull';
 
 /** Names declared as `uniform <type> <name>;`, array suffix trimmed. */
 function declaredUniforms(src: string): Set<string> {
@@ -93,24 +94,32 @@ describe('batch program — the sampler tree', () => {
   });
 });
 
-describe('batch program — slot, mode, and matrix share a float', () => {
-  it('unpacks in the vertex stage what packSlot and withMatrix packed', () => {
+describe('batch program — slot, mode, matrix and hull share a float', () => {
+  it('unpacks in the vertex stage what packSlot, withMatrix and withHull packed', () => {
     // The divisors as the shader source spells them, so a constant that moved
     // on one side only fails here.
     const slotMod = Number(/v_texSlot = packed % (\d+);/.exec(BATCH_VERT_SRC)![1]);
     const mode = /v_paintMode = float\(\(packed \/ (\d+)\) % (\d+)\);/.exec(BATCH_VERT_SRC)!;
-    const matrixDiv = Number(/v_matrix = packed \/ (\d+);/.exec(BATCH_VERT_SRC)![1]);
+    const matrix = /v_matrix = \(packed \/ (\d+)\) % (\d+);/.exec(BATCH_VERT_SRC)!;
+    const hullDiv = Number(/int hull = packed \/ (\d+);/.exec(BATCH_VERT_SRC)![1]);
+    const start = /v_hullStart = hull == 0 \? 0 : \(hull - 1\) \/ (\d+);/.exec(BATCH_VERT_SRC)!;
+    const hulls: [number, number][] = [[0, 0], [0, 1], [3, 4], [HULL_POOL - 1, 1], [HULL_POOL - HULL_PLANES, HULL_PLANES]];
     for (let slot = 0; slot < BATCH_TEXTURE_SLOTS; slot++) {
       for (let m = PAINT_MODE_PLAIN; m <= PAINT_MODE_IMAGE; m++) {
-        for (let matrix = 0; matrix < BATCH_MATRIX_SLOTS; matrix++) {
-          const packed = packSlot(withMatrix(slot, matrix), m);
-          expect(Math.fround(packed)).toBe(packed);
-          expect([
-            packed % slotMod,
-            Math.floor(packed / Number(mode[1])) % Number(mode[2]),
-            Math.floor(packed / matrixDiv),
-          ]).toEqual([slot, m, matrix]);
-          expect([paintModeOf(packed), matrixOf(packed)]).toEqual([m, matrix]);
+        for (let mx = 0; mx < BATCH_MATRIX_SLOTS; mx++) {
+          for (const [first, count] of hulls) {
+            const base = withMatrix(slot, mx);
+            const packed = packSlot(count === 0 ? base : withHull(base, first, count), m);
+            expect(Math.fround(packed)).toBe(packed);
+            const h = Math.floor(packed / hullDiv);
+            expect([
+              packed % slotMod,
+              Math.floor(packed / Number(mode[1])) % Number(mode[2]),
+              Math.floor(packed / Number(matrix[1])) % Number(matrix[2]),
+              h === 0 ? 0 : Math.floor((h - 1) / Number(start[1])),
+            ]).toEqual([slot, m, mx, first]);
+            expect([paintModeOf(packed), matrixOf(packed), hullOf(packed)]).toEqual([m, mx, [first, count]]);
+          }
         }
       }
     }

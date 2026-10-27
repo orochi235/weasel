@@ -1,8 +1,9 @@
 import { useMemo, type MutableRefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { SceneCanvasHit } from './SceneCanvas';
+import type { WorldPoint } from '@weasel-js/routing';
 
-type Picker = ((x: number, y: number) => { id: string; kind: string } | null | undefined) | undefined;
+type Picker = ((world: WorldPoint) => { id: string; kind: string } | null | undefined) | undefined;
 
 /** Turns a consumer's hit callback into the world-point observer the gesture
  *  dispatcher takes, resolving the hit with the canvas's own picker. Identity
@@ -11,13 +12,13 @@ type Picker = ((x: number, y: number) => { id: string; kind: string } | null | u
 export function useHitObserver(
   cb: ((hit: SceneCanvasHit | null) => void) | undefined,
   pickerRef: MutableRefObject<Picker>,
-): ((world: { x: number; y: number }) => void) | undefined {
+): ((world: WorldPoint) => void) | undefined {
   const cbRef = useLatest(cb);
   const wired = Boolean(cb);
   return useMemo(() => {
     if (!wired) return undefined;
     return (world) => {
-      const result = pickerRef.current?.(world.x, world.y);
+      const result = pickerRef.current?.(world);
       cbRef.current?.(result ? { id: result.id, kind: result.kind } : null);
     };
   }, [wired, cbRef, pickerRef]);

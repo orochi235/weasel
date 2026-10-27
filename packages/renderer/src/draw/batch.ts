@@ -7,7 +7,9 @@ import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot, withMatrix } from '../shaders/b
 import type { DrawContext } from './drawContext';
 import { retryUncut, flushForOwnDraw } from './clip';
 import { flushBatch } from './flushBatch';
-import { openRun, runTakes, slotForAtlas, slotForBitmap, slotForRamps, takeMatrix } from './batchRun';
+import {
+  openRun, runTakes, slotForAtlas, slotForBitmap, slotForRamps, takeHulls, takeMatrix,
+} from './batchRun';
 import { type BatchPaint, rampVertices } from './gradient';
 
 /**
@@ -55,8 +57,9 @@ export function stageSolid(ctx: DrawContext, vertices: number): number {
   const open = ctx.batchState;
   if (open !== undefined && !runTakes(ctx, open, colorMatrix, alpha)) flushBatch(ctx);
   if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);
-  const matrix = takeMatrix(openRun(ctx), colorMatrix, alpha);
-  return packSlot(withMatrix(WHITE_SLOT, matrix), PAINT_MODE_PLAIN);
+  const staged = openRun(ctx);
+  const matrix = takeMatrix(staged, colorMatrix, alpha);
+  return packSlot(takeHulls(ctx, staged, withMatrix(WHITE_SLOT, matrix)), PAINT_MODE_PLAIN);
 }
 
 /**
@@ -119,7 +122,7 @@ export function stageImage(
     staged.textures.push({ kind: 'bitmap', image, sampling });
     slot = staged.textures.length;
   }
-  under.slot = withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha));
+  under.slot = takeHulls(ctx, staged, withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha)));
   return under;
 }
 
@@ -148,7 +151,7 @@ export function stageGlyphs(
     staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale });
     slot = staged.textures.length;
   }
-  return withMatrix(slot, takeMatrix(staged, colorMatrix, alpha));
+  return takeHulls(ctx, staged, withMatrix(slot, takeMatrix(staged, colorMatrix, alpha)));
 }
 
 /**
@@ -177,7 +180,7 @@ function stageRamps(
   const slot = slotForRamps(staged);
   staged.ramps = true;
   return {
-    slot: withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha)),
+    slot: takeHulls(ctx, staged, withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha))),
     tint: under.tint,
     rowV: ctx.gradRamps.rowV(ctx.gradRamps.upload(stops, space)),
   };
@@ -295,6 +298,6 @@ export function stageColorGlyphs(
     staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale: NO_FIELD });
     slot = staged.textures.length;
   }
-  under.slot = withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha));
+  under.slot = takeHulls(ctx, staged, withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha)));
   return under;
 }

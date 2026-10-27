@@ -75,9 +75,9 @@ describe('useSceneSelectTool through the pick index', () => {
       pickWalk(full, scenePointQuery(AUTO_POSE_DESCRIPTOR, true, 4)(x, y, { x: 1, y: 1 }));
 
     const before = pickIndexBuildCount();
-    expect(result.current.pickBest(615, 615)).toBe(at(615, 615).at(-1));
-    expect(result.current.pickEvery(615, 615)).toEqual(at(615, 615));
-    expect(result.current.pickEvery(10, 10)).toEqual(['n0']);
+    expect(result.current.pickBest({ x: 615, y: 615 })).toBe(at(615, 615).at(-1));
+    expect(result.current.pickEvery({ x: 615, y: 615 })).toEqual(at(615, 615));
+    expect(result.current.pickEvery({ x: 10, y: 10 })).toEqual(['n0']);
     expect(at(615, 615)).toEqual(['n820']);
     expect(pickIndexBuildCount() - before).toBe(1);
   });
@@ -99,10 +99,10 @@ describe('useSceneSelectTool through the pick index', () => {
       pickWalk(full, scenePointQuery(g, false, 4)(x, y, { x: 1, y: 1 }));
 
     const before = pickIndexBuildCount();
-    for (let i = 0; i < 2; i++) expect(result.current.pickEvery(625, 615)).toEqual(at(625, 615, d));
+    for (let i = 0; i < 2; i++) expect(result.current.pickEvery({ x: 625, y: 615 })).toEqual(at(625, 615, d));
     expect(at(625, 615, d)).toEqual(['n820']);
     expect(at(625, 615, AUTO_POSE_DESCRIPTOR)).toEqual([]);
-    expect(result.current.pickBest(625, 615)).toBe('n820');
+    expect(result.current.pickBest({ x: 625, y: 615 })).toBe('n820');
     expect(pickIndexBuildCount() - before).toBe(1);
   });
 
@@ -120,8 +120,8 @@ describe('useSceneSelectTool through the pick index', () => {
     scene.overrides.commit();
     const adapter = sceneToAdapter(scene);
     const { result } = renderHook(() => useSceneSelectTool({ scene, adapter }));
-    expect(result.current.pickEvery(90, 90)).toEqual([]);
-    expect(result.current.pickEvery(10, 10)).toEqual(['a']);
+    expect(result.current.pickEvery({ x: 90, y: 90 })).toEqual([]);
+    expect(result.current.pickEvery({ x: 10, y: 10 })).toEqual(['a']);
   });
 
   it('marquee and lasso pick through the index', () => {

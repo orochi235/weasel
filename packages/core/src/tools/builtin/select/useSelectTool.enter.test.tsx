@@ -41,10 +41,10 @@ function harness(initial: UseSceneOptions<unknown, 'default', Pose>['initial']) 
     const scene = useScene<unknown, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
     const sel = useSelection({ mode: 'multi' });
     const adapter = sceneToAdapter(scene, { selection: sel });
-    const pickEvery = (x: number, y: number) =>
+    const pickEvery = ({ x, y }: { x: number; y: number }) =>
       pickWalk(scenePickSource(scene), adapterPointQuery(AUTO_POSE_DESCRIPTOR, false)(x, y, 0));
     const entry = createGroupEntryContribution({
-      pickHit: (x, y) => pickEvery(x, y).at(-1) ?? null,
+      pickHit: (p) => pickEvery(p).at(-1) ?? null,
       tree: adapter,
       boxOf: (id) => {
         const pose = scene.get(asNodeId(id))?.pose;

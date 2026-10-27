@@ -80,11 +80,11 @@ describe('renderer — a group color matrix and the run', () => {
    * run draws under: `u_colorBias[i].r`, which is 0.25 under `TINTED` and 0
    * under identity, and `u_alpha[i]`. An upload the renderer skipped leaves
    * the previous one in force, as it does on the GPU. A run under one matrix
-   * draws with `_batchFill`, one under more with `_batchFillMatrices`, and
+   * draws with `_batchFill`, one under more with `_batchVariants`, and
    * each holds its own.
    */
   const uniformsAtDraws = (): { bias: number[]; alpha: number[] }[] => {
-    const programs = [r._batchFill(), r._batchFillMatrices()];
+    const programs = [r._batchFill(), r._batchVariants().get(true, false)];
     const held = new Map(programs.map((p) => [p.handle as unknown, { bias: [] as number[], alpha: [] as number[] }]));
     const owner = (loc: unknown, name: string) => programs.find((p) => p.uniform(name) === loc)?.handle;
     const out: { bias: number[]; alpha: number[] }[] = [];
@@ -240,7 +240,7 @@ describe('renderer — a group color matrix and the run', () => {
     expect(draws()).toEqual([30]);
     expect(biasAtDraws()).toEqual([[0, 0.25, 0.125]]);
     expect(quadMatrices()).toEqual([0, 0, 1, 2, 0]);
-    expect(drawPrograms()).toEqual([r._batchFillMatrices().handle]);
+    expect(drawPrograms()).toEqual([r._batchVariants().get(true, false).handle]);
     // The last rect is mapped by the second matrix: red 0.5 + 0.125.
     expect(quadColors()[4]).toEqual([0.625, 0, 0, 1]);
   });

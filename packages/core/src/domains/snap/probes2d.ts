@@ -3,8 +3,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { SnapBegin } from 'interactions/actions/snapDep';
 import type { SnapProbeAt } from './types';
 import { resizeProbes, resizeSubject, type ResizeSubject } from './resizeBox';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** How a 2D session reads its subject at press. */
 export interface ProbeReads {

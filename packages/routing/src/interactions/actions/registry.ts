@@ -63,7 +63,8 @@ export interface ActionsRegistry {
    *  forwarded to `ImmediateInvoker.run` as its second argument — use it for
    *  parametric actions (e.g. `trigger('tool.activate', { toolId: 'rect' })`).
    *  Returns whether it ran one: `false` for an unknown id, for an action
-   *  whose `enabled` refuses, and for an ongoing-invoker action, which
+   *  whose `enabled` refuses or whose `run` returns `'pass'`, and for an
+   *  ongoing-invoker action, which
    *  `trigger` cannot reach (see `begin`). `enabled` is asked at
    *  `{ x: params.worldX, y: params.worldY }` when both are numbers, and with
    *  no point otherwise. */

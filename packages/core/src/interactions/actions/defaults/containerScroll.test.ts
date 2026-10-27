@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { LayoutStrategy } from '../../../layout/types';
@@ -27,11 +27,13 @@ function overflowingStack(): LayoutStrategy<RectPose> {
 
 const C = asNodeId('C');
 
-function setup(rows = 5) {
+function setup(rows = 5, rotation = 0) {
   const scene = createScene<null, 'l', RectPose>({
     systemLayers: [{ id: 'l' }],
     composition: RIGID_POSE_COMPOSITION,
-    initial: [{ id: C, kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 100 }, data: null, layout: overflowingStack() }],
+    initial: [{
+      id: C, kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 100, rotation }, data: null, layout: overflowingStack(),
+    }],
   });
   for (let i = 0; i < rows; i++) {
     scene.add({ kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: C });
@@ -41,9 +43,8 @@ function setup(rows = 5) {
   return { scene, deps };
 }
 
-const wheel = (deps: ActionDeps, at: { x: number; y: number }, deltaY: number, swapAxis = false): void => {
+const wheel = (deps: ActionDeps, at: { x: number; y: number }, deltaY: number, swapAxis = false): void | 'pass' =>
   (containerScrollAction.invoker as ImmediateInvoker).run(deps, { worldX: at.x, worldY: at.y, deltaX: 0, deltaY, swapAxis });
-};
 
 describe('containerScrollAction', () => {
   it('reads the range from the strategy\'s contentExtent', () => {
@@ -75,9 +76,58 @@ describe('containerScrollAction', () => {
     expect(scene.childrenOf(C).map((id) => scene.get(id)!.pose)).toEqual(stored);
   });
 
-  it('leaves an axis with nowhere to go where it is', () => {
+  it('leaves an axis with nowhere to go where it is, and passes the wheel on', () => {
     const { scene, deps } = setup();
-    wheel(deps, { x: 120, y: 150 }, 60, true);
+    expect(wheel(deps, { x: 120, y: 150 }, 60, true)).toBe('pass');
     expect(scene.scroll.get(C)).toBeUndefined();
+  });
+
+  it('passes the wheel on at the end of its range, and takes it again turned back', () => {
+    const { scene, deps } = setup();
+    expect(wheel(deps, { x: 120, y: 150 }, -60)).toBe('pass');
+    expect(wheel(deps, { x: 120, y: 150 }, 1000)).toBeUndefined();
+    expect(wheel(deps, { x: 120, y: 150 }, 60)).toBe('pass');
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 100 });
+    expect(wheel(deps, { x: 120, y: 150 }, -60)).toBeUndefined();
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 70 });
+  });
+
+  it('hands the wheel to the scrollable container holding one at the end of its range', () => {
+    const { scene, deps } = setup(4);
+    const inner = scene.add({
+      kind: 'group', layer: 'l', pose: { x: 0, y: 0, width: 50, height: 40 }, data: null, parent: C, index: 0, layout: overflowingStack(),
+    });
+    for (let i = 0; i < 5; i++) {
+      scene.add({ kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: inner });
+    }
+    const at = { x: 120, y: 110 };
+    expect(wheel(deps, at, 1000)).toBeUndefined();
+    expect(scene.scroll.get(inner)).toEqual({ x: 0, y: 160 });
+    expect(scene.scroll.get(C)).toBeUndefined();
+    expect(wheel(deps, at, 1000)).toBeUndefined();
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 100 });
+    expect(wheel(deps, at, 1000)).toBe('pass');
+  });
+
+  it('measures a turned container\'s range along its own axes', () => {
+    const { scene } = setup(5, Math.PI / 4);
+    const r = scrollRange(scene as never, C, AUTO_POSE_DESCRIPTOR)!;
+    [...r.x, ...r.y].forEach((v, i) => expect(v).toBeCloseTo([0, 0, 0, 100][i], 9));
+  });
+
+  it('takes a wheel only over a turned container\'s own area, not its box\'s corners', () => {
+    const { deps } = setup(5, Math.PI / 4);
+    expect(containerScrollAction.enabled!(deps, { x: 125, y: 150 })).toBe(true);
+    expect(containerScrollAction.enabled!(deps, { x: 80, y: 105 })).not.toBe(true);
+  });
+
+  it('declines under a composition that cannot scroll', () => {
+    const scene = createScene<null, 'l', RectPose>({
+      systemLayers: [{ id: 'l' }],
+      composition: IDENTITY_POSE_COMPOSITION as PoseComposition<RectPose>,
+      initial: [{ id: C, kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 100 }, data: null, layout: overflowingStack() }],
+    });
+    for (let i = 0; i < 5; i++) scene.add({ kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: C });
+    expect(scrollRange(scene as never, C, AUTO_POSE_DESCRIPTOR)).toBeNull();
   });
 });

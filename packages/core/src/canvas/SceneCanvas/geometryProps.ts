@@ -1,4 +1,5 @@
 import type { Bounds } from 'tools/builtin/select';
+import type { WorldPoint } from '@weasel-js/routing';
 
 /** `<SceneCanvas geometry>`: hit-test and bounds overrides, consumed by the
  *  internal select tool. Ignored if the consumer passes their own `tools`. */
@@ -8,7 +9,7 @@ export interface SceneCanvasGeometry {
    *  consumer with domain overlap ordering (e.g. children over their
    *  container) feed the kit's `pickTopMostHit` the true order instead of
    *  pre-collapsing to one id. Matches `Canvas`'s `pickEvery` shape. */
-  pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
+  pickEvery?: (world: WorldPoint) => string | string[] | null;
   boundsOf?: (id: string) => Bounds | null;
   /**
    * What "the pointer is on this node" means for the default body-pick.

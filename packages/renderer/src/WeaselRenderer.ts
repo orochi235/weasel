@@ -2,7 +2,7 @@ import { createPaintResources, type OwnedPaintResources } from './paintResources
 import { ShaderProgram } from './shaders/ShaderProgram';
 import {
   LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC,
-  BATCH_FILL_MATRICES_SPEC, createBatchFill,
+  BatchVariantPrograms, createBatchFill,
 } from './shaders/builtinPrograms';
 import {
   glyphGeneration,
@@ -95,7 +95,7 @@ export class WeaselRenderer {
   private readonly pathFill: LazyProgram;
   private readonly pathFillVColor: LazyProgram;
   private batchFill: ShaderProgram;
-  private readonly batchFillMatrices: LazyProgram;
+  private readonly batchVariants: BatchVariantPrograms;
   private readonly gradFill: LazyProgram;
   private readonly patternFill: LazyProgram;
   /** Compiled on first use: only atlas text under a texture paint needs one. */
@@ -198,7 +198,7 @@ export class WeaselRenderer {
     this.pathFillVColor = new LazyProgram(this.gl, PATH_FILL_VCOLOR_SPEC);
     this.gradFill = new LazyProgram(this.gl, GRAD_FILL_SPEC);
     this.patternFill = new LazyProgram(this.gl, PATTERN_FILL_SPEC);
-    this.batchFillMatrices = new LazyProgram(this.gl, BATCH_FILL_MATRICES_SPEC);
+    this.batchVariants = new BatchVariantPrograms(this.gl);
     this.batchFill = createBatchFill(this.gl);
 
     this.meshCache = new GLMeshCache(this.gl);
@@ -211,7 +211,7 @@ export class WeaselRenderer {
   }
 
   private lazyPrograms(): LazyProgram[] {
-    return [this.pathFill, this.pathFillVColor, this.gradFill, this.patternFill, this.batchFillMatrices];
+    return [this.pathFill, this.pathFillVColor, this.gradFill, this.patternFill, ...this.batchVariants.lazy()];
   }
 
   private uploadQuadGeometry(): void {
@@ -496,13 +496,13 @@ export class WeaselRenderer {
     }
     const device = this.deviceRect();
     const own = this.glRect();
-    const { pathFill, pathFillVColor, gradFill, patternFill, batchFillMatrices } = this;
+    const { pathFill, pathFillVColor, gradFill, patternFill } = this;
     const ctx: DrawContext = {
       gl,
       get pathFill() { return pathFill.get(); },
       get pathFillVColor() { return pathFillVColor.get(); },
       batchFill: this.batchFill,
-      get batchFillMatrices() { return batchFillMatrices.get(); },
+      batchVariants: this.batchVariants,
       get gradFill() { return gradFill.get(); },
       get patternFill() { return patternFill.get(); },
       meshCache: this.meshCache,
@@ -610,7 +610,7 @@ export class WeaselRenderer {
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor.get(); }
   /** @internal */ _drawBatch(): DrawBatch { return this.drawBatch; }
   /** @internal */ _batchFill(): ShaderProgram { return this.batchFill; }
-  /** @internal */ _batchFillMatrices(): ShaderProgram { return this.batchFillMatrices.get(); }
+  /** @internal */ _batchVariants(): BatchVariantPrograms { return this.batchVariants; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill.get(); }
   /** @internal */ _patternFill(): ShaderProgram { return this.patternFill.get(); }
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }

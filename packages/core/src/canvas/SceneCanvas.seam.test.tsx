@@ -267,7 +267,7 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
 
     const selApi = makeSelectionStub();
     const pickBest = vi.fn(
-      (_wx: number, _wy: number, alt: boolean, _sel: readonly string[]) =>
+      (_world: unknown, alt: boolean, _sel: readonly string[]) =>
         (alt ? (idA as string) : (idB as string)),
     );
 

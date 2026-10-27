@@ -29,9 +29,11 @@
  * cost a software rasterizer (SwiftShader) about a third of the program's
  * build.
  *
- * **Mode, slot, and matrix share one attribute**, as `slot + 16 * mode +
- * 128 * matrix`, because every extra float widens the buffer write for every
- * rect and quad in the run, not just for the vertices that read it.
+ * **Mode, slot, matrix and hull share one attribute**, as `slot + 16 * mode +
+ * 128 * matrix + 1024 * hull`, because every extra float widens the buffer
+ * write for every rect and quad in the run, not just for the vertices that
+ * read it. `hull` is 0 for a vertex under no convex clip the shader decides
+ * (`batchHull.ts`), and otherwise names the planes it is tested against.
  *
  * **Every vertex names the color matrix it is mapped by**, as an index into
  * `u_colorMatrix`, `u_colorBias`, and `u_alpha`. A solid's color and a glyph's
@@ -56,13 +58,15 @@
  *   a_vertexColor  vec4   straight-alpha color; (1,1,1,1) on an image vertex
  *   a_uv           vec2   texture coordinate 0..1; the white texel for solids
  *   a_post         float  alpha factor applied after the color matrix; a glyph's bold shift
- *   a_texSlot      float  slot + 16 * paint mode + 128 * matrix index; slot 0 is the white texel
+ *   a_texSlot      float  slot + 16 * mode + 128 * matrix + 1024 * hull; slot 0 is the white texel
  *
  * Output: PREMULTIPLIED alpha. Blend: `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
  */
 
 import { GLYPH_COVERAGE_GLSL } from '@weasel-js/font';
 import { STRAIGHT_RGB_GLSL } from './straightRgb';
+import { HULL_COVERAGE_GLSL } from './hullCoverage';
+import { HULL_PLANES } from '../batchHull';
 
 /**
  * Texture units the batch program samples, slot 0 being the white texel.
@@ -90,6 +94,7 @@ export const BATCH_MATRIX_SLOTS = 8;
 /** Room for the paint modes in the packed attribute; they run 0 to 5. */
 const PAINT_MODES = 8;
 const MATRIX_STRIDE = BATCH_TEXTURE_SLOTS * PAINT_MODES;
+const HULL_STRIDE = MATRIX_STRIDE * BATCH_MATRIX_SLOTS;
 
 /** Paint mode for everything whose texel is a color rather than a field. */
 export const PAINT_MODE_PLAIN = 0;
@@ -127,6 +132,19 @@ export function withMatrix(slot: number, matrix: number): number {
   return slot + MATRIX_STRIDE * matrix;
 }
 
+/** `slot` naming the `count` hull planes from `start` in the run's pool as
+ *  well. */
+export function withHull(slot: number, start: number, count: number): number {
+  return slot + HULL_STRIDE * (1 + start * HULL_PLANES + count - 1);
+}
+
+/** The hull planes an `a_texSlot` value names, as `[start, count]`; a count
+ *  of 0 is no hull. For the tests. */
+export function hullOf(packed: number): [number, number] {
+  const h = Math.floor((packed + 0.5) / HULL_STRIDE);
+  return h === 0 ? [0, 0] : [Math.floor((h - 1) / HULL_PLANES), ((h - 1) % HULL_PLANES) + 1];
+}
+
 /** The paint mode packed into an `a_texSlot` value — for the tests, which read
  *  a vertex back out of the buffer it was staged into. */
 export function paintModeOf(packed: number): number {
@@ -135,7 +153,7 @@ export function paintModeOf(packed: number): number {
 
 /** The matrix index packed into an `a_texSlot` value, for the same tests. */
 export function matrixOf(packed: number): number {
-  return Math.floor((packed + 0.5) / MATRIX_STRIDE);
+  return Math.floor((packed + 0.5) / MATRIX_STRIDE) % BATCH_MATRIX_SLOTS;
 }
 
 /**
@@ -175,6 +193,8 @@ out float v_post;
 flat out int v_texSlot;
 flat out float v_paintMode;
 flat out int v_matrix;
+flat out int v_hullStart;
+flat out int v_hullCount;
 void main() {
   vec3 screen = u_model * vec3(a_position, 1.0);
   vec3 clip = u_proj * vec3(screen.xy, 1.0);
@@ -182,12 +202,15 @@ void main() {
   v_vertexColor = a_vertexColor;
   v_uv = a_uv;
   v_post = a_post;
-  // slot + 16 * mode + 128 * matrix, unpacked — see the file header for why
-  // they share a float.
+  // slot + 16 * mode + 128 * matrix + 1024 * hull, unpacked — see the file
+  // header for why they share a float.
   int packed = int(a_texSlot + 0.5);
   v_texSlot = packed % ${BATCH_TEXTURE_SLOTS};
   v_paintMode = float((packed / ${BATCH_TEXTURE_SLOTS}) % ${PAINT_MODES});
-  v_matrix = packed / ${MATRIX_STRIDE};
+  v_matrix = (packed / ${MATRIX_STRIDE}) % ${BATCH_MATRIX_SLOTS};
+  int hull = packed / ${HULL_STRIDE};
+  v_hullStart = hull == 0 ? 0 : (hull - 1) / ${HULL_PLANES};
+  v_hullCount = hull == 0 ? 0 : (hull - 1) % ${HULL_PLANES} + 1;
 }
 `;
 
@@ -195,12 +218,14 @@ void main() {
  * The fragment stage for runs under `matrices` color matrices. Under one, every
  * vertex names entry 0, so the default program indexes it as a constant: a
  * software rasterizer (SwiftShader) took about a quarter of the program's
- * build to index the arrays by a varying.
+ * build to index the arrays by a varying. `hulls` builds in the hull clip, for
+ * runs that hold one.
  */
-function batchFragSrc(matrices: number): string {
+function batchFragSrc(matrices: number, hulls = false): string {
   const m = matrices === 1 ? '0' : 'v_matrix';
   return /* glsl */ `#version 300 es
 precision highp float;
+${hulls ? 'precision highp int;' : ''}
 in vec4 v_vertexColor;
 in vec2 v_uv;
 in float v_post;
@@ -222,6 +247,7 @@ ${sampleTree(0, BATCH_TEXTURE_SLOTS - 1)}
 }
 ${GLYPH_COVERAGE_GLSL}
 ${STRAIGHT_RGB_GLSL}
+${hulls ? HULL_COVERAGE_GLSL : ''}
 void main() {
   float isGrad = step(2.5, v_paintMode) * step(v_paintMode, ${PAINT_MODE_CONIC + 0.5});
   // A radial or conic vertex carries a gradient-space coordinate rather than a
@@ -255,7 +281,7 @@ void main() {
   // plain vertex multiplies its texel in as it always did.
   vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;
   vec4 mapped = clamp(u_colorMatrix[${m}] * src + u_colorBias[${m}], 0.0, 1.0);
-  float a = mapped.a * u_alpha[${m}] * mix(v_post, 1.0, max(isGrad, isGlyph)) * mix(1.0, coverage, isGlyph);
+  float a = mapped.a * u_alpha[${m}] * mix(v_post, 1.0, max(isGrad, isGlyph)) * mix(1.0, coverage, isGlyph)${hulls ? ' * hullCoverage()' : ''};
   outColor = vec4(mapped.rgb * a, a);
 }
 `;
@@ -269,10 +295,17 @@ export const BATCH_FRAG_SRC = batchFragSrc(1);
  *  one is drawn. */
 export const BATCH_MATRICES_FRAG_SRC = batchFragSrc(BATCH_MATRIX_SLOTS);
 
+/** The two again with the hull clip built in, each built the first time a run
+ *  holding a hull needs it. */
+export const BATCH_HULL_FRAG_SRC = batchFragSrc(1, true);
+export const BATCH_MATRICES_HULL_FRAG_SRC = batchFragSrc(BATCH_MATRIX_SLOTS, true);
+
 export const BATCH_FILL_UNIFORMS = [
   'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_fieldScale',
   'u_colorMatrix', 'u_colorBias',
 ] as const;
+
+export const BATCH_HULL_UNIFORMS = [...BATCH_FILL_UNIFORMS, 'u_hullPlanes'] as const;
 
 export const BATCH_FILL_ATTRIBUTES = [
   'a_position', 'a_vertexColor', 'a_uv', 'a_post', 'a_texSlot',

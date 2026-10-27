@@ -107,7 +107,7 @@
     "bench:hops": "vitest run --config tests/perf/vitest.scene-bench.config.ts --reporter=default packages/diagram/src/hops/hops.bench.ts",
     "perf:bench:baseline": "vitest bench --run --config tests/perf/vitest.bench.config.ts --reporter=default --reporter=json --outputFile.json=tests/perf/bench/baseline.json && node tests/perf/bench-report.mjs",
     "perf:compare": "node tests/perf/compare.mjs",
-    "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/ packages apps",
+    "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/ packages apps tests",
     "changeset": "changeset",
     "release": "node scripts/release.mjs",
     "version-packages": "changeset version && npm install --package-lock-only --ignore-scripts",

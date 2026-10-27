@@ -11,7 +11,7 @@
  */
 
 import type { StyledRun } from '@weasel-js/text';
-import { EMPTY_STYLE, styleStateFromElement, toRun, type StyleState } from './domRuns';
+import { EMPTY_STYLE, styleStateFromElement, toRun, type StyleState } from './runStyle';
 
 /** Elements whose contents are not text a reader sees. */
 const UNSEEN: ReadonlySet<string> = new Set([

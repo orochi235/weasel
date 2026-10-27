@@ -14,6 +14,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { ChromeCaps } from 'domains/chrome-caps/useChromeCaps';
 import type { PickView } from './SceneCanvas/useSceneSelectTool';
+import type { WorldPoint } from '@weasel-js/routing';
 
 export type { ViewRuleInputs } from 'domains/chrome-caps/useChromeCaps';
 
@@ -37,10 +38,10 @@ export interface SurfaceViewInputs
    *  point was produced under — a screen-pixel tolerance cannot be converted
    *  without its scale, nor a layer judged without its paint, and the world
    *  point carries neither. */
-  pickEvery?: (worldX: number, worldY: number, view?: PickView | null) => string[];
+  pickEvery?: (world: WorldPoint, view?: PickView | null) => string[];
   /** The one id a click resolves to, collapsing parent/child the way the
    *  select tool does. Falls back to `pickEvery`'s last when absent. */
-  pickBest?: (worldX: number, worldY: number, view?: PickView | null) => string | null;
+  pickBest?: (world: WorldPoint, view?: PickView | null) => string | null;
   /** A hit node's routing-trait kind, so `target: 'kind:text'` bindings match. */
   kindOfNode?: (id: string) => string | undefined;
   /** The node a double-click on a hit names (`doubleClickTarget`). */

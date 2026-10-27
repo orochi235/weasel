@@ -212,7 +212,7 @@ export function invokeAction(
   if (action.invoker?.timing === 'immediate') {
     try {
       const params = immediateParams(event, resolveParams(match.binding.opts?.params));
-      action.invoker.run(deps, params);
+      if (action.invoker.run(deps, params) === 'pass') return 'empty-handle';
     } catch (err) {
       console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
     }

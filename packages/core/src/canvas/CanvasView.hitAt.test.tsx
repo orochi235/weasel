@@ -34,7 +34,7 @@ describe('CanvasView hitAt dep', () => {
       boundsOf: undefined,
       selectionApi: { current: [], get: () => [], set: () => {} } as never,
       // Only a camera zoomed in 8x reaches the node.
-      pickBest: (_x: number, _y: number, view?: { scale: { x: number } } | null) => (view?.scale.x === 8 ? 'n' : null),
+      pickBest: (_world: unknown, view?: { scale: { x: number } } | null) => (view?.scale.x === 8 ? 'n' : null),
       kindOfNode: (id: string) => (id === 'n' ? 'rect' : undefined),
     };
     render(

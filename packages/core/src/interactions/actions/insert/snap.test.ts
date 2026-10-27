@@ -11,8 +11,8 @@ import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
 import type { InsertBehavior } from '../../gestures/types';
 import { insertAction } from './action';
 import { insertRepositionAction } from './repositionAction';
+import type { Point } from '@weasel-js/geom';
 
-type Point = { x: number; y: number };
 type Bounds = { x: number; y: number; width: number; height: number };
 type AnyScene = Scene<unknown, string, unknown>;
 

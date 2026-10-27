@@ -21,7 +21,7 @@
  */
 import type {
   Action, ActionDeps, AffordanceHit, BindingOpts, DragSample, InvocationCtx, OngoingHandle,
-  OngoingOverlay,
+  OngoingOverlay, WorldPoint,
 } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -33,8 +33,7 @@ import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
 import type { SnapBegin } from './snapDep';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** Which scene layer an invocation edits, read once as it starts. `undefined`
  *  means none: the action runs in the camera's world. */
@@ -99,7 +98,7 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
       requires,
       invoker: {
         timing: 'immediate',
-        run(deps: ActionDeps, params?: Record<string, unknown>): void {
+        run(deps: ActionDeps, params?: Record<string, unknown>): void | 'pass' {
           const plane = livePlane(deps, layerOf(deps), declared, null);
           if (plane === null) return inner.run(deps, params);
           const wx = params?.['worldX'];
@@ -107,7 +106,7 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
           const at = typeof wx === 'number' && typeof wy === 'number'
             ? toPlane(plane.map(), { x: wx, y: wy })
             : null;
-          inner.run(plane.deps, at ? { ...params, worldX: at.x, worldY: at.y } : params);
+          return inner.run(plane.deps, at ? { ...params, worldX: at.x, worldY: at.y } : params);
         },
       },
     } as A;
@@ -143,7 +142,7 @@ function livePlane(
    *  on any other read, so the seam converts only the deps it can see. */
   declared: readonly string[],
   /** The drag's press point in the camera's world, when there is a drag. */
-  pressedAt: Point | null,
+  pressedAt: WorldPoint | null,
 ): LivePlane | null {
   const scene = bag.scene as Scene<unknown, string, unknown> | undefined;
   const viewApi = bag.view as ViewApi | undefined;

@@ -9,9 +9,7 @@
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
-import { boundsOfPath, regularPolygonPath, starPath, type Path } from '@weasel-js/geom';
-
-type Point = { x: number; y: number };
+import { boundsOfPath, regularPolygonPath, starPath, type Path, type Point } from '@weasel-js/geom';
 
 /** The fields of an `insertPreview` overlay this needs. `canvas/deps/insert`
  *  passes the equivalent from its own `(bounds, extras)` commit arguments. */

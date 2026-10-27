@@ -1,6 +1,7 @@
-import { BATCH_TEXTURE_SLOTS, RAMP_SLOT } from '../shaders/batchFill';
+import { BATCH_TEXTURE_SLOTS, RAMP_SLOT, withHull } from '../shaders/batchFill';
+import { HULL_POOL, type HullSet } from '../batchHull';
 import { type BatchMatrix, matrixIndex } from './batchMatrices';
-import { runClipDepth } from './clip';
+import { liveHulls, runClipDepth } from './clip';
 import type { DrawContext } from './drawContext';
 
 /**
@@ -44,6 +45,14 @@ export interface StagedBatchState {
    * the radial and conic arm of the batch shader fetch it directly.
    */
   ramps: boolean;
+  /**
+   * The hull sets this run's vertices are tested against, each with where its
+   * planes start in the pool the flush uploads (`u_hullPlanes`); absent until
+   * one joins. A vertex names its set's planes by start and count.
+   */
+  hulls?: { set: HullSet; start: number }[];
+  /** Planes the pool holds so far. */
+  hullPlanes: number;
 }
 
 /** One entry in a run's slot list. */
@@ -96,19 +105,52 @@ function nextFreeSlot(staged: StagedBatchState): number {
 
 /**
  * Whether the open run can take an item under this matrix and alpha: it was
- * staged at the live clip depth, and it holds the pair or has room for it.
+ * staged at the live clip depth, it holds the pair or has room for it, and
+ * the same for the live hulls.
  */
 export function runTakes(
   ctx: DrawContext, staged: StagedBatchState, colorMatrix: Float32Array, alpha: number,
 ): boolean {
   return staged.clipDepth === runClipDepth(ctx)
-    && matrixIndex(staged.matrices, colorMatrix, alpha) >= 0;
+    && matrixIndex(staged.matrices, colorMatrix, alpha) >= 0
+    && hullFits(staged, liveHulls(ctx));
+}
+
+function hullFits(staged: StagedBatchState, set: HullSet | null): boolean {
+  if (set === null || hullEntry(staged, set) !== undefined) return true;
+  return staged.hullPlanes + set.count <= HULL_POOL;
+}
+
+/** A loop rather than `find`: this runs for every item staged under a hull. */
+function hullEntry(staged: StagedBatchState, set: HullSet): { set: HullSet; start: number } | undefined {
+  const hulls = staged.hulls;
+  if (hulls === undefined) return undefined;
+  for (let i = 0; i < hulls.length; i++) if (hulls[i].set === set) return hulls[i];
+  return undefined;
 }
 
 /** The staged state, opening a run if none is. */
 export function openRun(ctx: DrawContext): StagedBatchState {
-  ctx.batchState ??= { clipDepth: runClipDepth(ctx), matrices: [], textures: [], ramps: false };
+  ctx.batchState ??= {
+    clipDepth: runClipDepth(ctx), matrices: [], textures: [], ramps: false, hullPlanes: 0,
+  };
   return ctx.batchState;
+}
+
+/**
+ * `slot` naming the live hulls as well, added to a run that `runTakes` them
+ * if they are new to it. Unchanged under none.
+ */
+export function takeHulls(ctx: DrawContext, staged: StagedBatchState, slot: number): number {
+  const set = liveHulls(ctx);
+  if (set === null) return slot;
+  let entry = hullEntry(staged, set);
+  if (entry === undefined) {
+    entry = { set, start: staged.hullPlanes };
+    (staged.hulls ??= []).push(entry);
+    staged.hullPlanes += set.count;
+  }
+  return withHull(slot, entry.start, set.count);
 }
 
 /** The index of this matrix and alpha in a run that `runTakes` them, added if

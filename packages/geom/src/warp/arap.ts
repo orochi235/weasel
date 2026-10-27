@@ -13,7 +13,7 @@
  * re-solved as the pins move.
  */
 import { buildPiece, placePiece, rigidRound, similaritySolve, type Piece } from './arapPiece';
-import { energyAt, leastOf, nextEps, startingEps, turnedOver, untangleEnergy, untangleRound } from './injective';
+import { energyAt, leastOf, nextEps, restEnergy, startingEps, turnedOver, untangleEnergy, untangleRound } from './injective';
 import { stepMemory } from './lbfgs';
 
 /** A triangle mesh at rest: interleaved `x, y` vertices and vertex-index triples. */
@@ -65,6 +65,8 @@ export const ARAP_ROUNDS = 5;
 export const ARAP_INJECTIVE_ROUNDS = 100;
 /** A round moving no vertex farther than this share of the piece's size ends the rounds. */
 const SETTLED = 1e-4;
+/** An injective round taking off less than this share of the energy above a rigid motion's has settled. */
+const SETTLED_ENERGY = 3e-3;
 /** Settled injective rounds in a row that end the pass: one short step of a
  *  limited-memory descent is often followed by a long one. */
 const CALM_ROUNDS = 2;
@@ -177,7 +179,7 @@ export function createArapSolver(mesh: ArapMesh, pinned: readonly number[]): Ara
       if (tangled.some(Boolean)) {
         const state = solved.map((piece, k) => {
           const eps = tangled[k] ? startingEps(piece, pos[k]) : 0;
-          return { pos: pos[k], eps, energy: tangled[k] ? untangleEnergy(piece, pos[k], eps) : 0, live: tangled[k], memory: stepMemory(), calm: 0 };
+          return { pos: pos[k], eps, energy: tangled[k] ? untangleEnergy(piece, pos[k], eps) : 0, live: tangled[k], memory: stepMemory(), calm: 0, rest: restEnergy(piece) };
         });
         let r = 1;
         for (; r <= injective && state.some((s) => s.live); r++) {
@@ -185,7 +187,7 @@ export function createArapSolver(mesh: ArapMesh, pinned: readonly number[]): Ara
             const s = state[k];
             if (!s.live) return;
             const step = untangleRound(piece, s.pos, s.eps, s.energy, s.memory);
-            const settled = step.moved <= SETTLED * piece.size || s.energy - step.energy <= SETTLED * step.energy;
+            const settled = step.moved <= SETTLED * piece.size || s.energy - step.energy <= SETTLED_ENERGY * (step.energy - s.rest);
             s.pos = step.pos;
             if (s.eps > 0) {
               s.eps = nextEps(leastOf(step.terms), s.eps, s.energy, step.energy);

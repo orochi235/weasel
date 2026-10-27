@@ -16,8 +16,7 @@ import { insertPreviewExtent } from '../../canvas/insertPreviewExtent';
 import type { Bounds } from '../../core/viewport/fitViewToBounds';
 import type { KitInsertShape } from '../../core/shapeKinds';
 import type { OngoingOverlay, OverlayRole } from '@weasel-js/routing';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /**
  * The chrome-caps id a surface consults before painting each variant. The

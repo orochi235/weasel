@@ -2,7 +2,7 @@
 import { heldPose } from '../testUtils';
 import { describe, expect, it } from 'vitest';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
-import { pathFromD } from '@weasel-js/geom';
+import { pathFromD, type Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
@@ -18,7 +18,6 @@ import type { GroupTransform, MoveBehavior } from '../../gestures/types';
 import { snapToContainer } from './behaviors/snapToContainer';
 import { moveAction } from './action';
 
-type Point = { x: number; y: number };
 type AnyScene = Scene<unknown, string, unknown>;
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };

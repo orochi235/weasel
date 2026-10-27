@@ -5,7 +5,7 @@
  * until a new line or another move puts the pen somewhere else.
  */
 import { resolveRunFace, resolveTextStyle, scriptMetricsFor, type StyledRun, type TextStyle } from '@weasel-js/core';
-import { COLLAPSIBLE, readList } from './glyphShifts';
+import { collapses, readList } from './glyphShifts';
 import { type LineTracker, writtenByWeasel } from './tspanLines';
 
 /** The `y` and `dy` values over a stretch of glyphs: glyph `i` goes to
@@ -20,7 +20,7 @@ export function movesOf(el: Element, onWarn: (m: string) => void): Moves {
   const y = readList(el, 'y', onWarn);
   const dy = readList(el, 'dy', onWarn);
   const perGlyph = y.length > 1 || dy.slice(1).some((v) => v !== 0);
-  if (perGlyph && COLLAPSIBLE.test(el.textContent ?? '')) {
+  if (perGlyph && collapses(el)) {
     const named = (['y', 'dy'] as const).filter((n) => el.hasAttribute(n)).map((n) => `${n}="${el.getAttribute(n)}"`);
     onWarn(`<${el.tagName.toLowerCase()} ${named.join(' ')}> is read only to its first value: its text has white space`
       + ' SVG collapses, which moves the glyphs the list names');

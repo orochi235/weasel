@@ -1,7 +1,6 @@
 import { fromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { SnapMark } from './types';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** `marks` with repeats dropped, so a target several probes meet is drawn once. */
 export function distinct<P>(marks: readonly SnapMark<P>[]): SnapMark<P>[] {

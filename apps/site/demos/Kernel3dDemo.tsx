@@ -145,7 +145,7 @@ export function Kernel3dDemo() {
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const pickEvery = useMemo(() => {
     const nodeAtPoint = createNodeAtPoint(world);
-    return (x: number, y: number) => nodeAtPoint({ x, y });
+    return nodeAtPoint;
   }, [world]);
 
   const cameraRig = useMemo((): SurfaceContribution => {

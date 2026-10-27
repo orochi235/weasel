@@ -6,7 +6,9 @@ import {
   type InvocationCtx,
   type NodeId,
 } from '@weasel-js/core';
-import { createCamera, createPoseDescriptor } from '@weasel-js/kernel3d';
+import { createScene } from '@weasel-js/core';
+import { quatFromAxisAngle } from '@weasel-js/geom/3d';
+import { POSE3_COMPOSITION, createCamera, createPoseDescriptor } from '@weasel-js/kernel3d';
 import { applyFeedDelta, solidsToDraw, type SolidRecord } from './draws3d';
 import { aabbOfSolid, createSolidScene, pose3, type SolidScene } from './scene3d';
 
@@ -17,7 +19,7 @@ function firstId(scene: SolidScene) {
 /** The lab's own loop: read the feed, patch the records, build the frame. */
 function frameOf(scene: SolidScene, draws: Map<NodeId, SolidRecord>, feed = createPoseFeed(scene)) {
   applyFeedDelta(draws, feed.read());
-  return solidsToDraw(draws, new Set<NodeId>());
+  return solidsToDraw(scene, draws, new Set<NodeId>());
 }
 
 describe('applyFeedDelta', () => {
@@ -85,7 +87,7 @@ describe('solidsToDraw', () => {
     applyFeedDelta(draws, createPoseFeed(scene).read());
     const id = firstId(scene);
 
-    const solids = solidsToDraw(draws, new Set([id]));
+    const solids = solidsToDraw(scene, draws, new Set([id]));
 
     expect(solids.filter((s) => s.selected)).toHaveLength(1);
   });
@@ -103,7 +105,7 @@ describe('solidsToDraw', () => {
     scene.overrides.commit();
     applyFeedDelta(draws, feed.read());
 
-    const solids = solidsToDraw(draws, new Set<NodeId>());
+    const solids = solidsToDraw(scene, draws, new Set<NodeId>());
     const ghosts = solids.filter((s) => s.ghost);
 
     expect(ghosts).toHaveLength(1);
@@ -124,7 +126,7 @@ describe('solidsToDraw', () => {
     scene.overrides.clearAll();
     applyFeedDelta(draws, feed.read());
 
-    expect(solidsToDraw(draws, new Set<NodeId>()).some((s) => s.ghost)).toBe(false);
+    expect(solidsToDraw(scene, draws, new Set<NodeId>()).some((s) => s.ghost)).toBe(false);
   });
 
   it('draws every ghost above every solid', () => {
@@ -137,8 +139,50 @@ describe('solidsToDraw', () => {
     scene.overrides.commit();
     applyFeedDelta(draws, feed.read());
 
-    const solids = solidsToDraw(draws, new Set<NodeId>());
+    const solids = solidsToDraw(scene, draws, new Set<NodeId>());
     expect(solids.findIndex((s) => s.ghost)).toBe(solids.length - 1);
+  });
+});
+
+describe('solidsToDraw under containers', () => {
+  /** A box stored in a container that is raised, turned a quarter about +y and doubled. */
+  function framed() {
+    const scene: SolidScene = createScene({ composition: POSE3_COMPOSITION, systemLayers: [{ id: 'solids' }] });
+    const frame = scene.add({
+      kind: 'group', layer: 'solids', data: { kind: 'box', color: '#000' },
+      pose: pose3({ x: 3, y: 1, z: 0 }, { x: 2, y: 2, z: 2 }, quatFromAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI / 2)),
+    });
+    const box = scene.add({
+      kind: 'mark', layer: 'solids', parent: frame, data: { kind: 'box', color: '#e06c4f' },
+      pose: pose3({ x: 1, y: 0, z: 0 }),
+    });
+    const feed = createPoseFeed(scene);
+    const draws = new Map<NodeId, SolidRecord>();
+    applyFeedDelta(draws, feed.read());
+    return { scene, frame, box, feed, draws };
+  }
+
+  it('draws a nested solid at its world pose, and the container not at all', () => {
+    const { scene, draws } = framed();
+    const solids = solidsToDraw(scene, draws, new Set<NodeId>());
+    expect(solids).toHaveLength(1);
+    // Local +x turned a quarter about +y is world -z, doubled by the frame.
+    expect(solids[0].pose.position.x).toBeCloseTo(3, 12);
+    expect(solids[0].pose.position.z).toBeCloseTo(-2, 12);
+    expect(solids[0].pose.scale.x).toBeCloseTo(2, 12);
+  });
+
+  it('ghosts a nested solid whose container a gesture moves, keeping it where the document holds it', () => {
+    const { scene, frame, feed, draws } = framed();
+    scene.overrides.set(frame, { pose: { ...scene.get(frame)!.pose, position: { x: 3, y: 1, z: 5 } } });
+    scene.overrides.commit();
+    applyFeedDelta(draws, feed.read());
+
+    const solids = solidsToDraw(scene, draws, new Set<NodeId>());
+    const solid = solids.find((s) => !s.ghost)!;
+    const ghost = solids.find((s) => s.ghost)!;
+    expect(solid.pose.position.z).toBeCloseTo(-2, 12);
+    expect(ghost.pose.position.z).toBeCloseTo(3, 12);
   });
 });
 
@@ -198,7 +242,7 @@ describe('a frame drawn mid-drag', () => {
     startDrag(scene, id);
     applyFeedDelta(draws, feed.read());
 
-    const ghosts = solidsToDraw(draws, new Set<NodeId>()).filter((s) => s.ghost);
+    const ghosts = solidsToDraw(scene, draws, new Set<NodeId>()).filter((s) => s.ghost);
     expect(ghosts).toHaveLength(1);
     expect(scene.get(id)!.pose).toBe(before);
     expect(draws.get(id)!.committed).toBe(before);
@@ -215,7 +259,7 @@ describe('a frame drawn mid-drag', () => {
     startDrag(scene, id);
     applyFeedDelta(draws, feed.read());
 
-    const [ghost] = solidsToDraw(draws, new Set<NodeId>()).filter((s) => s.ghost);
+    const [ghost] = solidsToDraw(scene, draws, new Set<NodeId>()).filter((s) => s.ghost);
     expect(ghost.pose.position.x).not.toBeCloseTo(before.position.x, 3);
     expect(ghost.pose.position.y).toBeCloseTo(before.position.y, 6);
   });

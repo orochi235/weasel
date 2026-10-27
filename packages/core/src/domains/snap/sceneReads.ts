@@ -1,4 +1,4 @@
-import { applyToPoint, invert } from '@weasel-js/geom';
+import { applyToPoint, invert, type Point } from '@weasel-js/geom';
 import type { WorldPoint } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
@@ -8,8 +8,6 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_ORIGIN_PROJECTION, type OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { ProbeReads } from './probes2d';
 import type { SnapFrame } from './types';
-
-type Point = { x: number; y: number };
 
 /** {@link ProbeReads} over a canvas's scene, read when a session begins.
  *  `boxes` is the canvas's `drawnBoxes`, which alignment measures with too. */

@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/react';
-import { createLongPressStore, type Dispatcher, type DispatchTrace, type TraceRing } from '@weasel-js/routing';
+import { createLongPressStore, type Dispatcher, type DispatchTrace, type TraceRing, type WorldPoint } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry, useGestureDispatcher, type DepRegistry } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
@@ -43,12 +43,12 @@ export interface SceneGestureDispatcherInputs {
   /** The parallax plane a node is drawn through, under the surface's camera —
    *  so path anchors are hit where the plane draws them. */
   planeOfNode?: (id: string) => import('core/viewport/parallax').PlaneMap | null;
-  pickEvery?: (worldX: number, worldY: number) => string[];
+  pickEvery?: (world: WorldPoint) => string[];
   /** Single topmost hit (collapses parent/child via `pickTopMostHit`), used to
    *  classify the body under the pointer. Must match the select tool's own
    *  resolution so a child node isn't misclassified by its parent's selection.
    *  Falls back to `pickEvery`'s last id when absent. */
-  pickBest?: (worldX: number, worldY: number) => string | null;
+  pickBest?: (world: WorldPoint) => string | null;
   /** Resolves a hit node id to its routing-trait kind, so the body
    *  classification carries `kind` alongside `bodyTarget` and the
    *  `kind:<k>` / `kind:<k>:selected` target forms can match. Absent when
@@ -187,9 +187,9 @@ function useClassifyTarget(
       // Use the select tool's own topmost-hit resolution (`pickTopMostHit`,
       // which collapses parent/child) so a child body is classified by ITS
       // OWN selection — not its parent's.
-      (wx: number, wy: number) => {
-        if (pickBestRef.current) return pickBestRef.current(wx, wy);
-        const ids = pickEveryRef.current?.(wx, wy) ?? [];
+      (world: WorldPoint) => {
+        if (pickBestRef.current) return pickBestRef.current(world);
+        const ids = pickEveryRef.current?.(world) ?? [];
         return ids.length > 0 ? ids[ids.length - 1] : null;
       },
       // Node kind comes from the routing trait — the same classifier that

@@ -9,7 +9,7 @@ import { buildClassifyTarget } from './affordanceAt';
 
 // One node at world (0,0,50,50), selected; a second at (60,0,50,50), not.
 const SELECTION = ['text-1'];
-const pickBest = (wx: number, wy: number): string | null => {
+const pickBest = ({ x: wx, y: wy }: { x: number; y: number }): string | null => {
   if (wy < 0 || wy > 50) return null;
   if (wx >= 0 && wx <= 50) return 'text-1';
   if (wx >= 60 && wx <= 110) return 'rect-1';

@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { Dispatcher } from '@weasel-js/routing';
+import type { Dispatcher, WorldPoint } from '@weasel-js/routing';
 import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -73,7 +73,7 @@ export interface SceneStandardActionsInputs {
   dispatcher: Dispatcher;
   /** World-space picker forwarded so the `nodeAtPoint` dep source can
    *  reuse the same hit-test plumbing the tool dispatcher uses. */
-  pickEvery: (worldX: number, worldY: number) => string[];
+  pickEvery: (world: WorldPoint) => string[];
   /** This canvas's own view gate for scene layers, published on the `view`
    *  dep and read by the selecting actions. Absent when it hides nothing. */
   layerIsPainted?: (layerId: string) => boolean;

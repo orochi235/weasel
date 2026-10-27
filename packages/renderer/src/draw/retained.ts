@@ -6,9 +6,8 @@ import type { RetainedClip, RetainedKey } from '../retain/retainedKey';
 import { boxWithin, contentBox, type DeviceRect } from '../retain/contentBounds';
 import { movesWithView } from '../retain/movesWithView';
 import type { RetainedPixels } from '../retain/RetainedSurfaces';
-import { mat3 } from '@weasel-js/geom';
 import type { DrawContext } from './drawContext';
-import { drawFullscreenQuad, returnToRenderTarget } from './effects';
+import { compositeOver, insideBuffer, returnToRenderTarget, windowProjection } from './effects';
 import { applyClipTest } from './stencil';
 import { enterGroupClip } from './clip';
 import { flushBatch } from './flushBatch';
@@ -102,6 +101,8 @@ export function drawRetainedGroup(
     flushBatch(ctx);
     if (draw.fbo) drawInto(ctx, drawn, clips, draw.fbo, draw.rect, dispatch);
     pixels = draw.commit(key);
+    // The resolve leaves the default framebuffer bound.
+    ctx.gl.bindFramebuffer(ctx.gl.FRAMEBUFFER, ctx.renderTarget?.fbo ?? null);
   }
   ctx.state.pop();
 
@@ -111,13 +112,7 @@ export function drawRetainedGroup(
   const composite = ctx.ensureProgram?.(compositeProgramId()) ?? null;
   if (composite) {
     applyClipTest(ctx, 0);
-    const target = ctx.renderTarget ?? null;
-    const [ox, oy] = (target ? target.fragOrigin : ctx.fragOrigin) ?? [0, 0];
-    ctx.gl.viewport(ox + rect.x, oy + height - rect.y - rect.height, rect.width, rect.height);
-    drawFullscreenQuad(ctx, composite, texture, rect.width, rect.height, undefined, COMPOSITE_AS_DRAWN);
-    if (!target) ctx.restoreTargetRect?.();
-    else if (target.restore) target.restore();
-    else ctx.gl.viewport(0, 0, width, height);
+    compositeOver(ctx, composite, texture, rect, COMPOSITE_AS_DRAWN);
   }
   return true;
 }
@@ -145,15 +140,15 @@ function drawInto(
   // lands on the scratch buffer's, and the scissor keeps the rest out: the
   // projection is the frame's own, so the pixels are too. Reaching past it,
   // a viewport over `rect` alone under a projection aimed at it.
-  const inside = rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height;
-  if (!inside) ctx.projection = windowProjection(rect, width / ctx.widthCss);
+  const inside = insideBuffer(rect, width, height);
+  ctx.projection = inside ? undefined : windowProjection(rect, width / ctx.widthCss);
   const restore = (): void => {
     if (inside) gl.viewport(-rect.x, rect.y + rect.height - height, width, height);
     else gl.viewport(0, 0, rect.width, rect.height);
     gl.scissor(0, 0, rect.width, rect.height);
     gl.enable(gl.SCISSOR_TEST);
   };
-  const target = { fbo, restore, fragOrigin: [-rect.x, rect.y + rect.height - height] as const };
+  const target = { fbo, restore, fragOrigin: [-rect.x, rect.y + rect.height - height] as const, window: rect };
   scratchTargets.add(target);
   ctx.renderTarget = target;
 
@@ -171,11 +166,4 @@ function drawInto(
   ctx.projection = parentProjection;
   ctx.renderTarget = parentTarget;
   returnToRenderTarget(ctx, width, height, scissorWasOn);
-}
-
-/** Screen→clip aimed at `rect`, device pixels, of a buffer `scale` device
- *  pixels to the CSS pixel. */
-function windowProjection(rect: DeviceRect, scale: number): Float32Array {
-  const toClip = mat3.screenToClip(rect.width / scale, rect.height / scale);
-  return mat3.toUniform(mat3.translated(toClip, -rect.x / scale, -rect.y / scale));
 }

@@ -1,5 +1,6 @@
 import type { Paint } from '@weasel-js/paint';
 import type { DrawCommand } from '../DrawCommand';
+import { effectsReach } from '../effects/types';
 
 const withView = new WeakMap<readonly DrawCommand[], boolean>();
 const withoutView = new WeakMap<readonly DrawCommand[], boolean>();
@@ -12,8 +13,9 @@ const withoutView = new WeakMap<readonly DrawCommand[], boolean>();
  * Not so for a custom shader, whose `bounds` are screen pixels; a paint in
  * screen units, the default, or in world units with no view matrix to follow;
  * a texture paint on text, which renders into a scratch buffer clamped to the
- * drawing buffer; and a group with effects, isolation or its own composite,
- * whose buffers are clamped the same way. Memoized by array.
+ * drawing buffer; and a group whose effects do not say how far they reach,
+ * which run over the drawing buffer wherever its surface lies. Memoized by
+ * array.
  */
 export function movesWithView(cmds: readonly DrawCommand[], hasViewMatrix: boolean): boolean {
   const memo = hasViewMatrix ? withView : withoutView;
@@ -27,7 +29,7 @@ export function movesWithView(cmds: readonly DrawCommand[], hasViewMatrix: boole
 function commandMoves(cmd: DrawCommand, hasViewMatrix: boolean): boolean {
   switch (cmd.kind) {
     case 'group':
-      if ((cmd.effects?.length ?? 0) > 0 || cmd.isolate || cmd.composite !== undefined) return false;
+      if (cmd.effects && cmd.effects.length > 0 && !Number.isFinite(effectsReach(cmd.effects))) return false;
       return movesWithView(cmd.children, hasViewMatrix);
     case 'path':
       return paintMoves(cmd.fill?.paint, hasViewMatrix) && paintMoves(cmd.stroke?.paint, hasViewMatrix);

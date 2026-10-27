@@ -358,8 +358,13 @@ export interface ImmediateInvoker {
   timing: 'immediate';
   /** `params` carries the matched binding's opts.params. Invoked from the
    *  command palette, or anywhere else with no per-binding context, `params`
-   *  is undefined; descriptors should default to a sensible variant. */
-  run(deps: ActionDeps, params?: Record<string, unknown>): void;
+   *  is undefined; descriptors should default to a sensible variant.
+   *
+   *  Return `'pass'` when, having looked at the event, there is nothing to do
+   *  with it — a scroll already at the end of its range — and the dispatcher
+   *  walks on to the next matching binding, as for a declined `enabled()`.
+   *  Prediction cannot run the invoker, so it still names this action. */
+  run(deps: ActionDeps, params?: Record<string, unknown>): void | 'pass';
 }
 
 /** Phase-machine invocation. `start` opens the phase and returns the handle

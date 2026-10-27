@@ -90,7 +90,8 @@ export type WalkStep =
   | { kind: 'would-fire' }
   /** `enabled()` returned this reason. */
   | { kind: 'declined'; reason: string }
-  /** An ongoing action's `start()` returned an empty handle. */
+  /** An ongoing action's `start()` returned an empty handle, or an
+   *  immediate one's `run()` returned `'pass'`. */
   | { kind: 'empty-handle' }
   /** An ongoing action bound to a press-time `pointerDown` spec; refused. */
   | { kind: 'misbound' }

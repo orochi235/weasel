@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
+import type { WorldPoint } from '@weasel-js/routing';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import { useHostAnchor } from './useHostAnchor';
 import s from './hud.module.css';
@@ -27,10 +28,10 @@ export interface PickHudProps {
    *  passes that conversion, so the readout agrees with the picks. */
   toWorld?: (clientX: number, clientY: number) => [number, number];
   /** World-space hit-test. Same shape as `useSelectTool`'s `pickEvery`. */
-  pickEvery: (worldX: number, worldY: number) => readonly string[];
+  pickEvery: (world: WorldPoint) => readonly string[];
   /** Optional single-best resolver — the id this point would select on a
    *  bare click. When supplied, that id is rendered bold in the list. */
-  pickBest?: (worldX: number, worldY: number) => string | null;
+  pickBest?: (world: WorldPoint) => string | null;
   /** Inset from the canvas's top-right corner. Default `{ top: 76, right: 8 }`
    *  so the HUD clears `CursorCoordsHud` (~64 px tall in its 3-line form). */
   offset?: { top?: number; right?: number };
@@ -73,17 +74,18 @@ export function PickHud({ canvasRef, anchorRef, viewRef, toWorld, pickEvery, pic
         setState({ ids: [], best: null, inCanvas: false });
         return;
       }
-      const [worldX, worldY] = toWorldRef.current?.(e.clientX, e.clientY)
+      const [x, y] = toWorldRef.current?.(e.clientX, e.clientY)
         ?? clientToWorld(e.clientX, e.clientY, rect, view);
+      const world = { x, y };
       let ids: readonly string[] = [];
       try {
-        ids = pickEvery(worldX, worldY);
+        ids = pickEvery(world);
       } catch {
         ids = [];
       }
       let best: string | null = null;
       if (pickBest) {
-        try { best = pickBest(worldX, worldY); } catch { best = null; }
+        try { best = pickBest(world); } catch { best = null; }
       }
       setState({ ids, best, inCanvas: true });
     };

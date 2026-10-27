@@ -2,10 +2,11 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
+import type { WorldPoint } from '@weasel-js/routing';
 import { dlog } from '../../../debug/flag';
 
 /** A point in world coordinates. */
-export interface DragRectPoint { x: number; y: number }
+export type DragRectPoint = WorldPoint;
 /** The axis-aligned box between the drag's two corners, always with
  *  non-negative extents regardless of drag direction. */
 export interface DragRectBounds { x: number; y: number; width: number; height: number }

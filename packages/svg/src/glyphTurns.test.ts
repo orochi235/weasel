@@ -48,6 +48,12 @@ describe('turned glyphs, read as rotate', () => {
     expect(node.runs?.some((r) => r.rotate !== undefined) ?? false).toBe(false);
   });
 
+  it('reads a list over white space xml:space="preserve" keeps', () => {
+    const { node, warnings } = text('<text x="0" y="20" rotate="10 20 30 40" xml:space="preserve">a  b</text>');
+    expect(warnings).toEqual([]);
+    expect(turns(node)).toEqual([['a', 10], [' ', 20], [' ', 30], ['b', 40]]);
+  });
+
   it('reads one value over white space SVG collapses', () => {
     const { node, warnings } = text('<text x="0" y="20" rotate="10">a  b</text>');
     expect(warnings).toEqual([]);

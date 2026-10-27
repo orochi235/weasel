@@ -68,6 +68,20 @@ describe('runsToDom', () => {
     expect(domToRuns(parent)[0].fill).toEqual({ paint: { kind: 'solid', color: 'rgb(0, 128, 0)' } });
   });
 
+  it('carries a run\'s stroke and turn through the overlay and back, and through text typed into it', () => {
+    const stroke = { paint: { kind: 'solid' as const, color: '#00f' }, width: { px: 2 }, dash: [3, 1] };
+    runsToDom([{ text: 'ab', stroke, rotate: 30 }, { text: 'c', rotate: 0 }, { text: 'd' }], parent);
+    expect(domToRuns(parent)).toEqual([{ text: 'ab', stroke, rotate: 30 }, { text: 'c', rotate: 0 }, { text: 'd' }]);
+    const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
+    span.firstChild!.textContent = 'aXb';
+    expect(domToRuns(parent)[0]).toEqual({ text: 'aXb', stroke, rotate: 30 });
+  });
+
+  it('ignores a stroke or fill attribute pasted markup carries that is not JSON', () => {
+    parent.innerHTML = '<span data-stroke="{oops" data-fill="nope" data-rotate="x">a</span>';
+    expect(domToRuns(parent)).toEqual([{ text: 'a' }]);
+  });
+
   it('carries an unfilled run through the overlay and back', () => {
     const runs = [{ text: 'a', fill: null }, { text: 'b' }, { text: 'c', fill: { paint: { kind: 'solid' as const, color: '#ff0000' } } }];
     runsToDom(runs, parent);

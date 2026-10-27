@@ -1,8 +1,13 @@
 /**
- * Polygon-boolean operations on `Path` values, backed by `polygon-clipping`.
+ * Boolean operations on `Path` values.
  *
- *   - Bezier inputs are flattened to straight-line segments before clipping,
- *     so the result contains only M/L/Z commands.
+ *   - Union, intersect, subtract and exclude keep curves: where any input has
+ *     a curve, each curve in the result is a piece of an input curve
+ *     (`curveBoolean`). Inputs of straight lines only, very large inputs, and
+ *     the cases `curveBoolean` declines (coincident outlines, self-crossing
+ *     cubics, some tangencies) are flattened and clipped by `polygon-clipping`
+ *     instead, so their result has only M/L/Z commands.
+ *   - Divide, crop, trim, merge and the face pieces always flatten.
  *   - Open contours are treated as closed (a polyline has zero area and would
  *     otherwise be silently dropped).
  *   - Output `fillRule` is always `'nonzero'`.
@@ -13,6 +18,7 @@
 import polygonClipping from 'polygon-clipping';
 import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon, type Polygon } from './adapter';
 import { arrangementFaces } from './arrangementFaces';
+import { curveBoolean } from './curveBoolean';
 import type { Path, PolygonPath } from '../path';
 import { keepCorners } from '../paths/cornerRestore';
 
@@ -21,33 +27,40 @@ function toPath(mp: MultiPolygon, sources: readonly Path[]): PolygonPath {
   return keepCorners(sources, multiPolygonToPath(mp));
 }
 
+type Clip = (head: MultiPolygon, ...rest: MultiPolygon[]) => MultiPolygon;
+
+/** `keep` over `paths` with curves kept, or `clip` on their flattening where that declines. */
+function boolean(paths: Path[], keep: (inside: boolean[]) => boolean, clip: Clip): PolygonPath {
+  if (paths.length === 0) return multiPolygonToPath([]);
+  const curved = curveBoolean(paths, keep);
+  if (curved) return keepCorners(paths, curved);
+  const [head, ...rest] = paths.map((p) => pathToMultiPolygon(p));
+  return toPath(clip(head, ...rest), paths);
+}
+
+const any = (inside: boolean[]): boolean => inside.includes(true);
+const all = (inside: boolean[]): boolean => !inside.includes(false);
+const aNotB = (inside: boolean[]): boolean => inside[0] && !inside[1];
+const odd = (inside: boolean[]): boolean => inside.filter(Boolean).length % 2 === 1;
+
 /** Union of N paths. Commutative. Returns an empty path if all inputs are empty. */
 export function pathUnion(...paths: Path[]): PolygonPath {
-  if (paths.length === 0) return multiPolygonToPath([]);
-  const mps = paths.map((p) => pathToMultiPolygon(p));
-  const [head, ...rest] = mps;
-  return toPath(polygonClipping.union(head, ...rest), paths);
+  return boolean(paths, any, polygonClipping.union);
 }
 
 /** Intersection of N paths. Commutative. Empty result is an empty path. */
 export function pathIntersect(...paths: Path[]): PolygonPath {
-  if (paths.length === 0) return multiPolygonToPath([]);
-  const mps = paths.map((p) => pathToMultiPolygon(p));
-  const [head, ...rest] = mps;
-  return toPath(polygonClipping.intersection(head, ...rest), paths);
+  return boolean(paths, all, polygonClipping.intersection);
 }
 
 /** Asymmetric difference: returns `a − b`. */
 export function pathSubtract(a: Path, b: Path): PolygonPath {
-  return toPath(polygonClipping.difference(pathToMultiPolygon(a), pathToMultiPolygon(b)), [a, b]);
+  return boolean([a, b], aNotB, polygonClipping.difference);
 }
 
-/** Symmetric difference (XOR) of N paths. Commutative. */
+/** Symmetric difference (XOR) of N paths: what an odd number of them cover. Commutative. */
 export function pathExclude(...paths: Path[]): PolygonPath {
-  if (paths.length === 0) return multiPolygonToPath([]);
-  const mps = paths.map((p) => pathToMultiPolygon(p));
-  const [head, ...rest] = mps;
-  return toPath(polygonClipping.xor(head, ...rest), paths);
+  return boolean(paths, odd, polygonClipping.xor);
 }
 
 /** One path of a result that keeps its pieces apart, and the inputs it came

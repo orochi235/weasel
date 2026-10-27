@@ -1,11 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { View } from '@weasel-js/geom';
+import type { View, Point } from '@weasel-js/geom';
 import type { SnapBegin, SnapMods } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore } from './outcomeStore';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapMark, SnapProbeAt, SnapSource } from './types';
-
-type Point = { x: number; y: number };
 
 const FREE: SnapMods = { suspend: false, constrain: false };
 const STEP = 10;

@@ -2,8 +2,7 @@ import { stepLine, type Flat } from '@weasel-js/geom/nd';
 import type { SnapBegin, SnapMods } from 'interactions/actions/snapDep';
 import { diagonal, edgeAxis, type ResizeSubject } from './resizeBox';
 import { SNAP_AXIS_STEP } from './roles';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 const PLANE: Flat = { at: [0, 0], dirs: [[1, 0], [0, 1]] };
 const AXES = [[1, 0], [0, 1]] as const;

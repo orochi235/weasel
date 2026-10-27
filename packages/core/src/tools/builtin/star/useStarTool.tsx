@@ -4,13 +4,13 @@ import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { SHAPE_COUNT_RANGE } from 'domains/paths/shapeGenerator';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
-import type { Action } from '@weasel-js/routing';
+import type { Action, WorldPoint } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 
 /** A point in world coordinates. */
-export interface StarPoint { x: number; y: number }
+export type StarPoint = WorldPoint;
 
 /** Options for `useStarTool`. */
 export interface UseStarToolOptions extends InsertToolOptions {

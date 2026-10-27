@@ -56,7 +56,7 @@
     "longestFunction": 122
   },
   "packages/core/src/tools/builtin/select/useSelectTool.ts": {
-    "longestFunction": 194
+    "longestFunction": 192
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
     "longestFunction": 185
@@ -198,9 +198,6 @@
   },
   "packages/svg/src/gradients.ts": {
     "lines": 624
-  },
-  "packages/text-dom/src/domRuns.ts": {
-    "lines": 474
   },
   "packages/text-dom/src/useTextEdit.ts": {
     "lines": 674,

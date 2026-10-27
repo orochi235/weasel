@@ -14,8 +14,8 @@ const KEYS = ['a', 'b', 'c', 'd'] as const;
 let presses: string[] = [];
 let orders: PrefOrder[] = [];
 const ACTIONS: Action[] = [
-  ...KEYS.map((key): Action => ({ id: `t.${key}`, label: key.toUpperCase(), invoker: { timing: 'immediate', run: () => presses.push(key) } })),
-  ...['front', 'back'].map((id): Action => ({ id, label: id, group: 'arrange', invoker: { timing: 'immediate', run: () => presses.push(id) } })),
+  ...KEYS.map((key): Action => ({ id: `t.${key}`, label: key.toUpperCase(), invoker: { timing: 'immediate', run: () => { presses.push(key); } } })),
+  ...['front', 'back'].map((id): Action => ({ id, label: id, group: 'arrange', invoker: { timing: 'immediate', run: () => { presses.push(id); } } })),
 ];
 const act = (key: string): PrefLeaf => ({ kind: 'action', name: key.toUpperCase(), description: '', default: undefined, action: `t.${key}` }) as PrefLeaf;
 const FOUR: PrefGroup = { name: 'Tools', children: Object.fromEntries(KEYS.map((key) => [key, act(key)])) };

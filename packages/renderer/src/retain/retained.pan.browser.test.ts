@@ -18,6 +18,7 @@ import { WeaselRenderer } from '../WeaselRenderer';
 import type { DrawCommand } from '../DrawCommand';
 import type { RetainedStats } from '../rendererTypes';
 import { registerProgram } from '../shaders/registerProgram';
+import { blur, vignette } from '../effects/builtins';
 
 const W = 64;
 const H = 48;
@@ -198,6 +199,41 @@ describe('a retained world layer through a pan, in a real context', () => {
       // Drawn in its surface over translucent content: resolve rounding.
       expect(held.max, extra.kind).toBeLessThanOrEqual(2);
     }
+  });
+
+  it('moves a layer holding a blurred group with the view, blur read past the buffer included', () => {
+    const blurred: DrawCommand = {
+      kind: 'group', effects: blur({ radius: 5 }),
+      children: [
+        { kind: 'path', path: { kind: 'rect', x: -6, y: 10, width: 12, height: 14 }, fill: { paint: { color: '#ffffff' } } },
+        { kind: 'path', path: { kind: 'rect', x: 30, y: -7, width: 16, height: 5 }, fill: { paint: { color: 'rgba(255, 0, 0, 0.8)' } } },
+        { kind: 'path', path: { kind: 'rect', x: 52, y: 40, width: 30, height: 20 }, fill: { paint: { color: '#00ffcc' } } },
+      ],
+    };
+    // On its own: the world's thin stroke would add the envelope the last
+    // test measures, and the blur, drawn single-sampled, has none.
+    const children = [blurred];
+    const p = pairOf();
+    frame(p, 0, 0, children);
+    expect(frame(p, 0, 0, children).stats).toMatchObject({ composited: 1 });
+    const first = frame(p, 3.5, -2, children);
+    expect(first.stats).toMatchObject({ redrawn: 1 });
+    expect(first.max).toBeLessThanOrEqual(1);
+    for (const [x, y] of [[5, -3], [8, 1], [-1.5, 1.5], [11, -6.5]]) {
+      const moved = frame(p, x, y, children);
+      expect(moved.stats, `at ${x}, ${y}`).toMatchObject({ composited: 1, redrawn: 0 });
+      expect(moved.max, `at ${x}, ${y}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('draws a layer holding an effect with no reach straight through a move', () => {
+    const p = pairOf();
+    const children = world([{ kind: 'group', effects: vignette({ amount: 0.5 }), children: world() }]);
+    frame(p, 0, 0, children);
+    frame(p, 0, 0, children);
+    const moved = frame(p, 1, 0, children);
+    expect(moved.stats).toMatchObject({ declined: 1, composited: 0, redrawn: 0 });
+    expect(moved.max).toBe(0);
   });
 
   it('differs from a direct draw along a thin slanted stroke no more than two direct draws a pixel apart do', () => {

@@ -3,10 +3,8 @@
  * the guide that shows which one is holding.
  */
 import { roleReader, type ModifierRoles, type ModifierState, type OngoingOverlay, type WorldPoint } from '@weasel-js/routing';
-import { handleAlongItsAngle, handleAtItsLength } from '@weasel-js/geom';
+import { handleAlongItsAngle, handleAtItsLength, type Point } from '@weasel-js/geom';
 import type { HandleLocks } from './params';
-
-type Point = { x: number; y: number };
 
 /** Where a handle drag's anchor and handle sat at the press. */
 export interface HandlePress {

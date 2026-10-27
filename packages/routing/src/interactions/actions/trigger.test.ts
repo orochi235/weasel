@@ -23,4 +23,10 @@ describe('ActionsRegistry.trigger', () => {
     expect(seen).toEqual([{ x: 5, y: 7 }, { x: -5, y: 7 }, undefined]);
     expect(run).toHaveBeenCalledTimes(1);
   });
+
+  it('answers false when run passes', () => {
+    const { registry } = new ActionsNode(null, true, () => null);
+    registry.register({ id: 'test.pass', label: 'Pass', invoker: { timing: 'immediate', run: () => 'pass' } });
+    expect(registry.trigger('test.pass')).toBe(false);
+  });
 });

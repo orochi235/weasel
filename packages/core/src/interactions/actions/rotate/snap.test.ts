@@ -11,8 +11,8 @@ import { sceneSession2d } from 'domains/snap/sceneSession2d';
 import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';
 import { rotateAction } from './action';
+import type { Point } from '@weasel-js/geom';
 
-type Point = { x: number; y: number };
 type AnyScene = Scene<unknown, string, unknown>;
 type Pose = { x: number; y: number; width: number; height: number; rotation: number };
 
