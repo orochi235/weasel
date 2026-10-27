@@ -296,7 +296,15 @@ function groupFor(
     } as unknown as LaidOutGroup;
     if (stroke) group.stroke = stroke;
     if (source === 'color') group.colorGlyphs = [];
-    slots.push({ group, run: g.run, paint });
+    const i = slots.length;
+    let slot = slotPool[i];
+    if (slot === undefined) {
+      slot = { group, run: g.run, paint };
+      if (i < SLOT_POOL_MAX) slotPool[i] = slot;
+    } else {
+      slot.group = group; slot.run = g.run; slot.paint = paint;
+    }
+    slots.push(slot);
   }
   last.group = group;
   last.run = g.run; last.family = family; last.weight = weight; last.style = style;
@@ -308,6 +316,15 @@ function groupFor(
  *  nor one a painting: each glyph is read before the next is filled in. */
 const cursor = blankGlyph();
 
+/** A painting's groups so far and the one its last glyph joined, reused by
+ *  every painting and emptied after each so they hold no group. */
+const slots: GroupSlot[] = [];
+const slotPool: GroupSlot[] = [];
+const SLOT_POOL_MAX = 64;
+const last: LastGroup = {
+  group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
+};
+
 /**
  * Derive what to draw for `laid`, the layout of `runs` — or of runs that
  * differ from them only in paint and decoration, which a layout does not read.
@@ -317,10 +334,8 @@ export function paintRuns(
   runs: readonly ResolvedRun[],
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
-  const slots: GroupSlot[] = [];
-  const last: LastGroup = {
-    group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
-  };
+  slots.length = 0;
+  last.group = null;
   const decorations: LaidOutDecoration[] = [];
   const faceOf = runs.some(isDecorated) ? runFaces(runs) : null;
   // A rule is a solid rect with only a fill to paint it.
@@ -381,6 +396,11 @@ export function paintRuns(
   }
   if (sized !== null) (sized.quadData as number[]).length = sizedAt;
   const out: LaidOutGroup[] = [];
-  for (const slot of slots) out.push(Object.defineProperties(slot.group, groupViews));
+  for (const slot of slots) {
+    out.push(Object.defineProperties(slot.group, groupViews));
+    slot.group = null as unknown as LaidOutGroup;
+  }
+  slots.length = 0;
+  last.group = null;
   return { groups: out, decorations };
 }
