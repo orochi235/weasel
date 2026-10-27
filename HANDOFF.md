@@ -4,9 +4,9 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Agent TODO batches 2–9, merged 2026-10-26/27 (not pushed)
+## Agent TODO batches 2–10, merged 2026-10-26/27 (not pushed)
 
-Eight batches of `[agent]` entries from `docs/TODO.md` merged to `main`, the last as f7caf4e16. Each went
+Nine batches of `[agent]` entries from `docs/TODO.md` merged to `main`, the last as 3028e098c. Each went
 through a branch gate (fleet with the gate test, and post-build) before its merge and a fleet run of `main`
 after. Every batch's TODO commit retires what landed, rewrites what is left, and files what the agents
 found. The calls made without a ruling are in each commit body; the ones most likely to want a say:
@@ -19,6 +19,8 @@ found. The calls made without a ruling are in each commit body; the ones most li
 - `transformPath` gives a far-out result an origin by default (`autoOrigin: false` opts out); a multi-cluster
   ligature's advance is split evenly, not by the face's caret list; rect clips on a single-sampled target snap
   to 1/16 px (batch 9).
+- A run's `lang` now reaches SVG (`xml:lang`), the edit overlay, and `textTransform`; labkit tests that mount a
+  lab share a `live` guard that also prints a stalled step's stack in the timeout warning (batch 10).
 
 **Needs Mike before the next release:** first-publish `@weasel-js/headless` and `@weasel-js/shape`
 (`docs/TODO.md`, P2 [maintainer]); `check:first-publish` fails the release job until then. Also filed for
@@ -36,8 +38,9 @@ Two commits in batch 7 do not build alone (5b7d0acfe, 11e2b7d6f); the merge's tr
 
 **What is left of the `[agent]` entries:** later arcs of work in flight (shaping, headless layer, boolean
 groups, far-origin readers, HUD garbage, retained surfaces, batch clips), fleet-infra measurement that needs
-quiet nodes, multi-arc platform projects (WebGPU, worker offload, headless Node), and onto/wake entries
-waiting on their own repos' branches.
+quiet nodes, multi-arc platform projects (WebGPU, worker offload, headless Node), wake entries
+waiting on wake's own branches, and three onto fixes merged in onto (bd536ed, 2026-10-27, unpushed) that
+reach the fleet only after `onto push` to the nodes.
 
 ## Overnight TODO batch, merged 2026-10-25 (not pushed)
 
