@@ -451,7 +451,7 @@ export class DrawBatch {
    * subpixel grid the rasterizer snaps to, and the shortened edge then covers
    * different samples than the whole one did; along an axis the cut edge is
    * the same line exactly. So a slanted quad that crosses is rolled back and
-   * refused, for the caller to clip through the stencil instead.
+   * refused, for the caller to clip another way (`enterUncut`).
    */
   private clipQuad(v0: number, i0: number, rect: ClipRect): boolean {
     const v = this.verts;
