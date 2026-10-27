@@ -21,10 +21,12 @@ export const TOOLS = {
     <path d="M2.5 11 C7 11 8 3 15 3 L17.5 7.5 C11 7.5 10 16 3.5 16 Z"/>
     <circle cx="5" cy="13.5" r="1.5" fill="currentColor" stroke="none"/>
     <circle cx="15.6" cy="5.3" r="1.5" fill="currentColor" stroke="none"/>`,
+  // Every edge on a 16px 1x pixel center, at a stroke one pixel wide, which is crisp at 2x as well, all about
+  // pixel 7: the circle on columns 0 to 4, the step between on 6 to 9, the box on 11 to 14.
   blend: `
-    <circle cx="4.5" cy="10" r="2.6"/>
-    <rect x="7.9" y="7" width="4.4" height="6" rx="1.6" stroke-width="1"/>
-    <rect x="13.4" y="5.5" width="4.4" height="9" rx="0.5"/>`,
+    <circle cx="3.125" cy="9.375" r="2.5" stroke-width="1.25"/>
+    <rect x="8.125" y="5.625" width="3.75" height="7.5" rx="1.25" stroke-width="1.25"/>
+    <rect x="14.375" y="4.375" width="3.75" height="10" rx="0.5" stroke-width="1.25"/>`,
   // Each stripe runs along the band's normal from one edge's line to the other's and stops there: a cap past
   // either line shows outside the band.
   bendAlong: `

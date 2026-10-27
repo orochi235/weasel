@@ -23,7 +23,7 @@
       "tags": []
     },
     "blend": {
-      "body": "<circle cx=\"4.5\" cy=\"10\" r=\"2.6\"/><rect x=\"7.9\" y=\"7\" width=\"4.4\" height=\"6\" rx=\"1.6\" stroke-width=\"1\"/><rect x=\"13.4\" y=\"5.5\" width=\"4.4\" height=\"9\" rx=\"0.5\"/>",
+      "body": "<circle cx=\"3.125\" cy=\"9.375\" r=\"2.5\" stroke-width=\"1.25\"/><rect x=\"8.125\" y=\"5.625\" width=\"3.75\" height=\"7.5\" rx=\"1.25\" stroke-width=\"1.25\"/><rect x=\"14.375\" y=\"4.375\" width=\"3.75\" height=\"10\" rx=\"0.5\" stroke-width=\"1.25\"/>",
       "group": "Tools",
       "tags": []
     },

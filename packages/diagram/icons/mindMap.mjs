@@ -1,15 +1,25 @@
-// The mind map topics: a central ellipse with a heavy label, a rounded main topic, a stadium
+// The mind map topics: a central oval with a heavy label, a rounded main topic, a stadium
 // subtopic, and a note with its corner folded, as the `note` outline draws it.
 
 import { P, at, line, n, roundRect } from './grid.mjs';
 
 const BOLD = 2.5;
 
-const ellipse = (cx, cy, rx, ry) =>
-  `M${P(cx - rx, cy)}A${n(rx)} ${n(ry)} 0 1 1 ${P(cx + rx, cy)}A${n(rx)} ${n(ry)} 0 1 1 ${P(cx - rx, cy)}Z`;
+// Four circular arcs through the box's extremes: sides of radius `side`, and top and bottom of the radius
+// that meets them at a tangent. Flatter across the top than an ellipse of the same box, which at 16px 1x
+// stepped through gray on every side; this one holds solid rows and columns at its extremes.
+function oval(cx, cy, rx, ry, side) {
+  const top = ((rx - side) ** 2 + ry ** 2 - side ** 2) / (2 * (ry - side));
+  const topY = cy - ry + top;
+  const d = Math.hypot(rx - side, cy - topY);
+  const x = cx + ((rx - side) / d) * top;
+  const y = topY + ((cy - topY) / d) * top;
+  const arc = (r, px, py) => `A${n(r)} ${n(r)} 0 0 1 ${P(px, py)}`;
+  return `M${P(2 * cx - x, y)}${arc(top, x, y)}${arc(side, x, 2 * cy - y)}${arc(top, 2 * cx - x, 2 * cy - y)}${arc(side, 2 * cx - x, y)}Z`;
+}
 
 const centralTopic = (() => {
-  const shape = ellipse(10, 10, at(13), at(9));
+  const shape = oval(10, 10, at(13), at(9), at(6));
   return { d: shape, fill: shape, inner: { d: line(at(10), at(16), at(22), at(16)), width: BOLD } };
 })();
 
