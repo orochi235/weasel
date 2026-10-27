@@ -133,3 +133,37 @@ describe('trackRun', () => {
     });
   });
 });
+
+describe('trackRun in a right-to-left direction', () => {
+  const rtl = { direction: 'rtl' } as const;
+  test('a straight line starts at its right end, items still upright', () => {
+    const r = trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }), 0, 1, rtl);
+    close(r.at(0).point, { x: 100, y: 0 });
+    close(r.at(1).point, { x: 0, y: 0 });
+    expect(r.at(0.5).angle).toBeCloseTo(0);
+    close(r.at(0.5).tangent, { x: -1, y: 0 });
+    close(r.at(0.5).normal, trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 })).at(0.5).normal);
+    expect([r.flipped, r.reversed]).toEqual([false, true]);
+  });
+  test('a run along the top starts at its right end, each item tipped as the left-to-right run tips it', () => {
+    const shape = arcShape({ center: C, radius: 100, start: 300, end: 60 });
+    const ltr = trackRun(shape);
+    const r = trackRun(shape, 0, 1, rtl);
+    expect(r.at(0).point.x).toBeGreaterThan(0);
+    for (const g of [0, 0.3, 1]) {
+      close(r.at(g).point, ltr.at(1 - g).point);
+      expect(r.at(g).angle).toBeCloseTo(ltr.at(1 - g).angle);
+      expect(r.at(g).turned).toBe(ltr.at(1 - g).turned);
+    }
+  });
+  test('a flipped run along the bottom starts at its right end too', () => {
+    const r = trackRun(arcShape({ center: C, radius: 100, start: 120, end: 240 }), 0, 1, rtl);
+    expect(r.flipped).toBe(true);
+    expect(r.at(0).point.x).toBeGreaterThan(0);
+    expect(r.at(0.5).angle).toBeCloseTo(0);
+  });
+  test('nearest answers in the reading order', () => {
+    const r = trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }), 0, 1, rtl);
+    expect(r.nearest({ x: 25, y: 0 }).f).toBeCloseTo(0.75);
+  });
+});

@@ -27,26 +27,37 @@ export interface ResolvedGlyph {
 }
 
 /** The glyph for `cp` in the tier `resolved` landed on, or null when that
- *  tier has none. */
-export function glyphIn(resolved: ResolveResult, cp: number): ResolvedGlyph | null {
+ *  tier has none. With `into`, the answer is written into it and it is
+ *  returned: a caller that reads the fields at once and keeps none allocates
+ *  nothing a code point. */
+export function glyphIn(resolved: ResolveResult, cp: number, into?: ResolvedGlyph): ResolvedGlyph | null {
   const metrics = metricsOf(resolved);
   if (!metrics) return null;
   if (resolved.outlineFace) {
     const advance = metrics.advanceOf(cp);
-    return advance === null ? null : { resolved, metrics, advance, font: null, glyph: null };
+    return advance === null ? null : answer(into, resolved, metrics, advance, null, null);
   }
   const face = resolved.dynamicFace;
   const font = resolved.entry?.font ?? face?.font;
   const glyph = resolved.entry ? font?.charMap.get(cp) : face?.requestGlyph(cp);
   if (!font || !glyph || (face && !usableGlyph(glyph))) return null;
-  return { resolved, metrics, advance: glyph.xadvance, font, glyph };
+  return answer(into, resolved, metrics, glyph.xadvance, font, glyph);
+}
+
+function answer(
+  into: ResolvedGlyph | undefined, resolved: ResolveResult, metrics: GlyphMetrics, advance: number,
+  font: BmFont | null, glyph: BmFontChar | null,
+): ResolvedGlyph {
+  if (!into) return { resolved, metrics, advance, font, glyph };
+  into.resolved = resolved; into.metrics = metrics; into.advance = advance; into.font = font; into.glyph = glyph;
+  return into;
 }
 
 /**
  * The glyph for `cp` in a run that asked for `(family, weight, style)` and
  * resolved to `resolved`: that tier's own, else the dynamic tier's under the
  * face the run asked for. Null when neither has it, with a warning naming the
- * code point unless `warn` is false.
+ * code point unless `warn` is false. `into` is as `glyphIn` takes it.
  */
 export function resolveGlyph(
   resolved: ResolveResult,
@@ -55,11 +66,12 @@ export function resolveGlyph(
   style: FontStyle,
   cp: number,
   warn = true,
+  into?: ResolvedGlyph,
 ): ResolvedGlyph | null {
-  const own = glyphIn(resolved, cp);
+  const own = glyphIn(resolved, cp, into);
   if (own) return own;
   const fallback = resolveGlyphFallback(family, weight, style);
-  const escalated = fallback && glyphIn(fallback, cp);
+  const escalated = fallback && glyphIn(fallback, cp, into);
   if (escalated) return escalated;
   if (warn) warnMissingGlyph(resolved.resolved.family, cp);
   return null;

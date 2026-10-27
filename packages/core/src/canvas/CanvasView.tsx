@@ -67,7 +67,7 @@ const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<un
  */
 export function CanvasView(props: CanvasViewProps): null {
   const {
-    id, parent, bounds,
+    id, parent, follows, bounds,
     layers = ALL_LAYERS, layerVisibility, layerOrder, background, order = Infinity, label, cameraRef,
     selection: selectionProp, selectionOptions, interactive = true, paint = true,
   } = props;
@@ -90,7 +90,7 @@ export function CanvasView(props: CanvasViewProps): null {
   // is registered once and must not churn, but what it answers with has to be
   // the last committed render's.
   const live = useLatest({
-    parent, bounds, layers, layerVisibility, layerOrder, viewSelection, selection,
+    parent, follows, bounds, layers, layerVisibility, layerOrder, viewSelection, selection,
   });
 
   const { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted } = useViewNesting(registry, live);

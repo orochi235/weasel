@@ -3,7 +3,7 @@
  * every edge routed around the shapes. The routes derive from the data, so
  * they live in the specs and are never reported back to the host.
  */
-import type { RectPose } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, type PoseComposition, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf, headerBox } from '../containers/trait';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
@@ -11,6 +11,7 @@ import type { DiagramSpec } from '../fromData';
 import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf } from '../ports';
 import { diagramNodeOf } from '../trait';
+import { specWorldPoses } from '../specWorld';
 import type { Port } from '../types';
 import { createAvoidRouter } from './router';
 import { headerIdOf } from './sceneInput';
@@ -22,7 +23,7 @@ const facing = (ports: readonly Port[]): AvoidPort[] =>
 /** The obstacles specs make, as `avoidSceneInput` reads a scene: a shape's box; a
  *  container's or pool's box as a region holding what is inside it, and its header;
  *  a lane's header alone. A derived box, a group's, is none. */
-function obstaclesOf(specs: readonly DiagramSpec[]): AvoidObstacle[] {
+function obstaclesOf(specs: readonly DiagramSpec[], world: ReadonlyMap<string, RectPose>): AvoidObstacle[] {
   const children = new Map<string, string[]>();
   for (const s of specs) {
     if (s.parent == null) continue;
@@ -41,12 +42,13 @@ function obstaclesOf(specs: readonly DiagramSpec[]): AvoidObstacle[] {
     if (spec.derivePose !== undefined || diagramEdgeOf(spec) !== null) continue;
     const region = diagramContainerOf(spec);
     if (diagramNodeOf(node) === null && region?.role !== 'lane') continue;
-    const header = region === null ? null : headerBox(spec.pose, region.header);
+    const box = world.get(node.id) ?? (spec.pose as RectPose);
+    const header = region === null ? null : headerBox(box, region.header);
     if (header !== null) out.push({ id: headerIdOf(node.id), kind: 'shape', box: header });
     if (region?.role === 'lane') continue;
     out.push(region === null
-      ? { id: node.id, kind: 'shape', box: spec.pose }
-      : { id: node.id, kind: 'region', box: spec.pose, members: inside(node.id, new Set()) });
+      ? { id: node.id, kind: 'shape', box }
+      : { id: node.id, kind: 'region', box, members: inside(node.id, new Set()) });
   }
   return out;
 }
@@ -64,18 +66,27 @@ function labelsOf(specs: readonly DiagramSpec[]): Map<string, AvoidLabel> {
   return out;
 }
 
+/** How {@link createSpecRouter} routes: the router's own options, and the composition the specs' poses are stored
+ *  under, which must be the one `diagramScene` was given. Default {@link RIGID_POSE_COMPOSITION}, as there. */
+export interface SpecRouterOptions extends AvoidOptions {
+  composition?: PoseComposition<RectPose>;
+}
+
 /**
  * A function from specs to the same specs with each edge on `avoid` and
  * holding its route. It holds one router across calls, so each call reroutes
- * only the edges the change since the last one disturbed.
+ * only the edges the change since the last one disturbed. Shapes and ports are
+ * read where they draw, each pose folded through the containers above it.
  */
-export function createSpecRouter(options: AvoidOptions = {}): (specs: readonly DiagramSpec[]) => DiagramSpec[] {
-  const router = createAvoidRouter(options);
+export function createSpecRouter(options: SpecRouterOptions = {}): (specs: readonly DiagramSpec[]) => DiagramSpec[] {
+  const { composition = RIGID_POSE_COMPOSITION, ...avoid } = options;
+  const router = createAvoidRouter(avoid);
   let held = new Map<string, Vec2[] | null>();
   return (specs) => {
     const byId = new Map(specs.map((s) => [s.id as string, s]));
     const labels = labelsOf(specs);
-    const obstacles = obstaclesOf(specs);
+    const world = specWorldPoses(specs, composition);
+    const obstacles = obstaclesOf(specs, world);
     const edges: AvoidEdge[] = [];
     for (const spec of specs) {
       const edge = diagramEdgeOf(spec);
@@ -85,7 +96,8 @@ export function createSpecRouter(options: AvoidOptions = {}): (specs: readonly D
       if (a === undefined || b === undefined || a === b) continue;
       const portsAt = (s: DiagramSpec, port: string | undefined) => {
         const n = { id: s.id as string, kind: s.kind, data: s.data };
-        return facing(port === undefined ? portsOf(n, s.pose as RectPose) : portSitesOf(n, s.pose as RectPose, port));
+        const pose = world.get(n.id) ?? (s.pose as RectPose);
+        return facing(port === undefined ? portsOf(n, pose) : portSitesOf(n, pose, port));
       };
       const route = held.get(spec.id as string);
       edges.push({

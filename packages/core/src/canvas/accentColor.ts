@@ -1,3 +1,5 @@
+import { useMemo, type RefObject } from 'react';
+
 /** The accent canvas chrome paints in when the element sits under no theme. */
 export const FALLBACK_ACCENT = '#4c8dff';
 
@@ -33,4 +35,14 @@ export function watchThemeOf(el: () => Element | null | undefined, fn: () => voi
     observer.disconnect();
     scheme?.removeEventListener?.('change', fn);
   };
+}
+
+/** The color `name` on the element `ref` holds, read when asked, and how to hear it may have changed. */
+export function useChromeColor(
+  ref: RefObject<Element | null>, name: `--${string}`, fallback: string,
+): { read: () => string; changed: (fn: () => void) => () => void } {
+  return useMemo(() => ({
+    read: () => chromeColorOf(ref.current, name, fallback),
+    changed: (fn: () => void) => watchThemeOf(() => ref.current, fn),
+  }), [ref, name, fallback]);
 }

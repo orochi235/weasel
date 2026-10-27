@@ -1,9 +1,8 @@
 /**
- * `useTextEditDepSource` — wires the `textEdit` dep consumed by
- * `enterTextEditAction`. Kit-default implementation is a no-op stub for
- * `startEdit` plus an `isTextNode` that asks `isTextData`. Consumers wanting real text editing override the
- * dep via their own `useDepSource('textEdit', ...)` sourced from a
- * `useSceneTextEdit` instance.
+ * `useTextEditDepSource` — the `textEdit` dep `enterTextEditAction` reads when
+ * no editor answers it: a `startEdit` that does nothing, and an `isTextNode`
+ * that asks `isTextData`. `<SceneCanvas>`'s own editor registers over it
+ * (`SceneCanvas/defaultTextEditor.tsx`), and so does a host's.
  */
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest, isDev } from '@weasel-js/react';
@@ -22,8 +21,9 @@ export function useTextEditDepSource(
       startEdit(_id: string, _opts?: { caret?: number | 'all' }) {
         if (isDev()) {
           console.warn(
-            'weasel textEditDep: startEdit called but no useTextEdit hook is mounted in SceneCanvas. ' +
-            'Override the "textEdit" dep via useDepSource("textEdit", ...) to enable in-place text editing.',
+            'weasel textEditDep: startEdit called but this canvas has no text editor: it was given ' +
+            'textEditor={false}, or a host useSceneTextEdit holds it without publishing the "textEdit" dep. ' +
+            'Publish it with useDepSource("textEdit", ...) from inside <SceneCanvas>.',
           );
         }
       },

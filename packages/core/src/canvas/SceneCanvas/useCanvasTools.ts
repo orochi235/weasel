@@ -119,10 +119,12 @@ export function useCanvasTools(args: {
   });
   const tools = takeover ?? internal;
   const takeoverAmbient = takeover?.ambient;
-  const surface = useMemo(
-    () => (takeoverAmbient && markerDrag && !takeoverAmbient.some((e) => e.id === markerDrag.id) ? [markerDrag] : []),
-    [takeoverAmbient, markerDrag],
-  );
+  const surface = useMemo(() => {
+    if (!takeoverAmbient) return [];
+    const missing = (e: SurfaceContribution | null): e is SurfaceContribution =>
+      e !== null && !takeoverAmbient.some((t) => t.id === e.id);
+    return [markerDrag, pressFeedback].filter(missing);
+  }, [takeoverAmbient, markerDrag, pressFeedback]);
 
   const onToolsCreatedRef = useLatest(onToolsCreated);
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools, onToolsCreatedRef]);

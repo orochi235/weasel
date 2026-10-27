@@ -2,6 +2,7 @@ import type { ModeRegistry } from '@weasel-js/modes';
 import { useKeybindings } from 'tools/useKeybindings';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import type { CanvasExtensionApi } from '../canvasExtension';
+import type { SurfaceContribution } from '../surfaceContribution';
 import { useContributionRoles, type VersionCheck } from './useContributionRoles';
 
 /**
@@ -16,6 +17,7 @@ import { useContributionRoles, type VersionCheck } from './useContributionRoles'
 export function useToolKeybindings({
   internalTools,
   toolsTakeover,
+  surface,
   enableKeybindings,
   modes,
   canvasApi,
@@ -23,6 +25,8 @@ export function useToolKeybindings({
 }: {
   internalTools: ToolsApi;
   toolsTakeover?: ToolsApi;
+  /** The surface's own entries installed beside a takeover. */
+  surface?: readonly SurfaceContribution[];
   enableKeybindings: boolean;
   modes?: ModeRegistry;
   canvasApi: CanvasExtensionApi | null;
@@ -39,5 +43,5 @@ export function useToolKeybindings({
   // Entry-owned roles live here and not in the tool hooks because the hooks
   // run above the provider. Not gated on `enableKeybindings` — these back
   // wheel and pointer bindings too, not just keys.
-  useContributionRoles(toolsTakeover ?? internalTools, canvasApi, versionCheck);
+  useContributionRoles(toolsTakeover ?? internalTools, canvasApi, versionCheck, surface);
 }

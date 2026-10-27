@@ -46,6 +46,7 @@ const config = f.schema({
   centerY: f.number(CENTER.y).step(1).label('Center y'),
   spacing: f.number(120).range(10, 400).step(1).suffix('px').label('Repeat spacing'),
   glide: f.boolean(false).label('Glide'),
+  glideRows: f.boolean(false).label('Glide rows'),
   pattern: f.enum<WallpaperGroup>('p4m', GROUPS).label('Wallpaper group'),
   cell: f.enum<WallpaperCell>('kaleidoscope', CELLS).label('Cell'),
   cellAngle: f.number(0).range(-180, 180).step(1).suffix('°').label('Cell angle'),
@@ -114,7 +115,7 @@ function usePathEditHost() {
 function fieldsOf(spec: SymmetrySpec, center: { x: number; y: number }) {
   return {
     kind: spec.kind, angle: spec.angle / DEG, count: spec.count, centerX: center.x, centerY: center.y,
-    spacing: spec.spacing, glide: spec.glide, cell: spec.cell, cellAngle: spec.cellAngle / DEG,
+    spacing: spec.spacing, glide: spec.glide, glideRows: spec.glideRows ?? false, cell: spec.cell, cellAngle: spec.cellAngle / DEG,
     rowAngle: spec.rowAngle / DEG, rowSpacing: spec.rowSpacing, extentWidth: spec.extent.width,
     extentHeight: spec.extent.height,
   };
@@ -123,7 +124,7 @@ function fieldsOf(spec: SymmetrySpec, center: { x: number; y: number }) {
 /** The spec the panel's fields say, its extent centered on the group. */
 function specOf(c: Config): Partial<SymmetrySpec> {
   return {
-    kind: c.kind, angle: c.angle * DEG, count: c.count, spacing: c.spacing, glide: c.glide, cell: c.cell,
+    kind: c.kind, angle: c.angle * DEG, count: c.count, spacing: c.spacing, glide: c.glide, glideRows: c.glideRows, cell: c.cell,
     cellAngle: c.cellAngle * DEG, rowAngle: c.rowAngle * DEG, rowSpacing: c.rowSpacing,
     extent: { x: -c.extentWidth / 2, y: -c.extentHeight / 2, width: c.extentWidth, height: c.extentHeight },
   };

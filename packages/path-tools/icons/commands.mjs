@@ -1,16 +1,18 @@
 // Path-structure commands: direction, start, corners, segment type and extremes.
+import { px } from '../../icons/scripts/lib/base.mjs';
+
 const n = (v) => Math.round(v * 1e4) / 1e4;
-/** The center of pixel `k` at 16px 1x. */
-const px = (k) => 0.625 + 1.25 * k;
 const anchor = (cx, cy, s = 2.5) =>
   `<rect x="${n(cx - s / 2)}" y="${n(cy - s / 2)}" width="${s}" height="${s}" fill="currentColor" stroke="none"/>`;
 const dot = (cx, cy, r) => `<circle cx="${n(cx)}" cy="${n(cy)}" r="${r}" fill="currentColor" stroke="none"/>`;
 
-// Resample: an arch drawn thin, so the anchors set along it at even steps stand off it.
-const ARCH = { cx: 10, cy: px(12), r: 6.875 };
+// Resample: an arch drawn thin, so the anchors set along it at even steps stand off it. Each anchor is two
+// pixels square, centered on the pixel corner nearest its point on the arch, so it fills whole pixels at 1x.
+const ARCH = { cx: 10, cy: 13.75, r: 7.5 };
 const onArch = (deg) => [ARCH.cx + ARCH.r * Math.cos((deg * Math.PI) / 180), ARCH.cy - ARCH.r * Math.sin((deg * Math.PI) / 180)];
+const toCorner = (v) => Math.round(v / 1.25) * 1.25;
 const resamplePath = `<path d="M${n(ARCH.cx - ARCH.r)} ${n(ARCH.cy)}A${ARCH.r} ${ARCH.r} 0 0 1 ${n(ARCH.cx + ARCH.r)} ${n(ARCH.cy)}" stroke-width="1"/>`
-  + [180, 135, 90, 45, 0].map((deg) => anchor(...onArch(deg))).join('');
+  + [180, 135, 90, 45, 0].map((deg) => anchor(...onArch(deg).map(toCorner))).join('');
 
 // Convert a spiro to a path: spiro's round points at the ends, and at the top an anchor with its handles out.
 const releaseSpiro = `<path d="M${px(2)} ${px(13)}C${px(2)} ${px(5)} ${px(13)} ${px(5)} ${px(13)} ${px(13)}" stroke-width="1"/>`

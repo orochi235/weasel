@@ -80,8 +80,9 @@ export type LoupeOptions = LoupeBaseOptions & (
        * mode paints the canvas's own stack — scene and selection chrome — and
        * the lens can take input. It magnifies the camera of whatever view is
        * under its aim: aimed over a `<CanvasView>` panel, it shows and edits
-       * that panel's world at the panel's zoom times its own factor. A host
-       * without `viewAt` gets the canvas's camera wherever it aims.
+       * that panel's world at the panel's zoom times its own factor, painting
+       * and picking only the layers the panel does. A host without `viewAt`
+       * gets the canvas's camera and stack wherever it aims.
        */
       views: Pick<SceneCanvasApi, 'addView' | 'getSurfaceRect'> & Partial<Pick<SceneCanvasApi, 'getPaintedVersion' | 'viewAt'>>;
       /** Narrows what vector mode paints. Defaults to the canvas's stack. */
@@ -192,9 +193,8 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     opts.background ?? ctx.tokens['--wzl-surface'];
   const backdrop = (ctx: HudContentCtx): DrawCommand => backdropOf(ctx, backdropColor(ctx));
 
-  const innerView = (outer: View, rect: WidgetBounds): View => (
-    lensCamera(model.aim, host?.viewAt?.(model.aim, { except: LENS_VIEW }) ?? null, outer, rect, model.factor)
-  );
+  const aimedView = () => host?.viewAt?.(model.aim, { except: LENS_VIEW }) ?? null;
+  const innerView = (outer: View, rect: WidgetBounds): View => lensCamera(model.aim, aimedView(), outer, rect, model.factor);
 
   const drawVector = (ctx: HudContentCtx): DrawCommand[] => {
     if (host) return lens ? [backdrop(ctx), ...lens.draw(ctx.data, ctx.view, ctx.dims)] : [backdrop(ctx)];
@@ -348,6 +348,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       view: (outer) => innerView(outer, win.contentRect),
       paint: false,
       interactive,
+      follows: () => aimedView()?.id ?? null,
       ...(opts.source ? { layers: () => opts.source! } : {}),
     });
   }

@@ -31,6 +31,22 @@ export interface EffectItem {
   middle: number;
   /** What it paints; empty for a piece that only takes room, such as a space. */
   parts: readonly DerivedPart[];
+  /** Rules it carries across its stretch — a text decoration cut to one cluster. A band that runs to the item's end
+   *  joins one alike in paint and depth that starts the next item, so the effect draws them as one ribbon bent along
+   *  the path rather than as rigid pieces. */
+  bands?: readonly EffectBand[];
+}
+
+/** A rule across part of an item, in the item's frame. */
+export interface EffectBand {
+  /** Its ends along the item, 0..`length`. */
+  x0: number;
+  x1: number;
+  /** Its top and bottom edges, y down from the anchor line. */
+  y0: number;
+  y1: number;
+  fill: Fill | null;
+  stroke: Stroke | null;
 }
 
 /** A source shape. */

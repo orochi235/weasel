@@ -1,18 +1,5 @@
 import { useState } from 'react';
-import {
-  SceneCanvas,
-  asNodeId,
-  defaultPaintBounds,
-  solid,
-  stickyData,
-  useDepSource,
-  useLatest,
-  useScene,
-  useSceneTextEdit,
-  useSelection,
-  type ToolsApi,
-  type UseSceneTextEditReturn,
-} from '@weasel-js/core';
+import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, type ToolsApi } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 
 const W = 520, H = 340;
@@ -33,28 +20,14 @@ const INITIAL = [
   note('c', 30, 188, 'A note cuts its text at its edge, so this sentence, which runs on well past the bottom of the paper, is clipped there.', '#ffd6e0ff'),
 ];
 
-/** Publishes the canvas's text editor as the `textEdit` dep, so a new note
- *  opens with its caret and a click on a selected one edits it. A child of
- *  `<SceneCanvas>`, so its registration lands after the canvas's stub. */
-function TextEditDep({ edit }: { edit: UseSceneTextEditReturn }): null {
-  const ref = useLatest(edit);
-  useDepSource('textEdit', () => ({
-    startEdit: (id, opts) => ref.current.startEdit(id, opts),
-    isTextNode: (id) => ref.current.isTextNode(id),
-  }));
-  return null;
-}
-
 export function StickyNotesDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
-  const [frame, setFrame] = useState<HTMLDivElement | null>(null);
-  const edit = useSceneTextEdit(scene, frame);
   return (
     <div className="ckd-shape-tools-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <div className="ckd-canvas-frame" ref={setFrame} onDoubleClick={edit.onDoubleClick}>
+      <div className="ckd-canvas-frame">
         <SceneCanvas
           width={W}
           height={H}
@@ -65,12 +38,8 @@ export function StickyNotesDemo() {
           features={['pick', 'move', 'resize', 'edit']}
           defaultTools={['sticky', 'pencil', 'text']}
           initialActiveTool="sticky"
-          // The overlay stands in for the text it is editing; the note's paper stays.
-          layers={{ scene: { drawOne: edit.drawOne, paintBounds: defaultPaintBounds } }}
           onToolsCreated={setTools}
-        >
-          <TextEditDep edit={edit} />
-        </SceneCanvas>
+        />
       </div>
     </div>
   );

@@ -46,6 +46,9 @@ test('Tab crosses a described row in one stop, and the help opens for the contro
 
 test('a click on a described row\'s control opens no help', async () => {
   render(<Rows />);
+  // The pointer starts wherever an earlier file left it. Resting on the label, it opens the help by hover, and
+  // the tooltip, placed under the label, takes the click meant for the control.
+  await userEvent.hover(screen.getByRole('button', { name: 'Before' }));
   await userEvent.click(screen.getByRole('textbox', { name: 'Author' }));
   expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Author' }));
   await settle(900);

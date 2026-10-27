@@ -9,6 +9,8 @@ import { SceneCanvas } from '../../canvas/SceneCanvas';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from '../../canvas/surfaceContribution';
+import { useTools } from '../../tools/overlayBinding';
+import { WeaselProvider } from '../../WeaselProvider';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -25,6 +27,17 @@ function mount(feedback: SurfaceContribution, ambient: SurfaceContribution[] = [
     <SceneCanvas scene={scene} layers={{}} width={400} height={300} longPress={{ feedback }} ambient={ambient} />,
   );
   return r.container.querySelector('canvas')!;
+}
+
+/** A consumer-assembled tool set handed in as `tools`, whose ambient is `ambient` alone. */
+function Takeover({ feedback, ambient }: { feedback: SurfaceContribution; ambient: SurfaceContribution[] }) {
+  const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+  const tools = useTools({ active: null, registry: {}, ambient });
+  return <SceneCanvas scene={scene} layers={{}} width={400} height={300} tools={tools} longPress={{ feedback }} />;
+}
+
+function mountTakeover(feedback: SurfaceContribution, ambient: SurfaceContribution[]) {
+  return render(<WeaselProvider><Takeover feedback={feedback} ambient={ambient} /></WeaselProvider>).container.querySelector('canvas')!;
 }
 
 function capture(): { entry: SurfaceContribution; state: () => LongPressState | undefined } {
@@ -66,5 +79,21 @@ describe('<SceneCanvas> long-press state', () => {
     const canvas = mount(probe.entry);
     touchDown(canvas);
     expect(probe.state()?.get()?.armed).toBe(false);
+  });
+
+  it('installs the feedback beside a tools takeover, whose ambient says nothing of it', () => {
+    const probe = capture();
+    const canvas = mountTakeover(probe.entry, [bound]);
+    expect(probe.state()).toBeDefined();
+    touchDown(canvas);
+    expect(probe.state()?.get()).toMatchObject({ pointerType: 'touch', armed: true });
+  });
+
+  it('installs it once under a takeover that lists it in its own ambient', () => {
+    const probe = capture();
+    const attach = vi.fn(probe.entry.attach!);
+    const entry = { ...probe.entry, attach };
+    mountTakeover(entry, [bound, entry]);
+    expect(attach).toHaveBeenCalledTimes(1);
   });
 });

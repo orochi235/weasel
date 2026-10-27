@@ -1,12 +1,12 @@
-import { chevron } from '../../icons/scripts/lib/base.mjs';
+import { chevron, GRID_HEAD, px } from '../../icons/scripts/lib/base.mjs';
 import { BASE } from './base-glyphs.mjs';
 
 // delete, undo and redo are core's: packages/core/icons/history.mjs.
 
 // ── sort ─────────────────────────────────────────────────────────────────
-const sortArrowTip = [15.3, 14.8];
-const sortRules = `M3.6 5.6h7.2M3.6 10h8.8M3.6 14.4h5`;
-const sortArrow = `M15.3 5.4v9.4`;
+const sortArrowTip = [px(12), px(12)];
+const sortRules = `M3.6 ${px(4)}h7.2M3.6 ${px(8)}h8.8M3.6 ${px(12)}h5`;
+const sortArrow = `M${px(12)} ${px(4)}V${px(12)}`;
 
 export const ACTIONS = {
   filter: `<path d="M3.4 4.6h13.2L11.8 11v5.4L8.2 14.8V11z"/>`,
@@ -17,7 +17,7 @@ export const ACTIONS = {
   sort: `
     <path d="${sortRules}"/>
     <path d="${sortArrow}"/>
-    <path d="${chevron(sortArrowTip, [0, 1], 2.6, 40)}"/>`,
+    <path d="${chevron(sortArrowTip, [0, 1], ...GRID_HEAD)}"/>`,
 
   // Export keeps the tray-and-arrow; snapshot takes the camera. One word was
   // doing both jobs and the tray reads as download, not "capture this state".

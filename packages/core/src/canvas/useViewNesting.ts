@@ -17,7 +17,7 @@ export const NO_RECT: ViewRect = { x: 0, y: 0, w: 0, h: 0 };
 export interface OuterFrame { view: View; dims: Dims; origin: { x: number; y: number }; clip?: ViewRect }
 
 /** The props the nesting reads, as of the last committed render. */
-export type ViewNestingInputs = Pick<CanvasViewProps, 'parent' | 'bounds' | 'layers' | 'layerVisibility' | 'layerOrder'>;
+export type ViewNestingInputs = Pick<CanvasViewProps, 'parent' | 'follows' | 'bounds' | 'layers' | 'layerVisibility' | 'layerOrder'>;
 
 /** A view rect's size, as the `Dims` its camera looks through. */
 export const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
@@ -67,20 +67,40 @@ export function useViewNesting(
     return p === undefined ? undefined : registry?.get(p);
   }, [live, registry]);
 
+  // Set while this view asks the view it follows, so two views following each
+  // other find nothing to follow rather than recursing.
+  const following = useRef(false);
+  /** `read` asked of the view this one follows, while it names a live one. */
+  const ofFollowed = useCallback(<T>(read: (reg: ViewRegistration) => T): { value: T } | null => {
+    const id = live.current.follows?.() ?? null;
+    const reg = id === null || following.current ? undefined : registry?.get(id);
+    if (!reg) return null;
+    following.current = true;
+    try {
+      return { value: read(reg) };
+    } finally {
+      following.current = false;
+    }
+  }, [live, registry]);
+
   /** The layers this view draws, in the order it draws them: of the surface's,
-   *  or of what the view it is nested in draws. */
+   *  or of what the view it is nested in or follows draws. */
   const drawnLayers = useCallback((): readonly RenderLayer<unknown>[] => {
+    const followed = ofFollowed((reg) => reg.drawnLayers());
+    if (followed) return viewPaintedLayers(followed.value, live.current);
     if (live.current.parent !== undefined) return viewPaintedLayers(parentReg()?.drawnLayers() ?? [], live.current);
     return viewPaintedLayers(registry?.surface()?.layers() ?? [], live.current);
-  }, [registry, live, parentReg]);
+  }, [registry, live, parentReg, ofFollowed]);
 
   const [sceneLayerGate] = useState(createSceneLayerGate);
   /** What this view's picks, marquees and select-alls ask of a scene layer:
-   *  painted here, and in every view this one is nested in. */
+   *  painted here, and in every view this one is nested in or follows. */
   const layerIsPainted = useCallback((layerId: string): boolean => {
     if (!sceneLayerGate(registry?.surface()?.layers() ?? [], live.current)(layerId)) return false;
+    const followed = ofFollowed((reg) => reg.layerIsPainted(layerId));
+    if (followed) return followed.value;
     if (live.current.parent === undefined) return true;
     return parentReg()?.layerIsPainted(layerId) ?? false;
-  }, [registry, sceneLayerGate, live, parentReg]);
+  }, [registry, sceneLayerGate, live, parentReg, ofFollowed]);
   return { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted };
 }

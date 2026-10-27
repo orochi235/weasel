@@ -82,10 +82,20 @@ function useKeyedInstall(
   }, []);
 }
 
+const NO_SURFACE: readonly SurfaceContribution[] = [];
+
+/**
+ * `surface` is the canvas's own entries installed beside a takeover, which the
+ * takeover's `ToolsApi` does not hold: their deps, `watch`, `attach`, frame
+ * hooks and overlay install here, the overlay as a registered layer since no
+ * tool set lists it. Their actions are the canvas's standard actions, so they
+ * are not registered again.
+ */
 export function useContributionRoles(
   tools: ToolsApi,
   api: CanvasExtensionApi | null,
   versionCheck: VersionCheck = 'warn',
+  surface: readonly SurfaceContribution[] = NO_SURFACE,
 ): void {
   const registry = useActionsRegistry();
   const depRegistry = useOptionalDepRegistry();
@@ -119,7 +129,7 @@ export function useContributionRoles(
     return () => { for (const r of releases) r(); };
   }, [menuHost, toolRegistry, ambient]);
 
-  const entries = contributionEntries(tools);
+  const entries = [...contributionEntries(tools), ...surface];
   // Development only for a warning; a strict surface asked to be stopped, so
   // it throws in every build.
   if (versionCheck === 'strict' || (versionCheck === 'warn' && isDev())) {
@@ -135,6 +145,11 @@ export function useContributionRoles(
     if (watch && depRegistry) installs.set(watch, () => watch(() => depRegistry.changed?.()));
     const attach = entry.attach;
     if (attach && api) installs.set(attach, () => attach(api, reader));
+  }
+  for (const entry of surface) {
+    const overlay = entry.overlay;
+    if (!overlay || !api) continue;
+    for (const layer of Array.isArray(overlay) ? overlay : [overlay]) installs.set(layer, () => api.registerLayer(layer));
   }
   useKeyedInstall(installs);
   useContributionFrameHooks(entries, api, reader);

@@ -59,16 +59,14 @@ export function createMeasurements(options: { layer: string }): Measurements {
 
 
 /** The measurement nodes on `ms.layer`, oldest first. */
-export function measureIds(scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes'>, ms: Pick<Measurements, 'layer'>): NodeId[] {
-  return scene.renderOrderNodes()
-    .filter((n) => n.layer === ms.layer && measurementOf(n) !== null)
-    .map((n) => n.id);
+export function measureIds(scene: Pick<Scene<unknown, string, unknown>, 'nodesOnLayer'>, ms: Pick<Measurements, 'layer'>): NodeId[] {
+  return scene.nodesOnLayer(ms.layer).filter((n) => measurementOf(n) !== null).map((n) => n.id);
 }
 
 /** The measurement commands act on: the picked one while it is still in the
  *  scene, else the newest. */
 export function currentMeasureId(
-  scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes' | 'get'>,
+  scene: Pick<Scene<unknown, string, unknown>, 'nodesOnLayer' | 'get'>,
   ms: Pick<Measurements, 'layer' | 'picked'>,
 ): NodeId | null {
   const picked = ms.picked.get();

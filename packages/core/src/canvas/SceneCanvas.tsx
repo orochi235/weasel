@@ -44,10 +44,11 @@ import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
 import { useGroupEntryContribution } from 'tools/builtin/select/groupEntry';
 import { useNodeKinds } from './SceneCanvas/useNodeKinds';
+import { DefaultTextEditDep, useCanvasTextEditor } from './SceneCanvas/defaultTextEditor';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
-import { chromeColorOf, watchThemeOf } from './accentColor';
+import { useChromeColor } from './accentColor';
 import { ENTERED_FRAME_COLOR, ENTERED_FRAME_TOKEN } from 'domains/selection/enteredGroupFrame';
 export { SCENE_CANVAS_FEATURES, type Feature } from './SceneCanvas/features';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
@@ -99,12 +100,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
   useEffect(() => publishPreviews(scene, dispatcher), [scene, dispatcher]);
 
-  const frameColor = useMemo(() => ({
-    read: () => chromeColorOf(internalCanvasRef.current, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR),
-    changed: (fn: () => void) => watchThemeOf(() => internalCanvasRef.current, fn),
-  }), []);
+  const frameColor = useChromeColor(internalCanvasRef, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR);
+  const { editor: textEditor, layers } = useCanvasTextEditor(scene as Scene<TData, string, unknown>, internalCanvasRef, props);
   const layered = useSceneCanvasLayers({
-    layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
+    layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
     poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
@@ -170,6 +169,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       <SurfaceDeclarations views={props.views} entries={contributionEntries(tools.tools)} added={addedViews} />
+      <DefaultTextEditDep editor={textEditor} onDoubleClick={enabled.has('edit')} />
       {props.children}
     </CanvasKitProviders>
   );

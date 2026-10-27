@@ -59,6 +59,18 @@ describe('textEffectItems', () => {
     expect(bounds(scaled)).toEqual(twice);
   });
 
+  it("a cluster's decoration rules come as bands, grown with the glyphs", () => {
+    const ruled: TextOutlineSource = { text: 'Hi', style: { fontFamily: 'bars', fontSize: 100, underline: true }, fill: INK };
+    const plain = textEffectItems(ruled, POSE);
+    expect(plain.map((it) => it.bands?.length)).toEqual([1, 1]);
+    const [band] = plain[0]!.bands!;
+    expect(band).toMatchObject({ x0: 0, x1: 60, fill: INK, stroke: null });
+    expect(band!.y1).toBeGreaterThan(band!.y0);
+    const [twice] = textEffectItems(ruled, { ...POSE, transform: [2, 0, 0, 2] })[0]!.bands!;
+    expect(twice).toEqual({ ...band, x0: 0, x1: 120, y0: band!.y0 * 2, y1: band!.y1 * 2 });
+    expect(textEffectItems(text('Hi'), POSE)[0]!.bands).toEqual([]);
+  });
+
   it('empty and space-only text has no ink', () => {
     expect(textEffectItems(text(''), POSE)).toEqual([]);
     const spaces = textEffectItems(text('  '), POSE);

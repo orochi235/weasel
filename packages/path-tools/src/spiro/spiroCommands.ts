@@ -9,9 +9,13 @@ import {
   type NodeId, type Op, type SceneNode,
 } from '@weasel-js/core';
 import { respiroWithKind, spiroOf, withoutSpiro } from './spiroShape';
-import { icon } from '../icons.gen';
+import { icon, type PathToolsIconName } from '../icons.gen';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
+
+const KIND_ICONS: Record<SpiroKind, PathToolsIconName> = {
+  smooth: 'spiroSmooth', g4: 'spiroG4', corner: 'spiroCorner', left: 'spiroLeft', right: 'spiroRight',
+};
 
 const KIND_LABELS: Record<SpiroKind, string> = {
   smooth: 'Smooth spiro point',
@@ -58,7 +62,7 @@ export const setSpiroKindAction: Action & { requires: string[] } = {
   label: 'Set spiro point kind',
   tags: pathOperationTags('command'),
   group: 'spiro',
-  variants: SPIRO_KINDS.map((kind) => ({ key: kind, label: KIND_LABELS[kind], params: { kind } })),
+  variants: SPIRO_KINDS.map((kind) => ({ key: kind, label: KIND_LABELS[kind], icon: icon(KIND_ICONS[kind]), params: { kind } })),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'scene', 'applyOps'],
   invoker: {

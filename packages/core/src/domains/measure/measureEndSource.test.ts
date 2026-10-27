@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { SnapMods } from 'interactions/actions/snapDep';
@@ -61,5 +61,13 @@ describe('measureAt', () => {
   it('finds an end where it is shown', () => {
     const s = shownMoved(scene());
     expect(measureAt(s, { layer: 'main' }, { x: 199, y: 50 }, 4)).toEqual({ id: 'm', part: 'end' });
+  });
+
+  it("reads only the measurement layer's nodes, not the whole scene", () => {
+    const s = scene();
+    const walk = vi.spyOn(s, 'renderOrderNodes');
+    expect(measureAt(s, { layer: 'main' }, { x: 99, y: 50 }, 4)).toEqual({ id: 'm', part: 'end' });
+    // A proxy for the cost: a hit test per pointer move should not walk every node of every layer.
+    expect(walk).not.toHaveBeenCalled();
   });
 });

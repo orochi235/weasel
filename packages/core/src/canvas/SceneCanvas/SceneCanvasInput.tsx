@@ -139,6 +139,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   useToolKeybindings({
     internalTools: p.tools.internal,
     toolsTakeover: p.tools.takeover ?? undefined,
+    surface: p.tools.surface,
     enableKeybindings,
     modes: props.modes,
     canvasApi: canvas.ready ? canvas.apiRef.current : null,

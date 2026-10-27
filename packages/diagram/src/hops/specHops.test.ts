@@ -26,6 +26,15 @@ describe('createSpecHops', () => {
     expect(edgeOf(specs, AB).hops).toBeUndefined();
   });
 
+  it('finds a crossing at an end inside a container, where that end draws', () => {
+    const data: DiagramData = {
+      ...DATA,
+      containers: [{ id: 'k', role: 'container', label: 'K', members: ['c', 'd'], box: { x: 180, y: -180, width: 140, height: 380 }, pinned: true }],
+    };
+    const specs = createSpecHops(6)(diagramScene(data, { layout: 'none' }));
+    expect(edgeOf(specs, CD).hops).toEqual([{ at: { x: 250, y: 20 }, over: [AB], r: 6 }]);
+  });
+
   it('drops hops a spec carried once its edges no longer cross', () => {
     const hop = createSpecHops(5);
     const crossed = hop(diagramScene(DATA, { layout: 'none' }));

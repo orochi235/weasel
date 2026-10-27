@@ -233,6 +233,21 @@ describe('diagramScene', () => {
     expect(labelUnderCover({ at: 0.3, offset: 12, dodge: false })).toEqual({ at: 0.3, offset: 12, dodge: false });
   });
 
+  it('moves a label off a container member covering it, where the member draws', () => {
+    const data: DiagramData = {
+      nodes: [
+        { id: 'a', lines: [], at: { x: 0, y: 0 }, width: 100, height: 40, pinned: true },
+        { id: 'b', lines: [], at: { x: 400, y: 0 }, width: 100, height: 40, pinned: true },
+        { id: 'cover', lines: [], at: { x: 200, y: 0 }, width: 100, height: 40, pinned: true },
+      ],
+      edges: [{ from: 'a', to: 'b', label: 'note', labelPlacement: { at: 0.5, offset: 0 } }],
+      containers: [{ id: 'k', role: 'container', label: 'K', members: ['cover'], box: { x: 150, y: -60, width: 200, height: 160 }, pinned: true }],
+    };
+    const specs = createSpecLabelPlacer()(diagramScene(data, { layout: 'none' }));
+    const label = (specs.find((s) => s.id === `${edgeIdOf(data.edges[0]!)}/label`)!.data?.diagram as { label: unknown }).label;
+    expect(label).toHaveProperty('placed');
+  });
+
   it('takes a layout by name, or a function given barycenter under partial layoutOptions', () => {
     let got: unknown;
     diagramScene(DATA, { layout: (_g, o) => ((got = o), new Map()), layoutOptions: { direction: 'right' } });

@@ -97,7 +97,7 @@ export { installAvoidRouting, routeDataOps } from './avoid/install';
 export { DIAGRAM_PASS_ORDER } from './passOrder';
 export type { AvoidRouting, AvoidRoutingOptions } from './avoid/install';
 export { useAvoidRouting } from './avoid/useAvoidRouting';
-export { createSpecRouter } from './avoid/specRoutes';
+export { createSpecRouter, type SpecRouterOptions } from './avoid/specRoutes';
 export { DEFAULT_HOP_SIZE, HOPS_DOC_KEY } from './hops/types';
 export type { EdgeHop, HopsDocValue } from './hops/types';
 export { edgeHops } from './hops/crossings';

@@ -1,12 +1,6 @@
 import type { Paint, TexturePaint } from '@weasel-js/paint';
-import {
-  DEFAULT_TEXT_STYLE,
-  type LaidOutGroup,
-  type LaidOutDecoration,
-  verticalAlignOffset,
-  cachedLayoutRuns,
-  cachedPaintRuns,
-} from '@weasel-js/text';
+import { type LaidOutGroup, type LaidOutDecoration, cachedPaintRuns } from '@weasel-js/text';
+import { laidOutText } from '../textLayout';
 import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GlMat3 } from '@weasel-js/geom';
@@ -55,15 +49,6 @@ import { type ScreenRect, renderPaintToScratch, bindScratchPaint } from './scrat
 export const OUTLINE_MIN_SCREEN_PX = 48;
 
 export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
-  // Read field by field rather than through `resolveTextStyle`, which builds a
-  // whole resolved style per command per frame and needs four of its fields.
-  const style = cmd.style;
-  const lineHeight = style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight;
-  const align = cmd.align ?? style.align ?? DEFAULT_TEXT_STYLE.align;
-  const direction = cmd.direction ?? style.direction ?? DEFAULT_TEXT_STYLE.direction;
-  const tabSize = style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize;
-  const maxWidth = cmd.maxWidth ?? Infinity;
-
   // Screen threshold → world threshold: a 12px label at 8× zoom is 96 screen
   // pixels of text and wants outlines exactly as much as a 96px heading does.
   const minScreen = ctx.textOutlineMinScreenSize ?? OUTLINE_MIN_SCREEN_PX;
@@ -71,21 +56,12 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     ? minScreen / modelScale(ctx.state.transform)
     : undefined;
 
-  const laid = cachedLayoutRuns(cmd.runs, {
-    maxWidth, alignWidth: cmd.width, lineHeight, align, direction, tabSize, justify: cmd.justify,
-  });
+  const { laid, dx, dy } = laidOutText(cmd);
   const { groups, decorations } = cachedPaintRuns(laid, cmd.runs, { outlineMinSize });
   // Decorations are checked too: text whose glyphs are all ink-free — every
   // one still awaiting a dynamic-atlas bake, say — produces no groups at all
   // while still carrying a rule that has to be drawn.
   if (groups.length === 0 && decorations.length === 0) return;
-
-  // `laid` is origin-relative, so this is the command's position plus the
-  // verticalAlign shift. Applied at upload time, not baked in: a cached layout
-  // that absorbed either offset would gain another one every frame and slide
-  // off the page.
-  const dx = cmd.x;
-  const dy = cmd.y + verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
 
   for (const group of groups) {
     if (group.source === 'outline') drawTextOutlineGroup(ctx, group, dx, dy);

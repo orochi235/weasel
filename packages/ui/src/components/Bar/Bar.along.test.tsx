@@ -95,6 +95,15 @@ describe('Bar along a curve', () => {
     expect(within(menu).getAllByRole('button').map((b) => b.textContent)).toEqual(['c', 'd', 'e', 'f']);
   });
 
+  test('right to left, menu mode starts the run at its right end and puts More at its left', () => {
+    const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
+    render(<div dir="rtl"><Bar schema={six} shape={shape} overflow="menu" label="Tools" /></div>);
+    const xs = items().map((el) => placed(el).x);
+    expect(xs[0]!).toBeGreaterThan(xs[1]!);
+    expect(placed(more()).x).toBeLessThan(Math.min(...xs));
+    expect(placed(items()[0]!).angle).toBeGreaterThan(0);
+  });
+
   test("an arc too short for any item keeps the More button alone at the run's center, holding every item", () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 10, start: 315, end: 45 });
     render(<Bar schema={six} shape={shape} overflow="menu" label="Tools" />);
@@ -166,6 +175,14 @@ describe('Bar along a curve: scroll mode', () => {
     expect(items().at(-1)).toHaveAttribute('data-clipped', 'past');
     expect(marks()).toEqual(['end']);
     expect(turn('end')).toBeCloseTo(pastEnd(10).angle - 90);
+  });
+
+  test('right to left, the chevron past the end sits at the left and points out of it', () => {
+    render(<div dir="rtl"><Bar schema={schema} shape={shape} label="Tools" /></div>);
+    expect(marks()).toEqual(['end']);
+    const end = runStationAt(trackRun(shape, 0, 1, { direction: 'rtl' }), trackRun(shape).length + 10, 0, 'follow');
+    expect(end.point.x).toBeLessThan(shape.at(0.5).point.x);
+    expect(turn('end')).toBeCloseTo(end.angle + 90);
   });
 
   test('the wheel scrolls the run, moving the chevron to the start', () => {

@@ -54,7 +54,7 @@ const mod = {
     render: () => null,
     play: async ({ canvasElement }) => {
       const box = outermost(canvasElement);
-      if (box.style.width || box.style.height) throw new Error(`the story's box is ${box.style.width} by ${box.style.height}`);
+      if (box.style.width || box.style.height !== '100vh') throw new Error(`the story's box is ${box.style.width} by ${box.style.height}`);
     },
   }),
   Throwing: story({
@@ -87,7 +87,7 @@ describe('runStory', () => {
     await expect(runStory(mod, 'Sized', FILE, AUTO_TITLE)).resolves.toBeUndefined();
   });
 
-  it('leaves a story with no viewport in an unsized box, even after a sized one', async () => {
+  it("gives a story with no viewport the page's height and no width, even after a sized one", async () => {
     await runStory(mod, 'Sized', FILE, AUTO_TITLE);
     await expect(runStory(mod, 'Unsized', FILE, AUTO_TITLE)).resolves.toBeUndefined();
   });

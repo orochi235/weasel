@@ -214,6 +214,34 @@ describe('textClusters', () => {
     expect(b.y + b.height).toBeCloseTo(-20, 1);
   });
 
+  it('carries each decoration rule across the slots it covers, on the baseline the outlines sit on', () => {
+    const style = { fontFamily: 'outline-inter', fontSize: 100 };
+    const cs = textClusters({
+      text: 'ab c', style, fill: INK,
+      runs: [{ text: 'ab ', underline: true, strikethrough: true }, { text: 'c' }],
+    });
+    expect(cs.map((c) => c.rules.map((r) => r.kind))).toEqual([
+      ['underline', 'strikethrough'], ['underline', 'strikethrough'], ['underline', 'strikethrough'], [],
+    ]);
+    for (const c of cs.slice(0, 3)) {
+      const [under, strike] = c.rules;
+      expect([under!.x0, under!.x1]).toEqual([0, expect.closeTo(c.advance, 6)]);
+      expect(under!.y0).toBeGreaterThan(0);
+      expect(under!.y1).toBeGreaterThan(under!.y0);
+      expect(strike!.y1).toBeLessThan(0);
+      expect(under!.fill).toEqual(INK);
+      expect(under!.y0).toBe(cs[0]!.rules[0]!.y0);
+    }
+    // An underlined space is the rule alone, where the flat outline draws it; an H stands on the baseline.
+    const box = { x: 0, y: 0, width: 1e6, height: 0 };
+    const rule = boundsOfPath(textToPath({ text: ' ', style: { ...style, underline: true }, fill: INK }, box));
+    const h = boundsOfPath(textToPath({ text: 'H', style, fill: INK }, box));
+    const baseline = h.y + h.height;
+    const [space] = textClusters({ text: ' ', style: { ...style, underline: true }, fill: INK });
+    expect([space!.rules[0]!.y0, space!.rules[0]!.y1])
+      .toEqual([expect.closeTo(rule.y - baseline, 3), expect.closeTo(rule.y + rule.height - baseline, 3)]);
+  });
+
   it('names itself in the errors it throws', () => {
     expect(() => textClusters(text('H', 'nowhere'))).toThrow(/^textClusters: /);
   });

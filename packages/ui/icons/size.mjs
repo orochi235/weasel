@@ -1,4 +1,4 @@
-import { chevron } from '../../icons/scripts/lib/base.mjs';
+import { chevron, GRID_HEAD, px } from '../../icons/scripts/lib/base.mjs';
 
 // Size: a bar, and arrows along the axis it grows on. `at` places a point given
 // along that axis and across it, so the tall glyphs and the wide ones are one drawing.
@@ -6,9 +6,7 @@ import { chevron } from '../../icons/scripts/lib/base.mjs';
 // Every coordinate is a pixel center at 16px 1x: `px(k)` is the center of pixel k, an odd multiple of
 // 0.625. So the shaft runs down pixel 7, and each head's barbs end two whole pixels back from its tip and two
 // either side of it, at 45 degrees; at 2.6 long and 40 degrees the heads closed up into dots at 1x.
-const px = (k) => 0.625 + 1.25 * k;
 const SHAFT = px(7);
-const HEAD = [2.5 * Math.SQRT2, 45];
 const tall = (t, c) => [c, t];
 const wide = (t, c) => [t, c];
 
@@ -16,7 +14,7 @@ const line = (at, t0, t1, c0 = SHAFT, c1 = SHAFT) => `M${at(t0, c0).join(' ')}L$
 const head = (at, tip, toward) => {
   const [x, y] = at(px(tip), SHAFT);
   const [dx, dy] = at(toward, 0);
-  return chevron([x, y], [dx, dy], ...HEAD);
+  return chevron([x, y], [dx, dy], ...GRID_HEAD);
 };
 const rule = (at, k) => `<path d="${line(at, px(k), px(k), px(3), px(11))}"/>`;
 const arrow = (at, from, tip) =>

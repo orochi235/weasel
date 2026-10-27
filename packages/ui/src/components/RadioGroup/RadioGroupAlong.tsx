@@ -1,6 +1,7 @@
 import { createContext, useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
 import { Label, RadioGroup as RACRadioGroup } from 'react-aria-components';
-import { runStationAt, trackRun, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { runStationAt, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { useReadingRun } from '../Along/useReadingRun';
 import { AlongContext } from '../Along/alongContext';
 import { placeStyle } from '../Along/placeOnRun';
 import { bendAt } from '../Along/runBend';
@@ -27,7 +28,7 @@ export type RadioGroupAlongProps = RadioGroupProps & { shape: TrackShape; align:
  */
 export function RadioGroupAlong({ label, description, errorMessage, children, className, shape, align, ...rest }: RadioGroupAlongProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
-  const run = useMemo(() => trackRun(shape), [shape]);
+  const run = useReadingRun(root, shape);
   const slots = useMemo(() => createRunSlots(), []);
   const gap = useRunGap(root);
   const host = useRunSlotHost({ slots, root, run, gap, align });

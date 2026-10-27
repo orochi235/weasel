@@ -5,8 +5,11 @@
  */
 import { faceMetricsOf, glyphGeneration } from '@weasel-js/font';
 import type { PolygonPath } from '@weasel-js/geom';
+import type { Fill, Stroke } from '@weasel-js/paint';
 import { concat, paintsOf, placedGlyphOutline } from './glyphOutlines';
+import { lineDecorations, type DecorationKind } from './layout/decorationMetrics';
 import { layoutRuns, type PlacedGlyph } from './layout/layoutRuns';
+import { runFaces } from './layout/paintRuns';
 import {
   outlineLayoutInput, type TextOutlineSource, type TextPaintPath, type TextToPathOptions,
 } from './textToPath';
@@ -22,6 +25,23 @@ export interface TextCluster {
   paths: TextPaintPath[];
   /** Height of the x-height's middle above the baseline. */
   middle: number;
+  /** The decoration rules crossing the slot, cut to it, in the frame `paths` use; underline, then strikethrough, then
+   *  overline. A rule running on into the next slot ends at `advance` here and starts at 0 there. */
+  rules: TextClusterRule[];
+}
+
+/** The stretch of one decoration rule inside a cluster's slot. */
+export interface TextClusterRule {
+  kind: DecorationKind;
+  /** Its ends along the slot, 0..`advance`. */
+  x0: number;
+  x1: number;
+  /** Its top and bottom edges, y down from the baseline. */
+  y0: number;
+  y1: number;
+  /** The paint its run wears, as the cluster's `paths` carry it. */
+  fill: Fill | null;
+  stroke?: Stroke;
 }
 
 /** Options for {@link textClusters}. */
@@ -40,7 +60,8 @@ const MIDDLE_FALLBACK = 0.25;
  * laid at the node's box origin with no pose applied; the lines after it are
  * dropped. The slots tile the
  * line: each cluster's `advance` runs to the next one's `x`, so the kerning
- * between two clusters belongs to the left one. Decoration rules are left out.
+ * between two clusters belongs to the left one. A decoration rule is cut into
+ * the slots it crosses (`rules`).
  *
  * Throws `TextOutlinesError` as `textToPath` does, except that a color
  * glyph, or one drawn by a fallback face with no outlines, keeps its slot
@@ -74,6 +95,9 @@ function clustersOf(data: TextOutlineSource, width: number, scale: number): Text
   const line = layoutRuns(runs, layoutOpts).lines[0];
   if (!line || line.cells.length === 0) return [];
   const { paints, paintOf } = paintsOf(runs);
+  const deco = lineDecorations(runs, runFaces(runs), (run) => String(paintOf[run]));
+  for (const g of line.glyphs) deco.add(g);
+  const lineRules = deco.end();
 
   const glyphOf: PlacedGlyph[] = new Array(line.cells.length);
   for (const g of line.glyphs) glyphOf[g.cell] = g;
@@ -98,6 +122,17 @@ function clustersOf(data: TextOutlineSource, width: number, scale: number): Text
     }
     const paths: TextPaintPath[] = [];
     parts.forEach((p, k) => { if (p.length > 0) paths.push({ ...paints[k]!, path: concat(p) }); });
+    const rules: TextClusterRule[] = [];
+    for (const r of lineRules) {
+      const x0 = Math.max(r.x0, left);
+      const x1 = Math.min(r.x1, right);
+      if (!(x1 > x0)) continue;
+      const { fill, stroke } = paints[paintOf[r.run]!]!;
+      rules.push({
+        kind: r.kind, x0: x0 - left, x1: x1 - left, y0: r.y0 - line.baselineY, y1: r.y1 - line.baselineY,
+        fill, ...(stroke ? { stroke } : {}),
+      });
+    }
     const first = glyphs[0]!;
     const xHeight = faceMetricsOf(first.resolved)?.xHeight;
     return {
@@ -105,6 +140,7 @@ function clustersOf(data: TextOutlineSource, width: number, scale: number): Text
       advance: right - left,
       paths,
       middle: (xHeight === undefined ? MIDDLE_FALLBACK : xHeight / 2) * first.fontSize,
+      rules,
     };
   });
 }

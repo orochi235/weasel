@@ -3,7 +3,7 @@
  * with each edge label moved off whatever covers it. Placement derives from
  * the specs, so it lives in them and is never reported back to the host.
  */
-import type { DerivedDep, RectPose } from '@weasel-js/core';
+import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf } from '../containers/trait';
 import { edgeRouter } from '../edge';
@@ -12,17 +12,15 @@ import type { DiagramSpec } from '../fromData';
 import { diagramGroupOf } from '../group';
 import { diagramLabelOf, type DiagramLabel } from '../labelTrait';
 import { diagramNodeOf } from '../trait';
+import { specDeps, specWorldPoses } from '../specWorld';
 import { placeLabels, type LabelPlacements, type PlaceLabel, type PlaceLabelsInput, type PlaceLabelsOptions, type PlaceRoute } from './place';
 
 const routeOf = edgeRouter<RectPose>();
 
 /** What placement reads off `specs`: every label moving. */
 function inputOf(specs: readonly DiagramSpec[]): PlaceLabelsInput {
-  const byId = new Map(specs.map((s) => [s.id as string, s]));
-  const dep = (id: unknown): DerivedDep<RectPose> | undefined => {
-    const s = byId.get(id as string);
-    return s === undefined ? undefined : { node: { ...s, parent: null } as never, pose: s.pose, path: null };
-  };
+  const world = specWorldPoses(specs);
+  const dep = specDeps(specs, world);
   const shapes: PlaceLabelsInput['shapes'][number][] = [];
   const routes: PlaceRoute[] = [];
   const labels: PlaceLabel[] = [];
@@ -42,7 +40,7 @@ function inputOf(specs: readonly DiagramSpec[]): PlaceLabelsInput {
     }
     const node = { id, kind: spec.kind, data: spec.data };
     if (spec.derivePose !== undefined || diagramContainerOf(node) !== null || diagramGroupOf(node) !== null || diagramNodeOf(node) === null) continue;
-    shapes.push({ id, box: spec.pose });
+    shapes.push({ id, box: world.get(id) ?? spec.pose });
   }
   return { shapes, routes, labels };
 }

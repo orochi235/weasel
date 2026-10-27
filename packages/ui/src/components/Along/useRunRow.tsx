@@ -108,9 +108,10 @@ const MORE_PAST_OUT = 10;
 /** A chevron at each end of a scrolled run that has items past it, pointing out along the run. */
 export function RunEnds({ row, run }: { row: RunRow; run: TrackRun }): ReactElement | null {
   if (!row.scrolls) return null;
-  // The chevron glyph points down, a quarter turn clockwise from the reading direction `angle` tips to.
+  // The chevron glyph points down, a quarter turn clockwise from the left to right `angle` tips to.
   const mark = (at: 'start' | 'end') => {
-    const style = placeStyle(runStationAt(run, at === 'start' ? -MORE_PAST_OUT : run.length + MORE_PAST_OUT, 0, 'follow'), at === 'start' ? 90 : -90);
+    const left = (at === 'start') === (run.direction === 'ltr');
+    const style = placeStyle(runStationAt(run, at === 'start' ? -MORE_PAST_OUT : run.length + MORE_PAST_OUT, 0, 'follow'), left ? 90 : -90);
     return (
       <span className={s.morePast} data-more-past={at} aria-hidden="true" style={style}>
         <Icon name={icon('chevron')} size={14} />

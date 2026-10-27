@@ -61,8 +61,14 @@ export interface Entry {
  * boundaries, in the left glyph's face and at its size, and through a
  * nonspacing mark. A run whose face has
  * no metrics contributes no entries but still takes up its source offsets.
+ *
+ * With `pool`, the entries are its objects, rewritten in place and grown as
+ * needed, so a caller that is done with them before it measures again
+ * allocates none: the entries of a label re-laid out every frame were a tenth
+ * of a HUD readout's garbage. They are then valid only until the next call
+ * given the same pool. A pool keeps at most `POOL_MAX` of them.
  */
-export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entry[] {
+export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?: Entry[]): Entry[] {
   const entries: Entry[] = [];
   /** The entry the next one kerns against; none across a break, a tab, or a
    *  run with no metrics. */
@@ -115,15 +121,11 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
         : 0;
       // A slot with nothing in it: no glyph, no width, and none of the
       // tracking or kerning a width would carry. Filled in place when it inks.
-      const blank: Entry = {
-        run: runIndex, cp, fontSize,
-        lineSize: Math.max(run.fontSize, run.strutSize ?? 0),
+      const blank = blankEntry(
+        pool, entries.length, runIndex, cp, fontSize, Math.max(run.fontSize, run.strutSize ?? 0),
         // Optional on the authored run type; absent, every y would go NaN.
-        baselineShift: run.baselineShift ?? 0,
-        srcIndex: srcStart, srcEnd, clusterEnd,
-        resolved, metrics, font: null, glyph: null,
-        advance: 0, tracking: 0, kerningBefore: 0, drawsInk: false,
-      };
+        run.baselineShift ?? 0, srcStart, srcEnd, clusterEnd, resolved, metrics,
+      );
 
       if (color) {
         entries.push(clusterEnd ? ink(blank, color, 0, tracking) : blank);
@@ -141,7 +143,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
         } else {
           // Its record in the run's own tier, for an atlas that draws one. It
           // never escalates: a face without a space still parts words.
-          const own = glyphIn(resolved, 32);
+          const own = glyphIn(resolved, 32, HIT);
           blank.font = own?.font ?? null;
           blank.glyph = own?.glyph ?? null;
           blank.advance = advance;
@@ -151,7 +153,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
           entries.push(prev);
         }
       } else {
-        const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp);
+        const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp, true, HIT);
         const entry = hit ? ink(blank, hit, kerningBefore, tracking) : blank;
         entries.push(entry);
         if (!mark) prev = entry;
@@ -159,6 +161,34 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
     }
   });
   return entries;
+}
+
+/** What `resolveGlyph` answers into, which `ink` copies out of at once. */
+const HIT: ResolvedGlyph = { resolved: null as unknown as ResolveResult, metrics: null as unknown as GlyphMetrics, advance: 0, font: null, glyph: null };
+
+/** The most entries a pool keeps, so one long text does not hold its entries for good. */
+const POOL_MAX = 4096;
+
+/** An entry with nothing in it — no glyph, no width — as `pool[i]` rewritten, or a new one. */
+function blankEntry(
+  pool: Entry[] | undefined, i: number, run: number, cp: number, fontSize: number, lineSize: number,
+  baselineShift: number, srcIndex: number, srcEnd: number, clusterEnd: boolean,
+  resolved: ResolveResult, metrics: GlyphMetrics,
+): Entry {
+  const e = pool?.[i];
+  if (!e) {
+    const made: Entry = {
+      run, cp, fontSize, lineSize, baselineShift, srcIndex, srcEnd, clusterEnd, resolved, metrics,
+      font: null, glyph: null, advance: 0, tracking: 0, kerningBefore: 0, tab: undefined, drawsInk: false,
+    };
+    if (pool && i < POOL_MAX) pool[i] = made;
+    return made;
+  }
+  e.run = run; e.cp = cp; e.fontSize = fontSize; e.lineSize = lineSize; e.baselineShift = baselineShift;
+  e.srcIndex = srcIndex; e.srcEnd = srcEnd; e.clusterEnd = clusterEnd; e.resolved = resolved; e.metrics = metrics;
+  e.font = null; e.glyph = null; e.advance = 0; e.tracking = 0; e.kerningBefore = 0; e.tab = undefined;
+  e.drawsInk = false;
+  return e;
 }
 
 /** Fill the empty slot `e` with `hit`, in place: one object a code point. An

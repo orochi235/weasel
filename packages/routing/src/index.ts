@@ -130,6 +130,7 @@ export type { DepRegistry, DepListing, DepSource } from './interactions/actions/
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
 export type { ActionsRegistry, ActionEntry, ActionsProp } from './interactions/actions/registry';
 export { resolveParams } from './interactions/actions/invoker';
+export { holdPreview, holdPreviewId } from './interactions/actions/holdPreview';
 export { overlaysOf } from './interactions/actions/overlay';
 export { tuneAction } from './interactions/actions/tuning';
 export type { ActionParams, ActionTuning, TunedBinding } from './interactions/actions/tuning';

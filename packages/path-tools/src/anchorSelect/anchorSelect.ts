@@ -13,6 +13,7 @@ import {
 import {
   depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep, type KeySpec,
 } from '@weasel-js/core';
+import { icon, type PathToolsIconName } from '../icons.gen';
 
 /** The group every action here is in, which an `ActionBar` can show. */
 export const ANCHOR_SELECTION_GROUP = 'anchorSelection';
@@ -31,12 +32,13 @@ const pathOpen = (deps?: ActionDeps): true | ActionDisabledReason =>
 /** A selection command bound to `key`; `needsSelection` when `pick` reads
  *  the current selection and so has nothing to do without one. */
 function makeSelectCommand(
-  id: string, label: string, key: KeySpec, needsSelection: boolean, pick: Pick,
+  id: PathToolsIconName, label: string, key: KeySpec, needsSelection: boolean, pick: Pick,
 ): Action & { requires: string[] } {
   const enabled = needsSelection ? requiresAnchorSelection : pathOpen;
   return {
     id,
     label,
+    icon: icon(id),
     group: ANCHOR_SELECTION_GROUP,
     tags: pathOperationTags('command'),
     defaultBinding: [{ spec: key, opts: { id: `${id}.key` } }],

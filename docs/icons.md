@@ -87,7 +87,9 @@ the chord instead only helps above radius 5. So end the curve early and carry th
 straight run at least as long as the barbs trail back.
 Pick where the curve ends so that run points along an axis or a diagonal. On a diagonal run use
 `chevron`'s spread of 45, which lays both barbs on the pixel axes; at 36–42 they sit a few degrees
-off and blur at 16px. A head also needs a shaft showing behind its barbs, or it reads as a caret.
+off and blur at 16px. A straight arrow at 16px puts its shaft and tip on pixel centers (`px(k)` in
+`packages/icons/scripts/lib/base.mjs`) and its head at `GRID_HEAD`, whose barbs end two whole pixels
+back and two aside. A head also needs a shaft showing behind its barbs, or it reads as a caret.
 A ring or an open arc is free to turn: before reshaping anything, slide its gap round until the
 head lands on the flattest stretch that is clear of other strokes.
 Where there is no room for a straight run, hang the head on the shaft instead of on its tangent:

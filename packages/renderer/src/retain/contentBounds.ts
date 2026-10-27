@@ -16,10 +16,10 @@ export interface DeviceRect {
  * The device pixels a retained group's `children` can paint, drawn under
  * `transform` inside `clips`, within a buffer `width × height` device pixels
  * that is `scale` device pixels to the CSS pixel. A group with `effects` is
- * grown by how far they reach (`effectsReach`). Text, a custom shader, and
- * effects that do not say how far they reach are bounded only by the clips
- * around them; with none, the bound is the whole buffer. Empty where nothing
- * lands inside it.
+ * grown by how far they reach (`effectsReach`), and text by its layout and
+ * the ink margins `textBox` allows it. A custom shader, and effects that do
+ * not say how far they reach, are bounded only by the clips around them; with
+ * none, the bound is the whole buffer. Empty where nothing lands inside it.
  */
 export function contentBounds(
   children: readonly DrawCommand[], transform: GlMat3, clips: readonly RetainedClip[],
