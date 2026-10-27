@@ -86,7 +86,9 @@ export function useLabPresentation(
   const still = useStill(start.still, clocks, labBody);
   const clocked = useStore(store, (s) => {
     const record = s.trials.find((t) => t.id === focusedTrialId);
-    return Boolean(record && s.instruments?.find((i) => i.name === record.instrumentName)?.clock);
+    const declared = record && s.instruments?.find((i) => i.name === record.instrumentName)?.clock;
+    // A function may resolve to no clock, which never registers one to wait for.
+    return Boolean(declared) && typeof declared !== 'function';
   });
   usePresentationMessages(
     presenting && !start.still && options.messages !== false,

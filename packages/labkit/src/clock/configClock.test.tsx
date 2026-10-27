@@ -1,11 +1,30 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
+import { useContext } from 'react';
 import { describe, expect, it } from 'vitest';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
-import { useTrialClock } from './hooks';
+import { type LabContextValue, useLabContext } from '../lab/LabContext';
+import { LabStoreContext } from '../state/context';
+import type { LabStore } from '../state/store';
+import { ClockRegistryContext } from './contexts';
+import { useTrialClock, useTrialClockHandle } from './hooks';
+import { TrialTransport } from './TrialTransport';
+
+let lab: LabContextValue | null = null;
+let store: LabStore | null = null;
+let rootOfClock: Element | null | undefined;
+
+function Probe() {
+  lab = useLabContext();
+  store = useContext(LabStoreContext)?.store ?? null;
+  const registry = useContext(ClockRegistryContext);
+  const handle = useTrialClockHandle();
+  rootOfClock = handle ? registry?.targets(handle)[0]?.() : undefined;
+  return null;
+}
 
 function Readout() {
   const clock = useTrialClock();
@@ -23,6 +42,8 @@ const make = (clock: Declare) =>
     render: (ctx) => (
       <>
         <Readout />
+        <TrialTransport />
+        <Probe />
         <button type="button" onClick={() => ctx.trial.clock?.seek(1500)}>
           seek
         </button>
@@ -74,5 +95,37 @@ describe('a clock declared from config', () => {
     expect(readout()).toHaveTextContent('none');
     await click('four');
     expect(readout()).toHaveTextContent('0/4000');
+  });
+});
+
+describe('a clock declared from config, in the trial', () => {
+  it('shows a transport only while it has a clock', async () => {
+    await mount((s) => (s > 0 ? { duration: s * 1000 } : null));
+    expect(screen.queryByRole('button', { name: 'Play' })).not.toBeNull();
+    await click('zero');
+    expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
+    await click('three');
+    expect(screen.queryByRole('button', { name: 'Play' })).not.toBeNull();
+  });
+
+  it('registers the trial root as the element showing it', async () => {
+    await mount((s) => ({ duration: s * 1000 }));
+    expect(rootOfClock).toBeInstanceOf(HTMLElement);
+    expect((rootOfClock as HTMLElement).classList.contains('lk-trial')).toBe(true);
+  });
+
+  it('holds a reopened time its first span cannot reach until the span grows', async () => {
+    await mount((s) => ({ duration: s * 1000 }));
+    const first = lab?.trials[0]?.id as string;
+    await act(async () => {
+      store?.getState().updateTrialClock(first, { elapsed: 3000, rate: 0 });
+      lab?.cloneTrial(first);
+    });
+    await act(async () => {
+      lab?.closeTrial(first);
+    });
+    expect(readout()).toHaveTextContent('2000/2000');
+    await click('four');
+    expect(readout()).toHaveTextContent('3000/4000');
   });
 });
