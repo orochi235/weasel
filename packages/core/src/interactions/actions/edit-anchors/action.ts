@@ -39,7 +39,7 @@
  */
 
 import type { Action } from '@weasel-js/routing';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
+import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay, WorldPoint } from '@weasel-js/routing';
 import type { EditAnchorsDep, SnapDep } from '../depSchema';
 import type { SnapBegin, SnapMods, SnapSession } from '../snapDep';
 import { inputSession } from 'domains/snap/session2d';
@@ -141,8 +141,6 @@ interface EditAnchorsScratch {
   others: readonly { id: string; path: PolygonPath }[];
 }
 
-type Point = { x: number; y: number };
-
 /**
  * An anchor drag's snap: a `point` session, begun on the first move, for
  * where the pressed anchor goes. The edited path offers no targets but what
@@ -151,8 +149,8 @@ type Point = { x: number; y: number };
  */
 function anchorDragSnap(
   snap: SnapDep | undefined,
-  press: { id: string; origin: Point; originPose: PolygonPath; dragging: readonly number[] },
-): { at(world: Point, mods: SnapMods): Point; end(): void } {
+  press: { id: string; origin: WorldPoint; originPose: PolygonPath; dragging: readonly number[] },
+): { at(world: WorldPoint, mods: SnapMods): WorldPoint; end(): void } {
   let session: SnapSession | null = null;
   return {
     at(world, mods) {
@@ -199,7 +197,7 @@ function handlePressOf(
 
 /** Move the dragged anchors to follow `to`, and the anchors the extensions
  *  weight by their shares. A weighted drag moves no symmetric images. */
-function moveAnchors(scratch: EditAnchorsScratch, to: Point): void {
+function moveAnchors(scratch: EditAnchorsScratch, to: WorldPoint): void {
   if (scratch.dragging.length === 0) return;
   const dx = to.x - scratch.anchorOrigin.x;
   const dy = to.y - scratch.anchorOrigin.y;

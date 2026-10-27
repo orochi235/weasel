@@ -5,7 +5,7 @@
  */
 import { useDepSource } from '@weasel-js/routing/react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import type { DebugSink } from '@weasel-js/routing';
+import type { DebugSink, WorldPoint } from '@weasel-js/routing';
 import type { SnapDep } from 'interactions/actions/snapDep';
 import { ownGeometryAt } from 'domains/paths/pathSnap/pathSnapSource';
 import type { View } from 'core/viewport/view';
@@ -22,8 +22,6 @@ import type { SnapReadoutDep } from 'domains/snap/readoutDep';
 import { rotationSnapSource } from 'domains/snap/rotationSource';
 import { pathSnapSource } from 'domains/paths/pathSnap/pathSnapSource';
 import type { SnapSource } from 'domains/snap/types';
-
-type Point = { x: number; y: number };
 
 /** What `begin` reads: the scene its probes come from and the sources it asks. */
 export interface SnapSessionSources {
@@ -92,7 +90,7 @@ export function useSnapDepSource(
         scene: s.scene,
         boxes: s.boxes(),
         sources,
-        ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }, reachPx) } : {}),
+        ...(wantsGeometry ? { geometryAt: (press: WorldPoint, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }, reachPx) } : {}),
         view: () => viewRef.current,
         reachPx,
         ...(s.poseDescriptor ? { poseDescriptor: s.poseDescriptor } : {}),

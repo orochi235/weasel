@@ -1,4 +1,4 @@
-import type { ResizeAnchor } from '@weasel-js/routing';
+import type { ResizeAnchor, WorldPoint } from '@weasel-js/routing';
 import type { View } from '@weasel-js/geom';
 import type { DebugSink } from '@weasel-js/routing';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -13,7 +13,6 @@ import { sceneProbeReads, sceneRotations, sceneSnapFrames, withSubtrees } from '
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapGesture, SnapSource } from './types';
 
-type Point = { x: number; y: number };
 type AnyScene = Scene<unknown, string, unknown>;
 
 /** What a session over a scene runs on: its subject's probes and boxes come
@@ -26,7 +25,7 @@ export interface SceneSessionInputs {
   view(): View | null;
   reachPx: number;
   store: SnapOutcomeStore;
-  geometryAt?: (press: Point, ids: readonly string[]) => Point | null;
+  geometryAt?: (press: WorldPoint, ids: readonly string[]) => WorldPoint | null;
   /** How a pose's origin is read. Default `AUTO_ORIGIN_PROJECTION`. */
   originProjection?: OriginProjection<unknown>;
   /** How a node's rotation is read. Default `AUTO_POSE_DESCRIPTOR`. */
@@ -72,18 +71,18 @@ export interface SnapSession2dOptions {
   sources: readonly SnapSource[];
   gesture: SnapGesture;
   /** World coords. */
-  press: Point;
+  press: WorldPoint;
   /** The subject, whose geometry offers no targets. */
   ids?: readonly string[];
   /** The container a subject not yet in the scene lands in. */
   parent?: string;
   /** Point gestures: the previous anchor, a line's start. */
-  origin?: Point;
+  origin?: WorldPoint;
   constrain?: SnapConstrain;
   /** Resize: the sides the drag pins. */
   handle?: ResizeAnchor;
   /** Rotate: the point the angle turns about. */
-  pivot?: Point;
+  pivot?: WorldPoint;
   /** Rotate: the subject's angle at press. */
   theta0?: number;
   /** Angle gestures: the reach as an angle, radians. */
