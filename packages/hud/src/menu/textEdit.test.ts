@@ -3,7 +3,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { HudDrawCtx } from '../widget';
 import type { MenuTextEntry } from '@weasel-js/menu';
 import { DEFAULT_MENU_METRICS as m, drawPanel, OPENED_VALUES } from './drawPanel';
-import { editKey, startEdit, type EditMods, type HudTextEdit } from './textEdit';
+import { composeEdit, editKey, insertText, startEdit, type EditMods, type HudTextEdit } from './textEdit';
 
 const entry: MenuTextEntry = { kind: 'text', key: 'name', label: 'Name', value: undefined, set: vi.fn() };
 
@@ -65,6 +65,26 @@ describe('editKey', () => {
     expect(editKey(sel, 'ArrowLeft', alt).edit).toMatchObject({ caret: 3, anchor: 3 });
   });
 
+  it('deletes a word with Alt+Backspace and Alt+Delete, or the selection when there is one', () => {
+    const alt = { alt: true };
+    expect(shown(run('one two  three', [['Backspace', alt]]))).toBe('one two  |');
+    expect(shown(run('one two  three', [['Backspace', alt], ['Backspace', alt]]))).toBe('one |');
+    expect(shown(run('one, two', ['Home', ['Delete', alt]]))).toBe('|, two');
+    expect(shown(run('one, two', ['Home', ['Delete', alt], ['Delete', alt]]))).toBe('|');
+    expect(shown(run('ab cd', [['ArrowLeft', { shift: true }], ['Backspace', alt]]))).toBe('ab c|');
+    expect(shown(run('ab', ['Home', ['Backspace', alt]]))).toBe('|ab');
+  });
+
+  it('holds a composition in place of the selection until it is entered', () => {
+    const sel = run('abcd', [['ArrowLeft', { shift: true }], ['ArrowLeft', { shift: true }]])!;
+    const composing = composeEdit(sel, 'に');
+    expect(composing).toMatchObject({ draft: 'abcd', caret: 2, anchor: 4, preedit: 'に' });
+    expect(composeEdit(composing, '')).not.toHaveProperty('preedit');
+    const entered = insertText(composing, '日本');
+    expect(shown(entered)).toBe('ab日本|');
+    expect(entered).not.toHaveProperty('preedit');
+  });
+
   it('counts a character outside the BMP as one', () => {
     expect(shown(run('a😀b', ['ArrowLeft', 'ArrowLeft', 'Backspace']))).toBe('|😀b');
   });
@@ -103,5 +123,16 @@ describe('drawPanel: a text row being typed into', () => {
     const sel = mid.find((c) => c.kind === 'path' && c.fill && JSON.stringify(c.fill).includes('#246'));
     expect(sel).toMatchObject({ path: { kind: 'rect', x: right - 3 * 7, width: 2 * 7 } });
     expect(atEnd.some((c) => JSON.stringify(c).includes('#246'))).toBe(false);
+  });
+
+  it('draws a composition where the selection was, underlined, with the caret after it', () => {
+    const cmds = draw(composeEdit({ ...startEdit(entry, 'abcd'), caret: 1, anchor: 3 }, 'xyz'));
+    const texts = cmds.flatMap((c) => (c.kind === 'text' ? [c.runs.map((r) => r.text).join('')] : []));
+    expect(texts).toContain('axyzd');
+    expect(caretX(cmds)).toBe(right - 1 * 7 + 1);
+    const strokes = cmds.filter((x) => x.kind === 'path' && x.stroke && !x.fill);
+    const underline = (strokes.at(-2) as { path: { coords: ArrayLike<number> } }).path.coords;
+    expect([underline[0], underline[2]]).toEqual([right - 4 * 7, right - 7]);
+    expect(cmds.some((c) => JSON.stringify(c).includes('#246'))).toBe(false);
   });
 });

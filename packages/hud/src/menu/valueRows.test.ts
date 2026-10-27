@@ -209,6 +209,27 @@ describe('createMenuWidget: value rows', () => {
     expect(row.set).toHaveBeenCalledExactlyOnceWith('L_ayer! 1');
   });
 
+  it('reports the caret of a running edit as its text input, and takes composition through it', () => {
+    const row = textRow();
+    const { w } = widget([row]);
+    const input = w.textInput!;
+    const heard = vi.fn();
+    input.subscribe(heard);
+    expect(input.read()).toBeNull();
+    type(w, ['ArrowDown', 'Enter']);
+    expect(heard).toHaveBeenCalled();
+    const p = w.bounds;
+    expect(input.read()).toEqual({
+      rect: { x: p.x + p.w - m.padX - 2, y: p.y + m.padY, w: m.padX + 2, h: m.rowHeight }, label: 'Name',
+    });
+    input.compose('に');
+    expect(textOf(w.draw(ctx) as DrawCommand[])).toContain('Layer 1に');
+    expect(input.read()!.rect.x).toBe(p.x + p.w - m.padX - 2);
+    input.insert('日本');
+    type(w, ['Enter']);
+    expect(row.set).toHaveBeenCalledExactlyOnceWith('Layer 1日本');
+  });
+
   it('does not edit a disabled text row', () => {
     const row = textRow({ disabled: true });
     const { w } = widget([row]);
