@@ -99,7 +99,7 @@ enumerated values and no default.
 - **`History.undo`/`redo` are callable while a journal is active**, which
   interleaves parent and journal ops against one adapter. Whether that should
   throw is a lifecycle decision, not an oversight to patch.
-- **`packages/core/src/features/paths/flatten.ts` holds a second copy of
+- **`packages/core/src/domains/paths/flatten.ts` holds a second copy of
   `flattenCubic`** with the same non-termination, and core's own
   `booleans.adapter.ts` is a parallel copy of geom's. Both are outside this
   review's area. The geom fixes do not reach them.

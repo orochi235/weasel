@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { pathSnapSource } from 'features/paths/pathSnap/pathSnapSource';
-import { gridSource, sceneOfPaths, sessionDep } from 'features/snap/testing/sessionDep';
-import type { SnapSource } from 'features/snap/types';
+import { pathSnapSource } from 'domains/paths/pathSnap/pathSnapSource';
+import { gridSource, sceneOfPaths, sessionDep } from 'domains/snap/testing/sessionDep';
+import type { SnapSource } from 'domains/snap/types';
 import type { SnapDep } from '../snapDep';
 import { editAnchorsAction } from './action';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';

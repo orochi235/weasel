@@ -1,7 +1,7 @@
 /** Part of the `@weasel-js/core` barrel. Text rendering and editing. */
 
 // ─── Text rendering / editing ───────────────────────────────────────────────
-export * from '../features/text';
+export * from '../domains/text';
 // Named rather than `export *`: a star re-export of an external package emits no
 // binding in core's bundle, and a consumer importing one of these through
 // `@weasel-js/core` fails to resolve it. Caught by `test:smoke:consumer`.

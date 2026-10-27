@@ -206,8 +206,8 @@ export type {
   DefaultTextData,
   TextEditDoubleClick,
   UseSceneTextEditReturn,
-} from '../features/text/useSceneTextEdit';
-export type { EditingDrawOne } from '../features/text/editingDrawOne';
+} from '../domains/text/useSceneTextEdit';
+export type { EditingDrawOne } from '../domains/text/editingDrawOne';
 export { textBoxOf, type TextNodeData, type TextOverflow } from '../canvas/nodeShapes/textPainter';
 export type { StyleToggle } from '@weasel-js/text-dom';
 export type { Vec2 } from '../core/geometry/vec2';

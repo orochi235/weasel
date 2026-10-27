@@ -1,7 +1,7 @@
 import type { RenderLayer } from '../core/layers/render';
-import type { SelectionOverlayLayerOpts } from 'features/selection/overlay';
+import type { SelectionOverlayLayerOpts } from 'domains/selection/overlay';
 import type { SceneSlotConfig } from './buildSceneLayer';
-import type { PathEditingOverlayStyle } from 'features/paths/pathEditingOverlayLayer';
+import type { PathEditingOverlayStyle } from 'domains/paths/pathEditingOverlayLayer';
 
 /** Standard slot names — render in this canonical order.
  *  `cellHighlight` is not an anchor for custom layers: it sits between the

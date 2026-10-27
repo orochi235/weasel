@@ -132,8 +132,8 @@ export {
   PATH_SNAP_KINDS,
   pathSnapGlyph,
   PATH_SNAP_LABELS,
-} from '../features/paths';
-export { hasEditablePath } from '../features/paths/editablePath';
+} from '../domains/paths';
+export { hasEditablePath } from '../domains/paths/editablePath';
 export type {
   Path,
   PolygonPath,
@@ -193,7 +193,7 @@ export type {
   PathSnapIndex,
   PathSnapKind,
   PathSnapQuery,
-} from '../features/paths';
+} from '../domains/paths';
 export {
   SHAPE_COUNT_RANGE,
   STAR_RATIO_RANGE,
@@ -208,8 +208,8 @@ export {
   type PolygonGenerator,
   type ShapeGenerator,
   type StarGenerator,
-} from '../features/paths/shapeGenerator';
-export { useAnchorFields, type AnchorFieldsApi } from '../features/paths/useAnchorFields';
+} from '../domains/paths/shapeGenerator';
+export { useAnchorFields, type AnchorFieldsApi } from '../domains/paths/useAnchorFields';
 export type { SetAnchorFieldParams } from '../interactions/actions/defaults/anchorFields';
 export type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/geom';
 
@@ -244,9 +244,9 @@ export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symme
 export { HANDLE_LOCK_ROLES, locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
 export {
   classifyPathStorage, pathEditPathOf, resolveEditablePathOf, storeEditablePath, type EditableShape,
-} from '../features/paths/editablePath';
-export { nodeOutline } from '../features/paths/strokeOutline';
-export { DEFAULT_OVERLAY_STYLE } from '../features/paths/anchorMarkers';
+} from '../domains/paths/editablePath';
+export { nodeOutline } from '../domains/paths/strokeOutline';
+export { DEFAULT_OVERLAY_STYLE } from '../domains/paths/anchorMarkers';
 
 // ─── Path effects: live blend, bend along, repeat along, and text along ────
 export {
@@ -276,10 +276,10 @@ export type {
   RepeatAlongEffect,
   TextAlongEffect,
 } from '../core/scene/pathEffects';
-export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../features/pathEffects';
-export { effectSourceFor, hiddenSourcesTakenWith, sourcesHiddenBy } from '../features/pathEffects/effectSources';
+export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../domains/pathEffects';
+export { effectSourceFor, hiddenSourcesTakenWith, sourcesHiddenBy } from '../domains/pathEffects/effectSources';
 export { sourcesOf } from '../core/scene/dependents';
-export { useEffectSourcesLayer } from '../features/pathEffects/useEffectSourcesLayer';
+export { useEffectSourcesLayer } from '../domains/pathEffects/useEffectSourcesLayer';
 
 // ─── Geometric constraints on a path's anchors ──────────────────────────────
 export {

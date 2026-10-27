@@ -5,13 +5,13 @@ import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapDep } from 'interactions/actions/snapDep';
-import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
-import type { SnapSource } from 'features/snap/types';
+import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
+import type { SnapSource } from 'domains/snap/types';
 import { useSnapDepSource, type SnapSessionSources } from './snap';
 
 const geometry = vi.hoisted(() => ({ calls: 0 }));
-vi.mock('features/paths/pathSnap/pathSnapSource', async (importActual) => {
-  const actual = await importActual<typeof import('features/paths/pathSnap/pathSnapSource')>();
+vi.mock('domains/paths/pathSnap/pathSnapSource', async (importActual) => {
+  const actual = await importActual<typeof import('domains/paths/pathSnap/pathSnapSource')>();
   return {
     ...actual,
     ownGeometryAt: (...args: Parameters<typeof actual.ownGeometryAt>) => {

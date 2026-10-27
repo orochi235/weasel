@@ -14,8 +14,8 @@ import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
 import type { SurfaceContribution } from './surfaceContribution';
-import type { VisibilityRules } from 'features/chrome-caps';
-import { never } from 'features/chrome-caps';
+import type { VisibilityRules } from 'domains/chrome-caps';
+import { never } from 'domains/chrome-caps';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { kind: 'rect' };

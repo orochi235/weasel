@@ -9,7 +9,7 @@ import { CanvasView } from './CanvasView';
 import type { AimHeldViewProps, CameraHeldViewProps, CanvasViewCommonProps } from './canvasViewProps';
 import type { CanvasViewCamera } from './canvasExtension';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import { rectAim } from 'features/viewports/aim';
+import { rectAim } from 'domains/viewports/aim';
 import type { View } from 'core/viewport/view';
 
 /** What a test sets on the view the harness mounts: either side, the common props optional. */

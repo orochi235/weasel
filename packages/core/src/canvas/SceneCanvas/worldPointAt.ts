@@ -1,4 +1,4 @@
-import type { ViewTarget } from 'features/viewports/viewResolver';
+import type { ViewTarget } from 'domains/viewports/viewResolver';
 import type { CanvasExtensionApi } from '../canvasExtension';
 
 /**

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { createScene } from 'core/scene/scene';
 import type { RectPose, Scene } from 'core/scene/types';
 import { createSnapSession2d } from './sceneSession2d';
@@ -39,5 +40,24 @@ describe('createSnapSession2d', () => {
     }).at({ x: 3, y: 4 }, { suspend: false, constrain: false });
     expect(seen[0].box).toBeUndefined();
     expect(seen[0].probes).toEqual([{ id: 'pointer', at: { x: 3, y: 4 }, role: 'pointer' }]);
+  });
+
+  it('hands sources each node\'s own frame: from its corner, along its axes, turned as it is drawn', () => {
+    const sc = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RIGID_POSE_COMPOSITION });
+    const g = sc.add({ kind: 'group', layer: 'main', pose: { x: 10, y: 20, width: 40, height: 20, rotation: Math.PI / 2 }, data: {} }) as string;
+    const seen: SnapCollect[] = [];
+    createSnapSession2d({
+      scene: sc as unknown as Scene<unknown, string, unknown>, view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+      sources: [spy(seen)], gesture: 'point', press: { x: 0, y: 0 },
+    }).at({ x: 1, y: 1 }, { suspend: false, constrain: false });
+    const frame = seen[0].frameOf?.(g);
+    // The corner is (-20, -10) from the center (30, 30); a quarter turn carries it to (10, -20).
+    const corner = frame!.toWorld({ x: 0, y: 0 });
+    expect(corner.x).toBeCloseTo(40, 9);
+    expect(corner.y).toBeCloseTo(10, 9);
+    const back = frame!.toLocal(frame!.toWorld({ x: 3, y: 7 }))!;
+    expect(back.x).toBeCloseTo(3, 9);
+    expect(back.y).toBeCloseTo(7, 9);
+    expect(seen[0].frameOf?.('nowhere')).toBeUndefined();
   });
 });

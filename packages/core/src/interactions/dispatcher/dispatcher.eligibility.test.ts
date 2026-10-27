@@ -13,7 +13,7 @@ import type { ActionsRegistry } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { InputEvent } from '@weasel-js/routing';
-import type { RuleCtx } from '../../features/chrome-caps';
+import type { RuleCtx } from '../../domains/chrome-caps';
 
 function makeRegistry(actions: Action[]): ActionsRegistry {
   const map = new Map(actions.map((a) => [a.id, a]));

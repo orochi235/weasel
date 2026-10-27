@@ -126,13 +126,13 @@ export {
   registerContentHandler,
   openFilePicker,
   kitTextHandler,
-} from '../features/ingestion';
+} from '../domains/ingestion';
 export type {
   ContentHandlerEntry,
   IngestCtx,
   IngestItem,
   OpenFilePickerOptions,
-} from '../features/ingestion';
+} from '../domains/ingestion';
 
 // ─── WeaselProvider: mounts all five kit-root contexts in one wrap ──────────
 export { WeaselProvider } from '../WeaselProvider';
@@ -140,10 +140,10 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 
 // ─── Layer primitives: RenderLayer, ordered children ────────────────────────
 export * from '../core/layers/render';
-export { workspaceTintLayer, modeDecorationLayer } from '../features/modes/modeLayers';
-export type { WorkspaceTintLayerOptions } from '../features/modes/modeLayers';
-export { modeTriggers } from '../features/modes/modeTriggers';
-export type { ModeTriggerHandlers } from '../features/modes/modeTriggers';
+export { workspaceTintLayer, modeDecorationLayer } from '../domains/modes/modeLayers';
+export type { WorkspaceTintLayerOptions } from '../domains/modes/modeLayers';
+export { modeTriggers } from '../domains/modes/modeTriggers';
+export type { ModeTriggerHandlers } from '../domains/modes/modeTriggers';
 export { createChildrenLayer } from '../core/layers/children';
 export type { CreateChildrenLayerOpts } from '../core/layers/children';
 

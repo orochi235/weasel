@@ -6,7 +6,7 @@ import type { NodeId } from 'core/scene/types';
 import type { InsertDep, SnapDep } from '../depSchema';
 import { SHAPE_KINDS, shapeKindsWhere } from 'core/shapeKinds';
 import { createScene } from 'core/scene/scene';
-import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
+import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
 
 // ---------------------------------------------------------------------------
 // Stub insert dep

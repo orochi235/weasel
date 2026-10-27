@@ -11,7 +11,7 @@ import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
-import { createViewResolver } from 'features/viewports/viewResolver';
+import { createViewResolver } from 'domains/viewports/viewResolver';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 import { viewportDragPanAction } from '../actions/defaults/viewportDragPan';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyToPoint, rotateAboutPoint } from '@weasel-js/geom';
-import { poseFrameInverseOf, poseFrameOf, poseLinearOf } from './poseFrame';
+import { boxFrameOf, poseFrameInverseOf, poseFrameOf, poseLinearOf } from './poseFrame';
 
 const BOX = { x: 10, y: 20, width: 40, height: 20 };
 
@@ -47,5 +47,26 @@ describe('poseFrameInverseOf', () => {
 
   it('is null for a singular transform', () => {
     expect(poseFrameInverseOf({ ...BOX, transform: [1, 0, 0, 0] })).toBeNull();
+  });
+});
+
+describe('boxFrameOf', () => {
+  it('puts the origin of the box\'s own coordinates on its corner', () => {
+    expect(applyToPoint(boxFrameOf(BOX)!, 0, 0)).toEqual([10, 20]);
+    expect(applyToPoint(boxFrameOf(BOX)!, 40, 20)).toEqual([50, 40]);
+  });
+
+  it('turns them with the box, about its center', () => {
+    const frame = boxFrameOf({ ...BOX, rotation: Math.PI / 2 })!;
+    // The corner is (-20, -10) from the center (30, 30); a quarter turn
+    // carries that to (10, -20).
+    const [x, y] = applyToPoint(frame, 0, 0);
+    expect(x).toBeCloseTo(40, 9);
+    expect(y).toBeCloseTo(10, 9);
+  });
+
+  it('is null for a pose that is not a box', () => {
+    expect(boxFrameOf({ rotation: 1 })).toBeNull();
+    expect(boxFrameOf(undefined)).toBeNull();
   });
 });

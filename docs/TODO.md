@@ -28,15 +28,8 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [maintainer] `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
-  (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
-  bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
-  Ruled 2026-10-11: the directory and the taxonomy's term take a new word, and the prop keeps
-  `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
-  its imports, and the section of the taxonomy.
-
 - **(P3) [agent] External-content ingestion — follow-ups.** The pipeline is in
-  `packages/core/src/features/ingestion/` (its README is the map). Left:
+  `packages/core/src/domains/ingestion/` (its README is the map). Left:
   (a) an insertion ghost under the pointer during a drag. A ghost needs two things nothing has
   yet: somewhere for an action to draw while it is only being predicted (`ingest` is an immediate
   action, and a dragover never invokes it), and what to draw, since a browser withholds a dragged
@@ -49,7 +42,7 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [maintainer] The image and SVG drop handlers could leave core.** `kitImageHandler` /
   `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed), and `openFilePicker` in
-  `packages/core/src/features/ingestion/` are about 300 lines no kernel path needs; the registry,
+  `packages/core/src/domains/ingestion/` are about 300 lines no kernel path needs; the registry,
   the `ingest` action, the `ingestion` dep, and the weasel-JSON handler stay, since Cmd+V of the
   canvas's own content runs through them. Moving them makes a file drop do nothing on a bare
   `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
@@ -207,7 +200,7 @@ Owner tags, after the priority (2026-10-26):
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
 - **(P2) [maintainer] Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
-  re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
+  re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `domains/pathEffects/`).
 - **(P2) [maintainer] Tune Trim segment hands-on, with the maintainer driving.** First-draft click reach (6
   screen px, `DEFAULT_STROKE_REACH_PX` in `packages/path-tools/src/shared/scenePaths.ts`), the preview's look (the
   `cut` overlay role's red dash at width 3, `packages/path-tools/src/trim/piecePreview.ts`), and its tool key,
@@ -290,11 +283,11 @@ Owner tags, after the priority (2026-10-26):
   a default `'path-snap'` source; every path kind on, `nearest` included, once a consumer registers
   `pathSnapSource()`; the readout's glyphs, its fixed orange, and where a label sits; Ctrl to
   suspend; and that draw turns on the grid, measurement ends and anchors but not the other path kinds
-  ([`docs/snapping.md`](./snapping.md), `packages/core/src/features/snap/`,
-  `packages/core/src/features/paths/pathSnap/`).
+  ([`docs/snapping.md`](./snapping.md), `packages/core/src/domains/snap/`,
+  `packages/core/src/domains/paths/pathSnap/`).
 - **(P3) [maintainer] Equal spacing on a turned resize, and where its alignment marks sit.** Decision for the
   maintainer (2026-10-18). A resize whose frame turns or skews the box moves no side of its
-  axis-aligned extent alone, so `resizeEdges` (`packages/core/src/features/snap/resizeBox.ts`)
+  axis-aligned extent alone, so `resizeEdges` (`packages/core/src/domains/snap/resizeBox.ts`)
   answers no edges and `spacingSnapSource` offers nothing; alignment still runs, but its marks span
   the box at the press rather than where it lands. Open question: should spacing on a turned box
   measure its extent, its own frame, or stay off?
@@ -440,7 +433,7 @@ Owner tags, after the priority (2026-10-26):
 ## Scene, adapters & layout
 
 - **(P3) [agent] Several hit tests still scan every node or shape linearly.** Core's
-  `features/text/textHitAt.ts` (needs a pose descriptor from `useSceneTextEdit`), `diagram/src/portLayer.ts`,
+  `domains/text/textHitAt.ts` (needs a pose descriptor from `useSceneTextEdit`), `diagram/src/portLayer.ts`,
   `diagram/src/labelDragLayer.ts`, and `boxesOf` in kernel3d's `snap/sources.ts`, whose `world.bounds` needs a
   generation to cache against first.
 
@@ -505,15 +498,6 @@ Owner tags, after the priority (2026-10-26):
   (`buildSceneTree`'s `composePose`), picking, selection chrome, the preview ghost
   (`resolvePreviews`), and the gestures (`scenePoseFrame`, `sceneGestureFrames`), which must read and
   write through it alike so a move inside a scrolled container stores the content position.
-
-### Units
-
-- **(P3) [agent] A rotated container's grid does not turn with it.** A scoped container draws and snaps
-  on its own scope's lattice (`createGridLayer({ scopes, regions })`, `gridSnapSource({ scopes })`),
-  but every lattice is world-aligned and runs through one anchor, so inside a container rotated
-  30° the cells sit square to the page, not to the container. Turning it means turning both
-  readers together: the layer would draw a region's lattice in the container's frame, and
-  `gridSnapSource` would round in that frame, which `SnapCollect` does not carry today.
 
 ---
 
@@ -918,6 +902,13 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
+  arc, edge to edge, and the well runs one rim past the first and last"
+  (`packages/ui/src/components/ToggleBar/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
+  ± 0.5 in a full run on teitou on 2026-10-24 (at the features-to-domains rename, which touches no ToggleBar code),
+  then passed 3 of 3 alone on the same node and tree (job e82589ab). Seen once; a measurement taken
+  before a face or a layout settles is the first thing to look for.
+
 - **(P3) [waiting] `segmentsAlong`'s first "a lit end segment fills the well round its cap" case failed
   intermittently** (full fleet run of `main` at `437648aa4`, 2026-10-26). Since ac92a714c the test waits
   for `document.fonts.ready` after a first frame; that the face was the cause is inferred, not
@@ -972,7 +963,7 @@ only story runner in the repo.
 - **(P3) [agent] Worker-thread render offload.** Rendering the GL pipeline in a worker — major perf win,
   significant API complexity. Defer until measured pain on the single-thread pipeline. The
   main-thread `OffscreenCanvas` that rasterizes pattern tiles in
-  `packages/core/src/features/patterns/` is not worker offload.
+  `packages/renderer/src/patterns/` is not worker offload.
 - **(P3) [agent] Headless server-side rendering in Node.** `renderSceneToPixels`
   (`packages/core/src/canvas/renderSceneToPixels.ts`) accepts a caller-supplied `gl`, which has to
   be WebGL2. `headless-gl` cannot supply one: `gl@8.1.6` (read 2026-10-17) implements WebGL 1.0.3

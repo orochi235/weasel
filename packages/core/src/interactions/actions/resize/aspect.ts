@@ -1,5 +1,5 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { EPS } from 'features/snap/resizeBox';
+import { EPS } from 'domains/snap/resizeBox';
 import type { ResizeAnchor } from '../../gestures/types';
 
 /** `b` with the axis an edge handle leaves free scaled to keep `origin`'s

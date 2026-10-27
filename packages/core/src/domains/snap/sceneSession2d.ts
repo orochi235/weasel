@@ -9,7 +9,7 @@ import { drawnBoxes, type DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, subjectOf } from './probes2d';
-import { sceneProbeReads, sceneRotations, withSubtrees } from './sceneReads';
+import { sceneProbeReads, sceneRotations, sceneSnapFrames, withSubtrees } from './sceneReads';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapGesture, SnapSource } from './types';
 
@@ -58,6 +58,7 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
     reachPx: i.reachPx,
     scene: i.scene,
     rotationOf: sceneRotations(i.scene, i.poseDescriptor),
+    frameOf: sceneSnapFrames(i.scene),
     store: i.store,
     ...(i.debug ? { debug: i.debug } : {}),
   });

@@ -57,7 +57,7 @@ export default [
   {
     /**
      * `core/` is the bottom of the package: scene, ops, adapters, selection,
-     * viewport. `features/` and `interactions/` build on it, never the reverse.
+     * viewport. `domains/` and `interactions/` build on it, never the reverse.
      * A runtime reach-back is a cycle, which the bundler resolves by
      * duplicating a module — and a duplicated registry is a silent, total
      * failure rather than a loud one.
@@ -74,9 +74,9 @@ export default [
         {
           patterns: [
             {
-              group: ['features/*', 'interactions/*', '**/features/**', '**/interactions/**'],
+              group: ['domains/*', 'interactions/*', '**/domains/**', '**/interactions/**'],
               message:
-                'core/ must not import from features/ or interactions/. Dependencies flow one way.',
+                'core/ must not import from domains/ or interactions/. Dependencies flow one way.',
             },
           ],
         },

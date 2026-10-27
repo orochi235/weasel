@@ -16,7 +16,7 @@ import { insetBox, outsetBox } from 'core/geometry/inkExtents';
 import type { ResizeBox, ResizeFrame, ResizeSession } from './session';
 import { clampToMinSize } from './behaviors/clampMinSize';
 import { edgeAspect, onDiagonal } from './aspect';
-import { snapMods } from 'features/snap/roles';
+import { snapMods } from 'domains/snap/roles';
 
 /** `ob` with the edges `anchor` leaves free moved by the drag delta, which is
  *  taken into the axes of the frame the box is drawn in first. A frame nothing

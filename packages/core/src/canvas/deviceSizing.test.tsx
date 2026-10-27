@@ -2,7 +2,7 @@
  * Handle sizes and hit radii are one number, scaled once.
  *
  * The failure this file exists to prevent is chrome you can see but cannot
- * grab: paint size lives in `SceneCanvas` / `features/selection/overlay` and
+ * grab: paint size lives in `SceneCanvas` / `domains/selection/overlay` and
  * hit radius lives in `affordances/cornerResize` / `canvas/affordanceAt`, and
  * before this they were five independent literal `8`s. Scaling one of them
  * for a coarse pointer and missing another is a silent, touch-only bug — and

@@ -15,7 +15,7 @@ import type { Action } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { ActionDisabledReason, isBody } from '@weasel-js/routing';
-import { effectSourceFor } from 'features/pathEffects/effectSources';
+import { effectSourceFor } from 'domains/pathEffects/effectSources';
 
 export const enterPathEditAction: Action & { requires: string[] } = {
   id: 'enterPathEdit',

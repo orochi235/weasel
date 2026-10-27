@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { SnapMods } from 'interactions/actions/snapDep';
-import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
-import { createSession2d } from 'features/snap/session2d';
+import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
+import { createSession2d } from 'domains/snap/session2d';
 import { measureAt, measureEndSource } from './measureHit';
 import { measureNode } from './measurement';
 

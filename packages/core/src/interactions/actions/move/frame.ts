@@ -4,7 +4,7 @@ import type { NodeId } from 'core/scene/types';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BehaviorResult, GroupTransform } from '../../gestures/types';
 import { draggedStoredPose } from './delta';
-import { snapMods } from 'features/snap/roles';
+import { snapMods } from 'domains/snap/roles';
 import type { MoveFrame, MoveSession } from './session';
 
 function foldBehaviors(

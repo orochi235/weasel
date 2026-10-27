@@ -257,7 +257,7 @@ declare module '@weasel-js/routing' {
      *  snap>`'s sources. Absent means no snapping. */
     snap?: SnapDep;
     /** The store the snap readout layer draws, for an action's own marks. Sourced by `<SceneCanvas>`. */
-    snapReadout?: import('../../features/snap/readoutDep').SnapReadoutDep;
+    snapReadout?: import('../../domains/snap/readoutDep').SnapReadoutDep;
     /**
      * The canvas's debug sink.
      * Sourced by `<SceneCanvas>`; absent while its `debug` overlay is off.

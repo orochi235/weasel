@@ -39,13 +39,13 @@
   "packages/core/src/core/scene/types.ts": {
     "lines": 531
   },
-  "packages/core/src/features/paths/pathLayer.ts": {
+  "packages/core/src/domains/paths/pathLayer.ts": {
     "longestFunction": 121
   },
-  "packages/core/src/features/paths/penPreviewLayer.ts": {
+  "packages/core/src/domains/paths/penPreviewLayer.ts": {
     "longestFunction": 138
   },
-  "packages/core/src/features/selection/overlay.ts": {
+  "packages/core/src/domains/selection/overlay.ts": {
     "lines": 514
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {

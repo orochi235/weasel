@@ -13,9 +13,9 @@ import { createTransformOp } from 'core/ops/transform';
 import { createSetDataOp } from 'core/ops/setData';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
-import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
-import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
-import { withoutGeometryBoundData } from 'features/paths/pathEditExtension';
+import { resolveEditablePathOf, storeEditablePath } from 'domains/paths/editablePath';
+import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
+import { withoutGeometryBoundData } from 'domains/paths/pathEditExtension';
 
 
 /** A selected node with an editable polygon, and that polygon in world space. */

@@ -42,9 +42,12 @@ a world outline and its scope chain, nested as the containers are.
 `sceneGridRegions` builds them from a scene. The layer draws each region's
 lattice clipped to its outline and cuts it out of the lattice around it, and a
 hovered cell carries the `pitch` of the lattice it is on, which
-`createCellHighlightLayer` draws it at. Every lattice is world-aligned and runs
-through the same anchor, as `gridSnapSource` snaps to it, so a rotated
-container's lattice does not turn with it.
+`createCellHighlightLayer` draws it at. A region's `frame` is the container's
+box frame (`sceneBoxFrames`): its lattice runs from the container's corner
+along its axes, and turns with it, and a cell in it is counted and drawn in
+that frame. `gridSnapSource` rounds in the same frame, read through
+`SnapCollect.frameOf`. A region with no `frame` stays world-aligned, through
+the root lattice's anchor.
 
 ## Related
 

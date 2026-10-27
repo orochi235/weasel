@@ -3,7 +3,7 @@ import { createElement, type ReactNode } from 'react';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { renderHook, act } from '@testing-library/react';
 import { usePenTool } from '../usePenTool';
-import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
+import { createPenPreviewLayer } from 'domains/paths/penPreviewLayer';
 import type { PolygonPath } from '@weasel-js/geom';
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ModifierState } from 'core/modifierState';
@@ -11,11 +11,11 @@ import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import type { InsertExtras } from 'interactions/actions/depSchema';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
-import type { SnapSource } from 'features/snap/types';
-import { sceneOfPaths, sessionDep } from 'features/snap/testing/sessionDep';
+import type { SnapSource } from 'domains/snap/types';
+import { sceneOfPaths, sessionDep } from 'domains/snap/testing/sessionDep';
 
 // `setup` reads the pen's state off the preview layer's recorded calls, so a
-// test file calling it must mock 'features/paths/penPreviewLayer' with the real
+// test file calling it must mock 'domains/paths/penPreviewLayer' with the real
 // factory wrapped in `vi.fn`. `vi.mock` is hoisted per file and cannot live here.
 const previewLayers = vi.mocked(createPenPreviewLayer);
 

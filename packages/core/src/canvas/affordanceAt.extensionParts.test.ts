@@ -3,7 +3,7 @@ import { polygonFromPoints } from '@weasel-js/geom';
 import { buildAffordanceAt } from './affordanceAt';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { NodeId } from 'core/scene/types';
-import type { PathEditExtension, PathEditPart } from 'features/paths/pathEditExtension';
+import type { PathEditExtension, PathEditPart } from 'domains/paths/pathEditExtension';
 
 const VIEW = { x: 0, y: 0, scale: { x: 2, y: 2 } };
 const PATH = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }]);

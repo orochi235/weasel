@@ -6,8 +6,8 @@ import type { Scene } from 'core/scene/types';
 import { createDebugSink } from 'debug/createDebugSink';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapDep } from 'interactions/actions/snapDep';
-import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
-import type { SnapSource } from 'features/snap/types';
+import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
+import type { SnapSource } from 'domains/snap/types';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import { useSnapDepSource, type SnapSessionSources } from './snap';
 

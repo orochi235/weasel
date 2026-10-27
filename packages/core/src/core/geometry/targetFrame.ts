@@ -3,7 +3,7 @@
  * target's bounds, with the helpers the outline, the handles, their hit
  * regions, and the resize and rotate actions all place themselves by.
  */
-import { applyToPoint, invert, poseFrameOf, type Affine, type Scale2 } from '@weasel-js/geom';
+import { applyToPoint, invert, poseFrameOf, pxExtentInFrame, type Affine, type Scale2 } from '@weasel-js/geom';
 
 /** Local↔world maps for a chrome target. Local is the target's unrotated box
  *  frame; world is where the node is drawn. */
@@ -74,12 +74,7 @@ export function normalToWorld(xf: TargetTransform, n: { x: number; y: number }):
 /** `pxExtent` along the target's own axes: how far along each an edge across
  *  it must move to move `px` on screen. */
 export function pxExtentIn(px: number, scale: Scale2, xf: TargetTransform): { x: number; y: number } {
-  const [a, b, c, d] = xf.toWorld;
-  const ux = a * scale.x, uy = b * scale.y;
-  const vx = c * scale.x, vy = d * scale.y;
-  const det = Math.abs(ux * vy - uy * vx);
-  if (det === 0) return { x: 0, y: 0 };
-  return { x: (px * Math.hypot(vx, vy)) / det, y: (px * Math.hypot(ux, uy)) / det };
+  return pxExtentInFrame(px, scale, xf.toWorld);
 }
 
 /** The target's box corners in world, TL/TR/BR/BL. */

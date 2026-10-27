@@ -6,7 +6,7 @@
   // `paths` is CLEARED rather than inherited. The root config maps every
   // `@weasel-js/*` specifier to a sibling's `src/`, which is right for the
   // dev loop but wrong here: following core into source drags in core's own
-  // bare aliases (`core/…`, `features/…`) that only core's tsconfig maps, and
+  // bare aliases (`core/…`, `domains/…`) that only core's tsconfig maps, and
   // it would inline core's declarations into ui's instead of referencing them.
   //
   // With no mappings, tsc resolves each sibling through the node_modules

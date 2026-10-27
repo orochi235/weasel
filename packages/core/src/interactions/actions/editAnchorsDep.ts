@@ -1,6 +1,6 @@
 import type { PointOrigin } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
-import type { PathEditExtension, PathEditMark, PathEditStore } from 'features/paths/pathEditExtension';
+import type { PathEditExtension, PathEditMark, PathEditStore } from 'domains/paths/pathEditExtension';
 import type { HandleLocks } from './edit-anchors/params';
 
 /** An edit as {@link EditAnchorsDep.finishEdit} finishes it: the edited node's world path, and the other nodes' that move with it. */

@@ -279,8 +279,8 @@ Tracked in `docs/TODO.md` under "Tool primitive follow-ups":
 
 - Create: `src/tools/builtin/useUserPenTool.ts`
 - Create: `src/tools/builtin/useUserPenTool.test.tsx`
-- Create: `src/features/paths/penPreviewLayer.ts`
-- Create: `src/features/paths/penPreviewLayer.test.ts`
+- Create: `src/domains/paths/penPreviewLayer.ts`
+- Create: `src/domains/paths/penPreviewLayer.test.ts`
 - Create: `src/util/constrainTo45.ts` (small helper, exported)
 - Create: `src/util/constrainTo45.test.ts`
 - Modify: `src/tools/builtin/index.ts` (re-export)

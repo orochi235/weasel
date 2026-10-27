@@ -5,7 +5,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
-import { hiddenSourcesTakenWith } from 'features/pathEffects/effectSources';
+import { hiddenSourcesTakenWith } from 'domains/pathEffects/effectSources';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {

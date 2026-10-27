@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { createSnapSourceRegistry, SnapSourceRegistryContext } from 'features/snap/registry';
+import { createSnapSourceRegistry, SnapSourceRegistryContext } from 'domains/snap/registry';
 import { IconRegistryProviderIfRoot } from '../../iconRegistry';
 import { ViewInputsProvider, type SurfaceViewInputs } from '../viewInputs';
 import { PointerProviderIfRoot } from './PointerProviderIfRoot';

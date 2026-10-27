@@ -2,7 +2,7 @@ import type { OngoingHandle } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
 import type { FinishedEditFrame } from '../editAnchorsDep';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
-import { storeEditablePath, type EditableShape } from 'features/paths/editablePath';
+import { storeEditablePath, type EditableShape } from 'domains/paths/editablePath';
 
 /** Where the edited polygon lives on its node: the pose itself, or `data.path`
  *  under a rect pose. */

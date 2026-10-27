@@ -211,9 +211,8 @@ How subagent work ran, for the next arc run this way:
    the batch's new shader paths still have no before-and-after number. Not exercised: the
    release job's `npm run release` and `gh release create`, which only a real release can run.
 2. See the list below in a browser.
-3. Rulings: `docs/unruled.md`, and the either/ors left in `docs/TODO.md` entries. Two wait on a
-   word from the owner: the new name for the `features` directory, and the second cue for disabled
-   controls.
+3. Rulings: `docs/unruled.md`, and the either/ors left in `docs/TODO.md` entries. One waits on a
+   word from the owner: the second cue for disabled controls.
 4. astv: the Changes pane's Submit button is built (`onSubmit(changes, literal)` on
    `PrefSchemaEditor`) and astv's session wires the host half. Its prefs adapter can stop resending
    refused writes once it reads a rebuilt `dist`.

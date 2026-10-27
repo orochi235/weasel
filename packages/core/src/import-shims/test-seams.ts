@@ -23,4 +23,4 @@ export {
 export { rootsTree as rootsTreeForTests } from 'core/adapters/testing/rootsTree';
 export {
   createSnapSession2d as createSnapSession2dForTests, type SnapSession2dOptions,
-} from 'features/snap/sceneSession2d';
+} from 'domains/snap/sceneSession2d';

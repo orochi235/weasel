@@ -5,7 +5,7 @@
  * picking all read a pose through `poseFrameOf` so they agree on where the
  * node is.
  */
-import { invert, multiply, rotateAboutPoint, type Affine } from './affine';
+import { invert, multiply, rotateAboutPoint, translate, type Affine } from './affine';
 import type { Path } from './path';
 import { transformPath } from './paths/transformPath';
 import { poseRotationOf, rotatePathAround } from './poseRotation';
@@ -59,6 +59,20 @@ export function poseFrameOf(pose: unknown): Affine | null {
   const [a, b, c, d] = linear;
   const about: Affine = [a, b, c, d, cx - (a * cx + c * cy), cy - (b * cx + d * cy)];
   return p.rotation ? multiply(rotateAboutPoint(cx, cy, p.rotation), about) : about;
+}
+
+/**
+ * The matrix taking a point in the box's own coordinates, with their origin
+ * on its corner and their axes along its own, to where the node draws it:
+ * what a container's children are laid out in when its pose is a frame.
+ * `null` when the pose is not a box.
+ */
+export function boxFrameOf(pose: unknown): Affine | null {
+  const p = pose as Partial<FramedBox> | null | undefined;
+  if (!p || p.x == null || p.y == null || p.width == null || p.height == null) return null;
+  const at = translate(p.x, p.y);
+  const frame = poseFrameOf(p);
+  return frame ? multiply(frame, at) : at;
 }
 
 /**

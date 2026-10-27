@@ -13,9 +13,9 @@ import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
 import type { ReflowTransition } from '../../layout/types';
-import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
-import type { SnapSourceRegistry } from 'features/snap/registry';
-import type { SnapSource } from 'features/snap/types';
+import type { SnapOutcomeStore } from 'domains/snap/outcomeStore';
+import type { SnapSourceRegistry } from 'domains/snap/registry';
+import type { SnapSource } from 'domains/snap/types';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import {
   useAreaSelectDepSource,

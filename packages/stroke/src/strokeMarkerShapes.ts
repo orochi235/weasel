@@ -7,7 +7,7 @@
  * in units of `MarkerCtx.size`, which defaults to the resolved stroke width —
  * one definition is therefore correct at any line weight.
  *
- * Not to be confused with `features/paths/markers.ts`, which builds
+ * Not to be confused with `domains/paths/markers.ts`, which builds
  * decorative chrome shapes and is unrelated.
  */
 

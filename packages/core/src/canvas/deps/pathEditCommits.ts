@@ -12,11 +12,11 @@ import { writtenBy } from 'core/ops/writtenBy';
 import type { TransformFollower, TransformPreviewNode } from 'interactions/actions/transformFinish';
 import type { NodeId, Scene } from 'core/scene/types';
 import { sceneDependentsOf } from 'core/scene/dependents';
-import { pathEditPathOf, storeEditablePath } from 'features/paths/editablePath';
-import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
+import { pathEditPathOf, storeEditablePath } from 'domains/paths/editablePath';
+import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
 import {
   withoutGeometryBoundData, type PathEditExtension, type PathEditFinishCtx, type PathEditOther, type PathTransformFinishCtx,
-} from 'features/paths/pathEditExtension';
+} from 'domains/paths/pathEditExtension';
 
 type AnyScene = Scene<unknown, string, unknown>;
 export type EditableNode = { pose: unknown; data: unknown };

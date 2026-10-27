@@ -9,19 +9,19 @@
  * own the same way and an app passes the object. Nothing here imports an
  * action, so a canvas reaches only the presets it is handed.
  *
- * A preset is not one of the `packages/core/src/features/<name>/` source
+ * A preset is not one of the `packages/core/src/domains/<name>/` source
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
  * and nothing else.
  */
 import { toolIdsOf, type Action, type ToolEntry } from '@weasel-js/routing';
-import { never } from 'features/chrome-caps/conditions';
-import type { ChromeId, VisibilityRules } from 'features/chrome-caps/types';
+import { never } from 'domains/chrome-caps/conditions';
+import type { ChromeId, VisibilityRules } from 'domains/chrome-caps/types';
 import type { MoveBehavior } from 'interactions/gestures/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { Contribution, Tool } from 'tools/overlayBinding';
-import type { PathEditExtension } from 'features/paths/pathEditExtension';
-import type { SnapSource } from 'features/snap/types';
+import type { PathEditExtension } from 'domains/paths/pathEditExtension';
+import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { BuiltinToolId } from './props';
 

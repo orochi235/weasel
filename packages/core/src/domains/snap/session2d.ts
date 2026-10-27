@@ -13,7 +13,7 @@ import { markFromPlane } from './marks';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { resizedBox, resizeEdges, resizeSubject, type ResizeSubject } from './resizeBox';
 import { screenOf } from './screen';
-import type { SnapCollect, SnapMark, SnapProbeAt, SnapSource } from './types';
+import type { SnapCollect, SnapFrame, SnapMark, SnapProbeAt, SnapSource } from './types';
 
 type Point = { x: number; y: number };
 
@@ -41,6 +41,8 @@ export interface Session2dInputs {
   /** `id`'s world rotation, for angle targets; undefined for a node that
    *  cannot turn. */
   rotationOf?: (id: string) => number | undefined;
+  /** `id`'s box frame, for sources that work in a container's axes. */
+  frameOf?: (id: string) => SnapFrame | undefined;
   store: SnapOutcomeStore;
   /** Nodes that offer no targets. Default `req.ids`. */
   exclude?: readonly string[];
@@ -92,7 +94,7 @@ function outcome(press: Point, delta: readonly number[], held: boolean, marks: r
 }
 
 /** What a source is told that holds from press to release. */
-type FixedCollect = Pick<SnapCollect, 'gesture' | 'ids' | 'parent' | 'exclude' | 'drawnBox' | 'origin' | 'also' | 'scene'>;
+type FixedCollect = Pick<SnapCollect, 'gesture' | 'ids' | 'parent' | 'exclude' | 'drawnBox' | 'origin' | 'also' | 'scene' | 'frameOf'>;
 
 /** What changes from one frame to the next. */
 interface Frame {
@@ -112,6 +114,7 @@ function collectAtPress(inputs: Session2dInputs): FixedCollect {
     ...(req.origin ? { origin: req.origin } : {}),
     ...(req.also ? { also: req.also } : {}),
     ...(inputs.scene ? { scene: inputs.scene } : {}),
+    ...(inputs.frameOf ? { frameOf: inputs.frameOf } : {}),
   };
 }
 

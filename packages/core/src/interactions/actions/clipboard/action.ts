@@ -2,7 +2,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { buildDeleteOps } from '../defaults/delete';
 import { requiresSelection } from '../defaults/requiresSelection';
-import { kitWeaselJsonHandler } from 'features/ingestion/weaselJsonHandler';
+import { kitWeaselJsonHandler } from 'domains/ingestion/weaselJsonHandler';
 import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
 import { icon } from '../../../icons.gen';
 

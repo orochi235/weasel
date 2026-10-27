@@ -19,7 +19,7 @@ import { bendSegment, editAnchorSetTracked, type PointOrigin, type PolygonPath }
 import { inPlane, editingLayer } from '../planeInput';
 import { pathEditPreview } from '../edit-anchors/preview';
 import { segmentUnder } from './segmentUnder';
-import { representationOf, type PathRepresentation } from 'features/paths/pathRepresentation';
+import { representationOf, type PathRepresentation } from 'domains/paths/pathRepresentation';
 import { pathEditToolActive } from './pathEditTools';
 import { pathOperationTags } from '../pathGestureTags';
 import { icon } from '../../../icons.gen';

@@ -4,7 +4,7 @@ import { asNodeId, type Scene } from 'core/scene/types';
 import { useLatest } from '@weasel-js/react';
 import { doubleClickTarget } from '../doubleClickTarget';
 import { useEnteredGroup } from '../deps/enteredGroup';
-import { createEnteredGroupScope } from 'features/selection/enteredGroupScope';
+import { createEnteredGroupScope } from 'domains/selection/enteredGroupScope';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';

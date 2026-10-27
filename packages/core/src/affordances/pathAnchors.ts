@@ -5,7 +5,7 @@ import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceS
 import type { ChromeState } from 'core/selection/chromeState';
 import { pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
-import type { PathEditExtension } from 'features/paths/pathEditExtension';
+import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 
 /**
  * Live anchor-editing state. The thunk that returns it is called on every

@@ -12,9 +12,9 @@ import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Node, Scene } from 'core/scene/types';
 import {
   useSceneTextEditor, type DefaultTextData, type UseSceneTextEditOptions, type UseSceneTextEditReturn,
-} from 'features/text/useSceneTextEdit';
-import { hostTextEditorHolds } from 'features/text/hostTextEditors';
-import { drawOneEditing, type EditingDrawOne } from 'features/text/editingDrawOne';
+} from 'domains/text/useSceneTextEdit';
+import { hostTextEditorHolds } from 'domains/text/hostTextEditors';
+import { drawOneEditing, type EditingDrawOne } from 'domains/text/editingDrawOne';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
 import { isCustomEntry } from '../layerSlots';
 import type { SceneCanvasLayers } from './props';

@@ -4,12 +4,12 @@
  */
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { AffordanceHit } from '@weasel-js/routing';
-import { aimSpace2d, type AimSpace } from 'features/viewports/aim';
-import type { ResolvableView } from 'features/viewports/viewResolver';
+import { aimSpace2d, type AimSpace } from 'domains/viewports/aim';
+import type { ResolvableView } from 'domains/viewports/viewResolver';
 import type { View } from 'core/viewport/view';
 import {
   createViewMarkerLayer, grabViewMarker, type ViewMarkerHost, type ViewMarkerProps,
-} from 'features/viewports/viewMarker';
+} from 'domains/viewports/viewMarker';
 import { layerAffordance } from './affordanceAt';
 
 /** @internal Composed into `ViewRegistry`. */

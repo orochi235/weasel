@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import { useSceneTextEdit } from 'features/text/useSceneTextEdit';
+import { useSceneTextEdit } from 'domains/text/useSceneTextEdit';
 import { SceneCanvas } from './SceneCanvas';
 import type { Feature } from './SceneCanvas/features';
 import { layersWhileEditing, type SceneCanvasTextEditor } from './SceneCanvas/defaultTextEditor';

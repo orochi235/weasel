@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { ChromeCaps } from 'features/chrome-caps/useChromeCaps';
+import type { ChromeCaps } from 'domains/chrome-caps/useChromeCaps';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SurfaceViewInputs } from '../viewInputs';
 

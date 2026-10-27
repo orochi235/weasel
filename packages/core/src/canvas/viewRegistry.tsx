@@ -12,14 +12,14 @@ import type { Dims, RenderLayer } from 'core/layers/render';
 import type { LayerHit } from 'affordances/types';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
-import type { ViewportLayer } from 'features/viewports/viewportLayer';
+import type { ViewportLayer } from 'domains/viewports/viewportLayer';
 import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
-import { createViewResolver, viewContains, type ViewResolver } from 'features/viewports/viewResolver';
+import { createViewResolver, viewContains, type ViewResolver } from 'domains/viewports/viewResolver';
 import { createEmitter } from '@weasel-js/registry';
 import type { ViewAt } from './canvasExtension';
-import { isRectAim, rectAim, viewForAim, type ViewAim } from 'features/viewports/aim';
+import { isRectAim, rectAim, viewForAim, type ViewAim } from 'domains/viewports/aim';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import type { ViewMarkerProps } from 'features/viewports/viewMarker';
+import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
 import { createViewMarkerRegistry, type ViewMarkerRegistry } from './viewMarkers';
 
 /**

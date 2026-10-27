@@ -12,6 +12,7 @@ import {
   type PlaneUnits,
   type PlaneValue,
 } from '@weasel-js/core';
+import { mat3 } from '@weasel-js/geom';
 import type { GridCell } from './pointToGridCell';
 
 /** Options for `createCellHighlightLayer`. */
@@ -23,7 +24,8 @@ export interface CellHighlightLayerOpts {
   /** Origin the cell grid is anchored to, in world units. Defaults to (0,0). */
   origin?: () => { x: number; y: number };
   /** Cell to highlight, or `null` to skip drawing. A cell carrying its
-   *  lattice's `pitch` (`useGridCellHover` with `scopes`) is drawn at it. */
+   *  lattice's `pitch` (`useGridCellHover` with `scopes`) is drawn at it,
+   *  and one carrying a `frame` is drawn in it, from its origin. */
   getCell: () => GridCell | null;
   /** Fill for the highlighted cell. Defaults to a soft green. */
   fill?: CommandFill;
@@ -41,7 +43,7 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
       const cell = opts.getCell();
       if (!cell) return [];
       const spacing = cell.pitch ?? resolveAxes(opts.spacing, opts.unitSystem);
-      const o = opts.origin ? opts.origin() : { x: 0, y: 0 };
+      const o = cell.frame || !opts.origin ? { x: 0, y: 0 } : opts.origin();
       const x = o.x + cell.col * spacing.x;
       const y = o.y + cell.row * spacing.y;
       const children: DrawCommand[] = [
@@ -52,7 +54,7 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
         },
       ];
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
-      return children;
+      return cell.frame ? [{ kind: 'group', transform: mat3.fromAffine(cell.frame), children }] : children;
     },
   };
 }

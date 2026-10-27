@@ -52,7 +52,7 @@ export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): Vi
     ...packageAliases(repoRoot),
     // Bare top-level kit paths — mirror core's tsconfig path mappings.
     { find: /^core\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/core/$1') },
-    { find: /^features\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/features/$1') },
+    { find: /^domains\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/domains/$1') },
     { find: /^affordances\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/affordances/$1') },
     { find: /^interactions\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/interactions/$1') },
     { find: /^tools\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/tools/$1') },

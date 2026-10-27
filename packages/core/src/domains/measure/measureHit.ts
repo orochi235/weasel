@@ -3,7 +3,7 @@ import { measureEndsOf, type MeasureEnd, type MeasurePoint } from './measurement
 import { measureIds, type Measurements } from './measurements';
 import { nodesAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { nodeGates } from 'core/scene/nodeGates';
-import type { SnapSource } from 'features/snap/types';
+import type { SnapSource } from 'domains/snap/types';
 
 /** Which part of which measurement lies under a point. */
 export interface MeasureHit {

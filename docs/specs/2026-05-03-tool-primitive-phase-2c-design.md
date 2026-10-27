@@ -121,7 +121,7 @@ worldY = (clientY - rect.top)  / view.scale + view.y
 
 ### Remove `usePan` and migrate bezier demo
 
-`src/features/viewport/usePan.ts` was `@deprecated`'d in 2b. 2c deletes it from the source tree and removes the `src/index.ts` re-export. Bezier demo migrates from its CSS-scale wrapper to `useHandTool` + `useWheelZoomTool` + Canvas viewport props. The `bezier-zoom` design doc that referenced `usePan` either gets pruned or rewritten to point at the new tool stack.
+`src/domains/viewport/usePan.ts` was `@deprecated`'d in 2b. 2c deletes it from the source tree and removes the `src/index.ts` re-export. Bezier demo migrates from its CSS-scale wrapper to `useHandTool` + `useWheelZoomTool` + Canvas viewport props. The `bezier-zoom` design doc that referenced `usePan` either gets pruned or rewritten to point at the new tool stack.
 
 ## Forward compatibility
 

@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Action } from '@weasel-js/routing';
-import { createLongPressFeedbackContribution } from '../../features/longPress/longPressFeedback';
-import { createViewMarkerContribution } from '../../features/viewports/viewMarkerDrag';
+import { createLongPressFeedbackContribution } from '../../domains/longPress/longPressFeedback';
+import { createViewMarkerContribution } from '../../domains/viewports/viewMarkerDrag';
 import { useTools, type Contribution, type Tool, type ToolsApi } from '../../tools/overlayBinding';
 import type { SurfaceContribution } from '../surfaceContribution';
 import {

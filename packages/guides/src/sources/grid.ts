@@ -1,10 +1,12 @@
 import {
   asNodeId, sceneSharedUnitScopes, sceneUnitScopes,
-  type PerAxis, type PlaneMap, type PlaneUnits, type PlaneValue, type SnapCollect, type SnapSource,
+  type NodeId, type PerAxis, type PlaneMap, type PlaneUnits, type PlaneValue, type SnapCollect, type SnapFrame,
+  type SnapSource, type SourceCandidate,
 } from '@weasel-js/core';
+import { scopeOwner } from '../grid/regions';
 import { gridPitch, scopedGridPitch, type GridScopes } from '../grid/scopedPitch';
 import { roundToGridOn } from '../strategies/onPlane';
-import { axisLine } from './lines';
+import { axisLine, frameLine } from './lines';
 
 type Point = { x: number; y: number };
 
@@ -18,8 +20,17 @@ export interface GridSnapSourceOptions {
   /** Read the unit scope the subject sits in: a node inside a millimeter
    *  sub-assembly snaps on that scope's pitch. The subject's scope is the one
    *  all its nodes share; for a gesture with none, the scope of the
-   *  container it draws into (`SnapCollect.parent`), else the root. */
+   *  container it draws into (`SnapCollect.parent`), else the root. When that
+   *  scope is one container's, the lattice runs in its frame
+   *  (`SnapCollect.frameOf`): from its corner, turned as it is. */
   scopes?: GridScopes;
+}
+
+/** The lattice a gesture snaps on: its pitch, and the frame of the container
+ *  it runs in, or none for the root's. */
+interface Lattice {
+  pitch: PerAxis<number>;
+  frame?: SnapFrame | undefined;
 }
 
 /**
@@ -31,11 +42,25 @@ export interface GridSnapSourceOptions {
 export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
   const { scopes } = opts;
   const rootPitch = gridPitch(opts.spacing, opts.unitSystem, scopes);
-  const pitchFor = (q: SnapCollect): PerAxis<number> => {
-    if (!scopes || !q.scene) return rootPitch;
-    if (q.ids?.length) return scopedGridPitch(opts.spacing, scopes, sceneSharedUnitScopes(q.scene, q.ids.map(asNodeId), scopes.root));
-    if (q.parent === undefined) return rootPitch;
-    return scopedGridPitch(opts.spacing, scopes, sceneUnitScopes(q.scene, asNodeId(q.parent), scopes.root, { inclusive: true }));
+  const latticeFor = (q: SnapCollect): Lattice => {
+    const scene = q.scene;
+    if (!scopes || !scene) return { pitch: rootPitch };
+    const within = (owner: NodeId | null) => (owner === null ? undefined : q.frameOf?.(owner));
+    if (q.ids?.length) {
+      const ids = q.ids.map(asNodeId);
+      const owners = new Set(ids.map((id) => scopeOwner(scene, id)));
+      return {
+        pitch: scopedGridPitch(opts.spacing, scopes, sceneSharedUnitScopes(scene, ids, scopes.root)),
+        // Nodes in two containers share no one lattice, whatever their scopes.
+        frame: owners.size === 1 ? within([...owners][0]!) : undefined,
+      };
+    }
+    if (q.parent === undefined) return { pitch: rootPitch };
+    const parent = asNodeId(q.parent);
+    return {
+      pitch: scopedGridPitch(opts.spacing, scopes, sceneUnitScopes(scene, parent, scopes.root, { inclusive: true })),
+      frame: within(scopeOwner(scene, parent, true)),
+    };
   };
   const o = opts.origin ?? { x: 0, y: 0 };
   const lines = (v: number, axis: 'x' | 'y', pitch: PerAxis<number>, plane: PlaneMap | null): [number, number] => {
@@ -50,12 +75,33 @@ export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
     reachPx: Infinity,
     roles: ['origin', 'pointer'],
     *collect(q) {
-      const pitch = pitchFor(q);
+      const { pitch, frame } = latticeFor(q);
+      const plane = q.plane ?? null;
       for (const p of q.probes) {
+        if (frame) {
+          yield* framedLines(p.id, p.at, pitch, frame, plane);
+          continue;
+        }
         for (const axis of ['x', 'y'] as const) {
-          for (const at of lines(p.at[axis], axis, pitch, q.plane ?? null)) yield { probe: p.id, locus: axisLine(axis, at, p.at) };
+          for (const at of lines(p.at[axis], axis, pitch, plane)) yield { probe: p.id, locus: axisLine(axis, at, p.at) };
         }
       }
     },
   };
+}
+
+/** The lines of `frame`'s lattice either side of `at` on each of its axes,
+ *  running from the frame's origin. */
+function* framedLines(
+  probe: string, at: Point, pitch: PerAxis<number>, frame: SnapFrame, plane: PlaneMap | null,
+): Generator<SourceCandidate> {
+  const local = frame.toLocal(at);
+  if (!local) return;
+  for (const axis of ['x', 'y'] as const) {
+    const step = pitch[axis] * (plane ? plane.scale[axis] : 1);
+    const near = Math.round(local[axis] / step) * step;
+    for (const offset of [near, near + (local[axis] >= near ? step : -step)]) {
+      yield { probe, locus: frameLine(frame, axis, offset, local) };
+    }
+  }
 }

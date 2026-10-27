@@ -8,7 +8,7 @@ import { join, relative } from 'node:path';
 import { APP_SOURCES, TESTING, workspaceEntries } from './packageEntries.mjs';
 
 /** Bare top-level paths into core's source, as `scripts/vite-aliases.ts` has them. */
-const KIT_DIRS = ['core', 'features', 'affordances', 'interactions', 'tools', 'canvas', 'debug'];
+const KIT_DIRS = ['core', 'domains', 'affordances', 'interactions', 'tools', 'canvas', 'debug'];
 
 const OPEN = '    "paths": {\n';
 const CLOSE = '\n    }';

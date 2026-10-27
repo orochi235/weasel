@@ -9,7 +9,7 @@ import type { Dims } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { isRectAim, rectAim, viewForAim, type ViewAim } from 'features/viewports/aim';
+import { isRectAim, rectAim, viewForAim, type ViewAim } from 'domains/viewports/aim';
 import { useCanvasView, type CanvasViewState } from './useCanvasView';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 import { sizeOf, type useViewNesting } from './useViewNesting';

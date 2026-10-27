@@ -6,7 +6,7 @@
  *
  *  Lives in `core/selection` (next to `ChromeState`) because it's a
  *  selection-derived concept, not a tool concept — `affordances/`,
- *  `features/selection/`, and `tools/` all consume it, so it must sit at
+ *  `domains/selection/`, and `tools/` all consume it, so it must sit at
  *  the bottom of the layering (`core` → `affordances` → `tools` →
  *  `features`). */
 export const MULTI_RESIZE_TARGET_ID = '__weasel:multi-selection';
