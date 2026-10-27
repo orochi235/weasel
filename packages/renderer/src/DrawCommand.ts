@@ -108,7 +108,8 @@ export interface GroupDrawCommand {
    * drawn straight through until it holds a frame. Not for a group holding a
    * custom shader, a paint in screen units, a texture paint on text, or a
    * group with effects, isolation or its own composite: none of those moves
-   * with the transform, so they are drawn again.
+   * with the transform, so they are drawn straight through while it moves,
+   * as a layer whose margin does not fit `retainBudget` is.
    *
    * The composite matches drawing the group to within 8-bit rounding, except
    * at a pixel where an edge of the group crosses an edge drawn beneath it: the
