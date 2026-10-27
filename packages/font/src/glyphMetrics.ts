@@ -41,23 +41,26 @@ export function usableGlyph(glyph: BmFontChar): boolean {
 /** Reads through to `font` rather than copying: the canvas tier measures a
  *  face again in place when its web font lands. */
 function atlasMetrics(font: BmFont, advanceOf: (cp: number) => number | null): GlyphMetrics {
-  const stated = (): { ascent: number; descent: number } | undefined => {
+  // The products are kept until the face's metrics object is replaced, since
+  // each fresh one boxed a number on every read: 120 KB a frame of a HUD readout.
+  let seen: BmFont['faceMetrics'] | null = null;
+  let ascent = 0.5;
+  let descent: number | undefined;
+  const stated = (): boolean => {
     const face = font.faceMetrics;
-    return face?.ascent !== undefined && face.descent !== undefined
-      ? face as { ascent: number; descent: number }
-      : undefined;
+    if (face !== seen) {
+      seen = face;
+      const has = face?.ascent !== undefined && face.descent !== undefined;
+      ascent = has ? face.ascent! * font.info.size : 0.5;
+      descent = has ? face.descent! * font.info.size : undefined;
+    }
+    return descent !== undefined;
   };
   return {
     size: font.info.size,
     get base() { return font.common.base; },
-    get ascent() {
-      const face = stated();
-      return face ? face.ascent * font.info.size : font.common.base;
-    },
-    get descent() {
-      const face = stated();
-      return face && face.descent * font.info.size;
-    },
+    get ascent() { return stated() ? ascent : font.common.base; },
+    get descent() { return stated() ? descent : undefined; },
     advanceOf,
     kernOf: (l, r) => font.kerningMap.get(l)?.get(r) ?? 0,
   };
