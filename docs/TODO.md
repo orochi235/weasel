@@ -981,6 +981,12 @@ only story runner in the repo.
   own package that way, so most of each package would stay unbundled. forge got its gain by moving
   its stories onto package specifiers first (2026-10-21); the tests would need the same.
 
+- **(P3) [agent] `Lab.messages.test.tsx` hung once for 20 s in a fleet run.** "reports its state as it starts,
+  on a change, and when asked" timed out on studio (0.4 of 10 cores busy) in the batch-5 gate at 9d51e9d04
+  (2026-10-27), where it takes 62 ms locally; its retry then counted one state report too many, presumably
+  the timed-out attempt's lab still answering the query. It passed in the four full fleet runs before it.
+  What it waited on is unknown: the next sighting wants the attempt's stack at the timeout.
+
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
   so a tab's renderer cannot pile up the Mach ports that closed its sockets, and waits at each
