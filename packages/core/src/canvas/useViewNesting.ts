@@ -6,6 +6,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
+import type { SelectionApi } from 'core/selection/useSelection';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 import { createSceneLayerGate, viewPaintedLayers } from './sceneLayerPaint';
 import type { ViewRegistration, ViewRegistry } from './viewRegistry';
@@ -17,7 +18,12 @@ export const NO_RECT: ViewRect = { x: 0, y: 0, w: 0, h: 0 };
 export interface OuterFrame { view: View; dims: Dims; origin: { x: number; y: number }; clip?: ViewRect }
 
 /** The props the nesting reads, as of the last committed render. */
-export type ViewNestingInputs = Pick<CanvasViewProps, 'parent' | 'follows' | 'bounds' | 'layers' | 'layerVisibility' | 'layerOrder'>;
+export type ViewNestingInputs = Pick<CanvasViewProps, 'parent' | 'follows' | 'bounds' | 'layers' | 'layerVisibility' | 'layerOrder'> & {
+  /** The selection the view owns, when it owns one. */
+  viewSelection?: SelectionApi | undefined;
+  /** The surface's selection, which the view acts on while it neither owns one nor follows a view that does. */
+  shared: SelectionApi;
+};
 
 /** A view rect's size, as the `Dims` its camera looks through. */
 export const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
@@ -102,5 +108,13 @@ export function useViewNesting(
     if (live.current.parent === undefined) return true;
     return parentReg()?.layerIsPainted(layerId) ?? false;
   }, [registry, sceneLayerGate, live, parentReg, ofFollowed]);
-  return { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted };
+
+  /** The selection this view owns, or else the one the view it follows owns:
+   *  `undefined` while it shares the surface's. */
+  const ownedSelection = useCallback((): SelectionApi | undefined => (
+    live.current.viewSelection ?? ofFollowed((reg) => reg.selection())?.value
+  ), [live, ofFollowed]);
+  /** The selection this view acts on, as of now: a followed view's changes with the aim. */
+  const selectionNow = useCallback(() => ownedSelection() ?? live.current.shared, [ownedSelection, live]);
+  return { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted, ownedSelection, selectionNow };
 }

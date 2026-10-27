@@ -111,7 +111,7 @@ function CanvasInner<TPose>(
     adapter: props.adapter, geometry, boundsOf: props.boundsOf, boundsOfPose: props.boundsOfPose,
     nodes: props.nodes, gestureSource: props.gestureSource, previewPoseExtra: props.previewPoseExtra,
     getScale: () => viewRef.current.scale,
-    selection: props.selection?.current ?? NO_SELECTION,
+    selection: () => props.selection?.current ?? NO_SELECTION,
     getIsVisible: () => gateRef.current.getIsVisible?.() ?? alwaysVisible,
     layerIsPainted: useViewLayerGate(layerVisibility, layerOrder, () => layers),
   });

@@ -6,8 +6,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { CanvasView, SceneCanvas, useScene } from '@weasel-js/core';
-import type { NodeId, SceneCanvasApi } from '@weasel-js/core';
+import { CanvasView, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import type { NodeId, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '../react';
 import type { Hud } from '../hud';
@@ -41,6 +41,8 @@ interface Mounted {
   api: SceneCanvasApi;
   hud: Hud;
   selection: () => readonly NodeId[];
+  /** The panel's own selection, when it owns one. */
+  panelSelection: () => readonly NodeId[] | undefined;
   pose: (id?: string) => Pose;
 }
 
@@ -54,12 +56,15 @@ interface Mounted {
 const PANEL = { x: 250, y: 250, w: 150, h: 150 };
 const PANEL_VIEW = { x: 1000, y: 1000, scale: { x: 2, y: 2 } };
 
-async function mount(opts: { panel?: boolean; panelHides?: boolean } = {}): Promise<Mounted> {
+async function mount(opts: { panel?: boolean; panelHides?: boolean; panelSelects?: boolean } = {}): Promise<Mounted> {
   let hud!: Hud;
   let scene!: ReturnType<typeof useScene<Data, string, Pose>>;
+  let panelSelection: SelectionApi | undefined;
   const ref = React.createRef<SceneCanvasApi>();
   function Harness() {
     hud = useHud(ref);
+    const ownSelection = useSelection();
+    if (opts.panelSelects) panelSelection = ownSelection;
     const contribution = useHudContribution();
     scene = useScene<Data, string, Pose>({
       systemLayers: [{ id: 'default' }],
@@ -82,7 +87,8 @@ async function mount(opts: { panel?: boolean; panelHides?: boolean } = {}): Prom
       <SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]}>
         {opts.panel ? (
           <CanvasView id="panel" bounds={PANEL} defaultView={PANEL_VIEW}
-            {...(opts.panelHides ? { layerVisibility: { 'scene:default': false } } : {})} />
+            {...(opts.panelHides ? { layerVisibility: { 'scene:default': false } } : {})}
+            {...(opts.panelSelects ? { selection: ownSelection } : {})} />
         ) : null}
       </SceneCanvas>
     );
@@ -94,6 +100,7 @@ async function mount(opts: { panel?: boolean; panelHides?: boolean } = {}): Prom
     api: ref.current!,
     hud,
     selection: () => scene.getSelection(),
+    panelSelection: () => panelSelection?.get(),
     pose: (id = 'n') => scene.nodes.get(id as NodeId)!.pose,
   };
 }
@@ -209,6 +216,14 @@ describe('a loupe aimed over a view', () => {
       ['pointerup', PRESS.x + 40, PRESS.y],
     ]);
     expect(m.pose('p')).toMatchObject({ x: 1020, y: 1020 });
+  });
+
+  it('selects into the view’s own selection where the view owns one', async () => {
+    const m = await mount({ panel: true, panelSelects: true });
+    await openLoupe(m, 'interactive');
+    await press(m.canvas, [['pointerdown', PRESS.x, PRESS.y], ['pointerup', PRESS.x, PRESS.y]]);
+    expect(m.panelSelection()).toEqual(['p']);
+    expect(m.selection()).toEqual([]);
   });
 
   it('passes over a layer the view hides, as the view does', async () => {

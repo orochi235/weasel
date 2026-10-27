@@ -81,7 +81,8 @@ export type LoupeOptions = LoupeBaseOptions & (
        * the lens can take input. It magnifies the camera of whatever view is
        * under its aim: aimed over a `<CanvasView>` panel, it shows and edits
        * that panel's world at the panel's zoom times its own factor, painting
-       * and picking only the layers the panel does. A host without `viewAt`
+       * and picking only the layers the panel does, and acting on the panel's
+       * selection where it owns one. A host without `viewAt`
        * gets the canvas's camera and stack wherever it aims.
        */
       views: Pick<SceneCanvasApi, 'addView' | 'getSurfaceRect'> & Partial<Pick<SceneCanvasApi, 'getPaintedVersion' | 'viewAt'>>;

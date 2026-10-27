@@ -15,7 +15,7 @@ import { createViewportLayer } from 'domains/viewports/viewportLayer';
 import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { useSelection } from 'core/selection/useSelection';
+import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
@@ -54,6 +54,10 @@ const NO_INPUTS: Omit<SurfaceViewInputs, 'selectionApi'> = {
 
 const ALWAYS_VISIBLE = (): boolean => true;
 
+// Only a view that owns a selection, or follows one that does, overlays it; otherwise the surface's answer
+// stands, wrappers (`selectable`) included.
+const selectionOverlay = (selection: SelectionApi | undefined) => (selection ? { selection } : {});
+
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
 
@@ -82,18 +86,18 @@ export function CanvasView(props: CanvasViewProps): null {
   const viewSelection = selectionProp ?? (selectionOptions ? ownSelection : undefined);
 
   const inputs = useOptionalViewInputs();
-  // The selection this view acts on: its own when it has one, the surface's
-  // otherwise.
-  const selection = viewSelection ?? inputs?.selectionApi ?? ownSelection;
+  const shared = inputs?.selectionApi ?? ownSelection;
 
   // Everything the registration reads is behind a ref: the registration object
   // is registered once and must not churn, but what it answers with has to be
   // the last committed render's.
   const live = useLatest({
-    parent, follows, bounds, layers, layerVisibility, layerOrder, viewSelection, selection,
+    parent, follows, bounds, layers, layerVisibility, layerOrder, viewSelection, shared,
   });
 
-  const { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted } = useViewNesting(registry, live);
+  const {
+    frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted, ownedSelection, selectionNow,
+  } = useViewNesting(registry, live);
 
   /** The rect for the surface's current frame — what a client point and a
    *  clamp are measured against outside a draw call. */
@@ -150,10 +154,10 @@ export function CanvasView(props: CanvasViewProps): null {
   /** The chrome-caps context this view answers for: its selection, its camera,
    *  its dispatcher's in-flight action. */
   const ruleInputs = useCallback((): ViewRuleInputs => ({
-    selection: live.current.selection.get(),
+    selection: selectionNow().get(),
     view: camera(),
     action: dispatcherRef.current!.getActiveAction(),
-  }), [camera, live]);
+  }), [camera, selectionNow]);
 
   // The surface's resolver, asked for this view's camera.
   const surfaceBoundsOf = inputs?.boundsOf;
@@ -174,7 +178,7 @@ export function CanvasView(props: CanvasViewProps): null {
     boundsOf,
     boundsOfPose,
     ...own,
-    selection: selection.current,
+    selection: () => selectionNow().current,
     layerIsPainted,
     getIsVisible: () => inputsRef.current?.chromeCaps?.isVisible(ruleInputs()) ?? ALWAYS_VISIBLE,
   });
@@ -220,7 +224,7 @@ export function CanvasView(props: CanvasViewProps): null {
   }, [id, getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, inputs?.resizeHandles, helpersRef]);
 
   const classifyTarget = useMemo(() => buildClassifyTarget(
-    () => live.current.selection.get(),
+    () => selectionNow().get(),
     (wx, wy) => {
       const i = inputsRef.current;
       // This view's camera: the dispatcher converted with `clientToWorldHere`,
@@ -233,7 +237,7 @@ export function CanvasView(props: CanvasViewProps): null {
     },
     (id) => inputsRef.current?.kindOfNode?.(id),
     (id) => inputsRef.current?.doubleClickNames?.(id) ?? id,
-  ), [camera, layerIsPainted, live, inputsRef]);
+  ), [camera, layerIsPainted, selectionNow, inputsRef]);
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,
@@ -259,6 +263,7 @@ export function CanvasView(props: CanvasViewProps): null {
     }),
     layerIsPainted,
     drawnLayers,
+    selection: ownedSelection,
     target: {
       dispatcher: dispatcherRef.current!,
       affordanceAt,
@@ -268,9 +273,7 @@ export function CanvasView(props: CanvasViewProps): null {
         view: viewApi, ingestion: ingestionApi, hitAt: hitAtOf(classifyTarget),
         // An Escape here cancels what is in flight here.
         dispatcher: { cancelAll: (reason) => dispatcherRef.current!.cancelAll(reason) },
-        // Only a view with its own selection overlays that one; otherwise the
-        // surface's answer stands, wrappers (`selectable`) included.
-        ...(live.current.viewSelection ? { selection: live.current.viewSelection } : {}),
+        ...selectionOverlay(ownedSelection()),
       }),
       // Action eligibility is chrome-caps evaluated against this view, so a
       // rule that hides an action in one panel cannot decline a gesture in
@@ -279,7 +282,7 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [id, parent, order, interactive, paint, held, aim, setAim, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi, drawnLayers,
-       layerIsPainted, live, inputsRef, helpersRef, frameIn, registry]);
+       layerIsPainted, ownedSelection, inputsRef, helpersRef, frameIn, registry]);
 
   useEffect(() => {
     if (!registry) return;

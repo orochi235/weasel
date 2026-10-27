@@ -11,6 +11,7 @@ import { createContext, useContext, useMemo, useRef, type ReactNode } from 'reac
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { LayerHit } from 'affordances/types';
 import type { ChromeState } from 'core/selection/chromeState';
+import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { ViewportLayer } from 'domains/viewports/viewportLayer';
 import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
@@ -114,6 +115,9 @@ export interface ViewRegistration {
   /** The layers this view draws, in order — what a view nested in it paints
    *  from. */
   drawnLayers(): readonly RenderLayer<unknown>[];
+  /** The selection the view owns, or the one the view it follows owns;
+   *  `undefined` while it shares the surface's. */
+  selection(): SelectionApi | undefined;
   /** Whether the view keeps its camera or its aim; the other is derived. */
   held: 'camera' | 'aim';
   /** What the view shows: the aim it holds, or its camera's. */
