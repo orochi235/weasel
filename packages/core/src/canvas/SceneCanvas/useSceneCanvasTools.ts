@@ -46,5 +46,5 @@ export function useSceneCanvasTools(args: {
     move: args.move as FeatureBindingOptions['move'],
     rotate: (props.selectTool?.rotate || undefined) as FeatureBindingOptions['rotate'],
   });
-  return { tools, internal, takeover, contributions, standardActions };
+  return { tools, internal, takeover, surface, contributions, standardActions };
 }

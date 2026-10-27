@@ -13,6 +13,8 @@ import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from '../../canvas/surfaceContribution';
 import { FALLBACK_ACCENT } from '../../canvas/accentColor';
+import { useTools } from '../../tools/overlayBinding';
+import { WeaselProvider } from '../../WeaselProvider';
 
 const W = 320;
 const H = 240;
@@ -41,16 +43,24 @@ afterEach(() => {
   host = null;
 });
 
-async function holdAndCapture(ambient: SurfaceContribution[], holdMs: number) {
+/** `<SceneCanvas>` under a consumer-assembled tool set whose ambient is `ambient` alone. */
+function Takeover(props: Record<string, unknown> & { ambient: SurfaceContribution[] }) {
+  const { ambient, ...rest } = props;
+  const tools = useTools({ active: null, registry: {}, ambient });
+  return createElement(SceneCanvas, { ...rest, tools } as never);
+}
+
+async function holdAndCapture(ambient: SurfaceContribution[], holdMs: number, takeover = false) {
   host = document.createElement('div');
   host.style.width = `${W}px`;
   host.style.height = `${H}px`;
   document.body.appendChild(host);
   root = createRoot(host);
   const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
-  flushSync(() => root!.render(createElement(SceneCanvas, {
-    scene, layers: {}, width: W, height: H, ambient, longPress: { duration: DURATION },
-  } as never)));
+  const props = { scene, layers: {}, width: W, height: H, ambient, longPress: { duration: DURATION } };
+  flushSync(() => root!.render(takeover
+    ? createElement(WeaselProvider, null, createElement(Takeover, props))
+    : createElement(SceneCanvas, props as never)));
   await new Promise((r) => setTimeout(r, 100));
   const canvas = host.querySelector('canvas')!;
   const rect = canvas.getBoundingClientRect();
@@ -94,6 +104,13 @@ function accentPixels(img: ImageData, dpr: number): { ring: number; elsewhere: n
 describe('long-press feedback ring', () => {
   it('paints an accent ring around a touch held mid-progress', async () => {
     const { data, dpr } = await holdAndCapture([bound], HOLD);
+    const px = accentPixels(data, dpr);
+    expect(px.ring).toBeGreaterThan(40);
+    expect(px.elsewhere).toBe(0);
+  });
+
+  it('paints it under a tools takeover whose ambient says nothing of it', async () => {
+    const { data, dpr } = await holdAndCapture([bound], HOLD, true);
     const px = accentPixels(data, dpr);
     expect(px.ring).toBeGreaterThan(40);
     expect(px.elsewhere).toBe(0);
