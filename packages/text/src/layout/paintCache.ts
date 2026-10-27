@@ -168,31 +168,23 @@ function handOut(p: Painting, use: CacheUse): PaintedRuns {
 /** Forget the painting held for `runs`, which `dropRuns` was told will not be
  *  drawn again. */
 export function forgetPaintRuns(runs: readonly ResolvedRun[]): void {
-  // Pointed at no layout rather than deleted, as `dropRuns` empties its entry.
-  const mine = own.get(runs);
-  if (mine !== undefined) mine.laid = NO_LAYOUT;
+  own.delete(runs);
 }
-
-const NO_LAYOUT: LaidOutRuns = { lines: [], bounds: { width: 0, height: 0 } };
 
 /** Drop every painting of `laid`, which no caller can reach any more, giving
  *  the quad arrays of those no caller kept back to the pool. */
 export function recyclePaintings(laid: LaidOutRuns): void {
   const list = shared.get(laid);
   if (list === undefined) return;
-  for (let i = 0; i < list.length; i++) {
-    const p = list[i];
+  shared.delete(laid);
+  for (const p of list) {
     if (p.pinned) continue;
-    const { groups } = p.painted;
-    for (let k = 0; k < groups.length; k++) {
-      const group = groups[k];
+    for (const group of p.painted.groups) {
       if (group.quadData.length === 0) continue;
       giveDoubles(group.quadData as number[]);
       group.quadData = EMPTY;
     }
   }
-  // Emptied, not deleted: the entry goes with `laid`.
-  list.length = 0;
 }
 
 const EMPTY: readonly number[] = [];

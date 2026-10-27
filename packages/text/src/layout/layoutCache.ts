@@ -146,10 +146,7 @@ function release(laid: LaidOutRuns): void {
 }
 
 function disown(vs: Variant[]): void {
-  // Indexed, not `for...of`: dropRuns runs once a label a frame, and an
-  // iterator it walks unoptimized allocates.
-  for (let i = 0; i < vs.length; i++) {
-    const v = vs[i];
+  for (const v of vs) {
     const cols = columnsOf(v.laid);
     if (cols === null) continue;
     cols.owners--;
@@ -293,9 +290,9 @@ export function cachedLayoutRuns(
 export function dropRuns(runs: readonly ResolvedRun[]): void {
   const entry = cache.get(runs);
   forgetPaintRuns(runs);
-  // Emptied rather than deleted: deleting from a WeakMap shrinks its table,
-  // and a readout's next runs grow it straight back, every frame.
-  if (entry !== undefined) disown(entry.variants);
+  if (entry === undefined) return;
+  cache.delete(runs);
+  disown(entry.variants);
 }
 
 function structuralLayout(
