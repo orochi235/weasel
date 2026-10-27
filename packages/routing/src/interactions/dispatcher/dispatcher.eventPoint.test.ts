@@ -49,7 +49,7 @@ describe('invocation coordinates', () => {
   it('gives a click\u2019s ctx the click\u2019s own world point', () => {
     const ctx = ctxFor(
       { kind: 'click' },
-      { kind: 'click', x: 3, y: 4, press: { x: 1, y: 2 }, ...noMods },
+      { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, ...noMods },
     );
     expect(ctx.world).toEqual({ x: 3, y: 4 });
   });
@@ -72,7 +72,7 @@ describe('invocation coordinates', () => {
 
 describe('enabled() sees where the event landed', () => {
   const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
-  const click: InputEvent = { kind: 'click', x: 3, y: 4, press: { x: 1, y: 2 }, ...noMods };
+  const click: InputEvent = { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, ...noMods };
 
   it('hands a click’s world point to the gate', () => {
     const enabled = vi.fn().mockReturnValue(true);

@@ -275,7 +275,7 @@ describe('immediate params for affordance-carrying kinds', () => {
   it('a click invoker keeps its press point', () => {
     const params = paramsFor(
       { kind: 'click' },
-      { kind: 'click', x: 3, y: 4, press: { x: 1, y: 2 }, affordance, ...noMods },
+      { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, affordance, ...noMods },
     );
     expect(params).toMatchObject({ world: { x: 3, y: 4 }, press: { x: 1, y: 2 }, affordance });
   });

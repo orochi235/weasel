@@ -7,6 +7,7 @@ import {
   type Action,
   type ActionsRegistry,
   contextMenuAction,
+  type ImmediateParams,
   InputScope,
   makePinchZoomAction,
   makeViewportZoomAction,
@@ -45,7 +46,6 @@ import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 import { clientToHost, hostBox, hostToClient } from './hostBox';
 import type { ViewportSize, WorldFrame } from './worldSpec';
-import type { ImmediateParams } from '@weasel-js/core';
 
 /** The view id the stage publishes its pointer under. */
 export const STAGE_VIEW_ID = 'stage';
