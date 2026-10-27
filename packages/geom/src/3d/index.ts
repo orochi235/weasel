@@ -10,7 +10,7 @@
  */
 export {
   add, sub, scale, dot, cross, len, len2, normalize, vec3, distance, lerp,
-  quatIdentity, quatFromAxisAngle,
+  quatIdentity, quatFromAxisAngle, quatMultiply, quatConjugate, quatRotate,
   type Vec3, type Quat,
 } from './vec3';
 export {
