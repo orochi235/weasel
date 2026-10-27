@@ -43,14 +43,19 @@ Owner tags, after the priority (2026-10-26):
   `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
   2026-10-11). If they do move, the package is `images`; `ingest` was turned down.
 
-- **(P3) [agent] The action pipeline's coordinates are 2D — what is left.** `WorldPoint` (`@weasel-js/routing`)
-  names the space `clientToWorld` maps into and types `InvocationCtx.world`, the dispatcher's hooks and the
-  `nodeAtPoint`, `lassoSelect`, `insert` and `snap` dep payloads. Still untyped by it: the local
-  `type Point = { x: number; y: number }` aliases across core's snap, paths, edit-anchors and canvas deps; the
-  flat `worldX`/`worldY` scalars in `PointerWorldPos` (the `pointer` dep's store, read by flip's pointer pivot,
-  never run in a 3D host) and in `@weasel-js/gestures`' click events; and the pick functions. The camera is the
-  2D `View`, and kernel3d declares `camera3d` beside it by design. Not a blocker for another kernel: the 3D lab
-  drives core's dispatcher unchanged. Findings in `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
+- **(P3) [agent] The action pipeline's coordinates are 2D — what is left.** `WorldPoint` (`@weasel-js/routing`) types
+  `InvocationCtx.world`, the dispatcher's hooks, the `nodeAtPoint`, `lassoSelect`, `insert` and `snap` dep
+  payloads, the pointer store's `PointerWorldPos.world`, and the pointer points in core's snap, paths and
+  edit-anchors code. Still untyped by it: the pick functions (`pickEvery`, `pickBest`, `pickHit`,
+  `pickOutermost` take positional `(worldX, worldY)` across `viewInputs`, `useSceneGestureDispatcher`,
+  `getNodeAtPoint`, `affordanceAt`, `nestedHit`, `selectDeep`, `enterGroup`, `useSelectTool`,
+  `PickHud`/`DevHuds` and `<SceneCanvas>` props); the binding params bag's flat `worldX`/`worldY`/`pressX`/
+  `pressY`, which every click action reads and `ClickEvent.pressX`/`pressY` feed; and `planeInput.ts`'s
+  `pressedAt`. The camera is the 2D `View`, and kernel3d declares `camera3d` beside it by design. Not a blocker
+  for another kernel: the 3D lab drives core's dispatcher unchanged.
+- **(P3) [agent] About 20 local `Point` aliases in core duplicate geom's.** `type Point = { x: number; y: number }` is
+  redeclared across the snap domain, `resolveOverlays`, `insertPreviewExtent`, `brushOverlay`, `planeInput`
+  and `handleDrag`; one definition should serve them.
 
 - **(P3) [recheck] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
@@ -61,11 +66,12 @@ Owner tags, after the priority (2026-10-26):
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) [agent] kernel3d reads stored poses as world positions everywhere.** `boundsOfNode`, the pick index,
-  snap boxes and `probes3d` all read `node.pose`, so under container composition a node inside a container is
-  picked, snapped and drawn at its container-relative position, and a container's own box is a snap target.
-  A 3D move does map through frames (2026-10-26); nothing else does. kernel3d also ships no container
-  composition for `Pose3`: `YAW_POSE_COMPOSITION` in `packages/kernel3d/src/testScene.ts` is test-only.
+- **(P3) [agent] A click on a node inside a 3D container selects the node, not the container.** In 2D the select
+  tool picks the outermost container; whether kernel3d should match is untested and unhandled since
+  `POSE3_COMPOSITION` shipped (2026-10-27).
+- **(P3) [agent] labkit's 3D lab example draws stored poses.** `packages/labkit/examples/3d-lab/renderer3d.ts`
+  reads `node.pose`, not `worldPoseOf`, so under containers it would draw nested nodes in the wrong place. Its
+  scene has no containers today.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -115,16 +121,14 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [recheck] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
 
-- **(P3) [agent] svg import: turned glyphs, and some per-glyph `x` lists, are not read.** `rotate` warns
-  (`packages/svg/src/tspanLines.ts`) and needs per-glyph rotation in the text model, the renderer, picking,
-  bounds and `textToPath`. A `<text>`'s `x` list over `<tspan>`s is read (`foldTextPositions` in
-  `packages/svg/src/glyphShifts.ts`) except where a `<tspan>` it reaches has its own `x` or `dx`: SVG takes
-  each glyph's value from the nearest ancestor that has one, and merging that per glyph is not done, so it
-  warns and reads only the first value. Like every `x` list, it also needs a loaded face to measure the
-  glyphs.
-- **(P3) [agent] A caret cluster across a zero-width mark spans one unit too far.** `caretCells` (`hitTest.ts`) merges
-  A, a combining mark and a kerned B into one cell spanning 0..23 rather than 0..22, because the mark's cell
-  starts at 23: the mark keeps an advance of 0 and A takes the kerning (2026-10-27).
+- **(P3) [agent] svg import: a `<text>` per-glyph `x` list is not read where a `<tspan>` it reaches has both an `x`
+  and a `y` or `dy`** (`foldTextPositions` in `packages/svg/src/glyphShifts.ts`), because that tspan may open a
+  new line and the fold measures one line.
+- **(P3) [agent] svg import warns about collapsing white space under `xml:space="preserve"`.** The `dx`, `dy` and
+  `rotate` list checks in `glyphShifts.ts`, `glyphRises.ts` and `glyphTurns.ts` do not read
+  `preservesSpace`, so a list over preserved white space is reported and not read.
+- **(P3) [agent] The DOM text editor drops a run's `rotate` and `stroke` on an edit.** `packages/text-dom/src/domRuns.ts`
+  has no slot for either when it turns runs into spans and back.
 
 ### Path editing tricks
 
@@ -290,9 +294,6 @@ Owner tags, after the priority (2026-10-26):
   L-BFGS steps there are usually cut to half length by the line search, or stopped at 80% of the nearest
   flattening. A looser stop, or a step not held back by nearly-flat triangles, is what is left; either changes
   the final map, so the fold test's refit anchor counts (5 and 11) will move.
-- **(P3) [agent] `warp.bench.ts` records the node's tree as the commit it measured.** It writes `git rev-parse HEAD`
-  as each run's `sha`, which on an onto node is not the commit under test; the 2026-10-27 runs are told apart by
-  their `label`.
 - **(P3) [recheck] WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
@@ -433,18 +434,12 @@ Owner tags, after the priority (2026-10-26):
   `diagram-drop` demo a straight `filter → mix` edge strikes through the two boxes dropped between them.
   Painting edges under nodes needs an edge between a container's fill and its members, or the edge hidden
   under the container; the alternative is `router="avoid"` in the demo. A pick between those (2026-10-26).
-- **(P3) [agent] Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its
-  overflow past the container's last visible line and reports the region through
-  `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
-  container's bounds. Ruled 2026-10-11: a container's scroll offset is view state, part of the frame
-  the container gives its children, and the document never moves. Every scene now composes frames
-  (2026-10-26), so what is left is the offset and a host that reads `contentExtent` and scrolls. The
-  offset cannot simply join `scene.composition`: the layout pass and every other writer that stores
-  a pose must keep folding through the unscrolled frame, or scrolling would rewrite children's
-  stored poses. So it is a second, view-side fold over the same frames, read by painting
-  (`buildSceneTree`'s `composePose`), picking, selection chrome, the preview ghost
-  (`resolvePreviews`), and the gestures (`scenePoseFrame`, `sceneGestureFrames`), which must read and
-  write through it alike so a move inside a scrolled container stores the content position.
+- **(P3) [agent] A container's wheel scroll never hands the wheel on at the end of its range.** `containerScrollAction`
+  (`container.scroll`, 2026-10-27) always takes the wheel over a scrollable container, because its
+  `enabled()` gets no delta; it also measures a turned container's range on its axis-aligned box.
+- **(P3) [agent] A connector into a scrolled container is untested.** A derived node works out its pose from the
+  document positions, while its painted path uses the scrolled positions of the nodes it connects; painting and
+  hit testing are believed to agree (inferred, not tested).
 
 ---
 
@@ -488,10 +483,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
 
-- **(P3) [agent] A vertical `RangeSlider`'s fill runs across its track.** With `orientation="vertical"` the fill is
-  laid on the inline axis (`inset-inline-start`/`end`), so it runs across the track rather than along it
-  (predates 2026-10-27, when the fill moved off physical `left`/`right`).
-
 - **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
   `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
   (median of 12) with a node property schema open: `IconAttrField`'s grid of every registered icon
@@ -505,16 +496,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) [agent] A HUD menu's text row has no IME composition.** `createTextEditor` (`hud/src/menu/textEdit.ts`) takes
-  keydown characters only, so a composed character (CJK, dead keys) cannot be entered. The fix is a hidden
-  `<input>` placed at the row and focused while an edit runs, feeding `compositionupdate` (drawn as preedit) and
-  `compositionend` (inserted) into the editor. That reaches past the menu into `attach.ts`: focus moving from the
-  canvas to the input fires the canvas `blur`, which calls `hud.focus(null)`; keys land on the input, not the
-  canvas `keydown` listener; and a `Widget` has no DOM access to ask for an input. It needs a `Widget` hook for
-  an active text edit (its rect and composition callbacks), `attach.ts` owning the input and treating its focus
-  as the canvas's, and keydowns with `isComposing` or keyCode 229 ignored. text-dom's `useTextEdit` composes on
-  its own contentEditable overlay, which cannot be reused here. Alt+Backspace and Alt+Delete still delete one
-  character, not a word.
+- **(P3) [agent] Cmd+Backspace does nothing in a HUD menu's text row.** macOS deletes to the start of the line;
+  `createTextEditor` (`hud/src/menu/textEdit.ts`) binds Alt+Backspace and Alt+Delete to word deletion
+  (2026-10-27) and nothing to Cmd.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -709,12 +693,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [agent] The overlay frame's boundary may be off by the page's own scroll.** Its `getBoundingClientRect`
-  override (`packages/ui/src/overlays/overlayFrame.ts`) reports a corner of `clientLeft − scrollLeft`,
-  `clientTop − scrollTop`, and for a fixed frame React Aria reads that rect as the offset between container and
-  boundary, so once the page itself is scrolled the boundary may be off by that scroll (inferred from React Aria
-  3.52.1's `calculatePosition`; every browser test runs with the page unscrolled).
-
 - **(P3) [recheck] On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
   server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
@@ -750,12 +728,6 @@ only story runner in the repo.
   the branch and commit. A screenshot with the trial's marks on it goes into the issue by pasting it there;
   never by committing it to the repo. Left to settle: how the workshop reaches GitHub, and whether marks come
   back (next entry) to draw that screenshot.
-- **(P3) [agent] A pending forge story host swallows the marks' wheel.** A story host still marked `data-pending`
-  has `pointer-events: none`, so the wheel's under-the-pointer lookup (`packages/labkit/src/annotations/wheelScroll.ts`)
-  skips it and its inner scroller, and a wheel during that window does nothing.
-- **(P3) [agent] A forge story never near the viewport exports blank.** `TrialHost` renders a story's content only
-  near the viewport, so a mark export of one that never was captures an empty host: the opaque story
-  background, with nothing on it.
 
 - **(P3) [recheck] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
@@ -1068,17 +1040,17 @@ only story runner in the repo.
   to look for: a sync from this machine into another tree, a network event, or the onto daemons. The
   logs lived in a session scratchpad and are not kept.
 
-- **(P2) [agent] HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
-  `tests/perf/hud-vs-dom.spec.ts` (`tests/perf/README.md`, "What the HUD allocates"). With the readout changing
-  every frame the HUD allocates 3.15 MB a frame at 5,000 glyphs on a fixed camera against the DOM's 0.10
-  (msb-uai, 2026-10-27, down from 4.51). Every key string is gone. What is left: the column and quad arrays
-  (`slice`, 916 KB), `layoutRuns`' code point list and line boxes (298), `breakLines` (206, including a copy of
-  the entry that opens each line), `paintRuns` (214), `resolveRuns`/`resolveTextStyle` building the new command
-  (155, 100), `placeLine` (153), and `glyphMetrics`' `get descent` returning a boxed number on each read (122).
-  - **A static HUD should now be skippable, not yet measured.** `attachHud`'s layer declares `deps` that hold
-    while no widget changed, so a canvas reuses the layer and, past 250 commands, retains it. The spec draws the
-    HUD layer by calling `layer.draw` directly, so it cannot see this; routing its static HUD cell through
-    `drawLayers` with a command cache would price it.
+- **(P2) [agent] HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.** With the readout
+  changing every frame the HUD allocates 2.52 MB a frame at 5,000 glyphs on a fixed camera against the DOM's 0.10
+  (msb-uai, 2026-10-27, down from 3.17; `tests/perf/hud-vs-dom.spec.ts`, README "What the HUD allocates").
+  Line breaking, painting's group slots, an atlas face's descent and the empty objects spread while resolving are
+  gone. What is left: the column and quad arrays (`slice`, 869 KB), which the layout and paint caches hold;
+  `layoutRuns`' line boxes and result (255); `paintRuns` and `groupFor` building the returned groups (179, 87);
+  `placeLine`'s line box (133); `resolveFontVariantInternal`'s result object and two key strings per run (96;
+  caching it per font entry would change result identity); `resolveTextStyle` and `resolveRuns` building the
+  command (73, 67). Glyph rotation added two numbers per quad and one per column, which these figures predate
+  (about +24 bytes a glyph, inferred from the shapes, not measured). A still HUD drawn through `drawLayers`
+  costs the main thread what the DOM does (README, "A still HUD through `drawLayers`").
 
 - **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
@@ -1245,28 +1217,35 @@ only story runner in the repo.
   draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
 
-- **(P3) [agent] Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is drawn
-  once into its own texture and composited (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the
-  policy is `packages/core/src/core/layers/retain.ts`; `<Canvas retain>` sets the threshold and budget). Each
-  surface covers only the device pixels its layer can paint. A custom shader with its own vertex shader, one
-  reading `gl_FragCoord` without declaring `u_fragOrigin`, and effects with no `reach` still get a
-  canvas-sized surface (16 MB at 1280x800 and dpr 2). Layers with `effects`, and layers inside a `LayerGroup`
-  with effects, are retained since 4c0141f5a. Left:
+- **(P3) [agent] Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is drawn once into
+  its own texture and composited (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the policy is
+  `packages/core/src/core/layers/retain.ts`; `<Canvas retain>` sets the threshold and budget). Each surface
+  covers only the device pixels its layer can paint. A custom shader with its own vertex shader, one reading
+  `gl_FragCoord` without declaring `u_fragOrigin`, and effects with no `reach` still get a canvas-sized surface
+  (16 MB at 1280x800 and dpr 2). Layers with effects are retained since 4c0141f5a, and a world layer is retained
+  through a pan since f9282f7bf: its surface is composited moved by whole device pixels and drawn again with a
+  margin of an eighth of the buffer each side (`PAN_MARGIN`). Left:
 
-  - **The budget still caps canvas-sized layers at about 16.** `retainBudget` (256 MB default) counts only
-    kept surfaces. A frame that redraws can hold the budget plus one canvas-sized multisampled scratch buffer
-    (131 MB at 4x), plus a single-sampled one when a retained group sits inside an effects buffer. Drawing in
-    tiles would cap this. Whether the default should scale with the drawing buffer is also open.
-  - **Retaining through camera motion.** A world layer stops retaining while the view moves, so a pan
-    resubmits every layer. Moving the kept surface gives exact pixels only for a whole-device-pixel shift;
-    reusing it also needs an oversized surface (a margin past the buffer) and content that moves exactly with
-    the view. Shader commands (their `bounds` are absolute screen pixels) and screen-unit gradients do not,
-    so they would opt the layer out.
-  - **An effects layer uses the same 250-command threshold** as any other, though its passes cost far more
-    than its commands, so a low-count blurred layer is not retained unless it sets `retain: true`. Measure
-    before changing it.
+  - **The budget still caps canvas-sized layers at about 16, and fills before a pan needs margins.**
+    `retainBudget` (256 MB default) counts only kept surfaces. A frame that redraws can hold the budget plus one
+    multisampled scratch buffer, now up to 1.56 times the canvas for a margin surface (205 MB at 4x
+    multisampling, 2560x1600), plus a single-sampled one inside an effects buffer. Drawing in tiles would cap
+    the scratch, but each tile dispatches the children again unless they are culled per tile. At 16
+    canvas-sized layers no margin fits and a pan falls back to drawing them straight through
+    (`tests/perf/recorded/retain-pan-2026-10-27/`). Open: whether the default should scale with the drawing
+    buffer, and whether to give margins to some layers rather than none.
+  - **A pan by fractions of a device pixel never reuses a surface** (kit inertia, most trackpad momentum); such
+    a layer is drawn straight through until the view holds. Reusing one needs resampling, which is not exact.
+  - **Pan retaining is opted out for layers holding a shader, a screen-unit paint or effects.** Screen units are
+    the gradient and pattern default, so most real world layers holding a gradient opt out. Effects run in
+    buffers clamped to the drawing buffer; growing those to the margin would let a blurred layer follow a pan.
+  - **An effects layer uses the same 250-command threshold** as any other, though its passes cost far more than
+    its commands, so a low-count blurred layer is not retained unless it sets `retain: true`. Measure before
+    changing it.
   - **The threshold** was left at 250 after measurement (`tests/perf/layer-dispatch.spec.ts`; result files in
     `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`).
+- **(P3) [agent] The perf specs are not linted.** `tests/perf/*.spec.ts` break `no-console` (`layer-dispatch.spec.ts`
+  among them), but `npm run lint` covers only `packages` and `apps`.
 
 - **(P3) [agent] The pull request benchmark job's new run time is unmeasured.** Since 2026-10-26 it runs
   `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a
