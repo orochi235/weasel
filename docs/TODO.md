@@ -954,7 +954,10 @@ only story runner in the repo.
   presumably the timed-out attempt's lab still answering. `TrialTransport.test.tsx`'s "shares the chosen speed
   between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both
   2026-10-27). What they wait on is unknown: the next sighting wants the attempt's stack at the timeout.
-  `Lab.messages`'s run at 041b87fa7 also failed once on play rate ("plays with the controls left off").
+  "plays with the controls left off" has now read play rate 0 after a play message twice: at 041b87fa7, and on
+  main at 0125be239 (2026-10-27), in a run where four other `Lab.messages` tests timed out and passed on retry.
+  Its clock spans an hour, so it did not run out; a play message landing before the lab's listener is wired
+  under load is the likely shape (inferred, not checked).
 
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
