@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { Action } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { ToolsApi } from '../tools/overlayBinding';
 import { LeanSceneCanvas } from './LeanSceneCanvas';
@@ -44,7 +45,7 @@ function Probe({ into }: { into: Seen }) {
   return null;
 }
 
-const scene = () => createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+const scene = () => createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
 
 describe('a preset object', () => {
   it("registers its actions and tools, installs its contributions' deps, and hands path edit its extensions", () => {

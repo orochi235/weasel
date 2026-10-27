@@ -2,7 +2,7 @@
 // falls on the point the tool acts at. Distinct from the toolbar icon sets,
 // which are `fill: none` outlines centred in their box.
 //
-// Geometry is computed, not eyeballed — see CLAUDE.md ("Drawing icons").
+// Geometry is computed, not eyeballed — see docs/icons.md ("Drawing rules").
 
 const n = (v) => Math.round(v * 100) / 100;
 

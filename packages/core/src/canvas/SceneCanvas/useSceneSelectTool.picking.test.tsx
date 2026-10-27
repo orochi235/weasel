@@ -180,7 +180,8 @@ describe('useSceneSelectTool — ancestor clips', () => {
             parent: asNodeId('bed'),
             kind: 'mark',
             layer: 'default',
-            pose: leaf,
+            // `leaf` is in world; the bed's frame is at (-50, -50).
+            pose: { ...leaf, x: leaf.x + 50, y: leaf.y + 50 },
             data: {},
           },
         ],

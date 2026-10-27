@@ -8,6 +8,7 @@
 // stops themselves, and the browser only interpolates the short hops between.
 
 import { sampleGradientStops, type Paint } from '@weasel-js/core';
+import { solidColorOf } from './components/paintValue';
 
 /** Sample count along a previewed gradient. Enough that a hue arc reads as a
  *  curve at chip size; a straight sRGB ramp would need a fraction of it. */
@@ -38,15 +39,20 @@ function meshPreview(paint: { patches?: { colors: string[] }[] }): string | unde
   return layers.join(', ');
 }
 
+/** `samples + 1` CSS color stops, evenly spaced from 0 to 1: the color `colorAt` gives each, placed at `positionOf`. */
+export function sampledCssStops(colorAt: (t: number) => string, samples: number, positionOf: (t: number) => string): string {
+  const out: string[] = [];
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    out.push(`${colorAt(t)} ${positionOf(t)}`);
+  }
+  return out.join(', ');
+}
+
 /** CSS color stops across the whole ramp, in the gradient's own blend space. */
 function sampledStops(paint: Extract<Paint, { stops: unknown }>): string {
   const space = paint.interpolate ?? 'rgb';
-  const out: string[] = [];
-  for (let i = 0; i <= SAMPLES; i++) {
-    const t = i / SAMPLES;
-    out.push(`${sampleGradientStops(paint.stops, t, space)} ${(t * 100).toFixed(1)}%`);
-  }
-  return out.join(', ');
+  return sampledCssStops((t) => sampleGradientStops(paint.stops, t, space), SAMPLES, (t) => `${(t * 100).toFixed(1)}%`);
 }
 
 const DEG = 180 / Math.PI;
@@ -69,8 +75,8 @@ function pct(v: number): string {
  */
 export function paintPreviewCss(paint: Paint | null | undefined): string | undefined {
   if (paint == null) return undefined;
-  const kind = paint.kind ?? 'solid';
-  if (kind === 'solid') return (paint as { color: string }).color;
+  const solid = solidColorOf(paint);
+  if (solid !== undefined) return solid;
 
   if (paint.kind === 'linear-gradient') {
     const dx = paint.to.x - paint.from.x;

@@ -39,12 +39,16 @@ export interface RegionOptions<TLayer extends string> {
   style?: NodeStyle;
   /** Marks a region whose box is fitted to its members each time it is built from data. */
   fitted?: boolean;
+  /** A container's reorder axis. */
+  reorder?: 'x' | 'y';
   /** The title's family. Default sans-serif. */
   fontFamily?: string;
 }
 
-function regionData(role: ContainerRole, axis: 'x' | 'y', style: NodeStyle, fitted: boolean): DiagramSceneData {
-  const container: DiagramContainer = { role, header: containerShape(role, axis).header, ...(fitted ? { fitted: true } : {}) };
+function regionData(role: ContainerRole, axis: 'x' | 'y', style: NodeStyle, fitted: boolean, reorder?: 'x' | 'y'): DiagramSceneData {
+  const container: DiagramContainer = {
+    role, header: containerShape(role, axis).header, ...(fitted ? { fitted: true } : {}), ...(reorder !== undefined ? { reorder } : {}),
+  };
   return {
     diagram: { outline: 'rect', container },
     ...(role === 'lane' ? {} : { fill: { paint: { color: style.fill } } }),
@@ -67,7 +71,7 @@ export function regionSpecs<TLayer extends string>(
   const { layout, header } = containerShape(role, axis);
   const region: RegionSpec<TLayer> = {
     id: opts.id as NodeId, kind: 'mark', layer: opts.layer, pose, parent: (opts.parent ?? null) as NodeId | null,
-    data: regionData(role, axis, style, opts.fitted === true), layout: CONTAINER_LAYOUTS[layout],
+    data: regionData(role, axis, style, opts.fitted === true, opts.reorder), layout: CONTAINER_LAYOUTS[layout],
   };
   if (title === null) return [region];
   return [region, {

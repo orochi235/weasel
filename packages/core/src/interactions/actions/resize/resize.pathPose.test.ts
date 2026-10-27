@@ -5,6 +5,7 @@
 import { heldPose } from '../testUtils';
 import { describe, it, expect } from 'vitest';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
@@ -17,7 +18,7 @@ import { resizeAction } from './action';
 const ID = asNodeId('tri');
 
 function makeScene(): Scene<unknown, string, unknown> {
-  const scene = createScene<unknown, 'main', Path>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<unknown, 'main', Path>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   scene.add({
     id: ID,
     kind: 'mark',

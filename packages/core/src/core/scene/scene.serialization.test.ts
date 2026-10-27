@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
 import { createScene, sceneFromJSON } from './scene';
 import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
@@ -12,7 +13,7 @@ describe('scene.toJSON', () => {
     const a = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const b = scene.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     const json = scene.toJSON();
-    expect(json.version).toBe(2);
+    expect(json.version).toBe(3);
     expect(json.systemLayers.map((l) => l.id)).toEqual(['structures', 'plantings']);
     expect(json.nodes).toHaveLength(2);
     expect(json.nodes[0]).toMatchObject({ id: a, kind: 'mark', layer: 'structures', pose: POSE });
@@ -169,7 +170,7 @@ describe('sceneFromJSON', () => {
   it('a loaded container keeps its clipFromPose through remove and undo', () => {
     const factory = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
     const json: SerializedScene<Data, 'structures', typeof POSE> = {
-      version: 2,
+      version: 3,
       systemLayers: [{ id: 'structures' }],
       nodes: [{
         id: 'bed',
@@ -189,13 +190,13 @@ describe('sceneFromJSON', () => {
   });
 
   it('throws on unknown version', () => {
-    const json = { version: 3, systemLayers: [{ id: 'structures' as const }], nodes: [] };
+    const json = { version: 4, systemLayers: [{ id: 'structures' as const }], nodes: [] };
     expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version/);
   });
 
   it('throws on unknown clipFromPoseKey', () => {
     const json: SerializedScene<Data, 'structures', typeof POSE> = {
-      version: 2,
+      version: 3,
       systemLayers: [{ id: 'structures' }],
       nodes: [{
         id: 'bed',
@@ -211,7 +212,7 @@ describe('sceneFromJSON', () => {
 
   it('accepts a higher-layer child subtree in JSON (renders above its parent)', () => {
     const json: SerializedScene<Data, 'structures' | 'plantings', typeof POSE> = {
-      version: 2,
+      version: 3,
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
       nodes: [
         { id: 'bed', kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } },
@@ -295,7 +296,7 @@ describe('Scene.loadState', () => {
 
   it('throws on an unsupported version', () => {
     const dst = createScene<D, 'main'>({ systemLayers: LAYERS });
-    expect(() => dst.loadState({ version: 3, systemLayers: LAYERS, nodes: [] } as never)).toThrow(/version/);
+    expect(() => dst.loadState({ version: 4, systemLayers: LAYERS, nodes: [] } as never)).toThrow(/version/);
   });
 
   it('restores a parented snapshot in place over a populated scene', () => {
@@ -319,7 +320,7 @@ describe('Scene.loadState', () => {
 });
 
 describe('user layers survive a round-trip', () => {
-  const baseOpts = () => ({ systemLayers: [{ id: 'base' as const }] });
+  const baseOpts = () => ({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'base' as const }] });
   const withUserLayer = () => {
     const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
     scene.addLayer({ id: 'fx', name: 'Effects' });

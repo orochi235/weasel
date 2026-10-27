@@ -1,17 +1,24 @@
+import { chevron } from '../../../packages/icons/scripts/lib/base.mjs';
+
 // WeaselDraw's own controls.
+/** The center of pixel `k` at 16px 1x. */
+const px = (k) => 0.625 + 1.25 * k;
+const HEAD = [2.5 * Math.SQRT2, 45];
+
 export const ACTIONS = {
+  // A path with heads along it, the marks the toggle shows on every path.
+  pathDirection: `<path d="M${px(1)} ${px(7)}H${px(14)}"/>`
+    + `<path d="${chevron([px(6), px(7)], [1, 0], ...HEAD)}"/><path d="${chevron([px(12), px(7)], [1, 0], ...HEAD)}"/>`,
   releaseCompound: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <rect x="2" y="5" width="6" height="10" fill="currentColor" stroke="none"/>
       <rect x="12" y="5" width="6" height="10"/>
       <line x1="10" y1="3" x2="10" y2="17" stroke-dasharray="1.5 1.5"/>
     </g>`,
+  // core:flipX's trapezoids with both halves outlined: an even pair, so the mode never reads as the flip action.
   symmetry: `
-    <g stroke-linecap="butt" stroke-linejoin="miter">
-      <path d="M8 4 L3 10 L8 16 Z" fill="currentColor" stroke="none"/>
-      <path d="M12 4 L17 10 L12 16 Z" stroke-linejoin="round"/>
-      <line x1="10" y1="2" x2="10" y2="18" stroke-dasharray="1.5 1.5"/>
-    </g>`,
+    <path d="M1.25 2.5 8.75 6.25 8.75 13.75 1.25 17.5Z M2.5 4.5225 7.5 7.0225 7.5 12.9775 2.5 15.4775Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+    <path d="M18.75 2.5 11.25 6.25 11.25 13.75 18.75 17.5Z M17.5 4.5225 12.5 7.0225 12.5 12.9775 17.5 15.4775Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,
   settings: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <path d="M10 1.5 L11.2 3.6 L13.6 3 L13.7 5.4 L15.8 6.6 L14.5 8.6 L15.8 10.6 L13.7 11.8 L13.6 14.2 L11.2 13.6 L10 15.7 L8.8 13.6 L6.4 14.2 L6.3 11.8 L4.2 10.6 L5.5 8.6 L4.2 6.6 L6.3 5.4 L6.4 3 L8.8 3.6 Z" stroke-linejoin="round"/>

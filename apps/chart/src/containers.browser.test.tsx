@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
+import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import { isDiagramBody } from '@weasel-js/diagram';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
@@ -42,7 +43,11 @@ const saved = (): Saved[] => {
 };
 const role = (r: string) => saved().filter((n) => n.data.diagram?.container?.role === r);
 const bodies = () => saved().filter(isDiagramBody);
-const byId = (id: string) => saved().find((n) => n.id === id)!;
+/** `id` as saved, posed where it draws: a member is stored in its container's frame. */
+const byId = (id: string): Saved => {
+  const all = saved();
+  return { ...all.find((n) => n.id === id)!, pose: worldPosesOf(all, RIGID_POSE_COMPOSITION).get(id)! };
+};
 const lanesInOrder = () => role('lane').sort((a, b) => a.pose.y - b.pose.y);
 
 const shapes = (name: string) => userEvent.click(page.getByRole('complementary', { name: 'Shapes and tools' }).getByRole('button', { name, exact: true }));

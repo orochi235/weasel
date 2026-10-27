@@ -1,6 +1,6 @@
 /** A diagram scene as a {@link DiagramDocument}: what every format writes from. */
 import {
-  pageHolding, placedPagesOf, type PlacedPage, type RectPose, type Scene,
+  composeWorldPose, pageHolding, placedPagesOf, scenePoseAdapter, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
@@ -48,7 +48,7 @@ function contentPage(scene: AnyScene): PlacedPage {
 export function documentFromScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, opts: DocumentFromSceneOptions = {},
 ): DiagramDocument {
-  const s = scene as unknown as AnyScene;
+  const s = inWorld(scene);
   const themeValue = s.doc.get(DIAGRAM_THEME_KEY) as DiagramDocument['theme'];
   const theme = diagramThemeFrom(themeValue, opts.theme);
   const placed = placedPagesOf(scene);
@@ -122,3 +122,20 @@ const isContainerOrPool = (node: ReadNode): boolean => {
   const trait = (node.data as { diagram?: { container?: { role?: string } } }).diagram;
   return trait?.container?.role === 'container' || trait?.container?.role === 'pool';
 };
+
+/** `scene` read with every node at the pose it is drawn at in document space. */
+function inWorld<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): AnyScene {
+  const raw = scene as unknown as AnyScene;
+  const poses = scenePoseAdapter(scene as never);
+  const placed = (node: ReadNode): ReadNode => ({ ...node, pose: composeWorldPose(poses, node.id, scene.composition.compose as never) });
+  return {
+    roots: raw.roots,
+    doc: raw.doc,
+    childrenOf: (id) => raw.childrenOf(id),
+    get: (id) => {
+      const node = raw.get(id);
+      return node === undefined ? undefined : placed(node);
+    },
+    renderOrderNodes: () => raw.renderOrderNodes().map(placed),
+  };
+}

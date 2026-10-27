@@ -1,3 +1,4 @@
+import type { DropVerdict } from './dropVerdict';
 import type { LayoutDropTargetMode, LayoutStrategy, ReflowTransition } from '../../layout/types';
 
 /**
@@ -17,9 +18,11 @@ export interface LayoutDep {
 
 /**
  * Whether the nodes `ids` may be dropped into the container `parent`. A move
- * consults it before reparenting anything: reparent-on-drop passes over a
- * refused container to the nearest one around it that admits them, and the
- * layout drop treats a refused layout container as if it were not there.
- * Absent, every container takes any drop.
+ * consults it before reparenting anything. Where it answers `false`,
+ * reparent-on-drop passes over the container to the nearest one around it
+ * that admits them, and the layout drop treats a layout container as if it
+ * were not there. Where it answers a `DropRefusal`, a drag over the container
+ * draws it refused with the reason beside the pointer, and a release there
+ * moves nothing. Absent, every container takes any drop.
  */
-export type CanDropIntoDep = (parent: string, ids: readonly string[]) => boolean;
+export type CanDropIntoDep = (parent: string, ids: readonly string[]) => DropVerdict;

@@ -42,7 +42,8 @@ describe('useDepartureGhostLayer', () => {
     const out = result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[];
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({ kind: 'group', alpha: 0.25 });
-    expect(rectsIn(out)).toEqual([30, 4]);
+    // The child is stored in the ghost's frame.
+    expect(rectsIn(out)).toEqual([30, 34]);
   });
 
   it('composes a ghost into the frame of a parent still in the scene, and its descendants into its own', () => {

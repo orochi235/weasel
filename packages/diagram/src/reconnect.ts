@@ -160,10 +160,9 @@ export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Act
           onMove(moveCtx: InvocationCtx): void {
             scratch.current = { x: moveCtx.world.x, y: moveCtx.world.y };
           },
-          overlay(): OngoingOverlay | null {
+          overlay(): readonly OngoingOverlay[] | null {
             if (!scratch.open) return null;
-            const points = resolver.preview(scratch.route, scratch.fixed, scratch.current, scratch.deps.view, scratch.moving, scratch.ends.trait.waypoints);
-            return points.length < 2 ? null : { kind: 'polyline', points, role: 'connector' };
+            return resolver.overlays(scratch.route, scratch.fixed, scratch.current, scratch.deps.view, scratch.moving, scratch.ends.trait.waypoints);
           },
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             scratch.open = false;

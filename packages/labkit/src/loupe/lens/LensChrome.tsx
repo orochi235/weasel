@@ -1,4 +1,5 @@
 import { useActionsRegistry } from '@weasel-js/core';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { useLensResolution, useShownSource } from './LensSlot';
 import { LENS_ACTION_IDS } from './lensActionDefs';
 import { type LensSlotProps, requestsOf } from './lensSource';
@@ -54,7 +55,8 @@ export function LensChrome<C>({
     shownRequests.every((r) => gridFits(shown.source?.kind ?? null, r.factor, r.dpr)) &&
     !difference;
   const at = { lensId: lens.lensId, reticle, source: shown.source?.kind ?? null };
-  const trigger = (id: string) => () => {
+  const fire = (id: string | undefined): void => {
+    if (id === undefined) return;
     onFocus?.(lens.lensId);
     registry?.trigger(id);
   };
@@ -67,45 +69,49 @@ export function LensChrome<C>({
         <span className="lk-lens-chrome__compare">{describe(settings.compare, at)}</span>
       ) : null}
       <span className="lk-lens-chrome__toggles">
-        {SOURCE_TOGGLES.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className="lk-lens-chrome__toggle"
-            aria-pressed={source?.kind === t.kind}
-            onClick={trigger(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-        {READOUT_TOGGLES.map((t) => {
-          const on = settings.readouts.includes(t.readout);
-          const needs = t.readout === 'grid' && on && !gridOk;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              className="lk-lens-chrome__toggle"
-              aria-pressed={on}
-              onClick={trigger(t.id)}
-            >
-              {needs ? GRID_NEEDS : t.label}
-            </button>
-          );
-        })}
-        {settings.compare !== null
-          ? VIEW_TOGGLES.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className="lk-lens-chrome__toggle"
-                aria-pressed={settings.view === t.view}
-                onClick={trigger(t.id)}
-              >
-                {t.label}
-              </button>
-            ))
-          : null}
+        <ToggleBar
+          ariaLabel="Source"
+          size="sm"
+          variant="minimal"
+          items={SOURCE_TOGGLES.map((t) => ({ value: t.kind, label: t.label }))}
+          value={source?.kind ?? null}
+          // The pressed source may be a fallback for the one wanted, so pressing it again still asks for it.
+          allowDeselect
+          onChange={(next) =>
+            fire(SOURCE_TOGGLES.find((t) => t.kind === (next ?? source?.kind))?.id)
+          }
+        />
+        <ToggleBar
+          ariaLabel="Readouts"
+          mode="multiple"
+          size="sm"
+          variant="minimal"
+          items={READOUT_TOGGLES.map((t) => ({
+            value: t.readout,
+            label:
+              t.readout === 'grid' && settings.readouts.includes('grid') && !gridOk
+                ? GRID_NEEDS
+                : t.label,
+          }))}
+          value={settings.readouts}
+          onChange={(next) =>
+            fire(
+              READOUT_TOGGLES.find(
+                (t) => next.includes(t.readout) !== settings.readouts.includes(t.readout),
+              )?.id,
+            )
+          }
+        />
+        {settings.compare !== null ? (
+          <ToggleBar
+            ariaLabel="View"
+            size="sm"
+            variant="minimal"
+            items={VIEW_TOGGLES.map((t) => ({ value: t.view, label: t.label }))}
+            value={settings.view}
+            onChange={(next) => fire(VIEW_TOGGLES.find((t) => t.view === next)?.id)}
+          />
+        ) : null}
       </span>
     </div>
   );

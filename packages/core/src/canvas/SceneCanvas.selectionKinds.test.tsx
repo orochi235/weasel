@@ -8,6 +8,7 @@ import { render, act } from '@testing-library/react';
 import { SelectionContextProvider, useSelectionContext } from '@weasel-js/routing/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useOptionalViewInputs } from './viewInputs';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type NodeId, type Scene } from 'core/scene/types';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
@@ -34,7 +35,7 @@ const NODES: Record<string, { kind: 'mark' | 'group'; pose: P; data: D }> = {
 const IDS = Object.keys(NODES).map(asNodeId);
 
 function makeScene(): Scene<D, L, P> {
-  const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+  const s = createScene<D, L, P>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   for (const [id, n] of Object.entries(NODES)) {
     s.add({ id: asNodeId(id), layer: 'main', ...n } as Parameters<typeof s.add>[0]);
   }

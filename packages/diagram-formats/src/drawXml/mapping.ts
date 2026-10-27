@@ -5,8 +5,26 @@ import type { Outline } from '@weasel-js/diagram';
 /** The arc size, in percent, at and past which a rounded rect has round ends and reads as a stadium. */
 export const STADIUM_ARC = 50;
 
-/** Shapes by their style name, each with the style that writes it back. */
-export const SHAPES: ReadonlyArray<{ name: string; outline: Exclude<Outline, object>; write: readonly (string | [string, string | number])[] }> = [
+type StylePart = string | [string, string | number];
+
+/** A figure drawn over its label, as BPMN's events and gateways and the network devices are. */
+const LABEL_BELOW: StylePart[] = [['verticalLabelPosition', 'bottom'], ['verticalAlign', 'top']];
+const event = (outline: string): StylePart[] =>
+  [['shape', 'mxgraph.bpmn.event'], ['outline', outline], ['symbol', 'general'], ...LABEL_BELOW];
+const gateway = (type: string): StylePart[] => [['shape', 'mxgraph.bpmn.gateway2'], ['gwType', type], ...LABEL_BELOW];
+const device = (name: string): StylePart[] => [['shape', `mxgraph.networks.${name}`], ...LABEL_BELOW];
+
+/**
+ * Shapes by their style name, each with the style that writes it back. `when` narrows a name to the
+ * cells whose style also holds that pair; an entry without `write` is read only. Read takes the first
+ * entry that matches, write the first that names the outline.
+ */
+export const SHAPES: ReadonlyArray<{
+  name: string;
+  when?: readonly [string, string];
+  outline: Exclude<Outline, object>;
+  write?: readonly StylePart[];
+}> = [
   { name: 'rhombus', outline: 'diamond', write: ['rhombus'] },
   { name: 'ellipse', outline: 'ellipse', write: ['ellipse'] },
   { name: 'hexagon', outline: 'hexagon', write: [['shape', 'hexagon'], ['perimeter', 'hexagonPerimeter2'], ['size', 0.2]] },
@@ -24,7 +42,34 @@ export const SHAPES: ReadonlyArray<{ name: string; outline: Exclude<Outline, obj
   { name: 'folder', outline: 'folder', write: [['shape', 'folder'], ['tabPosition', 'left']] },
   { name: 'umlActor', outline: 'actor', write: [['shape', 'umlActor'], ['verticalLabelPosition', 'bottom'], ['verticalAlign', 'top']] },
   { name: 'doubleEllipse', outline: 'doubleEllipse', write: ['ellipse', ['shape', 'doubleEllipse']] },
+  { name: 'mxgraph.bpmn.event', when: ['outline', 'standard'], outline: 'event', write: event('standard') },
+  { name: 'mxgraph.bpmn.event', when: ['outline', 'catching'], outline: 'intermediateEvent', write: event('catching') },
+  { name: 'mxgraph.bpmn.event', when: ['outline', 'throwing'], outline: 'intermediateEvent' },
+  { name: 'mxgraph.bpmn.event', outline: 'event' },
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'exclusive'], outline: 'exclusiveGateway', write: gateway('exclusive') },
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'parallel'], outline: 'parallelGateway', write: gateway('parallel') },
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'inclusive'], outline: 'inclusiveGateway', write: gateway('inclusive') },
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'eventBased'], outline: 'eventGateway', write: gateway('eventBased') },
+  { name: 'mxgraph.bpmn.gateway2', outline: 'diamond' },
+  {
+    name: 'mxgraph.bpmn.task', when: ['isLoopSub', '1'], outline: 'subprocess',
+    write: [['shape', 'mxgraph.bpmn.task'], ['taskMarker', 'abstract'], ['isLoopSub', 1], ['rounded', 1]],
+  },
+  { name: 'mxgraph.networks.server', outline: 'server', write: device('server') },
+  { name: 'mxgraph.networks.router', outline: 'router', write: device('router') },
+  { name: 'mxgraph.networks.switch', outline: 'switch', write: device('switch') },
+  { name: 'mxgraph.networks.firewall', outline: 'firewall', write: device('firewall') },
+  { name: 'mxgraph.networks.laptop', outline: 'laptop', write: device('laptop') },
+  { name: 'mxgraph.networks.pc', outline: 'desktop', write: device('pc') },
+  { name: 'mxgraph.networks.mobile', outline: 'phone', write: device('mobile') },
+  { name: 'mxgraph.networks.printer', outline: 'printer', write: device('printer') },
+  { name: 'mxgraph.networks.user_male', outline: 'user', write: device('user_male') },
 ];
+
+/** The entry a cell's style reads as: its shape name, and the pair that narrows it where one does. */
+export function shapeEntry(name: string | undefined, value: (key: string) => string | undefined): (typeof SHAPES)[number] | undefined {
+  return SHAPES.find((s) => s.name === name && (s.when === undefined || value(s.when[0]) === s.when[1]));
+}
 
 /** Style names that draw a plain box. */
 export const BOX_NAMES: ReadonlySet<string> = new Set(['rect', 'rectangle', 'text', 'label']);

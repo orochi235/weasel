@@ -5,7 +5,7 @@
 // about 8 device pixels across; an outline at that size is a ring of single
 // pixels around a hole.
 //
-// Geometry is computed, not eyeballed — see CLAUDE.md ("Drawing icons").
+// Geometry is computed, not eyeballed — see docs/icons.md ("Drawing rules").
 
 const n = (v) => Math.round(v * 100) / 100;
 

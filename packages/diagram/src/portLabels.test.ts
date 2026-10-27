@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bodyTrait, type BodySpec, type MeasureRowText } from './body';
 import { buildBody } from './buildBody';
-import { createScene, effectivePose, type RectPose } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, worldPosesOf, createScene, effectivePose, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, type DiagramData, type DiagramSpec } from './fromData';
 import { layered } from './layered';
@@ -142,14 +142,14 @@ describe('a node\'s margin under layout', () => {
 
 describe('diagramScene port labels', () => {
   const textOf = (specs: DiagramSpec[], text: string) => specs.find((s) => s.data.text === text)!;
-  const boxOf = (specs: DiagramSpec[], id: string) => specs.find((s) => s.id === id)!.pose;
+  const boxOf = (specs: DiagramSpec[], id: string) => worldPosesOf(specs, RIGID_POSE_COMPOSITION).get(id)!;
 
   it('draws a node\'s portLabels as text beside its ports, in the node\'s text color', () => {
     const specs = diagramScene({ nodes: [{ id: 'a', lines: ['a'], portLabels: { e: 'out' } }], edges: [] }, { layout: 'none' });
     const label = textOf(specs, 'out');
     const a = boxOf(specs, 'a');
     expect(label.parent).toBe('a');
-    expect(label.pose.x).toBeCloseTo(a.x + a.width + G);
+    expect(boxOf(specs, label.id as string).x).toBeCloseTo(a.x + a.width + G);
     expect(label.data.fill).toEqual({ paint: { color: '#dbe7f2' } });
   });
 
@@ -158,7 +158,7 @@ describe('diagramScene port labels', () => {
       nodes: [{ id: 'r', lines: ['r'] }, { id: 'a', lines: ['a'], portLabels: { e: 'a long label' } }, { id: 'b', lines: ['b'] }],
       edges: [{ from: 'r', to: 'a' }, { from: 'r', to: 'b' }],
     }, { layoutOptions: { nodeGap: 4 } });
-    const label = textOf(specs, 'a long label').pose;
+    const label = boxOf(specs, textOf(specs, 'a long label').id as string);
     const b = boxOf(specs, 'b');
     const overlaps = (p: typeof b, q: typeof b) =>
       p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height;

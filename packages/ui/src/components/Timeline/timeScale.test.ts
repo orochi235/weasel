@@ -72,7 +72,7 @@ describe('panWindow', () => {
 
 describe('tickTimes', () => {
   it('returns ticks inside the window, ascending', () => {
-    const ticks = tickTimes({ from: 0, to: 1000 }, 500, 50);
+    const ticks = tickTimes({ from: 0, to: 1000 }, 500, 50).values;
     expect(ticks.length).toBeGreaterThan(1);
     expect(ticks[0]).toBeGreaterThanOrEqual(0);
     expect(ticks[ticks.length - 1]).toBeLessThanOrEqual(1000);
@@ -81,7 +81,7 @@ describe('tickTimes', () => {
 
   it('honours the minimum pixel spacing', () => {
     const w = { from: 0, to: 1000 };
-    const ticks = tickTimes(w, 200, 50);
+    const ticks = tickTimes(w, 200, 50).values;
     const s = createTimeScale(w, 200);
     for (let i = 1; i < ticks.length; i++) {
       expect(s.toPx(ticks[i]) - s.toPx(ticks[i - 1])).toBeGreaterThanOrEqual(50 - 1e-9);
@@ -89,12 +89,20 @@ describe('tickTimes', () => {
   });
 
   it('uses round numbers, not arbitrary divisions', () => {
-    const ticks = tickTimes({ from: 0, to: 1000 }, 500, 90);
+    const ticks = tickTimes({ from: 0, to: 1000 }, 500, 90).values;
     for (const t of ticks) expect(t % 100).toBeCloseTo(0, 9);
   });
 
+  it('lands exactly on multiples of a fractional step', () => {
+    const { values, step, decimals } = tickTimes({ from: 0, to: 1 }, 640, 64);
+    expect(step).toBeCloseTo(0.1, 12);
+    expect(decimals).toBe(1);
+    expect(values).toContain(0.3);
+    expect(values).toContain(0.7);
+  });
+
   it('returns no ticks for a zero-width track', () => {
-    expect(tickTimes({ from: 0, to: 1000 }, 0, 50)).toEqual([]);
+    expect(tickTimes({ from: 0, to: 1000 }, 0, 50).values).toEqual([]);
   });
 });
 

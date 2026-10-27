@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 
 const W = 720;
@@ -129,24 +130,13 @@ function PresetRow({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <strong style={{ color: '#ddd', textTransform: 'capitalize' }}>{label}</strong>
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-        {PRESET_NAMES.map((p) => (
-          <button
-            key={p}
-            type="button"
-            aria-pressed={value === p}
-            onClick={() => onChange(p)}
-            style={{
-              padding: '4px 8px',
-              fontSize: 12,
-              background: value === p ? '#3a3a3a' : 'transparent',
-              color: '#ddd',
-              border: '1px solid #555',
-              cursor: 'pointer',
-            }}
-          >{p}</button>
-        ))}
-      </div>
+      <ToggleBar
+        items={PRESET_NAMES.map((p) => ({ value: p, label: p }))}
+        value={value}
+        onChange={(p) => p && onChange(p)}
+        ariaLabel={`${label} preset`}
+        size="sm"
+      />
     </div>
   );
 }

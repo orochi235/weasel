@@ -6,7 +6,7 @@ import { PerceptualColorSlidersDemo } from '../PerceptualColorSlidersDemo';
 // Hue, the two L thumbs, then the three chroma thumbs.
 const values = () => screen.getAllByRole('slider').slice(0, 6).map((el) => el.getAttribute('aria-valuenow'));
 const pick = (mode: string) => {
-  fireEvent.click(screen.getAllByRole('radio', { name: mode }).find((el) => el instanceof HTMLInputElement)!);
+  fireEvent.click(screen.getByRole('radio', { name: mode }));
 };
 
 describe('PerceptualColorSlidersDemo', () => {

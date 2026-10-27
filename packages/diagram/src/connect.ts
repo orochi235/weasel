@@ -20,6 +20,7 @@
  */
 import {
   type Action,
+  type DropVerdict,
   type GestureBinding,
   type InvocationCtx,
   type OngoingHandle,
@@ -44,9 +45,12 @@ export interface MovingEnd {
   end: 'from' | 'to';
 }
 
-/** Whether an edge may run from `from` to `to`. `moving` is the end being
- *  dragged when the edge already exists, and absent for a new connect. */
-export type CanConnect = (from: ConnectEnd, to: ConnectEnd, moving?: MovingEnd) => boolean;
+/** Whether an edge may run from `from` to `to`: `true`, `false` for a silent
+ *  no, where the end never snaps, or a refusal, which the end snaps to and is
+ *  drawn refused with the reason beside the pointer, and where a release
+ *  lands nothing. `moving` is the end being dragged when the edge already
+ *  exists, and absent for a new connect. */
+export type CanConnect = (from: ConnectEnd, to: ConnectEnd, moving?: MovingEnd) => DropVerdict;
 
 /** The edge a finished connect describes. Each end is a resolved port, or a
  *  body whose port the edge picks each time it is routed. */
@@ -269,12 +273,10 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
           onMove(moveCtx: InvocationCtx): void {
             scratch.current = { x: moveCtx.world.x, y: moveCtx.world.y };
           },
-          overlay(): OngoingOverlay | null {
+          overlay(): readonly OngoingOverlay[] | null {
             if (!scratch.open) return null;
-            const points = targets.preview(route, scratch.from, scratch.current, scratch.deps.view);
-            if (points.length < 2) return null;
             // How a connector reads belongs to whatever surface paints the role.
-            return { kind: 'polyline', points, role: 'connector' };
+            return targets.overlays(route, scratch.from, scratch.current, scratch.deps.view);
           },
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             scratch.open = false;

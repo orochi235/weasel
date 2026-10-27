@@ -10,6 +10,8 @@ import { carryPose, planeOf } from '../../planeInput';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession, ReparentOnDrop } from '../session';
 import { translateOps } from '../translate';
+import { refusalOf } from '../../dropVerdict';
+import { worldBoundsOf, type MoveRefusal } from '../refusal';
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
  *  the hit sibling whose z-order position the moved node should land
@@ -23,11 +25,12 @@ export interface DropTarget {
 
 /** Walk the hit chain to find the appropriate drop target. Returns
  *  `null` when no reparent should happen (drop on empty canvas, or the
- *  only hits are the moved subtree itself). */
-export function resolveDropTarget(
+ *  only hits are the moved subtree itself), and a refusal when the first
+ *  node of the chain to answer refuses with a reason. */
+export function resolveDrop(
   session: MoveSession,
   at: { x: number; y: number },
-): DropTarget | null {
+): DropTarget | { refused: MoveRefusal } | null {
   const dep = session.nodeAtPoint;
   if (!dep) return null;
 
@@ -40,18 +43,17 @@ export function resolveDropTarget(
   const hitNode = session.scene.get(hit);
   if (!hitNode) return null;
 
-  // A node that admits the drop is a drop-INTO target; any other is a
-  // drop-NEXT-TO target (parent = its parent). When it has no parent
-  // (top-level under a layer), `newParent === null` and the moved
-  // subtree lands at the layer root.
-  if (session.admits(hit)) {
-    return { newParent: hit, newLayer: hitNode.layer, hitSibling: null };
-  }
-  // A node that refuses the drop is a sibling to land beside, inside
-  // the nearest ancestor that admits it.
-  let newParent = hitNode.parent;
-  let hitSibling: NodeId = hit;
-  while (newParent !== null && !session.admits(newParent)) {
+  // A node that admits the drop is a drop-INTO target; one that refuses it
+  // silently is a sibling to land beside, inside the nearest ancestor that
+  // admits it. When there is none, `newParent === null` and the moved subtree
+  // lands at the layer root.
+  let newParent: NodeId | null = hit;
+  let hitSibling: NodeId | null = null;
+  while (newParent !== null) {
+    const verdict = session.verdict(newParent);
+    if (verdict === true) break;
+    const reason = refusalOf(verdict);
+    if (reason !== null) return { refused: { id: newParent, bounds: worldBoundsOf(session, newParent), reason } };
     hitSibling = newParent;
     newParent = session.scene.get(newParent)?.parent ?? null;
   }

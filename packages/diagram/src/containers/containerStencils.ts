@@ -3,7 +3,7 @@
  * and the edits on one: adding a lane to a pool, and releasing a container's
  * members.
  */
-import { createInsertOp, type NodeId, type Op, type RectPose, type Scene } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type Scene } from '@weasel-js/core';
 import type { IconRef } from '@weasel-js/icons';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
@@ -59,7 +59,9 @@ export function containerBuild<TLayer extends string>(
     ...(stencil.role === 'pool' ? firstLanes(id, axis, at, opts) : []),
   ];
   const label = `Insert ${stencil.label}`;
-  return { id, ops: specs.map((node) => createInsertOp({ node, label })) };
+  // Built in one frame; each lane and title is stored in its container's.
+  const stored = localizeWorldPoses(specs, RIGID_POSE_COMPOSITION);
+  return { id, ops: stored.map((node) => createInsertOp({ node, label })) };
 }
 
 /** The axis a pool stacks its lanes along, read off its header. */
@@ -91,7 +93,9 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   if (pool === undefined || trait?.role !== 'pool') return null;
   const axis = poolAxisOf(trait);
   const lanes = lanesOf(scene, poolId);
-  const b = pool.pose as RectPose;
+  // In the pool's own frame, where its lanes are stored.
+  const { width, height } = pool.pose as RectPose;
+  const b: RectPose = { x: 0, y: 0, width, height };
   const at = index === undefined || index >= lanes.length ? null : scene.get(lanes[index]!)!.pose as RectPose;
   const boundary = at !== null ? (axis === 'y' ? at.y : at.x) : axis === 'y' ? b.y + b.height : b.x + b.width;
   // Centered on the boundary it goes in at: the stack orders lanes by where they sit.
@@ -101,9 +105,9 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
     ? { x: b.x + offset, y: start, width: b.width - offset, height: NEW_LANE_SIZE }
     : { x: start, y: b.y + offset, width: NEW_LANE_SIZE, height: b.height - offset };
   const id = scene.mintId() as string;
-  const specs = regionSpecs('lane', axis, pose, `Lane ${lanes.length + 1}`, {
+  const specs = localizeWorldPoses(regionSpecs('lane', axis, pose, `Lane ${lanes.length + 1}`, {
     id, layer: pool.layer, parent: poolId, ...(style ? { style } : {}),
-  });
+  }), scene.composition as PoseComposition<RectPose>);
   scene.batch('Add lane', () => {
     for (const spec of specs) scene.add(spec as never);
     // A themed scene colors the lane as a theme change would, by its place in the stack.
@@ -136,8 +140,14 @@ export function releaseMembers(scene: AnyScene, id: string): void {
   const beside = releasedFrom(scene, node.id);
   const parent = scene.get(beside)!.parent;
   const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside);
+  // Read where each draws before the first move: it is stored in a frame that is about to go.
+  const frame = scenePoseFrame(scene);
+  const worlds = members.map((m) => frame.world(m));
   scene.batch('Release members', () => {
-    members.forEach((m, k) => scene.move(m, parent, index + k));
+    members.forEach((m, k) => {
+      scene.move(m, parent, index + k);
+      scene.setPose(m, frame.localUnder(parent, worlds[k]));
+    });
     scene.remove(node.id);
   });
 }

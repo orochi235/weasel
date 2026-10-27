@@ -16,8 +16,9 @@ one.
 nightly on a self-hosted machine with a real GPU and keeps the result files as
 an artifact; read those as a trend, never as pass/fail on a change.
 `.github/workflows/perf-pr.yml` runs everything on a pull request's merge base and on
-its head, on that same machine, and posts the comparison below as a comment; it
-cannot fail the checks. Shared
+its head, on that same machine (hud-vs-dom on the HUD alone, to fit the job's time
+limit), and posts the rows that moved most and a line per benchmark as a comment; the
+whole comparison below is `compare.txt` in its artifact. It cannot fail the checks. Shared
 runners are noisy enough that an honest threshold would have to be loose enough
 to miss real regressions. The Playwright specs do assert, but only that a measurement
 means something — a variant that paints nothing, a sweep that got cheaper as it
@@ -487,7 +488,7 @@ position as it completes, and align any printed table's numeric columns
 (right-aligned, fixed decimals). Don't pipe a run through `tail`; the result
 file is the output to keep.
 
-Before believing a number, check the traps in the repo's `CLAUDE.md` that
+Before believing a number, check the traps in the repo's `docs/traps/` that
 apply to benchmarks: a loop driven by hover events measures vsync, a shader
 variant the compiler can fold measures nothing, a variant that paints nothing
 measures free, and a single-threaded static server invents load regressions.

@@ -157,10 +157,12 @@ function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, vie
   }, [affordanceAt, canvasApiRef, viewRegistry]);
 }
 
-/** Markers take presses only while the routed tools carry the marker drag:
- *  `actions={null}` and a tools takeover both leave it out. */
-function useMarkerGate(viewRegistry: ViewRegistry | null, ambient: readonly Contribution[]): void {
-  const installed = ambient.some((entry) => entry.id === VIEW_MARKER_ENTRY_ID);
+/** Markers take presses only while the surface binds the marker drag, in the
+ *  routed tools or beside a takeover: `actions={null}` leaves it out. */
+function useMarkerGate(
+  viewRegistry: ViewRegistry | null, ambient: readonly Contribution[], contributions: readonly Contribution[],
+): void {
+  const installed = [...ambient, ...contributions].some((entry) => entry.id === VIEW_MARKER_ENTRY_ID);
   const installedRef = useLatest(installed);
   useEffect(() => viewRegistry?.gateMarkers(() => installedRef.current), [viewRegistry, installedRef]);
 }
@@ -224,7 +226,7 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
   }, [tools.registry, tools.ambient, contributions]);
 
   const kindOfNodeRef = useLatest(kindOfNode);
-  useMarkerGate(viewRegistry, tools.ambient);
+  useMarkerGate(viewRegistry, tools.ambient, contributions);
 
   const affordanceWithLayers = useAffordanceAt(inputs, depRegistry, viewRegistry);
   const classifyTarget = useClassifyTarget(inputs, kindOfNodeRef);

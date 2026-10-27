@@ -85,6 +85,25 @@ describe('radial', () => {
     expect(radial(graphOf(moved(MAP, first), MAP_EDGES)).size).toBe(0);
   });
 
+  it('keeps a branch dragged to the other side there, and a second run moves nothing', () => {
+    const first = moved(MAP, radial(graphOf(MAP, MAP_EDGES)));
+    const rootRight = first.root![0] + 160;
+    const dragged = { ...first, b: [rootRight + 300, first.b![1], 100, 40] as Box };
+    const again = moved(dragged, radial(graphOf(dragged, MAP_EDGES)));
+    const root = again.root![0] + 80;
+    const side = (id: string) => (again[id]![0] + 50 > root ? 'right' : 'left');
+    expect(['a', 'b', 'c', 'd'].map(side)).toEqual(['right', 'right', 'left', 'left']);
+    expect(overlaps(laidOut(again, MAP_EDGES))).toEqual([]);
+    expect(radial(graphOf(again, MAP_EDGES)).size).toBe(0);
+  });
+
+  it('deals a map whose branches all stand on one side, as another layout leaves one, afresh', () => {
+    const lopsided: Boxes = { root: [0, 0, 160, 80], a: [400, 0], b: [400, 60], c: [400, 120], d: [400, 180], a1: [600, 0], a2: [600, 60], a3: [600, 120] };
+    const boxes = laidOut(lopsided, MAP_EDGES);
+    const root = centerX(boxes.root!);
+    expect(['a', 'b', 'c', 'd'].filter((id) => centerX(boxes[id]!) < root).sort()).toEqual(['b', 'c', 'd']);
+  });
+
   it('leaves a single node where it is', () => {
     expect(radial(graphOf({ only: [40, 70] })).size).toBe(0);
   });

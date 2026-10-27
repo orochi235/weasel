@@ -1,6 +1,7 @@
 import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentPlaceProps } from '../segmentedRow';
+import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 
 /**
@@ -17,9 +18,9 @@ export type OptionsBarItem<V extends string | number = string> = {
 };
 
 /** Segment height and type scale for an {@link OptionsBar}. */
-export type OptionsBarSize = 'sm' | 'md';
+export type OptionsBarSize = SegmentedSize;
 /** Visual treatment of an {@link OptionsBar}. */
-export type OptionsBarVariant = 'default' | 'minimal' | 'flat';
+export type OptionsBarVariant = SegmentedVariant;
 
 /** Props for {@link OptionsBar}. */
 export type OptionsBarProps<V extends string | number = string> = {

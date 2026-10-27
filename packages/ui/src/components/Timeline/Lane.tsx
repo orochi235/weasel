@@ -5,6 +5,7 @@ import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
 import { createTimeScale, spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { snapToNearest, useSnapRadiusPx } from '../../snap';
+import { arrowMove } from '../../arrowKeys';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
 
@@ -128,14 +129,12 @@ export function Lane(props: LaneProps): ReactElement {
   });
 
   const onKeyDown = (i: number, t: number) => (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    const step = KEY_STEP_MS * (e.shiftKey ? 10 : 1);
-    const move = (toMs: number): void => {
+    const dx = arrowMove(e)?.dx ?? 0;
+    if (dx !== 0) {
       e.preventDefault();
       refocus.current = true;
-      onKeyCommit(i, toMs);
-    };
-    if (e.key === 'ArrowRight') move(t + step);
-    if (e.key === 'ArrowLeft') move(Math.max(0, t - step));
+      onKeyCommit(i, Math.max(0, t + dx * KEY_STEP_MS));
+    }
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(i); }
   };
 

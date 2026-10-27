@@ -54,11 +54,12 @@ describe('moveAction with snapToContainer — a derived node with no slot of its
     handle.onMove!(ctx(scene, ids, DRAG));
     handle.onEnd!(ctx(scene, ids, DRAG), 'commit');
 
-    // The leaf took its slot, (210, 10) from where it started; the envelope rode along.
-    expect(scene.get(leaf)!.pose).toEqual(box(210, 10));
+    // The leaf took its slot, (210, 10) in world; the envelope rode along. Each
+    // is stored in the target's frame, at (200, 0).
+    expect(scene.get(leaf)!.pose).toEqual(box(10, 10));
     expect(scene.get(envelope)!.parent).toBe(target);
-    expect(effectivePose(scene, scene.get(envelope)!)).toEqual(box(220, 70));
-    expect(scene.get(inside)!.pose).toEqual(box(220, 70));
+    expect(effectivePose(scene, scene.get(envelope)!)).toEqual(box(20, 70));
+    expect(scene.get(inside)!.pose).toEqual(box(20, 70));
 
     scene.undo();
     expect(scene.get(envelope)!.pose).toEqual(box(0, 0, 1, 1));

@@ -3,7 +3,6 @@ import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS, shapeKindInfo } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
-import { resolveAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { minSizeOf, type MinSize } from 'core/scene/minSize';
 import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
@@ -11,6 +10,7 @@ import { poseLinearOf } from '@weasel-js/geom';
 import { settleShapeGenerator } from 'features/paths/shapeGenerator';
 import { SHAPE_GENERATOR_SECTIONS } from './shapeGeneratorProperties';
 import { icon } from '../../icons.gen';
+import type { IconRef } from '@weasel-js/icons';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
@@ -70,21 +70,6 @@ const italicEncoding: PrefBooleanEncoding = {
   write: (on) => (on ? 'italic' : undefined),
 };
 
-/** `TextStyle.align` read as the edge that paints, or as `justify`. The model
- *  also holds the reading-order pair `start` / `end`, which name an edge only
- *  under a stated `direction`. Under `auto` each paragraph takes its own from
- *  its text, so no segment is lit. A click writes the edge. */
-const alignEncoding: PrefEnumEncoding = {
-  read: (stored, style) => {
-    if (stored === 'start' || stored === 'end') {
-      const direction = style?.direction;
-      return direction === 'ltr' || direction === 'rtl' ? resolveAlign(stored, direction) : undefined;
-    }
-    return stored as string | undefined;
-  },
-  write: (edge) => edge,
-};
-
 const DEFAULT_NIB = { angle: Math.PI / 6, ratio: 0.25 };
 
 /** `Stroke.nib` as a flag: on keeps the nib held, or starts a default one,
@@ -110,6 +95,25 @@ const overflowEncoding: PrefBooleanEncoding = {
 };
 
 type MarkerOptions = PrefEnum['options'];
+
+/** The glyph of each built-in marker. A marker a consumer registers has none, and its option reads as text. */
+const MARKER_ICONS: Readonly<Record<string, IconRef>> = {
+  arrow: icon('markerArrow'),
+  'arrow-open': icon('markerArrowOpen'),
+  'arrow-concave': icon('markerArrowConcave'),
+  'triangle-hollow': icon('markerTriangleHollow'),
+  diamond: icon('markerDiamond'),
+  'diamond-hollow': icon('markerDiamondHollow'),
+  circle: icon('markerCircle'),
+  square: icon('markerSquare'),
+  bar: icon('markerBar'),
+  dot: icon('markerDot'),
+  'crow-one': icon('markerCrowOne'),
+  'crow-many': icon('markerCrowMany'),
+  'crow-zero-one': icon('markerCrowZeroOne'),
+  'crow-one-many': icon('markerCrowOneMany'),
+  'crow-zero-many': icon('markerCrowZeroMany'),
+};
 let markerOptionsCache: { generation: number; options: MarkerOptions } | undefined;
 
 /** A `select` rather than a `toggle`: nine options will not fit a segmented
@@ -121,8 +125,8 @@ function markerOptions(): MarkerOptions {
     markerOptionsCache = {
       generation,
       options: [
-        { value: '', label: 'None' },
-        ...listMarkers().map((m) => ({ value: m.id, label: m.id })),
+        { value: '', label: 'None', icon: icon('markerNone') },
+        ...listMarkers().map((m) => ({ value: m.id, label: m.id, icon: MARKER_ICONS[m.id] })),
       ],
     };
   }
@@ -306,7 +310,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
                         direction: { kind: 'enum', name: 'Direction', description: 'Reading direction. Auto takes each paragraph\'s from its first strong character.', absentIsDefault: true, default: 'auto', control: 'toggle', options: [{ value: 'auto', label: 'Auto', short: ['Auto'] }, { value: 'ltr', label: 'Left to right', short: ['LTR'] }, { value: 'rtl', label: 'Right to left', short: ['RTL'] }] },
                         // Last, so the box's vertical alignment — a field of
                         // the node rather than of its style — follows it.
-                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', absentIsDefault: true, default: 'left', control: 'toggle', encoding: alignEncoding, options: [{ value: 'left', label: 'Left', icon: icon('textAlignLeft') }, { value: 'center', label: 'Center', icon: icon('textAlignCenter') }, { value: 'right', label: 'Right', icon: icon('textAlignRight') }, { value: 'justify', label: 'Justify', icon: icon('textAlignJustify') }] },
+                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', absentIsDefault: true, default: 'left', control: 'toggle', options: [{ value: 'left', label: 'Left', icon: icon('textAlignLeft') }, { value: 'center', label: 'Center', icon: icon('textAlignCenter') }, { value: 'right', label: 'Right', icon: icon('textAlignRight') }, { value: 'justify', label: 'Justify', icon: icon('textAlignJustify') }, { value: 'start', label: 'Start', icon: icon('textAlignStart') }, { value: 'end', label: 'End', icon: icon('textAlignEnd') }] },
                       },
                     },
                   },

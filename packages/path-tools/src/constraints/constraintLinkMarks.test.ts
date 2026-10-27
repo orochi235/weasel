@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
-import { createScene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
 import { brokenConstraintLinks, constraintLinkNode } from './constraintLinks';
 import { constraintLinkMarks, createConstraintLinkMarks } from './constraintLinkMarks';
 import type { CanvasExtensionApi, ContributionDepReader, RenderLayer } from '@weasel-js/core';
@@ -10,7 +10,7 @@ const STYLE = { stroke: '#0e9f8e', conflictStroke: '#e5484d' };
 
 /** A square and a triangle whose anchor 0 is held on the square's bottom edge, at `y` below it. */
 function setup(y: number) {
-  const scene = createScene<Record<string, unknown>, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<Record<string, unknown>, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const square = scene.add({ kind: 'mark', layer: 'main', pose: poly([0, 0], [100, 0], [100, 100], [0, 100]), data: {} });
   const triangle = scene.add({ kind: 'mark', layer: 'main', pose: poly([40, y], [40, -50], [10, -50]), data: {} });
   const link = scene.add(constraintLinkNode<unknown>({

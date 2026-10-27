@@ -2,13 +2,18 @@
   "namespace": "draw",
   "owner": "apps/draw",
   "icons": {
+    "pathDirection": {
+      "body": "<path d=\"M1.875 9.375H18.125\"/><path d=\"M5.63 6.88 8.13 9.38 5.63 11.88\"/><path d=\"M13.13 6.88 15.63 9.38 13.13 11.88\"/>",
+      "group": "Actions",
+      "tags": []
+    },
     "releaseCompound": {
       "body": "<g stroke-linecap=\"butt\" stroke-linejoin=\"miter\"><rect x=\"2\" y=\"5\" width=\"6\" height=\"10\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"12\" y=\"5\" width=\"6\" height=\"10\"/><line x1=\"10\" y1=\"3\" x2=\"10\" y2=\"17\" stroke-dasharray=\"1.5 1.5\"/></g>",
       "group": "Actions",
       "tags": []
     },
     "symmetry": {
-      "body": "<g stroke-linecap=\"butt\" stroke-linejoin=\"miter\"><path d=\"M8 4 L3 10 L8 16 Z\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M12 4 L17 10 L12 16 Z\" stroke-linejoin=\"round\"/><line x1=\"10\" y1=\"2\" x2=\"10\" y2=\"18\" stroke-dasharray=\"1.5 1.5\"/></g>",
+      "body": "<path d=\"M1.25 2.5 8.75 6.25 8.75 13.75 1.25 17.5Z M2.5 4.5225 7.5 7.0225 7.5 12.9775 2.5 15.4775Z\" fill=\"currentColor\" fill-rule=\"evenodd\" stroke=\"none\"/><path d=\"M18.75 2.5 11.25 6.25 11.25 13.75 18.75 17.5Z M17.5 4.5225 12.5 7.0225 12.5 12.9775 17.5 15.4775Z\" fill=\"currentColor\" fill-rule=\"evenodd\" stroke=\"none\"/>",
       "group": "Actions",
       "tags": []
     },

@@ -90,7 +90,8 @@ export interface EffectEditorApi {
  *  title renames it; under `lanes` a lane drags by its header. A selected
  *  wire's route drags under every look: into `routes` under `nodeGraph`, and
  *  into `lookRoutes` under the others, where it holds only while the wire's
- *  ends stay put. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
+ *  ends stay put. A selected wire's label drags under every look into
+ *  `labels`, and stays where it was put whatever the look. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
  *  as with `EffectChart`. */
 export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(function EffectEditor(
   { doc, onChange, run, selected, onSelect, selectedGroup, onSelectGroup, look = 'nodeGraph', options, width, height, background, className },
@@ -174,6 +175,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onConnect={handlers.onConnect}
       onReconnect={handlers.onReconnect}
       onEditRoute={handlers.onEditRoute}
+      onMoveLabel={handlers.onMoveLabel}
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient })}
       {...(look === 'nodeGraph' ? { onEditContainer: handlers.onEditContainer } : {})}

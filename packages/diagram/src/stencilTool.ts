@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react';
 import {
-  commitOps, defineTool, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
+  commitOps, defineTool, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
   type ActionDeps, type InsertDep, type NodeId, type Op, type Tool,
 } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
@@ -72,16 +72,15 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       if (id === null) return undefined;
       return stencilsRef.current.find((s) => s.id === id) ?? optsRef.current.containers?.find((s) => s.id === id);
     };
-    const builtAt = (stencil: DiagramStencil | ContainerStencil, bounds: Bounds): { id: string; ops: Op[] } | null => {
+    const builtAt = (stencil: DiagramStencil | ContainerStencil, world: Bounds): { id: string; ops: Op[] } | null => {
       if (scene === undefined) return null;
-      const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+      const center = { x: world.x + world.width / 2, y: world.y + world.height / 2 };
       const role = 'role' in stencil ? stencil.role : null;
       const { style, measure, font, containerStyle, laneStyles } = optsRef.current;
-      const common = {
-        layer: layer(),
-        newId: () => scene.mintId() as string,
-        parent: diagramDropParentAt(scene as unknown as DropParentScene, center, role),
-      };
+      const parent = diagramDropParentAt(scene as unknown as DropParentScene, center, role);
+      // Drawn in world; built in the frame of the container it lands in.
+      const bounds = parent === null ? world : scenePoseFrame(scene as never).localUnder(parent as NodeId, { ...world }) as Bounds;
+      const common = { layer: layer(), newId: () => scene.mintId() as string, parent };
       if ('role' in stencil) {
         const boxStyle = containerStyle ?? style;
         return containerBuild(stencil, bounds, {
@@ -113,3 +112,4 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
     };
   });
 }
+

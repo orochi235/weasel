@@ -75,19 +75,23 @@ the canvas's own input path, so the write clamps to `viewBounds`, reaches
 **A marker** is one view's aim outlined in another's frame, after that frame's
 layers: `<ViewMarker id source target style interactive>`, or the same props in
 a contribution's `markers`. `source` is a view id, `null` for the root, or an
-`AimSource` (an aim handed in by value, with an optional writer). The default
+`AimSource` (an aim handed in by value, with an optional writer, and an
+optional `subscribe` that repaints the marker when the aim changes). The default
 style is `VIEW_MARKER_DEFAULT_STYLE`: white, 1px, dashed [2, 3]. Marker ids are
 unique per surface. Two contributions declaring the same id throw; a second
 `<ViewMarker>` with a live id logs an error and is skipped, so the first keeps
 painting and taking presses.
 
 Dragging a marker pans its source: a press inside its outline, or within
-`VIEW_MARKER_HIT_SLOP_PX` of it, starts the `view.marker.drag` action
+`VIEW_MARKER_HIT_SLOP_PX` of it, starts a drag. A marker
+covering more than three quarters of its frame grabs only that band about its
+rim, so a zoomed-out view's aim drawn across its whole frame leaves the frame's
+presses to the frame. The drag is the `view.marker.drag` action
 (`VIEW_MARKER_DRAG`). That binding comes from an always-on entry the surface
-installs, so `actions={null}` and a `tools` takeover both turn dragging off;
-the marker still paints, and presses fall through to the view's own bindings.
-Passing `createViewMarkerContribution()` in `ambient`, or in a takeover's own
-`useTools` ambient list, turns it back on.
+installs, beside a `tools` takeover too, so only `actions={null}` turns
+dragging off; the marker still paints, and presses fall through to the view's
+own bindings. Passing `createViewMarkerContribution()` in `ambient` turns it
+back on.
 `interactive={false}` turns off one marker, and a by-value source with no
 `setAim` is never draggable.
 

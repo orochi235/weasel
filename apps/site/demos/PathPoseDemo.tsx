@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   asNodeId,
   polygonFromPoints,
   SceneCanvas,
@@ -12,6 +12,7 @@ import type {
   DebugConfig,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
 const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
@@ -42,7 +43,7 @@ export function PathPoseDemo() {
   // Path TPose needs the full useScene shape (the trivial form aliases
   // pose === data === item, so item would have to BE a Path — but Path
   // carries no id field).
-  const scene = useScene<{ id: string }, 'default', Path>({
+  const scene = useScene<{ id: string }, 'default', Path>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [{
       kind: 'mark',
@@ -57,12 +58,11 @@ export function PathPoseDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <button
-          className="ckd-btn"
+        <Button
           onClick={() => setDebugIdx((i) => (i + 1) % DEBUG_STATES.length)}
         >
           Debug overlay: {DEBUG_STATES[debugIdx].label}
-        </button>
+        </Button>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas

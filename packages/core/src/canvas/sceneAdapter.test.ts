@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { useClipboardOps } from 'interactions/actions/clipboard/clipboardOps';
@@ -473,8 +474,8 @@ describe('clipboard seam', () => {
   it('commitPaste mints fresh ids, remaps parents/children, translates the whole subtree, and does not insert', () => {
     const scene = makeScene();
     const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 15, y: 15, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
-    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 30, y: 30, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 5, y: 5, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 20, y: 20, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
     const adapter = sceneToAdapter(scene);
     const snap = adapter.snapshotSelection!([p]);
     const nodeCountBefore = scene.nodes.size;
@@ -495,11 +496,10 @@ describe('clipboard seam', () => {
     expect(nc2.parent).toBe(np.id);
     expect(np.children).toEqual([nc1.id, nc2.id]);
 
-    // Scene v1 poses are absolute (see sceneAdapter's cascade notes), so the
-    // subtree translates rigidly: every node shifts by the offset.
+    // The root shifts by the offset; its children are stored in its frame and ride it.
     expect(np.pose).toEqual({ x: 22, y: 22, width: 100, height: 100 });
-    expect(nc1.pose).toEqual({ x: 27, y: 27, width: 5, height: 5 });
-    expect(nc2.pose).toEqual({ x: 42, y: 42, width: 5, height: 5 });
+    expect(nc1.pose).toEqual({ x: 5, y: 5, width: 5, height: 5 });
+    expect(nc2.pose).toEqual({ x: 20, y: 20, width: 5, height: 5 });
 
     // commitPaste is a pure factory — insertion happens via the hook's
     // InsertOps, never here.
@@ -524,7 +524,7 @@ describe('clipboard seam', () => {
   it('commitPaste uses ctx.dropPoint as the cluster origin, ignoring the offset', () => {
     const scene = makeScene();
     const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 12, y: 12, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 2, y: 2, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
     void c1;
     const adapter = sceneToAdapter(scene);
     const snap = adapter.snapshotSelection!([p]);
@@ -534,13 +534,13 @@ describe('clipboard seam', () => {
       { dropPoint: { worldX: 100, worldY: 50 } },
     ) as unknown as SnapItem[];
     // Cluster origin (root bounds min corner: 10,10) lands on the drop point;
-    // the subtree rides along rigidly.
+    // the child rides along in its frame.
     expect(created[0].pose).toMatchObject({ x: 100, y: 50 });
-    expect(created[1].pose).toMatchObject({ x: 102, y: 52 });
+    expect(created[1].pose).toMatchObject({ x: 2, y: 2 });
   });
 
   it('commitPaste translates a non-rect pose in its own fields, adding none', () => {
-    const scene = createScene<Data, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
+    const scene = createScene<Data, 'bg', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'bg' }] });
     const id = scene.add({ kind: 'mark', layer: 'bg', pose: circle(5, 6, 7), data: { label: 'dot' } });
     const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     const snap = adapter.snapshotSelection!([id]);
@@ -587,8 +587,8 @@ describe('clipboard seam', () => {
   it('round-trips copy → paste through useClipboardOps: subtree inserted, one undo entry, selection = new ids', () => {
     const scene = makeScene();
     const p = scene.add({ kind: 'group', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
-    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 15, y: 15, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
-    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 30, y: 30, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
+    const c1 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 5, y: 5, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 20, y: 20, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
     let selection: string[] = [p];
     const adapter = sceneToAdapter(scene, {
       selection: { get: () => selection, set: (ids) => { selection = [...ids]; } },
@@ -630,7 +630,7 @@ describe('clipboard seam', () => {
 
 describe('sceneToAdapter — non-rect poses', () => {
   it('area-selects and pastes circles through the descriptor', () => {
-    const scene = createScene<object, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
+    const scene = createScene<object, 'bg', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'bg' }] });
     const id = scene.add({ kind: 'mark', layer: 'bg', pose: circle(10, 10, 5), data: {} });
     const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     expect(adapter.hitTestArea!({ x: 0, y: 0, width: 20, height: 20 })).toEqual([id]);
@@ -638,13 +638,13 @@ describe('sceneToAdapter — non-rect poses', () => {
     expect(pasted[0]!.pose).toEqual(circle(17, 10, 5));
   });
 
-  it('cascades a container move to circle children', () => {
-    const scene = createScene<object, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
+  it('leaves circle children where they are when an absolute-pose container moves', () => {
+    const scene = createScene<object, 'bg', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'bg' }] });
     const box = scene.add({ kind: 'group', layer: 'bg', pose: circle(50, 50, 50), data: {} });
     const kid = scene.add({ kind: 'mark', layer: 'bg', parent: box, pose: circle(40, 40, 5), data: {} });
     const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     adapter.setPose(box, circle(60, 50, 50));
-    expect(scene.get(kid)!.pose).toEqual(circle(50, 40, 5));
+    expect(scene.get(kid)!.pose).toEqual(circle(40, 40, 5));
   });
 });
 

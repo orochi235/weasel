@@ -22,7 +22,7 @@ export {
 export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName } from '@weasel-js/geom';
 export {
   createPoseTarget, poseAxes, scenePoseTarget,
-  type PoseCascade, type PoseTargetOptions, type PoseTargetScene,
+  type PoseTargetOptions, type PoseTargetScene,
 } from './poseTarget';
 export { createWrittenPoseTarget, type WrittenPoseTargetOptions } from './writtenPoseTarget';
 export { sceneClipTargets, type SceneClipTargetsOptions } from './clipTargets';

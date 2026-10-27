@@ -15,7 +15,9 @@ import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
 import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptions } from './serialization';
 import { resolveLayoutFrame, runLayoutPass } from './layoutPass';
-import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from './composeFrame';
+import type { PoseComposition } from './composeFrame';
+import { RIGID_POSE_COMPOSITION } from './composePose';
+import type { SceneOptions } from './useSceneOptions';
 import {
   asNodeId,
   type AddNodeSpec,
@@ -24,8 +26,7 @@ import {
   type RegisteredOp,
   type Scene,
   type SceneRegistry,
-  type SerializedScene,
-  type SerializedSceneV1,
+  type SavedScene,
   type UseSceneOptions,
 } from './types';
 
@@ -49,7 +50,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 }
 
 type SceneConfig<TData, TLayer extends string, TPose> =
-  Omit<UseSceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial' | 'doc'>;
+  Omit<SceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial' | 'doc'>;
 
 /** A scene holding `layers`, the document values `initialDoc`, and the nodes
  *  `initialNodes` answers with once it is handed the registry their functions
@@ -131,7 +132,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     ...reads,
 
     mintId: generateId,
-    composition: options.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
+    composition: options.composition ?? (RIGID_POSE_COMPOSITION as PoseComposition<TPose>),
 
     ...edits.methods,
     ...recording.methods,
@@ -150,7 +151,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     loadState(json, opts) {
       // Validate + map up front (throws before we touch live state on a bad
       // version or unknown registry key).
-      const specs = specsFromSerialized(json, registry, opts);
+      const specs = specsFromSerialized(json, registry, { composition: scene.composition, ...opts });
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
@@ -181,15 +182,15 @@ function buildScene<TData, TLayer extends string, TPose>(
  *  keys, or invalid scene shape (cross-layer subtrees, unknown layer ids).
  *  The scene starts with empty history. */
 export function sceneFromJSON<TData, TLayer extends string, TPose>(
-  json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
+  json: SavedScene<TData, TLayer, TPose>,
   options: {
     registry?: SceneRegistry<TPose, TData, TLayer>;
     historyLimit?: number;
     coalesceWindowMs?: number;
     generateId?: () => NodeId;
     ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
-    composition?: UseSceneOptions<TData, TLayer, TPose>['composition'];
-    layoutFrame?: UseSceneOptions<TData, TLayer, TPose>['layoutFrame'];
+    composition?: SceneOptions<TData, TLayer, TPose>['composition'];
+    layoutFrame?: SceneOptions<TData, TLayer, TPose>['layoutFrame'];
   } & SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): Scene<TData, TLayer, TPose> {
   return buildScene(

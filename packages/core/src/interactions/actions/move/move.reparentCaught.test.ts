@@ -9,7 +9,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { ReflowTransition } from '../../../layout/types';
 import { moveAction } from './action';
-import { heldPose } from '../testUtils';
+import { scenePoseFrame } from '../poseFrame';
 
 const A = asNodeId('a');
 const KID = asNodeId('kid');
@@ -51,24 +51,24 @@ function fixture(gliding: NodeId, selected: NodeId[]) {
   const at = { start: { x: 5, y: 5 }, current: { x: 55, y: 5 }, delta: { x: 50, y: 0 } };
   const ctx = { world: { x: 55, y: 5 }, modifiers: MODS, deps: {}, drag: at } as unknown as InvocationCtx;
   handle.onMove!(ctx);
-  const preview = (id: NodeId) => heldPose(scene, id as string) as RectPose;
-  const shownAtDrop = { a: preview(A), kid: preview(KID) };
+  const world = (id: NodeId) => scenePoseFrame(scene as never).world(id) as RectPose;
+  const shownAtDrop = { a: world(A), kid: world(KID) };
   handle.onEnd!(ctx, 'commit');
-  return { scene, shownAtDrop };
+  return { scene, shownAtDrop, world };
 }
 
 describe('moveAction — reparentOnDrop of a node caught mid-glide', () => {
   it('lands a caught root where the drag showed it', () => {
-    const { scene, shownAtDrop } = fixture(A, [A]);
+    const { scene, shownAtDrop, world } = fixture(A, [A]);
     expect(shownAtDrop.a).toMatchObject({ x: 30, y: 0 });
     expect(scene.get(A)!.parent).toBe(T);
-    expect(scene.get(A)!.pose).toEqual(shownAtDrop.a);
+    expect(world(A)).toEqual(shownAtDrop.a);
   });
 
   it('lands a caught descendant of the dragged root where the drag showed it', () => {
-    const { scene, shownAtDrop } = fixture(KID, [A]);
+    const { scene, shownAtDrop, world } = fixture(KID, [A]);
     expect(shownAtDrop.kid).toMatchObject({ x: 40, y: 10 });
     expect(scene.get(A)!.parent).toBe(T);
-    expect(scene.get(KID)!.pose).toEqual(shownAtDrop.kid);
+    expect(world(KID)).toEqual(shownAtDrop.kid);
   });
 });

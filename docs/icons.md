@@ -2,7 +2,7 @@
 
 How code names an icon, where the glyph for that name comes from, and how a build ships only the
 glyphs it names. For anyone adding a glyph, drawing one, or wiring icons into an app. How to draw a
-glyph well is in `CLAUDE.md` ("Drawing icons").
+glyph well is under "Drawing rules" below.
 
 ## Names
 
@@ -66,6 +66,71 @@ A new package that draws glyphs also needs an `./icons` export pointing at its b
 and a `"weaselIcons": { "table": "./dist/icons.table.json" }` field in `package.json`, with its
 build copying the JSON into `dist`. Core, ui and path-tools show the shape. The build plugin finds
 an installed package's glyphs through that field.
+
+## Drawing rules
+
+**Proof SVG icons at 10–15× their display size.** A glyph authored on a 20×20
+viewBox gets inspected at ~240–320px before anyone looks at it small. At
+chrome size a misplaced arrowhead or a join that doesn't meet is two blurry
+pixels and reads as fine; blown up it is obviously broken. Render small only
+afterward, as a legibility check — never as the design surface.
+
+Compute terminus geometry, don't eyeball it. `M x y A rx ry rot laf sf dx dy`
+ends at `(x+dx, y+dy)` — an arrowhead capping that arc puts its vertex
+*there*. Same for a handle meeting a circle's rim: solve for the point on the
+circle rather than guessing a coordinate that looks close.
+
+**An arrowhead goes on a straight run, on a compass direction.** A head set on the end of a curve
+and aimed along its tangent leans outward, and its inside barb closes up against the bending shaft;
+below a radius of about twice the head's length it reads as a hook or a flag, and aiming it along
+the chord instead only helps above radius 5. So end the curve early and carry the head on a
+straight run at least as long as the barbs trail back.
+Pick where the curve ends so that run points along an axis or a diagonal. On a diagonal run use
+`chevron`'s spread of 45, which lays both barbs on the pixel axes; at 36–42 they sit a few degrees
+off and blur at 16px. A head also needs a shaft showing behind its barbs, or it reads as a caret.
+A ring or an open arc is free to turn: before reshaping anything, slide its gap round until the
+head lands on the flattest stretch that is clear of other strokes.
+Where there is no room for a straight run, hang the head on the shaft instead of on its tangent:
+walk one trail of arc back from the tip and put the two barb ends on the curve's normal there, the
+same distance either side. That holds down to a bend radius of about 1.2 head lengths; tighter,
+the inner barb fills the bend, and the head wants to be solid. `chevronOn` in `packages/icons/scripts/lib/base.mjs`
+draws this head, and `turn` in `packages/ui/icons/camera.mjs` uses it.
+
+**Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
+gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt
+cap is only that where the two cross at a right angle *and* the stroke in front is straight there.
+The gap is measured along the stroke being cut, and it is the same at every point across it: the
+cut end is the front stroke's edge slid along by the gap, not an offset at right angles to it.
+Behind a straight stroke, draw the back stroke on past the cut inside a nested `<svg>` whose
+viewport ends at the cut line — it clips to its box and needs no id. Behind a curved one, make the
+front stroke out of circular arcs, whose stroked edges are arcs again, fill the back stroke, and
+end it on that edge arc slid by the gap: `turn` in `camera.mjs` builds its ring as a four-arc oval
+for this, since an ellipse's edges are no curve path data can follow. Keep such coordinates to four
+places. Never call a cut close enough by its size; he measures these zoomed in. One optical
+exception: a short cut end facing a long curved edge reads flatter than the edge even when it
+measures parallel, because the eye takes the edge's curvature from its whole run, so `turn`'s upper
+axis end is bent 2.5 times as far as the ring beneath it, its middle kept at the gap. Round caps
+stopped short of the crossing are worse again: the gap pinches, and the strokes read as unrelated.
+
+**The small check is a separate check, and it is the pixel grid.** Proofing
+large tells you nothing about chrome size. Rasterise at the size the chrome
+actually renders — labkit's chrome regions draw glyphs at `size={16}` — magnify with
+nearest-neighbour, and look at the pixels the renderer produced. A 16px glyph
+inside a screenshot of a proof page has been resampled twice before you see it.
+
+**Check 1× and 2× separately; they disagree.** At 1× a 16px icon gets 16 device
+pixels and fine detail collapses; at 2× it gets 32 and the same drawing
+resolves. Neither grid is the answer on its own, and a conclusion drawn from one
+does not transfer.
+
+**Path order is z-order.** `gen:icons` emits paths in source order, so the
+sequence in each package's `icons/` definitions is load-bearing wherever a glyph gets
+depth from overlap. Reordering paths for tidiness breaks it silently.
+
+Fuller notes from the session that produced these — what stroke weight can and
+cannot fix, why rounded corners move numeric constraints, how `currentColor`
+behaves across inline / `<img>` / `mask-image`, and the size cost of sampled
+curves — are in `clone-icons/STYLE-LESSONS.md` in Mike's iCloud Drive.
 
 ## Drawing a glyph
 

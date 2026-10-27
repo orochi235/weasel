@@ -25,8 +25,8 @@ function outlineParts(node: DataNode, warn: Warn): StylePart[] {
   const outline = node.outline ?? 'rect';
   if (outline === 'stadium') return [['rounded', 1], ['arcSize', STADIUM_ARC]];
   if (outline === 'roundRect') return [['rounded', 1]];
-  const shape = SHAPES.find((s) => s.outline === outline);
-  if (shape !== undefined) return shape.write as StylePart[];
+  const shape = SHAPES.find((s) => s.outline === outline && s.write !== undefined);
+  if (shape?.write !== undefined) return shape.write as StylePart[];
   if (typeof outline !== 'string') warn('Shapes drawn with an outline path of their own were written as rects.');
   else if (outline !== 'rect') warn(`Shapes of kind "${outline}" were written as rects.`);
   return [['rounded', 0]];

@@ -16,7 +16,8 @@ export interface SerializedLayer<TLayer extends string>
  *  (e.g., `clipFromPose`) appear as string keys (`clipFromPoseKey`) and
  *  are resolved through `SceneRegistry` at load time. */
 export interface SerializedScene<TData, TLayer extends string, TPose> {
-  version: 2;
+  /** 3 stores a child's pose in its container's frame. */
+  version: 3;
   /** The whole layer stack, system and user alike — the name predates user
    *  layers and is kept so existing snapshots still parse. */
   systemLayers: readonly SerializedLayer<TLayer>[];
@@ -68,9 +69,21 @@ export interface SerializedNodeV1<TData, TLayer extends string, TPose>
   kind: 'leaf' | 'container';
 }
 
-/** A version 1 save, still read and never written. */
+/** A version 1 save, still read and never written: every pose in it is world. */
 export interface SerializedSceneV1<TData, TLayer extends string, TPose>
   extends Omit<SerializedScene<TData, TLayer, TPose>, 'version' | 'nodes'> {
   version: 1;
   nodes: readonly SerializedNodeV1<TData, TLayer, TPose>[];
 }
+
+/** A version 2 save, still read and never written: every pose in it is world. */
+export interface SerializedSceneV2<TData, TLayer extends string, TPose>
+  extends Omit<SerializedScene<TData, TLayer, TPose>, 'version'> {
+  version: 2;
+}
+
+/** Any save a scene reads: the current version or an older one. */
+export type SavedScene<TData, TLayer extends string, TPose> =
+  | SerializedScene<TData, TLayer, TPose>
+  | SerializedSceneV2<TData, TLayer, TPose>
+  | SerializedSceneV1<TData, TLayer, TPose>;

@@ -80,3 +80,62 @@ describe('findPathSnaps', () => {
     expect(findPathSnaps(line, { x: 3, y: 1 }, { radius: 1.5 }).map((h) => h.kind)).toEqual(['nearest']);
   });
 });
+
+describe('findPathSnaps over many paths', () => {
+  // A 40×40 grid of short strokes, 10 apart.
+  const grid = Array.from({ length: 1600 }, (_, i) => {
+    const x = (i % 40) * 10;
+    const y = Math.floor(i / 40) * 10;
+    return pathFromD(`M${x} ${y} L${x + 4} ${y + 4}`);
+  });
+
+  /** `index` with each target list and segment list counting the entries read from it. */
+  function counted(index: ReturnType<typeof createPathSnapIndex>) {
+    let reads = 0;
+    const watch = <T extends object>(list: readonly T[]): readonly T[] => new Proxy(list as T[], {
+      get(target, key, receiver) {
+        if (typeof key === 'string' && /^\d+$/.test(key)) reads++;
+        return Reflect.get(target, key, receiver) as unknown;
+      },
+    });
+    const lists = new Map<string, readonly unknown[]>();
+    return {
+      index: {
+        paths: index.paths,
+        segments: watch(index.segments.map((s) => watch(s))),
+        targets: (kind: Parameters<typeof index.targets>[0]) => {
+          if (!lists.has(kind)) lists.set(kind, watch(index.targets(kind)));
+          return lists.get(kind) as ReturnType<typeof index.targets>;
+        },
+      },
+      reads: () => reads,
+      reset: () => { reads = 0; },
+    };
+  }
+
+  it('finds every target in range, as a scan of them all would', () => {
+    const index = createPathSnapIndex(grid);
+    const probe = { x: 202, y: 201 };
+    const hits = findPathSnaps(index, probe, { radius: 6, origin: { x: 0, y: 300 } });
+    const kinds = ['anchor', 'midpoint'] as const;
+    for (const kind of kinds) {
+      const want = index.targets(kind).filter((t) => Math.hypot(t.x - probe.x, t.y - probe.y) <= 6);
+      expect(hits.filter((h) => h.kind === kind).map((h) => [h.x, h.y]).sort())
+        .toEqual(want.map((t) => [t.x, t.y]).sort());
+    }
+  });
+
+  it('measures nothing along an axis scaled to zero, so every target along it is in range', () => {
+    const hits = findPathSnaps(createPathSnapIndex(grid), { x: -500, y: 0 }, { radius: 0.5, scale: { x: 0, y: 1 }, kinds: ['anchor'] });
+    expect(hits).toHaveLength(40);
+  });
+
+  it('reads only the targets and segments near the probe once it has looked once', () => {
+    const c = counted(createPathSnapIndex(grid));
+    const query = { radius: 6, kinds: ['anchor', 'midpoint', 'perpendicular', 'nearest'] as const, origin: { x: 0, y: 300 } };
+    findPathSnaps(c.index, { x: 202, y: 201 }, query);
+    c.reset();
+    findPathSnaps(c.index, { x: 302, y: 101 }, query);
+    expect(c.reads()).toBeLessThan(100);
+  });
+});

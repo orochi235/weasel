@@ -113,8 +113,7 @@ export function subtreeIds(scene: AnyScene, id: NodeId): NodeId[] {
 /**
  * The nodes whose stored pose has to change for `ids` to move as a unit: each
  * selected node and its descendants, less any stored in the frame of another
- * node in the set, which that frame carries. With the default absolute poses
- * nothing is carried and every descendant is written.
+ * node in the set, which that frame carries.
  */
 export function translateTargets(
   scene: AnyScene,
@@ -125,7 +124,6 @@ export function translateTargets(
   for (const root of selectedRoots(scene, ids)) {
     for (const id of subtreeIds(scene, root)) moving.add(id);
   }
-  if (frame.pc.closure === 'identity') return [...moving];
   return [...moving].filter((id) => {
     const storedIn = frame.frame(id);
     return storedIn === null || !moving.has(storedIn);
@@ -175,7 +173,7 @@ export function storedDelta(
   dx: number,
   dy: number,
 ): { dx: number; dy: number } {
-  if (frame.pc.closure === 'identity' || frame.frame(id) === null) return { dx, dy };
+  if (frame.frame(id) === null) return { dx, dy };
   const world = frame.world(id);
   const from = descriptor.getBounds(frame.local(id, world));
   const to = descriptor.getBounds(frame.local(id, translatePoseViaDescriptor(world, dx, dy, descriptor)));

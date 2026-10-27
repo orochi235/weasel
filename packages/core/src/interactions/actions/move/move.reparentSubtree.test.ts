@@ -1,6 +1,6 @@
 /**
- * Reparent-on-drop of a container, on a scene with the default absolute
- * poses: its children store world coordinates of their own.
+ * Reparent-on-drop of a container: it lands in the target's frame, and its
+ * children ride in its own.
  */
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
@@ -42,9 +42,9 @@ describe('moveAction — reparentOnDrop of a container with children', () => {
     const scene = makeScene();
     dragOntoTarget(scene, 50);
     expect(scene.get(G)!.parent).toBe(T);
-    expect(scene.get(G)!.pose).toEqual({ x: 50, y: 0, width: 20, height: 20 });
+    expect(scene.get(G)!.pose).toEqual({ x: 10, y: 0, width: 20, height: 20 });
     expect(scene.get(C)!.parent).toBe(G);
-    expect(scene.get(C)!.pose).toEqual({ x: 55, y: 5, width: 10, height: 10 });
+    expect(scene.get(C)!.pose).toEqual({ x: 5, y: 5, width: 10, height: 10 });
   });
 
   it('undoes the reparent and the children in one step', () => {

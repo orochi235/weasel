@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   asNodeId, createScene, createSnapOutcomeStore, pathFromD, pathSnapSource,
   type ImmediateInvoker, type InvocationCtx, type SnapDep, type SnapOutcomeStore, type SnapSource,
 } from '@weasel-js/core';
@@ -54,7 +54,7 @@ const grid = (step: number): SnapSource => ({
   },
 });
 
-const emptyScene = () => createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
+const emptyScene = () => createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
 
 /** A `snap` dep as a canvas builds it: `canvas` less the gesture's `omit`,
  *  then the gesture's own `sources`, at a zoom of `scale`. */

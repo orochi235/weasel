@@ -36,6 +36,11 @@ describe('themePrefsSchema', () => {
     expect(LEAVES.get('fg.fg-muted')?.kind).toBe('string');
   });
 
+  it('names a token on its group\'s page without the group\'s prefix, and is still found by its whole name', () => {
+    expect(LEAVES.get('button.button-pressed-surface')).toMatchObject({ name: 'pressed-surface', tags: ['button-pressed-surface'] });
+    expect(LEAVES.get('surface.surface')?.name).toBe('surface');
+  });
+
   it('splits a default only along the axes the token differs by', () => {
     const surface = LEAVES.get('surface.surface')!;
     expect(surface.defaultLocus).toEqual({

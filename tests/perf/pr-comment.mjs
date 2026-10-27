@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 /**
- * Post a `perf:compare` report on a pull request, rewriting the comment a
- * previous run left instead of adding another.
+ * Post the comparison of two directories of perf results on a pull request,
+ * rewriting the comment a previous run left instead of adding another.
  *
- *   node tests/perf/pr-comment.mjs <report.txt> --pr <number> --base <sha> --head <sha>
+ *   node tests/perf/pr-comment.mjs <base-dir> <head-dir> --pr <number> --base <sha> --head <sha>
  *
  * Reads `GITHUB_TOKEN` and `GITHUB_REPOSITORY`. With `--dry-run` it prints the
  * body and calls nothing.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
+import { compareResults } from './lib/compare.ts';
+import { loadResultDir } from './lib/loadResults.ts';
+import { pairByBenchmark } from './lib/pairResults.ts';
 import { COMMENT_MARKER, commentBody } from './lib/prComment.ts';
 
 const args = process.argv.slice(2);
@@ -16,16 +19,20 @@ const flag = (name) => {
   const i = args.indexOf(name);
   return i === -1 ? undefined : args[i + 1];
 };
-const reportPath = args[0];
+const [baseDir, headDir] = args;
 const pr = flag('--pr');
 const base = flag('--base');
 const head = flag('--head');
-if (!reportPath || reportPath.startsWith('--') || !pr || !base || !head) {
-  console.error('usage: node tests/perf/pr-comment.mjs <report.txt> --pr <number> --base <sha> --head <sha> [--dry-run]');
+if (!baseDir || !headDir || [baseDir, headDir].some((d) => d.startsWith('--')) || !pr || !base || !head) {
+  console.error('usage: node tests/perf/pr-comment.mjs <base-dir> <head-dir> --pr <number> --base <sha> --head <sha> [--dry-run]');
   process.exit(2);
 }
 
-const body = commentBody(readFileSync(reportPath, 'utf8'), { base, head });
+// A side whose every benchmark failed may have written no directory at all.
+const read = (dir) => (existsSync(dir) ? loadResultDir(dir) : []);
+const { pairs, onlyA, onlyB } = pairByBenchmark(read(baseDir), read(headDir));
+const compared = pairs.map((p) => ({ benchmark: p.benchmark, cmp: compareResults(p.a.result, p.b.result) }));
+const body = commentBody({ compared, onlyBase: onlyA, onlyHead: onlyB }, { base, head });
 if (args.includes('--dry-run')) {
   console.log(body);
   process.exit(0);

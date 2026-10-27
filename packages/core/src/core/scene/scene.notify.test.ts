@@ -264,7 +264,8 @@ describe('Scene — a bare edit of a laid-out container', () => {
     expect(labels(scene)).toEqual(['both']);
     scene.untracked(() => scene.reorder(B, 0));
     expect(labels(scene)).toEqual(['both']);
-    expect(scene.get(B)!.pose.y).toBe(100);
+    // The container's first slot, in its frame.
+    expect(scene.get(B)!.pose.y).toBe(0);
   });
 
   it('a refused bare move throws and leaves no entry', () => {

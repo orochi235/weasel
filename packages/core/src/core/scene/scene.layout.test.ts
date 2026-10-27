@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScene, sceneFromJSON } from './scene';
+import { RIGID_POSE_COMPOSITION, composeWorldPose } from './composePose';
+import { scenePoseAdapter } from './scenePoseAdapter';
 import { asNodeId } from './types';
 import type { NodeId, RectPose } from './types';
 import type { LayoutStrategy } from '../../layout/types';
@@ -67,8 +69,9 @@ function add(scene: ReturnType<typeof makeScene>, id: string, index?: number): N
   });
 }
 
-const posOf = (scene: ReturnType<typeof makeScene>, id: string) => {
-  const p = scene.get(asNodeId(id))!.pose;
+/** Where `id` is in world: a child's stored pose is in its container's frame. */
+const posOf = (scene: { composition: { compose: unknown } }, id: string) => {
+  const p = composeWorldPose(scenePoseAdapter(scene as never), id, scene.composition.compose as never) as RectPose;
   return [p.x, p.y];
 };
 
@@ -226,11 +229,13 @@ describe('scene container layout', () => {
     expect(posOf(scene, 'c')).toEqual([100, 110]);
   });
 
-  it('leaves the children alone when the container only moves', () => {
+  it('carries the children in its frame when the container only moves, writing none of them', () => {
     const scene = makeScene();
     add(scene, 'a');
+    const stored = scene.get(asNodeId('a'))!.pose;
     scene.setPose(C, { ...CONTAINER, x: 300 });
-    expect(posOf(scene, 'a')).toEqual([100, 100]);
+    expect(posOf(scene, 'a')).toEqual([300, 100]);
+    expect(scene.get(asNodeId('a'))!.pose).toBe(stored);
   });
 
   it('lays out through applyBatch and scene.batch, in the same entry', () => {
@@ -294,7 +299,8 @@ describe('scene container layout', () => {
     const seen: { id: string; from: RectPose; to: RectPose }[][] = [];
     const off = scene.onReflow((moves) => seen.push(moves.map((m) => ({ ...m }))));
     add(scene, 'a');
-    expect(seen).toEqual([[{ id: 'a', from: LOOSE, to: { x: 100, y: 100, width: 50, height: 10 } }]]);
+    // Stored poses, in the container's frame.
+    expect(seen).toEqual([[{ id: 'a', from: LOOSE, to: { x: 0, y: 0, width: 50, height: 10 } }]]);
     scene.undo();
     scene.redo();
     expect(seen).toHaveLength(1);
@@ -311,8 +317,9 @@ describe('scene container layout', () => {
     });
     scene.add({ id: asNodeId('x'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: inner });
     // The inner container took the parent's row; its child took the inner's.
-    expect(scene.get(inner)!.pose).toEqual({ x: 100, y: 100, width: 50, height: 10 });
-    expect(scene.get(asNodeId('x'))!.pose).toEqual({ x: 100, y: 100, width: 50, height: 10 });
+    expect(scene.get(inner)!.pose).toEqual({ x: 0, y: 0, width: 50, height: 10 });
+    expect(scene.get(asNodeId('x'))!.pose).toEqual({ x: 0, y: 0, width: 50, height: 10 });
+    expect(posOf(scene, 'x')).toEqual([100, 100]);
     scene.setPose(C, { ...CONTAINER, width: 90 });
     expect(scene.get(asNodeId('x'))!.pose.width).toBe(90);
   });
@@ -342,8 +349,8 @@ describe('scene container layout', () => {
     expect(scene.composition).toBe(TRANSLATE);
   });
 
-  it('answers the identity composition when none is given', () => {
-    expect(makeScene(stack()).composition.closure).toBe('identity');
+  it('composes rigidly when no composition is given', () => {
+    expect(makeScene(stack()).composition).toBe(RIGID_POSE_COMPOSITION);
   });
 
   it('round-trips a registered layout through toJSON', () => {
@@ -376,8 +383,8 @@ describe('scene container layout', () => {
     back.restoreHistory(saved.history);
     const childPoses = vi.spyOn(layout, 'childPoses');
     back.undo();
-    expect(back.get(asNodeId('a'))!.pose.y).toBe(100);
-    expect(back.get(asNodeId('b'))!.pose.y).toBe(110);
+    expect(posOf(back, 'a')).toEqual([100, 100]);
+    expect(posOf(back, 'b')).toEqual([100, 110]);
     expect(childPoses).not.toHaveBeenCalled();
   });
 
@@ -428,7 +435,7 @@ describe('scene container layout', () => {
       });
       scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'l', pose: LOOSE, data: null, parent: C });
       scene.setLayout(C, stack());
-      expect(scene.get(asNodeId('a'))!.pose).toEqual({ x: 100, y: 100, width: 50, height: 10 });
+      expect(scene.get(asNodeId('a'))!.pose).toEqual({ x: 0, y: 0, width: 50, height: 10 });
       scene.undo();
       expect(scene.layoutOf(C)).toBeNull();
       expect(scene.get(asNodeId('a'))!.pose).toEqual(LOOSE);
@@ -484,7 +491,7 @@ describe('scene container layout', () => {
       expect(back.layoutOf(C)).toBe(second);
       back.undo();
       expect(back.layoutOf(C)).toBe(first);
-      expect(back.get(asNodeId('b'))!.pose.y).toBe(110);
+      expect(posOf(back, 'b')).toEqual([100, 110]);
       back.redo();
       expect(back.layoutOf(C)).toBe(second);
     });

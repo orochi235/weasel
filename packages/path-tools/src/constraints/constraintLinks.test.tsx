@@ -4,7 +4,7 @@ import { createElement, type ReactNode } from 'react';
 import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   createScene, createTransformOp, defaultCommitAdapter, effectivePose, moveAction, pathsPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
   type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type Scene, type SelectionApi, type TransformFollower,
 } from '@weasel-js/core';
@@ -25,7 +25,7 @@ const poly = (...pts: [number, number][]) => polygonFromPoints(pts.map(([x, y]) 
  * square's anchors 0 → 1 are 3 → 4.
  */
 function setup() {
-  const scene = createScene<Data, 'main' | 'notes', unknown>({ systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }] });
+  const scene = createScene<Data, 'main' | 'notes', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }] });
   const square = scene.add({ kind: 'mark', layer: 'main', pose: poly([0, 0], [100, 0], [100, 100], [0, 100]), data: {} });
   const triangle = scene.add({
     kind: 'mark', layer: 'main', pose: poly([40, 0], [40, -50], [10, -50]),

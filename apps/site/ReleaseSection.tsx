@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangelogEntry, Release } from '../shared/releases';
 import num from '@weasel-js/theme/numeric.module.css';
+import { Button } from '@weasel-js/ui/components/Button';
 
 /** Matches the `UNRELEASED` label the changelogs plugin stamps on pending
  *  changesets. */
@@ -118,15 +119,9 @@ function Packages({
   return (
     <div className="ckd-release-pkgs">
       {names.map((name) => (
-        <button
-          key={name}
-          type="button"
-          className={`ckd-release-pkg is-filter${selected.includes(name) ? ' is-on' : ''}`}
-          aria-pressed={selected.includes(name)}
-          onClick={() => onToggle(name)}
-        >
+        <Button key={name} size="sm" pressed={selected.includes(name)} onClick={() => onToggle(name)}>
           {name}
-        </button>
+        </Button>
       ))}
     </div>
   );

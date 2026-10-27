@@ -1,31 +1,20 @@
-import { forwardRef, type ReactNode, type Ref } from 'react';
+import { forwardRef, type Ref } from 'react';
 import {
   NumberField as RACNumberField,
   Label,
   Input as RACInput,
   Group,
   Button as RACButton,
-  Text,
-  FieldError,
   type NumberFieldProps as RACNumberFieldProps,
-  type ValidationResult,
 } from 'react-aria-components';
-import type { FieldOrientation } from '../Field/Field';
+import { MIXED_HINT } from '../mixedHint';
+import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import type { StepperSide } from './UnitField';
 import f from '../field.module.css';
 import s from './NumberField.module.css';
 
 /** Props for {@link NumberField}, on top of React Aria's `NumberField` props. */
-export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className'> & {
-  label?: ReactNode;
-  /**
-   * `'stacked'` (the default) puts the label above the field; `'row'` sets it
-   * beside the field at its own width, with any description or error on a
-   * line below. Same vocabulary as {@link Field}'s `orientation`.
-   */
-  orientation?: FieldOrientation;
-  description?: ReactNode;
-  errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
+export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className'> & FieldSlotProps & {
   /** Hide the up/down stepper buttons. Defaults to false. */
   hideSteppers?: boolean;
   /** Which end of the field the steppers sit at. Defaults to `'start'`. */
@@ -33,9 +22,11 @@ export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className
   /** Render with no box until focused — the readout treatment the property
    *  rows use, for a value that sits inside other chrome rather than in a form. */
   ghost?: boolean;
-  /** Native input placeholder — e.g. `'Mixed'` for a multi-selection
-   *  editor with no shared value. */
+  /** Native input placeholder. */
   placeholder?: string;
+  /** The field stands for several values that differ: it shows empty, reading
+   *  `Mixed` in place of `placeholder`. */
+  mixed?: boolean;
   /**
    * `'fill'` (the default) takes the width of whatever row the field sits in.
    * `'fit'` sizes it to `--wzl-number-field-width` (`9ch` by default) plus its
@@ -59,13 +50,14 @@ export const NumberField = forwardRef(function NumberField(
 ) {
   const {
     label,
-    orientation = 'stacked',
+    orientation,
     description,
     errorMessage,
     hideSteppers,
     stepperSide = 'start',
     ghost,
     placeholder,
+    mixed,
     width = 'fill',
     className,
     ...rest
@@ -73,22 +65,15 @@ export const NumberField = forwardRef(function NumberField(
   return (
     <RACNumberField
       {...rest}
-      className={[
-        f.field,
-        f.control,
-        width === 'fit' && `${f.fit} ${s.fit}`,
-        orientation === 'row' && f.row,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      value={mixed ? NaN : rest.value}
+      className={fieldRootClass({ orientation, width, fit: s.fit, className })}
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <Group
         className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
         data-stepper-side={stepperSide}
       >
-        <RACInput ref={ref} placeholder={placeholder} />
+        <RACInput ref={ref} placeholder={mixed ? MIXED_HINT : placeholder} />
         {!hideSteppers && (
           <div className={s.steppers}>
             <RACButton slot="increment" className={s.stepper} aria-label="Increment" data-wzl-subordinate="">▲</RACButton>
@@ -96,12 +81,7 @@ export const NumberField = forwardRef(function NumberField(
           </div>
         )}
       </Group>
-      {description !== undefined && (
-        <Text slot="description" className={`${f.hint} ${f.below}`}>
-          {description}
-        </Text>
-      )}
-      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
+      <FieldFoot description={description} errorMessage={errorMessage} />
     </RACNumberField>
   );
 });

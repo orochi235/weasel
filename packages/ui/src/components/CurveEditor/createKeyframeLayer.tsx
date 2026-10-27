@@ -10,9 +10,11 @@
 import type { ReactNode } from 'react';
 import { cubicBezierEasing, resolveEasing } from '@weasel-js/core';
 import { type EasingFn, type Keyframe } from '@weasel-js/animator';
+import { Diamond } from './Diamond';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
+import { arrowMove } from '../../arrowKeys';
 import { handleHalf } from '../../handles';
-import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
+import { snapRadiusPx as kitSnapRadiusPx, snapToNearest } from '../../snap';
 import s from './CurveEditor.module.css';
 import type {
   CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint,
@@ -65,7 +67,6 @@ export const HANDLE_HIT_PX = 8;
 export const CURVE_HIT_PX = 6;
 const KEY_HALF = handleHalf('--wzl-handle-size');
 const HANDLE_RADIUS = handleHalf('--wzl-handle-dot-size-sm');
-const SHIFT_MULTIPLIER = 10;
 const HANDLE_STEP = 0.01;
 
 /** A keyframe layer state with nothing selected and no gesture in flight. */
@@ -145,7 +146,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
   const id = cfg.id ?? 'keyframes';
   const label = cfg.label ?? 'Curve';
   const formatX = cfg.formatX ?? ((x: number) => String(Math.round(x)));
-  const snapRadiusPx = (ctx: LayerCtx): number => cfg.snapRadiusPx ?? ctx.kitSettings?.get('targets.snapRadiusPx') ?? SNAP_RADIUS_PX;
+  const snapRadiusPx = (ctx: LayerCtx): number => cfg.snapRadiusPx ?? kitSnapRadiusPx(ctx.kitSettings);
 
   // A live handle drag is previewed straight from its control points: a
   // fresh spec per pointermove through `resolveEasing` would leave one
@@ -258,14 +259,11 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
         {state.keys.map((k, i) => {
           const p = ctx.toPlot({ x: k.t, y: k.value });
           return (
-            <rect
+            <Diamond
               key={`key-${i}`}
               className={s.keyframe}
-              x={p.x - KEY_HALF}
-              y={p.y - KEY_HALF}
-              width={KEY_HALF * 2}
-              height={KEY_HALF * 2}
-              transform={`rotate(45 ${p.x} ${p.y})`}
+              at={p}
+              half={KEY_HALF}
               role="button"
               tabIndex={0}
               aria-label={`${label} key at ${formatX(k.t)}`}
@@ -278,14 +276,11 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
         {state.drag?.kind === 'key' ? (() => {
           const p = ctx.toPlot({ x: state.drag.t, y: state.drag.value });
           return (
-            <rect
+            <Diamond
               aria-hidden="true"
               className={s.keyframeGhost}
-              x={p.x - KEY_HALF}
-              y={p.y - KEY_HALF}
-              width={KEY_HALF * 2}
-              height={KEY_HALF * 2}
-              transform={`rotate(45 ${p.x} ${p.y})`}
+              at={p}
+              half={KEY_HALF}
               data-keyframe-ghost=""
             />
           );
@@ -381,9 +376,10 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
     const target = e.target as Element | null;
     if (target?.closest?.('[data-layer-id]')?.getAttribute('data-layer-id') !== id) return;
     const activate = e.key === 'Enter' || e.key === ' ';
-    const dx = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    const dy = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
-    const mult = e.shiftKey ? SHIFT_MULTIPLIER : 1;
+    const move = arrowMove(e);
+    const dx = move?.dx ?? 0;
+    // The model's y runs up, the screen's down.
+    const dy = -(move?.dy ?? 0);
 
     const keyEl = target.closest('[data-keyframe-index]');
     if (keyEl) {
@@ -398,8 +394,8 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
       if (dx === 0 && dy === 0) return;
       e.preventDefault();
       const m = ctx.modelRange;
-      const stepX = (cfg.step?.x ?? Math.abs(m.xMax - m.xMin) / 100) * mult;
-      const stepY = (cfg.step?.y ?? Math.abs(m.yMax - m.yMin) / 100) * mult;
+      const stepX = cfg.step?.x ?? Math.abs(m.xMax - m.xMin) / 100;
+      const stepY = cfg.step?.y ?? Math.abs(m.yMax - m.yMin) / 100;
       const t = clampTo(k.t + dx * stepX, cfg.xClamp);
       const value = clampTo(k.value + dy * stepY, cfg.yClamp);
       if (t === k.t && value === k.value) return;
@@ -428,8 +424,8 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
       e.preventDefault();
       const h = Number(handleEl.getAttribute('data-handle-index'));
       const next = [...bezier] as [number, number, number, number];
-      next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + dx * HANDLE_STEP * mult));
-      next[h * 2 + 1] += dy * HANDLE_STEP * mult;
+      next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + dx * HANDLE_STEP));
+      next[h * 2 + 1] += dy * HANDLE_STEP;
       const drag: KeyframeDrag = { kind: 'handle', segment: state.selectedSegment, bezier: next };
       extra.commit({ ...state, ...applyKeyframeDrag({ ...state, drag }), drag: null });
     }

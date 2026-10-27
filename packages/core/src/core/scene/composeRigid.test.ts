@@ -65,7 +65,7 @@ describe('composeRigidPose', () => {
   it('treats an absent rotation as zero on either side', () => {
     const p: RectPose = { x: 10, y: 20, width: 5, height: 5 };
     const c: RectPose = { x: 1, y: 2, width: 3, height: 4 };
-    expect(composeRigidPose(p, c)).toEqual({ x: 11, y: 22, width: 3, height: 4, rotation: 0 });
+    expect(composeRigidPose(p, c)).toEqual({ x: 11, y: 22, width: 3, height: 4 });
   });
 
   it('is what a rotated parent does to an upright child — the case that is wrong today', () => {

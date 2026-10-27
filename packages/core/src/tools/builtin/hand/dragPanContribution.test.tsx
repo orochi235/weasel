@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { SceneCanvas } from '../../../canvas/SceneCanvas';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
 import { dragPanContribution } from './dragPanContribution';
@@ -22,7 +23,7 @@ const START: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 /** Mount a view-only canvas, drag 30px right and 20px down, and return the
  *  last view it reported. */
 function dragOnce(ambient: Contribution[]): View {
-  const scene = createScene<unknown, 'main', { x: number; y: number }>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<unknown, 'main', { x: number; y: number }>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   let last = START;
   const { container } = render(
     <SceneCanvas features={['view']}

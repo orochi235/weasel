@@ -1,6 +1,6 @@
 import type { BrowserCommand } from 'vitest/node';
 import type {} from '@vitest/browser-playwright';
-import type { Download } from '@playwright/test';
+import type { Download, Page } from '@playwright/test';
 import { createServer, type Server } from 'node:net';
 import { waitForOwnFrame } from './vitest-own-frame.ts';
 
@@ -87,6 +87,31 @@ const settleFrame: BrowserCommand<[]> = async (ctx) => {
   if (ctx.testPath) await waitForOwnFrame(ctx.page, ctx.testPath);
 };
 
+// A test file can fail to load with only "Failed to fetch dynamically imported module", and vite logs
+// neither a 404 nor an aborted request, so the page's own view of each failed load goes to stdout,
+// stamped in the same epoch ms as the `browserv` query vitest puts on every test import.
+const watchedPages = new WeakSet<Page>();
+const LOADS = new Set(['script', 'document', 'stylesheet']);
+
+/** Print every request of the test page that fails or answers 400 or more, once per page. */
+const watchRequests: BrowserCommand<[]> = async (ctx) => {
+  const page = ctx.page;
+  if (watchedPages.has(page)) return;
+  watchedPages.add(page);
+  const log = (what: string, type: string, url: string) =>
+    console.log(`weasel-request ${Date.now()} ${new Date().toISOString()} ${what} ${type} ${url}`);
+  page.on('requestfailed', (request) => {
+    const failure = request.failure()?.errorText ?? 'failed';
+    // A frame torn down mid-load aborts its images and fonts; only a module or page load matters here.
+    if (failure === 'net::ERR_ABORTED' && !LOADS.has(request.resourceType())) return;
+    log(failure, request.resourceType(), request.url());
+  });
+  page.on('response', (response) => {
+    if (response.status() < 400) return;
+    log(String(response.status()), response.request().resourceType(), response.url());
+  });
+};
+
 /** One step of a real mouse: a move to a client point of the test's frame, a
  *  press, or a release of the primary button. */
 export type PointerStep =
@@ -155,7 +180,7 @@ const clickAcrossStall: BrowserCommand<[at: [number, number], stallMs: number]> 
 
 export const browserCommands = {
   grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage, settleFrame,
-  pointer, clickAcrossStall,
+  watchRequests, pointer, clickAcrossStall,
 };
 
 declare module 'vitest/browser' {
@@ -167,6 +192,7 @@ declare module 'vitest/browser' {
     takeDownload: () => Promise<{ filename: string; text: string } | null>;
     collectGarbage: () => Promise<void>;
     settleFrame: () => Promise<void>;
+    watchRequests: () => Promise<void>;
     pointer: (steps: PointerStep[]) => Promise<void>;
     clickAcrossStall: (at: [x: number, y: number], stallMs: number) => Promise<void>;
   }

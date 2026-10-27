@@ -164,7 +164,8 @@ describe('dragging a member of a group', () => {
     });
     const scene = h.scene();
     expect(scene.get(asNodeId('g'))?.pose).toMatchObject({ x: 10, y: 7 });
-    expect(scene.get(asNodeId('m'))?.pose).toMatchObject({ x: 10, y: 7 });
+    // Stored in the group's frame, which carries it.
+    expect(scene.get(asNodeId('m'))?.pose).toMatchObject({ x: 0, y: 0 });
     expect(scenePoseFrame(scene).world(asNodeId('m'))).toMatchObject({ x: 10, y: 7 });
   });
 });

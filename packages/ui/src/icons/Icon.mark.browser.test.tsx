@@ -40,10 +40,11 @@ test('a mark is drawn at the middle of its slot', async () => {
   expect(await alphaAt('markDot', 15.5, 15.5)).toBe(255);
 });
 
-// The stop glyph's right edge passes over the minus, inside the slot's box but more than the band from the stroke.
+// The stop glyph's right edge runs down into the slot's box toward the minus: still drawn where it is more than the band
+// above the minus, cleared within the band, and both probes stay off the minus's own stroke.
 test('the clearing follows the mark\'s outline, not its slot', async () => {
-  expect(await alphaAt('markRemove', 14.4, 12.5, 'stop')).toBe(255);
-  expect(await alphaAt('markRemove', 12.8, 14.4, 'stop')).toBe(0);
+  expect(await alphaAt('markRemove', 15.72, 12.5, 'stop')).toBe(255);
+  expect(await alphaAt('markRemove', 15.72, 14.2, 'stop')).toBe(0);
 });
 
 // A mask sized by its target's bounding box has no height to work with here, and erases the line.

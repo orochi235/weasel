@@ -1,17 +1,18 @@
-import { applyToPoint, ellipsePath, linePath, type Path, type Point } from '@weasel-js/geom';
+import { applyToPoint, ellipsePath, linePath, rectPath, type Path, type Point } from '@weasel-js/geom';
 import {
   viewToTransform, worldToScreen, type DrawCommand, type LayerHit, type RenderLayer, type View,
 } from '@weasel-js/core';
 import { SYMMETRY_KINDS, type SymmetrySpec } from './kinds';
+import { latticePoints } from './wallpaper';
 
 /** The guide layer's id. */
 export const SYMMETRY_GUIDE_ID = 'weasel-symmetry-guide';
 /** The affordance kind a press on one of the guide's handles arrives as. */
 export const SYMMETRY_HANDLE_KIND = `layer:${SYMMETRY_GUIDE_ID}`;
 
-/** Which handle a press took: the center, the knob that turns the axis, or
- *  the end of a repeat's first step. */
-export type SymmetryHandle = 'center' | 'angle' | 'step';
+/** Which handle a press took: the center, the knob that turns the axis, the
+ *  end of a repeat's or a wallpaper's first step, or a wallpaper's first row. */
+export type SymmetryHandle = 'center' | 'angle' | 'step' | 'row';
 
 /** What a press on a handle carries to the drag action. */
 export interface SymmetryHandlePress {
@@ -40,7 +41,7 @@ export interface SymmetryGuideSource {
   subscribe(listener: () => void): () => void;
 }
 
-const CURSORS: Record<SymmetryHandle, string> = { center: 'move', angle: 'grab', step: 'grab' };
+const CURSORS: Record<SymmetryHandle, string> = { center: 'move', angle: 'grab', step: 'grab', row: 'grab' };
 
 /**
  * Each handle the guide shows for `spec`, in screen pixels, topmost first.
@@ -59,12 +60,13 @@ export function guideHandles(
   const t = viewToTransform(view);
   const [cx, cy] = worldToScreen(center.x, center.y, t);
   const out: Array<{ handle: SymmetryHandle; at: Point }> = [];
-  if (spec.kind === 'repeat') {
-    const [sx, sy] = worldToScreen(
-      center.x + Math.cos(spec.angle) * spec.spacing, center.y + Math.sin(spec.angle) * spec.spacing, t,
-    );
-    out.push({ handle: 'step', at: { x: sx, y: sy } });
-  } else if (hasAxis(spec)) {
+  const along = (handle: SymmetryHandle, angle: number, dist: number): void => {
+    const [x, y] = worldToScreen(center.x + Math.cos(angle) * dist, center.y + Math.sin(angle) * dist, t);
+    out.push({ handle, at: { x, y } });
+  };
+  if (spec.kind === 'repeat' || spec.kind === 'wallpaper') along('step', spec.angle, spec.spacing);
+  if (spec.kind === 'wallpaper') along('row', spec.angle + spec.rowAngle, spec.rowSpacing);
+  else if (hasAxis(spec)) {
     const d = screenDir(spec.angle, view);
     const reachPx = reach * Math.hypot(Math.cos(spec.angle) * view.scale.x, Math.sin(spec.angle) * view.scale.y);
     const dist = reach > 0 ? Math.max(knobPx, reachPx + 2 * clearPx) : knobPx;
@@ -87,8 +89,12 @@ function screenDir(angle: number, view: View): Point {
   return { x: x / len, y: y / len };
 }
 
-/** The angles of the lines a spec reflects across. */
+/** The angles of the lines a spec reflects across: for a wallpaper, those
+ *  through the center its cell reflects across. */
 function mirrorAngles(spec: SymmetrySpec): number[] {
+  if (spec.kind === 'wallpaper') {
+    return spec.cell === 'none' ? [] : mirrorAngles({ ...spec, kind: spec.cell, angle: spec.angle + spec.cellAngle });
+  }
   if (spec.kind === 'mirror') return [spec.angle];
   if (spec.kind === 'both') return [spec.angle, spec.angle + Math.PI / 2];
   if (spec.kind === 'kaleidoscope') {
@@ -147,8 +153,10 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
           out.push({ kind: 'path', path: dot({ x, y }, 2.5), fill: { paint: { kind: 'solid', color: faint } } });
         }
       }
+      if (spec.kind === 'wallpaper') out.push(...latticeGuide(spec, center, view, faint));
       for (const h of guideHandles(spec, center, view, knob, contentReach, hitR)) {
         if (h.handle === 'angle') out.push(line({ x: cx, y: cy }, h.at, color));
+        if (h.handle === 'step' || h.handle === 'row') out.push(line({ x: cx, y: cy }, h.at, faint));
         out.push({
           kind: 'path',
           path: dot(h.at, h.handle === 'center' ? r + 1 : r),
@@ -170,4 +178,23 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
       return null;
     },
   };
+}
+
+/** A wallpaper's extent outlined, and a dot at each of its lattice points. */
+function latticeGuide(spec: SymmetrySpec, center: Point, view: View, color: string): DrawCommand[] {
+  const t = viewToTransform(view);
+  const { x, y, width, height } = spec.extent;
+  const [x0, y0] = worldToScreen(center.x + x, center.y + y, t);
+  const [x1, y1] = worldToScreen(center.x + x + width, center.y + y + height, t);
+  const paint = { kind: 'solid' as const, color };
+  const out: DrawCommand[] = [{
+    kind: 'path',
+    path: rectPath(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0)),
+    stroke: { paint, width: { px: 1 }, dash: [4, 4] },
+  }];
+  for (const p of latticePoints(spec)) {
+    const [px, py] = worldToScreen(center.x + p.x, center.y + p.y, t);
+    out.push({ kind: 'path', path: ellipsePath({ x: px - 2, y: py - 2, width: 4, height: 4 }), fill: { paint } });
+  }
+  return out;
 }

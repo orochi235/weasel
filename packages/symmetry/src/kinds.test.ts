@@ -43,11 +43,11 @@ describe('symmetryTransforms', () => {
     expect(symmetryTransforms(spec(kind), C)).toHaveLength(n);
   });
 
-  it.each(Object.entries(SYMMETRY_KINDS).filter(([, d]) => d.group).map(([k]) => k as SymmetryKind))(
-    '%s is a group: every product of two copies is the original or another copy',
+  it.each(Object.keys(SYMMETRY_KINDS) as SymmetryKind[])(
+    '%s has a point group: every product of two of it is the original or another of it',
     (kind) => {
       for (const count of [2, 3, 5, 8]) {
-        const ms = symmetryTransforms(spec(kind, { count, angle: 0.4 }), C);
+        const ms = SYMMETRY_KINDS[kind].pointGroup(spec(kind, { count, angle: 0.4, cell: 'kaleidoscope', cellAngle: 0.2 }), C);
         const all = [ID, ...ms];
         for (const a of all) {
           for (const b of all) expect(all.some((m) => same(m, multiply(a, b))), `${kind} ×${count}`).toBe(true);

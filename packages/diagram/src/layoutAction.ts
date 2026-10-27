@@ -5,7 +5,13 @@
  */
 import {
   translatePoseViaDescriptor,
+  carriedDescendants,
+  composeWorldPose,
+  rebaseLocalPose,
+  sceneCarrySource,
+  scenePoseAdapter,
   AUTO_POSE_DESCRIPTOR,
+  type NodeId,
   type Action,
   type PoseDescriptor,
   type Scene,
@@ -48,8 +54,7 @@ export interface ApplyLayoutOptions<TPose> {
  * pose can be a path or anything else a consumer wired, and only its own
  * descriptor knows how to move one.
  *
- * A participant that is a container takes its whole subtree along. `setPose`
- * does not cascade — poses are absolute.
+ * A participant that is a container takes what its frame holds along.
  */
 export function applyLayout<TPose>(
   scene: Scene<unknown, string, TPose>,
@@ -76,7 +81,9 @@ export function applyLayout<TPose>(
 
 /**
  * The poses a layout result implies, without writing any of them: each moved
- * node translated to its new top-left, and its subtree translated with it.
+ * node translated so its box starts where the layout put it, in world, and
+ * stored in its container's frame. What a moved container's frame holds rides
+ * it; a node under an envelope moved with it is written too.
  *
  * The translation is measured from the node's document pose, which a live run
  * in flight never changes, so a frame's answer does not depend on the frame
@@ -87,31 +94,29 @@ export function layoutPoses<TPose>(
   result: LayoutResult,
   geometry: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
 ): Map<string, TPose> {
+  const sc = scene as unknown as Scene<unknown, string, unknown>;
+  const { compose, decompose } = sc.composition;
+  const stored = scenePoseAdapter(sc);
   const out = new Map<string, TPose>();
-  for (const [id, at] of result) {
-    const node = scene.get(id as never);
-    if (node === undefined) continue;
-    const bounds = geometry.getBounds(node.pose);
+  // Reads what is already decided, so a node under a moved one is stored in its new frame.
+  const decided = { ...stored, getPose: (id: string) => (out.has(id) ? out.get(id) : stored.getPose(id)) };
+  const depth = (id: string) => {
+    let d = 0;
+    for (let at = scene.get(id as never)?.parent; at != null; at = scene.get(at)?.parent) d++;
+    return d;
+  };
+  const ids = [...result.keys()].filter((id) => scene.get(id as never) !== undefined).sort((a, b) => depth(a) - depth(b));
+  for (const id of ids) {
+    const at = result.get(id)!;
+    const world = composeWorldPose(stored, id, compose) as TPose;
+    const bounds = geometry.getBounds(world);
     const dx = at.x - bounds.x;
     const dy = at.y - bounds.y;
     if (dx === 0 && dy === 0) continue;
-    out.set(id, translatePoseViaDescriptor(node.pose, dx, dy, geometry));
-    for (const descendant of subtreeOf(scene, id)) {
-      const child = scene.get(descendant as never);
-      if (child === undefined) continue;
-      out.set(descendant, translatePoseViaDescriptor(child.pose, dx, dy, geometry));
-    }
-  }
-  return out;
-}
-
-function subtreeOf<TPose>(scene: Scene<unknown, string, TPose>, id: string): string[] {
-  const out: string[] = [];
-  const stack = [...scene.childrenOf(id as never)];
-  while (stack.length > 0) {
-    const next = stack.pop()!;
-    out.push(next);
-    stack.push(...scene.childrenOf(next));
+    const parent = scene.get(id as never)!.parent;
+    out.set(id, rebaseLocalPose(decided, translatePoseViaDescriptor(world, dx, dy, geometry), parent, compose, decompose) as TPose);
+    const carried = carriedDescendants(sceneCarrySource(sc), id as NodeId, (w) => translatePoseViaDescriptor(w as TPose, dx, dy, geometry));
+    for (const [d, pose] of carried) out.set(d, pose as TPose);
   }
   return out;
 }

@@ -215,6 +215,19 @@ describe('the stroke leaf\'s markers', () => {
     }
   });
 
+  it('draws every built-in marker and None as a glyph, and a registered one as text', () => {
+    const dispose = registerMarker({ ...getMarker('arrow')!, id: 'test-glyphless-marker' });
+    try {
+      const options = (strokeLeaf().children.markerEnd as PrefEnum).options;
+      for (const o of options) {
+        if (o.value === 'test-glyphless-marker') expect(o.icon).toBeUndefined();
+        else expect(o.icon, o.value || 'None').toBe(o.value === '' ? 'core:markerNone' : `core:marker${o.value.replace(/(^|-)([a-z])/g, (_, __, c: string) => c.toUpperCase())}`);
+      }
+    } finally {
+      dispose();
+    }
+  });
+
   it('lists a marker registered after the schemas were built', () => {
     const dispose = registerMarker({ ...getMarker('arrow')!, id: 'test-late-marker' });
     try {
@@ -302,31 +315,16 @@ describe('inferredNodeProperties', () => {
     expect(fields.sort()).toEqual(Object.keys(offered).sort());
   });
 
-  it('offers justify as a fourth Align segment, lit by justify alone', () => {
+  it('offers justify, start and end as Align segments of their own, each lit by its own value', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const style = ((entry.schema.members.text as PrefSection).members['data.style']) as PrefObject;
     const align = (style.children.paragraph as PrefSection).members.align as PrefEnum;
     expect(align.options.map((o) => [o.value, o.icon])).toEqual([
       ['left', 'core:textAlignLeft'], ['center', 'core:textAlignCenter'], ['right', 'core:textAlignRight'],
-      ['justify', 'core:textAlignJustify'],
+      ['justify', 'core:textAlignJustify'], ['start', 'core:textAlignStart'], ['end', 'core:textAlignEnd'],
     ]);
-    expect(align.encoding!.read('justify', { direction: 'rtl' })).toBe('justify');
-    expect(align.encoding!.read('start', { direction: 'rtl' })).toBe('right');
-  });
-
-  it('lights no Align segment for start or end while the direction is each paragraph\'s own', () => {
-    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
-    const style = ((entry.schema.members.text as PrefSection).members['data.style']) as PrefObject;
-    const { read } = ((style.children.paragraph as PrefSection).members.align as PrefEnum).encoding!;
-    for (const siblings of [{}, { direction: 'auto' }, undefined]) {
-      expect(read('start', siblings)).toBeUndefined();
-      expect(read('end', siblings)).toBeUndefined();
-      expect(read('right', siblings)).toBe('right');
-      expect(read('justify', siblings)).toBe('justify');
-    }
-    expect(read('start', { direction: 'ltr' })).toBe('left');
-    expect(read('end', { direction: 'ltr' })).toBe('right');
-    expect(read('end', { direction: 'rtl' })).toBe('left');
+    // Read as stored: under a stated direction `start` lights Start, not the edge it resolves to.
+    expect(align.encoding).toBeUndefined();
   });
 
   it('offers the padding and the box alignment beside the style, as fields of the node', () => {

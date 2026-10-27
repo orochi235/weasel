@@ -198,30 +198,35 @@ describe('two runs syncing one node tree', () => {
 });
 
 describe('selection', () => {
-  const marked = (select: boolean | undefined) =>
-    put(MARKER, JSON.stringify({ commit: COMMIT, files: { 'src/a.ts': '1'.repeat(40), 'src/gone.ts': null }, select }));
+  const marked = (select: string[] | undefined = ['src/a.ts', 'src/gone.ts']) =>
+    put(MARKER, JSON.stringify({ commit: COMMIT, files: { 'src/a.ts': '1'.repeat(40), 'src/gone.ts': null, 'src/main.ts': null }, select }));
 
   const none = { always: [], triggers: [] };
 
   it('is the changed paths, absolute, plus every path the run always keeps', () => {
-    marked(true);
+    marked();
     expect(selection(root, { [COMMIT_ENV]: COMMIT }, { always: ['scripts/x.gate.ts'], triggers: ['**/package.json'] })).toEqual(
       [join(root, 'src/a.ts'), join(root, 'src/gone.ts'), join(root, 'scripts/x.gate.ts')],
     );
   });
 
   it('is undefined when a changed path is a trigger', () => {
-    marked(true);
+    marked();
     expect(selection(root, { [COMMIT_ENV]: COMMIT }, { always: [], triggers: ['src/*.ts'] })).toBeUndefined();
   });
 
+  it('selects from its own list, not every path the tree check covers', () => {
+    marked(['src/a.ts']);
+    expect(selection(root, { [COMMIT_ENV]: COMMIT }, none)).toEqual([join(root, 'src/a.ts')]);
+  });
+
   it('is undefined for a run that tests everything', () => {
-    marked(undefined);
+    put(MARKER, JSON.stringify({ commit: COMMIT, files: { 'src/a.ts': '1'.repeat(40) } }));
     expect(selection(root, { [COMMIT_ENV]: COMMIT }, none)).toBeUndefined();
   });
 
   it('is undefined in a step a fleet job spawns, which still carries the commit for the tree check', () => {
-    marked(true);
+    marked();
     put('src/a.ts', 'a\n');
     const env = stepEnv({ [COMMIT_ENV]: COMMIT, PATH: '/bin' });
     expect(env).toMatchObject({ [COMMIT_ENV]: COMMIT, PATH: '/bin' });
@@ -231,7 +236,7 @@ describe('selection', () => {
 
   it('is undefined with no marker, and for a marker this run did not ask for', () => {
     expect(selection(root, {}, none)).toBeUndefined();
-    marked(true);
+    marked();
     expect(selection(root, { [COMMIT_ENV]: OTHER }, none)).toBeUndefined();
     expect(selection(root, {}, none)).toBeUndefined();
   });

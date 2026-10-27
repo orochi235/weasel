@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { dragPanContribution } from '../tools/builtin/hand/dragPanContribution';
 import type { CanvasDebugSink, DebugConfig } from '../debug/types';
@@ -25,7 +26,7 @@ beforeAll(() => {
 });
 
 function mount(debug: DebugConfig | false, ambient: Contribution[] = []) {
-  const scene = createScene<unknown, 'main', { x: number; y: number }>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<unknown, 'main', { x: number; y: number }>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const sinkRef = { current: null as CanvasDebugSink | null };
   const ref = { current: null as SceneCanvasApi | null };
   const { container } = render(

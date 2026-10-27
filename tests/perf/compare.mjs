@@ -10,10 +10,9 @@
  * benchmark, one report each, taking the latest file where a side holds a
  * benchmark more than once. Exits 0 whatever the numbers say; 2 on bad input.
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-import { validateResult } from './lib/result.ts';
+import { statSync } from 'node:fs';
 import { compareResults, formatReport } from './lib/compare.ts';
+import { loadResult, loadResultDir } from './lib/loadResults.ts';
 import { pairByBenchmark } from './lib/pairResults.ts';
 
 const paths = process.argv.slice(2).filter((a) => a !== '--');
@@ -27,17 +26,15 @@ const fail = (message) => {
   process.exit(2);
 };
 
-const load = (path) => {
-  let parsed;
+const orFail = (read) => {
   try {
-    parsed = JSON.parse(readFileSync(path, 'utf8'));
+    return read();
   } catch (e) {
-    fail(`${path}: ${e.message}`);
+    return fail(e.message);
   }
-  const problems = validateResult(parsed);
-  if (problems.length) fail(`${path} is not a perf result:\n  ${problems.join('\n  ')}`);
-  return parsed;
 };
+const load = (path) => orFail(() => loadResult(path));
+const loadDir = (dir) => orFail(() => loadResultDir(dir));
 
 const isDir = (path) => {
   try {
@@ -46,13 +43,6 @@ const isDir = (path) => {
     return fail(`${path}: ${e.message}`);
   }
 };
-
-const loadDir = (dir) =>
-  readdirSync(dir)
-    .filter((name) => name.endsWith('.json'))
-    .sort()
-    .map((name) => join(dir, name))
-    .map((path) => ({ path, result: load(path) }));
 
 const report = (a, b) =>
   formatReport(a.result, b.result, compareResults(a.result, b.result), { a: a.path, b: b.path });

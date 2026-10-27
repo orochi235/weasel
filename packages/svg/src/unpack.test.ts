@@ -3,7 +3,7 @@ import type { SvgNode } from './types';
 import { svgNodesToKitDrafts } from './unpack';
 import { unpackSvgFiles } from './unpackFiles';
 import { parseSvg } from './parse';
-import { DEFAULT_TEXT_FILL, getMarker, INHERIT, type IngestCtx, type Op } from '@weasel-js/core';
+import { DEFAULT_TEXT_FILL, RIGID_POSE_COMPOSITION, getMarker, INHERIT, type IngestCtx, type Op } from '@weasel-js/core';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
@@ -37,7 +37,7 @@ function ctx(overrides: Partial<IngestCtx> = {}) {
         label,
       });
     },
-    scene: { layers: [{ id: 'main' }], mintId: () => `svg-${minted++}` } as never,
+    scene: { layers: [{ id: 'main' }], mintId: () => `svg-${minted++}`, composition: RIGID_POSE_COMPOSITION } as never,
     selection: {} as never,
     deps: {},
     ...overrides,
@@ -350,6 +350,19 @@ describe('unpackSvgFiles', () => {
     expect(wrapper.pose.height).toBeCloseTo(70);
     expect(wrapper.pose.x + wrapper.pose.width / 2).toBeCloseTo(400);
     expect(wrapper.pose.y + wrapper.pose.height / 2).toBeCloseTo(300);
+  });
+
+  it('stores each child in its container\'s frame', async () => {
+    const twoRects = `<svg xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="10" width="20" height="20" fill="#ff0000"/>
+      <rect x="60" y="60" width="20" height="20" fill="#00ff00"/>
+    </svg>`;
+    const { c, batches } = ctx({ point: { x: 400, y: 300 } });
+    await unpackSvgFiles([asFile(twoRects)], c);
+    const [wrapper, a, b] = batches[0].ops;
+    expect(a.parent).toBe(wrapper.id);
+    expect(a.pose).toMatchObject({ x: 0, y: 0 });
+    expect(b.pose).toMatchObject({ x: 50, y: 50 });
   });
 
   it("sizes the wrapper around a rotated root by its axis-aligned box", async () => {

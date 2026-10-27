@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import type { DiagramData } from './dataTypes';
 import { diagramScene, edgeIdOf, type DiagramSpec } from './fromData';
 import type { DiagramEdge } from './edgeTrait';
 
 const boxOf = (specs: readonly DiagramSpec[], id: string) => {
-  const { x, y, width, height } = specs.find((s) => s.id === id)!.pose;
+  const { x, y, width, height } = worldPosesOf(specs, RIGID_POSE_COMPOSITION).get(id)!;
   return { x, y, width, height };
 };
 const node = (id: string, at?: { x: number; y: number }) => ({ id, lines: [id], width: 60, height: 40, ...(at ? { at } : {}) });

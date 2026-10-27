@@ -86,16 +86,18 @@ describe('SelectionPanel — the text style', () => {
     const { styleOf } = renderText({ align: 'center' });
     const bar = barWith('Left');
     const segs = within(bar).getAllByRole('radio');
-    expect(segs.map((b) => b.getAttribute('aria-label'))).toEqual(['Left', 'Center', 'Right', 'Justify']);
+    expect(segs.map((b) => b.getAttribute('aria-label'))).toEqual(['Left', 'Center', 'Right', 'Justify', 'Start', 'End']);
     expect(segs.every((b) => b.querySelector('svg') !== null)).toBe(true);
     expect(within(bar).getByRole('radio', { name: 'Center' })).toHaveAttribute('aria-checked', 'true');
     fireEvent.click(within(bar).getByRole('radio', { name: 'Right' }));
     expect(styleOf(0)).toEqual({ align: 'right' });
   });
 
-  it('lights the edge a reading-order alignment paints at', () => {
+  it('lights a reading-order alignment\'s own segment, not the edge it paints at', () => {
     renderText({ align: 'end', direction: 'rtl' });
-    expect(within(barWith('Left')).getByRole('radio', { name: 'Left' })).toHaveAttribute('aria-checked', 'true');
+    const bar = barWith('Left');
+    expect(within(bar).getByRole('radio', { name: 'End' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(bar).getByRole('radio', { name: 'Left' })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('offers the vertical alignment the painter reads off the node data', () => {

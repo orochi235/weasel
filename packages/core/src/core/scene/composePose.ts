@@ -50,12 +50,19 @@ export function decomposeRectPose<TPose extends RectPose>(parent: TPose, world: 
   };
 }
 
+/** `pose` turned to `rotation`, which a pose that named none keeps unnamed
+ *  while it is zero. */
+function withRotation<TPose extends RectPose>(pose: TPose, rotation: number): TPose {
+  if (rotation === 0 && pose.rotation === undefined) return pose;
+  return { ...pose, rotation };
+}
+
 /** `pose` with the linear part `linear` held as `rotation` and whatever is
  *  left over as `transform`, which is dropped when nothing is. */
 function withLinear<TPose extends RectPose>(pose: TPose, rotation: number, linear: Affine): TPose {
   const [a, b, c, d] = multiply(rotate(-rotation), linear);
   const plain = Math.abs(a - 1) < 1e-12 && Math.abs(b) < 1e-12 && Math.abs(c) < 1e-12 && Math.abs(d - 1) < 1e-12;
-  const next: RectPose = { ...pose, rotation };
+  const next: RectPose = withRotation({ ...pose }, rotation);
   if (plain) delete next.transform;
   else next.transform = [a, b, c, d];
   return next as TPose;
@@ -99,12 +106,7 @@ export function composeRigidPose<TPose extends RectPose>(parent: TPose, child: T
     parent.x + child.x + child.width / 2,
     parent.y + child.y + child.height / 2,
   );
-  return {
-    ...child,
-    x: wcx - child.width / 2,
-    y: wcy - child.height / 2,
-    rotation: (child.rotation ?? 0) + pr,
-  };
+  return withRotation({ ...child, x: wcx - child.width / 2, y: wcy - child.height / 2 }, (child.rotation ?? 0) + pr);
 }
 
 /** Inverse of `composeRigidPose` — un-turns about the parent's center, then
@@ -125,12 +127,7 @@ export function decomposeRigidPose<TPose extends RectPose>(parent: TPose, world:
     world.x + world.width / 2,
     world.y + world.height / 2,
   );
-  return {
-    ...world,
-    x: ux - parent.x - world.width / 2,
-    y: uy - parent.y - world.height / 2,
-    rotation: (world.rotation ?? 0) - pr,
-  };
+  return withRotation({ ...world, x: ux - parent.x - world.width / 2, y: uy - parent.y - world.height / 2 }, (world.rotation ?? 0) - pr);
 }
 
 /** Translation-only composition over `RectPose`. What a scene wants when a

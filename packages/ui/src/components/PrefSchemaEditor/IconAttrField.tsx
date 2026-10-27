@@ -4,7 +4,7 @@ import { Button } from '../Button';
 import { Input } from '../Input';
 import { Icon } from '../../icons/Icon';
 import { groupIcons, pageIndex, stepIndex } from './iconPickerModel';
-import { MIXED_HINT } from './mixedHint';
+import { MIXED_HINT } from '../mixedHint';
 import s from './IconAttrField.module.css';
 
 /** Picks an icon from every one registered, by qualified name. Writes the name as a string, and `undefined` to clear.

@@ -144,6 +144,9 @@ const conicWedges = RAMP.map((op, i) => {
 // stripe is the square clipped to the band c1 <= x + y <= c2, solved by
 // Sutherland-Hodgman against the two half-planes — the corner stripes are
 // triangles and eyeballing their vertices does not land on the edge.
+/** One pixel of a glyph drawn at 14px, in viewBox units. */
+const P14 = 20 / 14;
+const n4 = (v) => Math.round(v * 1e4) / 1e4;
 const SQUARE = [[BOX, BOX], [BOX_END, BOX], [BOX_END, BOX_END], [BOX, BOX_END]];
 
 // `axis` picks the diagonal family: 'sum' is x + y (down-right rules),
@@ -259,6 +262,17 @@ export const PAINT = {
   // universal "none / not applicable" strike, which is the one thing this
   // glyph must not say.
   'paint-pattern': crosshatch(BOX + BOX_END, 'sum') + crosshatch(0, 'diff'),
+
+  // A solid parent swatch handing its paint down an elbow to an empty child: the node takes what its parent
+  // paints. Laid on the 14px grid the paint segments draw at (`P14` edges for the fill, centers for the
+  // strokes), where it is crisp at 1x and 2x.
+  'paint-inherit': (() => {
+    const edge = (k) => n4(k * P14);
+    const mid = (k) => n4((k + 0.5) * P14);
+    return `<path d="M${edge(2)} ${edge(2)}H${edge(6)}V${edge(6)}H${edge(2)}Z" fill="currentColor" stroke="none"/>`
+      + `<path d="M${mid(3)} ${edge(6)}V${mid(9)}H${mid(7)}"/>`
+      + `<path d="M${mid(7)} ${mid(7)}H${mid(11)}V${mid(11)}H${mid(7)}Z" stroke-linejoin="miter"/>`;
+  })(),
 
   // Illustrator's convention, and the one glyph in the set that is an empty
   // box rather than a mass of ink — the absence of paint should not look like

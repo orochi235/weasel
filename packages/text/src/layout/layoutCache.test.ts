@@ -16,6 +16,7 @@ import {
 } from './layoutCache';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import type { BidiResolver } from './bidiSeam';
+import { registerBidi } from './bidiRegistry';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -105,6 +106,42 @@ describe('cachedLayoutRuns', () => {
     expect(cachedLayoutRuns(runs, { ...OPTS, maxWidth: 80 })).not.toBe(base);
     expect(cachedLayoutRuns(runs, { ...OPTS, lineHeight: 2 })).not.toBe(base);
     expect(cachedLayoutRuns(runs, { ...OPTS, align: 'center' })).not.toBe(base);
+  });
+
+  it('answers each of two alternating option sets with its own layout', () => {
+    // The last lookup is compared field by field before any key is built, so
+    // switching back has to find the first layout, not the last one.
+    const runs = [run('hello world this wraps')];
+    const wide = cachedLayoutRuns(runs, OPTS);
+    const narrow = cachedLayoutRuns(runs, { ...OPTS, maxWidth: 80 });
+    expect(narrow).not.toBe(wide);
+    expect(cachedLayoutRuns(runs, OPTS)).toBe(wide);
+    expect(cachedLayoutRuns(runs, { ...OPTS, maxWidth: 80 })).toBe(narrow);
+    for (const changed of [{ tabSize: 4 }, { justify: true }, { alignWidth: 200 }, { direction: 'rtl' as const }]) {
+      expect(cachedLayoutRuns(runs, OPTS)).toBe(wide);
+      expect(cachedLayoutRuns(runs, { ...OPTS, ...changed })).not.toBe(wide);
+    }
+  });
+
+  it('lays out again when an engine is registered after a hit', () => {
+    const runs = [run('ab')];
+    const plain = cachedLayoutRuns(runs, OPTS);
+    expect(cachedLayoutRuns(runs, OPTS)).toBe(plain);
+    const unregister = registerBidi({
+      analyze: () => null,
+      reorder: (_a, start, end) => ({
+        order: Array.from({ length: end - start }, (_, i) => end - 1 - i),
+        levels: new Array<number>(end - start).fill(1),
+      }),
+      mirror: () => null,
+      baseLevel: () => 0,
+    });
+    try {
+      expect(cachedLayoutRuns(runs, OPTS)).not.toBe(plain);
+    } finally {
+      unregister();
+    }
+    expect(cachedLayoutRuns(runs, OPTS)).toBe(plain);
   });
 
   it('re-lays out when the alignment box changes, not when it restates maxWidth', () => {

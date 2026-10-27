@@ -5,6 +5,7 @@ export { isDev } from '@weasel-js/registry';
 export { useCanvasFocus } from './useCanvasFocus';
 export type { UseCanvasFocusOptions, CanvasFocusReturn } from './useCanvasFocus';
 export { useLatest } from './useLatest';
+export { useNearViewport } from './useNearViewport';
 export { prefersReducedMotion, usePrefersReducedMotion } from './reducedMotion';
 export { useVisibleRaf } from './useVisibleRaf';
 export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from './useVisibleRaf';

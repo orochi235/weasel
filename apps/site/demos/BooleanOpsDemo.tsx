@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from 'react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   asNodeId,
   defaultCommitAdapter,
   PATH_L,
@@ -21,6 +21,7 @@ import {
 import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 
 const W = 240;
@@ -105,7 +106,7 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
 }
 
 function InteractivePanel() {
-  const scene = useScene<PanelItem, 'default', PolygonPath>({
+  const scene = useScene<PanelItem, 'default', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
   });
@@ -199,9 +200,7 @@ function InteractivePanel() {
       <h3 className="ckd-boolops-label">Interactive</h3>
       <div className="ckd-boolops-toolbar">
         <ActionBar group="pathfinder" />
-        <button type="button" className="ckd-boolops-reset" onClick={reset}>
-          Reset
-        </button>
+        <Button className="ckd-boolops-reset" onClick={reset}>Reset</Button>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={['pick']}

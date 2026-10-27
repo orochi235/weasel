@@ -22,7 +22,7 @@ import { grabPortAction, grabPortBindings } from '../connect';
 import { addLane, releaseMembers } from './containerStencils';
 import { LANE_AFFORDANCE_KIND, laneLayer, laneScratchOf, poolsOf, type LaneLayerOptions, type PoolLanes } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
-import { titlePose } from './titlePose';
+import { titleInFrame } from './titlePose';
 import { diagramContainerOf, titleIdOf } from './trait';
 
 /** The action that drags a lane's boundary. */
@@ -72,7 +72,7 @@ export function laneResizeFrame(scene: AnyScene, pool: PoolLanes, index: number,
   const placeTitle = (id: string, at: RectPose) => {
     const node = scene.get(id as NodeId);
     if (node !== undefined && scene.get(titleIdOf(id) as NodeId) !== undefined) {
-      out.set(titleIdOf(id), titlePose(at, diagramContainerOf(node)?.header));
+      out.set(titleIdOf(id), titleInFrame(at, diagramContainerOf(node)?.header));
     }
   };
   const laneAt = grow(lane.pose, d);

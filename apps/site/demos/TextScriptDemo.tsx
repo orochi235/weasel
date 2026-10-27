@@ -3,6 +3,7 @@ import { DrawCanvas, textCommandFromRuns, solid } from '@weasel-js/core';
 import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
 import { DEFAULT_TEXT_STYLE, scriptMetricsFor } from '@weasel-js/text';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import styles from './TextScriptDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -110,8 +111,8 @@ export function TextScriptDemo() {
       <div className={styles.controls}>
         <label className={styles.control}>
           Baseline shift
-          <input
-            type="range" min={-0.8} max={0.8} step={0.001} value={shift}
+          <InlineRange
+            min={-0.8} max={0.8} step={0.001} value={shift}
             className={styles.slider}
             data-testid="shift"
             onChange={(e) => setShift(Number(e.target.value))}
@@ -120,8 +121,8 @@ export function TextScriptDemo() {
         </label>
         <label className={styles.control}>
           Font scale
-          <input
-            type="range" min={0.2} max={1.5} step={0.001} value={scale}
+          <InlineRange
+            min={0.2} max={1.5} step={0.001} value={scale}
             className={styles.slider}
             data-testid="scale"
             onChange={(e) => setScale(Number(e.target.value))}

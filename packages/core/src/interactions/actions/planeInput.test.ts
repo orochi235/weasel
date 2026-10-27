@@ -303,7 +303,8 @@ describe('editing a selection that spans planes', () => {
     const sun = scene.get(asNodeId('sun'))!;
     expect(sun.layer).toBe('main');
     expect(sun.parent).toBe('box');
-    expect(sun.pose).toMatchObject({ x: 230, y: 50, width: 20, height: 20 });
+    // Drawn at (230, 50) in world; stored in the box's frame at (200, 0).
+    expect(sun.pose).toMatchObject({ x: 30, y: 50, width: 20, height: 20 });
   });
 
   it('hands a layout on another plane the dragged node in that plane', () => {

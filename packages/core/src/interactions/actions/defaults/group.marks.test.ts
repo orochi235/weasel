@@ -30,7 +30,7 @@ describe('a mark that has children', () => {
   it('is taken by a marquee, unlike a group', () => {
     const { scene, parent, child } = markWithChild();
     const group = scene.add({ kind: 'group', layer: 'main', pose: pose(100), data: {} });
-    const member = scene.add({ kind: 'mark', layer: 'main', pose: pose(100), data: {}, parent: group });
+    const member = scene.add({ kind: 'mark', layer: 'main', pose: pose(0), data: {}, parent: group });
     const box = { x: -5, y: -5, width: 200, height: 30 };
 
     const taken = hitTestArea(scene as never, box);

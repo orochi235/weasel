@@ -91,7 +91,7 @@ export function ObjectLeaf({
     // Depth is drawn only where a label marks it.
     frame: (key, section, inner, { labeled, indent, path }) => [
       prefAsBox(section.as) ? (
-        <MotifFrame key={`group:${key}`} fallback={FORM_FRAMES.labeled} title={labeled ? section.name : undefined} level={5} className={s.objectPanel}
+        <MotifFrame key={`group:${key}`} motif={section.motif} fallback={FORM_FRAMES.labeled} title={labeled ? section.name : undefined} level={5} className={s.objectPanel}
           disabled={sectionOff(path)}>
           <div>{inner}</div>
         </MotifFrame>

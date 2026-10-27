@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { SceneCanvas, defineTool, useScene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, SceneCanvas, defineTool, useScene } from '@weasel-js/core';
 import {
   CURSOR_MAX_CSS_PX,
   GLYPHS,
@@ -7,6 +7,7 @@ import {
   resolveCursorTier,
   type CursorGlyphName,
 } from '@weasel-js/cursor';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './CursorDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -54,7 +55,7 @@ export function CursorDemo() {
   const [glyph, setGlyph] = useState<CursorGlyphName>('pencil');
   const [size, setSize] = useState(48);
 
-  const scene = useScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = useScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   const tool = useMemo(
     () => defineTool({ id: 'cursor', cursor: { glyph, size, fallback: FALLBACK } }),
     [glyph, size],
@@ -72,8 +73,8 @@ export function CursorDemo() {
       <div className={s.controls}>
         <label className={s.control}>
           Size
-          <input
-            type="range" min={16} max={256} step={1} value={size}
+          <InlineRange
+            min={16} max={256} step={1} value={size}
             className={s.slider}
             data-testid="size"
             onChange={(e) => setSize(Number(e.target.value))}

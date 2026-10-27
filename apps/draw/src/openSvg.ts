@@ -1,4 +1,4 @@
-import { type AddNodeSpec, pathEffectNode, registeredPathEffects } from '@weasel-js/core';
+import { type AddNodeSpec, localizeWorldPoses, pathEffectNode, registeredPathEffects } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { DEFAULT_BG_COLOR } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
@@ -31,12 +31,14 @@ function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; draft
  * as, and as nothing when it exported none; a live one leaves those paths out.
  */
 function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
+  type Spec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
   const sceneIdOf = new Map(drafts.map((d) => [d.id, scene.mintId()]));
   const derivations = registeredPathEffects(scene.registry);
   const leaves = new Set(drafts.filter((d) => d.kind === 'mark').map((d) => d.id));
   const live = (d: SceneDraft) => derivations !== null && d.kind === 'effect' && d.dependsOn.every((s) => leaves.has(s));
   const skipped = new Set<string>();
   const parents = new Set(drafts.map((d) => d.parentId));
+  const specs: Spec[] = [];
   for (const draft of drafts) {
     if (draft.parentId != null && skipped.has(draft.parentId)) {
       skipped.add(draft.id);
@@ -50,15 +52,17 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
     if (draft.kind === 'effect' && live(draft)) {
       skipped.add(draft.id);
       const sources = draft.dependsOn.map((s) => sceneIdOf.get(s)!);
-      scene.add({ ...pathEffectNode(draft.effect, sources, 'default', derivations!), ...at } as AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>);
+      specs.push({ ...pathEffectNode(draft.effect, sources, 'default', derivations!), ...at } as Spec);
       continue;
     }
     if (draft.kind === 'effect' && !parents.has(draft.id)) continue;
     const node = draft.kind === 'mark'
       ? { kind: 'mark' as const, ...leafOfObj(draft.obj) }
       : { kind: 'group' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
-    scene.add({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
+    specs.push({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
   }
+  // A file's geometry is world; each pose is stored in its container's frame.
+  for (const spec of localizeWorldPoses(specs, scene.composition)) scene.add(spec);
 }
 
 /**

@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/diagram';
 import type { CellGeometry, RawCell } from './cells';
 import { cellLines } from './cellText';
-import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, SHAPES, STADIUM_ARC, markerOf } from './mapping';
+import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry } from './mapping';
 import { hasStyleName, shapeOf, styleFlag, styleNumber, type CellStyle } from './style';
 
 /** Records one sentence about what a file had that a diagram cannot hold. */
@@ -15,7 +15,7 @@ export type Warn = (message: string) => void;
 /** The outline a vertex draws as. A shape it does not know is a rect, with a warning. */
 export function outlineOf(style: CellStyle, warn: Warn): Outline {
   const shape = shapeOf(style);
-  const known = SHAPES.find((s) => s.name === shape);
+  const known = shapeEntry(shape, (key) => style.values.get(key));
   if (known !== undefined) return known.outline;
   if (styleFlag(style, 'rounded')) return (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC ? 'stadium' : 'roundRect';
   if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as rects.`);
@@ -68,8 +68,13 @@ export function textOf(cell: RawCell): Pick<DataNode, 'lines' | 'rows'> {
 
 const VERTICAL: Readonly<Record<string, DataNode['verticalAlign']>> = { top: 'top', middle: 'center', bottom: 'bottom' };
 
-/** Where a vertex's text sits, when its style says. */
-export const verticalAlignOf = (style: CellStyle): DataNode['verticalAlign'] => VERTICAL[style.values.get('verticalAlign') ?? ''];
+/** Where a vertex's text sits, when its style says, and not only because its shape is written that way. */
+export function verticalAlignOf(style: CellStyle): DataNode['verticalAlign'] {
+  const raw = style.values.get('verticalAlign') ?? '';
+  const own = shapeEntry(shapeOf(style), (key) => style.values.get(key))?.write;
+  if (own?.some((part) => Array.isArray(part) && part[0] === 'verticalAlign' && part[1] === raw)) return undefined;
+  return VERTICAL[raw];
+}
 
 /** The router an edge style draws with. */
 export function routerOf(style: CellStyle): DiagramRouter {

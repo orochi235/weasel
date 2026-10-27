@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, WeaselProvider, useScene, useSelection } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, SceneCanvas, WeaselProvider, localizeWorldPoses, useScene, useSelection } from '@weasel-js/core';
 import {
   parseSvg,
   serializeSvg,
@@ -9,6 +9,7 @@ import {
   type SvgKitLeafData,
   type SvgKitPose,
 } from '@weasel-js/svg';
+import { Button } from '@weasel-js/ui/components/Button';
 import s from './SvgDemo.module.css';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 
@@ -75,16 +76,18 @@ function sceneFromSvg(source: string) {
   const parsed = parseSvg(source);
   let seq = 0;
   const drafts = svgNodesToKitDrafts(parsed, () => `svg-${seq++}`);
+  // Drafts are measured in world; a scene stores each pose in its container's frame.
+  const local = localizeWorldPoses(drafts.map((d) => ({ id: d.id, parent: d.parentId, pose: d.pose })), RIGID_POSE_COMPOSITION);
   return {
     parsed,
     json: {
-      version: 2 as const,
+      version: 3 as const,
       systemLayers: [{ id: 'default' as const }],
-      nodes: drafts.map((d) => ({
+      nodes: drafts.map((d, i) => ({
         id: d.id,
         kind: d.kind,
         layer: 'default' as const,
-        pose: d.pose,
+        pose: local[i]!.pose,
         data: d.data as SvgKitLeafData,
         ...(d.parentId ? { parent: d.parentId } : {}),
         ...(d.kind === 'group' && d.clip ? { clip: d.clip } : {}),
@@ -154,15 +157,9 @@ function SvgRoundTrip() {
           <div className={s.source}>
             <div className={s.presets}>
               {PRESETS.map((p) => (
-                <button
-                  key={p.name}
-                  type="button"
-                  className="ckd-btn"
-                  aria-pressed={source === p.svg}
-                  onClick={() => setSource(p.svg)}
-                >
+                <Button key={p.name} size="sm" pressed={source === p.svg} onClick={() => setSource(p.svg)}>
                   {p.name}
-                </button>
+                </Button>
               ))}
             </div>
             <textarea

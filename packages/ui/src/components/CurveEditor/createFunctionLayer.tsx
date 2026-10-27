@@ -7,8 +7,10 @@
  */
 import type { ReactNode } from 'react';
 import { CurveFill } from './CurveFill';
+import { Diamond } from './Diamond';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
+import { arrowMove } from '../../arrowKeys';
 import { handleHalf } from '../../handles';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
@@ -33,7 +35,6 @@ export const ANCHOR_SNAP_PX = 12;
 export const CURVE_HIT_PX = 8;
 /** An arrow-key nudge, as a fraction of the range; shift takes ten. */
 const KEY_STEP_FRACTION = 0.01;
-const SHIFT_MULTIPLIER = 10;
 
 const formatCoord = (n: number): string => String(Number(n.toFixed(3)));
 
@@ -178,14 +179,11 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
           if (renderAsDiamond) {
             const half = locked ? LOCKED_HALF : ENDPOINT_HALF;
             return (
-              <rect
+              <Diamond
                 key={i}
                 className={anchorCls}
-                x={a.x - half}
-                y={a.y - half}
-                width={half * 2}
-                height={half * 2}
-                transform={`rotate(45 ${a.x} ${a.y})`}
+                at={a}
+                half={half}
                 data-anchor-index={i}
                 {...a11y}
               />
@@ -378,19 +376,18 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     if (target?.closest?.('[data-layer-id]')?.getAttribute('data-layer-id') !== id) return;
     const el = target.closest('[data-anchor-index]');
     if (!el) return;
-    const dx = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    const dy = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
-    if (dx === 0 && dy === 0) return;
+    const move = arrowMove(e);
+    if (move === null) return;
     e.preventDefault();
     const index = Number(el.getAttribute('data-anchor-index'));
     const p = state.points[index];
     if (!p || p.locked) return;
     const m = ctx.modelRange;
-    const mult = e.shiftKey ? SHIFT_MULTIPLIER : 1;
     const xSpan = cfg.xClamp ? cfg.xClamp[1] - cfg.xClamp[0] : m.xMax - m.xMin;
     const next = moveAnchor(state, index, {
-      x: p.x + dx * Math.abs(xSpan) * KEY_STEP_FRACTION * mult,
-      y: p.y + dy * Math.abs(m.yMax - m.yMin) * KEY_STEP_FRACTION * mult,
+      x: p.x + move.dx * Math.abs(xSpan) * KEY_STEP_FRACTION,
+      // The model's y runs up, the screen's down.
+      y: p.y - move.dy * Math.abs(m.yMax - m.yMin) * KEY_STEP_FRACTION,
     }, ctx);
     const moved = next.points[index];
     if (moved.x === p.x && moved.y === p.y) return;

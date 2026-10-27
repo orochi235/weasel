@@ -43,13 +43,19 @@ function Harness({ machine, into }: { machine: ModeMachine; into: (entered: Ente
     const outline = pathFromD('M 0 0 L 30 0 L 30 30 L 0 30 Z') as PolygonPath;
     leaf('anchorless', AT.anchorless, { path: { ...outline, kind: 'spiro' }, fill: { paint: solid('#888') } });
     leaf('text', AT.text, { text: 'hello' });
-    const container = (id: string, parent: string | undefined, x: number, width: number) => s.add({
-      id: asNodeId(id), kind: 'group', layer: 'main', data: {}, pose: { ...square(x), width },
-      ...(parent ? { parent: asNodeId(parent) } : {}),
-    } as never);
+    // `x` is in world; a child is stored in its container's frame.
+    const worldX = new Map<string, number>();
+    const localX = (parent: string | undefined, x: number) => x - (parent ? worldX.get(parent)! : 0);
+    const container = (id: string, parent: string | undefined, x: number, width: number) => {
+      worldX.set(id, x);
+      return s.add({
+        id: asNodeId(id), kind: 'group', layer: 'main', data: {}, pose: { ...square(localX(parent, x)), width },
+        ...(parent ? { parent: asNodeId(parent) } : {}),
+      } as never);
+    };
     const member = (id: string, parent: string, x: number) => s.add({
       id: asNodeId(id), kind: 'mark', layer: 'main', parent: asNodeId(parent),
-      data: { path: pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath, fill: { paint: solid('#888') } }, pose: square(x),
+      data: { path: pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath, fill: { paint: solid('#888') } }, pose: square(localX(parent, x)),
     } as never);
     container('group', undefined, AT.member, 70);
     member('member', 'group', AT.member);

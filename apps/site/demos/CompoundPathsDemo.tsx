@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   DEFAULT_HANDLE_SIZE,
   SceneCanvas,
   composePath,
@@ -155,7 +155,7 @@ const INITIAL: Shape[] = [
 ];
 
 export function CompoundPathsDemo() {
-  const scene = useScene<ShapeData, 'default', Path>({
+  const scene = useScene<ShapeData, 'default', Path>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: INITIAL.map((s) => ({
       kind: 'mark',

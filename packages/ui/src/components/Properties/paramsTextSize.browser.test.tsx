@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { Fragment, type ReactNode } from 'react';
 import { cleanup } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import { PREF_KINDS, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DetailList, DetailRow } from '../DetailList';
@@ -100,7 +100,7 @@ function asSection(): PrefSection {
 }
 
 function Selection() {
-  const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   const data = Object.fromEntries(
     Object.values(LEAVES_BY_KIND).flatMap((leaves) => Object.entries(leaves).map(([k, l]) => [k, l.default])),
   );

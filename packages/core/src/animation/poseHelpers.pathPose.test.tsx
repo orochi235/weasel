@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { linear, PATH_L, PATH_M, PATH_Z, type Path } from '@weasel-js/geom';
+import { IDENTITY_POSE_COMPOSITION } from '../core/scene/composeFrame';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import { sceneToAdapter } from '../canvas/sceneAdapter';
@@ -28,7 +29,7 @@ function setup(pose: Path) {
     clock = t;
     act(() => { for (const cb of cbs.splice(0)) cb(t); });
   };
-  const scene = createScene<object, 'main', Path>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<object, 'main', Path>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
   const adapter = sceneToAdapter(scene) as unknown as PoseAnimationAdapter<Path>;
   const shown = () => effectivePose(scene, scene.get(a)!);

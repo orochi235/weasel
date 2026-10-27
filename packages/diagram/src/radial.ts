@@ -5,7 +5,11 @@
  * The root is the first root {@link forestOf} finds. Its children are dealt to
  * the two sides in graph order, each to whichever side weighs less so far,
  * counting nodes per subtree, so the first branch goes right and the map
- * stays balanced. Each side is then a horizontal `tree` growing away from the
+ * stays balanced. On a map already arranged around its root, with branches
+ * standing on both sides of it, a branch clear of the root keeps the side it
+ * stands on, so one dragged across stays there; the rest are dealt after
+ * them. A map with every branch on one side, as another layout leaves one,
+ * is dealt afresh. Each side is then a horizontal `tree` growing away from the
  * root, its subtrees packed as solid blocks, and centered on the root.
  *
  * Further trees in a forest lay out the same way, stacked below the first,
@@ -67,16 +71,28 @@ function mindMap(
   return { at, top, bottom };
 }
 
-/** The root's children dealt right and left, each to the lighter side. They
- *  are dealt in graph order, so where a branch sits now cannot change its
- *  side, and each side keeps the order its branches already stand in. */
+/** The root's children dealt right and left, each to the lighter side, in
+ *  graph order. On an arranged map, those clear of the root keep their side
+ *  first. Each side keeps the order its branches already stand in. */
 function sides(root: GraphNode, children: Children, order: (id: string) => number): [GraphNode[], GraphNode[]] {
   const weight = (node: GraphNode): number => 1 + (children.get(node.id) ?? []).reduce((sum, k) => sum + weight(k), 0);
   const kids = children.get(root.id) ?? [];
+  const half = root.bounds.width / 2;
+  const mid = root.bounds.x + half;
+  const standing = (k: GraphNode): 1 | -1 | 0 => {
+    const c = k.bounds.x + k.bounds.width / 2 - mid;
+    return c > half ? 1 : c < -half ? -1 : 0;
+  };
+  const stands = new Map(kids.map((k) => [k, standing(k)]));
+  const arranged = [...stands.values()].includes(1) && [...stands.values()].includes(-1);
   const right = new Set<GraphNode>();
   let r = 0;
   let l = 0;
-  for (const child of [...kids].sort((a, b) => order(a.id) - order(b.id))) {
+  const dealt = arranged ? kids.filter((k) => stands.get(k) !== 0) : [];
+  for (const k of dealt) {
+    if (stands.get(k) === 1) { right.add(k); r += weight(k); } else l += weight(k);
+  }
+  for (const child of kids.filter((k) => !dealt.includes(k)).sort((a, b) => order(a.id) - order(b.id))) {
     const w = weight(child);
     if (r <= l) { right.add(child); r += w; } else l += w;
   }

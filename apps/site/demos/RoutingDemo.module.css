@@ -12,11 +12,6 @@
   flex-wrap: wrap;
 }
 
-.active {
-  border-color: var(--wzl-accent-strong);
-  background: color-mix(in srgb, var(--wzl-accent-strong) 18%, var(--wzl-surface-raised));
-}
-
 .tag {
   margin-inline-start: var(--wzl-space-3);
   padding: var(--wzl-space-1) var(--wzl-space-4);

@@ -1,4 +1,4 @@
-import type { AddNodeSpec, SerializedDoc, SerializedScene, SerializedSceneV1 } from '@weasel-js/core';
+import { isSerializedScene, type AddNodeSpec, type SerializedDoc } from '@weasel-js/core';
 import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue } from '@weasel-js/diagram';
 import { docFromSnapshot, nodeSpecsFromSnapshot, readStored, serializeReplacer } from '@editor/index';
 import { CHART_REGISTRY, chartDoc, type ChartData, type ChartLayer, type ChartPose, type ChartScene } from './chartDocument';
@@ -26,8 +26,8 @@ export function chartToJson(scene: ChartScene): string {
 
 /** The chart a saved file holds. Throws on text that is not one. */
 export function chartFromJson(text: string): ChartFile {
-  const json = JSON.parse(text) as SerializedScene<ChartData, ChartLayer, ChartPose> | SerializedSceneV1<ChartData, ChartLayer, ChartPose>;
-  if ((json?.version !== 1 && json?.version !== 2) || !Array.isArray(json.nodes)) throw new Error('Not a saved chart');
+  const json: unknown = JSON.parse(text);
+  if (!isSerializedScene<ChartData, ChartLayer, ChartPose>(json)) throw new Error('Not a saved chart');
   return { specs: nodeSpecsFromSnapshot(json, CHART_REGISTRY), doc: chartDoc(docFromSnapshot(json)) };
 }
 

@@ -19,6 +19,9 @@ import type {
   VoiceHandle,
 } from '@weasel-js/audio';
 import num from '@weasel-js/theme/numeric.module.css';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { DemoStage } from './DemoStage';
 
 interface Dot { id: string; x: number; y: number; width: number; height: number }
@@ -263,14 +266,10 @@ export function AudioDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <button className="ckd-btn" onClick={enable} disabled={!kit || state === 'running'}>
-          enable audio
-        </button>
+        <Button onClick={enable} disabled={!kit || state === 'running'}>enable audio</Button>
         <span className="ckd-readout is-code">engine.state() = {state}</span>
-        <button className="ckd-btn" onClick={toggleSource} disabled={!kit}>
-          {sourcePlaying ? 'stop source' : 'play source'}
-        </button>
-        <button className="ckd-btn" onClick={burst} disabled={!kit}>fire 50 one-shots</button>
+        <Button onClick={toggleSource} disabled={!kit}>{sourcePlaying ? 'stop source' : 'play source'}</Button>
+        <Button onClick={burst} disabled={!kit}>fire 50 one-shots</Button>
         <span className={`ckd-readout ${num.numeric}`}>activeVoices {voices} / 8 per bus</span>
       </div>
       <div className="ckd-row">
@@ -304,36 +303,20 @@ export function AudioDemo() {
           {BUSES.map((bus) => (
             <div className="ckd-bus" key={bus}>
               <span className="ckd-readout is-code">{bus}</span>
-              <input
-                className="ckd-range" type="range" min={0} max={1} step={0.01}
+              <InlineRange
+                aria-label={`${bus} gain`} min={0} max={1} step={0.01}
                 value={gains[bus]} onChange={(e) => setBusGain(bus, Number(e.target.value))}
               />
-              <label className="ckd-field">
-                <input
-                  type="checkbox" checked={muted[bus]}
-                  onChange={(e) => setBusMute(bus, e.target.checked)}
-                />
-                mute
-              </label>
-              <label className="ckd-field">
-                <input
-                  type="checkbox" checked={soloed[bus]}
-                  onChange={(e) => setBusSolo(bus, e.target.checked)}
-                />
-                solo
-              </label>
-              <button className="ckd-btn" onClick={() => trigger(bus)} disabled={!kit}>
-                trigger
-              </button>
+              <Checkbox isSelected={muted[bus]} onChange={(on) => setBusMute(bus, on)}>mute</Checkbox>
+              <Checkbox isSelected={soloed[bus]} onChange={(on) => setBusSolo(bus, on)}>solo</Checkbox>
+              <Button size="sm" onClick={() => trigger(bus)} disabled={!kit}>trigger</Button>
             </div>
           ))}
           <div className="ckd-panel-title">pattern</div>
           <div className="ckd-bus">
-            <button className="ckd-btn" onClick={togglePattern} disabled={!kit}>
-              {patternOn ? 'stop' : 'play'}
-            </button>
-            <input
-              className="ckd-range" type="range" min={60} max={200} step={1}
+            <Button size="sm" onClick={togglePattern} disabled={!kit}>{patternOn ? 'stop' : 'play'}</Button>
+            <InlineRange
+              aria-label="Tempo" min={60} max={200} step={1}
               value={tempo} onChange={(e) => changeTempo(Number(e.target.value))}
             />
             <span className={`ckd-readout ${num.numeric}`}>{tempo} bpm, step {patternOn ? patternStep + 1 : '–'}/16</span>
@@ -341,13 +324,12 @@ export function AudioDemo() {
           <div className="ckd-panel-title">music inserts</div>
           <div className="ckd-bus">
             {EFFECTS.map((name) => (
-              <label className="ckd-field" key={name}>
-                <input
-                  type="checkbox" checked={effectsOn[name]} disabled={!kit}
-                  onChange={(e) => toggleEffect(name, e.target.checked)}
-                />
+              <Checkbox
+                key={name} isSelected={effectsOn[name]} isDisabled={!kit}
+                onChange={(on) => toggleEffect(name, on)}
+              >
                 {name}
-              </label>
+              </Checkbox>
             ))}
           </div>
         </div>

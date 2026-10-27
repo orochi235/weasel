@@ -192,6 +192,13 @@ describe('PaintInput', () => {
     expect(none.querySelector('svg')).not.toBeNull();
   });
 
+  it('draws Inherit as a glyph, keeping its name for the accessible label', () => {
+    renderWithIcons(<PaintInput value="inherit" inherit={{ paint: null, onInherit: () => {} }} onChange={() => {}} />);
+    const inherit = screen.getByRole('radio', { name: 'Inherit' });
+    expect(inherit).toHaveAttribute('aria-label', 'Inherit');
+    expect(inherit.querySelector('svg')).not.toBeNull();
+  });
+
   it('shows no editor body for None', () => {
     renderWithIcons(<PaintInput value={null} onChange={() => {}} />);
     expect(screen.getByRole('radio', { name: 'None' })).toBeChecked();

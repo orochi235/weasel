@@ -12,6 +12,7 @@ import {
   type CubicCoords,
   type CurveNearest,
 } from '@weasel-js/geom';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './GeomDemo.module.css';
 import { DemoStage } from './DemoStage';
 import { decimal, qty } from '@weasel-js/quantity';
@@ -168,8 +169,8 @@ export function GeomDemo() {
       </DemoStage>
       <label className={s.control}>
         <span><code>splitCubicAt</code> t</span>
-        <input
-          type="range" min={0} max={1} step={0.01} value={t}
+        <InlineRange
+          min={0} max={1} step={0.01} value={t}
           className={s.slider}
           data-testid="t"
           onChange={(e) => setT(Number(e.target.value))}

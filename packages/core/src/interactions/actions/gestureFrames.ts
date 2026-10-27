@@ -21,6 +21,7 @@ export function sceneGestureFrames(
       return parent === null ? pose : frame.pc.compose(parent, pose);
     },
     toLocal: (id, worldPose) => frame.local(id as NodeId, worldPose),
+    toLocalUnder: (parentId, worldPose) => frame.localUnder(parentId as NodeId | null, worldPose),
     planeOf: (layer) => planeOf(view, layer),
   };
 }

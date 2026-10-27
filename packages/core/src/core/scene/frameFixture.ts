@@ -1,10 +1,10 @@
 /**
- * A test scene where local and world poses differ.
+ * A test scene where local and world poses differ under a turned frame.
  *
- * **Under `IDENTITY_POSE_COMPOSITION` a local pose and a world pose are the
- * same value**, so a test written against a default scene passes whether or
- * not the consumer composes. Anything asserting that a consumer reads world
- * coordinates has to run against this one.
+ * Under an upright container a local pose is only offset from the world one,
+ * so a test that misreads one for the other can still pass by accident.
+ * Anything asserting that a consumer reads world coordinates runs against this
+ * one.
  *
  * Shape: a container turned 90° holding two children at non-zero local
  * offsets, one of them turned again. The right angle makes every expected

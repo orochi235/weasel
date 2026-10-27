@@ -2,6 +2,7 @@ import { Fragment, type CSSProperties, type ReactElement, type ReactNode } from 
 import type { RovingTabIndex } from '../useRovingTabIndex';
 import { useTrackShape } from './Along/alongContext';
 import { SegmentsAlong } from './segmentsAlong';
+import type { SegmentedSize, SegmentedVariant } from './segmentedVariant';
 import s from './segmentedControl.module.css';
 
 /** Whether a segment is on, off, or mixed: its sources disagree. */
@@ -32,8 +33,8 @@ export interface SegmentedRowProps {
   ariaLabel?: string;
   className?: string;
   height?: number;
-  size?: 'sm' | 'md';
-  variant?: 'default' | 'minimal' | 'flat';
+  size?: SegmentedSize;
+  variant?: SegmentedVariant;
   segments: readonly Segment[];
   /** Wraps the segments, for a context they read. */
   wrap?: (segments: ReactNode) => ReactNode;

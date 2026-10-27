@@ -1,4 +1,5 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
+import { useDebouncedText } from '@weasel-js/ui/components/Prefs';
 import {
   type PropertyControlProps,
   PropertyField,
@@ -7,7 +8,7 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
 import { valueAtPath } from '../config/path';
-import { BareControl, leafValueAt, useDebouncedText, useTextWaitMs } from './fields';
+import { BareControl, leafValueAt, useTextWaitMs } from './fields';
 
 const noDrafts = (): void => {};
 

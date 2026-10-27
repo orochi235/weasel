@@ -3,6 +3,8 @@ import {
   clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
 } from '@weasel-js/quantity';
 import f from '../field.module.css';
+import { fieldRootClass } from '../Field/fieldSlots';
+import { MIXED_HINT } from '../mixedHint';
 import s from './NumberField.module.css';
 import { useStepRepeat } from './useStepRepeat';
 
@@ -48,6 +50,9 @@ export interface UnitFieldProps {
    *  reading instead. Default: the number with every decimal it has. */
   display?: Display;
   placeholder?: string;
+  /** The field stands for several values that differ: it shows empty, reading
+   *  `Mixed` in place of `placeholder`, whatever `value` is. */
+  mixed?: boolean;
   /** Up and down buttons beside the value, which repeat while held. */
   steppers?: boolean;
   /** The field and its steppers take no input. */
@@ -84,7 +89,7 @@ function stepStart(typed: number, value: number, endless: Endless | undefined): 
  * are typed, which is why this is not that.
  */
 export function UnitField({
-  value,
+  value: valueProp,
   onChange,
   onInput,
   onCancel,
@@ -97,6 +102,7 @@ export function UnitField({
   accepts,
   display = FULL_PRECISION,
   placeholder,
+  mixed = false,
   steppers,
   disabled = false,
   stepperSide = 'start',
@@ -106,6 +112,7 @@ export function UnitField({
   id,
   'aria-label': ariaLabel,
 }: UnitFieldProps) {
+  const value = mixed ? Number.NaN : valueProp;
   const [draft, setDraft] = useState<string | null>(null);
   const canceled = useRef(false);
   // The value typing began from, and whether any keystroke reached `onInput`.
@@ -172,9 +179,7 @@ export function UnitField({
 
   return (
     <div
-      className={[f.field, f.control, width === 'fit' && `${f.fit} ${s.fit}`, className]
-        .filter(Boolean)
-        .join(' ')}
+      className={fieldRootClass({ width, fit: s.fit, className })}
     >
       <div
         className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
@@ -193,7 +198,7 @@ export function UnitField({
           aria-valuetext={known ? qty(value, display).spoken : undefined}
           aria-valuemin={minValue}
           aria-valuemax={maxValue}
-          placeholder={placeholder}
+          placeholder={mixed ? MIXED_HINT : placeholder}
           disabled={disabled}
           value={draft ?? text}
           onChange={(e) => {

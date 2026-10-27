@@ -1,4 +1,5 @@
 import type { Vec2 } from '@weasel-js/core/math';
+import type { DiagramLabel } from '../labelTrait';
 import { pruneGroups } from './groupEdit';
 import { pruneLookRoutes } from './lookRoutes';
 import { formatParam } from './stageTypes';
@@ -60,10 +61,27 @@ export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc 
 /** `doc` keeping only the routes, under every look, of wires it still has,
  *  less those of the `rewired` wires, whose ends now join other ports. */
 export function pruneRoutes(doc: EffectDoc, rewired: readonly string[] = []): EffectDoc {
-  const pruned = pruneLookRoutes(doc, rewired);
+  const pruned = pruneLabels(pruneLookRoutes(doc, rewired));
   if (pruned.routes === undefined) return pruned;
   const ids = new Set(doc.pipeline.wires.flatMap((w) => (w.id === undefined || rewired.includes(w.id) ? [] : [w.id])));
   return { ...pruned, routes: Object.fromEntries(Object.entries(pruned.routes).filter(([id]) => ids.has(id))) };
+}
+
+/** `doc` without the label placements of wires it no longer has. A rewired wire keeps its own. */
+function pruneLabels(doc: EffectDoc): EffectDoc {
+  if (doc.labels === undefined) return doc;
+  const ids = new Set(doc.pipeline.wires.flatMap((w) => (w.id === undefined ? [] : [w.id])));
+  const kept = Object.entries(doc.labels).filter(([id]) => ids.has(id));
+  const { labels: _was, ...rest } = doc;
+  return kept.length > 0 ? { ...rest, labels: Object.fromEntries(kept) } : rest;
+}
+
+/** Puts wire `wire`'s label at `placement`; `null` gives it back to the look. */
+export function setWireLabel(doc: EffectDoc, wire: string, placement: DiagramLabel | null): EffectDoc {
+  const { [wire]: _was, ...others } = doc.labels ?? {};
+  const { labels: _all, ...rest } = doc;
+  const labels = placement === null ? others : { ...others, [wire]: placement };
+  return Object.keys(labels).length > 0 ? { ...rest, labels } : rest;
 }
 
 /** Routes wire `wire` through `points`; none clears its route. */

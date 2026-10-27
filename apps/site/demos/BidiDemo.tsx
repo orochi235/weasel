@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { analyze, mirror, reorder, type BidiDirection } from '@weasel-js/bidi';
 import { Input } from '@weasel-js/ui/components/Input';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { Button } from '@weasel-js/ui/components/Button';
 import s from './BidiDemo.module.css';
 
 const PRESETS = [
@@ -45,9 +46,9 @@ export function BidiDemo() {
       </div>
       <div className={s.controls}>
         {PRESETS.map((p) => (
-          <button key={p.label} type="button" className="ckd-btn" onClick={() => setText(p.text)}>
+          <Button key={p.label} onClick={() => setText(p.text)}>
             {p.label}
-          </button>
+          </Button>
         ))}
       </div>
 

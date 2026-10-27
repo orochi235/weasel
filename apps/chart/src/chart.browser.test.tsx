@@ -270,9 +270,10 @@ describe('WeaselChart chart mode', () => {
       canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: q.x, clientY: q.y }));
     }
     await expect.poll(() => bodies().length).toBe(2);
+    // A label is stored in its body's frame.
     const labelOffset = (body: SavedNode) => {
       const label = saved().find((n) => n.parent === body.id)!.pose!;
-      return [label.x - body.pose!.x, label.y - body.pose!.y].map((v) => Math.round(v * 100) / 100);
+      return [label.x, label.y].map((v) => Math.round(v * 100) / 100);
     };
     expect(labelOffset(bodies()[0]!)).toEqual(labelOffset(bodies()[1]!));
   });

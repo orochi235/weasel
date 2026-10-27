@@ -72,21 +72,14 @@ describe('applyLayout', () => {
     expect([b.width, b.height]).toEqual([100, 40]);
   });
 
-  // `setPose` is absolute and does not cascade, so a built body would walk out
-  // from under its own label rows — invisibly, since nothing about the rows is
-  // wrong on their own.
-  it('takes a container\'s children along with it', () => {
+  it('takes a container\'s children along in its frame, writing none of them', () => {
     const scene = chain();
     const label = scene.add({
-      kind: 'mark', layer: 'main', parent: 'b' as never,
-      pose: { x: START['b']!.x + 10, y: START['b']!.y + 10, width: 30, height: 12 },
-      data: {},
+      kind: 'mark', layer: 'main', parent: 'b' as never, pose: { x: 10, y: 10, width: 30, height: 12 }, data: {},
     });
     const before = scene.get(label)!.pose;
     applyLayout(scene, layered(graphOf(scene)));
-    const b = scene.get('b' as never)!.pose;
-    expect(scene.get(label)!.pose.x - b.x).toBe(before.x - START['b']!.x);
-    expect(scene.get(label)!.pose.y - b.y).toBe(before.y - START['b']!.y);
+    expect(scene.get(label)!.pose).toBe(before);
   });
 
   it('skips an id the scene no longer holds', () => {

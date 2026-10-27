@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 // First, so the panel's sheet lands after the checkbox's: a consumer's bundle may order them either way.
 import '../checkbox.module.css';
 import { cleanup, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { SelectionPanel } from './SelectionPanel';
@@ -13,7 +13,7 @@ import { SelectionPanel } from './SelectionPanel';
 afterEach(cleanup);
 
 it('draws a checkbox as a box, not across the row', () => {
-  const scene = createScene<{ grid: boolean }, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<{ grid: boolean }, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { grid: true } });
   const members: PrefSection['members'] = {
     'data.grid': { kind: 'boolean', name: 'Grid', description: '', default: true, control: 'checkbox' } as PrefLeaf,

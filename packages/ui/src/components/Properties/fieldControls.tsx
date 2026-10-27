@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
+import { MIXED_HINT } from '../mixedHint';
 import { Switch } from '../Switch';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { ToggleBar } from '../ToggleBar';
@@ -74,7 +75,7 @@ export function ControlBody(props: PropertyControlProps) {
 function Dimmed({ mixed, unset, children }: { mixed?: boolean; unset?: boolean; children: ReactNode }) {
   if (!mixed && !unset) return <>{children}</>;
   return (
-    <span className={s.dimmed} title={mixed ? 'Mixed' : 'Not set'}>
+    <span className={s.dimmed} title={mixed ? MIXED_HINT : 'Not set'}>
       {children}
     </span>
   );
@@ -165,7 +166,6 @@ function useTextEdit(p: PropertyStringFieldProps) {
 
 function StringControl(p: PropertyStringFieldProps) {
   const edit = useTextEdit(p);
-  const placeholder = p.mixed ? 'Mixed' : p.placeholder;
   if (p.control === 'textarea') {
     return (
       <textarea
@@ -173,7 +173,7 @@ function StringControl(p: PropertyStringFieldProps) {
         className={p.className ? `${s.textarea} ${p.className}` : s.textarea}
         aria-label={p.name}
         value={edit.shown}
-        placeholder={placeholder}
+        placeholder={p.mixed ? MIXED_HINT : p.placeholder}
         maxLength={p.maxLength}
         disabled={p.disabled}
         rows={3}
@@ -188,7 +188,8 @@ function StringControl(p: PropertyStringFieldProps) {
       id={p.id}
       className={p.className ? `${s.textField} ${p.className}` : s.textField}
       value={edit.shown}
-      placeholder={placeholder}
+      placeholder={p.placeholder}
+      mixed={p.mixed}
       maxLength={p.maxLength}
       isDisabled={p.disabled}
       aria-label={p.name}

@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, sceneFromJSON, useSelection } from '@weasel-js/core';
 import type { SerializedScene, Fill } from '@weasel-js/core';
+import { Button } from '@weasel-js/ui/components/Button';
 import sceneJson from './data/scene.scene.json';
 import { DemoStage } from './DemoStage';
 
@@ -18,8 +19,8 @@ export function SceneDemo() {
   return (
     <div tabIndex={0} style={{ outline: 'none' }}>
       <div style={{ marginBottom: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button onClick={() => scene.undo()} disabled={!scene.canUndo()}>Undo</button>
-        <button onClick={() => scene.redo()} disabled={!scene.canRedo()}>Redo</button>
+        <Button onClick={() => scene.undo()} disabled={!scene.canUndo()}>Undo</Button>
+        <Button onClick={() => scene.redo()} disabled={!scene.canRedo()}>Redo</Button>
         <span style={{ fontSize: 12, opacity: 0.7 }}>
           Cmd/Ctrl+Z undo · Shift+Cmd/Ctrl+Z redo · drag rects to move
         </span>

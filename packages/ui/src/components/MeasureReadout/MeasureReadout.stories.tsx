@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   ActionsProvider,
   createMeasurements,
   createScene,
@@ -29,7 +29,7 @@ function Deps({ scene, selected }: { scene: AnyScene; selected: readonly string[
  *  measurement commands registered and `selected` as the content selection. */
 function Held({ from, to, selected }: { from: Pt; to: Pt; selected: readonly string[] }) {
   const [{ scene, ms, actions }] = useState(() => {
-    const sc = createScene<unknown, 'main' | 'notes', unknown>({
+    const sc = createScene<unknown, 'main' | 'notes', unknown>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
     }) as unknown as AnyScene;
     sc.add(measureNode('m' as NodeId, 'notes', from, to) as never);

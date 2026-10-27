@@ -71,8 +71,13 @@ export function resolveLayoutOpts(opts: LayoutRunsOpts): ResolvedLayoutOpts {
     lineHeight: opts.lineHeight,
     align: opts.align,
     justify: opts.justify === true || opts.align === 'justify',
-    bidi: opts.bidi ?? registeredBidi(),
+    bidi: layoutBidi(opts),
     direction: opts.direction ?? 'auto',
     tabSize: opts.tabSize ?? DEFAULT_TAB_SIZE,
   };
+}
+
+/** The bidi engine `opts` lays out with: its own, else the registered one. */
+export function layoutBidi(opts: LayoutRunsOpts): BidiResolver | null {
+  return opts.bidi ?? registeredBidi();
 }

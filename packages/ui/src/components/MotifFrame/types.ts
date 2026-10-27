@@ -71,8 +71,9 @@ export type FrameKind = 'panel' | 'group' | 'subpanel';
 export interface MotifFrameProps extends AppearanceProps {
   /** The frame's title, which names it. An untitled frame is not a named group. */
   title?: ReactNode;
-  /** How the frame draws its title and edge. Defaults to the `<DefaultMotif>` for its `kind`: `sheet()` for a panel, `rule()` for a group, `divider()` for a subpanel. */
-  motif?: Motif;
+  /** How the frame draws its title and edge. Defaults to the `<DefaultMotif>` for its `kind`: `sheet()` for a panel, `rule()` for a group, `divider()` for a subpanel.
+   *  A name is looked up in the `named` motifs of a `<DefaultMotif>` above; one nothing defines draws as if unset. */
+  motif?: Motif | string;
   /** Which default motif the frame takes when given none. Defaults to `'group'`. */
   kind?: FrameKind;
   /**

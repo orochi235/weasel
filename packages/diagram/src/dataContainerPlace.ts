@@ -138,6 +138,7 @@ export function containerSpecs(
     if (box === undefined) return [];
     const specs = regionSpecs(r.role, r.axis, { ...box }, r.label ?? null, {
       id: r.id, layer: 'main', parent: r.parent ?? null, style: dataRegionStyle(r, theme, r.index), fitted: r.fitted, fontFamily,
+      ...(r.reorder !== undefined ? { reorder: r.reorder } : {}),
     });
     const marks = { ...(r.pinned ? { pinned: true } : {}), ...ownNodeStyle(r.colors) };
     if (Object.keys(marks).length === 0) return specs as DiagramSpec[];

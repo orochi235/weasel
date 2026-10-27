@@ -37,8 +37,6 @@
 
 /* --- Action bar (top of window) ---------------------------------------- */
 .wd-commandbar {
-  display: flex;
-  align-items: center;
   gap: var(--wzl-space-3);
   padding: var(--wzl-space-2) var(--wzl-space-4);
   /* Match the left tool palette, which renders via weasel-ui's Sidebar
@@ -50,15 +48,10 @@
   background: var(--wzl-surface);
   border-bottom: 1px solid var(--wzl-border);
   font-size: 11px;
-  flex-wrap: wrap;
   flex-shrink: 0;
 }
 
-/* A cluster of kit controls that belong together (file, recording). Each
-   control brings its own chrome, so the cluster only lays them out. */
 .wd-commandbar-group {
-  display: inline-flex;
-  align-items: center;
   gap: var(--wzl-space-2);
 }
 
@@ -162,12 +155,6 @@
    whether they belong in the kit component instead. */
 
 /* --- Action bar far-right spacer ------------------------------------- */
-/* Pushes the trailing controls (recording, settings cog) to the right
-   edge of the toolbar. */
-.wd-commandbar-spacer {
-  margin-left: auto;
-}
-
 /* --- Preferences modal ----------------------------------------------- */
 
 /* Panels-visibility editor — a `block` pref, so it supplies its own title. */

@@ -57,8 +57,9 @@ export interface UseAlignOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
   /** Label passed to applyOps. Default 'Align'. */
   label?: string;
-  /** How local poses fold up to world. Default IDENTITY, where the two are
-   *  the same value and the alignment runs entirely in stored coordinates. */
+  /** How local poses fold up to world. Default IDENTITY, which takes every
+   *  pose the adapter answers as world; over a scene's adapter, pass
+   *  `scene.composition`. */
   composition?: PoseComposition<TPose>;
   /** The nodes behind the adapter's ids. With it, a stroked node aligns by
    *  the box it is drawn with (`drawnBoundsOf`); without, by its pose box.

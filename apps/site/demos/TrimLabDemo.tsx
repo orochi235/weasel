@@ -1,4 +1,4 @@
-import { createScene, ellipsePath, pathFromD } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, ellipsePath, pathFromD } from '@weasel-js/core';
 import { trimPreset, useTrimTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -25,7 +25,7 @@ type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', unknown>;
 
 const createLabScene = () =>
-  createScene<unknown, 'default', unknown>({
+  createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [
       strokeNode('left', pathFromD('M200 80 V400'), '#7fb069'),

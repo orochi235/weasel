@@ -14,7 +14,8 @@ import { bindClip, createTarget } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Paint, RectPose, Fill } from '@weasel-js/core';
 import type { Clip, SampledTrack, TimelineHandle } from '@weasel-js/animator';
-import num from '@weasel-js/theme/numeric.module.css';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Transport } from '@weasel-js/ui/components/Timeline';
 import { DemoStage } from './DemoStage';
 
 type Lab = [number, number, number];
@@ -128,11 +129,8 @@ export function TimelineDemo() {
 
   useEffect(() => animator.onTick(() => setNow(handle.current?.time() ?? 0)), [animator]);
 
-  const toggle = (): void => {
-    const tl = handle.current;
-    if (!tl) return;
-    if (tl.isPaused()) { tl.resume(); setPlaying(true); } else { tl.pause(); setPlaying(false); }
-  };
+  const play = (): void => { handle.current?.resume(); setPlaying(true); };
+  const pause = (): void => { handle.current?.pause(); setPlaying(false); };
 
   // Scrubbing pauses first: a playhead the user is dragging and a playhead the
   // animator is advancing are two different intents.
@@ -163,28 +161,19 @@ export function TimelineDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <button className="ckd-btn" onClick={toggle}>{playing ? 'pause' : 'play'}</button>
-        <label className="ckd-field">
-          scrub
-          <input
-            className="ckd-range" type="range" min={0} max={duration || 1} step={10}
-            value={Math.round(now)} onChange={(e) => scrub(Number(e.target.value))}
-          />
-        </label>
-        <span className={`ckd-readout ${num.numeric}`}>{Math.round(now)} / {duration} ms</span>
-        <label className="ckd-field">
-          <input type="checkbox" checked={loop} onChange={(e) => setLoop(e.target.checked)} />
-          loop
-        </label>
-        <label className="ckd-field">
-          time-scale
-          <input
-            className="ckd-range" type="range" min={0.1} max={3} step={0.1}
-            value={timeScale} onChange={(e) => onTimeScale(Number(e.target.value))}
-          />
-          <span className={`ckd-readout ${num.numeric}`}>{timeScale.toFixed(1)}×</span>
-        </label>
-        <button className="ckd-btn" onClick={addKey}>add x keyframe</button>
+        <Transport
+          paused={!playing}
+          loop={loop}
+          rate={timeScale}
+          playhead={now}
+          duration={duration}
+          onPlay={play}
+          onPause={pause}
+          onLoopChange={(next) => setLoop(next !== false && next !== 0)}
+          onRateChange={onTimeScale}
+          onSeek={scrub}
+        />
+        <Button onClick={addKey}>add x keyframe</Button>
       </div>
       <div className="ckd-row">
         <DemoStage width={W} height={H}>
@@ -193,7 +182,7 @@ export function TimelineDemo() {
         <div className="ckd-panel">
           <div className="ckd-panel-title">event track</div>
           <p className="ckd-panel-note">
-            Events fire on forward playback only. Drag <strong>scrub</strong> and watch this
+            Events fire on forward playback only. Drag the position bar and watch this
             list stay exactly where it is — <code>seek</code> never fires an event, at any
             nesting depth.
           </p>
@@ -209,7 +198,7 @@ export function TimelineDemo() {
         blue = a child timeline nested at 500 ms with its own 2000 ms duration.
         <strong> add x keyframe</strong> pushes a key past the current end inside
         <code> timeline.edit</code>, which recomputes the duration and drops cached
-        interpolators — the readout and the scrub range grow immediately.
+        interpolators — the readout and the position bar grow immediately.
       </div>
     </div>
   );

@@ -58,8 +58,8 @@ export function FontWeightSelect(props: FontWeightSelectProps) {
     <Select<string>
       className={className}
       options={options}
-      selectedKey={mixed || value === undefined ? null : String(value)}
-      placeholder={mixed ? 'Mixed' : undefined}
+      selectedKey={value === undefined ? null : String(value)}
+      mixed={mixed}
       isDisabled={props.isDisabled}
       onSelectionChange={(key) => onChange(Number(key))}
       aria-label={props['aria-label'] ?? 'Weight'}

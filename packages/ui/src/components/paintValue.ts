@@ -5,6 +5,8 @@
 // writes a bare string back over it. These helpers are what keep a control
 // honest about the shape it is holding.
 
+import { isSolidPaint, type Paint } from '@weasel-js/paint';
+
 /** Whether a value is a `Paint` at all: an object naming a kind, or one
  *  carrying a color, which is the solid member with its optional tag left off.
  *  A pref's stored value is `unknown`, so this is what stands between a paint
@@ -16,13 +18,10 @@ export function isPaint(value: unknown): value is { kind?: string; color?: strin
 }
 
 /** The color of a solid paint, or `undefined` for anything else — including a
- *  value that isn't a paint at all. `kind` is optional on the solid member of
- *  the union, so the tag alone can't decide it. */
+ *  value that isn't a paint at all. */
 export function solidColorOf(value: unknown): string | undefined {
-  if (typeof value !== 'object' || value === null) return undefined;
-  const paint = value as { kind?: string; color?: unknown };
-  if (paint.kind !== undefined && paint.kind !== 'solid') return undefined;
-  return typeof paint.color === 'string' ? paint.color : undefined;
+  if (!isPaint(value) || !isSolidPaint(value as Paint)) return undefined;
+  return typeof value.color === 'string' ? value.color : undefined;
 }
 
 /** The single color a stroke shows, or `undefined` when it has none to show —

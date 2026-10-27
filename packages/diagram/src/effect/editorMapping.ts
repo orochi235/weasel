@@ -62,10 +62,16 @@ export function editorScene<L extends EditorLook = 'nodeGraph'>(
   }));
   // Only `nodeGraph` draws hand-set routes; `rack` and `lanes` route their own wires.
   const routes = look === 'nodeGraph' ? doc.routes : undefined;
-  const edges = routes === undefined ? drawn.data.edges : drawn.data.edges.map((e) => {
+  const { labels } = doc;
+  const edges = routes === undefined && labels === undefined ? drawn.data.edges : drawn.data.edges.map((e) => {
     const id = wires.get(edgeIdOf(e));
-    const route = id === undefined ? undefined : routes[id];
-    return route === undefined ? e : { ...e, waypoints: route };
+    const route = id === undefined ? undefined : routes?.[id];
+    const label = id === undefined ? undefined : labels?.[id];
+    return {
+      ...e,
+      ...(route !== undefined ? { waypoints: route } : {}),
+      ...(label !== undefined ? { labelPlacement: label } : {}),
+    };
   });
   return {
     ...drawn,

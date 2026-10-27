@@ -136,20 +136,26 @@ function turn(flip, swap) {
 const floor = `<path d="M7 3.8h6l3.6 12.4H3.4Z"/>`;
 
 // ── orbit ────────────────────────────────────────────────────────────────
-const n = (v) => Math.round(v * 100) / 100;
-const C = 10;
-// A tilted ring around a body, open at the top, with a head on the end that closes on the gap.
-const TILT = -24;
-const OX = 7.2;
-const OY = 3.4;
-const tilted = ([x, y]) => [n(C + x * Math.cos(rad(TILT)) - y * Math.sin(rad(TILT))), n(C + x * Math.sin(rad(TILT)) + y * Math.cos(rad(TILT)))];
-const lean = ([x, y]) => [x * Math.cos(rad(TILT)) - y * Math.sin(rad(TILT)), x * Math.sin(rad(TILT)) + y * Math.cos(rad(TILT))];
-const track = (deg) => tilted([OX * Math.cos(rad(deg)), -OY * Math.sin(rad(deg))]);
-const ORBIT_FROM = 30;
-const ORBIT_TO = -260;
-const orbit =
-  `<path d="M${track(ORBIT_FROM).join(' ')}A${OX} ${OY} ${TILT} 1 1 ${track(ORBIT_TO).join(' ')}"/>` +
-  `<path d="${chevron(track(ORBIT_TO), lean([OX * Math.sin(rad(ORBIT_TO)), OY * Math.cos(rad(ORBIT_TO))]), 2.7, 40)}"/>`;
+// A level ring round a body, open on its lower right. It sweeps up the right side, over the back and down the
+// left, then leaves the ring at the front's center on a straight run to a head pointing right. Every run and
+// the head sit on 16px 1x pixel centers (`px(k)` is the center of pixel k); the earlier tilted ring with its
+// head on the bend closed up into a dot there.
+const n = (v) => Math.round(v * 1e4) / 1e4;
+const px = (k) => 0.625 + 1.25 * k;
+const RING = { left: px(1), right: px(14), top: px(4), bottom: px(12) };
+const ORBIT_START_X = 17.6;
+const orbit = (() => {
+  const cx = (RING.left + RING.right) / 2;
+  const cy = (RING.top + RING.bottom) / 2;
+  const rx = (RING.right - RING.left) / 2;
+  const ry = (RING.bottom - RING.top) / 2;
+  const startY = cy + ry * Math.sqrt(1 - ((ORBIT_START_X - cx) / rx) ** 2);
+  const tip = [px(11), RING.bottom];
+  return (
+    `<path d="M${n(ORBIT_START_X)} ${n(startY)}A${n(rx)} ${n(ry)} 0 1 0 ${n(cx)} ${n(RING.bottom)}H${tip[0]}"/>` +
+    `<path d="${chevron(tip, [1, 0], 2.5 * Math.SQRT2, 45)}"/>`
+  );
+})();
 
 // ── rise / sink ──────────────────────────────────────────────────────────
 const ground = `<path d="M4 16.4h12"/>`;
@@ -163,7 +169,7 @@ export const CAMERA = {
   pitchDown: turn(true, true),
   rise: `${ground}<path d="M10 13.6V3.6"/><path d="${chevron([10, 3.6], [0, -1], 3.2, 42)}"/>`,
   sink: `${ground}<path d="M10 3.6V13.2"/><path d="${chevron([10, 13.2], [0, 1], 3.2, 42)}"/>`,
-  orbit: `${orbit}<circle cx="10" cy="10" r="1.9" fill="currentColor" stroke="none"/>`,
+  orbit: `${orbit}<circle cx="10" cy="10" r="1.75" fill="currentColor" stroke="none"/>`,
   home: `
     <path d="M3.4 9.8 10 3.8l6.6 6"/>
     <path d="M5.4 8.6v6.6a1 1 0 0 0 1 1h7.2a1 1 0 0 0 1-1V8.6"/>

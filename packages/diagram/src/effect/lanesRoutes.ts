@@ -2,7 +2,7 @@
  *  passes draw and of the group boxes it neither leaves nor enters, each wire
  *  sharing a corridor on a track of its own, and each label set where it
  *  covers no stage. */
-import { pointAlongPath, type Path } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, pointAlongPath, type Path } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText } from '../body';
 import { SIDE_TRACK_GAP } from '../chainRoutes';
@@ -271,8 +271,9 @@ function walledIn(grid: LaneGrid, walls: readonly Wall[]): LaneGrid {
 export function routeWires(
   wires: readonly { edge: DataEdge; style: EdgeStyle }[], nodes: readonly DataNode[], laid: Laid,
 ): { edges: { edge: DataEdge; style: EdgeStyle }[]; tracks: ReadonlyMap<number, number> } {
+  // Laid out to be measured, in world.
   const specs = diagramScene({ nodes, edges: wires.map((w) => w.edge), ...(laid.groups !== undefined ? { groups: laid.groups } : {}) }, {
-    layout: 'none', router: laid.router, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
+    layout: 'none', router: laid.router, composition: IDENTITY_POSE_COMPOSITION, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
   });
   const spec = new Map(specs.map((s) => [s.id as string, s]));
   const ink = new Map(nodes.map((n) => [n.id, inkOf(n.id, specs)]));

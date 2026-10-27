@@ -1,5 +1,5 @@
 /**
- * Reordering a group marked `reorder`: a member dragged along that axis among
+ * Reordering a group or container marked `reorder`: a member dragged along that axis among
  * its siblings, which slide into the places they would take, or the selected
  * one stepped with Alt and an arrow key. Nothing is written: the host hears
  * the new order, writes it to its data, and layout keeps it.
@@ -22,9 +22,10 @@ import { carriedWith, reorderTargetOf, type ReorderTarget } from './reorderModel
 /** Alt and an arrow key: the selected member one place along. */
 export const STEP_REORDER_ACTION_ID = 'diagram.stepReorder';
 
-/** A reorderable group's members in their new order. */
+/** A reorderable group's or container's members in their new order. */
 export interface ReorderChange {
-  group: string;
+  /** The group's or the container's id. */
+  parent: string;
   order: readonly string[];
 }
 
@@ -38,8 +39,8 @@ function targetAt(deps: ActionDeps | undefined, id: string | null | undefined): 
   return reorderTargetOf(scene as never, id, (m) => worldRectOf(scene, m));
 }
 
-/** The members of the reorderable group a press at `at` carries one of, each
- *  with everything drawn with it, or `null` off any such group. */
+/** The members of the reorderable group or container a press at `at` carries
+ *  one of, each with everything drawn with it, or `null` off any. */
 export function groupReorderSlots(deps: ActionDeps, at: Vec2): ReorderSlots | null {
   const scene = sceneOf(deps);
   const target = targetAt(deps, deps.nodeAtPoint?.(at));
@@ -82,7 +83,7 @@ export function createStepReorderAction(report: (change: ReorderChange) => void)
         const order = [...members];
         order.splice(at, 1);
         order.splice(to, 0, member);
-        report({ group: target.group, order });
+        report({ parent: target.parent, order });
       },
     },
     enabled: (deps) => (selectedTarget(deps) !== null ? true : ActionDisabledReason.NotApplicable),
@@ -100,8 +101,8 @@ export function groupReorderContribution(report: (change: ReorderChange) => void
     show: 'slide',
     on: onBody,
     commit: (move, ctx) => {
-      const group = targetAt(ctx.deps, move.id)?.group;
-      if (group !== undefined) report({ group, order: move.order });
+      const parent = targetAt(ctx.deps, move.id)?.parent;
+      if (parent !== undefined) report({ parent, order: move.order });
     },
   });
   return { ...drag, id: 'weasel-diagram-reorder', actions: [...(drag.actions ?? []), createStepReorderAction(report)] };

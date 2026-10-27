@@ -1,4 +1,5 @@
 import { useRef, useSyncExternalStore } from 'react';
+import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
 import { createScene } from './scene';
 import type { NodeId, Scene, UseSceneOptions } from './types';
 import { asNodeId } from './types';
@@ -41,7 +42,9 @@ function buildScene(options: unknown): Scene<unknown, string, unknown> {
   if (!isTrivialOptions(options)) {
     return createScene(options as UseSceneOptions<unknown, string, unknown>);
   }
+  // A flat list: its items are whatever the caller holds, and nothing nests.
   return createScene<unknown, DefaultLayer, unknown>({
+    composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: DEFAULT_LAYER }],
     historyLimit: options.historyLimit,
     generateId: options.generateId,

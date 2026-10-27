@@ -4,6 +4,7 @@ import type { Action } from '@weasel-js/routing';
 import { createLongPressFeedbackContribution } from '../../features/longPress/longPressFeedback';
 import { createViewMarkerContribution } from '../../features/viewports/viewMarkerDrag';
 import { useTools, type Contribution, type Tool, type ToolsApi } from '../../tools/overlayBinding';
+import type { SurfaceContribution } from '../surfaceContribution';
 import {
   presetActions,
   presetAmbient,
@@ -81,6 +82,8 @@ export function useCanvasTools(args: {
   /** The canvas's own api, built whether or not a takeover replaces it. */
   internal: ToolsApi;
   takeover: ToolsApi | null;
+  /** The surface's own always-on entries a takeover's ambient leaves out: they apply under it too. */
+  surface: readonly SurfaceContribution[];
 } {
   const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, ambient, initialActiveTool, modes, onToolsCreated } = args;
 
@@ -115,11 +118,16 @@ export function useCanvasTools(args: {
     ...(modes ? { modes } : {}),
   });
   const tools = takeover ?? internal;
+  const takeoverAmbient = takeover?.ambient;
+  const surface = useMemo(
+    () => (takeoverAmbient && markerDrag && !takeoverAmbient.some((e) => e.id === markerDrag.id) ? [markerDrag] : []),
+    [takeoverAmbient, markerDrag],
+  );
 
   const onToolsCreatedRef = useLatest(onToolsCreated);
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools, onToolsCreatedRef]);
 
-  return { tools, internal, takeover };
+  return { tools, internal, takeover, surface };
 }
 
 /**
@@ -139,14 +147,16 @@ export function useFeatureBindings(args: {
   tools: Pick<ToolsApi, 'registry' | 'ambient'>;
   move: FeatureBindingOptions['move'];
   rotate: FeatureBindingOptions['rotate'];
+  /** Entries the surface installs beside a takeover, with the actions they bring. */
+  surface?: readonly SurfaceContribution[];
 }): { contributions: Contribution[]; standardActions: Action[] } {
-  const { enabled, pool, baseline, tools, move, rotate } = args;
+  const { enabled, pool, baseline, tools, move, rotate, surface } = args;
   const contributions = useMemo<Contribution[]>(
-    () => presetAmbient(enabled, { move, rotate }),
-    [enabled, move, rotate],
+    () => [...presetAmbient(enabled, { move, rotate }), ...(surface ?? [])],
+    [enabled, move, rotate, surface],
   );
   const standardActions = useMemo(() => {
-    const own = presetActions(enabled);
+    const own = [...presetActions(enabled), ...(surface ?? []).flatMap((e) => e.actions ?? [])];
     const ownIds = new Set(own.map((a) => a.id));
     const out = [...(baseline ?? []).filter((a) => !ownIds.has(a.id)), ...own];
     const have = new Set(out.map((a) => a.id));
@@ -161,7 +171,7 @@ export function useFeatureBindings(args: {
       }
     }
     return out;
-  }, [enabled, pool, baseline, tools, contributions]);
+  }, [enabled, pool, baseline, tools, contributions, surface]);
   return { contributions, standardActions };
 }
 

@@ -13,8 +13,9 @@ function fixture() {
   const b = scene.add({ kind: 'mark', layer: 'main', pose: box(30, 0), data: {} });
   const hidden = scene.add({ kind: 'mark', layer: 'off', pose: box(60, 0), data: {} });
   const g = scene.add({ kind: 'group', layer: 'main', pose: box(100, 100, 50, 50), data: {} });
-  const inner = scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(110, 110), data: {} });
-  const innerB = scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(130, 110), data: {} });
+  // Stored in the group's frame: (110, 110) and (130, 110) in world.
+  const inner = scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(10, 10), data: {} });
+  const innerB = scene.add({ kind: 'mark', parent: g, layer: 'main', pose: box(30, 10), data: {} });
   return { scene, a, b, hidden, g, inner, innerB };
 }
 

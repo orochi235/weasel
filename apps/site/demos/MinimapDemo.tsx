@@ -10,6 +10,7 @@ import {
 import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { CanvasSize, View } from '@weasel-js/core';
+import { Button } from '@weasel-js/ui/components/Button';
 import styles from './MinimapDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -79,7 +80,7 @@ export function MinimapDemo() {
           <span className={styles.viewLabel}>
             view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) ×{view.scale.x.toFixed(2)}
           </span>
-          <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</button>
+          <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</Button>
           <span className={styles.hint}>
             press or drag either minimap to move the view · the crosshair follows the pointer across all three
           </span>

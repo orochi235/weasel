@@ -2,7 +2,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { clamp } from '@weasel-js/geom';
 import { snapToStep } from '@weasel-js/quantity';
 import { crossEnd } from './crossEnd';
-import { keyMoveOf } from './keyMove';
+import { keyMoveOf } from '../../arrowKeys';
 import { clampOrdered, defaultStep, resolveBounds, stepStops } from './stops';
 import type { SliderProps, Thumb } from './types';
 

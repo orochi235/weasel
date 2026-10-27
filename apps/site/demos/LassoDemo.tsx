@@ -8,6 +8,7 @@ import {
   solid,
   type LassoHitMode,
 } from '@weasel-js/core';
+import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
 import { DemoStage } from './DemoStage';
 
 const W = 480, H = 320;
@@ -36,11 +37,11 @@ const INITIAL = (() => {
   return out;
 })();
 
-const MODE_LABELS: Record<LassoHitMode, string> = {
-  centers: 'centers (snappy)',
-  intersect: 'intersect (Figma)',
-  enclosed: 'enclosed (strict)',
-};
+const MODE_ITEMS: ToggleBarItem<LassoHitMode>[] = [
+  { value: 'centers', label: 'centers (snappy)' },
+  { value: 'intersect', label: 'intersect (any overlap)' },
+  { value: 'enclosed', label: 'enclosed (strict)' },
+];
 
 export function LassoDemo() {
   // `pick` brings the select tool and `defaultTools` adds the lasso. The
@@ -55,18 +56,7 @@ export function LassoDemo() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12 }}>
         <span>Hit mode:</span>
-        {(Object.keys(MODE_LABELS) as LassoHitMode[]).map((m) => (
-          <label key={m} style={{ cursor: 'pointer' }}>
-            <input
-              type="radio"
-              name="lasso-mode"
-              value={m}
-              checked={mode === m}
-              onChange={() => setMode(m)}
-            />
-            {' '}{MODE_LABELS[m]}
-          </label>
-        ))}
+        <ToggleBar items={MODE_ITEMS} value={mode} onChange={(m) => m && setMode(m)} ariaLabel="Hit mode" size="sm" />
         <span style={{ marginLeft: 'auto', opacity: 0.7 }}>Press <kbd>L</kbd> for lasso</span>
       </div>
       <DemoStage width={W} height={H}>

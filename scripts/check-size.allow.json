@@ -25,7 +25,7 @@
     "lines": 516
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "longestFunction": 144
+    "longestFunction": 134
   },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 230
@@ -240,12 +240,12 @@
     "longestFunction": 334
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
-    "lines": 414,
-    "longestFunction": 313
+    "lines": 411,
+    "longestFunction": 309
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
-    "lines": 439,
-    "longestFunction": 296
+    "lines": 435,
+    "longestFunction": 291
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {
     "longestFunction": 165
@@ -276,8 +276,8 @@
     "longestFunction": 158
   },
   "packages/ui/src/components/Select/Select.tsx": {
-    "lines": 495,
-    "longestFunction": 126
+    "lines": 453,
+    "longestFunction": 125
   },
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
     "longestFunction": 132
@@ -286,7 +286,7 @@
     "longestFunction": 136
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
-    "longestFunction": 201
+    "longestFunction": 199
   },
   "packages/ui/src/components/Timeline/Timeline.tsx": {
     "longestFunction": 185
