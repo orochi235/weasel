@@ -62,3 +62,11 @@
   width: 300px;
   height: 260px;
 }
+
+.wzl-popover-test-scroller-content[data-holder='transform'] {
+  transform: translateX(0);
+}
+
+.wzl-popover-test-scroller-content[data-holder='filter'] {
+  filter: opacity(1);
+}

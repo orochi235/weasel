@@ -93,15 +93,22 @@ it('leaves a wide callout centered on its trigger at 1× where the viewport hold
   expect(popover.left + popover.width / 2).toBeCloseTo(trigger.left + trigger.width / 2, 0);
 });
 
-function Scroller({ isOpen }: { isOpen: boolean }) {
+type Holder = 'positioned' | 'transform' | 'filter';
+
+// `positioned`: the scroller is the overlays' containing block. `transform` and `filter`: a box inside the scroller
+// is, and is the containing block for fixed descendants too.
+function Scroller({ isOpen, holder }: { isOpen: boolean; holder: Holder }) {
   const trigger = useRef<HTMLButtonElement>(null);
-  const [box, setBox] = useState<HTMLDivElement | null>(null);
+  const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+  const [inner, setInner] = useState<HTMLDivElement | null>(null);
+  const box = holder === 'positioned' ? scroller : inner;
   return (
-    <div ref={setBox} className="wzl-popover-test-scroller">
-      <div className="wzl-popover-test-scroller-content" />
-      <button ref={trigger} type="button" className="wzl-popover-test-trigger">
-        Open
-      </button>
+    <div ref={setScroller} className="wzl-popover-test-scroller">
+      <div ref={setInner} className="wzl-popover-test-scroller-content" data-holder={holder}>
+        <button ref={trigger} type="button" className="wzl-popover-test-trigger">
+          Open
+        </button>
+      </div>
       {box ? (
         <Callout
           triggerRef={trigger}
@@ -118,13 +125,27 @@ function Scroller({ isOpen }: { isOpen: boolean }) {
   );
 }
 
-it('adds nothing to the scroll range of the positioned container it opens in', async () => {
-  const { container, rerender } = renderWithIcons(<Scroller isOpen={false} />);
-  await frames(2);
-  const scroller = container.querySelector<HTMLElement>('.wzl-popover-test-scroller')!;
-  const closed = { width: scroller.scrollWidth, height: scroller.scrollHeight };
-  rerender(<Scroller isOpen />);
-  await frames(3);
-  expect(container.querySelector('[data-weasel-overlay]')).not.toBeNull();
-  expect({ width: scroller.scrollWidth, height: scroller.scrollHeight }).toEqual(closed);
-});
+it.each<Holder>(['positioned', 'transform', 'filter'])(
+  'adds nothing to the scroll range of a scroller it opens in, held by a %s box',
+  async (holder) => {
+    const { container, rerender } = renderWithIcons(<Scroller isOpen={false} holder={holder} />);
+    await frames(2);
+    const scroller = container.querySelector<HTMLElement>('.wzl-popover-test-scroller')!;
+    const closed = { width: scroller.scrollWidth, height: scroller.scrollHeight };
+    rerender(<Scroller isOpen holder={holder} />);
+    await frames(3);
+    expect({ width: scroller.scrollWidth, height: scroller.scrollHeight }).toEqual(closed);
+    const trigger = container.querySelector('button')!.getBoundingClientRect();
+    const popover = container.querySelector('[data-weasel-overlay]')!.getBoundingClientRect();
+    expect(popover.top).toBeGreaterThanOrEqual(trigger.bottom);
+    if (holder === 'positioned') {
+      // A fixed frame the scroller does not clip: centered on its trigger, past the scroller's edge.
+      expect(popover.left + popover.width / 2).toBeCloseTo(trigger.left + trigger.width / 2, 0);
+    } else {
+      // Clipped by the scroller, so placed where the scroller lets it be seen.
+      const seen = scroller.getBoundingClientRect();
+      expect(popover.left).toBeGreaterThanOrEqual(seen.left + scroller.clientLeft);
+      expect(popover.right).toBeLessThanOrEqual(seen.left + scroller.clientLeft + scroller.clientWidth);
+    }
+  },
+);
