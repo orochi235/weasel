@@ -500,6 +500,22 @@ Owner tags, after the priority (2026-10-26):
 
 ### Container layout strategies
 
+- **(P3) [agent] A member of a diagram container marked `reorder` cannot be dragged out of it.** The
+  reorder drag (`packages/diagram/src/groupReorder.ts`) takes every body press on a member and moves
+  it only along the axis, so the move's reparent never runs; a group's members have the same limit,
+  but a container's are scene children that could leave. A drag that leaves the container's body
+  could hand off to the move instead (2026-10-26).
+- **(P3) [agent] An item carried in with `dragItemProps` draws no ghost of itself over the canvas.** The
+  canvas outlines the target and marks the index (`packages/diagram/src/itemDrop.ts`), and labkit
+  draws its own `DragGhost` for its palette; diagram leaves it to the host. A ghost from the item's
+  own element, or a preview of the shape it would make, would belong beside `startItemDrag`
+  (2026-10-26).
+- **(P3) [agent] A diagram edge that crosses a node draws over it.** In the `diagram-drop` demo, dropping
+  two steps into the row between `filter` and `mix` leaves the `filter → mix` edge running straight
+  through both new boxes. The line shows over their fill and through their labels, as a
+  strikethrough (seen headless, 2026-10-26). Either edges paint above member nodes inside a
+  container, or the straight router ignores members as obstacles. Check the paint order against
+  the composition merge (`437648aa4`) first.
 - **(P3) [agent] Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its
   overflow past the container's last visible line and reports the region through
   `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
@@ -924,10 +940,21 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) [waiting] Chart's "gives a wire routed under Rack back to the look from Format › Connector › Reset
+  route" timed out once.** The `locator.click` at `apps/chart/src/pipeline/pipeline.browser.test.tsx:157`
+  exceeded 38.7 s in the full fleet run of `main` at `6d941e1db` (2026-10-26). The same file passed in
+  both branch runs of that merge's code. If it recurs, look at what the menu waits on before it
+  takes a click.
 - **(P3) [waiting] `segmentsAlong`'s first "a lit end segment fills the well round its cap" case failed
   intermittently** (full fleet run of `main` at `437648aa4`, 2026-10-26). Since ac92a714c the test waits
   for `document.fonts.ready` after a first frame; that the face was the cause is inferred, not
   reproduced. Delete the entry if the next full runs pass it.
+- **(P3) [agent] `rowHelp.browser.test.tsx`'s "a click on a described row's control opens no help" fails
+  under load.** In `packages/ui/src/components/Properties/rowHelp.browser.test.tsx`, the click on
+  the Author input timed out at 45 s because the row's open help tooltip covered it and intercepted
+  the pointer. It failed in both full fleet runs of the `diagram-drop-refuse` branch on 2026-10-26
+  (at `8b14236e5` and `b8893e8e6`, both on teitou), which touch no ui code, and passed 3 of 3 alone on
+  the fleet. A tooltip that has not closed before the next click is the first thing to suspect.
 - **(P3) [waiting] `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the

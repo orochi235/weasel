@@ -16,7 +16,7 @@ export type { ContainerBuildOptions, ContainerStencil } from './containerStencil
 export { firstLanes, regionSpecs } from './regionSpecs';
 export type { RegionOptions, RegionSpec } from './regionSpecs';
 export { diagramCanDropInto, diagramDropParentAt } from './canDropInto';
-export type { DropParentScene } from './canDropInto';
+export type { CanReparent, DropParentScene } from './canDropInto';
 export {
   LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneAffordance, laneLayer, laneScratchOf, poolsOf,
 } from './laneBoundaryLayer';

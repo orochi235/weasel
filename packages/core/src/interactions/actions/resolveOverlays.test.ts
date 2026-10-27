@@ -254,6 +254,14 @@ describe('resolveOverlays', () => {
     expect(resolved.map((r) => r.kind)).toEqual(['polyline', 'marquee']);
   });
 
+  it('keeps a reason with words in it, at its point, and drops an empty one', () => {
+    const resolved = resolveOverlays([
+      { kind: 'reason', at: { x: 3, y: 4 }, text: 'Not here' },
+      { kind: 'reason', at: { x: 0, y: 0 }, text: '' },
+    ]);
+    expect(resolved).toEqual([{ kind: 'reason', visibilityId: 'action.reason', at: { x: 3, y: 4 }, text: 'Not here' }]);
+  });
+
   it('accepts any iterable, and answers with nothing for an empty one', () => {
     expect(resolveOverlays([])).toEqual([]);
     expect(resolveOverlays(new Set<OngoingOverlay>())).toEqual([]);

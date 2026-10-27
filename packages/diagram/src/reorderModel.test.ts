@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import { diagramScene, type DiagramData, type DiagramSpec } from './fromData';
 import { carriedWith, reorderTargetOf, type ReorderScene } from './reorderModel';
 
@@ -45,7 +46,7 @@ describe('reorderTargetOf', () => {
 
   it('carries the row a node sits in', () => {
     const target = reorderTargetOf(scene, 'b.pool', boxOf(specs));
-    expect(target).toMatchObject({ group: 'layers', axis: 'y', member: 'b' });
+    expect(target).toMatchObject({ parent: 'layers', axis: 'y', member: 'b' });
     expect(target!.members).toEqual(['a', 'b', 'c']);
   });
 
@@ -65,5 +66,30 @@ describe('reorderTargetOf', () => {
     const rows = rowsOf(specs, 'b.patch');
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((id) => carried.has(id))).toBe(true);
+  });
+});
+
+describe('reorderTargetOf a container marked reorder', () => {
+  const node = (id: string, x: number) => ({ id, lines: [id], width: 60, height: 40, at: { x, y: 140 }, pinned: true });
+  const data: DiagramData = {
+    nodes: [node('m3', 260), node('m1', 60), node('m2', 160), node('out', 600)],
+    edges: [],
+    containers: [{ id: 'k', role: 'container', label: 'K', members: ['m1', 'm2', 'm3'], reorder: 'x', box: { x: 40, y: 100, width: 320, height: 100 }, pinned: true }],
+  };
+  const specs = diagramScene(data, { layout: 'none' });
+  const world = worldPosesOf(specs, RIGID_POSE_COMPOSITION);
+  const scene = sceneOf(specs);
+  const worldBox = (id: string) => world.get(id) ?? null;
+
+  it('carries a member along the axis, with every member in the order it stands', () => {
+    const target = reorderTargetOf(scene, 'm2', worldBox);
+    expect(target).toEqual({ parent: 'k', axis: 'x', member: 'm2', members: ['m1', 'm2', 'm3'] });
+  });
+
+  it('has nothing to carry for a node outside it, or in a container not marked reorder', () => {
+    expect(reorderTargetOf(scene, 'out', worldBox)).toBeNull();
+    const { reorder: _axis, ...unmarked } = data.containers![0]!;
+    const plain = diagramScene({ ...data, containers: [unmarked] }, { layout: 'none' });
+    expect(reorderTargetOf(sceneOf(plain), 'm2', worldBox)).toBeNull();
   });
 });

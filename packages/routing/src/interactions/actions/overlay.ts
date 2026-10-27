@@ -20,6 +20,8 @@ export type OverlayRole =
   | 'falloff'
   /** What a lock holds a dragged point to — a line, a circle. */
   | 'lock'
+  /** What a dragged item would be dropped on: the box it would go into. */
+  | 'target'
   /** Where a dragged item would land: a reorder's insertion bar. */
   | 'insert'
   /** Where a dragged item is over and cannot land. */
@@ -97,6 +99,16 @@ export type OngoingOverlay =
       /** World affines the shape will also be drawn under once it lands, by
        *  the container it is drawn into: the preview is painted under each. */
       copies?: readonly (readonly [number, number, number, number, number, number])[];
+    }
+  | {
+      /**
+       * Why the gesture cannot land where it is, in words for the user: a
+       * refusal's reason. A surface shows `text` beside the pointer, which
+       * `at` is, in world coordinates.
+       */
+      kind: 'reason';
+      at: { x: number; y: number };
+      text: string;
     };
 
 /** A handle's overlays as a list: empty when it has none. */
