@@ -12,7 +12,10 @@ import {
   BATCH_VERT_SRC,
   BATCH_FRAG_SRC,
   BATCH_MATRICES_FRAG_SRC,
+  BATCH_HULL_FRAG_SRC,
+  BATCH_MATRICES_HULL_FRAG_SRC,
   BATCH_FILL_UNIFORMS,
+  BATCH_HULL_UNIFORMS,
   BATCH_FILL_ATTRIBUTES,
 } from './batchFill';
 import {
@@ -81,6 +84,12 @@ export const GRAD_FILL_SPEC: ProgramSpec = {
 export const BATCH_FILL_MATRICES_SPEC: ProgramSpec = {
   vert: BATCH_VERT_SRC, frag: BATCH_MATRICES_FRAG_SRC, uniforms: BATCH_FILL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
 };
+const BATCH_FILL_HULL_SPEC: ProgramSpec = {
+  vert: BATCH_VERT_SRC, frag: BATCH_HULL_FRAG_SRC, uniforms: BATCH_HULL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
+};
+const BATCH_FILL_MATRICES_HULL_SPEC: ProgramSpec = {
+  vert: BATCH_VERT_SRC, frag: BATCH_MATRICES_HULL_FRAG_SRC, uniforms: BATCH_HULL_UNIFORMS, attributes: BATCH_FILL_ATTRIBUTES,
+};
 export const PATTERN_FILL_SPEC: ProgramSpec = {
   vert: PATTERN_VERT_SRC, frag: PATTERN_FRAG_SRC, uniforms: PATTERN_FILL_UNIFORMS, attributes: PATTERN_FILL_ATTRIBUTES,
 };
@@ -92,4 +101,43 @@ export function createBatchFill(gl: WebGL2RenderingContext): ShaderProgram {
   program.lookupUniforms(BATCH_FILL_UNIFORMS);
   program.lookupAttributes(BATCH_FILL_ATTRIBUTES);
   return program;
+}
+
+/** The batch program's other builds, which a run picks by what it holds. */
+export interface BatchVariants {
+  /**
+   * Whether a run may hold a hull clip: only where the default framebuffer
+   * takes one sample a pixel, which is where the shader's decision is exact
+   * (`batchHull.ts`).
+   */
+  readonly hulls: boolean;
+  /** The build for a run under several color matrices, or holding a hull, or
+   *  both. A run with neither draws with `createBatchFill`'s. */
+  get(matrices: boolean, hulls: boolean): ShaderProgram;
+}
+
+/** `BatchVariants` over this context, each build compiled the first time a
+ *  run needs it. */
+export class BatchVariantPrograms implements BatchVariants {
+  readonly hulls: boolean;
+  private readonly matrices: LazyProgram;
+  private readonly hull: LazyProgram;
+  private readonly matricesHull: LazyProgram;
+
+  constructor(gl: WebGL2RenderingContext) {
+    // The default framebuffer's, read while it is bound.
+    this.hulls = gl.getParameter(gl.SAMPLES) === 0;
+    this.matrices = new LazyProgram(gl, BATCH_FILL_MATRICES_SPEC);
+    this.hull = new LazyProgram(gl, BATCH_FILL_HULL_SPEC);
+    this.matricesHull = new LazyProgram(gl, BATCH_FILL_MATRICES_HULL_SPEC);
+  }
+
+  get(matrices: boolean, hulls: boolean): ShaderProgram {
+    if (!hulls) return this.matrices.get();
+    return (matrices ? this.matricesHull : this.hull).get();
+  }
+
+  lazy(): LazyProgram[] {
+    return [this.matrices, this.hull, this.matricesHull];
+  }
 }

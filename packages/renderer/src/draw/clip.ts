@@ -1,9 +1,10 @@
-import type { Path, GlMat3 } from '@weasel-js/geom';
+import { mat3, type Path, type GlMat3 } from '@weasel-js/geom';
 import { axisAlignedClipRect, intersectClipRects, type ClipRect } from '../batchClip';
-import type { DrawContext } from './drawContext';
+import { concatHulls, hullOf, windowMap, type Hull, type HullSet } from '../batchHull';
+import type { ClipEntry, DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { fillMeshHandle } from './mesh';
-import { setProjAndModel } from './uniforms';
+import { projFor, setProjAndModel } from './uniforms';
 import { ancestorMask } from './stencil';
 import { flushBatch } from './flushBatch';
 
@@ -20,44 +21,76 @@ export function enterGroupClip(ctx: DrawContext, clip: Path, transform: GlMat3 =
   enterClip(ctx, clip, transform);
 }
 
+const IDENTITY = mat3.identity();
+
 /**
  * Push a group's clip. A clip only the stencil can express takes its bit now.
  * An axis-aligned rect takes none: staged geometry is cut to it on the CPU, so
- * content inside it joins the run outside it. It takes a bit only if something
- * that draws for itself turns up inside it — see `flushForOwnDraw`.
+ * content inside it joins the run outside it. Nor does a convex clip the batch
+ * shader decides (`batchHull.ts`). Either takes a bit only if something that
+ * draws for itself turns up inside it — see `flushForOwnDraw`.
  */
 function enterClip(ctx: DrawContext, path: Path, transform: GlMat3): void {
   const rect = axisAlignedClipRect(path, transform);
-  if (rect === null) {
-    // Bits nest in stack order, so any rect clip still without one takes it
-    // first.
+  const below = liveHulls(ctx);
+  const hull = rect === null ? hullFor(ctx, path, transform) : null;
+  const hulls = hull && (below ? concatHulls(below, hull.set) : hull.set);
+  if (rect !== null) {
+    ctx.clipStack.push({ path, transform, rect, hull: null, hulls: below, depth: 0 });
+  } else if (hull && hulls) {
+    ctx.clipStack.push({ path, transform, rect: null, hull, hulls, depth: 0 });
+  } else {
+    // Bits nest in stack order, so any clip still without one takes it first.
     materializeClips(ctx);
     const depth = ctx.clipDepth + 1;
     pushClip(ctx, path, depth, transform);
     ctx.clipDepth = depth;
-    ctx.clipStack.push({ path, transform, rect: null, depth });
-  } else {
-    ctx.clipStack.push({ path, transform, rect, depth: 0 });
+    ctx.clipStack.push({ path, transform, rect: null, hull: null, hulls: below, depth });
   }
   syncBatchClip(ctx);
+}
+
+/** `path` under `transform` as a hull, where this target can decide one in
+ *  the shader exactly: the default framebuffer, single-sampled. */
+function hullFor(ctx: DrawContext, path: Path, transform: GlMat3): Hull | null {
+  if (!ctx.batchVariants?.hulls || ctx.renderTarget || ctx.projection) return null;
+  if (ctx.deviceWidth === undefined || ctx.deviceHeight === undefined) return null;
+  const map = windowMap(projFor(ctx), ctx.fragOrigin ?? [0, 0], ctx.deviceWidth, ctx.deviceHeight);
+  return hullOf(path, transform, map);
+}
+
+/** The hulls a vertex staged now is tested against. */
+export function liveHulls(ctx: DrawContext): HullSet | null {
+  const stack = ctx.clipStack;
+  return stack.length === 0 ? null : stack[stack.length - 1].hulls;
 }
 
 export function leaveClip(ctx: DrawContext): void {
   const entry = ctx.clipStack.pop()!;
   if (entry.depth > 0) {
-    popClip(ctx, entry.path, entry.depth - 1, entry.transform);
+    popClip(ctx, stencilPath(entry), entry.depth - 1, stencilTransform(entry));
     ctx.clipDepth = entry.depth - 1;
   }
   syncBatchClip(ctx);
 }
 
-/** Give every rect clip on the stack its stencil bit, for a draw the CPU cut
- *  cannot reach. */
+/** What the stencil draws for a clip: a hull's snapped polygon, so it covers
+ *  the pixels the shader keeps; anything else as it came. */
+function stencilPath(entry: ClipEntry): Path {
+  return entry.hull ? entry.hull.path : entry.path;
+}
+
+function stencilTransform(entry: ClipEntry): GlMat3 {
+  return entry.hull ? IDENTITY : entry.transform;
+}
+
+/** Give every rect and hull clip on the stack its stencil bit, for a draw
+ *  neither the CPU cut nor the batch shader reaches. */
 function materializeClips(ctx: DrawContext): void {
   for (const entry of ctx.clipStack) {
     if (entry.depth !== 0) continue;
     const depth = ctx.clipDepth + 1;
-    pushClip(ctx, entry.path, depth, entry.transform);
+    pushClip(ctx, stencilPath(entry), depth, stencilTransform(entry));
     entry.depth = depth;
     ctx.clipDepth = depth;
   }
@@ -73,17 +106,18 @@ function syncBatchClip(ctx: DrawContext): void {
 
 /**
  * The clip depth a run is staged and drawn at: the innermost clip only the
- * stencil can express. Rect clips are left out whether or not they hold a bit,
- * because the CPU cut already applies them — which is what lets a run cross
- * them.
+ * stencil can express. Rect and hull clips are left out whether or not they
+ * hold a bit, because the CPU cut or the shader already applies them — which
+ * is what lets a run cross them.
  */
 export function runClipDepth(ctx: DrawContext): number {
   const stack = ctx.clipStack;
   if (stack.length === 0 || ctx.uncut) return ctx.clipDepth;
   for (let i = stack.length - 1; i >= 0; i--) {
-    if (stack[i].rect === null) return stack[i].depth;
+    if (stack[i].rect === null && stack[i].hull === null) return stack[i].depth;
   }
-  // Only rect clips: whatever depth held before the first of them took a bit.
+  // Only rect and hull clips: whatever depth held before the first of them
+  // took a bit.
   for (const entry of stack) if (entry.depth > 0) return entry.depth - 1;
   return ctx.clipDepth;
 }

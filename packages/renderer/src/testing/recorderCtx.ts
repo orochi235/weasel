@@ -24,10 +24,11 @@ export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeo
     pathFill: r._pathFill(),
     pathFillVColor: r._pathFillVColor(),
     batchFill: r._batchFill(),
-    batchFillMatrices: r._batchFillMatrices(),
+    batchVariants: r._batchVariants(),
     gradFill: r._gradFill(),
     patternFill: r._patternFill(),
   };
+  r._batchVariants().get(true, false);
   recorder.reset();
   const ctx: DrawContext = {
     gl: recorder.gl,

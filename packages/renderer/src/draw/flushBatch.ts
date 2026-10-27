@@ -5,6 +5,9 @@ import { drawTriangles } from './drawTriangles';
 import { setColorUniform, setProjAndModel } from './uniforms';
 import { uploadBatchMatrices } from './batchMatrices';
 import { applyClipTest } from './stencil';
+import { HULL_POOL } from '../batchHull';
+import type { StagedBatchState } from './batchRun';
+import type { ShaderProgram } from '../shaders/ShaderProgram';
 
 /** The rect batch transforms its own corners, so it draws at model identity. */
 export const BATCH_MODEL = mat3.identity();
@@ -18,6 +21,9 @@ const SAMPLER_UNITS = new Int32Array(
 /** `u_fieldScale`, per slot: an atlas slot's `glyphFieldScale`. Slots that are
  *  not atlases keep whatever a previous flush wrote, which nothing reads. */
 const FIELD_SCALES = new Float32Array(2 * BATCH_TEXTURE_SLOTS);
+
+/** `u_hullPlanes`, filled per flush from the run's hull sets. */
+const HULL_PLANES = new Int32Array(4 * HULL_POOL);
 
 /**
  * Draw the staged run as one `drawElements`, under the state it was staged
@@ -42,7 +48,11 @@ export function flushBatch(ctx: DrawContext): void {
     return;
   }
   const gl = ctx.gl;
-  const prog = staged.matrices.length > 1 ? ctx.batchFillMatrices ?? ctx.batchFill : ctx.batchFill;
+  const several = staged.matrices.length > 1;
+  const hulls = staged.hulls !== undefined;
+  const prog = (several || hulls) && ctx.batchVariants
+    ? ctx.batchVariants.get(several, hulls)
+    : ctx.batchFill;
   gl.useProgram(prog.handle);
   const indexCount = batch.uploadAndBind();
   setProjAndModel(ctx, prog, BATCH_MODEL);
@@ -70,6 +80,7 @@ export function flushBatch(ctx: DrawContext): void {
   if (staged.ramps) ctx.gradRamps.bind(RAMP_SLOT);
   gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
   gl.uniform2fv(prog.uniform('u_fieldScale')!, FIELD_SCALES);
+  if (hulls) uploadHulls(gl, prog, staged);
   applyClipTest(ctx, staged.clipDepth);
   drawTriangles(ctx, indexCount, ctx.gl.UNSIGNED_INT);
   // Everything else in the renderer binds its texture to unit 0 and some of it
@@ -81,4 +92,9 @@ export function flushBatch(ctx: DrawContext): void {
   gl.bindVertexArray(null);
   batch.reset();
   ctx.batchState = undefined;
+}
+
+function uploadHulls(gl: WebGL2RenderingContext, prog: ShaderProgram, staged: StagedBatchState): void {
+  for (const { set, start } of staged.hulls!) HULL_PLANES.set(set.planes, 4 * start);
+  gl.uniform4iv(prog.uniform('u_hullPlanes')!, HULL_PLANES, 0, 4 * staged.hullPlanes);
 }

@@ -25,6 +25,13 @@
  * `-k8` puts eight leaves under each clip instead of one. If entry is the whole
  * price, the per-group figure holds and the per-leaf figure falls by eight.
  *
+ * The `ss-` frames draw into a second, single-sampled canvas, the only kind of
+ * target where a convex clip is decided in the batch shader (`batchHull.ts`):
+ * `ss-rect-hullclip` is `rect-clipped` there, and `ss-rect-stencilclip` the
+ * same frame with the shader clip turned off. Before timing, the spec checks on
+ * that canvas that a solid under each clip keeps exactly the pixels a fill
+ * drawing for itself through the stencil keeps.
+ *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
@@ -54,6 +61,10 @@ const VARIANTS = [
   { id: 'pat-clipped',     groups: N,     note: 'each pattern in its own clip' },
   { id: 'pat-cmbreak',     groups: N,     note: 'each pattern in its own color-matrix break' },
   { id: 'pat-clipped-k8',  groups: N / K, note: `${K} patterns per clip` },
+  { id: 'ss-rect-plain',       groups: 0,     note: 'rect-plain on a single-sampled canvas' },
+  { id: 'ss-rect-hullclip',    groups: N,     note: 'rect-clipped there, each clip decided in the batch shader' },
+  { id: 'ss-rect-stencilclip', groups: N,     note: 'the same with the shader clip off: the stencil' },
+  { id: 'ss-rect-hullclip-k8', groups: N / K, note: `${K} rects per shader-decided clip` },
 ] as const;
 
 type VariantId = (typeof VARIANTS)[number]['id'];
@@ -97,7 +108,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
-  const { paints, glRenderer, draws } = await page.evaluate(
+  const { paints, glRenderer, draws, agreement } = await page.evaluate(
     async ({ root, n, k, runs, variants }) => {
       const report = (globalThis as unknown as {
         __clipReport: (m: unknown) => Promise<void>;
@@ -136,6 +147,20 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
         ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
         : gl.getParameter(gl.RENDERER));
       const renderer = new WeaselRenderer({ gl, canvas, width: W, height: H, dpr: 1 });
+
+      const ssCanvas = document.createElement('canvas');
+      ssCanvas.width = W;
+      ssCanvas.height = H;
+      const ssGl = ssCanvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true, antialias: false });
+      if (!ssGl) throw new Error('no single-sampled WebGL2 context');
+      const ssRenderer = new WeaselRenderer({ gl: ssGl, canvas: ssCanvas, width: W, height: H, dpr: 1 });
+      const variantsOf = ssRenderer._batchVariants();
+      const hullsOffered = variantsOf.hulls;
+      Object.defineProperty(variantsOf, 'hulls', { value: true, writable: true });
+      const ssRender = (tree: unknown[], hulls: boolean) => {
+        (variantsOf as { hulls: boolean }).hulls = hulls;
+        ssRenderer.render(tree, identity);
+      };
 
       const px = (i: number) => 20 + ((i * 37) % (W - 160));
       const py = (i: number) => 20 + ((i * 53) % (H - 160));
@@ -187,6 +212,9 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       }
 
       function buildVariant(id: string): unknown[] {
+        if (id.startsWith('ss-')) {
+          return buildVariant(id.slice(3).replace('hullclip', 'clipped').replace('stencilclip', 'clipped'));
+        }
         const leaves = id.startsWith('pat') ? pats : solids;
         if (id.endsWith('-plain')) return leaves;
         if (id.endsWith('-k8')) {
@@ -203,16 +231,59 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
 
       const built: Record<string, unknown[]> = {};
       for (const v of variants) built[v.id] = buildVariant(v.id);
+      const frameOf = (id: string, tree: unknown[] = built[id]) => {
+        if (!id.startsWith('ss-')) return () => renderer.render(tree, identity);
+        const hulls = !id.includes('stencilclip');
+        return () => ssRender(tree, hulls);
+      };
+      const glOf = (id: string) => (id.startsWith('ss-') ? ssGl : gl);
+
+      /**
+       * Each clip around a solid, which the shader clips, and around a fill
+       * with per-vertex colors, which draws for itself through the stencil:
+       * the two must keep the same pixels, exactly. Also counts the pixels
+       * where the shader-decided frame differs from the stencil clipping the
+       * unsnapped path, which a rasterizer finer than a sixteenth of a pixel
+       * can show.
+       */
+      function readSs(tree: unknown[], hulls: boolean): Uint8Array {
+        ssRender(tree, hulls);
+        const buf = new Uint8Array(W * H * 4);
+        ssGl!.readPixels(0, 0, W, H, ssGl!.RGBA, ssGl!.UNSIGNED_BYTE, buf);
+        return buf;
+      }
+      const diff = (a: Uint8Array, b: Uint8Array) => {
+        let count = 0;
+        for (let p = 0; p < a.length; p += 4) {
+          if (a[p] !== b[p] || a[p + 1] !== b[p + 1] || a[p + 2] !== b[p + 2] || a[p + 3] !== b[p + 3]) count++;
+        }
+        return count;
+      };
+      const red = (i: number, own: boolean) => ({
+        kind: 'path',
+        path: { kind: 'rect', x: px(i) - 10, y: py(i) - 10, width: 120, height: 120 },
+        fill: { paint: { kind: 'solid', color: own ? '#ffffff' : '#ff0000' } },
+        ...(own ? { vertexColors: [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1] } : {}),
+      });
+      const agreeTree = (own: boolean) => Array.from({ length: 64 }, (_, i) => ({
+        kind: 'group', clip: clipPath(i * 7), children: [red(i * 7, own)],
+      }));
+      const agreement = {
+        hullsOffered,
+        shaderVsOwnDraw: diff(readSs(agreeTree(false), true), readSs(agreeTree(true), true)),
+        shaderVsUnsnapped: diff(readSs(agreeTree(false), true), readSs(agreeTree(false), false)),
+      };
 
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       const gcAvailable = typeof collect === 'function';
 
       /** A variant that silently draws nothing measures free. */
       function paintsAnything(id: string): boolean {
-        renderer.render([built[id][0]], identity);
-        gl.finish();
+        frameOf(id, [built[id][0]])();
+        const g = glOf(id)!;
+        g.finish();
         const buf = new Uint8Array(W * H * 4);
-        gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+        g.readPixels(0, 0, W, H, g.RGBA, g.UNSIGNED_BYTE, buf);
         for (let p = 3; p < buf.length; p += 4) if (buf[p] !== 0) return true;
         return false;
       }
@@ -224,15 +295,16 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       /** Each split rests on what draws alone and what joins a run; counted, not assumed. */
       const draws: Record<string, number> = {};
       for (const v of variants) {
-        renderer.render(built[v.id], identity);
-        draws[v.id] = renderer.lastFrameStats().drawCalls;
+        frameOf(v.id)();
+        draws[v.id] = (v.id.startsWith('ss-') ? ssRenderer : renderer).lastFrameStats().drawCalls;
       }
 
-      // Pay this context's one-time costs before the first timed block.
+      // Pay each context's one-time costs before the first timed block.
       for (const v of variants) {
-        for (let i = 0; i < 3; i++) renderer.render(built[v.id], identity);
+        for (let i = 0; i < 3; i++) frameOf(v.id)();
       }
       gl.finish();
+      ssGl.finish();
 
       await report({
         type: 'header', glRenderer, gcAvailable,
@@ -243,9 +315,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       let index = 0;
       for (let run = 1; run <= runs; run++) {
         if (collect) collect({ type: 'major', execution: 'sync' });
-        const timed = await timeInterleaved(gl, variants.map((v) => ({
-          id: v.id, frame: () => renderer.render(built[v.id], identity),
-        })));
+        const main = variants.filter((v) => !v.id.startsWith('ss-'));
+        const ss = variants.filter((v) => v.id.startsWith('ss-'));
+        const timed = {
+          ...await timeInterleaved(gl, main.map((v) => ({ id: v.id, frame: frameOf(v.id) }))),
+          ...await timeInterleaved(ssGl, ss.map((v) => ({ id: v.id, frame: frameOf(v.id) }))),
+        };
         for (const v of variants) {
           const perFrameMs = +timed[v.id].net.toFixed(4);
           index += 1;
@@ -254,7 +329,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       }
 
       renderer.dispose();
-      return { paints, glRenderer, draws };
+      ssRenderer.dispose();
+      return { paints, glRenderer, draws, agreement };
     },
     { root: repoRoot, n: N, k: K, runs: RUNS, variants: VARIANTS.map((v) => ({ id: v.id })) },
   );
@@ -282,6 +358,9 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   const clipEntryK8 = deltaUs('rect-clipped-k8', 'rect-plain', N / K);
   const cpuCut = deltaUs('rect-rectclip', 'rect-plain', N);
   const stencilEntryK8 = deltaUs('pat-clipped-k8', 'pat-plain', N / K);
+  const hullClip = deltaUs('ss-rect-hullclip', 'ss-rect-plain', N);
+  const ssStencilClip = deltaUs('ss-rect-stencilclip', 'ss-rect-plain', N);
+  const hullClipK8 = deltaUs('ss-rect-hullclip-k8', 'ss-rect-plain', N / K);
 
   const num = (x: number) => x.toFixed(2);
   const lines = [
@@ -306,6 +385,13 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     `| clip entry at ${K} leaves | ${num(clipEntryK8)} | rect-clipped-k8 − rect-plain, per clip |`,
     `| stencil at ${K} leaves | ${num(stencilEntryK8)} | pat-clipped-k8 − pat-plain, per clip |`,
     `| a rect clip cut on the CPU | ${num(cpuCut)} | rect-rectclip − rect-plain, per clip |`,
+    `| a slanted clip, decided in the shader | ${num(hullClip)} | ss-rect-hullclip − ss-rect-plain, per clip |`,
+    `| ...at ${K} leaves | ${num(hullClipK8)} | ss-rect-hullclip-k8 − ss-rect-plain, per clip |`,
+    `| the same clip on the stencil, single-sampled | ${num(ssStencilClip)} | ss-rect-stencilclip − ss-rect-plain, per clip |`,
+    '',
+    `single-sampled canvas offers the shader clip: ${String(agreement.hullsOffered)}; `
+    + `pixels where a shader-clipped solid and a stencil-clipped fill differ: ${agreement.shaderVsOwnDraw}; `
+    + `pixels where the shader clip differs from the stencil of the unsnapped path: ${agreement.shaderVsUnsnapped}`,
     '',
     `stencil is ${((stencilOnly / clipTotal) * 100).toFixed(0)}% of clip entry; `
     + `the batch break is ${((breakShare / clipTotal) * 100).toFixed(0)}%.`,
@@ -321,6 +407,10 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   expect(draws['rect-clipped'], 'a stencil clip must close the run, or rect-clipped prices no break').toBeGreaterThanOrEqual(N);
   expect(draws['rect-cmbreak'], 'each color matrix must close the run, or rect-cmbreak prices no flush').toBeGreaterThanOrEqual(N);
   expect(draws['rect-rectclip'], 'a rect clip should be cut on the CPU, inside one run').toBe(draws['rect-plain']);
+  expect(agreement.hullsOffered, 'a single-sampled canvas should offer the shader clip').toBe(true);
+  expect(agreement.shaderVsOwnDraw, 'the shader clip and the stencil must keep the same pixels').toBe(0);
+  expect(draws['ss-rect-hullclip'], 'a shader-decided clip should not end the run').toBeLessThan(N / 4);
+  expect(draws['ss-rect-stencilclip'], 'with the shader clip off, each clip should close its run').toBeGreaterThanOrEqual(N);
   // A clipped frame that did not cost more than its unclipped twin means the
   // variant is not doing what its name says.
   expect(clipTotal, 'clipping a rect should cost more than not clipping it').toBeGreaterThan(0);
@@ -342,5 +432,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   run.item(`clip entry at ${K} leaves`, { perClip: metric(clipEntryK8, 'us', `${derived}, rect-clipped-k8 - rect-plain`) });
   run.item(`stencil at ${K} leaves`, { perClip: metric(stencilEntryK8, 'us', `${derived}, pat-clipped-k8 - pat-plain`) });
   run.item('rect clip cut on the CPU', { perClip: metric(cpuCut, 'us', `${derived}, rect-rectclip - rect-plain`) });
+  run.item('slanted clip decided in the shader', { perClip: metric(hullClip, 'us', `${derived}, ss-rect-hullclip - ss-rect-plain`) });
+  run.item(`slanted clip decided in the shader at ${K} leaves`, { perClip: metric(hullClipK8, 'us', `${derived}, ss-rect-hullclip-k8 - ss-rect-plain`) });
+  run.item('slanted clip on the stencil, single-sampled', { perClip: metric(ssStencilClip, 'us', `${derived}, ss-rect-stencilclip - ss-rect-plain`) });
+  run.item('shader clip agreement', {
+    shaderVsOwnDraw: metric(agreement.shaderVsOwnDraw, 'count', 'pixels differing over 64 clips: a solid under the shader clip, a vertex-colored fill under the stencil'),
+    shaderVsUnsnapped: metric(agreement.shaderVsUnsnapped, 'count', 'pixels differing over the same clips: the shader clip, the stencil of the unsnapped path'),
+  });
   run.write();
 });
