@@ -91,6 +91,7 @@ export function createDispatcher(opts?: {
     return routeThroughKeymap(event, ctx, {
       run: (pass, ev) => route(ev, { ...ctx, keymapPass: pass }),
       binds: (ev) => rank(ev, { ...ctx, keymapPass: 'only' }, inFlight.engagedOwners(), false).ordered.length > 0,
+      engaged: () => inFlight.handles.size > 0,
     }) ?? route(event, ctx);
   }
 

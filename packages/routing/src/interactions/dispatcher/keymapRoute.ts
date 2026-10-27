@@ -17,6 +17,8 @@ export interface KeymapPasses {
   run(pass: 'only' | 'none', event: InputEvent): Outcome;
   /** Whether any binding of the innermost keymap matches `event`, without running one. */
   binds(event: InputEvent): boolean;
+  /** Whether a gesture is in flight. */
+  engaged(): boolean;
 }
 
 const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
@@ -64,6 +66,11 @@ export function routeThroughKeymap(
   if (verdict === 'cascaded') return passes.run('none', event);
 
   if (isPlainEscape(event)) {
+    // A gesture in flight — a key held through a keymap, say — is Escape's to cancel before the keymap's to close.
+    if (passes.engaged() && passes.run('none', event) === 'handled') {
+      stack.inputSeen();
+      return 'handled';
+    }
     stack.closeInnermost();
     return 'handled';
   }
