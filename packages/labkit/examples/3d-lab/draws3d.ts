@@ -11,16 +11,18 @@
  * instead, so a drag shows what moved and from where.
  */
 
-import type { FeedDelta, NodeId } from '@weasel-js/core';
+import { documentOf, type FeedDelta, type NodeId } from '@weasel-js/core';
+import { worldPoseOf } from '@weasel-js/kernel3d';
 import type { SolidDraw } from './renderer3d';
-import type { Pose3, SolidData, SolidKind, SolidLayer } from './scene3d';
+import type { Pose3, SolidData, SolidKind, SolidLayer, SolidScene } from './scene3d';
 
 export interface SolidRecord {
-  /** What the document stores. */
+  /** What the document stores, in the node's container frame. */
   committed: Pose3;
-  /** What to draw: the committed pose, or the one a gesture is proposing. */
+  /** The committed pose, or the one a gesture is proposing, in the same frame. */
   pose: Pose3;
-  kind: SolidKind;
+  /** `null` for a container, which draws nothing. */
+  kind: SolidKind | null;
   color: string;
 }
 
@@ -34,36 +36,51 @@ export function applyFeedDelta(draws: Map<NodeId, SolidRecord>, delta: SolidDelt
     draws.set(entry.node.id, {
       committed: entry.node.pose,
       pose: entry.pose,
-      kind: entry.node.data.kind,
+      kind: entry.node.kind === 'group' ? null : entry.node.data.kind,
       color: entry.node.data.color,
     });
   }
 }
 
+/** Whether a gesture is moving `id` or any container above it. */
+function inFlight(scene: SolidScene, draws: ReadonlyMap<NodeId, SolidRecord>, id: NodeId): boolean {
+  for (let at: NodeId | null = id; at !== null; at = scene.get(at)?.parent ?? null) {
+    const draw = draws.get(at);
+    if (draw && draw.pose !== draw.committed) return true;
+  }
+  return false;
+}
+
 /**
- * The draw list for one frame: every solid at its committed pose, plus a ghost
- * for each one a gesture has moved.
+ * The draw list for one frame: every solid at its committed world pose, plus a
+ * ghost at the shown one for each solid a gesture has moved, itself or through
+ * a container. Records hold poses in container frames; the world poses come
+ * from the scene, folded through every container above.
  *
  * Selection is stamped on here rather than stored in the record because it
  * moves on its own clock, and a ghost never carries it — the chrome tracks the
  * committed solid.
  */
 export function solidsToDraw(
+  scene: SolidScene,
   draws: ReadonlyMap<NodeId, SolidRecord>,
   selected: ReadonlySet<NodeId>,
 ): SolidDraw[] {
   const solids: SolidDraw[] = [];
   const ghosts: SolidDraw[] = [];
+  const document = documentOf(scene);
   for (const [id, draw] of draws) {
+    if (draw.kind === null) continue;
+    const shown = worldPoseOf(scene, id);
+    if (shown === undefined) continue;
+    const moving = inFlight(scene, draws, id);
     solids.push({
-      pose: draw.committed,
+      pose: moving ? worldPoseOf(document, id)! : shown,
       kind: draw.kind,
       color: draw.color,
       selected: selected.has(id),
     });
-    if (draw.pose !== draw.committed) {
-      ghosts.push({ pose: draw.pose, kind: draw.kind, color: draw.color, selected: false, ghost: true });
-    }
+    if (moving) ghosts.push({ pose: shown, kind: draw.kind, color: draw.color, selected: false, ghost: true });
   }
   return [...solids, ...ghosts];
 }

@@ -27,6 +27,7 @@ import {
   type Dispatcher,
   type NodeId,
   type Tool,
+  type WorldPoint,
 } from '@weasel-js/core';
 import { useKitSettings } from '@weasel-js/react';
 import { f } from '../../src/config';
@@ -189,7 +190,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         w: Math.round(css.w * frame.dpr),
         h: Math.round(css.h * frame.dpr),
       };
-      const solids = solidsToDraw(draws, new Set(selectionRef.current));
+      const solids = solidsToDraw(scene, draws, new Set(selectionRef.current));
 
       // The chrome is drawn here rather than in the DOM because the shared
       // buffer paints above the instrument, so anything inside the pane would
@@ -322,14 +323,14 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
 
   // ── Tools ──────────────────────────────────────────────────────────────
   const pickEvery = useCallback(
-    (worldX: number, worldY: number): string[] => {
-      const id = nodeAtPoint({ x: worldX, y: worldY });
+    (world: WorldPoint): string[] => {
+      const id = nodeAtPoint(world);
       return id ? [id] : [];
     },
     [nodeAtPoint],
   );
   const pickBest = useCallback(
-    (worldX: number, worldY: number): string | null => nodeAtPoint({ x: worldX, y: worldY }),
+    (world: WorldPoint): string | null => nodeAtPoint(world),
     [nodeAtPoint],
   );
 
