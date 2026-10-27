@@ -86,13 +86,16 @@ export function measureRuns(
   runs: readonly ResolvedRun[], tabSize: number, pool?: Entry[], into?: Entry[], shaper: TextShaper | null = null,
 ): Entry[] {
   const entries: Entry[] = into ?? [];
-  entries.length = 0;
+  // Written by index and cut to length once: `length = 0` drops the backing
+  // store, so pushing after it reallocated the list every call.
+  let n = 0;
   /** The entry the next one kerns against; none across a break, a tab, or a
    *  run with no metrics. */
   let prev: Entry | undefined;
   let srcIndex = 0;
 
-  runs.forEach((run, runIndex) => {
+  for (let runIndex = 0; runIndex < runs.length; runIndex++) {
+    const run = runs[runIndex];
     const resolved = resolveFontVariant(run.fontFamily, run.fontWeight, run.fontStyle);
     const metrics = metricsOf(resolved);
     if (!metrics) {
@@ -101,7 +104,7 @@ export function measureRuns(
       warnNoMetrics(run.fontFamily, run.fontWeight, run.fontStyle);
       srcIndex += run.srcMap?.length ?? run.text.length;
       prev = undefined;
-      return;
+      continue;
     }
     const runBase = srcIndex;
     const map = run.srcMap;
@@ -112,9 +115,11 @@ export function measureRuns(
     /** The color glyph of the cluster being walked, when it has one. */
     let color: ResolvedGlyph | null = null;
     let at = 0;
+    const text = run.text;
 
-    for (const ch of run.text) {
-      const cp = ch.codePointAt(0)!;
+    while (at < text.length) {
+      const cp = text.codePointAt(at)!;
+      const len = cp > 0xffff ? 2 : 1;
       const slot = shaped?.[at];
       const fontSize = run.sizeMap ? run.sizeMap[at] : run.fontSize;
       if (at === clusterStart) {
@@ -122,7 +127,7 @@ export function measureRuns(
           resolved, run.fontFamily, run.fontWeight, run.fontStyle, run.text.slice(at, clusterEnds[cluster]),
         );
       }
-      const clusterEnd = at + ch.length === clusterEnds[cluster];
+      const clusterEnd = at + len === clusterEnds[cluster];
       if (clusterEnd) clusterStart = clusterEnds[cluster++];
       // World units, deliberately not scaled by fontSize: the same tracking
       // opens the same gap whatever size the run is set at.
@@ -130,34 +135,34 @@ export function measureRuns(
       // A transformed run draws characters its source does not have; each
       // takes the source span of the character it was mapped from.
       const srcStart = map ? runBase + map.starts[at] : runBase + at;
-      const srcEnd = map ? runBase + map.ends[at] : runBase + at + ch.length;
-      at += ch.length;
+      const srcEnd = map ? runBase + map.ends[at] : runBase + at + len;
+      at += len;
       srcIndex = map ? runBase + map.length : srcEnd;
 
-      const mark = NONSPACING_MARK.test(ch);
+      const mark = isNonspacingMark(cp);
       const kerningBefore = prev && !mark
         ? prev.metrics.kernOf(prev.cp, cp) * (prev.fontSize / prev.metrics.size)
         : 0;
       // A slot with nothing in it: no glyph, no width, and none of the
       // tracking or kerning a width would carry. Filled in place when it inks.
       const blank = blankEntry(
-        pool, entries.length, runIndex, cp, fontSize, Math.max(run.fontSize, run.strutSize ?? 0),
+        pool, n, runIndex, cp, fontSize, Math.max(run.fontSize, run.strutSize ?? 0),
         // Optional on the authored run type; absent, every y would go NaN.
         run.baselineShift ?? 0, run.rotate ?? 0, srcStart, srcEnd, clusterEnd, resolved, metrics,
       );
 
       if (color) {
-        entries.push(clusterEnd ? ink(blank, color, 0, tracking) : blank);
+        entries[n++] = clusterEnd ? ink(blank, color, 0, tracking) : blank;
         prev = undefined;
       } else if (isHardLineBreak(cp)) {
-        entries.push(blank);
+        entries[n++] = blank;
         prev = undefined;
       } else if (cp === 9 || cp === 32) {
         // A face with no space still gets one wide enough to part words.
         const space = metrics.advanceOf(32);
         const advance = space !== null ? space * (fontSize / metrics.size) : fontSize * 0.25;
         if (cp === 9) {
-          entries.push({ ...blank, tab: { stop: tabSize * (advance + run.letterSpacing), min: advance / 2 } });
+          entries[n++] = { ...blank, tab: { stop: tabSize * (advance + run.letterSpacing), min: advance / 2 } };
           prev = undefined;
         } else {
           // Its record in the run's own tier, for an atlas that draws one. It
@@ -169,20 +174,26 @@ export function measureRuns(
           blank.tracking = tracking;
           blank.kerningBefore = kerningBefore;
           prev = blank;
-          entries.push(prev);
+          entries[n++] = prev;
         }
       } else if (slot !== undefined) {
-        entries.push(shape(blank, slot, tracking));
+        entries[n++] = shape(blank, slot, tracking);
         prev = undefined;
       } else {
         const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp, true, HIT);
         const entry = hit ? ink(blank, hit, kerningBefore, tracking) : blank;
-        entries.push(entry);
+        entries[n++] = entry;
         if (!mark) prev = entry;
       }
     }
-  });
+  }
+  entries.length = n;
   return entries;
+}
+
+/** No nonspacing mark sits below U+0300, so Latin text builds no string to ask. */
+function isNonspacingMark(cp: number): boolean {
+  return cp >= 0x300 && NONSPACING_MARK.test(String.fromCodePoint(cp));
 }
 
 /** The cluster ends of the run being measured, refilled for each. */

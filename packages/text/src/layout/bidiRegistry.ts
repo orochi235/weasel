@@ -78,8 +78,10 @@ const RTL_BLOCK_NEUTRALS: ReadonlyArray<readonly [number, number]> = [
   [0x060c, 0x060c], [0xfd3e, 0xfd3f], [0xfeff, 0xfeff],
 ];
 
-const within =(ranges: ReadonlyArray<readonly [number, number]>, cp: number): boolean =>
-  ranges.some(([lo, hi]) => cp >= lo && cp <= hi);
+function within(ranges: ReadonlyArray<readonly [number, number]>, cp: number): boolean {
+  for (let i = 0; i < ranges.length; i++) if (cp >= ranges[i][0] && cp <= ranges[i][1]) return true;
+  return false;
+}
 
 let warnedLogicalRtl = false;
 
@@ -87,9 +89,10 @@ let warnedLogicalRtl = false;
  * Warn, once per process, when `codePoints` hold right-to-left letters and
  * there is no engine to reorder them.
  */
-export function warnRtlWithoutEngine(codePoints: Iterable<number>): void {
+export function warnRtlWithoutEngine(codePoints: ArrayLike<number>): void {
   if (warnedLogicalRtl) return;
-  for (const cp of codePoints) {
+  for (let i = 0; i < codePoints.length; i++) {
+    const cp = codePoints[i];
     if (!within(RTL_BLOCKS, cp) || within(RTL_BLOCK_NUMBERS, cp) || within(RTL_BLOCK_NEUTRALS, cp)) continue;
     warnedLogicalRtl = true;
     console.warn(

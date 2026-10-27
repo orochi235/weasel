@@ -43,6 +43,22 @@ const isAlpha =(c: number): boolean => c === AL || c === HL;
 const isKorean = (c: number): boolean => c === JL || c === JV || c === JT || c === H2 || c === H3;
 const isIdeoLike = (c: number): boolean => c === ID || c === EB || c === EM;
 
+/** Per-unit columns of one {@link lineBreakOpportunities} call. */
+interface Scratch { cls: Uint8Array; ea: Uint8Array; pict: Uint8Array; cp: Int32Array; start: Int32Array }
+
+const newScratch = (n: number): Scratch => ({
+  cls: new Uint8Array(n), ea: new Uint8Array(n), pict: new Uint8Array(n), cp: new Int32Array(n), start: new Int32Array(n),
+});
+
+/** Code points past which a call builds its own columns rather than growing the shared ones for good. */
+const SCRATCH_MAX = 1 << 16;
+let shared = newScratch(64);
+
+function growScratch(n: number): Scratch {
+  if (shared.cls.length < n) shared = newScratch(Math.min(SCRATCH_MAX, Math.max(n, shared.cls.length * 2)));
+  return shared;
+}
+
 /**
  * For each position `0..cps.length`, whether a line may break before it:
  * {@link NO_BREAK}, {@link BREAK_ALLOWED} or {@link BREAK_MANDATORY}. Position
@@ -57,12 +73,11 @@ export function lineBreakOpportunities(cps: ArrayLike<number>): Uint8Array {
   out[n] = BREAK_MANDATORY;
 
   // LB9/LB10: collapse each base and the marks it carries into one unit.
-  const cls = new Uint8Array(n);
-  const ea = new Uint8Array(n);
-  const pict = new Uint8Array(n);
-  const cp = new Int32Array(n);
+  // Every slot below `units` is written before it is read, so stale scratch past it is never seen.
+  const scratch = n <= SCRATCH_MAX ? growScratch(n) : newScratch(n);
+  const { cls, ea, pict, cp } = scratch;
   /** Original index of each unit's first code point. */
-  const start = new Int32Array(n);
+  const start = scratch.start;
   let u = 0;
   for (let i = 0; i < n; i++) {
     const props = lineBreakPropsOf(cps[i]);

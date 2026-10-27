@@ -51,8 +51,11 @@ let cur = NONE;
 let sum: number[] = doubles(64);
 /** Indices of the tabs among `cur`, ascending. */
 const tabs: number[] = [];
-/** The lines a call broke, and every line object any call has made, reused by index. */
+/** The lines a call broke, and every line object any call has made, reused by
+ *  index. Lists here are written by index and cut to length once: `length = 0`
+ *  drops an array's backing store, so pushing after it reallocated every call. */
 const broken: Line[] = [];
+let brokenCount = 0;
 const linePool: Line[] = [];
 /** The most line objects the pool keeps. */
 const LINE_POOL_MAX = 64;
@@ -67,16 +70,15 @@ function tabbedWidth(start: number, end: number): number {
 }
 
 function pushSpan(start: number, end: number, wrapped: boolean): void {
-  const i = broken.length;
+  const i = brokenCount++;
   let line = linePool[i];
   if (line === undefined) {
     line = { start: 0, entries: [], width: 0.5, height: 0.5, ascent: 0.5, wrapped: false, srcEnd: 0, end: 0 };
     if (i < LINE_POOL_MAX) linePool[i] = line;
   }
   line.start = start; line.end = end; line.wrapped = wrapped;
-  line.entries.length = 0;
   line.width = 0; line.height = 0; line.ascent = 0; line.srcEnd = 0;
-  broken.push(line);
+  broken[i] = line;
 }
 
 /**
@@ -99,16 +101,18 @@ export function breakLines(
 ): Line[] {
   if (sum.length < entries.length + 1) sum = doubles(entries.length + 1);
   sum[0] = 0;
-  tabs.length = 0;
-  broken.length = 0;
+  let tabCount = 0;
+  brokenCount = 0;
   for (let k = 0; k < entries.length; k++) {
     const e = entries[k];
     sum[k + 1] = sum[k] + e.kerningBefore + e.advance + e.tracking;
-    if (e.tab) tabs.push(k);
+    if (e.tab) tabs[tabCount++] = k;
   }
+  tabs.length = tabCount;
   cur = entries;
-  wrapSpans(cps, maxWidth, tabs.length === 0 ? flatWidth : tabbedWidth, pushSpan);
+  wrapSpans(cps, maxWidth, tabCount === 0 ? flatWidth : tabbedWidth, pushSpan);
   cur = NONE;
+  broken.length = brokenCount;
 
   for (let i = 0; i < broken.length; i++) {
     const line = broken[i];
@@ -117,17 +121,20 @@ export function breakLines(
       line.height = brk.lineSize * lineHeight;
       line.ascent = aboveBaseline(brk, lineHeight);
       line.srcEnd = brk.srcIndex;
+      line.entries.length = 0;
       continue;
     }
+    const out = line.entries;
     for (let k = line.start; k < line.end; k++) {
       const e = entries[k];
       if (k === line.start) e.kerningBefore = 0;
       if (e.tab) e.advance = tabAdvance(line.width, e.tab.stop, e.tab.min);
-      line.entries.push(e);
+      out[k - line.start] = e;
       line.width += e.kerningBefore + e.advance + e.tracking;
       line.height = Math.max(line.height, e.lineSize * lineHeight);
       line.ascent = Math.max(line.ascent, aboveBaseline(e, lineHeight));
     }
+    out.length = line.end - line.start;
     line.srcEnd = entries[line.end - 1].srcEnd;
   }
   return broken;

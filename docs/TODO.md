@@ -1011,14 +1011,18 @@ only story runner in the repo.
   (msb-uai, 2026-10-27, down from 1,942; `tests/perf/hud-vs-dom.spec.ts`, README "What the HUD allocates"). A
   recycled layout now hands its line boxes, paintings and groups to the next one, and the 180 KB once charged to
   `dropRuns` was `Array.prototype.fill` in `LayoutColumns.recycle`. What is left, self KB a frame: `cachedCommands`
-  in the HUD (135); `layoutRuns` (111) and `breakLines` (77), neither of whose visible work should allocate
-  (`measureRuns` in `layoutEntries.ts` still walks runs with a `forEach` closure and text with `for...of`);
-  `resolveRuns` (69) and `resolveTextStyle` (56) building the command; `paintRunsInto` (49) and `groupFor` (37);
-  `resolveFontVariantInternal`'s result object (36; caching it per font entry would change result identity);
-  `graphemeEnds` (39). A run with Chromium's inlining off (`--js-flags=--no-turbo-inlining --no-maglev-inlining`)
-  shows where a function's allocation really sits. Main-thread time fell, with ranges apart in two of four cells,
-  from one run each. A still HUD drawn through `drawLayers` costs the main thread what the DOM does (README, "A
-  still HUD through `drawLayers`").
+  in the HUD (135); `layoutRuns` (111) and `breakLines` (77), whose avoidable allocation is now fixed (2026-10-27):
+  their lists, and `graphemeEnds`', were emptied with `length = 0`, which drops the backing store, and regrown by
+  `push` every call, and `measureRuns` walked runs with a `forEach` closure. In Node a 48-character readout's
+  `measureRuns` and `breakLines` now allocate nothing of their own, from about 2.4 KB and 1.3 KB a call; the browser re-measure
+  (`tests/perf/hud-vs-dom.spec.ts`) has not been run. `lineBreakOpportunities` still builds its result array and
+  three closures a wrapped call (about 0.6 KB at 48 characters); `resolveRuns` (69) and `resolveTextStyle` (56)
+  building the command; `paintRunsInto` (49) and `groupFor` (37); `resolveFontVariantInternal`'s result object
+  (36; caching it per font entry would change result identity); `graphemeEnds` (39), which still allocates per
+  cluster on its `Intl.Segmenter` path, taken by text with anything from U+0300 up. A run with Chromium's inlining
+  off (`--js-flags=--no-turbo-inlining --no-maglev-inlining`) shows where a function's allocation really sits.
+  Main-thread time fell, with ranges apart in two of four cells, from one run each. A still HUD drawn through
+  `drawLayers` costs the main thread what the DOM does (README, "A still HUD through `drawLayers`").
 
 - **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
