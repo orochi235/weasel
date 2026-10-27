@@ -53,16 +53,16 @@ export function ringPlan(rows: readonly number[], room: number): number[] {
   });
 }
 
-/** Rings in from `shape`, their middles `depths` in, each reading the way the outermost does. A ring that would fold
- *  lies on the last one that does not. */
-export function ringsOf(shape: TrackShape, depths: readonly number[]): SwatchRing[] {
-  const run = trackRun(shape);
+/** Rings in from `shape`, their middles `depths` in, each reading the way the outermost does, from its right end under
+ *  `'rtl'`. A ring that would fold lies on the last one that does not. */
+export function ringsOf(shape: TrackShape, depths: readonly number[], direction: 'ltr' | 'rtl' = 'ltr'): SwatchRing[] {
+  const run = trackRun(shape, 0, 1, { direction });
   const sign = inwardSign(shape, run);
   const side = run.flipped ? 'flipped' : 'path';
   const rings: SwatchRing[] = [];
   depths.forEach((depth, k) => {
     const moved = k === 0 ? shape : shiftTrack(shape, sign * depth);
-    rings.push(moved ? { shape: moved, run: k === 0 ? run : trackRun(moved, 0, 1, { side }) } : rings[k - 1]!);
+    rings.push(moved ? { shape: moved, run: k === 0 ? run : trackRun(moved, 0, 1, { side, direction }) } : rings[k - 1]!);
   });
   return rings;
 }

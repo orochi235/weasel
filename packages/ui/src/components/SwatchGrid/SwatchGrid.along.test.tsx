@@ -62,6 +62,16 @@ describe('SwatchGrid along a curve', () => {
     });
   }
 
+  test('right to left, every ring starts at its right end', () => {
+    render(<div dir="rtl"><SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise']} /></div>);
+    for (const [k, r] of [[0, 100], [1, 80]] as const) {
+      for (const el of ring(k)) expect(radius(el)).toBeCloseTo(r, 2);
+      const xs = ring(k).map((el) => at(el).x);
+      expect(xs[0]!).toBeGreaterThan(xs[1]!);
+      expect(xs[1]!).toBeGreaterThan(xs[2]!);
+    }
+  });
+
   test('outside a curve it is the grid it always was', () => {
     render(<SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={lineShape({ x: 0, y: 0 }, { x: 100, y: 0 })} />);
     expect(document.querySelector('[data-ring]')).toBeNull();
