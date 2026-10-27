@@ -29,7 +29,9 @@ const box = (p: DerivedPart) => {
 const near = (...vs: number[]) => vs.map((v) => expect.closeTo(v, 5));
 const vertices = (p: DerivedPart) => {
   const out: { x: number; y: number }[] = [];
-  for (let i = 0; i < p.path.coords.length; i += 2) out.push({ x: p.path.coords[i]!, y: p.path.coords[i + 1]! });
+  if (p.path.kind !== 'polygon') throw new Error('a ribbon is a polygon');
+  const { coords } = p.path;
+  for (let i = 0; i < coords.length; i += 2) out.push({ x: coords[i]!, y: coords[i + 1]! });
   return out;
 };
 
