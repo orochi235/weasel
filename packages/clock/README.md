@@ -14,3 +14,25 @@ npm install @weasel-js/clock
 `createClock` and `createClockRegistry` are the root entry and need no React or
 DOM. `useClockLoop`, the one frame loop that syncs a registry's clocks, is in
 `@weasel-js/clock/react`.
+
+## Shown time
+
+A clock's shown time is `origin + elapsed`. `origin` (in `ClockSpec`) is where
+the run starts on the timeline; `elapsed` is how far it has moved since.
+`ClockHandle.declare` sets the time a caller wants shown and `override` replaces
+it for a while; a time declared onto a pass boundary reads as the end of the
+pass before it.
+
+`holdAt` pins a clock at a position. Its limit: a foreign seek to exactly the
+held, clamped value looks the same as the hold's own, so it does not release it.
+
+## Visibility
+
+A registry runs one frame loop for all its clocks. A clock is gated, meaning
+not advanced, only when all three hold:
+
+- it is not the registry's shared clock;
+- every registration of it gave a visibility target;
+- none of those targets is in view.
+
+A gated clock is rebased when it comes back, so it resumes without a jump.
