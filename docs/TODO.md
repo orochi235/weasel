@@ -289,8 +289,8 @@ Owner tags, after the priority (2026-10-26):
   `vitest-bench.json`. It did not run on 2026-10-21: onto's solo check (`soloBlock` in
   `~/src/onto/queuesolo.go`) counts studio's idle `brick-spot-render` service as a running job, so a
   `--solo` job never starts there.
-  The onto fix is on onto's `solo-ignores-idle-service` branch (d113785, 2026-10-26), unmerged; the re-record
-  waits on it merging and the binary being rebuilt.
+  The onto fix merged (onto bd536ed, 2026-10-27) and this machine's binary is rebuilt; the re-record waits on
+  the queue host's agent running the new binary (`soloBlock` runs in `queuehost.go`).
 
 ---
 
@@ -835,8 +835,8 @@ only story runner in the repo.
   with a test failing on purpose, job 401c89a8). This is onto's (`~/src/onto`), not this repo's. Until
   it changes, a browser test can print its own diagnosis with `console.log`, which does reach the log
   (`LabFit.browser.test.tsx` does).
-  Fixed on onto's `logs-both-streams` branch (2026-10-26), unmerged; retire it once that merges and the binary
-  is rebuilt and pushed to the nodes.
+  Fixed in onto (merged as bd536ed, 2026-10-27; this machine's binary rebuilt); retire it once the binary is
+  pushed to the nodes.
 
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
@@ -906,8 +906,8 @@ only story runner in the repo.
   retrying would rerun groups already finished. The fix reaches a machine when its `onto` binary
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
-  Fixed on onto's `spread-resync` branch (2026-10-26), unmerged; retire it once that merges and the binary
-  is rebuilt and pushed to the nodes.
+  Fixed in onto (merged as bd536ed, 2026-10-27; this machine's binary rebuilt); retire it once the binary is
+  pushed to the nodes.
 
 - **(P3) [agent] The overlap's jsdom worker count subtracts busy cores the reserve sweep never did.**
   `roomToOverlap` (`scripts/lib/node-load.mjs`) gives jsdom `floor(cores - busy) - reserve` workers, but
