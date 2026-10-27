@@ -1,0 +1,1076 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (tests/perf/vitest.bench.module-runner.config.ts:6:26). Use `import.meta.dirname` instead
+  - import "../../scripts/vite-aliases" without a file extension (tests/perf/vitest.bench.module-runner.config.ts:4:31). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+[90mstderr[2m | tests/perf/bench/animator-on-blits.bench.ts[2m > [22m[2mspring frame — 1000 nodes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"spring frame — 1000 nodes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/animator/src/engine/integrator.ts > stepSpring
+
+[90mstderr[2m | tests/perf/bench/animator-on-blits.bench.ts[2m > [22m[2mspring frame — 10000 nodes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"spring frame — 10000 nodes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/animator/src/engine/integrator.ts > stepSpring
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/animator-on-blits.bench.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 97963[2mms[22m[39m
+   [33m[2m✓[22m[39m tween churn — 1000 nodes[33m 1306[2mms[22m[39m
+     [1mname [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     today  [34m8,973.23[39m  [36m0.0972[39m  [36m3.0066[39m  [36m0.1174[39m  [36m0.1166[39m  [36m0.2809[39m  [36m0.3937[39m  [36m0.7979[39m  [2m±1.21%[22m  [2m   8522[22m
+   [33m[2m✓[22m[39m tween churn — 10000 nodes[33m 1407[2mms[22m[39m
+     [1mname [22m  [1m    hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     today  [34m749.13[39m  [36m1.1764[39m  [36m1.9827[39m  [36m1.3430[39m  [36m1.3740[39m  [36m1.8197[39m  [36m1.8820[39m  [36m1.9716[39m  [2m±0.61%[22m  [2m    745[22m
+   [33m[2m✓[22m[39m tween frame — 1000 nodes[33m 24125[2mms[22m[39m
+     [1mname                                             [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     blits, a tween voice per animation, pull, no sink  [34m32,272.44[39m  [36m0.0293[39m  [36m0.0657[39m  [36m0.0310[39m  [36m0.0309[39m  [36m0.0354[39m  [36m0.0383[39m  [36m0.0499[39m  [2m±0.05%[22m  [2m  32231[22m[1m[32m   fastest[39m[22m
+     blits, one tween voice, pull, no sink              [34m28,360.78[39m  [36m0.0328[39m  [36m0.3984[39m  [36m0.0353[39m  [36m0.0353[39m  [36m0.0401[39m  [36m0.0422[39m  [36m0.0542[39m  [2m±0.09%[22m  [2m  28302[22m
+     blits, a tween voice per animation, pull           [34m28,315.67[39m  [36m0.0344[39m  [36m0.5675[39m  [36m0.0358[39m  [36m0.0352[39m  [36m0.0429[39m  [36m0.0467[39m  [36m0.2613[39m  [2m±0.38%[22m  [2m  27901[22m
+     blits, one tween voice, pull                       [34m25,008.07[39m  [36m0.0370[39m  [36m0.5895[39m  [36m0.0406[39m  [36m0.0401[39m  [36m0.0484[39m  [36m0.0552[39m  [36m0.2902[39m  [2m±0.40%[22m  [2m  24631[22m
+     on targets, readInto                               [34m12,262.26[39m  [36m0.0757[39m  [36m0.2527[39m  [36m0.0817[39m  [36m0.0827[39m  [36m0.0909[39m  [36m0.0950[39m  [36m0.1385[39m  [2m±0.10%[22m  [2m  12236[22m
+     today, no sink                                     [34m11,271.33[39m  [36m0.0820[39m  [36m0.4285[39m  [36m0.0894[39m  [36m0.0891[39m  [36m0.0988[39m  [36m0.1156[39m  [36m0.3462[39m  [2m±0.29%[22m  [2m  11190[22m
+     today                                              [34m10,623.08[39m  [36m0.0868[39m  [36m0.5340[39m  [36m0.0948[39m  [36m0.0944[39m  [36m0.1077[39m  [36m0.1309[39m  [36m0.3598[39m  [2m±0.30%[22m  [2m  10544[22m
+     blits, a tween voice per animation                 [34m 9,209.04[39m  [36m0.1020[39m  [36m0.6903[39m  [36m0.1092[39m  [36m0.1107[39m  [36m0.1199[39m  [36m0.1257[39m  [36m0.4366[39m  [2m±0.29%[22m  [2m   9156[22m
+     blits, one tween voice                             [34m 8,947.40[39m  [36m0.1036[39m  [36m0.5926[39m  [36m0.1124[39m  [36m0.1126[39m  [36m0.1216[39m  [36m0.1275[39m  [36m0.4299[39m  [2m±0.29%[22m  [2m   8899[22m
+     on targets                                         [34m 8,835.06[39m  [36m0.0982[39m  [36m4.7894[39m  [36m0.1151[39m  [36m0.1170[39m  [36m0.1573[39m  [36m0.2344[39m  [36m0.4159[39m  [2m±1.00%[22m  [2m   8685[22m
+     blits, voice per animation (subjects)              [34m 7,279.50[39m  [36m0.1263[39m  [36m0.9575[39m  [36m0.1383[39m  [36m0.1395[39m  [36m0.1495[39m  [36m0.1638[39m  [36m0.4810[39m  [2m±0.37%[22m  [2m   7230[22m
+     blits, a tween voice per animation, lanes off      [34m 5,494.82[39m  [36m0.1776[39m  [36m0.6206[39m  [36m0.1827[39m  [36m0.1837[39m  [36m0.2016[39m  [36m0.2089[39m  [36m0.4667[39m  [2m±0.25%[22m  [2m   5475[22m
+     blits, one tween voice, lanes off                  [34m 5,354.69[39m  [36m0.1723[39m  [36m0.6529[39m  [36m0.1876[39m  [36m0.1891[39m  [36m0.2040[39m  [36m0.2143[39m  [36m0.5249[39m  [2m±0.28%[22m  [2m   5331[22m
+     blits, one voice, lanes off                        [34m 5,312.08[39m  [36m0.1740[39m  [36m0.7046[39m  [36m0.1899[39m  [36m0.1905[39m  [36m0.2121[39m  [36m0.4941[39m  [36m0.5672[39m  [2m±0.40%[22m  [2m   5268[22m
+     blits, one voice                                   [34m 5,308.74[39m  [36m0.1760[39m  [36m0.7244[39m  [36m0.1900[39m  [36m0.1908[39m  [36m0.2118[39m  [36m0.4947[39m  [36m0.5852[39m  [2m±0.41%[22m  [2m   5263[22m
+     blits, one voice, pull, no sink                    [34m 5,246.48[39m  [36m0.1779[39m  [36m0.6586[39m  [36m0.1916[39m  [36m0.1909[39m  [36m0.2115[39m  [36m0.2244[39m  [36m0.5370[39m  [2m±0.30%[22m  [2m   5221[22m
+     blits, one voice, pull                             [34m 5,015.52[39m  [36m0.1838[39m  [36m0.7846[39m  [36m0.2010[39m  [36m0.2030[39m  [36m0.2261[39m  [36m0.5060[39m  [36m0.5847[39m  [2m±0.40%[22m  [2m   4975[22m
+     blits, voice per animation (subjects), lanes off   [34m 4,680.21[39m  [36m0.1965[39m  [36m1.0766[39m  [36m0.2150[39m  [36m0.2166[39m  [36m0.2484[39m  [36m0.2991[39m  [36m0.5861[39m  [2m±0.37%[22m  [2m   4651[22m
+     blits, voice per animation (target)                [34m 4,010.13[39m  [36m0.2265[39m  [36m1.5159[39m  [36m0.2512[39m  [36m0.2518[39m  [36m0.3200[39m  [36m0.4060[39m  [36m0.6236[39m  [2m±0.42%[22m  [2m   3981[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring frame — 1000 nodes[33m 15206[2mms[22m[39m
+     [1mname                                              [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     blits, a spring voice per animation, pull, no sink  [34m13,873.17[39m  [36m0.0702[39m  [36m0.4742[39m  [36m0.0722[39m  [36m0.0718[39m  [36m0.0793[39m  [36m0.0818[39m  [36m0.0956[39m  [2m±0.16%[22m  [2m  13843[22m[1m[32m   fastest[39m[22m
+     blits, a spring voice per animation, pull           [34m12,885.59[39m  [36m0.0755[39m  [36m0.5252[39m  [36m0.0784[39m  [36m0.0785[39m  [36m0.0910[39m  [36m0.0994[39m  [36m0.3840[39m  [2m±0.35%[22m  [2m  12763[22m
+     blits, one voice, pull, no sink                     [34m11,598.73[39m  [36m0.0840[39m  [36m0.5030[39m  [36m0.0864[39m  [36m0.0860[39m  [36m0.0951[39m  [36m0.0999[39m  [36m0.1139[39m  [2m±0.16%[22m  [2m  11576[22m
+     blits, one voice, pull                              [34m10,867.74[39m  [36m0.0888[39m  [36m0.4656[39m  [36m0.0927[39m  [36m0.0930[39m  [36m0.1079[39m  [36m0.1142[39m  [36m0.3977[39m  [2m±0.31%[22m  [2m  10788[22m
+     today                                               [34m 9,545.73[39m  [36m0.1012[39m  [36m0.5156[39m  [36m0.1058[39m  [36m0.1057[39m  [36m0.1226[39m  [36m0.1432[39m  [36m0.4395[39m  [2m±0.37%[22m  [2m   9456[22m
+     blits, a spring voice per animation                 [34m 6,813.20[39m  [36m0.1425[39m  [36m0.5694[39m  [36m0.1475[39m  [36m0.1484[39m  [36m0.1658[39m  [36m0.1748[39m  [36m0.4779[39m  [2m±0.28%[22m  [2m   6780[22m
+     blits, voice per animation (subjects)               [34m 6,796.53[39m  [36m0.1424[39m  [36m0.5717[39m  [36m0.1479[39m  [36m0.1490[39m  [36m0.1672[39m  [36m0.1739[39m  [36m0.4843[39m  [2m±0.28%[22m  [2m   6763[22m
+     blits, one voice                                    [34m 6,147.31[39m  [36m0.1576[39m  [36m0.5979[39m  [36m0.1633[39m  [36m0.1647[39m  [36m0.1817[39m  [36m0.1878[39m  [36m0.4563[39m  [2m±0.25%[22m  [2m   6125[22m
+     blits, voice per animation (target)                 [34m 5,067.20[39m  [36m0.1937[39m  [36m0.5873[39m  [36m0.1979[39m  [36m0.1970[39m  [36m0.2198[39m  [36m0.2274[39m  [36m0.4588[39m  [2m±0.21%[22m  [2m   5054[22m
+     blits, one voice, lanes off                         [34m 4,840.42[39m  [36m0.2006[39m  [36m0.6693[39m  [36m0.2072[39m  [36m0.2068[39m  [36m0.2272[39m  [36m0.2336[39m  [36m0.4793[39m  [2m±0.24%[22m  [2m   4826[22m
+     blits, voice per animation (subjects), lanes off    [34m 4,684.55[39m  [36m0.2096[39m  [36m0.6840[39m  [36m0.2142[39m  [36m0.2124[39m  [36m0.2382[39m  [36m0.2509[39m  [36m0.5330[39m  [2m±0.26%[22m  [2m   4668[22m
+     blits, a spring voice per animation, lanes off      [34m 4,645.69[39m  [36m0.2104[39m  [36m0.6437[39m  [36m0.2161[39m  [36m0.2150[39m  [36m0.2445[39m  [36m0.2889[39m  [36m0.5296[39m  [2m±0.27%[22m  [2m   4629[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tween frame — 10000 nodes[33m 23957[2mms[22m[39m
+     [1mname                                             [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     blits, a tween voice per animation, pull, no sink  [34m3,498.07[39m  [36m0.2824[39m  [36m0.4921[39m  [36m0.2860[39m  [36m0.2847[39m  [36m0.3162[39m  [36m0.3244[39m  [36m0.3396[39m  [2m±0.08%[22m  [2m   3497[22m[1m[32m   fastest[39m[22m
+     blits, one tween voice, pull, no sink              [34m3,165.06[39m  [36m0.3123[39m  [36m0.3996[39m  [36m0.3161[39m  [36m0.3146[39m  [36m0.3514[39m  [36m0.3602[39m  [36m0.3706[39m  [2m±0.07%[22m  [2m   3164[22m
+     blits, a tween voice per animation, pull           [34m2,868.36[39m  [36m0.3331[39m  [36m1.2535[39m  [36m0.3580[39m  [36m0.3475[39m  [36m0.9086[39m  [36m1.0382[39m  [36m1.1805[39m  [2m±0.97%[22m  [2m   2794[22m
+     blits, one tween voice, pull                       [34m2,637.51[39m  [36m0.3631[39m  [36m1.2484[39m  [36m0.3882[39m  [36m0.3790[39m  [36m0.9480[39m  [36m1.0672[39m  [36m1.2060[39m  [2m±0.93%[22m  [2m   2577[22m
+     today, no sink                                     [34m  953.94[39m  [36m1.0146[39m  [36m1.8481[39m  [36m1.0534[39m  [36m1.0412[39m  [36m1.4857[39m  [36m1.5919[39m  [36m1.7141[39m  [2m±0.53%[22m  [2m    950[22m
+     blits, a tween voice per animation                 [34m  888.64[39m  [36m1.0592[39m  [36m2.1265[39m  [36m1.1352[39m  [36m1.1447[39m  [36m1.7560[39m  [36m1.9349[39m  [36m2.1111[39m  [2m±0.74%[22m  [2m    881[22m
+     today                                              [34m  878.59[39m  [36m1.0850[39m  [36m1.9984[39m  [36m1.1470[39m  [36m1.1425[39m  [36m1.8469[39m  [36m1.8995[39m  [36m1.9852[39m  [2m±0.72%[22m  [2m    872[22m
+     blits, one tween voice                             [34m  873.50[39m  [36m1.0766[39m  [36m2.1248[39m  [36m1.1559[39m  [36m1.1665[39m  [36m1.9467[39m  [36m1.9978[39m  [36m2.0846[39m  [2m±0.78%[22m  [2m    866[22m
+     blits, voice per animation (subjects)              [34m  713.93[39m  [36m1.3158[39m  [36m2.4665[39m  [36m1.4122[39m  [36m1.4391[39m  [36m2.1301[39m  [36m2.3071[39m  [36m2.4515[39m  [2m±0.78%[22m  [2m    709[22m
+     on targets, readInto                               [34m  562.48[39m  [36m1.7081[39m  [36m2.2110[39m  [36m1.7810[39m  [36m1.8039[39m  [36m2.0667[39m  [36m2.1073[39m  [36m2.2025[39m  [2m±0.36%[22m  [2m    562[22m
+     blits, one voice, pull, no sink                    [34m  521.56[39m  [36m1.8510[39m  [36m3.3166[39m  [36m1.9279[39m  [36m1.8966[39m  [36m2.6522[39m  [36m2.7784[39m  [36m3.0687[39m  [2m±0.74%[22m  [2m    519[22m
+     blits, one voice, lanes off                        [34m  506.28[39m  [36m1.8749[39m  [36m3.0227[39m  [36m1.9922[39m  [36m1.9769[39m  [36m2.8563[39m  [36m2.9243[39m  [36m3.0182[39m  [2m±0.93%[22m  [2m    502[22m
+     blits, one tween voice, lanes off                  [34m  499.74[39m  [36m1.9395[39m  [36m2.9354[39m  [36m2.0097[39m  [36m1.9855[39m  [36m2.7973[39m  [36m2.8432[39m  [36m2.9308[39m  [2m±0.65%[22m  [2m    498[22m
+     blits, one voice, pull                             [34m  493.41[39m  [36m1.9151[39m  [36m3.3003[39m  [36m2.0455[39m  [36m2.0509[39m  [36m3.0383[39m  [36m3.1002[39m  [36m3.2614[39m  [2m±0.98%[22m  [2m    489[22m
+     blits, one voice                                   [34m  485.11[39m  [36m1.9202[39m  [36m3.3764[39m  [36m2.0817[39m  [36m2.0910[39m  [36m3.1659[39m  [36m3.2407[39m  [36m3.3302[39m  [2m±1.02%[22m  [2m    481[22m
+     on targets                                         [34m  418.82[39m  [36m2.3157[39m  [36m4.1940[39m  [36m2.3917[39m  [36m2.4154[39m  [36m2.6325[39m  [36m2.7096[39m  [36m3.6726[39m  [2m±0.46%[22m  [2m    419[22m
+     blits, voice per animation (subjects), lanes off   [34m  377.76[39m  [36m2.5565[39m  [36m3.8392[39m  [36m2.6592[39m  [36m2.6211[39m  [36m3.5767[39m  [36m3.6072[39m  [36m3.7554[39m  [2m±0.77%[22m  [2m    377[22m
+     blits, a tween voice per animation, lanes off      [34m  276.58[39m  [36m3.5057[39m  [36m5.3666[39m  [36m3.6323[39m  [36m3.5683[39m  [36m4.9918[39m  [36m5.2453[39m  [36m5.3445[39m  [2m±0.91%[22m  [2m    276[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring frame — 10000 nodes[33m 14524[2mms[22m[39m
+     [1mname                                              [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     blits, a spring voice per animation, pull, no sink  [34m1,424.12[39m  [36m0.6933[39m  [36m1.5726[39m  [36m0.7041[39m  [36m0.7008[39m  [36m0.7531[39m  [36m0.8295[39m  [36m1.4659[39m  [2m±0.38%[22m  [2m   1421[22m[1m[32m   fastest[39m[22m
+     blits, a spring voice per animation, pull           [34m1,276.70[39m  [36m0.7471[39m  [36m1.9422[39m  [36m0.7946[39m  [36m0.7839[39m  [36m1.5578[39m  [36m1.7005[39m  [36m1.8559[39m  [2m±0.90%[22m  [2m   1259[22m
+     blits, one voice, pull, no sink                     [34m1,190.86[39m  [36m0.8249[39m  [36m1.8428[39m  [36m0.8420[39m  [36m0.8389[39m  [36m0.8945[39m  [36m1.0055[39m  [36m1.7611[39m  [2m±0.42%[22m  [2m   1188[22m
+     blits, one voice, pull                              [34m1,089.53[39m  [36m0.8783[39m  [36m2.0603[39m  [36m0.9288[39m  [36m0.9178[39m  [36m1.7616[39m  [36m1.8568[39m  [36m2.0471[39m  [2m±0.87%[22m  [2m   1077[22m
+     today                                               [34m  840.33[39m  [36m1.1448[39m  [36m2.4194[39m  [36m1.2045[39m  [36m1.1769[39m  [36m2.0945[39m  [36m2.1642[39m  [36m2.3204[39m  [2m±0.96%[22m  [2m    831[22m
+     blits, a spring voice per animation                 [34m  625.01[39m  [36m1.4994[39m  [36m2.7494[39m  [36m1.6136[39m  [36m1.6523[39m  [36m2.5707[39m  [36m2.6702[39m  [36m2.7490[39m  [2m±0.85%[22m  [2m    620[22m
+     blits, voice per animation (subjects)               [34m  622.22[39m  [36m1.5047[39m  [36m2.9556[39m  [36m1.6213[39m  [36m1.6704[39m  [36m2.5112[39m  [36m2.6892[39m  [36m2.8914[39m  [2m±0.86%[22m  [2m    617[22m
+     blits, one voice                                    [34m  581.30[39m  [36m1.6137[39m  [36m3.1100[39m  [36m1.7369[39m  [36m1.7588[39m  [36m2.7890[39m  [36m2.9103[39m  [36m3.0853[39m  [2m±0.94%[22m  [2m    576[22m
+     blits, one voice, lanes off                         [34m  467.34[39m  [36m2.0846[39m  [36m3.0538[39m  [36m2.1481[39m  [36m2.1222[39m  [36m2.9281[39m  [36m3.0305[39m  [36m3.0465[39m  [2m±0.65%[22m  [2m    466[22m
+     blits, voice per animation (subjects), lanes off    [34m  353.95[39m  [36m2.7446[39m  [36m3.8747[39m  [36m2.8362[39m  [36m2.7970[39m  [36m3.8441[39m  [36m3.8533[39m  [36m3.8678[39m  [2m±0.74%[22m  [2m    353[22m
+     blits, a spring voice per animation, lanes off      [34m  329.71[39m  [36m2.8945[39m  [36m4.2848[39m  [36m3.0458[39m  [36m3.0974[39m  [36m4.0334[39m  [36m4.1660[39m  [36m4.2594[39m  [2m±0.79%[22m  [2m    329[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tween start + first frame — 100 nodes[33m 1572[2mms[22m[39m
+     [1mname                                 [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m     rme[22m  [1msamples[22m
+     blits, one voice                       [34m14,341.89[39m  [36m0.0600[39m  [36m0.1045[39m  [36m0.0719[39m  [36m0.0738[39m  [36m0.1027[39m  [36m0.1036[39m  [36m0.1043[39m  [2m ±17.21%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, one tween voice                 [34m 8,306.93[39m  [36m0.1073[39m  [36m0.1540[39m  [36m0.1220[39m  [36m0.1247[39m  [36m0.1528[39m  [36m0.1534[39m  [36m0.1538[39m  [2m ±10.86%[22m  [2m      8[22m
+     blits, a tween voice per animation     [34m 3,828.32[39m  [36m0.2478[39m  [36m0.2903[39m  [36m0.2617[39m  [36m0.2643[39m  [36m0.2886[39m  [36m0.2895[39m  [36m0.2901[39m  [2m  ±4.14%[22m  [2m      8[22m
+     today                                  [34m 1,313.35[39m  [36m0.6894[39m  [36m1.3193[39m  [36m0.7939[39m  [36m0.7531[39m  [36m1.2801[39m  [36m1.2997[39m  [36m1.3154[39m  [2m ±22.50%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m 2,926.91[39m  [36m0.2826[39m  [36m4.2563[39m  [36m0.7972[39m  [36m0.3221[39m  [36m3.9822[39m  [36m4.1192[39m  [36m4.2289[39m  [2m±146.59%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m 1,022.55[39m  [36m0.9395[39m  [36m1.0829[39m  [36m0.9800[39m  [36m0.9902[39m  [36m1.0789[39m  [36m1.0809[39m  [36m1.0825[39m  [2m  ±4.24%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring start + first frame — 100 nodes[33m 1379[2mms[22m[39m
+     [1mname                                 [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m    rme[22m  [1msamples[22m
+     today                                  [34m2,511.07[39m  [36m0.3474[39m  [36m0.7587[39m  [36m0.4228[39m  [36m0.4001[39m  [36m0.7356[39m  [36m0.7472[39m  [36m0.7564[39m  [2m±27.38%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, one voice                       [34m1,516.69[39m  [36m0.5801[39m  [36m0.7283[39m  [36m0.6623[39m  [36m0.6903[39m  [36m0.7269[39m  [36m0.7276[39m  [36m0.7282[39m  [2m ±5.88%[22m  [2m      8[22m
+     blits, a spring voice per animation    [34m  371.71[39m  [36m2.3724[39m  [36m2.9078[39m  [36m2.7010[39m  [36m2.8561[39m  [36m2.9047[39m  [36m2.9063[39m  [36m2.9075[39m  [2m ±5.51%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m  368.89[39m  [36m2.3067[39m  [36m3.1252[39m  [36m2.7467[39m  [36m3.0734[39m  [36m3.1243[39m  [36m3.1247[39m  [36m3.1251[39m  [2m±10.17%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m  134.04[39m  [36m6.9215[39m  [36m9.1497[39m  [36m7.5164[39m  [36m7.5609[39m  [36m9.0675[39m  [36m9.1086[39m  [36m9.1415[39m  [2m ±8.20%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tween start + first frame — 300 nodes[33m 1686[2mms[22m[39m
+     [1mname                                 [22m  [1m      hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m   p999[22m  [1m     rme[22m  [1msamples[22m
+     blits, one voice                       [34m6,108.79[39m  [36m0.1432[39m  [36m 0.2095[39m  [36m0.1658[39m  [36m0.1720[39m  [36m0.2075[39m  [36m0.2085[39m  [36m 0.2093[39m  [2m ±10.62%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, a tween voice per animation     [34m1,391.98[39m  [36m0.7048[39m  [36m 0.7454[39m  [36m0.7186[39m  [36m0.7231[39m  [36m0.7445[39m  [36m0.7449[39m  [36m 0.7453[39m  [2m  ±1.62%[22m  [2m      8[22m
+     blits, one tween voice                 [34m2,703.84[39m  [36m0.2837[39m  [36m 4.9768[39m  [36m0.9153[39m  [36m0.3942[39m  [36m4.6608[39m  [36m4.8188[39m  [36m 4.9452[39m  [2m±150.00%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m1,100.09[39m  [36m0.7943[39m  [36m 5.4104[39m  [36m1.3878[39m  [36m0.8272[39m  [36m5.0928[39m  [36m5.2516[39m  [36m 5.3787[39m  [2m ±97.92%[22m  [2m      8[22m
+     today                                  [34m  608.35[39m  [36m1.5596[39m  [36m 2.1926[39m  [36m1.6634[39m  [36m1.6232[39m  [36m2.1557[39m  [36m2.1742[39m  [36m 2.1889[39m  [2m ±10.89%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m  155.99[39m  [36m6.0001[39m  [36m10.1191[39m  [36m6.5961[39m  [36m6.1706[39m  [36m9.8482[39m  [36m9.9836[39m  [36m10.0920[39m  [2m ±18.07%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring start + first frame — 300 nodes[33m 1356[2mms[22m[39m
+     [1mname                                 [22m  [1m      hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m     rme[22m  [1msamples[22m
+     today                                  [34m2,199.00[39m  [36m0.4033[39m  [36m 0.7720[39m  [36m0.4739[39m  [36m0.4579[39m  [36m 0.7526[39m  [36m 0.7623[39m  [36m 0.7701[39m  [2m ±21.85%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, a spring voice per animation    [34m1,339.21[39m  [36m0.7155[39m  [36m 0.8402[39m  [36m0.7491[39m  [36m0.7498[39m  [36m 0.8377[39m  [36m 0.8390[39m  [36m 0.8400[39m  [2m  ±5.17%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m1,337.10[39m  [36m0.7163[39m  [36m 0.8720[39m  [36m0.7505[39m  [36m0.7462[39m  [36m 0.8634[39m  [36m 0.8677[39m  [36m 0.8712[39m  [2m  ±5.60%[22m  [2m      8[22m
+     blits, one voice                       [34m2,862.56[39m  [36m0.2937[39m  [36m 4.2985[39m  [36m0.8080[39m  [36m0.3228[39m  [36m 4.0204[39m  [36m 4.1594[39m  [36m 4.2707[39m  [2m±145.94%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m  156.09[39m  [36m5.9639[39m  [36m10.3343[39m  [36m6.6119[39m  [36m6.2156[39m  [36m10.0606[39m  [36m10.1974[39m  [36m10.3069[39m  [2m ±19.11%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tween start + first frame — 1000 nodes[33m 2547[2mms[22m[39m
+     [1mname                                 [22m  [1m      hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m     rme[22m  [1msamples[22m
+     blits, one tween voice                 [34m1,101.62[39m  [36m 0.8792[39m  [36m 0.9813[39m  [36m 0.9087[39m  [36m 0.9114[39m  [36m 0.9772[39m  [36m 0.9793[39m  [36m 0.9809[39m  [2m  ±2.98%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, one voice                       [34m1,888.15[39m  [36m 0.4183[39m  [36m 4.3101[39m  [36m 0.9601[39m  [36m 0.5899[39m  [36m 4.0523[39m  [36m 4.1812[39m  [36m 4.2843[39m  [2m±118.06%[22m  [2m      8[22m
+     blits, a tween voice per animation     [34m  353.17[39m  [36m 2.3169[39m  [36m 6.1475[39m  [36m 3.2918[39m  [36m 3.3242[39m  [36m 6.1160[39m  [36m 6.1317[39m  [36m 6.1444[39m  [2m ±41.38%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m  298.12[39m  [36m 2.7315[39m  [36m 6.6865[39m  [36m 3.8194[39m  [36m 3.9304[39m  [36m 6.6777[39m  [36m 6.6821[39m  [36m 6.6856[39m  [2m ±37.96%[22m  [2m      8[22m
+     today                                  [34m 61.0574[39m  [36m 6.2622[39m  [36m41.7550[39m  [36m26.3130[39m  [36m34.9685[39m  [36m41.3482[39m  [36m41.5516[39m  [36m41.7144[39m  [2m ±41.40%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m 15.1188[39m  [36m62.2239[39m  [36m71.5668[39m  [36m66.2998[39m  [36m68.3275[39m  [36m71.4801[39m  [36m71.5234[39m  [36m71.5582[39m  [2m  ±4.38%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring start + first frame — 1000 nodes[33m 2124[2mms[22m[39m
+     [1mname                                 [22m  [1m     hz[22m  [1m    min[22m  [1m   max[22m  [1m   mean[22m  [1m    p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m    rme[22m  [1msamples[22m
+     blits, one voice                       [34m 931.19[39m  [36m 0.8958[39m  [36m6.0558[39m  [36m 1.6039[39m  [36m 1.0815[39m  [36m5.7111[39m  [36m5.8834[39m  [36m6.0213[39m  [2m±93.87%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     today                                  [34m 746.00[39m  [36m 1.1243[39m  [36m4.7027[39m  [36m 1.6649[39m  [36m 1.3855[39m  [36m4.4814[39m  [36m4.5920[39m  [36m4.6805[39m  [2m±62.06%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m 333.21[39m  [36m 2.4715[39m  [36m5.8198[39m  [36m 3.3645[39m  [36m 3.5439[39m  [36m5.7952[39m  [36m5.8075[39m  [36m5.8174[39m  [2m±35.21%[22m  [2m      8[22m
+     blits, a spring voice per animation    [34m 342.91[39m  [36m 2.4303[39m  [36m6.3802[39m  [36m 3.3891[39m  [36m 3.4350[39m  [36m6.3403[39m  [36m6.3602[39m  [36m6.3762[39m  [2m±41.41%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m14.2804[39m  [36m59.8767[39m  [36m271.10[39m  [36m89.4208[39m  [36m67.3490[39m  [36m256.99[39m  [36m264.04[39m  [36m269.69[39m  [2m±68.69%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tween start + first frame — 10000 nodes[33m 3902[2mms[22m[39m
+     [1mname                                 [22m  [1m     hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m    rme[22m  [1msamples[22m
+     blits, one voice                       [34m 111.27[39m  [36m 5.0757[39m  [36m25.2965[39m  [36m11.2547[39m  [36m11.2259[39m  [36m24.3151[39m  [36m24.8058[39m  [36m25.1983[39m  [2m±46.49%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, one tween voice                 [34m46.7774[39m  [36m19.4640[39m  [36m22.5367[39m  [36m21.4450[39m  [36m22.1750[39m  [36m22.5240[39m  [36m22.5303[39m  [36m22.5354[39m  [2m ±4.86%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m20.8133[39m  [36m41.1034[39m  [36m62.8845[39m  [36m48.9215[39m  [36m52.6242[39m  [36m62.2103[39m  [36m62.5474[39m  [36m62.8170[39m  [2m±12.43%[22m  [2m      8[22m
+     blits, a tween voice per animation     [34m16.7910[39m  [36m43.2194[39m  [36m 244.64[39m  [36m84.3275[39m  [36m79.5144[39m  [36m 236.54[39m  [36m 240.59[39m  [36m 243.83[39m  [2m±70.19%[22m  [2m      8[22m
+     today                                  [34m11.0260[39m  [36m73.9557[39m  [36m 335.99[39m  [36m 116.00[39m  [36m94.8207[39m  [36m 321.22[39m  [36m 328.60[39m  [36m 334.51[39m  [2m±65.20%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring start + first frame — 10000 nodes[33m 2869[2mms[22m[39m
+     [1mname                                 [22m  [1m     hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m    rme[22m  [1msamples[22m
+     blits, one voice                       [34m75.9119[39m  [36m10.7488[39m  [36m26.5401[39m  [36m14.3865[39m  [36m15.0423[39m  [36m25.8646[39m  [36m26.2024[39m  [36m26.4725[39m  [2m±31.42%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     today                                  [34m67.2493[39m  [36m12.1499[39m  [36m17.8065[39m  [36m15.2015[39m  [36m17.0731[39m  [36m17.7671[39m  [36m17.7868[39m  [36m17.8025[39m  [2m±12.84%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m19.7601[39m  [36m40.9540[39m  [36m 270.77[39m  [36m73.6802[39m  [36m48.7693[39m  [36m 255.36[39m  [36m 263.06[39m  [36m 269.23[39m  [2m±90.42%[22m  [2m      8[22m
+     blits, a spring voice per animation    [34m15.9137[39m  [36m43.9961[39m  [36m 181.49[39m  [36m84.9937[39m  [36m 121.91[39m  [36m 179.27[39m  [36m 180.38[39m  [36m 181.27[39m  [2m±54.43%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mhitTestArea — rect poses, node count (25% query rect)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea — rect poses, node count (25% query rect)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+  - packages/geom/src/bvh/bvhTree.ts > LEAF_SIZE
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mhitTestArea — rect poses, query-rect size (1000 nodes)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea — rect poses, query-rect size (1000 nodes)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mhitTestArea — 24-gon silhouettes, node count (25% query rect)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea — 24-gon silhouettes, node count (25% query rect)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/canvas/NodeShape.ts > findShapeInk
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mhitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/geom/src/polyline.ts > pointInPolygon
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/core/src/canvas/NodeShape.ts > findShapeInk
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2maabbOfPose — the per-node fast-reject itself
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"aabbOfPose — the per-node fast-reject itself"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/canvas/SceneCanvas/poseGeometry.ts > aabbOfPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > AUTO_POSE_DESCRIPTOR
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/core/src/core/geometry/pathPoseDescriptor.ts > pathPoseDescriptor
+  - packages/geom/src/index.ts > boundsOfPath
+  - packages/geom/src/paths/bounds.ts > boundsOfPath
+  - packages/geom/src/paths/corners.ts > resolveCorners
+  - packages/geom/src/commands.ts > forEachSegment
+  - packages/geom/src/commands.ts > PATH_C
+  - packages/geom/src/commands.ts > PATH_Q
+  - packages/geom/src/commands.ts > PATH_Z
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mpointInPath — per-node kernel, by vertex count
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"pointInPath — per-node kernel, by vertex count"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/geom/src/commands.ts > PATH_C
+  - packages/geom/src/index.ts > pointInPath
+  - packages/geom/src/pathHitTest.ts > pointInPath
+  - packages/geom/src/pathSubpaths.ts > closedSubpaths
+  - packages/geom/src/flatten.ts > DEFAULT_FLATTEN_TOLERANCE
+  - packages/geom/src/paths/corners.ts > resolveCorners
+  - packages/geom/src/paths/pathOrigin.ts > worldCoords
+  - packages/geom/src/commands.ts > forEachSegment
+  - packages/geom/src/commands.ts > PATH_Q
+  - packages/geom/src/commands.ts > PATH_Z
+  - packages/geom/src/openFill.ts > fillsOpenSubpaths
+  - packages/geom/src/flatten.ts > flattenCubic
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2marea pick — BVH index vs full walk, node count (1% query rect)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"area pick — BVH index vs full walk, node count (1% query rect)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/core/src/core/scene/composeFrame.ts > composesFrames
+  - packages/core/src/core/scene/nodeAsShown.ts > nodesAsShown
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/geom/src/bvh/bvhTree.ts > LEAF_SIZE
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2marea pick — BVH index vs full walk, 10000 nodes by query-rect size
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"area pick — BVH index vs full walk, 10000 nodes by query-rect size"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+  - packages/geom/src/index.ts > boxContainsBox
+  - packages/geom/src/box.ts > boxContainsBox
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/geom/src/bvh/bvhTree.ts > LEAF_SIZE
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mpoint pick — BVH index vs full walk, node count
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"point pick — BVH index vs full walk, node count"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/scalar.ts > len2
+  - packages/geom/src/polyline.ts > pointSegmentDist2
+  - packages/geom/src/scalar.ts > dot
+  - packages/core/src/core/scene/composeFrame.ts > composesFrames
+  - packages/core/src/core/scene/nodeAsShown.ts > nodesAsShown
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > AUTO_POSE_DESCRIPTOR
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
+  - packages/core/src/canvas/pickWalk.ts > pickWalk
+  - packages/core/src/canvas/pickWalk.ts > scenePickSource
+  - packages/core/src/canvas/scenePickSource.ts > scenePickSource
+  - packages/core/src/core/scene/nodeGates.ts > nodeGates
+  - packages/core/src/core/scene/annotation.ts > annotationLayerIds
+  - packages/core/src/canvas/derivedPath.ts > scenePaintedPoseOf
+  - packages/core/src/canvas/scenePickReads.ts > sceneShownPathOf
+  - packages/core/src/canvas/derivedPath.ts > sceneDerivedPathOf
+  - packages/core/src/canvas/scenePickReads.ts > sceneParentsOf
+  - packages/core/src/canvas/planeClips.ts > clipCarrier
+  - packages/core/src/canvas/pickIndex/scenePickIndex.ts > indexedCandidates
+  - packages/core/src/canvas/NodeShape.ts > getNodeShapes
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemoGeneration
+  - packages/stroke/src/index.ts > markerGeneration
+  - packages/stroke/src/strokeMarkers.ts > markerGeneration
+  - packages/geom/src/bvh/bvhQuery.ts > queryOverlap
+  - packages/core/src/core/viewport/screenSlop.ts > slopForStrokeHit
+  - packages/geom/src/index.ts > scale
+  - packages/geom/src/affine.ts > scale
+  - packages/core/src/core/viewport/screenSlop.ts > hasSlop
+  - packages/geom/src/index.ts > strokeHitTest
+  - packages/geom/src/pathHitTest.ts > strokeHitTest
+  - packages/geom/src/screenBand.ts > stretchOf
+  - packages/geom/src/screenBand.ts > isSimilarity
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/canvas/NodeShape.ts > findShapeInk
+  - packages/core/src/canvas/SceneCanvas/poseGeometry.ts > poseContainsRotated
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isPathLike
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > pointInPath
+  - packages/geom/src/pathHitTest.ts > pointInPath
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2mpick index — rebuild after one pose change, node count
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"pick index — rebuild after one pose change, node count"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > AUTO_POSE_DESCRIPTOR
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickIndex/nodeBroadBox.ts > nodeBroadBox
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/canvas/NodeShape.ts > findShapeInk
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
+  - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2marea pick after every pose change (25% query rect), 10000 nodes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"area pick after every pose change (25% query rect), 10000 nodes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
+  - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
+  - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/hit-test.bench.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 60703[2mms[22m[39m
+   [33m[2m✓[22m[39m hitTestArea — rect poses, node count (25% query rect)[33m 3798[2mms[22m[39m
+     [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     100 nodes    [34m34,790.43[39m  [36m0.0269[39m  [36m0.2283[39m  [36m0.0289[39m  [36m0.0294[39m  [36m0.0326[39m  [36m0.0352[39m  [36m0.1432[39m  [2m±0.18%[22m  [2m  34559[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 2,964.02[39m  [36m0.3162[39m  [36m0.6176[39m  [36m0.3386[39m  [36m0.3412[39m  [36m0.4603[39m  [36m0.4959[39m  [36m0.5947[39m  [2m±0.25%[22m  [2m   2954[22m
+     10000 nodes  [34m   309.09[39m  [36m3.0363[39m  [36m4.4211[39m  [36m3.2560[39m  [36m3.2794[39m  [36m4.2242[39m  [36m4.2829[39m  [36m4.3854[39m  [2m±0.97%[22m  [2m    308[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — rect poses, query-rect size (1000 nodes)[33m 3778[2mms[22m[39m
+     [1mname                 [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     1% area (16 hits)      [34m43,151.26[39m  [36m0.0212[39m  [36m0.2358[39m  [36m0.0233[39m  [36m0.0236[39m  [36m0.0263[39m  [36m0.0283[39m  [36m0.0543[39m  [2m±0.20%[22m  [2m  42846[22m[1m[32m   fastest[39m[22m
+     25% area (289 hits)    [34m 2,895.32[39m  [36m0.3289[39m  [36m1.3460[39m  [36m0.3463[39m  [36m0.3461[39m  [36m0.4627[39m  [36m0.4840[39m  [36m0.5223[39m  [2m±0.26%[22m  [2m   2889[22m
+     100% area (1000 hits)  [34m   861.63[39m  [36m1.0663[39m  [36m1.6757[39m  [36m1.1639[39m  [36m1.1887[39m  [36m1.3912[39m  [36m1.4369[39m  [36m1.5772[39m  [2m±0.38%[22m  [2m    860[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — 24-gon silhouettes, node count (25% query rect)[33m 3822[2mms[22m[39m
+     [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     100 nodes    [34m30,238.82[39m  [36m0.0302[39m  [36m0.3254[39m  [36m0.0333[39m  [36m0.0336[39m  [36m0.0376[39m  [36m0.0416[39m  [36m0.1733[39m  [2m±0.24%[22m  [2m  29996[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 2,518.14[39m  [36m0.3720[39m  [36m0.7769[39m  [36m0.3989[39m  [36m0.3981[39m  [36m0.5462[39m  [36m0.5824[39m  [36m0.6960[39m  [2m±0.31%[22m  [2m   2507[22m
+     10000 nodes  [34m   238.48[39m  [36m3.8494[39m  [36m5.5044[39m  [36m4.2089[39m  [36m4.3497[39m  [36m4.9327[39m  [36m5.0422[39m  [36m5.4004[39m  [2m±0.80%[22m  [2m    238[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)[33m 3771[2mms[22m[39m
+     [1mname                 [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     1% area (17 hits)      [34m29,486.98[39m  [36m0.0315[39m  [36m0.2485[39m  [36m0.0341[39m  [36m0.0345[39m  [36m0.0392[39m  [36m0.0425[39m  [36m0.1561[39m  [2m±0.19%[22m  [2m  29298[22m[1m[32m   fastest[39m[22m
+     25% area (287 hits)    [34m 2,525.14[39m  [36m0.3697[39m  [36m0.7814[39m  [36m0.3981[39m  [36m0.3958[39m  [36m0.5564[39m  [36m0.5767[39m  [36m0.6433[39m  [2m±0.33%[22m  [2m   2512[22m
+     100% area (1000 hits)  [34m   827.32[39m  [36m1.0993[39m  [36m1.6370[39m  [36m1.2133[39m  [36m1.2306[39m  [36m1.4714[39m  [36m1.5070[39m  [36m1.6212[39m  [2m±0.44%[22m  [2m    825[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m aabbOfPose — the per-node fast-reject itself[33m 8714[2mms[22m[39m
+     [1mname        [22m  [1m          hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     rect pose     [34m9,904,914.35[39m  [36m0.0000[39m  [36m 0.1450[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0002[39m  [36m0.0002[39m  [36m0.0003[39m  [2m±0.06%[22m  [2m9404692[22m[1m[32m   fastest[39m[22m
+     4-gon pose    [34m1,474,977.25[39m  [36m0.0005[39m  [36m13.5429[39m  [36m0.0007[39m  [36m0.0007[39m  [36m0.0008[39m  [36m0.0008[39m  [36m0.0010[39m  [2m±3.38%[22m  [2m1427913[22m
+     24-gon pose   [34m  430,652.22[39m  [36m0.0022[39m  [36m12.6059[39m  [36m0.0024[39m  [36m0.0023[39m  [36m0.0026[39m  [36m0.0027[39m  [36m0.0038[39m  [2m±2.94%[22m  [2m 417985[22m
+     256-gon pose  [34m   50,444.57[39m  [36m0.0195[39m  [36m 0.4186[39m  [36m0.0199[39m  [36m0.0197[39m  [36m0.0221[39m  [36m0.0250[39m  [36m0.0302[39m  [2m±0.22%[22m  [2m  50202[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m pointInPath — per-node kernel, by vertex count[33m 6872[2mms[22m[39m
+     [1mname                          [22m  [1m          hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     4-gon                           [34m1,354,313.40[39m  [36m0.0006[39m  [36m 0.3764[39m  [36m0.0007[39m  [36m0.0007[39m  [36m0.0008[39m  [36m0.0009[39m  [36m0.0013[39m  [2m±0.27%[22m  [2m1337363[22m[1m[32m   fastest[39m[22m
+     24-gon                          [34m  446,461.36[39m  [36m0.0021[39m  [36m12.2535[39m  [36m0.0023[39m  [36m0.0023[39m  [36m0.0025[39m  [36m0.0027[39m  [36m0.0050[39m  [2m±2.72%[22m  [2m 433377[22m
+     8 cubics (flattened per call)   [34m  130,488.19[39m  [36m0.0074[39m  [36m 0.3527[39m  [36m0.0079[39m  [36m0.0077[39m  [36m0.0085[39m  [36m0.0096[39m  [36m0.0334[39m  [2m±0.49%[22m  [2m 126712[22m
+     256-gon                         [34m   50,263.30[39m  [36m0.0193[39m  [36m 4.3628[39m  [36m0.0202[39m  [36m0.0201[39m  [36m0.0229[39m  [36m0.0271[39m  [36m0.0410[39m  [2m±0.92%[22m  [2m  49510[22m
+     64 cubics (flattened per call)  [34m   36,725.16[39m  [36m0.0262[39m  [36m 1.5423[39m  [36m0.0279[39m  [36m0.0274[39m  [36m0.0334[39m  [36m0.0382[39m  [36m0.2636[39m  [2m±0.56%[22m  [2m  35803[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m area pick — BVH index vs full walk, node count (1% query rect)[33m 7660[2mms[22m[39m
+     [1mname                  [22m  [1m        hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed, 100 nodes      [34m289,535.91[39m  [36m 0.0032[39m  [36m 0.4070[39m  [36m 0.0035[39m  [36m 0.0035[39m  [36m 0.0040[39m  [36m 0.0048[39m  [36m 0.0112[39m  [2m±0.42%[22m  [2m 283195[22m[1m[32m   fastest[39m[22m
+     indexed, 1000 nodes     [34m 41,811.05[39m  [36m 0.0230[39m  [36m 0.4824[39m  [36m 0.0242[39m  [36m 0.0241[39m  [36m 0.0292[39m  [36m 0.0324[39m  [36m 0.0565[39m  [2m±0.33%[22m  [2m  41355[22m
+     full walk, 100 nodes    [34m  9,898.07[39m  [36m 0.0992[39m  [36m 2.6818[39m  [36m 0.1019[39m  [36m 0.1007[39m  [36m 0.1108[39m  [36m 0.1216[39m  [36m 0.3429[39m  [2m±0.58%[22m  [2m   9812[22m
+     indexed, 10000 nodes    [34m  5,121.35[39m  [36m 0.1884[39m  [36m 0.6441[39m  [36m 0.1967[39m  [36m 0.1971[39m  [36m 0.2340[39m  [36m 0.4334[39m  [36m 0.5955[39m  [2m±0.36%[22m  [2m   5084[22m
+     full walk, 1000 nodes   [34m    987.45[39m  [36m 0.9931[39m  [36m 1.4210[39m  [36m 1.0146[39m  [36m 1.0073[39m  [36m 1.2548[39m  [36m 1.2638[39m  [36m 1.3911[39m  [2m±0.30%[22m  [2m    986[22m
+     full walk, 10000 nodes  [34m   93.1528[39m  [36m10.4037[39m  [36m11.8280[39m  [36m10.7462[39m  [36m10.8618[39m  [36m11.7030[39m  [36m11.7655[39m  [36m11.8155[39m  [2m±0.68%[22m  [2m     94[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m area pick — BVH index vs full walk, 10000 nodes by query-rect size[33m 7596[2mms[22m[39m
+     [1mname                [22m  [1m      hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed, 1% area      [34m5,163.00[39m  [36m 0.1868[39m  [36m 0.6550[39m  [36m 0.1951[39m  [36m 0.1959[39m  [36m 0.2233[39m  [36m 0.4379[39m  [36m 0.6060[39m  [2m±0.36%[22m  [2m   5126[22m[1m[32m   fastest[39m[22m
+     indexed, 25% area     [34m  306.22[39m  [36m 3.1196[39m  [36m 4.0143[39m  [36m 3.2752[39m  [36m 3.3723[39m  [36m 3.9575[39m  [36m 3.9864[39m  [36m 4.0074[39m  [2m±0.64%[22m  [2m    306[22m
+     full walk, 1% area    [34m 92.6523[39m  [36m10.3530[39m  [36m12.8699[39m  [36m10.8144[39m  [36m10.9598[39m  [36m12.4212[39m  [36m12.6455[39m  [36m12.8250[39m  [2m±0.95%[22m  [2m     93[22m
+     full walk, 25% area   [34m 90.5297[39m  [36m10.7467[39m  [36m12.6873[39m  [36m11.0571[39m  [36m11.2237[39m  [36m12.3091[39m  [36m12.4982[39m  [36m12.6495[39m  [2m±0.68%[22m  [2m     91[22m
+     full walk, 100% area  [34m 86.5448[39m  [36m11.2748[39m  [36m13.3404[39m  [36m11.5618[39m  [36m11.7245[39m  [36m12.6298[39m  [36m12.9851[39m  [36m13.2694[39m  [2m±0.55%[22m  [2m     87[22m
+     indexed, 100% area    [34m 83.4943[39m  [36m11.4907[39m  [36m13.1963[39m  [36m11.9916[39m  [36m12.2803[39m  [36m13.1264[39m  [36m13.1613[39m  [36m13.1893[39m  [2m±0.78%[22m  [2m     84[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m point pick — BVH index vs full walk, node count[33m 8293[2mms[22m[39m
+     [1mname                  [22m  [1m        hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed, 100 nodes      [34m493,500.30[39m  [36m 0.0018[39m  [36m 0.4580[39m  [36m 0.0021[39m  [36m 0.0020[39m  [36m 0.0024[39m  [36m 0.0025[39m  [36m 0.0050[39m  [2m±0.51%[22m  [2m 480103[22m[1m[32m   fastest[39m[22m
+     indexed, 1000 nodes     [34m327,525.27[39m  [36m 0.0027[39m  [36m 0.4519[39m  [36m 0.0031[39m  [36m 0.0031[39m  [36m 0.0035[39m  [36m 0.0036[39m  [36m 0.0087[39m  [2m±0.42%[22m  [2m 321153[22m
+     indexed, 10000 nodes    [34m 63,408.71[39m  [36m 0.0152[39m  [36m 0.5196[39m  [36m 0.0159[39m  [36m 0.0159[39m  [36m 0.0180[39m  [36m 0.0213[39m  [36m 0.0348[39m  [2m±0.30%[22m  [2m  62853[22m
+     full walk, 100 nodes    [34m  5,311.62[39m  [36m 0.1824[39m  [36m 0.5917[39m  [36m 0.1894[39m  [36m 0.1879[39m  [36m 0.2099[39m  [36m 0.4427[39m  [36m 0.4845[39m  [2m±0.32%[22m  [2m   5281[22m
+     full walk, 1000 nodes   [34m    494.19[39m  [36m 1.8885[39m  [36m 2.3923[39m  [36m 2.0268[39m  [36m 2.0258[39m  [36m 2.3775[39m  [36m 2.3828[39m  [36m 2.3890[39m  [2m±0.37%[22m  [2m    494[22m
+     full walk, 10000 nodes  [34m   46.4898[39m  [36m20.8335[39m  [36m24.2091[39m  [36m21.5244[39m  [36m21.6356[39m  [36m23.5350[39m  [36m23.8721[39m  [36m24.1417[39m  [2m±0.67%[22m  [2m     64[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m pick index — rebuild after one pose change, node count[33m 3812[2mms[22m[39m
+     [1mname       [22m  [1m       hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     100 nodes    [34m10,380.35[39m  [36m 0.0880[39m  [36m 0.6403[39m  [36m 0.0973[39m  [36m 0.0986[39m  [36m 0.1124[39m  [36m 0.1233[39m  [36m 0.5241[39m  [2m±0.41%[22m  [2m  10276[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m   999.19[39m  [36m 0.9530[39m  [36m 1.7214[39m  [36m 1.0052[39m  [36m 1.0196[39m  [36m 1.4847[39m  [36m 1.5812[39m  [36m 1.6930[39m  [2m±0.49%[22m  [2m    995[22m
+     10000 nodes  [34m  88.6054[39m  [36m10.9748[39m  [36m12.5560[39m  [36m11.2976[39m  [36m11.3823[39m  [36m12.4953[39m  [36m12.5256[39m  [36m12.5499[39m  [2m±0.70%[22m  [2m     89[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m area pick after every pose change (25% query rect), 10000 nodes[33m 2585[2mms[22m[39m
+     [1mname     [22m  [1m     hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed    [34m89.9609[39m  [36m10.4367[39m  [36m12.0165[39m  [36m11.1329[39m  [36m11.4209[39m  [36m11.9653[39m  [36m11.9909[39m  [36m12.0113[39m  [2m±0.82%[22m  [2m     90[22m[1m[32m   fastest[39m[22m
+     full walk  [34m86.3733[39m  [36m11.0987[39m  [36m12.7707[39m  [36m11.5916[39m  [36m11.8257[39m  [36m12.7334[39m  [36m12.7520[39m  [36m12.7669[39m  [2m±0.75%[22m  [2m     87[22m
+[90mstderr[2m | tests/perf/bench/scene-ops.bench.ts[2m > [22m[2mrenderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/core/scene/treeShape.ts > hasChildren
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/scene-ops.bench.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 39296[2mms[22m[39m
+   [32m✓[39m scene.add — leaf, by tree depth[32m 184[2mms[22m[39m
+     [1mname    [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     depth 0   [34m586,366.73[39m  [36m0.0013[39m  [36m0.7480[39m  [36m0.0019[39m  [36m0.0018[39m  [36m0.0050[39m  [36m0.0063[39m  [36m0.0174[39m  [2m±4.83%[22m  [2m  20000[22m[1m[32m   fastest[39m[22m
+     depth 4   [34m543,382.35[39m  [36m0.0015[39m  [36m0.3890[39m  [36m0.0020[39m  [36m0.0019[39m  [36m0.0046[39m  [36m0.0051[39m  [36m0.0163[39m  [2m±4.06%[22m  [2m  20000[22m
+     depth 16  [34m386,114.16[39m  [36m0.0022[39m  [36m0.3710[39m  [36m0.0027[39m  [36m0.0027[39m  [36m0.0052[39m  [36m0.0056[39m  [36m0.0133[39m  [2m±2.83%[22m  [2m  20000[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m scene.add + scene.remove — round trip, by tree depth[33m 325[2mms[22m[39m
+     [1mname    [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     depth 0   [34m315,390.75[39m  [36m0.0027[39m  [36m0.4566[39m  [36m0.0034[39m  [36m0.0033[39m  [36m0.0063[39m  [36m0.0086[39m  [36m0.0278[39m  [2m±2.54%[22m  [2m  20000[22m[1m[32m   fastest[39m[22m
+     depth 4   [34m254,233.40[39m  [36m0.0033[39m  [36m0.4402[39m  [36m0.0042[39m  [36m0.0040[39m  [36m0.0077[39m  [36m0.0087[39m  [36m0.0339[39m  [2m±2.05%[22m  [2m  20000[22m
+     depth 16  [34m173,745.85[39m  [36m0.0050[39m  [36m0.2953[39m  [36m0.0060[39m  [36m0.0058[39m  [36m0.0095[39m  [36m0.0108[39m  [36m0.0351[39m  [2m±1.32%[22m  [2m  20000[22m[1m[90m   slowest[39m[22m
+   [32m✓[39m scene.setPose — by tree depth[32m 117[2mms[22m[39m
+     [1mname    [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     depth 0   [34m1,113,607.43[39m  [36m0.0008[39m  [36m0.2868[39m  [36m0.0010[39m  [36m0.0009[39m  [36m0.0027[39m  [36m0.0040[39m  [36m0.0096[39m  [2m±4.01%[22m  [2m  20000[22m[1m[32m   fastest[39m[22m
+     depth 4   [34m  879,156.63[39m  [36m0.0010[39m  [36m0.2486[39m  [36m0.0012[39m  [36m0.0011[39m  [36m0.0020[39m  [36m0.0030[39m  [36m0.0067[39m  [2m±2.75%[22m  [2m  20000[22m
+     depth 16  [34m  471,430.79[39m  [36m0.0020[39m  [36m1.4200[39m  [36m0.0023[39m  [36m0.0021[39m  [36m0.0051[39m  [36m0.0055[39m  [36m0.0134[39m  [2m±6.28%[22m  [2m  20000[22m[1m[90m   slowest[39m[22m
+   [32m✓[39m per-frame pose write — one node, three paths[32m 48[2mms[22m[39m
+     [1mname                                        [22m  [1m           hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     the pose object alone                         [34m24,352,499.21[39m  [36m0.0000[39m  [36m0.0163[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0000[39m  [2m±4.32%[22m  [2m  20000[22m[1m[32m   fastest[39m[22m
+     override, mutated in place — records nothing  [34m 3,540,224.74[39m  [36m0.0002[39m  [36m0.1881[39m  [36m0.0003[39m  [36m0.0003[39m  [36m0.0004[39m  [36m0.0006[39m  [36m0.0032[39m  [2m±6.18%[22m  [2m  20000[22m
+     setPose, fresh object — records a step        [34m 1,061,373.12[39m  [36m0.0007[39m  [36m0.2917[39m  [36m0.0010[39m  [36m0.0010[39m  [36m0.0040[39m  [36m0.0042[39m  [36m0.0045[39m  [2m±4.53%[22m  [2m  20000[22m[1m[90m   slowest[39m[22m
+   [32m✓[39m per-frame pose write — setPose, untracked[32m 19[2mms[22m[39m
+     [1mname                                      [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     setPose inside untracked — records nothing  [34m2,257,318.53[39m  [36m0.0003[39m  [36m0.2618[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0008[39m  [36m0.0035[39m  [36m0.0041[39m  [2m±7.25%[22m  [2m  20000[22m
+   [32m✓[39m scene.setPose — 10k-node scene, one node[32m 46[2mms[22m[39m
+     [1mname       [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     10000 nodes  [34m1,083,160.22[39m  [36m0.0008[39m  [36m0.5415[39m  [36m0.0010[39m  [36m0.0010[39m  [36m0.0014[39m  [36m0.0025[39m  [36m0.0045[39m  [2m±6.76%[22m  [2m  20000[22m
+   [33m[2m✓[22m[39m renderOrder — flat scene, fully drained[33m 10260[2mms[22m[39m
+     [1mname       [22m  [1m           hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1m samples[22m
+     100 nodes    [34m19,009,496.49[39m  [36m0.0000[39m  [36m0.0328[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0001[39m  [2m±0.04%[22m  [2m16887215[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 1,982,799.62[39m  [36m0.0003[39m  [36m0.0546[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0007[39m  [2m±0.04%[22m  [2m 1970672[22m
+     10000 nodes  [34m   203,199.29[39m  [36m0.0034[39m  [36m0.0352[39m  [36m0.0049[39m  [36m0.0050[39m  [36m0.0053[39m  [36m0.0053[39m  [36m0.0100[39m  [2m±0.03%[22m  [2m  202665[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m renderOrder — 10k nodes, by layer count[33m 5377[2mms[22m[39m
+     [1mname     [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     64 layers  [34m203,945.20[39m  [36m0.0034[39m  [36m0.0470[39m  [36m0.0049[39m  [36m0.0050[39m  [36m0.0053[39m  [36m0.0054[39m  [36m0.0103[39m  [2m±0.04%[22m  [2m 203133[22m[1m[32m   fastest[39m[22m
+     16 layers  [34m203,563.28[39m  [36m0.0034[39m  [36m0.0494[39m  [36m0.0049[39m  [36m0.0050[39m  [36m0.0053[39m  [36m0.0055[39m  [36m0.0113[39m  [2m±0.05%[22m  [2m 202646[22m
+     1 layers   [34m198,358.42[39m  [36m0.0035[39m  [36m0.1447[39m  [36m0.0051[39m  [36m0.0051[39m  [36m0.0054[39m  [36m0.0055[39m  [36m0.0065[39m  [2m±0.04%[22m  [2m 197663[22m
+     4 layers   [34m196,995.70[39m  [36m0.0035[39m  [36m0.0398[39m  [36m0.0051[39m  [36m0.0052[39m  [36m0.0054[39m  [36m0.0055[39m  [36m0.0100[39m  [2m±0.04%[22m  [2m 196242[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m renderOrder — 1000 leaves under a container chain[33m 5679[2mms[22m[39m
+     [1mname    [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     depth 0   [34m2,005,151.35[39m  [36m0.0003[39m  [36m0.0262[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0007[39m  [2m±0.03%[22m  [2m1995953[22m[1m[32m   fastest[39m[22m
+     depth 4   [34m1,983,340.71[39m  [36m0.0003[39m  [36m0.0281[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0007[39m  [2m±0.03%[22m  [2m1971995[22m
+     depth 16  [34m1,970,161.16[39m  [36m0.0003[39m  [36m0.0313[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0007[39m  [2m±0.04%[22m  [2m1958682[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)[33m 2644[2mms[22m[39m
+     [1mname                               [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     drain — cached                       [34m201,454.21[39m  [36m0.0035[39m  [36m0.0412[39m  [36m0.0050[39m  [36m0.0050[39m  [36m0.0054[39m  [36m0.0055[39m  [36m0.0115[39m  [2m±0.04%[22m  [2m 200876[22m[1m[32m   fastest[39m[22m
+     drain — cold, after a layer reorder  [34m  1,328.47[39m  [36m0.7340[39m  [36m2.9779[39m  [36m0.7554[39m  [36m0.7497[39m  [36m0.9547[39m  [36m0.9980[39m  [36m1.1791[39m  [2m±0.51%[22m  [2m   1324[22m
+   [33m[2m✓[22m[39m renderOrder → nodes vs renderOrderNodes[33m 14595[2mms[22m[39m
+     [1mname                               [22m  [1m           hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1m samples[22m
+     100 nodes — via renderOrderNodes     [34m20,007,756.16[39m  [36m0.0000[39m  [36m 6.4088[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0002[39m  [36m0.0004[39m  [2m±1.97%[22m  [2m15954307[22m[1m[32m   fastest[39m[22m
+     1000 nodes — via renderOrderNodes    [34m 4,264,270.42[39m  [36m0.0000[39m  [36m 1.2280[39m  [36m0.0003[39m  [36m0.0003[39m  [36m0.0007[39m  [36m0.0007[39m  [36m0.0010[39m  [2m±1.05%[22m  [2m 3244498[22m
+     10000 nodes — via renderOrderNodes   [34m   769,823.99[39m  [36m0.0008[39m  [36m 0.2666[39m  [36m0.0015[39m  [36m0.0013[39m  [36m0.0021[39m  [36m0.0027[39m  [36m0.0602[39m  [2m±0.52%[22m  [2m  681724[22m
+     100 nodes — via renderOrder + get    [34m   614,463.37[39m  [36m0.0015[39m  [36m 0.2450[39m  [36m0.0016[39m  [36m0.0016[39m  [36m0.0020[39m  [36m0.0021[39m  [36m0.0035[39m  [2m±0.21%[22m  [2m  607862[22m
+     1000 nodes — via renderOrder + get   [34m    40,472.52[39m  [36m0.0234[39m  [36m 6.4201[39m  [36m0.0250[39m  [36m0.0249[39m  [36m0.0274[39m  [36m0.0302[39m  [36m0.0473[39m  [2m±1.27%[22m  [2m   39955[22m
+     10000 nodes — via renderOrder + get  [34m     3,509.92[39m  [36m0.2735[39m  [36m16.5893[39m  [36m0.2919[39m  [36m0.2875[39m  [36m0.3318[39m  [36m0.5132[39m  [36m0.6477[39m  [2m±3.29%[22m  [2m    3427[22m[1m[90m   slowest[39m[22m
+[90mstderr[2m | tests/perf/bench/text-layout.bench.ts[2m > [22m[2mlayoutRuns — glyph count, one run, no wrap
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"layoutRuns — glyph count, one run, no wrap"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/text/src/layout/lineBreak/lineBreaks.ts > isHardLineBreak
+  - packages/font/src/glyphMetrics.ts > metricsOf
+  - packages/font/src/index.ts > resolveColorCluster
+  - packages/font/src/resolveGlyph.ts > resolveColorCluster
+  - packages/font/src/emojiCluster.ts > hasEmojiPresentation
+  - packages/font/src/index.ts > resolveGlyph
+  - packages/font/src/resolveGlyph.ts > resolveGlyph
+  - packages/font/src/index.ts > glyphIn
+  - packages/font/src/resolveGlyph.ts > glyphIn
+
+[90mstderr[2m | tests/perf/bench/text-layout.bench.ts[2m > [22m[2mlayoutRuns — glyph count, one run, wrapped to 400px
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"layoutRuns — glyph count, one run, wrapped to 400px"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/text/src/layout/lineBreak/lineBreaks.ts > isHardLineBreak
+  - packages/font/src/glyphMetrics.ts > metricsOf
+  - packages/font/src/index.ts > resolveColorCluster
+  - packages/font/src/resolveGlyph.ts > resolveColorCluster
+  - packages/font/src/emojiCluster.ts > hasEmojiPresentation
+  - packages/text/src/layout/lineBreak/lineBreaks.ts > NO_BREAK
+  - packages/font/src/index.ts > resolveGlyph
+  - packages/font/src/resolveGlyph.ts > resolveGlyph
+  - packages/font/src/index.ts > glyphIn
+  - packages/font/src/resolveGlyph.ts > glyphIn
+
+[90mstderr[2m | tests/perf/bench/text-layout.bench.ts[2m > [22m[2mlayoutRuns — run count at a fixed 1000 glyphs
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"layoutRuns — run count at a fixed 1000 glyphs"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/text/src/layout/lineBreak/lineBreaks.ts > isHardLineBreak
+  - packages/font/src/glyphMetrics.ts > metricsOf
+  - packages/font/src/index.ts > resolveColorCluster
+  - packages/font/src/resolveGlyph.ts > resolveColorCluster
+  - packages/font/src/emojiCluster.ts > hasEmojiPresentation
+  - packages/text/src/layout/lineBreak/lineBreaks.ts > NO_BREAK
+  - packages/font/src/index.ts > resolveGlyph
+  - packages/font/src/resolveGlyph.ts > resolveGlyph
+
+[90mstderr[2m | tests/perf/bench/text-layout.bench.ts[2m > [22m[2mlayoutCache — hit vs miss (500 glyphs, wrapped)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"layoutCache — hit vs miss (500 glyphs, wrapped)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/text/src/layout/layoutColumns.ts > LineBox
+  - packages/text/src/layout/tabStops.ts > DEFAULT_TAB_SIZE
+  - packages/text/src/layout/shaperRegistry.ts > registeredShaper
+  - packages/text/src/layout/layoutOpts.ts > layoutShaper
+  - packages/text/src/layout/bidiRegistry.ts > registeredBidi
+  - packages/text/src/index.ts > cachedLayoutRuns
+  - packages/text/src/layout/layoutCache.ts > cachedLayoutRuns
+  - packages/font/src/index.ts > faceGeneration
+  - packages/font/src/glyphReady.ts > faceGeneration
+  - packages/text/src/layout/layoutOpts.ts > layoutBidi
+  - packages/text/src/layout/lineBreak/lineBreaks.ts > isHardLineBreak
+  - packages/font/src/glyphMetrics.ts > metricsOf
+  - packages/font/src/index.ts > resolveColorCluster
+  - packages/font/src/resolveGlyph.ts > resolveColorCluster
+  - packages/font/src/emojiCluster.ts > hasEmojiPresentation
+  - packages/text/src/layout/lineBreak/lineBreaks.ts > NO_BREAK
+  - packages/font/src/index.ts > resolveGlyph
+  - packages/font/src/resolveGlyph.ts > resolveGlyph
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/text-layout.bench.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 18392[2mms[22m[39m
+   [33m[2m✓[22m[39m layoutRuns — glyph count, one run, no wrap[33m 3784[2mms[22m[39m
+     [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     50 glyphs    [34m44,455.38[39m  [36m0.0215[39m  [36m0.6637[39m  [36m0.0226[39m  [36m0.0226[39m  [36m0.0259[39m  [36m0.0303[39m  [36m0.0422[39m  [2m±0.20%[22m  [2m  44229[22m[1m[32m   fastest[39m[22m
+     500 glyphs   [34m 4,894.25[39m  [36m0.1997[39m  [36m0.4629[39m  [36m0.2047[39m  [36m0.2037[39m  [36m0.2262[39m  [36m0.2503[39m  [36m0.4133[39m  [2m±0.17%[22m  [2m   4885[22m
+     5000 glyphs  [34m   442.88[39m  [36m2.1583[39m  [36m3.1746[39m  [36m2.2632[39m  [36m2.2835[39m  [36m2.9336[39m  [36m3.0226[39m  [36m3.1395[39m  [2m±0.50%[22m  [2m    442[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m layoutRuns — glyph count, one run, wrapped to 400px[33m 3777[2mms[22m[39m
+     [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     50 glyphs    [34m36,953.09[39m  [36m0.0254[39m  [36m0.4816[39m  [36m0.0272[39m  [36m0.0274[39m  [36m0.0300[39m  [36m0.0313[39m  [36m0.0420[39m  [2m±0.18%[22m  [2m  36814[22m[1m[32m   fastest[39m[22m
+     500 glyphs   [34m 3,887.55[39m  [36m0.2451[39m  [36m0.5368[39m  [36m0.2577[39m  [36m0.2574[39m  [36m0.2866[39m  [36m0.2995[39m  [36m0.4958[39m  [2m±0.17%[22m  [2m   3881[22m
+     5000 glyphs  [34m   379.35[39m  [36m2.4984[39m  [36m3.5143[39m  [36m2.6427[39m  [36m2.6647[39m  [36m3.4005[39m  [36m3.4858[39m  [36m3.5130[39m  [2m±0.55%[22m  [2m    379[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m layoutRuns — run count at a fixed 1000 glyphs[33m 3758[2mms[22m[39m
+     [1mname    [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     1 run     [34m1,868.11[39m  [36m0.5085[39m  [36m0.8915[39m  [36m0.5362[39m  [36m0.5392[39m  [36m0.6110[39m  [36m0.7221[39m  [36m0.8665[39m  [2m±0.22%[22m  [2m   1865[22m[1m[32m   fastest[39m[22m
+     10 runs   [34m1,832.37[39m  [36m0.5178[39m  [36m0.9371[39m  [36m0.5470[39m  [36m0.5507[39m  [36m0.6526[39m  [36m0.8287[39m  [36m0.8957[39m  [2m±0.26%[22m  [2m   1829[22m
+     100 runs  [34m1,722.83[39m  [36m0.5544[39m  [36m1.0325[39m  [36m0.5816[39m  [36m0.5787[39m  [36m0.6728[39m  [36m0.8089[39m  [36m0.9242[39m  [2m±0.24%[22m  [2m   1720[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m layoutCache — hit vs miss (500 glyphs, wrapped)[33m 7072[2mms[22m[39m
+     [1mname                           [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     cachedLayoutRuns hit             [34m2,951,762.74[39m  [36m0.0002[39m  [36m0.0468[39m  [36m0.0003[39m  [36m0.0003[39m  [36m0.0004[39m  [36m0.0004[39m  [36m0.0005[39m  [2m±0.04%[22m  [2m2935688[22m[1m[32m   fastest[39m[22m
+     cachedLayoutRuns moving origin   [34m2,864,052.87[39m  [36m0.0002[39m  [36m0.0482[39m  [36m0.0004[39m  [36m0.0004[39m  [36m0.0004[39m  [36m0.0005[39m  [36m0.0005[39m  [2m±0.04%[22m  [2m2844115[22m
+     cachedLayoutRuns structural hit  [34m  624,990.51[39m  [36m0.0014[39m  [36m6.8390[39m  [36m0.0017[39m  [36m0.0016[39m  [36m0.0019[39m  [36m0.0020[39m  [36m0.0046[39m  [2m±3.70%[22m  [2m 579347[22m
+     cachedLayoutRuns miss            [34m    3,878.70[39m  [36m0.2430[39m  [36m4.2304[39m  [36m0.2658[39m  [36m0.2590[39m  [36m0.3468[39m  [36m0.3664[39m  [36m2.9010[39m  [2m±1.74%[22m  [2m   3763[22m[1m[90m   slowest[39m[22m
+[90mstderr[2m | tests/perf/bench/tessellate.bench.ts[2m > [22m[2mtessellate — curve count (default tolerance 0.5)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"tessellate — curve count (default tolerance 0.5)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/geom/src/commands.ts > PATH_Q
+  - packages/geom/src/commands.ts > PATH_C
+  - packages/geom/src/flatten.ts > flattenCubicWithArcLen
+
+[90mstderr[2m | tests/perf/bench/tessellate.bench.ts[2m > [22m[2mtessellate — flatten tolerance (64 cubics)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"tessellate — flatten tolerance (64 cubics)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/commands.ts > PATH_M
+  - packages/geom/src/commands.ts > PATH_L
+  - packages/geom/src/commands.ts > PATH_Q
+  - packages/geom/src/commands.ts > PATH_C
+  - packages/geom/src/flatten.ts > flattenCubicWithArcLen
+
+[90mstderr[2m | tests/perf/bench/tessellate.bench.ts[2m > [22m[2mtessellate — rect fast path
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"tessellate — rect fast path"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/tessellate/index.ts > tessellate
+  - packages/geom/src/tessellate/tessellate.ts > tessellate
+  - packages/geom/src/box.ts > rectToContour
+  - packages/geom/src/paths/pathOrigin.ts > originFor
+  - packages/geom/src/paths/pathOrigin.ts > coordsFrom
+
+[90mstderr[2m | tests/perf/bench/tessellate.bench.ts[2m > [22m[2mmesh cache — hit vs miss (64 cubics)
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"mesh cache — hit vs miss (64 cubics)"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/renderer/src/test-seams.ts > getMesh
+  - packages/renderer/src/cache/cache.ts > getMesh
+  - packages/geom/src/index.ts > DEFAULT_FLATTEN_TOLERANCE
+  - packages/geom/src/flatten.ts > DEFAULT_FLATTEN_TOLERANCE
+  - packages/geom/src/index.ts > defaultOpenFill
+  - packages/geom/src/openFill.ts > defaultOpenFill
+
+[90mstderr[2m | tests/perf/bench/tessellate.bench.ts[2m > [22m[2mtessellateStroke — curve count
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"tessellateStroke — curve count"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/stroke/src/tessellate/ribbon.ts > makeSeg
+  - packages/stroke/src/tessellate/ribbon.ts > emitJoin
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/tessellate.bench.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 18003[2mms[22m[39m
+   [33m[2m✓[22m[39m tessellate — curve count (default tolerance 0.5)[33m 3773[2mms[22m[39m
+     [1mname      [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     8 cubics    [34m18,059.97[39m  [36m0.0523[39m  [36m0.5226[39m  [36m0.0560[39m  [36m0.0570[39m  [36m0.0680[39m  [36m0.0822[39m  [36m0.2263[39m  [2m±0.28%[22m  [2m  17850[22m[1m[32m   fastest[39m[22m
+     64 cubics   [34m 5,597.76[39m  [36m0.1699[39m  [36m0.4328[39m  [36m0.1799[39m  [36m0.1819[39m  [36m0.3150[39m  [36m0.3520[39m  [36m0.4099[39m  [2m±0.30%[22m  [2m   5558[22m
+     512 cubics  [34m 1,402.84[39m  [36m0.6812[39m  [36m1.0723[39m  [36m0.7157[39m  [36m0.7104[39m  [36m0.9782[39m  [36m0.9998[39m  [36m1.0381[39m  [2m±0.38%[22m  [2m   1398[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tessellate — flatten tolerance (64 cubics)[33m 5015[2mms[22m[39m
+     [1mname          [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     tolerance 2     [34m9,853.71[39m  [36m0.0956[39m  [36m2.2866[39m  [36m0.1035[39m  [36m0.1037[39m  [36m0.1745[39m  [36m0.2723[39m  [36m0.4143[39m  [2m±0.71%[22m  [2m   9666[22m[1m[32m   fastest[39m[22m
+     tolerance 0.5   [34m5,683.32[39m  [36m0.1697[39m  [36m0.4197[39m  [36m0.1770[39m  [36m0.1768[39m  [36m0.3086[39m  [36m0.3415[39m  [36m0.3953[39m  [2m±0.28%[22m  [2m   5649[22m
+     tolerance 0.25  [34m3,890.82[39m  [36m0.2449[39m  [36m0.5325[39m  [36m0.2586[39m  [36m0.2606[39m  [36m0.4156[39m  [36m0.4735[39m  [36m0.5247[39m  [2m±0.32%[22m  [2m   3867[22m
+     tolerance 0.05  [34m1,693.20[39m  [36m0.5730[39m  [36m0.9215[39m  [36m0.5925[39m  [36m0.5907[39m  [36m0.7983[39m  [36m0.8347[39m  [36m0.8772[39m  [2m±0.31%[22m  [2m   1688[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m tessellate — rect fast path[33m 1572[2mms[22m[39m
+     [1mname[22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     rect  [34m967,091.66[39m  [36m0.0009[39m  [36m3.0419[39m  [36m0.0011[39m  [36m0.0010[39m  [36m0.0012[39m  [36m0.0014[39m  [36m0.0034[39m  [2m±0.67%[22m  [2m 952060[22m
+   [33m[2m✓[22m[39m mesh cache — hit vs miss (64 cubics)[33m 3880[2mms[22m[39m
+     [1mname        [22m  [1m          hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     getMesh hit   [34m4,229,733.54[39m  [36m0.0001[39m  [36m 0.0425[39m  [36m0.0002[39m  [36m0.0003[39m  [36m0.0003[39m  [36m0.0003[39m  [36m0.0004[39m  [2m±0.04%[22m  [2m4180962[22m[1m[32m   fastest[39m[22m
+     getMesh miss  [34m    5,667.39[39m  [36m0.1692[39m  [36m25.9306[39m  [36m0.1830[39m  [36m0.1780[39m  [36m0.3627[39m  [36m0.3911[39m  [36m0.4536[39m  [2m±5.08%[22m  [2m   5464[22m
+   [33m[2m✓[22m[39m tessellateStroke — curve count[33m 3763[2mms[22m[39m
+     [1mname      [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     8 cubics    [34m5,700.85[39m  [36m0.1709[39m  [36m0.4375[39m  [36m0.1765[39m  [36m0.1748[39m  [36m0.3352[39m  [36m0.3407[39m  [36m0.3598[39m  [2m±0.28%[22m  [2m   5666[22m[1m[32m   fastest[39m[22m
+     64 cubics   [34m1,790.85[39m  [36m0.5386[39m  [36m0.9318[39m  [36m0.5614[39m  [36m0.5626[39m  [36m0.7978[39m  [36m0.8425[39m  [36m0.8911[39m  [2m±0.39%[22m  [2m   1782[22m
+     512 cubics  [34m  477.11[39m  [36m2.0111[39m  [36m2.5853[39m  [36m2.1020[39m  [36m2.0993[39m  [36m2.4996[39m  [36m2.5142[39m  [36m2.5620[39m  [2m±0.51%[22m  [2m    476[22m[1m[90m   slowest[39m[22m
+[90mstderr[2m | tests/perf/bench/pose-overrides.bench.ts[2m > [22m[2mpaint walk with overrides — 1000 nodes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"paint walk with overrides — 1000 nodes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/core/scene/types.ts > asNodeId
+  - packages/core/src/canvas/overChildren.ts > splitOverChildren
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/core/scene/nodeGates.ts > hidesSubtree
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/canvas/wrapNodeOutput.ts > wrapNodeOutput
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritedPaintIn
+  - packages/core/src/canvas/poseRotation.ts > wrapWithPoseRotation
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/canvas/ownClip.ts > ownClipOf
+  - packages/core/src/core/scene/effectivePose.ts > definesFrame
+  - packages/core/src/core/scene/nodeMemo.ts > dropPoseKeyedMemoSlots
+  - packages/core/src/core/scene/nodeAsShown.ts > shownCopyOf
+  - packages/core/src/core/scene/plyStacks.ts > plyPath
+
+[90mstderr[2m | tests/perf/bench/pose-overrides.bench.ts[2m > [22m[2moverride reads after a commit — 1000 nodes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"override reads after a commit — 1000 nodes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/core/scene/nodeMemo.ts > dropPoseKeyedMemoSlots
+  - packages/core/src/core/scene/nodeAsShown.ts > shownCopyOf
+  - packages/core/src/core/scene/plyStacks.ts > plyPath
+
+[90mstderr[2m | tests/perf/bench/pose-overrides.bench.ts[2m > [22m[2mpaint walk with overrides — 10000 nodes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"paint walk with overrides — 10000 nodes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/core/scene/types.ts > asNodeId
+  - packages/core/src/canvas/overChildren.ts > splitOverChildren
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/core/scene/nodeGates.ts > hidesSubtree
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/canvas/wrapNodeOutput.ts > wrapNodeOutput
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritedPaintIn
+  - packages/core/src/canvas/poseRotation.ts > wrapWithPoseRotation
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/canvas/ownClip.ts > ownClipOf
+  - packages/core/src/core/scene/effectivePose.ts > definesFrame
+
+[90mstderr[2m | tests/perf/bench/pose-overrides.bench.ts[2m > [22m[2moverride reads after a commit — 10000 nodes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"override reads after a commit — 10000 nodes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/core/scene/documentOf.ts > isDocument
+  - packages/core/src/core/scene/nodeAsShown.ts > nodeAsShown
+  - packages/core/src/core/scene/nodeMemo.ts > dropPoseKeyedMemoSlots
+  - packages/core/src/core/scene/nodeAsShown.ts > shownCopyOf
+  - packages/core/src/core/scene/plyStacks.ts > plyPath
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/pose-overrides.bench.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 15312[2mms[22m[39m
+   [33m[2m✓[22m[39m paint walk with overrides — 1000 nodes[33m 3794[2mms[22m[39m
+     [1mname           [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     0% overridden    [34m1,158.56[39m  [36m0.7987[39m  [36m4.4630[39m  [36m0.8718[39m  [36m0.8791[39m  [36m1.0884[39m  [36m1.2494[39m  [36m3.6286[39m  [2m±1.07%[22m  [2m   1148[22m[1m[32m   fastest[39m[22m
+     10% overridden   [34m1,027.54[39m  [36m0.9426[39m  [36m3.4801[39m  [36m0.9815[39m  [36m0.9657[39m  [36m1.7562[39m  [36m1.9400[39m  [36m2.3450[39m  [2m±0.84%[22m  [2m   1021[22m
+     100% overridden  [34m  738.30[39m  [36m1.2915[39m  [36m5.4150[39m  [36m1.3986[39m  [36m1.3435[39m  [36m4.4741[39m  [36m4.6536[39m  [36m5.0705[39m  [2m±2.31%[22m  [2m    716[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m override reads after a commit — 1000 nodes[33m 3773[2mms[22m[39m
+     [1mname           [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     0% overridden    [34m8,165.51[39m  [36m0.1208[39m  [36m2.9139[39m  [36m0.1229[39m  [36m0.1221[39m  [36m0.1346[39m  [36m0.1407[39m  [36m0.1477[39m  [2m±0.55%[22m  [2m   8140[22m[1m[32m   fastest[39m[22m
+     10% overridden   [34m5,712.73[39m  [36m0.1708[39m  [36m0.2245[39m  [36m0.1752[39m  [36m0.1768[39m  [36m0.1930[39m  [36m0.1966[39m  [36m0.2109[39m  [2m±0.07%[22m  [2m   5709[22m
+     100% overridden  [34m2,287.75[39m  [36m0.4319[39m  [36m0.7632[39m  [36m0.4372[39m  [36m0.4373[39m  [36m0.4680[39m  [36m0.4720[39m  [36m0.4886[39m  [2m±0.08%[22m  [2m   2288[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m paint walk with overrides — 10000 nodes[33m 3894[2mms[22m[39m
+     [1mname           [22m  [1m     hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     0% overridden    [34m 116.77[39m  [36m 7.9952[39m  [36m14.8469[39m  [36m 8.6036[39m  [36m 8.7087[39m  [36m10.2893[39m  [36m12.2088[39m  [36m14.3193[39m  [2m±1.50%[22m  [2m    117[22m[1m[32m   fastest[39m[22m
+     10% overridden   [34m 100.55[39m  [36m 9.4642[39m  [36m14.7173[39m  [36m 9.9917[39m  [36m10.1038[39m  [36m12.5886[39m  [36m13.6530[39m  [36m14.5045[39m  [2m±1.50%[22m  [2m    101[22m
+     100% overridden  [34m66.0614[39m  [36m14.1589[39m  [36m19.2098[39m  [36m15.2846[39m  [36m15.2706[39m  [36m19.2051[39m  [36m19.2075[39m  [36m19.2094[39m  [2m±2.60%[22m  [2m     66[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m override reads after a commit — 10000 nodes[33m 3850[2mms[22m[39m
+     [1mname           [22m  [1m    hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     0% overridden    [34m819.65[39m  [36m1.2091[39m  [36m1.3325[39m  [36m1.2202[39m  [36m1.2213[39m  [36m1.2901[39m  [36m1.3045[39m  [36m1.3253[39m  [2m±0.07%[22m  [2m    820[22m[1m[32m   fastest[39m[22m
+     10% overridden   [34m554.51[39m  [36m1.7395[39m  [36m2.2841[39m  [36m1.8063[39m  [36m1.8218[39m  [36m2.0679[39m  [36m2.1312[39m  [36m2.2315[39m  [2m±0.35%[22m  [2m    554[22m
+     100% overridden  [34m190.16[39m  [36m5.1220[39m  [36m7.4470[39m  [36m5.2764[39m  [36m5.1778[39m  [36m6.4942[39m  [36m6.5698[39m  [36m7.2716[39m  [2m±0.90%[22m  [2m    190[22m[1m[90m   slowest[39m[22m
+[90mstderr[2m | tests/perf/bench/puppet.bench.ts[2m > [22m[2mpuppet warp — setup per pin set
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"puppet warp — setup per pin set"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/warp/profileCholesky.ts > addSymmetric
+
+[90mstderr[2m | tests/perf/bench/puppet.bench.ts[2m > [22m[2mpuppet warp — per drag frame
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"puppet warp — per drag frame"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/paths/cubicMath.ts > cubicPointAt
+  - packages/geom/src/curve.ts > cubicEvalAt
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/puppet.bench.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 14645[2mms[22m[39m
+   [33m[2m✓[22m[39m puppet warp — setup per pin set[33m 5748[2mms[22m[39m
+     [1mname                        [22m  [1m     hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     mesh + factor, ~200 vertices  [34m95.4638[39m  [36m 9.9080[39m  [36m17.3126[39m  [36m10.5197[39m  [36m10.6351[39m  [36m12.3717[39m  [36m14.8421[39m  [36m16.8185[39m  [2m±1.58%[22m  [2m     96[22m[1m[32m   fastest[39m[22m
+     mesh + factor, ~400 vertices  [34m54.4374[39m  [36m17.8034[39m  [36m19.2531[39m  [36m18.3751[39m  [36m18.6022[39m  [36m19.1492[39m  [36m19.2012[39m  [36m19.2427[39m  [2m±0.43%[22m  [2m     64[22m
+     mesh + factor, ~800 vertices  [34m27.5230[39m  [36m35.5317[39m  [36m37.9825[39m  [36m36.3424[39m  [36m36.7637[39m  [36m37.8907[39m  [36m37.9366[39m  [36m37.9734[39m  [2m±0.40%[22m  [2m     64[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m puppet warp — per drag frame[33m 8897[2mms[22m[39m
+     [1mname                                            [22m  [1m      hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m    rme[22m  [1msamples[22m
+     solve, 471 vertices, the two linear steps alone   [34m5,303.88[39m  [36m0.1809[39m  [36m 1.9881[39m  [36m0.1916[39m  [36m0.1903[39m  [36m 0.2324[39m  [36m 0.2414[39m  [36m 1.7565[39m  [2m ±0.99%[22m  [2m   5221[22m[1m[32m   fastest[39m[22m
+     solve, 738 vertices, the two linear steps alone   [34m2,792.03[39m  [36m0.3485[39m  [36m 1.7449[39m  [36m0.3614[39m  [36m0.3588[39m  [36m 0.4061[39m  [36m 0.4481[39m  [36m 1.6721[39m  [2m ±0.73%[22m  [2m   2768[22m
+     solve, 1251 vertices, the two linear steps alone  [34m1,428.96[39m  [36m0.6865[39m  [36m 1.9642[39m  [36m0.7040[39m  [36m0.6963[39m  [36m 0.8192[39m  [36m 1.5022[39m  [36m 1.9567[39m  [2m ±0.63%[22m  [2m   1421[22m
+     solve, 471 vertices                               [34m1,482.90[39m  [36m0.5712[39m  [36m10.9680[39m  [36m0.9071[39m  [36m0.6708[39m  [36m10.3508[39m  [36m10.7648[39m  [36m10.8718[39m  [2m ±9.99%[22m  [2m   1103[22m
+     solve, 738 vertices                               [34m  876.76[39m  [36m0.5266[39m  [36m 1.5622[39m  [36m1.1881[39m  [36m1.2521[39m  [36m 1.3856[39m  [36m 1.4548[39m  [36m 1.5085[39m  [2m ±1.00%[22m  [2m    842[22m
+     solve + map + refit the star (default mesh)       [34m  122.85[39m  [36m3.8853[39m  [36m12.5090[39m  [36m8.3766[39m  [36m8.9963[39m  [36m10.5931[39m  [36m11.4692[39m  [36m12.3011[39m  [2m ±2.55%[22m  [2m    120[22m
+     solve, 1251 vertices                              [34m  343.53[39m  [36m1.0540[39m  [36m44.1374[39m  [36m9.8059[39m  [36m3.8030[39m  [36m43.0296[39m  [36m43.5801[39m  [36m44.0260[39m  [2m±27.21%[22m  [2m    102[22m[1m[90m   slowest[39m[22m
+[90mstderr[2m | tests/perf/bench/timeline-sampling.bench.ts[2m > [22m[2m100 tracks, one frame
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"100 tracks, one frame"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/easings.ts > EASINGS
+
+[90mstderr[2m | tests/perf/bench/timeline-sampling.bench.ts[2m > [22m[2m1000 tracks, one frame
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"1000 tracks, one frame"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/easings.ts > EASINGS
+
+[90mstderr[2m | tests/perf/bench/timeline-sampling.bench.ts[2m > [22m[2m10000 tracks, one frame
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"10000 tracks, one frame"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/easings.ts > EASINGS
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/timeline-sampling.bench.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 7776[2mms[22m[39m
+   [33m[2m✓[22m[39m 100 tracks, one frame[33m 2710[2mms[22m[39m
+     [1mname      [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     today       [34m526,541.19[39m  [36m0.0013[39m  [36m0.2128[39m  [36m0.0028[39m  [36m0.0057[39m  [36m0.0062[39m  [36m0.0063[39m  [36m0.0086[39m  [2m±0.28%[22m  [2m 357703[22m[1m[32m   fastest[39m[22m
+     blits keys  [34m151,540.73[39m  [36m0.0028[39m  [36m0.2171[39m  [36m0.0067[39m  [36m0.0068[39m  [36m0.0073[39m  [36m0.0086[39m  [36m0.0153[39m  [2m±0.16%[22m  [2m 149446[22m
+   [33m[2m✓[22m[39m 1000 tracks, one frame[33m 2530[2mms[22m[39m
+     [1mname      [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     today       [34m47,388.16[39m  [36m0.0153[39m  [36m0.2679[39m  [36m0.0295[39m  [36m0.0581[39m  [36m0.0632[39m  [36m0.0648[39m  [36m0.0917[39m  [2m±0.71%[22m  [2m  33885[22m[1m[32m   fastest[39m[22m
+     blits keys  [34m13,047.33[39m  [36m0.0360[39m  [36m1.1315[39m  [36m0.0776[39m  [36m0.0788[39m  [36m0.0962[39m  [36m0.1117[39m  [36m0.2178[39m  [2m±0.33%[22m  [2m  12888[22m
+   [33m[2m✓[22m[39m 10000 tracks, one frame[33m 2535[2mms[22m[39m
+     [1mname      [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     today       [34m4,660.11[39m  [36m0.1550[39m  [36m0.8174[39m  [36m0.2997[39m  [36m0.5814[39m  [36m0.6347[39m  [36m0.6478[39m  [36m0.7290[39m  [2m±2.23%[22m  [2m   3338[22m[1m[32m   fastest[39m[22m
+     blits keys  [34m  584.02[39m  [36m1.1571[39m  [36m2.8098[39m  [36m1.7184[39m  [36m1.7347[39m  [36m2.0072[39m  [36m2.0785[39m  [36m2.4128[39m  [2m±0.48%[22m  [2m    582[22m
+[90mstderr[2m | tests/perf/bench/snap-3d-move.bench.ts[2m > [22m[2msnap — 3D move frame against a grid of boxes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"snap — 3D move frame against a grid of boxes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/geom/src/3d/vec3.ts > dot
+  - packages/geom/src/snap/flat.ts > flatDim
+  - packages/geom/src/3d/vec3.ts > len
+  - packages/geom/src/3d/vec3.ts > cross
+  - packages/geom/src/3d/vec3.ts > normalize
+  - packages/geom/src/snap/flat.ts > intersectFlats
+  - packages/geom/src/3d/vec3.ts > sub
+  - packages/kernel3d/src/snap/plane.ts > vec3Of
+  - packages/geom/src/3d/index.ts > transformPoint4
+  - packages/geom/src/3d/mat4.ts > transformPoint4
+  - packages/geom/src/scalar.ts > SINGULAR_RATIO
+  - packages/kernel3d/src/camera.ts > cameraViewProjection
+  - packages/geom/src/3d/index.ts > multiply
+  - packages/geom/src/3d/mat4.ts > multiply
+  - packages/geom/src/3d/index.ts > perspective
+  - packages/geom/src/3d/mat4.ts > perspective
+  - packages/geom/src/3d/index.ts > lookAt
+  - packages/geom/src/3d/mat4.ts > lookAt
+  - packages/kernel3d/src/project.ts > projectPoint
+  - packages/kernel3d/src/screen.ts > ndcToScreen
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/snap-3d-move.bench.ts [2m([22m[2m1 test[22m[2m)[22m[33m 6873[2mms[22m[39m
+   [33m[2m✓[22m[39m snap — 3D move frame against a grid of boxes[33m 6873[2mms[22m[39m
+     [1mname                  [22m  [1m    hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     50 boxes, spacing 3     [34m339.47[39m  [36m1.6648[39m  [36m12.6108[39m  [36m3.6157[39m  [36m 4.1673[39m  [36m11.0667[39m  [36m11.3308[39m  [36m12.3052[39m  [2m±6.19%[22m  [2m    300[22m[1m[32m   fastest[39m[22m
+     50 boxes, spacing 1.6   [34m324.14[39m  [36m1.5817[39m  [36m14.0933[39m  [36m4.1260[39m  [36m 5.2425[39m  [36m12.1418[39m  [36m12.3236[39m  [36m13.6139[39m  [2m±7.01%[22m  [2m    300[22m
+     200 boxes, spacing 3    [34m234.79[39m  [36m1.8776[39m  [36m18.7090[39m  [36m5.9103[39m  [36m 6.6764[39m  [36m18.1558[39m  [36m18.3291[39m  [36m18.6374[39m  [2m±7.73%[22m  [2m    300[22m
+     200 boxes, spacing 1.6  [34m169.78[39m  [36m1.9780[39m  [36m17.3900[39m  [36m7.6816[39m  [36m10.1026[39m  [36m14.3636[39m  [36m15.9447[39m  [36m17.2986[39m  [2m±5.36%[22m  [2m    300[22m[1m[90m   slowest[39m[22m
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/constraint-solve.bench.ts [2m([22m[2m1 test[22m[2m)[22m[32m 284[2mms[22m[39m
+   [32m✓[39m constraint solve — staircase drag frame[32m 283[2mms[22m[39m
+     [1mname        [22m  [1m      hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m    rme[22m  [1msamples[22m
+     50 anchors    [34m1,596.27[39m  [36m 0.5564[39m  [36m 0.8011[39m  [36m 0.6372[39m  [36m 0.6964[39m  [36m 0.7987[39m  [36m 0.7999[39m  [36m 0.8009[39m  [2m±10.34%[22m  [2m     10[22m[1m[32m   fastest[39m[22m
+     200 anchors   [34m  394.95[39m  [36m 2.4265[39m  [36m 2.7460[39m  [36m 2.5347[39m  [36m 2.5731[39m  [36m 2.7315[39m  [36m 2.7387[39m  [36m 2.7445[39m  [2m ±2.53%[22m  [2m     10[22m
+     1000 anchors  [34m 61.2412[39m  [36m15.3414[39m  [36m19.7205[39m  [36m16.4094[39m  [36m16.6244[39m  [36m19.4856[39m  [36m19.6030[39m  [36m19.6970[39m  [2m ±5.62%[22m  [2m     10[22m[1m[90m   slowest[39m[22m
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/derived-path.bench.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 349[2mms[22m[39m
+   [32m✓[39m a frame of derived paths — memo hit, value-comparing the deps[32m 266[2mms[22m[39m
+     [1mname                [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     20 nodes, 30 edges    [34m29,927.53[39m  [36m0.0315[39m  [36m0.0575[39m  [36m0.0336[39m  [36m0.0345[39m  [36m0.0377[39m  [36m0.0450[39m  [36m0.0550[39m  [2m±1.02%[22m  [2m    200[22m[1m[32m   fastest[39m[22m
+     100 nodes, 150 edges  [34m 5,650.84[39m  [36m0.1579[39m  [36m0.2632[39m  [36m0.1775[39m  [36m0.1801[39m  [36m0.2087[39m  [36m0.2137[39m  [36m0.2533[39m  [2m±0.86%[22m  [2m    200[22m
+     500 nodes, 750 edges  [34m 1,145.25[39m  [36m0.7722[39m  [36m1.8761[39m  [36m0.8825[39m  [36m0.9083[39m  [36m1.2388[39m  [36m1.4193[39m  [36m1.7847[39m  [2m±1.73%[22m  [2m    200[22m[1m[90m   slowest[39m[22m
+   [32m✓[39m the floor: the same frame, comparing named fields off the scene[32m 83[2mms[22m[39m
+     [1mname                [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     20 nodes, 30 edges    [34m104,553.22[39m  [36m0.0094[39m  [36m0.0179[39m  [36m0.0096[39m  [36m0.0095[39m  [36m0.0102[39m  [36m0.0112[39m  [36m0.0165[39m  [2m±0.89%[22m  [2m    200[22m[1m[32m   fastest[39m[22m
+     100 nodes, 150 edges  [34m 20,357.94[39m  [36m0.0478[39m  [36m0.1264[39m  [36m0.0494[39m  [36m0.0494[39m  [36m0.0558[39m  [36m0.0599[39m  [36m0.1131[39m  [2m±1.59%[22m  [2m    200[22m
+     500 nodes, 750 edges  [34m  3,873.28[39m  [36m0.2482[39m  [36m1.1185[39m  [36m0.2616[39m  [36m0.2609[39m  [36m0.2750[39m  [36m0.3324[39m  [36m0.9613[39m  [2m±3.27%[22m  [2m    200[22m[1m[90m   slowest[39m[22m
+
+[2m Test Files [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m      Tests [22m [1m[32m58 passed[39m[22m[90m (58)[39m
+[2m   Start at [22m 19:02:46
+[2m   Duration [22m 289.95s[2m (tests 97%, transform 1%, environment 1%, import 1%)[22m
+
+JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/recorded/bench-native-esm-2026-10-27/studio-module-runner/vitest-bench.json

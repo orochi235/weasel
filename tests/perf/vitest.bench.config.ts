@@ -1,9 +1,7 @@
 import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
-import { weaselAliases } from '../../scripts/vite-aliases';
 
-const repoRoot = resolve(__dirname, '../..');
+const repoRoot = resolve(import.meta.dirname, '../..');
 
 // Benchmarks live in their own config, not as a project in `vitest.config.ts`,
 // so that no `--project` selection or bare `vitest run` can pull them into a
@@ -11,12 +9,14 @@ const repoRoot = resolve(__dirname, '../..');
 // reporter and turns that report into a result file.
 export default defineConfig({
   root: repoRoot,
-  resolve: {
-    alias: weaselAliases(repoRoot),
-  },
-  plugins: [react()],
   test: {
     name: 'bench',
+    // Node imports the code itself, not Vite's module runner: the runner turns
+    // every imported binding into a getter, which a sub-microsecond bench
+    // times along with the code. `node-hooks.mjs` resolves and compiles the
+    // source in Vite's place.
+    experimental: { viteModuleRunner: false, nodeLoader: false },
+    execArgv: ['--import', './tests/perf/bench/node-hooks.mjs'],
     // jsdom, not node: the font registry rasterizes through canvas/DOM shims
     // that `vitest.setup.ts` installs, and the core barrel pulls in modules
     // that touch `window` at load.
