@@ -6,7 +6,7 @@
  * builds, so a scene edited before every pick never pays for a build. Nodes it
  * cannot box conservatively are on `always` and are tested by every walk.
  */
-import { createBvh, type Bvh } from '@weasel-js/geom/nd';
+import { createBvh, createSettledCache, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
 import { markerGeneration } from '@weasel-js/stroke';
 import { getNodeShapes } from 'canvas/NodeShape';
 import { inheritedPaintOf, inheritsPaint } from 'core/scene/inheritedPaint';
@@ -35,16 +35,7 @@ export function pickIndexBuildCount(): number {
   return builds;
 }
 
-interface Cached {
-  version: number;
-  overrides: number;
-  memo: number;
-  markers: number;
-  /** Null until a second pick finds the same state. */
-  index: BuiltIndex | null;
-}
-
-const CACHE = new WeakMap<object, WeakMap<PoseDescriptor<unknown>, Cached>>();
+const CACHE = new WeakMap<object, WeakMap<PoseDescriptor<unknown>, SettledCache<BuiltIndex>>>();
 
 /** Past this share of the scene the index costs more than the walk it narrows. */
 const MAX_SHARE = 0.5;
@@ -204,16 +195,13 @@ function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltInd
   const markers = markerGeneration();
   let perScene = CACHE.get(scene);
   if (perScene === undefined) CACHE.set(scene, (perScene = new WeakMap()));
-  const hit = perScene.get(descriptor);
+  let cache = perScene.get(descriptor);
+  if (cache === undefined) perScene.set(descriptor, (cache = createSettledCache()));
   // Boxed as shown, so a data override that grows a node's ink is met where it is painted.
   const order = nodesAsShown(scene.overrides, scene.renderOrderNodes()) as unknown as Order;
-  if (hit && hit.version === version && hit.overrides === overrides && hit.memo === memo && hit.markers === markers) {
-    if (hit.index === null) hit.index = build(scene, descriptor, order);
-    else hit.index.rankBy(order);
-    return hit.index;
-  }
-  perScene.set(descriptor, { version, overrides, memo, markers, index: null });
-  return null;
+  const index = cache.read([version, overrides, memo, markers], () => build(scene, descriptor, order));
+  index?.rankBy(order);
+  return index;
 }
 
 /** What `PickSource.candidates` answers for a scene source with an index. */

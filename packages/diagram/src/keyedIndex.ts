@@ -1,23 +1,15 @@
 /**
- * A hit index rebuilt when its source's key changes. The first read at a new
- * key records it and answers null, so the caller scans; the second builds.
- * A source edited before every read never pays for a build.
+ * A hit index rebuilt when its source's key changes, built on the second read
+ * at a key (`createSettledCache`). A source with no key (`undefined`) is never
+ * indexed: every read answers null, so the caller scans.
  */
-import { createBvh, type Bvh } from '@weasel-js/geom/nd';
+import { createBvh, createSettledCache, type Bvh } from '@weasel-js/geom/nd';
 
 export function keyedIndex<T>(key: () => readonly unknown[] | undefined, build: () => T): () => T | null {
-  let seen: readonly unknown[] | undefined;
-  let built: T | null = null;
+  const cache = createSettledCache<T>();
   return () => {
     const now = key();
-    if (now === undefined) return null;
-    if (seen !== undefined && seen.length === now.length && seen.every((v, i) => v === now[i])) {
-      built ??= build();
-      return built;
-    }
-    seen = now;
-    built = null;
-    return null;
+    return now === undefined ? null : cache.read(now, build);
   };
 }
 

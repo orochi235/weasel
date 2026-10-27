@@ -6,7 +6,7 @@
 
 import type { NodeId } from '@weasel-js/core';
 import type { Aabb } from '@weasel-js/geom/3d';
-import { createBvh, type BoxN, type Bvh } from '@weasel-js/geom/nd';
+import { createBvh, createSettledCache, type BoxN, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
 import { boundsOfNode, type Node3d, type World3d } from '../world';
 
 interface Built {
@@ -17,13 +17,7 @@ interface Built {
   always: readonly number[];
 }
 
-interface Cached {
-  version: number;
-  bounds: unknown;
-  index: Built | null;
-}
-
-const CACHE = new WeakMap<object, Cached>();
+const CACHE = new WeakMap<object, SettledCache<Built>>();
 
 let builds = 0;
 
@@ -58,14 +52,9 @@ function build<TData, TLayer extends string>(world: World3d<TData, TLayer>): Bui
 }
 
 function current<TData, TLayer extends string>(world: World3d<TData, TLayer>): Built | null {
-  const version = world.scene.getVersion();
-  const hit = CACHE.get(world);
-  if (hit && hit.version === version && hit.bounds === world.bounds) {
-    hit.index ??= build(world);
-    return hit.index;
-  }
-  CACHE.set(world, { version, bounds: world.bounds, index: null });
-  return null;
+  let cache = CACHE.get(world);
+  if (cache === undefined) CACHE.set(world, (cache = createSettledCache()));
+  return cache.read([world.scene.getVersion(), world.bounds], () => build(world));
 }
 
 /** Grows a query box by a relative epsilon, so rounding between the tree's
