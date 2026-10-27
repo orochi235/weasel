@@ -25,7 +25,7 @@ interface State {
 const START: State = {
   row: ['decode', 'filter', 'mix'],
   loose: [
-    { id: 'source', lines: ['source'], ...STEP, at: { x: 420, y: 70 }, pinned: true },
+    { id: 'source', lines: ['source'], ...STEP, at: { x: 340, y: 260 }, pinned: true },
     { id: 'kept', lines: ['kept'], ...STEP, at: { x: 70, y: 270 }, pinned: true },
   ],
   shelf: ['kept'],

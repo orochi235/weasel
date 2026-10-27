@@ -540,6 +540,12 @@ Priority tags:
   draws its own `DragGhost` for its palette; diagram leaves it to the host. A ghost from the item's
   own element, or a preview of the shape it would make, would belong beside `startItemDrag`
   (2026-10-26).
+- **(P3) A diagram edge that crosses a node draws over it.** In the `diagram-drop` demo, dropping
+  two steps into the row between `filter` and `mix` leaves the `filter → mix` edge running straight
+  through both new boxes. The line shows over their fill and through their labels, as a
+  strikethrough (seen headless, 2026-10-26). Either edges paint above member nodes inside a
+  container, or the straight router ignores members as obstacles. Check the paint order against
+  the composition merge (`437648aa4`) first.
 - **(P3) Reparent-on-layout-drop lives in the move action's `layoutDrop` behavior
   (`actions/move/commit/layoutDrop.ts`), not the strategies' `commitDrop`** (which are pose-only),
   as does choosing the destination container (`<SceneCanvas layoutDropTarget>`,
