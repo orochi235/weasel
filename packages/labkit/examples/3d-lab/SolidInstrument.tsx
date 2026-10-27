@@ -43,12 +43,10 @@ import {
   collectOverlayBoxes,
   createAreaSelect,
   createCamera,
-  createInsert,
   createNodeAtPoint,
   createPoseDescriptor,
   createSnap,
   groundGridSource,
-  pose3,
   projectSnapMarks,
   screenBoxOf,
   useOrbitTool,
@@ -65,6 +63,7 @@ import {
 } from './scene3d';
 import { useBoxTool } from './tools3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
+import { useBoxInsert } from './insert3d';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */
@@ -283,25 +282,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     const all = createAreaSelect(world, selectionApi);
     return { ...all, hitTestArea: (rect: Parameters<typeof all.hitTestArea>[0]) => all.hitTestArea(rect).filter(reachable) };
   }, [world, selectionApi, reachable]);
-  const insert = useMemo(
-    () =>
-      createInsert({
-        viewport: viewportSource,
-        mint: ({ center, width, depth }) => {
-          const height = (width + depth) / 2;
-          return scene.add({
-            kind: 'mark',
-            layer: 'solids',
-            pose: pose3(
-              { x: center.x, y: height / 2, z: center.z },
-              { x: width, y: height, z: depth },
-            ),
-            data: { kind: 'box', color: '#c49a3f' },
-          });
-        },
-      }),
-    [scene, viewportSource],
-  );
+  const insert = useBoxInsert(scene, viewportSource);
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const kitSettings = useKitSettings();
   const snap = useMemo(

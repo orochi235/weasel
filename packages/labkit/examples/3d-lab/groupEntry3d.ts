@@ -1,8 +1,9 @@
 /**
  * Entering a container, wired the way `<SceneCanvas>` wires it: an entered-group
- * dep, picks that stop at the entered group's subtree, and core's group-entry
- * contribution reading both. A double-click on a solid enters the container a
- * click there would select; Escape, or a press outside its box, leaves it.
+ * dep, an `insertInto` dep naming the entered group, picks that stop at its
+ * subtree, and core's group-entry contribution reading them. A double-click on a
+ * solid enters the container a click there would select; Escape, or a press
+ * outside its box, leaves it.
  */
 
 import { useEffect, useMemo } from 'react';
@@ -39,6 +40,9 @@ export function useGroupEntry3d(
   const { scene } = world;
   const entered = useEnteredGroup(scene);
   useDepSource('enteredGroup', () => entered);
+  // What is drawn while a container is entered lands in it, unless a source
+  // registered under this one names another container.
+  useDepSource('insertInto', (below) => ({ get: () => below()?.get() ?? entered.get() }));
   useEffect(() => entered.subscribe(repaint), [entered, repaint]);
 
   const scoped = useMemo(() => {
