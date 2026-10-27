@@ -649,6 +649,17 @@ built by `bench/group.ts`, which runs its benchmarks together; vitest prints
 one table per group as each finishes; the result file holds each benchmark's
 median, min, mean and `rme`.
 
+Node imports the bench code natively rather than through Vite's module runner
+(`experimental.viteModuleRunner: false`). The runner turns every imported
+binding into a getter, and a sub-microsecond row would time those getters along
+with the code: `getMesh hit` read 208 ns under it and 42 ns without it, on the
+same tree. Nothing the benches import goes through a Vite plugin;
+`bench/node-hooks.mjs` resolves `@weasel-js/*` and core's bare paths through
+`weaselAliases`, compiles TS with esbuild, and loads stylesheets, JSON and
+`?url` imports. It is not `tsx`, whose `keepNames` wraps every closure as it is
+created and doubled `scene.setPose`. Vitest prints "accessed module export
+getters too many times" if a bench is ever back under the runner.
+
 Setup that has to run before every iteration but is not the thing under test
 — resetting a cache, invalidating a walk — goes in the benchmark's
 `beforeEach` option, `bench(name, { beforeEach }, fn)`. tinybench runs it

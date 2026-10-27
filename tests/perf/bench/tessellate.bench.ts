@@ -10,8 +10,6 @@
 import { group } from './group';
 import { tessellate } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from '@weasel-js/stroke';
-// Relative: core's `renderer/` tree has no bare path mapping (nothing inside
-// core imports it by one), so there is no alias to lean on here.
 import { getMesh, _resetCacheForTests } from '@weasel-js/renderer/test-seams';
 import { curvyPath, rectPath } from './fixtures';
 
