@@ -34,9 +34,6 @@ Owner tags, after the priority (2026-10-26):
   start a real OS drag, so the ghost has not been seen: check that it follows the pointer, clears on Esc, on
   leave and on drop, and looks right in WeaselDraw. A handler-supplied ghost (a handler naming its own
   preview size or shape per MIME) is not built.
-- **(P3) [agent] Ingestion handlers apply to every canvas on the page.** Handlers passed in one canvas's
-  `ingestion.handlers` go into the page-wide registry and run on every mounted canvas, so no canvas can opt
-  out of a kit handler (plain text, on by default since 2026-10-26) on its own.
 
 - **(P3) [maintainer] The image and SVG drop handlers could leave core.** `kitImageHandler` /
   `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed), and `openFilePicker` in
@@ -64,10 +61,11 @@ Owner tags, after the priority (2026-10-26):
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) [agent] A nested root in a 3D multi-root move still moves per node.** Since 2026-10-26 every root
-  stored in world space moves by the first root's world delta (`TranslateLead`); a root stored under a frame
-  (a container, under container composition) gets no lead, so in such a kernel3d scene it misses a snap target
-  another root found. kernel3d's fixtures use identity composition, so no test covers it.
+- **(P3) [agent] kernel3d reads stored poses as world positions everywhere.** `boundsOfNode`, the pick index,
+  snap boxes and `probes3d` all read `node.pose`, so under container composition a node inside a container is
+  picked, snapped and drawn at its container-relative position, and a container's own box is a snap target.
+  A 3D move does map through frames (2026-10-26); nothing else does. kernel3d also ships no container
+  composition for `Pose3`: `YAW_POSE_COMPOSITION` in `packages/kernel3d/src/testScene.ts` is test-only.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -117,15 +115,17 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [recheck] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
 
-- **(P3) [agent] svg import: turned glyphs, and per-glyph `x` across tspans, are not read.** `rotate` warns
+- **(P3) [agent] svg import: turned glyphs, and some per-glyph `x` lists, are not read.** `rotate` warns
   (`packages/svg/src/tspanLines.ts`) and needs per-glyph rotation in the text model, the renderer, picking,
-  bounds and `textToPath`. A list-valued `x` on a `<text>` holding a `<tspan>` still warns: reading it needs
-  the pen positions measured across runs of different styles, then folded into `TextShifts`' `dx`
-  (`packages/svg/src/glyphShifts.ts`). A `<text>`'s own first `dy` is never read, because weasel writes the
-  half leading there, so an external file's `dy` on `<text>` is dropped without a warning. A `<tspan>` with
-  its own `x` and `y` that opens a `<text>` with no `y` sets no line pitch, but the box top still comes from
-  the `<text>`'s `y`, so the box lands off by the difference (`<text><tspan x="10" y="20">A</tspan></text>`
-  gets its top at -16, not 4).
+  bounds and `textToPath`. A `<text>`'s `x` list over `<tspan>`s is read (`foldTextPositions` in
+  `packages/svg/src/glyphShifts.ts`) except where a `<tspan>` it reaches has its own `x` or `dx`: SVG takes
+  each glyph's value from the nearest ancestor that has one, and merging that per glyph is not done, so it
+  warns and reads only the first value. Like every `x` list, it also needs a loaded face to measure the
+  glyphs.
+- **(P3) [agent] A laid-out cell's `advance` may leave out the kerning at a run boundary.** With the fixture font at
+  32, A then B in two runs gives A's cell an `advance` of 23 while the gap between the two cells' `x` is 22,
+  the kerned width; `LaidOutCell`'s doc says a cell's advance includes the kerning before the next glyph
+  (`packages/text`, measured 2026-10-26, cause not traced). svg import reads the pen gap instead.
 
 ### Path editing tricks
 
@@ -302,11 +302,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Rendering & paint
 
-- **(P3) [agent] An image paint with no size takes its tile from the bitmap, which can change.** An SVG picture
-  used as an `{ kind: 'image' }` paint with no `width`/`height` is tiled at its rasterized size, so an image
-  node with the same `src` re-rasterizing it larger makes the tile jump. The picker always writes a size;
-  only hand-made paints hit this.
-
 - **(P3) [agent] Renderer: geometry far from the origin is still single precision.** The transform stack
   is in doubles, a large model translation is rebased before upload (`setProjAndModel`,
   `u_origin`), and a gradient's or a pattern's paint space is rebased the same way (`bindGradient`
@@ -398,10 +393,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] Several hit tests still scan every node or shape linearly.** Core's
-  `domains/text/textHitAt.ts` (needs a pose descriptor from `useSceneTextEdit`), `diagram/src/portLayer.ts`,
-  `diagram/src/labelDragLayer.ts`, and `boxesOf` in kernel3d's `snap/sources.ts`, whose `world.bounds` needs a
-  generation to cache against first.
+- **(P3) [agent] Ports are still read every frame for painting.** Port hit tests go through an index since
+  2026-10-26 (`packages/diagram/src/keyedIndex.ts`), but painting still calls every port's `regions()` each
+  frame.
+- **(P3) [agent] When to build a hit-test index is decided in three places.** The rule that a source's first
+  query after a change scans and records its generation, and the second at that generation builds the index,
+  is copied in core's `scenePickIndex`, diagram's `keyedIndex.ts` and kernel3d's `snap/boxIndex.ts`
+  (2026-10-26). One helper should own it.
 
 - **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
   marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
@@ -429,9 +427,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Container layout strategies
 
-- **(P3) [agent] A drag hand-off resets the drag's trail to the press point.** When an action passes a drag
-  with `'pass'` (2026-10-26), the action that takes over sees a trail starting at the press, without the
-  points before the hand-off. Nothing reads the trail across a hand-off yet.
 - **(P3) [recheck] An item carried in with `dragItemProps` draws no ghost of itself over the canvas.** The
   canvas outlines the target and marks the index (`packages/diagram/src/itemDrop.ts`), and labkit
   draws its own `DragGhost` for its palette; diagram leaves it to the host. A ghost from the item's
@@ -500,16 +495,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
 
-- **(P3) [agent] The arc `Slider` reads left to right in a right-to-left locale.** Curved rows, `CurvedLabel`
-  and `SwatchRings` follow the root's `direction` (2026-10-26), and `Jog` stays left to right on purpose. The
-  straight `Slider` does not mirror either: value direction, pointer math, arrow keys and readouts all assume
-  left to right. So this is one arc for both shapes, not a `direction` passed to `trackRun` in
-  `useSliderGeometry`.
-- **(P3) [agent] `CurvedLabel` loses Arabic joining forms.** It gives each grapheme its own span, so a joining script
-  draws its isolated forms (predates 2026-10-26).
-- **(P3) [agent] `Timeline/Transport.tsx` probably half-mirrors in a right-to-left locale.** It is a flex row with no
-  `dir` pin, as the straight `Jog` was before 2026-10-26: flex would reverse its buttons while its scrubber
-  runs left to right (inferred, not checked).
+- **(P3) [agent] `RangeSlider` may disagree with `Slider` in a right-to-left page.** It is built on React Aria,
+  which takes direction from its locale rather than the computed `dir` that `Slider` reads since 2026-10-26
+  (inferred, not checked).
 
 - **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
   `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
@@ -524,11 +512,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) [agent] A schema drawn as a menu still has gaps at the edges.** The HUD menu draws a color row
-  read-only: it hosts no color picker (the DOM menu opens `ColorField` in a popover). The HUD's text entry
-  (`createTextEditor` in `hud/src/menu/textEdit.ts`) adds and removes characters at the end only: no caret
-  movement, selection or IME composition. A `map` drawn as a menu offers no add or remove, and skips keys
-  holding a dot; a `list` removes only its last entry.
+- **(P3) [agent] A HUD menu's text row has no IME composition, and a press does not place its caret.**
+  `createTextEditor` (`hud/src/menu/textEdit.ts`) takes keydown characters only, so a composed character
+  (CJK, dead keys) cannot be entered; the canvas has no hidden input to receive
+  `compositionstart`/`compositionupdate`. A press on the row starts an edit with the caret at the end; there is
+  no Alt+arrow word movement either.
+- **(P3) [agent] A menu item cannot keep its menu open.** `choose` (`packages/menu`) closes the menu before running
+  the item, so a HUD color swatch applies and closes where the hex row applies and stays open. It needs an
+  item flag that keeps the menu open.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -557,10 +548,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   to the two sources' `roles` (`'origin'` to `'box'`). Insert and the pen are a different case and
   stay as they are: they snap the pointer, before the node has a stroke to measure.
 
-- **(P3) [agent] The split mark in a `PrefsForm` bar cell is tested in jsdom only.** The one in a row's label
-  line has been seen; the bar cell's wants a `*.browser.test.tsx` showing it fits the cell. Nothing in an app
-  animates a selector's weights yet: `prefWeightAxes` gives an animator target the axes, and nothing yet asks
-  for a transition.
+- **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
+  animator target the axes, and nothing yet asks for a transition.
 
 - **(P3) [maintainer] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
@@ -689,13 +678,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   switches it from a menu button showing its surface, and a toolbar or menu button switches from its
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
-- **(P3) [agent] Simplify, Offset, and Corner shape in draw's command row are not surface assets.** They are
-  draw's own controls (`ui/PathCommands`, `ui/CornerShape`) and need custom pref kinds before a schema asset
-  can hold them. Simplify's tolerance also tunes the `simplifyBrush` path edit, so it has to live above every
-  surface rather than in the control. Corner shape needs the corner selection in `SurfaceHostContext`.
-- **(P3) [agent] draw's dev asset editor may not draw the panel assets.** Since 2026-10-26 `#/dev/assets`
-  (`dev/drawWorkspace.ts`) lists the Colors, Layers and History assets, whose app-defined leaf kinds it has no
-  renderers for; how it shows them is unchecked.
 
 - **(P3) [agent] Multi-page documents in draw.** Core has pages end to end (`packages/core/src/core/pages/`, and
   "Page" in `docs/concepts.md`): the page list is the `core:pages` document value, the edits in
@@ -742,17 +724,10 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [agent] React Aria shifts a popover sideways against the wrong edges when its container is not at the
-  viewport's corner.** Its sideways shift treats the viewport's left edge as sitting at the portal container's
-  corner: in `Popover.bounds.browser.test.tsx` a box at left `100vw − 200px` let a callout run past the right
-  edge (right 492 against a 414 px viewport). Scaled boxes are fixed since 2026-10-26 by the overlay frame
-  (`packages/ui/src/overlays/overlayFrame.ts`); unscaled ones still have it. Using the frame for every
-  non-body container would fix them, but its viewport-sized box can lengthen the scroll range of a positioned
-  container that scrolls.
-- **(P3) [agent] A canvas stack's first measurement under a scaled ancestor is the scaled size.** Before its size
-  observer first reports, `<CanvasStack>` sizes the canvas from the client rect, so for one pass a stack shown
-  at 3× in a 100px box gets a 300px CSS canvas, then corrects (2026-10-26, seen in
-  `CanvasStack.frame.browser.test.tsx`, which waits for the settle).
+- **(P3) [agent] A fixed overlay frame costs scroll range under a transformed ancestor.** Since 2026-10-26
+  popovers in a positioned container portal into a `position: fixed` frame (`packages/ui/src/overlays/overlayFrame.ts`),
+  which adds no scroll range, except where a `transform`, `filter` or `contain` ancestor inside a scrolling
+  element is the containing block for fixed elements: there the frame acts as an absolute box again.
 
 - **(P3) [recheck] On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
@@ -789,9 +764,11 @@ only story runner in the repo.
   the branch and commit. A screenshot with the trial's marks on it goes into the issue by pasting it there;
   never by committing it to the repo. Left to settle: how the workshop reaches GitHub, and whether marks come
   back (next entry) to draw that screenshot.
-- **(P3) [agent] forge's marks are pinned to the story's box, not its scrolled content.** On a long story or
-  index page the marks stay put while the content scrolls, and an export's capture shows only the top of the
-  content (2026-10-26).
+- **(P3) [agent] A drawing tool over a marked forge story takes the wheel.** With any tool but the pointer active,
+  the marks' input box sits over the story and takes wheel events, and forge has no camera to hand them to, so
+  the story cannot scroll until the pointer is picked.
+- **(P3) [agent] A forge mark export can come out transparent.** The export's copy of the story keeps `data-pending`,
+  so a story captured before its first paint draws nothing.
 
 - **(P3) [recheck] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
