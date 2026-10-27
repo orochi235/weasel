@@ -41,12 +41,14 @@ describe('withColorPickers', () => {
     expect((entries[3] as SubmenuEntry).entries[0]!.kind).toBe('submenu');
   });
 
-  it('writes a swatch through the row, and typed hex through the controller, keeping alpha', () => {
+  it('writes a swatch and typed hex through the controller, keeping alpha', () => {
     const row = { ...fill('#00000080'), alpha: true };
     const c = ctrl();
     const picker = withColorPickers([row], ['#1e88e5'], () => c).entries[0] as SubmenuEntry;
+    expect(picker.entries[0]).toMatchObject({ keepOpen: true });
     (picker.entries[0] as MenuItemEntry).run();
-    expect(row.set).toHaveBeenCalledWith('#1e88e580');
+    expect(c.setColor).toHaveBeenCalledWith(row, '#1e88e580');
+    c.setColor.mockClear();
     const hex = picker.entries[2] as MenuTextEntry;
     expect(hex.value).toBe('#00000080');
     hex.set('nope');
@@ -82,7 +84,7 @@ const draws = (w: ReturnType<typeof widget>['w'], color: string) =>
   (w.draw(ctx) as DrawCommand[]).some((c) => c.kind === 'path' && JSON.stringify(c.fill ?? null).includes(color));
 
 describe('createMenuWidget: a color row', () => {
-  it('opens a picker whose swatch writes the color and closes the menu', () => {
+  it('opens a picker whose swatch writes the color and keeps the menu open', () => {
     const row = fill('#336699');
     const { w, close, type } = widget([row]);
     expect(draws(w, '#336699')).toBe(true);
@@ -91,7 +93,8 @@ describe('createMenuWidget: a color row', () => {
     expect(draws(w, '#1e88e5')).toBe(true);
     type(['ArrowDown', 'Enter']);
     expect(row.set).toHaveBeenCalledWith('#1e88e5');
-    expect(close).toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+    expect(w.accessibleTree!.read().children![0]).toMatchObject({ label: 'Fill: #1e88e5' });
   });
 
   it('takes typed hex in the picker and writes it without closing', () => {

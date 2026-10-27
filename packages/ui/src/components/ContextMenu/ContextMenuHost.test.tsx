@@ -312,6 +312,18 @@ describe('menu rows that are links', () => {
   });
 });
 
+describe('a row that keeps the menu open', () => {
+  it('runs on click and on Enter, and the menu stays open', () => {
+    ran.length = 0;
+    const close = panels([item('a', { keepOpen: true }), item('b')]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'a' }));
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Enter' });
+    expect(ran).toEqual(['a', 'a']);
+    expect(close).not.toHaveBeenCalled();
+    expect(screen.getByRole('menu')).toBeTruthy();
+  });
+});
+
 describe('OpenPanels bar hooks', () => {
   it('releaseRuns: a pointerup over a row presses it', () => {
     ran.length = 0;
