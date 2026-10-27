@@ -29,7 +29,6 @@ import { LoupeProvider } from './loupe/CaptureInputs';
 import { createStoryHosts, StoryHostsContext } from './storyHosts';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { RoutePlayhead } from '../timeline/RoutePlayhead';
-import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import { GlobalsMenus } from './globalsMenu';
@@ -143,7 +142,6 @@ export function Workshop(props: WorkshopProps) {
   useDocumentTitle(title);
   const [frames] = useState(createTrialFrames);
   const [hosts] = useState(createStoryHosts);
-  const [clocks] = useState(createTrialClocks);
   // Warm frames are for the stories that render in one: every story when no importers are given, else the isolated.
   const pool = useFramePool(frameUrl, importers === undefined || index.some((entry) => entry.isolate !== undefined));
   const entries = useMemo(() => [...index, ...indexEntries(index)], [index]);
@@ -205,7 +203,6 @@ export function Workshop(props: WorkshopProps) {
         <FramePoolContext.Provider value={pool}>
           <TrialFramesContext.Provider value={frames}>
             <StoryHostsContext.Provider value={hosts}>
-            <TrialClocksContext.Provider value={clocks}>
             <LoupeProvider captureBase={props.captureBase} revision={props.revision}>
               <Lab
                 title={title}
@@ -238,7 +235,6 @@ export function Workshop(props: WorkshopProps) {
                 <KeysChrome onChrome={setKeysChrome} />
               </Lab>
             </LoupeProvider>
-            </TrialClocksContext.Provider>
             </StoryHostsContext.Provider>
           </TrialFramesContext.Provider>
         </FramePoolContext.Provider>

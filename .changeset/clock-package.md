@@ -1,5 +1,6 @@
 ---
 '@weasel-js/clock': patch
+'@weasel-js/forge': patch
 '@weasel-js/labkit': patch
 '@weasel-js/ui': patch
 ---
@@ -9,3 +10,7 @@ New package `@weasel-js/clock`: labkit's trial clock, moved out so it has no Rea
 `ClockSpec` takes `origin`, the time `elapsed` 0 is shown as (display only), and `speed`, the unsigned speed a transport plays a paused clock at. `Clock` reads both back, and `ClockHandle.declare(spec)` takes up a new `duration`, `origin`, `loop` and `speed` while keeping the shown time (`origin + elapsed`), clamped to the new run. This adds API.
 
 The ui `Transport` takes `start`, where its scrub bar begins, so it can show a playhead before zero. labkit exports `useTransportControl` and `TransportControl`; `TransportControl` gains `start`, `touched` and `touch`, its `playhead` and `seek` work in shown time, and the keyboard Home and End and `labkit:seek` follow.
+
+labkit exports `useTrialClockHandle`, the resolver behind `useTrialClock`.
+
+forge's story timelines run on the shared clock. A story's `timeline` declares its trial's labkit clock, so the trial's transport is labkit's `TrialTransport` (its scrub bar is named "Position"), it shows a lead-in below zero, and the paused playhead is kept in the trial's record rather than in a `$playhead` config key. A config saved with `$playhead` still opens, without the key reaching the story. `usePlayhead`, `useTimeline` and the `TimelineSpec`, `TimelineSpan` and `SpanOverride` types keep their shape. Behavior changes: a span set at runtime keeps the playhead's shown time rather than following the span's start, and loading a snapshot no longer restores the playhead.

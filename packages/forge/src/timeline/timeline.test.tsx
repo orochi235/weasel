@@ -1,24 +1,25 @@
-import { createMemoryAdapter, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
+import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { useEffect } from 'react';
-import { afterEach, describe, expect, it as base, vi } from 'vitest';
+import { act, fireEvent, renderHook, screen, within } from '@testing-library/react';
+import { createClock } from '@weasel-js/clock';
+import { type ReactNode, useEffect } from 'react';
+import { afterEach, describe, expect, vi } from 'vitest';
 import { loadCsfModule } from '../csf/loadCsfModule';
 import { StoryHost } from '../frame/StoryHost';
 import { installResizeObserver } from '../shell/labHarness';
-import { readRoute, readRouteParams } from '../shell/useRoute';
-import { Workshop } from '../shell/Workshop';
+import { readRoute } from '../shell/useRoute';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
 import type { IndexEntry, LoadedStory, StoryContext } from '../story/types';
-import { usePlayhead, useTimeline } from './context';
+import { clockSpecOf } from './clockSpec';
+import { useTimeline } from './context';
+import { shownTime } from './shown';
+import { StoryClockProvider } from './StoryClock';
+import type { TimelineSpec } from './types';
+import { harness, playhead, playheads, Readout, trial, tParam, workshopIt } from './workshopHarness';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 installResizeObserver();
-
-function Readout() {
-  return <output aria-label="playhead">{Math.round(usePlayhead())}</output>;
-}
 
 function SpanReadout() {
   const { span } = useTimeline();
@@ -53,76 +54,7 @@ const tModule = {
 
 const importers = () => ({ '/t.stories.tsx': () => Promise.resolve(tModule as unknown as Record<string, unknown>) });
 
-/** Lab commands the workshop has no button for, as buttons. */
-function LabProbe() {
-  const lab = useLabContext();
-  const first = lab.trials[0]?.id;
-  return (
-    <>
-      <button type="button" onClick={() => lab.addTrial('t--timed')}>probe: add</button>
-      <button type="button" onClick={() => first && lab.saveSnapshot(first, 'held')}>probe: save</button>
-      <button
-        type="button"
-        onClick={() => first && lab.savedSnapshots[0] && lab.loadSnapshot(first, lab.savedSnapshots[0].id)}
-      >
-        probe: load
-      </button>
-    </>
-  );
-}
-
-const probeConfig = { labChrome: [{ id: 'probe', region: 'header', render: () => <LabProbe /> }] } as const;
-
-/**
- * The workshop helpers, bound to one test. A test that times out keeps running after cleanup, and
- * its next mount would land in the following test's document; once its signal aborts, every wait
- * here throws instead of resuming.
- */
-function harness(signal: AbortSignal) {
-  const live = <T,>(value: T): T => {
-    signal.throwIfAborted();
-    return value;
-  };
-  const until = <T,>(cb: () => T, options?: Parameters<typeof waitFor>[1]) => waitFor(cb, options).then(live);
-  return {
-    mount(url: string, storage: StorageAdapter = createMemoryAdapter()) {
-      signal.throwIfAborted();
-      history.replaceState(null, '', url);
-      return renderWithIcons(
-        <Workshop
-          index={[timed, still, late]}
-          frameUrl="/frame.html"
-          importers={importers()}
-          setup={{}}
-          storage={storage}
-          config={probeConfig}
-        />,
-      );
-    },
-    until,
-    loaded: () =>
-      until(() => expect(screen.getAllByRole('status', { name: 'playhead' }).length).toBeGreaterThan(0), { timeout: 15_000 }),
-    /**
-     * Past labkit's write-behind, so what the lab holds has reached storage. `act`'s thenable returns nothing from
-     * `then`, so chaining on it resolves at once and leaves its scope open, holding back every later `act`'s render.
-     */
-    persisted: async () => {
-      await act(() => new Promise((r) => setTimeout(r, 400)));
-      live(undefined);
-    },
-  };
-}
-
-const it = base.extend<{ lab: ReturnType<typeof harness> }>({
-  lab: async ({ signal }, provide) => {
-    await provide(harness(signal));
-  },
-});
-
-const trial = () => screen.getAllByRole('region', { name: /^Trial / })[0]!;
-const playhead = () => Number(screen.getAllByRole('status', { name: 'playhead' })[0]!.textContent);
-const playheads = () => screen.getAllByRole('status', { name: 'playhead' }).map((el) => Number(el.textContent));
-const tParam = () => readRouteParams().t ?? null;
+const it = workshopIt({ index: [timed, still, late], importers });
 
 afterEach(() => {
   lateDelay = 20;
@@ -133,7 +65,7 @@ afterEach(() => {
 describe('the workshop helpers', () => {
   it('refuse to mount or resume for a test that has timed out', async () => {
     const timedOut = new AbortController();
-    const { mount, until } = harness(timedOut.signal);
+    const { mount, until } = harness(timedOut.signal, { index: [timed], importers });
     const waiting = until(() => expect(document.body.dataset.never).toBe('set'), { timeout: 5000 });
     timedOut.abort(new Error('timed out'));
     document.body.dataset.never = 'set';
@@ -156,7 +88,7 @@ describe('a story with a timeline, in the workshop', () => {
     mount('/#/t--timed');
     await until(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
     expect(within(trial()).getByRole('button', { name: 'Play' })).toBeInTheDocument();
-    expect(within(trial()).getByRole('slider', { name: 'Scrub' })).toBeInTheDocument();
+    expect(within(trial()).getByRole('slider', { name: 'Position' })).toBeInTheDocument();
     expect(within(trial()).getByTestId('timeline-time').textContent).toBe('0.00s / 4.00s');
 
     act(() => {
@@ -193,7 +125,7 @@ describe('a story with a timeline, in the workshop', () => {
     const { mount, until } = lab;
     mount('/#/t--timed');
     await until(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
-    const scrub = within(trial()).getByRole('slider', { name: 'Scrub' });
+    const scrub = within(trial()).getByRole('slider', { name: 'Position' });
     fireEvent.keyDown(scrub, { key: 'End' });
     expect(playhead()).toBe(4000);
     expect(tParam()).toBe('4');
@@ -216,7 +148,7 @@ describe('a hash change under the open story', () => {
     await until(() => expect(playhead()).toBe(2000));
     expect(within(trial()).getByRole('button', { name: 'Play' })).toBeInTheDocument();
 
-    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
+    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Position' }), { key: 'End' });
     act(() => {
       location.hash = '#/t--timed?other=1';
     });
@@ -231,7 +163,7 @@ describe('the playhead kept with the trial', () => {
     const storage = createMemoryAdapter();
     const first = mount('/#/t--timed', storage);
     await loaded();
-    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
+    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Position' }), { key: 'End' });
     expect(playhead()).toBe(4000);
     await persisted();
     first.unmount();
@@ -244,19 +176,6 @@ describe('the playhead kept with the trial', () => {
     mount('/#/t--timed?t=1', storage);
     await loaded();
     expect(playhead()).toBe(1000);
-  });
-
-  it('comes back at its paused time when a snapshot is loaded', async ({ lab }) => {
-    const { mount, until, loaded } = lab;
-    mount('/#/t--timed');
-    await loaded();
-    const scrub = within(trial()).getByRole('slider', { name: 'Scrub' });
-    fireEvent.keyDown(scrub, { key: 'End' });
-    fireEvent.click(screen.getByRole('button', { name: 'probe: save' }));
-    fireEvent.keyDown(scrub, { key: 'Home' });
-    expect(playhead()).toBe(0);
-    fireEvent.click(screen.getByRole('button', { name: 'probe: load' }));
-    await until(() => expect(playhead()).toBe(4000));
   });
 });
 
@@ -272,29 +191,23 @@ describe('a story that learns its span only once it runs', () => {
     expect(written.filter((url) => /[?&]t=(?!2\.5\b)/.test(url))).toEqual([]);
   });
 
-  it('comes back at a persisted time beyond the placeholder span after a reload', async ({ lab }) => {
+  it('keeps the shown time when the span arrives, and reopens in the span it ran with', async ({ lab }) => {
     const { mount, until, loaded, persisted } = lab;
     const storage = createMemoryAdapter();
     const first = mount('/#/t--late', storage);
     await loaded();
-    await until(() => expect(playhead()).toBe(-300));
-    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
+    await until(() => expect(within(trial()).getByTestId('timeline-time').textContent).toBe('0.00s / 4.00s'));
+    expect(playhead()).toBe(0);
+    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Position' }), { key: 'End' });
     expect(playhead()).toBe(3700);
     await persisted();
     first.unmount();
 
+    // The trial's record keeps the run's length, so a story that never sets its span again reopens in the one it had.
     lateDelay = null;
-    const second = mount('/#/t--late', storage);
-    await loaded();
-    expect(playhead()).toBe(1000);
-    expect(tParam()).toBeNull();
-    await persisted();
-    second.unmount();
-
-    lateDelay = 20;
     mount('/#/t--late', storage);
     await loaded();
-    await until(() => expect(playhead()).toBe(3700));
+    expect(playhead()).toBe(4000);
   });
 });
 
@@ -306,9 +219,9 @@ describe('two trials of the routed story', () => {
     fireEvent.click(screen.getByRole('button', { name: 'probe: add' }));
     await until(() => expect(playheads()).toHaveLength(2));
     const [older, newer] = screen.getAllByRole('region', { name: /^Trial / });
-    fireEvent.keyDown(within(newer!).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
+    fireEvent.keyDown(within(newer!).getByRole('slider', { name: 'Position' }), { key: 'End' });
     expect(tParam()).toBe('4');
-    const olderScrub = within(older!).getByRole('slider', { name: 'Scrub' });
+    const olderScrub = within(older!).getByRole('slider', { name: 'Position' });
     fireEvent.keyDown(olderScrub, { key: 'End' });
     fireEvent.keyDown(olderScrub, { key: 'Home' });
     expect(playheads()).toEqual([0, 4000]);
@@ -394,5 +307,56 @@ describe('a story with a timeline, outside a trial', () => {
     );
     expect(fixed!.timeline?.({})).toEqual({ duration: 800 });
     expect(byArgs!.timeline?.({ seconds: 5 })).toEqual({ duration: 5000 });
+  });
+});
+
+describe('a story clock', () => {
+  const ran = (spec: TimelineSpec, ms: number) => {
+    const { clock } = createClock(clockSpecOf(spec));
+    clock.rate = 1;
+    clock.sync(0);
+    clock.sync(ms);
+    return clock;
+  };
+
+  it('loops by default, its playhead wrapping back into the span, and stops paused at the end when told not to', () => {
+    expect(shownTime(ran({ start: -200, duration: 1000 }, 1500))).toBe(300);
+    const once = ran({ duration: 1000, loop: false }, 1500);
+    expect(shownTime(once)).toBe(1000);
+    expect(once.rate).toBe(0);
+  });
+
+  const timeline = (spec: TimelineSpec) => {
+    const handle = createClock(clockSpecOf(spec));
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <StoryClockProvider handle={handle} spec={spec}>
+        {children}
+      </StoryClockProvider>
+    );
+    return { handle, hook: renderHook(() => useTimeline(), { wrapper }) };
+  };
+
+  it('plays from the end over from the start, clamps a seek, and ignores a rate that is not positive', () => {
+    const { hook } = timeline({ start: -300, duration: 1000, loop: false });
+    act(() => hook.result.current.seek(5000));
+    expect(hook.result.current.time).toBe(700);
+    act(() => hook.result.current.seek(-5000));
+    expect(hook.result.current.time).toBe(-300);
+    act(() => hook.result.current.seek(700));
+    act(() => hook.result.current.play());
+    expect(hook.result.current).toMatchObject({ playing: true, time: -300 });
+    for (const rate of [0, -1, Number.NaN]) act(() => hook.result.current.setRate(rate));
+    expect(hook.result.current.rate).toBe(1);
+    act(() => hook.result.current.setRate(2));
+    expect(hook.result.current.rate).toBe(2);
+  });
+
+  it('keeps the shown time across a span set at runtime, and goes back to the declared span when it is lifted', () => {
+    const { hook } = timeline({ duration: 1000 });
+    act(() => hook.result.current.seek(600));
+    act(() => hook.result.current.setSpan({ start: -500, duration: 4000 }));
+    expect(hook.result.current).toMatchObject({ time: 600, span: { start: -500, end: 3500 } });
+    act(() => hook.result.current.setSpan(null));
+    expect(hook.result.current).toMatchObject({ time: 600, span: { start: 0, end: 1000 } });
   });
 });

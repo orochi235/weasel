@@ -10,8 +10,8 @@ import { LAB_DENSITY } from '../../shell/labDensity';
 import type { Globals } from '../../protocol/messages';
 import type { Loaded } from '../../story/indexBundle';
 import type { DepGraph, LoadedStory, StoryContext } from '../../story/types';
-import { ClockContext } from '../../timeline/context';
-import { useStoryClock } from '../../timeline/StoryClock';
+import { holdAt } from '@weasel-js/clock';
+import { StoryClockProvider, useOwnClock } from '../../timeline/StoryClock';
 import type { CapturePayload } from '../../vite/capture/payload';
 import type { FrameSetup } from '../FrameController';
 import { indexEnvOf } from '../index/indexEnv';
@@ -53,7 +53,10 @@ function scrollTo(host: HTMLElement | null, { left, top }: CapturePayload['scrol
 /** One story at the payload's playhead, config and state, writing nowhere. */
 function CapturedStory({ story, payload, setup }: { story: LoadedStory; payload: CapturePayload; setup: FrameSetup }) {
   const spec = useMemo(() => story.timeline?.(payload.config) ?? null, [story, payload.config]);
-  const clock = useStoryClock(spec, () => payload.playhead);
+  const clock = useOwnClock(spec);
+  // Held rather than sought, so a span the story sets once it runs can still reach the payload's time.
+  const at = payload.playhead;
+  useLayoutEffect(() => (clock ? holdAt(clock, at).release : undefined), [clock, at]);
 
   const state = useMemo(
     () => (payload.state === null && story.initialState ? story.initialState(payload.config) : payload.state),
@@ -69,9 +72,9 @@ function CapturedStory({ story, payload, setup }: { story: LoadedStory; payload:
     name: story.name,
   };
   return (
-    <ClockContext.Provider value={clock}>
+    <StoryClockProvider handle={clock} spec={spec}>
       <StoryHost story={story} ctx={ctx} decorators={setup.decorators ?? []} resetKey={0} onError={NO_WRITE} />
-    </ClockContext.Provider>
+    </StoryClockProvider>
   );
 }
 

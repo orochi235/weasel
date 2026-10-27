@@ -1,9 +1,10 @@
-import { useLabContext } from '@weasel-js/labkit';
+import { holdAt, type PlayheadHold } from '@weasel-js/clock';
+import { useLabContext, useTrialClockHandle } from '@weasel-js/labkit';
 import { type RefObject, useEffect, useRef } from 'react';
 import { routedTrial } from '../shell/routedTrial';
 import { readRoute, useRoute } from '../shell/useRoute';
 import { readPlayheadParam, writePlayheadParam } from './playheadUrl';
-import { useTrialClock } from './trialClocks';
+import { clockTime } from './shown';
 
 interface PlayheadSyncProps {
   trialId: string;
@@ -14,21 +15,24 @@ interface PlayheadSyncProps {
 
 /** Ties one trial's clock to the URL's `t`. */
 function PlayheadSync({ trialId, route, appliedRef }: PlayheadSyncProps) {
-  const clock = useTrialClock(trialId);
+  const handle = useTrialClockHandle(trialId);
   useEffect(() => {
-    if (!clock) return;
+    if (!handle) return;
+    const { clock } = handle;
+    let hold: PlayheadHold | null = null;
     const fromUrl = (): void => {
       const t = readPlayheadParam();
-      if (t === null || t === clock.get().time) return;
-      clock.request(t);
+      if (t === null || t === clockTime(clock)) return;
+      hold?.release();
+      hold = holdAt(handle, t);
     };
-    // Paused off the span's start, the URL holds the time; playing or at the start, it holds none. While the span
-    // cannot hold a requested time yet, the URL keeps the request rather than the clamped stand-in.
+    // Paused off the span's start, the URL holds the time, counted across passes as a hold counts it; playing or at
+    // the start, it holds none. While the span cannot hold a requested time yet, the URL keeps the request.
     let held: number | null | undefined;
     const toUrl = (): void => {
-      if (clock.pending() !== null) return;
-      const { playing, time, span } = clock.get();
-      const next = playing || time === span.start ? null : time;
+      if (hold && hold.pending() !== null) return;
+      const time = clockTime(clock);
+      const next = clock.rate !== 0 || time === clock.origin ? null : time;
       if (next === held) return;
       held = next;
       writePlayheadParam(next);
@@ -49,9 +53,10 @@ function PlayheadSync({ trialId, route, appliedRef }: PlayheadSyncProps) {
     window.addEventListener('hashchange', onHashChange);
     return () => {
       off();
+      hold?.release();
       window.removeEventListener('hashchange', onHashChange);
     };
-  }, [clock, route, appliedRef]);
+  }, [handle, route, appliedRef]);
   return null;
 }
 

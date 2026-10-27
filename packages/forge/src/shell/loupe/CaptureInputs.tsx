@@ -1,6 +1,7 @@
-import { TrialIdContext } from '@weasel-js/labkit';
+import { TrialIdContext, useTrialClockHandle } from '@weasel-js/labkit';
 import { type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Layout } from '../../protocol/messages';
+import { clockTime } from '../../timeline/shown';
 import { useCssOverrides } from '../cssVars/overrides';
 import { createCaptureTrials, type LoupeCapture, LoupeCaptureContext, type Revision, type TrialInputs } from './captureContext';
 import { createLiveLenses, LiveLensesContext } from './liveLenses';
@@ -11,6 +12,8 @@ export interface CaptureInputsProps {
   layout: Layout;
   config: unknown;
   state: unknown;
+  /** Whether the story declares a timeline, so the trial's clock is its playhead. */
+  timed: boolean;
 }
 
 /**
@@ -18,14 +21,18 @@ export interface CaptureInputsProps {
  * change republishes over the last; only unmounting, or moving to another trial, withdraws it, so a lens never sees
  * the trial gone between the two.
  */
-export function CaptureInputs({ entry, layout, config, state }: CaptureInputsProps) {
+export function CaptureInputs({ entry, layout, config, state, timed }: CaptureInputsProps) {
   const capture = useContext(LoupeCaptureContext);
   const trialId = useContext(TrialIdContext);
   const [overrides] = useCssOverrides();
   const withdraw = useRef<(() => void) | null>(null);
+  const handle = useTrialClockHandle();
+  const clock = timed ? (handle?.clock ?? null) : null;
   useEffect(() => {
-    if (capture && trialId) withdraw.current = capture.trials.publish(trialId, { entry, layout, config, state, overrides });
-  }, [capture, trialId, entry, layout, config, state, overrides]);
+    if (!capture || !trialId) return;
+    const playhead = () => (clock && clock.rate === 0 ? clockTime(clock) : null);
+    withdraw.current = capture.trials.publish(trialId, { entry, layout, config, state, overrides, playhead });
+  }, [capture, trialId, entry, layout, config, state, overrides, clock]);
   useEffect(
     () => () => {
       withdraw.current?.();

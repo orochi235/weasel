@@ -2,7 +2,7 @@ import { isPlainObject } from '@weasel-js/core';
 import type { Globals, Layout } from '../../protocol/messages';
 import { type CapturePayload, MAX_DPR, MIN_DPR } from '../../vite/capture/payload';
 import type { CssOverrides } from '../cssVars/overrides';
-import { effectiveGlobals, GLOBALS_KEY, PLAYHEAD_KEY, storyConfig } from '../globals';
+import { effectiveGlobals, GLOBALS_KEY, storyConfig } from '../globals';
 import type { TrialInputs } from './captureContext';
 import {
   type ForgeComparison,
@@ -37,6 +37,8 @@ export interface CapturePayloadInput {
   resolved: ResolvedConditions;
   lab: CapturePayload['lab'];
   colorScheme: CapturePayload['colorScheme'];
+  /** Where the story's playhead stands while paused; null while it plays, or with no timeline. */
+  playhead: number | null;
 }
 
 /** Whether `round`, `value` sent through JSON, is `value` again: nothing dropped, nothing turned into something else. */
@@ -79,14 +81,13 @@ const clampDpr =(dpr: number) => Math.min(Math.max(dpr, MIN_DPR), MAX_DPR);
  * different story.
  */
 export function capturePayload(input: CapturePayloadInput): CapturePayload | { unavailable: string } {
-  const { entry, layout, config, state, globals, overrides, host, dpr, resolved, lab, colorScheme } = input;
+  const { entry, layout, config, state, globals, overrides, host, dpr, resolved, lab, colorScheme, playhead } = input;
   if (!sendable(state)) return { unavailable: STATE_UNSENDABLE };
   const sent = withoutUndefined(withArgs(storyConfig(config), resolved.args));
   if (!sendable(sent)) return { unavailable: CONFIG_UNSENDABLE };
   const box = { width: host.offsetWidth, height: host.offsetHeight };
   if (!(box.width > 0 && box.height > 0)) return { unavailable: NO_BOX };
   const isolate = entry.isolate !== undefined;
-  const kept = (config as Record<string, unknown> | null | undefined)?.[PLAYHEAD_KEY];
   return {
     story: entry.id,
     isolate,
@@ -94,7 +95,7 @@ export function capturePayload(input: CapturePayloadInput): CapturePayload | { u
     state,
     globals,
     overrides,
-    playhead: !isolate && typeof kept === 'number' && Number.isFinite(kept) ? kept : null,
+    playhead: isolate ? null : playhead,
     box,
     layout,
     dpr: clampDpr(resolved.dpr ?? dpr),
@@ -120,8 +121,10 @@ export function trialPayload(
   const own = effectiveGlobals(lab.labValues, (trial.config as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY]);
   const resolved = resolveComparison(c, own, ctx);
   const colorScheme = ctx.prefersDark ? 'dark' : 'light';
+  const { playhead, ...inputs } = trial;
   return capturePayload({
-    ...trial,
+    ...inputs,
+    playhead: playhead(),
     globals: resolved.globals,
     host: hit.host,
     dpr,

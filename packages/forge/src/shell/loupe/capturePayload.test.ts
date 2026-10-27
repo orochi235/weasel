@@ -24,6 +24,7 @@ const input: CapturePayloadInput = {
   resolved: { globals: { mode: 'light', theme: 'paper' }, args: { label: 'Stop' }, dpr: null },
   lab: { globals: { mode: 'light', theme: 'paper' }, mode: 'light' },
   colorScheme: 'light',
+  playhead: 120,
 };
 
 describe('capturePayload', () => {
@@ -89,7 +90,7 @@ describe('capturePayload', () => {
       lab: { globals: { mode: 'light', theme: 'paper' }, mode: 'light' },
       colorScheme: 'light',
     });
-    expect(capturePayload({ ...input, config: { label: 'Go' } })).toMatchObject({ playhead: null });
+    expect(capturePayload({ ...input, playhead: null })).toMatchObject({ playhead: null });
   });
 
   it('sends no playhead for an isolated story', () => {
@@ -105,6 +106,7 @@ describe('trialPayload', () => {
     config: { label: 'Go', $globals: { theme: 'paper', density: 'lab' } },
     state: null,
     overrides: {},
+    playhead: () => 1500,
   };
   const hit = (): TrialHit => ({ trialId: 't1', host: host(100, 50), local: { x: 10, y: 10 }, scale: 1 });
   const lab = {
@@ -118,6 +120,14 @@ describe('trialPayload', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("reads the trial's playhead when the capture is taken", () => {
+    let at: number | null = 1500;
+    const moving = { ...trial, playhead: () => at };
+    expect(trialPayload(moving, lab, hit(), 1, null)).toMatchObject({ playhead: 1500 });
+    at = null;
+    expect(trialPayload(moving, lab, hit(), 1, null)).toMatchObject({ playhead: null });
   });
 
   it("renders under the trial's pins, and the lab's values for the rest", () => {

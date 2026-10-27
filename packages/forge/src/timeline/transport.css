@@ -1,0 +1,5 @@
+/* A status bar item sizes to its content, and the transport's scrub bar only takes slack, so the item is given some. */
+.fg-transport {
+  inline-size: 32rem;
+  max-inline-size: 100%;
+}

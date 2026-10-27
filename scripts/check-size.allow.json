@@ -166,7 +166,7 @@
     "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "lines": 499,
+    "lines": 498,
     "longestFunction": 380
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {

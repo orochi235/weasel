@@ -38,7 +38,7 @@ export type {
 } from './protocol/messages';
 export { FOLLOW_APP, type GlobalDeclaration, type GlobalDeclarations, type LabChrome } from './shell/globals';
 export { meta, story } from './story/define';
-export type { Span as TimelineSpan, SpanOverride, TimelineSpec } from './timeline/clock';
+export type { Span as TimelineSpan, SpanOverride, TimelineSpec } from './timeline/types';
 export { type StoryTimeline, usePlayhead, useTimeline } from './timeline/context';
 export type { Library } from './story/library';
 export { GALLERY_TAG, LAB_TAG } from './story/tags';

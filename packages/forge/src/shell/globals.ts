@@ -53,7 +53,7 @@ const isRecord = isPlainObject;
 
 export const isGlobalsPath = (path: string): boolean => path === GLOBALS_KEY || path.startsWith(`${GLOBALS_KEY}.`);
 
-/** The config key a timeline story's paused playhead is kept under, so labkit persists and snapshots it. */
+/** The config key forge once kept a paused playhead under; a saved config may still hold it, so a story never sees it. */
 export const PLAYHEAD_KEY = '$playhead';
 
 /** Config keys forge owns: a story neither sees nor writes them. */
