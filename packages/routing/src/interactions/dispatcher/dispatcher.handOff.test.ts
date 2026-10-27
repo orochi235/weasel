@@ -59,6 +59,24 @@ describe('handing a drag off', () => {
     expect(dispatcher.inFlight().size).toBe(0);
   });
 
+  it('carries the trail drawn before the hand-off to the taker, and leaves the passer its own copy', () => {
+    const a = passing(50);
+    const b = passing();
+    const { dispatcher, ctx } = setup(a.handle, b.handle);
+    dispatcher.handleInput(down(10, 10), ctx);
+    dispatcher.handleInput(move(30, 10), ctx);
+    dispatcher.handleInput(move(60, 12), ctx);
+    const xy = (points: readonly { x: number; y: number }[] | undefined) => points?.map(({ x, y }) => ({ x, y }));
+    const handed = (b.handle.onMove.mock.calls[0]![0] as InvocationCtx).drag?.points;
+    expect(xy(handed)).toEqual([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 60, y: 12 }]);
+    const passerKept = (a.handle.onEnd.mock.calls[0]![0] as InvocationCtx).drag?.points;
+    dispatcher.handleInput(move(70, 15), ctx);
+    dispatcher.handleInput(up(70, 15), ctx);
+    const ended = (b.handle.onEnd.mock.calls[0]![0] as InvocationCtx).drag?.points;
+    expect(xy(ended)).toEqual([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 60, y: 12 }, { x: 70, y: 15 }]);
+    expect(xy(passerKept)).toEqual([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 60, y: 12 }]);
+  });
+
   it('ends the drag when no other candidate takes it', () => {
     const a = passing(50);
     const registry = makeRegistry([ongoingAction('first', { kind: 'drag' }, vi.fn().mockReturnValue(a.handle))]);

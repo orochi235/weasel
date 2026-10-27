@@ -19,7 +19,7 @@ export function handOff(
     walk(rank(press, ctx, engaged(), false), press, ctx, (match, action, deps) => (
       skip.has(action.id) ? 'empty-handle' : invoke(match, action, deps)
     ), false);
-    notePassed(run, event, skip);
+    notePassed(run, event, passed);
     if (pumpGesture(run, event) !== 'pass') break;
   }
   return 'handled';

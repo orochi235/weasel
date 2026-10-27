@@ -3,7 +3,7 @@
  * chose, feeding it the events that continue it, and ending it.
  */
 import type { Action } from '../actions/action';
-import type { ActionDeps, InvocationCtx, OngoingHandle } from '../actions/invoker';
+import type { ActionDeps, DragSample, InvocationCtx, OngoingHandle } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { platformRoleKeys, roleKeysOf } from '../actions/modifierRoles';
 import type { DispatcherContext } from './dispatcherApi';
@@ -66,19 +66,32 @@ function endGesture(run: GestureRun, gestureId: string, event: InputEvent, reaso
   return true;
 }
 
-/** End a drag whose handle passed it, answering the press that opened it and every action not to offer it to. */
-export function endPassed(run: GestureRun, event: InputEvent): { event: InputEvent; skip: Set<string> } | null {
+/** A drag ended by a pass: the press that opened it, every action not to offer it to, and the trail it had drawn. */
+export interface Passed {
+  event: InputEvent;
+  skip: Set<string>;
+  trail: readonly DragSample[];
+}
+
+/** End a drag whose handle passed it. */
+export function endPassed(run: GestureRun, event: InputEvent): Passed | null {
   const gestureId = gestureIdFor(event);
   const opened = run.opened.get(gestureId);
   if (opened === undefined) return null;
+  // A copy: the passing handle's `onEnd` may keep the live trail it is handed.
+  const trail = [...(run.facts.of(gestureId).points ?? [])];
   endGesture(run, gestureId, event, 'cancel');
-  return { event: opened.event, skip: new Set([...opened.passed, opened.action]) };
+  return { event: opened.event, skip: new Set([...opened.passed, opened.action]), trail };
 }
 
-/** Mark the drag `event` belongs to, if one is in flight, as never to go back to `skip`. */
-export function notePassed(run: GestureRun, event: InputEvent, skip: ReadonlySet<string>): void {
-  const opened = run.opened.get(gestureIdFor(event));
-  if (opened !== undefined) opened.passed = new Set([...opened.passed, ...skip]);
+/** If the drag `event` belongs to was taken, mark it never to go back to `passed.skip` and give it the trail drawn
+ *  before `event`, which the taker is handed next and samples itself. */
+export function notePassed(run: GestureRun, event: InputEvent, passed: Passed): void {
+  const gestureId = gestureIdFor(event);
+  const opened = run.opened.get(gestureId);
+  if (opened === undefined) return;
+  opened.passed = new Set([...opened.passed, ...passed.skip]);
+  run.facts.resumeTrail(gestureId, passed.trail.slice(0, -1));
 }
 
 function endMultiTouch(run: GestureRun, event: InputEvent, reason: Reason, except?: string): boolean {
