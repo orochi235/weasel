@@ -26,7 +26,11 @@ export interface TransportProps {
   rates?: readonly number[];
   /** How a rate reads, shown and spoken. Default a multiplier, `0.5x`. */
   formatRate?: (rate: number) => string;
+  /** The shown time, ms, and where the scrub bar starts: the bar spans
+   *  `[start, start + duration]`. */
   playhead: number;
+  /** Default `0`. */
+  start?: number;
   duration: number;
   onPlay: () => void;
   onPause: () => void;
@@ -47,8 +51,16 @@ const multiplierText = (r: number): string => qty(r, RATE).text;
 const multiplierSpoken = (r: number): string => qty(r, RATE).spoken;
 
 /** The playhead over the duration, in seconds, in a cell that holds its width. */
-export function PlayheadReadout({ playhead, duration }: { playhead: number; duration: number }): ReactElement {
-  const shown = Math.min(Math.max(playhead, 0), duration);
+export function PlayheadReadout({
+  playhead,
+  duration,
+  start = 0,
+}: {
+  playhead: number;
+  duration: number;
+  start?: number;
+}): ReactElement {
+  const shown = Math.min(Math.max(playhead, start), start + duration);
   return (
     <span className={s.time}>
       <span data-testid="timeline-time">
@@ -69,7 +81,8 @@ export function PlayheadReadout({ playhead, duration }: { playhead: number; dura
 export function Transport(props: TransportProps): ReactElement {
   const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange, onSeek, onReverseChange } = props;
   const reverse = props.reverse ?? false;
-  const shown = Math.min(Math.max(playhead, 0), duration);
+  const start = props.start ?? 0;
+  const shown = Math.min(Math.max(playhead, start), start + duration);
   const looping = loop !== false && loop !== 0;
   // The handle's scale is whatever anything holding it set, so an off-list rate
   // gets its own detent — `DetentSlider` would otherwise round it to the
@@ -138,15 +151,15 @@ export function Transport(props: TransportProps): ReactElement {
         <Slider
           ariaLabel="Position"
           thumbs={[{ value: shown, valueText: spokenSeconds(shown) }]}
-          min={0}
-          max={duration}
-          onInput={([thumb]) => onSeek(thumb.value)}
+          min={start}
+          max={start + duration}
+          onInput={([thumb]) => onSeek(Math.min(Math.max(thumb.value, start), start + duration))}
           thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
           className={t.scrub}
         />
       ) : null}
 
-      <PlayheadReadout playhead={playhead} duration={duration} />
+      <PlayheadReadout playhead={playhead} duration={duration} start={start} />
     </div>
   );
 }

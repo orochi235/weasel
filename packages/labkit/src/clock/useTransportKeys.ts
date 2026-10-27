@@ -13,15 +13,14 @@ const ARROW_STEP = 0.05;
 /**
  * Space plays and pauses, the arrows step the playhead, Home and End jump to
  * the pass's ends, R flips the direction and `<` / `>` step the speed — on the
- * document `anchor` is in, while `enabled`. `touch` is called before each.
+ * document `anchor` is in, while `enabled`.
  */
 export function useTransportKeys(
   anchor: RefObject<HTMLElement | null>,
   control: TransportControl | null,
   enabled: boolean,
-  touch: () => void,
 ): void {
-  const latest = useLatest({ control, touch });
+  const latest = useLatest({ control });
   // The transport renders its anchor only once it has a control, so the
   // listener has to wait for that commit rather than run once without one.
   const ready = control !== null;
@@ -29,13 +28,12 @@ export function useTransportKeys(
     const doc = anchor.current?.ownerDocument;
     if (!enabled || !ready || !doc) return;
     const onKeyDown = (event: KeyboardEvent): void => {
-      const { control: c, touch: touched } = latest.current;
+      const { control: c } = latest.current;
       if (!c || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.target instanceof Element && event.target.closest(OWNS_KEYS)) return;
       const act = keyAction(event.key, c);
       if (!act) return;
       event.preventDefault();
-      touched();
       act();
     };
     doc.addEventListener('keydown', onKeyDown);
@@ -60,9 +58,9 @@ function keyAction(key: string, c: TransportControl): (() => void) | null {
     case 'ArrowLeft':
       return () => c.seek(c.playhead - step);
     case 'Home':
-      return () => c.seek(0);
+      return () => c.seek(c.start);
     case 'End':
-      return () => c.seek(c.length);
+      return () => c.seek(c.start + c.length);
     case 'r':
     case 'R':
       return () => c.setBackward(!c.backward);

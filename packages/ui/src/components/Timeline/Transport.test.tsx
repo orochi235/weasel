@@ -45,6 +45,14 @@ describe('Transport', () => {
     expect(screen.getByTestId('timeline-time')).toHaveTextContent('0.48s / 2.00s');
   });
 
+  it('shows a playhead before zero and spans the scrub bar from start', () => {
+    renderWithIcons(<Transport {...props} start={-500} duration={3000} playhead={-500} onSeek={() => {}} />);
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('-0.50s / 3.00s');
+    const bar = screen.getByRole('slider', { name: 'Position' });
+    expect(bar).toHaveAttribute('aria-valuemin', '-500');
+    expect(bar).toHaveAttribute('aria-valuemax', '2500');
+  });
+
   it('reflects the loop state on the toggle', () => {
     renderWithIcons(<Transport {...props} loop />);
     expect(screen.getByRole('switch', { name: /loop/i })).toBeChecked();
