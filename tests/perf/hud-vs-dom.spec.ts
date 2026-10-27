@@ -30,6 +30,12 @@
  * no layer-level offset, so under a pan it still moves each widget. `react`
  * bundles React's production build, which is what a consumer ships.
  *
+ * A HUD whose labels neither change nor move is drawn through `drawLayers`
+ * with a command cache, as a canvas draws it, so its layer's `deps` let the
+ * canvas reuse the layer and retain its pixels. Every other HUD cell calls the
+ * layer's `draw` itself, which is what the canvas would end up doing anyway.
+ * `HVD_LAYERS=0` draws the still HUD that way too, which is what prices the skip.
+ *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect, type Browser, type Page } from '@playwright/test';
@@ -76,6 +82,9 @@ const WARMUP = 30;
 /** Passes. Each runs every configuration's approaches forward then backward
  *  (ABCCBA), so each gives every cell two samples. */
 const PASSES = rounds(2);
+
+/** `HVD_LAYERS=0` draws a still HUD by calling its layer, not through `drawLayers`. */
+const LAYERS = process.env.HVD_LAYERS !== '0';
 
 /** `HVD_CENSUS=1` reports every thread in every process, and the frame
  *  pipeline's stages, for each measurement — what the four counted groups
@@ -232,13 +241,15 @@ function printAlloc(a: Awaited<ReturnType<typeof allocProfile>>): void {
 }
 
 async function install(
-  { root, w, h, glyphsPerLabel, reactUrl }: { root: string; w: number; h: number; glyphsPerLabel: number; reactUrl: string },
+  { root, w, h, glyphsPerLabel, reactUrl, layers }:
+  { root: string; w: number; h: number; glyphsPerLabel: number; reactUrl: string; layers: boolean },
 ): Promise<{ glRenderer: string; gpuTimer: boolean }> {
   const base = `/weasel/@fs${root}`;
   // One import of the renderer barrel, so the font registry the renderer reads
   // is the one written here; a second specifier can load a second copy.
   const { WeaselRenderer, registerFont } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
   const { createHud, attachHud } = await import(/* @vite-ignore */ `${base}/packages/hud/src/index.ts`);
+  const { drawLayers } = await import(/* @vite-ignore */ `${base}/packages/core/src/core/layers/render.ts`);
   const { mountReactOverlay } = await import(/* @vite-ignore */ reactUrl);
 
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -344,7 +355,7 @@ async function install(
           return hud.text({ id: `l${i}`, x: p.x, y: p.y, text: label(i, 0), fontSize: 14, color: '#e8e8e8' });
         });
         // `attachHud`'s own layer, so the cell pays what the real layer does per repaint.
-        let layer: { draw(data: unknown, view: unknown, dims: unknown): unknown[] } | null = null;
+        let layer: { draw(data: unknown, view: unknown, dims: unknown): unknown[]; deps?: unknown } | null = null;
         const detach = attachHud({
           element: null,
           requestRedraw: () => {},
@@ -353,7 +364,10 @@ async function install(
         }, hud, { font: 'sans-serif' });
         const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
         const dims = { width: w, height: h };
-        const frameCommands = () => [...background, ...layer!.draw(null, view, dims)];
+        const cache = every || moving || !layers ? null : new Map();
+        const frameCommands = cache
+          ? () => [...background, ...drawLayers([layer], null, {}, undefined, view, dims, cache)]
+          : () => [...background, ...layer!.draw(null, view, dims)];
         step = (f) => {
           const c = moving ? camera(f, zoom) : null;
           for (let i = 0; i < n; i++) {
@@ -536,7 +550,7 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     viewport: `${W}x${H}`, dpr: 1, glyphs: GLYPHS, glyphsPerLabel: GLYPHS_PER_LABEL,
     updates: [...UPDATES], cameras: [...CAMERAS], approaches: [...APPROACHES], frames: FRAMES, warmup: WARMUP, passes: PASSES,
     order: 'each configuration\'s approaches forward then backward (ABCCBA), reversed on alternate passes', backgroundRects: 200,
-    census: CENSUS, alloc: ALLOC,
+    census: CENSUS, alloc: ALLOC, layers: LAYERS,
   });
   const errors: string[] = [];
   // The fixture page has no HMR socket to reach; vite's client says so.
@@ -558,7 +572,9 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     for (let attempt = 1; ; attempt++) {
       try {
         await page.goto('/weasel/__perf/hud-vs-dom');
-        return await page.evaluate(install, { root: repoRoot, w: W, h: H, glyphsPerLabel: GLYPHS_PER_LABEL, reactUrl: REACT_URL });
+        return await page.evaluate(install, {
+          root: repoRoot, w: W, h: H, glyphsPerLabel: GLYPHS_PER_LABEL, reactUrl: REACT_URL, layers: LAYERS,
+        });
       } catch (e) {
         if (attempt === 5 || !/Execution context was destroyed|interrupted by another navigation/.test((e as Error).message)) throw e;
         await page.waitForTimeout(2000);

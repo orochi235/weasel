@@ -364,10 +364,48 @@ msb-uai (Apple M3 Max) on 2026-10-27, one run of each tree without the worker-po
 the shared line orders frozen, the profile showed 132 KB a frame under `next`, gone once they were
 not. The runs are in `recorded/hud-vs-dom-alloc-2026-10-27/`.
 
-What is left, at 5,000 glyphs: the column and quad arrays (`slice`, 916 KB), `layoutRuns`' own
-garbage (298: its code point list, a line box per line), `breakLines` (206), `paintRuns` (214),
-`resolveRuns` and `resolveTextStyle` building the new command (155 and 100), `placeLine` (153),
-and a boxed number per read of an atlas face's `descent` (`get descent`, 122).
+A third round reused what each layout threw away. Line breaking keeps its lines, prefix sums and
+entry lists from one layout to the next and zeroes the kerning of the entry opening a line in
+place rather than copying it; painting keeps its group slots; an atlas face keeps its ascent and
+descent until it is measured again rather than box a number on every read; and resolving a style
+or a run spreads no new empty object for each field it leaves out, nor transforms text no run
+asked to transform. KB allocated a frame and renderer main thread in ms a frame, median
+[min–max] of 4 samples:
+
+| Camera | Glyphs | HUD before | HUD after | DOM after |
+|---|---:|---:|---:|---:|
+| fixed  | 2,500 | 1,612, 1.90 [1.63–2.30] | 1,286, 2.21 [2.08–2.35] |  73, 2.21 [2.07–2.38] |
+| fixed  | 5,000 | 3,166, 3.42 [3.05–3.89] | 2,517, 3.00 [2.97–3.09] | 105, 2.79 [2.65–3.17] |
+| moving | 2,500 | 1,642, 2.21 [2.19–2.31] | 1,334, 2.04 [1.63–2.23] | 104, 2.36 [1.89–2.37] |
+| moving | 5,000 | 3,234, 3.82 [3.70–4.01] | 2,606, 3.75 [3.58–3.83] | 169, 3.85 [3.84–3.91] |
+
+Allocation fell 19–21% in every cell; main-thread time moved inside its spread. Measured on
+msb-uai on 2026-10-27, one run of each tree, at `0f80b7626` and at `c5e74cfb6` with only this
+round's commits on it. The runs are in `recorded/hud-vs-dom-alloc-2026-10-27-round3/`.
+
+What is left, at 5,000 glyphs: the column and quad arrays (`slice`, 869 KB), which the layout and
+paint caches hold; `layoutRuns`' own garbage (255: the line boxes and the result); `paintRuns`
+(179) and `groupFor` (87), building the groups a painting returns; `placeLine` (133, the line
+box); `resolveFontVariantInternal` (96, a result object and two key strings a run); and
+`resolveTextStyle` and `resolveRuns` building the new command (73 and 67).
+
+### A still HUD through `drawLayers`
+
+A HUD whose labels neither change nor move lets a canvas skip it: `attachHud`'s layer declares
+`deps` that hold while no widget changed, so `drawLayers` reuses its commands and, past 250 of
+them, asks the renderer to keep its pixels. The spec draws a still HUD that way; `HVD_LAYERS=0`
+calls the layer's `draw` instead, as it did before. Renderer main thread in ms a frame, median
+[min–max] of 4 samples, fixed camera:
+
+| Glyphs | HUD, `draw` called | HUD, through `drawLayers` | DOM, in each run |
+|---:|---:|---:|---:|
+| 2,500 | 0.50 [0.45–0.52] | 0.21 [0.19–0.31] | 0.21–0.26, 0.17–0.30 |
+| 5,000 | 0.69 [0.66–0.76] | 0.23 [0.21–0.26] | 0.21–0.25, 0.19–0.24 |
+
+Through `drawLayers` a still HUD costs the main thread what the DOM does, where calling `draw`
+cost two to three times as much. GPU-process time differed between the two runs for the DOM as
+well, so only main-thread time compares across them. Same node and date, one run of each, in the
+same directory.
 
 ### Widget command caching
 
@@ -380,6 +418,7 @@ result files are in `recorded/hud-command-cache/`.
 
 The default sweep is 486 measurements and took 78 minutes on msb-uai.
 `HVD_GLYPHS`, `HVD_UPDATES`, `HVD_CAMERAS`, and `HVD_APPROACHES` each narrow it.
+`HVD_LAYERS=0` draws a still HUD by calling its layer, as above.
 `HVD_CENSUS=1` adds the census of every thread, the renderer worker pool's self time by event, and the frame pipeline's async
 stages; it traces more categories, so its busy figures are not comparable with a
 run without it. `HVD_ALLOC=1` adds the allocation profile above.

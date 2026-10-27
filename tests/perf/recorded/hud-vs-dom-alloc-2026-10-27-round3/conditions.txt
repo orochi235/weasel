@@ -1,0 +1,16 @@
+Every run: HVD_APPROACHES=hud,dom HVD_GLYPHS=2500,5000 npm run test:perf -- hud-vs-dom, through
+onto do --solo on msb-uai (Apple M3 Max, 14 cores), one run each.
+
+1-before          HVD_ALLOC=1 HVD_UPDATES=every-frame HVD_CAMERAS=fixed,moving
+                  0f80b7626 (shared batch worktree, its one uncommitted
+                  file outside the text path); load 2.9 at start
+2-after           the same, on a throwaway worktree at c5e74cfb6 plus only the third round's
+                  cuts (the five commits from 79357fcab to a95ece14d), so another session's
+                  uncommitted glyph rotation is not in it; load 2.7
+3-static-direct   HVD_LAYERS=0 HVD_UPDATES=static HVD_CAMERAS=fixed: the still HUD drawn by
+                  calling its layer's draw, as the spec did before; same tree; load 1.9
+4-static-layers   HVD_UPDATES=static HVD_CAMERAS=fixed: the still HUD drawn through drawLayers
+                  with a command cache; same tree; load 1.8
+
+2-4 share one log. GPU-process time differs between runs 3 and 4 for the DOM too (1.9 ms
+against 0.7), so compare main-thread time across those two runs, and totals only within one.
