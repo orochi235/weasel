@@ -102,20 +102,24 @@ export function typingCommands(
   return out;
 }
 
+/** A swatch of `color` in a row's icon column, outlined in `edge`; `width` 2 marks the color a picker holds. */
+export function swatchCommand(
+  b: WidgetBounds, r: { y: number; h: number }, color: string, m: MenuMetrics, edge: string, width = 1,
+): DrawCommand {
+  const size = 12;
+  const x = b.x + m.padX + (m.rowHeight - size) / 2;
+  const y = b.y + r.y + (r.h - size) / 2;
+  return {
+    kind: 'path', path: { kind: 'rect', x, y, width: size, height: size },
+    fill: solid(color), stroke: { paint: { kind: 'solid', color: edge }, width },
+  };
+}
+
 /** The swatch a color row draws in its icon column, and its hex at the row's end. */
 export function colorCommands(
   b: WidgetBounds, r: { y: number; h: number }, e: MenuColorEntry, m: MenuMetrics, ink: ValueInk,
 ): DrawCommand[] {
-  const out: DrawCommand[] = [];
-  if (e.value !== undefined) {
-    const size = 12;
-    const x = b.x + m.padX + (m.rowHeight - size) / 2;
-    const y = b.y + r.y + (r.h - size) / 2;
-    out.push({
-      kind: 'path', path: { kind: 'rect', x, y, width: size, height: size },
-      fill: solid(e.value), stroke: { paint: { kind: 'solid', color: ink.border }, width: 1 },
-    });
-  }
+  const out: DrawCommand[] = e.value === undefined ? [] : [swatchCommand(b, r, e.value, m, ink.border)];
   out.push(textCommandFromRuns(
     b.x + m.padX, b.y + r.y, [{ text: e.value ?? '—', fill: solid(ink.muted) }],
     { ...ink.font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2,

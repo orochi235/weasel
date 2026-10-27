@@ -8,6 +8,7 @@ import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
 import { chipAt } from './valueRows';
 import { createTextEditor } from './textEdit';
+import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
 
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
@@ -26,6 +27,8 @@ export interface MenuWidgetOptions {
   metrics?: MenuMetrics;
   /** Where a row's icon is looked up; without it no row draws one. */
   icons?: MenuIcons;
+  /** The swatches a color row's picker offers, as `#rrggbb`. Default {@link DEFAULT_MENU_PALETTE}. */
+  palette?: readonly string[];
   onChange(): void;
 }
 
@@ -39,9 +42,11 @@ function underOnCanvas(r: Rect, toCanvas: (client: Point) => Point): Rect {
 export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const m = opts.metrics ?? DEFAULT_MENU_METRICS;
   const rev = createRevision(opts.onChange);
+  const pickers = withColorPickers(
+    withLinks(opts.open.entries, (href) => window.location.assign(href)), opts.palette ?? DEFAULT_MENU_PALETTE, () => c,
+  );
   const c = createMenuController({
-    entries: withLinks(opts.open.entries, (href) => window.location.assign(href)),
-    highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
+    entries: pickers.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
   const place = createPlacer({
     anchor: opts.toCanvas(opts.open.client),
@@ -120,7 +125,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     return true;
   };
 
-  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu(c), subscribe: c.subscribe };
+  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu(c, pickers.swatchOf), subscribe: c.subscribe };
 
   return {
     id: `weasel-menu-${opts.open.seq}`,
@@ -136,7 +141,10 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     draw: (ctx) => {
       family = ctx.defaultFont;
       panels = place(c, family);
-      const values = { number: c.numberValue, text: c.textValue, editing: typing.current(), measure: opts.measure ?? measureLabel };
+      const values = {
+        number: c.numberValue, text: c.textValue, editing: typing.current(), swatch: pickers.swatchOf,
+        measure: opts.measure ?? measureLabel,
+      };
       return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons, values));
     },
     hitTest: (x, y) => levelAt(x, y) >= 0,

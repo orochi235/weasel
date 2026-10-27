@@ -8,7 +8,7 @@ import { toIconRef, type IconRegistry } from '@weasel-js/icons';
 import { boxShadowCommands } from '../boxShadow';
 import { glyphCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
-import { colorCommands, numberCommands, textCommands, typingCommands, valueRowWidth } from './valueRows';
+import { colorCommands, numberCommands, swatchCommand, textCommands, typingCommands, valueRowWidth } from './valueRows';
 import { measureLabel } from './measureLabel';
 import type { HudTextEdit } from './textEdit';
 
@@ -101,6 +101,8 @@ export interface MenuDrawValues {
   number(e: MenuNumberEntry): number | undefined;
   text(e: MenuTextEntry): string | undefined;
   editing?: HudTextEdit | null;
+  /** The color a row draws as a swatch in its icon column, in place of its icon or check. */
+  swatch?(e: MenuEntry): string | undefined;
   /** Width of a label, which places the caret in typed text. Defaults to {@link measureLabel}. */
   measure?(text: string, fontSize: number, fontFamily: string): number;
 }
@@ -138,7 +140,7 @@ export function drawPanel(
       return;
     }
     if (i === highlight) out.push(rect(b.x + 2, b.y + r.y, b.w - 4, r.h, t['--wzl-surface-hover']));
-    // Nothing here edits a color row, so it reads as a disabled one does.
+    // A color row left a color row is one nothing writes (the widget makes the rest pickers), so it reads as disabled.
     const color = e.disabled || e.kind === 'color' ? muted : fg;
     out.push(textCommandFromRuns(
       b.x + m.padX + m.rowHeight, b.y + r.y,
@@ -149,7 +151,11 @@ export function drawPanel(
     const iconY = b.y + r.y + r.h / 2;
     const ref = e.kind !== 'color' && typeof e.icon === 'string' ? toIconRef(e.icon) : undefined;
     const glyph = ref ? icons?.get(ref) : undefined;
-    if (e.kind === 'item' && e.checked) out.push(check(iconX, iconY, color));
+    const swatch = values.swatch?.(e);
+    if (swatch !== undefined) {
+      const held = e.kind === 'item' && e.checked;
+      out.push(swatchCommand(b, r, swatch, m, held ? fg : t['--wzl-border'], held ? 2 : 1));
+    } else if (e.kind === 'item' && e.checked) out.push(check(iconX, iconY, color));
     else if (glyph) out.push(...glyphCommands(glyph, { x: iconX - ICON_SIZE / 2, y: iconY - ICON_SIZE / 2, size: ICON_SIZE, color }));
     const chip = shortcutOf(e);
     if (chip) {
