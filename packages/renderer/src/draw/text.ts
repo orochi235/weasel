@@ -5,7 +5,7 @@ import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { isSolidPaint } from '@weasel-js/paint';
+import { isSolidPaint, resolveColor } from '@weasel-js/paint';
 import {
   ensureFontTexture,
   textureCacheKey,
@@ -27,7 +27,7 @@ import { applyClipTest } from './stencil';
 import { enterUncut, leaveUncut, flushForOwnDraw } from './clip';
 import { BATCH_MODEL, flushBatch } from './flushBatch';
 import { solidColor, stageSolid, stageGlyphs, tryStageFill } from './batch';
-import { foldColor } from './foldColor';
+import { foldColor, foldColorInto } from './foldColor';
 import { batchPaint } from './gradient';
 import { bindPattern, bindGradient } from './paintBind';
 import { drawPathFillByKind } from './pathPaint';
@@ -183,12 +183,13 @@ function drawTextGroup(
     drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic, fieldScale);
     return;
   }
-  const color = isSolidPaint(fill) ? solidColor(fill) : [0, 0, 0, 1];
+  const color = isSolidPaint(fill) ? resolveColor(fill.color) : BLACK;
+  const opacity = isSolidPaint(fill) ? fill.opacity ?? 1 : 1;
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
   let slot = stageGlyphs(ctx, atlasId, fieldScale);
-  const rgba = foldColor(ctx, color[0], color[1], color[2], color[3]);
+  const rgba = foldColorInto(ctx, color[0], color[1], color[2], color[3] * opacity, glyphRgba);
 
   const quads = group.quadData;
   for (let at = 0; at < quads.length; at += QUAD_STRIDE) {
@@ -207,6 +208,11 @@ function drawTextGroup(
     }
   }
 }
+
+const BLACK = [0, 0, 0, 1] as const;
+/** The color `drawTextGroup` stages its glyphs in. Read by `pushGlyph` as each
+ *  quad is staged and kept by nothing, so one array serves every group. */
+const glyphRgba: [number, number, number, number] = [0, 0, 0, 0];
 
 /** Which glyph-paint program `fill` needs, or `null` for a paint the batch
  *  draws as one color. */

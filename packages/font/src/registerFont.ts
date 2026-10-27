@@ -3,6 +3,7 @@
  * chain that resolves a request against it.
  */
 
+import { textureCacheKey } from './textureCacheKey';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FontStyle } from './fontStyle';
 import { notifyGlyphReady } from './glyphReady';
@@ -405,10 +406,7 @@ export function ensureFontTexture(
   return true;
 }
 
-/** The texture cache key used by `ensureFontTexture` for a given variant. */
-export function textureCacheKey(family: string, weight: number, style: FontStyle): string {
-  return `${family}|${weight}|${style}`;
-}
+export { textureCacheKey } from './textureCacheKey';
 
 /** Kept as a no-op for context-restore call sites; per-cache dedup handles it now. */
 export function markAllFontsNotUploaded(): void {}

@@ -58,6 +58,24 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     for (const c of matrixCalls) expect((c.args[2] as Float32Array)[0]).toBe(1);
   });
 
+  it('stages each text command in its own color, its fill opacity and group alpha folded in', () => {
+    // Glyph colors share one scratch array; a later command must not repaint
+    // an earlier one's quads, already staged, in its color.
+    const text = (color: string, opacity?: number): DrawCommand => ({
+      kind: 'text', x: 0, y: 0,
+      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { paint: { kind: 'solid', color, opacity } }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }],
+      align: 'left', style: { fontFamily: 'inter', fontSize: 32 },
+    });
+    r.render([{ kind: 'group', alpha: 0.5, children: [text('#f00', 0.5)] }, text('#00f')]);
+    const upload = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+    )!;
+    const v = upload.args[2] as Float32Array;
+    expect(Array.from(v.slice(2, 6))).toEqual([1, 0, 0, 0.25]);
+    const second = 4 * 10;
+    expect(Array.from(v.slice(second + 2, second + 6))).toEqual([0, 0, 1, 1]);
+  });
+
   it('uploads u_colorMatrix during an image draw inside a group whose colorMatrix mixes channels', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     // Red takes green's value: off the diagonal, so no vertex tint stands in for it.
