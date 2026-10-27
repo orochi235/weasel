@@ -17,10 +17,6 @@ import {
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 
-/** How import maps a shape into place: a shape landing far from 0 is measured
- *  from an origin beside it, so its float32 coords keep their fractions. */
-export const AUTO_ORIGIN = { autoOrigin: true } as const;
-
 /** Magic constant: cubic Bezier control offset for a quarter-circle of radius 1. */
 const KAPPA = (4 * (Math.sqrt(2) - 1)) / 3;
 
@@ -35,7 +31,7 @@ export function rectElementToPath(
   m: Matrix = IDENTITY_MATRIX,
 ): Path {
   if (rx <= 0 && ry <= 0) {
-    return transformPath({ kind: 'rect', x, y, width, height }, m, AUTO_ORIGIN);
+    return transformPath({ kind: 'rect', x, y, width, height }, m);
   }
   const r = Math.min(Math.max(rx, ry), Math.min(width, height) / 2);
   const r2 = Math.min(rx > 0 ? rx : r, ry > 0 ? ry : r, Math.min(width, height) / 2);
@@ -56,7 +52,7 @@ export function rectElementToPath(
   b.lineTo(x, y + rad);
   b.curveTo(x, y + rad - k, x + rad - k, y, x + rad, y);
   b.close();
-  return transformPath(b.build(), m, AUTO_ORIGIN);
+  return transformPath(b.build(), m);
 }
 
 /** `<ellipse cx cy rx ry>` → PolygonPath (4 cubic segments). */
@@ -73,7 +69,7 @@ export function ellipseToPath(
   b.curveTo(cx - rx, cy - ky, cx - kx, cy - ry, cx, cy - ry);
   b.curveTo(cx + kx, cy - ry, cx + rx, cy - ky, cx + rx, cy);
   b.close();
-  return transformPath(b.build(), m, AUTO_ORIGIN);
+  return transformPath(b.build(), m);
 }
 
 /** `<circle cx cy r>` → ellipse with rx === ry. */
@@ -91,7 +87,7 @@ export function lineToPath(
   const b = new PathBuilder().autoOrigin();
   b.moveTo(x1, y1);
   b.lineTo(x2, y2);
-  return transformPath(b.build(), m, AUTO_ORIGIN);
+  return transformPath(b.build(), m);
 }
 
 /** Parse SVG `points="x1,y1 x2,y2 ..."` to a flat list. */
@@ -116,7 +112,7 @@ export function polylineToPath(
   const b = new PathBuilder().autoOrigin();
   b.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) b.lineTo(points[i].x, points[i].y);
-  return transformPath(b.build(), m, AUTO_ORIGIN);
+  return transformPath(b.build(), m);
 }
 
 /** `<polygon points="...">` → closed polygon. */
@@ -131,7 +127,7 @@ export function polygonToPath(
   b.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) b.lineTo(points[i].x, points[i].y);
   b.close();
-  return transformPath(b.build(), m, AUTO_ORIGIN);
+  return transformPath(b.build(), m);
 }
 
 // Re-export the path opcodes for any callers that want to introspect.

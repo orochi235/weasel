@@ -1,7 +1,6 @@
 /** `<clipPath>` definitions, and the clip an element's `clip-path` names. */
 
 import { type Path, transformPath } from '@weasel-js/core';
-import { AUTO_ORIGIN } from './shapes';
 import type { Matrix } from './types';
 import { parseTransform } from './transform';
 import { collectElementsByTag } from './elements';
@@ -69,5 +68,5 @@ export function clipFor(
     onWarn(`clip-path references #${ref.id}, which no <clipPath> in the document defines`);
     return undefined;
   }
-  return transformPath(path, ctm, AUTO_ORIGIN);
+  return transformPath(path, ctm);
 }

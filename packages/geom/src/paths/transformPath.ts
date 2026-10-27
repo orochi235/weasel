@@ -15,9 +15,9 @@ const AXIS_ALIGNED_EPSILON = 1e-9;
  * `RectPath` a rect, normalizing negative extent (mirror). Rotation or
  * shear promotes the rect's four corners to a `PolygonPath`.
  *
- * With `autoOrigin`, a polygon that had no origin and lands past
- * `ORIGIN_THRESHOLD` is measured from the one `originFor` picks, so the
- * map's doubles survive the float32 coords. */
+ * A polygon that had no origin and lands past `ORIGIN_THRESHOLD` is measured
+ * from the one `originFor` picks, so the map's doubles survive the float32
+ * coords; `autoOrigin: false` keeps it origin-free. */
 export function transformPath(path: Path, m: Affine, opts: TransformPathOptions = {}): Path {
   const [a, b, c, d, e, f] = m;
   if (path.kind === 'rect') {
@@ -36,7 +36,7 @@ export function transformPath(path: Path, m: Affine, opts: TransformPathOptions 
       };
     }
     // Rotation / shear — promote to polygon with the four rect corners.
-    const poly = new PathBuilder()
+    const poly = new PathBuilder().autoOrigin()
       .moveTo(path.x, path.y)
       .lineTo(path.x + path.width, path.y)
       .lineTo(path.x + path.width, path.y + path.height)
@@ -50,7 +50,7 @@ export function transformPath(path: Path, m: Affine, opts: TransformPathOptions 
 
 /** Options for {@link transformPath}. */
 export interface TransformPathOptions {
-  /** Give a far-out result with no origin one. Default false. */
+  /** Give a far-out result with no origin one. Default true. */
   autoOrigin?: boolean;
 }
 
@@ -60,7 +60,7 @@ function transformPolygon(path: PolygonPath, m: Affine, opts: TransformPathOptio
   const o = path.origin;
   if (o === undefined) {
     const mapped = transformCoords(path.coords, m);
-    const picked = opts.autoOrigin ? originFor(mapped) : undefined;
+    const picked = opts.autoOrigin !== false ? originFor(mapped) : undefined;
     return picked
       ? { ...scaled, coords: coordsFrom(picked, mapped), origin: picked }
       : { ...scaled, coords: Float32Array.from(mapped) };

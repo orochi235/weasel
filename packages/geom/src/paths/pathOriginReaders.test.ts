@@ -109,13 +109,20 @@ describe('producers that pick an origin', () => {
     expect(worldCoords(far)[0]).toBeCloseTo(X, 6);
   });
 
-  it('map a path far out with an origin under transformPath\'s autoOrigin', () => {
+  it('map a path far out with an origin under transformPath, unless told not to', () => {
     const near = new PathBuilder().moveTo(0, 0).lineTo(1, 0).lineTo(1, 1).close().build();
     const m = [1, 0, 0, 1, X, 0] as const;
-    expect((transformPath(near, [...m]) as PolygonPath).origin).toBeUndefined();
-    const far = transformPath(near, [...m], { autoOrigin: true }) as PolygonPath;
+    const far = transformPath(near, [...m]) as PolygonPath;
     expect(far.origin).toBeDefined();
     expect(worldCoords(far)[0]).toBeCloseTo(X, 6);
+    expect((transformPath(near, [...m], { autoOrigin: false }) as PolygonPath).origin).toBeUndefined();
+    expect((transformPath(near, [1, 0, 0, 1, 5, 0]) as PolygonPath).origin).toBeUndefined();
+  });
+
+  it('keep a rect rotated far out exact through transformPath', () => {
+    const turned = transformPath({ kind: 'rect', x: X, y: 1, width: 1, height: 1 }, [0, 1, -1, 0, 0, 0]) as PolygonPath;
+    expect(turned.origin).toBeDefined();
+    expect(worldCoords(turned)[1]).toBeCloseTo(X, 6);
   });
 
   it('read SVG path data reaching past the threshold into a path with an origin', () => {

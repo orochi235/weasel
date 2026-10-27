@@ -23,6 +23,12 @@ describe('SVG far from the origin', () => {
     expect(Math.min(...worldCoords(p).filter((_, i) => i % 2 === 0))).toBeCloseTo(FAR + 0.1, 5);
   });
 
+  it('bakes an element\'s own skew carrying a shape past the threshold into a path with an origin', () => {
+    const p = pathOf(`<svg xmlns="http://www.w3.org/2000/svg"><path transform="matrix(1 0 0.5 1 262144 0)" d="M0.3 1 L1.3 1 L1.8 2 Z"/></svg>`);
+    expect(p.origin).toBeDefined();
+    expect(worldCoords(p)[0]).toBeCloseTo(FAR + 0.8, 5);
+  });
+
   it('imports a document near 0 without origins', () => {
     expect(pathOf(`<svg xmlns="http://www.w3.org/2000/svg"><path d="M1 1 L2 1 L2.5 2 Z"/></svg>`).origin).toBeUndefined();
   });
