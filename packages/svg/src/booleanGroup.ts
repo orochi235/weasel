@@ -31,13 +31,15 @@ export function derivedPathIn(
 }
 
 /** `node` with the path it derives as its data's, and that path's box as its pose, placed
- *  through `place` into the frame its children are written in. */
+ *  through `place` into the frame its children are written in; no path when it draws nothing. */
 export function asBooleanLeaf<T extends { data: unknown; pose: unknown }>(
   node: T,
   path: Path | null,
   place: (box: { x: number; y: number; width: number; height: number }) => T['pose'],
 ): T {
-  if (path === null) return { ...node, data: { ...(node.data as object), path: undefined } };
+  if (path === null || (path.kind === 'polygon' && path.commands.length === 0)) {
+    return { ...node, data: { ...(node.data as object), path: undefined } };
+  }
   return { ...node, data: { ...(node.data as object), path }, pose: place(boundsOfPath(path)) };
 }
 
