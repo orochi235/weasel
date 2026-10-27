@@ -37,3 +37,9 @@ test('right to left, a Hebrew label shows reversed and lays its first letter rig
   expect(x(first)).toBeCloseTo(195);
   expect(document.querySelector('[role="img"]')).toHaveAttribute('aria-label', 'אבג (1)');
 });
+
+test('right to left, an Arabic word keeps each joined stretch in one span, laid from the right', () => {
+  render(<div dir="rtl"><CurvedLabel text="سلام" shape={shape} align="start" /></div>);
+  expect(spans().sort((a, b) => x(b) - x(a)).map((el) => el.textContent)).toEqual(['سلا', 'م']);
+  expect(document.querySelector('[role="img"]')).toHaveAttribute('aria-label', 'سلام');
+});

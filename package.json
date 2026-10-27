@@ -89,6 +89,7 @@
     "gen:tsconfig-paths": "node scripts/gen-tsconfig-paths.mjs",
     "gen:bidi-tables": "node packages/bidi/scripts/gen-bidi-tables.mjs",
     "gen:line-break-table": "node packages/text/scripts/gen-line-break-table.mjs",
+    "gen:joining-types": "node packages/ui/scripts/gen-joining-types.mjs",
     "gen:font": "node packages/font/scripts/gen-font.ts",
     "gen:audio-worklet": "node packages/audio/scripts/gen-worklet.mjs",
     "test:stories:forge": "vitest run --project=forge-stories",
