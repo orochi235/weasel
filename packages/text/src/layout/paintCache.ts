@@ -18,30 +18,40 @@ export const PAINT_CACHE_VARIANT_LIMIT = 32;
 interface Painting {
   /** `glyphGeneration()` when it was painted. */
   generation: number;
-  key: string;
+  /** What it paints, built only once a second runs array asks this layout
+   *  for a painting: until then nothing has to be told apart from it. */
+  key: string | null;
+  /** The bucket of the threshold it was painted at, and the runs it was
+   *  painted for, held until `key` is built from them. */
+  bucket: number;
+  runs: readonly ResolvedRun[] | null;
   painted: PaintedRuns;
 }
 
 /**
  * Two tiers, as the layout cache has and for the same reason. A runs array
  * that stays put, which is what the renderer is handed, keeps its own painting
- * for as long as it and its layout both live: any number of labels can share
- * one layout and none evicts another. Runs built fresh on every call can only
- * be found by what they paint, in a bounded map per layout.
+ * for as long as it lives: any number of labels can share one layout and none
+ * evicts another. Runs built fresh on every call can only be found by what
+ * they paint, in a bounded list per layout, which hangs off the layout weakly.
  *
- * Both hang off the layout weakly and hold no reference back to it, so
- * neither keeps one the layout cache has let go.
+ * Text whose runs and layout are both new, a readout rewritten every frame,
+ * builds no key at all: the list for a fresh layout is empty, and a key is
+ * built only when there is something to compare it with.
  */
-const own = new WeakMap<readonly ResolvedRun[], WeakMap<LaidOutRuns, OwnPainting>>();
+const own = new WeakMap<readonly ResolvedRun[], OwnPainting>();
 
-/** A runs array's own painting, and the threshold it was last asked for at.
- *  The runs fix every paint, so an unchanged threshold and glyph generation
- *  is a hit with no key built. */
+/** A runs array's own painting, the layout it was painted on, and the
+ *  threshold it was last asked for at. The runs fix every paint, so the same
+ *  layout at an unchanged threshold and glyph generation is a hit with no key
+ *  built. One layout a runs array: the layout cache holds that one already. */
 interface OwnPainting {
+  laid: LaidOutRuns;
   painting: Painting;
   min: number | undefined;
 }
-const shared = new WeakMap<LaidOutRuns, Map<string, Painting>>();
+/** Most recently used last. */
+const shared = new WeakMap<LaidOutRuns, Painting[]>();
 
 /**
  * How many of the distinct font sizes present in `runs` reach `min`. The
@@ -58,21 +68,33 @@ const shared = new WeakMap<LaidOutRuns, Map<string, Painting>>();
  */
 function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): number {
   if (min === undefined) return -1;
-  const sizes = new Set<number>();
-  for (const r of runs) sizes.add(r.fontSize);
   let n = 0;
-  for (const size of sizes) if (size >= min) n++;
+  for (let i = 0; i < runs.length; i++) {
+    const size = runs[i].fontSize;
+    if (!(size >= min)) continue;
+    let seen = false;
+    for (let j = 0; j < i && !seen; j++) seen = runs[j].fontSize === size;
+    if (!seen) n++;
+  }
   return n;
 }
 
 /** Everything `paintRuns` reads from the runs that their layout does not. */
-function variantKey(runs: readonly ResolvedRun[], opts: PaintRunsOpts): string {
-  let out = `${outlineBucket(runs, opts.outlineMinSize)}`;
+function variantKey(runs: readonly ResolvedRun[], bucket: number): string {
+  let out = `${bucket}`;
   for (const r of runs) {
     out += `|${r.underline ? 1 : 0}${r.strikethrough ? 1 : 0}${r.overline ? 1 : 0}`
       + `${paintKey(r.fill?.paint)}|${strokeKey(r.stroke)}`;
   }
   return out;
+}
+
+function keyOf(p: Painting): string {
+  if (p.key === null) {
+    p.key = variantKey(p.runs!, p.bucket);
+    p.runs = null;
+  }
+  return p.key;
 }
 
 /**
@@ -88,35 +110,42 @@ export function cachedPaintRuns(
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
   const generation = glyphGeneration();
-  let byLayout = own.get(runs);
-  if (byLayout === undefined) {
-    byLayout = new WeakMap();
-    own.set(runs, byLayout);
-  }
-  const mine = byLayout.get(laid);
-  if (mine !== undefined && mine.min === opts.outlineMinSize && mine.painting.generation === generation) {
+  const min = opts.outlineMinSize;
+  const mine = own.get(runs);
+  const mineHere = mine !== undefined && mine.laid === laid && mine.painting.generation === generation;
+  if (mineHere && mine.min === min) return mine.painting.painted;
+
+  const bucket = outlineBucket(runs, min);
+  if (mineHere && mine.painting.bucket === bucket) {
+    mine.min = min;
     return mine.painting.painted;
   }
 
-  const key = variantKey(runs, opts);
-  const fresh = (p: Painting | undefined): p is Painting =>
-    p !== undefined && p.generation === generation && p.key === key;
-  if (mine !== undefined && fresh(mine.painting)) {
-    mine.min = opts.outlineMinSize;
-    return mine.painting.painted;
+  let list = shared.get(laid);
+  if (list === undefined) {
+    list = [];
+    shared.set(laid, list);
   }
-
-  let byKey = shared.get(laid);
-  if (byKey === undefined) {
-    byKey = new Map();
-    shared.set(laid, byKey);
+  let painting: Painting | null = null;
+  if (list.length > 0) {
+    const key = variantKey(runs, bucket);
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      if (p.bucket !== bucket || keyOf(p) !== key) continue;
+      list.splice(i, 1);
+      if (p.generation === generation) painting = p;
+      break;
+    }
+    if (painting === null) painting = { generation, key, bucket, runs: null, painted: paintRuns(laid, runs, opts) };
+  } else {
+    painting = { generation, key: null, bucket, runs, painted: paintRuns(laid, runs, opts) };
   }
-  let painting = byKey.get(key);
-  // Deleted either way, so that setting it below makes it the youngest.
-  byKey.delete(key);
-  if (!fresh(painting)) painting = { generation, key, painted: paintRuns(laid, runs, opts) };
-  if (byKey.size >= PAINT_CACHE_VARIANT_LIMIT) byKey.delete(byKey.keys().next().value!);
-  byKey.set(key, painting);
-  byLayout.set(laid, { painting, min: opts.outlineMinSize });
+  if (list.length >= PAINT_CACHE_VARIANT_LIMIT) list.shift();
+  list.push(painting);
+  if (mine !== undefined) {
+    mine.laid = laid; mine.painting = painting; mine.min = min;
+  } else {
+    own.set(runs, { laid, painting, min });
+  }
   return painting.painted;
 }

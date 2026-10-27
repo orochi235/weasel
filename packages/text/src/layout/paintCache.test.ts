@@ -80,6 +80,30 @@ describe('cachedPaintRuns', () => {
     expect(cachedPaintRuns(laid, variants[0]).groups[0].fill?.paint).toEqual({ kind: 'solid', color: '#f00' });
   });
 
+  it('tells a second paint on a fresh layout from the first, whose key it builds late', () => {
+    // The first painting on a layout builds no key; the second has to build
+    // the first one's from the runs it was painted for, not its own.
+    const red = [{ ...run('AB'), fill: { paint: { kind: 'solid' as const, color: '#f00' } } }];
+    const laid = cachedLayoutRuns(red, OPTS);
+    const first = cachedPaintRuns(laid, red);
+    const blue = [{ ...run('AB'), fill: { paint: { kind: 'solid' as const, color: '#00f' } } }];
+    expect(cachedPaintRuns(laid, blue)).not.toBe(first);
+    expect(cachedPaintRuns(laid, blue).groups[0].fill?.paint).toEqual({ kind: 'solid', color: '#00f' });
+    expect(cachedPaintRuns(laid, [{ ...red[0] }])).toBe(first);
+  });
+
+  it('keeps one runs array\'s painting per layout as it moves between two', () => {
+    const runs = [run('AB CD')];
+    const wide = cachedLayoutRuns(runs, OPTS);
+    const narrow = cachedLayoutRuns(runs, { ...OPTS, maxWidth: 1 });
+    expect(narrow).not.toBe(wide);
+    const onWide = cachedPaintRuns(wide, runs);
+    const onNarrow = cachedPaintRuns(narrow, runs);
+    expect(onNarrow).not.toBe(onWide);
+    expect(cachedPaintRuns(wide, runs)).toBe(onWide);
+    expect(cachedPaintRuns(narrow, runs)).toBe(onNarrow);
+  });
+
   describe('the outline threshold', () => {
     // `outlineMinSize` is derived from the view zoom, so a naive key would
     // miss on every frame of a pinch.

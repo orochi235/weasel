@@ -229,46 +229,74 @@ export function runFaces(runs: readonly ResolvedRun[]): (run: number) => FaceMet
 
 const isDecorated = (r: ResolvedRun): boolean => r.underline || r.strikethrough || r.overline;
 
-/** The group the previous glyph joined, and every input its key was built from. */
+/** The group the previous glyph joined, and every input it was matched on. */
 interface LastGroup {
   group: LaidOutGroup | null;
   run: number; family: string; weight: number; style: FontStyle;
   bold: boolean; italic: boolean; source: LaidOutGroup['source']; page: number;
 }
 
+/** A group, the run whose glyph opened it, and what that run paints, as a
+ *  string built only when a glyph of another run has to be compared with it. */
+interface GroupSlot {
+  group: LaidOutGroup;
+  run: number;
+  paint: string | null;
+}
+
+/** What a glyph of `run` on `source` paints with: its fill, and its stroke
+ *  where the tier can draw one. */
+function strokeOn(run: ResolvedRun, source: LaidOutGroup['source']): Stroke | undefined {
+  // Only the outline tier can paint a stroke; an SDF group carrying one would
+  // be a promise the renderer cannot keep.
+  return source === 'outline' && strokeHasInk(run.stroke) ? run.stroke : undefined;
+}
+
+function paintOf(run: ResolvedRun, source: LaidOutGroup['source']): string {
+  return `${paintKey(run.fill?.paint)}|${strokeKey(strokeOn(run, source))}`;
+}
+
 function groupFor(
-  groups: Map<string, LaidOutGroup>,
+  slots: GroupSlot[],
+  runs: readonly ResolvedRun[],
   g: PlacedGlyph,
-  run: ResolvedRun,
   source: LaidOutGroup['source'],
   last: LastGroup,
 ): LaidOutGroup {
   const { family, weight, style } = g.resolved.resolved;
   const { synthetic } = g.resolved;
   const page = source === 'outline' ? 0 : g.glyph!.page;
-  // A glyph keyed like the one before it joins that group without building the
-  // key, which, a string per glyph, was the largest allocation in painting text.
+  // A glyph matching the one before it joins that group without a search.
   if (last.group !== null && last.run === g.run && last.source === source && last.page === page
     && last.family === family && last.weight === weight && last.style === style
     && last.bold === synthetic.bold && last.italic === synthetic.italic) {
     return last.group;
   }
-  // Only the outline tier can paint a stroke; an SDF group carrying one would
-  // be a promise the renderer cannot keep.
-  const stroke = source === 'outline' && strokeHasInk(run.stroke) ? run.stroke : undefined;
-  const key = `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}`
-    + `|${paintKey(run.fill?.paint)}|${strokeKey(stroke)}|${source}|${page}`;
-  let group = groups.get(key);
-  if (!group) {
+  const run = runs[g.run];
+  let group: LaidOutGroup | null = null;
+  let paint: string | null = null;
+  for (const slot of slots) {
+    const c = slot.group;
+    if (c.source !== source || c.page !== page || c.family !== family || c.weight !== weight
+      || c.style !== style || c.synthetic.bold !== synthetic.bold || c.synthetic.italic !== synthetic.italic) continue;
+    // One run paints one way, so only a glyph of another run builds the strings.
+    if (slot.run !== g.run) {
+      paint ??= paintOf(run, source);
+      slot.paint ??= paintOf(runs[slot.run], source);
+      if (slot.paint !== paint) continue;
+    }
+    group = c;
+    break;
+  }
+  if (group === null) {
+    const stroke = strokeOn(run, source);
     group = {
-      family, weight, style, synthetic: { ...synthetic }, source, page,
-      fill: run.fill,
-      ...(stroke ? { stroke } : {}),
-      quadData: [],
-      ...(source === 'color' ? { colorGlyphs: [] } : {}),
-      glyphs: [],
+      family, weight, style, synthetic: { bold: synthetic.bold, italic: synthetic.italic }, source, page,
+      fill: run.fill, quadData: [], glyphs: [],
     } as unknown as LaidOutGroup;
-    groups.set(key, group);
+    if (stroke) group.stroke = stroke;
+    if (source === 'color') group.colorGlyphs = [];
+    slots.push({ group, run: g.run, paint });
   }
   last.group = group;
   last.run = g.run; last.family = family; last.weight = weight; last.style = style;
@@ -285,7 +313,7 @@ export function paintRuns(
   runs: readonly ResolvedRun[],
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
-  const groups = new Map<string, LaidOutGroup>();
+  const slots: GroupSlot[] = [];
   const last: LastGroup = {
     group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
   };
@@ -323,13 +351,13 @@ export function paintRuns(
       // refused, so it gets none.
       if (!fillHasInk(run.fill) && !(outline !== null && strokeHasInk(run.stroke))) continue;
       if (outline !== null) {
-        groupFor(groups, g, run, 'outline', last).glyphs.push({
+        groupFor(slots, runs, g, 'outline', last).glyphs.push({
           ...outline, x: g.x, baselineY: g.baselineY, scale: g.fontSize,
         });
         continue;
       }
       if (!hasGlyphQuad(g)) continue;
-      const group = groupFor(groups, g, run, g.glyph!.color ? 'color' : g.resolved.source, last);
+      const group = groupFor(slots, runs, g, g.glyph!.color ? 'color' : g.resolved.source, last);
       if (sized === null) {
         sized = group;
         group.quadData = doubles(glyphCount * QUAD_STRIDE);
@@ -351,6 +379,6 @@ export function paintRuns(
   }
   if (sized !== null) (sized.quadData as number[]).length = sizedAt;
   const out: LaidOutGroup[] = [];
-  for (const group of groups.values()) out.push(Object.defineProperties(group, groupViews));
+  for (const slot of slots) out.push(Object.defineProperties(slot.group, groupViews));
   return { groups: out, decorations };
 }
