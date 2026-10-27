@@ -423,6 +423,12 @@ The default sweep is 486 measurements and took 78 minutes on msb-uai.
 stages; it traces more categories, so its busy figures are not comparable with a
 run without it. `HVD_ALLOC=1` adds the allocation profile above.
 
+## Retained layers through a pan
+
+`retain-pan.spec.ts` times a pan frame of retained world layers against submitting them, a
+fractional pan, a screen-unit paint that opts out, and a still frame. Its runs are in
+`tests/perf/recorded/retain-pan-2026-10-27/`.
+
 ## Timing a frame
 
 Specs that time the renderer draw **one frame per task** and take the median,
