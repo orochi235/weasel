@@ -17,7 +17,8 @@ import {
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { emboldenGlyphD } from '../syntheticBold';
 import { lineDecorations, type DecorationKind } from './decorationMetrics';
-import { blankGlyph, doubles, LineBox } from './layoutColumns';
+import { doubles, takeDoubles } from './arrayPool';
+import { blankGlyph, LineBox } from './layoutColumns';
 import type { LaidOutRuns, PlacedGlyph } from './layoutRuns';
 import { hasGlyphQuad, quadViews, QUAD_STRIDE, writeGlyphQuad, type LaidOutQuad } from './glyphQuads';
 
@@ -267,6 +268,11 @@ const cursor = blankGlyph();
 const slots: GroupSlot[] = [];
 const slotPool: GroupSlot[] = [];
 const SLOT_POOL_MAX = 64;
+/** The first group's quads while a painting fills them, before they are
+ *  copied out at their final length. */
+let scratch: number[] = [];
+/** Longest {@link scratch} grows to; a longer text's group gets its own. */
+const SCRATCH_MAX = 1 << 14;
 const last: LastGroup = {
   group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
 };
@@ -287,10 +293,14 @@ export function paintRuns(
   // A rule is a solid rect with only a fill to paint it.
   const rulePaint = faceOf && ((run: number): string | null =>
     (fillHasInk(runs[run].fill) ? paintKey(runs[run].fill!.paint) : null));
-  // Most text is one group. The first to take a quad gets an array sized for
-  // every glyph, trimmed at the end; any other grows as it fills.
+  // Most text is one group. The first to take a quad fills a scratch array
+  // sized for every glyph, copied out at its final length; any other grows
+  // as it fills.
   let glyphCount = 0;
   for (const line of laid.lines) glyphCount += LineBox.count(line);
+  const need = glyphCount * QUAD_STRIDE;
+  if (need <= SCRATCH_MAX && scratch.length < need) scratch = doubles(need);
+  const buf = need <= SCRATCH_MAX ? scratch : doubles(need);
   let sized: LaidOutGroup | null = null;
   let sizedAt = 0;
 
@@ -323,7 +333,7 @@ export function paintRuns(
       const group = groupFor(slots, runs, g, g.glyph!.color ? 'color' : g.resolved.source, last);
       if (sized === null) {
         sized = group;
-        group.quadData = doubles(glyphCount * QUAD_STRIDE);
+        group.quadData = buf;
       }
       const quads = group.quadData as number[];
       if (group === sized) {
@@ -340,7 +350,13 @@ export function paintRuns(
       decorations.push({ ...rect, fill: runs[run].fill! });
     }
   }
-  if (sized !== null) (sized.quadData as number[]).length = sizedAt;
+  if (sized !== null && buf !== scratch) {
+    buf.length = sizedAt;
+  } else if (sized !== null) {
+    const quads = takeDoubles(sizedAt);
+    for (let k = 0; k < sizedAt; k++) quads[k] = scratch[k];
+    sized.quadData = quads;
+  }
   const out: LaidOutGroup[] = [];
   for (const slot of slots) {
     out.push(Object.defineProperties(slot.group, quadViews));

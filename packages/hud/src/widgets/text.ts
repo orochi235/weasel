@@ -1,7 +1,7 @@
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { textCommandFromRuns } from '@weasel-js/core';
+import { dropRuns, textCommandFromRuns } from '@weasel-js/core';
 
 /** Options for a text widget. `x`/`y` place the text; its bounds follow from
  *  the string and font size. */
@@ -35,6 +35,9 @@ export function createText(opts: TextOptions): TextWidget {
   let text = opts.text;
   let hidden = false;
   let placed: { text: string; color: string; fontFamily: string; cmd: DrawCommand } | null = null;
+  // The runs a replaced command drew are never drawn again, so the text
+  // caches can hand their arrays to the new ones.
+  const drop = () => { if (placed?.cmd.kind === 'text') dropRuns(placed.cmd.runs); };
   /** What `draw` returns: `placed.cmd` at the corner `x`, `y`. */
   let moved: { x: number; y: number; out: DrawCommand[] } | null = null;
 
@@ -61,6 +64,7 @@ export function createText(opts: TextOptions): TextWidget {
         const cmd = textCommandFromRuns(bounds.x, bounds.y, [{ text, fill: { paint: { kind: 'solid', color } } }], {
           fontFamily, fontSize: opts.fontSize,
         });
+        drop();
         placed = { text, color, fontFamily, cmd };
         moved = { x: bounds.x, y: bounds.y, out: [cmd] };
       }
@@ -76,6 +80,7 @@ export function createText(opts: TextOptions): TextWidget {
     dispose() {
       if (disposed) return;
       disposed = true;
+      drop();
       opts.removeFromHud?.();
     },
   };

@@ -36,7 +36,7 @@ export function measureTextBounds(
     align: resolved.align,
     direction: resolved.direction,
     tabSize: resolved.tabSize,
-  });
+  }, 'read');
   // Copied: the layout behind it is shared, and handing a caller a mutable
   // reference into a cache entry is how one measurement corrupts the next.
   return { width: bounds.width, height: bounds.height };

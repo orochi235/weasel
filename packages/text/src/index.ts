@@ -45,6 +45,7 @@ export {
 } from './layout/lineBreak/lineBreaks';
 export {
   cachedLayoutRuns,
+  dropRuns,
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layout/layoutCache';
@@ -71,6 +72,7 @@ export type {
   LaidOutOutlineGlyph,
   LaidOutDecoration,
 } from './layout/paintRuns';
+export type { CacheUse } from './layout/layoutCache';
 export { cachedPaintRuns } from './layout/paintCache';
 
 export { measureText, measuredWidth } from './measure/measureText';

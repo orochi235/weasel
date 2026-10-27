@@ -48,6 +48,7 @@ export {
   isSmallCapsLetter,
   layoutRuns,
   cachedLayoutRuns,
+  dropRuns,
   paintRuns,
   QUAD_STRIDE,
   cachedPaintRuns,
@@ -65,6 +66,7 @@ export {
   layoutMarkdown,
 } from '@weasel-js/text';
 export type {
+  CacheUse,
   PointInTextPoseOpts,
   FitTextPoseOptions,
   LabelOptions,

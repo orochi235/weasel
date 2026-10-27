@@ -320,7 +320,7 @@ store is allocated outside it. The typed-array version allocated less on the hea
 frame, but every one of its four main-thread samples sat above every sample before it, 4.80–5.05
 ms against 3.59–4.46, because a label paid for three such stores a frame. An array starts out
 holding integers or nothing and is copied the first time a fraction lands in it, so the columns
-are sliced from a template of fractions at their final size (`doubles` in `layoutColumns.ts`).
+are sliced from a template of fractions at their final size (`doubles` in `arrayPool.ts`).
 
 All threads plus the pool, ms a frame, median [min–max] of 4 samples, with the allocation
 profile's KB a frame:
