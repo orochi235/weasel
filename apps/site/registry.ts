@@ -175,7 +175,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'keymap',
     title: 'Keymaps behind a leader',
     category: 'Selection & actions',
-    description: 'keymapContribution builds a keymap and the leader key that opens it. The keymap\'s bindings are live only while it is open, so its letters are free of everything else on the canvas. A tap of the leader opens it for one input; holding the leader keeps it open until the key comes up. Escape always closes it, and a key it does not bind is ignored (the gestures.keymapUnbound kit setting can pass such keys on instead). <KeymapHint> lists the open keymap\'s keys.',
+    description: 'keymapContribution builds a keymap and the leader key that opens it. The keymap\'s bindings are live only while it is open, so its letters are free of everything else on the canvas. A tap of the leader opens it for one input; holding the leader keeps it open until the key comes up. Escape closes it (or, while a held key's gesture is in flight, cancels that gesture first), and a key it does not bind is ignored (the gestures.keymapUnbound kit setting can pass such keys on instead). <KeymapHint> lists the open keymap\'s keys.',
     hint: 'All three rects start selected. Press <kbd>Mod</kbd>+<kbd>K</kbd>, then <kbd>L</kbd> or <kbd>T</kbd> to align, <kbd>H</kbd> or <kbd>V</kbd> to flip, or click to align left to the pointer. Hold <kbd>Mod</kbd>+<kbd>K</kbd> to press several in a row.',
     load: () => import('./demos/KeymapDemo').then((m) => m.KeymapDemo),
     path: 'apps/site/demos/KeymapDemo.tsx',
