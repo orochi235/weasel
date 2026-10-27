@@ -59,7 +59,10 @@ describe('moveAction inside a scrolled container', () => {
     const frames = sceneGestureFrames(scene as never, {} as never);
     const shown = frames.world(s);
     const stored = frames.toLocalUnder(target, shown) as RectPose;
-    scene.update(s, { parent: target, pose: stored });
+    scene.batch('reparent', () => {
+      scene.move(s, target);
+      scene.setPose(s, stored);
+    });
     expectSamePose(worldOf(scene, s), shown as RectPose);
     expect(scene.get(c)!.pose).toEqual(box(100, 100, 100, 100));
   });
