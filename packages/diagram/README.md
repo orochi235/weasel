@@ -1069,7 +1069,7 @@ and a `color(type)` for the ports. `EFFECT_LOOKS` holds `nodeGraph`, `rack`, `la
 | Look | Draws | Options |
 | --- | --- | --- |
 | `nodeGraph` (default) | Every port a named row on its stage, a wire from port to port, flowing left to right. | `router` (default `'bezier'`), `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch` |
-| `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch`, `collapseSkips` |
+| `rack` | The main signal on one straight line, and everything else hung beside the stage on the line it is nearest to, whichever way the wire runs. | `chain`, `direction`, `side`, `nodeGap`, `rankGap`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch`, `collapseSkips` |
 | `lanes` | A horizontal lane per value type, and each stage standing across the lanes of the types it reads and writes, as tall as they are, its ports in their own lanes. | `lanes`, `laneHeight`, `rankGap`, `router`, `colors`, `showParams`, `showValues`, `showPreviews`, `previewSize`, `branch`, `measure` |
 | `compact` | Each stage one line, its title alone, no ports drawn, and one line between two stages however many wires join them. For a pipeline too big to read as a node graph. | `router`, `nodeGap`, `rankGap`, `colors`, `branch` |
 
@@ -1078,8 +1078,12 @@ true) shows the `params` of ordinary stages, sources and sinks; `showValues`
 (default false) keeps a row per output on those stages for a run's values, and
 `showPreviews` (default false) a slot per output for its previews. `rack` runs
 along `chain`, a list of stage ids that defaults to the longest path over data
-wires (`mainChain(pipeline)` returns it); `side` is `'below'` (default) or
-`'above'`.
+wires (`mainChain(pipeline)` returns it). Its `direction` is `'right'`
+(default), the line running left to right, or `'down'`, a column the main
+signal enters at each stage's top and leaves at its bottom, which a reorder
+drags along vertically. `side` is `'below'` (default) or `'above'`; in a
+column, `'below'` hangs the side stages on the column's right and `'above'`
+on its left, and a collapsed skip's arc runs down the other edge.
 
 `lanes` puts the lanes top down in the order their types first appear on the
 pipeline's ports, after any it is given in `lanes`. A stage stands

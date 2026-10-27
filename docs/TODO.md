@@ -347,6 +347,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P3) [agent] A decision drawn as its symbol in a `direction: 'down'` rack still faces right**
+  (2026-10-27). The branch symbols (`packages/diagram/src/effect/symbolParts.ts`) take the signal in on their
+  left and send exits out on their right, and `BranchOptions.controlSide` knows only `'top' | 'bottom'`, so
+  in a column a decision that does not collapse to an arc (`collapseSkips: false`, or one that does more than
+  skip ahead) bends its main wires in from the side and draws its control input on an edge the side stages do
+  not face. Fix: give the symbols a flow direction, with `controlSide` taking `'left' | 'right'`, and have
+  `rack` pass both.
+
 - **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
   marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
   8.97 ms at 394b86d43 (medians, keiei, one session, 2026-10-22); the pick-index branch's own full
