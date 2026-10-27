@@ -1,5 +1,3 @@
-import type { CLOCK_RATES } from './rates';
-
 /**
  * What a caller declares to get a clock: how long a pass runs, how many
  * passes, and how it opens. Shaped like a blits voice spec.
@@ -21,7 +19,7 @@ export interface ClockSpec {
   /** The unsigned speed a transport plays a paused clock at. Default `|rate|`,
    *  or `1` for a clock that opens paused. */
   speed?: number;
-  /** The speeds a transport offers, unsigned. Default {@link CLOCK_RATES}. */
+  /** The speeds a transport offers, unsigned. Default `CLOCK_RATES`. */
   rates?: readonly number[];
   /** `false` for a clock whose state is built up by running, so time can
    *  only move by running: no seek and no negative rate. Default `true`. */

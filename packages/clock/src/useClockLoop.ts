@@ -20,6 +20,32 @@ function outOfSight(
   });
 }
 
+/** Has `io` observe every element a registration names, and lets go of the rest. */
+function syncObserved(
+  registry: ClockRegistry,
+  io: IntersectionObserver | null,
+  seen: Map<Element, boolean>,
+): void {
+  if (!io) return;
+  const named = new Set<Element>();
+  for (const handle of registry.all()) {
+    for (const target of registry.targets(handle)) {
+      const el = target();
+      if (el) named.add(el);
+    }
+  }
+  for (const el of [...seen.keys()]) {
+    if (named.has(el)) continue;
+    io.unobserve(el);
+    seen.delete(el);
+  }
+  for (const el of named) {
+    if (seen.has(el)) continue;
+    seen.set(el, true);
+    io.observe(el);
+  }
+}
+
 /**
  * The one frame loop for every clock in a registry: syncs each clock that is not
  * inert, and sleeps once every clock is, until one wakes. A clock registered with
@@ -35,32 +61,9 @@ export function useClockLoop(
   const seen = useRef(new Map<Element, boolean>());
   const observer = useRef<IntersectionObserver | null>(null);
 
-  /** Observes every element a registration names, and lets go of the rest. */
-  const syncObserved = (): void => {
-    const io = observer.current;
-    if (!io) return;
-    const named = new Set<Element>();
-    for (const handle of registry.all()) {
-      for (const target of registry.targets(handle)) {
-        const el = target();
-        if (el) named.add(el);
-      }
-    }
-    for (const el of [...seen.current.keys()]) {
-      if (named.has(el)) continue;
-      io.unobserve(el);
-      seen.current.delete(el);
-    }
-    for (const el of named) {
-      if (seen.current.has(el)) continue;
-      seen.current.set(el, true);
-      io.observe(el);
-    }
-  };
-
   const loop = useVisibleRaf(
     (timestamp, loop) => {
-      syncObserved();
+      syncObserved(registry, observer.current, seen.current);
       let live = false;
       for (const handle of registry.all()) {
         const { clock } = handle;
@@ -83,13 +86,14 @@ export function useClockLoop(
   );
 
   useEffect(() => {
+    const seenNow = seen.current;
     if (typeof IntersectionObserver !== 'undefined') {
       observer.current = new IntersectionObserver((entries) => {
         let returned = false;
         for (const entry of entries) {
-          if (!seen.current.has(entry.target)) continue;
-          if (entry.isIntersecting && seen.current.get(entry.target) === false) returned = true;
-          seen.current.set(entry.target, entry.isIntersecting);
+          if (!seenNow.has(entry.target)) continue;
+          if (entry.isIntersecting && seenNow.get(entry.target) === false) returned = true;
+          seenNow.set(entry.target, entry.isIntersecting);
         }
         if (returned) loop.request();
       });
@@ -97,7 +101,7 @@ export function useClockLoop(
     return () => {
       observer.current?.disconnect();
       observer.current = null;
-      seen.current.clear();
+      seenNow.clear();
     };
   }, [loop]);
 
@@ -106,7 +110,7 @@ export function useClockLoop(
     const attach = (): void => {
       for (const off of unwakes) off();
       unwakes = [];
-      syncObserved();
+      syncObserved(registry, observer.current, seen.current);
       for (const { clock } of registry.all()) {
         unwakes.push(clock.onWake(() => loop.request()));
         if (!clock.inert) loop.request();
@@ -118,6 +122,5 @@ export function useClockLoop(
       off();
       for (const unwake of unwakes) unwake();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registry, loop]);
 }
