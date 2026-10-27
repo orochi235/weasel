@@ -1,6 +1,8 @@
 import { mat3, type Path, type GlMat3 } from '@weasel-js/geom';
 import { axisAlignedClipRect, intersectClipRects, type ClipRect } from '../batchClip';
-import { concatHulls, hullOf, windowMap, type Hull, type HullSet } from '../batchHull';
+import {
+  concatHulls, hullOf, snappedRectOf, windowMap, type Hull, type HullSet, type WindowMap,
+} from '../batchHull';
 import type { ClipEntry, DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { fillMeshHandle } from './mesh';
@@ -29,38 +31,62 @@ const IDENTITY = mat3.identity();
  * content inside it joins the run outside it. Nor does a convex clip the batch
  * shader decides (`batchHull.ts`). Either takes a bit only if something that
  * draws for itself turns up inside it — see `flushForOwnDraw`.
+ *
+ * Where the shader can decide hulls, a rect clip is snapped to their grid and
+ * carries itself as a hull too, for an item with a slanted edge across it,
+ * which the CPU cut refuses (see `enterUncut`).
  */
 function enterClip(ctx: DrawContext, path: Path, transform: GlMat3): void {
-  const rect = axisAlignedClipRect(path, transform);
+  const aligned = axisAlignedClipRect(path, transform);
+  const map = aligned === null ? null : hullMap(ctx);
+  const snapped = map === null ? null : snappedRectOf(path, transform, map);
+  const rect = snapped ? snapped.rect : aligned;
   const below = liveHulls(ctx);
+  const top = ctx.clipStack[ctx.clipStack.length - 1];
+  const belowUncut = top === undefined ? null : top.uncutHulls;
   const hull = rect === null ? hullFor(ctx, path, transform) : null;
   const hulls = hull && (below ? concatHulls(below, hull.set) : hull.set);
   if (rect !== null) {
-    ctx.clipStack.push({ path, transform, rect, hull: null, hulls: below, depth: 0 });
+    const own = snapped ? snapped.hull : null;
+    const uncutHulls = own ? joinHulls(belowUncut, own.set) : false;
+    ctx.clipStack.push({ path, transform, rect, hull: own, hulls: below, uncutHulls, depth: 0 });
   } else if (hull && hulls) {
-    ctx.clipStack.push({ path, transform, rect: null, hull, hulls, depth: 0 });
+    const uncutHulls = joinHulls(belowUncut, hull.set);
+    ctx.clipStack.push({ path, transform, rect: null, hull, hulls, uncutHulls, depth: 0 });
   } else {
     // Bits nest in stack order, so any clip still without one takes it first.
     materializeClips(ctx);
     const depth = ctx.clipDepth + 1;
     pushClip(ctx, path, depth, transform);
     ctx.clipDepth = depth;
-    ctx.clipStack.push({ path, transform, rect: null, hull: null, hulls: below, depth });
+    ctx.clipStack.push({ path, transform, rect: null, hull: null, hulls: below, uncutHulls: belowUncut, depth });
   }
   syncBatchClip(ctx);
 }
 
-/** `path` under `transform` as a hull, where this target can decide one in
- *  the shader exactly: the default framebuffer, single-sampled. */
-function hullFor(ctx: DrawContext, path: Path, transform: GlMat3): Hull | null {
+function joinHulls(below: HullSet | null | false, set: HullSet): HullSet | false {
+  if (below === false) return false;
+  return (below ? concatHulls(below, set) : set) ?? false;
+}
+
+/** The map from screen space to the window a hull is built in, where this
+ *  target can decide one in the shader exactly: the default framebuffer,
+ *  single-sampled. */
+function hullMap(ctx: DrawContext): WindowMap | null {
   if (!ctx.batchVariants?.hulls || ctx.renderTarget || ctx.projection) return null;
   if (ctx.deviceWidth === undefined || ctx.deviceHeight === undefined) return null;
-  const map = windowMap(projFor(ctx), ctx.fragOrigin ?? [0, 0], ctx.deviceWidth, ctx.deviceHeight);
-  return hullOf(path, transform, map);
+  return windowMap(projFor(ctx), ctx.fragOrigin ?? [0, 0], ctx.deviceWidth, ctx.deviceHeight);
+}
+
+/** `path` under `transform` as a hull, where this target can decide one. */
+function hullFor(ctx: DrawContext, path: Path, transform: GlMat3): Hull | null {
+  const map = hullMap(ctx);
+  return map === null ? null : hullOf(path, transform, map);
 }
 
 /** The hulls a vertex staged now is tested against. */
 export function liveHulls(ctx: DrawContext): HullSet | null {
+  if (ctx.uncutHulls !== undefined) return ctx.uncutHulls;
   const stack = ctx.clipStack;
   return stack.length === 0 ? null : stack[stack.length - 1].hulls;
 }
@@ -123,17 +149,25 @@ export function runClipDepth(ctx: DrawContext): number {
 }
 
 /**
- * Put the rect clips on the stencil and stop cutting, for an item the batch
- * refused to cut — one with a slanted edge across a clip (see
- * `DrawBatch.clipQuad`). Staged again between this and `leaveUncut`, the item
- * sees the full stencil depth and lands in a run of its own under every clip.
+ * Stop cutting, for an item the batch refused to cut — one with a slanted
+ * edge across a clip (see `DrawBatch.clipQuad`) — and clip it some other way
+ * while it is staged again, between this and `leaveUncut`. Where every rect
+ * clip on the stack carries a hull and they fit in one set with the rest, the
+ * shader tests the item against that set and it stays in the run. Otherwise
+ * the rect clips go on the stencil, and the item sees the full stencil depth
+ * and lands in a run of its own under every clip.
  * Returns the cut to hand back. A pair rather than a callback: the staging
  * paths are hot, and a closure would cost an allocation on every call.
  */
 export function enterUncut(ctx: DrawContext): ClipRect | null {
-  materializeClips(ctx);
   const cut = ctx.drawBatch.clip;
   ctx.drawBatch.clip = null;
+  const top = ctx.clipStack[ctx.clipStack.length - 1];
+  if (top !== undefined && top.uncutHulls) {
+    ctx.uncutHulls = top.uncutHulls;
+    return cut;
+  }
+  materializeClips(ctx);
   ctx.uncut = true;
   return cut;
 }
@@ -141,6 +175,7 @@ export function enterUncut(ctx: DrawContext): ClipRect | null {
 export function leaveUncut(ctx: DrawContext, cut: ClipRect | null): void {
   ctx.drawBatch.clip = cut;
   ctx.uncut = false;
+  ctx.uncutHulls = undefined;
 }
 
 /** `fn(ctx, a, b)` again, uncut — for the stage-and-push helpers, which pass

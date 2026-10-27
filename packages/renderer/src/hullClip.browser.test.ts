@@ -135,6 +135,37 @@ describe('a convex clip decided in the batch shader, in a real context', () => {
     expect(differing(paint(frame).px, paint(frame, { hulls: false }).px)).toEqual([]);
   });
 
+  const RECT_CLIPS: [string, Path][] = [
+    ['fractional edges', { kind: 'rect', x: 20.53, y: 15.47, width: 50.21, height: 40.9 }],
+    ['edges through pixel centers', { kind: 'rect', x: 20.5, y: 15.5, width: 50, height: 41 }],
+  ];
+  const across = (draw: (color: string, path: Path) => DrawCommand) => [
+    draw('#ff0000', { kind: 'rect', x: 0, y: 30, width: W, height: 10 }),
+    draw('#00ff00', turned(48, 40, 30, 90, 20)),
+    draw('#0000ff', { kind: 'rect', x: 40, y: 0, width: 10, height: H }),
+  ];
+  const own = (color: string, path: Path) => ownDraw(path, [
+    parseInt(color.slice(1, 3), 16) / 255, parseInt(color.slice(3, 5), 16) / 255, parseInt(color.slice(5, 7), 16) / 255, 1,
+  ]);
+
+  for (const [name, clip] of RECT_CLIPS) {
+    it(`keeps a slanted item across a rect clip in the run, on the pixels the stencil keeps: ${name}`, () => {
+      // Cut on the CPU, tested in the shader, and drawn through the stencil
+      // from the same snapped corners: all three must keep the same pixels.
+      const shader = paint([solid('#202020'), clipped(clip, across(solid))]);
+      const stencil = paint([solid('#202020'), clipped(clip, across(own))]);
+      expect(shader.draws).toBe(1);
+      expect(covered(shader.px)).toBeGreaterThan(0);
+      expect(differing(shader.px, stencil.px)).toEqual([]);
+    });
+  }
+
+  it('snaps a rect clip only where its edges are off the grid', () => {
+    const [, onGrid] = RECT_CLIPS[1];
+    const frame = [solid('#202020'), clipped(onGrid, across(solid))];
+    expect(differing(paint(frame).px, paint(frame, { hulls: false }).px)).toEqual([]);
+  });
+
   it('on a multisampled buffer, keeps the stencil and agrees with it', () => {
     const clip = CLIPS[1][1];
     const shader = paint([clipped(clip, [solid('#ff0000')])], { antialias: true });

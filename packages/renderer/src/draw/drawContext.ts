@@ -69,6 +69,9 @@ export interface DrawContext {
   clipStack: ClipEntry[];
   /** Set while `enterUncut` stages an item the rect clips could not cut. */
   uncut?: boolean;
+  /** Set instead of `uncut` while that item is clipped in the shader: the
+   *  set it is tested against, rect clips included. */
+  uncutHulls?: HullSet;
   /** Set while a path drawn by its own draw call has a `PolygonPath.origin`:
    *  `setProjAndModel` then places its vertices from there. See
    *  `atMeshOrigin`. */
@@ -149,11 +152,16 @@ export interface ClipEntry {
   rect: ClipRect | null;
   /** The clip as half-planes the batch shader tests, for a convex one it can
    *  decide; `null` otherwise. A clip with neither this nor `rect` is one only
-   *  the stencil can express. */
+   *  the stencil can express. A rect clip has one too where it is snapped to
+   *  the hull grid, but the CPU cut applies it, so it is not in `hulls`. */
   hull: Hull | null;
   /** Every hull on the stack up to and including this entry, as the one set
    *  a vertex staged now is tested against; `null` under none. */
   hulls: HullSet | null;
+  /** `hulls` with every rect clip's hull added, for an item the CPU cut
+   *  refuses; `false` where a rect clip has none or they do not fit in one
+   *  set. */
+  uncutHulls: HullSet | null | false;
   /** The stencil bit this clip holds, or 0 while it holds none. */
   depth: number;
 }
