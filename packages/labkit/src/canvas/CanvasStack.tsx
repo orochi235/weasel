@@ -85,10 +85,12 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
       const observed = entries?.at(-1)?.contentRect;
       if (observed) layout = { width: observed.width, height: observed.height };
       const rect = el.getBoundingClientRect();
+      // Before the observer first reports, the offset size, rounded to whole px, stands in for it.
+      const known = layout ?? { width: el.offsetWidth, height: el.offsetHeight };
       // Unscaled, the client rect is the box, read the same way on every call: a size that changed only in how it
       // was rounded would place a view a second time.
-      const scaled = layout !== null && rect.width > 0 && Math.abs(rect.width - layout.width) > 0.5;
-      const box = scaled && layout ? layout : rect;
+      const scaled = known.width > 0 && rect.width > 0 && Math.abs(rect.width - known.width) > 0.5;
+      const box = scaled ? known : rect;
       const scale = (box.width > 0 ? rect.width / box.width : 1) * embedScale(win);
       const { width, height } = box;
       const dpr = backingDensity(width, height, window.devicePixelRatio ?? 1, scale);

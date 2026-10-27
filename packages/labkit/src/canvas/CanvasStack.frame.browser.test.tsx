@@ -42,22 +42,27 @@ function backingAgainstShown(canvas: HTMLCanvasElement, frame: HTMLIFrameElement
   return { backing: canvas.width, shown: canvas.getBoundingClientRect().width * frameScale * devicePixelRatio };
 }
 
-/** Waits for the stack to settle at the backing the page shows it at. */
-async function expectSharp(canvas: () => HTMLCanvasElement, frame: HTMLIFrameElement | null) {
-  await waitFor(() => {
-    const { backing, shown } = backingAgainstShown(canvas(), frame);
-    expect(canvas().style.width).toBe('100px');
-    expect(backing).toBeCloseTo(shown, 0);
-  });
+function expectSharpNow(canvas: HTMLCanvasElement, frame: HTMLIFrameElement | null) {
+  const { backing, shown } = backingAgainstShown(canvas, frame);
+  expect(canvas.style.width).toBe('100px');
+  expect(backing).toBeCloseTo(shown, 0);
 }
 
+/** Waits for the stack to settle at the backing the page shows it at. */
+async function expectSharp(canvas: () => HTMLCanvasElement, frame: HTMLIFrameElement | null) {
+  await waitFor(() => expectSharpNow(canvas(), frame));
+}
+
+// Checked before anything awaits, so before the size observer first reports: the first pass is already right.
 test('a stack under a scaled ancestor in its own document is backed at the density it is shown at', async () => {
   const m = mountScaled(3, false);
+  expectSharpNow(m.canvas(), null);
   await expectSharp(m.canvas, null);
 });
 
 test('a stack in a frame the page shows at 3x is backed at 3x, not enlarged', async () => {
   const m = mountScaled(3, true);
+  expectSharpNow(m.canvas(), m.frame);
   await expectSharp(m.canvas, m.frame);
 });
 
