@@ -45,7 +45,7 @@ function warnOfNoCamera(instrument: Instrument, how: string): void {
  * Provides a trial's orbit to `useTrialOrbit` and `useOrbitView`. In
  * development it also watches for a 3D view drawn in a trial whose instrument
  * leaves `orbit` undeclared — through `useOrbitView`, a three.js renderer in
- * its DOM, or WebGL depth testing on a canvas there — and warns once per
+ * its DOM, or WebGL or WebGPU depth testing on a canvas there — and warns once per
  * instrument and marks the title bar.
  */
 export function TrialOrbitProvider({

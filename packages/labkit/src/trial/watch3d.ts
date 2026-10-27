@@ -86,15 +86,85 @@ function installDepthWatch(): void {
   }
 }
 
-/** Starts watching for 3D views drawn by hand — three.js renderers and raw WebGL — in development. */
+type DepthStencil = {
+  format?: string;
+  depthCompare?: string;
+  depthWriteEnabled?: boolean;
+};
+type Pipeline = (this: object, descriptor?: { depthStencil?: DepthStencil }) => unknown;
+
+/** A stencil-only format, or a depth test that always passes and writes nothing, is no depth testing. */
+const testsDepth = (ds: DepthStencil | undefined): boolean =>
+  !!ds?.format?.startsWith('depth') &&
+  (ds.depthWriteEnabled === true || (ds.depthCompare ?? 'always') !== 'always');
+
+let gpuInstalled = false;
+/** Canvases configured with each device, and the devices that have built a depth-tested pipeline. */
+const gpuCanvases = new WeakMap<object, Set<Element>>();
+const gpuDepth = new WeakSet<object>();
+
+function gpuFound(canvas: Element): void {
+  if (depthSeen.has(canvas)) return;
+  depthSeen.add(canvas);
+  // Deferred, as three may build a pipeline before it announces its renderer.
+  setTimeout(() => {
+    if (!threeCanvases.has(canvas)) findTrial(canvas, 'WebGPU with depth testing');
+  }, RETRIES_MS[0]);
+}
+
+/**
+ * The WebGPU counterpart of {@link installDepthWatch}. A pipeline belongs to a
+ * device rather than a canvas, so a canvas counts once the device it is
+ * configured with builds a render pipeline that tests depth, in either order.
+ * Wraps `GPUCanvasContext.configure` and `GPUDevice.createRenderPipeline[Async]`.
+ */
+function installGpuDepthWatch(): void {
+  if (gpuInstalled) return;
+  gpuInstalled = true;
+  const g = globalThis as Global;
+  const ctxProto = (g.GPUCanvasContext as { prototype?: Record<string, unknown> } | undefined)
+    ?.prototype;
+  const configure = ctxProto?.configure;
+  if (ctxProto && typeof configure === 'function') {
+    ctxProto.configure = function (this: { canvas?: unknown }, config?: { device?: object }) {
+      const { canvas } = this;
+      const device = config?.device;
+      if (device && isElement(canvas)) {
+        const set = gpuCanvases.get(device) ?? new Set();
+        gpuCanvases.set(device, set);
+        set.add(canvas);
+        if (gpuDepth.has(device)) gpuFound(canvas);
+      }
+      return configure.call(this, config);
+    };
+  }
+  const devProto = (g.GPUDevice as { prototype?: Record<string, unknown> } | undefined)?.prototype;
+  if (!devProto) return;
+  for (const name of ['createRenderPipeline', 'createRenderPipelineAsync']) {
+    const create = devProto[name];
+    if (typeof create !== 'function') continue;
+    const wrapped: Pipeline = function (this, descriptor) {
+      if (testsDepth(descriptor?.depthStencil) && !gpuDepth.has(this)) {
+        gpuDepth.add(this);
+        for (const canvas of gpuCanvases.get(this) ?? []) gpuFound(canvas);
+      }
+      return (create as Pipeline).call(this, descriptor);
+    };
+    devProto[name] = wrapped;
+  }
+}
+
+/** Starts watching for 3D views drawn by hand — three.js renderers, raw WebGL and raw WebGPU — in
+ *  development. */
 export function install3dWatch(): void {
   if (!isDev()) return;
   installThreeWatch();
   installDepthWatch();
+  installGpuDepthWatch();
 }
 
-/** Calls `found` with how, whenever a three.js renderer or a depth-tested WebGL canvas draws into trial
- *  `trialId`'s DOM. */
+/** Calls `found` with how, whenever a three.js renderer or a depth-tested WebGL or WebGPU canvas draws
+ *  into trial `trialId`'s DOM. */
 export function watch3d(trialId: string, found: (how: string) => void): () => void {
   const set = byTrial.get(trialId) ?? new Set();
   byTrial.set(trialId, set);
