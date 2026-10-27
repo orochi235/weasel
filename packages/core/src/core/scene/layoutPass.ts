@@ -29,6 +29,7 @@ import { carriedDescendants } from './carryDescendants';
 import { definesFrame, documentPose, type PoseSource, type PosedNode } from './effectivePose';
 import { asRectPose } from './kitRegistry';
 import { samePoseValue } from './poseSnapshot';
+import { strategyView } from './strategyView';
 import type { LayoutFrame, NodeId } from './types';
 
 /** What the pass reads a scene through. */
@@ -63,31 +64,6 @@ export function resized<TPose>(frame: ResolvedLayoutFrame<TPose>, id: NodeId, fr
   const b = frame.bounds(to, id);
   if (a === null || b === null) return a !== b;
   return a.width !== b.width || a.height !== b.height;
-}
-
-/** How a strategy sees a container at world `pose`: upright, in its own
- *  frame placed where its world box sits, so a turned container's children
- *  are laid out along its axes; an upright one is seen as it is. */
-function strategyView<TPose>(
-  pose: TPose,
-  id: NodeId,
-  frame: ResolvedLayoutFrame<TPose>,
-  { compose, decompose }: PoseComposition<TPose>,
-) {
-  const own = decompose(pose, pose);
-  const from = frame.bounds(own, id);
-  const at = frame.bounds(pose, id);
-  if (from === null || at === null) return null;
-  const upright = frame.remap(own, from, { ...from, x: at.x, y: at.y }, id);
-  const bounds = frame.bounds(upright, id);
-  if (bounds === null) return null;
-  const turned = !samePoseValue(upright, pose);
-  return {
-    upright,
-    bounds,
-    toStrategy: (p: TPose): TPose => (turned ? compose(upright, decompose(pose, p)) : p),
-    toWorld: (p: TPose): TPose => (turned ? compose(pose, decompose(upright, p)) : p),
-  };
 }
 
 /** How many times one pass may arrange a container before giving up on it —
@@ -132,7 +108,12 @@ export function runLayoutPass<TPose>(
   /** The container and its children as the strategy sees them, with every
    *  write this pass has made so far folded in. */
   const frameOf = (containerId: NodeId) => {
-    const view = strategyView(world(containerId), containerId, frame, source.composition);
+    const view = strategyView(
+      world(containerId),
+      source.composition,
+      (p) => frame.bounds(p, containerId),
+      (p, from, to) => frame.remap(p, from, to, containerId),
+    );
     if (view === null) return null;
     const children: LayoutChild<TPose>[] = source.childrenOf(containerId).map((cid) => ({
       id: cid as string,

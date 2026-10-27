@@ -7,6 +7,7 @@ import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { LayoutPass } from '../layout/types';
 import type { MoveSession } from '../session';
 import { rebaseTransformOp } from './rebase';
+import { opInWorld } from '../layout/view';
 
 /** The ops of a drop a layout container accepted: reparents, then each
  *  placement's `commitDrop`, then the source containers' reflow. */
@@ -16,7 +17,7 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
   const commitAdapter = sceneViewPoseAdapter(session.scene);
   const destId = lp.container.id;
   const draggedIds = new Set<string>(session.ids.map((id) => id as string));
-  // commitDrop returns world poses (the contract is world in/out).
+  // commitDrop answers in the strategy's space (`opInWorld` takes it to world).
   // Rebase each transform op to local: a dragged id lands under the
   // destination container; any other id keeps its current parent.
   // `from` rebases under the node's PRE-commit parent.
@@ -25,7 +26,7 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
     if (id === undefined) return op;
     const curParent = session.scene.get(asNodeId(id))?.parent ?? null;
     const toParent = draggedIds.has(id) ? destId : curParent;
-    return rebaseTransformOp(op, commitAdapter, pc, curParent, toParent);
+    return rebaseTransformOp(opInWorld(lp.view, op), commitAdapter, pc, curParent, toParent);
   };
   // Cross-container drop: reparent each dragged node under the
   // destination container, then pose it in that container's frame.
