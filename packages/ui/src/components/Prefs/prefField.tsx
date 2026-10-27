@@ -160,7 +160,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         value: typeof value === 'string' ? value : '',
         mixed,
         unset,
-        onChange: setValue,
+        onChange: setValue, placeholder: leaf.placeholder,
       };
     case 'enum': {
       // An encoding reads an absent field too (no dash is `solid`), which is
