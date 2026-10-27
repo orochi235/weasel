@@ -139,3 +139,19 @@ describe('resolveGlyph', () => {
     expect(warn.mock.calls[0][0]).toContain('U+2014');
   });
 });
+
+describe('glyphIn and resolveGlyph into a given object', () => {
+  it('write the answer into it and return it, and leave it be on a miss', async () => {
+    await registerTestFont('inter');
+    const resolved = resolveFontVariant('inter', 400, 'normal');
+    const into = { resolved, metrics: metricsOf(resolved)!, advance: -1, font: null, glyph: null };
+    const fresh = glyphIn(resolved, 65)!;
+    expect(glyphIn(resolved, 65, into)).toBe(into);
+    expect(into).toEqual(fresh);
+    expect(resolveGlyph(resolved, 'inter', 400, 'normal', 66, true, into)).toBe(into);
+    expect(into.glyph).toBe(resolved.entry!.font.charMap.get(66));
+    into.advance = -1;
+    expect(glyphIn(resolved, MISSING, into)).toBeNull();
+    expect(into.advance).toBe(-1);
+  });
+});

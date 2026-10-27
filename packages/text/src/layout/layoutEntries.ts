@@ -143,7 +143,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?
         } else {
           // Its record in the run's own tier, for an atlas that draws one. It
           // never escalates: a face without a space still parts words.
-          const own = glyphIn(resolved, 32);
+          const own = glyphIn(resolved, 32, HIT);
           blank.font = own?.font ?? null;
           blank.glyph = own?.glyph ?? null;
           blank.advance = advance;
@@ -153,7 +153,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?
           entries.push(prev);
         }
       } else {
-        const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp);
+        const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp, true, HIT);
         const entry = hit ? ink(blank, hit, kerningBefore, tracking) : blank;
         entries.push(entry);
         if (!mark) prev = entry;
@@ -162,6 +162,9 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?
   });
   return entries;
 }
+
+/** What `resolveGlyph` answers into, which `ink` copies out of at once. */
+const HIT: ResolvedGlyph = { resolved: null as unknown as ResolveResult, metrics: null as unknown as GlyphMetrics, advance: 0, font: null, glyph: null };
 
 /** The most entries a pool keeps, so one long text does not hold its entries for good. */
 const POOL_MAX = 4096;
