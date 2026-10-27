@@ -35,7 +35,7 @@ import { resolveAlign } from '../textStyle';
 import { analyzeParagraphs, orderLine } from './bidiLines';
 import { directionOfLevel, warnRtlWithoutEngine } from './bidiRegistry';
 import { LayoutColumns } from './layoutColumns';
-import { measureRuns, mirrorEntries } from './layoutEntries';
+import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
 import { breakLines, placeLine } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
@@ -174,6 +174,9 @@ export interface LaidOutRuns {
   bounds: { width: number; height: number };
 }
 
+/** The entries every layout measures into: none outlives the layout that measured it. */
+const ENTRY_POOL: Entry[] = [];
+
 /**
  * Lay out `runs` into lines of placed glyphs. Wrapping, baselines and tracking
  * follow the rules in this file's module doc.
@@ -183,7 +186,7 @@ export function layoutRuns(
   opts: LayoutRunsOpts,
 ): LaidOutRuns {
   const o = resolveLayoutOpts(opts);
-  const entries = measureRuns(runs, o.tabSize);
+  const entries = measureRuns(runs, o.tabSize, ENTRY_POOL);
   const cps = entries.map((e) => e.cp);
   const { bidi } = o;
   // Each paragraph is analyzed once; each line then asks for its own range,
