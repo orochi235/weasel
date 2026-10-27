@@ -47,3 +47,18 @@
   width: 160px;
   height: 40px;
 }
+
+/* A positioned box that scrolls. */
+.wzl-popover-test-scroller {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  width: 300px;
+  height: 200px;
+  overflow: auto;
+}
+
+.wzl-popover-test-scroller-content {
+  width: 300px;
+  height: 260px;
+}

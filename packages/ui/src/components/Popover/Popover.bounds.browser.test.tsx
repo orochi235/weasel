@@ -82,8 +82,49 @@ it.each([1, 2])('limits a tall callout to the viewport inside a box drawn at %s�
   expect(popover.bottom).toBeGreaterThan(window.innerHeight - 13 * scale);
 });
 
-// At 1× React Aria's own shift reads the viewport's edge at the box's (react-aria 3.52.1), so only 2× is held here.
-it('shifts a wide callout inside the viewport across its axis at 2×', async () => {
-  const { popover } = await open({ scale: 2, at: 'right', size: 'wide', placement: 'bottom' });
+it.each([1, 2])('shifts a wide callout inside the viewport across its axis at %s×', async (scale) => {
+  const { popover } = await open({ scale, at: 'right', size: 'wide', placement: 'bottom' });
+  expect(popover.left).toBeGreaterThanOrEqual(0);
   expect(popover.right).toBeLessThanOrEqual(window.innerWidth);
+});
+
+it('leaves a wide callout centered on its trigger at 1× where the viewport holds it', async () => {
+  const { trigger, popover } = await open({ scale: 1, at: 'right', size: 'wide', placement: 'bottom' });
+  expect(popover.left + popover.width / 2).toBeCloseTo(trigger.left + trigger.width / 2, 0);
+});
+
+function Scroller({ isOpen }: { isOpen: boolean }) {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const [box, setBox] = useState<HTMLDivElement | null>(null);
+  return (
+    <div ref={setBox} className="wzl-popover-test-scroller">
+      <div className="wzl-popover-test-scroller-content" />
+      <button ref={trigger} type="button" className="wzl-popover-test-trigger">
+        Open
+      </button>
+      {box ? (
+        <Callout
+          triggerRef={trigger}
+          portalContainer={box}
+          isOpen={isOpen}
+          placement="bottom"
+          showCloseButton={false}
+          aria-label="Menu"
+        >
+          <div className="wzl-popover-test-content" data-size="short" />
+        </Callout>
+      ) : null}
+    </div>
+  );
+}
+
+it('adds nothing to the scroll range of the positioned container it opens in', async () => {
+  const { container, rerender } = renderWithIcons(<Scroller isOpen={false} />);
+  await frames(2);
+  const scroller = container.querySelector<HTMLElement>('.wzl-popover-test-scroller')!;
+  const closed = { width: scroller.scrollWidth, height: scroller.scrollHeight };
+  rerender(<Scroller isOpen />);
+  await frames(3);
+  expect(container.querySelector('[data-weasel-overlay]')).not.toBeNull();
+  expect({ width: scroller.scrollWidth, height: scroller.scrollHeight }).toEqual(closed);
 });

@@ -7,6 +7,12 @@
   pointer-events: none;
 }
 
+/* Fixed makes a stacking context, so it takes React Aria's overlay z-index for the overlays it holds. */
+.fixed {
+  position: fixed;
+  z-index: 100000;
+}
+
 .frame > * {
   pointer-events: auto;
 }

@@ -1,5 +1,5 @@
 import { Children, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { mergeProps, OverlayContainer, useOverlayPosition, useTooltip, useUNSAFE_PortalContext } from 'react-aria';
+import { mergeProps, OverlayContainer, useOverlayPosition, useTooltip } from 'react-aria';
 import { filterDOMProps } from 'react-aria/filterDOMProps';
 import {
   TooltipTrigger as RACTooltipTrigger,
@@ -14,7 +14,12 @@ import {
 import { targetInBlockUnits } from '../../overlays/blockFrame';
 import { overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
 import { useEnterAnimation, useExitAnimation } from '../../overlays/overlayAnimation';
-import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import {
+  useOverlayPortal,
+  useReactAriaPortalTarget,
+  type OverlayPortalProps,
+  type WithoutPortalTarget,
+} from '../../overlays/portalHost';
 import { InlineMarkdown } from '../InlineMarkdown';
 import s from './Tooltip.module.css';
 
@@ -130,8 +135,7 @@ function TooltipOverlay(own: OverlayProps) {
   const state = useTooltipState(props);
   const exiting = useExitAnimation(ref, state.isOpen);
   const isExiting = props.isExiting || (!state.shouldSkipAnimation && exiting) || false;
-  const { getContainer } = useUNSAFE_PortalContext();
-  const container = getContainer?.() ?? null;
+  const container = useReactAriaPortalTarget();
   const frame = useMemo(() => overlayFrameFor(container), [container]);
   if (!state.isOpen && !isExiting) return null;
   return (
@@ -144,7 +148,7 @@ function TooltipOverlay(own: OverlayProps) {
 function TooltipBody({ state, tooltipRef, frame, ...props }: OverlayProps & {
   state: TooltipTriggerState;
   tooltipRef: RefObject<HTMLDivElement | null>;
-  /** The overlay frame it is portaled into inside a scaled box, else null. */
+  /** The overlay frame it is portaled into inside a positioned container, else null. */
   frame: HTMLElement | null;
 }) {
   const arrowRef = useRef<HTMLDivElement>(null);

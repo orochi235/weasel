@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactElement, type ReactNode } from 'react';
-import { UNSAFE_PortalProvider } from 'react-aria';
+import { UNSAFE_PortalProvider, useUNSAFE_PortalContext } from 'react-aria';
 import { nearestPortalHost } from '@weasel-js/gestures';
 
 export { nearestPortalHost };
@@ -66,6 +66,22 @@ export interface OverlayPortalProps {
 /** React Aria props minus the portal key a weasel overlay owns: set, it
  *  would override the container {@link useOverlayPortal} provides. */
 export type WithoutPortalTarget<T> = Omit<T, 'UNSTABLE_portalContainer'>;
+
+/** The portal key of a React Aria overlay's props. */
+interface PortalTargeted {
+  UNSTABLE_portalContainer?: Element;
+}
+
+/** Where React Aria will portal an overlay with these props: their own target, else its portal provider's. */
+export function useReactAriaPortalTarget(props?: PortalTargeted): Element | null {
+  const { getContainer } = useUNSAFE_PortalContext();
+  return props?.UNSTABLE_portalContainer ?? getContainer?.() ?? null;
+}
+
+/** A React Aria overlay's props with their portal target replaced by `target`, or as given when it is null. */
+export function withPortalTarget<T extends PortalTargeted>(props: T, target: Element | null): T {
+  return target ? { ...props, UNSTABLE_portalContainer: target } : props;
+}
 
 /**
  * Resolves where an overlay should portal, and the anchor that answers it.
