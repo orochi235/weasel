@@ -26,7 +26,7 @@ function distanceToSegment(p: MeasurePoint, a: MeasurePoint, b: MeasurePoint): n
  * measurement (`nodeGates`) is passed over.
  */
 export function measureAt(
-  scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes' | 'get' | 'layers' | 'overrides'>,
+  scene: Pick<Scene<unknown, string, unknown>, 'nodesOnLayer' | 'get' | 'layers' | 'overrides'>,
   ms: Pick<Measurements, 'layer'>,
   p: MeasurePoint,
   tolerance: number,
