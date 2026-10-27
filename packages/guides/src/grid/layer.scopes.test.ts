@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   createScene,
+  RIGID_POSE_COMPOSITION,
   type Bounds,
   type DrawCommand,
   type GroupDrawCommand,
   type PathDrawCommand,
   type UnitScope,
 } from '@weasel-js/core';
-import { PATH_Z } from '@weasel-js/geom';
+import { applyToPoint, mat3, multiply, PATH_Z, rotateAboutPoint, scale, translate, type Affine } from '@weasel-js/geom';
 import { createCellHighlightLayer } from './cellHighlight';
 import { createGridLayer } from './layer';
 import { pointToGridCell } from './pointToGridCell';
@@ -133,5 +134,95 @@ describe('a hovered cell in a scoped grid', () => {
   it('is highlighted at its own lattice\'s size', () => {
     const layer = createCellHighlightLayer({ spacing: 10, getCell: () => ({ col: 6, row: 5, pitch: { x: 5, y: 5 } }) });
     expect(layer.draw(undefined, VIEW, DIMS)[0]).toMatchObject({ path: { kind: 'rect', x: 30, y: 25, width: 5, height: 5 } });
+  });
+});
+
+/** `square`, in a frame's own coordinates, carried to world. */
+const squareIn = (frame: Affine, x: number, y: number, size: number) =>
+  square(x, y, size).map((p) => {
+    const [wx, wy] = applyToPoint(frame, p.x, p.y);
+    return { x: wx, y: wy };
+  });
+
+const TURN = Math.PI / 6;
+
+describe('createGridLayer — a region\'s own frame', () => {
+  it('draws a region\'s lattice in its frame, from its origin', () => {
+    const frame = translate(23, 21);
+    const layer = createGridLayer({
+      spacing: 10,
+      scopes: { root: ROOT },
+      regions: () => [{ outline: squareIn(frame, 0, 0, 40), chain: [ROOT, HALF], frame }],
+      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+    });
+    const [, inner] = layer.draw(undefined, VIEW, DIMS);
+    const turned = (inner as GroupDrawCommand).children[0] as GroupDrawCommand;
+    expect(turned.transform).toEqual(mat3.fromAffine(frame));
+    expect(verticals(turned)).toEqual([0, 5, 10, 15, 20, 25, 30, 35, 40]);
+  });
+
+  it('turns the lattice with a turned region, and keeps its lines a pixel wide', () => {
+    const frame = multiply(rotateAboutPoint(40, 40, TURN), translate(20, 20));
+    const layer = createGridLayer({
+      spacing: 10,
+      scopes: { root: ROOT },
+      regions: () => [{ outline: squareIn(frame, 0, 0, 40), chain: [ROOT, HALF], frame }],
+      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+    });
+    const [, inner] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 2, y: 2 } }, DIMS);
+    const turned = (inner as GroupDrawCommand).children[0] as GroupDrawCommand;
+    expect(turned.transform).toEqual(mat3.fromAffine(frame));
+    expect(verticals(turned)).toEqual([0, 5, 10, 15, 20, 25, 30, 35, 40]);
+    const line = turned.children[0] as PathDrawCommand;
+    expect(line.stroke!.width).toBeCloseTo(0.5, 9);
+  });
+
+  it('measures a pixel in a stretched frame\'s own units', () => {
+    const frame = multiply(translate(20, 20), scale(2, 2));
+    const layer = createGridLayer({
+      spacing: 10,
+      scopes: { root: ROOT },
+      regions: () => [{ outline: squareIn(frame, 0, 0, 20), chain: [ROOT, HALF], frame }],
+      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+    });
+    const [, inner] = layer.draw(undefined, VIEW, DIMS);
+    const turned = (inner as GroupDrawCommand).children[0] as GroupDrawCommand;
+    expect((turned.children[0] as PathDrawCommand).stroke!.width).toBeCloseTo(0.5, 9);
+  });
+});
+
+describe('sceneGridRegions — frames', () => {
+  it('gives a container its box frame, and its outline turned with it', () => {
+    const scene = createScene<object, 'default', Bounds>({
+      systemLayers: [{ id: 'default', visible: true, locked: false }], composition: RIGID_POSE_COMPOSITION,
+    });
+    scene.add({ kind: 'group', layer: 'default', pose: { x: 20, y: 20, width: 40, height: 40, rotation: TURN } as Bounds, data: {}, units: HALF });
+    const [region] = sceneGridRegions(scene, ROOT);
+    const frame = multiply(rotateAboutPoint(40, 40, TURN), translate(20, 20));
+    region!.frame!.forEach((v, i) => expect(v).toBeCloseTo(frame[i]!, 9));
+    squareIn(frame, 0, 0, 40).forEach((p, i) => {
+      expect(region!.outline[i]!.x).toBeCloseTo(p.x, 9);
+      expect(region!.outline[i]!.y).toBeCloseTo(p.y, 9);
+    });
+  });
+});
+
+describe('a hovered cell in a turned region', () => {
+  const frame = multiply(rotateAboutPoint(40, 40, TURN), translate(20, 20));
+  const regions: GridRegion[] = [{ outline: squareIn(frame, 0, 0, 40), chain: [ROOT, HALF], frame }];
+
+  it('is counted in the region\'s frame, and carries it', () => {
+    const [x, y] = applyToPoint(frame, 12, 7);
+    expect(pointToGridCell({ x, y }, 10, undefined, undefined, { scopes: { root: ROOT }, regions }))
+      .toEqual({ col: 2, row: 1, pitch: { x: 5, y: 5 }, frame });
+  });
+
+  it('is highlighted in its frame', () => {
+    const layer = createCellHighlightLayer({ spacing: 10, getCell: () => ({ col: 2, row: 1, pitch: { x: 5, y: 5 }, frame }) });
+    expect(layer.draw(undefined, VIEW, DIMS)[0]).toMatchObject({
+      kind: 'group',
+      transform: mat3.fromAffine(frame),
+      children: [{ path: { kind: 'rect', x: 10, y: 5, width: 5, height: 5 } }],
+    });
   });
 });

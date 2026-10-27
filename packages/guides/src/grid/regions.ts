@@ -1,5 +1,7 @@
-import { sceneUnitScopes, type NodeId, type ScopedScene, type UnitScope } from '@weasel-js/core';
-import { pointInPolygon } from '@weasel-js/geom';
+import {
+  sceneBoxFrames, scenePoseFrame, sceneUnitScopes, type NodeId, type Scene, type ScopedScene, type UnitScope,
+} from '@weasel-js/core';
+import { applyToPoint, pointInPolygon, type Affine } from '@weasel-js/geom';
 
 type Point = { x: number; y: number };
 
@@ -13,51 +15,66 @@ export interface GridRegion {
   chain: readonly UnitScope[];
   /** Scoped containers inside this one. */
   regions?: readonly GridRegion[];
-}
-
-/** What `sceneGridRegions` needs of a scene. A `Scene` satisfies it. */
-export interface GridRegionScene extends ScopedScene {
-  readonly nodes: ReadonlyMap<NodeId, unknown>;
+  /** The container's frame, its own coordinates to world (`sceneBoxFrames`):
+   *  its lattice runs from the frame's origin along its axes, in its units,
+   *  as `gridSnapSource` snaps. Absent, the lattice is world-aligned and runs
+   *  through the grid's anchor. */
+  frame?: Affine;
 }
 
 /**
  * Every container in `scene` declaring a unit scope, as `GridRegion`s nested
- * the way the containers are. `outlineOf` gives a node's world outline, or
- * `null` to leave it, and every scope inside it, out.
+ * the way the containers are, each in its box frame. `outlineOf` gives a
+ * node's world outline, or `null` to leave it, and every scope inside it,
+ * out; by default, a box pose's outline as it is drawn, and none for any
+ * other pose.
  */
 export function sceneGridRegions(
-  scene: GridRegionScene,
+  scene: Scene<unknown, string, unknown>,
   root: UnitScope,
-  outlineOf: (id: NodeId) => readonly Point[] | null,
+  outlineOf?: (id: NodeId) => readonly Point[] | null,
 ): GridRegion[] {
-  const scoped = (id: NodeId) => scene.get(id)?.units !== undefined;
-  const enclosing = (id: NodeId): NodeId | null => {
-    for (let at = scene.get(id)?.parent ?? null; at !== null; at = scene.get(at)?.parent ?? null) {
-      if (scoped(at)) return at;
-    }
-    return null;
+  const frames = sceneBoxFrames(scene);
+  const poses = scenePoseFrame(scene);
+  const boxOutline = (id: NodeId, frame: Affine): Point[] => {
+    const { width, height } = poses.world(id) as { width: number; height: number };
+    return [[0, 0], [width, 0], [width, height], [0, height]].map(([x, y]) => {
+      const [wx, wy] = applyToPoint(frame, x!, y!);
+      return { x: wx, y: wy };
+    });
   };
   const children = new Map<NodeId | null, NodeId[]>();
   for (const id of scene.nodes.keys()) {
-    if (!scoped(id)) continue;
-    const parent = enclosing(id);
+    if (scene.get(id)?.units === undefined) continue;
+    const parent = scopeOwner(scene, id);
     children.set(parent, [...(children.get(parent) ?? []), id]);
   }
   const build = (parent: NodeId | null): GridRegion[] => {
     const out: GridRegion[] = [];
     for (const id of children.get(parent) ?? []) {
-      const outline = outlineOf(id);
+      const frame = frames(id);
+      const outline = outlineOf ? outlineOf(id) : frame && boxOutline(id, frame);
       if (!outline) continue;
       const inner = build(id);
       out.push({
         outline,
         chain: sceneUnitScopes(scene, id, root, { inclusive: true }),
         ...(inner.length ? { regions: inner } : {}),
+        ...(frame ? { frame } : {}),
       });
     }
     return out;
   };
   return build(null);
+}
+
+/** The nearest container above `id` declaring a unit scope, or `null` for
+ *  the root's: whose lattice `id` sits on. `inclusive` counts `id` itself. */
+export function scopeOwner(scene: ScopedScene, id: NodeId, inclusive = false): NodeId | null {
+  for (let at = inclusive ? id : scene.get(id)?.parent ?? null; at !== null; at = scene.get(at)?.parent ?? null) {
+    if (scene.get(at)?.units !== undefined) return at;
+  }
+  return null;
 }
 
 /** The innermost region holding `point`, or `null` outside them all. */

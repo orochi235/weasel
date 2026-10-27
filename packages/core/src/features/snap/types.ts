@@ -19,6 +19,14 @@ export interface Locus<P = Point> {
   span?: readonly (readonly [number, number])[];
 }
 
+/** An affine map between a frame and world, in a host's point type. */
+export interface SnapFrame<P = Point> {
+  /** A point given in the frame, in world. */
+  toWorld(p: P): P;
+  /** A world point in the frame; null where nothing maps back. */
+  toLocal(p: P): P | null;
+}
+
 /** One locus a source offers one probe. */
 export interface SourceCandidate<P = Point> {
   /** The id of a probe the source was offered. */
@@ -87,6 +95,11 @@ export interface SnapCollect<P = Point> {
   reachPx: number;
   /** Absent in a host with no 2D scene. */
   scene?: Scene<unknown, string, unknown>;
+  /** `id`'s own frame: the coordinates its box is laid out in, from its
+   *  corner along its own axes, turned and transformed as it is drawn. A
+   *  container whose pose is a frame stores its children's poses in it.
+   *  Undefined for a node with no box; absent in a host that has none. */
+  frameOf?(id: string): SnapFrame<P> | undefined;
   /** How the camera's world maps into the parallax plane the probes are in.
    *  Absent in the camera's own world. A target the camera draws, a grid or
    *  a ruler guide, is carried through it. */

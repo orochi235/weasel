@@ -13,6 +13,9 @@
  * doesn't know about the view.
  */
 
+import type { Affine } from './affine';
+
+/** A view's zoom on each axis. */
 export interface Scale2 {
   x: number;
   y: number;
@@ -87,6 +90,19 @@ export function standoff(
   nx /= l;
   ny /= l;
   return { x: anchor.x + (nx * px) / scale.x, y: anchor.y + (ny * px) / scale.y, nx, ny };
+}
+
+/** One screen-pixel length as extents along each axis of `frame`, in the
+ *  frame's own units: how far a line across that axis moves to move `px` on
+ *  screen. `frame` takes the frame to world; only its linear part counts.
+ *  Zero on both axes for a singular frame, which draws nothing. */
+export function pxExtentInFrame(px: number, scale: Scale2, frame: Affine): { x: number; y: number } {
+  const [a, b, c, d] = frame;
+  const ux = a * scale.x, uy = b * scale.y;
+  const vx = c * scale.x, vy = d * scale.y;
+  const det = Math.abs(ux * vy - uy * vx);
+  if (det === 0) return { x: 0, y: 0 };
+  return { x: (px * Math.hypot(vx, vy)) / det, y: (px * Math.hypot(ux, uy)) / det };
 }
 
 /** The screen angle a frame turned `rotation` from world lands its x axis at.
