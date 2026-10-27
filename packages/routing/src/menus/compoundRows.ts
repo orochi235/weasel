@@ -26,6 +26,24 @@ const noop = () => {};
 const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
+/** A map key as one segment of a dotted path: a `.` or `\` in it is escaped with a `\`. */
+export function pathSegment(key: string): string {
+  return key.replace(/[\\.]/g, '\\$&');
+}
+
+/** A dotted path's segments, each unescaped: the inverse of joining {@link pathSegment}s with `.`. */
+export function pathSegments(path: string): string[] {
+  const out: string[] = [];
+  let seg = '';
+  for (let i = 0; i < path.length; i++) {
+    const ch = path[i]!;
+    if (ch === '\\' && i + 1 < path.length) seg += path[++i];
+    else if (ch === '.') { out.push(seg); seg = ''; } else seg += ch;
+  }
+  out.push(seg);
+  return out;
+}
+
 /** `container` with the value at `segs` replaced, every container on the way copied. */
 function setIn(container: unknown, segs: readonly string[], value: unknown): unknown {
   const [head, ...rest] = segs;
@@ -49,14 +67,14 @@ function below(outer: MenuAccess, path: string, held: () => unknown, writable: b
   const values = (p: string): unknown => {
     if (!inside(p)) return outer.values(p);
     let cur = held();
-    for (const seg of rel(p).split('.')) cur = cur !== null && typeof cur === 'object' ? (cur as Record<string, unknown>)[seg] : undefined;
+    for (const seg of pathSegments(rel(p))) cur = cur !== null && typeof cur === 'object' ? (cur as Record<string, unknown>)[seg] : undefined;
     return cur;
   };
   const { onChange } = outer;
   if (!onChange || !writable) return { values };
   return {
     values,
-    onChange: (p, v) => (inside(p) ? onChange(path, setIn(held(), rel(p).split('.'), v)) : onChange(p, v)),
+    onChange: (p, v) => (inside(p) ? onChange(path, setIn(held(), pathSegments(rel(p)), v)) : onChange(p, v)),
   };
 }
 
@@ -76,8 +94,16 @@ export function objectRows(draw: MenuDraw, leaf: PrefObject, key: string, path: 
   return submenu(key, leaf, draw.fields(leaf.children, path, access, off || leaf.readout === true));
 }
 
-/** A list as a submenu of its entries, each drawn as its item and named for its place, with rows that add an entry
- *  and remove the last one within the list's bounds. */
+/** A "Remove <name>" submenu of one row per entry, each labeled as `labels` names it, which `drop` removes. */
+function removeRows(key: string, name: string, labels: readonly string[], off: boolean, drop: (i: number) => void): MenuEntry {
+  return {
+    kind: 'submenu', key, label: `Remove ${name}`, ...(off ? { disabled: true } : {}),
+    entries: labels.map((label, i): MenuEntry => ({ kind: 'item', key: `${key}/${i}`, label, disabled: off, run: () => drop(i) })),
+  };
+}
+
+/** A list as a submenu of its entries, each drawn as its item and named for its place, with a row that adds an
+ *  entry and a submenu that removes any one, within the list's bounds. */
 export function listRows(draw: MenuDraw, leaf: PrefList, key: string, path: string, off: boolean): MenuEntry[] {
   const held = (): readonly unknown[] => {
     const v = draw.access.values(path);
@@ -98,27 +124,46 @@ export function listRows(draw: MenuDraw, leaf: PrefList, key: string, path: stri
       run: () => onChange(path, [...held(), leaf.item.default]),
     });
     if (n > 0) {
-      rows.push({
-        kind: 'item', key: `${path}/-`, label: `Remove ${name} ${n}`,
-        disabled: frozen || n <= (leaf.minItems ?? 0),
-        run: () => onChange(path, held().slice(0, -1)),
-      });
+      rows.push(removeRows(
+        `${path}/-`, name, items.map((_, i) => `${name} ${i + 1}`), frozen || n <= (leaf.minItems ?? 0),
+        (i) => onChange(path, held().filter((_, j) => j !== i)),
+      ));
     }
   }
   return submenu(key, leaf, rows);
 }
 
-/** A map as a submenu of its entries, each drawn as its item and named for its key. A key holding a `.` cannot be
- *  addressed by a path, and is left out. */
+/** A map as a submenu of its entries, each drawn as its item and named for its key, with a text row that adds an
+ *  entry under the key typed into it and a submenu that removes any one. A key's `.` is escaped in its path. */
 export function mapRows(draw: MenuDraw, leaf: PrefMap, key: string, path: string, off: boolean): MenuEntry[] {
   const held = (): Record<string, unknown> => {
     const v = draw.access.values(path);
     return isRecord(v) ? v : isRecord(leaf.default) ? leaf.default : {};
   };
+  const frozen = off || leaf.readout === true;
   const access = below(draw.access, path, held, true);
-  const rows = Object.keys(held())
-    .filter((k) => !k.includes('.'))
-    .flatMap((k) => draw.leaf({ ...leaf.item, name: k }, `${path}.${k}`, access, off || leaf.readout === true, `${path}.${k}`));
+  const keys = Object.keys(held());
+  const rows = keys.flatMap((k) => {
+    const at = `${path}.${pathSegment(k)}`;
+    return draw.leaf({ ...leaf.item, name: k }, at, access, frozen, at);
+  });
+  const { onChange } = draw.access;
+  if (onChange && !leaf.readout) {
+    const name = leaf.item.name || leaf.name;
+    rows.push(sep(`${path}/±`), {
+      kind: 'text', key: `${path}/+`, label: `Add ${name}`, value: undefined, ...(frozen ? { disabled: true } : {}),
+      set: (k) => {
+        const now = held();
+        if (k !== '' && !Object.hasOwn(now, k)) onChange(path, { ...now, [k]: leaf.item.default });
+      },
+    });
+    if (keys.length > 0) {
+      rows.push(removeRows(`${path}/-`, name, keys, frozen, (i) => {
+        const { [keys[i]!]: _dropped, ...kept } = held();
+        onChange(path, kept);
+      }));
+    }
+  }
   return submenu(key, leaf, rows);
 }
 

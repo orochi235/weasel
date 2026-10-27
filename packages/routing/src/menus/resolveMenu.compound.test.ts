@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { MenuColorEntry, MenuEntry, MenuItemEntry, MenuNumberEntry, SubmenuEntry } from '@weasel-js/menu';
+import type { MenuColorEntry, MenuEntry, MenuItemEntry, MenuNumberEntry, MenuTextEntry, SubmenuEntry } from '@weasel-js/menu';
 import {
   pref, type PrefField, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefObject, type PrefPaint,
   type PrefUnion,
 } from '@weasel-js/prefs';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
+import { pathSegment, pathSegments } from './compoundRows';
 
 /** Values held whole at each top-level key, as a prefs store holds them, read at a dotted path. */
 function store(initial: Record<string, unknown>, extra: Partial<MenuSources> = {}) {
@@ -75,17 +76,26 @@ describe('resolveSchemaMenu: a list leaf', () => {
   it('is a submenu of its entries named for their place, each writing the list whole', () => {
     const { src, onChange } = store({ caps: [10, 20] });
     const rows = rowsOf(only(resolveSchemaMenu(menu({ caps }), src)));
-    expect(rows.map((r) => (r as { label: string }).label)).toEqual(['Cap 1', 'Cap 2', 'Add Cap', 'Remove Cap 2']);
+    expect(rows.map((r) => (r as { label: string }).label)).toEqual(['Cap 1', 'Cap 2', 'Add Cap', 'Remove Cap']);
     (rows[1] as MenuNumberEntry).set(25);
     expect(onChange).toHaveBeenLastCalledWith('caps', [10, 25]);
   });
 
-  it('adds an entry at its item default and removes the last, within its bounds', () => {
+  it('removes any entry from a submenu naming each', () => {
+    const { src, onChange } = store({ caps: [10, 20, 30] });
+    const remove = sub(rowsOf(only(resolveSchemaMenu(menu({ caps }), src))).find((r) => r.key === 'caps/-')!);
+    expect(remove.entries.map((r) => (r as MenuItemEntry).label)).toEqual(['Cap 1', 'Cap 2', 'Cap 3']);
+    (remove.entries[1] as MenuItemEntry).run();
+    expect(onChange).toHaveBeenLastCalledWith('caps', [10, 30]);
+  });
+
+  it('adds an entry at its item default and removes one, within its bounds', () => {
     const { src, onChange } = store({ caps: [10, 20] });
     const rows = rowsOf(only(resolveSchemaMenu(menu({ caps: { ...caps, minItems: 2 } }), src)));
     const add = rows.find((r) => r.key === 'caps/+') as MenuItemEntry;
-    const remove = rows.find((r) => r.key === 'caps/-') as MenuItemEntry;
+    const remove = sub(rows.find((r) => r.key === 'caps/-')!);
     expect(remove.disabled).toBe(true);
+    expect(remove.entries.every((r) => (r as MenuItemEntry).disabled)).toBe(true);
     add.run();
     expect(onChange).toHaveBeenLastCalledWith('caps', [10, 20, 0]);
     const full = rowsOf(only(resolveSchemaMenu(menu({ caps }), store({ caps: [1, 2, 3] }).src)));
@@ -103,13 +113,58 @@ describe('resolveSchemaMenu: a list leaf', () => {
 });
 
 describe('resolveSchemaMenu: a map leaf', () => {
-  it('is a submenu of its entries named for their keys', () => {
-    const sizes = leafOf<PrefMap>({ kind: 'map', name: 'Sizes', default: {}, item: pref.number('Size', 0) });
-    const { src, onChange } = store({ sizes: { small: 8, large: 24, 'a.b': 1 } });
-    const rows = rowsOf(only(resolveSchemaMenu(menu({ sizes }), src))) as MenuNumberEntry[];
-    expect(rows.map((r) => [r.label, r.value])).toEqual([['small', 8], ['large', 24]]);
+  const sizes = leafOf<PrefMap>({ kind: 'map', name: 'Sizes', default: {}, item: pref.number('Size', 0) });
+
+  it('is a submenu of its entries named for their keys, a key holding a dot among them', () => {
+    const { src, onChange } = store({ sizes: { small: 8, large: 24, 'a.b': 1, 'c\\d': 2 } });
+    const rows = rowsOf(only(resolveSchemaMenu(menu({ sizes }), src))).filter((r) => r.kind === 'number') as MenuNumberEntry[];
+    expect(rows.map((r) => [r.label, r.value])).toEqual([['small', 8], ['large', 24], ['a.b', 1], ['c\\d', 2]]);
     rows[1]!.set(30);
-    expect(onChange).toHaveBeenLastCalledWith('sizes', { small: 8, large: 30, 'a.b': 1 });
+    expect(onChange).toHaveBeenLastCalledWith('sizes', { small: 8, large: 30, 'a.b': 1, 'c\\d': 2 });
+    rows[2]!.set(5);
+    expect(onChange).toHaveBeenLastCalledWith('sizes', { small: 8, large: 30, 'a.b': 5, 'c\\d': 2 });
+    rows[3]!.set(6);
+    expect(onChange).toHaveBeenLastCalledWith('sizes', { small: 8, large: 30, 'a.b': 5, 'c\\d': 6 });
+  });
+
+  it('writes into an entry under a dotted key inside an object', () => {
+    const box = leafOf<PrefObject>({ kind: 'object', name: 'Box', default: {}, children: { sizes } });
+    const { src, onChange } = store({ box: { sizes: { 'x.y': 1 } } });
+    const inner = sub(rowsOf(only(resolveSchemaMenu(menu({ box }), src)))[0]!);
+    (inner.entries[0] as MenuNumberEntry).set(4);
+    expect(onChange).toHaveBeenLastCalledWith('box', { sizes: { 'x.y': 4 } });
+  });
+
+  it('adds an entry under the key typed into its add row, at its item default', () => {
+    const { src, onChange } = store({ sizes: { small: 8 } });
+    const add = rowsOf(only(resolveSchemaMenu(menu({ sizes }), src))).find((r) => r.key === 'sizes/+') as MenuTextEntry;
+    expect(add).toMatchObject({ kind: 'text', label: 'Add Size', value: undefined });
+    add.set('');
+    add.set('small');
+    expect(onChange).not.toHaveBeenCalled();
+    add.set('huge.ish');
+    expect(onChange).toHaveBeenLastCalledWith('sizes', { small: 8, 'huge.ish': 0 });
+  });
+
+  it('removes any entry from a submenu naming each key', () => {
+    const { src, onChange } = store({ sizes: { small: 8, 'a.b': 1 } });
+    const remove = sub(rowsOf(only(resolveSchemaMenu(menu({ sizes }), src))).find((r) => r.key === 'sizes/-')!);
+    expect(remove.entries.map((r) => (r as MenuItemEntry).label)).toEqual(['small', 'a.b']);
+    (remove.entries[1] as MenuItemEntry).run();
+    expect(onChange).toHaveBeenLastCalledWith('sizes', { small: 8 });
+  });
+
+  it('offers no add or remove when it is a readout', () => {
+    const { src } = store({ sizes: { small: 8 } });
+    const rows = rowsOf(only(resolveSchemaMenu(menu({ sizes: { ...sizes, readout: true } }), src)));
+    expect(rows.map((r) => r.key)).toEqual(['sizes.small']);
+  });
+});
+
+describe('pathSegment', () => {
+  it('escapes a dot and a backslash, and pathSegments reads them back', () => {
+    const keys = ['a.b', 'c\\d', 'plain', '', 'x\\.y'];
+    expect(pathSegments(keys.map(pathSegment).join('.'))).toEqual(keys);
   });
 });
 
