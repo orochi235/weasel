@@ -154,10 +154,25 @@ describe('a per-glyph x list, where a loaded face measures the glyphs', () => {
     expect(spacing(node)).toEqual([['A', 8], ['B', 1], ['A', undefined]]);
   });
 
-  it('leaves a text\'s list unread, and says why, where a tspan it reaches may start a line', () => {
+  it('reads a text\'s list through a tspan with an x and a dy that leave the pen on the line', () => {
     const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 50" y="40">A<tspan x="30" dy="0">BA</tspan></text>');
-    expect(warnings).toEqual([expect.stringMatching(/<text x="0 30 50"> positions each glyph; only the first value is read: a <tspan> it reaches may start a line/)]);
-    expect(node.runs).toBeUndefined();
+    expect(warnings).toEqual([]);
+    expect(spacing(node)).toEqual([['A', 8], ['B', -2], ['A', undefined]]);
+  });
+
+  it('measures a text\'s list one line at a time where a tspan it reaches opens a line', () => {
+    // B opens the second line at the box edge; A, at 50, sits 28 past where B leaves it.
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 50 0" y="40">A<tspan x="0" dy="40">BA</tspan></text>');
+    expect(warnings).toEqual([]);
+    expect(node.text).toBe('A\nBA');
+    expect(spacing(node)).toEqual([['A', undefined], ['\nB', 28], ['A', undefined]]);
+  });
+
+  it('reads a tspan\'s own list on a line it opens, measured on that line', () => {
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 99" y="40">AB<tspan x="0 30" y="80">BA</tspan></text>');
+    expect(warnings).toEqual([]);
+    expect(node.text).toBe('AB\nBA');
+    expect(spacing(node)).toEqual([['A', 8], ['B', undefined], ['\nB', 8], ['A', undefined]]);
   });
 });
 

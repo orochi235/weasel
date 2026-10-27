@@ -198,58 +198,81 @@ export interface Inherited { dx: readonly number[]; raw: string | null; merged?:
 /** One of a `<text>`'s runs, and the `<tspan>` it came from, or `null` for bare text. */
 export interface Piece { tspan: Element | null; run: StyledRun }
 
+/** Whether `tspan`, placing its first glyph with an `x` of its own, moves the
+ *  pen off the line, and so may open a new one. */
+function mayOpenLine(tspan: Element | null, ownX: readonly number[], onWarn: (m: string) => void): boolean {
+  if (!tspan || ownX.length === 0) return false;
+  return tspan.hasAttribute('y') || (readList(tspan, 'dy', onWarn)[0] ?? 0) !== 0;
+}
+
+/** `runs`, `glyphs` glyphs, laid out on a line of their own in `style`, or
+ *  why they cannot be measured. */
+function measureLine(runs: readonly StyledRun[], glyphs: number, style: TextStyle, rtl: boolean): Line | string {
+  const resolved = resolveTextStyle(style);
+  const { lines } = layoutRuns(resolveRuns(runs, resolved), {
+    maxWidth: Infinity, lineHeight: resolved.lineHeight, align: rtl ? 'right' : 'left',
+    direction: rtl ? 'rtl' : 'ltr', tabSize: resolved.tabSize,
+  });
+  const line = lines.length === 1 ? lines[0]! : null;
+  if (!line || line.cells.length !== glyphs || !(line.x1 > line.x0)) return 'no loaded face measures its glyphs';
+  if (!allRead(line.cells, rtl)) {
+    return 'in right-to-left text it is read only where a bidi engine says every glyph reads right to left';
+  }
+  return line;
+}
+
 /**
  * A `<text>`'s `x` list folded into its `dx` list, as `foldPositions` folds a
  * run's, or the reason it cannot be. The glyphs it places are measured
- * together, through every run they fall in, in `style`, the text's own. Each
- * glyph takes its `x` and `dx` from its own `<tspan>` where that has a value
- * for it, and otherwise from the text, as SVG does; `reached` is how many
- * glyphs the lists were merged over.
+ * together, through every run they fall in, in `style`, the text's own, one
+ * line at a time: a `<tspan>` that places its first glyph with an `x` of its
+ * own and moves the pen off the line starts a new one. Each glyph takes its
+ * `x` and `dx` from its own `<tspan>` where that has a value for it, and
+ * otherwise from the text, as SVG does; `reached` is how many glyphs the
+ * lists were merged over.
  */
 function foldTextPositions(
   x: readonly number[], dx: readonly number[], pieces: readonly Piece[], style: TextStyle, onWarn: (m: string) => void,
 ): { dx: number[]; reached: number } | string {
-  const reached: StyledRun[] = [];
+  const segments: { runs: StyledRun[]; start: number }[] = [];
   const xs: (number | undefined)[] = [];
   const dxs: number[] = [];
   for (let at = 0, k = 0; at < x.length && k < pieces.length; k++) {
     const { tspan, run } = pieces[k]!;
-    if (tspan?.hasAttribute('x') && (tspan.hasAttribute('y') || tspan.hasAttribute('dy'))) {
-      return 'a <tspan> it reaches may start a line of its own';
-    }
     const ownX = tspan ? readList(tspan, 'x', onWarn) : [];
     const ownDx = tspan ? readList(tspan, 'dx', onWarn) : [];
+    if (segments.length === 0 || mayOpenLine(tspan, ownX, onWarn)) segments.push({ runs: [], start: xs.length });
     const n = Array.from(run.text).length;
     for (let i = 0; i < n; i++) {
       xs.push(i < ownX.length ? ownX[i] : x[at + i]);
       dxs.push(i < ownDx.length ? ownDx[i]! : dx[at + i] ?? 0);
     }
-    reached.push(run);
+    segments[segments.length - 1]!.runs.push(run);
     at += n;
   }
   const rtl = style.direction === 'rtl';
-  const resolved = resolveTextStyle(style);
-  const { lines } = layoutRuns(resolveRuns(reached, resolved), {
-    maxWidth: Infinity, lineHeight: resolved.lineHeight, align: rtl ? 'right' : 'left',
-    direction: rtl ? 'rtl' : 'ltr', tabSize: resolved.tabSize,
-  });
-  const line = lines.length === 1 ? lines[0]! : null;
   const glyphs = xs.length;
-  if (!line || line.cells.length !== glyphs || !(line.x1 > line.x0)) return 'no loaded face measures its glyphs';
-  if (!allRead(line.cells, rtl)) {
-    return 'in right-to-left text it is read only where a bidi engine says every glyph reads right to left';
+  const pens: number[] = [];
+  for (const [s, { runs, start }] of segments.entries()) {
+    const line = measureLine(runs, (segments[s + 1]?.start ?? glyphs) - start, style, rtl);
+    if (typeof line === 'string') return line;
+    pens.push(...pensOf(line, rtl));
   }
-  const pens = pensOf(line, rtl);
+  const starts = new Set(segments.map((s) => s.start));
   // Where each glyph's pen lands: placed by its `x`, or carried on from the one before.
   const at: number[] = [];
   for (let i = 0; i < glyphs; i++) {
     const own = xs[i];
     at.push(own !== undefined ? own + dxs[i]! : at[i - 1]! + pens[i]! - pens[i - 1]! + dxs[i]!);
   }
-  // The first glyph moves the text from its own `x`, which places it.
-  const out = Array.from({ length: Math.max(dx.length, glyphs) }, (_, i) => (
-    i >= glyphs ? dx[i] ?? 0 : i === 0 ? at[0]! - x[0]! : at[i]! - at[i - 1]! - (pens[i]! - pens[i - 1]!)
-  ));
+  // The first glyph moves the text from its own `x`, which places it. A later
+  // line starts at the box edge, its own `x` unread, as a lone tspan `x` is.
+  const out = Array.from({ length: Math.max(dx.length, glyphs) }, (_, i) => {
+    if (i >= glyphs) return dx[i] ?? 0;
+    if (i === 0) return at[0]! - x[0]!;
+    if (starts.has(i)) return dxs[i]!;
+    return at[i]! - at[i - 1]! - (pens[i]! - pens[i - 1]!);
+  });
   return { dx: out, reached: glyphs };
 }
 
