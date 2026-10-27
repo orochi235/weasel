@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useStore } from 'zustand/react';
 import type { ClockRegistry } from '../clock/clockRegistry';
+import type { LabStore } from '../state/store';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { type PresentationMessageOptions, usePresentationMessages } from './presentationMessages';
 import { type Still, stillOf, useStill } from './still';
@@ -65,6 +67,7 @@ export function useLabPresentation(
   focusedTrialId: string | null,
   labBody: HTMLElement | null,
   clocks: ClockRegistry,
+  store: LabStore,
   options: {
     transport: boolean | PresentedTransportOptions;
     messages: boolean | PresentationMessageOptions;
@@ -80,11 +83,16 @@ export function useLabPresentation(
   );
   const presenting = presentedBy !== null;
   const still = useStill(start.still, clocks, labBody);
+  const clocked = useStore(store, (s) => {
+    const record = s.trials.find((t) => t.id === focusedTrialId);
+    return Boolean(record && s.instruments?.find((i) => i.name === record.instrumentName)?.clock);
+  });
   usePresentationMessages(
     presenting && !start.still && options.messages !== false,
     labBody?.ownerDocument.defaultView ?? null,
     clocks,
     focusedTrialId,
+    clocked,
     typeof options.messages === 'object' ? options.messages : NO_OPTIONS,
   );
 
