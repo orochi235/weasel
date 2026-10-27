@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import type { Plugin } from 'vite';
+import type { Plugin, ViteDevServer } from 'vite';
 import { APP_SOURCES } from './lib/packageEntries.mjs';
 import { reachByPath, relativeImportsIn, resolveRelative } from './vite-prebundle-reach.ts';
 
@@ -141,6 +141,22 @@ function viteQueriesExternal() {
   };
 }
 
+/**
+ * `server.restart(true)`, less its leak. Each restart left its environments reachable, and with them its whole module
+ * graph: ~30 MB a restart on forge (`scripts/probe-dev-restarts.ts`). vite hands them to the next server, whose
+ * closures keep them, and rolldown's resolver holds a handle that is never released on a closure that reaches them.
+ * Neither holder can be reached from here, so the outgoing environments are emptied once the new server is up.
+ */
+export async function restartLeavingNothing(server: ViteDevServer): Promise<void> {
+  const outgoing = server.environments as Record<string, object>;
+  await server.restart(true);
+  if (server.environments === outgoing) return;
+  for (const [name, env] of Object.entries(outgoing)) {
+    for (const key of Object.keys(env)) delete (env as Record<string, unknown>)[key];
+    delete outgoing[name];
+  }
+}
+
 export interface PrebundleOptions {
   /** Read `*.stories.*` files under `sourceDirs` for specifiers, for a server that loads stories. */
   readonly stories?: boolean;
@@ -219,7 +235,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
         clearTimeout(timer);
         timer = setTimeout(() => {
           server.config.logger.info(`re-bundling workspace packages: ${why}`, { timestamp: true });
-          void server.restart(true);
+          void restartLeavingNothing(server);
         }, 200);
       };
       const fromSource = (file: string) => under(file, served) || isStory(file) || sourced.has(file);
