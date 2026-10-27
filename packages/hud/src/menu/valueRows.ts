@@ -3,6 +3,7 @@ import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
 import { menuNumberCanStep, menuNumberText, type MenuColorEntry, type MenuEntry, type MenuNumberEntry } from '@weasel-js/menu';
 import type { WidgetBounds } from '../widget';
 import type { MenuMetrics } from './drawPanel';
+import { selectionOf, type HudTextEdit } from './textEdit';
 
 /** A span across a panel, from its left edge. */
 export interface Span { x: number; w: number }
@@ -61,22 +62,43 @@ export function numberCommands(
   ];
 }
 
-/** A text row's value at the row's end: muted while disabled, and followed by a caret while it is typed into. */
+/** A text row's value at the row's end, muted while disabled. */
 export function textCommands(
   b: WidgetBounds, r: { y: number; h: number }, value: string | undefined, m: MenuMetrics, ink: ValueInk,
-  mode: 'off' | 'live' | 'typing' = 'live',
+  mode: 'off' | 'live' = 'live',
 ): DrawCommand[] {
-  const typing = mode === 'typing';
-  const end = b.x + b.w - m.padX;
-  const out: DrawCommand[] = [textCommandFromRuns(
-    b.x + m.padX, b.y + r.y, [{ text: typing ? value ?? '' : value ?? '—', fill: solid(mode === 'off' ? ink.muted : ink.fg) }],
-    { ...ink.font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2 - (typing ? 3 : 0),
+  return [textCommandFromRuns(
+    b.x + m.padX, b.y + r.y, [{ text: value ?? '—', fill: solid(mode === 'off' ? ink.muted : ink.fg) }],
+    { ...ink.font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2,
   )];
-  if (typing) {
-    const half = ink.font.fontSize * 0.6;
-    const cy = b.y + r.y + r.h / 2;
-    out.push(mark(`M ${end - 1} ${cy - half} L ${end - 1} ${cy + half}`, ink.fg));
+}
+
+/** A text row being typed into: what is typed at the row's end, the selection behind it in `selection`, and a caret
+ *  where `edit` has it. `measure` gives the width of a run of the row's text. */
+export function typingCommands(
+  b: WidgetBounds, r: { y: number; h: number }, edit: HudTextEdit, m: MenuMetrics, ink: ValueInk, selection: string,
+  measure: (text: string) => number,
+): DrawCommand[] {
+  // Room after the last character, so a caret at the end clears it.
+  const right = b.x + b.w - m.padX - 3;
+  const chars = Array.from(edit.draft);
+  const xAt = (i: number) => right - measure(chars.slice(i).join(''));
+  const half = ink.font.fontSize * 0.6;
+  const cy = b.y + r.y + r.h / 2;
+  const out: DrawCommand[] = [];
+  const [from, to] = selectionOf(edit);
+  if (from !== to) {
+    out.push({
+      kind: 'path', path: { kind: 'rect', x: xAt(from), y: cy - half, width: xAt(to) - xAt(from), height: half * 2 },
+      fill: solid(selection),
+    });
   }
+  out.push(textCommandFromRuns(
+    b.x + m.padX, b.y + r.y, [{ text: edit.draft, fill: solid(ink.fg) }],
+    { ...ink.font, align: 'right' }, undefined, r.h, 'center', undefined, right - b.x - m.padX,
+  ));
+  const x = xAt(edit.caret) + 1;
+  out.push(mark(`M ${x} ${cy - half} L ${x} ${cy + half}`, ink.fg));
   return out;
 }
 

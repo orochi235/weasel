@@ -8,7 +8,8 @@ import { toIconRef, type IconRegistry } from '@weasel-js/icons';
 import { boxShadowCommands } from '../boxShadow';
 import { glyphCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
-import { colorCommands, numberCommands, textCommands, valueRowWidth } from './valueRows';
+import { colorCommands, numberCommands, textCommands, typingCommands, valueRowWidth } from './valueRows';
+import { measureLabel } from './measureLabel';
 import type { HudTextEdit } from './textEdit';
 
 /** Sizes of a HUD menu panel, in CSS pixels. */
@@ -100,6 +101,8 @@ export interface MenuDrawValues {
   number(e: MenuNumberEntry): number | undefined;
   text(e: MenuTextEntry): string | undefined;
   editing?: HudTextEdit | null;
+  /** Width of a label, which places the caret in typed text. Defaults to {@link measureLabel}. */
+  measure?(text: string, fontSize: number, fontFamily: string): number;
 }
 
 /** Each value row as it opened, with nothing being typed. */
@@ -126,6 +129,8 @@ export function drawPanel(
     stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
   }, ...shadow.over];
   const rows = rowLayout(entries, m);
+  const measure = values.measure ?? measureLabel;
+  const selection = t['--wzl-accent-soft'] ?? t['--wzl-surface-pressed'] ?? muted;
   entries.forEach((e, i) => {
     const r = rows[i]!;
     if (e.kind === 'separator') {
@@ -157,8 +162,10 @@ export function drawPanel(
     if (e.kind === 'number') out.push(...numberCommands(b, r, e, values.number(e), m, ink));
     if (e.kind === 'color') out.push(...colorCommands(b, r, e, m, ink));
     if (e.kind === 'text') {
-      const typing = values.editing?.entry === e ? values.editing.draft : undefined;
-      out.push(...textCommands(b, r, typing ?? values.text(e), m, ink, typing !== undefined ? 'typing' : e.disabled ? 'off' : 'live'));
+      const edit = values.editing?.entry === e ? values.editing : undefined;
+      out.push(...(edit
+        ? typingCommands(b, r, edit, m, ink, selection, (s) => measure(s, m.fontSize, ctx.defaultFont))
+        : textCommands(b, r, values.text(e), m, ink, e.disabled ? 'off' : 'live')));
     }
     if (e.kind === 'submenu') out.push(caret(b.x + b.w - m.padX - m.rowHeight / 2, b.y + r.y + r.h / 2, color));
   });

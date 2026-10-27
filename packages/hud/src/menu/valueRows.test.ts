@@ -7,6 +7,7 @@ import type { HudDrawCtx, HudKeyEvent } from '../widget';
 import { DEFAULT_MENU_METRICS as m, drawPanel, OPENED_VALUES, panelSize } from './drawPanel';
 import { createMenuWidget } from './menuWidget';
 import { numberChips } from './valueRows';
+import { startEdit } from './textEdit';
 
 const ctx = {
   dims: { width: 800, height: 600 }, defaultFont: 'Inter',
@@ -75,7 +76,7 @@ describe('drawPanel: value rows', () => {
 
   it('draws what is typed into a text row, and a caret after it', () => {
     const plain = drawPanel(ctx, b, [text], null, m);
-    const typing = drawPanel(ctx, b, [text], null, m, undefined, { ...OPENED_VALUES, editing: { entry: text, draft: 'Lay' } });
+    const typing = drawPanel(ctx, b, [text], null, m, undefined, { ...OPENED_VALUES, editing: startEdit(text, 'Lay') });
     expect(textOf(typing)).toEqual(['Name', 'Lay']);
     expect(typing.filter((c) => c.kind === 'path').length).toBe(plain.filter((c) => c.kind === 'path').length + 1);
   });

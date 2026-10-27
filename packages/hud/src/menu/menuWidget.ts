@@ -110,7 +110,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
 
   const key = (evt: HudKeyEvent): boolean => {
     if (evt.type !== 'keydown') return false;
-    if (!evt.ctrlKey && !evt.metaKey && typing.key(evt.key)) return true;
+    if (typing.key(evt.key, { shift: evt.shiftKey, mod: evt.ctrlKey || evt.metaKey })) return true;
     const level = c.stack().length - 1;
     const at = c.stack()[level];
     const row = at == null ? undefined : c.entriesAt(level)[at];
@@ -136,7 +136,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     draw: (ctx) => {
       family = ctx.defaultFont;
       panels = place(c, family);
-      const values = { number: c.numberValue, text: c.textValue, editing: typing.current() };
+      const values = { number: c.numberValue, text: c.textValue, editing: typing.current(), measure: opts.measure ?? measureLabel };
       return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons, values));
     },
     hitTest: (x, y) => levelAt(x, y) >= 0,
