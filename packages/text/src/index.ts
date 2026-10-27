@@ -59,12 +59,13 @@ export type {
   LaidOutCell,
   PlacedGlyph,
 } from './layout/layoutRuns';
-export { paintRuns, QUAD_STRIDE } from './layout/paintRuns';
+export { paintRuns } from './layout/paintRuns';
+export { QUAD_STRIDE } from './layout/glyphQuads';
+export type { LaidOutQuad } from './layout/glyphQuads';
 export type {
   PaintRunsOpts,
   PaintedRuns,
   LaidOutGroup,
-  LaidOutQuad,
   LaidOutOutlineGlyph,
   LaidOutDecoration,
 } from './layout/paintRuns';
@@ -106,6 +107,7 @@ export { setFlagOverRange, nodeHasFlag, unboldPatch } from './runs/flagRange';
 export type { FlagKey, SetFlagResult } from './runs/flagRange';
 
 export { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
+export { glyphTurn } from './glyphTurn';
 export { syntheticBoldOffset, emboldenGlyphD } from './syntheticBold';
 export { glyphOutlineAt } from './glyphOutlines';
 export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from './textToPath';

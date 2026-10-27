@@ -77,6 +77,13 @@ export interface StyledRun {
    * own; `'normal'` turns an inherited one off.
    */
   fontVariantCaps?: FontVariantCaps;
+  /**
+   * Degrees to turn each of this run's glyphs, clockwise, each about its own
+   * pen on the baseline — SVG's `rotate` with one value for the run. The
+   * glyphs keep their places along the line; only their angle changes. A
+   * different angle per glyph is a run per glyph.
+   */
+  rotate?: number;
 }
 
 /** Normalize the two accepted spellings of text content — a plain string or

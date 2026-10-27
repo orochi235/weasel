@@ -143,6 +143,7 @@ function runsHash(runs: readonly ResolvedRun[]): number {
     h = mix(h, r.fontStyle === 'italic' ? 1 : 0);
     h = mixNum(h, r.letterSpacing);
     h = mixNum(h, r.baselineShift);
+    h = mixNum(h, r.rotate ?? 0);
     h = mixNum(h, r.strutSize ?? -1);
   }
   return h;
@@ -165,7 +166,7 @@ function sameRuns(a: readonly ResolvedRun[], b: readonly ResolvedRun[]): boolean
     if (x.text !== y.text || x.fontFamily !== y.fontFamily || !same(x.fontSize, y.fontSize)
       || !same(x.fontWeight, y.fontWeight) || x.fontStyle !== y.fontStyle
       || !same(x.letterSpacing, y.letterSpacing) || !same(x.baselineShift, y.baselineShift)
-      || !same(x.strutSize, y.strutSize) || !sameNums(x.sizeMap, y.sizeMap)) return false;
+      || !same(x.strutSize, y.strutSize) || !same(x.rotate ?? 0, y.rotate ?? 0) || !sameNums(x.sizeMap, y.sizeMap)) return false;
     // Ends follow from starts and the length, so the two pin the cells.
     const sx = x.srcMap, sy = y.srcMap;
     if (sx !== sy && (sx === undefined || sy === undefined || sx.length !== sy.length

@@ -21,6 +21,7 @@ import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { PAINT_MODE_IMAGE, packSlot } from './shaders/batchFill';
 import { clipConvexPolygon, type ClipRect } from './batchClip';
+import { glyphCorners } from './glyphCorners';
 
 /** Vertices per flush. Caps staging memory; a longer run flushes in chunks,
  *  which stays correct because painter's order survives a flush. */
@@ -34,6 +35,8 @@ export const FLOATS_PER_VERTEX = 10;
  *  packed alongside the slot — `paintModeOf` unpacks it. */
 export const TEX_SLOT_OFFSET = 9;
 const INITIAL_VERTICES = 256;
+/** The corners `pushGlyph` maps, read before the next glyph's are written. */
+const CORNERS: number[] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
 const INITIAL_INDICES = 384;
 
 /** UV of the white texel bound at slot 0. Its texture is 1x1, so any
@@ -253,8 +256,9 @@ export class DrawBatch {
    * rides the vertices packed into the slot. `synthBold` is the shift on the
    * field's threshold, in `a_post`: a glyph has no use for an alpha factor there.
    *
-   * A synthetic oblique is sheared here, before `m`; `tanItalic` is 0 for an
-   * upright face. Corners wind as `pushQuad`'s do.
+   * A synthetic oblique is sheared and the glyph's turn applied here, before
+   * `m` (`glyphCorners`); `tanItalic` is 0 for an upright face. Corners wind
+   * as `pushQuad`'s do.
    */
   pushGlyph(
     quads: ArrayLike<number>, at: number, ox: number, oy: number, tanItalic: number, m: GlMat3,
@@ -262,19 +266,15 @@ export class DrawBatch {
   ): boolean {
     this.reserve(4, 6);
     let i = this.nVerts * FLOATS_PER_VERTEX;
-    const x0 = quads[at] + ox, y0 = quads[at + 1] + oy, x1 = quads[at + 2] + ox, y1 = quads[at + 3] + oy;
-    const u0 = quads[at + 4], v0 = quads[at + 5], u1 = quads[at + 6], v1 = quads[at + 7], baselineY = quads[at + 8] + oy;
+    const u0 = quads[at + 4], v0 = quads[at + 5], u1 = quads[at + 6], v1 = quads[at + 7];
     const r = rgba[0], g = rgba[1], b = rgba[2], a = rgba[3];
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
-    // Above-baseline corners (lower y in screen coords) lean further right.
-    const topShift = (baselineY - y0) * tanItalic;
-    const botShift = (baselineY - y1) * tanItalic;
-    const tx0 = x0 + topShift, tx1 = x1 + topShift;
-    const bx0 = x0 + botShift, bx1 = x1 + botShift;
-    const ax = ma * tx0 + mc * y0 + mtx, ay = mb * tx0 + md * y0 + mty;
-    const bx = ma * tx1 + mc * y0 + mtx, by = mb * tx1 + md * y0 + mty;
-    const cx = ma * bx1 + mc * y1 + mtx, cy = mb * bx1 + md * y1 + mty;
-    const dx = ma * bx0 + mc * y1 + mtx, dy = mb * bx0 + md * y1 + mty;
+    const c = CORNERS;
+    glyphCorners(quads, at, ox, oy, tanItalic, c);
+    const ax = ma * c[0] + mc * c[1] + mtx, ay = mb * c[0] + md * c[1] + mty;
+    const bx = ma * c[2] + mc * c[3] + mtx, by = mb * c[2] + md * c[3] + mty;
+    const cx = ma * c[4] + mc * c[5] + mtx, cy = mb * c[4] + md * c[5] + mty;
+    const dx = ma * c[6] + mc * c[7] + mtx, dy = mb * c[6] + md * c[7] + mty;
     const P = packSlot(slot, mode);
     i = this.writeVertex(i, ax, ay, r, g, b, a, u0, v0, synthBold, P);
     i = this.writeVertex(i, bx, by, r, g, b, a, u1, v0, synthBold, P);

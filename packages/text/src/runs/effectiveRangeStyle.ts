@@ -34,7 +34,7 @@ export function rangeWeight(
  *  have no node-level counterpart, so they only ever come from the range. */
 const OVERRIDES = [
   'fontFamily', 'fontSize', 'letterSpacing', 'fill', 'script', 'baselineShift', 'fontScale',
-  'textTransform', 'fontVariantCaps',
+  'textTransform', 'fontVariantCaps', 'rotate',
 ] as const;
 
 /**

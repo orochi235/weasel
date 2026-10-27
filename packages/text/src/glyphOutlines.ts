@@ -7,8 +7,10 @@ import { paintKey, strokeKey, type Stroke, type Fill } from '@weasel-js/paint';
 import { loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle } from '@weasel-js/font';
 import { pathFromD, pathSignedArea, reversePath, transformPath, type Affine, type PolygonPath } from '@weasel-js/geom';
 import type { PlacedGlyph } from './layout/layoutRuns';
-import { faceOutlineD, hasGlyphQuad } from './layout/paintRuns';
+import { hasGlyphQuad } from './layout/glyphQuads';
+import { faceOutlineD } from './layout/paintRuns';
 import type { ResolvedRun } from './runs/resolveRuns';
+import { glyphTurn } from './glyphTurn';
 import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
 import { emboldenGlyph } from './syntheticBold';
 
@@ -144,14 +146,18 @@ export function placedGlyphOutline(
 /**
  * `d`, the em-space outline data of `g`'s glyph, set where the renderer's
  * outline tier draws it: wound positive, grown for synthetic bold, sheared
- * for synthetic italic, at the pen `(g.x + dx, g.baselineY + dy)`. For a
+ * for synthetic italic, turned by `g.rotate`, at the pen `(g.x + dx, g.baselineY + dy)`. For a
  * caller reading `d` from a source of its own rather than the registered face.
  */
 export function glyphOutlineAt(d: string, g: PlacedGlyph, dx: number, dy: number): PolygonPath {
   const s = g.fontSize;
   const shear = g.resolved.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
-  // The renderer's placement (`mergeGlyphMeshes`): x = pen + (ex - ey·shear)·s.
-  const m: Affine = [s, 0, -shear * s, s, g.x + dx, g.baselineY + dy];
+  // The renderer's placement (`mergeGlyphMeshes`): x = pen + (ex - ey·shear)·s,
+  // then the glyph's turn about the pen.
+  const [cos, sin] = glyphTurn(g.rotate);
+  const m: Affine = [
+    cos * s, sin * s, -(cos * shear + sin) * s, (cos - sin * shear) * s, g.x + dx, g.baselineY + dy,
+  ];
   return transformPath(emboldenGlyph(emGlyph(d), d, g.resolved), m) as PolygonPath;
 }
 

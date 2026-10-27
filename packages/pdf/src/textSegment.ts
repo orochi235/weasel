@@ -9,7 +9,7 @@ import {
 } from '@weasel-js/paint';
 import type { TextDrawCommand } from '@weasel-js/renderer';
 import { dashLength } from '@weasel-js/stroke';
-import { type PlacedGlyph, SYNTHETIC_ITALIC_RADIANS, syntheticBoldOffset } from '@weasel-js/text';
+import { glyphTurn, type PlacedGlyph, SYNTHETIC_ITALIC_RADIANS, syntheticBoldOffset } from '@weasel-js/text';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import type { EmbeddedFont } from './fonts/embedFont';
@@ -38,7 +38,12 @@ const BOLD_MITER_LIMIT = 4;
  * An em past each slot on every side covers any glyph the face draws, oblique ones included.
  */
 function inkBox(seg: TextSegment, dx: number, dy: number): Path {
-  const { fontSize: s, baselineY } = seg.glyphs[0].g;
+  const { fontSize: s, baselineY, rotate, x, advance } = seg.glyphs[0].g;
+  if (rotate) {
+    // A turned glyph is alone in its segment; this reaches past its ink at any angle.
+    const r = advance + 1.5 * s;
+    return { kind: 'rect', x: x + dx - r, y: baselineY + dy - r, width: 2 * r, height: 2 * r };
+  }
   let x0 = Infinity;
   let x1 = -Infinity;
   for (const { g } of seg.glyphs) {
@@ -61,7 +66,9 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
   out.op('Tf', `/${ctx.resources.font(seg.font.ref)}`, 1);
   if (mode !== FILL) out.op('Tr', mode);
   // Glyph space is y up and the frame is y down, so d is negative; c leans the tops toward +x.
-  out.op('Tm', s, 0, s * shear, -s, first.x + dx, first.baselineY + dy);
+  // A turned glyph then turns about its pen.
+  const [cos, sin] = glyphTurn(first.rotate);
+  out.op('Tm', cos * s, sin * s, s * (cos * shear + sin), s * (sin * shear - cos), first.x + dx, first.baselineY + dy);
   const parts: string[] = [];
   let hex = '';
   let pen = 0;

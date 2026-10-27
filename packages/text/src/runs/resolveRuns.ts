@@ -68,6 +68,9 @@ export interface ResolvedRun {
    * `fontSize`.
    */
   strutSize?: number;
+  /** Degrees each glyph turns, clockwise about its pen on the baseline.
+   *  Absent is upright. */
+  rotate?: number;
 }
 
 /** What one script preset expands to. */
@@ -230,6 +233,7 @@ export function resolveRuns(
       overline: run.overline || style.overline,
       baselineShift: shiftEm * style.fontSize,
       ...(relative ? { strutSize: style.fontSize } : NOTHING),
+      ...(run.rotate && Number.isFinite(run.rotate) ? { rotate: run.rotate } : NOTHING),
     });
   }
   return out;

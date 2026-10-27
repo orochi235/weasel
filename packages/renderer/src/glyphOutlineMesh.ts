@@ -10,7 +10,7 @@ import type { GlMat3 } from '@weasel-js/geom';
 import { quantizeStrokeScale } from './cache/strokeMeshCache';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
-import { SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
+import { SYNTHETIC_ITALIC_RADIANS, glyphTurn } from '@weasel-js/text';
 
 /**
  * Merge a group's glyphs into one world-space mesh, or `null` when nothing in
@@ -51,7 +51,12 @@ export function outlineGroupStrokeMesh(
     return mergeGlyphMeshes(group, dx, dy, (glyph) => {
       if (!(glyph.scale > 0)) return null;
       const s = glyph.scale;
-      const space = strokeSpaceOf(s * a, s * b, s * (c - a * shear), s * (d - b * shear));
+      // The em-to-screen map: shear, the glyph's turn, then `transform`.
+      const [cos, sin] = glyphTurn(glyph.rotate);
+      const ex = [cos * s, sin * s], ey = [-(cos * shear + sin) * s, (cos - sin * shear) * s];
+      const space = strokeSpaceOf(
+        a * ex[0] + c * ex[1], b * ex[0] + d * ex[1], a * ey[0] + c * ey[1], b * ey[0] + d * ey[1],
+      );
       const pxPerEm = quantizeStrokeScale(width.px, space.scale);
       if (!(pxPerEm > 0)) return null;
       const dash = stroke.dash?.map((v) => v / pxPerEm);
@@ -97,7 +102,8 @@ function mergeGlyphMeshes(
 
   // Matches the SDF vertex shader's skew exactly: x moves by
   // `(baselineY - y) * tan(angle)`, and in em space `baselineY - y` is
-  // `-ey * scale`, so above-baseline vertices (negative ey) lean right.
+  // `-ey * scale`, so above-baseline vertices (negative ey) lean right. The
+  // glyph's turn then rotates the sheared glyph about its pen.
   const shear = shearOf(group);
 
   const vertices = new Float32Array(vertexFloats);
@@ -107,11 +113,13 @@ function mergeGlyphMeshes(
   let base = 0;
   for (const { mesh, glyph } of parts) {
     const { x, baselineY, scale } = glyph;
+    const [cos, sin] = glyphTurn(glyph.rotate);
     for (let k = 0; k < mesh.vertices.length; k += 2) {
       const ex = mesh.vertices[k];
       const ey = mesh.vertices[k + 1];
-      vertices[vi++] = x + dx + (ex - ey * shear) * scale;
-      vertices[vi++] = baselineY + dy + ey * scale;
+      const lx = (ex - ey * shear) * scale, ly = ey * scale;
+      vertices[vi++] = x + dx + lx * cos - ly * sin;
+      vertices[vi++] = baselineY + dy + lx * sin + ly * cos;
     }
     for (let k = 0; k < mesh.indices.length; k++) indices[ii++] = base + mesh.indices[k];
     base += mesh.vertices.length / 2;

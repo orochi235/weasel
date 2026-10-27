@@ -12,7 +12,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests, _resetFallbackForTests } from '@weasel-js/font/test-seams';
 import { registerFixture, stubFetch, RUN_PLAIN } from './testing/fontFixtures';
 import { layoutRuns } from './layoutRuns';
-import { paintRuns, QUAD_STRIDE } from './paintRuns';
+import { paintRuns } from './paintRuns';
+import { QUAD_STRIDE } from './glyphQuads';
 
 beforeEach(async () => {
   _resetFontRegistryForTests();
@@ -43,8 +44,8 @@ describe('layout columns', () => {
     const [group] = paintRuns(laid, runs).groups;
     expect(Array.isArray(group.quadData)).toBe(true);
     expect(group.quadData.length).toBe(2 * QUAD_STRIDE);
-    const { x0, y0, x1, y1, u0, v0, u1, v1, baselineY } = group.quads[1];
-    expect(group.quadData.slice(QUAD_STRIDE)).toEqual([x0, y0, x1, y1, u0, v0, u1, v1, baselineY]);
+    const { x0, y0, x1, y1, u0, v0, u1, v1, baselineY, penX, rotate } = group.quads[1];
+    expect(group.quadData.slice(QUAD_STRIDE)).toEqual([x0, y0, x1, y1, u0, v0, u1, v1, baselineY, penX, rotate]);
   });
 
   it('builds a view once and keeps it as a plain value', () => {

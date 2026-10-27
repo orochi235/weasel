@@ -31,6 +31,8 @@ export interface Entry {
   lineSize: number;
   /** How far its run is raised off the line's baseline. */
   baselineShift: number;
+  /** Its run's `rotate`, in degrees: how far the glyph turns about its pen. */
+  rotate: number;
   /** UTF-16 span of the source character it was drawn from. */
   srcIndex: number;
   srcEnd: number;
@@ -128,7 +130,7 @@ export function measureRuns(
       const blank = blankEntry(
         pool, entries.length, runIndex, cp, fontSize, Math.max(run.fontSize, run.strutSize ?? 0),
         // Optional on the authored run type; absent, every y would go NaN.
-        run.baselineShift ?? 0, srcStart, srcEnd, clusterEnd, resolved, metrics,
+        run.baselineShift ?? 0, run.rotate ?? 0, srcStart, srcEnd, clusterEnd, resolved, metrics,
       );
 
       if (color) {
@@ -179,20 +181,20 @@ const POOL_MAX = 4096;
 /** An entry with nothing in it — no glyph, no width — as `pool[i]` rewritten, or a new one. */
 function blankEntry(
   pool: Entry[] | undefined, i: number, run: number, cp: number, fontSize: number, lineSize: number,
-  baselineShift: number, srcIndex: number, srcEnd: number, clusterEnd: boolean,
+  baselineShift: number, rotate: number, srcIndex: number, srcEnd: number, clusterEnd: boolean,
   resolved: ResolveResult, metrics: GlyphMetrics,
 ): Entry {
   const e = pool?.[i];
   if (!e) {
     const made: Entry = {
-      run, cp, fontSize, lineSize, baselineShift, srcIndex, srcEnd, clusterEnd, resolved, metrics,
+      run, cp, fontSize, lineSize, baselineShift, rotate, srcIndex, srcEnd, clusterEnd, resolved, metrics,
       font: null, glyph: null, advance: 0, tracking: 0, kerningBefore: 0, tab: undefined, drawsInk: false,
     };
     if (pool && i < POOL_MAX) pool[i] = made;
     return made;
   }
   e.run = run; e.cp = cp; e.fontSize = fontSize; e.lineSize = lineSize; e.baselineShift = baselineShift;
-  e.srcIndex = srcIndex; e.srcEnd = srcEnd; e.clusterEnd = clusterEnd; e.resolved = resolved; e.metrics = metrics;
+  e.rotate = rotate; e.srcIndex = srcIndex; e.srcEnd = srcEnd; e.clusterEnd = clusterEnd; e.resolved = resolved; e.metrics = metrics;
   e.font = null; e.glyph = null; e.advance = 0; e.tracking = 0; e.kerningBefore = 0; e.tab = undefined;
   e.drawsInk = false;
   return e;

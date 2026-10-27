@@ -123,6 +123,10 @@ export interface PlacedGlyph {
    *  justified gap's share of the slack, and the kerning before the next glyph
    *  along the line. */
   step: number;
+  /** Degrees its run turns each glyph, clockwise about `(x, baselineY)`, its
+   *  pen on the baseline. 0, or absent on a glyph built by hand, is upright.
+   *  The turn moves no pen: the glyphs after it sit where they would. */
+  rotate?: number;
 }
 
 /**
