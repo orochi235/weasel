@@ -1,20 +1,11 @@
-import { useMemo, type ReactNode } from 'react';
-import { pref, type PrefLeaf } from '@weasel-js/prefs';
-import { BarPopover } from '@weasel-js/ui/components/Bar';
+import { useMemo } from 'react';
+import { pref } from '@weasel-js/prefs';
 import { DEFAULT_FILENAME } from '../docPersistence';
 import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_OPTIONS, type PaperSizeKey } from '../paperSizes';
 import { backgroundHex, DocumentLayers, HistoryEntries, PaletteSwatches, SelectionProperties } from '../sidebarPanels';
+import { blockLeaf, inPopover } from './appLeaves';
 import { useSurfaceHost } from './hostContext';
-import type { AssetLeafRenderer, SurfaceAsset, SchemaBinding } from './types';
-
-/** An app-defined leaf that brings its own chrome, drawn full width without a label row. */
-const blockLeaf = (kind: string, name: string, rest?: Partial<PrefLeaf>): PrefLeaf =>
-  ({ kind, name, description: '', default: undefined, block: true, ...rest });
-
-/** Draws a leaf's control in a bar as a button named `label` opening it. */
-const inPopover = (label: string, Content: () => ReactNode): AssetLeafRenderer => () => (
-  <BarPopover label={label}><Content /></BarPopover>
-);
+import type { SurfaceAsset, SchemaBinding } from './types';
 
 const SELECTION_KIND = 'draw.selection';
 const SWATCHES_KIND = 'draw.swatches';

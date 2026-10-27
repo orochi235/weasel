@@ -2,6 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { ActionsProvider, createMeasurements, createScene, useSelection, type Action } from '@weasel-js/core';
+import { CORNER_CONTROLS_PROMPT, type CornerControlsSelection } from '@weasel-js/path-tools';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { CommandBar } from '../CommandBar';
@@ -35,13 +36,17 @@ const ACTIONS: Action[] = [
 
 const setFilename = vi.fn();
 
+const NO_CORNERS: CornerControlsSelection = { editingId: () => null, selectedAnchors: () => new Set(), subscribe: () => () => {} };
+
 function App({ docSelected = false }: { docSelected?: boolean }) {
   const [scene] = useState(() => createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS }));
   const selection = useSelection({ mode: 'multi', scene });
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }));
+  const [simplifyTolerance, setSimplifyTolerance] = useState(1);
   const host: SidebarHost = {
     scene, selection, measurements, filename: 'drawing', setFilename, backgroundColor: '#ffffff',
     setBackgroundColor: () => {}, paperSize: 'a4', setPaperSize: () => {}, docSelected, setDocSelected: () => {},
+    cornerSelection: NO_CORNERS, simplifyTolerance, setSimplifyTolerance,
   };
   return (
     <ActionsProvider>
@@ -118,5 +123,45 @@ describe('the Colors, Layers, and History assets', () => {
     renderWithIcons(<App />);
     expect(sidebar().getByRole('button', { name: 'Colors', expanded: true })).toBeDefined();
     expect(sidebar().getAllByLabelText(/Palette/).length).toBeGreaterThan(0);
+  });
+});
+
+describe('the Simplify and Offset and Corner shape assets', () => {
+  const popover = async (name: string) => {
+    click(strip().getByRole('button', { name }));
+    return within(await screen.findByRole('dialog', { name }));
+  };
+
+  it('draw in the command row as buttons opening their controls', async () => {
+    renderWithIcons(<App />);
+    expect((await popover('Simplify')).getByRole('slider', { name: 'Simplify tolerance' })).toBeDefined();
+    cleanup();
+    renderWithIcons(<App />);
+    expect((await popover('Offset')).getByRole('slider', { name: 'Offset distance' })).toBeDefined();
+    cleanup();
+    renderWithIcons(<App />);
+    expect((await popover('Corner shape')).getByText(CORNER_CONTROLS_PROMPT)).toBeDefined();
+  });
+
+  it('keep the Simplify tolerance when Simplify moves to a panel', async () => {
+    renderWithIcons(<App />);
+    const simplify = await popover('Simplify');
+    act(() => { fireEvent.keyDown(simplify.getByRole('slider', { name: 'Simplify tolerance' }), { key: 'ArrowRight' }); });
+    act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+    act(() => { fireEvent.contextMenu(strip().getByRole('button', { name: 'Simplify' })); });
+    click(screen.getByRole('menuitem', { name: 'Show as panel' }));
+
+    expect(strip().queryByRole('button', { name: 'Simplify' })).toBeNull();
+    expect(sidebar().getByRole('button', { name: 'Simplify and Offset', expanded: true })).toBeDefined();
+    expect(Number(sidebar().getByRole('slider', { name: 'Simplify tolerance' }).getAttribute('aria-valuenow'))).toBeCloseTo(1.1);
+    expect(sidebar().getByRole('slider', { name: 'Offset distance' })).toBeDefined();
+  });
+
+  it('draw Corner shape in a panel', () => {
+    surfaces({ corners: { surface: 'panel' } });
+    renderWithIcons(<App />);
+    expect(strip().queryByRole('button', { name: 'Corner shape' })).toBeNull();
+    expect(sidebar().getByRole('button', { name: 'Corner shape', expanded: true })).toBeDefined();
+    expect(sidebar().getByText(CORNER_CONTROLS_PROMPT)).toBeDefined();
   });
 });

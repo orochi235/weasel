@@ -1,7 +1,7 @@
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
-import { SchemaMenu } from './SchemaSurfaces';
+import { SchemaMenu, useAssetBinding } from './SchemaSurfaces';
 import { switchMenuId } from './surfaceSwitch';
 import { useSurfaces } from './surfaceState';
 import type { SurfaceAsset } from './types';
@@ -32,9 +32,10 @@ export function CommandSlot({ id, ...look }: CommandBarLook & { id: string }) {
 
 function CommandBarSurface({ asset, look }: { asset: SurfaceAsset; look: CommandBarLook }) {
   const openSwitch = useContextMenu(switchMenuId(asset.id));
+  const { values, onChange } = useAssetBinding(asset);
   const bar = (
     <Bar
-      schema={asset.schema}
+      schema={asset.schema} values={values} onChange={onChange} renderers={asset.renderers?.bar}
       {...(look.label !== undefined ? { label: look.label } : {})}
       {...(look.segmented ? { framed: 'segmented' as const } : {})}
     />

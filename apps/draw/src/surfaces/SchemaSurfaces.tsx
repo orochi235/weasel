@@ -16,7 +16,7 @@ const useUnbound = (): SchemaBinding => UNBOUND;
 
 /** What `asset`'s leaves are bound to, from its own binding hook. Each surface asks, so moving an asset between
  *  surfaces keeps what it shows. */
-function useAssetBinding(asset: SurfaceAsset): SchemaBinding {
+export function useAssetBinding(asset: SurfaceAsset): SchemaBinding {
   const useBinding = asset.useBinding ?? useUnbound;
   return useBinding();
 }

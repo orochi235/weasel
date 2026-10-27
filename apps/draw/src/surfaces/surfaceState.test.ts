@@ -28,7 +28,7 @@ beforeAll(() => {
 describe('SURFACE_ASSETS', () => {
   it('lists the command row, then Arrange, Pathfinder, Path, and Loupe as toolbars, then the four sidebar panels', () => {
     expect(SURFACE_ASSETS.filter((a) => a.row === 'command').map((a) => a.id)).toEqual([
-      'file', 'undo', 'clipboard', 'edit', 'structure', 'view', 'text', 'compound', 'record', 'app',
+      'file', 'undo', 'clipboard', 'edit', 'structure', 'view', 'pathCommands', 'corners', 'text', 'compound', 'record', 'app',
     ]);
     expect(SURFACE_ASSETS.filter((a) => a.row !== 'command').map((a) => [a.id, a.defaultSurface])).toEqual([
       ['arrange', 'bar'], ['pathfinder', 'bar'], ['path', 'bar'], ['loupe', 'bar'],

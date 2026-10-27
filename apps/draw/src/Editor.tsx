@@ -34,7 +34,7 @@ import { RightSidebar } from './RightSidebar';
 import { FIXED_CHROME, ShowChrome } from './surfaces/chrome';
 import { SurfaceHostContext } from './surfaces/hostContext';
 import { StripDock } from './surfaces/StripSurfaces';
-import type { SidebarHost } from './surfaces/types';
+import { useEditorSurfaceHost } from './surfaces/useEditorSurfaceHost';
 import { Toolbar } from './Toolbar';
 import { useDocumentState } from './useDocumentState';
 import { useLastTool } from './useLastTool';
@@ -88,14 +88,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   }, []);
   const loupeSource = useLoupeSource(scene, PAPER_PRESETS[doc.paperSize], doc.backgroundColor);
 
-  const surfaceHost = useMemo((): SidebarHost => ({
-    scene, selection, measurements,
-    filename: doc.filename, setFilename: doc.setFilename,
-    backgroundColor: doc.backgroundColor, setBackgroundColor: doc.setBackgroundColor,
-    paperSize: doc.paperSize, setPaperSize: doc.setPaperSize,
-    docSelected: doc.docSelected, setDocSelected: doc.setDocSelected,
-  }), [scene, selection, measurements, doc.filename, doc.setFilename, doc.backgroundColor, doc.setBackgroundColor,
-    doc.paperSize, doc.setPaperSize, doc.docSelected, doc.setDocSelected]);
+  const surfaceHost = useEditorSurfaceHost({ scene, selection, measurements, doc, cornerSelection: modality.cornerSelection });
 
   // `hostRef.current` is null on the first render and populated by the time the canvas mounts,
   // which re-renders this component, so the overlay always has a container before an edit can
@@ -110,22 +103,21 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
     <ActiveToolContextProvider>
       <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
         <div className="wd-app">
-          <Toolbar
-            menus={<MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />}
-            scene={scene}
-            selection={selection}
-            paperSize={doc.paperSize}
-            setPaperSize={doc.setPaperSize}
-            filename={doc.filename}
-            setFilename={doc.setFilename}
-            backgroundColor={doc.backgroundColor}
-            setBackgroundColor={doc.setBackgroundColor}
-            cornerSelection={modality.cornerSelection}
-          />
-          <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
-          <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-          <ContextMenuHost />
           <SurfaceHostContext.Provider value={surfaceHost}>
+            <Toolbar
+              menus={<MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />}
+              scene={scene}
+              selection={selection}
+              paperSize={doc.paperSize}
+              setPaperSize={doc.setPaperSize}
+              filename={doc.filename}
+              setFilename={doc.setFilename}
+              backgroundColor={doc.backgroundColor}
+              setBackgroundColor={doc.setBackgroundColor}
+            />
+            <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
+            <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+            <ContextMenuHost />
             <StripDock className="wd-dock">
               <div className="wd-dock-main">
                 <div ref={optionsRef}>

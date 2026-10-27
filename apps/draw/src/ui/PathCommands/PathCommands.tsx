@@ -1,20 +1,17 @@
 /**
- * Simplify and Offset Path in the command bar, as sliders in popovers. Dragging a slider previews its command on the selection and
- * releasing it commits one undo entry. The Simplify slider is also the
- * tolerance path edit's Simplify brush refits at.
+ * Simplify and Offset Path as sliders. Dragging a slider previews its command on the selection and releasing it
+ * commits one undo entry. The Simplify tolerance is also what the Simplify brush path edit refits at, so it lives
+ * above whichever surface draws the slider (`useSimplifyTolerance`).
  */
 import { useEffect, useState, type ReactElement } from 'react';
 import { useActionsRegistry, useLatest, useOngoingAction } from '@weasel-js/core';
-import { BarPopover } from '@weasel-js/ui/components/Bar';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
 
 const readout = (t: { value: number }): string => t.value.toFixed(1);
 
-export function PathCommands(): ReactElement {
-  const simplify = useOngoingAction('simplifyPath');
-  const offset = useOngoingAction('offsetPath');
+/** The Simplify tolerance and its setter, tuning the `simplifyBrush` path edit to it. */
+export function useSimplifyTolerance(): [number, (tolerance: number) => void] {
   const [tolerance, setTolerance] = useState(1);
   const registry = useActionsRegistry();
   const brushTolerance = useLatest(tolerance);
@@ -22,48 +19,62 @@ export function PathCommands(): ReactElement {
     () => registry?.tune('simplifyBrush', { params: () => ({ tolerance: brushTolerance.current }) }),
     [registry, brushTolerance],
   );
-  const [distance, setDistance] = useState(0);
+  return [tolerance, setTolerance];
+}
 
+/** Sizes a slider; without it, it is a popover's width. */
+export interface PathSliderProps {
+  className?: string;
+}
+
+export interface SimplifySliderProps extends PathSliderProps {
+  tolerance: number;
+  onTolerance: (tolerance: number) => void;
+}
+
+export function SimplifySlider({ tolerance, onTolerance, className = s.slider }: SimplifySliderProps): ReactElement {
+  const simplify = useOngoingAction('simplifyPath');
   return (
-    <Toolbar.Group className="wd-commandbar-group">
-      <BarPopover label="Simplify">
-        <Slider
-          className={s.slider}
-          ariaLabel="Simplify tolerance"
-          min={0.1}
-          max={20}
-          step={0.1}
-          thumbs={[{ value: tolerance }]}
-          onInput={([t]) => {
-            setTolerance(t.value);
-            simplify.input({ tolerance: t.value });
-          }}
-          onChange={([t]) => simplify.commit({ tolerance: t.value })}
-          readoutPlacement="inline-after"
-          renderReadout={readout}
-        />
-      </BarPopover>
-      <BarPopover label="Offset">
-        <Slider
-          className={s.slider}
-          ariaLabel="Offset distance"
-          min={-50}
-          max={50}
-          step={0.5}
-          thumbs={[{ value: distance }]}
-          onInput={([t]) => {
-            setDistance(t.value);
-            offset.input({ distance: t.value });
-          }}
-          onChange={([t]) => {
-            offset.commit({ distance: t.value });
-            // The new outline is selected now; the next offset starts from it.
-            setDistance(0);
-          }}
-          readoutPlacement="inline-after"
-          renderReadout={readout}
-        />
-      </BarPopover>
-    </Toolbar.Group>
+    <Slider
+      className={className}
+      ariaLabel="Simplify tolerance"
+      min={0.1}
+      max={20}
+      step={0.1}
+      thumbs={[{ value: tolerance }]}
+      onInput={([t]) => {
+        onTolerance(t.value);
+        simplify.input({ tolerance: t.value });
+      }}
+      onChange={([t]) => simplify.commit({ tolerance: t.value })}
+      readoutPlacement="inline-after"
+      renderReadout={readout}
+    />
+  );
+}
+
+export function OffsetSlider({ className = s.slider }: PathSliderProps): ReactElement {
+  const offset = useOngoingAction('offsetPath');
+  const [distance, setDistance] = useState(0);
+  return (
+    <Slider
+      className={className}
+      ariaLabel="Offset distance"
+      min={-50}
+      max={50}
+      step={0.5}
+      thumbs={[{ value: distance }]}
+      onInput={([t]) => {
+        setDistance(t.value);
+        offset.input({ distance: t.value });
+      }}
+      onChange={([t]) => {
+        offset.commit({ distance: t.value });
+        // The new outline is selected now; the next offset starts from it.
+        setDistance(0);
+      }}
+      readoutPlacement="inline-after"
+      renderReadout={readout}
+    />
   );
 }

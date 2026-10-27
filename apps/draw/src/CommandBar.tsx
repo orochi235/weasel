@@ -2,7 +2,8 @@
  *
  *  Every editing command (history, clipboard, group, create outlines) is a kit action, and each run of them is a
  *  command-row surface asset (`COMMAND_ASSETS`) drawn in its slot here, from the registry `<SceneCanvas>` fills,
- *  glyphs included; each can be moved to a menu or a panel instead. Arrange, Pathfinder, and Path are surface assets, drawn in the
+ *  glyphs included; each can be moved to a menu or a panel instead. Simplify, Offset and Corner shape are command-row
+ *  assets too, of draw's own controls (`PATH_COMMAND_ASSETS`), and move to a panel only. Arrange, Pathfinder, and Path are surface assets, drawn in the
  *  toolbar dock below this row (`StripDock`) when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
  *  Preferences are actions too (`appCommands`), as are Record and Play
  *  (`recording`) and Open, Import and Save (`fileCommands`), so a button's shortcut is the
@@ -13,14 +14,10 @@ import { Bar } from '@weasel-js/ui/components/Bar';
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { DEBUG_MENU } from './dev/devRoutes';
 import { CommandSlot } from './surfaces/CommandSurfaces';
-import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
-import { PathCommands } from './ui/PathCommands';
 
 export interface CommandBarProps {
   /** The app's menu bar, drawn first in the row. */
   menus?: ReactNode;
-  /** What the Corner shape controls read; without it they are left out. */
-  corners?: CornerShapeProps;
 }
 
 /** A command-row asset of one registry group's actions, drawn as the kit's `ActionBar` draws that group. */
@@ -38,8 +35,8 @@ export function CommandBar(p: CommandBarProps) {
       <Run id="edit" group="edit" />
       <Run id="structure" group="structure" />
       <Run id="view" group="view" />
-      <PathCommands />
-      {p.corners && <CornerShape {...p.corners} />}
+      <CommandSlot id="pathCommands" group />
+      <CommandSlot id="corners" group />
       <Run id="text" group="text" />
       <Run id="compound" group="compound" />
       <Toolbar.Spacer />

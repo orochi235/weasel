@@ -31,6 +31,8 @@ function Host({ kind }: { kind: PathEffect['kind'] }) {
     scene, selection, measurements: useState(() => createMeasurements({ layer: ANNOTATION_LAYER }))[0],
     filename: '', setFilename: () => {}, backgroundColor: '#ffffff', setBackgroundColor: () => {},
     paperSize: 'letter' as never, setPaperSize: () => {}, docSelected: false, setDocSelected: () => {},
+    cornerSelection: { editingId: () => null, selectedAnchors: () => new Set(), subscribe: () => () => {} },
+    simplifyTolerance: 1, setSimplifyTolerance: () => {},
   };
   return <SurfaceHostContext.Provider value={host}><SelectionProperties /></SurfaceHostContext.Provider>;
 }

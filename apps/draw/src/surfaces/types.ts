@@ -1,4 +1,5 @@
 import type { Measurements, SelectionApi } from '@weasel-js/core';
+import type { CornerControlsSelection } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefOrder } from '@weasel-js/prefs';
 import type { ReactNode } from 'react';
 import type { DrawScene } from '../drawDocument';
@@ -40,6 +41,11 @@ export interface SidebarHost {
   setPaperSize: (v: PaperSizeKey) => void;
   docSelected: boolean;
   setDocSelected: (v: boolean) => void;
+  /** The path open in path edit and its selected anchors, for Corner shape. */
+  cornerSelection: CornerControlsSelection;
+  /** What Simplify refits at, and the Simplify brush with it. */
+  simplifyTolerance: number;
+  setSimplifyTolerance: (v: number) => void;
 }
 
 /** What a host binds an asset's leaves to, by dotted path within the asset's schema. Each surface reads and writes

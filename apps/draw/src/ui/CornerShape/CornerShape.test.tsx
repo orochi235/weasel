@@ -8,7 +8,7 @@ import {
   withCorner,
   type PolygonPath,
 } from '@weasel-js/core';
-import { CORNER_CONTROLS, CORNER_CONTROLS_PROMPT, type CornerControlsSelection } from '@weasel-js/path-tools';
+import { CORNER_CONTROLS_PROMPT, type CornerControlsSelection } from '@weasel-js/path-tools';
 import { CornerShape } from './CornerShape';
 
 afterEach(cleanup);
@@ -37,7 +37,6 @@ function setup(selected: number[]) {
       <CornerShape scene={scene} selection={selection} />
     </ActionsProvider>,
   );
-  act(() => { fireEvent.click(screen.getByRole('button', { name: CORNER_CONTROLS.name })); });
   const select = (next: number[]) => act(() => { anchors = new Set(next); listeners.forEach((l) => l()); });
   return { run, select };
 }

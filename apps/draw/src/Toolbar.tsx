@@ -11,7 +11,6 @@ import {
   type SelectionApi,
   WEASEL_CLIPBOARD_MIME
 } from '@weasel-js/core';
-import type { CornerControlsSelection } from '@weasel-js/path-tools';
 import {
   type ReactElement,
   type ReactNode,
@@ -39,8 +38,6 @@ export interface ToolbarProps {
   setFilename: (name: string) => void;
   backgroundColor: string;
   setBackgroundColor: (color: string) => void;
-  /** The open path and its selected anchors, for the Corner shape controls. */
-  cornerSelection?: CornerControlsSelection;
   /** The menu bar, drawn first in the row. */
   menus?: ReactNode;
 }
@@ -48,7 +45,7 @@ export interface ToolbarProps {
 export function Toolbar({
   scene, selection,
   paperSize, setPaperSize,
-  filename, setFilename, backgroundColor, setBackgroundColor, cornerSelection, menus,
+  filename, setFilename, backgroundColor, setBackgroundColor, menus,
 }: ToolbarProps): ReactElement {
   // A paste lands where a draw would: in the entered group, say.
   const deps = useOptionalDepRegistry();
@@ -107,10 +104,7 @@ export function Toolbar({
 
   return (
     <>
-      <CommandBar
-        menus={menus}
-        {...(cornerSelection ? { corners: { scene, selection: cornerSelection } } : {})}
-      />
+      <CommandBar menus={menus} />
     </>
   );
 }

@@ -2,6 +2,7 @@ import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { FILE_ACTIONS } from '../fileCommands';
 import { LOUPE_SCHEMA, useLoupeBinding } from '../LoupeProvider';
 import { PANEL_ASSETS } from './panelAssets';
+import { PATH_COMMAND_ASSETS } from './pathCommandAssets';
 import type { SurfaceAsset, SurfaceKind } from './types';
 
 const ALL: readonly SurfaceKind[] = ['bar', 'panel', 'menu'];
@@ -41,6 +42,7 @@ export const COMMAND_ASSETS: readonly SurfaceAsset[] = [
   commandRun('edit', 'Edit', 'edit'),
   commandRun('structure', 'Structure', 'structure'),
   commandRun('view', 'View', 'view'),
+  ...PATH_COMMAND_ASSETS,
   commandRun('text', 'Text', 'text'),
   commandRun('compound', 'Compound path', 'compound'),
   commandRun('record', 'Record', 'record'),
