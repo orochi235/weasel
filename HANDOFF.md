@@ -4,7 +4,7 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Agent TODO batches 2–10, merged 2026-10-26/27 (not pushed)
+## Agent TODO batches 2–10, merged and pushed 2026-10-26/27
 
 Nine batches of `[agent]` entries from `docs/TODO.md` merged to `main`, the last as 3028e098c. Each went
 through a branch gate (fleet with the gate test, and post-build) before its merge and a fleet run of `main`
@@ -39,7 +39,7 @@ Two commits in batch 7 do not build alone (5b7d0acfe, 11e2b7d6f); the merge's tr
 **What is left of the `[agent]` entries:** later arcs of work in flight (shaping, headless layer, boolean
 groups, far-origin readers, HUD garbage, retained surfaces, batch clips), fleet-infra measurement that needs
 quiet nodes, multi-arc platform projects (WebGPU, worker offload, headless Node), wake entries
-waiting on wake's own branches. onto bd536ed (on every node since 2026-10-27, not pushed to its origin)
+waiting on wake's own branches. onto bd536ed (on every node and pushed, 2026-10-27)
 unblocks the tessellate baseline re-record.
 
 ## Overnight TODO batch, merged 2026-10-25 (not pushed)
