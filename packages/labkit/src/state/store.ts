@@ -10,7 +10,7 @@ import {
 } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
 import { emptyDocument } from './document';
-import { newId } from './helpers';
+import { loadedFrom, snapshotOf } from './snapshots';
 import { hydrateSnapshots, hydrateTrials, rehydrated, withoutUnreadable } from './hydrate';
 import type {
   CreateLabStoreOptions,
@@ -192,24 +192,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
     saveSnapshot: (trialId, name) => {
       const trial = get().trials.find((w) => w.id === trialId);
       if (!trial) return;
-      const reg = hooks.serializers[trial.instrumentName];
-      const serializedState = reg?.serialize
-        ? reg.serialize(trial.state)
-        : structuredClone(trial.state);
-      const clonedConfig = structuredClone(trial.config);
-      const lastAt = get().savedSnapshots.reduce((m, sn) => (sn.savedAt > m ? sn.savedAt : m), 0);
-      const savedAt = Math.max(Date.now(), lastAt + 1);
-      const snapshot: SavedSnapshot = {
-        id: newId(),
-        name,
-        trialId,
-        instrumentName: trial.instrumentName,
-        config: clonedConfig,
-        state: serializedState,
-        auto: [...(trial.auto ?? [])],
-        ...(trial.clock ? { clock: { ...trial.clock } } : {}),
-        savedAt,
-      };
+      const snapshot = snapshotOf(trial, name, hooks, get().savedSnapshots);
       set((s) => ({ savedSnapshots: [...s.savedSnapshots, snapshot] }));
     },
 
@@ -224,21 +207,8 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         );
         return;
       }
-      const reg = hooks.serializers[snapshot.instrumentName];
-      const restoredState = reg?.deserialize
-        ? reg.deserialize(snapshot.state, snapshot.config)
-        : snapshot.state;
       set((s) => ({
-        trials: s.trials.map((w) => {
-          if (w.id !== trialId) return w;
-          const loaded: TrialRecord = { ...w, state: restoredState, config: snapshot.config };
-          // A fresh object each load, so the trial's clock tells it from its own writes.
-          if (snapshot.clock) loaded.clock = { ...snapshot.clock };
-          if (snapshot.auto === undefined) return loaded;
-          delete loaded.auto;
-          if (snapshot.auto.length > 0) loaded.auto = [...snapshot.auto];
-          return loaded;
-        }),
+        trials: s.trials.map((w) => (w.id === trialId ? loadedFrom(w, snapshot, hooks) : w)),
       }));
     },
 

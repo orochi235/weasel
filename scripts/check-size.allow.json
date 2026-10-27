@@ -160,7 +160,7 @@
     "longestFunction": 212
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 227
+    "longestFunction": 200
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
     "longestFunction": 255

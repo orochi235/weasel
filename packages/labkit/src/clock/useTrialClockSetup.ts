@@ -1,4 +1,5 @@
 import { holdAt, type PlayheadHold } from '@weasel-js/clock';
+import { useLatest } from '@weasel-js/core';
 import { useContext, useEffect, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
@@ -95,8 +96,7 @@ export function useTrialClockSetup({
     return clocks.register(record.id, handle, onLab ? undefined : target);
   }, [clocks, handle, record.id, target, onLab]);
 
-  const declaredSpec = useRef<ClockCapability | null>(null);
-  declaredSpec.current = spec;
+  const declaredSpec = useLatest(spec);
   // The position this hook last wrote, or seeded from; any other is a load from outside, as a snapshot's.
   const written = useRef<ClockPosition | undefined>(record.clock);
   useEffect(() => {
@@ -111,7 +111,7 @@ export function useTrialClockSetup({
       written.current = position;
       updateTrialClock(record.id, position);
     });
-  }, [handle, onLab, record.id, updateTrialClock]);
+  }, [handle, onLab, record.id, updateTrialClock, declaredSpec]);
 
   const loaded = record.clock;
   const loadHold = useRef<PlayheadHold | null>(null);
@@ -122,7 +122,7 @@ export function useTrialClockSetup({
     if (!declaredNow) return;
     loadHold.current?.release();
     loadHold.current = holdAt(handle, shownAt(loaded, declaredNow));
-  }, [handle, onLab, loaded]);
+  }, [handle, onLab, loaded, declaredSpec]);
   useEffect(
     () => () => {
       loadHold.current?.release();
