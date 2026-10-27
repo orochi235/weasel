@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { composePatternTransform, decomposePatternTransform } from '@weasel-js/core';
 import type { PatternPaint as PatternFill } from '@weasel-js/core';
-import { PatternPicker, seedPattern } from './PatternPicker';
+import { PatternPicker, seedImagePattern, seedPattern } from './PatternPicker';
 
 function rotationInput(): HTMLInputElement {
   return screen.getByRole('spinbutton', { name: 'Rotation' }) as HTMLInputElement;
@@ -94,5 +94,64 @@ describe('PatternPicker rotation', () => {
     const next = onChange.mock.calls[0][0] as PatternFill;
     expect(next.kind).toBe('dots');
     expect(next.transform).toEqual(transform);
+  });
+});
+
+describe('PatternPicker images', () => {
+  const READ = { src: 'data:image/png;base64,AAAA', width: 400, height: 200 };
+
+  function upload(): void {
+    const input = screen.getByTestId('pattern-image-file') as HTMLInputElement;
+    const file = new File(['x'], 'tile.png', { type: 'image/png' });
+    fireEvent.change(input, { target: { files: [file] } });
+  }
+
+  it('commits a picked file as an image paint, its longest side at the default size', async () => {
+    const onChange = vi.fn();
+    const readImage = vi.fn(async () => READ);
+    const transform = composePatternTransform({ rotation: 0.5 });
+    render(
+      <PatternPicker
+        value={{ ...seedPattern('hatch', '#123456'), transform }}
+        color="#123456"
+        onChange={onChange}
+        readImage={readImage}
+      />,
+    );
+    upload();
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
+    expect(readImage).toHaveBeenCalledWith(expect.objectContaining({ name: 'tile.png' }));
+    expect(onChange.mock.calls[0][0]).toEqual({ ...seedImagePattern(READ), transform });
+    expect(seedImagePattern(READ)).toMatchObject({ kind: 'image', width: 128, height: 64, units: 'bounds' });
+  });
+
+  it('marks the image swatch as the one in use', () => {
+    render(<PatternPicker value={seedImagePattern(READ)} color="#123456" onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'image' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'hatch' }).getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('resizes an image tile by its longest side, keeping its proportions', () => {
+    const onChange = vi.fn();
+    render(<PatternPicker value={seedImagePattern(READ)} color="#123456" onChange={onChange} />);
+    fireEvent.click(screen.getByRole('radio', { name: 'S' }));
+    expect(onChange.mock.calls[0][0]).toMatchObject({ kind: 'image', src: READ.src, width: 32, height: 16 });
+  });
+
+  it('warns and changes nothing when a file cannot be read', async () => {
+    const onChange = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    render(
+      <PatternPicker
+        value={seedPattern('hatch', '#123456')}
+        color="#123456"
+        onChange={onChange}
+        readImage={() => Promise.reject(new Error('not an image'))}
+      />,
+    );
+    upload();
+    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+    expect(onChange).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

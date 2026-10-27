@@ -9,13 +9,13 @@ import type { PaintDrawKind } from '@weasel-js/renderer';
  */
 export type PaintKind =
   | 'solid' | 'linear-gradient' | 'radial-gradient' | 'conic-gradient'
-  | TileKind | 'texture'
+  | TileKind | 'image' | 'texture'
   | (string & {});
 
 /**
  * A set of kinds an editor offers as one choice. Kinds sharing a family show
  * as a single segment in a kind bar, named by the family, and the member is
- * picked inside that segment's body. The built-in tiles and `texture` are the
+ * picked inside that segment's body. The built-in tiles, `image` and `texture` are the
  * `patternFamily`.
  */
 export interface PaintKindFamily {

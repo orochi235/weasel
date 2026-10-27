@@ -30,3 +30,12 @@ them.
 Each built-in is also a paint kind of its own: `{ kind: 'hatch', color }` is a
 fill as it stands, serializes, and needs no handle. Reach for those first; drop
 to the tile builder when you need a pattern they don't cover.
+
+## Images
+
+`{ kind: 'image', src, width, height }` tiles a picture. `resolveImage.ts`
+hands it a texture id built from `src` at once, and the texture behind that id
+is whatever `images/imageCache` has decoded for `src` when a frame draws it:
+nothing while it loads, then the bitmap, then a fresh one if the cache drops
+and reloads it. `width` and `height` are the tile's extent in paint units;
+left out, the bitmap's pixel size is used.

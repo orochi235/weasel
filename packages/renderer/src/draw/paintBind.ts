@@ -1,7 +1,7 @@
 import type { Paint, TexturePaint } from '@weasel-js/paint';
 import type { PaintBindContext, PaintResources } from '../paintKinds';
 import { createPaintResources } from '../paintResources';
-import { getTexture } from '../textures/registerTexture';
+import { getTexture, isOwnedTextureId } from '../textures/registerTexture';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { patternTileSpace } from '../math/patternSpace';
@@ -58,7 +58,7 @@ export function bindPattern(
   const tex = fill.texture;
   const entry = getTexture(tex.id);
   if (!entry) {
-    if (isDev()) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
+    if (isDev() && !isOwnedTextureId(tex.id)) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
     return null;
   }
   const inverse = gradientSpaceInverse(ctx, fill.units);
@@ -75,7 +75,7 @@ export function bindPattern(
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, model);
   setColorMatrixUniforms(ctx, prog);
-  const [tw, th] = textureSize(entry.source);
+  const [tw, th] = tileExtent(fill, entry.source);
   // The tile repeats, so whole tiles come out of the translation here, in
   // doubles: far from the origin a float32 has no bits left for the texel.
   tileSpace[6] -= Math.floor(tileSpace[6] / tw) * tw;
@@ -90,11 +90,12 @@ export function bindPattern(
 }
 
 /** Tile extent in paint-space units — one tile spans this many units of
- *  whatever space `units` names. */
-function textureSize(source: HTMLImageElement | ImageBitmap): [number, number] {
-  const w = 'naturalWidth' in source ? source.naturalWidth : source.width;
-  const h = 'naturalHeight' in source ? source.naturalHeight : source.height;
-  return [w || 1, h || 1];
+ *  whatever space `units` names. A side the paint leaves out is the
+ *  texture's pixel size. */
+function tileExtent(fill: TexturePaint, source: HTMLImageElement | ImageBitmap): [number, number] {
+  const w = fill.width ?? ('naturalWidth' in source ? source.naturalWidth : source.width);
+  const h = fill.height ?? ('naturalHeight' in source ? source.naturalHeight : source.height);
+  return [w > 0 ? w : 1, h > 0 ? h : 1];
 }
 
 /** The gradient counterpart of `bindPattern`. */

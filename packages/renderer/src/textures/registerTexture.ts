@@ -33,7 +33,8 @@ export function _resetTextureRegistryForTests(): void {
 export interface TextureIdOwner {
   /** Register `id` again if it can be rebuilt; do nothing otherwise. */
   revive(id: string): void;
-  /** `id` was looked up and found: something is about to draw it. */
+  /** `id` was looked up and found: something is about to draw it. The
+   *  owner may replace or drop the entry here; the lookup reads it after. */
   touched?(id: string): void;
 }
 
@@ -52,6 +53,16 @@ export function ownTextureIds(prefix: string, owner: TextureIdOwner): () => void
   };
 }
 
+/**
+ * Whether an owner claims `id`. A lookup of an owned id that misses is the
+ * owner's business — a texture still loading, say — rather than a stale
+ * handle worth a warning.
+ * @internal
+ */
+export function isOwnedTextureId(id: string): boolean {
+  return ownerOf(id) !== undefined;
+}
+
 function ownerOf(id: string): TextureIdOwner | undefined {
   for (let i = 0; i < owners.length; i++) {
     if (id.startsWith(owners[i].prefix)) return owners[i].owner;
@@ -68,8 +79,9 @@ export function getTexture(id: string): TextureEntry | null {
   const owner = owners.length > 0 ? ownerOf(id) : undefined;
   const hit = registry.get(id);
   if (hit) {
-    owner?.touched?.(id);
-    return hit;
+    if (!owner?.touched) return hit;
+    owner.touched(id);
+    return registry.get(id) ?? null;
   }
   if (!owner) return null;
   owner.revive(id);

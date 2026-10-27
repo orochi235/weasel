@@ -30,14 +30,18 @@ export type {
 } from './paint';
 export {
   TILE_KINDS,
+  isImagePatternPaint,
   isPatternPaint,
   isTileKind,
   isTilePaint,
   patternPlacementOf,
   tileSpecOf,
+  type ImagePatternPaint,
   type PatternPaint,
   type PatternPlacement,
+  type ResolvablePatternKind,
   type TexturePaint,
+  type TileExtent,
   type TileKind,
   type TilePaint,
   type TilePatternSpec,

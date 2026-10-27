@@ -56,9 +56,11 @@ export type {
   GradientPaint,
   GradientKind,
   PaintUnits,
+  ImagePatternPaint,
   PatternPaint,
   PatternPlacement,
   TexturePaint,
+  TileExtent,
   TileKind,
   TilePaint,
   TilePatternSpec,
@@ -80,6 +82,7 @@ export type {
 } from '@weasel-js/paint';
 export {
   TILE_KINDS,
+  isImagePatternPaint,
   isPatternPaint,
   isSolidPaint,
   isTileKind,

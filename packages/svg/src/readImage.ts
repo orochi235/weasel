@@ -27,7 +27,7 @@ export function parseImageElement(
   return node;
 }
 
-function imageHref(el: Element): string | null {
+export function imageHref(el: Element): string | null {
   return el.getAttribute('href')
     ?? el.getAttributeNS(XLINK_NS, 'href')
     ?? el.getAttribute('xlink:href');

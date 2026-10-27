@@ -14,8 +14,8 @@ import type { VertexWidth } from './vertexWidth';
  * equivalent to `{ kind: 'solid', color: '#abc' }`. Every other paint names
  * its kind.
  *
- * A pattern is one of the built-in tile kinds or a `texture`; see
- * `PatternPaint`.
+ * A pattern is one of the built-in tile kinds, an `image`, or a `texture`;
+ * see `PatternPaint`.
  *
  * `interpolate` on a gradient names the space its stops blend through, and
  * defaults to `'rgb'`. `'oklab'` spaces the blend perceptually; `'oklch'`

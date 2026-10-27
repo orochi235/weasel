@@ -141,6 +141,23 @@ describe('persistence — saved measurements', () => {
   });
 });
 
+describe('persistence — image pattern fills', () => {
+  it('keeps the picture itself, so a reload needs nothing stored beside the scene', () => {
+    const paint = {
+      kind: 'image' as const, src: 'data:image/png;base64,iVBORw0KGgo=', width: 64, height: 32,
+      units: 'bounds' as const, transform: [0, 1, -1, 0] as const,
+    };
+    const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS });
+    scene.add({
+      id: asNodeId('a'), kind: 'mark', layer: 'default' as WeaselDrawLayer,
+      pose: { x: 0, y: 0, width: 10, height: 10 }, data: { fill: { paint } },
+    });
+    const saved = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const [node] = nodeSpecsFromSnapshot(saved, DRAW_REGISTRY);
+    expect((node!.data as WeaselDrawData).fill).toEqual({ paint });
+  });
+});
+
 // `collapse WeaselDraw's own fill and stroke onto the kit shapes` (7af35c53,
 // 2026-08-26) dropped `WeaselDrawData`'s `fill?: string` / `stroke?: string` /
 // `strokeWidth?: number` in favor of the kit's `Paint` and `Stroke`

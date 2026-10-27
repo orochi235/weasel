@@ -19,7 +19,7 @@ import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntr
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
 
-/** The family the built-in tiles and `texture` are offered under. A consumer's
+/** The family the built-in tiles, `image` and `texture` are offered under. A consumer's
  *  own pattern kind joins it by naming this as its `family`. */
 export const patternFamily: PaintKindFamily = { id: 'pattern', label: 'Pattern', icon: icon('paintPattern') };
 
@@ -40,6 +40,14 @@ const BUILTINS: readonly PaintKindEntry[] = [
   tileKind('crosshatch', 'Crosshatch'),
   tileKind('dots', 'Dots'),
   tileKind('chunks', 'Chunks'),
+  {
+    id: 'image',
+    label: 'Image',
+    family: patternFamily,
+    // An image is chosen by the user and cannot be made from a color.
+    seed: (color) => seedTile('hatch', color),
+    colorOf: () => undefined,
+  },
   {
     id: 'texture',
     label: 'Texture',
