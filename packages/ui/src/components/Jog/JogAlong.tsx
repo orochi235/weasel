@@ -45,7 +45,7 @@ export function JogAlong({ parts, shape, align, className }: { parts: JogParts; 
   };
 
   return (
-    <div ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind}>
+    <div ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} dir="ltr">
       <AlongContext.Provider value={null}>
         {part('prev', parts.prev)}
         {part('play', parts.play)}
@@ -69,7 +69,7 @@ function scrubStretch(run: TrackRun, center: number, length: number): [number, n
   if (run.length <= 0) return [0.5, 0.5];
   const f = (d: number) => {
     const g = Math.min(1, Math.max(0, d / run.length));
-    return Math.round((run.reversed ? run.to - g * (run.to - run.from) : run.from + g * (run.to - run.from)) * 1e6) / 1e6;
+    return Math.round(run.toShape(g) * 1e6) / 1e6;
   };
   const a = f(center - length / 2);
   const b = f(center + length / 2);

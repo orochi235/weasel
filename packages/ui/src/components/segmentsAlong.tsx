@@ -65,8 +65,7 @@ export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
 
 /** The shape fraction a point `d` px along `run` falls at. */
 function shapeAt(run: TrackRun, d: number): number {
-  const g = run.length > 0 ? clamp(d / run.length, 0, 1) : 0.5;
-  return run.reversed ? run.to - g * (run.to - run.from) : run.from + g * (run.to - run.from);
+  return run.toShape(run.length > 0 ? clamp(d / run.length, 0, 1) : 0.5);
 }
 
 /** SVG path data for the stretch `lo..hi` px along `run`, carried on straight past either end of it. */

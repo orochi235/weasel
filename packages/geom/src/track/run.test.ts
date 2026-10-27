@@ -166,4 +166,11 @@ describe('trackRun in a right-to-left direction', () => {
     const r = trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }), 0, 1, rtl);
     expect(r.nearest({ x: 25, y: 0 }).f).toBeCloseTo(0.75);
   });
+  test('toShape is the shape fraction the place at g stands on, either way round', () => {
+    const shape = arcShape({ center: C, radius: 100, start: 120, end: 240 });
+    for (const r of [trackRun(shape, 0.1, 0.9), trackRun(shape, 0.1, 0.9, rtl), trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }), 0.2, 0.6)]) {
+      for (const g of [0, 0.25, 1]) close(r.at(g).point, r.shape.at(r.toShape(g)).point);
+    }
+    expect(trackRun(shape, 0.1, 0.9).toShape(0)).toBeCloseTo(0.9);
+  });
 });
