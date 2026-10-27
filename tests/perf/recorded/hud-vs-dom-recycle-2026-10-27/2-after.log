@@ -1,0 +1,1151 @@
+  waiting for room
+  base   f645651d
+  commits sent directly, 9.3 KiB (not on origin)
+  updated weasel on msb-uai at f645651d
+  job    7f193445 on msb-uai
+
+onto: hvd-recycle-after is already set up
+onto: playwright-browsers-eb0f8a7479e5 is already set up
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts hud-vs-dom
+
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] wake: /Users/mike/src/wake/dist/index.js not found; serving without one-copy-per-app
+
+Running 1 test using 1 worker
+
+
+HUD vs DOM overlay — 1280x800, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+GPU timer query: available
+36 measurements (4 configurations, each approach twice a pass, + 2 baselines, x 2 passes), 120 frames each
+load at start 1.8 2.9 3.5 on 14 cores
+onto: plan 36 measurements
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+    1/36  pass 1  none          0 glyphs  static       fixed   main   0.43  (js  0.22 style  0.00 layout  0.00 paint  0.08)  comp  0.31  raster  0.00  gpu-proc  2.34  total   3.08 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.19  load    1.7      5s
+onto: progress 1/36
+    2/36  pass 1  hud        2500 glyphs  every-frame  fixed   main   2.07  (js  1.97 style  0.00 layout  0.00 paint  0.03)  comp  0.16  raster  0.00  gpu-proc  2.03  total   4.27 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.28  load    1.5     12s
+         allocated    989.5 KB/frame; by function, KB/frame self, total:
+              112.4    112.4  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               92.2    333.0  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+               91.4    135.9  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+               75.9     79.1  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               63.6    243.7  cachedCommands (packages/hud/src/attach.ts:199)
+               50.3    663.1  drawText (packages/renderer/src/draw/text.ts:36)
+               44.5     44.5  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               40.8     40.8  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               40.0     48.8  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               38.6    188.2  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               37.0    989.2  step
+               36.7     36.7  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               36.2    396.7  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               34.3     56.2  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               31.2     31.3  pushRect (packages/renderer/src/draw/batch.ts:195)
+         by total:
+                0.0    989.3  loop
+               37.0    989.2  step
+                1.4    702.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    699.2  dispatch (packages/renderer/src/draw.ts:11)
+               50.3    663.1  drawText (packages/renderer/src/draw/text.ts:36)
+               36.2    396.7  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               92.2    333.0  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                3.2    247.0  draw (packages/hud/src/attach.ts:73)
+               63.6    243.7  cachedCommands (packages/hud/src/attach.ts:199)
+               38.6    188.2  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               91.4    135.9  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              112.4    112.4  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               75.9     79.1  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               34.3     56.2  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               40.0     48.8  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 2/36
+    3/36  pass 1  dom        2500 glyphs  every-frame  fixed   main   1.67  (js  0.25 style  0.00 layout  0.59 paint  0.69)  comp  0.25  raster  0.00  gpu-proc  1.32  total   3.25 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    1.4     19s
+         allocated     72.6 KB/frame; by function, KB/frame self, total:
+               30.1     30.3  pushRect (packages/renderer/src/draw/batch.ts:195)
+               23.9     67.8  step
+                5.0      5.0  padStart
+                4.6     35.0  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                1.9      3.5  visitNode
+                1.8     38.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.9      0.9  (V8 API)
+                0.6      0.6  Float32Array
+                0.6      0.6  checkAndReturn
+                0.5      0.5  push
+                0.4      3.5  visitChild
+                0.3      0.3  subarray
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  stageSolid (packages/renderer/src/draw/batch.ts:43)
+                0.2      0.4  expectValue
+         by total:
+                0.0     67.8  loop
+               23.9     67.8  step
+                1.8     38.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.6     35.0  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                0.0     35.0  dispatch (packages/renderer/src/draw.ts:11)
+               30.1     30.3  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.0      5.0  padStart
+                1.9      3.5  visitNode
+                0.4      3.5  visitChild
+                0.0      3.5  captureSnapshot
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+                0.6      0.6  checkAndReturn
+onto: progress 3/36
+    4/36  pass 1  dom        2500 glyphs  every-frame  fixed   main   1.67  (js  0.27 style  0.00 layout  0.59 paint  0.68)  comp  0.26  raster  0.00  gpu-proc  1.28  total   3.21 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    1.8     26s
+         allocated     72.5 KB/frame; by function, KB/frame self, total:
+               30.4     30.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+               23.9     68.3  step
+                6.0      6.0  padStart
+                4.7     35.3  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                1.7     38.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      3.1  visitNode
+                0.7      0.7  (V8 API)
+                0.6      0.6  push
+                0.6      0.6  checkAndReturn
+                0.5      3.1  visitChild
+                0.3      0.3  Float32Array
+                0.2      0.2  subarray
+                0.2      0.2  stageSolid (packages/renderer/src/draw/batch.ts:43)
+                0.2      0.2  next
+                0.2      0.2  reclaim (packages/renderer/src/effects/EffectTargets.ts:27)
+         by total:
+                0.0     68.4  loop
+               23.9     68.3  step
+                1.7     38.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.7     35.3  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                0.0     35.3  dispatch (packages/renderer/src/draw.ts:11)
+               30.4     30.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.0      6.0  padStart
+                1.4      3.1  visitNode
+                0.5      3.1  visitChild
+                0.0      3.1  captureSnapshot
+                0.0      0.8  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.6      0.6  push
+                0.6      0.6  checkAndReturn
+                0.0      0.5  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.0      0.4  expectValue
+onto: progress 4/36
+    5/36  pass 1  hud        2500 glyphs  every-frame  fixed   main   1.64  (js  1.52 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  1.62  total   3.39 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.26  load    2.6     33s
+         allocated    991.9 KB/frame; by function, KB/frame self, total:
+              116.2    116.2  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               94.4    344.3  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+               87.9    130.1  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+               77.7     80.2  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               61.8    241.0  cachedCommands (packages/hud/src/attach.ts:199)
+               51.2    668.0  drawText (packages/renderer/src/draw/text.ts:36)
+               50.9     50.9  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               42.2     42.2  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               38.3    182.3  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               38.2     38.2  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               37.8    991.3  step
+               37.2    407.1  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               37.2     37.2  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               35.6     54.3  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               31.3     31.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+         by total:
+                0.2    991.5  loop
+               37.8    991.3  step
+                1.1    706.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    704.0  dispatch (packages/renderer/src/draw.ts:11)
+               51.2    668.0  drawText (packages/renderer/src/draw/text.ts:36)
+               37.2    407.1  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               94.4    344.3  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                3.4    244.4  draw (packages/hud/src/attach.ts:73)
+               61.8    241.0  cachedCommands (packages/hud/src/attach.ts:199)
+               38.3    182.3  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               87.9    130.1  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              116.2    116.2  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               77.7     80.2  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               35.6     54.3  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               50.9     50.9  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 5/36
+    6/36  pass 1  hud        5000 glyphs  every-frame  fixed   main   2.84  (js  2.73 style  0.00 layout  0.00 paint  0.03)  comp  0.11  raster  0.00  gpu-proc  1.64  total   4.59 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.30  load    2.6     40s
+         allocated   1946.1 KB/frame; by function, KB/frame self, total:
+              226.4    226.4  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              191.2    684.6  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+              180.5    187.9  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+              179.3    266.8  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              123.1    509.3  cachedCommands (packages/hud/src/attach.ts:199)
+              102.8   1315.2  drawText (packages/renderer/src/draw/text.ts:36)
+              100.0    100.0  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               87.4     87.4  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               77.7    374.7  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               77.1     77.1  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               77.1     77.1  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               72.0   1945.1  step
+               71.9    782.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               69.3    106.2  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               46.5     46.5  set
+         by total:
+                0.3   1945.5  loop
+               72.0   1945.1  step
+                1.3   1353.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+              102.8   1315.2  drawText (packages/renderer/src/draw/text.ts:36)
+               71.9    782.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+              191.2    684.6  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                5.5    514.8  draw (packages/hud/src/attach.ts:73)
+              123.1    509.3  cachedCommands (packages/hud/src/attach.ts:199)
+               77.7    374.7  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+              179.3    266.8  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              226.4    226.4  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              180.5    187.9  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               69.3    106.2  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+              100.0    100.0  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               87.4     87.4  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+onto: progress 6/36
+    7/36  pass 1  dom        5000 glyphs  every-frame  fixed   main   2.72  (js  0.30 style  0.00 layout  1.12 paint  1.12)  comp  0.29  raster  0.00  gpu-proc  1.23  total   4.23 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    2.6     48s
+         allocated    102.5 KB/frame; by function, KB/frame self, total:
+               46.5     94.1  step
+               29.8     30.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+                9.2      9.2  padStart
+                5.2     35.2  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                4.0      6.6  visitNode
+                1.5      1.5  (V8 API)
+                1.3     38.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.1      6.6  visitChild
+                0.8      0.8  checkAndReturn
+                0.5      0.5  Float32Array
+                0.4      0.7  expectValue
+                0.4      0.4  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+                0.3      0.3  push
+                0.2      0.2  Map
+                0.2      0.2  stageSolid (packages/renderer/src/draw/batch.ts:43)
+         by total:
+                0.0     94.1  loop
+               46.5     94.1  step
+                1.3     38.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.2     35.2  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+               29.8     30.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+                9.2      9.2  padStart
+                4.0      6.6  visitNode
+                0.0      6.6  captureSnapshot
+                1.1      6.6  visitChild
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      1.0  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.8      0.8  checkAndReturn
+                0.4      0.7  expectValue
+                0.0      0.6  projFor (packages/renderer/src/draw/uniforms.ts:57)
+                0.5      0.5  Float32Array
+onto: progress 7/36
+    8/36  pass 1  dom        5000 glyphs  every-frame  fixed   main   3.18  (js  0.37 style  0.00 layout  1.30 paint  1.27)  comp  0.34  raster  0.00  gpu-proc  1.48  total   5.01 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.20  load    2.7     56s
+         allocated    103.8 KB/frame; by function, KB/frame self, total:
+               46.3     95.9  step
+               30.2     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.4     10.4  padStart
+                5.1     35.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+                3.0      6.1  visitNode
+                1.9     39.0  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      1.4  (V8 API)
+                1.3      6.1  visitChild
+                1.1      1.1  checkAndReturn
+                0.6      0.6  Float32Array
+                0.5      0.7  expectValue
+                0.3      0.3  push
+                0.3      0.3  subarray
+                0.3      0.3  String
+                0.2      0.2  stageSolid (packages/renderer/src/draw/batch.ts:43)
+         by total:
+                0.0     96.1  loop
+               46.3     95.9  step
+                1.9     39.0  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.1     35.5  drawPathFill (packages/renderer/src/draw/pathPaint.ts:25)
+               30.2     30.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.4     10.4  padStart
+                3.0      6.1  visitNode
+                1.3      6.1  visitChild
+                0.0      6.1  captureSnapshot
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                1.1      1.1  checkAndReturn
+                0.0      1.0  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.7  expectValue
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+onto: progress 8/36
+    9/36  pass 1  hud        5000 glyphs  every-frame  fixed   main   3.35  (js  3.20 style  0.00 layout  0.00 paint  0.04)  comp  0.17  raster  0.00  gpu-proc  2.05  total   5.57 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.31  load    2.8     63s
+         allocated   1953.4 KB/frame; by function, KB/frame self, total:
+              226.8    226.8  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              186.8    676.5  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+              179.9    187.5  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+              176.1    265.3  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              124.0    514.3  cachedCommands (packages/hud/src/attach.ts:199)
+              101.5   1312.9  drawText (packages/renderer/src/draw/text.ts:36)
+               96.0     96.0  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               89.2     89.2  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               79.0    376.5  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               77.3     77.3  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               75.8     75.8  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               75.1   1952.5  step
+               73.6    776.9  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               69.7    110.2  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               48.5     48.5  set
+         by total:
+                0.2   1952.7  loop
+               75.1   1952.5  step
+                1.5   1352.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+              101.5   1312.9  drawText (packages/renderer/src/draw/text.ts:36)
+               73.6    776.9  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+              186.8    676.5  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                6.4    520.7  draw (packages/hud/src/attach.ts:73)
+              124.0    514.3  cachedCommands (packages/hud/src/attach.ts:199)
+               79.0    376.5  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+              176.1    265.3  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              226.8    226.8  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              179.9    187.5  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               69.7    110.2  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               96.0     96.0  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               89.2     89.2  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+onto: progress 9/36
+   10/36  pass 1  hud        2500 glyphs  every-frame  moving  main   2.20  (js  2.06 style  0.00 layout  0.00 paint  0.05)  comp  0.20  raster  0.00  gpu-proc  1.64  total   4.04 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.26  load    3.1     70s
+         allocated   1034.6 KB/frame; by function, KB/frame self, total:
+              112.1    112.1  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               91.8    335.1  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+               88.9    133.7  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+               74.2     77.3  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               72.2    251.6  cachedCommands (packages/hud/src/attach.ts:199)
+               71.2   1034.3  step
+               49.2    455.3  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               49.1     49.1  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               44.7     44.7  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               40.6     40.6  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               38.5    185.9  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               37.1     37.1  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               36.5    398.3  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               35.0     55.7  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               29.8     29.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+         by total:
+               71.2   1034.3  step
+                0.0   1034.3  loop
+                1.6    705.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    702.0  dispatch (packages/renderer/src/draw.ts:11)
+                6.2    667.5  drawText (packages/renderer/src/draw/text.ts:36)
+               49.2    455.3  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               36.5    398.3  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               91.8    335.1  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                3.7    255.3  draw (packages/hud/src/attach.ts:73)
+               72.2    251.6  cachedCommands (packages/hud/src/attach.ts:199)
+               38.5    185.9  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               88.9    133.7  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              112.1    112.1  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               74.2     77.3  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               35.0     55.7  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+onto: progress 10/36
+   11/36  pass 1  dom        2500 glyphs  every-frame  moving  main   2.28  (js  0.39 style  0.16 layout  0.77 paint  0.82)  comp  0.28  raster  0.00  gpu-proc  1.15  total   3.71 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.19  load    3.1     77s
+         allocated    108.4 KB/frame; by function, KB/frame self, total:
+               50.1     98.2  step
+               33.0     33.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.4      6.4  (V8 API)
+                5.8      5.8  padStart
+                5.7     38.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.6      3.4  visitNode
+                1.5     42.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.7      3.3  visitChild
+                0.6      0.6  Float32Array
+                0.6      0.6  checkAndReturn
+                0.3      0.3  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+                0.3      0.4  expectValue
+                0.2      3.8  (anonymous)
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  subarray
+         by total:
+               50.1     98.2  step
+                0.0     98.2  loop
+                1.5     42.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.7     38.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                0.0     38.8  dispatch (packages/renderer/src/draw.ts:11)
+               33.0     33.1  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.8      5.8  padStart
+                0.1      3.4  captureSnapshot
+                1.6      3.4  visitNode
+                0.7      3.3  visitChild
+                0.0      1.4  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      1.0  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+                0.6      0.6  checkAndReturn
+onto: progress 11/36
+   12/36  pass 1  dom        2500 glyphs  every-frame  moving  main   2.60  (js  0.47 style  0.19 layout  0.88 paint  0.90)  comp  0.29  raster  0.00  gpu-proc  1.22  total   4.11 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.9     84s
+         allocated    106.3 KB/frame; by function, KB/frame self, total:
+               52.7     96.4  step
+               29.6     29.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.2      6.2  padStart
+                6.1      6.1  (V8 API)
+                4.5     34.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.9      3.4  visitNode
+                1.6     37.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.7      3.4  visitChild
+                0.6      0.6  Float32Array
+                0.5      0.5  checkAndReturn
+                0.2      0.2  push
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+                0.2      0.2  subarray
+                0.2      3.7  (anonymous)
+                0.1      0.1  stageSolid (packages/renderer/src/draw/batch.ts:43)
+         by total:
+                0.0     96.5  loop
+               52.7     96.4  step
+                1.6     37.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.5     34.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                0.0     34.2  dispatch (packages/renderer/src/draw.ts:11)
+               29.6     29.8  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.2      6.2  padStart
+                1.9      3.4  visitNode
+                0.7      3.4  visitChild
+                0.0      3.4  captureSnapshot
+                0.0      1.1  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.0      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+                0.5      0.5  checkAndReturn
+onto: progress 12/36
+   13/36  pass 1  hud        2500 glyphs  every-frame  moving  main   1.87  (js  1.76 style  0.00 layout  0.00 paint  0.04)  comp  0.11  raster  0.00  gpu-proc  0.76  total   2.75 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.25  load    3.1     91s
+         allocated   1031.0 KB/frame; by function, KB/frame self, total:
+              115.7    115.7  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               94.2    335.5  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+               90.1    134.7  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+               77.3     80.0  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               73.6    249.8  cachedCommands (packages/hud/src/attach.ts:199)
+               68.6   1030.5  step
+               49.8    454.1  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               49.4     49.4  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               44.6     44.6  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               38.6    187.4  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               38.2     38.2  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               36.7     36.7  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               36.2    396.3  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               32.8     51.1  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               32.3     32.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+         by total:
+                0.0   1030.6  loop
+               68.6   1030.5  step
+                1.0    706.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    703.5  dispatch (packages/renderer/src/draw.ts:11)
+                5.9    666.4  drawText (packages/renderer/src/draw/text.ts:36)
+               49.8    454.1  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               36.2    396.3  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               94.2    335.5  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                3.6    253.5  draw (packages/hud/src/attach.ts:73)
+               73.6    249.8  cachedCommands (packages/hud/src/attach.ts:199)
+               38.6    187.4  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               90.1    134.7  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              115.7    115.7  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               77.3     80.0  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               32.8     51.1  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+onto: progress 13/36
+   14/36  pass 1  hud        5000 glyphs  every-frame  moving  main   3.08  (js  2.96 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  0.87  total   4.09 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.34  load    3.0     98s
+         allocated   2024.6 KB/frame; by function, KB/frame self, total:
+              229.7    229.7  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              185.8    665.7  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+              180.1    187.5  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+              178.6    268.6  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              145.7    528.2  cachedCommands (packages/hud/src/attach.ts:199)
+              141.2   2024.2  step
+              103.7    882.0  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               95.7     95.7  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               90.0     90.0  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               76.5     76.5  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               73.5     73.5  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               72.9    370.8  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               71.5    763.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               67.5    106.5  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               44.7     44.7  set
+         by total:
+              141.2   2024.2  step
+                0.0   2024.2  loop
+                1.7   1344.8  render (packages/renderer/src/WeaselRenderer.ts:433)
+               13.5   1304.7  drawText (packages/renderer/src/draw/text.ts:36)
+              103.7    882.0  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               71.5    763.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+              185.8    665.7  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                5.6    533.8  draw (packages/hud/src/attach.ts:73)
+              145.7    528.2  cachedCommands (packages/hud/src/attach.ts:199)
+               72.9    370.8  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+              178.6    268.6  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              229.7    229.7  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              180.1    187.5  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               67.5    106.5  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               95.7     95.7  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 14/36
+   15/36  pass 1  dom        5000 glyphs  every-frame  moving  main   3.94  (js  0.69 style  0.27 layout  1.32 paint  1.40)  comp  0.43  raster  0.00  gpu-proc  1.58  total   5.95 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.23  load    2.9    106s
+         allocated    169.3 KB/frame; by function, KB/frame self, total:
+              101.1    151.5  step
+               31.1     31.2  pushRect (packages/renderer/src/draw/batch.ts:195)
+               11.7     11.7  (V8 API)
+               10.7     10.7  padStart
+                4.7     36.0  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.1      5.9  visitNode
+                1.6     39.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.1      1.1  checkAndReturn
+                1.1      5.9  visitChild
+                0.5      0.6  expectValue
+                0.4      0.4  Float32Array
+                0.3      0.3  subarray
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+                0.2      0.2  String
+                0.2      0.2  WeakMap
+         by total:
+                0.0    151.5  loop
+              101.1    151.5  step
+                1.6     39.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.7     36.0  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               31.1     31.2  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.7     10.7  padStart
+                3.1      5.9  visitNode
+                1.1      5.9  visitChild
+                0.0      5.9  captureSnapshot
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                1.1      1.1  checkAndReturn
+                0.0      0.7  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.6  expectValue
+                0.4      0.4  Float32Array
+                0.0      0.4  from
+onto: progress 15/36
+   16/36  pass 1  dom        5000 glyphs  every-frame  moving  main   4.07  (js  0.81 style  0.28 layout  1.37 paint  1.29)  comp  0.48  raster  0.00  gpu-proc  1.70  total   6.25 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.23  load    3.0    114s
+         allocated    168.6 KB/frame; by function, KB/frame self, total:
+              100.7    151.1  step
+               32.2     32.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.6     10.6  (V8 API)
+                9.9      9.9  padStart
+                4.7     37.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.5      6.5  visitNode
+                1.5     40.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.4      6.5  visitChild
+                1.0      1.0  checkAndReturn
+                0.4      0.6  expectValue
+                0.4      0.4  Float32Array
+                0.3      0.3  push
+                0.3      0.3  String
+                0.2      0.2  subarray
+                0.2      0.2  stageSolid (packages/renderer/src/draw/batch.ts:43)
+         by total:
+                0.0    151.2  loop
+              100.7    151.1  step
+                1.5     40.3  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.7     37.1  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               32.2     32.4  pushRect (packages/renderer/src/draw/batch.ts:195)
+                9.9      9.9  padStart
+                3.5      6.5  visitNode
+                0.0      6.5  captureSnapshot
+                1.4      6.5  visitChild
+                0.0      1.1  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                1.0      1.0  checkAndReturn
+                0.1      0.6  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.4      0.6  expectValue
+                0.4      0.4  Float32Array
+                0.0      0.4  from
+onto: progress 16/36
+   17/36  pass 1  hud        5000 glyphs  every-frame  moving  main   3.50  (js  3.37 style  0.00 layout  0.00 paint  0.05)  comp  0.15  raster  0.00  gpu-proc  1.01  total   4.66 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.38  load    2.9    121s
+         allocated   2033.8 KB/frame; by function, KB/frame self, total:
+              228.3    228.3  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              188.9    666.2  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+              180.9    188.8  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+              177.2    267.1  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              146.4    537.0  cachedCommands (packages/hud/src/attach.ts:199)
+              138.6   2033.6  step
+              100.9    881.9  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               95.4     95.4  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               89.9     89.9  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               77.6     77.6  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               76.5     76.5  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               75.0    372.2  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               73.1    764.9  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               70.0    108.0  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               46.2     46.2  set
+         by total:
+              138.6   2033.6  step
+                0.0   2033.6  loop
+                1.3   1347.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+               12.5   1307.4  drawText (packages/renderer/src/draw/text.ts:36)
+              100.9    881.9  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               73.1    764.9  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+              188.9    666.2  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                5.9    542.9  draw (packages/hud/src/attach.ts:73)
+              146.4    537.0  cachedCommands (packages/hud/src/attach.ts:199)
+               75.0    372.2  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+              177.2    267.1  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              228.3    228.3  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              180.9    188.8  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               70.0    108.0  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               95.4     95.4  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 17/36
+   18/36  pass 1  none          0 glyphs  static       fixed   main   0.50  (js  0.22 style  0.00 layout  0.00 paint  0.09)  comp  0.28  raster  0.00  gpu-proc  1.76  total   2.54 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.35  load    2.8    125s
+onto: progress 18/36
+   19/36  pass 2  none          0 glyphs  static       fixed   main   0.53  (js  0.29 style  0.00 layout  0.00 paint  0.08)  comp  0.24  raster  0.00  gpu-proc  1.60  total   2.37 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.33  load    2.8    130s
+onto: progress 19/36
+   20/36  pass 2  dom        2500 glyphs  every-frame  fixed   main   2.44  (js  0.49 style  0.00 layout  0.85 paint  0.89)  comp  0.37  raster  0.00  gpu-proc  1.29  total   4.11 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.26  load    3.0    138s
+         allocated     72.0 KB/frame; by function, KB/frame self, total:
+               29.8     29.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+               22.4     66.9  step
+                6.5      6.5  padStart
+                4.5     34.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.9      3.5  visitNode
+                1.6     37.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.3      1.3  (V8 API)
+                0.5      0.5  checkAndReturn
+                0.5      3.5  visitChild
+                0.5      0.5  Float32Array
+                0.4      0.4  push
+                0.3      0.3  String
+                0.2      0.5  expectValue
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+                0.2      0.2  setColorUniform (packages/renderer/src/draw/uniforms.ts:30)
+         by total:
+               22.4     66.9  step
+                0.0     66.9  loop
+                1.6     37.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.5     34.4  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               29.8     29.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.5      6.5  padStart
+                1.9      3.5  visitNode
+                0.0      3.5  captureSnapshot
+                0.5      3.5  visitChild
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  checkAndReturn
+                0.5      0.5  Float32Array
+                0.0      0.5  from
+                0.2      0.5  expectValue
+onto: progress 20/36
+   21/36  pass 2  hud        2500 glyphs  every-frame  fixed   main   2.09  (js  2.00 style  0.00 layout  0.00 paint  0.03)  comp  0.11  raster  0.00  gpu-proc  0.80  total   3.01 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.30  load    3.1    145s
+         allocated    994.0 KB/frame; by function, KB/frame self, total:
+              116.7    116.7  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               91.6    334.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+               89.9    134.6  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+               74.8     78.3  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               74.1    249.0  cachedCommands (packages/hud/src/attach.ts:199)
+               50.1    456.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               48.0     48.0  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               44.7     44.7  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               39.2    187.8  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               39.0     39.0  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               37.0    398.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               36.1     36.1  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               34.1    993.5  step
+               32.7     52.1  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               30.9     31.2  pushRect (packages/renderer/src/draw/batch.ts:195)
+         by total:
+               34.1    993.5  step
+                0.0    993.5  loop
+                1.6    704.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    664.7  drawText (packages/renderer/src/draw/text.ts:36)
+               50.1    456.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               37.0    398.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               91.6    334.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                3.6    252.6  draw (packages/hud/src/attach.ts:73)
+               74.1    249.0  cachedCommands (packages/hud/src/attach.ts:199)
+               39.2    187.8  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               89.9    134.6  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              116.7    116.7  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               74.8     78.3  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               32.7     52.1  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               48.0     48.0  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 21/36
+   22/36  pass 2  hud        2500 glyphs  every-frame  fixed   main   1.85  (js  1.73 style  0.00 layout  0.00 paint  0.04)  comp  0.11  raster  0.00  gpu-proc  0.77  total   2.72 ms/frame  interval 16.67 (traced 16.66)  missed   0  gpu  0.25  load    3.1    151s
+         allocated    991.1 KB/frame; by function, KB/frame self, total:
+              113.5    113.5  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               90.4    326.1  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+               87.8    134.3  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+               75.4     78.3  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               74.2    251.2  cachedCommands (packages/hud/src/attach.ts:199)
+               53.0    450.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               48.2     48.2  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               46.5     46.5  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               39.1    188.1  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               38.7     38.7  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               37.7    389.8  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               36.7     36.7  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               36.4    990.4  step
+               31.3     51.6  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               30.5     30.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+         by total:
+                0.0    990.5  loop
+               36.4    990.4  step
+                1.6    696.8  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0    658.4  drawText (packages/renderer/src/draw/text.ts:36)
+               53.0    450.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               37.7    389.8  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               90.4    326.1  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                3.3    254.5  draw (packages/hud/src/attach.ts:73)
+               74.2    251.2  cachedCommands (packages/hud/src/attach.ts:199)
+               39.1    188.1  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               87.8    134.3  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              113.5    113.5  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               75.4     78.3  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               31.3     51.6  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               48.2     48.2  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 22/36
+   23/36  pass 2  dom        2500 glyphs  every-frame  fixed   main   2.46  (js  0.41 style  0.00 layout  0.91 paint  0.96)  comp  0.33  raster  0.00  gpu-proc  1.23  total   4.02 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    3.1    159s
+         allocated     75.1 KB/frame; by function, KB/frame self, total:
+               33.0     33.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+               22.2     70.7  step
+                6.1      6.1  padStart
+                5.2     38.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.8      3.3  visitNode
+                1.7     42.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.8      0.8  (V8 API)
+                0.7      0.7  Float32Array
+                0.6      3.3  visitChild
+                0.6      0.6  checkAndReturn
+                0.3      0.3  WeakMap
+                0.2      0.2  push
+                0.2      0.2  String
+                0.2      0.2  subarray
+                0.2      0.3  expectValue
+         by total:
+               22.2     70.7  step
+                0.0     70.7  loop
+                1.7     42.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.2     38.2  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               33.0     33.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.1      6.1  padStart
+                1.8      3.3  visitNode
+                0.6      3.3  visitChild
+                0.0      3.3  captureSnapshot
+                0.0      1.6  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      1.2  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.7      0.7  Float32Array
+                0.0      0.7  from
+                0.6      0.6  checkAndReturn
+                0.1      0.4  endFrame (packages/renderer/src/retain/RetainedSurfaces.ts:236)
+onto: progress 23/36
+   24/36  pass 2  dom        5000 glyphs  every-frame  fixed   main   3.28  (js  0.56 style  0.00 layout  1.31 paint  1.18)  comp  0.37  raster  0.00  gpu-proc  1.27  total   4.92 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.16  load    3.0    167s
+         allocated    109.3 KB/frame; by function, KB/frame self, total:
+               46.6     99.8  step
+               32.8     32.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.8     10.8  padStart
+                4.8     37.7  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.7      7.5  visitNode
+                2.0     41.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.8      7.5  visitChild
+                1.8      1.8  (V8 API)
+                1.0      1.0  String
+                0.8      0.8  checkAndReturn
+                0.7      1.0  expectValue
+                0.5      0.5  Float32Array
+                0.4      0.4  push
+                0.2      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+         by total:
+                0.0     99.8  loop
+               46.6     99.8  step
+                2.0     41.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.8     37.7  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               32.8     32.9  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.8     10.8  padStart
+                3.7      7.5  visitNode
+                1.8      7.5  visitChild
+                0.0      7.5  captureSnapshot
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.7      1.0  expectValue
+                1.0      1.0  String
+                0.2      0.9  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.8      0.8  checkAndReturn
+                0.5      0.5  Float32Array
+onto: progress 24/36
+   25/36  pass 2  hud        5000 glyphs  every-frame  fixed   main   3.30  (js  3.19 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  0.87  total   4.30 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.34  load    3.0    174s
+         allocated   1946.0 KB/frame; by function, KB/frame self, total:
+              224.2    224.2  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              185.4    660.1  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+              178.0    266.6  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              176.5    183.4  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+              150.2    531.6  cachedCommands (packages/hud/src/attach.ts:199)
+              102.0    877.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               97.4     97.4  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               88.6     88.6  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               77.7    373.9  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               77.1     77.1  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               76.4   1945.7  step
+               74.7     74.7  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               74.6    759.8  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               68.7    107.1  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               45.2     45.2  set
+         by total:
+               76.4   1945.7  step
+                0.0   1945.7  loop
+                1.5   1327.2  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0   1289.7  drawText (packages/renderer/src/draw/text.ts:36)
+              102.0    877.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               74.6    759.8  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+              185.4    660.1  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                6.3    538.0  draw (packages/hud/src/attach.ts:73)
+              150.2    531.6  cachedCommands (packages/hud/src/attach.ts:199)
+               77.7    373.9  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+              178.0    266.6  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              224.2    224.2  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              176.5    183.4  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               68.7    107.1  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               97.4     97.4  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 25/36
+   26/36  pass 2  hud        5000 glyphs  every-frame  fixed   main   3.32  (js  3.20 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  0.92  total   4.36 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.35  load    3.2    180s
+         allocated   1961.1 KB/frame; by function, KB/frame self, total:
+              230.2    230.2  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              186.4    667.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+              178.9    269.6  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              177.5    184.4  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+              149.6    533.6  cachedCommands (packages/hud/src/attach.ts:199)
+              102.1    882.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               98.4     98.4  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               90.8     90.8  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               79.5    380.1  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               75.3     75.3  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               75.3     75.3  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               73.0   1960.6  step
+               71.1    764.6  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               68.1    108.1  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               46.8     46.8  set
+         by total:
+                0.0   1960.6  loop
+               73.0   1960.6  step
+                1.2   1344.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.0   1303.6  drawText (packages/renderer/src/draw/text.ts:36)
+              102.1    882.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               71.1    764.6  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+              186.4    667.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                5.6    539.2  draw (packages/hud/src/attach.ts:73)
+              149.6    533.6  cachedCommands (packages/hud/src/attach.ts:199)
+               79.5    380.1  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+              178.9    269.6  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              230.2    230.2  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              177.5    184.4  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               68.1    108.1  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               98.4     98.4  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 26/36
+   27/36  pass 2  dom        5000 glyphs  every-frame  fixed   main   3.89  (js  0.72 style  0.00 layout  1.49 paint  1.36)  comp  0.46  raster  0.00  gpu-proc  1.54  total   5.89 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.21  load    3.0    188s
+         allocated    107.8 KB/frame; by function, KB/frame self, total:
+               47.2     98.7  step
+               32.0     32.2  pushRect (packages/renderer/src/draw/batch.ts:195)
+                9.9      9.9  padStart
+                5.1     37.3  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.2      6.8  visitNode
+                1.9      1.9  (V8 API)
+                1.6     40.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.3      6.8  visitChild
+                1.2      1.2  String
+                1.1      1.1  checkAndReturn
+                0.6      1.0  expectValue
+                0.6      0.6  push
+                0.3      0.3  Float32Array
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+         by total:
+                0.0     98.7  loop
+               47.2     98.7  step
+                1.6     40.5  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.1     37.3  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               32.0     32.2  pushRect (packages/renderer/src/draw/batch.ts:195)
+                9.9      9.9  padStart
+                0.0      6.8  captureSnapshot
+                3.2      6.8  visitNode
+                1.3      6.8  visitChild
+                1.2      1.2  String
+                1.1      1.1  checkAndReturn
+                0.6      1.0  expectValue
+                0.0      0.8  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.6      0.6  push
+                0.0      0.6  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+onto: progress 27/36
+   28/36  pass 2  dom        2500 glyphs  every-frame  moving  main   2.78  (js  0.72 style  0.16 layout  0.83 paint  0.83)  comp  0.33  raster  0.00  gpu-proc  1.33  total   4.44 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.26  load    2.8    196s
+         allocated    106.8 KB/frame; by function, KB/frame self, total:
+               52.9     97.2  step
+               30.8     31.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+                6.1      6.1  (V8 API)
+                5.7      5.7  padStart
+                4.6     35.6  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.8      3.3  visitNode
+                1.2     38.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.7      3.3  visitChild
+                0.5      0.5  Float32Array
+                0.5      0.5  checkAndReturn
+                0.3      0.3  push
+                0.2      0.2  String
+                0.2      0.2  stageSolid (packages/renderer/src/draw/batch.ts:43)
+                0.2      0.2  subarray
+                0.2      3.5  (anonymous)
+         by total:
+               52.9     97.2  step
+                0.0     97.2  loop
+                1.2     38.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.6     35.6  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               30.8     31.0  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.7      5.7  padStart
+                1.8      3.3  visitNode
+                0.7      3.3  visitChild
+                0.0      3.3  captureSnapshot
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  Float32Array
+                0.0      0.5  from
+                0.5      0.5  checkAndReturn
+                0.3      0.3  push
+onto: progress 28/36
+   29/36  pass 2  hud        2500 glyphs  every-frame  moving  main   1.99  (js  1.90 style  0.00 layout  0.00 paint  0.03)  comp  0.11  raster  0.00  gpu-proc  0.77  total   2.87 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.28  load    2.4    203s
+         allocated   1043.1 KB/frame; by function, KB/frame self, total:
+              113.1    113.1  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               93.8    330.2  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+               89.7    132.8  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+               77.7     80.8  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               75.8    259.4  cachedCommands (packages/hud/src/attach.ts:199)
+               73.5   1042.7  step
+               50.5    452.6  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               49.8     49.8  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               43.1     43.1  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               40.3    186.9  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               38.6     38.6  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               37.7    395.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               36.1     36.1  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               36.0     56.2  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               30.5     30.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+         by total:
+                0.0   1042.8  loop
+               73.5   1042.7  step
+                1.7    704.0  render (packages/renderer/src/WeaselRenderer.ts:433)
+                6.1    665.6  drawText (packages/renderer/src/draw/text.ts:36)
+               50.5    452.6  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               37.7    395.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               93.8    330.2  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                3.3    262.7  draw (packages/hud/src/attach.ts:73)
+               75.8    259.4  cachedCommands (packages/hud/src/attach.ts:199)
+               40.3    186.9  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               89.7    132.8  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              113.1    113.1  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               77.7     80.8  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               36.0     56.2  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               49.8     49.8  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 29/36
+   30/36  pass 2  hud        2500 glyphs  every-frame  moving  main   2.05  (js  1.94 style  0.00 layout  0.00 paint  0.04)  comp  0.12  raster  0.00  gpu-proc  0.84  total   3.00 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.27  load    2.3    210s
+         allocated   1034.2 KB/frame; by function, KB/frame self, total:
+              113.7    113.7  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               93.9    329.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+               89.3    133.0  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+               75.6     78.8  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               74.5    254.3  cachedCommands (packages/hud/src/attach.ts:199)
+               72.6   1033.6  step
+               48.6    450.3  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               47.8     47.8  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               43.7     43.7  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               37.2    184.6  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               36.9     36.9  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               36.7     36.7  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               35.9    393.8  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               35.6     56.5  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               30.5     30.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+         by total:
+                0.0   1033.6  loop
+               72.6   1033.6  step
+                1.8    699.7  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.8    660.7  drawText (packages/renderer/src/draw/text.ts:36)
+               48.6    450.3  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               35.9    393.8  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               93.9    329.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                4.0    258.3  draw (packages/hud/src/attach.ts:73)
+               74.5    254.3  cachedCommands (packages/hud/src/attach.ts:199)
+               37.2    184.6  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               89.3    133.0  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              113.7    113.7  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+               75.6     78.8  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               35.6     56.5  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               47.8     47.8  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 30/36
+   31/36  pass 2  dom        2500 glyphs  every-frame  moving  main   2.44  (js  0.56 style  0.17 layout  0.78 paint  0.76)  comp  0.28  raster  0.00  gpu-proc  1.11  total   3.83 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.18  load    2.5    217s
+         allocated     99.9 KB/frame; by function, KB/frame self, total:
+               47.4     90.4  step
+               29.0     29.2  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.9      5.9  (V8 API)
+                5.5      5.5  padStart
+                4.8     34.0  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                1.9      3.3  visitNode
+                1.3     37.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                0.5      3.3  visitChild
+                0.5      0.5  Float32Array
+                0.3      0.3  checkAndReturn
+                0.3      0.3  String
+                0.3      0.4  expectValue
+                0.2      0.2  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  push
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+         by total:
+                0.0     90.5  loop
+               47.4     90.4  step
+                1.3     37.1  render (packages/renderer/src/WeaselRenderer.ts:433)
+                4.8     34.0  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               29.0     29.2  pushRect (packages/renderer/src/draw/batch.ts:195)
+                5.5      5.5  padStart
+                1.9      3.3  visitNode
+                0.5      3.3  visitChild
+                0.0      3.3  captureSnapshot
+                0.0      1.2  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      0.8  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.5      0.5  Float32Array
+                0.0      0.5  from
+                0.3      0.4  expectValue
+                0.3      0.3  checkAndReturn
+onto: progress 31/36
+   32/36  pass 2  dom        5000 glyphs  every-frame  moving  main   3.73  (js  0.90 style  0.25 layout  1.22 paint  1.11)  comp  0.36  raster  0.00  gpu-proc  1.26  total   5.35 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.17  load    2.6    225s
+         allocated    169.3 KB/frame; by function, KB/frame self, total:
+              101.3    150.2  step
+               28.6     28.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+               12.0     12.0  (V8 API)
+               10.2     10.2  padStart
+                5.3     33.9  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.1      6.6  visitNode
+                1.6      6.6  visitChild
+                1.4     37.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.2      1.2  String
+                0.9      0.9  checkAndReturn
+                0.8      0.8  Float32Array
+                0.5      0.7  expectValue
+                0.4      0.4  push
+                0.3      7.0  (anonymous)
+                0.2      0.2  Map
+         by total:
+                0.0    150.3  loop
+              101.3    150.2  step
+                1.4     37.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.3     33.9  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               28.6     28.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+               10.2     10.2  padStart
+                3.1      6.6  visitNode
+                1.6      6.6  visitChild
+                0.0      6.6  captureSnapshot
+                0.0      1.6  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      1.2  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                1.2      1.2  String
+                0.9      0.9  checkAndReturn
+                0.8      0.8  Float32Array
+                0.0      0.8  from
+onto: progress 32/36
+   33/36  pass 2  hud        5000 glyphs  every-frame  moving  main   3.43  (js  3.30 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  0.90  total   4.46 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.33  load    2.2    232s
+         allocated   2011.0 KB/frame; by function, KB/frame self, total:
+              226.3    226.3  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              181.7    660.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+              181.1    188.3  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+              173.9    261.8  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              143.0    525.1  cachedCommands (packages/hud/src/attach.ts:199)
+              136.0   2010.7  step
+              106.2    880.1  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               94.3     94.3  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               87.9     87.9  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               79.3     79.3  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               76.2    369.4  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               72.7     72.7  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               69.9    757.3  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               67.8    104.4  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               48.1     48.1  set
+         by total:
+                0.0   2010.8  loop
+              136.0   2010.7  step
+                1.3   1340.4  render (packages/renderer/src/WeaselRenderer.ts:433)
+               12.2   1302.3  drawText (packages/renderer/src/draw/text.ts:36)
+              106.2    880.1  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               69.9    757.3  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+              181.7    660.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                5.5    530.6  draw (packages/hud/src/attach.ts:73)
+              143.0    525.1  cachedCommands (packages/hud/src/attach.ts:199)
+               76.2    369.4  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+              173.9    261.8  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              226.3    226.3  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              181.1    188.3  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               67.8    104.4  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               94.3     94.3  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 33/36
+   34/36  pass 2  hud        5000 glyphs  every-frame  moving  main   3.23  (js  3.11 style  0.00 layout  0.00 paint  0.04)  comp  0.13  raster  0.00  gpu-proc  0.88  total   4.24 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.32  load    2.1    239s
+         allocated   2053.0 KB/frame; by function, KB/frame self, total:
+              231.6    231.6  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              186.0    665.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+              183.9    191.1  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+              179.2    269.5  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              150.7    545.2  cachedCommands (packages/hud/src/attach.ts:199)
+              143.9   2052.6  step
+              100.9    880.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               97.7     97.7  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+               90.3     90.3  groupFor (node_modules/.vite/deps/src-Cvxxsi-j.js:2524)
+               79.3    380.6  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+               76.4     76.4  breakLines (node_modules/.vite/deps/src-Cvxxsi-j.js:2160)
+               75.2     75.2  resolveTextStyle (node_modules/.vite/deps/src-Cvxxsi-j.js:244)
+               73.1    111.6  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               70.8    763.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+               48.4     48.4  set
+         by total:
+                0.0   2052.7  loop
+              143.9   2052.6  step
+                1.3   1354.8  render (packages/renderer/src/WeaselRenderer.ts:433)
+               12.1   1314.4  drawText (packages/renderer/src/draw/text.ts:36)
+              100.9    880.5  cachedLayoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:3023)
+               70.8    763.0  structuralLayout (node_modules/.vite/deps/src-Cvxxsi-j.js:3069)
+              186.0    665.4  layoutRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2300)
+                5.4    550.7  draw (packages/hud/src/attach.ts:73)
+              150.7    545.2  cachedCommands (packages/hud/src/attach.ts:199)
+               79.3    380.6  cachedPaintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2752)
+              179.2    269.5  paintRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:2616)
+              231.6    231.6  placeLine (node_modules/.vite/deps/src-Cvxxsi-j.js:2233)
+              183.9    191.1  disown (node_modules/.vite/deps/src-Cvxxsi-j.js:2932)
+               73.1    111.6  resolveRuns (node_modules/.vite/deps/src-Cvxxsi-j.js:632)
+               97.7     97.7  resolveFontVariantInternal (node_modules/.vite/deps/src-Bklc8oGJ.js:2470)
+onto: progress 34/36
+   35/36  pass 2  dom        5000 glyphs  every-frame  moving  main   4.51  (js  1.12 style  0.27 layout  1.45 paint  1.32)  comp  0.47  raster  0.00  gpu-proc  1.61  total   6.59 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.19  load    2.0    246s
+         allocated    167.5 KB/frame; by function, KB/frame self, total:
+               97.3    148.4  step
+               31.5     31.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+               12.5     12.5  (V8 API)
+                9.8      9.8  padStart
+                5.1     36.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+                3.4      6.4  visitNode
+                1.9     40.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                1.6      6.4  visitChild
+                0.7      0.7  String
+                0.6      0.6  checkAndReturn
+                0.6      0.6  Float32Array
+                0.4      0.6  expectValue
+                0.3      0.3  push
+                0.3      0.3  deviceRect (packages/renderer/src/WeaselRenderer.ts:296)
+                0.2      0.2  screenToClip (node_modules/.vite/deps/src-JQfx_pzD.js:8095)
+         by total:
+                0.0    148.4  loop
+               97.3    148.4  step
+                1.9     40.6  render (packages/renderer/src/WeaselRenderer.ts:433)
+                5.1     36.8  drawPath (packages/renderer/src/draw/pathPaint.ts:17)
+               31.5     31.6  pushRect (packages/renderer/src/draw/batch.ts:195)
+                9.8      9.8  padStart
+                3.4      6.4  visitNode
+                1.6      6.4  visitChild
+                0.0      6.4  captureSnapshot
+                0.0      1.3  flushBatch (packages/renderer/src/draw/flushBatch.ts:31)
+                0.1      1.0  setProjAndModel (packages/renderer/src/draw/uniforms.ts:133)
+                0.7      0.7  String
+                0.6      0.6  checkAndReturn
+                0.6      0.6  Float32Array
+                0.0      0.6  from
+onto: progress 35/36
+   36/36  pass 2  none          0 glyphs  static       fixed   main   0.42  (js  0.20 style  0.00 layout  0.00 paint  0.08)  comp  0.23  raster  0.00  gpu-proc  1.56  total   2.20 ms/frame  interval 16.67 (traced 16.67)  missed   0  gpu  0.32  load    2.0    251s
+onto: progress 36/36
+
+HUD vs DOM overlay — 1280x800, dpr 1, on ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)
+Per frame, ms; median of 4 samples (ABBA x 2), spread = max - min.
+Baseline (background scene alone): main 0.47, all threads 2.45.
+
+**every-frame, camera fixed**: main thread / all threads / untraced frame interval, median [spread of all threads]
+
+| glyphs | hud | dom |
+|---:|---:|---:|
+| 2500 |   1.96 /   3.20 / 16.67 [1.55] |   2.06 /   3.64 / 16.67 [0.90] |
+| 5000 |   3.31 /   4.48 / 16.67 [1.27] |   3.23 /   4.96 / 16.67 [1.66] |
+
+**every-frame, camera moving**: main thread / all threads / untraced frame interval, median [spread of all threads]
+
+| glyphs | hud | dom |
+|---:|---:|---:|
+| 2500 |   2.02 /   2.93 / 16.67 [1.30] |   2.52 /   3.97 / 16.67 [0.73] |
+| 5000 |   3.33 /   4.35 / 16.67 [0.57] |   4.00 /   6.10 / 16.67 [1.24] |
+perf result: tests/perf/hvd-recycle-out/after.json
+  ✓  1 tests/perf/hud-vs-dom.spec.ts:530:1 › hud vs dom: text over the canvas, per frame (4.2m)
+
+  1 passed (4.2m)
+  1 files  171.2 KiB  → 0 already local (0 bytes)
+  fetching 1 files (171.2 KiB)
+  [1/1] after.json  171.2 KiB
+  ✓ 1 files, 171.2 KiB in 0s
+  cleared 1 file (171.2 KiB) from msb-uai; /private/tmp/claude-501/-Users-mike-src-weasel/a84e2e2f-cc5d-4214-bb66-833c0ba24952/scratchpad/hvd-recycle-after/tests/perf/hvd-recycle-out holds the only copy

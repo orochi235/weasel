@@ -1,0 +1,13 @@
+Every run: HVD_ALLOC=1 HVD_UPDATES=every-frame HVD_CAMERAS=fixed,moving HVD_APPROACHES=hud,dom
+HVD_GLYPHS=2500,5000 npm run test:perf -- hud-vs-dom, through onto do --solo on msb-uai
+(Apple M3 Max, 14 cores), one run each, each from a clean throwaway worktree (dirty: false).
+
+1-before         22472a12b, before recycling; load 6.3 at start
+2-after          f645651dd, layout and quad arrays recycled; load 1.8
+3-pool-kept      dc94cc384, pool buckets kept at peak length; load 3.2
+4-no-deletes     68318c2fa, dropRuns empties WeakMap entries instead of deleting; load 3.5
+5-indexed-loops  bb2fc7c5f, dropRuns' loops indexed; load 2.7
+
+Runs 3 to 5 also carry other sessions' commits landed between them (none in packages/text's
+layout or the renderer's text path). None of 3 to 5 moved the 179 KB a frame under
+dropRuns/disown; 4 and 5 were reverted in cc705df96.
