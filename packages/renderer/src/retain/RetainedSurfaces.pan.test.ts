@@ -91,6 +91,15 @@ describe('a retained surface through a pan', () => {
     drawn(store, { x0: 100, y0: 100, x1: 200, y1: 150 });
     store.beginFrame([]);
     expect(store.lookup('a', W, H, keyAt(0, 0, 1.5), true, SCALE)).toEqual({ kind: 'redraw', window: BUFFER });
+  });
+
+  it('draws a group that may not move straight through while it moves, and again once it holds', () => {
+    const store = new RetainedSurfaces(makeGLRecorder().gl, Infinity);
+    drawn(store, { x0: 100, y0: 100, x1: 200, y1: 150 });
+    store.beginFrame([]);
+    expect(store.lookup('a', W, H, keyAt(1, 0))).toEqual({ kind: 'through' });
+    store.endFrame();
+    store.beginFrame([]);
     expect(store.lookup('a', W, H, keyAt(1, 0))).toEqual({ kind: 'redraw', window: BUFFER });
   });
 
@@ -102,11 +111,20 @@ describe('a retained surface through a pan', () => {
     expect(store.lookup('a', W, H, k, true, SCALE)).toMatchObject({ kind: 'redraw' });
   });
 
-  it('cuts a margin that does not fit the budget back to the buffer', () => {
+  it('cuts a margin that does not fit the budget back to the buffer, and then draws a pan straight through', () => {
     const store = new RetainedSurfaces(makeGLRecorder().gl, W * H * 4);
+    drawn(store, WIDE);
     store.beginFrame([]);
+    expect(store.lookup('a', W, H, keyAt(1, 0), true, SCALE)).toEqual({ kind: 'redraw', window: GROWN });
     const draw = store.reserve('a', W, H, GROWN, true, { box: WIDE, window: GROWN })!;
     expect(draw.rect).toEqual(BUFFER);
     expect(store.declined).toBe(0);
+    draw.commit(keyAt(1, 0));
+    store.endFrame();
+    store.beginFrame([]);
+    expect(store.lookup('a', W, H, keyAt(2, 0), true, SCALE)).toEqual({ kind: 'through' });
+    store.endFrame();
+    store.beginFrame([]);
+    expect(store.lookup('a', W, H, keyAt(2, 0), true, SCALE)).toEqual({ kind: 'redraw', window: GROWN });
   });
 });

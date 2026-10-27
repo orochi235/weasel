@@ -1,0 +1,15 @@
+Every run: WEASEL_PERF_PORT=33571 npm run test:perf -- perf/retain-pan.spec.ts, through
+onto do --solo, on teitou (Apple M5 Max, ANGLE Metal), 3 rounds each. The tree was the shared
+batch worktree, so it carried other sessions' uncommitted files; none touched the renderer's
+retain or draw path.
+
+0-redraw-every-frame       f9282f7bf. The spec passed its view matrix with the wrong sign, so
+                           no retained layer's key matched modulo a pan: every retained
+                           variant redrew its surface (margin included) each frame. Kept as
+                           the price of a frame that redraws every surface: about 2 to 3.5
+                           times submitting the layers.
+1-margin-refused-redraws   f9282f7bf plus the spec fix and non-movable groups drawn through.
+                           At 16 canvas-sized layers the budget refused every margin, and a
+                           surface cut back to the buffer redrew on every pan frame.
+2-pan                      As 1, plus a pan whose margin the budget refused drawn straight
+                           through. The result the commit reports.

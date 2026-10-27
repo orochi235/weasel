@@ -176,7 +176,7 @@ describe('a retained world layer through a pan, in a real context', () => {
     expect(far.off).toBeLessThanOrEqual(4);
   });
 
-  it('draws a layer holding a screen-unit gradient or a shader again for every move', () => {
+  it('draws a layer holding a screen-unit gradient or a shader straight through a move, and again once it holds', () => {
     const screenGradient: DrawCommand = {
       kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 30, height: 30 },
       fill: { paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: W, y: 0 }, stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }] } },
@@ -191,9 +191,12 @@ describe('a retained world layer through a pan, in a real context', () => {
       frame(p, 0, 0, children);
       frame(p, 0, 0, children);
       const moved = frame(p, 1, 0, children);
-      expect(moved.stats, extra.kind).toMatchObject({ redrawn: 1, composited: 0 });
+      expect(moved.stats, extra.kind).toMatchObject({ declined: 1, redrawn: 0, composited: 0 });
+      expect(moved.max, extra.kind).toBe(0);
+      const held = frame(p, 1, 0, children);
+      expect(held.stats, extra.kind).toMatchObject({ redrawn: 1 });
       // Drawn in its surface over translucent content: resolve rounding.
-      expect(moved.max, extra.kind).toBeLessThanOrEqual(2);
+      expect(held.max, extra.kind).toBeLessThanOrEqual(2);
     }
   });
 

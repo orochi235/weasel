@@ -135,7 +135,10 @@ export class RetainedSurfaces {
    * of it on the buffer was drawn, and composites that far over. Moved by a
    * fraction of one, the group is drawn straight through and the surface kept
    * until the move holds for a frame; moved out past what was drawn, it is
-   * drawn again with a margin past the buffer, `PAN_MARGIN` of a side.
+   * drawn again with a margin past the buffer, `PAN_MARGIN` of a side, or
+   * straight through like a fractional move once the budget has refused that
+   * margin. Without `scale`, a group moved only by a translation is drawn straight
+   * through until the move holds a frame, and then drawn again.
    */
   lookup(
     id: string, width: number, height: number, key: RetainedKey, multisample = true, scale?: number,
@@ -154,13 +157,24 @@ export class RetainedSurfaces {
       this.composited++;
       return { kind: 'kept', pixels: pixelsOf(surface, 0, 0) };
     }
-    const shift = scale !== undefined && surface.reach ? keyShift(surface.key, key) : null;
+    const shift = keyShift(surface.key, key);
+    const movable = scale !== undefined && surface.reach !== null;
     const mx = Math.round(width * PAN_MARGIN), my = Math.round(height * PAN_MARGIN);
     const grown = { x: -mx, y: -my, width: width + 2 * mx, height: height + 2 * my };
-    if (!shift) return { kind: 'redraw', window: surface.panned && scale !== undefined ? grown : buffer };
-    surface.panned = true;
+    if (!shift) return { kind: 'redraw', window: surface.panned && movable ? grown : buffer };
     surface.seen = at;
     surface.frame = this.frame;
+    if (!movable) {
+      // Moved, and its pixels do not move with it: drawn straight through
+      // while the move goes on, as a redraw every frame costs more.
+      if (held) return { kind: 'redraw', window: buffer };
+      this.declined++;
+      return { kind: 'through' };
+    }
+    // Panned before and still drawn without a margin: the budget refused one,
+    // and drawing it again each frame would refuse it again.
+    const refused = surface.panned && surface.reach!.window.width === width && surface.reach!.window.height === height;
+    surface.panned = true;
     const dx = shift[0] * scale!, dy = shift[1] * scale!;
     const rx = Math.round(dx), ry = Math.round(dy);
     const whole = Math.abs(dx - rx) <= WHOLE_PIXEL_SLACK && Math.abs(dy - ry) <= WHOLE_PIXEL_SLACK;
@@ -168,7 +182,7 @@ export class RetainedSurfaces {
       this.composited++;
       return { kind: 'kept', pixels: pixelsOf(surface, rx, ry) };
     }
-    if (!whole && !held) {
+    if ((!whole || refused) && !held) {
       this.declined++;
       return { kind: 'through' };
     }
