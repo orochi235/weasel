@@ -29,6 +29,7 @@ import type { InputEvent } from './matcher';
 import { buildDispatchRecord } from './buildDispatchRecord';
 import { createGestureFacts } from './gestureFacts';
 import { endAllGestures, invokeAction, pumpGesture, type GestureRun } from './gestureRun';
+import { handOff } from './handOff';
 import { createInFlightGestures } from './inFlightGestures';
 import { createUiOngoing } from './uiOngoing';
 import { explain, resolveAll, resolveOnly } from './predict';
@@ -74,7 +75,7 @@ export function createDispatcher(opts?: {
   let routedToLocal: DispatcherContext['toLocal'];
 
   const run: GestureRun = {
-    inFlight, facts, viewId: () => routedView, isMac: () => routedIsMac, toLocal: () => routedToLocal,
+    inFlight, facts, viewId: () => routedView, isMac: () => routedIsMac, toLocal: () => routedToLocal, opened: new Map(),
   };
   const invoking = (event: InputEvent): Attempt =>
     (match, action, deps) => invokeAction(run, event, match, action, deps);
@@ -84,6 +85,7 @@ export function createDispatcher(opts?: {
     routedIsMac = ctx.isMac;
     routedToLocal = ctx.toLocal;
     const pumped = pumpGesture(run, event);
+    if (pumped === 'pass') return handOff(run, event, ctx, invoking, inFlight.engagedOwners);
     if (pumped !== undefined) return pumped;
 
     if (event.kind === 'hover') return hover(event, ctx);

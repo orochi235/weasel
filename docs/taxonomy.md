@@ -985,6 +985,16 @@ Two recovery rules live in `pointerSession/pointerSession.ts`:
 button is read as the release that never arrived — but only when the press
 reported button state at all, since synthesized events routinely carry none.
 
+### Hand-off
+
+An in-flight pointer drag changing hands: its action decides mid-drag that the
+drag is not its own after all and passes it, by returning `'pass'` from its
+handle's `onMove`. The dispatcher cancels that handle and walks the drag's
+press again, every action that passed it skipped; the taker starts as though
+it had won the press, then sees the move it was passed on. A reorder that the
+pointer carries out of its container hands off this way, to the move. The
+gesture is the same drag throughout; only the action bound to it changes.
+
 ### Gesture overlay
 
 The live state an in-flight ongoing action exposes. Consumed by overlay layers

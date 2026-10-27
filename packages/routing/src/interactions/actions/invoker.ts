@@ -273,7 +273,14 @@ export interface OngoingHandle {
    */
   cursor?(): CursorSpec | undefined;
 
-  onMove?(ctx: InvocationCtx): void;
+  /**
+   * A move of the gesture. Return `'pass'` from a pointer drag's move to hand
+   * the drag off: the dispatcher ends this handle with `'cancel'`, offers the
+   * drag as it was pressed to every other candidate in rank order, and the one
+   * that takes it starts as if it had won the press, then sees this move. With
+   * no taker the drag is over. A drag never returns to an action that passed it.
+   */
+  onMove?(ctx: InvocationCtx): void | 'pass';
   onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void;
 
   /**

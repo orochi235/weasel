@@ -27,10 +27,21 @@ export interface GestureRun {
   isMac(): boolean;
   /** The host's client-to-surface mapping, for the input being handled. */
   toLocal(): DispatcherContext['toLocal'];
+  /** Each pointer drag in flight: the press that opened it, the action running it, and those that passed it on. */
+  opened: Map<string, Opened>;
+}
+
+/** A pointer drag's press, its action, and the actions that handed it off. */
+export interface Opened {
+  event: InputEvent;
+  action: string;
+  passed: ReadonlySet<string>;
 }
 
 type Reason = 'commit' | 'cancel';
 type Outcome = 'handled' | 'unhandled';
+/** `'pass'`: the drag's handle handed it off (`OngoingHandle.onMove`), and the dispatcher must offer it on. */
+export type Pumped = Outcome | 'pass';
 
 const ctxFor = (run: GestureRun, event: InputEvent, deps: ActionDeps, gestureId: string): InvocationCtx =>
   buildInvocationCtx(event, deps, run.viewId(), run.facts.of(gestureId), run.toLocal());
@@ -50,8 +61,24 @@ function endGesture(run: GestureRun, gestureId: string, event: InputEvent, reaso
   const endCtx = ctxFor(run, event, {}, gestureId);
   const handle = run.inFlight.take(gestureId)!;
   run.facts.drop(gestureId);
+  run.opened.delete(gestureId);
   runOnEnd(gestureId, handle, endCtx, reason);
   return true;
+}
+
+/** End a drag whose handle passed it, answering the press that opened it and every action not to offer it to. */
+export function endPassed(run: GestureRun, event: InputEvent): { event: InputEvent; skip: Set<string> } | null {
+  const gestureId = gestureIdFor(event);
+  const opened = run.opened.get(gestureId);
+  if (opened === undefined) return null;
+  endGesture(run, gestureId, event, 'cancel');
+  return { event: opened.event, skip: new Set([...opened.passed, opened.action]) };
+}
+
+/** Mark the drag `event` belongs to, if one is in flight, as never to go back to `skip`. */
+export function notePassed(run: GestureRun, event: InputEvent, skip: ReadonlySet<string>): void {
+  const opened = run.opened.get(gestureIdFor(event));
+  if (opened !== undefined) opened.passed = new Set([...opened.passed, ...skip]);
 }
 
 function endMultiTouch(run: GestureRun, event: InputEvent, reason: Reason, except?: string): boolean {
@@ -67,6 +94,7 @@ export function endAllGestures(run: GestureRun, reason: Reason): void {
   const stubCtx = uiInvocationCtx({});
   const ending = run.inFlight.takeAll();
   run.facts.clear();
+  run.opened.clear();
   for (const [gestureId, handle] of ending) runOnEnd(gestureId, handle, stubCtx, reason);
 }
 
@@ -74,7 +102,7 @@ export function endAllGestures(run: GestureRun, reason: Reason): void {
  * Feed `event` to the gesture it continues. `undefined` when it continues
  * none and may start one.
  */
-export function pumpGesture(run: GestureRun, event: InputEvent): Outcome | undefined {
+export function pumpGesture(run: GestureRun, event: InputEvent): Pumped | undefined {
   const { inFlight } = run;
   const ended = (reason: Reason): Outcome =>
     (endGesture(run, gestureIdFor(event), event, reason) ? 'handled' : 'unhandled');
@@ -94,8 +122,8 @@ export function pumpGesture(run: GestureRun, event: InputEvent): Outcome | undef
     if (!handle) return 'unhandled';
     run.facts.sample(gestureId, event);
     if (!handle.onMove) return 'unhandled';
-    handle.onMove(ctxFor(run, event, {}, gestureId));
-    return 'handled';
+    const said = handle.onMove(ctxFor(run, event, {}, gestureId));
+    return said === 'pass' && run.opened.has(gestureId) ? 'pass' : 'handled';
   }
 
   // A wheel continues no gesture of its own, but one in flight may claim it.
@@ -212,6 +240,7 @@ export function invokeAction(
       return 'empty-handle';
     }
     run.inFlight.open(gestureId, handle, match.ownerId, action);
+    if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set() });
     return 'fired';
   }
 
