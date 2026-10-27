@@ -37,6 +37,19 @@ describe('createDispatcher', () => {
       expect(run).toHaveBeenCalledOnce();
     });
 
+    it('walks on to the next match when run() returns "pass", and is unhandled when every one passes', () => {
+      const passing = vi.fn().mockReturnValue('pass');
+      const next = vi.fn();
+      const dispatcher = createDispatcher();
+      const both = makeRegistry([immediateAction('passer', 'a', passing), immediateAction('taker', 'a', next)]);
+      expect(dispatcher.handleInput(keyAEvent, makeCtx({ actions: both }))).toBe('handled');
+      expect(passing).toHaveBeenCalledOnce();
+      expect(next).toHaveBeenCalledOnce();
+
+      const alone = makeRegistry([immediateAction('passer', 'a', passing)]);
+      expect(dispatcher.handleInput(keyAEvent, makeCtx({ actions: alone }))).toBe('unhandled');
+    });
+
     it('returns "unhandled" when no binding matches', () => {
       const action = immediateAction('actionA', 'a');
       const registry = makeRegistry([action]);

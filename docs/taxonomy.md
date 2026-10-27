@@ -1000,6 +1000,11 @@ it had won the press, then sees the move it was passed on. A reorder that the
 pointer carries out of its container hands off this way, to the move. The
 gesture is the same drag throughout; only the action bound to it changes.
 
+An immediate action passes the same way, by returning `'pass'` from `run`
+once the event shows it has nothing to do: the dispatcher walks on to the
+next matching binding as though `enabled()` had declined. A container's wheel
+scroll at the end of its range passes, so the wheel pans the view.
+
 ### Gesture overlay
 
 The live state an in-flight ongoing action exposes. Consumed by overlay layers

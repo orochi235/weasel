@@ -99,7 +99,7 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
       requires,
       invoker: {
         timing: 'immediate',
-        run(deps: ActionDeps, params?: Record<string, unknown>): void {
+        run(deps: ActionDeps, params?: Record<string, unknown>): void | 'pass' {
           const plane = livePlane(deps, layerOf(deps), declared, null);
           if (plane === null) return inner.run(deps, params);
           const wx = params?.['worldX'];
@@ -107,7 +107,7 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
           const at = typeof wx === 'number' && typeof wy === 'number'
             ? toPlane(plane.map(), { x: wx, y: wy })
             : null;
-          inner.run(plane.deps, at ? { ...params, worldX: at.x, worldY: at.y } : params);
+          return inner.run(plane.deps, at ? { ...params, worldX: at.x, worldY: at.y } : params);
         },
       },
     } as A;

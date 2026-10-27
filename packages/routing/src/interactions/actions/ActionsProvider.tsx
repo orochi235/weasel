@@ -260,7 +260,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const deps = leaf.depsOf(a);
       if (!evaluateEnabled(a, deps, pointOf(params)).enabled) return false;
       try {
-        a.invoker.run(deps, params);
+        if (a.invoker.run(deps, params) === 'pass') return false;
       } catch (err) {
         console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
       }
