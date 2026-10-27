@@ -1,6 +1,7 @@
-import { useContext, useMemo, useRef, type ReactElement } from 'react';
+import { useContext, useRef, type ReactElement } from 'react';
 import { TabList as RACTabList, TabListStateContext, type TabListProps as RACTabListProps } from 'react-aria-components';
-import { trackRun, type RunAlign, type TrackShape } from '@weasel-js/geom';
+import type { RunAlign, TrackShape } from '@weasel-js/geom';
+import { useReadingRun } from '../Along/useReadingRun';
 import { AlongContext } from '../Along/alongContext';
 import { useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds } from '../Along/useRunRow';
@@ -18,7 +19,7 @@ export type TabListAlongProps = TabListProps<object> & { shape: TrackShape; alig
  */
 export function TabListAlong({ className, shape, align, slots, ...rest }: TabListAlongProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
-  const run = useMemo(() => trackRun(shape), [shape]);
+  const run = useReadingRun(root, shape);
   const gap = useRunGap(root);
   const host = useRunSlotHost({ slots, root, run, gap, align });
   const state = useContext(TabListStateContext);

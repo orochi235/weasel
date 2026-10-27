@@ -9,7 +9,8 @@ import type {
 } from './shape';
 
 /** A station as a run places an item: `normal` is the item's up after any flip, `tangent` its reading direction,
- *  `angle` the CSS rotation in degrees that tips an upright item to it (0 = upright, clockwise positive, in (-180, 180]). */
+ *  `angle` the CSS rotation in degrees that tips an upright item to the place (0 = upright, clockwise positive, in
+ *  (-180, 180]). Read right to left, `tangent` points against the direction `angle` turns an item's own left to right. */
 export interface TrackPlace extends TrackStation {
   angle: number;
   /** True when `normal` points down the screen, so an item tipped by `angle` reads upside down. A run is turned over
@@ -32,6 +33,8 @@ export interface TrackRun extends TrackShape {
   readonly flipped: boolean;
   /** True when reading order runs against the shape's own direction. */
   readonly reversed: boolean;
+  /** The inline direction it reads in, from {@link TrackRunOptions.direction}. */
+  readonly direction: 'ltr' | 'rtl';
   at(g: number, options?: TrackAtOptions): TrackPlace;
 }
 
@@ -45,18 +48,22 @@ export interface TrackRunOptions {
   side?: TrackSide;
   /** The shape fraction `'auto'` judges the side at. Default the run's middle, `(from + to) / 2`. */
   about?: number;
+  /** The inline direction items read in on the side the run stands on: `'rtl'` starts the run at its right end. Each
+   *  item still stands as it would read left to right. Default `'ltr'`. */
+  direction?: 'ltr' | 'rtl';
 }
 
 /** The stretch `from..to` (default the whole shape) as items read it: on the side `options.side` picks, reversed to read
- *  left to right on that side. */
+ *  left to right on that side, or right to left under `options.direction: 'rtl'`. */
 export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunOptions = {}): TrackRun {
-  const { side = 'auto', about = (from + to) / 2 } = options;
+  const { side = 'auto', about = (from + to) / 2, direction = 'ltr' } = options;
+  const rtl = direction === 'rtl';
   const mid = shape.at(about);
   const flipped = side === 'auto' ? pointsDown(mid.normal) : side === 'flipped';
   const sgn = flipped ? -1 : 1;
   const reading = (n: Point): Point => ({ x: -(sgn * n.y), y: sgn * n.x });
   const r0 = reading(mid.normal);
-  const reversed = r0.x * mid.tangent.x + r0.y * mid.tangent.y < 0;
+  const reversed = (r0.x * mid.tangent.x + r0.y * mid.tangent.y < 0) !== rtl;
   const span = to - from;
   const lo = Math.min(from, to);
   const hi = Math.max(from, to);
@@ -69,7 +76,7 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
     const normal = { x: sgn * s.normal.x, y: sgn * s.normal.y };
     return {
       point: s.point,
-      tangent: dir,
+      tangent: rtl ? { x: -dir.x, y: -dir.y } : dir,
       normal,
       angle: angle === 0 ? 0 : angle === -180 ? 180 : angle,
       turned: pointsDown(normal),
@@ -95,6 +102,7 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
     to,
     flipped,
     reversed,
+    direction,
     at,
     nearest,
   };

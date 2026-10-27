@@ -1,5 +1,6 @@
-import { useMemo, useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { trackRun, type TrackShape } from '@weasel-js/geom';
+import { useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
+import type { TrackShape } from '@weasel-js/geom';
+import { useReadingRun } from '../Along/useReadingRun';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds, useRunRow } from '../Along/useRunRow';
@@ -37,7 +38,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const menu = overflow === 'menu';
   const root = useRef<HTMLDivElement>(null);
-  const run = useMemo(() => trackRun(shape), [shape]);
+  const run = useReadingRun(root, shape);
   const items = barItems(nodes, { popLeaves: true, cells, row, mark: props.onReorder !== undefined });
   const leading = useBarLead(barLead(props));
   const lengths = useItemLengths(root, drawnKeys(items, leading != null), barKeyOf);
