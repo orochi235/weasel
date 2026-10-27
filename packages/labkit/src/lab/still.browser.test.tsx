@@ -7,6 +7,7 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
+import { it as liveTest } from '../testing/liveTest';
 import { Lab } from './Lab';
 import type { LabProps } from './labProps';
 
@@ -94,13 +95,14 @@ test('a still of a clock that is not seekable draws the time it was run forward 
   expect(clock?.elapsed).toBe(1200);
 });
 
-test('a message posted to the page plays and pauses the lab in it', async () => {
+liveTest('a message posted to the page plays and pauses the lab in it', async ({ live }) => {
+  const post = live((type: string) => window.postMessage({ type }, location.origin));
   mount({ present: true });
   await expect.poll(() => clock).not.toBeNull();
-  window.postMessage({ type: 'labkit:pause' }, location.origin);
+  post('labkit:pause');
   await expect.poll(() => clock?.rate).toBe(0);
   const paused = clock?.elapsed ?? 0;
-  window.postMessage({ type: 'labkit:play' }, location.origin);
+  post('labkit:play');
   await expect.poll(() => clock?.rate).toBe(1);
   await expect.poll(() => clock?.elapsed ?? 0).toBeGreaterThan(paused);
 });

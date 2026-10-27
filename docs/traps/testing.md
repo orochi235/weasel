@@ -63,5 +63,6 @@ calls alongside whatever else the loop counts.
 the timeout without stopping the test body, so whatever it still posts reaches the next test's
 mounts: in `Lab.messages.test.tsx` that read as a play rate of 0 and one state report too many
 (2026-10-27). The retry is handed the attempt's already-aborted `context.signal`, so guarding on it
-fails every retry at once; guard on a per-test fixture that ends with the attempt instead
-(`Lab.messages.test.tsx`'s `host`).
+fails every retry at once; guard on a per-test fixture that ends with the attempt instead: labkit's
+`live` (`packages/labkit/src/testing/liveTest.ts`), which also logs the stack of each step a failed
+test was still waiting on.

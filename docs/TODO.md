@@ -937,10 +937,15 @@ only story runner in the repo.
   "reports its state as it starts, on a change, and when asked" timed out on studio (0.4 of 10 cores busy) in the
   batch-5 gate at 9d51e9d04, where it takes 62 ms locally, and `TrialTransport.test.tsx`'s "shares the chosen speed
   between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both 2026-10-27).
-  What they wait on is unknown: the next sighting wants the attempt's stack at the timeout. The follow-on failures
-  — a play rate of 0, one state report too many — were the timed-out attempt still sending messages to the next
-  lab; `Lab.messages` stops a test that has ended from doing so (2026-10-27). `TrialTransport.test.tsx` and other
-  files that mount a lab have no such guard.
+  What they wait on is unknown. Both files, and `still.browser.test.tsx`, now take their awaited steps through
+  labkit's `live` fixture (`packages/labkit/src/testing/liveTest.ts`), so a timed-out attempt stops at its next step
+  instead of acting on the next test, and the run's timeout warning prints the stack of each step it was still
+  awaiting (2026-10-27). Read that stack at the next sighting.
+
+- **(P3) [agent] The timeout warning prints once per vitest project.** A one-file run whose test timed out and
+  passed on retry printed `⚠ 1 test(s) timed out and were retried once` about a dozen times (2026-10-27). The `seen` guard in
+  `timeoutRetries()` (`scripts/vitest-timeout-retries.ts`) is meant to add one reporter per run; why it adds more
+  is not yet known.
 
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start

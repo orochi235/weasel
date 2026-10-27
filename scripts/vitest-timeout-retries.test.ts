@@ -24,6 +24,11 @@ describe('timeout retries', () => {
     expect(found).toEqual([{ name: 'a.test.ts > slow', passed: true }, { name: 'a.test.ts > stuck', passed: false }]);
   });
 
+  it('prints where a timed-out attempt was waiting, when the test recorded it', () => {
+    const slow = { ...test('slow', 'passed', 'Test timed out in 5000ms.'), meta: () => ({ waitingOn: ['Error: mount\n    at a.test.ts:3:9'] }) };
+    expect(timeoutReport(timedOut([slow]))?.warning).toContain('    waiting on Error: mount\n        at a.test.ts:3:9');
+  });
+
   it('warns for every timeout, and fails the run only past the budget', () => {
     expect(timeoutReport([])).toBeNull();
     const ten = Array.from({ length: 10 }, (_, i) => ({ name: `t${i}`, passed: true }));

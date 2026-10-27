@@ -1,9 +1,10 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
+import { it as liveTest } from '../testing/liveTest';
 import { TrialTransport, type TrialTransportProps } from './TrialTransport';
 import type { ClockCapability, TrialClock } from './trialClock';
 
@@ -27,11 +28,17 @@ function timed(spec: ClockCapability | undefined, props: TrialTransportProps = {
   };
 }
 
-async function mount(spec: ClockCapability | undefined, props?: TrialTransportProps) {
-  return renderSettled(<Lab instruments={[timed(spec, props)]} defaultInstrument="Timed" />, {
+const mountLab = (instrument: Instrument) =>
+  renderSettled(<Lab instruments={[instrument]} defaultInstrument="Timed" />, {
     wrapper: withIcons,
   });
-}
+
+const mountTimed = (spec: ClockCapability | undefined, props?: TrialTransportProps) =>
+  mountLab(timed(spec, props));
+
+const it = liveTest.extend<{ mount: typeof mountTimed }>({
+  mount: async ({ live }, provide) => provide(live(mountTimed)),
+});
 
 const c = () => clock as TrialClock;
 const press = (name: string) => act(() => fireEvent.click(screen.getByRole('button', { name })));
@@ -44,12 +51,12 @@ afterEach(() => {
 });
 
 describe('<TrialTransport>', () => {
-  it('renders nothing for a trial without a clock', async () => {
+  it('renders nothing for a trial without a clock', async ({ mount }) => {
     await mount(undefined);
     expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
   });
 
-  it('plays at the chosen speed and pauses', async () => {
+  it('plays at the chosen speed and pauses', async ({ mount }) => {
     await mount({ duration: 3_600_000 });
     fireEvent.keyDown(screen.getByRole('slider', { name: /rate/i }), { key: 'ArrowRight' });
     expect(c().rate).toBe(0);
@@ -59,7 +66,7 @@ describe('<TrialTransport>', () => {
     expect(c().rate).toBe(0);
   });
 
-  it('shares the chosen speed between two transports over one clock', async () => {
+  it('shares the chosen speed between two transports over one clock', async ({ live }) => {
     const twice: Instrument = {
       ...timed({ duration: 3_600_000 }),
       render: (ctx) => {
@@ -72,18 +79,16 @@ describe('<TrialTransport>', () => {
         );
       },
     };
-    await renderSettled(<Lab instruments={[twice]} defaultInstrument="Timed" />, {
-      wrapper: withIcons,
-    });
+    await live(mountLab)(twice);
     const [first] = screen.getAllByRole('slider', { name: /rate/i });
     fireEvent.keyDown(first as HTMLElement, { key: 'ArrowRight' });
-    await act(async () =>
+    await live(act)(async () =>
       fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[1] as HTMLElement),
     );
     expect(c().rate).toBe(2);
   });
 
-  it('reverses and scrubs a seekable clock', async () => {
+  it('reverses and scrubs a seekable clock', async ({ mount }) => {
     // Reversed from mid-span: a clock running backward stops at 0, which a stalled worker reaches from near it.
     await mount({ duration: 3_600_000, rate: 1 });
     act(() => c().seek(1_800_000));
@@ -97,13 +102,13 @@ describe('<TrialTransport>', () => {
     expect(c().elapsed).toBe(3_600_000);
   });
 
-  it('offers neither on a clock that only runs forward', async () => {
+  it('offers neither on a clock that only runs forward', async ({ mount }) => {
     await mount({ duration: 1000, seekable: false });
     expect(screen.queryByRole('switch', { name: 'Reverse' })).toBeNull();
     expect(screen.queryByRole('slider', { name: 'Position' })).toBeNull();
   });
 
-  it('shows the playhead within the current pass of a looping clock', async () => {
+  it('shows the playhead within the current pass of a looping clock', async ({ mount }) => {
     await mount({ duration: 1000, loop: true });
     act(() => c().seek(2300));
     expect(screen.getByRole('slider', { name: 'Position' })).toHaveAttribute(
@@ -116,7 +121,9 @@ describe('<TrialTransport>', () => {
     expect(c().elapsed).toBe(2000);
   });
 
-  it('holds End, and a scrub to the far right, at the end of the current pass of a loop', async () => {
+  it('holds End, and a scrub to the far right, at the end of the current pass of a loop', async ({
+    mount,
+  }) => {
     await mount({ duration: 1000, loop: 3 });
     const slider = () => screen.getByRole('slider', { name: 'Position' });
     act(() => c().seek(1300));
@@ -134,7 +141,7 @@ describe('<TrialTransport>', () => {
     expect(c().elapsed).toBe(1000);
   });
 
-  it('plays a finished run again from the start', async () => {
+  it('plays a finished run again from the start', async ({ mount }) => {
     await mount({ duration: 1000 });
     act(() => c().seek(1000));
     press('Play');
@@ -142,7 +149,7 @@ describe('<TrialTransport>', () => {
     expect(c().rate).toBe(1);
   });
 
-  it('replays a finished run after its hold, until the transport is touched', async () => {
+  it('replays a finished run after its hold, until the transport is touched', async ({ mount }) => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     await mount({ duration: 1000 }, { replay: 3000 });
     act(() => c().seek(1000));
@@ -158,7 +165,7 @@ describe('<TrialTransport>', () => {
     expect(c().elapsed).toBe(1000);
   });
 
-  it("offers the clock's rates, and steps through them", async () => {
+  it("offers the clock's rates, and steps through them", async ({ mount }) => {
     await mount({ duration: 64_000, rates: [1 / 16, 0.25, 1] }, { keys: true });
     key(' ');
     key('<');
@@ -170,7 +177,7 @@ describe('<TrialTransport>', () => {
     expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuemax', '2');
   });
 
-  it('reads a speed the way it is told to', async () => {
+  it('reads a speed the way it is told to', async ({ mount }) => {
     await mount({ duration: 1000, rates: [0.5, 1] }, { formatRate: (r) => `${1 / r} s/turn` });
     expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute(
       'aria-valuetext',
@@ -179,7 +186,7 @@ describe('<TrialTransport>', () => {
   });
 
   describe('with keys', () => {
-    it('answers Space, the arrows, Home and End, R, and < and >', async () => {
+    it('answers Space, the arrows, Home and End, R, and < and >', async ({ mount }) => {
       await mount({ duration: 1000 }, { keys: true });
       key(' ');
       expect(c().rate).toBe(1);
@@ -201,14 +208,14 @@ describe('<TrialTransport>', () => {
       expect(c().elapsed).toBe(50);
     });
 
-    it('leaves a key typed into a field, or pressed on a control, alone', async () => {
+    it('leaves a key typed into a field, or pressed on a control, alone', async ({ mount }) => {
       await mount({ duration: 1000 }, { keys: true });
       key(' ', screen.getByRole('textbox', { name: 'field' }));
       key(' ', screen.getByRole('button', { name: 'Play' }));
       expect(c().rate).toBe(0);
     });
 
-    it('answers none without `keys`', async () => {
+    it('answers none without `keys`', async ({ mount }) => {
       await mount({ duration: 1000 });
       key(' ');
       expect(c().rate).toBe(0);

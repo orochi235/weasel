@@ -16,19 +16,28 @@ export const TIMEOUT_BUDGET = 10;
 /** What every project's `test.retry` is: once, and only for a timeout. */
 export const RETRY_TIMEOUTS = { count: 1, condition: /^(Test|Hook) timed out in \d+ms/ };
 
-/** One test that timed out, and whether its retry passed. */
+/** One test that timed out, whether its retry passed, and what its attempt was waiting on, if recorded. */
 export interface TimedOut {
   name: string;
   passed: boolean;
+  waitingOn?: readonly string[];
 }
 
 /** The tests in `cases` that timed out at least once. */
-export function timedOut(cases: Iterable<Pick<TestCase, 'fullName' | 'result'> & { module: { moduleId: string } }>): TimedOut[] {
+export function timedOut(
+  cases: Iterable<Pick<TestCase, 'fullName' | 'result'> & Partial<Pick<TestCase, 'meta'>> & { module: { moduleId: string } }>,
+): TimedOut[] {
   const out: TimedOut[] = [];
   for (const test of cases) {
     const result = test.result();
     if (!(result.errors ?? []).some((e) => RETRY_TIMEOUTS.condition.test(e.message ?? ''))) continue;
-    out.push({ name: `${test.module.moduleId} > ${test.fullName}`, passed: result.state === 'passed' });
+    // Recorded by a test that knows what it awaits: labkit's `live` fixture.
+    const waitingOn = (test.meta?.() as { waitingOn?: string[] } | undefined)?.waitingOn;
+    out.push({
+      name: `${test.module.moduleId} > ${test.fullName}`,
+      passed: result.state === 'passed',
+      ...(waitingOn?.length ? { waitingOn } : {}),
+    });
   }
   return out;
 }
@@ -36,7 +45,10 @@ export function timedOut(cases: Iterable<Pick<TestCase, 'fullName' | 'result'> &
 /** The warning a run prints, and the error that fails it when the budget is spent; `null` for none. */
 export function timeoutReport(found: readonly TimedOut[], budget = TIMEOUT_BUDGET): { warning: string; error: string | null } | null {
   if (found.length === 0) return null;
-  const lines = found.map((t) => `  ${t.passed ? 'passed on retry' : 'failed again  '}  ${t.name}`);
+  const lines = found.flatMap((t) => [
+    `  ${t.passed ? 'passed on retry' : 'failed again  '}  ${t.name}`,
+    ...(t.waitingOn ?? []).map((stack) => `    waiting on ${stack.replace(/\n/g, '\n    ')}`),
+  ]);
   const warning = [`⚠ ${found.length} test(s) timed out and were retried once:`, ...lines].join('\n');
   const error = found.length > budget
     ? `${found.length} tests timed out, more than the ${budget} a run may retry: the machine is too loaded to trust this run.`

@@ -1,9 +1,10 @@
 import { act, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
-import { afterEach, it as base, beforeEach, describe, expect, type MockInstance, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, type MockInstance, vi } from 'vitest';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
+import { it as liveTest } from '../testing/liveTest';
 import { Lab } from './Lab';
 import type { LabProps } from './labProps';
 import type { PresentationState } from './presentationMessages';
@@ -52,32 +53,8 @@ const send = (data: unknown, init: MessageEventInit = {}) =>
     );
   });
 
-// A test that times out keeps running once vitest has moved on, and a message it
-// sent then would reach the next test's lab, so its host stops at its next step.
-// Not by the test's `signal`: vitest 5.0.2 hands a retry the one that aborted.
-function hostFor(live: () => boolean) {
-  const check = (): void => {
-    if (!live()) throw new Error('this test has already ended');
-  };
-  return {
-    mount: (spec: ClockCapability | undefined, props?: Partial<LabProps>) => {
-      check();
-      return mountLab(spec, props);
-    },
-    send: (data: unknown, init?: MessageEventInit) => {
-      check();
-      return send(data, init);
-    },
-  };
-}
-
-const it = base.extend<{ host: ReturnType<typeof hostFor> }>({
-  // biome-ignore lint/correctness/noEmptyPattern: vitest reads a fixture's dependencies from this pattern
-  host: async ({}, provide) => {
-    let live = true;
-    await provide(hostFor(() => live));
-    live = false;
-  },
+const it = liveTest.extend<{ host: { mount: typeof mountLab; send: typeof send } }>({
+  host: async ({ live }, provide) => provide({ mount: live(mountLab), send: live(send) }),
 });
 
 let posted: MockInstance<typeof window.postMessage>;
