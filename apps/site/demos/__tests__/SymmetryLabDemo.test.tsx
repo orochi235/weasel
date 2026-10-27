@@ -30,7 +30,7 @@ afterEach(() => {
 type Node = {
   id: string; parent?: string;
   pose: { x: number; y: number; width: number; height: number };
-  data: { path?: { coords: ArrayLike<number> } };
+  data: { path?: { coords: ArrayLike<number> }; symmetry?: { glideRows?: boolean } };
 };
 const nodes = () => window.__weaselTest!.getScene().nodes as unknown as Node[];
 const node = (id: string) => nodes().find((n) => n.id === id)!;
@@ -86,5 +86,15 @@ describe('SymmetryLabDemo', () => {
     const before = nodes().length;
     drag(canvas, [100, 60], [140, 90]);
     expect(nodes().slice(before).map((n) => n.parent ?? null)).toEqual([null]);
+  });
+
+  it('turns the glide onto rows and back from its checkbox', async () => {
+    await mount();
+    const rows = screen.getByRole('checkbox', { name: 'Glide rows' });
+    expect(rows).not.toBeChecked();
+    await userEvent.click(rows);
+    expect(node(GROUP_ID).data.symmetry?.glideRows).toBe(true);
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Glide rows' }));
+    expect(node(GROUP_ID).data.symmetry?.glideRows ?? false).toBe(false);
   });
 });
