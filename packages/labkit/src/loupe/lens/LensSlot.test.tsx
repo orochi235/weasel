@@ -296,7 +296,12 @@ describe('LensSlot and LensChrome', () => {
           registry?.register({
             id: 'loupe.source.pixels',
             label: 'Source: pixels',
-            invoker: { timing: 'immediate', run: () => { landed.push(current); } },
+            invoker: {
+              timing: 'immediate',
+              run: () => {
+                landed.push(current);
+              },
+            },
           } satisfies Action),
         [registry],
       );
