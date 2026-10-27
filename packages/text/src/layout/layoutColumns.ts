@@ -69,6 +69,11 @@ export class LayoutColumns {
     ref[r] = e.resolved; ref[r + 1] = e.metrics; ref[r + 2] = e.font; ref[r + 3] = e.glyph;
   }
 
+  /** Lengthen code point `i`'s step by `by`: the kerning the pen takes after it. */
+  widen(i: number, by: number): void {
+    this.num[i * NUM + STEP] += by;
+  }
+
   /** Record that the `slot`-th code point the pen reaches on the line starting
    *  at `start` is the line's `pos`-th in logical order. */
   setVisual(start: number, slot: number, pos: number): void {

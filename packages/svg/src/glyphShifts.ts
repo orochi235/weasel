@@ -35,11 +35,21 @@ interface Lists {
   raw: { dx: string | null; x: string | null };
 }
 
-type Cells = ReturnType<typeof layoutRuns>['lines'][number]['cells'];
+type Line = ReturnType<typeof layoutRuns>['lines'][number];
+type Cells = Line['cells'];
+
+/** Each glyph's pen, by cell: its left edge, or in right-to-left text the
+ *  right edge of the glyph itself. A cell's advance would carry the kerning
+ *  before the glyph to its left past that edge. */
+function pensOf(line: Line, rtl: boolean): number[] {
+  const pens = line.cells.map((c) => c.x);
+  if (rtl) for (const g of line.glyphs) pens[g.cell] = g.x + g.advance;
+  return pens;
+}
 
 /** `run`'s cells on a line of its own, or `null` where the layout does not
  *  give one per glyph. */
-function cellsOf(run: StyledRun, style: TextStyle, rtl: boolean): { cells: Cells; width: number } | null {
+function cellsOf(run: StyledRun, style: TextStyle, rtl: boolean): { cells: Cells; line: Line; width: number } | null {
   const resolved = resolveTextStyle(style);
   const { lines } = layoutRuns(resolveRuns([run], resolved), {
     maxWidth: Infinity, lineHeight: resolved.lineHeight, align: rtl ? 'right' : 'left',
@@ -47,7 +57,7 @@ function cellsOf(run: StyledRun, style: TextStyle, rtl: boolean): { cells: Cells
   });
   const line = lines[0];
   if (lines.length !== 1 || !line || line.cells.length !== Array.from(run.text).length) return null;
-  return { cells: line.cells, width: line.x1 - line.x0 };
+  return { cells: line.cells, line, width: line.x1 - line.x0 };
 }
 
 /** Whether every cell reads the paragraph's way: a shift that moves the
@@ -60,8 +70,8 @@ const allRead = (cells: Cells, rtl: boolean): boolean => cells.every((c) => c.le
 function penPositions(run: StyledRun, style: TextStyle, rtl: boolean): number[] | null {
   const laid = cellsOf(run, style, rtl);
   if (!laid || !(laid.width > 0) || !allRead(laid.cells, rtl)) return null;
-  const pen = (c: Cells[number]): number => (rtl ? c.x + c.advance : c.x);
-  return laid.cells.map((c) => pen(c) - pen(laid.cells[0]!));
+  const pens = pensOf(laid.line, rtl);
+  return pens.map((p) => p - pens[0]!);
 }
 
 /**
@@ -215,7 +225,8 @@ function foldTextPositions(
     return 'in right-to-left text it is read only where a bidi engine says every glyph reads right to left';
   }
   const placed = Math.min(x.length, glyphs);
-  const pen = (i: number): number => (rtl ? line.cells[i]!.x + line.cells[i]!.advance : line.cells[i]!.x);
+  const pens = pensOf(line, rtl);
+  const pen = (i: number): number => pens[i]!;
   const at = (i: number): number => x[i]! + (dx[i] ?? 0);
   return Array.from({ length: Math.max(dx.length, placed) }, (_, i) => (
     i === 0 || i >= placed ? dx[i] ?? 0 : at(i) - at(i - 1) - (pen(i) - pen(i - 1))

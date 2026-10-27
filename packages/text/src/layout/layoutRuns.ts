@@ -43,8 +43,8 @@ import { isHardLineBreak } from './lineBreak/lineBreaks';
 /**
  * One advance cell: a single code point's slot on a line.
  *
- * A cell spans its code point *plus* the kerning that precedes the next one,
- * so a caret snapped to the midpoint between two `x`s lands where the glyphs
+ * A cell spans its code point *plus* the kerning that precedes the glyph to
+ * its right, so a caret snapped to the midpoint between two `x`s lands where the glyphs
  * were actually painted rather than where an unkerned re-measure would put it.
  */
 export interface LaidOutCell {
@@ -63,7 +63,10 @@ export interface LaidOutCell {
    *  order; never assume `cells[i + 1].x` is this cell's right edge. */
   x: number;
   /** Width of the cell: its glyph's advance, plus its run's tracking when it
-   *  closes a grapheme cluster, plus a justified gap's share of the slack. */
+   *  closes a grapheme cluster, plus a justified gap's share of the slack,
+   *  plus the kerning before the glyph to its right. A cell ends at its right
+   *  neighbor's `x`, except across a combining mark that takes no room: the
+   *  mark keeps 0 and the glyph it sits on takes the kerning. */
   advance: number;
   /** Resolved bidi embedding level — even reads left-to-right. 0 with no
    *  engine, which is the same as saying the text was laid out logically. */
@@ -116,8 +119,9 @@ export interface PlacedGlyph {
   baselineY: number;
   /** The glyph's own advance. */
   advance: number;
-  /** How far the pen moved past it: `advance`, its run's tracking, and a
-   *  justified gap's share of the slack. */
+  /** How far the pen moved past it: `advance`, its run's tracking, a
+   *  justified gap's share of the slack, and the kerning before the next glyph
+   *  along the line. */
   step: number;
 }
 

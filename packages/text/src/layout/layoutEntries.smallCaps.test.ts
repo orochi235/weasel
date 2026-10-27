@@ -30,7 +30,7 @@ describe('layoutRuns — small caps', () => {
     // A advances 23 at 32; the A→B pair kerns -1 at A's size.
     expect(b.x).toBeCloseTo(22, 9);
     expect(b.advance).toBeCloseTo(22 * K, 9);
-    expect(a.advance).toBe(23);
+    expect(a.advance).toBe(22);
     const [qa, qb] = out.groups[0].quads;
     expect(qb.x1 - qb.x0).toBeCloseTo(20 * K, 9);
     expect(qa.x1 - qa.x0).toBe(22);
