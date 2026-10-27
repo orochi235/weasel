@@ -375,6 +375,13 @@ describe('createClock', () => {
         rate: 0,
       });
     });
+
+    it('records an origin other than the declared one', () => {
+      const h = createClock({ duration: 100, origin: -20 });
+      expect(clockPosition(h.clock, 100, -20)).toEqual({ elapsed: 0, rate: 0 });
+      h.override({ origin: -50 });
+      expect(clockPosition(h.clock, 100, -20)).toEqual({ elapsed: 30, rate: 0, origin: -50 });
+    });
   });
 
   describe('start', () => {
@@ -412,5 +419,23 @@ describe('createClock', () => {
       expect(() => createClock({ rates: [] })).toThrow(RangeError);
       expect(() => createClock({ rates: [1, 0] })).toThrow(RangeError);
     });
+  });
+});
+
+describe('a subscriber that throws', () => {
+  it('does not stop the subscribers after it', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { clock } = createClock({ duration: 100 });
+    const heard = vi.fn();
+    clock.subscribe(() => {
+      throw new Error('boom');
+    });
+    clock.subscribe(heard);
+    expect(() => {
+      clock.rate = 1;
+    }).not.toThrow();
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(logged).toHaveBeenCalledTimes(1);
+    logged.mockRestore();
   });
 });

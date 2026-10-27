@@ -6,13 +6,18 @@ import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
 import { checkDuration, checkOrigin, checkRate, checkSpeed, ratesOf } from './validate';
 
 /** Where `clock` stands, for a record to reopen it at; `declared` is the
- *  duration its spec gave. */
-export function clockPosition(clock: Clock, declared: number | undefined): ClockPosition {
+ *  duration its spec gave, and `declaredOrigin` the origin. */
+export function clockPosition(
+  clock: Clock,
+  declared: number | undefined,
+  declaredOrigin = 0,
+): ClockPosition {
   const duration = declared ?? Number.POSITIVE_INFINITY;
   return {
     elapsed: clock.elapsed,
     rate: clock.rate,
     ...(clock.duration !== duration ? { duration: clock.duration } : {}),
+    ...(clock.origin !== declaredOrigin ? { origin: clock.origin } : {}),
     ...(clock.phase === 1 && !clock.ended ? { passEnd: true as const } : {}),
   };
 }
@@ -77,19 +82,39 @@ function setDuration(run: Run, hub: Hub, next: number): void {
   hub.subs.emit();
 }
 
-function declareRun(run: Run, hub: Hub, spec: ClockSpec): void {
-  const duration = spec.duration ?? Number.POSITIVE_INFINITY;
-  const origin = spec.origin ?? 0;
-  const speed = spec.speed ?? (Math.abs(run.rate) || 1);
+/** The four fields `declare` takes up, resolved. */
+interface Declared {
+  duration: number;
+  origin: number;
+  loop: boolean | number;
+  speed: number;
+}
+
+/** A runtime replacement for the declared `duration` and `origin`; see `ClockHandle.override`. */
+type SpanOverride = { duration?: number; origin?: number } | null;
+
+function declaredOf(run: Run, spec: ClockSpec): Declared {
+  return {
+    duration: spec.duration ?? Number.POSITIVE_INFINITY,
+    origin: spec.origin ?? 0,
+    loop: spec.loop ?? false,
+    speed: spec.speed ?? (Math.abs(run.rate) || 1),
+  };
+}
+
+/** Takes up `declared` with `override` laid over it, keeping the shown time, clamped. */
+function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride): void {
+  const duration = override?.duration ?? declared.duration;
+  const origin = override?.origin ?? declared.origin;
   checkDuration(duration);
   checkOrigin(origin);
-  checkSpeed(speed);
+  checkSpeed(declared.speed);
   const shown = run.origin + run.elapsed;
   run.duration = duration;
-  run.loop = spec.loop ?? false;
+  run.loop = declared.loop;
   run.span = duration * passesOf(run.loop);
   run.origin = origin;
-  run.speed = speed;
+  run.speed = declared.speed;
   run.elapsed = clamp(run, shown - origin);
   run.edge = false;
   change(run, hub);
@@ -258,6 +283,14 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   const clock = clockOf(run, hub, seekable, rates);
   hub.follow(run.elapsed);
 
+  let declared: Declared = {
+    duration: spec.duration ?? Number.POSITIVE_INFINITY,
+    origin: run.origin,
+    loop: run.loop,
+    speed: run.speed,
+  };
+  let override: SpanOverride = null;
+
   return {
     clock,
     mix,
@@ -270,7 +303,14 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
       change(run, hub);
       hub.subs.emit();
     },
-    declare: (next) => declareRun(run, hub, next),
+    declare(next) {
+      declared = declaredOf(run, next);
+      applyRun(run, hub, declared, override);
+    },
+    override(next) {
+      override = next ? { ...next } : null;
+      applyRun(run, hub, declared, override);
+    },
     onFrame: hub.frames.subscribe,
   };
 }

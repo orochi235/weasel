@@ -101,6 +101,8 @@ export interface ClockPosition {
   rate: number;
   /** Absent when the clock still ran at its declared duration. */
   duration?: number;
+  /** Absent when the clock still showed its declared origin. */
+  origin?: number;
   /** It stood at the end of a pass another follows, as `seek(…, 'end')` leaves it. */
   passEnd?: true;
 }
@@ -120,6 +122,10 @@ export interface ClockHandle {
    *  and rate are left alone. Notifies like a seek. Unlike assigning
    *  `duration`, this does not keep `phase`. */
   declare(spec: ClockSpec): void;
+  /** Replaces the declared `duration` and `origin` with `span`'s, where it
+   *  gives them, until called with `null`; a later `declare` changes what lies
+   *  under it, not the override. Keeps the shown time, clamped, like `declare`. */
+  override(span: { duration?: number; origin?: number } | null): void;
   /** Called after each sync that moved the clock or followed a change. */
   onFrame(fn: (elapsed: number, pass: number) => void): () => void;
 }

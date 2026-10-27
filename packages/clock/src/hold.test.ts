@@ -80,4 +80,13 @@ describe('holdAt', () => {
     expect(h.clock.elapsed).toBe(2500);
     expect(hold.pending()).toBeNull();
   });
+  it('holds a time on a pass boundary of a looping clock as the end of the pass before', () => {
+    const h = createClock({ duration: 1000, loop: true });
+    const hold = holdAt(h, 1000);
+    expect(h.clock.elapsed).toBe(1000);
+    expect([h.clock.pass, h.clock.phase]).toEqual([0, 1]);
+    expect(hold.pending()).toBeNull();
+    holdAt(h, 0);
+    expect([h.clock.pass, h.clock.phase]).toEqual([0, 0]);
+  });
 });

@@ -29,7 +29,7 @@ export function useLabClocks(
     const lab = clocks.shared;
     if (!lab) return;
     return lab.clock.subscribe(() =>
-      records.set(LAB_CLOCK_RECORD, clockPosition(lab.clock, spec?.duration)),
+      records.set(LAB_CLOCK_RECORD, clockPosition(lab.clock, spec?.duration, spec?.origin)),
     );
   }, [clocks, spec, records]);
   useClockLoop(clocks);

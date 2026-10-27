@@ -33,7 +33,11 @@ export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold 
   const place = (): void => {
     busy = true;
     try {
-      clock.seek(shown === null ? 0 : shown - clock.origin);
+      const within = shown === null ? 0 : shown - clock.origin;
+      const { duration } = clock;
+      // A time on a pass boundary is held as the end of the pass before, not the start of the next.
+      const boundary = within > 0 && Number.isFinite(duration) && within % duration === 0;
+      clock.seek(within, boundary ? 'end' : 'start');
     } finally {
       busy = false;
     }

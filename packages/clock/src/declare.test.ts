@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createClock } from './clock';
 
 describe('clock origin, speed and declare', () => {
@@ -55,5 +55,23 @@ describe('clock origin, speed and declare', () => {
     const h = createClock({ duration: 100 });
     expect(() => h.declare({ speed: -1 })).toThrow(RangeError);
     expect(() => h.declare({ duration: 0 })).toThrow(RangeError);
+  });
+  it('override replaces the span until lifted, and a declare under it changes only what lies beneath', () => {
+    const h = createClock({ duration: 1000 });
+    h.clock.seek(600);
+    h.override({ duration: 4000, origin: -500 });
+    expect([h.clock.duration, h.clock.origin, h.clock.origin + h.clock.elapsed]).toEqual([4000, -500, 600]);
+    h.declare({ duration: 2000, speed: 3 });
+    expect([h.clock.duration, h.clock.origin, h.clock.speed]).toEqual([4000, -500, 3]);
+    h.override(null);
+    expect([h.clock.duration, h.clock.origin, h.clock.origin + h.clock.elapsed]).toEqual([2000, 0, 600]);
+  });
+  it('override takes only the fields it gives, and notifies once', () => {
+    const h = createClock({ duration: 1000, origin: -200 });
+    const heard = vi.fn();
+    h.clock.subscribe(heard);
+    h.override({ duration: 3000 });
+    expect([h.clock.duration, h.clock.origin]).toEqual([3000, -200]);
+    expect(heard).toHaveBeenCalledTimes(1);
   });
 });
