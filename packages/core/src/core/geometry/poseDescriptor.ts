@@ -9,6 +9,13 @@ export interface RotatedPose extends Bounds {
   rotation: number;
 }
 
+/** One pose before and after a translate, handed to the translate of another
+ *  pose in the same move. Both are world poses. */
+export interface TranslateLead<TPose> {
+  readonly from: TPose;
+  readonly to: TPose;
+}
+
 /**
  * Bridges arbitrary `TPose` shapes into the kit's bounds-driven math: bounds
  * are read via `getBounds`, and `remapBounds` projects a result back into
@@ -26,8 +33,14 @@ export interface PoseDescriptor<TPose, TNode = unknown> {
   fromBounds(bounds: Bounds, template: TPose): TPose;
   /** Translate the pose by (dx, dy). Optional — when omitted, callers fall
    *  back to a translation derived from `remapBounds` (origin shifted, no
-   *  scale). Path-shaped poses should provide this for performance. */
-  translate?(pose: TPose, dx: number, dy: number): TPose;
+   *  scale). Path-shaped poses should provide this for performance.
+   *
+   *  `lead`, when given, is how another pose in the same move went under this
+   *  same (dx, dy). A descriptor for which (dx, dy) is one translation for
+   *  every pose ignores it. One that resolves it from where the pose sits, as
+   *  under a perspective camera, moves `pose` by the lead's own change, so a
+   *  move of several lands each of them by the amount it landed the lead. */
+  translate?(pose: TPose, dx: number, dy: number, lead?: TranslateLead<TPose>): TPose;
   /** Interpolate between two poses. Optional — animation helpers fall back to
    *  rect-shape lerp when omitted (which fails for non-rect poses). */
   lerp?(a: TPose, b: TPose, t: number): TPose;
@@ -222,8 +235,9 @@ export function translatePoseViaDescriptor<TPose>(
   dx: number,
   dy: number,
   geometry: PoseDescriptor<TPose>,
+  lead?: TranslateLead<TPose>,
 ): TPose {
-  if (geometry.translate) return geometry.translate(pose, dx, dy);
+  if (geometry.translate) return lead ? geometry.translate(pose, dx, dy, lead) : geometry.translate(pose, dx, dy);
   const src = geometry.getBounds(pose);
   const dst = { x: src.x + dx, y: src.y + dy, width: src.width, height: src.height };
   return geometry.remapBounds(pose, src, dst);

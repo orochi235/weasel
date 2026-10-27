@@ -1,6 +1,6 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Affine } from '@weasel-js/geom';
-import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { translatePoseViaDescriptor, type PoseDescriptor, type TranslateLead } from 'core/geometry/poseDescriptor';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -20,13 +20,14 @@ export const MOVE_NODES_REQUIRES = [
 /**
  * One transform op per id, translating its authored pose by the stored-frame
  * delta `deltaOf` gives it, plus its data-held geometry's op when a
- * `geometryProjection` is wired. An id `deltaOf` answers null for is skipped.
+ * `geometryProjection` is wired. An id `deltaOf` answers null for is skipped,
+ * and one it answers with a `lead` is translated with it.
  * Every translate commit — a drag, a nudge, {@link moveNodes} — builds its ops here.
  */
 export function translateNodeOps(
   scene: AnyScene,
   ids: Iterable<NodeId>,
-  deltaOf: (id: NodeId) => { dx: number; dy: number } | null,
+  deltaOf: (id: NodeId) => { dx: number; dy: number; lead?: TranslateLead<unknown> } | null,
   descriptorOf: (id: NodeId) => PoseDescriptor<unknown>,
   geometryProjection: GeometryProjection | undefined,
   label: string,
@@ -41,7 +42,7 @@ export function translateNodeOps(
     // pose is its derivation, and writing that back would lose the
     // placeholder undo restores.
     const from = node.pose;
-    const to = translatePoseViaDescriptor(from, l.dx, l.dy, descriptorOf(id));
+    const to = translatePoseViaDescriptor(from, l.dx, l.dy, descriptorOf(id), l.lead);
     ops.push(createTransformOp<unknown>({ id: id as string, from, to, label }));
     const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
     const dataOp = geometryDataOp(geometryProjection, { id: id as string, data: node.data, pose: from }, m, to, label);
@@ -69,11 +70,19 @@ export function moveNodesOps(
   if (dx === 0 && dy === 0) return [];
   const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps?.poseDescriptor));
   const frame = scenePoseFrame(scene);
-  const targets = translateTargets(scene, frame, moveSources(scene, ids));
+  const sources = moveSources(scene, ids);
+  const targets = translateTargets(scene, frame, sources);
+  // The first one stored in world space leads the rest, as in a drag.
+  const inWorld = targets.filter((id) => frame.frame(id) === null);
+  const first = inWorld.find((id) => id === sources[0]) ?? inWorld[0];
+  const from = first === undefined ? undefined : scene.get(first)?.pose;
+  const lead: TranslateLead<unknown> | undefined = first === undefined || from === undefined
+    ? undefined
+    : { from, to: translatePoseViaDescriptor(from, dx, dy, descriptorOf(first)) };
   return translateNodeOps(
     scene,
     targets,
-    (id) => storedDelta(frame, descriptorOf(id), id, dx, dy),
+    (id) => frame.frame(id) === null && lead ? { dx, dy, lead } : storedDelta(frame, descriptorOf(id), id, dx, dy),
     descriptorOf,
     deps?.geometryProjection,
     label,

@@ -1,7 +1,7 @@
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { translateNodeOps } from '../moveNodes';
-import { localDelta } from './delta';
+import { localDelta, storedLeadFor } from './delta';
 import type { MoveSession } from './session';
 
 /** The default translate commit: one transform op per id, plus the data-held
@@ -16,7 +16,9 @@ export function translateOps(session: MoveSession, ids: Iterable<NodeId>, delta:
       // A moving frame carries the drag; a catch mid-glide is the node's own.
       if (session.carried.has(id)) return c ?? null;
       const l = localDelta(session, id, delta.dx, delta.dy);
-      return c ? { dx: l.dx + c.dx, dy: l.dy + c.dy } : l;
+      if (c) return { dx: l.dx + c.dx, dy: l.dy + c.dy };
+      const lead = storedLeadFor(session, id, delta.dx, delta.dy);
+      return lead ? { ...l, lead } : l;
     },
     session.descriptorOf,
     session.geometryProjection,

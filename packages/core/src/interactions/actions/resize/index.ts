@@ -4,6 +4,7 @@ export {
   ROTATED_POSE_DESCRIPTOR,
   poseDescriptorForNode,
   type PoseDescriptor,
+  type TranslateLead,
 } from './geometry';
 export {
   cornerResizeHandles,

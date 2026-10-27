@@ -7,7 +7,8 @@ export interface Subject3d {
   /** The union of the subject's world boxes. */
   box: Aabb;
   /** The node whose `translate` the session answers for exactly: the first
-   *  of the subject still in the scene. */
+   *  of the subject still in the scene, which is the move's lead, so every
+   *  other root follows it onto what it snapped to. */
   anchor: { box: Aabb; height: number };
 }
 

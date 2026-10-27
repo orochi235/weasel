@@ -68,6 +68,12 @@ function onPlane(
   return t === null ? null : pointOnRay(ray, t);
 }
 
+/** `pose` moved by `delta`, kept at its own height along `upAxis`. */
+function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: 'x' | 'y' | 'z'): Pose3 {
+  const position = { ...add(pose.position, delta), [upAxis]: pose.position[upAxis] };
+  return { ...pose, position };
+}
+
 export { screenBoxOf } from './pickIndex';
 
 /**
@@ -286,34 +292,21 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         };
       },
 
-      /** Screen-space deltas resolve against the plane the node already sits on. */
-      translate(pose, dx, dy) {
+      /**
+       * Screen-space deltas resolve against the plane the node already sits
+       * on. That plane differs per node, so in a move of several each follows
+       * the lead's world delta instead, and the group moves as one body.
+       */
+      translate(pose, dx, dy, lead) {
+        if (lead) return movedOnLevel(pose, sub(lead.to.position, lead.from.position), upAxis);
         const vp = castableViewport();
-        if (!vp) return pose;
-        const box = boundsIn(vp, pose);
-        if (!box) return pose;
+        const box = vp && boundsIn(vp, pose);
+        if (!vp || !box) return pose;
         const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-        const to = { x: from.x + dx, y: from.y + dy };
-        const offset = dot(up, pose.position);
-
-        const ray = rayAt(vp, to);
-        if (!ray) return pose;
-        const t = intersectRayPlane(ray, up, offset);
-        if (t === null) return pose;
-
-        const anchorRay = rayAt(vp, from);
-        if (!anchorRay) return pose;
-        const anchorT = intersectRayPlane(anchorRay, up, offset);
-        if (anchorT === null) return pose;
-
-        const delta = sub(pointOnRay(ray, t), pointOnRay(anchorRay, anchorT));
-        const position = {
-          x: pose.position.x + delta.x,
-          y: pose.position.y + delta.y,
-          z: pose.position.z + delta.z,
-        };
-        position[upAxis] = pose.position[upAxis];
-        return { ...pose, position };
+        const level = { normal: up, offset: dot(up, pose.position) };
+        const before = onPlane(vp, level, from);
+        const after = onPlane(vp, level, { x: from.x + dx, y: from.y + dy });
+        return before && after ? movedOnLevel(pose, sub(after, before), upAxis) : pose;
       },
 
       supportsRotation() {
