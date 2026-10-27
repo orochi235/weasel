@@ -7,7 +7,7 @@ import type { BodyClassification } from '@weasel-js/gestures';
 import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
 import type { Contribution } from '../../contributions/types';
 import type { DepSchema } from '../../index';
-import type { AffordanceHit } from '../actions/invoker';
+import type { AffordanceHit, WorldPoint } from '../actions/invoker';
 import type { ActionsRegistry } from '../actions/registry';
 import type { Dispatcher } from './dispatcherApi';
 import type { DispatchTrace } from './dispatchTrace';
@@ -126,14 +126,14 @@ export interface UseGestureDispatcherOptions {
    * for the gesture. As a binding it would lose to `enterPathEdit` on any
    * body hit and silently never fire.
    */
-  onDoubleClick?: (world: { x: number; y: number }) => void;
+  onDoubleClick?: (world: WorldPoint) => void;
   /**
    * Observer fired on every synthesized click, in world coordinates — an
    * observer for the same reason as `onDoubleClick`. Unlike it, this runs
    * AFTER the click is dispatched, so whatever the click's binding changed
    * (a pick, say) is already readable.
    */
-  onClick?: (world: { x: number; y: number }) => void;
+  onClick?: (world: WorldPoint) => void;
   /**
    * Default true. Set false to leave the window `keydown`/`keyup` listeners
    * unattached so keyboard-bound actions never dispatch — pointer, wheel, and
@@ -159,7 +159,7 @@ export interface UseGestureDispatcherOptions {
    * is always `undefined`. `<SceneCanvas>` wires the full chrome→dispatcher
    * bridge.
    */
-  affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
+  affordanceAt?: (worldPoint: WorldPoint) => AffordanceHit | null;
 
   /**
    * Optional body classifier. Called on every pointerdown with the world-space
@@ -172,7 +172,7 @@ export interface UseGestureDispatcherOptions {
    * never matches — bindings using those specs are silently skipped.
    * `<SceneCanvas>` wires this.
    */
-  classifyTarget?: (worldPoint: { x: number; y: number }) => BodyClassification;
+  classifyTarget?: (worldPoint: WorldPoint) => BodyClassification;
 
   /**
    * Optional pre-created `Dispatcher`. When provided, this hook pumps events
@@ -196,7 +196,7 @@ export interface UseGestureDispatcherOptions {
    * positions (marquee, lasso polyline, world-space affordances).
    * `<SceneCanvas>` always wires this via its canvas rect + current view.
    */
-  clientToWorld?: (clientX: number, clientY: number) => { x: number; y: number };
+  clientToWorld?: (clientX: number, clientY: number) => WorldPoint;
 
   /**
    * Converts a client point to CSS pixels from the canvas's top-left: where

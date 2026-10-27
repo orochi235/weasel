@@ -21,6 +21,16 @@ export type { ModifierState } from '../../vocabulary';
 export type Point2 = Point;
 
 /**
+ * A point in the space the dispatcher's `clientToWorld` maps the pointer into:
+ * the world, on a 2D canvas. A host with a camera of its own, such as a
+ * `@weasel-js/kernel3d` scene, passes identity, so there it is the pane's
+ * screen point and the deps reading it cast a ray through the camera they
+ * close over. Every world point the dispatcher hands out, and every dep
+ * payload it reaches, is one of these.
+ */
+export type WorldPoint = Point2;
+
+/**
  * Which UI affordance was hit at pointerdown. Populated by the dispatcher when
  * the `affordanceAt` thunk is provided to `useGestureDispatcher`.
  *
@@ -71,7 +81,7 @@ export interface AffordanceHit {
  * The stylus fields are absent for mouse/touch on browsers that don't report
  * them, and for synthetic events.
  */
-export interface DragSample extends Point2 {
+export interface DragSample extends WorldPoint {
   /** 0..1. Mouse/touch report 0.5 while a button is held, per the spec. */
   pressure?: number;
   /** Degrees, ±90. Zero for mouse/touch. */
@@ -84,7 +94,7 @@ export interface DragSample extends Point2 {
  *  Gesture-kind-specific fields (`drag`, `wheel`, `multiTouch`, `key`) are
  *  populated only for matching gesture kinds. */
 export interface InvocationCtx {
-  world: Point2;
+  world: WorldPoint;
   /**
    * The pointer in client/screen pixels, for an action that has to place DOM
    * at the pointer. Absent on every invocation whose event carries no client
@@ -99,8 +109,8 @@ export interface InvocationCtx {
   modifiers: ModifierState;
   deps: ActionDeps;
   drag?: {
-    start: Point2;
-    current: Point2;
+    start: WorldPoint;
+    current: WorldPoint;
     delta: Point2;
     /**
      * Drag delta in the surface's own CSS pixels from the drag origin: client

@@ -1,19 +1,17 @@
 /** The `snap` dep: what a drawn or dragged point locks to. */
 
 import type { Path } from '@weasel-js/geom';
-import type { ResizeAnchor } from '@weasel-js/routing';
+import type { ResizeAnchor, WorldPoint } from '@weasel-js/routing';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { SnapGesture, SnapMark, SnapSource } from 'domains/snap/types';
-
-type Point = { x: number; y: number };
 
 /** Geometry a gesture brings to snap to that is in no scene node: what stays
  *  put of a path whose anchors it is dragging. World coords. */
 export interface SnapGeometry {
   paths?: readonly Path[];
   /** Points to snap to as anchors. */
-  anchors?: readonly Point[];
+  anchors?: readonly WorldPoint[];
 }
 
 /** What builds a gesture's input subspace while `snap.constrain` is held:
@@ -26,14 +24,14 @@ export type SnapConstrain = { step: number } | 'aspect' | 'axis';
 export interface SnapResizeBox {
   bounds: Bounds;
   /** Its frame into ctx coordinates, an affine map. Default: the identity. */
-  toWorld?: (p: Point) => Point;
+  toWorld?: (p: WorldPoint) => WorldPoint;
 }
 
 /** What a gesture tells the snap dep when it starts. Points are ctx
  *  coordinates: world in 2D. */
 export interface SnapBegin {
   gesture: SnapGesture;
-  press: Point;
+  press: WorldPoint;
   /** The subject, whose geometry offers no targets. */
   ids?: readonly string[];
   /** The container a subject not yet in the scene lands in: an insert's
@@ -45,7 +43,7 @@ export interface SnapBegin {
    *  axis-aligned. */
   box?: SnapResizeBox;
   /** Rotate, handle: the point the angle turns about. Default `press`. */
-  pivot?: Point;
+  pivot?: WorldPoint;
   /** Rotate: the subject's angle at press, radians. Default 0. */
   theta0?: number;
   /** Angle gestures: the reach as an angle, radians, in place of screen px
@@ -56,7 +54,7 @@ export interface SnapBegin {
    *  start, the previous anchor, the anchor a handle pulls from. Tangent and
    *  perpendicular targets are measured from it, a `constrain` step turns
    *  about it, and no point target on it is offered. */
-  origin?: Point;
+  origin?: WorldPoint;
   also?: SnapGeometry;
   constrain?: SnapConstrain;
   /** How the camera's world maps into the parallax plane the gesture's points
@@ -83,7 +81,7 @@ export interface SnapMods {
 
 /** Where a session put one frame's point, and the marks to draw for it. */
 export interface SnapOutcome {
-  point: Point;
+  point: WorldPoint;
   /** Whether some target holds the point. */
   held: boolean;
   marks: readonly SnapMark[];
@@ -92,7 +90,7 @@ export interface SnapOutcome {
 /** One gesture's snapping, from press to release. */
 export interface SnapSession {
   /** Where `p` lands. */
-  at(p: Point, mods: SnapMods): SnapOutcome;
+  at(p: WorldPoint, mods: SnapMods): SnapOutcome;
   /** Where the angle `theta` (radians, about `pivot`) lands. */
   angle(theta: number, mods: SnapMods): { theta: number; marks: readonly SnapMark[] };
   /** Clears the gesture's marks. */

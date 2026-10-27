@@ -141,7 +141,7 @@ export { modifierStateOf } from './interactions/dispatcher/inputFacts';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from './interactions/actions/modifierRoles';
 
 export type {
-  Point2, AffordanceHit, DragSample, InvocationCtx, BindingOpts, ActionDeps,
+  Point2, WorldPoint, AffordanceHit, DragSample, InvocationCtx, BindingOpts, ActionDeps,
   OverlayRole, OngoingOverlay, OngoingHandle, ImmediateInvoker, OngoingInvoker, Invoker,
 } from './interactions/actions/invoker';
 export {

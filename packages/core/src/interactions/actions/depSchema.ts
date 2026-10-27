@@ -18,7 +18,7 @@ import type { BoundsConstraint } from '../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
+import type { DragSample, DebugSink, LongPressState, WorldPoint } from '@weasel-js/routing';
 import type { EditAnchorsDep, FinishedEditFrame } from './editAnchorsDep';
 import type { SnapDep } from './snapDep';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
@@ -80,7 +80,7 @@ export type HitTestView = RegionPickView;
  * wants to ignore the nodes it's manipulating.
  */
 export type NodeAtPointDep = (
-  point: { x: number; y: number },
+  point: WorldPoint,
   exclude?: Iterable<NodeId>,
 ) => NodeId | null;
 
@@ -111,7 +111,7 @@ export interface LassoSelectDep {
    * `hitTestArea`.
    */
   hitTestLasso?(
-    polygon: ReadonlyArray<{ x: number; y: number }>,
+    polygon: ReadonlyArray<WorldPoint>,
     mode: 'centers' | 'intersect' | 'enclosed',
     view?: HitTestView,
   ): string[];
@@ -145,9 +145,9 @@ export type { SvgIngestOptions, SvgUnpacker, ClipboardIngestCtx, IngestionDep };
 export type InsertExtras =
   | { kind: 'rect' }
   | { kind: 'ellipse' }
-  | { kind: 'line'; a: { x: number; y: number }; b: { x: number; y: number } }
-  | { kind: 'polygon'; sides: number; rotation: number; center?: { x: number; y: number }; radius?: number }
-  | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
+  | { kind: 'line'; a: WorldPoint; b: WorldPoint }
+  | { kind: 'polygon'; sides: number; rotation: number; center?: WorldPoint; radius?: number }
+  | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: WorldPoint; outerRadius?: number }
   | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
   | { kind: 'text'; text?: string }
   /** A sticky note: a text node with a background, in the look its tool names. */
