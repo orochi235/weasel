@@ -289,8 +289,7 @@ Owner tags, after the priority (2026-10-26):
   `vitest-bench.json`. It did not run on 2026-10-21: onto's solo check (`soloBlock` in
   `~/src/onto/queuesolo.go`) counts studio's idle `brick-spot-render` service as a running job, so a
   `--solo` job never starts there.
-  The onto fix merged (onto bd536ed, 2026-10-27) and this machine's binary is rebuilt; the re-record waits on
-  the queue host's agent running the new binary (`soloBlock` runs in `queuehost.go`).
+  The onto fix is on every node as of 2026-10-27 (onto bd536ed), so the re-record can run.
 
 ---
 
@@ -829,15 +828,6 @@ only story runner in the repo.
   Splitting the project across 2 or 3 Chromium processes (vitest `--shard` per process) is untested:
   run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
   every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
-- **(P2) [agent] `onto logs` drops stderr, so a fleet run's log never says why a test failed.** vitest
-  writes its failure report to stderr; `onto do` shows it live, but `onto logs <job>` keeps stdout
-  only, so a finished job's log holds the failing test's name and nothing else (tested 2026-10-21
-  with a test failing on purpose, job 401c89a8). This is onto's (`~/src/onto`), not this repo's. Until
-  it changes, a browser test can print its own diagnosis with `console.log`, which does reach the log
-  (`LabFit.browser.test.tsx` does).
-  Fixed in onto (merged as bd536ed, 2026-10-27; this machine's binary rebuilt); retire it once the binary is
-  pushed to the nodes.
-
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
@@ -898,16 +888,6 @@ only story runner in the repo.
   10-15 and 10-17 (fault `0x89` in `MarkingWorklists::~Local`) are the only ones it might have
   answered. Before removing it, run the jsdom projects on teitou without it a few times and check
   `~/Library/Logs/DiagnosticReports/node-*.ips` there for new reports.
-
-- **(P3) [agent] `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
-  onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
-  longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check
-  on this side, in every shard. `--spread` calls `prepare()` once and runs its shards outside the retry, since
-  retrying would rerun groups already finished. The fix reaches a machine when its `onto` binary
-  is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
-  `onto push <node>`.
-  Fixed in onto (merged as bd536ed, 2026-10-27; this machine's binary rebuilt); retire it once the binary is
-  pushed to the nodes.
 
 - **(P3) [agent] The overlap's jsdom worker count subtracts busy cores the reserve sweep never did.**
   `roomToOverlap` (`scripts/lib/node-load.mjs`) gives jsdom `floor(cores - busy) - reserve` workers, but
