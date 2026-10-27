@@ -139,9 +139,24 @@ describe('a per-glyph x list, where a loaded face measures the glyphs', () => {
     expect(spacing(node)).toEqual([['A', 9], ['B', -3], ['A', undefined]]);
   });
 
-  it('leaves a text\'s list unread, and says why, where a tspan it reaches has its own x', () => {
-    const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 50" y="40">A<tspan x="30">BA</tspan></text>');
-    expect(warnings).toEqual([expect.stringMatching(/<text x="0 30 50"> positions each glyph; only the first value is read: a <tspan> it reaches has its own x/)]);
+  it('takes each glyph\'s x from its own tspan where that has one, and from the text past the tspan\'s list', () => {
+    const agrees = text('<text font-family="inter" font-size="32" x="0 30 50" y="40">A<tspan x="30">BA</tspan></text>');
+    expect(agrees.warnings).toEqual([]);
+    expect(spacing(agrees.node)).toEqual([['A', 8], ['B', -2], ['A', undefined]]);
+    const own = text('<text font-family="inter" font-size="32" x="0 30 50" y="40">A<tspan x="40 60">BA</tspan></text>');
+    expect(own.warnings).toEqual([]);
+    expect(spacing(own.node)).toEqual([['A', 18], ['B', -2], ['A', undefined]]);
+  });
+
+  it('adds a tspan\'s own dx list to the text\'s positions', () => {
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 50" y="40">A<tspan dx="0 3">BA</tspan></text>');
+    expect(warnings).toEqual([]);
+    expect(spacing(node)).toEqual([['A', 8], ['B', 1], ['A', undefined]]);
+  });
+
+  it('leaves a text\'s list unread, and says why, where a tspan it reaches may start a line', () => {
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 50" y="40">A<tspan x="30" dy="0">BA</tspan></text>');
+    expect(warnings).toEqual([expect.stringMatching(/<text x="0 30 50"> positions each glyph; only the first value is read: a <tspan> it reaches may start a line/)]);
     expect(node.runs).toBeUndefined();
   });
 });
