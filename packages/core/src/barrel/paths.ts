@@ -266,6 +266,7 @@ export type {
   BendAlongEffect,
   BlendEffect,
   DerivedPart,
+  EffectBand,
   EffectItem,
   EffectSource,
   EffectSourceReader,

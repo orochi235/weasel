@@ -110,7 +110,7 @@ export { syntheticBoldOffset, emboldenGlyphD } from './syntheticBold';
 export { glyphOutlineAt } from './glyphOutlines';
 export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from './textToPath';
 export { textClusters } from './textClusters';
-export type { TextCluster, TextClustersOptions } from './textClusters';
+export type { TextCluster, TextClusterRule, TextClustersOptions } from './textClusters';
 export type {
   TextOutlineSource, TextNodeSource, TextPaintPath, TextToPathOptions, TextOutlinesFailure,
 } from './textToPath';

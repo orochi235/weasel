@@ -8,10 +8,12 @@ import {
 } from '@weasel-js/geom';
 import type { DerivedPart } from '../derivedParts';
 import type { EffectItem, EffectSource, PathEffectOptions } from './source';
+import { bandParts, type LaidItem } from './textAlongBands';
 
 /**
  * Text (or any shape) laid along a path, item by item. Its sources are `[text, path]`. Only the text's first laid line
- * follows the path; a color glyph keeps its advance and paints nothing; underlines and other decorations are not drawn.
+ * follows the path; a color glyph keeps its advance and paints nothing. An item's bands — underline, strikethrough and
+ * overline — join their alike neighbors' and bend with the path as one ribbon, while the glyphs stay rigid.
  * On an open path an item whose middle falls past either end is not drawn; on a closed one the text wraps past the
  * seam, and an item a whole lap on from the first item's start is not drawn.
  */
@@ -49,19 +51,25 @@ export function textAlongParts(effect: TextAlongEffect, items: readonly EffectIt
   const c = at + (0.5 - k) * total;
   const about = closed ? ((c / L) % 1 + 1) % 1 : clamp01(c / L);
   const run = trackRun(shape, 0, 1, { side: effect.side ?? 'auto', about });
-  const places = placeAlongRun(run, lengths, {
-    gap, align: 'center', at: run.reversed ? L - c : c, shift: finiteOr(effect.shift, 0), wrap: closed,
-  });
+  const shift = finiteOr(effect.shift, 0);
+  const places = placeAlongRun(run, lengths, { gap, align: 'center', at: run.reversed ? L - c : c, shift, wrap: closed });
   const center = effect.anchor === 'center';
   const out: DerivedPart[] = [];
+  const laid: (LaidItem | null)[] = [];
   const firstStart = places[0]!.center - lengths[0]! / 2;
   places.forEach((place, i) => {
     // By center (SVG textPath's rule), not by RunPlace.clipped, which judges by extent.
-    if (dropped(place, closed ? firstStart : null, L)) return;
+    if (dropped(place, closed ? firstStart : null, L)) {
+      laid.push(null);
+      return;
+    }
     const item = items[i]!;
-    const m = itemFrame(place, item.length, center ? item.middle : 0);
+    const lift = center ? item.middle : 0;
+    const m = itemFrame(place, item.length, lift);
     for (const part of item.parts) out.push({ ...part, path: transformPath(part.path, m) });
+    laid.push({ item, start: place.center - item.length / 2, lift });
   });
+  if (items.some((it) => it.bands !== undefined && it.bands.length > 0)) out.push(...bandParts(laid, run, shift));
   return out;
 }
 

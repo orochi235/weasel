@@ -1,6 +1,7 @@
 /**
  * A text node as a path effect's items: its first line's grapheme clusters,
- * each one's outlines in its own frame, sized as the node draws them.
+ * each one's outlines and decoration rules in its own frame, sized as the node
+ * draws them.
  */
 import { poseFrameOf, transformPath, type Affine, type PathInWorldPose } from '@weasel-js/geom';
 import {
@@ -35,6 +36,9 @@ export function textEffectItems(data: TextOutlineSource, pose: PathInWorldPose):
       path: grow === null ? p.path : transformPath(p.path, grow),
       fill: p.fill,
       stroke: p.stroke ?? null,
+    })),
+    bands: c.rules.map((r) => ({
+      x0: r.x0 * k, x1: r.x1 * k, y0: r.y0 * k, y1: r.y1 * k, fill: r.fill, stroke: r.stroke ?? null,
     })),
   }));
 }
