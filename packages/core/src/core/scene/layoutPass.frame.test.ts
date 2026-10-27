@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from './scene';
-import { RIGID_POSE_COMPOSITION, composeWorldPose } from './composePose';
+import { RIGID_POSE_COMPOSITION, composeWorldPose, type PoseAdapter } from './composePose';
 import { scenePoseAdapter } from './scenePoseAdapter';
 import { asNodeId, type RectPose } from './types';
 import type { LayoutStrategy } from '../../layout/types';
@@ -49,7 +49,7 @@ describe('layout pass on a turned container', () => {
   it('keeps every child inside the container', () => {
     const { scene, add } = setup(Math.PI / 2);
     const ids = [add(), add(), add()];
-    const doc = scenePoseAdapter(scene);
+    const doc = scenePoseAdapter(scene) as PoseAdapter<RectPose>;
     const c = composeWorldPose(doc, C, RIGID_POSE_COMPOSITION.compose);
     for (const id of ids) {
       const w = composeWorldPose(doc, id, RIGID_POSE_COMPOSITION.compose);
