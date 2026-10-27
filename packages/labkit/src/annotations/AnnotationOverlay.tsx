@@ -11,7 +11,6 @@ import {
 import {
   type CSSProperties,
   useCallback,
-  useContext,
   useEffect,
   useInsertionEffect,
   useLayoutEffect,
@@ -19,7 +18,6 @@ import {
   useState,
 } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { CameraWheelContext } from '../canvas/CameraWheelContext';
 import type { Rect } from '../surface/rect';
 import {
   useSurfaceCanvas,
@@ -41,6 +39,7 @@ import type {
   FracPoint,
 } from './types';
 import { fitView, toWeaselView } from './view';
+import { useWheelHandOff } from './wheelScroll';
 
 /** Props for `<AnnotationOverlay>`. */
 export interface AnnotationOverlayProps {
@@ -232,15 +231,7 @@ export function AnnotationOverlay({
     });
   }, [canvasRef, surface, tileId]);
 
-  // The box is portalled out of whatever the picture sits in, so a wheel over
-  // a mark would never reach the trial's camera without being handed to it.
-  const wheelSlot = useContext(CameraWheelContext);
-  useEffect(() => {
-    if (!input || !wheelSlot) return;
-    const wheel = (e: WheelEvent): void => wheelSlot.current?.(e);
-    input.addEventListener('wheel', wheel, { passive: false });
-    return () => input.removeEventListener('wheel', wheel);
-  }, [input, wheelSlot]);
+  useWheelHandOff(input, target.ref);
 
   useEffect(
     () =>
