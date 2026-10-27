@@ -134,7 +134,7 @@ describe('gridSnapSource — a container\'s own frame', () => {
     const scene = createScene<object, 'default', Bounds>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
     const ids = [3, 1].map((at) => {
       const g = scene.add({ kind: 'group', layer: 'default', pose: { x: at, y: at, width: 20, height: 20 }, data: {}, units: HALF });
-      return scene.add({ kind: 'mark', layer: 'default', parent: g, pose: { x: 10, y: 10, width: 1, height: 1 }, data: {} }) as string;
+      return scene.add({ kind: 'mark', layer: 'default', parent: g, pose: { x: 10 - at, y: 10 - at, width: 1, height: 1 }, data: {} }) as string;
     });
     const s = scene as unknown as Scene<unknown, string, unknown>;
     expectNear(moveBy({ sources: [grid], scene: s, ids }).by(1.8, -1.9).point, { x: 0, y: 0 });
