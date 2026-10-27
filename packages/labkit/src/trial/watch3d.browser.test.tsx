@@ -146,7 +146,7 @@ describe('a real three.js renderer under a declared `orbit`', () => {
 function RawGl({ depth }: { depth: boolean }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
-    const gl = ref.current?.getContext('webgl2');
+    const gl = ref.current?.getContext('webgl2', { stencil: true });
     if (!gl) return;
     if (depth) gl.enable(gl.DEPTH_TEST);
     else gl.disable(gl.DEPTH_TEST);

@@ -43,6 +43,7 @@ export function useDefaultTextEditor<TData>(
   on: boolean,
 ): DefaultTextEditor {
   const [element, setElement] = useState<HTMLElement | null>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the canvas fills elementRef on commit, so every commit rereads it; the guard stops a loop
   useLayoutEffect(() => {
     if (elementRef.current !== element) setElement(elementRef.current);
   });

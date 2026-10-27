@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { createScene } from 'core/scene/scene';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { View } from 'core/viewport/view';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 
@@ -21,7 +22,7 @@ const LENS = { x: 10, y: 220, w: 60, h: 60 };
 const LENS_VIEW: View = { x: 500, y: 500, scale: { x: 3, y: 3 } };
 
 function mount(follows: () => string | null, lensHides = false) {
-  const scene = createScene<unknown, 'main' | 'notes', unknown>({ systemLayers: [{ id: 'main' }, { id: 'notes' }] });
+  const scene = createScene<unknown, 'main' | 'notes', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }, { id: 'notes' }] });
   let registry: ViewRegistry | null = null;
   function Probe() {
     const r = useOptionalViewRegistry();
