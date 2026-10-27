@@ -97,6 +97,35 @@ describe('createSpecRouter', () => {
     expect(crosses(am, header)).toBe(false);
   });
 
+  it('routes between members of a container around the member between them, in world', () => {
+    const data: DiagramData = {
+      nodes: [
+        { id: 'p', lines: ['p'], at: { x: 120, y: 140 }, width: 60, height: 40, pinned: true },
+        { id: 'q', lines: ['q'], at: { x: 260, y: 140 }, width: 60, height: 40, pinned: true },
+        { id: 'r', lines: ['r'], at: { x: 400, y: 140 }, width: 60, height: 40, pinned: true },
+      ],
+      edges: [{ from: 'p', to: 'r' }],
+      containers: [{ id: 'k', role: 'container', label: 'K', members: ['p', 'q', 'r'], box: { x: 100, y: 100, width: 400, height: 120 }, pinned: true }],
+    };
+    const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
+    const route = edgeOf(specs, edgeIdOf({ from: 'p', to: 'r' })).route!;
+    expect(route.length).toBeGreaterThan(0);
+    const q = { x: 260, y: 140, width: 60, height: 40 };
+    const inQ = route.slice(1).some((b, i) => {
+      const a = route[i]!;
+      for (let t = 0; t <= 1; t += 0.05) {
+        const x = a.x + (b.x - a.x) * t;
+        const y = a.y + (b.y - a.y) * t;
+        if (x > q.x && x < q.x + q.width && y > q.y && y < q.y + q.height) return true;
+      }
+      return false;
+    });
+    expect(inQ).toBe(false);
+    const [first] = route;
+    expect(first!.x).toBeGreaterThanOrEqual(110);
+    expect(first!.y).toBeGreaterThanOrEqual(130);
+  });
+
   it('leaves specs without edges as they are', () => {
     const specs = diagramScene({ nodes: DATA.nodes, edges: [] }, { layout: 'none' });
     expect(createSpecRouter()(specs)).toEqual(specs);
