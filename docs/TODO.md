@@ -994,11 +994,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) Chart's "gives a wire routed under Rack back to the look from Format › Connector › Reset
-  route" timed out once.** The `locator.click` at `apps/chart/src/pipeline/pipeline.browser.test.tsx:157`
-  exceeded 38.7 s in the full fleet run of `main` at `6d941e1db` (2026-10-26). The same file passed in
-  both branch runs of that merge's code. If it recurs, look at what the menu waits on before it
-  takes a click.
 - **(P3) `segmentsAlong`'s first "a lit end segment fills the well round its cap" case fails
   intermittently.** In `packages/ui/src/components/segmentsAlong.browser.test.tsx`, only the first
   parameterized case failed, taking 329 ms where its siblings took 69. That was the full fleet run of
