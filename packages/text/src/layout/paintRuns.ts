@@ -304,6 +304,10 @@ function groupFor(
   return group;
 }
 
+/** One glyph walks a layout's columns, so painting builds no object a glyph,
+ *  nor one a painting: each glyph is read before the next is filled in. */
+const cursor = blankGlyph();
+
 /**
  * Derive what to draw for `laid`, the layout of `runs` — or of runs that
  * differ from them only in paint and decoration, which a layout does not read.
@@ -320,10 +324,8 @@ export function paintRuns(
   const decorations: LaidOutDecoration[] = [];
   const faceOf = runs.some(isDecorated) ? runFaces(runs) : null;
   // A rule is a solid rect with only a fill to paint it.
-  const rulePaint = (run: number): string | null =>
-    (fillHasInk(runs[run].fill) ? paintKey(runs[run].fill!.paint) : null);
-  // One glyph walks the layout's columns, so painting builds no object a glyph.
-  const cursor = blankGlyph();
+  const rulePaint = faceOf && ((run: number): string | null =>
+    (fillHasInk(runs[run].fill) ? paintKey(runs[run].fill!.paint) : null));
   // Most text is one group. The first to take a quad gets an array sized for
   // every glyph, trimmed at the end; any other grows as it fills.
   let glyphCount = 0;
@@ -334,7 +336,7 @@ export function paintRuns(
   for (const line of laid.lines) {
     const span = LineBox.span(line);
     const count = LineBox.count(line);
-    const rules = faceOf && lineDecorations(runs, faceOf, rulePaint);
+    const rules = faceOf && lineDecorations(runs, faceOf, rulePaint!);
     for (let slot = 0; slot < count; slot++) {
       const pos = span ? span.cols.visual(span.start, slot) : -1;
       const g = span ? span.cols.glyph(span.start, pos, cursor) : line.glyphs[slot];
