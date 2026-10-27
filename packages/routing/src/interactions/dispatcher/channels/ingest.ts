@@ -6,6 +6,8 @@
 import { itemsFromClipboardData, itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
 import { isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
+import type { InputEvent } from '../matcher';
+import { dropPreview } from './dropPreview';
 
 /** Toggled on the canvas while an OS drag hovers it; consumers style it. */
 export const DROPOVER_CLASS = 'weasel-dropover';
@@ -15,32 +17,39 @@ export function ingestInput(core: DispatchCore): {
   onDragLeave: () => void;
   onDrop: (e: DragEvent) => void;
   onPaste: (e: ClipboardEvent) => void;
+  /** Take down a drag's preview, for teardown. */
+  endPreview: () => void;
 } {
   const { canvas, routeAt, toWorld, dispatch } = core;
+  const preview = dropPreview();
 
   // Attached to both dragover and dragenter: cancelling dragenter (WHATWG)
   // guarantees the element stays the active drop target and shows the copy
   // cursor on entry rather than waiting for the first dragover tick.
   const onDragOver = (e: DragEvent) => {
     const dt = e.dataTransfer;
-    if (!dt) return;
+    if (!dt) { preview.end(); return; }
     routeAt(null, e.clientX, e.clientY);
     const w = toWorld(e.clientX, e.clientY);
-    const wanted = core.dispatcherNow().resolveOnly({
+    const event: Extract<InputEvent, { kind: 'drop' }> = {
       kind: 'drop', items: itemTypesFromDataTransfer(dt),
       x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY,
       altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
-    }, core.ctxNow()) !== null;
-    canvas?.classList.toggle(DROPOVER_CLASS, wanted);
+    };
+    const ctx = core.ctxNow();
+    const winner = core.dispatcherNow().resolveOnly(event, ctx);
+    canvas?.classList.toggle(DROPOVER_CLASS, winner !== null);
     // Left alone, a drag no binding would take stays the page's: no copy
     // cursor, and no `drop` event here to swallow.
-    if (!wanted) return;
+    if (!winner) { preview.end(); return; }
+    preview.show(event, winner, ctx);
     e.preventDefault();
     dt.dropEffect = 'copy';
   };
 
   const onDragLeave = () => {
     canvas?.classList.remove(DROPOVER_CLASS);
+    preview.end();
   };
 
   // No stopPropagation: handled-ness is only known after the async
@@ -49,6 +58,7 @@ export function ingestInput(core: DispatchCore): {
   // dispatch. Callers that need exclusivity should gate on the action result.
   const onDrop = (e: DragEvent) => {
     canvas?.classList.remove(DROPOVER_CLASS);
+    preview.end();
     const dt = e.dataTransfer;
     if (!dt) return;
     e.preventDefault();
@@ -102,5 +112,5 @@ export function ingestInput(core: DispatchCore): {
     if (result === 'handled') e.preventDefault();
   };
 
-  return { onDragOver, onDragLeave, onDrop, onPaste };
+  return { onDragOver, onDragLeave, onDrop, onPaste, endPreview: preview.end };
 }

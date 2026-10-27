@@ -213,6 +213,7 @@ export { scratchKey, getScratch, setScratch, deleteScratch } from './interaction
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
   INGEST_STRING_MIMES, admitIngestMime, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
+  pendingKindOf, type PendingIngestItem,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';

@@ -106,22 +106,37 @@ export function itemsFromDataTransfer(dt: DataTransfer): Promise<IngestItem[]> {
   return Promise.all(reads).then(() => [...files, ...strings]);
 }
 
+/** What a drag still in flight says of one item: whether it is a file or a
+ *  string, and its MIME. No `file` or `text` until the drop. */
+export interface PendingIngestItem {
+  readonly pending: 'file' | 'string';
+  readonly mime: string;
+}
+
 /**
- * What a drag still in flight says it carries: one item per flavor, MIME
- * only. A browser withholds contents until the drop, so nothing may read
- * `file` or `text` off these; they exist to ask which bindings would match.
+ * What a drag still in flight says it carries: one item per flavor, kind and
+ * MIME only. A browser withholds contents until the drop, so nothing may read
+ * `file` or `text` off these; they exist to ask which bindings would match and
+ * to preview what the drop would make. Each is typed `IngestItem` so a drop
+ * spec can be asked about it; {@link pendingKindOf} tells them apart.
  * A file the browser does not name yet (Firefox reports
  * `application/x-moz-file`, others only a `Files` type) is `UNKNOWN_MIME`.
  */
 export function itemTypesFromDataTransfer(dt: DataTransfer): readonly IngestItem[] {
-  const mimes: string[] = [];
+  const pending: PendingIngestItem[] = [];
   for (const item of Array.from(dt.items ?? [])) {
     const mime = item.type ? normalizeMime(item.type) : '';
-    if (item.kind === 'file') mimes.push(mime && mime !== 'application/x-moz-file' ? mime : UNKNOWN_MIME);
-    else if (keepsString(mime)) mimes.push(mime);
+    if (item.kind === 'file') pending.push({ pending: 'file', mime: mime && mime !== 'application/x-moz-file' ? mime : UNKNOWN_MIME });
+    else if (keepsString(mime)) pending.push({ pending: 'string', mime });
   }
-  if (mimes.length === 0 && Array.from(dt.types ?? []).includes('Files')) mimes.push(UNKNOWN_MIME);
-  return mimes.map((mime) => ({ mime })) as unknown as IngestItem[];
+  if (pending.length === 0 && Array.from(dt.types ?? []).includes('Files')) pending.push({ pending: 'file', mime: UNKNOWN_MIME });
+  return pending as unknown as IngestItem[];
+}
+
+/** Whether an item from {@link itemTypesFromDataTransfer} is a file or a
+ *  string; undefined for a materialized item, which has its `kind`. */
+export function pendingKindOf(item: IngestItem): PendingIngestItem['pending'] | undefined {
+  return (item as unknown as Partial<PendingIngestItem>).pending;
 }
 
 /** Materialize a paste's `clipboardData`. Fully synchronous. */
