@@ -7,7 +7,7 @@
  * a `?url` import as its file URL, and JSON as its value.
  *
  * Not `tsx`: it compiles with esbuild's `keepNames`, which wraps every
- * closure in a `__name()` call at creation and doubled `scene.setPose`.
+ * closure in a `__name()` call at creation, nearly tripling `scene.setPose`.
  */
 import { registerHooks } from 'node:module';
 import { readFileSync, statSync } from 'node:fs';
