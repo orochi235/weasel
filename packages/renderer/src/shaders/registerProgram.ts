@@ -79,6 +79,15 @@ export function getProgramSource(id: string): ProgramSource | null {
  * (recommended). The kit's vertex shader exposes `v_uv`, `v_screen`, and
  * `v_world` varyings plus `u_bounds` and `u_view` uniforms.
  *
+ * **`gl_FragCoord`** counts from the corner of whatever buffer the draw lands
+ * in, which is not always the canvas's: a renderer confined to a tile of a
+ * shared canvas, a group's effects and a retained layer's surface each move
+ * it. A fragment shader reading it declares `uniform vec2 u_fragOrigin;` and
+ * reads `gl_FragCoord.xy - u_fragOrigin`, the device pixel from the bottom
+ * left of the renderer's own drawing buffer. A program reading `gl_FragCoord`
+ * without declaring `u_fragOrigin` makes a retained layer holding it keep a
+ * surface the size of the whole drawing buffer.
+ *
  * **IMPORTANT — Premultiplied alpha:**
  * Your fragment shader MUST output premultiplied alpha:
  *   `outColor = vec4(rgb * a, a);`  ← correct

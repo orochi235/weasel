@@ -17,6 +17,9 @@
  *   out vec2 v_uv          0..1 across the bounds rect (top-left origin)
  *   out vec2 v_screen      screen-space pixel coordinate of this fragment
  *   out vec2 v_world       approximate world-space coordinate (via view inverse)
+ *
+ *   uniform vec2 u_fragOrigin  declared by a fragment shader reading
+ *                              gl_FragCoord, set by kit (see registerProgram)
  */
 
 /**

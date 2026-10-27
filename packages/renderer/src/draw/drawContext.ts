@@ -89,8 +89,13 @@ export interface DrawContext {
    *  framebuffer. Tracked here rather than read back with `getParameter`
    *  because a group's effects nest, and each has to restore its parent's.
    *  `restore` puts back the viewport and scissor of a target that does not
-   *  draw to the whole of `fbo` from its corner. */
-  renderTarget?: { readonly fbo: WebGLFramebuffer; restore?(): void } | null;
+   *  draw to the whole of `fbo` from its corner, and `fragOrigin` where that
+   *  target puts the drawing buffer's bottom-left corner, `[0, 0]` absent. */
+  renderTarget?: { readonly fbo: WebGLFramebuffer; restore?(): void; readonly fragOrigin?: readonly [number, number] } | null;
+  /** Where the default framebuffer puts this renderer's bottom-left corner,
+   *  in device pixels: a custom shader's `u_fragOrigin` while
+   *  `renderTarget` is `null`. Absent, `[0, 0]`. */
+  fragOrigin?: readonly [number, number];
   /** Where groups carrying `retain` keep their pixels between frames. Absent
    *  without a renderer behind the context, and then they draw straight
    *  through. */

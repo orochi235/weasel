@@ -495,6 +495,7 @@ export class WeaselRenderer {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     }
     const device = this.deviceRect();
+    const own = this.glRect();
     const { pathFill, pathFillVColor, gradFill, patternFill, batchFillMatrices } = this;
     const ctx: DrawContext = {
       gl,
@@ -527,13 +528,12 @@ export class WeaselRenderer {
       retained: this.retained,
       paintScratch: this.paintScratch,
       renderTarget: null,
+      fragOrigin: [own.x, own.y],
       deviceWidth: device.width,
       deviceHeight: device.height,
       restoreTargetRect: () => this.applyTarget(),
-      viewportWithin: (rect) => {
-        const own = this.glRect();
-        gl.viewport(own.x + rect.x, own.y + own.height - rect.y - rect.height, rect.width, rect.height);
-      },
+      viewportWithin: (rect) => gl.viewport(
+        own.x + rect.x, own.y + own.height - rect.y - rect.height, rect.width, rect.height),
       paintResources: this.paintResources,
       stats: counters,
     };

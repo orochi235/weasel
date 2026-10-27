@@ -221,6 +221,12 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
     gl.uniform4f(uBounds, cmd.bounds.x, cmd.bounds.y, cmd.bounds.w, cmd.bounds.h);
   }
 
+  const uOrigin = program.uniform('u_fragOrigin');
+  if (uOrigin !== undefined) {
+    const [ox, oy] = (ctx.renderTarget ? ctx.renderTarget.fragOrigin : ctx.fragOrigin) ?? [0, 0];
+    gl.uniform2f(uOrigin, ox, oy);
+  }
+
   const uView = program.uniform('u_view');
   if (uView !== undefined) gl.uniformMatrix3fv(uView, false, mat3.toUniform(ctx.state.transform));
 

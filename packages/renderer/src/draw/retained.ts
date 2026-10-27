@@ -110,7 +110,7 @@ function drawInto(
     gl.scissor(0, 0, rect.width, rect.height);
     gl.enable(gl.SCISSOR_TEST);
   };
-  ctx.renderTarget = { fbo, restore };
+  ctx.renderTarget = { fbo, restore, fragOrigin: [-rect.x, rect.y + rect.height - height] };
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
   restore();
