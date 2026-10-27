@@ -36,7 +36,6 @@ export function useStoreCommands(
   {
     instruments,
     clocks,
-    loadHolds,
     focusedTrialId,
     focus,
     configRules,
