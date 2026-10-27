@@ -11,7 +11,7 @@ import type { Scene } from 'core/scene/types';
  */
 export function createEnteredGroupScope(opts: {
   entered: EnteredGroupApi;
-  scene: Pick<Scene<unknown, string, unknown>, 'ancestorsOf'>;
+  scene: Pick<Scene<unknown, string, unknown>, 'ancestorsOf' | 'get'>;
   /** Alpha for a node outside the entered group. Default `OUT_OF_SCOPE_ALPHA`. */
   dimAlpha?: number;
 }): NodeScope {

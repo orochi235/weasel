@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useSyncExternalStore, type RefObject } from 'react';
+import { useCallback, useMemo, type RefObject } from 'react';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { useLatest } from '@weasel-js/react';
@@ -48,16 +48,13 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
   );
   const ownEntered = useEnteredGroup(scene);
   const enteredGroup = args.props.enteredGroup ?? ownEntered;
-  // A press resolves inside the entered group, so nothing outside it takes a hit. With nothing
-  // entered and no consumer predicate there is nothing to filter, and the walk runs bare.
+  // A press resolves inside the entered group, so nothing outside it takes a hit, and nothing a
+  // node consumes takes one until that node is entered.
   const consumerInteractive = useLatest(isPointerInteractive);
-  const anyEntered = useSyncExternalStore(enteredGroup.subscribe, () => enteredGroup.get() !== null);
-  const filtering = anyEntered || isPointerInteractive !== undefined;
   const reachable = useMemo(() => {
-    if (!filtering) return undefined;
     const scope = createEnteredGroupScope({ entered: enteredGroup, scene });
     return (id: string) => scope.isPointerInteractive(id) && consumerInteractive.current?.(id) !== false;
-  }, [filtering, enteredGroup, scene, consumerInteractive]);
+  }, [enteredGroup, scene, consumerInteractive]);
 
   const surfaceViewRegistry = useOptionalViewRegistry();
   const viewLayerGate = useViewLayerGate(
@@ -85,7 +82,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     // that once per walk instead of once per candidate.
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
-    ...(reachable ? { isPointerInteractive: reachable } : {}),
+    isPointerInteractive: reachable,
     selectTool: args.selectTool,
   });
 
@@ -101,7 +98,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
 
   return {
     ...selectTool, adapter, kindOfNode, doubleClickNames, getNodeAtPoint, viewLayerGate, enteredGroup,
-    /** What a press or a region select can reach, or undefined when that is every node. */
+    /** What a press or a region select can reach. */
     reachable,
     /** The composed paint alpha, only when the consumer fades anything. */
     alphaOf: alphaFor ? composedAlphaFor : undefined,

@@ -892,6 +892,14 @@ its children, and frames its children's poses unless it is an envelope. A child'
 `'inherit'` fill or stroke reads its parent's, whatever the parent's kind. With no
 `canDropInto` dep a group admits drops and a mark does not.
 
+**A node that consumes its children draws them only through itself** (`consumesChildren`,
+2026-10-27). The render walk paints none of them, and a press, a region select or select-all
+reaches one only while that node, or a group inside it, is entered; it is entered as a group is.
+The boolean group is the kit's one (`booleanGroupFields`): a mark deriving its path from its
+children (`booleanOfChildren`, the operation in `data.boolean`) and its pose as their envelope,
+painted in its own fill and stroke and picked by that ink. It is a mark, not a group, because
+it draws and is hit as one shape.
+
 **A node clips its children only when it declares a clip** (decided 2026-10-22): its
 `clipFromPose` when it has one, else its outline when it sets `clip: 'outline'`. That outline
 is the silhouette of whichever painter claims the node, the rect fallback's box included, read

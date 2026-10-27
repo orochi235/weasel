@@ -14,6 +14,8 @@ export interface NodeFlagsEnv<TData, TLayer extends string, TPose> {
   record(kind: string, payload: unknown, label: string): void;
   /** Drop from the selection whatever is now hidden or locked. */
   narrowSelection(): void;
+  /** Drop what derives from `id`: a derivation may leave a hidden node out. */
+  invalidateDependents(id: NodeId): void;
 }
 
 interface FlagPayload { id: NodeId; from: boolean; to: boolean }
@@ -37,11 +39,13 @@ export function createNodeFlags<TData, TLayer extends string, TPose>(
       apply: (p) => {
         const { id, to } = p as FlagPayload;
         write(env.requireNode(id), flag, to);
+        if (flag === 'hidden') env.invalidateDependents(id);
         if (to) env.narrowSelection();
       },
       revert: (p) => {
         const { id, from } = p as FlagPayload;
         write(env.requireNode(id), flag, from);
+        if (flag === 'hidden') env.invalidateDependents(id);
       },
     });
   }

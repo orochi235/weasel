@@ -52,7 +52,8 @@ function wrapInChain(
  * **that node's own `layer`** — not its parent's. A node carrying `hidden` is skipped with
  * its whole subtree; see `nodeGates`. So a child whose `layer` differs from its
  * parent draws in its own layer's pass while staying a tree child for hit-testing / move /
- * reparent. Output is one group per visible layer, in adapter (`getLayers`) order.
+ * reparent. Output is one group per visible layer, in adapter (`getLayers`) order. A node that
+ * consumes its children paints none of them.
  *
  * A node paints before its children. What its `drawOne` wraps in `overChildren` paints after
  * them instead, in the node's own layer.
@@ -68,7 +69,7 @@ function wrapInChain(
  * single camera wrap still lands it right.
  */
 export function buildSceneTree<
-  TNode extends { id: string; layer: string; hidden?: boolean },
+  TNode extends { id: string; layer: string; hidden?: boolean; consumesChildren?: boolean },
   TPose,
 >(
   adapter: HierarchicalAdapter<TNode, TPose>,
@@ -140,7 +141,7 @@ export function buildSceneTree<
 
     // An envelope's children share its own parent's frame.
     const childFrame = definesFrame(node as never) ? (scrolled ? scrolled(id, pose) : pose) : parentFrame;
-    const children = adapter.getChildren(id);
+    const children = node.consumesChildren === true ? [] : adapter.getChildren(id);
     for (const cid of children) visit(cid, ownClips, childFrame, copied);
 
     // A copy is a copy of the clipped content, so its transform encloses the

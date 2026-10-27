@@ -21,14 +21,24 @@ export interface EnteredGroupApi {
   subscribe(fn: () => void): () => void;
 }
 
-/** Whether `id` is reachable while `group` is entered: inside it, and not the group itself. With
- *  nothing entered every node is. Picking, region selects and select-all all ask this. */
+/** Whether a node is entered as a group is: a group, or a node that consumes its children. */
+export function isEnterable(node: { kind?: string; consumesChildren?: boolean } | undefined): boolean {
+  return node?.kind === 'group' || node?.consumesChildren === true;
+}
+
+/** Whether `id` is reachable while `group` is entered: inside it, and not the group itself, and
+ *  not consumed by a node inside it (`SceneNode.consumesChildren`). With nothing entered every node
+ *  no node consumes is. Picking, region selects and select-all all ask this. */
 export function reachableInGroup(
-  scene: Pick<Scene<unknown, string, unknown>, 'ancestorsOf'>,
+  scene: Pick<Scene<unknown, string, unknown>, 'ancestorsOf' | 'get'>,
   group: NodeId | null,
   id: string,
 ): boolean {
-  return group === null || scene.ancestorsOf(id as NodeId).includes(group);
+  for (const above of scene.ancestorsOf(id as NodeId)) {
+    if (above === group) return true;
+    if (scene.get(above)?.consumesChildren === true) return false;
+  }
+  return group === null;
 }
 
 type SceneReads = Pick<Scene<unknown, string, unknown>, 'get' | 'ancestorsOf' | 'subscribe'>;
@@ -39,7 +49,7 @@ export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
   let announced: NodeId | null = null;
   const listeners = new Set<() => void>();
 
-  const isGroup = (id: NodeId) => scene.get(id)?.kind === 'group';
+  const isGroup = (id: NodeId) => isEnterable(scene.get(id));
   const get = (): NodeId | null => chain.find(isGroup) ?? null;
   const groupsFrom = (id: NodeId): NodeId[] => [id, ...scene.ancestorsOf(id)].filter(isGroup);
 

@@ -1,8 +1,4 @@
 import {
-  pathUnion,
-  pathIntersect,
-  pathSubtract,
-  pathExclude,
   pathDividePieces,
   pathCropPieces,
   pathTrim,
@@ -11,6 +7,7 @@ import {
 } from '@weasel-js/geom/booleans';
 import type { Path, PolygonPath } from '@weasel-js/geom';
 import type { BooleanOp } from './booleans';
+import { booleanOfPaths } from 'core/geometry/booleanOfPaths';
 
 /** One result path, and the operand it stands in for: an index into the
  *  operands, back to front. */
@@ -31,15 +28,10 @@ export function booleanPieces(op: BooleanOp, paths: Path[], mergeKey: (index: nu
   const whole = (path: PolygonPath): ResultPiece[] => [{ path, source: top }];
   let pieces: ResultPiece[];
   switch (op) {
-    case 'union':     pieces = whole(pathUnion(...paths)); break;
-    case 'intersect': pieces = whole(pathIntersect(...paths)); break;
-    case 'exclude':   pieces = whole(pathExclude(...paths)); break;
-    case 'subtract': {
-      // Illustrator "Minus Front": back − union(everything in front).
-      const front = paths.length === 2 ? paths[1]! : pathUnion(...paths.slice(1));
-      pieces = whole(pathSubtract(paths[0]!, front));
-      break;
-    }
+    case 'union':
+    case 'intersect':
+    case 'exclude':
+    case 'subtract':  pieces = whole(booleanOfPaths(op, paths)); break;
     case 'divide':    pieces = bySource(pathDividePieces(...paths)); break;
     // Illustrator "Crop": every source below the topmost, clipped to it; the
     // topmost is consumed as the mask.

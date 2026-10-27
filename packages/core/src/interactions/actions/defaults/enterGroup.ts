@@ -1,6 +1,6 @@
 import type { Action, ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
+import { isEnterable, type EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { NodeId } from 'core/scene/types';
 import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
 import type { ImmediateParams } from '@weasel-js/routing';
@@ -51,7 +51,7 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
     const hit = opts.pickHit(p);
     if (hit === null) return null;
     const target = pressTarget(opts.tree, hit, entered.get());
-    return (opts.tree.getNode(target) as { kind?: string } | undefined)?.kind === 'group' ? target : null;
+    return isEnterable(opts.tree.getNode(target) as Parameters<typeof isEnterable>[0]) ? target : null;
   };
   return {
     id: 'group.enter',
