@@ -4,6 +4,37 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## Agent TODO batches 2–8, merged 2026-10-26/27 (not pushed)
+
+Seven batches of `[agent]` entries from `docs/TODO.md` merged to `main`, the last as 0125be239. Each went
+through a branch gate (fleet with the gate test, and post-build) before its merge and a fleet run of `main`
+after. Every batch's TODO commit retires what landed, rewrites what is left, and files what the agents
+found. The calls made without a ruling are in each commit body; the ones most likely to want a say:
+- Alt+P opens the Pathfinder keymap, with U/I/M/X/D/C/T/R inside it.
+- Plain text is taken by every ingest canvas by default; image paints store the picture inline as a data URI.
+- Jog and Transport stay left to right in every locale; `Tree`/`ItemList`/`LayerList` typeahead now cycles on
+  a repeated letter, as menus do.
+- The default retain budget is 384 MiB (was 256), with surfaces drawn in 1024-px tiles.
+- New packages `@weasel-js/headless` and `@weasel-js/shape` (HarfBuzz).
+
+**Needs Mike before the next release:** first-publish `@weasel-js/headless` and `@weasel-js/shape`
+(`docs/TODO.md`, P2 [maintainer]); `check:first-publish` fails the release job until then. Also filed for
+him: whether core snaps the view's translation to whole device pixels.
+
+**Breaking for callers** (said in each changeset, all `patch`): pick functions take a `WorldPoint`;
+`PointerWorldPos` is `{ world, viewId }`; immediate actions' params carry `world`/`press` points; the
+clipboard's paste point is a `WorldPoint`; the packed glyph quad is 11 numbers; `TrackRun.toShape` is required.
+
+**Not seen in a browser by a person:** most of it. The redrawn path and warp glyphs (wall, zone `weasel`,
+5FEDE721) and the boolean-group glyph (702ADFE6) want a look.
+
+Two commits in batch 7 do not build alone (5b7d0acfe, 11e2b7d6f); the merge's tree is the gated one.
+
+**What is left of the `[agent]` entries:** later arcs of work in flight (shaping, headless layer, boolean
+groups, far-origin readers, HUD garbage, retained surfaces, batch clips), fleet-infra measurement that needs
+quiet nodes, multi-arc platform projects (WebGPU, worker offload, headless Node), and onto/wake entries
+waiting on their own repos' branches.
+
 ## Overnight TODO batch, merged 2026-10-25 (not pushed)
 
 Twenty-seven fixes from `docs/TODO.md` merged to `main` in c4f600a75 (2026-10-25). The branch gate on
