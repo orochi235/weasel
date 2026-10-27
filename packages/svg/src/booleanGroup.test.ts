@@ -14,10 +14,13 @@ const RED = { paint: { kind: 'solid' as const, color: '#ff0000' } };
 const rect = (x: number, y: number): Path => ({ kind: 'rect', x, y, width: 100, height: 100 });
 
 /** A boolean group over a back square at (0, 0) and a front one at (50, 50). */
-function makeScene(op: string) {
+function makeScene(op: string, framedAt?: number) {
   const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+  const frame = framedAt === undefined
+    ? null
+    : scene.add({ kind: 'group', layer: 'main', pose: { x: framedAt, y: framedAt, width: 150, height: 150 }, data: {} });
   const group = scene.add({
-    ...booleanGroupFields<RectPose>(), layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+    ...booleanGroupFields<RectPose>(), layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, parent: frame,
     data: { fill: RED, boolean: op },
   });
   for (const [x, y] of [[0, 0], [50, 50]] as const) {
@@ -51,6 +54,13 @@ describe('a boolean group in SVG', () => {
       expect(drafts[0]).toMatchObject({ boolean: 'intersect' });
       expect(drafts.slice(1).every((d) => !d.hidden)).toBe(true);
     }
+  });
+
+  it('places its result through a group above it that is a frame', () => {
+    const [frame] = svgNodesFromKit(makeScene('subtract', 200) as unknown as SvgKitTree) as SvgGroupNode[];
+    const self = (frame!.children[0] as SvgGroupNode).children[0] as SvgPathNode;
+    expect(pathContainsPoint(self.path, 225, 225)).toBe(true);
+    expect(pathContainsPoint(self.path, 275, 275)).toBe(false);
   });
 
   it('is read by another reader as the result alone: the operands are display="none"', () => {

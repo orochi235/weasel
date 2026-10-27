@@ -9,12 +9,16 @@ import { SWILL_NAMESPACES } from './svgInterop';
 
 const PAGE = { id: 'page-1', width: 400, height: 400 };
 
-function makeScene() {
+/** A subtract of a square at (0, 0) less one at (50, 50); inside a group framing it at (200, 200) when `framed`. */
+function makeScene(framed = false) {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: [{ id: 'default' }], doc: { [PAGES_DOC_KEY]: { pages: [PAGE] } },
   });
+  const frame = framed
+    ? scene.add({ kind: 'group', layer: 'default', pose: { x: 200, y: 200, width: 150, height: 150 }, data: {} })
+    : null;
   const group = scene.add({
-    ...booleanGroupFields<WeaselDrawPose>(), layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 },
+    ...booleanGroupFields<WeaselDrawPose>(), layer: 'default', pose: { x: 0, y: 0, width: 0, height: 0 }, parent: frame,
     data: { fill: { paint: solid('#ff0000') }, boolean: 'subtract' },
   });
   for (const at of [0, 50]) {
@@ -29,7 +33,22 @@ function makeScene() {
 const save = (scene: ReturnType<typeof makeScene>) =>
   sceneToSvgString(scene, { filename: 'b.svg', pages: [{ ...PAGE, x: 0, y: 0, index: 0 }], backgroundColor: '#ffffff' });
 
+const resultOf = (svg: string) => {
+  const groups = (n: { kind: string; children?: unknown[]; boolean?: string }): unknown[] =>
+    n.kind !== 'group' ? [] : [n, ...(n.children as never[]).flatMap(groups)];
+  const holder = parseSvg(svg).nodes.flatMap(groups as never)
+    .find((g) => (g as { children: { boolean?: string }[] }).children.some((c) => c.boolean)) as { children: { path: never }[] };
+  return holder.children[0]!.path;
+};
+
 describe('a boolean group through SVG', () => {
+  it('writes its result where the canvas draws it inside a group that is a frame', async () => {
+    const path = resultOf(await save(makeScene(true)));
+    expect(pathContainsPoint(path, 225, 225)).toBe(true);
+    expect(pathContainsPoint(path, 275, 275)).toBe(false);
+    expect(pathContainsPoint(path, 25, 25)).toBe(false);
+  });
+
   it('writes the result as a visible path, in the group\'s paint, and its children hidden', async () => {
     const parsed = parseSvg(await save(makeScene()), { namespaces: SWILL_NAMESPACES });
     const [g] = parsed.nodes;
