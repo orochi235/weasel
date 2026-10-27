@@ -3,7 +3,7 @@
  * every edge routed around the shapes. The routes derive from the data, so
  * they live in the specs and are never reported back to the host.
  */
-import { RIGID_POSE_COMPOSITION, worldPosesOf, type PoseComposition, type RectPose } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, type PoseComposition, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf, headerBox } from '../containers/trait';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
@@ -11,6 +11,7 @@ import type { DiagramSpec } from '../fromData';
 import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf } from '../ports';
 import { diagramNodeOf } from '../trait';
+import { specWorldPoses } from '../specWorld';
 import type { Port } from '../types';
 import { createAvoidRouter } from './router';
 import { headerIdOf } from './sceneInput';
@@ -84,7 +85,7 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
   return (specs) => {
     const byId = new Map(specs.map((s) => [s.id as string, s]));
     const labels = labelsOf(specs);
-    const world = worldPosesOf(specs as never, composition) as Map<string, RectPose>;
+    const world = specWorldPoses(specs, composition);
     const obstacles = obstaclesOf(specs, world);
     const edges: AvoidEdge[] = [];
     for (const spec of specs) {

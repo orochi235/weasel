@@ -3,13 +3,14 @@
  * each edge carrying the hops it makes over the edges before it. The hops
  * derive from the specs, so they live there and are never reported back.
  */
-import type { DerivedDep, RectPose } from '@weasel-js/core';
+import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { edgeRouter } from '../edge';
 import { diagramEdgeOf } from '../edgeTrait';
 import type { DiagramSpec } from '../fromData';
 import { edgeHops } from './crossings';
 import { withHopsData } from './sceneEdges';
+import { specDeps, specWorldPoses } from '../specWorld';
 
 /** A function from specs to the same specs with every edge's hops of radius
  *  `r`, edges hopping those earlier in the list. An edge split across pages
@@ -17,17 +18,13 @@ import { withHopsData } from './sceneEdges';
 export function createSpecHops(r: number): (specs: readonly DiagramSpec[]) => DiagramSpec[] {
   const route = edgeRouter<RectPose>();
   return (specs) => {
-    const byId = new Map(specs.map((s) => [s.id as string, s]));
-    const dep = (id: string): DerivedDep<RectPose> | undefined => {
-      const s = byId.get(id);
-      return s === undefined ? undefined : ({ node: s, pose: s.pose, path: null } as unknown as DerivedDep<RectPose>);
-    };
+    const dep = specDeps(specs, specWorldPoses(specs));
     const polylines = new Map<string, Vec2[]>();
     const order: string[] = [];
     for (const spec of specs) {
       const ends = spec.dependsOn;
       if (diagramEdgeOf(spec) === null || !Array.isArray(ends) || ends.length !== 2) continue;
-      const routed = route(spec, [dep(ends[0] as string), dep(ends[1] as string)]);
+      const routed = route(spec, [dep(ends[0]), dep(ends[1])]);
       const points = routed?.stubs === undefined ? routed?.points : undefined;
       if (points === undefined || points.length < 2) continue;
       polylines.set(spec.id as string, [...points]);
