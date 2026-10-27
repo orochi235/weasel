@@ -8,6 +8,8 @@ import { effectSourceFor } from '../pathEffects/effectSources';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { caretIndexAt, pointInTextPose, type StyledRun, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { textBoxOf } from '../../canvas/nodeShapes/textPainter';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
+import { indexedCandidates } from '../../canvas/pickIndex/scenePickIndex';
 
 /** How a node's text fields are read from its `data`. */
 export interface TextReads<TData> {
@@ -30,6 +32,10 @@ export interface TextReads<TData> {
  * glyph it lays, counters included, with the caret at the end of the text.
  * A curved glyph takes a double-click anywhere in its axis-aligned box, wider
  * than the ink selection picks.
+ *
+ * The scene's pick index, read through `AUTO_POSE_DESCRIPTOR` because the
+ * text box is read as a rect, narrows the walk to the nodes boxed over the
+ * point when it is current; the answer is the full walk's either way.
  */
 export function textHitAt<TData, TPose extends RectPose>(
   scene: Scene<TData, string, TPose>,
@@ -39,7 +45,7 @@ export function textHitAt<TData, TPose extends RectPose>(
 ): { id: string; caret: number } | null {
   // renderOrder() is back-to-front, so iterate in reverse and stop on the first hit.
   // Hit as painted: an open edit's draft is what the glyphs and the caret are laid out from.
-  const order = nodesAsShown(scene.overrides, scene.renderOrderNodes());
+  const order = indexedOrderAt(scene, cx, cy) ?? nodesAsShown(scene.overrides, scene.renderOrderNodes());
   const shown = shownLookup(scene);
   const paintedPoseOf = scenePaintedPoseOf(scene);
   const derivedPathOf = sceneDerivedPathOf(scene);
@@ -69,6 +75,19 @@ export function textHitAt<TData, TPose extends RectPose>(
     return { id: String(node.id), caret: caretIndexAt(p.x, p.y, pose) };
   }
   return null;
+}
+
+type ShownNode<TData, TPose> = ReturnType<Scene<TData, string, TPose>['renderOrderNodes']>[number];
+
+/** The nodes the pick index boxes over `(cx, cy)`, as shown and in render order, or null when it has no answer. */
+function indexedOrderAt<TData, TPose>(
+  scene: Scene<TData, string, TPose>,
+  cx: number,
+  cy: number,
+): readonly ShownNode<TData, TPose>[] | null {
+  const broad = { box: { x: cx, y: cy, width: 0, height: 0 } };
+  const found = indexedCandidates(scene as never, AUTO_POSE_DESCRIPTOR, () => broad);
+  return found as unknown as readonly ShownNode<TData, TPose>[] | null;
 }
 
 /** Whether `(x, y)` is within the bounds of one of `path`'s parts: a glyph's box, so a stem too thin to land on and the
