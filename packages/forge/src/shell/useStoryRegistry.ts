@@ -13,6 +13,7 @@ import { type AnswerBook, createAnswerBook } from './answers';
 import { documentInstrument, type Loaded, pendingInstrument } from './documentInstrument';
 import type { GlobalDeclarations } from './globals';
 import { type Ready, readyKey } from './readyKey';
+import type { StoryHosts } from './storyHosts';
 import { storyInstrument } from './storyInstrument';
 
 /** The lab instruments `useStoryRegistry` builds, and the calls that keep them current. */
@@ -39,6 +40,9 @@ export interface StoryRegistryOptions {
   setup?: FrameSetup;
   /** Names the library an index page's component ships in. Default: its title's first segment. */
   libraries?: Libraries;
+  /** The workshop's story hosts. Given, a story or index page rendered in the document takes marks. Keep it the
+   *  same object: an instrument already built keeps the hosts it was built with. */
+  hosts?: StoryHosts;
   load?: (mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[];
 }
 
@@ -75,7 +79,7 @@ const toError = (error: unknown): Error => (error instanceof Error ? error : new
  * reach the stories through `StoryGlobalsContext`, not through here.
  */
 export function useStoryRegistry(index: readonly IndexEntry[], options: StoryRegistryOptions): StoryRegistry {
-  const { frameUrl, globals = NO_GLOBALS, importers, setup = NO_SETUP, libraries = TITLE_LIBRARIES, load = loadStories } = options;
+  const { frameUrl, globals = NO_GLOBALS, importers, setup = NO_SETUP, libraries = TITLE_LIBRARIES, load = loadStories, hosts } = options;
   const [readies, setReadies] = useState<ReadonlyMap<string, Ready>>(() => new Map());
   const [loaded, setLoaded] = useState<ReadonlyMap<string, Loaded>>(() => new Map());
   const [faults, setFaults] = useState<ReadonlyMap<string, Error>>(() => new Map());
@@ -233,7 +237,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
               instrument: !inDocument
                 ? storyInstrument({ entry, ready, answers, frameUrl, onReady, globals, setup })
                 : had
-                  ? documentInstrument({ entry, loaded: had, setup, globals })
+                  ? documentInstrument({ entry, loaded: had, setup, globals, ...(hosts ? { hosts } : {}) })
                   : pendingInstrument({ entry, globals, load: request, generation, ...(fault ? { fault } : {}) }),
             };
       built.set(entry.id, kept);
@@ -241,7 +245,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
     });
     const unchanged = list.length === previous.list.length && list.every((i, n) => i === previous.list[n]);
     return { built, books, list: unchanged ? previous.list : list };
-  }, [index, readies, loaded, faults, generations, revisions, frameUrl, globals, setup, importers, onReady, request]);
+  }, [index, readies, loaded, faults, generations, revisions, frameUrl, globals, setup, hosts, importers, onReady, request]);
 
   useLayoutEffect(() => {
     committed.current = cache;

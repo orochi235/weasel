@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { scenePoseFrame, RIGID_POSE_COMPOSITION, worldPosesOf, createScene, derivedDepOf, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
 import { diagramScene, edgeIdOf, type DiagramSpec } from '../fromData';
+import { specWorldPoses } from '../specWorld';
 import { nestGroups } from '../groupTree';
 import { portOn, uniqueGroups, uniqueStages } from './draw';
 import { SAMPLES } from './lab/samples';
 import { laneId, lanes } from './lanes';
-import { TRACK_GAP } from './lanesRoutes';
+import { TRACK_GAP, worldSpecs } from './lanesRoutes';
 import { io, w } from './skipFixture';
 import type { EffectPipeline } from './types';
 
@@ -219,4 +220,20 @@ describe('lanes wires', () => {
   });
 
   it('had labels to check', () => expect(labeled).toBeGreaterThan(5));
+
+  it('measures every spec where the drawn scene shows it, a stage\'s rows included', () => {
+    let framed = 0;
+    for (const [name, p] of Object.entries(CASES)) {
+      const drawn = lanes(p);
+      const shown = diagramScene(drawn.data, drawn.scene);
+      const world = specWorldPoses(shown);
+      framed += shown.filter((s) => Math.abs((s.pose as Box).x - world.get(s.id as string)!.x) > 1).length;
+      for (const s of worldSpecs(drawn.data, drawn.scene)) {
+        const [a, b] = [s.pose as Box, world.get(s.id as string)!];
+        for (const k of ['x', 'y', 'width', 'height'] as const) expect(a[k], `${name}: ${s.id as string} ${k}`).toBeCloseTo(b[k], 6);
+      }
+    }
+    // Some spec is stored in another's frame, so a read of the drawn scene's own poses would be caught.
+    expect(framed).toBeGreaterThan(0);
+  });
 });

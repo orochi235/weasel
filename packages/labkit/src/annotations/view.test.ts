@@ -21,16 +21,34 @@ describe('fitView', () => {
   });
 });
 
+describe('fitView over the part of the content a target shows', () => {
+  it('fits that part to the pane and pans its corner to the origin', () => {
+    expect(
+      fitView({ w: 300, h: 900 }, { w: 600, h: 400 }, { x: 0, y: 150, w: 300, h: 200 }),
+    ).toEqual({
+      zoom: 2,
+      pan: { x: 0, y: -300 },
+    });
+  });
+
+  it('is the whole-box camera when that part is the whole box', () => {
+    const content = { w: 256, h: 170 };
+    expect(fitView(content, { w: 512, h: 340 }, { x: 0, y: 0, ...content })).toEqual(
+      fitView(content, { w: 512, h: 340 }),
+    );
+  });
+});
+
 describe('view conversion', () => {
   it("round-trips a target's camera through weasel's shape", () => {
     const v = { zoom: 1.5, pan: { x: -12, y: 40 } };
     expect(fromWeaselView(toWeaselView(v))).toEqual(v);
   });
 
-  it("puts the pan in weasel's translation and the zoom in both scale axes", () => {
+  it("turns labkit's screen translation into the world point weasel's view puts at the corner", () => {
     expect(toWeaselView({ zoom: 2, pan: { x: 10, y: -5 } })).toEqual({
-      x: 10,
-      y: -5,
+      x: -5,
+      y: 2.5,
       scale: { x: 2, y: 2 },
     });
   });

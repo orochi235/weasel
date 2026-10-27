@@ -95,3 +95,9 @@ a.row {
 .text:focus-within {
   --_frame-bg: var(--wzl-surface-sunken);
 }
+
+/* The popover a color row opens beside itself. */
+.picker {
+  padding: var(--wzl-space-2);
+  outline: none;
+}

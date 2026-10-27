@@ -1,12 +1,12 @@
 /**
  * The paint a draw command takes: `Paint` and `Stroke` narrowed to what a
  * renderer can draw as it stands. A node's own paint may name its box
- * (`units: 'bounds'`) or a tile by kind; a command has neither a node nor a
- * rasterizer, so both are resolved before one is built.
+ * (`units: 'bounds'`), a tile by kind, or an image by `src`; a command has no
+ * node, rasterizer or decoder, so all of these are resolved before one is built.
  */
 
 import type { Fill, Paint, PaintUnits, Stroke } from './paint';
-import type { TileKind } from './patternPaint';
+import type { ResolvablePatternKind } from './patternPaint';
 
 /** The spaces a draw command's paint can name. `'bounds'` is not one: it means
  *  a node's box, and a command has no node. */
@@ -18,12 +18,13 @@ export type InCommandUnits<F> = F extends { units?: PaintUnits }
   : F;
 
 /** A `Paint` placed in a frame a command can name. Its pattern may still
- *  be a tile kind. */
+ *  be a tile kind or an image. */
 export type PosedPaint = InCommandUnits<Paint>;
 
 /** A `Paint` a renderer can draw as it stands: no paint is in `'bounds'`
- *  units, and a pattern is a registered `texture` rather than a tile kind. */
-export type CommandPaint = Exclude<PosedPaint, { kind: TileKind }>;
+ *  units, and a pattern is a registered `texture` rather than a tile kind or
+ *  an image. */
+export type CommandPaint = Exclude<PosedPaint, { kind: ResolvablePatternKind }>;
 
 /** The solid member of `Paint`: a color and an opacity. */
 export type SolidPaint = Extract<Paint, { kind?: 'solid' }>;

@@ -51,6 +51,9 @@ export interface JogParts {
  * Inside an `Along`, or given a curved `shape`, its buttons, readout and caption lie along the shape and the scrubber
  * follows it between them.
  *
+ * It reads left to right in a right-to-left locale too, as playback controls do; its caption takes its own text's
+ * direction.
+ *
  * Named for the jog of jog/shuttle — moving one frame at a time, as against running at speed.
  */
 export function Jog(props: JogProps) {
@@ -61,7 +64,7 @@ export function Jog(props: JogProps) {
     return <JogAlong parts={parts} shape={shape} align={props.align ?? along?.align ?? 'center'} className={props.className} />;
 
   return (
-    <div className={[s.jog, props.className].filter(Boolean).join(' ')}>
+    <div className={[s.jog, props.className].filter(Boolean).join(' ')} dir="ltr">
       {parts.prev}
       {parts.play}
       {parts.next}
@@ -142,7 +145,7 @@ function jogParts(props: JogProps): JogParts {
         {pad(ordinal, count)}/{count}
       </span>
     ),
-    caption: caption ? <span className={s.caption}>{caption}</span> : null,
+    caption: caption ? <span className={s.caption} dir="auto">{caption}</span> : null,
   };
 }
 

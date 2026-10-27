@@ -28,16 +28,26 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
   // An undo can take the picked stage or group away.
   const selected = picked !== null && doc.pipeline.stages.some((s) => s.id === picked) ? picked : null;
   const group = pickedGroup !== null && doc.pipeline.groups?.some((g) => g.id === pickedGroup) ? pickedGroup : null;
+  const [many, setMany] = useState<readonly string[]>([]);
   const pickGroup = useCallback((id: string | null) => {
     setPickedGroup(id);
     if (id !== null) setPicked(null);
   }, []);
-  useGroupCommands(editor, { stage: selected, group, pickGroup });
+  const pick = useCallback((id: string | null, ids: readonly string[]) => {
+    setPicked(id);
+    setMany(ids);
+  }, []);
+  const live = (id: string) => doc.pipeline.stages.some((s) => s.id === id) || doc.pipeline.groups?.some((g) => g.id === id) === true;
+  const pickMade = useCallback((id: string | null) => {
+    pickGroup(id);
+    setMany(id === null ? [] : [id]);
+  }, [pickGroup]);
+  useGroupCommands(editor, { stage: selected, group, picked: many.filter(live), pickGroup: pickMade });
 
   const add = useCallback((type: EffectStageType) => {
     const id = editor.current?.addStage(type);
-    if (id !== undefined) setPicked(id);
-  }, []);
+    if (id !== undefined) pick(id, [id]);
+  }, [pick]);
 
   return (
     <div className="wc-body">
@@ -46,7 +56,7 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
       </Sidebar>
       <div className="wc-host">
         <EffectEditor
-          ref={editor} doc={doc} onChange={change} look={look} options={rows} run={run} selected={selected} onSelect={setPicked}
+          ref={editor} doc={doc} onChange={change} look={look} options={rows} run={run} selected={selected} onSelect={pick}
           selectedGroup={group} onSelectGroup={pickGroup}
         />
       </div>

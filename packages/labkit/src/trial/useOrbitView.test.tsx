@@ -1,6 +1,6 @@
 /**
  * A trial learns that it draws 3D from `useOrbitView`, from a three.js
- * renderer drawing into its DOM, or from WebGL depth testing turned on for a
+ * renderer drawing into its DOM, or from WebGL or WebGPU depth testing turned on for a
  * canvas there; drawing 3D through no `orbit` warns, and marks the title bar.
  */
 
@@ -38,15 +38,42 @@ class FakeGl {
   disable(_cap: number): void {}
 }
 
+/** jsdom has no WebGPU either: a device and a canvas context with only the calls the watch reads. */
+type DepthStencil = {
+  format: string;
+  depthCompare?: string;
+  depthWriteEnabled?: boolean;
+};
+class FakeGpuDevice {
+  createRenderPipeline(_descriptor: { depthStencil?: DepthStencil }): object {
+    return {};
+  }
+  createRenderPipelineAsync(_descriptor: { depthStencil?: DepthStencil }): Promise<object> {
+    return Promise.resolve({});
+  }
+}
+class FakeGpuContext {
+  constructor(readonly canvas: HTMLCanvasElement) {}
+  configure(_config: { device: FakeGpuDevice }): void {}
+}
+
 beforeAll(() => {
-  (globalThis as { WebGL2RenderingContext?: unknown }).WebGL2RenderingContext = FakeGl;
+  Object.assign(globalThis, {
+    WebGL2RenderingContext: FakeGl,
+    GPUDevice: FakeGpuDevice,
+    GPUCanvasContext: FakeGpuContext,
+  });
   const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
   proto.hasPointerCapture = vi.fn(() => true);
 });
 
-const seen: { lab: LabContextValue | null; store: LabStore | null; view: TrialOrbit | null } = {
+const seen: {
+  lab: LabContextValue | null;
+  store: LabStore | null;
+  view: TrialOrbit | null;
+} = {
   lab: null,
   store: null,
   view: null,
@@ -133,7 +160,13 @@ describe('useOrbitView', () => {
     const { container, view } = await mount(solid('Paned', { initialView: { distance: 20 } }));
     const pane = container.querySelector('.lk-test-scene3d') as HTMLElement;
     await act(async () => {
-      pane.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 200 }));
+      pane.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          deltaY: 200,
+        }),
+      );
     });
     expect(view()?.distance).toBeGreaterThan(20);
     expect(badge()).toBeNull();
@@ -166,7 +199,13 @@ describe('a fixed orbit', () => {
     );
     const pane = container.querySelector('.lk-test-scene3d') as HTMLElement;
     await act(async () => {
-      pane.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 200 }));
+      pane.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          deltaY: 200,
+        }),
+      );
       pane.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
     });
     expect(view()?.distance).toBe(20);
@@ -230,6 +269,75 @@ describe('raw WebGL in a trial', () => {
   it('says nothing of a canvas drawn without depth testing, or under a declared orbit', async () => {
     await mount(solid('RawFlat', undefined, <RawGl depth={false} />));
     await mount(solid('RawOwned', false, <RawGl depth />));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(cameraWarnings()).toEqual([]);
+  });
+});
+
+/** A hand-written WebGPU view. `pipelineFirst` builds the pipeline before configuring the canvas, so the
+ *  watch has to tie them together in either order. */
+function RawGpu({
+  depthStencil,
+  pipelineFirst = false,
+  async = false,
+}: {
+  depthStencil?: DepthStencil;
+  pipelineFirst?: boolean;
+  async?: boolean;
+}) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const device = new FakeGpuDevice();
+    const ctx = new FakeGpuContext(ref.current as HTMLCanvasElement);
+    const build = () =>
+      async
+        ? void device.createRenderPipelineAsync({ depthStencil })
+        : device.createRenderPipeline({ depthStencil });
+    if (pipelineFirst) build();
+    ctx.configure({ device });
+    if (!pipelineFirst) build();
+  }, [depthStencil, pipelineFirst, async]);
+  return <canvas ref={ref} />;
+}
+
+let gpuLabs = 0;
+const DEPTH: DepthStencil = {
+  format: 'depth24plus',
+  depthCompare: 'less',
+  depthWriteEnabled: true,
+};
+
+describe('raw WebGPU in a trial', () => {
+  it.each<[string, { pipelineFirst?: boolean; async?: boolean }]>([
+    ['configured, then a depth pipeline', {}],
+    ['a depth pipeline, then configured', { pipelineFirst: true }],
+    ['an async depth pipeline', { async: true }],
+  ])('counts as a 3D view: %s', async (_, order) => {
+    const name = `Gpu${++gpuLabs}`;
+    await mount(solid(name, undefined, <RawGpu depthStencil={DEPTH} {...order} />));
+    await waitFor(() => expect(cameraWarnings()).toHaveLength(1));
+    expect(String(cameraWarnings()[0]?.[0])).toContain(
+      `"${name}" draws a 3D view (WebGPU with depth testing)`,
+    );
+    await waitFor(() => expect(badge()).not.toBeNull());
+  });
+
+  it('says nothing of a pipeline that tests no depth, or under a declared orbit', async () => {
+    await mount(solid('GpuFlat', undefined, <RawGpu />));
+    await mount(solid('GpuStencil', undefined, <RawGpu depthStencil={{ format: 'stencil8' }} />));
+    await mount(
+      solid(
+        'GpuAlways',
+        undefined,
+        <RawGpu
+          depthStencil={{
+            format: 'depth24plus-stencil8',
+            depthCompare: 'always',
+          }}
+        />,
+      ),
+    );
+    await mount(solid('GpuOwned', false, <RawGpu depthStencil={DEPTH} />));
     await new Promise((r) => setTimeout(r, 50));
     expect(cameraWarnings()).toEqual([]);
   });

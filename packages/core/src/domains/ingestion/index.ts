@@ -2,6 +2,8 @@ export {
   registerContentHandler,
   getContentHandlers,
   runIngest,
+  handlersFor,
+  admitHandlerMimes,
   type ContentHandlerEntry,
   type IngestCtx,
   type RunIngestOptions,
@@ -13,6 +15,5 @@ export { kitImageHandler } from './imageHandler';
 export { kitSvgHandler, isSvgFileItem, sniffSvgText, SVG_MIME } from './svgHandler';
 export { kitWeaselJsonHandler } from './weaselJsonHandler';
 export { kitTextHandler } from './textHandler';
-// Internal-ish: refcounted default-handler registration for mounted canvases.
-export { acquireKitContentHandlers } from './registerKitHandlers';
+export { kitHandlersFor, KIT_CONTENT_HANDLERS, type KitHandlersOption } from './kitHandlers';
 export { openFilePicker, type OpenFilePickerOptions } from './openFilePicker';

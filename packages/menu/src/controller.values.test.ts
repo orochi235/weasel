@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMenuController } from './controller';
-import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from './entries';
+import type { MenuColorEntry, MenuEntry, MenuNumberEntry, MenuTextEntry } from './entries';
 import { keyStep } from './keys';
 import { menuNumberText } from './numberText';
 
@@ -157,6 +157,42 @@ describe('a text row', () => {
     const { c, name, set } = text();
     c.key('Escape');
     c.setText(name, 'x');
+    expect(set).not.toHaveBeenCalled();
+  });
+});
+
+describe('a color row', () => {
+  function color(extra: Partial<MenuColorEntry> = {}) {
+    const set = vi.fn();
+    const fill: MenuColorEntry = { kind: 'color', key: 'fill', label: 'Fill', value: '#336699', set, ...extra };
+    const onClose = vi.fn();
+    const c = createMenuController({ entries: [{ kind: 'item', key: 'cut', label: 'Cut', run: () => {} }, fill], onClose });
+    return { c, fill, set, onClose };
+  }
+
+  it('holds what was set while the menu is open, writes it once, and tells subscribers', () => {
+    const { c, fill, set, onClose } = color();
+    const heard = vi.fn();
+    c.subscribe(heard);
+    expect(c.colorValue(fill)).toBe('#336699');
+    c.setColor(fill, '#ff0000');
+    c.setColor(fill, '#ff0000');
+    expect(set.mock.calls).toEqual([['#ff0000']]);
+    expect(c.colorValue(fill)).toBe('#ff0000');
+    expect(heard).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing without a set, while disabled, or once the menu has closed', () => {
+    const readOnly = color({ set: undefined });
+    readOnly.c.setColor(readOnly.fill, '#ff0000');
+    expect(readOnly.c.colorValue(readOnly.fill)).toBe('#336699');
+    const off = color({ disabled: true });
+    off.c.setColor(off.fill, '#ff0000');
+    expect(off.set).not.toHaveBeenCalled();
+    const { c, fill, set } = color();
+    c.key('Escape');
+    c.setColor(fill, '#ff0000');
     expect(set).not.toHaveBeenCalled();
   });
 });

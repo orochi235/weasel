@@ -36,6 +36,9 @@ export interface TrackRun extends TrackShape {
   /** The inline direction it reads in, from {@link TrackRunOptions.direction}. */
   readonly direction: 'ltr' | 'rtl';
   at(g: number, options?: TrackAtOptions): TrackPlace;
+  /** The shape fraction reading fraction `g` falls at, unclamped: `from` at g = 0 and `to` at g = 1, or the other way
+   *  round when the run is `reversed`. */
+  toShape(g: number): number;
 }
 
 /** Which side of a shape a run's items stand on: `'auto'` whichever is upright, `'path'` the shape's own normal, `'flipped'`
@@ -67,10 +70,10 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
   const span = to - from;
   const lo = Math.min(from, to);
   const hi = Math.max(from, to);
-  const toF = (g: number): number => reversed ? to - g * span : from + g * span;
+  const toShape = (g: number): number => reversed ? to - g * span : from + g * span;
 
   const at = (g: number, options?: TrackAtOptions): TrackPlace => {
-    const s = options?.open ? shape.at(toF(g), options) : shape.at(toF(clamp(g, 0, 1)));
+    const s = options?.open ? shape.at(toShape(g), options) : shape.at(toShape(clamp(g, 0, 1)));
     const dir = reading(s.normal);
     const angle = (Math.atan2(dir.y, dir.x) * 180) / Math.PI;
     const normal = { x: sgn * s.normal.x, y: sgn * s.normal.y };
@@ -90,7 +93,7 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
     const q = shape.at(f).point;
     const dist = Math.hypot(p.x - q.x, p.y - q.y);
     if (!options?.open) return { f: toG(f), dist };
-    return { f: toG(shape.nearest(p, { open: true, about: toF(options.about ?? 0.5) }).f), dist };
+    return { f: toG(shape.nearest(p, { open: true, about: toShape(options.about ?? 0.5) }).f), dist };
   };
 
   return {
@@ -104,6 +107,7 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
     reversed,
     direction,
     at,
+    toShape,
     nearest,
   };
 }

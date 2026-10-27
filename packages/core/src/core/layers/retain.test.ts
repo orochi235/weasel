@@ -59,12 +59,16 @@ describe('drawLayers retaining a layer', () => {
     expect(frames(layer({ draw: () => nested }), [{ data: 1 }, { data: 1 }])).toEqual([undefined, 'big']);
   });
 
-  it('never retains a layer that opts out, has no deps, or carries effects, or under a false policy', () => {
-    const effect = { program: { id: 'fx' } };
+  it('never retains a layer that opts out or has no deps, or under a false policy', () => {
     expect(frames(layer({ retain: false }), [{ data: 1 }, { data: 1 }])).toEqual([undefined, undefined]);
     expect(frames(layer({ deps: undefined }), [{ data: 1 }, { data: 1 }])).toEqual([undefined, undefined]);
-    expect(frames(layer({ effects: [effect] }), [{ data: 1 }, { data: 1 }])).toEqual([undefined, undefined]);
     expect(frames(layer(), [{ data: 1 }, { data: 1 }], false)).toEqual([undefined, undefined]);
+  });
+
+  it('retains a layer carrying effects on the group that runs them, in either space', () => {
+    const effects = [{ program: { id: 'fx' } }];
+    expect(frames(layer({ effects }), [{ data: 1 }, { data: 1 }])).toEqual([undefined, 'big']);
+    expect(frames(layer({ effects, space: 'screen' }), [{ data: 1 }, { data: 1 }])).toEqual([undefined, 'big']);
   });
 
   it('hands the renderer the cached array itself, so its identity names the pixels', () => {

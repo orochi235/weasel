@@ -9,6 +9,8 @@ import { type GlobalDeclarations, PLAYHEAD_KEY, withGlobals } from './globals';
 import { IndexTrial } from './IndexTrial';
 import type { Loaded } from '../story/indexBundle';
 import { CaptureInputs } from './loupe/CaptureInputs';
+import type { StoryHosts } from './storyHosts';
+import { storyMarks } from './storyMarks';
 import { StoryTrial } from './StoryTrial';
 
 export type { Loaded };
@@ -18,6 +20,8 @@ export interface DocumentInstrumentOptions {
   loaded: Loaded;
   setup: FrameSetup;
   globals?: GlobalDeclarations;
+  /** The workshop's story hosts. Without them the instrument takes no marks. */
+  hosts?: StoryHosts;
 }
 
 /** `schema` with a hidden leaf for the paused playhead, which labkit then persists and snapshots with the trial. */
@@ -27,7 +31,7 @@ function withPlayhead(schema: ConfigSchema<unknown>): ConfigSchema<unknown> {
 
 /** A loaded story, or index page, as a lab instrument rendering in the workshop document. */
 export function documentInstrument(options: DocumentInstrumentOptions): Instrument<unknown, unknown> {
-  const { entry, loaded, setup, globals = {} } = options;
+  const { entry, loaded, setup, globals = {}, hosts } = options;
   const schema = loaded.kind === 'story' ? loaded.story.config : (f.schema({}) as ConfigSchema<unknown>);
   const timed = loaded.kind === 'story' && loaded.story.timeline !== null;
   const config = withGlobals(timed ? withPlayhead(schema) : schema, globals);
@@ -53,6 +57,7 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
         />
       </>
     ),
+    ...(hosts ? { annotations: storyMarks(hosts) } : {}),
     ...(loaded.kind === 'story' && loaded.story.viewport
       ? { stage: { size: { width: loaded.story.viewport.width, height: loaded.story.viewport.height } } }
       : {}),

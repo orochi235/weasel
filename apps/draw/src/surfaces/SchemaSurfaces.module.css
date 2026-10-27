@@ -2,3 +2,8 @@
   display: inline-flex;
   min-inline-size: 0;
 }
+
+/* Holds a command-row bar for its context menu without becoming a box: the row lays out the bar itself. */
+.contents {
+  display: contents;
+}

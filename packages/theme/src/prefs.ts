@@ -5,7 +5,15 @@
  *
  * @packageDocumentation
  */
-export { THEME_PREFS_AXIS, themeAxisOf, themeAxisPath, themePrefsSchema, themeTokenOf } from './prefs/schema.ts';
+export {
+  THEME_PREFS_AXIS,
+  themeAxisOf,
+  themeAxisPath,
+  themePrefsReferences,
+  themePrefsSchema,
+  themeTokenOf,
+  type ThemePrefsReference,
+} from './prefs/schema.ts';
 export {
   themeFromPrefs,
   themePrefsPins,

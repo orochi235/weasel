@@ -2,9 +2,11 @@ import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
 import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
 import { markerReach, resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
 import {
-  SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type SpritesDrawCommand,
+  SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type ShaderDrawCommand,
+  type SpritesDrawCommand,
 } from './DrawCommand';
 import { effectsReach } from './effects/types';
+import { getProgramSource } from './shaders/registerProgram';
 import { textBox } from './textBounds';
 
 /** Matches the tessellator's default. */
@@ -40,9 +42,24 @@ export function commandBox(cmd: DrawCommand, m: GlMat3, scale: number): ScreenBo
       return paintedBox(cmd, m) ?? ANYWHERE;
     case 'text':
       return textBox(cmd, m) ?? EMPTY;
-    default:
-      return ANYWHERE;
+    case 'shader':
+      return shaderBox(cmd) ?? ANYWHERE;
   }
+}
+
+/**
+ * A custom shader's `bounds`, which the kit's vertex shader draws its quad
+ * over in CSS pixels whatever the transform. `null` for a program with its own
+ * vertex shader, which can put geometry anywhere, and for one reading
+ * `gl_FragCoord` without `u_fragOrigin`: it would read the wrong pixel in a
+ * surface that does not start at the drawing buffer's corner.
+ */
+function shaderBox(cmd: ShaderDrawCommand): ScreenBox | null {
+  const src = getProgramSource(cmd.program.id);
+  if (!src || src.vert !== '') return null;
+  if (/\bgl_FragCoord\b/.test(src.frag) && !/\bu_fragOrigin\b/.test(src.frag)) return null;
+  const { x, y, w, h } = cmd.bounds;
+  return { minX: Math.min(x, x + w), minY: Math.min(y, y + h), maxX: Math.max(x, x + w), maxY: Math.max(y, y + h) };
 }
 
 function grown(box: ScreenBox, by: number): ScreenBox {

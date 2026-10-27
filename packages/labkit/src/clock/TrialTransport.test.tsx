@@ -50,7 +50,7 @@ describe('<TrialTransport>', () => {
   });
 
   it('plays at the chosen speed and pauses', async () => {
-    await mount({ duration: 1000 });
+    await mount({ duration: 3_600_000 });
     fireEvent.keyDown(screen.getByRole('slider', { name: /rate/i }), { key: 'ArrowRight' });
     expect(c().rate).toBe(0);
     press('Play');
@@ -61,7 +61,7 @@ describe('<TrialTransport>', () => {
 
   it('shares the chosen speed between two transports over one clock', async () => {
     const twice: Instrument = {
-      ...timed({ duration: 1000 }),
+      ...timed({ duration: 3_600_000 }),
       render: (ctx) => {
         clock = ctx.trial.clock ?? null;
         return (

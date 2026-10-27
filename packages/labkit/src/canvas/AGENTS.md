@@ -174,10 +174,11 @@ A trial whose instrument leaves `orbit` undeclared and draws 3D anyway has a
 camera nothing labkit owns can move, and Clone, Reset, and the zoom controls
 pass it by. In development it warns once per instrument and marks its title
 bar "no camera". It learns of a 3D view three ways: a `useOrbitView()` call;
-a three.js `WebGLRenderer` whose canvas sits in the trial's DOM — three
-announces each one on `__THREE_DEVTOOLS__`, which `src/trial/watch3d.ts`
-defines or joins; and WebGL depth testing turned on for a canvas there, which
-weasel's own 2D renderer never does. A raw WebGPU view is not seen. Declaring
+a three.js renderer, WebGL or WebGPU, whose canvas sits in the trial's DOM —
+three announces each one on `__THREE_DEVTOOLS__`, which `src/trial/watch3d.ts`
+defines or joins; and depth testing on a canvas there, which weasel's own 2D
+renderer never uses: WebGL's `enable(DEPTH_TEST)`, or a WebGPU render pipeline
+with a depth test, built by the device the canvas is configured with. Declaring
 `orbit` in any form ends it:
 
 | Declared | Meaning |
@@ -186,10 +187,9 @@ weasel's own 2D renderer never does. A raw WebGPU view is not seen. Declaring
 | `orbit: { fixed: true }` | The trial's camera, binding no gestures |
 | `orbit: false` | The instrument keeps a camera of its own |
 
-Raw GL that skips `useOrbitView`, and three's `WebGPURenderer`, which
-announces nothing, go unnoticed. GL is no evidence of 3D — weasel's own
-renderer is WebGL2 and 2D — and probing a canvas with `getContext` would
-create a context.
+A raw view that draws 3D without a depth test goes unnoticed. A context alone
+is no evidence of 3D — weasel's own renderer is WebGL2 and 2D — and probing a
+canvas with `getContext` would create a context.
 
 Zoom is clamped to `[minZoom, maxZoom]` (defaults 0.1 / 32), settable via `CanvasStack`'s props and, for an instrument's own canvas, `CanvasCapability.minZoom` / `maxZoom`. The clamp always widens to admit whatever zoom the canvas opened at — an instrument declaring `initialView.zoom: 1600` with the default range is not clamped down to 32 on the first wheel event.
 

@@ -302,6 +302,18 @@ export const HueAlongADial: Story = {
   render: (args) => <HueAlongADialStory args={args} />,
 };
 
+/** In a right-to-left locale the values run from the right end, straight or curved, and ArrowRight steps down. */
+export const RightToLeft: Story = {
+  args: { min: 2, max: 16, stops: ZOOM_STOPS, spacing: 'even', snap: 'strict', readoutPlacement: 'below-thumb', trackHeight: undefined },
+  argTypes: FIXED_DOMAIN,
+  render: (args) => (
+    <div dir="rtl">
+      <Wrapper {...args} renderReadout={(t) => `${t.value}×`} initial={[{ value: 4 }]} />
+      <ZoomAlongALensRimStory args={args} />
+    </div>
+  ),
+};
+
 function evenlySpacedThumbs(n: number, min: number, max: number): Thumb[] {
   if (n <= 1) return [{ value: (min + max) / 2 }];
   return Array.from({ length: n }, (_, i) => ({ value: min + (i / (n - 1)) * (max - min) }));

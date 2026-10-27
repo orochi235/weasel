@@ -9,22 +9,18 @@ import { multiply, parseTransform, isIdentity } from './transform';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
-import { fontSizeOf } from './fontSize';
-import {
-  DEFAULT_LINE_HEIGHT, holdsOnlyText, joinLines, LINE_HEIGHT_ATTR, LineTracker, statesLines, warnUnreadPositions,
-} from './tspanLines';
+import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, warnUnreadPositions, writtenByWeasel } from './tspanLines';
 import { LAID_ATTR } from './laidLines';
-import { placeTspanRun } from './glyphShifts';
-import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
+import { readRuns } from './readRuns';
 import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import type { GradientTable } from './gradients';
 import {
-  deriveStyle, ownProp, ownValue, resolveCurrentColor, styleValue, type StyleContext,
+  deriveStyle, ownValue, resolveCurrentColor, styleValue, type StyleContext,
 } from './cascade';
 import { readProperty } from './properties';
-import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke } from './readPaint';
+import { readStroke, isNonScalingStroke, coreStroke } from './readPaint';
 
 /** Average glyph advance as a fraction of the em. Sans-serif Latin runs
  *  0.5–0.6; erring wide is the safer miss. */
@@ -120,11 +116,6 @@ export function parseTextElement(
   const laid = el.hasAttribute(LAID_ATTR);
   const explicitTopAnchor = laid || dominantBaseline === 'text-before-edge'
     || dominantBaseline === 'hanging';
-  // If serialized by us, `y` is already the top edge. Otherwise SVG's
-  // default is `y` = baseline of the first line — shift up by one
-  // line of cap-height so weasel's box top approximates the cap-line.
-  const topY = explicitTopAnchor ? ay : ay - fontSize;
-
   // `baseline-shift` is legal and inheritable on <text> itself, and unlike
   // every other run key it has no node-level home to be read into — so a bare
   // text child would drop it. Seed those children with it instead; a <tspan>
@@ -134,7 +125,15 @@ export function parseTextElement(
   const tracker = new LineTracker(el, onWarn);
   const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle, gradients, leafStyle, onWarn);
   const plain = runs.map((r) => r.text).join('');
-  const pitched = laid ? numberAttr(el, LINE_HEIGHT_ATTR) : tracker.lineHeight(fontSize);
+  // If serialized by us, `y` is already the top edge. Otherwise SVG's
+  // default is `y` = baseline of the first line — shift up by one
+  // line of cap-height so weasel's box top approximates the cap-line.
+  // Laid-out lines are placed under `y`; otherwise the first glyph's move
+  // places the first line.
+  const firstY = laid ? ay : tracker.firstBaseline ?? ay;
+  const topY = explicitTopAnchor ? firstY : firstY - fontSize;
+  const stated = numberAttr(el, LINE_HEIGHT_ATTR);
+  const pitched = laid ? stated : tracker.lineHeight(fontSize, stated);
   if (pitched !== undefined) textStyle.lineHeight = pitched;
   const lineHeight = textStyle.lineHeight ?? DEFAULT_LINE_HEIGHT;
 
@@ -170,7 +169,7 @@ export function parseTextElement(
   if (hasStyling) node.runs = runs;
   // An absent `direction` is `ltr` in SVG and the text's own in this model, so
   // only text weasel wrote, which says `ltr` when it means it, keeps it absent.
-  if (textStyle.direction === undefined && !el.hasAttribute('data-weasel-width')) {
+  if (textStyle.direction === undefined && !writtenByWeasel(el)) {
     textStyle.direction = 'ltr';
   }
   if (el.getAttribute('data-weasel-wrap') === 'true') textStyle.wrap = true;
@@ -186,107 +185,6 @@ export function parseTextElement(
   if (opacity != null) node.opacity = opacity;
   placeTextNode(node, multiply(ctm, localTransform), onWarn);
   return node;
-}
-
-/**
- * The element's runs, with a `\n` wherever a `<tspan>` opens a new line:
- * text nodes become plain runs, and `<tspan>` elements become runs carrying
- * their attribute overrides.
- */
-function readRuns(
-  el: Element,
-  tracker: LineTracker,
-  inheritedShift: Pick<StyledRun, 'script' | 'baselineShift'>,
-  textStyle: TextStyle,
-  gradients: GradientTable,
-  leafStyle: StyleContext,
-  onWarn: (m: string) => void,
-): { runs: StyledRun[]; lead: number } {
-  const runLines: StyledRun[][] = [[]];
-  let leading = 0;
-  let lead = 0;
-  const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
-  if (holdsOnlyText(el) && (el.hasAttribute('dx') || el.hasAttribute('x'))) {
-    const t = el.textContent ?? '';
-    if (t) lead = placeTspanRun(el, { text: t, ...inheritedShift }, runLines, textStyle, onWarn);
-  } else for (let i = 0; i < el.childNodes.length; i++) {
-    const child = el.childNodes[i];
-    if (child.nodeType === 3 /* TEXT_NODE */) {
-      const t = child.textContent ?? '';
-      if (!t) continue;
-      push({ text: t, ...inheritedShift });
-    } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
-      const sp = child as Element;
-      if (sp.tagName.toLowerCase() !== 'tspan') {
-        onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
-        const t = sp.textContent ?? '';
-        if (t) push({ text: t, ...inheritedShift });
-        continue;
-      }
-      warnUnreadPositions(sp, onWarn);
-      const afterText = runLines.some((line) => line.some((r) => r.text.trim() !== ''));
-      const lines = tracker.startsLine(sp, afterText);
-      // A tspan opening the text steps down from nothing, so it breaks no
-      // line unless it says how many it stepped.
-      if (runLines.length === 1 && runLines[0].length === 0 && statesLines(sp)) leading = lines;
-      else for (let n = 0; n < lines; n++) runLines.push([]);
-      lead += placeTspanRun(sp, readTspanRun(sp, gradients, leafStyle, onWarn), runLines, textStyle, onWarn);
-    }
-  }
-  if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
-  return { runs: joinLines(runLines, leading), lead };
-}
-
-function readTspanRun(
-  el: Element,
-  gradients: GradientTable,
-  style: StyleContext,
-  onWarn: (m: string) => void,
-): StyledRun {
-  const text = el.textContent ?? '';
-  const run: StyledRun = { text };
-  const fw = ownValue(el, 'font-weight', onWarn);
-  // 700 is the bold flag's own spelling; any other weight is the run's.
-  if (fw === 'bold' || fw === 'bolder' || fw === 700) run.bold = true;
-  else if (fw === 'normal') run.fontWeight = 400;
-  else if (typeof fw === 'number') run.fontWeight = fw;
-  if (ownValue(el, 'font-style', onWarn) === 'italic') run.italic = true;
-  const ff = ownValue(el, 'font-family', onWarn);
-  if (ff) run.fontFamily = ff;
-  const size = ownValue(el, 'font-size', onWarn);
-  if (size?.fontSize != null) run.fontSize = size.fontSize;
-  if (size?.fontScale != null) run.fontScale = size.fontScale;
-  const tspanStyle = deriveStyle(style, el);
-  const ls = ownValue(el, 'letter-spacing', onWarn, fontSizeOf(tspanStyle));
-  if (ls != null) run.letterSpacing = ls;
-  const shift = ownValue(el, 'baseline-shift', onWarn);
-  if (shift?.script != null) run.script = shift.script;
-  if (shift?.baselineShift != null) run.baselineShift = shift.baselineShift;
-  const decoration = ownValue(el, 'text-decoration', onWarn);
-  if (decoration?.underline) run.underline = true;
-  if (decoration?.strikethrough) run.strikethrough = true;
-  if (decoration?.overline) run.overline = true;
-  const transform = ownValue(el, 'text-transform', onWarn);
-  if (transform) run.textTransform = transform;
-  const variant = ownValue(el, 'font-variant', onWarn);
-  if (variant) run.fontVariantCaps = variant;
-  const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
-  if (fillAttr) {
-    const parsed = readProperty('fill', fillAttr);
-    if (parsed?.kind === 'none') {
-      run.fill = null;
-    } else if (parsed?.kind === 'solid') {
-      run.fill = { paint: { kind: 'solid', color: parsed.color } };
-    } else if (parsed?.kind === 'ref') {
-      const paint = gradients.get(parsed.id);
-      if (paint) run.fill = { paint };
-      else if (parsed.fallback) run.fill = { paint: { kind: 'solid', color: parsed.fallback.color } };
-    }
-  }
-  // Own attributes only — see `ownStrokeStyle`.
-  const stroke = coreStroke(readStroke(ownStrokeStyle(el, tspanStyle), gradients, onWarn, isNonScalingStroke(el)));
-  if (stroke) run.stroke = stroke;
-  return run;
 }
 
 function readTextStyle(
@@ -326,8 +224,8 @@ function readTextStyle(
   if (transform && transform !== 'none') out.textTransform = transform;
   const variant = styleValue(style, 'font-variant', onWarn);
   if (variant === 'small-caps') out.fontVariantCaps = variant;
-  // `lineHeight` is read from the lines' pitch, or from `data-weasel-line-height`
-  // on laid-out lines, by the caller.
+  // `lineHeight` is read from the lines' pitch and `data-weasel-line-height`
+  // by the caller.
   // Edit-overlay-only chrome (`caretColor`, `selectionBackground`,
   // `selectionColor`) is intentionally not persisted — those are UI state,
   // not document content.

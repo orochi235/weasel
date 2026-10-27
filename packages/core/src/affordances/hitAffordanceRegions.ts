@@ -54,7 +54,7 @@ export function hitAffordanceRegions(
   for (let i = affordances.length - 1; i >= 0; i--) {
     const a = affordances[i];
     if (isVisible && !isVisible(a.id)) continue;
-    const regions = a.regions(state);
+    const regions = a.regionsAt ? a.regionsAt(state, wx, wy, view) : a.regions(state);
     let best: { region: AffordanceRegion; d2: number } | null = null;
     for (let j = 0; j < regions.length; j++) {
       const region = regions[j];

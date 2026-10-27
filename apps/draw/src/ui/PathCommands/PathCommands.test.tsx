@@ -11,24 +11,28 @@ vi.mock('@weasel-js/core', async (importOriginal) => ({
   },
 }));
 
+import { useState } from 'react';
 import { ActionsProvider, useActionsRegistry, type Action, type ActionsRegistry } from '@weasel-js/core';
-import { PathCommands } from './PathCommands';
+import { OffsetSlider, SimplifySlider, useSimplifyTolerance } from './PathCommands';
+
+function Simplify() {
+  const [tolerance, setTolerance] = useState(1);
+  return <SimplifySlider tolerance={tolerance} onTolerance={setTolerance} />;
+}
+
+function TunedSimplify() {
+  const [tolerance, setTolerance] = useSimplifyTolerance();
+  return <SimplifySlider tolerance={tolerance} onTolerance={setTolerance} />;
+}
 
 afterEach(() => {
   cleanup();
   edits.clear();
 });
 
-function openPopover(name: string) {
-  act(() => {
-    fireEvent.click(screen.getByRole('button', { name }));
-  });
-}
-
-describe('PathCommands', () => {
+describe('the path command sliders', () => {
   it('drives Simplify from its slider: a step previews and commits the tolerance', () => {
-    render(<PathCommands />);
-    openPopover('Simplify');
+    render(<Simplify />);
     const slider = screen.getByRole('slider', { name: 'Simplify tolerance' });
     act(() => {
       fireEvent.keyDown(slider, { key: 'ArrowRight' });
@@ -39,8 +43,7 @@ describe('PathCommands', () => {
   });
 
   it('drives Offset Path from its slider, by distance', () => {
-    render(<PathCommands />);
-    openPopover('Offset');
+    render(<OffsetSlider />);
     const slider = screen.getByRole('slider', { name: 'Offset distance' });
     act(() => {
       fireEvent.keyDown(slider, { key: 'ArrowLeft' });
@@ -48,7 +51,7 @@ describe('PathCommands', () => {
     expect(edits.get('offsetPath')!.commit).toHaveBeenCalledWith({ distance: -0.5 });
   });
 
-  it("tunes the Simplify brush to the Simplify slider's tolerance", () => {
+  it("tunes the Simplify brush to the tolerance useSimplifyTolerance holds", () => {
     const run = vi.fn();
     const brush: Action = { id: 'simplifyBrush', label: 'Simplify brush', invoker: { timing: 'immediate', run } };
     let registry: ActionsRegistry | null = null;
@@ -56,9 +59,8 @@ describe('PathCommands', () => {
       registry = useActionsRegistry();
       return null;
     }
-    render(<ActionsProvider><Grab /><PathCommands /></ActionsProvider>);
+    render(<ActionsProvider><Grab /><TunedSimplify /></ActionsProvider>);
     act(() => { registry!.register(brush); });
-    openPopover('Simplify');
     act(() => {
       fireEvent.keyDown(screen.getByRole('slider', { name: 'Simplify tolerance' }), { key: 'ArrowRight' });
     });

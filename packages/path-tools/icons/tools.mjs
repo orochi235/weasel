@@ -1,28 +1,39 @@
 // Path tools and the effects they make.
+import { px } from '../../icons/scripts/lib/base.mjs';
+import { rounded } from './rounded.mjs';
+
+const SPIRO_TOOL = [[1, 12], [4, 12], [10, 6], [13, 6]];
+// One of envelope's rows, from column 1 to 13 with its ends on `row`, bowed up two pixels. `back` runs it from
+// 13 to 1 and joins it to the path so far.
+const bow = (row, back = false) => {
+  const pts = [[1, row], [3, row - 2], [11, row - 2], [13, row]];
+  const d = rounded(back ? pts.reverse() : pts, 2.5);
+  return back ? `L${d.slice(1)}` : d;
+};
+const P = (c, r) => `${px(c)} ${px(r)}`;
+const dot = (c, r, rad = 1.875) => `<circle cx="${px(c)}" cy="${px(r)}" r="${rad}" fill="currentColor" stroke="none"/>`;
+// A handle three pixels square on pixel (c, r).
+const handle = (c, r) => `<rect x="${px(c) - 1.875}" y="${px(r) - 1.875}" width="3.75" height="3.75" fill="currentColor" stroke="none"/>`;
 export const TOOLS = {
   smudgeBrush: `
     <path d="M2 15.5 H5 C9 15.5 9.5 7 14 7"/>
     <circle cx="14" cy="7" r="3.75" stroke-width="1"/>
     <path d="M14 7 C15.5 9.5 16.5 15.5 18 15.5"/>`,
+  // A quad pulled out of square by its corner handles, every corner on a pixel center at a one-pixel stroke.
+  // A square with one corner pushed in by its handle. The two edges it moves run two pixels along for each one
+  // across, the steepest slope short of the diagonal that still meets a pixel center every other step.
   distort: `
-    <path d="M3.5 4.5 L16 3 L17 16.5 L4.5 14.5 Z"/>
-    <rect x="2" y="3" width="3" height="3" fill="currentColor" stroke="none"/>
-    <rect x="14.5" y="1.5" width="3" height="3" fill="currentColor" stroke="none"/>
-    <rect x="15.5" y="15" width="3" height="3" fill="currentColor" stroke="none"/>
-    <rect x="3" y="13" width="3" height="3" fill="currentColor" stroke="none"/>`,
+    <path d="M${P(1, 1)}H${px(13)}V${px(13)}L${P(5, 9)}Z" stroke-width="1.25"/>
+    ${handle(1, 1)}${handle(13, 1)}${handle(13, 13)}${handle(5, 9)}`,
+  // A two-by-two mesh whose rows bow upward, each bow a level run between two pixel diagonals and its columns on
+  // pixels 1, 7 and 13, so every line stays crisp at 1x.
   envelope: `
-    <path d="M3.5 5.5 Q10 0.5 16.5 5.5 V16.5 Q10 12.5 3.5 16.5 Z"/>
-    <path d="M10 3 V14.5 M3.5 11 Q10 7 16.5 11" stroke-width="1"/>
-    <circle cx="3.5" cy="5.5" r="1.5" fill="currentColor" stroke="none"/>
-    <circle cx="16.5" cy="5.5" r="1.5" fill="currentColor" stroke="none"/>
-    <circle cx="16.5" cy="16.5" r="1.5" fill="currentColor" stroke="none"/>
-    <circle cx="3.5" cy="16.5" r="1.5" fill="currentColor" stroke="none"/>`,
+    <path d="M${P(1, 14)}V${px(4)}L${bow(4).slice(1)}V${px(14)}${bow(14, true)}" stroke-width="1.25"/>
+    <path d="M${P(7, 2)}V${px(12)}${bow(9)}" stroke-width="1.25"/>
+    ${dot(1, 4)}${dot(13, 4)}${dot(13, 14)}${dot(1, 14)}`,
   puppetWarp: `
-    <path d="M2.5 11 C7 11 8 3 15 3 L17.5 7.5 C11 7.5 10 16 3.5 16 Z"/>
-    <circle cx="5" cy="13.5" r="1.5" fill="currentColor" stroke="none"/>
-    <circle cx="15.6" cy="5.3" r="1.5" fill="currentColor" stroke="none"/>`,
-  // Every edge on a 16px 1x pixel center, at a stroke one pixel wide, which is crisp at 2x as well, all about
-  // pixel 7: the circle on columns 0 to 4, the step between on 6 to 9, the box on 11 to 14.
+    <path d="${rounded([[0, 10.5], [0, 8], [4, 8], [11, 1], [15, 1], [15, 6], [11, 6], [4, 13], [0, 13], [0, 10.5]], 1.25)}Z" stroke-width="1.25"/>
+    ${dot(2.5, 10.5, 1.5)}${dot(12.5, 3.5, 1.5)}`,
   blend: `
     <circle cx="3.125" cy="9.375" r="2.5" stroke-width="1.25"/>
     <rect x="8.125" y="5.625" width="3.75" height="7.5" rx="1.25" stroke-width="1.25"/>
@@ -79,11 +90,6 @@ export const TOOLS = {
     <path d="M10 6.6 V13.4" stroke-width="1"/>
     <circle cx="10" cy="6.6" r="1.4" fill="currentColor" stroke="none"/>
     <circle cx="10" cy="13.4" r="1.4" fill="currentColor" stroke="none"/>`,
-  spiro: `
-    <g stroke-linecap="butt" stroke-linejoin="miter">
-      <path d="M 3.5 15 C 6.5 15 7 10 10 10 C 13 10 13.5 5 16.5 5" stroke-linecap="round"/>
-      <circle cx="3.5" cy="15" r="1.6" fill="currentColor" stroke="none"/>
-      <circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/>
-      <circle cx="16.5" cy="5" r="1.6" fill="currentColor" stroke="none"/>
-    </g>`,
+  // An S that runs level, up the pixel diagonal and level again, with round points at its ends and its middle.
+  spiro: `<path d="${rounded(SPIRO_TOOL, 2.5)}" stroke-width="1.25"/>${dot(1, 12)}${dot(7, 9)}${dot(13, 6)}`,
 };

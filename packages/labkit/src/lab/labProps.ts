@@ -92,6 +92,12 @@ export interface LabBaseProps {
   /** Draw the lab's menu bar above its header. Default `true`. Dropped with the header
    *  (`header={false}`) and while presenting. */
   menuBar?: boolean;
+  /** Whether marks show at first, in a lab with an instrument declaring
+   *  `annotations`: its targets' overlays, each trial's Marks section and
+   *  export, and the drawing tools in the rail. Default `true`. View → Marks
+   *  turns them on and off, and a stored lab keeps that choice over this.
+   *  Hidden marks are kept, not dropped. */
+  marks?: boolean;
   /** Menus a right-click over a trial's camera opens, picked by each def's `when` (a camera
    *  reports no body, so `when: {}` matches anywhere on it). Rows name commands registered in
    *  the lab. Memoize or hoist. */

@@ -2,6 +2,7 @@ import type { PolygonPath } from '../path';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from '../paths/anchors';
 import { cubicPointAt, type Point } from '../paths/cubicMath';
 import { fitPointRun, keepCorner } from '../paths/fitRun';
+import { nearestOnLine } from '../nearest';
 
 /** Options for {@link warpPath}. */
 export interface WarpPathOptions {
@@ -12,6 +13,10 @@ export interface WarpPathOptions {
 
 const MIN_SAMPLES = 8;
 const MAX_SAMPLES = 64;
+/** How far the warped curve may stray from the chord between two samples, as a share of the tolerance. */
+const FLATNESS = 0.25;
+/** Most times a span between two even samples is halved where the warp bends it. */
+const MAX_HALVINGS = 6;
 /** How far along a segment, as a curve parameter, its end tangent is read. */
 const TANGENT_STEP = 1e-3;
 
@@ -44,8 +49,7 @@ function warpSubpath(sub: PenAnchor[], closed: boolean, map: (p: Point) => Point
     const b = sub[(i + 1) % n];
     const at = segmentAt(a, b);
     const count = sampleCount(a, b, tol);
-    const pts: Point[] = [];
-    for (let k = 0; k <= count; k++) pts.push(map(at(k / count)));
+    const pts = sampleWarped((t) => map(at(t)), count, tol);
     const start = pts[0];
     const end = pts[pts.length - 1];
     const tStart = unit(sub2(map(at(TANGENT_STEP)), start));
@@ -78,6 +82,34 @@ function sampleCount(a: PenAnchor, b: PenAnchor, tol: number): number {
   const c2 = b.inHandle ?? b;
   const len = Math.hypot(c1.x - a.x, c1.y - a.y) + Math.hypot(c2.x - c1.x, c2.y - c1.y) + Math.hypot(b.x - c2.x, b.y - c2.y);
   return Math.min(MAX_SAMPLES, Math.max(MIN_SAMPLES, Math.ceil(len / (8 * tol))));
+}
+
+/**
+ * The warped curve sampled `count` times evenly in its parameter, then halved
+ * wherever it strays from the chord between two samples by more than a share
+ * of `tol`: a warp can bend a stretch the even samples step straight over,
+ * and the refit reads the curve only through them.
+ */
+function sampleWarped(curve: (t: number) => Point, count: number, tol: number): Point[] {
+  const flat = FLATNESS * tol;
+  const out: Point[] = [curve(0)];
+  const span = (t0: number, p0: Point, t1: number, p1: Point, depth: number) => {
+    const tm = (t0 + t1) / 2;
+    const pm = curve(tm);
+    if (depth < MAX_HALVINGS && fromChord(pm, p0, p1) > flat) {
+      span(t0, p0, tm, pm, depth + 1);
+      span(tm, pm, t1, p1, depth + 1);
+    } else {
+      out.push(p1);
+    }
+  };
+  for (let k = 0; k < count; k++) span(k / count, out[out.length - 1], (k + 1) / count, curve((k + 1) / count), 0);
+  return out;
+}
+
+/** How far `p` lies from the segment `a`–`b`. */
+function fromChord(p: Point, a: Point, b: Point): number {
+  return nearestOnLine(p.x, p.y, a.x, a.y, b.x, b.y).dist;
 }
 
 function dedupe(pts: Point[]): Point[] {

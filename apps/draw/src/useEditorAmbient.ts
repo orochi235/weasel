@@ -1,4 +1,6 @@
-import { type Contribution, type SelectionApi, type SurfaceContribution, useLatest, type View } from '@weasel-js/core';
+import {
+  type Contribution, PATHFINDER_KEYMAP, type SelectionApi, type SurfaceContribution, useLatest, type View,
+} from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import { createEmitter } from '@weasel-js/registry';
 import { useLayoutEffect, useMemo } from 'react';
@@ -29,7 +31,7 @@ export interface EditorAmbientArgs {
 }
 
 /** Everything draw binds on the canvas whatever tool is active: the HUD, the mode keys, the
- *  color keys, the app's own commands, the input recorder, and live symmetry. */
+ *  color keys, the app's own commands, the Pathfinder keymap, the input recorder, and live symmetry. */
 export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContribution[] {
   const { scene, selection, modes, view, setView } = args;
   const hudTool = useHudContribution();
@@ -65,7 +67,7 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   const symmetry = args.symmetry.contribution;
 
   return useMemo(
-    () => [hudTool, ...modes, colorKeys, appKeys, recordingKeys, symmetry],
+    () => [hudTool, ...modes, colorKeys, appKeys, ...PATHFINDER_KEYMAP, recordingKeys, symmetry],
     [hudTool, modes, colorKeys, appKeys, recordingKeys, symmetry],
   );
 }

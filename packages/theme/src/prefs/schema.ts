@@ -1,4 +1,4 @@
-import { isPrefLocus, type PrefGroup, type PrefLeaf, type PrefLocus } from '@weasel-js/prefs';
+import { isPrefLocus, prefLeaves, type PrefGroup, type PrefLeaf, type PrefLocus } from '@weasel-js/prefs';
 import { selectionKey } from '../axes.ts';
 import { weaselTheme, type Theme } from '../theme.ts';
 import { prefOfCss, tokenLeafKind } from './leaf.ts';
@@ -74,4 +74,30 @@ export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
     children[key].children[row.name] = tokenLeaf(row, table, splitBy);
   }
   return { name: `${labeled(theme.name)} theme`, children };
+}
+
+/** What a token's CSS refers to, as {@link themePrefsReferences} reads it. */
+export interface ThemePrefsReference {
+  /** The custom property referred to, `--` and all. */
+  readonly property: string;
+  /** The path of the leaf that edits it, where it is one of the schema's tokens. */
+  readonly path?: string;
+}
+
+const WHOLE_VAR = /^\s*var\(\s*(--[\w-]+)\s*\)\s*$/;
+
+/**
+ * Reads a token's CSS as a reference to another custom property where the whole of it is one `var()` with no
+ * fallback, and finds the leaf of `schema` that edits that property. Anything else, a `calc()` or a shadow that
+ * holds a `var()` among other text included, reads as no reference.
+ */
+export function themePrefsReferences(schema: PrefGroup): (css: unknown) => ThemePrefsReference | undefined {
+  const paths = new Map<string, string>();
+  for (const path of prefLeaves(schema).keys()) if (themeAxisOf(path) === undefined) paths.set(`--wzl-${themeTokenOf(path)}`, path);
+  return (css) => {
+    const property = typeof css === 'string' ? WHOLE_VAR.exec(css)?.[1] : undefined;
+    if (property === undefined) return undefined;
+    const path = paths.get(property);
+    return path === undefined ? { property } : { property, path };
+  };
 }

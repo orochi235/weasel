@@ -5,6 +5,7 @@ import { useMenuHost, type MenuHost, type OpenMenu } from '@weasel-js/core';
 import { MenuPanel } from './MenuPanel';
 import { useDismiss } from './useDismiss';
 import { useMenuPortal } from './useMenuPortal';
+import { MenuPartsContext } from './menuParts';
 
 const noop = () => () => {};
 const nothing = () => null;
@@ -92,10 +93,15 @@ function Panels({ controller, open, close, takeFocus, labelledBy, inside, releas
 }) {
   const idBase = useId();
   const panels = useRef(new Map<number, HTMLElement>());
+  const parts = useRef(new Map<string, HTMLElement>());
+  const registerPart = useCallback((key: string, el: HTMLElement | null) => {
+    if (el) parts.current.set(key, el); else parts.current.delete(key);
+  }, []);
   const stack = useSyncExternalStore(controller.subscribe, controller.stack, controller.stack);
   const isInside = useCallback(
     (t: EventTarget | null) =>
-      (t instanceof Node && [...panels.current.values()].some((el) => el.contains(t))) || inside?.(t) === true,
+      (t instanceof Node && [...panels.current.values(), ...parts.current.values()].some((el) => el.contains(t)))
+      || inside?.(t) === true,
     [inside],
   );
   useDismiss(isInside, close);
@@ -111,7 +117,7 @@ function Panels({ controller, open, close, takeFocus, labelledBy, inside, releas
   };
 
   return (
-    <>
+    <MenuPartsContext.Provider value={registerPart}>
       {stack.map((highlight, level) => (
         <MenuPanel
           // A submenu panel remounts, and so re-places itself, when the row it hangs from changes.
@@ -131,6 +137,6 @@ function Panels({ controller, open, close, takeFocus, labelledBy, inside, releas
           register={(el) => { if (el) panels.current.set(level, el); else panels.current.delete(level); }}
         />
       ))}
-    </>
+    </MenuPartsContext.Provider>
   );
 }

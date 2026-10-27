@@ -1,5 +1,6 @@
 import { useRef, type CSSProperties, type ReactElement } from 'react';
 import { useTrackShape } from '../Along/alongContext';
+import { useInlineDirection } from '../Along/useReadingRun';
 import { QuantityText } from '../QuantityText';
 import { ReadoutsAlong } from './ReadoutsAlong';
 import { ReadoutsBelow } from './ReadoutsBelow';
@@ -55,8 +56,9 @@ export function SliderBody<T extends Thumb = Thumb>(
   const thumbLength = useBoxes(() => [thumbEls.current[0] ?? null], thumbs.length, { untransformed: true })[0]?.width || 14;
   const along = useTrackShape();
   const shape = props.shape ?? along?.shape;
+  const direction = useInlineDirection(trackRef);
   const { geometry, run } = useSliderGeometry({
-    shape, thumbFit: props.thumbFit ?? 'inside', thumbLength,
+    shape, thumbFit: props.thumbFit ?? 'inside', thumbLength, direction,
     rail: () => railRef.current, railFrame: () => railFrameRef.current, band: () => bandRef.current,
   });
   const scale = useScale(span, strict, step);
@@ -64,7 +66,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
 
   const pointer = useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, onInput: props.onInput, drags });
-  const keyDown = onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: props.onInput, onChange: props.onChange });
+  const keyDown = onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: props.onInput, onChange: props.onChange, direction });
 
   const placement = props.readoutPlacement ?? 'none';
   const { renderReadout, display } = props;
@@ -73,7 +75,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   const labeled = labeledStopsOf(stopList, props.stopLabels ?? 'all');
   const curved = geometry.curved && shape !== undefined;
   const rootClass = [s.root, props.thumbFit === 'overhang' && s.overhang, labeled.length > 0 && s.withStopLabels, curved && s.curved, className].filter(Boolean).join(' ');
-  const painted = props.renderTrack?.(trackCtxOf(run, boxes[0], boxes[2], boxes[1], valueToFraction));
+  const painted = props.renderTrack?.(trackCtxOf(run, boxes[0], boxes[2], boxes[1], valueToFraction, direction));
 
   const marks = (
     <>
@@ -137,7 +139,7 @@ export function SliderBody<T extends Thumb = Thumb>(
       )}
       </div>
       {placement === 'below-thumb' && (
-        <ReadoutsBelow readouts={thumbs.map((t, i) => ({ fraction: valueToFraction(t.value), content: readoutOf(t, i) }))} />
+        <ReadoutsBelow readouts={thumbs.map((t, i) => ({ fraction: valueToFraction(t.value), content: readoutOf(t, i) }))} place={geometry.place} />
       )}
     </div>
   );

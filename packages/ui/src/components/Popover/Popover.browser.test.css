@@ -23,3 +23,42 @@
   width: 60px;
   height: 20px;
 }
+
+/* Near the viewport's bottom or right edge, so the room left there depends on the scale. */
+.wzl-popover-test-box[data-at='low'] {
+  top: calc(100vh - 200px);
+}
+
+.wzl-popover-test-box[data-at='right'] {
+  left: calc(100vw - 200px);
+}
+
+.wzl-popover-test-content[data-size='short'] {
+  width: 120px;
+  height: 80px;
+}
+
+.wzl-popover-test-content[data-size='tall'] {
+  width: 120px;
+  height: 2000px;
+}
+
+.wzl-popover-test-content[data-size='wide'] {
+  width: 160px;
+  height: 40px;
+}
+
+/* A positioned box that scrolls. */
+.wzl-popover-test-scroller {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  width: 300px;
+  height: 200px;
+  overflow: auto;
+}
+
+.wzl-popover-test-scroller-content {
+  width: 300px;
+  height: 260px;
+}

@@ -17,3 +17,11 @@
   overflow: auto;
   min-height: 0;
 }
+
+/* A token's value that refers to another: the name referred to, and the way back to its text. */
+.reference {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  min-inline-size: 0;
+}

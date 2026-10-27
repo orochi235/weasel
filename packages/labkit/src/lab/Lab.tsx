@@ -3,11 +3,11 @@ import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { useShallow } from 'zustand/react/shallow';
+import { useLabMarks } from '../annotations/labMarks';
 import { AnnotationPreloadContext } from '../annotations/preload';
-import { labAnnotationTools } from '../annotations/toolMap';
 import { CameraGesturesContext } from '../canvas/cameraGestures';
 import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
-import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/LabChrome';
+import { LabFooterRegion, LabHeaderRegion } from '../chrome/LabChrome';
 import { ClockRegistryContext } from '../clock/clockRegistry';
 import { useLabClocks } from '../clock/useLabClocks';
 import { PersistenceContext } from '../state/Persistence';
@@ -26,6 +26,7 @@ import { LabProviders } from './LabProviders';
 import { LabShell } from './LabShell';
 import { LabSurface } from './LabSurface';
 import { LabZoom } from './LabZoom';
+import { useLabChromeAll } from './labChromeAll';
 import type { LabBaseProps, LabProps } from './labProps';
 import { nebulaStyle } from './nebula';
 import { type OpenedLab, openStoredLab, openUnstoredLab, presentStorageKey } from './openLab';
@@ -148,6 +149,7 @@ function LabRuntime({
   header = true,
   menus,
   menuBar = true,
+  marks = true,
   contextMenus,
   tools,
   configRules,
@@ -189,16 +191,8 @@ function LabRuntime({
   const workspacePanels = useMemo(() => panelsOf(undockedPanels), [undockedPanels]);
   const resolvedMode = useResolvedColorMode(modeValue);
 
-  // Tools and lab contributions share one id namespace, so they merge once
-  // here — before any region renders — and a collision throws rather than one
-  // of them silently losing.
-  // Declaring `annotations` on any instrument puts the drawing tools here, in
-  // the lab's rail: one tool is armed across every trial.
-  const annotationTools = useMemo(() => labAnnotationTools(instruments), [instruments]);
-  const labChromeAll = useMemo(
-    () => labContributions([...annotationTools, ...(tools ?? [])], labChrome),
-    [annotationTools, tools, labChrome],
-  );
+  const [marksShown, setMarksShown] = useLabMarks(opened.records, marks);
+  const labChromeAll = useLabChromeAll(instruments, marksShown, tools, labChrome);
   const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
   const hasPaneChrome = labChromeAll.some((c) => c.region === 'sidebar' || c.region === 'aside');
 
@@ -215,6 +209,8 @@ function LabRuntime({
     focus: setFocusPick,
     configRules,
     controls,
+    marks: marksShown,
+    setMarks: setMarksShown,
   });
 
   const backdropStyle = nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable');

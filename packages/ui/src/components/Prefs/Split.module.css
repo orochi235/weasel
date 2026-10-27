@@ -1,25 +1,19 @@
-/* What a row's label line carries for a value that may be split: its marks, and the control that opens it. */
-.head {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wzl-space-2);
-  margin-inline-start: var(--wzl-space-2);
-}
-
 .mark {
   display: inline-flex;
   flex: none;
 }
 
-/* The label line is a line of text: the twisty's target is the line's height, and no taller. */
+/* The twisty's target is a line of text's height, and no taller; after a control, it keeps its own width. */
 .toggle {
   --wzl-disclosure-target: var(--wzl-space-5);
+  flex: none;
 }
 
-/* On a line of its own, over a control that brings its own chrome. */
+/* The marks and the toggle on a line of their own, over a control that brings its own chrome. */
 .lead {
   display: flex;
-  margin-inline-start: 0;
+  align-items: center;
+  gap: var(--wzl-space-2);
   margin-block-end: var(--wzl-space-1);
   font-size: var(--wzl-font-size-2xs);
 }

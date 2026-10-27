@@ -31,6 +31,7 @@ export {
 export type {
   UseResizeOptions,
   PoseDescriptor,
+  TranslateLead,
   CornerHandle,
 } from '../interactions/actions/resize';
 export {

@@ -21,6 +21,11 @@ describe('paintPreviewCss', () => {
     } as unknown as Paint)).toBeUndefined();
   });
 
+  it('shows an image pattern\'s picture whole', () => {
+    expect(paintPreviewCss({ kind: 'image', src: 'data:image/png;base64,AAAA' }))
+      .toBe('url("data:image/png;base64,AAAA") center / cover no-repeat');
+  });
+
   it('reads a left-to-right gradient as CSS 90deg', () => {
     const css = paintPreviewCss({
       kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },

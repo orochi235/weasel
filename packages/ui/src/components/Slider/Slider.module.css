@@ -141,7 +141,7 @@
 .readoutInline {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: inline-block;
-  margin-left: var(--wzl-space-4);
+  margin-inline-start: var(--wzl-space-4);
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size-sm);
   line-height: var(--wzl-leading-tight);
@@ -215,11 +215,11 @@
 /* An end label centers on its stop like the rest, but stops at the track's edge,
  * so a wide one can't spill past the control and misalign whatever sits beside it.
  * The rail is inset from that edge by `--rp-thumb-inset`. */
-.stopLabel[data-edge="start"] {
+.stopLabel[data-edge="left"] {
   transform: translateX(max(-50%, -1 * var(--rp-thumb-inset)));
 }
 
-.stopLabel[data-edge="end"] {
+.stopLabel[data-edge="right"] {
   transform: translateX(min(-50%, var(--rp-thumb-inset) - 100%));
 }
 

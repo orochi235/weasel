@@ -117,13 +117,13 @@ describe('paint-kind registry', () => {
   it('ships the built-in kinds', () => {
     expect(listPaintKinds().map((k) => k.id)).toEqual([
       'solid', 'linear-gradient', 'radial-gradient', 'conic-gradient',
-      'hatch', 'crosshatch', 'dots', 'chunks', 'texture',
+      'hatch', 'crosshatch', 'dots', 'chunks', 'image', 'texture',
     ]);
   });
 
-  it('offers the tiles and texture as one pattern family', () => {
+  it('offers the tiles, image and texture as one pattern family', () => {
     const family = (id: string) => listPaintKinds().find((k) => k.id === id)?.family;
-    for (const id of ['hatch', 'crosshatch', 'dots', 'chunks', 'texture']) {
+    for (const id of ['hatch', 'crosshatch', 'dots', 'chunks', 'image', 'texture']) {
       expect(family(id)).toBe(patternFamily);
     }
     expect(family('solid')).toBeUndefined();

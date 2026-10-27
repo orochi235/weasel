@@ -8,7 +8,7 @@ const CASCADE_OFFSET_PX = 24;
  * `index`-th item of one arrival stepped down and right of the first.
  */
 export function arrivalBounds(
-  ctx: IngestCtx,
+  ctx: Pick<IngestCtx, 'point' | 'viewportWorldRect'>,
   size: { width: number; height: number },
   index: number,
 ): { x: number; y: number; width: number; height: number } {

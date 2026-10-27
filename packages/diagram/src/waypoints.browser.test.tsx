@@ -83,7 +83,7 @@ describe('route editing in a real canvas', () => {
     pointer(canvas, 'pointerdown', 150, 20);
     pointer(canvas, 'pointerup', 150, 20);
     await frame();
-    expect(onSelect).toHaveBeenLastCalledWith(AB);
+    expect(onSelect).toHaveBeenLastCalledWith(AB, [AB]);
     await frame();
     expect(inked(canvas, 260, 160)).toBe(false);
 

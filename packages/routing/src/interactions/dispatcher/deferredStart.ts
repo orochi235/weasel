@@ -8,13 +8,13 @@ import type { InvocationCtx, OngoingHandle } from '../actions/invoker';
  */
 export function deferredStart(start: () => OngoingHandle, thresholdPx: number): OngoingHandle {
   let inner: OngoingHandle | null = null;
-  const onMove = (ctx: InvocationCtx): void => {
+  const onMove = (ctx: InvocationCtx): void | 'pass' => {
     if (!inner) {
       const travel = ctx.drag?.screenDelta;
       if (!travel || Math.hypot(travel.x, travel.y) < thresholdPx) return;
       inner = start();
     }
-    inner.onMove?.(ctx);
+    return inner.onMove?.(ctx);
   };
   const onEnd = (ctx: InvocationCtx, reason: 'commit' | 'cancel'): void => {
     inner?.onEnd?.(ctx, reason);

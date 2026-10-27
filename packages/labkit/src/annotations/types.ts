@@ -3,6 +3,7 @@ import type { ViewTransform } from '../instrument/types';
 import type { TrialInfo } from '../state/types';
 import type { MarkStyle, PaintableMark } from './paint';
 import type { MarkScene } from './store';
+import type { ContentWindow } from './view';
 
 /** A point in fractions of a target's content box. */
 export interface FracPoint {
@@ -156,6 +157,11 @@ export interface AnnotationTarget extends AnnotationTargetInfo {
   ref: RefObject<HTMLElement | null>;
   /** The pane's camera, mirrored so marks pan and zoom with what they mark. */
   view?: ViewTransform;
+  /** For an element that scrolls its content, the part of the content box its
+   *  own box shows, in content units: its scroll offset and its layout size.
+   *  Ignored when `view` is given. Default: the whole content box. The overlay
+   *  asks for targets again when anything inside the element scrolls. */
+  shown?: ContentWindow;
 }
 
 /** Where an instrument keeps its own marks. Declaring this means labkit never

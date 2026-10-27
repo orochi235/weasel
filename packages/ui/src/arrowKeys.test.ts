@@ -18,6 +18,14 @@ describe('arrow-key steps', () => {
     expect(keyMoveOf(key('a'))).toBeNull();
   });
 
+  it('right to left, mirrors only the horizontal arrows', () => {
+    expect(keyMoveOf(key('ArrowRight'), 'rtl')).toBe(-1);
+    expect(keyMoveOf(key('ArrowLeft', true), 'rtl')).toBe(10);
+    expect(keyMoveOf(key('ArrowUp'), 'rtl')).toBe(1);
+    expect(keyMoveOf(key('PageDown'), 'rtl')).toBe(-10);
+    expect(keyMoveOf(key('End'), 'rtl')).toBe('end');
+  });
+
   it('moves on a plane in screen axes', () => {
     expect(arrowMove(key('ArrowUp'))).toEqual({ dx: 0, dy: -1 });
     expect(arrowMove(key('ArrowLeft', true))).toEqual({ dx: -10, dy: 0 });

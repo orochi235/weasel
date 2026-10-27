@@ -1,7 +1,10 @@
 /**
  * The kit's `text/plain` content handler: a pasted or dropped string becomes
- * a text node. Not registered by default; a canvas takes it through
- * `ingestion.handlers`.
+ * a text node. Registered by default with the other kit handlers.
+ *
+ * Strings that arrive beside a file are passed over: there they describe the
+ * file (its name, a URL to it), as when a browser drags an image or the OS
+ * copies a file, and the file is what was meant.
  *
  * The node's box is the string's own laid-out size at the default text style,
  * so it holds the text exactly and wraps nowhere the string does not break.
@@ -32,6 +35,7 @@ export function createTextHandler(opts: TextHandlerOptions = {}): ContentHandler
     types: ['text/plain'],
     priority: -110,
     handle(items, ctx: IngestCtx) {
+      if ((ctx.items ?? items).some((it) => it.kind === 'file')) return;
       let index = 0;
       for (const item of items) {
         if (item.kind !== 'string') continue;
@@ -44,8 +48,6 @@ export function createTextHandler(opts: TextHandlerOptions = {}): ContentHandler
   };
 }
 
-/**
- * Turns pasted or dropped plain text into a text node sized to the string. Registered nowhere by
- * default: a canvas opts in with `ingestion={{ handlers: [kitTextHandler] }}`.
- */
+/** Turns pasted or dropped plain text into a text node sized to the string. A kit handler, so a
+ *  canvas with the `ingest` feature takes text unless its `ingestion.kitHandlers` omits it. */
 export const kitTextHandler: ContentHandlerEntry = createTextHandler();

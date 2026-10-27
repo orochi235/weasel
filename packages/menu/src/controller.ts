@@ -1,6 +1,6 @@
 import { createNumberValues } from './numberValues';
-import { createTextValues } from './textValues';
-import { entriesAt, isRow, type MenuEntry, type MenuNumberEntry, type MenuTextEntry } from './entries';
+import { createHeldValues } from './heldValues';
+import { entriesAt, isRow, type MenuColorEntry, type MenuEntry, type MenuNumberEntry, type MenuTextEntry } from './entries';
 import { firstRow, type MenuStack } from './keys';
 import { EMPTY_TYPEAHEAD, planKey } from './keyPlan';
 import type { Point, Rect } from './placement';
@@ -62,6 +62,10 @@ export interface MenuController {
   textValue(e: MenuTextEntry): string | undefined;
   /** Write a text row. The menu stays open; subscribers hear it. */
   setText(e: MenuTextEntry, value: string): void;
+  /** What a color row holds now: the last value set while the menu is open, else the one it opened with. */
+  colorValue(e: MenuColorEntry): string | undefined;
+  /** Write a color row that has a `set`. The menu stays open; subscribers hear it. */
+  setColor(e: MenuColorEntry, value: string): void;
   subscribe(fn: () => void): () => void;
   dispose(): void;
 }
@@ -175,7 +179,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
     },
     setPanel(level, rect) { panels.set(level, rect); },
     ...numbers,
-    ...createTextValues(notify, () => closed),
+    ...createHeldValues(notify, () => closed),
     subscribe(fn) {
       listeners.add(fn);
       return () => { listeners.delete(fn); };

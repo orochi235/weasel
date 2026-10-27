@@ -1,0 +1,18 @@
+/* Laid over the viewport by `targetInFrame`; it takes no pointer of its own, and its overlays take theirs. */
+.frame {
+  position: absolute;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+/* Fixed makes a stacking context, so it takes the popover rung for the overlays it holds. */
+.fixed {
+  position: fixed;
+  z-index: var(--wzl-z-popover);
+}
+
+.frame > * {
+  pointer-events: auto;
+}

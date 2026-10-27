@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveTheme } from '../resolveTheme';
 import { defineTheme, weaselTheme } from '../theme';
 import { themeFromPrefs, themePrefsPins, themePrefsSelection, themePrefsValues } from './pins';
-import { themePrefsSchema } from './schema';
+import { themePrefsReferences, themePrefsSchema } from './schema';
 
 const open = (schema: PrefGroup) => openPrefsSync(schema, { storage: createMemoryAdapter(), prefix: 't.' });
 
@@ -134,5 +134,25 @@ describe('a theme that extends another', () => {
     const leaves = prefLeaves(themePrefsSchema(acme));
     expect(leaves.get('accent.accent-base')).toMatchObject({ kind: 'color', default: '#ff3366' });
     expect(leaves.get('acme.acme-gap')).toMatchObject({ kind: 'number', default: 3 });
+  });
+});
+
+describe('themePrefsReferences', () => {
+  const refer = themePrefsReferences(SCHEMA);
+
+  it('reads a whole-value var() of a token as the leaf that edits it', () => {
+    expect(refer(LEAVES.get('button.button-confirm-fg')!.default)).toEqual({ property: '--wzl-fg-on-accent', path: 'fg.fg-on-accent' });
+    expect(refer(' var( --wzl-gray-50 ) ')).toEqual({ property: '--wzl-gray-50', path: 'gray.gray-50' });
+  });
+
+  it('reads a property that is no token of the theme as a reference with no leaf', () => {
+    expect(refer(LEAVES.get('button.button-surface')!.default)).toEqual({ property: '--btn-glass' });
+  });
+
+  it('reads a var() among other text, one with a fallback, or anything not text, as no reference', () => {
+    expect(refer('1px solid var(--wzl-border)')).toBeUndefined();
+    expect(refer('var(--wzl-border, red)')).toBeUndefined();
+    expect(refer('calc(var(--btn-height) * 0.1)')).toBeUndefined();
+    expect(refer(12)).toBeUndefined();
   });
 });

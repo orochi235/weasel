@@ -6,7 +6,7 @@ import { resolveIcon } from '@weasel-js/ui/components/Icon';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { switchMenuId, switchSchema, SurfaceSwitchButton } from './surfaceSwitch';
-import type { PanelChrome, SchemaAsset, SchemaBinding } from './types';
+import type { PanelChrome, SurfaceAsset, SchemaBinding } from './types';
 import s from './SchemaSurfaces.module.css';
 
 const ignore = (): void => {};
@@ -16,7 +16,7 @@ const useUnbound = (): SchemaBinding => UNBOUND;
 
 /** What `asset`'s leaves are bound to, from its own binding hook. Each surface asks, so moving an asset between
  *  surfaces keeps what it shows. */
-function useAssetBinding(asset: SchemaAsset): SchemaBinding {
+export function useAssetBinding(asset: SurfaceAsset): SchemaBinding {
   const useBinding = asset.useBinding ?? useUnbound;
   return useBinding();
 }
@@ -37,31 +37,32 @@ function nest(values: Readonly<Record<string, unknown>> | undefined): Record<str
 }
 
 /** A schema asset drawn as a right-sidebar panel, its header offering the other surfaces. */
-export function SchemaPanel({ asset, chrome, order }: { asset: SchemaAsset; chrome: PanelChrome; order?: PrefOrder }) {
-  const { values, onChange } = useAssetBinding(asset);
+export function SchemaPanel({ asset, chrome, order }: { asset: SurfaceAsset; chrome: PanelChrome; order?: PrefOrder }) {
+  const { values, onChange, title } = useAssetBinding(asset);
   const tree = useMemo(() => nest(values), [values]);
   const schema = useMemo(() => orderPrefGroup(asset.schema, order), [asset.schema, order]);
   return (
     <SidebarPanel
-      title={asset.label}
+      title={title ?? asset.label}
       collapsed={chrome.collapsed}
       onToggleCollapse={chrome.onToggleCollapse}
       onHide={chrome.onHide}
       actions={<SurfaceSwitchButton asset={asset} current="panel" />}
     >
-      <PrefsForm schema={schema} layout="list" values={tree} onChange={onChange ?? ignore} />
+      <PrefsForm schema={schema} layout="list" values={tree} onChange={onChange ?? ignore} renderers={asset.renderers?.panel} />
     </SidebarPanel>
   );
 }
 
 /** A schema asset drawn as a labeled bar in the command strip; its context menu offers the other surfaces. */
-export function SchemaBar({ asset, order, onReorder }: { asset: SchemaAsset; order?: PrefOrder; onReorder?: (order: PrefOrder) => void }) {
+export function SchemaBar({ asset, order, onReorder }: { asset: SurfaceAsset; order?: PrefOrder; onReorder?: (order: PrefOrder) => void }) {
   const { values, onChange } = useAssetBinding(asset);
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   return (
     <div className={s.slot} onContextMenu={openSwitch}>
       <Bar
-        schema={asset.schema} label={asset.label} values={values} onChange={onChange} framed="segmented" overflow="menu"
+        schema={asset.schema} label={asset.label} values={values} onChange={onChange} renderers={asset.renderers?.bar}
+        framed="segmented" overflow="menu"
         {...(order ? { order } : {})} {...(onReorder ? { onReorder } : {})}
       />
     </div>
@@ -70,7 +71,7 @@ export function SchemaBar({ asset, order, onReorder }: { asset: SchemaAsset; ord
 
 /** A schema asset drawn as a menu button in the command strip, the other surfaces offered at the menu's end and
  *  from the button's context menu. */
-export function SchemaMenu({ asset, order }: { asset: SchemaAsset; order?: PrefOrder }) {
+export function SchemaMenu({ asset, order }: { asset: SurfaceAsset; order?: PrefOrder }) {
   const { values, onChange } = useAssetBinding(asset);
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   const schema = useMemo(

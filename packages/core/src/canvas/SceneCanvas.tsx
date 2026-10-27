@@ -123,7 +123,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selection: selection.current as readonly NodeId[], viewRef, dispatcher,
   });
 
-  const { ingest, clipboard: ingestionClipboard } = useCanvasIngestion(adapter, () => actionsRegistry, props.ingestion);
+  const { ingest, clipboard: ingestionClipboard, handlers: ingestionHandlers } = useCanvasIngestion(adapter, () => actionsRegistry, props.ingestion);
   const { views: addedViews, addView, viewAt, aimOf, setAim } = useAddedViews();
   // The consumer's handle extends the primitive's with `ingest`, which needs the action stack.
   const { handleRef, ready: canvasReady } = useSceneCanvasHandle({
@@ -165,7 +165,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         picking={{ ...picking, adapter: adapter as unknown as BridgeAdapter }} nodeAtPointRef={getNodeAtPointRef}
         tools={tools} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
         dispatcher={dispatcher} pathEdit={{ state: pathEditState }}
-        chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} devtools={devtools}
+        chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} ingestionHandlers={ingestionHandlers} devtools={devtools}
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       <SurfaceDeclarations views={props.views} entries={contributionEntries(tools.tools)} added={addedViews} />

@@ -21,7 +21,7 @@ export interface BlockFrame {
 const UNSCALED: BlockFrame = { left: 0, top: 0, scaleX: 1, scaleY: 1, insetLeft: 0, insetTop: 0 };
 
 /** True when `el` is the containing block for absolutely positioned descendants by its own style alone. */
-function holdsPositioned(el: Element): boolean {
+export function holdsPositioned(el: Element): boolean {
   const style = getComputedStyle(el);
   const set = (value: string | undefined) => Boolean(value) && value !== 'none';
   return (
@@ -56,10 +56,13 @@ export function containingBlock(el: HTMLElement): Element {
   return root;
 }
 
+/** `el`'s client rect as the browser lays it out, past any `getBoundingClientRect` of its own (an overlay frame's). */
+export const realRect = (el: Element): DOMRect => Element.prototype.getBoundingClientRect.call(el);
+
 /** How `block`'s own px map to client px. The root element, standing for the viewport, maps one to one. */
 export function blockFrame(block: Element): BlockFrame {
   if (block === block.ownerDocument.documentElement || !(block instanceof HTMLElement)) return UNSCALED;
-  const rect = block.getBoundingClientRect();
+  const rect = realRect(block);
   return {
     left: rect.left,
     top: rect.top,

@@ -184,14 +184,15 @@ export function LiveCopies(props: LiveCopiesProps) {
 }
 
 /**
- * What a lens's copy of an isolated story renders: its host id, the globals and args it renders under, and the trial's
- * host, whose scroll it follows.
+ * What a lens's copy of an isolated story renders: its host id, the globals and args it renders under, the trial's
+ * host, whose scroll it follows, and the factor the lens shows it at.
  */
 export interface LensFrameCopy {
   id: string;
   main: HTMLElement;
   globals: Globals;
   args: Readonly<Record<string, unknown>>;
+  factor: number;
 }
 
 /** Props for `LiveFrameCopies`. */
@@ -206,9 +207,9 @@ export interface LiveFrameCopiesProps {
 function FrameLensCopy({ request, trialId, trialConfig, children }: Omit<LiveFrameCopiesProps, 'trialId'> & { request: LiveRequest; trialId: string }) {
   const globals = useCopyGlobals(request, trialConfig);
   const id = copyId(trialId, request);
-  const { args } = request;
+  const { args, factor } = request;
   const main = request.hit.host;
-  const copy = useMemo(() => ({ id, main, globals, args }), [id, main, globals, args]);
+  const copy = useMemo(() => ({ id, main, globals, args, factor }), [id, main, globals, args, factor]);
   return <LensPortal request={request}>{children(copy)}</LensPortal>;
 }
 

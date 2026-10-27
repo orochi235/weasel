@@ -150,14 +150,14 @@ describe('a registered handler\'s own MIME', () => {
     const off = registerContentHandler({
       id: 'app:stencil', match: (it) => it.mime === 'application/x-app-stencil', types: ['application/x-app-stencil'], handle: () => {},
     });
-    expect(itemTypesFromDataTransfer(dragOf('application/x-app-stencil'))).toEqual([{ mime: 'application/x-app-stencil' }]);
+    expect(itemTypesFromDataTransfer(dragOf('application/x-app-stencil'))).toEqual([{ pending: 'string', mime: 'application/x-app-stencil' }]);
     off();
     expect(itemTypesFromDataTransfer(dragOf('application/x-app-stencil'))).toEqual([]);
   });
 
   it('is read from a glob-free string match too, and released by the test reset', () => {
     registerContentHandler({ id: 'app:csv', match: ['text/csv', 'image/*'], handle: () => {} });
-    expect(itemTypesFromDataTransfer(dragOf('text/csv'))).toEqual([{ mime: 'text/csv' }]);
+    expect(itemTypesFromDataTransfer(dragOf('text/csv'))).toEqual([{ pending: 'string', mime: 'text/csv' }]);
     _resetContentHandlersForTests();
     expect(itemTypesFromDataTransfer(dragOf('text/csv'))).toEqual([]);
   });

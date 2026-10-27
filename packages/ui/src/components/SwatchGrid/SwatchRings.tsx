@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type Re
 import { trackRun, type RunAlign, type TrackShape } from '@weasel-js/geom';
 import { AlongContext } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
+import { useInlineDirection } from '../Along/useReadingRun';
 import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunRow';
 import { SwatchButton, swatchesIn, swatchKeyDown, useSwatchApply, type SwatchApply } from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';
@@ -70,6 +71,7 @@ function useSwatchMetrics(root: RefObject<HTMLElement | null>): SwatchMetrics {
 export function SwatchRings({ shape, align, groups, onChange, onAltChange, className }: SwatchRingsProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const { size, gap, leads } = useSwatchMetrics(root);
+  const direction = useInlineDirection(root);
   // Keyed by its numbers, so the rings are rebuilt only when a palette's row count changes.
   const rowsKey = groups.map((g) => Math.max(1, Math.ceil(g.options.length / g.columns))).join();
   const rows = useMemo(() => rowsKey.split(',').map(Number), [rowsKey]);
@@ -77,8 +79,8 @@ export function SwatchRings({ shape, align, groups, onChange, onAltChange, class
     // Room is judged with every row on a ring of its own; the rings laid are then the ones the plan keeps.
     const room = viableRings(shape, inwardSign(shape, trackRun(shape)), ringDepths(ringThicknesses(rows, leads, size), gap), size, gap);
     const kept = ringPlan(rows, room);
-    return { plan: kept, rings: ringsOf(shape, ringDepths(ringThicknesses(kept, leads, size), gap)) };
-  }, [shape, rows, leads, size, gap]);
+    return { plan: kept, rings: ringsOf(shape, ringDepths(ringThicknesses(kept, leads, size), gap), direction) };
+  }, [shape, rows, leads, size, gap, direction]);
   const apply = useSwatchApply(onChange, onAltChange);
   const firsts = plan.map((_, i) => plan.slice(0, i).reduce((a, b) => a + b, 0));
   return (

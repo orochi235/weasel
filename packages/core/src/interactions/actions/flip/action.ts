@@ -126,12 +126,8 @@ function flipSelection(
     const flipped = about
       ? flipPoseAboutBounds(world, axis, geom, about)
       : flipPoseViaDescriptor(world, axis, geom);
-    ops.push(createTransformOp<unknown>({
-      id: id as string,
-      from: node.pose,
-      to: frame.local(id, flipped),
-      label: 'Flip',
-    }));
+    const to = frame.local(id, flipped);
+    ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
     // Mirror the data-held geometry about the SAME pivot the pose flip uses.
     // A pose-only flip of a bare-AABB pose is identity, so this data op is
     // the only way an asymmetric shape actually mirrors.
@@ -140,6 +136,7 @@ function flipSelection(
       geometryProjection,
       { id: id as string, data: node.data, pose: node.pose },
       localMirror(axis, frame, id, g),
+      to,
       'Flip',
     );
     if (dataOp) ops.push(dataOp);

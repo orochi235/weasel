@@ -28,6 +28,7 @@ import type {
   CommandFill,
 } from '@weasel-js/core';
 import { ellipsePath, paintsLayer, viewToTransform } from '@weasel-js/core';
+import { boxIndex, boxesMeeting, keyedIndex } from './keyedIndex';
 import { portsOf } from './ports';
 import type { DiagramNodeLike, DiagramNodeReader } from './trait';
 import type { Port } from './types';
@@ -68,8 +69,15 @@ export function offersPorts(
 
 /** Where the affordance gets its participants. A thunk rather than a scene so
  *  the geometry is testable without one, and so a consumer whose participants
- *  come from somewhere else needs no adapter. */
-export type ParticipantSource<TPose> = () => Iterable<ParticipantPose<TPose>>;
+ *  come from somewhere else needs no adapter.
+ *
+ *  With `generation`, a press is tested against an index of the ports rather
+ *  than every one: it must answer differently whenever the thunk can yield
+ *  something different (`sceneParticipants` answers the scene's version and
+ *  its overrides' generation). */
+export type ParticipantSource<TPose> = (() => Iterable<ParticipantPose<TPose>>) & {
+  generation?: () => readonly unknown[];
+};
 
 /** What a press on a port hands the action that picks up the drag. Arrives as
  *  `InvocationCtx.drag.affordance.payload`. */
@@ -162,34 +170,61 @@ export function createPortAffordance<TPose>(
     };
   };
 
+  const regionOf = (node: DiagramNodeLike, port: Port): AffordanceRegion => ({
+    id: `${node.id}:${port.id}`,
+    targetId: null,
+    shape: { kind: 'point', x: port.point.x, y: port.point.y, hitRadiusPx },
+    ...withPaint(paintOf(port)),
+    ...(opts.cursor !== undefined ? { cursor: opts.cursor } : {}),
+    strength,
+    claimedKinds: ['pointer'],
+    bind: () => ({
+      initialScratch: {
+        targetId: node.id,
+        nodeId: node.id,
+        portId: port.id,
+        port,
+      } satisfies PortScratch,
+    }),
+  });
+  const shown = (participant: ParticipantPose<TPose>, state: ChromeState): boolean =>
+    offersPorts(participant, state) && (opts.shows === undefined || opts.shows(participant.node, state));
+  const showsPort = (port: Port): boolean => opts.showsPort === undefined || opts.showsPort(port);
+
+  // Every participant's ports, gated by nothing that reads the chrome state, boxed at their points.
+  const index = keyedIndex(participants.generation ?? (() => undefined), () => {
+    const at: { participant: ParticipantPose<TPose>; port: Port }[] = [];
+    for (const participant of participants()) {
+      for (const port of portsOf(participant.node, participant.pose, portOpts)) at.push({ participant, port });
+    }
+    return { at, boxes: boxIndex(at.map(({ port: { point: p } }) => [p.x, p.y, p.x, p.y] as const)) };
+  });
+
+  const regions = (state: ChromeState): readonly AffordanceRegion[] => {
+    const out: AffordanceRegion[] = [];
+    for (const participant of participants()) {
+      if (!shown(participant, state)) continue;
+      for (const port of portsOf(participant.node, participant.pose, portOpts)) {
+        if (showsPort(port)) out.push(regionOf(participant.node, port));
+      }
+    }
+    return out;
+  };
+
   return {
     id,
-    regions(state: ChromeState): readonly AffordanceRegion[] {
+    regions,
+    regionsAt(state, wx, wy, view) {
+      const built = index();
+      // A port is hit within `hitRadiusPx` of its point on screen, along each axis.
+      const rx = hitRadiusPx / Math.abs(view.scale.x);
+      const ry = hitRadiusPx / Math.abs(view.scale.y);
+      const near = built && boxesMeeting(built.boxes, wx - rx, wy - ry, wx + rx, wy + ry);
+      if (!built || !near) return regions(state);
       const out: AffordanceRegion[] = [];
-      for (const participant of participants()) {
-        if (!offersPorts(participant, state)) continue;
-        const { node, pose } = participant;
-        if (opts.shows !== undefined && !opts.shows(node, state)) continue;
-        for (const port of portsOf(node, pose, portOpts)) {
-          if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
-          out.push({
-            id: `${node.id}:${port.id}`,
-            targetId: null,
-            shape: { kind: 'point', x: port.point.x, y: port.point.y, hitRadiusPx },
-            ...withPaint(paintOf(port)),
-            ...(opts.cursor !== undefined ? { cursor: opts.cursor } : {}),
-            strength,
-            claimedKinds: ['pointer'],
-            bind: () => ({
-              initialScratch: {
-                targetId: node.id,
-                nodeId: node.id,
-                portId: port.id,
-                port,
-              } satisfies PortScratch,
-            }),
-          });
-        }
+      for (const i of near) {
+        const { participant, port } = built.at[i]!;
+        if (shown(participant, state) && showsPort(port)) out.push(regionOf(participant.node, port));
       }
       return out;
     },

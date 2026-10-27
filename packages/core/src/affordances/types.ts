@@ -20,6 +20,11 @@ export interface Affordance {
    *  the world frame when `targetId` is `null`). `[]` means no chrome for this state. */
   regions(state: ChromeState): readonly AffordanceRegion[];
 
+  /** The regions a press at world `(wx, wy)` can hit, in the order `regions` lists them: a hit
+   *  test reads these in place of `regions`, so one that leaves out a region the point is in
+   *  changes which region wins. For an affordance with many regions, narrowed by an index. */
+  regionsAt?(state: ChromeState, wx: number, wy: number, view: View): readonly AffordanceRegion[];
+
   /** Optional non-interactive decoration (e.g., a leader line from a bounds edge to a
    *  handle). Receives raw state + view because it may live outside any single target's
    *  local frame. */

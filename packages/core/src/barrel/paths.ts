@@ -325,6 +325,9 @@ export {
   resolveBooleanOperands,
   commitBooleanPieces,
   PATHFINDER_STROKES,
+  PATHFINDER_KEYMAP,
+  PATHFINDER_KEYMAP_ID,
+  PATHFINDER_LEADER,
 } from '../interactions/actions/booleans';
 export type {
   BooleanOp,

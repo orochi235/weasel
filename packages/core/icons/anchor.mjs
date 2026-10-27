@@ -21,12 +21,14 @@ export const ANCHOR = {
     <path d="M${px(0)} ${px(2)} H${px(4)} M${px(14)} ${px(2)} H${px(10)}" stroke-width="1.25"/>
     <path d="${chevron([px(4), px(2)], [1, 0], ...GRID_HEAD)}${chevron([px(10), px(2)], [-1, 0], ...GRID_HEAD)}" stroke-width="1.25"/>
     <rect x="${px(6) - 0.625}" y="${px(5) - 0.625}" width="3.75" height="3.75" fill="currentColor" stroke="none"/>`,
+  // An arch of radius 6.25 about a pixel center, whose edges fall on pixel edges at a one-pixel stroke, its anchor
+  // at the top, and the handle bar along its top reaching an equal six pixels either side.
   symmetricHandles: `
-    <path d="M3 17 C3 10 6 8 10 8 S17 10 17 17"/>
-    <path d="M3.5 8 H16.5" stroke-width="1"/>
-    <circle cx="3.5" cy="8" r="1.5" fill="currentColor" stroke="none"/>
-    <circle cx="16.5" cy="8" r="1.5" fill="currentColor" stroke="none"/>
-    <rect x="8.5" y="6.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
+    <path d="M${px(2)} ${px(13)} V${px(9)} A6.25 6.25 0 0 1 ${px(12)} ${px(9)} V${px(13)}" stroke-width="1.25"/>
+    <path d="M${px(1)} ${px(4)} H${px(13)}" stroke-width="1.25"/>
+    <circle cx="${px(1)}" cy="${px(4)}" r="1.875" fill="currentColor" stroke="none"/>
+    <circle cx="${px(13)}" cy="${px(4)}" r="1.875" fill="currentColor" stroke="none"/>
+    <rect x="${px(6) - 0.625}" y="${px(3) - 0.625}" width="3.75" height="3.75" fill="currentColor" stroke="none"/>`,
   holdHandleAngle: `
     <path d="M5 15 L16 4"/>
     <path d="M12 4 H16 V8"/>
@@ -37,13 +39,17 @@ export const ANCHOR = {
     <path d="M10 10 L14.5962 5.4038"/>
     <circle cx="14.5962" cy="5.4038" r="1.75" fill="currentColor" stroke="none"/>
     <rect x="8.5" y="8.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
+  // A path that zigzags on the pixel diagonals until the brush's ring, and runs straight from inside it on. The
+  // ring's edges, radius 3.75 about a pixel center at a one-pixel stroke, fall on pixel edges.
   simplifyBrush: `
-    <path d="M2 16 C5 6 15 6 18 16"/>
-    <circle cx="10" cy="8.5" r="5" stroke-width="1" stroke-dasharray="2 1.5"/>`,
+    <path d="M${px(0)} ${px(10)} L${px(1)} ${px(9)} L${px(3)} ${px(11)} L${px(5)} ${px(9)} L${px(6)} ${px(10)} H${px(15)}" stroke-width="1.25"/>
+    <circle cx="${px(10)}" cy="${px(10)}" r="3.75" stroke-width="1.25"/>`,
+  // A circular arc, so its curvature is the same everywhere, its anchor at the top, under two equal teeth of a
+  // curvature comb on its normals along the pixel diagonals.
   harmonize: `
-    <path d="M3 16 C3 9 6.5 6 10 6 S17 9 17 16"/>
-    <path d="M4.02 7.43 L2.47 6.18 M10 3.5 V1.5 M15.98 7.43 L17.53 6.18" stroke-width="1"/>
-    <rect x="8.5" y="4.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
+    <path d="M${px(1)} ${px(13)} V${px(11)} A7.5 7.5 0 0 1 ${px(13)} ${px(11)} V${px(13)}" stroke-width="1.25"/>
+    <path d="M${px(1.5)} ${px(5.5)} L${px(0)} ${px(4)} M${px(12.5)} ${px(5.5)} L${px(14)} ${px(4)}" stroke-width="1.25"/>
+    <rect x="${px(6) - 0.625}" y="${px(4) - 0.625}" width="3.75" height="3.75" fill="currentColor" stroke="none"/>`,
   averageAnchors: `
     <path d="M5.6 5.6 L7.6 7.6 M14.4 5.6 L12.4 7.6 M10 14.4 V12.5" stroke-width="1.25"/>
     <rect x="2.875" y="2.875" width="3" height="3" fill="currentColor" stroke="none"/>

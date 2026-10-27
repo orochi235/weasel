@@ -2,13 +2,15 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
 import { formatShortcut } from '@weasel-js/gestures';
-import type { MenuEntry, MenuNumberEntry } from '@weasel-js/menu';
+import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import { expandVars, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
 import { toIconRef, type IconRegistry } from '@weasel-js/icons';
 import { boxShadowCommands } from '../boxShadow';
 import { glyphCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
-import { colorCommands, numberCommands, textCommands, valueRowWidth } from './valueRows';
+import { colorCommands, numberCommands, swatchCommand, textCommands, typingCommands, valueRowWidth } from './valueRows';
+import { measureLabel } from './measureLabel';
+import type { HudTextEdit } from './textEdit';
 
 /** Sizes of a HUD menu panel, in CSS pixels. */
 export interface MenuMetrics {
@@ -94,12 +96,26 @@ const ICON_SIZE = 16;
 // The shadow `.surface` in ui's listbox.module.css gives the DOM panel.
 const PANEL_SHADOW = 'var(--wzl-bevel-raised, 0 8px 24px var(--wzl-shadow))';
 
+/** What a panel's value rows hold now, and the text row being typed into. */
+export interface MenuDrawValues {
+  number(e: MenuNumberEntry): number | undefined;
+  text(e: MenuTextEntry): string | undefined;
+  editing?: HudTextEdit | null;
+  /** The color a row draws as a swatch in its icon column, in place of its icon or check. */
+  swatch?(e: MenuEntry): string | undefined;
+  /** Width of a label, which places the caret in typed text. Defaults to {@link measureLabel}. */
+  measure?(text: string, fontSize: number, fontFamily: string): number;
+}
+
+/** Each value row as it opened, with nothing being typed. */
+export const OPENED_VALUES: MenuDrawValues = { number: (e) => e.value, text: (e) => e.value };
+
 /** One panel's commands: its rounded face and the DOM panel's box shadow, a highlight behind row
- *  `highlight`, and every row, with the glyph `icons` holds for each row's icon. A number row shows what
- *  `shown` says it holds, by default what it opened with. */
+ *  `highlight`, and every row, with the glyph `icons` holds for each row's icon. A value row shows what
+ *  `values` says it holds, by default what it opened with. */
 export function drawPanel(
   ctx: HudDrawCtx, b: WidgetBounds, entries: readonly MenuEntry[], highlight: number | null, m: MenuMetrics,
-  icons?: MenuIcons, shown: (e: MenuNumberEntry) => number | undefined = (e) => e.value,
+  icons?: MenuIcons, values: MenuDrawValues = OPENED_VALUES,
 ): DrawCommand[] {
   const t = ctx.tokens;
   const fg = t['--wzl-fg'];
@@ -115,6 +131,8 @@ export function drawPanel(
     stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
   }, ...shadow.over];
   const rows = rowLayout(entries, m);
+  const measure = values.measure ?? measureLabel;
+  const selection = t['--wzl-accent-soft'] ?? t['--wzl-surface-pressed'] ?? muted;
   entries.forEach((e, i) => {
     const r = rows[i]!;
     if (e.kind === 'separator') {
@@ -122,8 +140,8 @@ export function drawPanel(
       return;
     }
     if (i === highlight) out.push(rect(b.x + 2, b.y + r.y, b.w - 4, r.h, t['--wzl-surface-hover']));
-    // Nothing here edits a color or a text row, so each reads as a disabled one does.
-    const color = e.disabled || e.kind === 'color' || e.kind === 'text' ? muted : fg;
+    // A color row left a color row is one nothing writes (the widget makes the rest pickers), so it reads as disabled.
+    const color = e.disabled || e.kind === 'color' ? muted : fg;
     out.push(textCommandFromRuns(
       b.x + m.padX + m.rowHeight, b.y + r.y,
       [{ text: e.label, fill: solid(color) }],
@@ -133,7 +151,11 @@ export function drawPanel(
     const iconY = b.y + r.y + r.h / 2;
     const ref = e.kind !== 'color' && typeof e.icon === 'string' ? toIconRef(e.icon) : undefined;
     const glyph = ref ? icons?.get(ref) : undefined;
-    if (e.kind === 'item' && e.checked) out.push(check(iconX, iconY, color));
+    const swatch = values.swatch?.(e);
+    if (swatch !== undefined) {
+      const held = e.kind === 'item' && e.checked;
+      out.push(swatchCommand(b, r, swatch, m, held ? fg : t['--wzl-border'], held ? 2 : 1));
+    } else if (e.kind === 'item' && e.checked) out.push(check(iconX, iconY, color));
     else if (glyph) out.push(...glyphCommands(glyph, { x: iconX - ICON_SIZE / 2, y: iconY - ICON_SIZE / 2, size: ICON_SIZE, color }));
     const chip = shortcutOf(e);
     if (chip) {
@@ -143,9 +165,14 @@ export function drawPanel(
       ));
     }
     const ink = { fg, muted, border: t['--wzl-border'], font };
-    if (e.kind === 'number') out.push(...numberCommands(b, r, e, shown(e), m, ink));
+    if (e.kind === 'number') out.push(...numberCommands(b, r, e, values.number(e), m, ink));
     if (e.kind === 'color') out.push(...colorCommands(b, r, e, m, ink));
-    if (e.kind === 'text') out.push(...textCommands(b, r, e.value, m, ink));
+    if (e.kind === 'text') {
+      const edit = values.editing?.entry === e ? values.editing : undefined;
+      out.push(...(edit
+        ? typingCommands(b, r, edit, m, ink, selection, (s) => measure(s, m.fontSize, ctx.defaultFont))
+        : textCommands(b, r, values.text(e), m, ink, e.disabled ? 'off' : 'live')));
+    }
     if (e.kind === 'submenu') out.push(caret(b.x + b.w - m.padX - m.rowHeight / 2, b.y + r.y + r.h / 2, color));
   });
   return out;

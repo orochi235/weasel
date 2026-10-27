@@ -110,15 +110,18 @@ export interface GroupDrawCommand {
    * Worth it for a group of a few hundred commands or more that holds still
    * across frames; below that, drawing it is cheaper than the composite. A
    * surface covers the device pixels the children can paint, clamped to the
-   * drawing buffer — all of it under text, a custom shader or `effects`, which
-   * are bounded only by the clips around them — and is freed at the end of any
+   * drawing buffer — all of it under a custom shader with its own vertex
+   * shader, one reading `gl_FragCoord` without `u_fragOrigin`, or `effects`
+   * that do not say how far they reach — and is freed at the end of any
    * frame that does not draw its id. The renderer's `retainBudget` caps what
    * they hold together.
    *
-   * Ignored, and the children drawn straight through, on a group that owns a
-   * surface anyway (`effects`, `isolate`, `composite`), inside another such
-   * surface, or over a tree holding a `composite` other than `source-over`,
-   * which reads pixels a retained surface does not have.
+   * A group with `effects` or `isolate` keeps the pixels its own surface
+   * composites, effects run, so a still frame runs none of its passes.
+   *
+   * Ignored, and the group drawn as usual, inside another retained group, or
+   * where it or anything in it composites with something other than
+   * `source-over`, which reads pixels a retained surface does not have.
    */
   retain?: string;
   children: DrawCommand[];
@@ -224,7 +227,8 @@ export interface SpritesDrawCommand {
  * and dispatches the consumer's fragment shader with the kit's vertex prelude.
  *
  * `uniforms` keys must match names declared in the consumer's fragment shader.
- * The kit automatically sets `u_bounds`, `u_view`, and `u_proj` — do not
+ * The kit automatically sets `u_bounds`, `u_view`, `u_proj` and, where the
+ * shader declares it, `u_fragOrigin` (see `registerProgram`) — do not
  * declare those in `uniforms`.
  *
  * `program` is the handle the module-level `registerProgram()` returned. Each
@@ -235,6 +239,7 @@ export interface ShaderDrawCommand {
   kind: 'shader';
   program: ShaderProgramHandle;
   uniforms: Record<string, ShaderUniform>;
-  /** Screen-space bounding rect in CSS pixels. */
+  /** Screen-space bounding rect in CSS pixels, which the kit's vertex shader
+   *  covers and nothing outside it. */
   bounds: { x: number; y: number; w: number; h: number };
 }

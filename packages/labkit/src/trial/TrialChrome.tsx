@@ -1,6 +1,7 @@
 import { DevtoolsLabel } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
+import { withMarks } from '../annotations/labMarks';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
 import { builtinContributions, TRANSIENT_BUILTINS } from '../chrome/builtins';
@@ -231,7 +232,7 @@ export function TrialChrome({
     () =>
       suppressContributions(
         mergeContributions(
-          builtinContributions(instrument, ctx, lab.controls),
+          builtinContributions(withMarks(instrument, lab.marks), ctx, lab.controls),
           [...(instrument.chrome ?? [])],
           [...(trialChrome ?? [])],
           [...(chrome ?? [])],
@@ -239,7 +240,7 @@ export function TrialChrome({
         suppress ?? [],
         TRANSIENT_BUILTINS,
       ),
-    [instrument, ctx, trialChrome, chrome, suppress, lab.controls],
+    [instrument, ctx, trialChrome, chrome, suppress, lab.controls, lab.marks],
   );
 
   const inRegion = (region: TrialRegion): TrialContribution[] =>

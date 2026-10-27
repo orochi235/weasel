@@ -1,9 +1,10 @@
-import { useLayoutEffect, useRef, type KeyboardEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { MenuController, MenuEntry, MenuSide, Rect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { blockFrame, clientToBlock, containingBlock } from '../../overlays/blockFrame';
 import { MenuRow } from './MenuRow';
 import { menuFieldId } from './MenuValue';
+import { editsColor } from './MenuColorValue';
 import s from './ContextMenu.module.css';
 
 /** One level of the open menu, positioned in the viewport. */
@@ -22,6 +23,9 @@ export function MenuPanel(props: {
 }) {
   const { controller: c, level, entries, highlight, idBase, parentRow, anchor, focus } = props;
   const ref = useRef<HTMLDivElement>(null);
+  // The color row whose picker is open.
+  const [picking, setPicking] = useState<number | null>(null);
+  const pick = (i: number) => { const at = entries[i]; if (at?.kind === 'color' && editsColor(at)) setPicking(i); };
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -60,6 +64,11 @@ export function MenuPanel(props: {
       document.getElementById(menuFieldId(`${idBase}-${level}-${highlight}`))?.focus();
       return;
     }
+    if (e.key === 'Enter' && at?.kind === 'color' && highlight != null) {
+      e.preventDefault();
+      pick(highlight);
+      return;
+    }
     if (c.key(e.key)) e.preventDefault();
   };
 
@@ -87,7 +96,9 @@ export function MenuPanel(props: {
           expanded={highlight === i && props.childOpen}
           controls={`${idBase}-panel-${level + 1}`}
           onHover={(e) => c.hover(level, i, { x: e.clientX, y: e.clientY })}
-          onPress={() => c.press(level, i)}
+          onPress={() => { c.press(level, i); pick(i); }}
+          picking={picking === i}
+          onPicked={() => setPicking(null)}
           onLeave={props.close}
           onRelease={(modified) => {
             if (!props.releaseRuns.current) return;

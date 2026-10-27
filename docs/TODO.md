@@ -28,17 +28,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P3) [agent] External-content ingestion — follow-ups.** The pipeline is in
-  `packages/core/src/domains/ingestion/` (its README is the map). Left:
-  (a) an insertion ghost under the pointer during a drag. A ghost needs two things nothing has
-  yet: somewhere for an action to draw while it is only being predicted (`ingest` is an immediate
-  action, and a dragover never invokes it), and what to draw, since a browser withholds a dragged
-  file's contents, its size included, until the drop. It also needs a real OS drag to check, which
-  no test here can start.
-  (b) `kitTextHandler` is exported but registered nowhere: a canvas opts in with
-  `ingestion={{ handlers: [kitTextHandler] }}`. Whether `ingest` canvases should take text by
-  default, and whether weaseldraw should, is undecided. The node gets the default text style,
-  since the `insert` dep's `text` kind carries a string and nothing else.
+- **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
+  hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
+  file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
+  start a real OS drag, so the ghost has not been seen: check that it follows the pointer, clears on Esc, on
+  leave and on drop, and looks right in WeaselDraw. A handler-supplied ghost (a handler naming its own
+  preview size or shape per MIME) is not built.
 
 - **(P3) [maintainer] The image and SVG drop handlers could leave core.** `kitImageHandler` /
   `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed), and `openFilePicker` in
@@ -48,12 +43,14 @@ Owner tags, after the priority (2026-10-26):
   `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
   2026-10-11). If they do move, the package is `images`; `ingest` was turned down.
 
-- **(P3) [agent] The action pipeline's coordinates are 2D.** World points arrive as `{x, y}` or flat
-  scalars in `InvocationCtx`, the dep payloads, the pick functions, and `@weasel-js/gestures`'
-  pointer events, and the camera is the 2D `View`. Not a blocker for another kernel: the 3D lab
-  (`packages/labkit/examples/3d-lab`) drives core's dispatcher with core unchanged, because its
-  deps rebuild the ray from a camera they close over. What is left is type hygiene. Findings in
-  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
+- **(P3) [agent] The action pipeline's coordinates are 2D — what is left.** `WorldPoint` (`@weasel-js/routing`)
+  names the space `clientToWorld` maps into and types `InvocationCtx.world`, the dispatcher's hooks and the
+  `nodeAtPoint`, `lassoSelect`, `insert` and `snap` dep payloads. Still untyped by it: the local
+  `type Point = { x: number; y: number }` aliases across core's snap, paths, edit-anchors and canvas deps; the
+  flat `worldX`/`worldY` scalars in `PointerWorldPos` (the `pointer` dep's store, read by flip's pointer pivot,
+  never run in a 3D host) and in `@weasel-js/gestures`' click events; and the pick functions. The camera is the
+  2D `View`, and kernel3d declares `camera3d` beside it by design. Not a blocker for another kernel: the 3D lab
+  drives core's dispatcher unchanged. Findings in `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
 
 - **(P3) [recheck] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
@@ -64,22 +61,11 @@ Owner tags, after the priority (2026-10-26):
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) [agent] `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Affine)` names a
-  plane in its signature, and core builds the `Affine` at four call sites (move, nudge, flip, and
-  resize commit) before the dep is consulted, so widening the type alone does not free it. It is
-  the one dep a camera-bearing host cannot implement: `view` is per-kernel by design (`kernel3d`
-  declares `camera3d`), `editAnchors` and `booleansAdapter` are 2D features, and the rest take
-  screen points under the identity `clientToWorld` a 3D host passes. `pointer` was read, not run in
-  a 3D host: its store (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no
-  camera.
-
-- **(P3) [agent] A 3D move of several roots lands only the first one exactly.** kernel3d's snap session
-  answers in the screen point that `translate` turns back into the snapped world delta for the
-  anchor, the first selected node. `translate` converts a screen delta per node, from that node's
-  own screen center and on the plane at its own height, so every other root, at a different height
-  or place on screen, moves by a slightly different world delta, and a target one of them snapped
-  to is missed. A fix needs either a group-rigid 3D move or a world-delta channel in the pose
-  descriptor that a 3D move could use in place of a screen delta.
+- **(P3) [agent] kernel3d reads stored poses as world positions everywhere.** `boundsOfNode`, the pick index,
+  snap boxes and `probes3d` all read `node.pose`, so under container composition a node inside a container is
+  picked, snapped and drawn at its container-relative position, and a container's own box is a snap target.
+  A 3D move does map through frames (2026-10-26); nothing else does. kernel3d also ships no container
+  composition for `Pose3`: `YAW_POSE_COMPOSITION` in `packages/kernel3d/src/testScene.ts` is test-only.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -110,14 +96,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Viewport
 
-- **(P3) [agent] A raw WebGPU view escapes labkit's missing-camera check.** WebGL views are caught when they
-  turn on depth testing (2026-10-26, `packages/labkit/src/trial/watch3d.ts`).
-
-- **(P3) [agent] A loupe over a view acts on the canvas's selection where the panel owns one.** It paints and
-  picks the panel's layers since `<CanvasView follows>` (2026-10-26); its dispatch target and selection
-  chrome still come from the canvas, and making them follow the aimed view needs a selection that switches
-  with the aim.
-
 - **(P3) [maintainer] Which plane 2D and 3D views share.** kernel3d's frustum outlines into a 2D view
   as its footprint on z = 0, which in kernel3d's y-up world is a wall facing yaw 0, where a top-down
   map wants the ground plane; `aimSpace3d` unprojects onto the same plane. A footprint the plane cuts
@@ -137,12 +115,17 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [recheck] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
 
-- **(P3) [agent] svg import: turned and vertically placed glyphs are not read.** `rotate`, a list-valued `y`
-  or `dy`, and a `dx` on a `<text>` holding a `<tspan>` still warn (`packages/svg/src/tspanLines.ts`);
-  `rotate` needs per-glyph rotation in the text model. An `x` or `dx` list is read as letter spacing
-  where a loaded face measures the glyphs (`packages/svg/src/glyphShifts.ts`), but not in right-to-left
-  text. `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
-  unless a caller carries it, as WeaselDraw does in `wd:line-height`.
+- **(P3) [agent] svg import: turned glyphs, and some per-glyph `x` lists, are not read.** `rotate` warns
+  (`packages/svg/src/tspanLines.ts`) and needs per-glyph rotation in the text model, the renderer, picking,
+  bounds and `textToPath`. A `<text>`'s `x` list over `<tspan>`s is read (`foldTextPositions` in
+  `packages/svg/src/glyphShifts.ts`) except where a `<tspan>` it reaches has its own `x` or `dx`: SVG takes
+  each glyph's value from the nearest ancestor that has one, and merging that per glyph is not done, so it
+  warns and reads only the first value. Like every `x` list, it also needs a loaded face to measure the
+  glyphs.
+- **(P3) [agent] A laid-out cell's `advance` may leave out the kerning at a run boundary.** With the fixture font at
+  32, A then B in two runs gives A's cell an `advance` of 23 while the gap between the two cells' `x` is 22,
+  the kerned width; `LaidOutCell`'s doc says a cell's advance includes the kerning before the next glyph
+  (`packages/text`, measured 2026-10-26, cause not traced). svg import reads the pen gap instead.
 
 ### Path editing tricks
 
@@ -301,26 +284,14 @@ Owner tags, after the priority (2026-10-26):
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) [agent] Some path command glyphs are unproofed.** The warp labs' tool lists borrow `ui:fitStretch`,
-  `ui:grid` and `ui:pin` rather than the warp tools' own glyphs. `core:symmetricHandles`,
-  `core:simplifyBrush`, `core:harmonize` and `path-tools:spiro` are first drafts, not proofed at high
-  resolution, and `path-tools:spiroSmooth` and `spiroG4` are soft at 1x, where an S-curve can only render as
-  a gray diagonal.
-- **(P3) [agent] A puppet warp's bends add anchors.** `warpPath` refits a puppet-warped outline with more
-  anchors than its shape needs, and a smoother map does not fix it. Measured with `foldCases.ts` at
-  tolerance 0.5 (2026-10-20), the squashed 4-anchor disc refits with 5 anchors under the piecewise-affine
-  map and 6 under the Clough–Tocher one that replaced it (`packages/geom/src/warp/cloughTocher.ts`), and
-  the bar pushed into an S with 21 and 22. Blending vertex Jacobians (a C0 quadratic map) did worse, 6
-  and 23. The extra anchors are in the refit's reading of the warped curve, not the map's smoothness
-  (inferred).
-- **(P3) [agent] A puppet warp that folds costs milliseconds a frame.** When the local/global rounds leave
-  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` runs many
-  rounds: measured on the fleet (2026-10-19), the disc squash takes 28 rounds and 5.3 ms a solve
-  on a 547-vertex mesh, the bar S 51 rounds and 6.8 ms on 517. The back-solves are not the bulk of
-  a round: each of its two takes 15 to 33 µs, and a George–Liu starting vertex for the
-  Cuthill–McKee order (`profileCholesky.ts`) left them unchanged. The rest is the per-triangle
-  passes (gradient, flip bound, energy per line-search step, least area); fewer rounds from a
-  better step is the larger lever.
+- **(P3) [agent] A folded puppet warp's bar S spends its rounds on the softening schedule.** Since `b43c94c9d`
+  the injective pass takes L-BFGS steps (`packages/geom/src/warp/lbfgs.ts`): the disc squash takes 17 rounds
+  and the bar S 45, 26 of them with the softening above zero. That schedule (`nextEps` in `injective.ts`,
+  Garanzha's, sigma floor 0.1) shrinks it about 7% a round from 2.1. A floor of 0.3 fails to untangle, several
+  steps per softening take more rounds, and dropping the softening once nothing is turned over takes 60. An
+  L-BFGS round costs about 30 µs more than a plain one, so the bar's solve rose from 6.2 to 6.7 ms on keiei
+  while the disc's fell from 5.0 to 4.1 (`warp.bench.ts`, runs in `warp.bench.runs.jsonl`). A faster schedule
+  that still untangles, or a cheaper round, is what is left.
 - **(P3) [recheck] WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
@@ -328,18 +299,8 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [agent] Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) [agent] True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) [agent] Preview a Boolean operation by holding its key over a path.** `holdPreview(action)`
-  (routing, 2026-10-26) shows an action's preview while its `held(…)` key is down and runs it on release; no
-  Pathfinder action has a key bound through it yet. In a keymap held open by its leader, Escape closes the
-  keymap rather than canceling the hold, so the release still runs (`keymapRoute.ts`, the `isPlainEscape`
-  branch).
 
 ## Rendering & paint
-
-- **(P3) [agent] Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
-  tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
-  needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
-  which is a storage question rather than a paint one.
 
 - **(P3) [agent] Renderer: geometry far from the origin is still single precision.** The transform stack
   is in doubles, a large model translation is rebased before upload (`setProjAndModel`,
@@ -432,10 +393,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] Several hit tests still scan every node or shape linearly.** Core's
-  `domains/text/textHitAt.ts` (needs a pose descriptor from `useSceneTextEdit`), `diagram/src/portLayer.ts`,
-  `diagram/src/labelDragLayer.ts`, and `boxesOf` in kernel3d's `snap/sources.ts`, whose `world.bounds` needs a
-  generation to cache against first.
+- **(P3) [agent] Ports are still read every frame for painting.** Port hit tests go through an index since
+  2026-10-26 (`packages/diagram/src/keyedIndex.ts`), but painting still calls every port's `regions()` each
+  frame.
+- **(P3) [agent] When to build a hit-test index is decided in three places.** The rule that a source's first
+  query after a change scans and records its generation, and the second at that generation builds the index,
+  is copied in core's `scenePickIndex`, diagram's `keyedIndex.ts` and kernel3d's `snap/boxIndex.ts`
+  (2026-10-26). One helper should own it.
 
 - **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
   marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
@@ -463,13 +427,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Container layout strategies
 
-- **(P3) [agent] A member of a diagram container marked `reorder` cannot be dragged out of it.** The
-  reorder drag (`packages/diagram/src/groupReorder.ts`) takes every body press on a member and moves
-  it only along the axis, so the move's reparent never runs; a group's members have the same limit,
-  but a container's are scene children that could leave. A drag that leaves the container's body
-  could hand off to the move instead (2026-10-26).
-  Two arcs (2026-10-26): core's dispatcher has nothing that hands a drag in progress to another action, so
-  first that handoff, then `groupReorder` handing off to move when the pointer leaves the body.
 - **(P3) [recheck] An item carried in with `dragItemProps` draws no ghost of itself over the canvas.** The
   canvas outlines the target and marks the index (`packages/diagram/src/itemDrop.ts`), and labkit
   draws its own `DragGhost` for its palette; diagram leaves it to the host. A ghost from the item's
@@ -479,9 +436,6 @@ Owner tags, after the priority (2026-10-26):
   `startCarry` as a cloned element, or to a diagram hook that adds a ui dependency, and its look is a call
   (2026-10-26).
 
-- **(P3) [agent] The effect editor's lanes may read members in the wrong frame.** `effect/lanesRoutes.ts` and
-  `lanes.ts` read `s.pose` across specs whose parent is a lane, as `router="avoid"`, `hops` and
-  `labels="dodge"` did before 2026-10-26 (`e9ea01b10`, `b6686242b`); unchecked, and the effect tests pass.
 - **(P3) [maintainer] Diagram edges paint above every node.** `mainSpecs` pushes edge specs last, so in the
   `diagram-drop` demo a straight `filter → mix` edge strikes through the two boxes dropped between them.
   Painting edges under nodes needs an edge between a container's fill and its members, or the edge hidden
@@ -541,11 +495,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
 
-- **(P3) [agent] Some curved runs still read left to right in a right-to-left locale.** `trackRun` takes a
-  `direction` and `useReadingRun` reads the root's (2026-10-26), wired into the curved `Bar`, segmented
-  row, `RadioGroup`, `TabList` and `PageTabs`. `CurvedLabel` (needs bidi), `JogAlong` (media controls
-  usually stay unmirrored; undecided), the arc `Slider` and `SwatchRings` build `trackRun` without it, and
-  `segmentsAlong.shapeAt` and `JogAlong` each repeat `trackRun`'s g-to-shape-fraction mapping.
+- **(P3) [agent] `RangeSlider` may disagree with `Slider` in a right-to-left page.** It is built on React Aria,
+  which takes direction from its locale rather than the computed `dir` that `Slider` reads since 2026-10-26
+  (inferred, not checked).
 
 - **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
   `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
@@ -560,18 +512,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) [agent] A schema drawn as a menu still drops or flattens some leaves.** `leafRows` in
-  `packages/routing/src/menus/resolveMenu.ts` draws a number and a string as rows edited in place
-  and a color as a read-only row. What is left:
-  - A color that is not a `readout` shows read-only; neither menu renderer hosts the kit's color
-    picker. A swatch submenu, or a picker the DOM menu opens beside its row, would make it editable.
-  - The HUD menu draws a text row read-only (`textCommands` in `hud/src/menu/valueRows.ts`): it has
-    no text entry. The DOM menu's text field was checked in a browser
-    (`MenuTextValue.browser.test.tsx`): typed keys reach it, Enter commits without closing, and it fits its row.
-  - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
-  For the color leaf (2026-10-26): first `MenuColorEntry` gets `set`/`alpha`, the controller holds a color
-  value as it does `textValue`, and `resolveMenu.colorRows` passes `set`; then ui's `MenuColorValue` opens the
-  kit's picker in a popover the menu's dismiss counts as inside.
+- **(P3) [agent] A HUD menu's text row has no IME composition, and a press does not place its caret.**
+  `createTextEditor` (`hud/src/menu/textEdit.ts`) takes keydown characters only, so a composed character
+  (CJK, dead keys) cannot be entered; the canvas has no hidden input to receive
+  `compositionstart`/`compositionupdate`. A press on the row starts an edit with the caret at the end; there is
+  no Alt+arrow word movement either.
+- **(P3) [agent] A menu item cannot keep its menu open.** `choose` (`packages/menu`) closes the menu before running
+  the item, so a HUD color swatch applies and closes where the hex row applies and stays open. It needs an
+  item flag that keeps the menu open.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -600,23 +548,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   to the two sources' `roles` (`'origin'` to `'box'`). Insert and the pen are a different case and
   stay as they are: they snap the pointer, before the node has a stroke to measure.
 
-- **(P3) [agent] The theme prefs form at narrow widths.** A hint wider than the label track ("FROM THEME",
-  the mode chip and the split toggle) overflows into the control, seen at an 880px viewport (2026-10-26);
-  a row's hint follows its label's last word since 089609ac4. A token whose value refers to another still
-  shows the reference as raw text, `var(--btn-glass)`. Nothing drives `applyTheme`'s `weights` from an
-  animator either, which is the same gap as the selector weights under "What the split rows in
-  `PrefsForm` left".
-
-- **(P3) [agent] What the split rows in `PrefsForm` left.** The split mark in a row's label line has been
-  seen (theme-editor's `DARK` chip beside "from theme", 2026-10-26); the one in a bar cell is tested
-  in jsdom only. A row that can be split is a
-  group and no `<label>`, so an app renderer's control on such a leaf has to name itself: the
-  toggle that opens the row is a button on the label line, and a `<label>` would hand its name and
-  every click on the label's text to that button. Undecided, and a look to settle in a browser:
-  move the toggle out of the label line so the row can stay a `<label>`, or keep it there and
-  leave naming to the renderer (`ctx.pref.name`), as a `group` renderer already does. Nothing
-  animates a selector's weights yet: `store.get(path, { weights })` is there for an animator
-  target to drive.
+- **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
+  animator target the axes, and nothing yet asks for a transition.
 
 - **(P3) [maintainer] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
@@ -745,14 +678,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   switches it from a menu button showing its surface, and a toolbar or menu button switches from its
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
-- **(P3) [agent] Draw's Properties, Colors, Layers, and History panels are code, not schemas,** so they can
-  only be panels: each is a `render` asset that allows `'panel'` alone. Each moves to a schema once
-  what it shows can be one: the selection's properties already are, while the swatch strip, the
-  layer list, and the history list need leaf kinds of their own.
-- **(P3) [agent] The rest of draw's command strip is not surface assets.** File, history, clipboard, edit,
-  structure, view, text, compound, record, and app stay `ActionBar`s in `CommandBar.tsx`, and
-  Simplify, Offset, Corner shape, and the paper size are draw's own controls with no pref form: each
-  needs a custom pref kind before it can sit in a schema asset.
 
 - **(P3) [agent] Multi-page documents in draw.** Core has pages end to end (`packages/core/src/core/pages/`, and
   "Page" in `docs/concepts.md`): the page list is the `core:pages` document value, the edits in
@@ -799,17 +724,10 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) [agent] In a magnified Live copy, a popover flips and limits its height against the wrong viewport.** ui's
-  `Popover` (2026-10-24) and `Tooltip` (2026-10-25) hand React Aria the trigger's rect in the scaled box's own px
-  (`overlays/blockFrame.ts`), so they open against their trigger at any scale, and the context menu places itself
-  the same way. React Aria still measures the boundary — the viewport — in client px while placing in the box's
-  px, so at `f = 2` it sees about twice the room there is, flips too late and allows too tall a popover (inferred
-  from `calculatePosition`, not seen). A boundary can only be handed to it as an element, and one outside the box
-  breaks the frame its descendant-of-boundary branch assumes, so the fix is likely upstream.
-- **(P3) [agent] A Live copy of an isolated story is drawn soft at magnification** (2026-10-21, inferred, not seen). A
-  `<CanvasStack>` puts the scale an ancestor transform shows it at into its backing density, so an in-document copy
-  is sharp at any factor. Inside an isolated story's frame the lens's transform is outside the frame's document,
-  where the stack's measurement cannot see it, so its canvas is enlarged instead.
+- **(P3) [agent] A fixed overlay frame costs scroll range under a transformed ancestor.** Since 2026-10-26
+  popovers in a positioned container portal into a `position: fixed` frame (`packages/ui/src/overlays/overlayFrame.ts`),
+  which adds no scroll range, except where a `transform`, `filter` or `contain` ancestor inside a scrolling
+  element is the containing block for fixed elements: there the frame acts as an absolute box again.
 
 - **(P3) [recheck] On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
@@ -846,11 +764,11 @@ only story runner in the repo.
   the branch and commit. A screenshot with the trial's marks on it goes into the issue by pasting it there;
   never by committing it to the repo. Left to settle: how the workshop reaches GitHub, and whether marks come
   back (next entry) to draw that screenshot.
-- **(P3) [agent] Marks are off in the workshop until annotations are a feature.** forge's
-  instruments do not declare labkit's `annotations` capability, so trials show
-  no Marks section and no tool rail. The removed wiring — the story as the one
-  annotation target, sized and captured through the trial's frame registry — is
-  in `git log --grep 'take marks out of forge'`.
+- **(P3) [agent] A drawing tool over a marked forge story takes the wheel.** With any tool but the pointer active,
+  the marks' input box sits over the story and takes wheel events, and forge has no camera to hand them to, so
+  the story cannot scroll until the pointer is picked.
+- **(P3) [agent] A forge mark export can come out transparent.** The export's copy of the story keeps `data-pending`,
+  so a story captured before its first paint draws nothing.
 
 - **(P3) [recheck] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
@@ -1345,47 +1263,28 @@ only story runner in the repo.
   draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
 
-- **(P3) [agent] Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is
-  drawn once into its own texture and composited (`GroupDrawCommand.retain`,
-  `packages/renderer/src/retain/`; the policy is `packages/core/src/core/layers/retain.ts`;
-  `<Canvas retain>` sets the threshold and budget). Each surface covers only the device pixels its
-  layer can paint, but text, custom shaders and `effects` cannot be bounded yet, so a layer holding
-  any of them still gets a canvas-sized surface (16 MB at 1280x800 and dpr 2). Left:
+- **(P3) [agent] Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is drawn
+  once into its own texture and composited (`GroupDrawCommand.retain`, `packages/renderer/src/retain/`; the
+  policy is `packages/core/src/core/layers/retain.ts`; `<Canvas retain>` sets the threshold and budget). Each
+  surface covers only the device pixels its layer can paint. A custom shader with its own vertex shader, one
+  reading `gl_FragCoord` without declaring `u_fragOrigin`, and effects with no `reach` still get a
+  canvas-sized surface (16 MB at 1280x800 and dpr 2). Layers with `effects`, and layers inside a `LayerGroup`
+  with effects, are retained since 4c0141f5a. Left:
 
   - **The budget still caps canvas-sized layers at about 16.** `retainBudget` (256 MB default) counts only
-    kept surfaces; the multisampled scratch buffer they are drawn in is left out and freed after a
-    frame that redraws nothing. A canvas-sized surface is 16 MB, so at 64 layers holding text 48 are
-    still drawn straight through (below). Two things are open: a frame that redraws can hold the
-    budget plus one canvas-sized multisampled buffer (131 MB at 4x), which drawing in tiles would
-    cap; and whether the default should scale with the drawing buffer.
-  - **Bounds for custom shaders.** A custom shader may read `gl_FragCoord`, which the offset viewport
-    moves. Text is bounded by its laid-out glyph cells plus margins since 3803ba262.
-  - **Retaining through camera motion.** A world layer stops retaining while the view moves, and its
-    surface is freed after a frame without it, so a pan resubmits every layer and reallocates on the
-    first still frame. An oversized, bounded surface could be translated instead of redrawn.
-  - **Layers with `effects`, and layers inside a `LayerGroup` that owns a surface,** are never
-    retained: the renderer declines a retained group inside another render target.
-  - **The threshold.** `tests/perf/layer-dispatch.spec.ts` times the real path (`retained`), each
-    variant on a renderer of its own. On msb-uai (Apple M3 Max, ANGLE Metal, headless Chromium 153),
-    2026-10-18, ms a frame over the control, medians of 3 runs, with the scratch buffer outside the
-    budget:
-
-    | layers | cmds | submit | retained | kept / declined |
-    |---:|---:|---:|---:|---:|
-    |  4 |   30 |  0.240 |  0.510 |  4 /  0 |
-    |  4 |  100 |  1.255 |  0.490 |  4 /  0 |
-    | 16 |   30 |  1.670 |  2.035 | 16 /  0 |
-    | 16 |  100 |  3.785 |  1.705 | 16 /  0 |
-    | 16 |  300 | 11.595 |  1.765 | 16 /  0 |
-    | 64 |  100 |  9.030 |  9.515 | 16 / 48 |
-    | 64 | 1000 | 56.125 | 43.005 | 16 / 48 |
-
-    Where every layer fits the budget, retaining wins by 100 commands a layer and loses at 30, well
-    below the 250 in force. It was left at 250: one GPU, and frame time does not price the memory a
-    lower threshold commits. With the scratch buffer counted, the same node kept 8 of 16 and 8 of
-    64. Result files: `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`
-    (now) and `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/` (scratch
-    counted).
+    kept surfaces. A frame that redraws can hold the budget plus one canvas-sized multisampled scratch buffer
+    (131 MB at 4x), plus a single-sampled one when a retained group sits inside an effects buffer. Drawing in
+    tiles would cap this. Whether the default should scale with the drawing buffer is also open.
+  - **Retaining through camera motion.** A world layer stops retaining while the view moves, so a pan
+    resubmits every layer. Moving the kept surface gives exact pixels only for a whole-device-pixel shift;
+    reusing it also needs an oversized surface (a margin past the buffer) and content that moves exactly with
+    the view. Shader commands (their `bounds` are absolute screen pixels) and screen-unit gradients do not,
+    so they would opt the layer out.
+  - **An effects layer uses the same 250-command threshold** as any other, though its passes cost far more
+    than its commands, so a low-count blurred layer is not retained unless it sets `retain: true`. Measure
+    before changing it.
+  - **The threshold** was left at 250 after measurement (`tests/perf/layer-dispatch.spec.ts`; result files in
+    `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`).
 
 - **(P3) [agent] The pull request benchmark job's new run time is unmeasured.** Since 2026-10-26 it runs
   `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a
@@ -1400,8 +1299,3 @@ only story runner in the repo.
   registration.** Both are on the registry at 1.11.1 under `latest` and `pre` (`npm view`,
   2026-10-21); whether each is registered as a trusted publisher (`docs/releasing.md`, "Setting up a
   new package") can only be read on npmjs.com.
-- **(P3) [agent] Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
-  takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
-  `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
-  Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
-  groups (2026-10-20): it changes `DiagramView`'s selection props for every host.

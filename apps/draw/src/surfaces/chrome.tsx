@@ -18,15 +18,18 @@ export const FIXED_CHROME = {
 
 const item = ({ id, label }: ChromeItem): ChromeItem => ({ id, label });
 
-/** Everything the View menu toggles, in screen order: the command strip's assets, the two left palettes, the right
- *  sidebar's panels, then the status bar. */
+/** Everything the View menu toggles, in screen order: the toolbar dock's assets, the two left palettes, the right
+ *  sidebar's panels, then the status bar. The command row's assets are left out: their names are the menus'. */
 export const CHROME_ITEMS: readonly ChromeItem[] = [
-  ...SURFACE_ASSETS.filter((a) => a.defaultSurface !== 'panel').map(item),
+  ...SURFACE_ASSETS.filter((a) => a.row !== 'command' && a.defaultSurface !== 'panel').map(item),
   FIXED_CHROME.tools,
   FIXED_CHROME.pathTools,
   ...SURFACE_ASSETS.filter((a) => a.defaultSurface === 'panel').map(item),
   FIXED_CHROME.statusBar,
 ];
+
+/** Everything Preferences lists: the command row's assets, then what the View menu toggles. */
+export const ALL_CHROME: readonly ChromeItem[] = [...SURFACE_ASSETS.filter((a) => a.row === 'command').map(item), ...CHROME_ITEMS];
 
 /** The id of the action that shows or hides chrome `id`. */
 export const chromeActionId = (id: string): string => `view.show.${id}`;

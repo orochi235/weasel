@@ -72,12 +72,18 @@ export interface DiagramViewProps {
    *  then needs a size of its own; a resize of the parent is a size change. */
   width?: number;
   height?: number;
-  /** A participant id, or null for none. */
-  selected?: string | null;
-  /** Reports what each click leaves picked, `null` for none — a re-click on the
+  /** `'multiple'` lets Shift-click add a node, group or edge to what is
+   *  picked, or take it out. Default `'single'`: every click picks one. */
+  selectionMode?: 'single' | 'multiple';
+  /** A participant id, a set of them, or null for none. One id under
+   *  `'multiple'` agrees with a pick of several whose latest it is, so handing
+   *  back what `onSelect` reports as `id` leaves the rest picked. */
+  selected?: string | null | readonly string[];
+  /** Reports what each click leaves picked: its latest pick, `null` for none,
+   *  and every id picked, in the order they were — a re-click on the
    *  picked node reports it again. The canvas keeps the pick even if
    *  `selected` does not follow it; only a change to `selected` is pushed in. */
-  onSelect?: (id: string | null) => void;
+  onSelect?: (id: string | null, ids: readonly string[]) => void;
   /** Reports the node, group or edge the pointer comes to be over, and `null`
    *  once it is over none or leaves the canvas. An edge answers only while
    *  edges are picked (`pickEdges`). */
@@ -123,7 +129,9 @@ export interface DiagramViewProps {
   /** Set to let a member of a group marked `reorder` be dragged along that
    *  axis among its siblings, or the selected one stepped with Alt and an
    *  arrow key. Reports the members' new order and moves nothing: write it to
-   *  the group's `members`, which layered layout keeps. */
+   *  the group's `members`, which layered layout keeps. A container's member
+   *  dragged out of the container's box becomes a move, as `onMove` reports
+   *  one, and lands wherever it is dropped. */
   onReorder?: (change: ReorderChange) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;

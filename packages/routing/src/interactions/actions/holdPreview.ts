@@ -31,9 +31,10 @@ export function holdPreview(action: Action): Action {
         const params = resolveParams(opts?.params);
         const hide = action.preview?.(ctx.deps, params);
         return {
-          onEnd: (end, reason) => {
+          // An end's ctx carries no deps, so the run takes the press's.
+          onEnd: (_end, reason) => {
             hide?.();
-            if (reason === 'commit' && invoker?.timing === 'immediate') invoker.run(end.deps, params);
+            if (reason === 'commit' && invoker?.timing === 'immediate') invoker.run(ctx.deps, params);
           },
         };
       },

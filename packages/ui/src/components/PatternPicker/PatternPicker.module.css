@@ -35,6 +35,21 @@
   border-color: var(--wzl-fg-muted);
 }
 
+/* A picture is shown whole rather than tiled at a fixed size. */
+.imageSwatch {
+  display: grid;
+  place-items: center;
+  color: var(--wzl-fg-muted);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* The upload swatch opens it; the input itself is never seen. */
+.fileInput {
+  display: none;
+}
+
 .swatchActive {
   border-color: var(--wzl-accent);
   box-shadow: 0 0 0 1px var(--wzl-accent);

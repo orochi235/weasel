@@ -35,6 +35,8 @@ export interface GestureFactsStore {
    *  `onEnd` is handed the same trail, so an action that only reads the
    *  finished path, and declares no `onMove`, still gets every vertex. */
   sample(gestureId: string, event: InputEvent & { kind: 'pointermove' }): void;
+  /** Give a drag taken over mid-gesture the trail drawn before the hand-off, if it began. */
+  resumeTrail(gestureId: string, trail: readonly DragSample[]): void;
   /** Add a multitouch move's change of angle to the gesture's turn. */
   turn(gestureId: string, event: InputEvent & { kind: 'multitouch' }): void;
   of(gestureId: string | undefined): GestureFacts;
@@ -69,6 +71,9 @@ export function createGestureFacts(): GestureFactsStore {
     },
     sample(gestureId, event) {
       points.get(gestureId)?.push({ x: event.x, y: event.y, ...stylusOf(event) });
+    },
+    resumeTrail(gestureId, trail) {
+      if (points.has(gestureId)) points.set(gestureId, [...trail]);
     },
     turn(gestureId, event) {
       const turn = turns.get(gestureId);

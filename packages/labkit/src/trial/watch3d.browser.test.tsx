@@ -181,3 +181,73 @@ describe('raw WebGL in a trial with no `orbit`', () => {
     expect(badge()).toBeNull();
   });
 });
+
+/** The slice of WebGPU this suite calls; the repo carries no WebGPU types. */
+type GpuDevice = {
+  createShaderModule(d: { code: string }): unknown;
+  createRenderPipeline(d: object): unknown;
+};
+type Gpu = {
+  requestAdapter(): Promise<{ requestDevice(): Promise<GpuDevice> } | null>;
+  getPreferredCanvasFormat(): string;
+};
+
+const SHADER = `
+@vertex fn vs() -> @builtin(position) vec4f { return vec4f(0.0, 0.0, 0.0, 1.0); }
+@fragment fn fs() -> @location(0) vec4f { return vec4f(1.0); }`;
+
+const DEPTH = { format: 'depth24plus', depthCompare: 'less', depthWriteEnabled: true };
+
+/** A hand-written WebGPU view on a real device, building one pipeline with or without a depth test. */
+function RawGpu({ depth, gpu }: { depth: boolean; gpu: Gpu }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const device = await (await gpu.requestAdapter())?.requestDevice();
+      const canvas = ref.current;
+      if (!device || !canvas) return;
+      const format = gpu.getPreferredCanvasFormat();
+      const ctx = canvas.getContext('webgpu') as { configure(c: object): void } | null;
+      ctx?.configure({ device, format });
+      const module = device.createShaderModule({ code: SHADER });
+      device.createRenderPipeline({
+        layout: 'auto',
+        vertex: { module, entryPoint: 'vs' },
+        fragment: { module, entryPoint: 'fs', targets: [{ format }] },
+        ...(depth ? { depthStencil: DEPTH } : {}),
+      });
+    })();
+  }, [depth, gpu]);
+  return <canvas ref={ref} width={120} height={80} />;
+}
+
+const gpu = (navigator as { gpu?: Gpu }).gpu;
+// Headless Chromium on a fleet node may have no WebGPU, or no adapter behind it.
+const adapter = await gpu?.requestAdapter().catch(() => null);
+
+describe.skipIf(!gpu || !adapter)('raw WebGPU in a trial with no `orbit`', () => {
+  const gpuLab = (depth: boolean): Instrument =>
+    ({
+      name: `RawGpu${++made}`,
+      defaultConfig: () => ({}),
+      initialState: () => ({}),
+      render: () => <RawGpu depth={depth} gpu={gpu as Gpu} />,
+    }) as Instrument;
+
+  it('warns once it builds a depth-tested pipeline, and marks the title bar', async () => {
+    const instrument = gpuLab(true);
+    mount(instrument);
+    await waitFor(() => expect(cameraWarnings()).toHaveLength(1));
+    expect(String(cameraWarnings()[0]?.[0])).toContain(
+      `"${instrument.name}" draws a 3D view (WebGPU with depth testing)`,
+    );
+    await waitFor(() => expect(badge()).not.toBeNull());
+  });
+
+  it('says nothing of a pipeline with no depth test', async () => {
+    mount(gpuLab(false));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(cameraWarnings()).toEqual([]);
+    expect(badge()).toBeNull();
+  });
+});

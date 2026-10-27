@@ -4,12 +4,11 @@ import { usePref } from '../prefs';
 import { SchemaBar, SchemaMenu } from './SchemaSurfaces';
 import { SwitchMenus } from './surfaceSwitch';
 import { useSurfaces, type SurfaceBinding } from './surfaceState';
-import { isSchemaAsset } from './types';
 
 const STRIP_DOCKS: readonly DockSpec[] = [{ id: 'strip', edge: 'top', className: 'wd-dock-strip' }];
 
 /**
- * The strip's toolbars: every asset that can be a bar or a menu, each drawn as one. Each may
+ * The strip's toolbars: every asset that can be a bar or a menu, each drawn as one, but those the command row holds. Each may
  * float over the workspace. An asset hidden or shown as a panel draws nothing but stays offered, so it keeps its place
  * for when it comes back.
  */
@@ -21,7 +20,7 @@ export function useStripBars(): DockBar[] {
 function stripBars(bindings: readonly SurfaceBinding[]): DockBar[] {
   const bars: DockBar[] = [];
   for (const { asset, surface, chrome, order, onReorder } of bindings) {
-    if (!isSchemaAsset(asset) || !asset.surfaces.some((s) => s === 'bar' || s === 'menu')) continue;
+    if (asset.row === 'command' || !asset.surfaces.some((s) => s === 'bar' || s === 'menu')) continue;
     bars.push({
       id: asset.id,
       label: asset.label,

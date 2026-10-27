@@ -3,13 +3,15 @@
  * keeping its own rect and camera, measured on the surface.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { useEffect } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { createScene } from 'core/scene/scene';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { View } from 'core/viewport/view';
+import type { NodeId } from 'core/scene/types';
+import type { RenderLayer } from 'core/layers/render';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 
 beforeAll(() => {
@@ -80,5 +82,42 @@ describe('<CanvasView follows>', () => {
     const h = mount(() => null);
     expect(h.reg('loop-a').layerIsPainted('main')).toBe(true);
     expect(h.drawn('loop-a').length).toBeGreaterThan(0);
+  });
+
+  it('acts on and draws the selection of the view it follows, while that view owns one', () => {
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    let registry: ViewRegistry | null = null;
+    function Probe() {
+      const r = useOptionalViewRegistry();
+      useEffect(() => { registry = r; });
+      return null;
+    }
+    let seen: unknown = null;
+    const probe: RenderLayer<unknown> = { id: 'probe', label: 'probe', draw: (data) => { seen = data; return []; } };
+    let target: string | null = 'owner';
+    render(
+      <SceneCanvas scene={scene} layers={{ probe: { layer: probe } }} width={400} height={300}>
+        <CanvasView id="owner" bounds={PANEL} defaultView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+          selectionOptions={{ initial: ['p' as NodeId] }} />
+        <CanvasView id="lens" bounds={LENS} view={() => LENS_VIEW} follows={() => target} />
+        <Probe />
+      </SceneCanvas>,
+    );
+    act(() => { scene.setSelection(['s' as NodeId]); });
+    const lens = registry!.get('lens')!;
+    const chromeSelection = () => {
+      lens.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300, dpr: 1 });
+      return (seen as { getChromeState(): { selection: readonly NodeId[] } }).getChromeState().selection;
+    };
+
+    const panelSelection = registry!.get('owner')!.target.deps!().selection!;
+    expect(lens.target.deps!().selection).toBe(panelSelection);
+    expect(chromeSelection()).toEqual(['p']);
+    act(() => { panelSelection.set(['q' as NodeId]); });
+    expect(chromeSelection()).toEqual(['q']);
+
+    target = null;
+    expect(lens.target.deps!().selection).toBeUndefined();
+    expect(chromeSelection()).toEqual(['s']);
   });
 });

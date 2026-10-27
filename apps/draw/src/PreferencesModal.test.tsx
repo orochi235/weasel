@@ -41,6 +41,6 @@ describe('SurfacesEditor', () => {
   it('offers a surface choice only for an asset that allows more than one', () => {
     render(<SurfacesEditor ctx={ctxFor({ path: { surface: 'menu' } })} />);
     expect(screen.getByRole('button', { name: /Show Path as/ }).textContent).toMatch(/Menu/);
-    expect(screen.queryByRole('button', { name: /Show Layers as/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Show Properties as/ })).toBeNull();
   });
 });

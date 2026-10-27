@@ -19,7 +19,7 @@
     "longestFunction": 162
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "longestFunction": 233
+    "longestFunction": 232
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 516
@@ -116,10 +116,10 @@
     "longestFunction": 228
   },
   "packages/kernel3d/src/deps.ts": {
-    "longestFunction": 161
+    "longestFunction": 147
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
-    "longestFunction": 178
+    "longestFunction": 177
   },
   "packages/labkit/src/annotations/ExportMenu.tsx": {
     "longestFunction": 126
@@ -141,7 +141,7 @@
     "longestFunction": 210
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 197
+    "longestFunction": 192
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -179,7 +179,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 626
+    "lines": 624
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608

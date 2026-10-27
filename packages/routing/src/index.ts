@@ -141,7 +141,7 @@ export { modifierStateOf } from './interactions/dispatcher/inputFacts';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from './interactions/actions/modifierRoles';
 
 export type {
-  Point2, AffordanceHit, DragSample, InvocationCtx, BindingOpts, ActionDeps,
+  Point2, WorldPoint, AffordanceHit, DragSample, InvocationCtx, BindingOpts, ActionDeps,
   OverlayRole, OngoingOverlay, OngoingHandle, ImmediateInvoker, OngoingInvoker, Invoker,
 } from './interactions/actions/invoker';
 export {
@@ -213,6 +213,7 @@ export { scratchKey, getScratch, setScratch, deleteScratch } from './interaction
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
   INGEST_STRING_MIMES, admitIngestMime, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
+  pendingKindOf, type PendingIngestItem,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';
@@ -224,4 +225,5 @@ export { mergeMenuDefs, pickMenu } from './menus/pickMenu';
 export { resolveMenu, resolveSchemaMenu } from './menus/resolveMenu';
 export { createMenuHost } from './menus/menuHost';
 export type { MenuHost, MenuOpenRequest, OpenMenu } from './menus/menuHost';
-export type { MenuSources } from './menus/resolveMenu';
+export type { MenuCustomAt, MenuSources } from './menus/resolveMenu';
+export type { MenuAccess } from './menus/compoundRows';

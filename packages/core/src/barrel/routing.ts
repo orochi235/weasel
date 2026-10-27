@@ -20,7 +20,7 @@ export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useActi
 export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
 export { useMenuHost, useMenus } from '@weasel-js/routing/react';
-export type { MenuDef, MenuHit, MenuHost, MenuOpenRequest, MenuSources, OpenMenu } from '@weasel-js/routing';
+export type { MenuDef, MenuHit, MenuHost, MenuOpenRequest, MenuSources, MenuCustomAt, MenuAccess, OpenMenu } from '@weasel-js/routing';
 export { resolveSchemaMenu } from '@weasel-js/routing';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { actionCursor } from '@weasel-js/routing';
@@ -104,7 +104,7 @@ export { defaultCommitAdapter } from '../interactions/actions/defaultCommitAdapt
 
 // ─── Invoker / GestureBinding / ActiveToolContext ───
 export { overlaysOf, resolveParams } from '@weasel-js/routing';
-export type { Point2, DragSample, InvocationCtx, BindingOpts, ActionDeps, AffordanceHit, OngoingHandle, OngoingOverlay, OverlayRole, ImmediateInvoker, OngoingInvoker, Invoker } from '@weasel-js/routing';
+export type { Point2, WorldPoint, DragSample, InvocationCtx, BindingOpts, ActionDeps, AffordanceHit, OngoingHandle, OngoingOverlay, OverlayRole, ImmediateInvoker, OngoingInvoker, Invoker } from '@weasel-js/routing';
 export type { GestureBinding } from '@weasel-js/routing';
 export { ActiveToolContextProvider, ActiveToolContextProviderIfRoot, useActiveToolContext, useOptionalActiveToolContext } from '@weasel-js/routing/react';
 export type { ActiveToolContextValue, ActiveToolContextProviderProps } from '@weasel-js/routing/react';
@@ -142,7 +142,7 @@ export type {
   SvgUnpacker,
   ViewApi,
 } from '../interactions/actions/depSchema';
-export type { GeometryProjection } from '../interactions/actions/geometryProjection';
+export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export { refusalOf, type DropRefusal, type DropVerdict } from '../interactions/actions/dropVerdict';
 export {
   useResizePolicy,

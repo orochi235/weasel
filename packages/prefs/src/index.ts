@@ -66,6 +66,7 @@ export {
 export { prefShownReader, prefShownValue } from './shown';
 export { prefLeafValue, prefValueAbsent } from './leafValue';
 export { isPrefLocus, locusSelectors as prefLocusSelectors, memberAt as prefLocusMember, type PrefLocus, type PrefSelection, type PrefWeighted, type PrefWeights } from './locus';
+export { prefWeightAxes, type PrefWeightAxes } from './weightAxes';
 export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
 export { pref } from './build';

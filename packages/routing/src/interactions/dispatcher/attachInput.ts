@@ -144,6 +144,7 @@ export function attachInput(
     listeners.removeAll();
     offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);
+    ingest.endPreview();
     // The registry in use at teardown is the one holding the keys.
     src.actions().dropKeys();
     hover.clear();

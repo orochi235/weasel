@@ -1,6 +1,7 @@
 /**
  * Pipeline groups in a real browser: a stage dragged into a group's box joins it and Undo takes it
- * back out, and Arrange's Group and Ungroup, by menu and by key, change what groups hold.
+ * back out, and Arrange's Group and Ungroup, by menu and by key, change what groups hold, Group taking
+ * everything Shift-clicked.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
@@ -97,5 +98,16 @@ describe('WeaselChart pipeline groups', () => {
     await expect.poll(() => groups().map((g) => g.id)).toEqual(['g', 'group']);
     await choose('Edit', /^Undo/);
     await expect.poll(() => JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!)).toEqual(DOC);
+  });
+
+  it('groups every stage and group Shift-clicked, from Arrange › Group', async () => {
+    const { canvas, at } = await openCanvas();
+    await userEvent.click(canvas, { position: at(600, 70) });
+    await userEvent.keyboard('{Shift>}');
+    await userEvent.click(canvas, { position: at(200, 260) });
+    await userEvent.keyboard('{/Shift}');
+    await choose('Arrange', /^Group/);
+    await expect.poll(() => groups().map((g) => g.id)).toEqual(['g', 'group']);
+    expect([...groups()[1]!.members].sort()).toEqual(['b', 'g']);
   });
 });

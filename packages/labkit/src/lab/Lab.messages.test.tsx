@@ -39,6 +39,10 @@ function mountLab(spec: ClockCapability | undefined, props: Partial<LabProps> = 
 
 const c = () => clock as TrialClock;
 
+// A clock stops at the end of its span, so a test asserting it still plays needs a span
+// no stall of a loaded worker can reach.
+const SPAN = 3_600_000;
+
 // jsdom's own `postMessage` delivers an event with no `source`, which a browser
 // never does, so the host's message is dispatched as the browser would shape it.
 const send = (data: unknown, init: MessageEventInit = {}) =>
@@ -66,7 +70,7 @@ afterEach(() => {
 
 describe('a presented lab’s messages', () => {
   it('plays and pauses on the host’s word', async () => {
-    await mountLab({ duration: 4000 });
+    await mountLab({ duration: SPAN });
     await send({ type: 'labkit:play' });
     expect(c().rate).toBe(1);
     await send({ type: 'labkit:pause' });
@@ -74,7 +78,7 @@ describe('a presented lab’s messages', () => {
   });
 
   it('plays at the speed the transport holds, and moves its button', async () => {
-    await mountLab({ duration: 4000, rate: 2 });
+    await mountLab({ duration: SPAN, rate: 2 });
     await send({ type: 'labkit:pause' });
     expect(screen.getByRole('button', { name: 'Play' })).not.toBeNull();
     await send({ type: 'labkit:play' });
@@ -83,7 +87,7 @@ describe('a presented lab’s messages', () => {
   });
 
   it('plays with the controls left off', async () => {
-    await mountLab({ duration: 4000 }, { transport: false });
+    await mountLab({ duration: SPAN }, { transport: false });
     await send({ type: 'labkit:play' });
     expect(c().rate).toBe(1);
   });
@@ -122,14 +126,14 @@ describe('a presented lab’s messages', () => {
   });
 
   it('reports its state as it starts, on a change, and when asked', async () => {
-    await mountLab({ duration: 4000 });
+    await mountLab({ duration: SPAN });
     expect(lastState()).toEqual({
       type: 'labkit:state',
       clock: true,
       playing: false,
       ended: false,
       time: 0,
-      duration: 4000,
+      duration: SPAN,
       rate: 1,
       seekable: true,
     });
@@ -156,7 +160,7 @@ describe('a presented lab’s messages', () => {
   });
 
   it('takes only the origins it is given', async () => {
-    await mountLab({ duration: 4000 }, { messages: { origins: ['https://host.example'] } });
+    await mountLab({ duration: SPAN }, { messages: { origins: ['https://host.example'] } });
     await send({ type: 'labkit:play' });
     expect(c().rate).toBe(0);
     await send({ type: 'labkit:play' }, { origin: 'https://host.example' });
@@ -164,7 +168,7 @@ describe('a presented lab’s messages', () => {
   });
 
   it('takes a message addressed to another lab as not its own', async () => {
-    await mountLab({ duration: 4000 }, { messages: { name: 'hero' } });
+    await mountLab({ duration: SPAN }, { messages: { name: 'hero' } });
     await send({ type: 'labkit:play', lab: 'other' });
     expect(c().rate).toBe(0);
     await send({ type: 'labkit:play', lab: 'hero' });

@@ -1,4 +1,5 @@
 import { ActionDisabledReason, useCommand } from '@weasel-js/core';
+import { MARKS_COMMAND, takesMarks } from '../annotations/labMarks';
 import { type LabContribution, type LabHeaderItem, useLabChromeContext } from '../chrome';
 import type { LabMode } from '../state/types';
 import { useLabContext } from './LabContext';
@@ -6,7 +7,8 @@ import { MODES } from './labModes';
 
 /**
  * Registers the lab header's commands on the lab's actions registry: add a
- * trial per instrument, the color modes, and each header item contribution.
+ * trial per instrument, the color modes, the Marks switch in a lab whose
+ * instruments take marks, and each header item contribution.
  * The header's buttons stay as they are; these are the same operations by id.
  */
 export function LabCommands({
@@ -32,6 +34,7 @@ export function LabCommands({
       {MODES.map((m) => (
         <ModeCommand key={m.mode} {...m} />
       ))}
+      {takesMarks(lab.instruments) ? <MarksCommand /> : null}
       {contributions.map((c) =>
         c.region === 'header' && c.item ? (
           <HeaderItemCommand key={c.id} id={c.id} item={c.item} />
@@ -52,6 +55,12 @@ function ModeCommand({ mode, label }: { mode: LabMode; label: string }) {
   useCommand(`lab.mode.${mode}`, label, () => lab.setMode(mode), {
     active: () => lab.mode === mode,
   });
+  return null;
+}
+
+function MarksCommand() {
+  const lab = useLabContext();
+  useCommand(MARKS_COMMAND, 'Marks', () => lab.setMarks(!lab.marks), { active: () => lab.marks });
   return null;
 }
 

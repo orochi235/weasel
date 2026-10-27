@@ -102,7 +102,7 @@ describe('label dragging in DiagramView', () => {
     pointer(canvas, 'pointerup', x, y);
     await frame();
 
-    expect(onSelect).toHaveBeenLastCalledWith(AB);
+    expect(onSelect).toHaveBeenLastCalledWith(AB, [AB]);
     expect(onMoveLabel).not.toHaveBeenCalled();
   });
 });

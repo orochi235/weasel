@@ -37,6 +37,29 @@ export function hostBox(el: HTMLElement | null | undefined): HostBox | null {
   };
 }
 
+/**
+ * How much the pages embedding `win` enlarge it: the scale an ancestor transform shows each frame element at, from
+ * `win`'s up to the top-level page. A transform outside a frame's document is invisible to any measurement inside
+ * it. 1 at the top level, and above a frame whose parent is another origin's.
+ */
+export function embedScale(win: Window | null | undefined): number {
+  let scale = 1;
+  for (let w = win; w; ) {
+    let el: Element | null;
+    try {
+      el = w.frameElement;
+    } catch {
+      break;
+    }
+    if (!el) break;
+    // CSS zoom on the frame or above it already reaches the frame's devicePixelRatio; only a transform does not.
+    const zoom = el.currentCSSZoom || 1;
+    scale *= scaleOf(el.getBoundingClientRect().width, (el as HTMLElement).offsetWidth * zoom);
+    w = el.ownerDocument.defaultView;
+  }
+  return scale;
+}
+
 /** `el`'s size in its own layout px, or `null` when it has none. */
 export function layoutSize(el: HTMLElement | null | undefined): ViewportSize | null {
   const box = hostBox(el);

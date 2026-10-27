@@ -65,7 +65,7 @@ function pct(v: number): string {
 
 /**
  * `paint` as a CSS `background` value, or `undefined` for a paint with no CSS
- * form — a pattern, a registered kind — which a caller shows as a checker or
+ * form — a tile pattern, a registered kind — which a caller shows as a checker or
  * a placeholder rather than as an invented color.
  *
  * Gradient geometry is honored as far as CSS can carry it: the angle of a
@@ -93,6 +93,8 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
   if ((paint.kind as string) === 'mesh-gradient') {
     return meshPreview(paint as unknown as { patches?: { colors: string[] }[] });
   }
+  // The picture whole, rather than a chip-sized corner of one tile.
+  if (paint.kind === 'image') return `url(${JSON.stringify(paint.src)}) center / cover no-repeat`;
   if (paint.kind === 'conic-gradient') {
     // CSS starts a conic gradient at "to top"; the paint starts at +x.
     const from = (paint.angle * DEG + 90).toFixed(1);

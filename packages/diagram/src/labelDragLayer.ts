@@ -18,6 +18,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import type { Path, Vec2 } from '@weasel-js/core/math';
+import { boxIndex, boxesMeeting, keyedIndex, type BoxIndex } from './keyedIndex';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { Bounds } from './outline';
 
@@ -89,33 +90,69 @@ export function* draggableLabels(scene: Scene<unknown, string, unknown>): Iterab
 
 const holds = (b: Bounds, at: Vec2) => at.x >= b.x && at.x <= b.x + b.width && at.y >= b.y && at.y <= b.y + b.height;
 
+type AnyScene = Scene<unknown, string, unknown>;
+
+/** Each scene's draggable labels, boxed. Read at document poses, so the scene's version is the whole key. */
+const INDEXES = new WeakMap<AnyScene, () => { labels: DraggableLabel[]; boxes: BoxIndex } | null>();
+
+function labelIndexOf(scene: AnyScene) {
+  let index = INDEXES.get(scene);
+  if (index === undefined) {
+    index = keyedIndex(
+      () => (typeof scene.getVersion === 'function' ? [scene.getVersion()] : undefined),
+      () => {
+        const labels = [...draggableLabels(scene)];
+        return {
+          labels,
+          boxes: boxIndex(labels.map(({ box: b }) => [
+            Math.min(b.x, b.x + b.width), Math.min(b.y, b.y + b.height),
+            Math.max(b.x, b.x + b.width), Math.max(b.y, b.y + b.height),
+          ] as const)),
+        };
+      },
+    );
+    INDEXES.set(scene, index);
+  }
+  return index;
+}
+
+/** The draggable labels whose box can hold `at`, in render order: every one, without an index. */
+function labelsAt(scene: AnyScene, at: Vec2): Iterable<DraggableLabel> {
+  const built = labelIndexOf(scene)();
+  const near = built && boxesMeeting(built.boxes, at.x, at.y, at.x, at.y);
+  if (!built || !near) return draggableLabels(scene);
+  return near.map((i) => built.labels[i]!);
+}
+
 /** The topmost draggable label whose box holds `at`, as its press scratch. */
-export function labelUnder(scene: Scene<unknown, string, unknown>, at: Vec2): LabelScratch | null {
+export function labelUnder(scene: AnyScene, at: Vec2): LabelScratch | null {
   let found: LabelScratch | null = null;
-  for (const { labelId, edgeId, box } of draggableLabels(scene)) {
+  for (const { labelId, edgeId, box } of labelsAt(scene, at)) {
     if (holds(box, at)) found = { targetId: labelId, labelId, edgeId };
   }
   return found;
 }
 
-function createLabelDragAffordance(scene: Scene<unknown, string, unknown>, cursor: CursorSpec): Affordance {
+function createLabelDragAffordance(scene: AnyScene, cursor: CursorSpec): Affordance {
+  const regionsOf = (labels: Iterable<DraggableLabel>): readonly AffordanceRegion[] => {
+    const out: AffordanceRegion[] = [];
+    for (const { labelId, edgeId, box } of labels) {
+      out.push({
+        id: labelId,
+        targetId: null,
+        shape: { kind: 'rect', x: box.x, y: box.y, width: box.width, height: box.height },
+        cursor,
+        strength: 'exclusive',
+        claimedKinds: ['pointer'],
+        bind: () => ({ initialScratch: { targetId: labelId, labelId, edgeId } satisfies LabelScratch }),
+      });
+    }
+    return out;
+  };
   return {
     id: LABEL_DRAG_LAYER_ID,
-    regions(): readonly AffordanceRegion[] {
-      const out: AffordanceRegion[] = [];
-      for (const { labelId, edgeId, box } of draggableLabels(scene)) {
-        out.push({
-          id: labelId,
-          targetId: null,
-          shape: { kind: 'rect', x: box.x, y: box.y, width: box.width, height: box.height },
-          cursor,
-          strength: 'exclusive',
-          claimedKinds: ['pointer'],
-          bind: () => ({ initialScratch: { targetId: labelId, labelId, edgeId } satisfies LabelScratch }),
-        });
-      }
-      return out;
-    },
+    regions: () => regionsOf(draggableLabels(scene)),
+    regionsAt: (_state, wx, wy) => regionsOf(labelsAt(scene, { x: wx, y: wy })),
   };
 }
 

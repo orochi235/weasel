@@ -112,6 +112,55 @@ describe('pattern serialization', () => {
     expect(warnings.join(' ')).toContain('TextureHandle');
   });
 
+  describe('an image pattern', () => {
+    const IMAGE: Paint = {
+      kind: 'image', src: 'data:image/png;base64,iVBORw0KGgo=', width: 24, height: 12,
+    };
+
+    it('round-trips through a pattern holding one <image>', () => {
+      const svg = serializeSvg(patternedRect(IMAGE));
+      expect(svg).toContain('<image href="data:image/png;base64,iVBORw0KGgo=" width="24" height="12"');
+      const { nodes, warnings } = parseSvg(svg);
+      expect(warnings).toEqual([]);
+      expect(nodes).toHaveLength(1);
+      expect(firstFill(nodes)).toEqual(IMAGE);
+    });
+
+    it('carries its origin and transform as a tile does', () => {
+      const transform = composePatternTransform({ rotation: Math.PI / 4 });
+      const svg = serializeSvg(patternedRect({ ...IMAGE, origin: { x: 5, y: 6 }, transform }));
+      const back = firstFill(parseSvg(svg).nodes) as PatternPaint;
+      expect(back.origin!.x).toBeCloseTo(5, 5);
+      expect(back.origin!.y).toBeCloseTo(6, 5);
+      back.transform!.forEach((v, i) => expect(v).toBeCloseTo(transform[i], 5));
+    });
+
+    it('reads another editor\'s bitmap pattern, xlink:href and all', () => {
+      const doc = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">'
+        + '<defs><pattern id="p" patternUnits="userSpaceOnUse" width="10" height="20">'
+        + '<image xlink:href="tile.png" x="0" y="0" width="10" height="20"/></pattern></defs>'
+        + '<rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
+      expect(firstFill(parseSvg(doc).nodes)).toEqual({ kind: 'image', src: 'tile.png', width: 10, height: 20 });
+    });
+
+    it('drops a pattern whose picture does not fill the tile', () => {
+      const doc = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        + '<defs><pattern id="p" patternUnits="userSpaceOnUse" width="10" height="10">'
+        + '<image href="tile.png" x="2" width="5" height="5"/></pattern></defs>'
+        + '<rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
+      const { nodes, warnings } = parseSvg(doc);
+      expect(firstFill(nodes)).toBeUndefined();
+      expect(warnings.join(' ')).toContain('unsupported pattern');
+    });
+
+    it('warns and drops one with no tile extent, which SVG cannot size', () => {
+      const warnings: string[] = [];
+      const svg = serializeSvg(patternedRect({ kind: 'image', src: 'tile.png' }), { onWarn: (m) => warnings.push(m) });
+      expect(svg).not.toContain('<pattern ');
+      expect(warnings.join(' ')).toContain('width and height');
+    });
+  });
+
   it('drops a hand-authored pattern with a warning rather than guessing', () => {
     const foreign = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
       + '<defs><pattern id="p" width="4" height="4"><circle cx="2" cy="2" r="1"/></pattern></defs>'

@@ -3,7 +3,8 @@ import { screen } from '@testing-library/react';
 import { asNodeId, createMeasurements, createScene, type PathEffect, useSelection } from '@weasel-js/core';
 import { useState } from 'react';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
-import { PropertiesPanel } from './sidebarPanels';
+import { SelectionProperties } from './sidebarPanels';
+import { SurfaceHostContext } from './surfaces/hostContext';
 import type { SidebarHost } from './surfaces/types';
 import { renderWithIcons } from './testIcons';
 
@@ -30,11 +31,13 @@ function Host({ kind }: { kind: PathEffect['kind'] }) {
     scene, selection, measurements: useState(() => createMeasurements({ layer: ANNOTATION_LAYER }))[0],
     filename: '', setFilename: () => {}, backgroundColor: '#ffffff', setBackgroundColor: () => {},
     paperSize: 'letter' as never, setPaperSize: () => {}, docSelected: false, setDocSelected: () => {},
+    cornerSelection: { editingId: () => null, selectedAnchors: () => new Set(), subscribe: () => () => {} },
+    simplifyTolerance: 1, setSimplifyTolerance: () => {},
   };
-  return <PropertiesPanel host={host} chrome={{ collapsed: false, hidden: false, onToggleCollapse: () => {}, onHide: () => {} }} />;
+  return <SurfaceHostContext.Provider value={host}><SelectionProperties /></SurfaceHostContext.Provider>;
 }
 
-describe('PropertiesPanel on a path-effect node', () => {
+describe('SelectionProperties on a path-effect node', () => {
   it.each(EFFECTS)('titles a %s node by its effect', (kind, title) => {
     renderWithIcons(<Host kind={kind} />);
     expect(screen.getByText(title)).toBeTruthy();

@@ -136,7 +136,7 @@ describe('admitIngestMime', () => {
     const release = admitIngestMime('Application/X-App-Stencil; charset=utf-8');
     try {
       expect(await itemsFromDataTransfer(drop())).toEqual([{ kind: 'string', mime: CUSTOM, text: 'decision' }]);
-      expect(itemTypesFromDataTransfer(drop())).toEqual([{ mime: CUSTOM }]);
+      expect(itemTypesFromDataTransfer(drop())).toEqual([{ pending: 'string', mime: CUSTOM }]);
       expect(itemsFromClipboardData(cd)).toEqual([{ kind: 'string', mime: CUSTOM, text: 'decision' }]);
     } finally {
       release();

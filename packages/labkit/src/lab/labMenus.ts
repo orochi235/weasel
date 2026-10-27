@@ -1,5 +1,6 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs';
 import { mergeMenuDefs } from '@weasel-js/routing';
+import { MARKS_COMMAND, takesMarks } from '../annotations/labMarks';
 import type { LabContribution } from '../chrome/labTypes';
 import { groupsOf } from '../chrome/regions/groupsOf';
 import type { InstrumentList } from '../instrument/types';
@@ -58,7 +59,7 @@ function labMenu({ instruments, addTrial, header }: LabMenuBarInput): PrefGroup 
   return pref.group('Lab', { ...children, ...itemSections(header) }, { as: 'menu' });
 }
 
-function viewMenu(zoom: boolean): PrefGroup {
+function viewMenu(zoom: boolean, marks: boolean): PrefGroup {
   const theme = pref.group(
     'Theme',
     Object.fromEntries(MODES.map(({ mode }) => [mode, pref.action(`lab.mode.${mode}`)])),
@@ -67,7 +68,10 @@ function viewMenu(zoom: boolean): PrefGroup {
   const zoomSection: Children = zoom
     ? { zoom: pref.group('', { zoom: pref.action('lab.zoom') }) }
     : {};
-  return pref.group('View', { ...zoomSection, theme }, { as: 'menu' });
+  const marksSection: Children = marks
+    ? { marks: pref.group('', { marks: pref.action(MARKS_COMMAND) }) }
+    : {};
+  return pref.group('View', { ...zoomSection, ...marksSection, theme }, { as: 'menu' });
 }
 
 function merged(
@@ -87,7 +91,7 @@ function merged(
 
 /**
  * The lab's menu bar as a schema: Lab (add trial and the header's item contributions), then the
- * menus the lab declares, then View (zoom and color mode). A declared menu keyed `lab` or `view`
+ * menus the lab declares, then View (zoom, Marks in a lab whose instruments take marks, and color mode). A declared menu keyed `lab` or `view`
  * adds its rows to the built-in one, after a separator.
  */
 export function labMenuBar(input: LabMenuBarInput): PrefGroup {
@@ -95,6 +99,6 @@ export function labMenuBar(input: LabMenuBarInput): PrefGroup {
   return pref.group('', {
     lab: merged('lab', labMenu(input), lab),
     ...rest,
-    view: merged('view', viewMenu(input.zoom), view),
+    view: merged('view', viewMenu(input.zoom, takesMarks(input.instruments)), view),
   });
 }

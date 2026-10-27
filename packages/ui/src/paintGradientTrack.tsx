@@ -43,7 +43,9 @@ export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => 
     if (ctx.along) {
       return <GradientCurve ctx={ctx} gradient={gradient} samples={samples} activeRange={activeRange} hatch={{ ...DEFAULT_HATCH, ...hatch }} />;
     }
-    const baseGradient = `linear-gradient(to right, ${sampledCssStops(gradient, samples, ctx.fractionToPosition)})`;
+    // Laid from the span's start: its right end under 'rtl'.
+    const [start, end] = ctx.shape.direction === 'rtl' ? ['right', 'left'] : ['left', 'right'];
+    const baseGradient = `linear-gradient(to ${end}, ${sampledCssStops(gradient, samples, ctx.fractionToPosition)})`;
 
     const layers: string[] = [];
     if (activeRange) {
@@ -56,13 +58,13 @@ export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => 
 
       if (low > 0) {
         const wL = ctx.fractionToPosition(low);
-        layers.push(`${dimOverlay} left 0 / ${wL} 100% no-repeat`);
-        layers.push(`${stripe} left 0 / ${wL} 100% no-repeat`);
+        layers.push(`${dimOverlay} ${start} 0 / ${wL} 100% no-repeat`);
+        layers.push(`${stripe} ${start} 0 / ${wL} 100% no-repeat`);
       }
       if (high < 1) {
         const wR = `calc(100% - ${ctx.fractionToPosition(high)})`;
-        layers.push(`${dimOverlay} right 0 / ${wR} 100% no-repeat`);
-        layers.push(`${stripe} right 0 / ${wR} 100% no-repeat`);
+        layers.push(`${dimOverlay} ${end} 0 / ${wR} 100% no-repeat`);
+        layers.push(`${stripe} ${end} 0 / ${wR} 100% no-repeat`);
       }
     }
     layers.push(baseGradient);

@@ -25,7 +25,7 @@ function projectedGeometry(
     sb.x, sb.y, sb.width, sb.height,
     db.x, db.y, db.width, db.height,
   );
-  const dataOp = geometryDataOp(projection, { id: node.id, data: node.data, pose: from }, m, label);
+  const dataOp = geometryDataOp(projection, { id: node.id, data: node.data, pose: from }, m, next, label);
   if (!dataOp) return null;
   // The data absorbed the affine — including any mirror from a
   // drag past the opposite edge — so the pose must commit as a

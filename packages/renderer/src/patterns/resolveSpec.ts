@@ -10,7 +10,7 @@
  */
 
 import {
-  isTileKind, isTilePaint, patternPlacementOf, tileSpecOf,
+  isImagePatternPaint, isTileKind, isTilePaint, patternPlacementOf, tileSpecOf,
   type CommandPaint, type Paint, type PosedPaint, type TilePaint, type TilePatternSpec,
 } from '@weasel-js/paint';
 import {
@@ -18,6 +18,7 @@ import {
   type TextureHandle,
 } from '../textures/registerTexture';
 import { rasterizeTile } from './rasterizeTile';
+import { resolveImagePattern } from './resolveImage';
 import { drawTileShapes, tileGeometry, tileSize } from './tileGeometry';
 
 /** How many built-in tiles stay rasterized at once. A scene drawing more
@@ -102,16 +103,27 @@ function revive(id: string): void {
 ownTextureIds(ID_PREFIX, { revive, touched: markUsed });
 
 /**
- * Swap a tile paint for the `texture` paint that draws it, placement kept,
- * leaving every other fill untouched. The built-in painters run this
- * alongside `fillInPoseFrame`; a consumer emitting its own draw commands
- * runs it at the same place it runs that one.
+ * Swap a tile or image paint for the `texture` paint that draws it, placement
+ * and extent kept, leaving every other fill untouched. The built-in painters
+ * run this alongside `fillInPoseFrame`; a consumer emitting its own draw
+ * commands runs it at the same place it runs that one.
  *
- * A tile that can't rasterize drops the fill rather than painting garbage.
+ * A tile that can't rasterize drops the fill rather than painting garbage. An
+ * image always resolves, and draws nothing until it has decoded.
  */
 export function resolveFillPattern(fill: PosedPaint): CommandPaint | null;
 export function resolveFillPattern(fill: Paint): Paint | null;
 export function resolveFillPattern(fill: Paint): Paint | null {
+  if (isImagePatternPaint(fill)) {
+    const { width, height } = fill;
+    return {
+      kind: 'texture',
+      texture: resolveImagePattern(fill),
+      ...(width !== undefined ? { width } : {}),
+      ...(height !== undefined ? { height } : {}),
+      ...patternPlacementOf(fill),
+    };
+  }
   if (!isTilePaint(fill)) return fill;
   const texture = resolvePatternSpec(fill);
   return texture ? { kind: 'texture', texture, ...patternPlacementOf(fill) } : null;

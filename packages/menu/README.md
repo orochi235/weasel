@@ -1,7 +1,7 @@
 # @weasel-js/menu
 
-The headless model behind weasel's context menus: entries (items, separators, submenus, number rows
-edited in place, and read-only color rows), a
+The headless model behind weasel's context menus: entries (items, separators, submenus, and number,
+text and color rows edited in place), a
 controller that owns the highlight, open submenus, keyboard and typeahead behavior, and placement
 that keeps a menu on screen. No React, no DOM.
 

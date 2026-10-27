@@ -131,4 +131,13 @@ describe('Transport', () => {
     rerender(<Transport {...props} reverse onReverseChange={onReverseChange} />);
     expect(screen.getByRole('switch', { name: /reverse/i })).toBeChecked();
   });
+
+  it('stays left to right in a right-to-left locale, scrub bar and arrow keys with it', () => {
+    const onSeek = vi.fn();
+    renderWithIcons(<div dir="rtl"><Transport {...props} playhead={500} onSeek={onSeek} /></div>);
+    const scrub = screen.getByRole('slider', { name: /position/i });
+    expect(scrub.style.left).toBe('25%');
+    fireEvent.keyDown(scrub, { key: 'ArrowRight' });
+    expect(onSeek).toHaveBeenLastCalledWith(520);
+  });
 });

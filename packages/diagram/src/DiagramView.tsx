@@ -67,7 +67,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, router, labels, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
@@ -92,7 +92,7 @@ function Inner({
     initial: specs as DiagramSpec[],
     registry,
   });
-  const selection = useSelection({ scene, mode: 'single' });
+  const selection = useSelection({ scene, mode: selectionMode === 'multiple' ? 'multi' : 'single' });
   const onClick = useMirroredSelection(selection, selected, onSelect);
 
   useSceneSync(scene, specs, { onMove, onEditContainer });

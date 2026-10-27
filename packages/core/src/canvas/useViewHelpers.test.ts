@@ -17,7 +17,7 @@ describe('useViewHelpers chrome state', () => {
       b: { x: 40, y: 20, width: 10, height: 10 },
     };
     const adapter = { getPose: (id: string) => poses[id] };
-    const selection = [asNodeId('a'), asNodeId('b')];
+    const selection = () => [asNodeId('a'), asNodeId('b')];
     const opts = {
       adapter,
       geometry: RECT_POSE_DESCRIPTOR,
@@ -55,7 +55,7 @@ describe('useViewHelpers preview bounds', () => {
       geometry: RECT_POSE_DESCRIPTOR,
       boundsOf: undefined,
       boundsOfPose: (_id: string, p: Bounds) => ({ x: p.x / 2, y: p.y / 2, width: p.width / 2, height: p.height / 2 }),
-      selection: [asNodeId('a')],
+      selection: () => [asNodeId('a')],
       gestureSource: undefined,
       previewPoseExtra: () => ({ x: 100, y: 40, width: 20, height: 20 }),
     }));
@@ -81,7 +81,7 @@ describe('useViewHelpers in-flight bounds', () => {
     adapter: { getPose: () => shown },
     geometry: RECT_POSE_DESCRIPTOR,
     boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
-    selection: [asNodeId('a')],
+    selection: () => [asNodeId('a')],
     gestureSource,
     previewPoseExtra: () => null,
   })).result.current.helpers;
@@ -107,7 +107,7 @@ describe('useViewHelpers over nodes', () => {
     boundsOf: undefined,
     nodes: { get: () => node as never },
     getScale: () => ({ x: 2, y: 2 }),
-    selection: [asNodeId('a')],
+    selection: () => [asNodeId('a')],
     gestureSource: undefined,
     previewPoseExtra,
   })).result.current.helpers;

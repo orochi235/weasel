@@ -72,6 +72,8 @@ function ChromeHarness({
     deleteSnapshot: vi.fn(),
     mode: 'auto',
     setMode: vi.fn(),
+    marks: true,
+    setMarks: vi.fn(),
     ...labOverrides,
   };
   return (

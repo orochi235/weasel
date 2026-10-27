@@ -14,18 +14,21 @@ export const ARRANGE_MENU: MenuRuns = {
 export interface GroupPicks {
   stage: string | null;
   group: string | null;
+  /** Every stage and group picked, Shift-clicks included. */
+  picked: readonly string[];
   pickGroup: (id: string | null) => void;
 }
 
-/** Registers Arrange › Group, which groups the picked stage or group and picks the new group, and
+/** Registers Arrange › Group, which groups every picked stage and group and picks the new group, and
  *  Ungroup, which dissolves the picked group. */
 export function useGroupCommands(editor: RefObject<EffectEditorApi | null>, picks: GroupPicks): void {
-  const { stage, group, pickGroup } = picks;
+  const { stage, group, picked, pickGroup } = picks;
   const target = stage ?? group;
+  const ids = picked.length > 0 ? picked : target === null ? [] : [target];
   useCommand(GROUP_ACTIONS.group, 'Group', () => {
-    const made = target === null ? null : editor.current?.group([target]) ?? null;
+    const made = ids.length === 0 ? null : editor.current?.group(ids) ?? null;
     if (made !== null) pickGroup(made);
-  }, { enabled: () => can(target !== null), keys: { kind: 'key', key: 'g', mods: { mod: true } } });
+  }, { enabled: () => can(ids.length > 0), keys: { kind: 'key', key: 'g', mods: { mod: true } } });
   useCommand(GROUP_ACTIONS.ungroup, 'Ungroup', () => {
     if (group === null) return;
     editor.current?.ungroup(group);

@@ -1,14 +1,20 @@
 import { useMemo, useState } from 'react';
 import { AssetEditor, PREF_SCHEMA_EDITOR_PREFS, workspaceCodec, type CustomKinds } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { usePrefsStore } from '@weasel-js/prefs/react';
+import type { PrefRenderer } from '@weasel-js/ui/components/Prefs';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { DataControl, RegistryEnumControl } from '../PreferencesModal';
 import { DevShell } from './DevShell';
-import { DRAW_WORKSPACE } from './drawWorkspace';
+import { DRAW_LEAF_KINDS, DRAW_WORKSPACE } from './drawWorkspace';
 import { RegistryProbe } from './registryProbe';
 import s from './AssetsPage.module.css';
 
+/** Stands in for a leaf the app draws with its own code: that code reads the running editor, which this page has not
+ *  got. */
+const appDrawn: PrefRenderer = ({ pref }) => <span className={s.appDrawn}>{pref.name}: drawn by WeaselDraw</span>;
+
 const KINDS: CustomKinds = {
+  ...Object.fromEntries(DRAW_LEAF_KINDS.map((kind) => [kind, {}])),
   'registry-enum': {
     default: { kind: 'string', name: 'Default', description: 'The value before anything is stored.', default: '' },
     source: { kind: 'string', name: 'Source', description: "Key into the modal's registryEnumSources.", default: '', required: true },
@@ -18,7 +24,11 @@ const KINDS: CustomKinds = {
   data: {},
 };
 
-const RENDERERS = { 'registry-enum': RegistryEnumControl, data: DataControl };
+const RENDERERS: Record<string, PrefRenderer> = {
+  ...Object.fromEntries(DRAW_LEAF_KINDS.map((kind) => [kind, appDrawn])),
+  'registry-enum': RegistryEnumControl,
+  data: DataControl,
+};
 
 const EDITOR_PREFS = { storage: localStorageAdapter, prefix: 'weaseldraw.schema-editor/' };
 

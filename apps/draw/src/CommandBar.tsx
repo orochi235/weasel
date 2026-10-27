@@ -1,36 +1,27 @@
 /** Top action bar for WeaselDraw — buttons that aren't tools, led by the menu bar on the same row.
  *
- *  Every editing command (history, clipboard, group, create outlines) is a kit action, rendered by
- *  the kit's `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills,
- *  glyphs included. Arrange, Pathfinder, and Path are surface assets, drawn in the
+ *  Every editing command (history, clipboard, group, create outlines) is a kit action, and each run of them is a
+ *  command-row surface asset (`COMMAND_ASSETS`) drawn in its slot here, from the registry `<SceneCanvas>` fills,
+ *  glyphs included; each can be moved to a menu or a panel instead. Simplify, Offset and Corner shape are command-row
+ *  assets too, of draw's own controls (`PATH_COMMAND_ASSETS`), and move to a panel only. Arrange, Pathfinder, and Path are surface assets, drawn in the
  *  toolbar dock below this row (`StripDock`) when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
  *  Preferences are actions too (`appCommands`), as are Record and Play
  *  (`recording`) and Open, Import and Save (`fileCommands`), so a button's shortcut is the
  *  binding that fires it. The Debug menu's rows are `debug.open`'s variants, one per dev page. */
 import type { ReactNode } from 'react';
 import { pref } from '@weasel-js/prefs';
-import { ActionBar as KitActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { DEBUG_MENU } from './dev/devRoutes';
-import { FILE_ACTIONS } from './fileCommands';
-import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
-import { PathCommands } from './ui/PathCommands';
+import { CommandSlot } from './surfaces/CommandSurfaces';
 
 export interface CommandBarProps {
   /** The app's menu bar, drawn first in the row. */
   menus?: ReactNode;
-  /** What the Corner shape controls read; without it they are left out. */
-  corners?: CornerShapeProps;
 }
 
-const FILE_BAR = pref.group('', {
-  open: pref.action(FILE_ACTIONS.open, { description: 'Open SVG…' }),
-  import: pref.action(FILE_ACTIONS.import, { description: 'Add an SVG to this document…' }),
-  save: pref.action(FILE_ACTIONS.save, { description: 'Save as SVG' }),
-}, { as: 'bar' });
-
-const KIT_GROUPS = ['history', 'clipboard', 'edit', 'structure'] as const;
+/** A command-row asset of one registry group's actions, drawn as the kit's `ActionBar` draws that group. */
+const Run = ({ id, group }: { id: string; group: string }) => <CommandSlot id={id} label={`${group} actions`} segmented />;
 
 const DEBUG_BAR = pref.group('', { debug: DEBUG_MENU }, { as: 'bar' });
 
@@ -38,21 +29,22 @@ export function CommandBar(p: CommandBarProps) {
   return (
     <Toolbar className="wd-commandbar" aria-label="Actions" roving={false} wrap>
       {p.menus}
-      <Toolbar.Group className="wd-commandbar-group">
-        <Bar schema={FILE_BAR} />
-      </Toolbar.Group>
-      {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
-      <KitActionBar group="view" />
-      <PathCommands />
-      {p.corners && <CornerShape {...p.corners} />}
-      <KitActionBar group="text" />
-      <KitActionBar group="compound" />
+      <CommandSlot id="file" group />
+      <Run id="undo" group="history" />
+      <Run id="clipboard" group="clipboard" />
+      <Run id="edit" group="edit" />
+      <Run id="structure" group="structure" />
+      <Run id="view" group="view" />
+      <CommandSlot id="pathCommands" group />
+      <CommandSlot id="corners" group />
+      <Run id="text" group="text" />
+      <Run id="compound" group="compound" />
       <Toolbar.Spacer />
-      <KitActionBar group="record" />
+      <Run id="record" group="record" />
       <Toolbar.Group className="wd-commandbar-group">
         <Bar schema={DEBUG_BAR} />
       </Toolbar.Group>
-      <KitActionBar group="app" />
+      <Run id="app" group="app" />
     </Toolbar>
   );
 }

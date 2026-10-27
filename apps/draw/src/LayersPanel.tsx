@@ -14,11 +14,9 @@ import { decimal, qty } from '@weasel-js/quantity';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
 import { LayerList, type LayerListItem, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
-import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { type CSSProperties, type MouseEvent, type ReactElement, useSyncExternalStore } from 'react';
 import type { DrawScene, WeaselDrawData } from './drawDocument';
 import { effectNodeName } from './nodeKinds';
-import type { PanelChrome } from './surfaces/types';
 import { usePref } from './prefs';
 
 /** Synthetic id for the fixed "Background" row in the Layers panel.
@@ -54,26 +52,25 @@ export function paintChipColor(fill: Paint): string | undefined {
   return undefined;
 }
 
-export interface LayersPanelProps {
+export interface LayersContentProps {
   scene: DrawScene;
   selection: SelectionApi;
   measurements: Measurements;
   backgroundColor: string;
   docSelected: boolean;
   setDocSelected: (v: boolean) => void;
-  chrome: PanelChrome;
 }
 
 /**
- * The Layers panel: a row per node, front to back, and a fixed Background
+ * What the Layers asset shows: a row per node, front to back, and a fixed Background
  * row last. Each row hides, locks and renames its node; a name is
  * `data.label`, shown in place of a text node's text or an effect's name. With
  * `ui.showAnnotations` on, the annotation layer — the measurements — and each
  * measurement are listed too, marked not printed; picking one there picks the
  * measurement, as a click on it does.
  */
-export function LayersPanel(props: LayersPanelProps): ReactElement {
-  const { scene, selection, measurements: ms, docSelected, setDocSelected, chrome } = props;
+export function LayersContent(props: LayersContentProps): ReactElement {
+  const { scene, selection, measurements: ms, docSelected, setDocSelected } = props;
   const [showAnnotations, setShowAnnotations] = usePref('ui.showAnnotations');
   const picked = useSyncExternalStore(ms.picked.subscribe, ms.picked.get, ms.picked.get);
   const base = useSceneLayerList({
@@ -119,12 +116,7 @@ export function LayersPanel(props: LayersPanelProps): ReactElement {
   };
 
   return (
-    <SidebarPanel
-      title="Layers"
-      collapsed={chrome.collapsed}
-      onToggleCollapse={chrome.onToggleCollapse}
-      onHide={chrome.onHide}
-    >
+    <>
       <Checkbox isSelected={showAnnotations} onChange={setShowAnnotations}>Show annotations</Checkbox>
       <LayerList
         {...base}
@@ -134,6 +126,6 @@ export function LayersPanel(props: LayersPanelProps): ReactElement {
         onRowContextMenu={onRowContextMenu}
         empty="No nodes"
       />
-    </SidebarPanel>
+    </>
   );
 }

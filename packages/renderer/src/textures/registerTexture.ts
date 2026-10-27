@@ -12,6 +12,9 @@ export type { TextureHandle };
 /** A registered texture's image source, uploaded to GL lazily at first draw. */
 export interface TextureEntry {
   source: HTMLImageElement | ImageBitmap;
+  /** The size the texture stands for, when `source` is a resampling of a
+   *  picture whose raster can change size (a re-rasterized SVG). */
+  size?: { width: number; height: number };
 }
 
 let counter = 0;
@@ -33,7 +36,8 @@ export function _resetTextureRegistryForTests(): void {
 export interface TextureIdOwner {
   /** Register `id` again if it can be rebuilt; do nothing otherwise. */
   revive(id: string): void;
-  /** `id` was looked up and found: something is about to draw it. */
+  /** `id` was looked up and found: something is about to draw it. The
+   *  owner may replace or drop the entry here; the lookup reads it after. */
   touched?(id: string): void;
 }
 
@@ -52,6 +56,16 @@ export function ownTextureIds(prefix: string, owner: TextureIdOwner): () => void
   };
 }
 
+/**
+ * Whether an owner claims `id`. A lookup of an owned id that misses is the
+ * owner's business — a texture still loading, say — rather than a stale
+ * handle worth a warning.
+ * @internal
+ */
+export function isOwnedTextureId(id: string): boolean {
+  return ownerOf(id) !== undefined;
+}
+
 function ownerOf(id: string): TextureIdOwner | undefined {
   for (let i = 0; i < owners.length; i++) {
     if (id.startsWith(owners[i].prefix)) return owners[i].owner;
@@ -68,8 +82,9 @@ export function getTexture(id: string): TextureEntry | null {
   const owner = owners.length > 0 ? ownerOf(id) : undefined;
   const hit = registry.get(id);
   if (hit) {
-    owner?.touched?.(id);
-    return hit;
+    if (!owner?.touched) return hit;
+    owner.touched(id);
+    return registry.get(id) ?? null;
   }
   if (!owner) return null;
   owner.revive(id);
@@ -101,8 +116,9 @@ export function registerTexture(
 export function registerTextureAs(
   id: string,
   image: HTMLImageElement | ImageBitmap,
+  size?: TextureEntry['size'],
 ): TextureHandle {
-  registry.set(id, { source: image });
+  registry.set(id, size ? { source: image, size } : { source: image });
   return { id };
 }
 

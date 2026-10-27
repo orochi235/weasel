@@ -14,8 +14,9 @@ export function arrowSteps(e: KeyLike): number | null {
 }
 
 /** {@link arrowSteps} plus the Page keys (ten steps) and Home and End (an end of the
- *  range): what a slider thumb answers to. `null` for any other key. */
-export function keyMoveOf(e: KeyLike): number | 'home' | 'end' | null {
+ *  range): what a slider thumb answers to. Under `'rtl'` ArrowLeft steps up and ArrowRight
+ *  down, as a native range input's do. `null` for any other key. */
+export function keyMoveOf(e: KeyLike, direction: 'ltr' | 'rtl' = 'ltr'): number | 'home' | 'end' | null {
   switch (e.key) {
     case 'PageUp':
       return SHIFT_STEPS;
@@ -25,8 +26,11 @@ export function keyMoveOf(e: KeyLike): number | 'home' | 'end' | null {
       return 'home';
     case 'End':
       return 'end';
-    default:
-      return arrowSteps(e);
+    default: {
+      const steps = arrowSteps(e);
+      const horizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+      return steps !== null && horizontal && direction === 'rtl' ? -steps : steps;
+    }
   }
 }
 

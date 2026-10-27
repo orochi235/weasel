@@ -7,6 +7,7 @@ import { useDecayLoop } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { View } from 'core/viewport/view';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
+import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
@@ -98,6 +99,8 @@ export interface SceneStandardActionsInputs {
    *  for the kit weasel-JSON handler, from `useCanvasIngestion`; absent
    *  when disabled. */
   ingestionClipboard?: ClipboardIngestCtx;
+  /** The canvas's own content handlers and the kit's it keeps, from `useCanvasIngestion`. */
+  ingestionHandlers?: readonly ContentHandlerEntry[];
 }
 
 /**
@@ -113,6 +116,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
     props, viewOn, selection, enteredGroup, scene, adapter, standardActions, currentViewRef,
     onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, alphaOf, reachable, viewAnimation,
     editAnchorsExternalState, snap, canvasRef, canvasApiRef, ingestionClipboard,
+    ingestionHandlers,
   } = inputs;
   const { tune, viewport, ingestion } = props;
   const boundsIncludeStroke = props.geometry?.boundsIncludeStroke ?? true;
@@ -192,7 +196,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useDebugDepSource(canvasApiRef);
   usePreviewPathsDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
-  useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard);
+  useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard, ingestionHandlers);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);

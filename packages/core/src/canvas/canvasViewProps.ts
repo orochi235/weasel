@@ -33,10 +33,12 @@ export interface CanvasViewCommonProps {
   /**
    * The id of a view whose layers this one paints, read at every paint and
    * pick: what that view paints, as a `parent` gives a nested view, narrowed by
-   * this view's own `layers`, `layerVisibility` and `layerOrder`. Its rect and
-   * camera are not taken; this view is still measured on its own frame. A
-   * loupe aimed over a panel follows the panel. `null`, or an id no view has,
-   * paints what this view would without it.
+   * this view's own `layers`, `layerVisibility` and `layerOrder`. Where that
+   * view owns a selection and this one does not, this view acts on that
+   * selection and draws its chrome. Its rect and camera are not taken; this
+   * view is still measured on its own frame. A loupe aimed over a panel
+   * follows the panel. `null`, or an id no view has, paints what this view
+   * would without it.
    */
   follows?: () => string | null;
   /**

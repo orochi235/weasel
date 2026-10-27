@@ -195,3 +195,39 @@ describe('readouts along a curve', () => {
     expect(mount().container.querySelector('[data-readout]')).toBeNull();
   });
 });
+
+describe('Slider on a curve, right to left', () => {
+  const rtl = trackRun(top, 0, 1, { direction: 'rtl' });
+  function mountRtl() {
+    const onInput = vi.fn();
+    const view = render(
+      <div dir="rtl">
+        <Slider shape={top} thumbFit="overhang" min={0} max={100} step={1} thumbs={[{ value: 25 }]} onInput={onInput} />
+      </div>,
+    );
+    const band = view.container.querySelector('[data-slider-band]') as Element;
+    const thumb = view.container.querySelector<HTMLElement>('[role="slider"]')!;
+    return { onInput, band, thumb };
+  }
+
+  test('its values run from the right end of the arc', () => {
+    const { thumb } = mountRtl();
+    expect(placed(thumb)).toEqual({ x: `${rtl.at(0.25).point.x}px`, y: `${rtl.at(0.25).point.y}px` });
+    expect(rtl.at(0.25).point.x).toBeGreaterThan(100);
+  });
+
+  test('a press on the band reads the mirrored value', () => {
+    const { band, onInput } = mountRtl();
+    const { point: p } = rtl.at(0.75);
+    fireEvent.pointerDown(band, { clientX: p.x, clientY: p.y, pointerId: 1 });
+    expect(values(onInput)).toEqual([75]);
+  });
+
+  test('ArrowRight steps down and ArrowLeft up', () => {
+    const { thumb, onInput } = mountRtl();
+    fireEvent.keyDown(thumb, { key: 'ArrowRight' });
+    expect(values(onInput)).toEqual([24]);
+    fireEvent.keyDown(thumb, { key: 'ArrowLeft' });
+    expect(values(onInput)).toEqual([26]);
+  });
+});

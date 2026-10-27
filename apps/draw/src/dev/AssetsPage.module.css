@@ -2,3 +2,8 @@
   height: 100%;
   padding: var(--wzl-space-3);
 }
+
+.appDrawn {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}

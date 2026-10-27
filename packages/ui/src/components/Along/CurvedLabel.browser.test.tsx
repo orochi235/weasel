@@ -82,3 +82,13 @@ test('names itself by its text, and gives a combining sequence and a ZWJ emoji o
   expect(label.getAttribute('aria-label')).toBe(text);
   expect(label.querySelectorAll('span')).toHaveLength(3);
 });
+
+test('an Arabic word is shaped joined: narrower than its letters set apart', async () => {
+  const width = async (text: string) => {
+    const w = [...(await mount({ text })).querySelectorAll<HTMLElement>('span')].reduce((sum, el) => sum + el.offsetWidth, 0);
+    cleanup();
+    return w;
+  };
+  // Beh's isolated form carries its whole bowl; at the start or in the middle of a word it is a short tooth.
+  expect(await width('ببب')).toBeLessThan(3 * (await width('ب')) * 0.8);
+});

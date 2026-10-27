@@ -14,7 +14,7 @@ const frames = async (n: number) => {
   for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r));
 };
 
-function Scaled({ scale }: { scale: number }) {
+function Scaled({ scale, placement = 'bottom' }: { scale: number; placement?: 'top' | 'bottom' }) {
   const [box, setBox] = useState<HTMLDivElement | null>(null);
   return (
     <div ref={setBox} className="wzl-popover-test-box" data-scale={scale}>
@@ -25,7 +25,7 @@ function Scaled({ scale }: { scale: number }) {
           </button>
         </Focusable>
         {box ? (
-          <Tooltip portalContainer={box} placement="bottom" offset={12}>
+          <Tooltip portalContainer={box} placement={placement} offset={12}>
             Save the document
           </Tooltip>
         ) : null}
@@ -42,4 +42,12 @@ it.each([1, 1.5, 2])('opens a tooltip against its trigger inside a box drawn at 
   // The offset is the tooltip's own px, so it is drawn at the box's scale like everything else in it.
   expect(tip.top).toBeCloseTo(trigger.bottom + 12 * scale, 0);
   expect(tip.left + tip.width / 2).toBeCloseTo(trigger.left + trigger.width / 2, 0);
+});
+
+it.each([1, 1.5, 2])('opens a top-placed tooltip against its trigger inside a box drawn at %s×', async (scale) => {
+  const { container } = render(<Scaled scale={scale} placement="top" />);
+  await frames(3);
+  const trigger = container.querySelector('button')!.getBoundingClientRect();
+  const tip = container.querySelector('[role="tooltip"]')!.getBoundingClientRect();
+  expect(tip.bottom).toBeCloseTo(trigger.top - 12 * scale, 0);
 });

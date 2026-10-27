@@ -63,7 +63,8 @@ export function PlayheadReadout({ playhead, duration }: { playhead: number; dura
 /** Play/pause, a reverse switch, a loop switch, a rate slider, a scrub bar,
  *  and the playhead over the duration in seconds. Holds no state: every
  *  control reports through a callback, and the reverse switch and scrub bar
- *  appear only with theirs. */
+ *  appear only with theirs. It reads left to right in a right-to-left
+ *  locale too, as playback controls do. */
 export function Transport(props: TransportProps): ReactElement {
   const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange, onSeek, onReverseChange } = props;
   const reverse = props.reverse ?? false;
@@ -79,7 +80,7 @@ export function Transport(props: TransportProps): ReactElement {
   const rates = offered.includes(rate) ? offered : [...offered, rate].sort((a, b) => a - b);
 
   return (
-    <div className={s.transport}>
+    <div className={s.transport} dir="ltr">
       <button
         type="button"
         className={s.transportButton}

@@ -19,7 +19,7 @@ export interface KeymapDef<TOverlay = never> {
   /** The keystroke, or keystrokes, that open it. A `key-held` spec is read as
    *  its `key` form: holding the key is what holds the keymap open. */
   leader: GestureSpec | readonly GestureSpec[];
-  /** The keymap's own bindings. Escape is not one: it always closes the keymap. */
+  /** The keymap's own bindings. Escape is not one: it cancels a gesture in flight, or else closes the keymap. */
   bindings: readonly GestureBinding[];
   /** Actions the bindings name that are not registered elsewhere. */
   actions?: readonly Action[];

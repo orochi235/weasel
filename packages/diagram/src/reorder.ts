@@ -75,6 +75,10 @@ export interface ReorderOptions {
    * overrides stay after a commit until the scene next changes.
    */
   show?: 'bar' | 'slide';
+  /** Where a drag of `item` stays a reorder, in world units. A move outside it hands the drag off (`'pass'` from
+   *  `OngoingHandle.onMove`) to whatever else would have taken the press, a move for one, and drops this
+   *  drag's preview. `null`, or the default, keeps every move a reorder. */
+  region?: (deps: ActionDeps, item: ReorderItem) => Box | null;
   /** Whether a drop may land. The bar draws refused, or nothing slides, where not. Default: every drop. */
   canDrop?: (move: ReorderMove) => boolean;
   /** Called once, on release over a gap that is not the item's own and that `canDrop` allows. */
@@ -163,6 +167,8 @@ export function createReorderAction(opts: ReorderOptions): Action {
         if (slots === null || picked === null) return {};
         const held: Held = { slots, ...picked };
         const { axis } = slots;
+        const region = opts.region?.(ctx.deps, held.item) ?? null;
+        const leaves = (at: Vec2) => region !== null && !inside(at, region);
         let by = ctx.world[axis] - start[axis];
         let open = true;
         // The overlay is read every frame; ask about each gap once a drag.
@@ -187,7 +193,8 @@ export function createReorderAction(opts: ReorderOptions): Action {
           const slide = ctx.deps.scene === undefined ? null : slideOthers(ctx.deps.scene, held.slots, held.item.id);
           return {
             kind: 'diagram-reorder',
-            onMove(moveCtx: InvocationCtx): void {
+            onMove(moveCtx: InvocationCtx): void | 'pass' {
+              if (leaves(moveCtx.world)) return 'pass';
               by = moveCtx.world[axis] - start[axis];
               slide?.show(landing(gapAt(held, by))?.order ?? null, by);
             },
@@ -207,7 +214,8 @@ export function createReorderAction(opts: ReorderOptions): Action {
         }
         return {
           kind: 'diagram-reorder',
-          onMove(moveCtx: InvocationCtx): void {
+          onMove(moveCtx: InvocationCtx): void | 'pass' {
+            if (leaves(moveCtx.world)) return 'pass';
             by = moveCtx.world[axis] - start[axis];
           },
           previewIds: () => (open && poses.size > 0 ? [...poses.keys()] : null),

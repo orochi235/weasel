@@ -17,9 +17,12 @@ import { escapeText } from './xmlEscape';
  */
 export const LINES_ATTR = 'data-weasel-lines';
 
-/** The `<text>` attribute stating its line height where its lines' pitch
- *  cannot, because a layout placed them. */
+/** The `<text>` attribute stating its line height, which its lines' pitch
+ *  cannot where there is one line or a layout placed them. */
 export const LINE_HEIGHT_ATTR = 'data-weasel-line-height';
+
+/** Whether weasel wrote `text`: it states the box, which no other writer does. */
+export const writtenByWeasel = (text: Element): boolean => text.hasAttribute('data-weasel-width');
 
 /** Whether `tspan` says how many lines it steps down. */
 export const statesLines = (tspan: Element): boolean => tspan.hasAttribute(LINES_ATTR);
@@ -64,31 +67,59 @@ export function linesXml(pieces: readonly LinePiece[], x: number, pitch: number)
 /** The line height a `<text>` has when nothing states one. */
 export const DEFAULT_LINE_HEIGHT = 1.2;
 
-/** Tracks the `y` the current line was placed at, to tell a tspan that moves
- *  down from one that only moves sideways along the same line, and how far
- *  down each new line was placed. */
+/** Tracks the pen's `y` through a `<text>`: where the current line's baseline
+ *  is, how far a glyph moved off it, and how far down each new line was
+ *  placed. */
 export class LineTracker {
-  private y: string | null;
-  /** Where the current line sits, in user units. */
+  /** The current line's baseline, in user units. */
+  private lineY: number;
+  /** Where the pen is, in user units. */
   private at: number;
   private readonly pitches: number[] = [];
+  /** The first line's baseline, once a glyph has landed on it. */
+  private first: number | undefined;
+  /** Whether the text opens with blank lines it states, below the text's `y`. */
+  private keepsTop = false;
 
   constructor(text: Element, private readonly onWarn: (message: string) => void) {
-    this.y = text.getAttribute('y');
-    this.at = readLength(text, 'y', 'y', 0, onWarn);
+    this.at = this.lineY = readLength(text, 'y', 'y', 0, onWarn);
   }
 
+  /** How far the pen sits above the current line's baseline, in user units. */
+  get rise(): number { return this.lineY - this.at; }
+
+  /** Move the pen to `y`, when given, and then down by `dy`. */
+  move(y: number | undefined, dy: number): void { this.at = (y ?? this.at) + dy; }
+
+  /** Say that `glyph` sits at the pen. The first glyph that is not white
+   *  space settles the first line where it sits, wherever the text's `y` was:
+   *  a line is placed by its glyphs. */
+  land(glyph: string): void {
+    if (this.first !== undefined || /^\s$/u.test(glyph)) return;
+    if (!this.keepsTop) this.lineY = this.at;
+    this.first = this.lineY;
+  }
+
+  /** The baseline the box's first line sits on: the text's `y` where the text
+   *  opens with blank lines it states, otherwise where the first glyph landed.
+   *  `undefined` before any glyph has. */
+  get firstBaseline(): number | undefined { return this.keepsTop ? undefined : this.first; }
+
   /** How many lines down `tspan` opens a new line, or 0 when it stays on the
-   *  current one. Call once per tspan, in order. `afterText` is whether any
-   *  text precedes it: the first line's own placement is not a pitch. */
-  startsLine(tspan: Element, afterText: boolean): number {
-    const y = tspan.getAttribute('y');
-    const movedY = y != null && y !== this.y;
-    if (y != null) this.y = y;
-    const from = this.at;
-    const dy = readLength(tspan, 'dy', 'y', 0, this.onWarn);
-    this.at = (y != null ? readLength(tspan, 'y', 'y', from, this.onWarn) : from) + dy;
-    if (!tspan.hasAttribute('x') || !(movedY || dy !== 0)) return 0;
+   *  current one. A tspan opens one when it has its own `x` and puts the pen
+   *  off the line's baseline; without an `x` it only moves its glyphs off the
+   *  line. `inherited` is the enclosing `<text>`'s `y` and `dy` for the
+   *  tspan's first glyph, used where the tspan has none of its own. Call once
+   *  per tspan, in order. `afterText` is whether any text precedes it: the
+   *  first line's own placement is not a pitch. */
+  startsLine(tspan: Element, afterText: boolean, inherited: { y?: number; dy?: number } = {}): number {
+    const from = this.lineY;
+    const y = tspan.hasAttribute('y') ? readLength(tspan, 'y', 'y', this.at, this.onWarn) : inherited.y;
+    const dy = tspan.hasAttribute('dy') ? readLength(tspan, 'dy', 'y', 0, this.onWarn) : inherited.dy ?? 0;
+    this.move(y, dy);
+    if (!afterText && this.first === undefined && statesLines(tspan)) this.keepsTop = true;
+    if (!tspan.hasAttribute('x') || Math.abs(this.at - from) < 1e-9) return 0;
+    this.lineY = this.at;
     // `0` is a line a layout wrapped onto: it moves down and breaks nothing.
     const stated = Number(tspan.getAttribute(LINES_ATTR) ?? NaN);
     const lines = Number.isInteger(stated) && stated >= 0 ? stated : 1;
@@ -98,17 +129,18 @@ export class LineTracker {
 
   /**
    * The line height the lines were pitched at, as a multiple of `fontSize`:
-   * `undefined` for a single line, or for lines at the default pitch. The
-   * model holds one line height, so uneven pitches give their mean, which
-   * keeps the block's height.
+   * `stated` for a single line or for lines pitched as it says, otherwise
+   * `undefined` at the default pitch. The model holds one line height, so
+   * uneven pitches give their mean, which keeps the block's height.
    */
-  lineHeight(fontSize: number): number | undefined {
+  lineHeight(fontSize: number, stated?: number): number | undefined {
     const { pitches } = this;
-    if (pitches.length === 0 || !(fontSize > 0)) return undefined;
+    if (pitches.length === 0 || !(fontSize > 0)) return stated;
     const mean = pitches.reduce((sum, p) => sum + p, 0) / pitches.length;
     if (pitches.some((p) => Math.abs(p - mean) > 1e-3 * fontSize)) {
       this.onWarn('<text> lines are pitched unevenly; they take the mean pitch as one line height');
     }
+    if (stated !== undefined && Math.abs(mean - stated * fontSize) <= 1e-3 * fontSize) return stated;
     const lineHeight = Math.round((mean / fontSize) * 1e6) / 1e6;
     return Math.abs(lineHeight - DEFAULT_LINE_HEIGHT) < 1e-6 ? undefined : lineHeight;
   }
@@ -118,23 +150,14 @@ export class LineTracker {
 export const holdsOnlyText = (el: Element): boolean =>
   !Array.from(el.childNodes).some((child) => child.nodeType === 1 /* ELEMENT_NODE */);
 
-/** Report the glyph positioning on a `<text>` or `<tspan>` that import does
- *  not read: every value after the first in a `y` list, a `rotate` that is
- *  not all zeros, and on a `<text>` holding a `<tspan>` such a `dx` and every
- *  `x` after the first. A `dx` or `x` list on a `<tspan>`, or on a `<text>`
- *  holding only text, is `placeTspanRun`'s to read or report. */
+/** Report a `rotate` on a `<text>` or `<tspan>` that is not all zeros, which
+ *  import does not read. The other glyph positioning lists are read by
+ *  `glyphShifts` and `glyphRises`, which report what they cannot read. */
 export function warnUnreadPositions(el: Element, onWarn: (message: string) => void): void {
   const tag = el.tagName.toLowerCase();
-  const own = tag === 'tspan' || holdsOnlyText(el);
-  for (const name of own ? ['y'] : ['x', 'y']) {
-    const raw = el.getAttribute(name)?.trim() ?? '';
-    if (/[\s,]/.test(raw)) onWarn(`<${tag} ${name}="${raw}"> positions each glyph; only the first value is read`);
-  }
-  for (const name of own ? ['rotate'] : ['dx', 'rotate']) {
-    const raw = el.getAttribute(name)?.trim() ?? '';
-    if (raw.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
-      onWarn(`<${tag} ${name}="${raw}"> is not read; the glyphs keep their own advance and angle`);
-    }
+  const rotate = el.getAttribute('rotate')?.trim() ?? '';
+  if (rotate.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
+    onWarn(`<${tag} rotate="${rotate}"> is not read; the glyphs keep their own angle`);
   }
 }
 

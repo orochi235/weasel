@@ -11,6 +11,8 @@ export interface SliderGeometryArgs {
   thumbFit: 'inside' | 'overhang';
   /** The first thumb's untransformed width in px. */
   thumbLength: number;
+  /** The inline direction it reads in: values run from the right end under `'rtl'`. */
+  direction: 'ltr' | 'rtl';
   rail: () => HTMLElement | null;
   /** On a line, an SVG drawn across the rail: what pointers are measured through. */
   railFrame: () => SVGGraphicsElement | null;
@@ -20,27 +22,28 @@ export interface SliderGeometryArgs {
 
 /** The slider's geometry, one identity per shape, fit and thumb length, and along a shape the value span it runs over. */
 export function useSliderGeometry(args: SliderGeometryArgs): { geometry: SliderGeometry; run: TrackRun | null } {
-  const { shape, thumbFit, thumbLength } = args;
+  const { shape, thumbFit, thumbLength, direction } = args;
   const [els] = useState(() => ({ rail: args.rail, railFrame: args.railFrame, band: args.band }));
-  const [line] = useState(() => lineGeometry(els.rail, els.railFrame));
+  const line = useMemo(() => lineGeometry(els.rail, els.railFrame, direction), [els, direction]);
   const run = useMemo(() => {
     if (!shape) return null;
-    if (thumbFit === 'overhang') return trackRun(shape);
+    if (thumbFit === 'overhang') return trackRun(shape, 0, 1, { direction });
     // Capped at the middle, so a shape shorter than a thumb collapses there instead of inverting.
     const i = Math.min(0.5, thumbLength / 2 / shape.length);
-    return trackRun(shape, i, 1 - i);
-  }, [shape, thumbFit, thumbLength]);
+    return trackRun(shape, i, 1 - i, { direction });
+  }, [shape, thumbFit, thumbLength, direction]);
   const geometry = useMemo(() => (run ? curvedGeometry(run, els.band) : line), [run, els, line]);
   return { geometry, run };
 }
 
-/** What a track painter is handed. With no shape the span runs along the rail, centered in the painted layer. */
-export function trackCtxOf(run: TrackRun | null, track: Box | undefined, layer: Box | undefined, rail: Box | undefined, valueToFraction: (v: number) => number): TrackCtx {
+/** What a track painter is handed. With no shape the span runs along the rail, centered in the painted layer, from its
+ *  right end under `'rtl'`. */
+export function trackCtxOf(run: TrackRun | null, track: Box | undefined, layer: Box | undefined, rail: Box | undefined, valueToFraction: (v: number) => number, direction: 'ltr' | 'rtl' = 'ltr'): TrackCtx {
   if (run) return { shape: run, trackWidth: run.length, valueToFraction, fractionToPosition, along: true };
   const w = layer?.width ?? 0;
   const h = layer?.height ?? 0;
   const railW = rail?.width ?? 0;
   const i = (w - railW) / 2;
-  const shape = trackRun(lineShape({ x: i, y: h / 2 }, { x: i + railW, y: h / 2 }));
+  const shape = trackRun(lineShape({ x: i, y: h / 2 }, { x: i + railW, y: h / 2 }), 0, 1, { direction });
   return { shape, trackWidth: track?.width ?? 0, valueToFraction, fractionToPosition, along: false };
 }

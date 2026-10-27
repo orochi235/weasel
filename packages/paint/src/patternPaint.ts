@@ -1,6 +1,7 @@
 /**
- * The pattern members of `Paint`: the built-in tiles, each its own kind, and
- * `texture` for a tile the consumer rasterized itself.
+ * The pattern members of `Paint`: the built-in tiles, each its own kind,
+ * `image` for a tile that is a picture, and `texture` for a tile the consumer
+ * rasterized itself.
  */
 
 import type { Paint, PaintUnits } from './paint';
@@ -59,14 +60,35 @@ export type TileKind = TilePatternSpec['kind'];
 export type TilePaint = TilePatternSpec & PatternPlacement;
 
 /**
+ * A tile's extent in paint-space units. Either side omitted takes the
+ * source's own pixel size on that axis.
+ */
+export interface TileExtent {
+  width?: number;
+  height?: number;
+}
+
+/**
+ * A paint that repeats a picture. `src` is anything an `<img>` loads — a URL,
+ * a `blob:` URL, or a `data:` URI — and is the paint's whole record of the
+ * image, so a paint holding a `data:` URI persists and exports with no
+ * storage beside it. Until the image decodes the fill draws nothing.
+ */
+export type ImagePatternPaint = { kind: 'image'; src: string } & TileExtent & PatternPlacement;
+
+/**
  * A paint of a tile the consumer built itself via `createTilePattern()`. The
  * handle is a session-scoped registry key, so a paint carrying one cannot be
- * persisted or exported; prefer a tile kind.
+ * persisted or exported; prefer a tile kind, or `image` for a picture.
  */
-export type TexturePaint = { kind: 'texture'; texture: TextureHandle } & PatternPlacement;
+export type TexturePaint = { kind: 'texture'; texture: TextureHandle } & TileExtent & PatternPlacement;
 
 /** Every paint that repeats a tile. */
-export type PatternPaint = TilePaint | TexturePaint;
+export type PatternPaint = TilePaint | ImagePatternPaint | TexturePaint;
+
+/** The pattern kinds a renderer cannot draw as they stand: each is resolved
+ *  to a `texture` paint first. */
+export type ResolvablePatternKind = TileKind | 'image';
 
 /** The built-in tile kinds, in the order a picker offers them. */
 export const TILE_KINDS: readonly TileKind[] = ['hatch', 'crosshatch', 'dots', 'chunks'];
@@ -83,9 +105,15 @@ export function isTilePaint(paint: Paint): paint is TilePaint {
   return isTileKind(paint.kind);
 }
 
-/** Whether a paint repeats a tile: a built-in one or a consumer's texture. */
+/** Whether a paint repeats a picture. */
+export function isImagePatternPaint(paint: Paint): paint is ImagePatternPaint {
+  return paint.kind === 'image';
+}
+
+/** Whether a paint repeats a tile: a built-in one, a picture, or a
+ *  consumer's texture. */
 export function isPatternPaint(paint: Paint): paint is PatternPaint {
-  return paint.kind === 'texture' || isTileKind(paint.kind);
+  return paint.kind === 'texture' || paint.kind === 'image' || isTileKind(paint.kind);
 }
 
 /** A pattern paint's placement alone, holding only the fields it sets. */

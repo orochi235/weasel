@@ -211,9 +211,9 @@ describe('resolveSchemaMenu: other leaves', () => {
     const own = resolveSchemaMenu(menu({ g: alias, view: pref.group('V', { grid: pref.boolean('Grid', false) }, { as: 'menu' }) }), valued({ 'view.grid': true }));
     expect(own[0]).toMatchObject({ label: 'Grid', checked: true });
   });
-  it('leaves out paint, field, compound, and custom leaves', () => {
+  it('leaves out a field with no leaf to name, and an app-defined leaf without customRows', () => {
     const es = resolveSchemaMenu(menu({
-      p: { kind: 'paint', name: 'P', description: '', default: null }, f: { kind: 'field', name: 'F', description: '', default: '' }, x: { kind: 'mine', name: 'X', description: '', default: 0 }, cut: act('cut'),
+      f: { kind: 'field', name: 'F', description: '', default: '', kinds: ['color'] }, x: { kind: 'mine', name: 'X', description: '', default: 0 }, cut: act('cut'),
     }), valued({}));
     expect(labels(es)).toEqual(['Cut']);
   });

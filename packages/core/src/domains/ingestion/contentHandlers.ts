@@ -25,6 +25,10 @@ export interface IngestCtx {
    *  for paste and point-less calls — handlers pick their own policy
    *  (the kit image handler centers on the viewport). */
   point: { x: number; y: number } | null;
+  /** Every item the arrival carried, the ones other handlers took included:
+   *  a handler can tell that the string it was given rides beside a file.
+   *  Absent reads as the items the handler was handed. */
+  items?: readonly IngestItem[];
   /** Visible canvas area in world coordinates. */
   viewportWorldRect(): { x: number; y: number; width: number; height: number };
   /** The kit insert dep — id/layer/undoable-op supplied; the canonical way
@@ -106,7 +110,20 @@ function unregister(entry: ContentHandlerEntry): void {
   if (releases?.length === 0) RELEASES.delete(entry);
 }
 
-/** Register a content handler. Returns a disposer that removes it. */
+/** Keep the string flavors `entries` name exactly, as registering them would, until the
+ *  returned disposer runs: for handlers one canvas holds rather than the registry. */
+export function admitHandlerMimes(entries: readonly ContentHandlerEntry[]): () => void {
+  const releases = [...new Set(entries.flatMap(namedMimes))].map(admitIngestMime);
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    releases.forEach((release) => release());
+  };
+}
+
+/** Register a content handler for every canvas on the page. Returns a disposer that removes
+ *  it. A handler for one canvas goes in that canvas's `ingestion.handlers` instead. */
 export function registerContentHandler(entry: ContentHandlerEntry): () => void {
   HANDLERS.push(entry);
   const admits = namedMimes(entry).map(admitIngestMime);
@@ -131,12 +148,19 @@ export function getContentHandlers(): readonly ContentHandlerEntry[] {
   return byPriority(HANDLERS);
 }
 
+/** The handlers an arrival on one canvas routes through: the canvas's own, then the
+ *  registry's, priority-ordered, so at equal priority the canvas's own run first. */
+export function handlersFor(own: readonly ContentHandlerEntry[] | undefined): ContentHandlerEntry[] {
+  return byPriority([...(own ?? []), ...HANDLERS]);
+}
+
 /** Options for {@link runIngest}. */
 export interface RunIngestOptions {
   /**
    * The handlers to route through, in place of the registry. The registry is
-   * shared by every canvas on the page, so this is how one arrival path
-   * accepts a narrower set of content than the page has handlers for.
+   * shared by every canvas on the page, so this is how one canvas routes
+   * through its own handlers, and how one arrival path accepts a narrower set
+   * of content than the canvas has handlers for.
    * Ordered by `priority` like registered handlers; an item none of them
    * matches is ignored.
    */

@@ -41,6 +41,8 @@ function Harness() {
     deleteSnapshot: noop,
     mode: 'auto',
     setMode: noop,
+    marks: true,
+    setMarks: noop,
   };
   return (
     <LabStoreContext.Provider value={{ store }}>

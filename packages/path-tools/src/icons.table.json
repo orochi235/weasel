@@ -8,17 +8,17 @@
       "tags": []
     },
     "distort": {
-      "body": "<path d=\"M3.5 4.5 L16 3 L17 16.5 L4.5 14.5 Z\"/><rect x=\"2\" y=\"3\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"14.5\" y=\"1.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15.5\" y=\"15\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"3\" y=\"13\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M1.875 1.875H16.875V16.875L6.875 11.875Z\" stroke-width=\"1.25\"/><rect x=\"0\" y=\"0\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15\" y=\"0\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15\" y=\"15\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"5\" y=\"10\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",
       "tags": []
     },
     "envelope": {
-      "body": "<path d=\"M3.5 5.5 Q10 0.5 16.5 5.5 V16.5 Q10 12.5 3.5 16.5 Z\"/><path d=\"M10 3 V14.5 M3.5 11 Q10 7 16.5 11\" stroke-width=\"1\"/><circle cx=\"3.5\" cy=\"5.5\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.5\" cy=\"5.5\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.5\" cy=\"16.5\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"3.5\" cy=\"16.5\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M1.875 18.125V5.625L1.875 5.625L3.6428 3.8572A2.5 2.5 0 0 1 5.4105 3.125L13.3395 3.125A2.5 2.5 0 0 1 15.1072 3.8572L16.875 5.625V18.125L16.875 18.125L15.1072 16.3572A2.5 2.5 0 0 0 13.3395 15.625L5.4105 15.625A2.5 2.5 0 0 0 3.6428 16.3572L1.875 18.125\" stroke-width=\"1.25\"/><path d=\"M9.375 3.125V15.625M1.875 11.875L3.6428 10.1072A2.5 2.5 0 0 1 5.4105 9.375L13.3395 9.375A2.5 2.5 0 0 1 15.1072 10.1072L16.875 11.875\" stroke-width=\"1.25\"/><circle cx=\"1.875\" cy=\"5.625\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.875\" cy=\"5.625\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.875\" cy=\"18.125\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"1.875\" cy=\"18.125\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",
       "tags": []
     },
     "puppetWarp": {
-      "body": "<path d=\"M2.5 11 C7 11 8 3 15 3 L17.5 7.5 C11 7.5 10 16 3.5 16 Z\"/><circle cx=\"5\" cy=\"13.5\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"15.6\" cy=\"5.3\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M0.625 13.75L0.625 11.875A1.25 1.25 0 0 1 1.875 10.625L5.1072 10.625A1.25 1.25 0 0 0 5.9911 10.2589L14.0089 2.2411A1.25 1.25 0 0 1 14.8928 1.875L18.125 1.875A1.25 1.25 0 0 1 19.375 3.125L19.375 6.875A1.25 1.25 0 0 1 18.125 8.125L14.8928 8.125A1.25 1.25 0 0 0 14.0089 8.4911L5.9911 16.5089A1.25 1.25 0 0 1 5.1072 16.875L1.875 16.875A1.25 1.25 0 0 1 0.625 15.625L0.625 13.75Z\" stroke-width=\"1.25\"/><circle cx=\"3.75\" cy=\"13.75\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.25\" cy=\"5\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",
       "tags": []
     },
@@ -78,7 +78,7 @@
       "tags": []
     },
     "spiro": {
-      "body": "<g stroke-linecap=\"butt\" stroke-linejoin=\"miter\"><path d=\"M 3.5 15 C 6.5 15 7 10 10 10 C 13 10 13.5 5 16.5 5\" stroke-linecap=\"round\"/><circle cx=\"3.5\" cy=\"15\" r=\"1.6\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"10\" cy=\"10\" r=\"1.6\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.5\" cy=\"5\" r=\"1.6\" fill=\"currentColor\" stroke=\"none\"/></g>",
+      "body": "<path d=\"M1.875 15.625L4.5895 15.625A2.5 2.5 0 0 0 6.3572 14.8928L12.3928 8.8572A2.5 2.5 0 0 1 14.1605 8.125L16.875 8.125\" stroke-width=\"1.25\"/><circle cx=\"1.875\" cy=\"15.625\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"9.375\" cy=\"11.875\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.875\" cy=\"8.125\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",
       "tags": []
     },
@@ -173,12 +173,12 @@
       "tags": []
     },
     "spiroSmooth": {
-      "body": "<path d=\"M1.875 15.625C6.875 15.625 5.625 9.375 9.375 9.375C13.125 9.375 11.875 3.125 16.875 3.125\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"9.375\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M0.625 14.375L3.6428 11.3572A2.5 2.5 0 0 1 5.4105 10.625L13.3395 10.625A2.5 2.5 0 0 0 15.1072 9.8928L18.125 6.875\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"10.625\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Spiro points",
       "tags": []
     },
     "spiroG4": {
-      "body": "<path d=\"M1.875 15.625C6.875 15.625 5.625 9.375 6.875 9.375M11.875 9.375C13.125 9.375 11.875 3.125 16.875 3.125\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"9.375\" r=\"2.5\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"9.375\" r=\"0.625\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M0.625 14.375L3.6428 11.3572A2.5 2.5 0 0 1 5.4105 10.625L6.875 10.625M11.875 10.625L13.3395 10.625A2.5 2.5 0 0 0 15.1072 9.8928L18.125 6.875\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"10.625\" r=\"2.5\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"10.625\" r=\"0.625\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Spiro points",
       "tags": []
     },

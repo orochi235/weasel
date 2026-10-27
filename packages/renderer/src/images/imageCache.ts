@@ -316,6 +316,17 @@ export function bitmapSrc(bitmap: ImageBitmap): string {
   return src;
 }
 
+/** The size `src` decoded at before any re-rasterizing, once it has: a
+ *  vector source's raster changes with the size it is drawn at, and this
+ *  does not. `undefined` while it loads or after it failed.
+ *  @internal */
+export function imageNaturalSize(src: string): ImageRasterSize | undefined {
+  const entry = cache.get(src);
+  if (entry?.vector) return entry.vector.natural;
+  const bitmap = entry?.bitmap ?? held.get(src)?.deref();
+  return bitmap ? { width: bitmap.width, height: bitmap.height } : undefined;
+}
+
 /** Current load status for `src` (`'idle'` if never requested). */
 export function imageStatus(src: string): ImageStatus {
   if (src.startsWith(BITMAP_SCHEME)) return getImageBitmap(src) === undefined ? 'idle' : 'ready';

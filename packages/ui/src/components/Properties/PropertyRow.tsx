@@ -141,10 +141,11 @@ export function PropertyRow({
     label
   );
   // The hint flows on from the name's last word: as a flex item of its own, it went to the column's edge
-  // whenever the name wrapped, since a wrapped name's box fills the line.
+  // whenever the name wrapped, since a wrapped name's box fills the line. The space lets it drop to a line of
+  // its own where it does not fit beside that word.
   const name = hint != null ? (
     <span className={s.rowName}>
-      {own}
+      {own}{' '}
       <span className={s.rowHint} data-wzl-subordinate="">{hint}</span>
     </span>
   ) : (

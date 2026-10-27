@@ -33,7 +33,9 @@ export interface ParticipantScene<TPose> {
     pose: TPose;
     dependsOn?: readonly string[] | 'children';
   }[];
-  readonly overrides: { read(id: string): { pose?: TPose } | undefined };
+  readonly overrides: { read(id: string): { pose?: TPose } | undefined; getGeneration?(): number };
+  /** With `overrides.getGeneration`, what lets the port layer index the ports. */
+  getVersion?(): number;
   get(id: string): unknown;
   childrenOf(id: string): readonly string[];
 }
@@ -50,12 +52,13 @@ export interface ParticipantScene<TPose> {
  * mid-drag, or from its pose in its container's frame, sits somewhere the
  * user can see the node is not.
  *
- * One source answers both the ports and the graph.
+ * One source answers both the ports and the graph. A scene with versions
+ * gives it a `generation`, so the port layer hit-tests through an index.
  */
 export function sceneParticipants<TPose>(
   scene: ParticipantScene<TPose>,
-): () => Iterable<ParticipantPose<TPose> & { node: GraphNodeLike }> {
-  return function* () {
+): ParticipantSource<TPose> & (() => Iterable<ParticipantPose<TPose> & { node: GraphNodeLike }>) {
+  const each = function* () {
     const gates = nodeGates(scene as never);
     const frame = scenePoseFrame(scene as never);
     for (const node of scene.renderOrderNodes()) {
@@ -70,6 +73,12 @@ export function sceneParticipants<TPose>(
       };
     }
   };
+  const { getVersion } = scene;
+  const getGeneration = scene.overrides.getGeneration;
+  if (getVersion === undefined || getGeneration === undefined) return each;
+  return Object.assign(each, {
+    generation: () => [getVersion.call(scene), getGeneration.call(scene.overrides)] as const,
+  });
 }
 
 /**

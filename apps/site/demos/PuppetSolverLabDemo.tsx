@@ -86,7 +86,7 @@ const solverInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'puppet', label: 'Puppet Warp', icon: icon('ui:pin'), shortcut: 'B' },
+      { id: 'puppet', label: 'Puppet Warp', icon: icon('path-tools:puppetWarp'), shortcut: 'B' },
     ],
     initial: 'puppet',
   },

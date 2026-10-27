@@ -110,6 +110,23 @@ describe('a split value in PrefsForm', () => {
     expect(screen.getByRole('button', { name: 'Tight Align' })).toBeTruthy();
   });
 
+  it('keeps a row that can be split a label, so an app renderer’s control is named by it and the toggle after it', () => {
+    const plain = Object.assign(
+      ({ value, setValue }: { value: unknown; setValue: (v: unknown) => void }) => (
+        <input value={String(value)} onChange={(e) => setValue(Number(e.target.value))} />
+      ),
+      {},
+    );
+    mount({ loci: new Map([['gap', byMode(4, 8)]]), renderers: { number: plain } });
+    const field = screen.getByRole('textbox', { name: /^Gap\b/ });
+    const row = field.closest('label');
+    expect(row).not.toBeNull();
+    const toggle = within(row!).getByRole('button', { name: 'Gap by Mode' });
+    expect(field.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(within(row!).getByText('Gap'));
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('opens to one control per option, each named for the leaf and the option and showing its member', () => {
     mount({ loci: new Map([['gap', byMode(4, 8)]]) });
     const toggle = screen.getByRole('button', { name: 'Gap by Mode' });

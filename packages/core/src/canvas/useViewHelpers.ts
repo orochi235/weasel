@@ -146,7 +146,9 @@ export interface UseViewHelpersOpts<TPose> {
   nodes?: DrawnBoundsScene | undefined;
   /** The view's scale, which a screen-pixel stroke is resolved at. Default 1. */
   getScale?: (() => Scale2) | undefined;
-  selection: readonly NodeId[];
+  /** The ids selected, read whenever chrome asks: a view following another
+   *  reads that view's, which changes without this one rendering. */
+  selection: () => readonly NodeId[];
   gestureSource: GestureSource | undefined;
   /** The dispatcher's preview pose for an id, read through a ref so a change
    *  mid-gesture doesn't rebuild the memos that depend on it. */
@@ -217,7 +219,7 @@ export function useViewHelpers<TPose>(
     }
   }, [adapter]);
 
-  const multiActive = selection.length > 1;
+  const selectionRef = useLatest(selection);
 
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
   const { previewPoseOf, previewBoundsOf } = useInFlightBounds({ gestureSource, previewPoseExtra, boxOf, committedPoseOf });
@@ -236,8 +238,8 @@ export function useViewHelpers<TPose>(
 
   const chromeState: ChromeState = useMemo(
     () => buildChromeState({
-      selection,
-      multiActive,
+      get selection() { return selectionRef.current(); },
+      get multiActive() { return selectionRef.current().length > 1; },
       effectiveBoundsOf: boundsWithPreview,
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
       // Absent adapter / unknown ids fall back to `true` so the affordance
@@ -251,7 +253,7 @@ export function useViewHelpers<TPose>(
       ...(layerIsPainted ? { layerIsPainted } : {}),
       ...(adapter?.getNode ? { layerOf: (id: string) => adapter.getNode?.(id)?.layer } : {}),
     }),
-    [selection, multiActive, boundsWithPreview, geometry, committedPoseOf, layerIsPainted, adapter],
+    [selectionRef, boundsWithPreview, geometry, committedPoseOf, layerIsPainted, adapter],
   );
 
   const helpers: CanvasViewHelpers<TPose> = {

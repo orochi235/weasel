@@ -7,32 +7,42 @@ import { useEffect, useRef } from 'react';
 import { held, key } from '@weasel-js/gestures';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 import { ActiveToolContextProvider } from './activeToolContext';
-import { DepRegistryProvider } from './depRegistry';
+import { DepRegistryProvider, useDepRegistry } from './depRegistry';
 import { ActionDisabledReason, type Action } from './action';
 import { createDispatcher } from '../dispatcher/dispatcher';
 import { useGestureDispatcher } from '../dispatcher/useGestureDispatcher';
 import { keymapContribution } from '../../keymaps/keymapContribution';
+import type { KeymapStack } from '../../keymaps/keymapStack';
 import { holdPreview, holdPreviewId } from './holdPreview';
 
 function rig(opts: { enabled?: Action['enabled'] } = {}) {
+  const dispatcher = createDispatcher();
   const shown = vi.fn();
   const hidden = vi.fn();
   const run = vi.fn();
   const unite: Action = {
     id: 'unite',
     label: 'Unite',
+    requires: ['keymaps'],
     ...(opts.enabled ? { enabled: opts.enabled } : {}),
-    preview: (_deps, params) => { shown(params); return hidden; },
-    invoker: { timing: 'immediate', run: (_deps, params) => run(params) },
+    preview: (deps, params) => { shown(params, deps); return hidden; },
+    invoker: { timing: 'immediate', run: (deps, params) => run(params, deps) },
+  };
+  // What core's cancelGesture is: Escape, live only while a gesture is in flight.
+  const cancel: Action = {
+    id: 'cancelGesture',
+    label: 'Cancel gesture',
+    defaultBinding: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'engaged' }] }, opts: { id: 'cancelGesture.key' } }],
+    invoker: { timing: 'immediate', run: () => dispatcher.cancelAll('cancel') },
   };
   const entries = keymapContribution({
     id: 'paths',
     label: 'Paths',
     leader: key('p'),
     bindings: [{ spec: held('u'), actionId: holdPreviewId('unite'), opts: { params: { op: 'union' } } }],
-    actions: [unite, holdPreview(unite)],
+    actions: [unite, holdPreview(unite), cancel],
   });
-  const dispatcher = createDispatcher();
+  let keymaps: () => KeymapStack | null | undefined = () => undefined;
   function Probe() {
     const registry = useActionsRegistry()!;
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -40,6 +50,8 @@ function rig(opts: { enabled?: Action['enabled'] } = {}) {
       const releases = entries.flatMap((e) => e.actions ?? []).map((a) => registry.register(a));
       return () => { for (const r of releases) r(); };
     });
+    const deps = useDepRegistry();
+    keymaps = () => deps.get('keymaps');
     useGestureDispatcher({ canvasRef, actions: registry, dispatcher, entriesById: new Map(entries.map((e) => [e.id, e])) });
     return <canvas ref={canvasRef} />;
   }
@@ -56,7 +68,8 @@ function rig(opts: { enabled?: Action['enabled'] } = {}) {
     act(() => { window.dispatchEvent(new KeyboardEvent(type, { key: k, code: `Key${k.toUpperCase()}` })); });
   };
   const tap = (k: string) => { send('keydown', k); send('keyup', k); };
-  return { shown, hidden, run, send, tap, dispatcher };
+  const open = () => keymaps()?.innermost()?.id ?? null;
+  return { shown, hidden, run, send, tap, dispatcher, open };
 }
 
 describe('holdPreview', () => {
@@ -64,13 +77,14 @@ describe('holdPreview', () => {
     const r = rig();
     r.tap('p');
     r.send('keydown', 'u');
-    expect(r.shown).toHaveBeenCalledWith({ op: 'union' });
+    expect(r.shown).toHaveBeenCalledWith({ op: 'union' }, expect.anything());
     expect(r.run).not.toHaveBeenCalled();
     r.send('keydown', 'u');
     expect(r.shown).toHaveBeenCalledTimes(1);
     r.send('keyup', 'u');
     expect(r.hidden).toHaveBeenCalledTimes(1);
-    expect(r.run).toHaveBeenCalledWith({ op: 'union' });
+    // With the press's deps: the release's own ctx carries none.
+    expect(r.run).toHaveBeenCalledWith({ op: 'union' }, expect.objectContaining({ keymaps: expect.anything() }));
   });
 
   it('takes the preview down and runs nothing when the hold is canceled', () => {
@@ -81,6 +95,21 @@ describe('holdPreview', () => {
     expect(r.hidden).toHaveBeenCalledTimes(1);
     r.send('keyup', 'u');
     expect(r.run).not.toHaveBeenCalled();
+  });
+
+  it('cancels the hold on Escape in a keymap its leader holds open, and leaves the keymap open', () => {
+    const r = rig();
+    r.send('keydown', 'p');
+    r.send('keydown', 'u');
+    expect(r.shown).toHaveBeenCalledTimes(1);
+    expect(r.open()).toBe('paths');
+    r.tap('Escape');
+    expect(r.hidden).toHaveBeenCalledTimes(1);
+    expect(r.open()).toBe('paths');
+    r.send('keyup', 'u');
+    expect(r.run).not.toHaveBeenCalled();
+    r.tap('Escape');
+    expect(r.open()).toBeNull();
   });
 
   it('is disabled where the action is, so the key does nothing', () => {
