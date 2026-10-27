@@ -39,7 +39,7 @@ export const DRAW_LEAF_KINDS: readonly string[] = [...new Set(SURFACE_ASSETS.fla
 ]))];
 
 const nodes: Asset[] = defaultNodeProperties.map((e) => ({
-  id: `node:${e.name}`, label: `Node: ${e.name}`, kind: 'schema', root: e.schema,
+  id: `node:${e.name}`, label: e.name, kind: 'schema', nodeKind: e.name, root: e.schema,
 }));
 
 /**

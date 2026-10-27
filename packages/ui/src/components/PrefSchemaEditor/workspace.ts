@@ -12,6 +12,8 @@ interface AssetBase {
 /** A dialog's schema. */
 export interface SchemaAsset extends AssetBase {
   kind: 'schema';
+  /** The scene node kind whose properties it holds. The list files it under Node properties, not Dialogs. */
+  nodeKind?: string;
 }
 
 /** A layout of pointers into a dialog. */
@@ -37,14 +39,14 @@ export type ShownAsset = SchemaAsset | LayoutAsset;
 export type Asset = ShownAsset | ActionsAsset;
 
 /** What the asset list files an asset under. */
-export type AssetHeading = 'Dialogs' | 'Panels' | 'Toolbars' | 'Menus';
+export type AssetHeading = 'Dialogs' | 'Node properties' | 'Panels' | 'Toolbars' | 'Menus';
 
 /**
- * Where the list files `asset`: a dialog; a layout drawn as a menu, or as a bar of nothing but menus, which is a
+ * Where the list files `asset`: a dialog, or one holding a node kind's properties; a layout drawn as a menu, or as a bar of nothing but menus, which is a
  * menu bar; a layout drawn as any other bar; or any other layout.
  */
 export function headingOf(asset: ShownAsset): AssetHeading {
-  if (asset.kind === 'schema') return 'Dialogs';
+  if (asset.kind === 'schema') return asset.nodeKind === undefined ? 'Dialogs' : 'Node properties';
   const root = asset.root;
   if (!('as' in root)) return 'Panels';
   if (root.as === 'menu') return 'Menus';
