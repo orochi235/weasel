@@ -274,10 +274,15 @@ Owner tags, after the priority (2026-10-26):
   against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
   paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`).
 
-- **(P3) [agent] The mesh cache's hit got five times slower between 2026-09-29 and 2026-10-27.** `getMesh hit` in
-  `tests/perf/bench/BASELINE.md` reads 209 ns, against 42 ns at the 2026-09-29 baseline (studio, both;
-  `tests/perf/recorded/tessellate-bench-2026-10-21/studio/`). The deliberate tessellation costs since then are in the
-  miss path, not the hit, so they do not explain it. Not bisected.
+- **(P3) [agent] The perf benches time vitest's module runner along with the code.** Vite's module runner turns
+  every imported binding into a getter, and a sub-microsecond bench mostly measures those getters. `getMesh hit` went
+  from 42 ns to 209 ns (2026-09-29 → 2026-10-27) only because the hit path now reads two cross-module bindings
+  (`defaultOpenFill`, `DEFAULT_FLATTEN_TOLERANCE`): the same function takes 13 ns under `tsx`, and a copy using local
+  helpers matches the old speed under vitest (measured 2026-10-27). Every recorded `bench.log` prints vitest's
+  "accessed module export getters too many times" warning. Its docs
+  (https://vitest.dev/guide/benchmarking#module-runner-overhead) offer two fixes: turn off
+  `experimental.viteModuleRunner` for the bench config, or benchmark the built packages instead of their source. Either
+  one means re-recording the whole baseline.
 
 ---
 
