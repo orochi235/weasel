@@ -61,7 +61,10 @@ export function captureHost(host: HTMLElement): Extract<CaptureSource, { kind: '
     `[data-fg-capture]{${tokens}}`,
     `[data-fg-capture] > .fg-story{width:${w}px;height:${h}px}`,
   ].join('\n');
-  root.append(style, host.cloneNode(true));
+  const copy = host.cloneNode(true) as HTMLElement;
+  // Pending only hides the host from view until its fonts have painted; a still picture has no jump to hide.
+  copy.removeAttribute('data-pending');
+  root.append(style, copy);
   // XML, not HTML: an `<svg>` base is parsed again as XML, where `<br>` and friends have to be closed.
   const inner = new XMLSerializer().serializeToString(root);
   return {

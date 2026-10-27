@@ -110,6 +110,17 @@ describe('captureHost', () => {
     );
   });
 
+  it('pictures a host still pending its first paint, which would otherwise draw at opacity 0', () => {
+    const host = scrolled(320, 200, { width: 320, height: 200, top: 0 });
+    host.setAttribute('data-pending', '');
+    document.body.append(host);
+    cleanups.push(() => host.remove());
+    const copy = parse(captureHost(host).markup).querySelector('.fg-story');
+    expect(copy).not.toBeNull();
+    expect(copy?.hasAttribute('data-pending')).toBe(false);
+    expect(host.hasAttribute('data-pending')).toBe(true);
+  });
+
   it("restates the custom properties as they resolve on the host, which no :root rule reaches", () => {
     const sheet = document.createElement('style');
     sheet.textContent = ':root{--fg-probe:#123456}.probe{color:var(--fg-probe)}';
