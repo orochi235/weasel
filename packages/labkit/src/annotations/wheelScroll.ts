@@ -47,13 +47,19 @@ export function scrollUnder(e: WheelEvent, box: Element, target: Element): boole
  * over it reaches neither the trial's camera nor a scroller in the target by itself: it goes to the camera when the
  * trial has one, and otherwise scrolls what is under it.
  */
-export function useWheelHandOff(input: HTMLElement | null, target: RefObject<HTMLElement | null>): void {
+export function useWheelHandOff(
+  input: HTMLElement | null,
+  target: RefObject<HTMLElement | null>,
+): void {
   const wheelSlot = useContext(CameraWheelContext);
   useEffect(() => {
     if (!input) return;
     const wheel = (e: WheelEvent): void => {
       const camera = wheelSlot?.current;
-      if (camera) return camera(e);
+      if (camera) {
+        camera(e);
+        return;
+      }
       const el = target.current;
       if (el && scrollUnder(e, input, el)) e.preventDefault();
     };

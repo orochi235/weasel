@@ -16,6 +16,7 @@ export interface SettledCache<T> {
   clear(): void;
 }
 
+/** Options for {@link createSettledCache}. */
 export interface SettledCacheOptions {
   /** Which read in a row at one key builds the value. Default 2: a source must
    *  be read once unchanged before it is worth building over. 1 builds on the
@@ -29,6 +30,7 @@ function sameKey(a: readonly unknown[], b: readonly unknown[]): boolean {
   return true;
 }
 
+/** A {@link SettledCache} that builds on the `reads`-th read in a row at one key. */
 export function createSettledCache<T>({ reads = 2 }: SettledCacheOptions = {}): SettledCache<T> {
   if (!(reads >= 1) || !Number.isInteger(reads)) throw new RangeError(`createSettledCache: reads must be a positive integer, got ${reads}`);
   let seen: readonly unknown[] | undefined;
