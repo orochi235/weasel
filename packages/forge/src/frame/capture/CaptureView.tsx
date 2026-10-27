@@ -11,7 +11,8 @@ import type { Globals } from '../../protocol/messages';
 import type { Loaded } from '../../story/indexBundle';
 import type { DepGraph, LoadedStory, StoryContext } from '../../story/types';
 import { holdAt } from '@weasel-js/clock';
-import { StoryClockProvider, useOwnClock } from '../../timeline/StoryClock';
+import { ClockContext } from '../../timeline/context';
+import { useOwnClock } from '../../timeline/StoryClock';
 import type { CapturePayload } from '../../vite/capture/payload';
 import type { FrameSetup } from '../FrameController';
 import { indexEnvOf } from '../index/indexEnv';
@@ -72,9 +73,9 @@ function CapturedStory({ story, payload, setup }: { story: LoadedStory; payload:
     name: story.name,
   };
   return (
-    <StoryClockProvider handle={clock} spec={spec}>
+    <ClockContext.Provider value={clock}>
       <StoryHost story={story} ctx={ctx} decorators={setup.decorators ?? []} resetKey={0} onError={NO_WRITE} />
-    </StoryClockProvider>
+    </ClockContext.Provider>
   );
 }
 

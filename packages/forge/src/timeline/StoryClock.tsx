@@ -4,33 +4,15 @@ import { useLatest } from '@weasel-js/core';
 import { type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import type { LoadedStory } from '../story/types';
 import { clockSpecOf } from './clockSpec';
-import { ClockContext, DeclaredTimelineContext } from './context';
-import { redeclare } from './moves';
+import { ClockContext } from './context';
 import type { TimelineSpec } from './types';
-
-/** Hands the story below `handle` as its clock, and `spec` as the timeline it declares. */
-export function StoryClockProvider({
-  handle,
-  spec,
-  children,
-}: {
-  handle: ClockHandle | null;
-  spec: TimelineSpec | null;
-  children: ReactNode;
-}) {
-  return (
-    <ClockContext.Provider value={handle}>
-      <DeclaredTimelineContext.Provider value={handle ? spec : null}>{children}</DeclaredTimelineContext.Provider>
-    </ClockContext.Provider>
-  );
-}
 
 const keyOf = (spec: TimelineSpec | null): string | null =>
   spec ? `${spec.start ?? 0}|${spec.duration}|${spec.loop ?? true}|${spec.rate ?? 1}` : null;
 
 /**
  * A clock of the story's own, where no lab makes one: made when `spec` appears, dropped when it goes, and redeclared
- * when it changes, the story's `setSpan` still laid over it.
+ * when it changes; the clock keeps any span the story's `setSpan` laid over it.
  */
 export function useOwnClock(spec: TimelineSpec | null): ClockHandle | null {
   const [handle, setHandle] = useState(() => (spec ? createClock(clockSpecOf(spec)) : null));
@@ -48,7 +30,7 @@ export function useOwnClock(spec: TimelineSpec | null): ClockHandle | null {
   useEffect(() => {
     if (!current || !latest.current || key === declared.current) return;
     declared.current = key;
-    redeclare(current, latest.current);
+    current.declare(clockSpecOf(latest.current));
   }, [current, key, latest]);
   return current;
 }
@@ -57,11 +39,7 @@ function OwnClock({ spec, children }: { spec: TimelineSpec; children: ReactNode 
   const handle = useOwnClock(spec);
   const [registry] = useState(() => createClockRegistry(handle));
   useClockLoop(registry);
-  return (
-    <StoryClockProvider handle={handle} spec={spec}>
-      {children}
-    </StoryClockProvider>
-  );
+  return <ClockContext.Provider value={handle}>{children}</ClockContext.Provider>;
 }
 
 /**

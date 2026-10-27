@@ -1,8 +1,7 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, renderHook, screen, within } from '@testing-library/react';
-import { createClock } from '@weasel-js/clock';
-import { type ReactNode, useEffect } from 'react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
+import { useEffect } from 'react';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { loadCsfModule } from '../csf/loadCsfModule';
 import { StoryHost } from '../frame/StoryHost';
@@ -11,11 +10,7 @@ import { readRoute } from '../shell/useRoute';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
 import type { IndexEntry, LoadedStory, StoryContext } from '../story/types';
-import { clockSpecOf } from './clockSpec';
 import { useTimeline } from './context';
-import { shownTime } from './shown';
-import { StoryClockProvider } from './StoryClock';
-import type { TimelineSpec } from './types';
 import { harness, playhead, playheads, Readout, trial, tParam, workshopIt } from './workshopHarness';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -177,6 +172,19 @@ describe('the playhead kept with the trial', () => {
     await loaded();
     expect(playhead()).toBe(1000);
   });
+
+  it('comes back at its paused time when a snapshot is loaded', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
+    mount('/#/t--timed');
+    await loaded();
+    const scrub = within(trial()).getByRole('slider', { name: 'Position' });
+    fireEvent.keyDown(scrub, { key: 'End' });
+    fireEvent.click(screen.getByRole('button', { name: 'probe: save' }));
+    fireEvent.keyDown(scrub, { key: 'Home' });
+    expect(playhead()).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: 'probe: load' }));
+    await until(() => expect(playhead()).toBe(4000));
+  });
 });
 
 describe('a story that learns its span only once it runs', () => {
@@ -191,7 +199,7 @@ describe('a story that learns its span only once it runs', () => {
     expect(written.filter((url) => /[?&]t=(?!2\.5\b)/.test(url))).toEqual([]);
   });
 
-  it('keeps the shown time when the span arrives, and reopens in the span it ran with', async ({ lab }) => {
+  it('keeps the shown time when the span arrives, and comes back at it after a reload', async ({ lab }) => {
     const { mount, until, loaded, persisted } = lab;
     const storage = createMemoryAdapter();
     const first = mount('/#/t--late', storage);
@@ -203,11 +211,20 @@ describe('a story that learns its span only once it runs', () => {
     await persisted();
     first.unmount();
 
-    // The trial's record keeps the run's length, so a story that never sets its span again reopens in the one it had.
+    // The trial's record keeps the run's length and origin, so a story that never sets its span again reopens at the
+    // time it showed, in the length it ran with.
     lateDelay = null;
+    const second = mount('/#/t--late', storage);
+    await loaded();
+    expect(playhead()).toBe(3700);
+    await persisted();
+    second.unmount();
+
+    lateDelay = 20;
     mount('/#/t--late', storage);
     await loaded();
-    expect(playhead()).toBe(4000);
+    await until(() => expect(playhead()).toBe(3700));
+    expect(within(trial()).getByTestId('timeline-time').textContent).toBe('3.70s / 4.00s');
   });
 });
 
@@ -307,56 +324,5 @@ describe('a story with a timeline, outside a trial', () => {
     );
     expect(fixed!.timeline?.({})).toEqual({ duration: 800 });
     expect(byArgs!.timeline?.({ seconds: 5 })).toEqual({ duration: 5000 });
-  });
-});
-
-describe('a story clock', () => {
-  const ran = (spec: TimelineSpec, ms: number) => {
-    const { clock } = createClock(clockSpecOf(spec));
-    clock.rate = 1;
-    clock.sync(0);
-    clock.sync(ms);
-    return clock;
-  };
-
-  it('loops by default, its playhead wrapping back into the span, and stops paused at the end when told not to', () => {
-    expect(shownTime(ran({ start: -200, duration: 1000 }, 1500))).toBe(300);
-    const once = ran({ duration: 1000, loop: false }, 1500);
-    expect(shownTime(once)).toBe(1000);
-    expect(once.rate).toBe(0);
-  });
-
-  const timeline = (spec: TimelineSpec) => {
-    const handle = createClock(clockSpecOf(spec));
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <StoryClockProvider handle={handle} spec={spec}>
-        {children}
-      </StoryClockProvider>
-    );
-    return { handle, hook: renderHook(() => useTimeline(), { wrapper }) };
-  };
-
-  it('plays from the end over from the start, clamps a seek, and ignores a rate that is not positive', () => {
-    const { hook } = timeline({ start: -300, duration: 1000, loop: false });
-    act(() => hook.result.current.seek(5000));
-    expect(hook.result.current.time).toBe(700);
-    act(() => hook.result.current.seek(-5000));
-    expect(hook.result.current.time).toBe(-300);
-    act(() => hook.result.current.seek(700));
-    act(() => hook.result.current.play());
-    expect(hook.result.current).toMatchObject({ playing: true, time: -300 });
-    for (const rate of [0, -1, Number.NaN]) act(() => hook.result.current.setRate(rate));
-    expect(hook.result.current.rate).toBe(1);
-    act(() => hook.result.current.setRate(2));
-    expect(hook.result.current.rate).toBe(2);
-  });
-
-  it('keeps the shown time across a span set at runtime, and goes back to the declared span when it is lifted', () => {
-    const { hook } = timeline({ duration: 1000 });
-    act(() => hook.result.current.seek(600));
-    act(() => hook.result.current.setSpan({ start: -500, duration: 4000 }));
-    expect(hook.result.current).toMatchObject({ time: 600, span: { start: -500, end: 3500 } });
-    act(() => hook.result.current.setSpan(null));
-    expect(hook.result.current).toMatchObject({ time: 600, span: { start: 0, end: 1000 } });
   });
 });

@@ -13,8 +13,7 @@ import { createPortal } from 'react-dom';
 import type { FrameSetup } from '../../frame/FrameController';
 import type { Globals, Layout } from '../../protocol/messages';
 import type { ClockHandle } from '@weasel-js/clock';
-import { StoryClockProvider } from '../../timeline/StoryClock';
-import type { TimelineSpec } from '../../timeline/types';
+import { ClockContext } from '../../timeline/context';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryBody, type StoryBodyProps } from '../StoryBody';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
@@ -40,19 +39,17 @@ export interface StoryCopyProps {
   body: Omit<StoryBodyProps, 'globals'>;
   /** The trial's clock; a copy reads it and never drives it. */
   clock: ClockHandle | null;
-  /** The timeline the story declares. */
-  spec: TimelineSpec | null;
   globals: Globals;
   args: Readonly<Record<string, unknown>>;
 }
 
 /** A story trial's copy: its body under the copy's globals, with the lens's args written over its config. */
-export function StoryCopy({ body, clock, spec, globals, args }: StoryCopyProps) {
+export function StoryCopy({ body, clock, globals, args }: StoryCopyProps) {
   const { config, setConfig } = useCopyConfig(body.config, body.setConfig, args);
   return (
-    <StoryClockProvider handle={clock} spec={spec}>
+    <ClockContext.Provider value={clock}>
       <StoryBody {...body} config={config} setConfig={setConfig} globals={globals} />
-    </StoryClockProvider>
+    </ClockContext.Provider>
   );
 }
 

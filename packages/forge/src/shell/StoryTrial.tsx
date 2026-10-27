@@ -4,7 +4,7 @@ import { type RefObject, useCallback, useContext, useEffect, useRef, useState } 
 import type { FrameSetup } from '../frame/FrameController';
 import type { Globals } from '../protocol/messages';
 import type { Decorator, LoadedStory } from '../story/types';
-import { StoryClockProvider } from '../timeline/StoryClock';
+import { ClockContext } from '../timeline/context';
 import { isForgePath, storyConfig } from './globals';
 import { LiveCopies, StoryCopy } from './loupe/LiveCopies';
 import { StoryBody } from './StoryBody';
@@ -78,9 +78,9 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
     onError: reportError,
   };
   const render = (globals: Globals) => (
-    <StoryClockProvider handle={clock} spec={spec}>
+    <ClockContext.Provider value={clock}>
       <StoryBody {...body} globals={globals} />
-    </StoryClockProvider>
+    </ClockContext.Provider>
   );
 
   return (
@@ -95,7 +95,7 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
         {render}
       </TrialHost>
       <LiveCopies trialId={trialId} layout={story.layout} setup={setup} trialConfig={ctx.config}>
-        {(globals, args) => <StoryCopy body={body} clock={clock} spec={spec} globals={globals} args={args} />}
+        {(globals, args) => <StoryCopy body={body} clock={clock} globals={globals} args={args} />}
       </LiveCopies>
     </>
   );

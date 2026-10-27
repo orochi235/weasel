@@ -18,10 +18,19 @@ export function Readout() {
 function LabProbe() {
   const lab = useLabContext();
   const first = lab.trials[0];
+  const saved = lab.savedSnapshots[0];
   return (
-    <button type="button" onClick={() => first && lab.addTrial(first.instrumentName)}>
-      probe: add
-    </button>
+    <>
+      <button type="button" onClick={() => first && lab.addTrial(first.instrumentName)}>
+        probe: add
+      </button>
+      <button type="button" onClick={() => first && lab.saveSnapshot(first.id, 'held')}>
+        probe: save
+      </button>
+      <button type="button" onClick={() => first && saved && lab.loadSnapshot(first.id, saved.id)}>
+        probe: load
+      </button>
+    </>
   );
 }
 

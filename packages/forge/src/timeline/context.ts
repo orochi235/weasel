@@ -2,15 +2,13 @@ import type { ClockHandle } from '@weasel-js/clock';
 import { useLatest } from '@weasel-js/core';
 import { useTransportControl, useTrialClockHandle } from '@weasel-js/labkit';
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
-import { overrideSpan, ownMoves, type PlayMoves, setLoop } from './moves';
+import { spanOverrideOf } from './clockSpec';
+import { ownMoves, type PlayMoves, setLoop, subscribeSpeed } from './moves';
 import { seekShown, shownTime } from './shown';
-import type { Span, SpanOverride, TimelineSpec } from './types';
+import type { Span, SpanOverride } from './types';
 
 /** The clock of the story rendering below it; null where the story declares no timeline. */
 export const ClockContext = createContext<ClockHandle | null>(null);
-
-/** The timeline the story below declares, which `setSpan(null)` goes back to. */
-export const DeclaredTimelineContext = createContext<TimelineSpec | null>(null);
 
 /** What `useTimeline` hands a story: where its playhead stands, and the moves the transport makes. Times in ms. */
 export interface StoryTimeline {
@@ -39,15 +37,18 @@ function useClock(hook: string): ClockHandle {
   return handle;
 }
 
-/** Subscribes to every change of `handle`'s clock: rate, seek, loop and declare, and each frame it moves. */
+/** Subscribes to every change of `handle`'s clock: rate, seek, loop and declare, each frame it moves, and a paused
+ *  speed change. */
 function useClockChanges(handle: ClockHandle): (listener: () => void) => () => void {
   return useCallback(
     (listener) => {
       const offChange = handle.clock.subscribe(listener);
       const offFrame = handle.onFrame(listener);
+      const offSpeed = subscribeSpeed(handle.clock, listener);
       return () => {
         offChange();
         offFrame();
+        offSpeed();
       };
     },
     [handle],
@@ -78,10 +79,11 @@ export function useTimeline(): StoryTimeline {
   const handle = useClock('useTimeline');
   const { clock } = handle;
   const moves = usePlayMoves(handle);
-  const latest = useLatest({ moves, declared: useContext(DeclaredTimelineContext) });
+  const latest = useLatest({ moves });
   useSyncExternalStore(
     useClockChanges(handle),
-    () => `${shownTime(clock)}|${clock.rate}|${String(clock.loop)}|${clock.origin}|${clock.duration}`,
+    () =>
+      `${shownTime(clock)}|${clock.rate}|${String(clock.loop)}|${clock.origin}|${clock.duration}|${moves.speed()}`,
   );
   const time = shownTime(clock);
   const playing = clock.rate !== 0;
@@ -98,10 +100,7 @@ export function useTimeline(): StoryTimeline {
       setRate: (next: number) => {
         if (validRate(next)) latest.current.moves.setSpeed(next);
       },
-      setSpan: (override: SpanOverride | null) => {
-        const { declared } = latest.current;
-        if (declared) overrideSpan(handle, declared, override);
-      },
+      setSpan: (span: SpanOverride | null) => handle.override(span ? spanOverrideOf(span) : null),
     }),
     [handle, latest],
   );

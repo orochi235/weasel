@@ -1,20 +1,5 @@
-import type { Clock, ClockHandle } from '@weasel-js/clock';
-import { clockSpecOf } from './clockSpec';
-import type { SpanOverride, TimelineSpec } from './types';
-
-const overrides = new WeakMap<ClockHandle, SpanOverride>();
-
-/** Declares `handle` from the story's own spec, with the span `setSpan` last laid over it still in place. */
-export function redeclare(handle: ClockHandle, declared: TimelineSpec): void {
-  handle.declare(clockSpecOf({ ...declared, ...overrides.get(handle) }));
-}
-
-/** Lays `override` over the declared span of `handle`'s story, or lifts it for null. The shown time is kept. */
-export function overrideSpan(handle: ClockHandle, declared: TimelineSpec, override: SpanOverride | null): void {
-  if (override) overrides.set(handle, override);
-  else overrides.delete(handle);
-  redeclare(handle, declared);
-}
+import type { Clock } from '@weasel-js/clock';
+import { createEmitter } from '@weasel-js/registry';
 
 /** Loops the clock without end, or plays it once. */
 export function setLoop(clock: Clock, loop: boolean): void {
@@ -31,6 +16,14 @@ export interface PlayMoves {
 }
 
 const speeds = new WeakMap<Clock, number>();
+const speedChanged = createEmitter<[Clock]>();
+
+/** Calls `listener` when the speed a pause of `clock` returns to changes outside a transport. */
+export function subscribeSpeed(clock: Clock, listener: () => void): () => void {
+  return speedChanged.subscribe((changed) => {
+    if (changed === clock) listener();
+  });
+}
 
 /** The moves on a clock no transport works, as outside a lab: the speed a pause returns to is kept here. */
 export function ownMoves(clock: Clock): PlayMoves {
@@ -49,6 +42,7 @@ export function ownMoves(clock: Clock): PlayMoves {
     setSpeed(next) {
       speeds.set(clock, next);
       if (clock.rate !== 0) clock.rate = next;
+      else speedChanged.emit(clock);
     },
   };
 }

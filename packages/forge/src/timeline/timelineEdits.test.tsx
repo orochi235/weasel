@@ -24,6 +24,7 @@ const entry = (file: string, exportName: string, id: string): IndexEntry => ({
 const clip = entry('/e.stories.tsx', 'Clip', 'e--clip');
 const reach = entry('/e.stories.tsx', 'Reach', 'e--reach');
 const saved = entry('/e.stories.tsx', 'Saved', 'e--saved');
+const knob = entry('/e.stories.tsx', 'Knob', 'e--knob');
 const leadIn: IndexEntry = { ...entry('/p.stories.tsx', 'LeadInOnce', 'p--lead-in-once'), title: 'P' };
 
 /** Sets the real span, 3000 ms, a moment after mount. */
@@ -36,10 +37,29 @@ function ReachLater() {
   return <Readout />;
 }
 
+/** Sets a 5 s span once it runs, and offers a control change that redeclares a 3 s one under it. */
+function SpanUnderKnob({ setConfig }: { setConfig: (path: string, value: unknown) => void }) {
+  const { setSpan } = useTimeline();
+  useEffect(() => setSpan({ duration: 5000 }), [setSpan]);
+  return (
+    <>
+      <Readout />
+      <button type="button" onClick={() => setConfig('seconds', 3)}>
+        three seconds
+      </button>
+    </>
+  );
+}
+
 const timedModule = {
   default: meta({ title: 'E' }),
   Clip: story({ timeline: { duration: 4000 }, render: () => <Readout /> }),
   Reach: story({ timeline: { duration: 1000 }, render: () => <ReachLater /> }),
+  Knob: story({
+    config: f.schema({ seconds: f.number(2) }),
+    timeline: (config) => ({ duration: config.seconds * 1000 }),
+    render: ({ setConfig }) => <SpanUnderKnob setConfig={setConfig} />,
+  }),
   Saved: story({
     config: f.schema({ label: f.string('hi') }),
     timeline: { duration: 4000 },
@@ -60,7 +80,7 @@ const importers = () => ({
   '/p.stories.tsx': () => Promise.resolve(playheadStories as unknown as Record<string, unknown>),
 });
 
-const it = workshopIt({ index: [clip, reach, saved, leadIn], importers, changes });
+const it = workshopIt({ index: [clip, reach, saved, knob, leadIn], importers, changes });
 
 afterEach(() => {
   module = timedModule;
@@ -121,6 +141,30 @@ describe('a URL t beyond the span a story declares', () => {
     expect(within(trial()).getByTestId('timeline-time').textContent).toBe('2.50s / 3.00s');
     const written = replace.mock.calls.map((call) => String(call[2]));
     expect(written.filter((url) => /[?&]t=(?!2\.5\b)/.test(url))).toEqual([]);
+  });
+});
+
+describe('a URL t on the end of a looping span', () => {
+  it('shows the end, not the start of the next pass', async ({ lab }) => {
+    const { mount, loaded } = lab;
+    mount('/#/e--clip?t=4');
+    await loaded();
+    expect(playhead()).toBe(4000);
+    expect(within(trial()).getByTestId('timeline-time').textContent).toBe('4.00s / 4.00s');
+    expect(tParam()).toBe('4');
+  });
+});
+
+describe('a span set at runtime, in a lab', () => {
+  it('stands when a control change redeclares the timeline under it', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
+    mount('/#/e--knob');
+    await loaded();
+    const readout = () => within(trial()).getByTestId('timeline-time').textContent;
+    await until(() => expect(readout()).toBe('0.00s / 5.00s'));
+    act(() => screen.getByRole('button', { name: 'three seconds' }).click());
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    expect(readout()).toBe('0.00s / 5.00s');
   });
 });
 
