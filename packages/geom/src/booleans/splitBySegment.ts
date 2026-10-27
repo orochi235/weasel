@@ -18,8 +18,8 @@ export type { Point };
 export interface SplitBySegmentOptions {
   /**
    * Flattening tolerance for the check that decides whether contours cross
-   * each other. Only a path whose contours do cross is flattened (see
-   * `splitPathByPolyline`).
+   * each other. Only a path whose contours do cross is resolved by a union
+   * first (see `splitPathByPolyline`).
    */
   flattenTolerance?: number;
 }
@@ -60,7 +60,8 @@ export function splitPathBySegment(
  * ring, say) returns one slit piece.
  *
  * A path whose contours cross each other or themselves is first resolved into
- * non-overlapping rings by a polygon union, which flattens its curves.
+ * non-overlapping rings by `pathUnion`, which keeps its curves except in the
+ * cases that union flattens (contours that coincide along a stretch, say).
  *
  * Returns `null` when no chord is cut.
  */
