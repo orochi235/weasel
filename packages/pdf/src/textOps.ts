@@ -10,7 +10,8 @@ import {
 } from '@weasel-js/text';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import { isSpace, outlineCommand, skipGlyph } from './textOutlines';
-import { type TextSegment, writeSegment } from './textSegment';
+import type { EmbeddedFont } from './fonts/embedFont';
+import { type SegmentGlyph, type TextSegment, writeSegment } from './textSegment';
 
 /** Code points that hold a slot and never ink: they advance and are left out silently. */
 const BLANK = /^[\s\p{Default_Ignorable_Code_Point}]$/u;
@@ -32,6 +33,23 @@ function joins(seg: TextSegment | undefined, g: PlacedGlyph, line: number): seg 
     ra.synthetic.bold === rg.synthetic.bold &&
     ra.synthetic.italic === rg.synthetic.italic
   );
+}
+
+/**
+ * What `g` draws in `font`, or null when the face has no glyph for it. A shaped code point
+ * draws its cluster's glyphs, and carries the cluster's text as `actual` wherever `/ToUnicode`
+ * would read them back as anything else: more than one glyph, or a glyph first drawn for other text.
+ */
+function segmentGlyph(font: EmbeddedFont, g: PlacedGlyph): SegmentGlyph | null {
+  if (!g.shaped) {
+    const gid = font.use(g.cp);
+    return gid === null ? null : { g, glyphs: [{ gid, x: 0, y: 0 }] };
+  }
+  const { glyphs, text } = g.shaped;
+  // Only the first glyph claims the text, so a reader ignoring /ActualText reads a cluster once,
+  // not once a glyph. Shapers draw a mark or pre-base matra first, ahead of a base other clusters share.
+  for (const [i, { gid }] of glyphs.entries()) if (!font.useGlyph(gid, i === 0 ? text : undefined)) return null;
+  return glyphs.length === 1 && font.readsAs(glyphs[0].gid) === text ? { g, glyphs } : { g, glyphs, actual: text };
 }
 
 /**
@@ -66,12 +84,14 @@ export async function writeText(ctx: PageCtx, cmd: TextDrawCommand, state: DrawS
         skipGlyph(ctx, g, 'has no glyph to draw');
         continue;
       }
+      // A code point inside a cluster another one draws: the opening one carries its text.
+      if (g.shaped?.glyphs.length === 0) continue;
       const { family, weight, style: fontStyle } = g.resolved.resolved;
       const font = await ctx.fonts.face(family, weight, fontStyle);
-      const gid = font?.use(g.cp) ?? null;
-      if (font && gid !== null) {
+      const drawn = font && segmentGlyph(font, g);
+      if (font && drawn) {
         if (!joins(seg, g, line)) items.push((seg = { font, line, glyphs: [] }));
-        seg.glyphs.push({ g, gid });
+        seg.glyphs.push(drawn);
         continue;
       }
       if (space) continue;

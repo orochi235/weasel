@@ -23,7 +23,7 @@ export interface ShapedSlot {
 
 /** A code point inside a cluster another one draws. */
 const COVERED: ShapedSlot = Object.freeze({
-  cluster: Object.freeze({ d: null, key: '', glyphs: Object.freeze([]), rtl: false }),
+  cluster: Object.freeze({ d: null, key: '', glyphs: Object.freeze([]), rtl: false, text: '' }),
   advance: 0,
 });
 
@@ -68,7 +68,7 @@ function slotsFor(
     while (j < glyphs.length && glyphs[j].cluster === start) j++;
     const end = j < glyphs.length ? glyphs[j].cluster : text.length;
     if (!holdsNotdef(glyphs, i, j)) {
-      slots[start] = clusterSlot(shaper, face, glyphs, i, j);
+      slots[start] = clusterSlot(shaper, face, glyphs, i, j, text.slice(start, end));
       for (let at = start + 1; at < end; at++) slots[at] = COVERED;
     }
     i = j;
@@ -83,7 +83,7 @@ function holdsNotdef(glyphs: readonly ShapedGlyph[], from: number, to: number): 
 
 /** Glyphs `[from, to)`, one cluster, set from one pen. */
 function clusterSlot(
-  shaper: TextShaper, face: ArrayBuffer, glyphs: readonly ShapedGlyph[], from: number, to: number,
+  shaper: TextShaper, face: ArrayBuffer, glyphs: readonly ShapedGlyph[], from: number, to: number, text: string,
 ): ShapedSlot {
   const placed: { gid: number; x: number; y: number }[] = [];
   let pen = 0;
@@ -97,5 +97,5 @@ function clusterSlot(
     key += `${k === from ? '' : ';'}${g.gid}${x === 0 && y === 0 ? '' : `@${fmt(x)},${fmt(y)}`}`;
     pen += g.advance;
   }
-  return { cluster: { d: d.length > 0 ? d : null, key, glyphs: placed, rtl: glyphs[from].rtl }, advance: pen };
+  return { cluster: { d: d.length > 0 ? d : null, key, glyphs: placed, rtl: glyphs[from].rtl, text }, advance: pen };
 }

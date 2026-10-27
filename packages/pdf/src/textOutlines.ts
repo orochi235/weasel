@@ -23,7 +23,8 @@ export function placedOutline(ctx: PageCtx, g: PlacedGlyph, dx: number, dy: numb
   const { family, weight, style } = g.resolved.resolved;
   let d: string | null;
   try {
-    d = ctx.opts.fonts.outline(family, weight, style, g.cp);
+    // A shaped code point draws its cluster's glyphs, not the one its code point maps to.
+    d = g.shaped ? g.shaped.d : ctx.opts.fonts.outline(family, weight, style, g.cp);
   } catch {
     return null;
   }
