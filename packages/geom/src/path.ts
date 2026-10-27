@@ -37,6 +37,14 @@ export interface PolygonPath {
    * expands the specs into the geometry everything draws, hits, and bounds.
    */
   corners?: readonly (CornerSpec | null)[];
+  /**
+   * The point `coords` are measured from, in doubles: a coordinate pair
+   * `(x, y)` stands for `(origin.x + x, origin.y + y)`. Absent is `(0, 0)`.
+   * A float32 coordinate at 262,144 is on a 1/32 grid; one measured from an
+   * origin beside the shape keeps its fraction. `PathBuilder.setOrigin`
+   * builds one; the renderer, the tessellators and their bounds honor it.
+   */
+  origin?: { readonly x: number; readonly y: number };
 }
 
 /**

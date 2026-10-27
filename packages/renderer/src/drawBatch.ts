@@ -340,9 +340,9 @@ export class DrawBatch {
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
     const P = packSlot(slot, mode);
+    const ox = mesh.origin?.x ?? 0, oy = mesh.origin?.y ?? 0;
     for (let k = 0; k < n; k++) {
-      const x = src[k * 2];
-      const y = src[k * 2 + 1];
+      const x = src[k * 2] + ox, y = src[k * 2 + 1] + oy;
       v[i++] = ma * x + mc * y + mtx;
       v[i++] = mb * x + md * y + mty;
       v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
@@ -376,9 +376,9 @@ export class DrawBatch {
     const v = this.verts;
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
+    const ox = mesh.origin?.x ?? 0, oy = mesh.origin?.y ?? 0;
     for (let k = 0; k < n; k++) {
-      const x = src[k * 2];
-      const y = src[k * 2 + 1];
+      const x = src[k * 2] + ox, y = src[k * 2 + 1] + oy;
       v[i++] = ma * x + mc * y + mtx;
       v[i++] = mb * x + md * y + mty;
       v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;

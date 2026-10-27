@@ -61,6 +61,9 @@ export function boundsOfPath(path: Path): RectPath {
   });
 
   if (!seen) return { kind: 'rect', x: 0, y: 0, width: 0, height: 0 };
-  return { kind: 'rect', x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  return {
+    kind: 'rect', x: minX + (path.origin?.x ?? 0), y: minY + (path.origin?.y ?? 0),
+    width: maxX - minX, height: maxY - minY,
+  };
 }
 

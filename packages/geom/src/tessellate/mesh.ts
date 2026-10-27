@@ -21,4 +21,7 @@ export interface Mesh {
   readonly anchorA?: Uint32Array;
   readonly anchorB?: Uint32Array;
   readonly anchorT?: Float32Array;
+  /** The point `vertices` are measured from, as `PolygonPath.origin`, which
+   *  a mesh built from such a path carries. Absent is `(0, 0)`. */
+  readonly origin?: { readonly x: number; readonly y: number };
 }

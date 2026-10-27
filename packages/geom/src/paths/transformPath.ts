@@ -44,9 +44,16 @@ export function transformPath(path: Path, m: Affine): Path {
 }
 
 function transformPolygon(path: PolygonPath, m: Affine): PolygonPath {
-  // transformCoords returns Float64Array; PolygonPath.coords is Float32Array.
-  const mapped = transformCoords(path.coords, m);
   // A corner radius scales as a length does: by the map's mean scale.
   const scaled = scaleCorners(path, Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])));
-  return { ...scaled, coords: Float32Array.from(mapped) };
+  const o = path.origin;
+  if (o === undefined) return { ...scaled, coords: Float32Array.from(transformCoords(path.coords, m)) };
+  // The translation moves the origin, in doubles; the coords take only the
+  // linear part, so they stay offsets from it.
+  const [a, b, c, d, e, f] = m;
+  return {
+    ...scaled,
+    coords: Float32Array.from(transformCoords(path.coords, [a, b, c, d, 0, 0])),
+    origin: { x: a * o.x + c * o.y + e, y: b * o.x + d * o.y + f },
+  };
 }

@@ -13,9 +13,10 @@ import {
   coordsOutOfMetric, polylineIntoMetric, type ScreenSpace, type StrokeSpaces,
 } from './tessellate/metric';
 
-/** Rotate + translate a marker's geometry onto its site. */
-function placed(path: Path, site: MarkerSite): PolygonPath {
-  const src = path as PolygonPath;
+/** Rotate + translate a marker's geometry onto its site, measured from
+ *  `origin`, the stroked path's, as the site is. */
+function placed(path: Path, site: MarkerSite, origin: PolygonPath['origin']): PolygonPath {
+  const { origin: _own, ...src } = path as PolygonPath;
   const cos = Math.cos(site.angle);
   const sin = Math.sin(site.angle);
   const coords = new Float32Array(src.coords.length);
@@ -24,7 +25,7 @@ function placed(path: Path, site: MarkerSite): PolygonPath {
     coords[i] = site.x + x * cos - y * sin;
     coords[i + 1] = site.y + x * sin + y * cos;
   }
-  return { ...src, coords };
+  return origin ? { ...src, coords, origin } : { ...src, coords };
 }
 
 /** One head's placed geometry, before any paint is applied. */
@@ -64,6 +65,7 @@ export function markerHeads(
   }
 
   const out: MarkerHead[] = [];
+  const origin = path.kind === 'polygon' ? path.origin : undefined;
   for (const pl of extractPolylines(path, strokeFlattening(flattenTolerance, strokeWidth, stroke.vertexWidths))) {
     for (const [space, want] of groups) {
       const inSpace = space ? { ...pl, points: pl.points.slice() } : pl;
@@ -75,7 +77,7 @@ export function markerHeads(
         if (entry === undefined) continue;
         const size = resolveMarkerSize(ref, strokeWidth);
         const angle = entry.orient === undefined || entry.orient === 'auto' ? site.angle : entry.orient;
-        const head = placed(entry.path({ size, stroke }), { ...site, angle });
+        const head = placed(entry.path({ size, stroke }), { ...site, angle }, origin);
         if (space) coordsOutOfMetric(head.coords, space.metric);
         out.push(space ? { entry, size, path: head, space } : { entry, size, path: head });
       }

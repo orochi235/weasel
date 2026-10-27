@@ -126,6 +126,7 @@ export function tessellateStroke(
     anchorA: new Uint32Array(anchorA),
     anchorB: new Uint32Array(anchorB),
     anchorT: new Float32Array(anchorT),
+    ...(path.kind === 'polygon' && path.origin ? { origin: path.origin } : {}),
   };
 }
 

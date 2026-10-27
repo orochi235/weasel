@@ -2,6 +2,7 @@ import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type Text
 import { getPaintDrawKind } from '../paintKinds';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { strokeMesh } from '../cache/strokeMeshCache';
@@ -12,7 +13,9 @@ import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { fillMesh, meshHandle, fillMeshHandle, flattenToleranceOf } from './mesh';
-import { setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms } from './uniforms';
+import {
+  atMeshOrigin, drawModel, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms,
+} from './uniforms';
 import { applyClipTest, ancestorMask, beginParityMask, endParityMask } from './stencil';
 import { flushForOwnDraw } from './clip';
 import { pushRect, pushRampRect, tryStageFill } from './batch';
@@ -48,13 +51,15 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint
   if (tryStageFill(ctx, mesh, paint)) return;
 
   const handle = meshHandle(ctx, mesh);
-  if (isSolid && hasVColors) {
-    drawPathFillVColor(ctx, cmd, solid, handle);
-  } else if (handle.requiresStencil) {
-    drawPathFillStencil(ctx, fill, handle);
-  } else {
-    drawPathFillByKind(ctx, fill, handle);
-  }
+  atMeshOrigin(ctx, mesh.origin, () => {
+    if (isSolid && hasVColors) {
+      drawPathFillVColor(ctx, cmd, solid, handle);
+    } else if (handle.requiresStencil) {
+      drawPathFillStencil(ctx, fill, handle);
+    } else {
+      drawPathFillByKind(ctx, fill, handle);
+    }
+  });
 }
 
 interface VertexColorBinding { vbo: WebGLBuffer; location: number | undefined }
@@ -180,14 +185,14 @@ function bindPathFillPattern(
   ctx: DrawContext,
   fill: TexturePaint,
 ): ShaderProgram | null {
-  return bindPattern(ctx, ctx.patternFill, fill, ctx.state.transform);
+  return bindPattern(ctx, ctx.patternFill, fill, drawModel(ctx));
 }
 
 function bindPathFillGradient(
   ctx: DrawContext,
   fill: Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
 ): ShaderProgram | null {
-  return bindGradient(ctx, ctx.gradFill, fill, ctx.state.transform);
+  return bindGradient(ctx, ctx.gradFill, fill, drawModel(ctx));
 }
 
 function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
@@ -218,7 +223,8 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   const stenciled = cmd.path.kind === 'polygon' || (metric !== undefined && !metricKeepsRects(metric));
   if (stenciled && align !== 'center') {
     flushForOwnDraw(ctx);
-    drawPathStrokeStenciled(ctx, cmd, align, spaces);
+    atMeshOrigin(ctx, cmd.path.kind === 'polygon' ? cmd.path.origin : undefined,
+      () => drawPathStrokeStenciled(ctx, cmd, align, spaces));
   } else {
     drawPathStrokeUnclipped(ctx, cmd, spaces);
   }
@@ -231,8 +237,6 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spaces: StrokeSpaces): void {
   const stroke = cmd.stroke;
   const paint = stroke.paint;
-  const isSolid = paint.kind === undefined || paint.kind === 'solid';
-  const solid = paint as { color: string; opacity?: number };
   const mesh = strokeMesh(cmd.path, stroke, flattenToleranceOf(ctx), spaces);
   if (mesh.indices.length === 0) return;
 
@@ -241,7 +245,13 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spac
   const batched = batchPaint(ctx, paint, hasVColors);
   if (batched === null) return;
   if (tryStageFill(ctx, mesh, batched)) return;
+  atMeshOrigin(ctx, mesh.origin, () => drawOwnRibbon(ctx, stroke, mesh, hasVColors));
+}
 
+function drawOwnRibbon(ctx: DrawContext, stroke: StrokedPathCommand['stroke'], mesh: Mesh, hasVColors: boolean): void {
+  const paint = stroke.paint;
+  const isSolid = paint.kind === undefined || paint.kind === 'solid';
+  const solid = paint as { color: string; opacity?: number };
   // The VAO records the per-draw color attribute, so a vertex-colored draw
   // cannot share a persistent one with a draw that has no vertex colors.
   const handle = hasVColors

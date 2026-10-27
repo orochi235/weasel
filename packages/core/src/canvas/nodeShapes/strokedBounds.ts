@@ -39,7 +39,8 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
       },
     );
     const v = mesh.vertices;
-    for (let i = 0; i + 1 < v.length; i += 2) box.add(v[i]!, v[i + 1]!, 0);
+    const ox = mesh.origin?.x ?? 0, oy = mesh.origin?.y ?? 0;
+    for (let i = 0; i + 1 < v.length; i += 2) box.add(v[i]! + ox, v[i + 1]! + oy, 0);
   }
   for (const { entry, path: head, size } of markerHeads(path, sized, width, undefined, spaces)) {
     const b = boundsOfPath(head);
