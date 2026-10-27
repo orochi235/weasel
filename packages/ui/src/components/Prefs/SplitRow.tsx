@@ -57,21 +57,22 @@ export function splitMarks(split: SplitCtx | undefined, values: unknown, ctx: Pr
   return state && state.shape.levels.length > 0 ? <SplitMarks levels={state.shape.levels} /> : null;
 }
 
+/** The control that opens a row whose value may be split: nothing for a row with nothing to open to. */
+export function SplitToggle({ state, onToggle }: { state: SplitRowState; onToggle: () => void }) {
+  if (!state.opens) return null;
+  return <Disclosure className={c.toggle} label={state.name} open={state.open} onToggle={onToggle} controls={state.open ? state.bodyId : undefined} />;
+}
+
 /**
- * What a row's label line carries for a leaf whose value may be split: the option each selector is set to, and
- * the control that opens the row. That control is a button, which is labelable, so the row it sits in is a group
- * and no `<label>`, whose name it would take off the row's control.
+ * The marks and the toggle on a line of their own, for a leaf with no label line: a `block` leaf, or an action's
+ * row. A row with a label line carries the marks in its hint and the toggle after its control, where the button
+ * comes after the control the row's `<label>` names.
  */
-export function SplitHead({ state, onToggle, lead = false }: {
-  state: SplitRowState;
-  onToggle: () => void;
-  /** On a line of its own, for a leaf with no label line. */
-  lead?: boolean;
-}) {
+export function SplitHead({ state, onToggle }: { state: SplitRowState; onToggle: () => void }) {
   return (
-    <span className={lead ? `${c.head} ${c.lead}` : c.head}>
+    <span className={c.lead}>
       <SplitMarks levels={state.shape.levels} />
-      {state.opens && <Disclosure className={c.toggle} label={state.name} open={state.open} onToggle={onToggle} controls={state.open ? state.bodyId : undefined} />}
+      <SplitToggle state={state} onToggle={onToggle} />
     </span>
   );
 }

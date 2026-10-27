@@ -23,12 +23,18 @@
   min-width: 0;
 }
 
-/* Where an inherited value comes from, after the label. */
+/* Where an inherited value comes from, after the label. One box, so it moves to the next line whole, and
+   wraps inside itself only where it is wider than the label track. */
 .rowHint {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wzl-space-1) var(--wzl-space-2);
+  max-inline-size: 100%;
+  vertical-align: baseline;
   font-size: var(--wzl-font-size-2xs);
   color: var(--wzl-fg-subtle);
-  white-space: nowrap;
-  margin-inline-start: var(--wzl-space-3);
+  margin-inline-start: var(--wzl-space-1);
 }
 
 /* A stacked row's readout sits inside the label and an inline row's sits after

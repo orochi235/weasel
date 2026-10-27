@@ -34,7 +34,7 @@ import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
 import { withRowControl } from './surfaceControls';
 import { selectionAttrs } from './selection';
-import { SplitBody, SplitHead, splitRowState } from './SplitRow';
+import { SplitBody, SplitHead, SplitMarks, SplitToggle, splitRowState } from './SplitRow';
 import type { SplitCtx } from './splitRows';
 import s from './Prefs.module.css';
 
@@ -233,8 +233,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   const width = rowWidthOf(pref, ctx.renderers);
   const stacked = width !== 'column';
   const split = splitRowState(ctx.split, ctx.values, pref, own, path, at !== undefined, renderCtx.mixedAt?.(path, true) === true);
-  const head = (lead: boolean): ReactNode =>
-    split && <SplitHead state={split} onToggle={() => ctx.split!.setOpen(own, !split.open)} lead={lead} />;
+  const toggleSplit = (): void => ctx.split!.setOpen(own, !split!.open);
   const members = split?.open && (
     <SplitBody ctx={renderCtx} state={split} split={ctx.split!}
       parts={{ renderControl: (of) => renderPrefControl(of, ctx.renderers), isGroup: (of) => rowIsGroup(of, ctx.renderers), width }} />
@@ -246,7 +245,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
     return (
       <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
         {marked && <HiddenBadge lead />}
-        {head(true)}
+        {split && <SplitHead state={split} onToggle={toggleSplit} />}
         {control}
         {members}
       </div>
@@ -263,16 +262,19 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={stacked ? `${s.row} ${s.rowStacked}` : s.row}
-      group={split !== null || rowIsGroup(renderCtx, ctx.renderers)}
+      group={rowIsGroup(renderCtx, ctx.renderers)}
       // The owner passes an inherited leaf's value already resolved, so the
       // control keeps drawing it; editing it pins, through `onChange`.
       auto={inherited}
       autoControl="dimmed"
       onAutoChange={toggles ? setAuto : undefined}
-      hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{head(false)}</> : inheritHint}
+      hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{split && <SplitMarks levels={split.shape.levels} />}</> : inheritHint}
       disabled={renderCtx.disabled}
     >
-      <span className={width === 'filled' ? `${s.rowControl} ${s.rowControlFilled}` : s.rowControl}>{control}</span>
+      <span className={width === 'filled' ? `${s.rowControl} ${s.rowControlFilled}` : s.rowControl}>
+        {control}
+        {split && <SplitToggle state={split} onToggle={toggleSplit} />}
+      </span>
     </PropertyRow>
     {members}
     </div>
