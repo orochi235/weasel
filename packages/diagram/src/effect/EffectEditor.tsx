@@ -47,8 +47,9 @@ export interface EffectEditorBaseProps {
   run?: EffectRun;
   /** A stage id, or null for none. */
   selected?: string | null;
-  /** Hears each pick: a stage's id, or `null` for anything else, a wire included. */
-  onSelect?: (stage: string | null) => void;
+  /** Hears each pick: a stage's id, or `null` for anything else, a wire included; and every stage and group
+   *  picked, in the order they were, for `EffectEditorApi.group`. Shift-click adds one, or takes it out. */
+  onSelect?: (stage: string | null, picked: readonly string[]) => void;
   /** A group id, or null for none: drawn picked while no stage is. */
   selectedGroup?: string | null;
   /** Hears each pick: a group's id, or `null` for anything else. */
@@ -179,6 +180,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient })}
       {...(look === 'nodeGraph' ? { onEditContainer: handlers.onEditContainer } : {})}
+      selectionMode="multiple"
       onSelect={picks.pick}
       {...(picks.shown !== undefined ? { selected: picks.shown } : {})}
       {...(pages !== undefined ? { pages } : {})}

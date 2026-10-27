@@ -93,6 +93,16 @@ describe('EffectEditor groups under nodeGraph', () => {
     expect(onSelectGroup).toHaveBeenLastCalledWith(null);
   });
 
+  it('picks several under Shift, and reports every stage and group picked, wires left out', () => {
+    const onSelect = vi.fn();
+    const api = createRef<EffectEditorApi>();
+    render(<EffectEditor ref={api} doc={DOC} onChange={vi.fn()} onSelect={onSelect} width={800} height={600} />);
+    const view = seen[seen.length - 1]!;
+    expect(view.selectionMode).toBe('multiple');
+    act(() => view.onSelect!('c', ['g', 'w1', 'c']));
+    expect(onSelect).toHaveBeenLastCalledWith('c', ['g', 'c']);
+  });
+
   it('hands DiagramView a controlled picked group', () => {
     const { view } = mount(DOC, { selectedGroup: 'g' });
     expect(view().selected).toBe('g');

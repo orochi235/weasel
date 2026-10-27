@@ -47,7 +47,7 @@ describe('DiagramView route editing', () => {
     const onSelect = vi.fn();
     const canvas = mount({ onEditRoute, onSelect });
     click(canvas, 160, 20);
-    expect(onSelect).toHaveBeenLastCalledWith(AB);
+    expect(onSelect).toHaveBeenLastCalledWith(AB, [AB]);
     drag(canvas, [200, 20], [200, 120]);
     expect(onEditRoute).toHaveBeenCalledTimes(1);
     expect(onEditRoute).toHaveBeenCalledWith({ edge: AB, waypoints: [{ x: 200, y: 120 }] });
@@ -89,6 +89,6 @@ describe('DiagramView router="avoid"', () => {
     );
     const canvas = container.querySelector('canvas')!;
     click(canvas, on.x, on.y);
-    expect(onSelect).toHaveBeenLastCalledWith(AB);
+    expect(onSelect).toHaveBeenLastCalledWith(AB, [AB]);
   });
 });

@@ -10,7 +10,7 @@ export const isPart = (built: EditorScene, id: string): boolean =>
 interface Given {
   selected?: string | null | undefined;
   selectedGroup?: string | null | undefined;
-  onSelect?: ((stage: string | null) => void) | undefined;
+  onSelect?: ((stage: string | null, picked: readonly string[]) => void) | undefined;
   onSelectGroup?: ((group: string | null) => void) | undefined;
 }
 
@@ -25,14 +25,14 @@ export function useEditorPicks(built: EditorScene, given: Given) {
   const [group, setGroup] = useState<string | null>(null);
   const [edge, setEdge] = useState<string | null>(null);
   const latest = useLatest({ built, given });
-  const pick = useCallback((id: string | null) => {
+  const pick = useCallback((id: string | null, ids: readonly string[] = id === null ? [] : [id]) => {
     const { built: b, given: g } = latest.current;
     const s = id === null ? undefined : b.stageOf(id);
     const k = id === null ? undefined : b.groupOf(id);
     setStage(s ?? null);
     setGroup(k ?? null);
     setEdge(id !== null && s === undefined && k === undefined && b.wireOf(id) !== undefined ? id : null);
-    g.onSelect?.(s ?? null);
+    g.onSelect?.(s ?? null, ids.filter((i) => isPart(b, i)));
     g.onSelectGroup?.(k ?? null);
   }, [latest]);
   const unpick = useCallback(() => setEdge(null), []);
