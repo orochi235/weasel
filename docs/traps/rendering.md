@@ -79,3 +79,12 @@ that sets React state and then asks for a redraw can paint the tile where it *wa
 — after that frame's whole-buffer clear, which nothing then erases.
 `AnnotationOverlay` commits the rect with `flushSync` first. A GL trace of
 `scissor` against `clear` is what shows it; the screenshot only shows a stray mark.
+
+**A blit out of a multisampled buffer writes past the rect it was given, on ANGLE's
+Metal backend.** Resolving the bottom-left tile of a scratch buffer into a surface
+larger than it overwrote a band of the neighboring tile with whatever the scratch
+buffer held there. It goes unseen while the destination is no larger than the rect,
+because the destination's own edge clips the excess, so an untiled retained surface
+never showed it. A tile resolves first into a single-sampled copy of the whole scratch
+buffer (`resolveInto`, `packages/renderer/src/retain/surfaceGl.ts`), and only that
+copy's blit names a sub-rect. `retained.tiles.browser.test.ts` fails without it.
