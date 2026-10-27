@@ -87,9 +87,9 @@ describe('EffectEditor groups under nodeGraph', () => {
     const { onSelectGroup, view } = mount();
     expect(view().specs.find((s) => s.id === 'g')).toMatchObject({ kind: 'mark' });
     expect(view().specs.find((s) => s.id === 'g')!.pickable).not.toBe(false);
-    act(() => view().onSelect!('g'));
+    act(() => view().onSelect!('g', ['g']));
     expect(onSelectGroup).toHaveBeenLastCalledWith('g');
-    act(() => view().onSelect!('a'));
+    act(() => view().onSelect!('a', ['a']));
     expect(onSelectGroup).toHaveBeenLastCalledWith(null);
   });
 
@@ -144,7 +144,7 @@ describe('EffectEditor groups under rack', () => {
     render(<EffectEditor doc={DOC} onChange={() => {}} onSelectGroup={onSelectGroup} look="rack" width={800} height={600} />);
     const view = seen.at(-1)!;
     expect(view.onEditContainer).toBeUndefined();
-    act(() => view.onSelect!('g'));
+    act(() => view.onSelect!('g', ['g']));
     expect(onSelectGroup).toHaveBeenLastCalledWith('g');
   });
 });
