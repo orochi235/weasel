@@ -2,8 +2,18 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { targetSizesPx, type TargetSizesPx } from '../../core/device/targets';
 import type { Node } from 'core/scene/types';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
-import { isCustomEntry, type LayersMap } from '../layerSlots';
+import { isCustomEntry, type CustomLayerEntry, type LayersMap } from '../layerSlots';
 import type { SceneCanvasLayers } from './props';
+
+/** `<SceneCanvas layers>` laid over the enabled presets' layers: a slot the
+ *  consumer names, `null` included, is theirs, and the rest are the presets'. */
+export function layersOverPresets<L extends object>(
+  presetLayers: Readonly<Record<string, CustomLayerEntry>>,
+  user: L | undefined,
+): L | undefined {
+  if (Object.keys(presetLayers).length === 0) return user;
+  return { ...presetLayers, ...user } as L;
+}
 
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to

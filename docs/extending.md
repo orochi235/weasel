@@ -240,6 +240,9 @@ exports: `createTextLayer`, `createPathLayer`, `createChildrenLayer`,
 
 The `grid` and `cellHighlight` slots take a pre-built layer, like any custom
 entry: `layers={{ grid: { layer: createGridLayer({ spacing: 20, bounds }) } }}`.
+A `FeaturePreset` fills slots the same way through its own `layers`, which is
+how `createGridPreset` brings its grid; a slot `<SceneCanvas layers>` names,
+`null` included, overrides the preset's.
 `scene` and `selectionOverlay` take one too, in place of the layers the canvas
 would build from a config.
 

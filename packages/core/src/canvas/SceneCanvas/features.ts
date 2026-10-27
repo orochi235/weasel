@@ -23,6 +23,7 @@ import type { Contribution, Tool } from 'tools/overlayBinding';
 import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
+import type { CustomLayerEntry } from '../layerSlots';
 import type { BuiltinToolId } from './props';
 
 /** A core preset that names one behavior and abbreviates nothing. */
@@ -85,6 +86,10 @@ export interface FeaturePreset {
   /** Snap sources every snap session on the canvas asks, after
    *  `<SceneCanvas snap.sources>` and the presets before it. */
   readonly snapSources?: readonly SnapSource[];
+  /** Layers it adds to the render stack, by slot, as `<SceneCanvas layers>`
+   *  takes them: `grid` fills the grid slot, any other key adds a layer. A
+   *  slot `<SceneCanvas layers>` names, `null` included, keeps the consumer's. */
+  readonly layers?: Readonly<Record<string, CustomLayerEntry>>;
   /** The selection chrome that is drawn, and can be grabbed, only while it is on. */
   readonly chrome?: readonly ChromeId[];
   /** Default chrome-caps rules for chrome of its own, under the consumer's
@@ -133,6 +138,8 @@ export interface EnabledPresets {
   readonly pathEdit: readonly PathEditExtension[];
   /** Their snap sources, in order. */
   readonly snapSources: readonly SnapSource[];
+  /** Their layers by slot; a later preset's wins a slot both name. */
+  readonly layers: Readonly<Record<string, CustomLayerEntry>>;
   /** Whether a preset with this id is on. */
   has(id: string): boolean;
 }
@@ -184,6 +191,7 @@ export function resolveFeatures(
     presets,
     pathEdit: presets.flatMap((p) => p.pathEdit ?? []),
     snapSources: presets.flatMap((p) => p.snapSources ?? []),
+    layers: Object.assign({}, ...presets.map((p) => p.layers ?? {})) as Record<string, CustomLayerEntry>,
     has: (id) => byId.has(id),
   };
 }
