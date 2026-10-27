@@ -62,7 +62,7 @@ export function ChartWorkspace(): ReactElement {
   const [view, setView] = useState<View>(NO_VIEW);
   const pages = useChartPages(scene, view, dims, setView);
   useExportCommands(scene, pages);
-  const recenter = usePageFit(dims, 'chart', pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
+  const recenter = usePageFit(dims, 'chart', pages.shown ?? pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
   const paperLayer = usePaperLayer(pages.placed, theme.page);
   const { gridLayer, snap, features } = useChartSnap(pages.shown ?? FALLBACK_PAGE, theme.page);
   const layers = useMemo(() => ({
