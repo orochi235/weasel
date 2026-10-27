@@ -204,7 +204,7 @@
     "longestFunction": 374
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
-    "longestFunction": 174
+    "longestFunction": 173
   },
   "packages/theme/src/engine/color/generate.ts": {
     "lines": 541,
