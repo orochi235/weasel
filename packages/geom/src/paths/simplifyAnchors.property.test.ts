@@ -43,7 +43,11 @@ function sampled(sub: readonly PenAnchor[], closed: boolean): Point[] {
   const count = closed ? sub.length : sub.length - 1;
   for (let i = 0; i < count; i++) {
     const a = sub[i], b = sub[(i + 1) % sub.length];
-    for (let k = 0; k < 12; k++) out.push(cubicPointAt(a, a.outHandle ?? a, b.inHandle ?? b, b, k / 12));
+    const c1 = a.outHandle ?? a, c2 = b.inHandle ?? b;
+    // A unit apart at most: a long refit cubic read through a dozen chords strays from itself.
+    const reach = Math.hypot(c1.x - a.x, c1.y - a.y) + Math.hypot(c2.x - c1.x, c2.y - c1.y) + Math.hypot(b.x - c2.x, b.y - c2.y);
+    const steps = Math.max(12, Math.ceil(reach));
+    for (let k = 0; k < steps; k++) out.push(cubicPointAt(a, c1, c2, b, k / steps));
   }
   out.push(closed ? sub[0] : sub[sub.length - 1]);
   return out;

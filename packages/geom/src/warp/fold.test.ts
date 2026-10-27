@@ -3,6 +3,8 @@ import { createArapSolver, type ArapStep } from './arap';
 import { barS, backwardStretches, discSquash, invertedTriangles, type FoldCase } from './foldCases';
 import { puppetMap } from './puppet';
 import { puppetMesh } from './puppetMesh';
+import { warpPath } from './warpPath';
+import { pathToAnchors } from '../paths/anchors';
 
 function solved(c: FoldCase) {
   const mesh = puppetMesh(c.shape, c.pins.map((p) => p.from));
@@ -61,4 +63,11 @@ it('leaves a mesh at rest where it is', () => {
   const { mesh, pinned, solver } = solved(barS);
   const at = solver.solve(pinned.flatMap((v) => [mesh.vertices[2 * v], mesh.vertices[2 * v + 1]]));
   at.forEach((x, i) => expect(x).toBeCloseTo(mesh.vertices[i], 9));
+});
+
+// The fewest a greedy search over the warped curve itself finds at tolerance 0.5 is 5 and 10; the
+// refit split at the worst sample took 6 and 22 (2026-10-26).
+it.each([{ c: discSquash, anchors: 6 }, { c: barS, anchors: 11 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
+  const out = warpPath(c.shape, puppetMap(c.shape, c.pins), { tolerance: 0.5 });
+  expect(pathToAnchors(out).anchors[0]).toHaveLength(anchors);
 });
