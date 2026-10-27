@@ -31,15 +31,15 @@ export function readRuns(
   const runLines: StyledRun[][] = [[]];
   const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
   const moves = new TextMoves(el, onWarn);
-  const raise = (n: number, own: Moves, inherited: Moves, placed: boolean): void =>
-    raiseRuns(runLines[runLines.length - 1], risesOver(n, own, inherited, tracker, placed), fontSize, textStyle);
+  const raise = (text: string, own: Moves, inherited: Moves, placed: boolean): void =>
+    raiseRuns(runLines[runLines.length - 1], risesOver(Array.from(text), own, inherited, tracker, placed), fontSize, textStyle);
   let leading = 0;
   let lead = 0;
   if (holdsOnlyText(el) && (el.hasAttribute('dx') || el.hasAttribute('x'))) {
     const t = el.textContent ?? '';
     if (t) {
       lead = placeTspanRun(el, { text: t, ...inheritedShift }, runLines, textStyle, onWarn);
-      raise(glyphCount(t), NO_MOVES, moves.take(glyphCount(t)), false);
+      raise(t, NO_MOVES, moves.take(glyphCount(t)), false);
     }
   } else for (let i = 0, shifts = new TextShifts(el, onWarn); i < el.childNodes.length; i++) {
     const child = el.childNodes[i];
@@ -50,7 +50,7 @@ export function readRuns(
       const t = child.textContent ?? '';
       if (!t) continue;
       lead += shifts.place({ text: t, ...inheritedShift }, runLines, textStyle);
-      raise(glyphCount(t), NO_MOVES, moves.take(glyphCount(t)), false);
+      raise(t, NO_MOVES, moves.take(glyphCount(t)), false);
     } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
       const sp = child as Element;
       warnUnreadPositions(sp, onWarn);
@@ -63,7 +63,7 @@ export function readRuns(
       if (runLines.length === 1 && runLines[0].length === 0 && statesLines(sp)) leading = lines;
       else for (let n = 0; n < lines; n++) runLines.push([]);
       lead += placeTspanRun(sp, run, runLines, textStyle, onWarn, shifts.take(run));
-      raise(glyphCount(run.text), movesOf(sp, onWarn), inherited, true);
+      raise(run.text, movesOf(sp, onWarn), inherited, true);
     }
   }
   if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);

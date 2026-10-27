@@ -6,7 +6,7 @@
  */
 import { resolveRunFace, resolveTextStyle, scriptMetricsFor, type StyledRun, type TextStyle } from '@weasel-js/core';
 import { COLLAPSIBLE, readList } from './glyphShifts';
-import type { LineTracker } from './tspanLines';
+import { type LineTracker, writtenByWeasel } from './tspanLines';
 
 /** The `y` and `dy` values over a stretch of glyphs: glyph `i` goes to
  *  `y[i]` where it has one, and then down by `dy[i]`. */
@@ -32,8 +32,8 @@ export function movesOf(el: Element, onWarn: (m: string) => void): Moves {
 /**
  * A `<text>`'s `y` and `dy` lists, handed out to the runs of its children in
  * order: each value moves one glyph, counting through the text and every
- * `<tspan>`. The first `y` places the text, and the first `dy` is not read:
- * weasel writes the half leading there.
+ * `<tspan>`. The first `y` places the text. The first `dy` moves the first
+ * glyph, except in text weasel wrote, which puts the half leading there.
  */
 export class TextMoves {
   private readonly moves: Moves;
@@ -41,7 +41,7 @@ export class TextMoves {
 
   constructor(text: Element, onWarn: (m: string) => void) {
     const { y, dy } = movesOf(text, onWarn);
-    this.moves = { y: [undefined, ...y.slice(1)], dy: [0, ...dy.slice(1)] };
+    this.moves = { y: [undefined, ...y.slice(1)], dy: [writtenByWeasel(text) ? 0 : dy[0] ?? 0, ...dy.slice(1)] };
   }
 
   /** The values over the next `n` glyphs. */
@@ -53,17 +53,20 @@ export class TextMoves {
 }
 
 /**
- * How far above the line each of `n` glyphs sits, in user units, moving the
+ * How far above the line each of `glyphs` sits, in user units, moving the
  * pen glyph by glyph: by `own` values where it has them, and otherwise by the
  * text's, `inherited`. `placed` says the first glyph's move was already made,
  * as `LineTracker.startsLine` makes a tspan's.
  */
-export function risesOver(n: number, own: Moves, inherited: Moves, tracker: LineTracker, placed: boolean): number[] {
+export function risesOver(
+  glyphs: readonly string[], own: Moves, inherited: Moves, tracker: LineTracker, placed: boolean,
+): number[] {
   const out: number[] = [];
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < glyphs.length; i++) {
     if (i > 0 || !placed) {
       tracker.move(i < own.y.length ? own.y[i] : inherited.y[i], (i < own.dy.length ? own.dy[i] : inherited.dy[i]) ?? 0);
     }
+    tracker.land(glyphs[i]!);
     out.push(tracker.rise);
   }
   return out;

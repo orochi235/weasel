@@ -36,10 +36,12 @@ describe('glyphs moved off their line, read as baseline shift', () => {
     expect(shifts(list.node)).toEqual([['a', undefined], ['b', 0.5], ['c', -0.5]]);
   });
 
-  it('hands a text\'s list to the glyph it counts to, through its tspans, its first dy unread', () => {
+  it('hands a text\'s list to the glyph it counts to, through its tspans', () => {
     const { node, warnings } = text('<text y="20" dy="3 0 -4" font-size="10">ab<tspan>cd</tspan></text>');
     expect(warnings).toEqual([]);
     expect(shifts(node)).toEqual([['ab', undefined], ['cd', 0.4]]);
+    // The first value moves the first glyph, and with it the line.
+    expect(node.y).toBeCloseTo(23 - 10);
     const own = text('<text y="20" dy="0 0 -4" font-size="10">ab<tspan dy="-2">cd</tspan></text>');
     expect(shifts(own.node)).toEqual([['ab', undefined], ['cd', 0.2]]);
   });
@@ -68,7 +70,25 @@ describe('glyphs moved off their line, read as baseline shift', () => {
   it('reads a list only to its first value, and says so, where collapsing white space would move its glyphs', () => {
     const { node, warnings } = text('<text y="20" font-size="10"><tspan dy="-1 3">a  b</tspan></text>');
     expect(warnings).toEqual([expect.stringMatching(/<tspan dy="-1 3"> is read only to its first value/)]);
-    expect(shifts(node)).toEqual([['a b', 0.1]]);
+    // The first value moves every glyph, so it moves the box instead.
+    expect(shifts(node)).toBeUndefined();
+    expect(node.y).toBeCloseTo(20 - 1 - 10);
+  });
+
+  it('moves the box by another writer\'s dy on <text>, and not by the half leading weasel writes there', () => {
+    const bare = text('<text y="20" dy="5" font-size="10">a</text>');
+    expect(bare.warnings).toEqual([]);
+    expect(bare.node.y).toBeCloseTo(15);
+    expect(shifts(bare.node)).toBeUndefined();
+    const opened = text('<text y="20" dy="5" font-size="10"><tspan>a</tspan>b</text>');
+    expect(opened.node.y).toBeCloseTo(15);
+    // A tspan's own dy wins over the text's for its first glyph.
+    const own = text('<text y="20" dy="5" font-size="10"><tspan dy="2">a</tspan></text>');
+    expect(own.node.y).toBeCloseTo(12);
+    const weasel = text(
+      '<text x="0" y="20" dominant-baseline="text-before-edge" dy="3" data-weasel-width="10" data-weasel-height="12" font-size="10">a</text>',
+    );
+    expect(weasel.node.y).toBeCloseTo(20);
   });
 
   it('survives export and import', () => {

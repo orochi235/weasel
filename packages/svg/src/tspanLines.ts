@@ -21,6 +21,9 @@ export const LINES_ATTR = 'data-weasel-lines';
  *  cannot where there is one line or a layout placed them. */
 export const LINE_HEIGHT_ATTR = 'data-weasel-line-height';
 
+/** Whether weasel wrote `text`: it states the box, which no other writer does. */
+export const writtenByWeasel = (text: Element): boolean => text.hasAttribute('data-weasel-width');
+
 /** Whether `tspan` says how many lines it steps down. */
 export const statesLines = (tspan: Element): boolean => tspan.hasAttribute(LINES_ATTR);
 
@@ -73,6 +76,10 @@ export class LineTracker {
   /** Where the pen is, in user units. */
   private at: number;
   private readonly pitches: number[] = [];
+  /** The first line's baseline, once a glyph has landed on it. */
+  private first: number | undefined;
+  /** Whether the text opens with blank lines it states, below the text's `y`. */
+  private keepsTop = false;
 
   constructor(text: Element, private readonly onWarn: (message: string) => void) {
     this.at = this.lineY = readLength(text, 'y', 'y', 0, onWarn);
@@ -83,6 +90,20 @@ export class LineTracker {
 
   /** Move the pen to `y`, when given, and then down by `dy`. */
   move(y: number | undefined, dy: number): void { this.at = (y ?? this.at) + dy; }
+
+  /** Say that `glyph` sits at the pen. The first glyph that is not white
+   *  space settles the first line where it sits, wherever the text's `y` was:
+   *  a line is placed by its glyphs. */
+  land(glyph: string): void {
+    if (this.first !== undefined || /^\s$/u.test(glyph)) return;
+    if (!this.keepsTop) this.lineY = this.at;
+    this.first = this.lineY;
+  }
+
+  /** The baseline the box's first line sits on: the text's `y` where the text
+   *  opens with blank lines it states, otherwise where the first glyph landed.
+   *  `undefined` before any glyph has. */
+  get firstBaseline(): number | undefined { return this.keepsTop ? undefined : this.first; }
 
   /** How many lines down `tspan` opens a new line, or 0 when it stays on the
    *  current one. A tspan opens one when it has its own `x` and puts the pen
@@ -96,6 +117,7 @@ export class LineTracker {
     const y = tspan.hasAttribute('y') ? readLength(tspan, 'y', 'y', this.at, this.onWarn) : inherited.y;
     const dy = tspan.hasAttribute('dy') ? readLength(tspan, 'dy', 'y', 0, this.onWarn) : inherited.dy ?? 0;
     this.move(y, dy);
+    if (!afterText && this.first === undefined && statesLines(tspan)) this.keepsTop = true;
     if (!tspan.hasAttribute('x') || Math.abs(this.at - from) < 1e-9) return 0;
     this.lineY = this.at;
     // `0` is a line a layout wrapped onto: it moves down and breaks nothing.

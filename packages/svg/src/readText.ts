@@ -9,7 +9,7 @@ import { multiply, parseTransform, isIdentity } from './transform';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
-import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, warnUnreadPositions } from './tspanLines';
+import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, warnUnreadPositions, writtenByWeasel } from './tspanLines';
 import { LAID_ATTR } from './laidLines';
 import { readRuns } from './readRuns';
 import { mapFillPaint } from './fillPaint';
@@ -116,11 +116,6 @@ export function parseTextElement(
   const laid = el.hasAttribute(LAID_ATTR);
   const explicitTopAnchor = laid || dominantBaseline === 'text-before-edge'
     || dominantBaseline === 'hanging';
-  // If serialized by us, `y` is already the top edge. Otherwise SVG's
-  // default is `y` = baseline of the first line — shift up by one
-  // line of cap-height so weasel's box top approximates the cap-line.
-  const topY = explicitTopAnchor ? ay : ay - fontSize;
-
   // `baseline-shift` is legal and inheritable on <text> itself, and unlike
   // every other run key it has no node-level home to be read into — so a bare
   // text child would drop it. Seed those children with it instead; a <tspan>
@@ -130,6 +125,13 @@ export function parseTextElement(
   const tracker = new LineTracker(el, onWarn);
   const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle, gradients, leafStyle, onWarn);
   const plain = runs.map((r) => r.text).join('');
+  // If serialized by us, `y` is already the top edge. Otherwise SVG's
+  // default is `y` = baseline of the first line — shift up by one
+  // line of cap-height so weasel's box top approximates the cap-line.
+  // Laid-out lines are placed under `y`; otherwise the first glyph's move
+  // places the first line.
+  const firstY = laid ? ay : tracker.firstBaseline ?? ay;
+  const topY = explicitTopAnchor ? firstY : firstY - fontSize;
   const stated = numberAttr(el, LINE_HEIGHT_ATTR);
   const pitched = laid ? stated : tracker.lineHeight(fontSize, stated);
   if (pitched !== undefined) textStyle.lineHeight = pitched;
@@ -167,7 +169,7 @@ export function parseTextElement(
   if (hasStyling) node.runs = runs;
   // An absent `direction` is `ltr` in SVG and the text's own in this model, so
   // only text weasel wrote, which says `ltr` when it means it, keeps it absent.
-  if (textStyle.direction === undefined && !el.hasAttribute('data-weasel-width')) {
+  if (textStyle.direction === undefined && !writtenByWeasel(el)) {
     textStyle.direction = 'ltr';
   }
   if (el.getAttribute('data-weasel-wrap') === 'true') textStyle.wrap = true;

@@ -23,6 +23,20 @@ describe('lines of text written as positioned tspans', () => {
     expect(text('<text><tspan x="10" y="20">A</tspan><tspan x="10" y="40">B</tspan></text>').node.text).toBe('A\nB');
   });
 
+  it('places the box by the first line\'s own y, not the text\'s', () => {
+    expect(text('<text><tspan x="10" y="20">A</tspan></text>').node.y).toBeCloseTo(4);
+    expect(text('<text y="5"><tspan x="10" y="20">A</tspan><tspan x="10" y="40">B</tspan></text>').node.y).toBeCloseTo(4);
+    expect(text('<text x="10" y="20"><tspan x="10" dy="6">A</tspan></text>').node.y).toBeCloseTo(10);
+    // Indentation before the first tspan sits nowhere.
+    expect(text('<text y="5">\n  <tspan x="10" y="20">A</tspan></text>').node.y).toBeCloseTo(4);
+  });
+
+  it('keeps the text\'s y as the box top where it opens with blank lines it states', () => {
+    const { node } = text('<text y="20"><tspan x="0" dy="19.2" data-weasel-lines="1">A</tspan></text>');
+    expect(node.text).toBe('\nA');
+    expect(node.y).toBeCloseTo(4);
+  });
+
   it('keeps the source file\'s indentation out of the lines', () => {
     const { node } = text(`<text x="10" y="20">
       <tspan x="10" dy="0">Line one</tspan>
