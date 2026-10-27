@@ -32,7 +32,7 @@ function rig(opts: { enabled?: Action['enabled'] } = {}) {
   const cancel: Action = {
     id: 'cancelGesture',
     label: 'Cancel gesture',
-    defaultBinding: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'engaged' }] } }],
+    defaultBinding: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'engaged' }] }, opts: { id: 'cancelGesture.key' } }],
     invoker: { timing: 'immediate', run: () => dispatcher.cancelAll('cancel') },
   };
   const entries = keymapContribution({
