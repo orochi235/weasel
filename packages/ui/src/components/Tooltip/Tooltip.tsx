@@ -12,7 +12,7 @@ import {
   type TooltipTriggerState,
 } from 'react-aria-components';
 import { targetInBlockUnits } from '../../overlays/blockFrame';
-import { overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
+import { frameBoundary, overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
 import { useEnterAnimation, useExitAnimation } from '../../overlays/overlayAnimation';
 import {
   useOverlayPortal,
@@ -170,7 +170,7 @@ function TooltipBody({ state, tooltipRef, frame, ...props }: OverlayProps & {
     arrowBoundaryOffset: props.arrowBoundaryOffset,
     shouldFlip: props.shouldFlip,
     containerPadding: props.containerPadding,
-    boundaryElement: frame ?? undefined,
+    boundaryElement: frame ? frameBoundary(frame) : undefined,
     onClose: () => state.close(true),
     getTargetRect,
   });

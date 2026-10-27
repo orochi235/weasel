@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useMemo, useRef } from 'react';
 import { mergeRefs } from 'react-aria';
 import { Popover as RACPopover, type PopoverProps as RACPopoverProps } from 'react-aria-components';
 import { targetInBlockUnits } from '../../overlays/blockFrame';
-import { overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
+import { frameBoundary, overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
 import { useReactAriaPortalTarget, withPortalTarget } from '../../overlays/portalHost';
 
 /** Props for {@link Popover}: React Aria's, unchanged. */
@@ -42,7 +42,7 @@ export const Popover = forwardRef<HTMLElement, PopoverProps>(function Popover(
     <RACPopover
       {...withPortalTarget(props, frame)}
       ref={merged}
-      boundaryElement={boundaryElement ?? frame ?? undefined}
+      boundaryElement={boundaryElement ?? (frame ? frameBoundary(frame) : undefined)}
       getTargetRect={targetRect}
     />
   );
