@@ -81,6 +81,12 @@ the marquee, snap targets and what a move drags. A renderer does the same with
 `worldPoseOf(scene, id)`, which also honors a gesture's in-flight pose; drawing
 `node.pose` draws a nested node at its container-relative position.
 
+A `kind: 'group'` container selects as it does in 2D: a click on a nested node
+selects its outermost container, a double-click enters it, and a click inside
+then selects the next level in. `createNodeAtPoint` answers the solid the ray
+hits and core's select tool walks up from it, so this needs nothing from the
+host but `<SceneCanvas>`'s own select tool.
+
 ## The bounds seam
 
 `World3d.bounds` is how a consumer says how big a node is. It is handed the node
