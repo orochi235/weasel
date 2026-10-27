@@ -3,6 +3,7 @@
  * hold on it synthesizes.
  */
 import type { BodyKind, BodyTarget, DoubleClickBody, EventModifiers, InputEvent } from '../ui/inputEvent';
+import type { Point } from './multiTouch';
 
 /** Press-time state replayed onto a synthesized click, long-press or
  *  contextmenu, whose matchers resolve targets against it. */
@@ -10,10 +11,9 @@ export interface PressFacts extends EventModifiers {
   target: unknown;
   clientX: number;
   clientY: number;
-  /** World-space press point, forwarded onto the synthesized click as
-   *  `pressX`/`pressY` — see `ClickEvent`. */
-  worldX: number;
-  worldY: number;
+  /** The press point in the host's world space, forwarded onto the
+   *  synthesized click as `pressX`/`pressY` — see `ClickEvent`. */
+  world: Point;
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
@@ -26,8 +26,8 @@ export interface ReleaseFacts extends EventModifiers {
   target: unknown;
   clientX: number;
   clientY: number;
-  worldX: number;
-  worldY: number;
+  /** The release point in the host's world space. */
+  world: Point;
 }
 
 /** What a press landed on, as a spread-able partial with no `undefined`-valued keys. */
@@ -51,14 +51,14 @@ export function clickEvents(down: PressFacts, up: ReleaseFacts): { click: InputE
     ctrlKey: up.ctrlKey,
     metaKey: up.metaKey,
     shiftKey: up.shiftKey,
-    x: up.worldX,
-    y: up.worldY,
+    x: up.world.x,
+    y: up.world.y,
     clientX: up.clientX,
     clientY: up.clientY,
   };
   const named = down.doubleClickBody;
   return {
-    click: { kind: 'click', ...shared, ...pressedOn(down), pressX: down.worldX, pressY: down.worldY },
+    click: { kind: 'click', ...shared, ...pressedOn(down), pressX: down.world.x, pressY: down.world.y },
     doubleclick: {
       kind: 'doubleclick', ...shared,
       ...pressedOn(named ? { affordance: down.affordance, ...named } : down),
@@ -78,7 +78,7 @@ export function longPressEvents(down: PressFacts): { longpress: InputEvent; cont
     shiftKey: down.shiftKey,
     ...pressedOn(down),
   };
-  const at = { x: down.worldX, y: down.worldY, clientX: down.clientX, clientY: down.clientY };
+  const at = { x: down.world.x, y: down.world.y, clientX: down.clientX, clientY: down.clientY };
   return {
     longpress: { kind: 'longpress', ...at, ...shared },
     contextmenu: { kind: 'contextmenu', ...at, ...shared },

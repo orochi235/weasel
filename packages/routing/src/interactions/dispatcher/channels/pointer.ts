@@ -67,7 +67,7 @@ function holdPublisher(core: PointerDispatchCore, longPress: PointerInputOptions
       pointerType: pending.pointerType,
       client: { x: press.clientX, y: press.clientY },
       local: core.toCanvasLocal(press.clientX, press.clientY),
-      world: { x: press.worldX, y: press.worldY },
+      world: { ...press.world },
       viewId: core.target().id,
       startedAt: pending.startedAt,
       duration: pending.duration,
