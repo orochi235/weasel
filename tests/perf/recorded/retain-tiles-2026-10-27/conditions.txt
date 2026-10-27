@@ -1,0 +1,22 @@
+Every run: WEASEL_PERF_PORT=33571 npm run test:perf -- perf/retain-pan.spec.ts, through
+onto do --solo on teitou (Apple M5 Max, ANGLE Metal), 3 rounds each, 1280x800 at dpr 2 (a
+2560x1600 drawing buffer, 4x multisampled). The tree was a throwaway worktree at 11e2b7d6f plus
+the tiling change and the spec's tile, budget and peak-memory switches. "peak MiB" is the most
+GPU memory retained surfaces held at the end of a frame, as RetainedSurfaces counts its
+allocations; no driver figure.
+
+a-tile-{none,2048,1024,512}   Tile side, budget 256 MiB, layers 4,16 x cmds 300,1000.
+b-budget-{256,384,512,768}    Tile 1024, layers 4,8,12,16 x cmds 1000.
+c-*, d-*, e1-*, e2-*          Layers 4 x cmds 1000, retainedRedraw the question. They ran with
+                              two temporary switches not in the committed code: per-tile
+                              culling (`cull` as committed, `boxonly` computing the boxes and
+                              dispatching every child to every tile, `none` neither) and the
+                              resolve path (`via` as committed, `novia` skipping the copy,
+                              which leaves wrong pixels, `fullvia` resolving the whole scratch
+                              buffer into it). e1 and e2 are the same four configs run twice,
+                              interleaved: the comparison to read.
+
+The redraw frame at tile 1024 is bimodal between jobs: about 9.7 ms (d-1024-via, a-tile-1024
+runs 1 and 2) or about 15.5 ms with the renderer's CPU time rising to match (e1, e2, c),
+against about 9 ms untiled every time. Culling does not move it (e-1024-nocull matches
+e-1024-cull), nor does the copy (d-1024-novia matches d-1024-via).

@@ -1,0 +1,47 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/retain-pan.spec.ts
+
+[WebServer] npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 1 test using 1 worker
+
+[WebServer] 
+[WebServer] A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+Retained pan — 1280x800 at dpr 2, on ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version); 21 cells
+
+    1/21  run 1   4 x 1000  control          0.210 ms/frame  mean    1.793  max    2.555  cpu   0.080  kept    0 redrawn   0 through    0  peak    0.0 MiB
+    2/21  run 1   4 x 1000  submitPan        2.675 ms/frame  mean    4.504  max    7.340  cpu   2.025  kept    0 redrawn   0 through    0  peak    0.0 MiB
+    3/21  run 1   4 x 1000  retainedPan      0.760 ms/frame  mean    2.332  max    3.870  cpu   0.110  kept  164 redrawn   0 through    0  peak   97.7 MiB
+    4/21  run 1   4 x 1000  retainedFrac     2.725 ms/frame  mean    4.468  max    6.975  cpu   1.950  kept    0 redrawn   0 through  164  peak   62.5 MiB
+    5/21  run 1   4 x 1000  retainedFixed    3.085 ms/frame  mean    4.509  max    6.495  cpu   2.020  kept    0 redrawn   0 through  164  peak   62.5 MiB
+    6/21  run 1   4 x 1000  retainedStill    0.820 ms/frame  mean    2.314  max    3.110  cpu   0.100  kept  164 redrawn   0 through    0  peak   62.5 MiB
+    7/21  run 1   4 x 1000  retainedRedraw   11.010 ms/frame  mean   12.219  max   16.505  cpu   5.215  kept    0 redrawn 164 through    0  peak  238.3 MiB
+    8/21  run 2   4 x 1000  control          0.210 ms/frame  mean    1.802  max    2.520  cpu   0.075  kept    0 redrawn   0 through    0  peak    0.0 MiB
+    9/21  run 2   4 x 1000  submitPan        2.920 ms/frame  mean    4.851  max    7.705  cpu   1.900  kept    0 redrawn   0 through    0  peak    0.0 MiB
+   10/21  run 2   4 x 1000  retainedPan      0.775 ms/frame  mean    2.360  max    2.990  cpu   0.100  kept  164 redrawn   0 through    0  peak   97.7 MiB
+   11/21  run 2   4 x 1000  retainedFrac     3.130 ms/frame  mean    5.009  max    7.660  cpu   1.985  kept    0 redrawn   0 through  164  peak   62.5 MiB
+   12/21  run 2   4 x 1000  retainedFixed    3.205 ms/frame  mean    4.756  max    6.540  cpu   2.060  kept    0 redrawn   0 through  164  peak   62.5 MiB
+   13/21  run 2   4 x 1000  retainedStill    0.810 ms/frame  mean    2.392  max    3.130  cpu   0.085  kept  164 redrawn   0 through    0  peak   62.5 MiB
+   14/21  run 2   4 x 1000  retainedRedraw   11.390 ms/frame  mean   12.853  max   18.570  cpu   5.120  kept    0 redrawn 164 through    0  peak  238.3 MiB
+   15/21  run 3   4 x 1000  control          0.150 ms/frame  mean    1.762  max    2.295  cpu   0.070  kept    0 redrawn   0 through    0  peak    0.0 MiB
+   16/21  run 3   4 x 1000  submitPan        2.905 ms/frame  mean    4.751  max    7.180  cpu   2.010  kept    0 redrawn   0 through    0  peak    0.0 MiB
+   17/21  run 3   4 x 1000  retainedPan      0.775 ms/frame  mean    2.359  max    3.045  cpu   0.100  kept  164 redrawn   0 through    0  peak   97.7 MiB
+   18/21  run 3   4 x 1000  retainedFrac     3.000 ms/frame  mean    4.940  max    7.630  cpu   2.015  kept    0 redrawn   0 through  164  peak   62.5 MiB
+   19/21  run 3   4 x 1000  retainedFixed    3.495 ms/frame  mean    4.854  max    7.750  cpu   2.295  kept    0 redrawn   0 through  164  peak   62.5 MiB
+   20/21  run 3   4 x 1000  retainedStill    0.815 ms/frame  mean    2.408  max    3.125  cpu   0.110  kept  164 redrawn   0 through    0  peak   62.5 MiB
+   21/21  run 3   4 x 1000  retainedRedraw   11.610 ms/frame  mean   12.810  max   16.880  cpu   5.395  kept    0 redrawn 164 through    0  peak  238.3 MiB
+
+Retained pan — 1280x800 at dpr 2, on ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)
+ms per frame, median of 3 runs of the median single-frame sample less the least frame that draws.
+
+| layers | cmds | control | submit pan | retained pan | retained frac | retained fixed | retained still | retained redraw | pan / submit | peak MiB, redraw |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|  4 | 1000 |   0.210 |   2.905 |   0.775 |   3.000 |   3.205 |   0.815 |  11.390 |  0.267 |  238.3 |
+perf result: tests/perf/recorded/retain-tiles-2026-10-27/e1-2048-cull.json
+  ✓  1 tests/perf/retain-pan.spec.ts:72:1 › retained layers through a pan (12.0s)
+
+  1 passed (13.1s)
