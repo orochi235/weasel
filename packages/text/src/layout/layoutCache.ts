@@ -146,7 +146,10 @@ function release(laid: LaidOutRuns): void {
 }
 
 function disown(vs: Variant[]): void {
-  for (const v of vs) {
+  // Indexed, not `for...of`: dropRuns runs once a label a frame, and an
+  // iterator it walks unoptimized allocates.
+  for (let i = 0; i < vs.length; i++) {
+    const v = vs[i];
     const cols = columnsOf(v.laid);
     if (cols === null) continue;
     cols.owners--;

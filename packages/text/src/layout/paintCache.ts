@@ -180,15 +180,19 @@ const NO_LAYOUT: LaidOutRuns = { lines: [], bounds: { width: 0, height: 0 } };
 export function recyclePaintings(laid: LaidOutRuns): void {
   const list = shared.get(laid);
   if (list === undefined) return;
-  shared.delete(laid);
-  for (const p of list) {
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
     if (p.pinned) continue;
-    for (const group of p.painted.groups) {
+    const { groups } = p.painted;
+    for (let k = 0; k < groups.length; k++) {
+      const group = groups[k];
       if (group.quadData.length === 0) continue;
       giveDoubles(group.quadData as number[]);
       group.quadData = EMPTY;
     }
   }
+  // Emptied, not deleted: the entry goes with `laid`.
+  list.length = 0;
 }
 
 const EMPTY: readonly number[] = [];
