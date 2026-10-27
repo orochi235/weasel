@@ -74,7 +74,7 @@ it('leaves a mesh at rest where it is', () => {
   at.forEach((x, i) => expect(x).toBeCloseTo(mesh.vertices[i], 9));
 });
 
-// The refit that split at the worst sample took 6 and 22 here (2026-10-26).
+// Before the L-BFGS solve, the refit that split at the worst sample took 6 and 22 here (2026-10-26).
 it.each([{ c: discSquash, anchors: 4 }, { c: barS, anchors: 10 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
   const out = warpPath(c.shape, puppetMap(c.shape, c.pins), { tolerance: 0.5 });
   expect(pathToAnchors(out).anchors[0]).toHaveLength(anchors);
