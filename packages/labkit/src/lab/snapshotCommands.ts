@@ -29,7 +29,10 @@ export function snapshotCommands(
       // The record lags a playing clock, and holds nothing for one never moved.
       if (handle && trial && instrument) {
         const spec = declaredClock(instrument, trial.config);
-        current.updateTrialClock(trialId, clockPosition(handle.clock, spec?.duration, spec?.origin));
+        current.updateTrialClock(
+          trialId,
+          clockPosition(handle.clock, spec?.duration, spec?.origin),
+        );
       }
       store.getState().saveSnapshot(trialId, name ?? `Snapshot ${taken + 1}`);
     },

@@ -28,7 +28,9 @@ function Probe() {
 
 function Readout() {
   const clock = useTrialClock();
-  return <output aria-label="clock">{clock ? `${clock.elapsed}/${clock.duration}` : 'none'}</output>;
+  return (
+    <output aria-label="clock">{clock ? `${clock.elapsed}/${clock.duration}` : 'none'}</output>
+  );
 }
 
 type Declare = (seconds: number) => { duration: number } | null;

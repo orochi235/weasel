@@ -1,5 +1,5 @@
 export { useClockFrame, useTrialClock, useTrialClockHandle, useTrialMix } from './hooks';
-export type { TransportControl } from './transportControl';
-export { useTransportControl } from './useTransportControl';
 export { TrialTransport, type TrialTransportProps } from './TrialTransport';
+export type { TransportControl } from './transportControl';
 export type { ClockCapability, ClockedMix, ClockPosition, TrialClock } from './trialClock';
+export { useTransportControl } from './useTransportControl';

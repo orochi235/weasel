@@ -10,8 +10,8 @@ import {
 } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
 import { emptyDocument } from './document';
-import { loadedFrom, snapshotOf } from './snapshots';
 import { hydrateSnapshots, hydrateTrials, rehydrated, withoutUnreadable } from './hydrate';
+import { loadedFrom, snapshotOf } from './snapshots';
 import type {
   CreateLabStoreOptions,
   InstrumentHooks,

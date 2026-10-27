@@ -1,5 +1,13 @@
 import type { ClockRegistry } from '@weasel-js/clock';
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useStore } from 'zustand/react';
 import { TrialRootContext } from '../clock/contexts';
 import type { LabStore } from '../state/store';

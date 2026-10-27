@@ -42,7 +42,8 @@ export function TrialTransport({
   const speed = control?.speed;
   const ended = clock?.ended ?? false;
   useEffect(() => {
-    if (replay === undefined || touched || !ended || !clock?.seekable || speed === undefined) return;
+    if (replay === undefined || touched || !ended || !clock?.seekable || speed === undefined)
+      return;
     const id = setTimeout(() => {
       clock.seek(0);
       clock.rate = speed;

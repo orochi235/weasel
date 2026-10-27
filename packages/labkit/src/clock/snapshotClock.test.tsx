@@ -42,7 +42,9 @@ const shown = () => screen.getByRole('status', { name: 'clock' }).textContent;
 
 describe('a trial clock in a snapshot', () => {
   it('comes back where it stood when the snapshot is loaded', async () => {
-    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, { wrapper: withIcons });
+    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(screen.getByRole('button', { name: 'seek' }));
     expect(shown()).toBe('1200');
     const trialId = lab!.trials[0]!.id;
@@ -54,7 +56,9 @@ describe('a trial clock in a snapshot', () => {
     expect(shown()).toBe('1200');
   });
   it('comes back where it rested when saved before it ever moved', async () => {
-    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, { wrapper: withIcons });
+    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, {
+      wrapper: withIcons,
+    });
     expect(shown()).toBe('700');
     const trialId = lab!.trials[0]!.id;
     act(() => lab!.saveSnapshot(trialId, 'rest'));

@@ -24,6 +24,8 @@ describe('transportControl over a clock with an origin', () => {
 
   it('starts a paused clock at its own speed', () => {
     const slow = createTrialClock({ duration: 3000, speed: 0.5 }).clock;
-    expect(transportControl(slow, { speed: slow.speed, backward: false }, () => {}).speed).toBe(0.5);
+    expect(transportControl(slow, { speed: slow.speed, backward: false }, () => {}).speed).toBe(
+      0.5,
+    );
   });
 });

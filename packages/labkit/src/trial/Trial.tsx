@@ -158,7 +158,13 @@ function TrialRuntime({
 
   const rootRef = useRef<HTMLElement | null>(null);
   const clockTarget = useCallback(() => rootRef.current, []);
-  const clockHandle = useTrialClockSetup({ instrument, config, record, store, target: clockTarget });
+  const clockHandle = useTrialClockSetup({
+    instrument,
+    config,
+    record,
+    store,
+    target: clockTarget,
+  });
   const ticks = useMemo(
     () => (clockHandle ? (fn: () => void) => clockHandle.onFrame(() => fn()) : undefined),
     [clockHandle],
