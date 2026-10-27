@@ -8,7 +8,6 @@ import { LoupeProvider } from '../LoupeProvider';
 import { drawPrefs } from '../prefs';
 import { RightSidebar } from '../RightSidebar';
 import { StripDock } from './StripSurfaces';
-import type { SidebarHost } from './types';
 import { renderWithIcons } from '../testIcons';
 
 // The lens itself needs a live canvas; what is under test is the state the asset drives into it.
@@ -48,7 +47,7 @@ function App() {
           <StripDock />
         </div>
         <div data-testid="sidebar">
-          <RightSidebar {...({} as SidebarHost)} />
+          <RightSidebar />
         </div>
         <ContextMenuHost />
       </LoupeProvider>

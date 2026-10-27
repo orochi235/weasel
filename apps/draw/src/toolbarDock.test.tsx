@@ -72,7 +72,7 @@ describe('the toolbar dock', () => {
   it('writes a moved bar’s place to ui.toolbars', () => {
     renderWithIcons(<App />);
     altRight('Arrange');
-    expect(drawPrefs().get('ui.toolbars').docks.strip).toEqual([['pathfinder', 'arrange', 'path', 'loupe']]);
+    expect(drawPrefs().get('ui.toolbars').docks.strip).toEqual([['pathfinder', 'arrange', 'path', 'loupe', 'colors', 'layers', 'history']]);
     expect(toolbarsInDock()).toEqual(['Pathfinder', 'Arrange', 'Path', 'Loupe']);
   });
 
@@ -81,7 +81,7 @@ describe('the toolbar dock', () => {
     setPath({ hidden: true });
     expect(toolbarsInDock()).toEqual(['Arrange', 'Pathfinder', 'Loupe']);
     altRight('Pathfinder');
-    expect(drawPrefs().get('ui.toolbars').docks.strip).toEqual([['arrange', 'path', 'loupe', 'pathfinder']]);
+    expect(drawPrefs().get('ui.toolbars').docks.strip).toEqual([['arrange', 'path', 'loupe', 'pathfinder', 'colors', 'layers', 'history']]);
     setPath({ hidden: false });
     expect(toolbarsInDock()).toEqual(['Arrange', 'Path', 'Loupe', 'Pathfinder']);
   });

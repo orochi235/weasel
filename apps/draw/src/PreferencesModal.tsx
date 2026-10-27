@@ -24,7 +24,7 @@ import {
 import type { RegistryEnumSources } from './registry/types';
 import { RegistryEnumSourcesContext, RegistrySelect } from './registry/RegistrySelect';
 import { SURFACE_ASSETS } from './surfaces/assets';
-import { CHROME_ITEMS, type ChromeItem } from './surfaces/chrome';
+import { ALL_CHROME, type ChromeItem } from './surfaces/chrome';
 import { surfaceOf } from './surfaces/surfaceState';
 import type { SurfaceAsset, SurfaceKind, SurfacesValue } from './surfaces/types';
 
@@ -110,7 +110,7 @@ const SURFACE_NAMES: Record<SurfaceKind, string> = { bar: 'Toolbar', panel: 'Pan
 /** A row of the editor: a piece of chrome, and its surface asset where it is one. */
 type ChromeRow = ChromeItem & { asset?: SurfaceAsset };
 
-const CHROME_ROWS: readonly ChromeRow[] = CHROME_ITEMS.map((item) => {
+const CHROME_ROWS: readonly ChromeRow[] = ALL_CHROME.map((item) => {
   const asset = SURFACE_ASSETS.find((a) => a.id === item.id);
   return asset ? { ...item, asset } : item;
 });

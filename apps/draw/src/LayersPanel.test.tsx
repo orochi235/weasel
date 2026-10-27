@@ -3,7 +3,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import { asNodeId, createMeasurements, createScene, measureNode, rectPath, solid, useSelection } from '@weasel-js/core';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { useState } from 'react';
-import { LayersPanel, layerSwatch } from './LayersPanel';
+import { LayersContent, layerSwatch } from './LayersPanel';
 import { drawPrefs } from './prefs';
 import { renderWithIcons } from './testIcons';
 
@@ -37,14 +37,13 @@ function Host({ scene }: { scene: ReturnType<typeof makeScene> }) {
   const selection = useSelection({ mode: 'multi', scene });
   const measurements = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }))[0];
   return (
-    <LayersPanel
+    <LayersContent
       scene={scene}
       selection={selection}
       measurements={measurements}
       backgroundColor="#ffffff"
       docSelected={false}
       setDocSelected={() => {}}
-      chrome={{ collapsed: false, hidden: false, onToggleCollapse: () => {}, onHide: () => {} }}
     />
   );
 }

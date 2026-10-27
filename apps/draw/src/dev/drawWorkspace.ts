@@ -5,7 +5,7 @@ import { DRAW_MENU_BAR } from '../menuBar';
 import { DRAW_MENUS } from '../menus';
 import { PREFS } from '../prefs';
 import { SURFACE_ASSETS } from '../surfaces/assets';
-import { isSchemaAsset, type SurfaceKind } from '../surfaces/types';
+import type { SurfaceKind } from '../surfaces/types';
 
 const PREFS_ID = 'prefs';
 
@@ -21,7 +21,7 @@ const MENU_LABELS: Record<string, string> = {
 const drawnAs = (root: PrefGroup, as: PrefGroupAs | undefined, name: string): PrefGroup =>
   ({ ...root, name: root.name || name, ...(as ? { as } : {}) });
 
-const surfaces: Asset[] = SURFACE_ASSETS.filter(isSchemaAsset).map((a) => ({
+const surfaces: Asset[] = SURFACE_ASSETS.map((a) => ({
   id: `surface:${a.id}`, label: a.label, kind: 'layout', over: PREFS_ID, root: drawnAs(a.schema, AS[a.defaultSurface], a.label),
 }));
 

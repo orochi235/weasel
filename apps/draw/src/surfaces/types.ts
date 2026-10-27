@@ -27,7 +27,7 @@ export interface PanelChrome {
   onHide(): void;
 }
 
-/** What the right sidebar hands a panel drawn by code rather than from a schema. */
+/** The editor state an asset's leaves read, on whichever surface draws them (`SurfaceHostContext`). */
 export interface SidebarHost {
   scene: DrawScene;
   selection: SelectionApi;
@@ -42,36 +42,41 @@ export interface SidebarHost {
   setDocSelected: (v: boolean) => void;
 }
 
-interface AssetBase {
-  id: string;
-  label: string;
-  /** The surfaces it may be drawn on, in the order a switch offers them. */
-  surfaces: readonly SurfaceKind[];
-  defaultSurface: SurfaceKind;
-}
-
-/** What a host binds a schema asset's leaves to, by dotted path within the asset's schema. Each surface reads and
- *  writes the same paths. */
+/** What a host binds an asset's leaves to, by dotted path within the asset's schema. Each surface reads and writes
+ *  the same paths. */
 export interface SchemaBinding {
   values?: Readonly<Record<string, unknown>>;
   onChange?: (path: string, value: unknown) => void;
+  /** The panel's title while bound to this state, where it is not the asset's label. */
+  title?: string;
 }
 
-/** An asset drawn from a prefs schema, on any surface it allows. */
-export interface SchemaAsset extends AssetBase {
+/** Draws one of a schema's app-defined leaves. It takes nothing: what it shows comes from hooks, so it reads the same
+ *  state on every surface. */
+export type AssetLeafRenderer = () => ReactNode;
+
+/** Controls for a schema's app-defined kinds, by kind, for each surface that draws them differently. */
+export interface AssetRenderers {
+  panel?: Readonly<Record<string, AssetLeafRenderer>>;
+  bar?: Readonly<Record<string, AssetLeafRenderer>>;
+}
+
+/** Something WeaselDraw can show as a toolbar, a panel, or a menu, drawn from a prefs schema on any surface it
+ *  allows. */
+export interface SurfaceAsset {
+  id: string;
+  label: string;
   schema: PrefGroup;
+  /** The surfaces it may be drawn on, in the order a switch offers them. A menu draws no app-defined leaf, so an
+   *  asset with one does not allow `'menu'`, nor `'bar'` without a `bar` renderer for it. */
+  surfaces: readonly SurfaceKind[];
+  defaultSurface: SurfaceKind;
+  /** Where its bar and menu sit: the toolbar dock under the command row, or a fixed slot in the command row itself,
+   *  drawn as the row's other buttons are. Default: the dock. */
+  row?: 'dock' | 'command';
   /** A hook binding the schema's value leaves to state the asset shows. Unset for an asset of actions alone. Called
    *  by whichever surface draws the asset, so every surface shows the same state. */
   useBinding?: () => SchemaBinding;
-  render?: never;
+  /** How the schema's app-defined leaves draw. */
+  renderers?: AssetRenderers;
 }
-
-/** A panel drawn by its own code, which owns its `SidebarPanel`. */
-export interface RenderAsset extends AssetBase {
-  render: (host: SidebarHost, chrome: PanelChrome) => ReactNode;
-  schema?: never;
-}
-
-export type SurfaceAsset = SchemaAsset | RenderAsset;
-
-export const isSchemaAsset = (asset: SurfaceAsset): asset is SchemaAsset => asset.schema !== undefined;

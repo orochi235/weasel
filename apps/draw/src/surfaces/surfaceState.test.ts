@@ -4,7 +4,7 @@ import { renderHook, act } from '@testing-library/react';
 import { drawPrefs, openDrawPrefs } from '../prefs';
 import { SURFACE_ASSETS } from './assets';
 import { migrateLegacyPanelFlags, surfaceOf, useSetSurface, useSurfaces } from './surfaceState';
-import { isSchemaAsset, type SurfaceAsset } from './types';
+import type { SurfaceAsset } from './types';
 
 const asset = (id: string): SurfaceAsset => SURFACE_ASSETS.find((a) => a.id === id)!;
 
@@ -26,8 +26,11 @@ beforeAll(() => {
 });
 
 describe('SURFACE_ASSETS', () => {
-  it('lists Arrange, Pathfinder, Path, and Loupe as toolbars, then the four sidebar panels', () => {
-    expect(SURFACE_ASSETS.map((a) => [a.id, a.defaultSurface])).toEqual([
+  it('lists the command row, then Arrange, Pathfinder, Path, and Loupe as toolbars, then the four sidebar panels', () => {
+    expect(SURFACE_ASSETS.filter((a) => a.row === 'command').map((a) => a.id)).toEqual([
+      'file', 'undo', 'clipboard', 'edit', 'structure', 'view', 'text', 'compound', 'record', 'app',
+    ]);
+    expect(SURFACE_ASSETS.filter((a) => a.row !== 'command').map((a) => [a.id, a.defaultSurface])).toEqual([
       ['arrange', 'bar'], ['pathfinder', 'bar'], ['path', 'bar'], ['loupe', 'bar'],
       ['properties', 'panel'], ['colors', 'panel'], ['layers', 'panel'], ['history', 'panel'],
     ]);
@@ -36,7 +39,6 @@ describe('SURFACE_ASSETS', () => {
   it('draws each schema asset from actions leaves, one run per registry group', () => {
     const groups = (id: string) => {
       const a = asset(id);
-      if (!isSchemaAsset(a)) throw new Error(id);
       return Object.values(a.schema.children).map((run) => ('children' in run ? (run.children.actions as { group: string }).group : null));
     };
     expect(groups('arrange')).toEqual(['reorder', 'align', 'distribute', 'flip']);
@@ -44,11 +46,15 @@ describe('SURFACE_ASSETS', () => {
     expect(groups('path')).toEqual(['path', 'anchors', 'pathEffects']);
   });
 
-  it('lets a schema asset go on any surface and keeps a code-drawn panel a panel', () => {
+  it('lets an asset of built-in leaves go on any surface, and one with its own kinds only where they draw', () => {
+    const own = (a: SurfaceAsset) => Object.keys(a.renderers?.panel ?? {});
     for (const a of SURFACE_ASSETS) {
       expect(a.surfaces).toContain(a.defaultSurface);
-      expect(a.surfaces).toEqual(isSchemaAsset(a) ? ['bar', 'panel', 'menu'] : ['panel']);
+      if (own(a).length === 0) expect(a.surfaces).toEqual(['bar', 'panel', 'menu']);
+      else expect(a.surfaces).not.toContain('menu');
+      if (a.surfaces.includes('bar')) for (const kind of own(a)) expect(a.renderers?.bar?.[kind]).toBeDefined();
     }
+    expect(asset('properties').surfaces).toEqual(['panel']);
   });
 });
 
@@ -56,7 +62,7 @@ describe('surfaceOf', () => {
   it('takes the chosen surface, and the default for none or one the asset does not allow', () => {
     expect(surfaceOf(asset('path'), { surface: 'menu' })).toBe('menu');
     expect(surfaceOf(asset('path'), undefined)).toBe('bar');
-    expect(surfaceOf(asset('layers'), { surface: 'bar' })).toBe('panel');
+    expect(surfaceOf(asset('properties'), { surface: 'bar' })).toBe('panel');
   });
 });
 

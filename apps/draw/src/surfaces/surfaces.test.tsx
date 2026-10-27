@@ -7,7 +7,6 @@ import { CommandBar } from '../CommandBar';
 import { drawPrefs } from '../prefs';
 import { RightSidebar } from '../RightSidebar';
 import { StripDock } from './StripSurfaces';
-import type { SidebarHost } from './types';
 import { renderWithIcons } from '../testIcons';
 
 // Same in-memory Storage shim as prefs.test.ts: jsdom 26 + Node 26 can
@@ -47,7 +46,7 @@ function App() {
         <StripDock />
       </div>
       <div data-testid="sidebar">
-        <RightSidebar {...({} as SidebarHost)} />
+        <RightSidebar />
       </div>
       <ContextMenuHost />
     </ActionsProvider>

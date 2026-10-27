@@ -11,7 +11,6 @@ import { renderWithIcons } from '../testIcons';
 import { CHROME_ITEMS, ShowChrome } from './chrome';
 import { StripDock } from './StripSurfaces';
 import { useChromeCommands } from './surfaceState';
-import type { SidebarHost } from './types';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -50,7 +49,7 @@ function App() {
     <>
       <MenuBar schema={DRAW_MENU_BAR} />
       <div data-testid="strip"><StripDock /></div>
-      <div data-testid="sidebar"><RightSidebar {...({} as SidebarHost)} /></div>
+      <div data-testid="sidebar"><RightSidebar /></div>
       <ShowChrome id="statusBar"><div role="status">status</div></ShowChrome>
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ambient={ambient} />
     </>
