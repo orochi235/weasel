@@ -73,6 +73,21 @@ export function textCommands(
   )];
 }
 
+/** The right edge typed text is set against in a row of panel width `w`, leaving room for a caret after it. */
+const typedRight = (w: number, m: MenuMetrics) => w - m.padX - 3;
+
+/** The code-point offset in `draft`, typed into a row of panel width `w`, nearest panel-local `x`, or undefined when
+ *  `x` is left of the text, over the row's label. `measure` gives the width of a run of the row's text. */
+export function caretAt(draft: string, w: number, m: MenuMetrics, x: number, measure: (text: string) => number): number | undefined {
+  const right = typedRight(w, m);
+  const chars = Array.from(draft);
+  const xAt = (i: number) => right - measure(chars.slice(i).join(''));
+  if (x < xAt(0) - m.padX) return undefined;
+  let best = 0;
+  for (let i = 1; i <= chars.length; i++) if (Math.abs(xAt(i) - x) < Math.abs(xAt(best) - x)) best = i;
+  return best;
+}
+
 /** A text row being typed into: what is typed at the row's end, the selection behind it in `selection`, and a caret
  *  where `edit` has it. `measure` gives the width of a run of the row's text. */
 export function typingCommands(
@@ -80,7 +95,7 @@ export function typingCommands(
   measure: (text: string) => number,
 ): DrawCommand[] {
   // Room after the last character, so a caret at the end clears it.
-  const right = b.x + b.w - m.padX - 3;
+  const right = b.x + typedRight(b.w, m);
   const chars = Array.from(edit.draft);
   const xAt = (i: number) => right - measure(chars.slice(i).join(''));
   const half = ink.font.fontSize * 0.6;

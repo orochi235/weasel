@@ -10,8 +10,20 @@ export interface HudTextEdit {
 }
 
 /** The modifiers a key arrives with: `shift` extends the selection, `mod` (Ctrl or Cmd) selects all on `a` and moves
- *  to an end on an arrow. */
-export interface EditMods { shift?: boolean; mod?: boolean }
+ *  to an end on an arrow, and `alt` moves an arrow by a word. */
+export interface EditMods { shift?: boolean; mod?: boolean; alt?: boolean }
+
+const WORD = /[\p{L}\p{N}\p{M}_]/u;
+
+/** The start of the word before `from` (dir -1) or the end of the word after it (dir 1), skipping what lies between. */
+export function wordStop(chars: readonly string[], from: number, dir: -1 | 1): number {
+  const at = (i: number) => WORD.test(chars[dir < 0 ? i - 1 : i] ?? '');
+  const inside = (i: number) => (dir < 0 ? i > 0 : i < chars.length);
+  let i = from;
+  while (inside(i) && !at(i)) i += dir;
+  while (inside(i) && at(i)) i += dir;
+  return i;
+}
 
 /** An edit of `entry` holding `draft`, with the caret at its end. */
 export function startEdit(entry: MenuTextEntry, draft: string): HudTextEdit {
@@ -44,6 +56,11 @@ function moveFor(edit: HudTextEdit, key: string, mods: EditMods): number | undef
   const [from, to] = selectionOf(edit);
   if (key === 'Home' || (key === 'ArrowLeft' && mods.mod)) return 0;
   if (key === 'End' || (key === 'ArrowRight' && mods.mod)) return n;
+  if (mods.alt && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+    const dir = key === 'ArrowLeft' ? -1 : 1;
+    const start = mods.shift ? edit.caret : dir < 0 ? from : to;
+    return wordStop(Array.from(edit.draft), start, dir);
+  }
   // An arrow with no Shift collapses a selection to its side before it moves anything.
   if (key === 'ArrowLeft') return !mods.shift && from !== to ? from : edit.caret - 1;
   if (key === 'ArrowRight') return !mods.shift && from !== to ? to : edit.caret + 1;
@@ -84,6 +101,14 @@ export function createTextEditor(c: Pick<MenuController, 'textValue' | 'setText'
     start(e: MenuEntry | undefined) {
       if (e?.kind !== 'text' || e.disabled || edit?.entry === e) return;
       edit = startEdit(e, c.textValue(e) ?? '');
+      changed();
+    },
+    /** When `e` is the row being typed into, put the caret at the offset `at` finds in what is typed; `at` gives
+     *  undefined to leave the caret be. */
+    place(e: MenuEntry | undefined, at: (draft: string) => number | undefined) {
+      const to = edit && edit.entry === e ? at(edit.draft) : undefined;
+      if (!edit || to === undefined) return;
+      edit = moveTo(edit, to, false);
       changed();
     },
     /** End the edit keeping what was typed, as a blur does, unless it is `e`'s. */
