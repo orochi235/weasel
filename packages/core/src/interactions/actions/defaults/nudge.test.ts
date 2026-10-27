@@ -35,6 +35,7 @@ function makeStubScene(initial: Record<string, Pose>) {
     poses,
     batchLog,
     composition: IDENTITY_POSE_COMPOSITION,
+    overrides: { read: () => undefined },
     renderOrder: () => [...poses.keys()].map((id) => asNodeId(id)),
     childrenOf: () => [],
     get(id: string) {

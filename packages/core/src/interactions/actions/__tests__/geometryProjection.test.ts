@@ -28,6 +28,7 @@ function setup(path: Path) {
     setPose: (id: string, p: unknown) => poses.set(id, p),
     renderOrder: () => ['n'], childrenOf: () => [], roots: ['n'],
     composition: IDENTITY_POSE_COMPOSITION,
+    overrides: { read: () => undefined },
   };
   const adapter = {
     setPose: (id: string, p: unknown) => poses.set(id, p),
