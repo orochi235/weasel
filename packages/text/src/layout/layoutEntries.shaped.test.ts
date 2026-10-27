@@ -76,21 +76,48 @@ afterEach(() => {
 });
 
 describe('layoutRuns with a shaper', () => {
-  it('draws a ligature from its first code point, and gives the rest no width', async () => {
+  it('draws a ligature from its first code point, and splits its advance across its letters', async () => {
     registerFace('lig');
     await settle('lig');
     unregister = registerShaper(fakeShaper({ fi: [glyph(7, 0, 0.6)] }));
 
     const out = layoutAndPaint(runsOf('fi', 'lig'), OPTS);
     const [f, i] = out.lines[0].cells;
-    expect(f.advance).toBeCloseTo(60, 9);
-    expect(i.x).toBeCloseTo(60, 9);
-    expect(i.advance).toBe(0);
+    // A caret between the two letters stops halfway across the ligature.
+    expect(f.advance).toBeCloseTo(30, 9);
+    expect(i.x).toBeCloseTo(30, 9);
+    expect(i.advance).toBeCloseTo(30, 9);
     expect(f.drawsInk).toBe(true);
     expect(i.drawsInk).toBe(false);
     const drawn = out.groups[0].glyphs;
     expect(drawn.map((g) => g.d)).toEqual(['g7@0,0']);
     expect(drawn[0].key).toBe('lig|400|normal|#7');
+  });
+
+  it('shifts a right-to-left ligature\'s glyphs left from its opening letter, drawn rightmost', async () => {
+    registerFace('rtl-lig');
+    await settle('rtl-lig');
+    unregister = registerShaper(fakeShaper({ 'لا': [glyph(7, 0, 0.6, { rtl: true })] }));
+
+    const out = layoutAndPaint(runsOf('لا', 'rtl-lig'), { ...OPTS, bidi });
+    const lam = out.lines[0].cells.find((c) => c.cp === 0x644)!;
+    const alef = out.lines[0].cells.find((c) => c.cp === 0x627)!;
+    expect(alef.x).toBeCloseTo(0, 9);
+    expect(lam.x).toBeCloseTo(30, 9);
+    expect(lam.advance).toBeCloseTo(30, 9);
+    expect(alef.advance).toBeCloseTo(30, 9);
+    // Drawn from the lam's pen, 30 in, the ligature still starts at 0.
+    expect(out.groups[0].glyphs.map((g) => g.d)).toEqual(['g7@-0.3,0']);
+  });
+
+  it('keeps one grapheme\'s whole advance on its first code point', async () => {
+    registerFace('one');
+    await settle('one');
+    // e and a combining acute: two code points, one grapheme, one cluster.
+    unregister = registerShaper(fakeShaper({ 'e\u0301': [glyph(4, 0, 0.5)] }));
+
+    const out = layoutAndPaint(runsOf('e\u0301', 'one'), OPTS);
+    expect(out.lines[0].cells.map((c) => c.advance)).toEqual([50, 0]);
   });
 
   it('draws a cluster of several glyphs as one, each at its offset from the pen', async () => {

@@ -4,15 +4,18 @@
  * Layout keeps one entry per code point, which carets, wrapping and bidi all
  * index. A shaper answers in clusters instead, any number of glyphs for any
  * number of code points: so the code point opening a cluster draws all of its
- * glyphs, set from that one pen, and takes its whole advance, and the cluster's
- * other code points take none. Its glyphs then land where the shaper put them
- * whichever way bidi reorders the cluster's code points, since the empty ones
- * sit at the same pen.
+ * glyphs, set from that one pen. A cluster spanning several grapheme clusters
+ * (a ligature of two letters) splits its advance evenly across them, so a
+ * caret can stop inside it; each grapheme's first code point takes a share and
+ * the rest take none. Right to left the opening code point is drawn rightmost,
+ * so its glyphs shift left by the other shares to land where the shaper put
+ * them.
  */
 import type { ResolveResult } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import type { ShapedCluster, ShapedGlyph, TextShaper } from './shaperSeam';
 import { shapeableBytes } from './shaperRegistry';
+import { graphemeEnds } from '../measure/graphemes';
 
 /** What one code point of a shaped run takes. */
 export interface ShapedSlot {
@@ -21,11 +24,11 @@ export interface ShapedSlot {
   advance: number;
 }
 
-/** A code point inside a cluster another one draws. */
-const COVERED: ShapedSlot = Object.freeze({
-  cluster: Object.freeze({ d: null, key: '', glyphs: Object.freeze([]), rtl: false, text: '' }),
-  advance: 0,
-});
+/** What a code point inside a cluster another one draws holds. */
+const NOTHING_DRAWN: ShapedCluster = Object.freeze({ d: null, key: '', glyphs: Object.freeze([]), rtl: false, text: '' });
+
+/** A code point inside a cluster another one draws, opening no grapheme. */
+const COVERED: ShapedSlot = Object.freeze({ cluster: NOTHING_DRAWN, advance: 0 });
 
 /** Slots by UTF-16 offset in the run's text: set at every code point a shaped
  *  cluster covers, absent where the code point is left to be found on its own. */
@@ -61,19 +64,39 @@ function slotsFor(
   shaper: TextShaper, face: ArrayBuffer, text: string, glyphs: readonly ShapedGlyph[],
 ): ShapedRun {
   const slots: (ShapedSlot | undefined)[] = new Array(text.length);
+  const ends = graphemeEnds(text);
+  let g = 0;
   let i = 0;
   while (i < glyphs.length) {
     const start = glyphs[i].cluster;
     let j = i;
     while (j < glyphs.length && glyphs[j].cluster === start) j++;
     const end = j < glyphs.length ? glyphs[j].cluster : text.length;
+    // The graphemes opening inside the cluster, past its own first code point.
+    while (g < ends.length && ends[g] <= start) g++;
+    let inner = 0;
+    for (let k = g; k < ends.length && ends[k] < end; k++) inner++;
     if (!holdsNotdef(glyphs, i, j)) {
-      slots[start] = clusterSlot(shaper, face, glyphs, i, j, text.slice(start, end));
-      for (let at = start + 1; at < end; at++) slots[at] = COVERED;
+      const total = advanceOf(glyphs, i, j);
+      const share = total / (inner + 1);
+      const shift = glyphs[i].rtl ? share - total : 0;
+      slots[start] = clusterSlot(shaper, face, glyphs, i, j, text.slice(start, end), shift, share);
+      const opens = share === 0 ? COVERED : { cluster: NOTHING_DRAWN, advance: share };
+      for (let at = start + 1, k = g; at < end; at++) {
+        const opening = k < ends.length && ends[k] === at;
+        if (opening) k++;
+        slots[at] = opening ? opens : COVERED;
+      }
     }
     i = j;
   }
   return slots;
+}
+
+function advanceOf(glyphs: readonly ShapedGlyph[], from: number, to: number): number {
+  let sum = 0;
+  for (let k = from; k < to; k++) sum += glyphs[k].advance;
+  return sum;
 }
 
 function holdsNotdef(glyphs: readonly ShapedGlyph[], from: number, to: number): boolean {
@@ -81,12 +104,14 @@ function holdsNotdef(glyphs: readonly ShapedGlyph[], from: number, to: number): 
   return false;
 }
 
-/** Glyphs `[from, to)`, one cluster, set from one pen. */
+/** Glyphs `[from, to)`, one cluster, set from one pen moved by `shift` ems,
+ *  its opening code point taking `advance` of the cluster's width. */
 function clusterSlot(
   shaper: TextShaper, face: ArrayBuffer, glyphs: readonly ShapedGlyph[], from: number, to: number, text: string,
+  shift: number, advance: number,
 ): ShapedSlot {
   const placed: { gid: number; x: number; y: number }[] = [];
-  let pen = 0;
+  let pen = shift;
   let d = '';
   let key = '';
   for (let k = from; k < to; k++) {
@@ -97,5 +122,5 @@ function clusterSlot(
     key += `${k === from ? '' : ';'}${g.gid}${x === 0 && y === 0 ? '' : `@${fmt(x)},${fmt(y)}`}`;
     pen += g.advance;
   }
-  return { cluster: { d: d.length > 0 ? d : null, key, glyphs: placed, rtl: glyphs[from].rtl, text }, advance: pen };
+  return { cluster: { d: d.length > 0 ? d : null, key, glyphs: placed, rtl: glyphs[from].rtl, text }, advance };
 }
