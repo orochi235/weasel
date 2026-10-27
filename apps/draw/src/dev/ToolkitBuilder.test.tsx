@@ -47,13 +47,21 @@ describe('ToolkitBuilder', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'path-tools' }));
     await waitFor(() => expect(screen.queryByText('useGirthTool')).toBeNull());
     expect(await countIn('Actions')).toBeLessThan(withPaths);
-    expect(window.location.hash).toBe('#/dev/toolkits?bundle=standard&paths=0');
+    expect(window.location.hash).toBe('#/dev/toolkits?base=draw&tools=tools:shape&paths=0');
   });
 
-  it('mounts path-tools beside every built-in tool', async () => {
-    window.history.replaceState(null, '', '#/dev/toolkits?bundle=exhaustive');
+  it('mounts path-tools beside every tool preset the hash names', async () => {
+    window.history.replaceState(null, '', '#/dev/toolkits?base=draw&tools=tools:shape,tools:draw,tools:type,tools:page');
     mount();
     expect(await screen.findByText('useGirthTool')).toBeTruthy();
     expect(await screen.findByText('usePenTool')).toBeTruthy();
+  });
+
+  it('mounts a tool preset while its switch is on', async () => {
+    mount();
+    expect(await screen.findByText('useRectTool')).toBeTruthy();
+    fireEvent.click(screen.getByRole('switch', { name: 'tools:shape' }));
+    await waitFor(() => expect(screen.queryByText('useRectTool')).toBeNull());
+    expect(window.location.hash).toBe('#/dev/toolkits?base=draw&tools=');
   });
 });
