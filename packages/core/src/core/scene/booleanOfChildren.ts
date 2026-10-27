@@ -27,7 +27,7 @@ export function setDepOutlineReader(read: DepOutline): void {
 }
 
 /** `dep`'s outline as one operand: a group's is the union of everything shown inside it. */
-function operandOf(dep: DerivedDep<unknown>): Path | null {
+export function operandOf(dep: DerivedDep<unknown>): Path | null {
   if (dep.node.kind !== 'group') return outlineOf(dep);
   const inside = outlinesOf(dep.children ?? []);
   return inside.length <= 1 ? inside[0] ?? null : booleanOfPaths('union', inside);

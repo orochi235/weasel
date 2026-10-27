@@ -141,7 +141,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     resizeHandles,
   );
 
-  const enteredFrameLayer = useEnteredGroupFrameLayer(args.enteredGroup, args.boundsOf, args.frameColor);
+  const enteredFrameLayer = useEnteredGroupFrameLayer(args.enteredGroup, args.boundsOf, args.frameColor, scene as never);
   const layers = useMemo<CanvasLayers>(() => ({
     ...builtLayersOf(merged),
     scene: sceneLayers,
