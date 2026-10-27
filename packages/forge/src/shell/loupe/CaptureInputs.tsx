@@ -1,7 +1,7 @@
 import { TrialIdContext, useTrialClockHandle } from '@weasel-js/labkit';
 import { type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Layout } from '../../protocol/messages';
-import { clockTime } from '../../timeline/shown';
+import { shownTime } from '../../timeline/shown';
 import { useCssOverrides } from '../cssVars/overrides';
 import { createCaptureTrials, type LoupeCapture, LoupeCaptureContext, type Revision, type TrialInputs } from './captureContext';
 import { createLiveLenses, LiveLensesContext } from './liveLenses';
@@ -30,7 +30,7 @@ export function CaptureInputs({ entry, layout, config, state, timed = false }: C
   const clock = timed ? (handle?.clock ?? null) : null;
   useEffect(() => {
     if (!capture || !trialId) return;
-    const playhead = () => (clock && clock.rate === 0 ? clockTime(clock) : null);
+    const playhead = () => (clock && clock.rate === 0 ? shownTime(clock) : null);
     withdraw.current = capture.trials.publish(trialId, { entry, layout, config, state, overrides, playhead });
   }, [capture, trialId, entry, layout, config, state, overrides, clock]);
   useEffect(

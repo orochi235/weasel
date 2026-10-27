@@ -41,7 +41,8 @@ export function snapshotCommands(
       const handle = ownClock(trialId);
       if (after === before || !position || !handle) return;
       holds.get(trialId)?.release();
-      holds.set(trialId, holdAt(handle, shownAt(position, handle.clock.origin)));
+      const { origin, duration, loop } = handle.clock;
+      holds.set(trialId, holdAt(handle, shownAt(position, origin, duration, loop)));
     },
   };
 }

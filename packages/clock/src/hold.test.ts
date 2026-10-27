@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createClock } from './clock';
-import { holdAt } from './hold';
+import { holdAt, shownInPass } from './hold';
 
 describe('holdAt', () => {
   it('holds a time the span cannot reach, then reaches it once declared', () => {
@@ -71,14 +71,28 @@ describe('holdAt', () => {
     expect(hold.pending()).toBeNull();
     expect(h.clock.elapsed).toBe(0);
   });
-  it('re-seeks to the held time when the loop count changes the span', () => {
-    const h = createClock({ duration: 1000, loop: 2 });
+  it('waits at the end of the first pass for a time past it', () => {
+    const h = createClock({ duration: 1000, loop: true });
     const hold = holdAt(h, 2500);
-    expect(h.clock.elapsed).toBe(2000);
+    expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([1000, 0, 1]);
     expect(hold.pending()).toBe(2500);
-    h.clock.loop = 3;
+    h.clock.duration = 3000;
     expect(h.clock.elapsed).toBe(2500);
     expect(hold.pending()).toBeNull();
+  });
+  it('round-trips the time a looping clock shows within its pass', () => {
+    const h = createClock({ duration: 3000, loop: true, origin: -500 });
+    h.clock.seek(7600);
+    const shown = shownInPass(h.clock.origin, h.clock.elapsed, h.clock.duration);
+    expect(shown).toBe(1100);
+    const back = createClock({ duration: 3000, loop: true, origin: -500 });
+    expect(holdAt(back, shown).pending()).toBeNull();
+    expect(shownInPass(back.clock.origin, back.clock.elapsed, back.clock.duration)).toBe(1100);
+    const end = createClock({ duration: 3000, loop: true });
+    end.clock.seek(6000, 'end');
+    const atEnd = shownInPass(0, end.clock.elapsed, 3000);
+    holdAt(back, atEnd - 500);
+    expect([back.clock.pass, back.clock.phase]).toEqual([0, 1]);
   });
   it('holds a time on a pass boundary of a looping clock as the end of the pass before', () => {
     const h = createClock({ duration: 1000, loop: true });

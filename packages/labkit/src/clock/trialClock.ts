@@ -4,6 +4,7 @@ import {
   type ClockPosition,
   type ClockSpec,
   createClock,
+  shownInPass,
 } from '@weasel-js/clock';
 import type { Instrument } from '../instrument/types';
 
@@ -26,6 +27,12 @@ export function declaredClock(instrument: Instrument, config: unknown): ClockCap
   return typeof raw === 'function' ? raw(config) : raw;
 }
 
-/** The time `position` showed; `origin` stands in for one it does not record. */
-export const shownAt = (position: ClockPosition, origin: number): number =>
-  (position.origin ?? origin) + position.elapsed;
+/** The time `position` showed within its pass, on a run of `loop` passes;
+ *  `origin` and `duration` stand in for ones it does not record. */
+export const shownAt = (
+  position: ClockPosition,
+  origin: number,
+  duration: number,
+  loop: boolean | number,
+): number =>
+  shownInPass(position.origin ?? origin, position.elapsed, position.duration ?? duration, loop);

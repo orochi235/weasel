@@ -1,4 +1,21 @@
+import { passesOf } from './place';
 import type { ClockHandle } from './types';
+
+/** The time a clock standing `elapsed` into a run of `loop` passes shows
+ *  within its pass: a time on a pass boundary past the start shows as the end
+ *  of the pass before, and one past the run's end runs on in its last pass. */
+export function shownInPass(
+  origin: number,
+  elapsed: number,
+  duration: number,
+  loop: boolean | number = true,
+): number {
+  if (!Number.isFinite(duration)) return origin + elapsed;
+  const last = (passesOf(loop) - 1) * duration;
+  if (elapsed > last + duration) return origin + elapsed - last;
+  const into = elapsed % duration;
+  return origin + (into === 0 && elapsed > 0 ? duration : into);
+}
 
 /** A clock held at a time its span may not reach yet. */
 export interface PlayheadHold {
@@ -9,8 +26,9 @@ export interface PlayheadHold {
 }
 
 /**
- * Pauses `handle`'s clock at the shown time `shown` (`null`: the span's start)
- * and keeps seeking there as `declare` or a `duration` write moves the span.
+ * Pauses `handle`'s clock at `shown`, a time shown within a pass (`null`: the
+ * span's start), placed in the first pass, and keeps seeking there as `declare`
+ * or a `duration` write moves the span. A time past the pass's end waits at it.
  * Any other change (a rate, a seek of someone else's) releases the hold. A
  * clock that is not seekable is never held.
  */
@@ -33,11 +51,9 @@ export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold 
   const place = (): void => {
     busy = true;
     try {
-      const within = shown === null ? 0 : shown - clock.origin;
       const { duration } = clock;
-      // A time on a pass boundary is held as the end of the pass before, not the start of the next.
-      const boundary = within > 0 && Number.isFinite(duration) && within % duration === 0;
-      clock.seek(within, boundary ? 'end' : 'start');
+      const within = Math.min(shown === null ? 0 : shown - clock.origin, duration);
+      clock.seek(within, within > 0 && within === duration ? 'end' : 'start');
     } finally {
       busy = false;
     }

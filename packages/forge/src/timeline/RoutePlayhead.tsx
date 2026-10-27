@@ -4,7 +4,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import { routedTrial } from '../shell/routedTrial';
 import { readRoute, useRoute } from '../shell/useRoute';
 import { readPlayheadParam, writePlayheadParam } from './playheadUrl';
-import { clockTime } from './shown';
+import { shownTime } from './shown';
 
 interface PlayheadSyncProps {
   trialId: string;
@@ -22,16 +22,16 @@ function PlayheadSync({ trialId, route, appliedRef }: PlayheadSyncProps) {
     let hold: PlayheadHold | null = null;
     const fromUrl = (): void => {
       const t = readPlayheadParam();
-      if (t === null || t === clockTime(clock)) return;
+      if (t === null || t === shownTime(clock)) return;
       hold?.release();
       hold = holdAt(handle, t);
     };
-    // Paused off the span's start, the URL holds the time, counted across passes as a hold counts it; playing or at
-    // the start, it holds none. While the span cannot hold a requested time yet, the URL keeps the request.
+    // Paused off the span's start, the URL holds the time shown within the pass; playing or at the start, it holds
+    // none. While the span cannot hold a requested time yet, the URL keeps the request.
     let held: number | null | undefined;
     const toUrl = (): void => {
       if (hold && hold.pending() !== null) return;
-      const time = clockTime(clock);
+      const time = shownTime(clock);
       const next = clock.rate !== 0 || time === clock.origin ? null : time;
       if (next === held) return;
       held = next;

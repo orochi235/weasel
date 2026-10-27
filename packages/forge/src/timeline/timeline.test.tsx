@@ -1,7 +1,7 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, screen, within } from '@testing-library/react';
-import { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { loadCsfModule } from '../csf/loadCsfModule';
 import { StoryHost } from '../frame/StoryHost';
@@ -10,7 +10,7 @@ import { readRoute } from '../shell/useRoute';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
 import type { IndexEntry, LoadedStory, StoryContext } from '../story/types';
-import { useTimeline } from './context';
+import { ClockContext, useTimeline } from './context';
 import { harness, playhead, playheads, Readout, trial, tParam, workshopIt } from './workshopHarness';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -35,9 +35,23 @@ function LateSpan() {
   return <Readout />;
 }
 
+/** Stands the clock past its first pass, paused, as playing on through a loop leaves it. */
+function Lapped() {
+  const handle = useContext(ClockContext);
+  return (
+    <>
+      <Readout />
+      <button type="button" onClick={() => handle?.clock.seek(9500)}>
+        probe: lap
+      </button>
+    </>
+  );
+}
+
 const timed: IndexEntry = { id: 't--timed', title: 'T', name: 'Timed', exportName: 'Timed', file: '/t.stories.tsx' };
 const still: IndexEntry = { id: 't--still', title: 'T', name: 'Still', exportName: 'Still', file: '/t.stories.tsx' };
 
+const lapped: IndexEntry = { id: 't--lapped', title: 'T', name: 'Lapped', exportName: 'Lapped', file: '/t.stories.tsx' };
 const late: IndexEntry = { id: 't--late', title: 'T', name: 'Late', exportName: 'Late', file: '/t.stories.tsx' };
 
 const tModule = {
@@ -45,11 +59,12 @@ const tModule = {
   default: meta({ title: 'T' }),
   Timed: story({ timeline: { duration: 4000 }, render: () => <Readout /> }),
   Still: story({ render: () => <p>still</p> }),
+  Lapped: story({ timeline: { duration: 4000 }, render: () => <Lapped /> }),
 };
 
 const importers = () => ({ '/t.stories.tsx': () => Promise.resolve(tModule as unknown as Record<string, unknown>) });
 
-const it = workshopIt({ index: [timed, still, late], importers });
+const it = workshopIt({ index: [timed, still, late, lapped], importers });
 
 afterEach(() => {
   lateDelay = 20;
@@ -184,6 +199,27 @@ describe('the playhead kept with the trial', () => {
     expect(playhead()).toBe(0);
     fireEvent.click(screen.getByRole('button', { name: 'probe: load' }));
     await until(() => expect(playhead()).toBe(4000));
+  });
+
+  it('comes back where it rested when the snapshot was saved before the playhead moved', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
+    mount('/#/t--timed');
+    await loaded();
+    const rest = playhead();
+    fireEvent.click(screen.getByRole('button', { name: 'probe: save' }));
+    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Position' }), { key: 'End' });
+    expect(playhead()).toBe(4000);
+    fireEvent.click(screen.getByRole('button', { name: 'probe: load' }));
+    await until(() => expect(playhead()).toBe(rest));
+  });
+
+  it('writes the time shown within the pass for a looping clock paused past its first pass', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
+    mount('/#/t--lapped');
+    await loaded();
+    fireEvent.click(screen.getByRole('button', { name: 'probe: lap' }));
+    await until(() => expect(tParam()).toBe('1.5'));
+    expect(playhead()).toBe(1500);
   });
 });
 

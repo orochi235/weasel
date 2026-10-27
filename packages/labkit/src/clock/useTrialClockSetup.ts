@@ -1,4 +1,4 @@
-import { holdAt } from '@weasel-js/clock';
+import { holdAt, shownInPass } from '@weasel-js/clock';
 import { useLatest } from '@weasel-js/core';
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
@@ -33,8 +33,10 @@ const shape = (s: ClockCapability): string =>
 
 function open(spec: ClockCapability, at: ClockPosition | undefined): Held {
   const handle = createTrialClock(spec, at);
-  const saved = at ? shownAt(at, spec.origin ?? 0) : null;
-  const shown = handle.clock.origin + handle.clock.elapsed;
+  const { clock } = handle;
+  const duration = spec.duration ?? Number.POSITIVE_INFINITY;
+  const saved = at ? shownAt(at, spec.origin ?? 0, duration, clock.loop) : null;
+  const shown = shownInPass(clock.origin, clock.elapsed, clock.duration, clock.loop);
   return { handle, reopenAt: saved !== null && shown !== saved ? saved : null };
 }
 
