@@ -1,0 +1,12 @@
+/* Laid over the viewport by `targetInFrame`; it takes no pointer of its own, and its overlays take theirs. */
+.frame {
+  position: absolute;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.frame > * {
+  pointer-events: auto;
+}

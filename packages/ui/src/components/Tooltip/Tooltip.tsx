@@ -1,5 +1,5 @@
-import { Children, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { mergeProps, OverlayContainer, useOverlayPosition, useTooltip } from 'react-aria';
+import { Children, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { mergeProps, OverlayContainer, useOverlayPosition, useTooltip, useUNSAFE_PortalContext } from 'react-aria';
 import { filterDOMProps } from 'react-aria/filterDOMProps';
 import {
   TooltipTrigger as RACTooltipTrigger,
@@ -12,6 +12,7 @@ import {
   type TooltipTriggerState,
 } from 'react-aria-components';
 import { targetInBlockUnits } from '../../overlays/blockFrame';
+import { overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
 import { useEnterAnimation, useExitAnimation } from '../../overlays/overlayAnimation';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import { InlineMarkdown } from '../InlineMarkdown';
@@ -80,8 +81,8 @@ export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children'
  * Tooltip bubble with an arrow pointing at the trigger. Non-interactive
  * content only (ARIA tooltip semantics). Use inside `<TooltipTrigger>`.
  *
- * It opens against its trigger inside a box drawn at another size, as {@link Popover} does: React Aria's own
- * `Tooltip` gives its placement no way to read the trigger in the box's px, so this one places itself.
+ * It is placed inside a box drawn at another size as {@link Popover} is: React Aria's own `Tooltip` gives its
+ * placement no way to read the trigger or the viewport in the box's px, so this one places itself.
  */
 export function Tooltip(props: TooltipProps) {
   const { children, className, placement = 'top', offset = 8, portalContainer, ...rest } = props;
@@ -129,19 +130,30 @@ function TooltipOverlay(own: OverlayProps) {
   const state = useTooltipState(props);
   const exiting = useExitAnimation(ref, state.isOpen);
   const isExiting = props.isExiting || (!state.shouldSkipAnimation && exiting) || false;
+  const { getContainer } = useUNSAFE_PortalContext();
+  const container = getContainer?.() ?? null;
+  const frame = useMemo(() => overlayFrameFor(container), [container]);
   if (!state.isOpen && !isExiting) return null;
   return (
-    <OverlayContainer>
-      <TooltipBody {...props} state={state} tooltipRef={ref} isExiting={isExiting} />
+    <OverlayContainer portalContainer={frame ?? undefined}>
+      <TooltipBody {...props} state={state} tooltipRef={ref} isExiting={isExiting} frame={frame} />
     </OverlayContainer>
   );
 }
 
-function TooltipBody({ state, tooltipRef, ...props }: OverlayProps & { state: TooltipTriggerState; tooltipRef: RefObject<HTMLDivElement | null> }) {
+function TooltipBody({ state, tooltipRef, frame, ...props }: OverlayProps & {
+  state: TooltipTriggerState;
+  tooltipRef: RefObject<HTMLDivElement | null>;
+  /** The overlay frame it is portaled into inside a scaled box, else null. */
+  frame: HTMLElement | null;
+}) {
   const arrowRef = useRef<HTMLDivElement>(null);
   const getTargetRect = useCallback(
-    (target: Element) => targetInBlockUnits(target.getBoundingClientRect(), tooltipRef.current),
-    [tooltipRef],
+    (target: Element) =>
+      frame
+        ? targetInFrame(target.getBoundingClientRect(), target, frame)
+        : targetInBlockUnits(target.getBoundingClientRect(), tooltipRef.current),
+    [tooltipRef, frame],
   );
   const { overlayProps, arrowProps, placement, triggerAnchorPoint } = useOverlayPosition({
     placement: props.placement ?? 'top',
@@ -154,6 +166,7 @@ function TooltipBody({ state, tooltipRef, ...props }: OverlayProps & { state: To
     arrowBoundaryOffset: props.arrowBoundaryOffset,
     shouldFlip: props.shouldFlip,
     containerPadding: props.containerPadding,
+    boundaryElement: frame ?? undefined,
     onClose: () => state.close(true),
     getTargetRect,
   });
