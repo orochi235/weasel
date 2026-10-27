@@ -42,7 +42,11 @@ export function scrollUnder(e: WheelEvent, box: Element, target: Element): boole
     typeof doc.elementsFromPoint === 'function'
       ? doc.elementsFromPoint(e.clientX, e.clientY).find((el) => el !== box && target.contains(el))
       : undefined;
-  for (let el: Element | null = under ?? deepestAt(target, e.clientX, e.clientY); el; el = el.parentElement) {
+  for (
+    let el: Element | null = under ?? deepestAt(target, e.clientX, e.clientY);
+    el;
+    el = el.parentElement
+  ) {
     const d = pixelDelta(e, el);
     const x = scrolls(el, 'x', d.x);
     const y = scrolls(el, 'y', d.y);

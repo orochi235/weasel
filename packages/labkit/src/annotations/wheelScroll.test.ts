@@ -65,13 +65,23 @@ it('finds the scroller by its box when hit testing skips the target, as it does 
   const { target, scroll, box } = setup();
   const rect = (el: Element, r: { left: number; top: number; right: number; bottom: number }) =>
     Object.defineProperty(el, 'getBoundingClientRect', {
-      value: () => ({ ...r, x: r.left, y: r.top, width: r.right - r.left, height: r.bottom - r.top }),
+      value: () => ({
+        ...r,
+        x: r.left,
+        y: r.top,
+        width: r.right - r.left,
+        height: r.bottom - r.top,
+      }),
     });
   rect(target, { left: 0, top: 0, right: 200, bottom: 200 });
   rect(scroll, { left: 0, top: 0, right: 200, bottom: 100 });
   document.elementsFromPoint = () => [box, document.body];
-  expect(scrollUnder(new WheelEvent('wheel', { deltaY: 30, clientX: 50, clientY: 50 }), box, target)).toBe(true);
+  expect(
+    scrollUnder(new WheelEvent('wheel', { deltaY: 30, clientX: 50, clientY: 50 }), box, target),
+  ).toBe(true);
   expect(scroll.scrollTop).toBe(30);
-  expect(scrollUnder(new WheelEvent('wheel', { deltaY: 30, clientX: 50, clientY: 150 }), box, target)).toBe(false);
+  expect(
+    scrollUnder(new WheelEvent('wheel', { deltaY: 30, clientX: 50, clientY: 150 }), box, target),
+  ).toBe(false);
   expect(scroll.scrollTop).toBe(30);
 });
