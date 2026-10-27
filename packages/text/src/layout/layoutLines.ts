@@ -110,7 +110,8 @@ export function breakLines(
   wrapSpans(cps, maxWidth, tabs.length === 0 ? flatWidth : tabbedWidth, pushSpan);
   cur = NONE;
 
-  for (const line of broken) {
+  for (let i = 0; i < broken.length; i++) {
+    const line = broken[i];
     if (line.start === line.end) {
       const brk = entries[line.end];
       line.height = brk.lineSize * lineHeight;
@@ -215,7 +216,9 @@ export function placeLine(
   /** The last code point the pen moved past, which the kerning after it widens. */
   let wide = -1;
   let slot = 0;
-  for (const pos of order.visual) {
+  const { visual } = order;
+  for (let v = 0; v < visual.length; v++) {
+    const pos = visual[v];
     const e = entries[pos];
     // Kerning is a gap between two adjacent characters, and the wrap measured
     // it logically. Reordering can put a different pair side by side: take

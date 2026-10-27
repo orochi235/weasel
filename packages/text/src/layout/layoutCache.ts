@@ -206,7 +206,8 @@ function mixStr(h: number, s: string): number {
  *  of the text and nothing for the collector. */
 function runsHash(runs: readonly ResolvedRun[]): number {
   let h = mix(0x811c9dc5, runs.length);
-  for (const r of runs) {
+  for (let i = 0; i < runs.length; i++) {
+    const r = runs[i];
     h = mixStr(h, r.text);
     h = mixStr(h, r.fontFamily);
     h = mixNum(h, r.fontSize);
