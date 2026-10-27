@@ -12,8 +12,8 @@ export interface CaptureInputsProps {
   layout: Layout;
   config: unknown;
   state: unknown;
-  /** Whether the story declares a timeline, so the trial's clock is its playhead. */
-  timed: boolean;
+  /** Whether the story declares a timeline, so the trial's clock is its playhead. A story in a frame has none here. */
+  timed?: boolean;
 }
 
 /**
@@ -21,7 +21,7 @@ export interface CaptureInputsProps {
  * change republishes over the last; only unmounting, or moving to another trial, withdraws it, so a lens never sees
  * the trial gone between the two.
  */
-export function CaptureInputs({ entry, layout, config, state, timed }: CaptureInputsProps) {
+export function CaptureInputs({ entry, layout, config, state, timed = false }: CaptureInputsProps) {
   const capture = useContext(LoupeCaptureContext);
   const trialId = useContext(TrialIdContext);
   const [overrides] = useCssOverrides();
