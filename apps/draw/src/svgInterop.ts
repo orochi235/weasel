@@ -164,10 +164,7 @@ function decodePathToolAndParams(
 /** Lower one WeaselDraw object to an SvgNode for serialization. */
 export function objToSvgNode(o: Obj): SvgNode {
   if (o.tool === 'text') {
-    // weasel-svg states `lineHeight` only as the pitch between lines, so one
-    // line would lose it: it also rides in the meta bag as `wd:line-height`.
     const style = o.style ?? {};
-    const lineHeight = style.lineHeight;
     const node = svgLeafFromKit({
       text: o.text,
       ...(Object.keys(style).length > 0 ? { style: style as TextStyle } : {}),
@@ -176,9 +173,7 @@ export function objToSvgNode(o: Obj): SvgNode {
       fill: o.fill === undefined ? DEFAULT_IMPORT_FILL : o.fill,
       ...(o.stroke ? { stroke: o.stroke } : {}),
     }, o) as SvgTextNode;
-    const wdAttrs = encodeWdAttrs(o);
-    if (lineHeight != null) wdAttrs['line-height'] = String(lineHeight);
-    node.meta = { wd: { attrs: wdAttrs } };
+    node.meta = { wd: { attrs: encodeWdAttrs(o) } };
     return node;
   }
   if (o.tool === 'image') {
@@ -225,7 +220,9 @@ export type SceneDraft =
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
- * namespace carries: a path's `tool` and `params`, a text's `lineHeight`.
+ * namespace carries: a path's `tool` and `params`. A text's `lineHeight` is
+ * also read from `wd:line-height`, where files written before weasel-svg
+ * stated it put it.
  */
 function kitLeafToObj(
   id: string,

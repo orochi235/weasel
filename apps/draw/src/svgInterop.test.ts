@@ -42,6 +42,8 @@ interface PathObjT {
 // `sceneToSvgNodes` reads only a node's kind; the leaf itself comes from `objOf`.
 const nodeOf = (kind: 'mark' | 'group') => ({ kind, data: {}, pose: { x: 0, y: 0, width: 0, height: 0 } });
 
+const WD_OPTS = { namespaces: { wd: 'https://weaseldraw.app/svg-ext' } };
+
 function ids(): () => string {
   let n = 0;
   return () => `i${n++}`;
@@ -423,15 +425,23 @@ describe('text style round-trip via the bridge', () => {
     const node = objToSvgNode(text as never);
     expect(node.kind).toBe('text');
     if (node.kind !== 'text') throw new Error('expected text');
-    // The style's copy pitches the exported lines; meta carries it for a single line.
     expect(node.style?.lineHeight).toBe(1.4);
-    expect(node.meta?.wd?.attrs?.['line-height']).toBe('1.4');
+    expect(node.meta?.wd?.attrs?.['line-height']).toBeUndefined();
 
-    const back = leavesOf([node], ids());
+    // One line has no pitch to read: weasel-svg states the line height itself.
+    const back = leavesOf(parseSvg(serializeSvg([node], WD_OPTS), WD_OPTS).nodes, ids());
     expect(back).toHaveLength(1);
     const t = back[0] as unknown as { tool: 'text'; style?: { lineHeight?: number } };
     expect(t.style?.lineHeight).toBe(1.4);
-    expect(t.style).toEqual(text.style);
+    const { fill: _notTextStyle, ...persisted } = text.style;
+    expect(t.style).toEqual(persisted);
+  });
+
+  it('reads the line height a file written before weasel-svg stated it put in wd:line-height', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="${WD_OPTS.namespaces.wd}">`
+      + '<text x="0" y="0" dominant-baseline="text-before-edge" wd:tool="text" wd:line-height="1.7">Hi</text></svg>';
+    const [t] = leavesOf(parseSvg(svg, WD_OPTS).nodes, ids()) as unknown as { style?: { lineHeight?: number } }[];
+    expect(t.style?.lineHeight).toBe(1.7);
   });
 
   it('carries the box alignment, which is a field of the object rather than its style', () => {
@@ -458,9 +468,7 @@ describe('objToSvgNode — coverage gaps', () => {
     const node = objToSvgNode(text as never);
     if (node.kind !== 'text') throw new Error('expected text');
     expect(node.style).toEqual({ fontSize: 12, align: 'right' });
-    // No lineHeight in the input → meta bag carries only `tool` and the id.
     expect(node.meta?.wd?.attrs).toEqual({ tool: 'text', 'leaf-id': 'x' });
-    expect(node.meta?.wd?.attrs?.['line-height']).toBeUndefined();
   });
 
   it('round-trips an open PathObj losslessly through both directions', () => {
