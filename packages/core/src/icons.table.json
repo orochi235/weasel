@@ -288,7 +288,7 @@
       "tags": []
     },
     "symmetricHandles": {
-      "body": "<path d=\"M3 17 C3 10 6 8 10 8 S17 10 17 17\"/><path d=\"M3.5 8 H16.5\" stroke-width=\"1\"/><circle cx=\"3.5\" cy=\"8\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.5\" cy=\"8\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.5\" y=\"6.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M3.125 16.875 V11.875 A6.25 6.25 0 0 1 15.625 11.875 V16.875\" stroke-width=\"1.25\"/><path d=\"M1.875 5.625 H16.875\" stroke-width=\"1.25\"/><circle cx=\"1.875\" cy=\"5.625\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.875\" cy=\"5.625\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"7.5\" y=\"3.75\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Anchors",
       "tags": []
     },
@@ -303,12 +303,12 @@
       "tags": []
     },
     "simplifyBrush": {
-      "body": "<path d=\"M2 16 C5 6 15 6 18 16\"/><circle cx=\"10\" cy=\"8.5\" r=\"5\" stroke-width=\"1\" stroke-dasharray=\"2 1.5\"/>",
+      "body": "<path d=\"M0.625 13.125 L1.875 11.875 L4.375 14.375 L6.875 11.875 L8.125 13.125 H19.375\" stroke-width=\"1.25\"/><circle cx=\"13.125\" cy=\"13.125\" r=\"3.75\" stroke-width=\"1.25\"/>",
       "group": "Anchors",
       "tags": []
     },
     "harmonize": {
-      "body": "<path d=\"M3 16 C3 9 6.5 6 10 6 S17 9 17 16\"/><path d=\"M4.02 7.43 L2.47 6.18 M10 3.5 V1.5 M15.98 7.43 L17.53 6.18\" stroke-width=\"1\"/><rect x=\"8.5\" y=\"4.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M1.875 16.875 V14.375 A7.5 7.5 0 0 1 16.875 14.375 V16.875\" stroke-width=\"1.25\"/><path d=\"M2.5 7.5 L0.625 5.625 M16.25 7.5 L18.125 5.625\" stroke-width=\"1.25\"/><rect x=\"7.5\" y=\"5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Anchors",
       "tags": []
     },
