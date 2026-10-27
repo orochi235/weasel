@@ -3,6 +3,7 @@
 import type { Point } from '../paths/cubicMath';
 import { intersectSegments } from '../intersect/segmentIntersections';
 import { type Seg, type Contour, evalSeg, subSeg } from './contourSegments';
+import { mergeCoincident, sharedStretch } from './curveOverlap';
 
 /** One piece of an outline between two crossings, and where it came from. */
 export interface Edge {
@@ -19,6 +20,8 @@ export interface Edge {
   key: number;
   /** Runs against its source curve. */
   reversed: boolean;
+  /** Other operands' pieces lying along this one, each running with it (1) or against it (-1). */
+  also?: { operand: number; sign: 1 | -1 }[];
 }
 
 export interface Arrangement {
@@ -93,28 +96,16 @@ function loops(seg: Seg): boolean {
   return intersectSegments(l, r).some((h) => h.ta < 1 - 1e-6 || h.tb > 1e-6);
 }
 
-/** Whether two segments of the input are the same curve, which every winding test would see as overlap. */
-function duplicates(refs: readonly SegRef[]): boolean {
-  const seen = new Set<string>();
-  for (const { seg } of refs) {
-    const fwd = seg.map((p) => `${p.x},${p.y}`).join(' ');
-    const back = seg.slice().reverse().map((p) => `${p.x},${p.y}`).join(' ');
-    const key = fwd < back ? fwd : back;
-    if (seen.has(key)) return true;
-    seen.add(key);
-  }
-  return false;
-}
-
 /**
  * Every segment of every operand cut where any other crosses or touches it,
- * the cut ends snapped to shared vertices. Null when the input has a case the
- * cut cannot represent: two segments that coincide or overlap along a
- * stretch, or a cubic that crosses itself.
+ * or starts or stops running along it, the cut ends snapped to shared
+ * vertices; pieces that lie along each other are one edge. Null when the
+ * input has a case the cut cannot represent: a cubic that crosses itself, or
+ * an overlap whose ends are not ends of either segment.
  */
 export function cutEdges(operands: readonly Contour[][], snap: number): Arrangement | null {
   const refs = refsOf(operands);
-  if (duplicates(refs) || refs.some((r) => loops(r.seg))) return null;
+  if (refs.some((r) => loops(r.seg))) return null;
   const verts = new Vertices(snap);
   // Ends first, so a crossing that lands on one takes its exact position rather than giving it a computed one.
   const ends = refs.map(({ seg }) => [verts.id(seg[0]), verts.id(seg[seg.length - 1])]);
@@ -126,6 +117,15 @@ export function cutEdges(operands: readonly Contour[][], snap: number): Arrangem
       const b = refs[j];
       if (a.box[0] > b.box[2] + snap || b.box[0] > a.box[2] + snap
         || a.box[1] > b.box[3] + snap || b.box[1] > a.box[3] + snap) continue;
+      const shared = sharedStretch(a.seg, b.seg, snap);
+      if (shared) {
+        for (const end of shared) {
+          const v = verts.id(end.p);
+          stops[i].push({ t: end.ta, v });
+          stops[j].push({ t: end.tb, v });
+        }
+        continue;
+      }
       const hits = intersectSegments(a.seg, b.seg);
       if (hits.length >= OVERLAP_HITS) return null;
       const near = adjacent(a, b);
@@ -161,5 +161,5 @@ export function cutEdges(operands: readonly Contour[][], snap: number): Arrangem
       edges.push({ seg: piece, from: a.v, to: b.v, operand: ref.operand, source: seg, t0: a.t, t1: b.t, key: i + a.t * 0.5, reversed: false });
     }
   });
-  return { edges, points: verts.points };
+  return { edges: mergeCoincident(edges, snap), points: verts.points };
 }

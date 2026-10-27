@@ -69,7 +69,7 @@ describe('a hover binding', () => {
     expect(run).toHaveBeenCalledTimes(2);
     expect(run.mock.calls[0][0]).toMatchObject({ clientX: 5, clientY: 7, bodyTarget: 'empty' });
     expect(run.mock.calls[1][0]).toMatchObject({ clientX: 9, mods: { shift: true } });
-    expect(typeof run.mock.calls[0][0].worldX).toBe('number');
+    expect(typeof run.mock.calls[0][0].world.x).toBe('number');
   });
 
   it('runs again where the pointer rests when a modifier goes down or up, and not on a key repeat', () => {

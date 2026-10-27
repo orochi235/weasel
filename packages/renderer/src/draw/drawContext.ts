@@ -69,6 +69,10 @@ export interface DrawContext {
   clipStack: ClipEntry[];
   /** Set while `enterUncut` stages an item the rect clips could not cut. */
   uncut?: boolean;
+  /** Set while a path drawn by its own draw call has a `PolygonPath.origin`:
+   *  `setProjAndModel` then places its vertices from there. See
+   *  `atMeshOrigin`. */
+  meshOrigin?: { readonly x: number; readonly y: number };
   /** Flatness tolerance for curve tessellation, a `{ px }` one in CSS pixels;
    *  `flattenToleranceOf` resolves it per path. Unset is half a pixel. See
    *  `WeaselRendererOptions.flattenTolerance`. */

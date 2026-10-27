@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SceneCanvas, useFrameClock, useHandleDrag, useLatest, useScene } from '@weasel-js/core';
-import type { Action, Dims, FrameClock, RenderLayer } from '@weasel-js/core';
+import type { Action, Dims, FrameClock, ImmediateParams, RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
@@ -166,8 +166,8 @@ function Panel({
       invoker: {
         timing: 'immediate',
         run: (_deps, params) => {
-          const p = params as { worldX: number; worldY: number };
-          onPointerMoveRef.current?.(p.worldX / sizeRef.current.width, p.worldY / sizeRef.current.height);
+          const world = (params as ImmediateParams | undefined)?.world;
+          if (world) onPointerMoveRef.current?.(world.x / sizeRef.current.width, world.y / sizeRef.current.height);
         },
       },
     };
@@ -177,8 +177,8 @@ function Panel({
       invoker: {
         timing: 'immediate',
         run: (_deps, params) => {
-          const p = params as { worldX: number; worldY: number };
-          onPressRef.current?.(p.worldX / sizeRef.current.width, p.worldY / sizeRef.current.height);
+          const world = (params as ImmediateParams | undefined)?.world;
+          if (world) onPressRef.current?.(world.x / sizeRef.current.width, world.y / sizeRef.current.height);
         },
       },
     };

@@ -1,5 +1,7 @@
 /** What the dispatcher reads straight off an input event. */
+import type { BodyKind, BodyTarget, IngestItem } from '@weasel-js/gestures';
 import type { Carried } from '../actions/action';
+import type { WorldPoint } from '../actions/invoker';
 import type { ModifierState } from '../../vocabulary';
 import type { InputEvent } from './matcher';
 
@@ -46,6 +48,38 @@ export function carriedBy(event: InputEvent): Carried | undefined {
 }
 
 /**
+ * What the dispatcher puts in an immediate invoker's `params`, beneath the
+ * binding's own params, which win on a clash. Each field is present only for
+ * the events that carry it. `run` takes the bag as `Record<string, unknown>`,
+ * so a reader casts it to this.
+ */
+export type ImmediateParams = {
+  /** Where the event landed; a click's release. */
+  world?: WorldPoint;
+  /** Where a click's press landed. Geometry placed at a click pins here, so
+   *  the drift between press and release can't move a snapped point. */
+  press?: WorldPoint;
+  clientX?: number;
+  clientY?: number;
+  deltaX?: number;
+  deltaY?: number;
+  scale?: number;
+  rotation?: number;
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
+  mods?: ModifierState;
+  /** A hover's: whether a button was down. */
+  held?: boolean;
+  carry?: { type: string; value: unknown };
+  items?: readonly IngestItem[];
+  via?: 'drop' | 'paste';
+};
+
+const at = (x: number | undefined, y: number | undefined): { world?: WorldPoint } =>
+  x !== undefined && y !== undefined ? { world: { x, y } } : {};
+
+/**
  * The params an immediate invoker runs with: what the event carries, under the
  * binding's own `resolved` params. An immediate invoker gets `(deps, params)`
  * and no `InvocationCtx`, so this is where it reads deltas and positions.
@@ -53,13 +87,13 @@ export function carriedBy(event: InputEvent): Carried | undefined {
 export function immediateParams(
   event: InputEvent,
   resolved: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
+): (ImmediateParams & Record<string, unknown>) | undefined {
   switch (event.kind) {
     case 'wheel':
       return {
         deltaX: event.deltaX, deltaY: event.deltaY,
         clientX: event.clientX, clientY: event.clientY,
-        ...(event.x !== undefined && event.y !== undefined ? { worldX: event.x, worldY: event.y } : {}),
+        ...at(event.x, event.y),
         affordance: event.affordance,
         ...resolved,
       };
@@ -73,10 +107,10 @@ export function immediateParams(
     case 'click':
     case 'doubleclick':
       return {
-        worldX: event.x, worldY: event.y,
+        ...at(event.x, event.y),
         affordance: event.affordance,
-        // The press point too: an action that places geometry at the click wants it.
-        ...(event.kind === 'click' ? { pressX: event.pressX, pressY: event.pressY } : {}),
+        ...(event.kind === 'click' && event.pressX !== undefined && event.pressY !== undefined
+          ? { press: { x: event.pressX, y: event.pressY } } : {}),
         mods: modifierStateOf(event),
         ...resolved,
       };
@@ -84,7 +118,7 @@ export function immediateParams(
     // buffered copy matches `drag` specs, which are ongoing.
     case 'contextmenu':
       return {
-        worldX: event.x, worldY: event.y,
+        ...at(event.x, event.y),
         clientX: event.clientX, clientY: event.clientY,
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
@@ -95,7 +129,7 @@ export function immediateParams(
     case 'pointerdown':
     case 'longpress':
       return {
-        worldX: event.x, worldY: event.y,
+        ...at(event.x, event.y),
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
         mods: modifierStateOf(event),
@@ -103,7 +137,7 @@ export function immediateParams(
       };
     case 'hover':
       return {
-        worldX: event.x, worldY: event.y,
+        ...at(event.x, event.y),
         clientX: event.clientX, clientY: event.clientY,
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
@@ -113,7 +147,7 @@ export function immediateParams(
       };
     case 'carry':
       return {
-        worldX: event.x, worldY: event.y,
+        ...at(event.x, event.y),
         clientX: event.clientX, clientY: event.clientY,
         carry: { type: event.type, value: event.value },
         affordance: event.affordance,
@@ -127,7 +161,7 @@ export function immediateParams(
       return {
         items: event.items,
         via: event.kind,
-        ...(event.kind === 'drop' && event.x !== undefined ? { worldX: event.x, worldY: event.y } : {}),
+        ...(event.kind === 'drop' ? at(event.x, event.y) : {}),
         ...resolved,
       };
     default:

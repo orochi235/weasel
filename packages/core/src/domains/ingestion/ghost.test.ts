@@ -60,7 +60,7 @@ describe('previewIngest', () => {
 
   it('draws the ghost at the drop point and hands back what takes it down', () => {
     const d = deps();
-    const stop = previewIngest(d.deps, { items: [pending('file', 'image/png')], worldX: 500, worldY: 500 }, IMAGES_AND_TEXT);
+    const stop = previewIngest(d.deps, { items: [pending('file', 'image/png')], world: { x: 500, y: 500 } }, IMAGES_AND_TEXT);
     expect(d.show).toHaveBeenCalledWith([{ path: { kind: 'rect', x: 450, y: 450, width: 100, height: 100 } }]);
     stop?.();
     expect(d.hide).toHaveBeenCalledTimes(1);

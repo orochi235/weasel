@@ -62,7 +62,7 @@ describe('dispatcher — carry', () => {
     expect(d.handleInput(carry('drop', 5), ctx)).toBe('handled');
     expect(run).toHaveBeenCalledOnce();
     expect(run.mock.calls[0]![1]).toMatchObject({
-      worldX: 5, worldY: 0, clientX: 5, clientY: 0,
+      world: { x: 5, y: 0 }, clientX: 5, clientY: 0,
       carry: { type: 'lab/part', value: { id: 'a' } },
     });
   });

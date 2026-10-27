@@ -21,6 +21,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 import { icon } from '../../../icons.gen';
+import type { ImmediateParams } from '@weasel-js/routing';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
 
@@ -198,18 +199,14 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const p = params as {
-          worldX?: number; worldY?: number;
-          affordance?: unknown;
-          mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
-        } | undefined;
+        const p = params as ImmediateParams | undefined;
         const selection = deps.selection;
-        if (!selection || p?.worldX === undefined || p.worldY === undefined) return;
+        if (!selection || !p?.world) return;
         const mods = p.mods ?? { alt: false, ctrl: false, meta: false, shift: false };
         const opts = optionsRef.current;
 
         const sel = selection.get();
-        const hit = pickHit({ x: p.worldX, y: p.worldY }, mods.alt, sel);
+        const hit = pickHit(p.world, mods.alt, sel);
 
         if (hit === null) {
           pressRef.current = { deferredClickId: null };

@@ -37,11 +37,11 @@ function fixture(opts?: Parameters<typeof distanceReadout>[0]) {
 describe('distanceReadout', () => {
   it('shows the distance from the selection to the shape under the pointer while the modifier is held', () => {
     const { r, run, store, heard } = fixture();
-    run({ show: true, worldX: 35, worldY: 5 });
+    run({ show: true, world: { x: 35, y: 5 } });
     expect(r.read().gaps).toEqual([{ axis: 'x', min: 10, max: 30, at: 5 }]);
     expect(store.get()).toEqual([{ kind: 'distance', from: { x: 10, y: 5 }, to: { x: 30, y: 5 }, value: 20 }]);
     expect(heard).toHaveBeenCalledTimes(1);
-    run({ show: false, worldX: 35, worldY: 5 });
+    run({ show: false, world: { x: 35, y: 5 } });
     expect(r.read().gaps).toEqual([]);
     expect(store.get()).toEqual([]);
     expect(heard).toHaveBeenCalledTimes(2);
@@ -49,18 +49,18 @@ describe('distanceReadout', () => {
 
   it('shows nothing over empty canvas, over the selection itself, or with nothing selected', () => {
     const { r, run, select, heard } = fixture();
-    run({ show: true, worldX: 20, worldY: 5 });
-    run({ show: true, worldX: 5, worldY: 5 });
+    run({ show: true, world: { x: 20, y: 5 } });
+    run({ show: true, world: { x: 5, y: 5 } });
     expect(r.read().gaps).toEqual([]);
     select([]);
-    run({ show: true, worldX: 35, worldY: 5 });
+    run({ show: true, world: { x: 35, y: 5 } });
     expect(r.read().gaps).toEqual([]);
     expect(heard).not.toHaveBeenCalled();
   });
 
   it('hides on a press', () => {
     const { r, run, el, store } = fixture();
-    run({ show: true, worldX: 35, worldY: 5 });
+    run({ show: true, world: { x: 35, y: 5 } });
     el.dispatchEvent(new Event('pointerdown'));
     expect(r.read().gaps).toEqual([]);
     expect(store.get()).toEqual([]);
@@ -81,7 +81,7 @@ describe('distanceReadout', () => {
 
   it('writes a leader to a shape it shares no range with as a line mark', () => {
     const { run, store } = fixture();
-    run({ show: true, worldX: 35, worldY: 45 });
+    run({ show: true, world: { x: 35, y: 45 } });
     expect(store.get()).toEqual([
       { kind: 'distance', from: { x: 10, y: 5 }, to: { x: 30, y: 5 }, value: 20 },
       { kind: 'distance', from: { x: 5, y: 10 }, to: { x: 5, y: 40 }, value: 30 },
@@ -92,7 +92,7 @@ describe('distanceReadout', () => {
 
   it('stamps its color on the distance and the leader', () => {
     const { run, store } = fixture({ color: '#e0397f' });
-    run({ show: true, worldX: 35, worldY: 45 });
+    run({ show: true, world: { x: 35, y: 45 } });
     expect(store.get().map((m) => m.color)).toEqual(Array(4).fill('#e0397f'));
   });
 });

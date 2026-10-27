@@ -103,7 +103,7 @@ describe('the non-pointer gestures', () => {
   ])('%s delivers a %s at the converted screen point', (actionId, type) => {
     const seen: HudPointerEvent[] = [];
     const widget = stubWidget(seen);
-    runImmediate(actionId, { worldX: 0, worldY: 0, affordance: affordanceFor(widget) });
+    runImmediate(actionId, { world: { x: 0, y: 0 }, affordance: affordanceFor(widget) });
     expect(seen).toEqual([{ type, ...SCREEN_OF_ORIGIN, native: null }]);
   });
 
@@ -120,7 +120,7 @@ describe('the non-pointer gestures', () => {
 
   it('every action ignores an affordance carrying no widget', () => {
     for (const id of ['hud.doubleClick', 'hud.contextMenu', 'hud.longPress', 'hud.wheel']) {
-      expect(() => runImmediate(id, { worldX: 0, worldY: 0, clientX: 0, clientY: 0 })).not.toThrow();
+      expect(() => runImmediate(id, { world: { x: 0, y: 0 }, clientX: 0, clientY: 0 })).not.toThrow();
     }
   });
 });

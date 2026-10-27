@@ -2,6 +2,7 @@ import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-j
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { BooleanOpOptions, NodeId, PathOverlay, TransientPath } from '@weasel-js/core';
 import { facesAlong, planShapeBuilder, type ShapeBuilderMode, type ShapeBuilderPlan } from './shapeBuilder';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 type Point = { x: number; y: number };
 
@@ -72,9 +73,9 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const p = params as { worldX?: number; worldY?: number; mods?: { alt?: boolean } } | undefined;
+        const p = params as ImmediateParams | undefined;
         const plan = enoughSelected(deps) === true ? plans.get(deps) : null;
-        const at = plan && p?.worldX !== undefined && p.worldY !== undefined ? plan.faceAt(p.worldX, p.worldY) : -1;
+        const at = plan && p?.world ? plan.faceAt(p.world.x, p.world.y) : -1;
         if (!plan || at < 0) overlay.clear();
         else show(plan, [at], modeFor(p?.mods?.alt) === 'delete' ? 'remove' : 'chrome');
       },
@@ -97,10 +98,10 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const p = params as { pressX?: number; pressY?: number; mods?: { alt?: boolean } } | undefined;
+        const p = params as ImmediateParams | undefined;
         const plan = plans.get(deps);
-        if (!plan || p?.pressX === undefined || p.pressY === undefined) return;
-        const at = plan.faceAt(p.pressX, p.pressY);
+        if (!plan || !p?.press) return;
+        const at = plan.faceAt(p.press.x, p.press.y);
         if (at < 0) return;
         overlay.clear();
         plans.clear();

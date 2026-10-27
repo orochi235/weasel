@@ -121,6 +121,11 @@ export function pathBox(path: Path, stroke: Stroke | undefined, m: GlMat3): Scre
       if (x < minX) minX = x; else if (x > maxX) maxX = x;
       if (y < minY) minY = y; else if (y > maxY) maxY = y;
     }
+    const o = path.origin;
+    if (o) {
+      minX += o.x; maxX += o.x;
+      minY += o.y; maxY += o.y;
+    }
   } else {
     return null;
   }

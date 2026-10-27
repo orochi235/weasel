@@ -3,6 +3,7 @@ import { ActionDisabledReason, type Contribution, type Vec2 } from '@weasel-js/c
 import { ANYWHERE } from '../reorder';
 import type { ReorderSource } from './editorReorder';
 import { groupAt } from './groupOrder';
+import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action that opens a group's name field. */
 export const RENAME_GROUP_ACTION_ID = 'effect.renameGroup';
@@ -24,7 +25,8 @@ export function renameGroupContribution(now: () => ReorderSource, rename: (group
       invoker: {
         timing: 'immediate',
         run(_, params) {
-          const group = under({ x: Number(params?.worldX), y: Number(params?.worldY) });
+          const world = (params as ImmediateParams | undefined)?.world;
+          const group = world ? under(world) : undefined;
           if (group !== undefined) rename(group);
         },
       },

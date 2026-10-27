@@ -37,6 +37,7 @@
     "build": "tsup"
   },
   "dependencies": {
+    "@weasel-js/headless": "1.13.0",
     "@weasel-js/quantity": "1.13.0"
   },
   "publishConfig": {

@@ -5,6 +5,7 @@ import { requiresSelection } from '../defaults/requiresSelection';
 import { kitWeaselJsonHandler } from 'domains/ingestion/weaselJsonHandler';
 import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
 import { icon } from '../../../icons.gen';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /**
  * Static descriptor for the `clipboard.copy` Action (Cmd/Ctrl+C).
@@ -86,9 +87,8 @@ export const clipboardPasteAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const x = params?.worldX;
-      const y = params?.worldY;
-      deps.clipboard?.paste(typeof x === 'number' && typeof y === 'number' ? { worldX: x, worldY: y } : undefined);
+      const world = (params as ImmediateParams | undefined)?.world;
+      deps.clipboard?.paste(world ? { worldX: world.x, worldY: world.y } : undefined);
     },
   },
   enabled: (deps) => {

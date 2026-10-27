@@ -1,8 +1,9 @@
 import type { Action, ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
+import { isEnterable, type EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { NodeId } from 'core/scene/types';
 import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -50,7 +51,7 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
     const hit = opts.pickHit(p);
     if (hit === null) return null;
     const target = pressTarget(opts.tree, hit, entered.get());
-    return (opts.tree.getNode(target) as { kind?: string } | undefined)?.kind === 'group' ? target : null;
+    return isEnterable(opts.tree.getNode(target) as Parameters<typeof isEnterable>[0]) ? target : null;
   };
   return {
     id: 'group.enter',
@@ -61,8 +62,8 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const x = params?.worldX, y = params?.worldY;
-        const target = typeof x === 'number' && typeof y === 'number' ? targetAt(deps, { x, y }) : null;
+        const world = (params as ImmediateParams | undefined)?.world;
+        const target = world ? targetAt(deps, world) : null;
         if (target !== null) deps.enteredGroup?.enter(target as NodeId);
       },
     },
@@ -93,8 +94,8 @@ export function createLeaveGroupAction(opts: LeaveGroupOptions): Action {
       run: (deps, params) => {
         const entered = deps.enteredGroup;
         if (!entered) return;
-        const x = params?.worldX, y = params?.worldY;
-        if (typeof x === 'number' && typeof y === 'number') leaveGroupsOutside(entered, opts.boxOf, { x, y });
+        const world = (params as ImmediateParams | undefined)?.world;
+        if (world) leaveGroupsOutside(entered, opts.boxOf, world);
         else entered.leave();
       },
     },

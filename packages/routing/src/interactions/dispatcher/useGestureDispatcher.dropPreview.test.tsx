@@ -66,7 +66,7 @@ describe('useGestureDispatcher — drop preview', () => {
     expect(preview).toHaveBeenCalledTimes(1);
     const params = (preview.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
     expect(params.items).toEqual([{ pending: 'file', mime: 'image/png' }]);
-    expect(params).toMatchObject({ via: 'drop', worldX: 10, worldY: 20 });
+    expect(params).toMatchObject({ via: 'drop', world: { x: 10, y: 20 } });
   });
 
   it('a stationary drag asks once; moving takes the last preview down and asks again', () => {

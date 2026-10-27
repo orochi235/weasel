@@ -17,11 +17,20 @@
  *                     holding a gradient in screen units, which does not move
  *                     with the view: every layer is drawn straight through.
  *   - `retainedStill` — retained under a still view, for reference.
+ *   - `retainedRedraw` — retained, the view jumping 170 CSS px and back each
+ *                     frame, past the margin either way: every surface is
+ *                     drawn again with its margin every frame. What a frame
+ *                     that redraws costs, and the scratch buffer at its
+ *                     largest.
  *
  * The layers' content spans twice the canvas each way, so a surface really
  * does run out of margin and draw again. Each sample is one frame; the raw
  * samples are kept, so the redraw frames hidden by a median are in the
- * result. `WEASEL_PERF_LAYERS` and `WEASEL_PERF_CMDS` override the ladders.
+ * result. `WEASEL_PERF_LAYERS` and `WEASEL_PERF_CMDS` override the ladders,
+ * `WEASEL_PERF_TILE` the scratch buffer's tile side (`none` draws every
+ * surface whole), and `WEASEL_PERF_BUDGET` the retain budget in MiB. Each cell
+ * also records the most GPU memory retained surfaces held at the end of a
+ * frame, as the renderer counts its allocations.
  * This reports; it does not gate.
  */
 import { test, expect } from '@playwright/test';
@@ -42,23 +51,29 @@ const ladder = (env: string | undefined, fallback: number[]) =>
 const LAYERS = ladder(process.env.WEASEL_PERF_LAYERS, [4, 16]);
 const CMDS = ladder(process.env.WEASEL_PERF_CMDS, [300, 1000]);
 const RUNS = rounds(3);
+const TILE = process.env.WEASEL_PERF_TILE === 'none' ? Infinity : Number(process.env.WEASEL_PERF_TILE) || undefined;
+const BUDGET = Number(process.env.WEASEL_PERF_BUDGET) * 1024 * 1024 || undefined;
 
-const VARIANTS = ['control', 'submitPan', 'retainedPan', 'retainedFrac', 'retainedFixed', 'retainedStill'] as const;
+const VARIANTS = ['control', 'submitPan', 'retainedPan', 'retainedFrac', 'retainedFixed', 'retainedStill', 'retainedRedraw'] as const;
 type Variant = (typeof VARIANTS)[number];
+/** CSS px the view moves a frame; `retainedRedraw`'s moves there and back. */
 const STEP: Record<Variant, number> = {
-  control: 1, submitPan: 1, retainedPan: 1, retainedFrac: 0.37, retainedFixed: 1, retainedStill: 0,
+  control: 1, submitPan: 1, retainedPan: 1, retainedFrac: 0.37, retainedFixed: 1, retainedStill: 0, retainedRedraw: 170,
 };
 
 interface Cell {
   run: number; layers: number; cmds: number; variant: Variant;
   perFrameMs: number; meanMs: number; maxMs: number; samples: number[]; cpuMs: number;
-  composited: number; redrawn: number; declined: number;
+  composited: number; redrawn: number; declined: number; peakBytes: number;
 }
 
 test.setTimeout(3_600_000);
 
 test('retained layers through a pan', async ({ page, browser, browserName }) => {
-  const run = startRun('retain-pan', { viewport: `${W}x${H}`, dpr: DPR, layers: LAYERS, cmds: CMDS, runs: RUNS, step: STEP });
+  const run = startRun('retain-pan', {
+    viewport: `${W}x${H}`, dpr: DPR, layers: LAYERS, cmds: CMDS, runs: RUNS, step: STEP,
+    tile: TILE === Infinity ? 'none' : TILE ?? 'default', budgetMiB: BUDGET ? BUDGET / 1024 / 1024 : 'default',
+  });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -78,7 +93,8 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
       `  ${String(c.index).padStart(3)}/${total}  run ${c.run}  ${String(c.layers).padStart(2)} x ${String(c.cmds).padStart(4)}`
       + `  ${c.variant.padEnd(13)} ${c.perFrameMs.toFixed(3).padStart(8)} ms/frame  mean ${c.meanMs.toFixed(3).padStart(8)}`
       + `  max ${c.maxMs.toFixed(3).padStart(8)}  cpu ${c.cpuMs.toFixed(3).padStart(7)}`
-      + `  kept ${String(c.composited).padStart(4)} redrawn ${String(c.redrawn).padStart(3)} through ${String(c.declined).padStart(4)}`,
+      + `  kept ${String(c.composited).padStart(4)} redrawn ${String(c.redrawn).padStart(3)} through ${String(c.declined).padStart(4)}`
+      + `  peak ${(c.peakBytes / 1024 / 1024).toFixed(1).padStart(6)} MiB`,
     );
   });
 
@@ -87,7 +103,7 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
   await page.waitForSelector('canvas');
 
   const { glRenderer } = await page.evaluate(
-    async ({ root, w, h, dpr, layerLadder, cmdLadder, runs, variants, steps }) => {
+    async ({ root, w, h, dpr, layerLadder, cmdLadder, runs, variants, steps, tile, budget }) => {
       const report = (globalThis as unknown as { __panReport: (m: unknown) => Promise<void> }).__panReport;
       const base = `/weasel/@fs${root}`;
       const { WeaselRenderer, registerFont } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
@@ -150,13 +166,15 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
             const { gl, canvas } = freshContext();
             const stacks = new Map<string, { layers: Layer[]; cache: Map<string, unknown>; renderer: InstanceType<typeof WeaselRenderer>; x: number }>();
             for (const v of variants) {
-              const renderer = new WeaselRenderer(v === 'control' ? { gl, canvas, width: w, height: h, dpr } : { gl, width: w, height: h, dpr });
+              const renderer = new WeaselRenderer(v === 'control' ? { gl, canvas, width: w, height: h, dpr } : { gl, width: w, height: h, dpr, retainBudget: budget ?? undefined });
+              // The renderer's own store; the tile side is not public API.
+              if (tile !== null) (renderer as unknown as { retained: { tile: number } }).retained.tile = tile === 'none' ? Infinity : tile;
               stacks.set(v, { layers: stackFor(v, n, m), cache: new Map(), renderer, x: 0 });
             }
-            const totals: Record<string, { composited: number; redrawn: number; declined: number }> = {};
+            const totals: Record<string, { composited: number; redrawn: number; declined: number; peakBytes: number }> = {};
             const frame = (v: string) => {
               const s = stacks.get(v)!;
-              s.x += steps[v];
+              s.x = v === 'retainedRedraw' ? (s.x === 0 ? steps[v] : 0) : s.x + steps[v];
               const view = { x: s.x, y: 0, scale: { x: 1, y: 1 } };
               const viewMatrix = new Float32Array([1, 0, 0, 0, 1, 0, -view.x, -view.y, 1]);
               const policy = v.startsWith('retained') ? undefined : false;
@@ -168,7 +186,7 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
             const cpu: Record<string, number[]> = {};
             const timed = await timeInterleaved(gl, variants.map((v: string) => {
               cpu[v] = [];
-              totals[v] = { composited: 0, redrawn: 0, declined: 0 };
+              totals[v] = { composited: 0, redrawn: 0, declined: 0, peakBytes: 0 };
               return {
                 id: v,
                 frame: () => frame(v),
@@ -178,6 +196,7 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
                   totals[v].composited += st.retained.composited;
                   totals[v].redrawn += st.retained.redrawn;
                   totals[v].declined += st.retained.declined;
+                  totals[v].peakBytes = Math.max(totals[v].peakBytes, st.retained.bytes);
                 },
               };
             }));
@@ -202,7 +221,10 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
       }
       return { glRenderer };
     },
-    { root: repoRoot, w: W, h: H, dpr: DPR, layerLadder: LAYERS, cmdLadder: CMDS, runs: RUNS, variants: [...VARIANTS], steps: STEP },
+    {
+      root: repoRoot, w: W, h: H, dpr: DPR, layerLadder: LAYERS, cmdLadder: CMDS, runs: RUNS, variants: [...VARIANTS], steps: STEP,
+      tile: TILE === Infinity ? 'none' as const : TILE ?? null, budget: BUDGET ?? null,
+    },
   );
 
   expect(errors, `page errors:\n${errors.join('\n')}`).toEqual([]);
@@ -212,8 +234,8 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
   const lines = [
     '', `Retained pan — ${W}x${H} at dpr ${DPR}, on ${glRenderer}`,
     `ms per frame, median of ${RUNS} runs of the median single-frame sample less the least frame that draws.`, '',
-    '| layers | cmds | control | submit pan | retained pan | retained frac | retained fixed | retained still | pan / submit |',
-    '|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
+    '| layers | cmds | control | submit pan | retained pan | retained frac | retained fixed | retained still | retained redraw | pan / submit | peak MiB, redraw |',
+    '|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
   ];
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   const stat = `median of ${RUNS} runs; each the median of 40 single-frame samples less the least frame that draws (lib/frameTiming.ts)`;
@@ -222,7 +244,8 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
       const at = (v: Variant) => med(of(n, m, v).map((c) => c.perFrameMs));
       lines.push(`| ${String(n).padStart(2)} | ${String(m).padStart(4)} | ${f(at('control'), 7)} | ${f(at('submitPan'), 7)}`
         + ` | ${f(at('retainedPan'), 7)} | ${f(at('retainedFrac'), 7)} | ${f(at('retainedFixed'), 7)} | ${f(at('retainedStill'), 7)}`
-        + ` | ${f(at('retainedPan') / at('submitPan'), 6)} |`);
+        + ` | ${f(at('retainedRedraw'), 7)} | ${f(at('retainedPan') / at('submitPan'), 6)}`
+        + ` | ${(Math.max(...of(n, m, 'retainedRedraw').map((c) => c.peakBytes)) / 1024 / 1024).toFixed(1).padStart(6)} |`);
       const items: Record<string, ReturnType<typeof metric>> = {};
       for (const v of VARIANTS) {
         const cs = of(n, m, v);
@@ -232,6 +255,8 @@ test('retained layers through a pan', async ({ page, browser, browserName }) => 
         items[`${v}Cpu`] = metric(med(cs.map((c) => c.cpuMs)), 'ms', `median of ${RUNS} runs of the median renderer.render() time`, cs.map((c) => c.cpuMs));
         items[`${v}Redrawn`] = metric(cs.reduce((a, c) => a + c.redrawn, 0), 'count', `layer surfaces drawn over every timed frame of ${RUNS} runs`);
         items[`${v}Composited`] = metric(cs.reduce((a, c) => a + c.composited, 0), 'count', `layer surfaces composited over every timed frame of ${RUNS} runs`);
+        items[`${v}Through`] = metric(cs.reduce((a, c) => a + c.declined, 0), 'count', `layers drawn straight through over every timed frame of ${RUNS} runs`);
+        items[`${v}PeakBytes`] = metric(Math.max(...cs.map((c) => c.peakBytes)), 'bytes', `most GPU memory retained surfaces held at the end of a timed frame, scratch included, across ${RUNS} runs`, cs.map((c) => c.peakBytes));
       }
       run.item(`${n}x${m}`, items, { layers: n, cmds: m });
     }

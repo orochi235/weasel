@@ -43,14 +43,9 @@ Owner tags, after the priority (2026-10-26):
   `<SceneCanvas>` until the consumer installs the handlers. Left in place for now (ruled
   2026-10-11). If they do move, the package is `images`; `ingest` was turned down.
 
-- **(P3) [agent] The binding params bag's points are flat scalars.** `immediateParams` (routing `inputFacts.ts`) hands
-  immediate invokers `worldX`/`worldY` and a click's `pressX`/`pressY`, and about 25 actions across core,
-  path-tools, rig, hud, guides, minimap, labkit, diagram and symmetry cast `params` to read them. Other code also
-  writes the scalars: `resolveMenu`'s trigger point, `planeInput`'s plane remap, `useCanvasIngestion`,
-  `ActionsProvider`'s `pointOf` for `enabled`, and about 60 tests that call invokers directly. Replace them with
-  `world`/`press` as `WorldPoint` under one exported params type, readers and writers in the same change; the bag
-  is `Record<string, unknown>`, so only tests catch a missed reader. The camera is the 2D `View`, and kernel3d
-  declares `camera3d` beside it by design.
+- **(P3) [agent] The clipboard's paste point is still flat.** `useClipboardOps`' `paste(at)` and `getDropPoint`, and the
+  adapter's `dropPoint`, take `{ worldX, worldY }` where the dispatcher's points are `WorldPoint`s since
+  2026-10-27.
 
 - **(P3) [recheck] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
   runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
@@ -61,9 +56,8 @@ Owner tags, after the priority (2026-10-26):
   `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
   no trials at all.
 
-- **(P3) [agent] labkit's 3D lab cannot enter a container.** `packages/labkit/examples/3d-lab` wires `useSelectTool` by
-  hand rather than through `<SceneCanvas>`, so it lacks the group-entry contribution: a click selects the
-  outermost container, but a double-click cannot enter one. Its scene has no containers today.
+- **(P3) [agent] A box drawn in labkit's 3D lab while a container is entered does not go into it.** The lab registers no
+  `insertInto` dep, and its insert ignores one (2026-10-27).
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -275,14 +269,13 @@ Owner tags, after the priority (2026-10-26):
 
 ### Pathfinder follow-ups (post-v1)
 
-- **(P3) [agent] Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
-- **(P3) [agent] Curve-preserving divide, crop, trim, merge and face pieces.** `pathUnion`/`pathIntersect`/
-  `pathSubtract`/`pathExclude` keep curves (`packages/geom/src/booleans/curveBoolean.ts`, 2026-10-27), but
-  `pathDividePieces`, `pathFacePieces`, `pathCropPieces`, `pathTrim` and `pathMerge` still go through
-  `pathToMultiPolygon` and `arrangementFaces`, so their pieces are straight-line. The cut-and-classify step
-  (`curveEdges.ts`, `curveClassify.ts`) already knows which operands cover each side of every edge, so faces are
-  its loops grouped by which inputs cover them. Coincident outlines (shared edges, the same circle twice) still
-  fall back to flattening: the classifier detects them but does not resolve them.
+- **(P3) [agent] Boolean groups: the rest.** Core has boolean groups (`booleanGroupFields`, `consumesChildren`,
+  2026-10-27). Still open: SVG export writes the children as separate visible shapes, because a derived path is not
+  visible to `svgNodesFromKit`; it should write the result path, with the children in a `<g>` carrying a marker
+  attribute so import can rebuild the group. Also: a WeaselDraw "Make boolean group" command or a Pathfinder
+  modifier, and a control to switch the operation; Ungroup / release for a boolean group; a group placed inside a
+  boolean group counts as no operand (a derivation cannot see grandchildren); an outline of the children while the
+  group is entered (they are not drawn, so only selection chrome shows where they are).
 
 ## Rendering & paint
 
@@ -294,15 +287,15 @@ Owner tags, after the priority (2026-10-26):
   far from the origin. Near it, `gradientStart.browser.test.ts` shows the shader honors the rebase:
   a linear, radial and conic ramp each land where their paint says in headless Chromium on the
   fleet, and all three fail with `bindGradient` handing over the unrebased inverse (2026-10-21).
-  Still float32:
-  a path's own coordinates (`PolygonPath.coords`, `Mesh.vertices`), which at world x = 262,144
-  sit on a 1/32 world unit grid, 2 px at 64x, so a tessellated shape is quantized where a batched
-  rect (doubles) is not; and what a consumer's own stage receives, which has no origin to rebase
-  against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
-  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first cannot be
-  fixed in tessellation alone: `PolygonPath.coords` is a `Float32Array`, so the grid is already in
-  the path before the tessellator reads it. It needs the path itself to carry an origin (or
-  double coords), which every reader of `coords` would then honor.
+  Still float32 for a consumer's own stage, which has no origin to rebase against: the model (`u_view` on a
+  shader command, `u_model` in a registered paint kind) and the paint matrix a registered kind asks for
+  (`PaintBindContext.spaceInverse`). A path's coordinates can now be measured from `PolygonPath.origin`
+  (2026-10-27), and the renderer, `tessellate`, `tessellateStroke`, `markerHeads`, `strokeToPath`,
+  `transformPath` and `boundsOfPath` honor it. Every other reader of `coords` still reads them as if the origin
+  were 0: hit-testing (`regionHit`), anchor editing and `pathToAnchors`, the booleans, `pathToD` and SVG export,
+  scene serialization, and the path-tools. Nothing produces a path with an origin yet: the pen tool, SVG import
+  and shape generators would have to build one with `PathBuilder.setOrigin`. A rect drawn on its own
+  (`tessellateRect`) is still built from float32 corners.
 
 - **(P3) [agent] The tessellate rows of `tests/perf/bench/BASELINE.md` predate two deliberate costs.**
   Bisected on studio (2026-10-19), the node that measured the 2026-09-29 rows, which still
@@ -364,14 +357,21 @@ Owner tags, after the priority (2026-10-26):
   ±0.45, which is unexplained. The `super`/`sub` 12px rows of
   `npx vitest run -c scripts/measure-overlay-alignment.config.ts` show both.
 
-- **(P3) [agent] Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutEntries.ts` looks
-  glyphs up one code point at a time and applies kerning pairs: sufficient for Latin, Cyrillic,
-  Greek, and CJK ideographs, wrong for Arabic, Devanagari, Thai, and any script needing contextual
-  shaping. The fix is a HarfBuzz WASM build (harfbuzzjs, ~1MB) behind a feature flag, so consumers
-  who only need Latin stay slim. It touches the layout pipeline only; the renderer already takes
-  pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is
-  synthesized (capitals scaled by x-height over cap height), and a face with an `smcp` feature
-  should get its own small-cap glyphs instead.
+- **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/shape`.** Shaping (`registerShaper(await
+  loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType
+  or OpenType bytes. Text drawn from an atlas (baked or canvas) is still laid out one code point at a time, because
+  atlases look glyphs up by code point and cannot draw a shaped glyph index. Open pieces:
+  - PDF export embeds glyphs by code point (`packages/pdf/src/fonts/embedFont.ts`, `glyphIndexOf(cp)`), so shaped
+    text exports unshaped. `PlacedGlyph.shaped.glyphs` already carries the glyph indices and positions it would
+    need.
+  - A ligature that spans several grapheme clusters puts its whole advance on its first code point, so a caret
+    inside it lands at its end. Splitting the advance across its grapheme ends needs the cluster's drawing
+    direction.
+  - Script pieces are cut over a fixed list of scripts. Any other script is one piece, and its direction is
+    guessed from the right-to-left Unicode blocks.
+  - Language is never set, so locale-specific forms (Serbian, Urdu digits) are not selected.
+  - harfbuzzjs awaits at its module's top level, so a bundler targeting below ES2022 fails on it; whether Vite
+    pre-bundling loses its `.wasm` is unchecked (the README advises `optimizeDeps.exclude`).
 
 ---
 
@@ -416,10 +416,11 @@ Owner tags, after the priority (2026-10-26):
   `diagram-drop` demo a straight `filter → mix` edge strikes through the two boxes dropped between them.
   Painting edges under nodes needs an edge between a container's fill and its members, or the edge hidden
   under the container; the alternative is `router="avoid"` in the demo. A pick between those (2026-10-26).
-- **(P3) [agent] The layout pass hands a strategy a turned container's box unturned but its children turned.**
-  `frameOf` in `packages/core/src/core/scene/layoutPass.ts` gives a strategy the container's bounds as an
-  axis-aligned box while its children arrive in rotated world poses, the frame mix-up `scrollRange` had until
-  2026-10-27 (inferred from the code, not tested).
+- **(P3) [agent] A drop into a turned layout container reads the container's box unturned.** The layout pass shows a
+  strategy a turned container in its own frame since 2026-10-27 (`strategyView` in `layoutPass.ts`), but the drag
+  hooks (`getDropTargets`, `reflowPoses`, `commitDrop`, in `interactions/actions/move/layout/dropPass.ts` and
+  `commit/layoutDrop.ts`) still get its axis-aligned box beside children in turned world poses, so a drop preview
+  or commit into a rotated grid or stack is off its axes (inferred from the code, not tested).
 
 ---
 
@@ -482,17 +483,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
-- **(P4) [agent] A headless-component layer shared by DOM and WebGL chrome.** The context menu already
-  runs one behavior on both substrates: `@weasel-js/menu` holds its state, keys, typeahead and
-  placement, ui's `MenuPanel` and hud's `drawPanel` draw it, and a hud widget's `accessibleTree`
-  is the substrate-neutral description its DOM mirror is built from. Generalizing that so buttons,
-  lists and other chrome draw on either substrate is several arcs: the roving highlight and
-  typeahead as a list behavior not typed to `MenuEntry` (`keys.ts`'s `step`/`firstRow`,
-  `typeahead.ts`); focus that means one thing whether it is DOM focus or `hud.focus`; a
-  measure/draw contract a DOM component and a hud widget both implement; then porting a button and
-  a list onto it. **Open decision before the first arc: where the layer lives.** A new package
-  (it needs nothing else from weasel, so it qualifies, and needs a first publish) or
-  `@weasel-js/menu` widened and renamed; the first arc moves the list behavior out of `menu` either way.
+- **(P4) [agent] A headless-component layer shared by DOM and WebGL chrome.** `@weasel-js/headless` (added
+  2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type
+  (`rovingKey`, `stepStop`, `typeaheadStep`), and `@weasel-js/menu` runs each menu level on it; ui's `MenuPanel`
+  and hud's `drawPanel` draw that menu, and a hud widget's `accessibleTree` is the substrate-neutral description its
+  DOM mirror is built from. Left, in order: focus that means one thing whether it is DOM focus or `hud.focus`; a
+  measure/draw contract a DOM component and a hud widget both implement; then porting a button and a list onto it.
+  The list port should fold ui's `useRowNavigation`/`useTypeahead` onto `headless`: it is a second typeahead that
+  does not cycle on a repeated letter, and it reads `tree.typeaheadMs` where `headless` takes a `resetMs`.
+- **(P2) [maintainer] Publish `@weasel-js/headless` and `@weasel-js/shape` for the first time.** Both were added
+  2026-10-27; each needs a first publish by hand, then `setup-trusted-publishing.mjs` and a committed
+  `trust-pending.json` (`docs/releasing.md`). Until then `check:first-publish` fails the release job.
 
 - **(P3) [maintainer] Should grid and guide snaps line up the stroke?** Decision for the maintainer.
   `gridSnapSource` and `guideSnapSource` (`packages/guides/src/sources/`) snap the subject's
@@ -963,6 +964,10 @@ only story runner in the repo.
   presumably the timed-out attempt's lab still answering. `TrialTransport.test.tsx`'s "shares the chosen speed
   between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both
   2026-10-27). What they wait on is unknown: the next sighting wants the attempt's stack at the timeout.
+  In the browser project, `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is, and
+  takes no press past it" timed out in `waitFor` on studio in the batch-7 gate at c6f0578c5, after passing at
+  5257af1db, whose labkit code is the same (2026-10-27). Its `Lab.messages` run at 041b87fa7 also failed once on
+  play rate ("plays with the controls left off").
 
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
@@ -1207,13 +1212,13 @@ only story runner in the repo.
   eighth of the buffer each side (`PAN_MARGIN`); since 7b048f4bf that includes layers holding effects that set
   `reach`, isolated groups and composite groups. Left:
 
-  - **The budget still caps canvas-sized layers at about 16, and fills before a pan needs margins.**
-    `retainBudget` (256 MB default) counts only kept surfaces. A frame that redraws can hold the budget plus one
-    multisampled scratch buffer, up to 1.56 times the canvas for a margin surface (205 MB at 4x, 2560x1600).
-    Drawing in tiles would cap the scratch, but each tile dispatches the children again unless they are culled
-    per tile. At 16 canvas-sized layers no margin fits and a pan draws them straight through
-    (`tests/perf/recorded/retain-pan-2026-10-27/`). Open: whether the default should scale with the drawing
-    buffer, and whether to give margins to some layers rather than none.
+  - **A redraw past one tile is slower, by a cause not found.** A retained surface is drawn in
+    1024-device-pixel tiles (`RETAIN_TILE`), so the multisampled scratch buffer is at most 38 MB at 4x.
+    Redrawing 4 layers with pan margins at 2560x1600 takes about 9.7 or about 15.5 ms depending on the job,
+    against 9 ms untiled, and in the slow jobs the renderer's CPU time rises to match. Culling and the resolve
+    copy are ruled out (`tests/perf/recorded/retain-tiles-2026-10-27/conditions.txt`). The default budget is
+    384 MiB (2026-10-27). Above about 15 canvas-sized layers with margins it still fills, and a margin goes to
+    whichever layer asks first rather than evicting a surface that cannot follow the pan.
   - **Screen-unit paints opt a layer out of pan retaining, correctly** (2026-10-27): such a paint stays put on
     the canvas while the geometry pans through it, so a moved surface would carry stale colors. The only exact
     exception is a pan along which the paint is constant (a linear gradient panned along its stripes, a pattern
@@ -1230,12 +1235,6 @@ only story runner in the repo.
   hairline at a half-pixel offset becomes two half-strength pixels and pops sharp at rest). The exact option is to
   snap the translation core draws with to whole device pixels, which leaves drawn and hit-tested positions up to
   half a device pixel apart for every consumer.
-- **(P3) [agent] `resolveInto` leaves the default framebuffer bound.** `packages/renderer/src/retain/surfaceGl.ts`
-  binds framebuffer `null` after its blit; `retained.ts` rebinds after it since 7b048f4bf, but any other caller
-  inherits the wrong target.
-- **(P3) [agent] Inside an effects buffer, a retained group and a texture-painted text stop at the drawing buffer.**
-  A retained group's surface and the text paint scratch are clamped to the drawing buffer, so their content just
-  past the edge does not feed a blur around them, unlike a direct draw (2026-10-27).
 
 - **(P3) [agent] The pull request benchmark job's new run time is unmeasured.** Since 2026-10-26 it runs
   `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a

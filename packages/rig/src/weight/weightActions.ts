@@ -12,6 +12,7 @@ import { dataRestPath } from '@weasel-js/core';
 import { brushWeights, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** One path under the rig node, where it is drawn, with the weights now showing. */
 export interface WeighedPath {
@@ -133,16 +134,17 @@ export function createWeightActions(env: WeightEnv): Action[] {
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const p = params as { pressX?: number; pressY?: number; mods?: { alt?: boolean } } | undefined;
+          const p = params as ImmediateParams | undefined;
+          const press = p?.press;
           const rig = env.placed();
-          if (!rig || p?.pressX === undefined || p.pressY === undefined) return;
-          const hit = jointAt(rig.skeleton, p.pressX, p.pressY, sceneReach(deps, env.reachPx()));
+          if (!rig || !press) return;
+          const hit = jointAt(rig.skeleton, press.x, press.y, sceneReach(deps, env.reachPx()));
           if (hit !== null) {
             env.state.setActive(hit);
             return;
           }
           const joint = activeJoint(env);
-          const next = joint === null ? null : dab(env, deps, joint, p.pressX, p.pressY, p.mods?.alt ? 'remove' : 'add');
+          const next = joint === null ? null : dab(env, deps, joint, press.x, press.y, p?.mods?.alt ? 'remove' : 'add');
           if (!next) return;
           env.paint(next);
           commitPainted(env, deps);

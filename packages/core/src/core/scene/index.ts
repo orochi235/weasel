@@ -68,4 +68,7 @@ export { nodeAsShown } from './nodeAsShown';
 export { documentOf } from './documentOf';
 export type { ShownDataSource } from './nodeAsShown';
 export { UNION_OF_CHILDREN, unionOfChildren } from './kitRegistry';
+export { BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf } from './booleanOfChildren';
+export { booleanGroupFields } from './booleanGroup';
+export type { BooleanShapeOp } from '../geometry/booleanOfPaths';
 export { CLIP_NOTHING, clipNothing } from './clipNothing';

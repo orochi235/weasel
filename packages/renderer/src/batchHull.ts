@@ -162,7 +162,9 @@ function cornersOf(path: Path): number[] | null {
   const { commands, coords } = path;
   if (commands.length < 4 || commands[0] !== PATH_M || commands[commands.length - 1] !== PATH_Z) return null;
   for (let i = 1; i < commands.length - 1; i++) if (commands[i] !== PATH_L) return null;
-  return Array.from(coords.subarray(0, (commands.length - 1) * 2));
+  const ox = path.origin?.x ?? 0;
+  const oy = path.origin?.y ?? 0;
+  return Array.from(coords.subarray(0, (commands.length - 1) * 2), (v, i) => v + (i & 1 ? oy : ox));
 }
 
 /** Twice the area, positive when the corners run counterclockwise in window

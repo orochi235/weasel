@@ -166,13 +166,13 @@ export function setup(over: {
     tool, adapter, scratch, actionOf, deps, scene, applyEdit, editOps, applyOps, inserted,
 
     /** A plain click — the `pen.placeAnchor` binding. */
-    click(x: number, y: number) { fire('pen.placeAnchor', { pressX: x, pressY: y }); },
+    click(x: number, y: number) { fire('pen.placeAnchor', { press: { x, y } }); },
 
     /** ⌘/Ctrl-click — the `pen.finishOpen` binding. Returns false when the
      *  action declined, in which case the dispatcher would fall through to
      *  the plain-click binding. */
     modClick(x: number, y: number): boolean {
-      return fire('pen.finishOpen', { pressX: x, pressY: y });
+      return fire('pen.finishOpen', { press: { x, y } });
     },
 
     /** A double click on the canvas. The dispatcher emits `click` for each of
@@ -180,7 +180,7 @@ export function setup(over: {
     doubleClick(x: number, y: number) {
       this.click(x, y);
       this.click(x, y);
-      fire('pen.finishOpen', { pressX: x, pressY: y, viaDoubleClick: true });
+      fire('pen.finishOpen', { press: { x, y }, viaDoubleClick: true });
     },
 
     /** A drag from `from` to `to`, with optional intermediate moves. */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aabbOfSolid, createSolidScene, pose3 } from './scene3d';
+import { STACK, aabbOfSolid, createSolidScene, pose3 } from './scene3d';
 import { quatFromAxisAngle, type Vec3 } from '@weasel-js/geom/3d';
 
 function expectVecClose(a: Vec3, b: Vec3, digits = 5) {
@@ -61,10 +61,16 @@ describe('createSolidScene', () => {
   it('builds a weasel scene holding 3D poses', () => {
     const scene = createSolidScene();
     const ids = [...scene.renderOrder()];
-    expect(ids).toHaveLength(3);
+    expect(ids).toHaveLength(6);
     const first = scene.get(ids[0]);
     expect(Object.keys(first!.pose.position)).toEqual(['x', 'y', 'z']);
     expect(first?.data.kind).toBe('box');
+  });
+
+  it('holds two solids in a container', () => {
+    const scene = createSolidScene();
+    expect(scene.get(STACK)?.kind).toBe('group');
+    expect([...scene.childrenOf(STACK)].map((id) => scene.get(id)?.data.kind)).toEqual(['box', 'sphere']);
   });
 
   it('round-trips a 3D pose through setPose and undo', () => {

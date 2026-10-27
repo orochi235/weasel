@@ -66,8 +66,7 @@ export interface ActionsRegistry {
    *  whose `enabled` refuses or whose `run` returns `'pass'`, and for an
    *  ongoing-invoker action, which
    *  `trigger` cannot reach (see `begin`). `enabled` is asked at
-   *  `{ x: params.worldX, y: params.worldY }` when both are numbers, and with
-   *  no point otherwise. */
+   *  `params.world`, and with no point when that is absent. */
   trigger(id: string, params?: Record<string, unknown>): boolean;
   /** Show what firing `id` with `params` would do, by its `Action.preview`,
    *  and return what takes it down; calling that twice is harmless. Shows

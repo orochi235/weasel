@@ -26,7 +26,7 @@ describe('useSelectTool — default pickEvery reads the descriptor', () => {
     if (invoker?.timing !== 'immediate') throw new Error('select.pick missing');
     act(() => {
       invoker.run({ selection: result.current.sel } as unknown as ActionDeps, {
-        worldX: 50, worldY: 50, mods: { alt: false, ctrl: false, meta: false, shift: false },
+        world: { x: 50, y: 50 }, mods: { alt: false, ctrl: false, meta: false, shift: false },
       });
     });
     expect(result.current.sel.current).toEqual(['c']);

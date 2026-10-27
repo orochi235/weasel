@@ -186,8 +186,8 @@ describe('puppet', () => {
   it('pins the shape, and a dragged pin leaves the other pin where it was', () => {
     const scene = makeScene();
     const addPin = createAddPinAction().invoker as ImmediateInvoker;
-    addPin.run(depsOf(scene), { pressX: 0, pressY: 0 });
-    addPin.run(depsOf(scene), { pressX: 100, pressY: 100 });
+    addPin.run(depsOf(scene), { press: { x: 0, y: 0 } });
+    addPin.run(depsOf(scene), { press: { x: 100, y: 100 } });
     const held = heldPathWarpOf(scene.get(asNodeId('a'))!.data)!;
     expect(held.warp.kind === 'puppet' && held.warp.pins).toHaveLength(2);
     dragControl(scene, 'puppet', { warpId: held.id, index: 1 }, { x: 100, y: 100 }, { x: 140, y: 60 });

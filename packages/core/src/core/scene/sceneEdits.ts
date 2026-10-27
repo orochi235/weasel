@@ -109,6 +109,7 @@ export function createSceneEdits<TData, TLayer extends string, TPose>(
     requireNode: store.requireNode,
     record: recorder.record,
     narrowSelection: () => env.narrowSelection(),
+    invalidateDependents: store.invalidateDependents,
   });
 
   const declaredEdits = createDeclaredFieldSetters<TData, TLayer, TPose>({

@@ -138,7 +138,7 @@ export interface ActionDispatch extends BindingSource {
    * (on a path segment, say) refuses other points here, so the dispatcher
    * falls through to the next binding and hover prediction shows the
    * action's `cursor` only where it would act. `trigger` passes the
-   * `worldX`/`worldY` its params carry, so a menu row is run under the
+   * `world` its params carry, so a menu row is run under the
    * question it was shown enabled for. Palettes and keystrokes pass no
    * point; treat absent as "anywhere".
    *

@@ -38,6 +38,7 @@ import { LayoutColumns } from './layoutColumns';
 import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
 import { breakLines, placeLine } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
+import type { ShapedCluster } from './shaperSeam';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
 
 /**
@@ -113,6 +114,10 @@ export interface PlacedGlyph {
    *  record gains its atlas rect in place when its bake lands. */
   font: BmFont | null;
   glyph: BmFontChar | null;
+  /** What it draws when a shaper shaped its run: its cluster's glyphs, set
+   *  from this pen, in place of the glyph its code point maps to. Null or
+   *  absent when its run was not shaped. */
+  shaped?: ShapedCluster | null;
   /** Pen position: the left edge of the glyph's slot. */
   x: number;
   /** Its line's baseline, raised by its run's `baselineShift`. */
@@ -197,7 +202,7 @@ export function layoutRuns(
   opts: LayoutRunsOpts,
 ): LaidOutRuns {
   const o = resolveLayoutOpts(opts);
-  const entries = measureRuns(runs, o.tabSize, ENTRY_POOL, ENTRIES);
+  const entries = measureRuns(runs, o.tabSize, ENTRY_POOL, ENTRIES, o.shaper);
   const cps = CPS;
   cps.length = entries.length;
   for (let k = 0; k < entries.length; k++) cps[k] = entries[k].cp;

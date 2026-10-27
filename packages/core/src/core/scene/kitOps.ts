@@ -86,7 +86,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
     pickable?: boolean; hidden?: boolean; locked?: boolean;
-    units?: UnitScope; clip?: NodeClip;
+    units?: UnitScope; clip?: NodeClip; consumesChildren?: boolean;
   } & Record<string, unknown>>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {

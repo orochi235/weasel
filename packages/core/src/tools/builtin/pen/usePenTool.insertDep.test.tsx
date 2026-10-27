@@ -32,8 +32,8 @@ describe('usePenTool — through the kit insert dep', () => {
       act(() => { invoker.run(buildDepsFromRequires(action, reg), params); });
     };
     const before = scene.historyEntries().length;
-    run('pen.placeAnchor', { pressX: 10, pressY: 20 });
-    run('pen.placeAnchor', { pressX: 60, pressY: 20 });
+    run('pen.placeAnchor', { press: { x: 10, y: 20 } });
+    run('pen.placeAnchor', { press: { x: 60, y: 20 } });
     run('pen.finish');
     const [id] = scene.renderOrder();
     const node = scene.get(id)!;

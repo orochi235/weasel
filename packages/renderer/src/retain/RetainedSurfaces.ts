@@ -44,6 +44,10 @@ const WHOLE_PIXEL_SLACK = 1e-4;
  *  the buffer, as a fraction of the buffer's side. */
 export const PAN_MARGIN = 1 / 8;
 
+/** The largest side of the scratch buffer a surface is drawn in, device
+ *  pixels: a larger surface is drawn in tiles this size. */
+export const RETAIN_TILE = 1024;
+
 /** A retained group's kept pixels: `texture` covers `rect` of the drawing
  *  buffer, and is `null` when `rect` is empty. */
 export interface RetainedPixels {
@@ -51,13 +55,18 @@ export interface RetainedPixels {
   rect: DeviceRect;
 }
 
-/** A surface about to be drawn: draw into `fbo`, whose bottom-left
- *  `rect.width × rect.height` is kept, then `commit`. `fbo` is `null` when the
- *  rect is empty and there is nothing to draw. */
+/** A surface about to be drawn: for each of `tiles`, draw it into the
+ *  bottom-left of `fbo` and `resolve` it; then `commit`. `fbo` is `null` and
+ *  `tiles` empty when the rect is empty and there is nothing to draw. */
 export interface RetainedDraw {
   fbo: WebGLFramebuffer | null;
   /** The rect of the drawing buffer the surface covers. */
   rect: DeviceRect;
+  /** `rect` cut into rects of the drawing buffer no wider or taller than the
+   *  scratch buffer. */
+  tiles: readonly DeviceRect[];
+  /** Keep what was just drawn in the scratch buffer as `tile` of the surface. */
+  resolve(tile: DeviceRect): void;
   commit(key: RetainedKey): RetainedPixels;
 }
 
@@ -68,15 +77,11 @@ export interface RetainedDraw {
  * them all.
  *
  * The budget counts the surfaces, which are what is kept. The scratch buffer
- * they are drawn in is transient: as large as the largest surface it has
- * drawn, so never past one canvas-sized buffer, and freed after the first
- * frame that redraws nothing. Counting it against the budget spent half the
- * default at 4x on a buffer a still frame never touches. A surface composited
- * into a single-sampled buffer is drawn single-sampled, to match what drawing
- * it there leaves, in a second scratch buffer kept the same way.
- *
- * A surface drawn for a group that pans reaches `PAN_MARGIN` past the
- * buffer, so its scratch buffer does too: 1.56 times the buffer's area.
+ * they are drawn in is transient, at most `tile` on a side: a surface larger
+ * than that is drawn a tile at a time, each tile resolved into its place.
+ * It is freed after the first frame that redraws nothing. A surface
+ * composited into a single-sampled buffer is drawn single-sampled, to match
+ * what drawing it there leaves, in a second scratch buffer kept the same way.
  */
 export class RetainedSurfaces {
   private readonly gl: WebGL2RenderingContext;
@@ -89,6 +94,8 @@ export class RetainedSurfaces {
   private height = 0;
   private frame = 0;
   private stamp: readonly unknown[] = [];
+  /** The scratch buffer's largest side; `Infinity` draws every surface whole. */
+  tile = RETAIN_TILE;
   composited = 0;
   redrawn = 0;
   declined = 0;
@@ -104,7 +111,9 @@ export class RetainedSurfaces {
   /** GPU memory held now, scratch buffer included. */
   get bytes(): number {
     let n = this.keptBytes();
-    for (const [samples, held] of this.scratches) n += held.width * held.height * Math.max(1, samples) * 8;
+    for (const [samples, held] of this.scratches) {
+      n += held.width * held.height * (Math.max(1, samples) * 8 + (held.resolved ? 4 : 0));
+    }
     return n;
   }
 
@@ -208,8 +217,8 @@ export class RetainedSurfaces {
     const empty = rect.width === 0 || rect.height === 0;
     const samples = multisample ? this.samples : 0;
     const held = this.scratches.get(samples);
-    const scratchW = Math.max(held?.width ?? 0, empty ? 0 : rect.width);
-    const scratchH = Math.max(held?.height ?? 0, empty ? 0 : rect.height);
+    const scratchW = Math.max(held?.width ?? 0, empty ? 0 : Math.min(rect.width, this.tile));
+    const scratchH = Math.max(held?.height ?? 0, empty ? 0 : Math.min(rect.height, this.tile));
     if (!this.fits(id, rect)) {
       this.declined++;
       return null;
@@ -223,11 +232,16 @@ export class RetainedSurfaces {
     surface.samples = samples;
     this.redrawn++;
     const scratch = surface.gl ? this.scratchFor(samples, scratchW, scratchH) : null;
+    const at = surface.rect;
     return {
       fbo: scratch?.fbo ?? null,
-      rect: surface.rect,
+      rect: at,
+      tiles: scratch ? tilesOf(at, this.tile) : [],
+      resolve: (tile) => {
+        if (!scratch || !surface.gl) return;
+        resolveInto(this.gl, scratch, surface.gl, tile.width, tile.height, tile.x - at.x, at.y + at.height - tile.y - tile.height);
+      },
       commit: (key) => {
-        if (scratch && surface.gl) resolveInto(this.gl, scratch, surface.gl, surface.rect.width, surface.rect.height);
         surface.key = keepKey(key);
         surface.stamp = this.stamp;
         surface.reach = reach ? { box: { ...reach.box }, window: { ...reach.window } } : null;
@@ -250,7 +264,8 @@ export class RetainedSurfaces {
     for (const [id, surface] of this.surfaces) {
       if (surface.frame === this.frame) {
         const n = need.get(surface.samples) ?? { w: 0, h: 0 };
-        need.set(surface.samples, { w: Math.max(n.w, surface.rect.width), h: Math.max(n.h, surface.rect.height) });
+        const { width: w, height: h } = surface.rect;
+        need.set(surface.samples, { w: Math.max(n.w, Math.min(w, this.tile)), h: Math.max(n.h, Math.min(h, this.tile)) });
         continue;
       }
       this.deleteSurface(surface);
@@ -339,6 +354,21 @@ function covers(reach: { box: DeviceBox; window: DeviceRect }, dx: number, dy: n
   const w = reach.window;
   return needed.x >= w.x && needed.y >= w.y
     && needed.x + needed.width <= w.x + w.width && needed.y + needed.height <= w.y + w.height;
+}
+
+/** `rect` cut into tiles at most `side` on a side, row by row from its top
+ *  left; the last in each row and column takes what is left. */
+export function tilesOf(rect: DeviceRect, side: number): DeviceRect[] {
+  const out: DeviceRect[] = [];
+  for (let y = 0; y < rect.height; y += side) {
+    for (let x = 0; x < rect.width; x += side) {
+      out.push({
+        x: rect.x + x, y: rect.y + y,
+        width: Math.min(side, rect.width - x), height: Math.min(side, rect.height - y),
+      });
+    }
+  }
+  return out;
 }
 
 function rectBytes(rect: DeviceRect): number {

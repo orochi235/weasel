@@ -66,7 +66,7 @@ const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 
 function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
-  const point = ctx.at ? { worldX: ctx.at.x, worldY: ctx.at.y } : {};
+  const point = ctx.at ? { world: ctx.at } : {};
   if (it.action.settings) return settingsOf(ctx, it, key, label, off || !evaluateEnabled(it.action, deps, ctx.at).enabled, access);
   return {
     kind: 'item',

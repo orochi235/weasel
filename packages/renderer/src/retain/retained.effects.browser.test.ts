@@ -110,6 +110,23 @@ describe('a retained group that owns a surface, in a real context', () => {
     expect(maxDiff(direct, kept)).toBeLessThanOrEqual(8);
   });
 
+  it('draws what lies past the edge into a surface inside an effects buffer', () => {
+    // Above the buffer but for its last rows: the blur reaching in is mostly
+    // what lies past the edge, which a surface cut at the edge does not hold.
+    const above: DrawCommand[] = [
+      { kind: 'path', path: { kind: 'rect', x: 8, y: -10, width: 30, height: 11 }, fill: { paint: { color: '#ff0000' } } },
+    ];
+    const effects = blur({ radius: 6 });
+    const r = open();
+    const make = (retain?: string): DrawCommand => ({ kind: 'group', effects, children: [{ kind: 'group', retain, children: above }] });
+    const direct = frame(r, [...BELOW, make()]);
+    const first = frame(r, [...BELOW, make('layer')]);
+    const kept = frame(r, [...BELOW, make('layer')]);
+    expect(r.lastFrameStats().retained).toMatchObject({ composited: 1, declined: 0 });
+    expect(maxDiff(direct, first)).toBeLessThanOrEqual(8);
+    expect(maxDiff(direct, kept)).toBeLessThanOrEqual(8);
+  });
+
   it('draws a retained group inside another one straight through', () => {
     const r = open();
     const nested: DrawCommand[] = [{ kind: 'group', retain: 'inner', children: CHILDREN }];

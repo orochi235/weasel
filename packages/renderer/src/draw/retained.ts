@@ -3,9 +3,9 @@ import { compositeProgramId } from '../effects/composite';
 import { isOwnComposite, readsBackdrop } from '../effects/compositeOp';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import type { RetainedClip, RetainedKey } from '../retain/retainedKey';
-import { boxWithin, contentBox, type DeviceRect } from '../retain/contentBounds';
+import { boxWithin, contentBox, type DeviceBox, type DeviceRect } from '../retain/contentBounds';
 import { movesWithView } from '../retain/movesWithView';
-import type { RetainedPixels } from '../retain/RetainedSurfaces';
+import type { RetainedDraw, RetainedPixels } from '../retain/RetainedSurfaces';
 import type { DrawContext } from './drawContext';
 import { compositeOver, insideBuffer, returnToRenderTarget, windowProjection } from './effects';
 import { applyClipTest } from './stencil';
@@ -73,6 +73,7 @@ export function drawRetainedGroup(
     clips,
     effects: cmd.effects,
     isolate: cmd.isolate === true,
+    window: ctx.renderTarget?.window,
   };
   // A buffer a group's effects draw in is single-sampled, and so is a
   // surface standing in for drawing into it.
@@ -91,18 +92,19 @@ export function drawRetainedGroup(
   if (found.kind === 'kept') {
     pixels = found.pixels;
   } else {
+    // Inside an effects buffer, what it holds, which may reach past the
+    // drawing buffer: a blur there reads what lies just past the edge.
+    const window = key.window ?? found.window;
     const box = contentBox(drawn, ctx.state.transform, clips, scale);
-    const draw = store.reserve(id, width, height, boxWithin(box, found.window), multisample, pans ? { box, window: found.window } : undefined);
+    const draw = store.reserve(id, width, height, boxWithin(box, window), multisample, pans ? { box, window } : undefined);
     if (!draw) {
       ctx.state.pop();
       return false;
     }
     // Staged geometry belongs to the buffer underneath.
     flushBatch(ctx);
-    if (draw.fbo) drawInto(ctx, drawn, clips, draw.fbo, draw.rect, dispatch);
+    if (draw.fbo) drawInto(ctx, drawn, clips, draw.fbo, draw, dispatch);
     pixels = draw.commit(key);
-    // The resolve leaves the default framebuffer bound.
-    ctx.gl.bindFramebuffer(ctx.gl.FRAMEBUFFER, ctx.renderTarget?.fbo ?? null);
   }
   ctx.state.pop();
 
@@ -117,48 +119,59 @@ export function drawRetainedGroup(
   return true;
 }
 
-/** Draw `children` into the bottom-left `rect.width × rect.height` of the
- *  scratch buffer behind `fbo`, under the group stack as it stands and inside
- *  `clips`: the part of the drawing buffer `rect` covers. */
+/** Draw `children` into `draw.rect` of the surface, a tile at a time: each
+ *  into the bottom-left of the scratch buffer behind `fbo`, under the group
+ *  stack as it stands and inside `clips`, then resolved into its place. A
+ *  child whose bounds miss a tile is not dispatched for it. */
 function drawInto(
   ctx: DrawContext, children: readonly DrawCommand[], clips: readonly RetainedClip[],
-  fbo: WebGLFramebuffer, rect: DeviceRect, dispatch: Dispatch,
+  fbo: WebGLFramebuffer, draw: RetainedDraw, dispatch: Dispatch,
 ): void {
   const gl = ctx.gl;
   const width = ctx.deviceWidth!;
   const height = ctx.deviceHeight!;
+  const { rect, tiles } = draw;
   const parentTarget = ctx.renderTarget ?? null;
   const parentClipDepth = ctx.clipDepth;
   const parentClipStack = ctx.clipStack;
   const parentBatchClip = ctx.drawBatch.clip;
   const parentProjection = ctx.projection;
   const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
-  ctx.clipDepth = 0;
-  ctx.clipStack = [];
-  ctx.drawBatch.clip = null;
-  // Inside the buffer, its whole viewport slid so `rect`'s bottom-left corner
-  // lands on the scratch buffer's, and the scissor keeps the rest out: the
-  // projection is the frame's own, so the pixels are too. Reaching past it,
-  // a viewport over `rect` alone under a projection aimed at it.
+  const scale = width / ctx.widthCss;
+  // Inside the buffer, the frame's own projection; reaching past it, one aimed
+  // at the whole surface. Either way every tile shares it, its viewport slid
+  // whole pixels so the tile's bottom-left corner lands on the scratch
+  // buffer's: the pixels are the ones drawing the surface whole leaves.
   const inside = insideBuffer(rect, width, height);
-  ctx.projection = inside ? undefined : windowProjection(rect, width / ctx.widthCss);
-  const restore = (): void => {
-    if (inside) gl.viewport(-rect.x, rect.y + rect.height - height, width, height);
-    else gl.viewport(0, 0, rect.width, rect.height);
-    gl.scissor(0, 0, rect.width, rect.height);
-    gl.enable(gl.SCISSOR_TEST);
-  };
-  const target = { fbo, restore, fragOrigin: [-rect.x, rect.y + rect.height - height] as const, window: rect };
-  scratchTargets.add(target);
-  ctx.renderTarget = target;
+  ctx.projection = inside ? undefined : windowProjection(rect, scale);
+  const boxes = tiles.length > 1 ? children.map((c) => contentBox([c], ctx.state.transform, [], scale)) : null;
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-  restore();
-  gl.stencilMask(0xFF);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-  for (const clip of clips) enterGroupClip(ctx, clip.path, clip.transform);
-  for (const child of children) dispatch(ctx, child);
-  flushBatch(ctx);
+  for (const tile of tiles) {
+    const bottom = tile.y + tile.height;
+    const restore = (): void => {
+      if (inside) gl.viewport(-tile.x, bottom - height, width, height);
+      else gl.viewport(rect.x - tile.x, bottom - rect.y - rect.height, rect.width, rect.height);
+      gl.scissor(0, 0, tile.width, tile.height);
+      gl.enable(gl.SCISSOR_TEST);
+    };
+    const target = { fbo, restore, fragOrigin: [-tile.x, bottom - height] as const, window: tile };
+    scratchTargets.add(target);
+    ctx.renderTarget = target;
+    ctx.clipDepth = 0;
+    ctx.clipStack = [];
+    ctx.drawBatch.clip = null;
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    restore();
+    gl.stencilMask(0xFF);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    for (const clip of clips) enterGroupClip(ctx, clip.path, clip.transform);
+    for (let i = 0; i < children.length; i++) {
+      if (!boxes || boxMeets(boxes[i], tile)) dispatch(ctx, children[i]);
+    }
+    flushBatch(ctx);
+    draw.resolve(tile);
+  }
 
   ctx.clipDepth = parentClipDepth;
   ctx.clipStack = parentClipStack;
@@ -166,4 +179,8 @@ function drawInto(
   ctx.projection = parentProjection;
   ctx.renderTarget = parentTarget;
   returnToRenderTarget(ctx, width, height, scissorWasOn);
+}
+
+function boxMeets(box: DeviceBox, rect: DeviceRect): boolean {
+  return box.x0 < rect.x + rect.width && box.x1 > rect.x && box.y0 < rect.y + rect.height && box.y1 > rect.y;
 }

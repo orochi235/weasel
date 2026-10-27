@@ -81,10 +81,11 @@ export interface WeaselRendererOptions {
   /** GPU memory, in bytes, that retained groups may hold between frames — see
    *  `GroupDrawCommand.retain`. A group that would take the total past it is
    *  drawn straight through instead. Counts each surface, 4 bytes a device
-   *  pixel. Not counted: the multisampled buffer surfaces are drawn in, 8
-   *  bytes a sample at the size of the largest surface drawn, held across
-   *  frames that redraw one and freed after the first that does not; on a
-   *  frame that redraws, GPU memory can reach the budget plus that buffer.
+   *  pixel. Not counted: the multisampled buffer surfaces are drawn in, a
+   *  tile at a time, 8 bytes a sample at up to 1024x1024 plus a 4-byte copy,
+   *  held across frames that redraw one and freed after the first that does
+   *  not; on a frame that redraws, GPU memory can reach the budget plus that
+   *  buffer, 36 MiB more at 4x.
    *  Default {@link DEFAULT_RETAIN_BUDGET}; 0 retains nothing. */
   retainBudget?: number;
   /** Per-render synchronous bake budget for dynamic canvas-SDF glyphs.
@@ -118,5 +119,8 @@ export interface RenderTarget {
   clear?: boolean;
 }
 
-/** 256 MiB: at 1280x800 and dpr 2, the 4x scratch buffer and seven surfaces. */
-export const DEFAULT_RETAIN_BUDGET = 256 * 1024 * 1024;
+/** 384 MiB: at 1280x800 and dpr 2, 24 canvas-sized surfaces, or 15 with the
+ *  margins a pan draws them with. With the 4x scratch buffer, a frame peaks at
+ *  420 MiB, below the 451 MiB that 256 MiB and an untiled scratch buffer
+ *  reached (`tests/perf/recorded/retain-tiles-2026-10-27/`). */
+export const DEFAULT_RETAIN_BUDGET = 384 * 1024 * 1024;

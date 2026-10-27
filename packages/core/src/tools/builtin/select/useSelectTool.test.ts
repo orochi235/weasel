@@ -33,13 +33,12 @@ function actionOf(tool: { actions?: readonly Action[] }, id: string): Action {
 function press(
   tool: { actions?: readonly Action[] },
   selection: unknown,
-  over: { worldX?: number; worldY?: number; mods?: Partial<Mods> } = {},
+  over: { world?: { x: number; y: number }; mods?: Partial<Mods> } = {},
 ) {
   const action = actionOf(tool, 'select.pick');
   if (action.invoker?.timing !== 'immediate') throw new Error('expected immediate');
   action.invoker.run({ selection } as unknown as ActionDeps, {
-    worldX: over.worldX ?? 50,
-    worldY: over.worldY ?? 50,
+    world: over.world ?? { x: 50, y: 50 },
     mods: { ...NO_MODS, ...over.mods },
   });
 }
@@ -266,7 +265,7 @@ describe('useSelectTool', () => {
     const invoker = actionOf(tool, 'select.pick').invoker;
     if (invoker?.timing !== 'immediate') throw new Error('expected immediate');
     expect(() =>
-      invoker.run({} as ActionDeps, { worldX: 0, worldY: 0, mods: NO_MODS }),
+      invoker.run({} as ActionDeps, { world: { x: 0, y: 0 }, mods: NO_MODS }),
     ).not.toThrow();
   });
 });

@@ -19,6 +19,7 @@ export class PathBuilder {
   private cmds: number[] = [];
   private xs: number[] = [];
   private fillRule: PathFillRule = 'nonzero';
+  private origin: { x: number; y: number } | undefined;
 
   /** Seed a builder with an existing `PolygonPath`. Useful for extending
    *  an in-flight path with another segment (e.g. appending a cubic to
@@ -34,7 +35,33 @@ export class PathBuilder {
     b.cmds = Array.from(path.commands);
     b.xs = Array.from(path.coords);
     b.fillRule = path.fillRule;
+    if (path.origin) b.origin = { x: path.origin.x, y: path.origin.y };
     return b;
+  }
+
+  /**
+   * Measure the coords from `(x, y)`, which the built path carries as its
+   * `origin`: every point given before or after this call is still in the
+   * path's own space, and is stored as its offset from the origin, taken in
+   * doubles. Far from 0, an origin beside the shape is what keeps its
+   * coordinates' fractions.
+   */
+  setOrigin(x: number, y: number): this {
+    const ox = this.origin?.x ?? 0;
+    const oy = this.origin?.y ?? 0;
+    // Stored coords are float32 once built, but not before: shift them exactly.
+    for (let i = 0; i < this.xs.length; i += 2) {
+      this.xs[i] += ox - x;
+      this.xs[i + 1] += oy - y;
+    }
+    this.origin = x === 0 && y === 0 ? undefined : { x, y };
+    return this;
+  }
+
+  private push(...pts: number[]): void {
+    const ox = this.origin?.x ?? 0;
+    const oy = this.origin?.y ?? 0;
+    for (let i = 0; i < pts.length; i += 2) this.xs.push(pts[i] - ox, pts[i + 1] - oy);
   }
 
   setFillRule(rule: PathFillRule): this {
@@ -44,27 +71,27 @@ export class PathBuilder {
 
   moveTo(x: number, y: number): this {
     this.cmds.push(PATH_M);
-    this.xs.push(x, y);
+    this.push(x, y);
     return this;
   }
 
   lineTo(x: number, y: number): this {
     this.cmds.push(PATH_L);
-    this.xs.push(x, y);
+    this.push(x, y);
     return this;
   }
 
   /** Cubic bezier to (x, y) with control points (x1, y1) and (x2, y2). */
   curveTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): this {
     this.cmds.push(PATH_C);
-    this.xs.push(x1, y1, x2, y2, x, y);
+    this.push(x1, y1, x2, y2, x, y);
     return this;
   }
 
   /** Quadratic bezier to (x, y) with control point (x1, y1). */
   quadTo(x1: number, y1: number, x: number, y: number): this {
     this.cmds.push(PATH_Q);
-    this.xs.push(x1, y1, x, y);
+    this.push(x1, y1, x, y);
     return this;
   }
 
@@ -79,6 +106,7 @@ export class PathBuilder {
       commands: new Uint8Array(this.cmds),
       coords: new Float32Array(this.xs),
       fillRule: this.fillRule,
+      ...(this.origin ? { origin: { ...this.origin } } : {}),
     };
   }
 }

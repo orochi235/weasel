@@ -25,7 +25,8 @@ export interface TessellateOptions {
  *  line segments, then the resulting polygon triangulated. */
 export function tessellate(path: Path, opts: TessellateOptions = {}): Mesh {
   if (path.kind === 'rect') return tessellateRect(path);
-  return tessellatePolygon(resolveCorners(path), opts);
+  const mesh = tessellatePolygon(resolveCorners(path), opts);
+  return path.origin ? { ...mesh, origin: path.origin } : mesh;
 }
 
 function tessellateRect(p: RectPath): Mesh {

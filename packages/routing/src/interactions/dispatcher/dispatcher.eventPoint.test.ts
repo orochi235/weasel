@@ -128,7 +128,7 @@ describe('enabled() sees where the event landed', () => {
     expect(dispatcher.resolveOnly(altClick(1, 0), ctx)?.actionId).toBe('near');
   });
 
-  it('hands a wheel its world point, and its immediate invoker the same point as worldX/worldY', () => {
+  it('hands a wheel its world point, and its immediate invoker the same point as `world`', () => {
     const enabled = vi.fn().mockReturnValue(true);
     const run = vi.fn();
     const action: Action = {
@@ -139,6 +139,6 @@ describe('enabled() sees where the event landed', () => {
       makeCtx({ actions: makeRegistry([action]) }),
     );
     expect(enabled.mock.calls[0][1]).toEqual({ x: 7, y: 8 });
-    expect(run.mock.calls[0][1]).toMatchObject({ worldX: 7, worldY: 8, deltaY: 5 });
+    expect(run.mock.calls[0][1]).toMatchObject({ world: { x: 7, y: 8 }, deltaY: 5 });
   });
 });

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { dwarn } from '../../debug';
 import { admitHandlerMimes, type ContentHandlerEntry } from './contentHandlers';
 import { kitHandlersFor, type KitHandlersOption } from './kitHandlers';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What `useCanvasIngestion` reads of `<SceneCanvas ingestion>`. */
 export interface CanvasIngestionOptions {
@@ -74,7 +75,7 @@ export function useCanvasIngestion(
       dwarn('ingest', 'CanvasExtensionApi.ingest called before the action registry mounted — call ignored. Defer to an effect or event handler.');
       return false;
     }
-    const params = { items, ...(point ? { worldX: point.x, worldY: point.y } : {}) };
+    const params: ImmediateParams = { items, ...(point ? { world: point } : {}) };
     const ran = registry.trigger('ingest', params);
     if (!ran) dwarn('ingest', 'CanvasExtensionApi.ingest ran nothing: this canvas has no `ingest` action. Add `ingest` to `features`.');
     return ran;

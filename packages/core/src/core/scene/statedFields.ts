@@ -8,6 +8,7 @@ export interface StatedNodeFields {
   locked?: boolean;
   units?: UnitScope;
   clip?: NodeClip;
+  consumesChildren?: boolean;
 }
 
 /** The plain optional fields of a node or spec as a spread for `scene.add`:
@@ -20,4 +21,5 @@ export const statedFields = (n: StatedNodeFields & { kind?: string }): StatedNod
   ...(n.locked === true ? { locked: true } : {}),
   ...(n.units !== undefined ? { units: n.units } : {}),
   ...(n.clip !== undefined ? { clip: n.clip } : {}),
+  ...(n.consumesChildren === true ? { consumesChildren: true } : {}),
 });

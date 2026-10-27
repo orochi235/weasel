@@ -9,6 +9,7 @@ import { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoi
 import type { Skeleton } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from './placedRig';
 import type { RigEditState } from './rigEditState';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What the bone tool's actions read and write, all of it the tool's own. */
 export interface BoneEnv {
@@ -124,10 +125,10 @@ export function createBoneActions(env: BoneEnv): Action[] {
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const p = params as { pressX?: number; pressY?: number } | undefined;
+          const press = (params as ImmediateParams | undefined)?.press;
           const at = env.placed();
-          if (!at || p?.pressX === undefined || p.pressY === undefined) return;
-          env.state.setActive(jointAt(at.skeleton, p.pressX, p.pressY, reachOf(env, deps)));
+          if (!at || !press) return;
+          env.state.setActive(jointAt(at.skeleton, press.x, press.y, reachOf(env, deps)));
         },
       },
     },

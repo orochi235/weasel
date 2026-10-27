@@ -59,7 +59,7 @@ function setup(settings?: KitSettingsOverrides) {
   const click = (x: number, y: number, alt = false) => {
     const invoker = actionOf('weight.click').invoker;
     if (invoker?.timing !== 'immediate') throw new Error('weight.click is not immediate');
-    invoker.run(deps, { pressX: x, pressY: y, mods: { alt } });
+    invoker.run(deps, { press: { x, y }, mods: { alt } });
   };
   const skin = () => {
     const s = scene.get(sleeve)!.data.skin;

@@ -2,6 +2,7 @@ import type { GlMat3, Path } from '@weasel-js/geom';
 import type { DrawCommand } from '../DrawCommand';
 import type { Effect } from '../effects/types';
 import type { ShaderUniform } from '../shaders/registerProgram';
+import type { DeviceRect } from './contentBounds';
 
 /** Everything a retained group's pixels were drawn under. Two keys that
  *  compare equal draw the same pixels. */
@@ -17,6 +18,9 @@ export interface RetainedKey {
   /** The group's own `effects` and `isolate`, for a group that owns a surface. */
   effects?: readonly Effect[];
   isolate?: boolean;
+  /** The rect of the drawing buffer the target it composites into holds,
+   *  when that is not the drawing buffer: a group's effects buffer. */
+  window?: DeviceRect;
 }
 
 /** A clip path and the transform it is in. */
@@ -34,6 +38,7 @@ export function keepKey(key: RetainedKey): RetainedKey {
     viewMatrix: key.viewMatrix?.slice(),
     screenMatrix: key.screenMatrix?.slice(),
     clips: key.clips.map((c) => ({ path: c.path, transform: c.transform.slice() })),
+    window: key.window && { ...key.window },
   };
 }
 
@@ -41,7 +46,8 @@ export function sameKey(a: RetainedKey, b: RetainedKey): boolean {
   return a.children === b.children && a.alpha === b.alpha
     && sameFloats(a.transform, b.transform) && sameFloats(a.colorMatrix, b.colorMatrix)
     && sameMatrix(a.viewMatrix, b.viewMatrix) && sameMatrix(a.screenMatrix, b.screenMatrix)
-    && sameClips(a.clips, b.clips) && a.isolate === b.isolate && sameEffects(a.effects, b.effects);
+    && sameClips(a.clips, b.clips) && a.isolate === b.isolate && sameEffects(a.effects, b.effects)
+    && sameRect(a.window, b.window);
 }
 
 /**
@@ -53,7 +59,7 @@ export function sameKey(a: RetainedKey, b: RetainedKey): boolean {
 export function keyShift(a: RetainedKey, b: RetainedKey): readonly [number, number] | null {
   if (a.children !== b.children || a.alpha !== b.alpha || a.isolate !== b.isolate) return null;
   if (!sameFloats(a.colorMatrix, b.colorMatrix) || !sameMatrix(a.screenMatrix, b.screenMatrix)) return null;
-  if (!sameEffects(a.effects, b.effects) || a.clips.length !== b.clips.length) return null;
+  if (!sameEffects(a.effects, b.effects) || a.clips.length !== b.clips.length || !sameRect(a.window, b.window)) return null;
   const shift = translationBetween(a.transform, b.transform);
   if (!shift) return null;
   const moved = (x: GlMat3 | undefined, y: GlMat3 | undefined): boolean => {
@@ -106,6 +112,11 @@ function sameUniform(a: ShaderUniform, b: ShaderUniform | undefined): boolean {
 
 function sameMatrix(a: GlMat3 | undefined, b: GlMat3 | undefined): boolean {
   return a === undefined ? b === undefined : b !== undefined && sameFloats(a, b);
+}
+
+function sameRect(a: DeviceRect | undefined, b: DeviceRect | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
 function sameClips(a: readonly RetainedClip[], b: readonly RetainedClip[]): boolean {

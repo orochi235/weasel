@@ -20,6 +20,7 @@ import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
 import { smallCapsScaleFor, smallCapsText } from './smallCaps';
+import { shapesWithFeature } from '../layout/shaperRegistry';
 
 /** A run with every style resolved against the node's text style — no
  *  optional inheritance left. This is what layout and painting consume. */
@@ -71,7 +72,13 @@ export interface ResolvedRun {
   /** Degrees each glyph turns, clockwise about its pen on the baseline.
    *  Absent is upright. */
   rotate?: number;
+  /** OpenType features a shaper turns on for this run (`'smcp'` for small
+   *  caps drawn from the face's own glyphs). Absent is none; a run that is not
+   *  shaped ignores it. */
+  fontFeatures?: readonly string[];
 }
+
+const SMALL_CAPS_FEATURES: readonly string[] = Object.freeze(['smcp']);
 
 /** What one script preset expands to. */
 export type ScriptPreset = Readonly<{ size: number; shift: number }>;
@@ -201,7 +208,12 @@ export function resolveRuns(
       ? resolveScreenLength(run.fontSize, viewScale)
       : style.fontSize * scale;
     let sizeMap: number[] | undefined;
-    if ((run.fontVariantCaps ?? style.fontVariantCaps) === 'small-caps') {
+    let fontFeatures: readonly string[] | undefined;
+    const smallCaps = (run.fontVariantCaps ?? style.fontVariantCaps) === 'small-caps';
+    // A face with small capitals of its own draws them; the rest are synthesized.
+    if (smallCaps && shapesWithFeature(fontFamily, fontWeight, fontStyle, 'smcp')) {
+      fontFeatures = SMALL_CAPS_FEATURES;
+    } else if (smallCaps) {
       const caps = smallCapsText(text, srcMap);
       text = caps.text;
       srcMap = caps.srcMap;
@@ -234,6 +246,7 @@ export function resolveRuns(
       baselineShift: shiftEm * style.fontSize,
       ...(relative ? { strutSize: style.fontSize } : NOTHING),
       ...(run.rotate && Number.isFinite(run.rotate) ? { rotate: run.rotate } : NOTHING),
+      ...(fontFeatures ? { fontFeatures } : NOTHING),
     });
   }
   return out;

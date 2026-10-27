@@ -1,5 +1,6 @@
 import { modeLabel, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
 import { ActionDisabledReason, type Action, type ActionDeps, type Contribution } from '@weasel-js/routing';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What a mode's double-click trigger does. */
 export interface ModeTriggerHandlers {
@@ -66,8 +67,8 @@ function triggerAction(
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const x = params?.worldX, y = params?.worldY;
-        const id = typeof x === 'number' && typeof y === 'number' ? targetAt(deps, { x, y }) : null;
+        const world = (params as ImmediateParams | undefined)?.world;
+        const id = world ? targetAt(deps, world) : null;
         if (id !== null) enter(mode.id, id);
       },
     },

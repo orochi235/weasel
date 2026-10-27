@@ -50,7 +50,7 @@ function harness(
       act(() => {
         invoker.run(
           { selection: result.current.sel, enteredGroup: { get: () => entered } } as unknown as ActionDeps,
-          { worldX: x, worldY: y, mods: { ...NO_MODS, ...mods } },
+          { world: { x, y }, mods: { ...NO_MODS, ...mods } },
         );
       });
     },

@@ -7,6 +7,7 @@ import {
   type Action,
   type ActionsRegistry,
   contextMenuAction,
+  type ImmediateParams,
   InputScope,
   makePinchZoomAction,
   makeViewportZoomAction,
@@ -277,9 +278,9 @@ function CameraDispatch({
       invoker: {
         timing: 'immediate',
         run: (_deps, params) => {
-          const p = params as { worldX?: number; worldY?: number } | undefined;
-          if (p?.worldX === undefined || p.worldY === undefined) return;
-          onTapRef.current?.(frameLocalToWorld({ x: p.worldX, y: p.worldY }, frameRef.current));
+          const world = (params as ImmediateParams | undefined)?.world;
+          if (!world) return;
+          onTapRef.current?.(frameLocalToWorld(world, frameRef.current));
         },
       },
     };

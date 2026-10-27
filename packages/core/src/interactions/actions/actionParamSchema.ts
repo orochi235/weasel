@@ -3,6 +3,7 @@
  * `ActionParamSchema` so `<SceneCanvas tune>` types them. An action that
  * reads params gets its entry here, beside the others.
  */
+import type { WorldPoint } from '@weasel-js/routing';
 import type { AlignReference } from './align/align';
 import type { DistributeMode } from './distribute/distribute';
 import type { FlipAxis, FlipPivot } from './flip/helpers';
@@ -11,7 +12,7 @@ import type { SetAnchorFieldParams } from './defaults/anchorFields';
 
 /** A point a spatial reference of `'pointer'` resolves to in place of the
  *  pointer dep, when the invocation has one of its own. */
-type AtPoint = { worldX: number; worldY: number };
+type AtPoint = { world: WorldPoint };
 
 type AlignParams = AtPoint & { to: AlignReference };
 type FlipParams = AtPoint & { axis: FlipAxis; pivot: FlipPivot };

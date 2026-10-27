@@ -60,7 +60,7 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
  * Extend to next path: carry each open end of the selected
  * paths along its tangent to the first stroke it meets (`extendToMeet`). In
  * path edit, the selected end anchors of the edited path, or all its open
- * ends when none is selected. Given a press (`pressX`, `pressY`, as a click
+ * ends when none is selected. Given a press (`press`, as a click
  * binding supplies), the open end nearest it of the topmost stroke within
  * `radiusPx` instead. An end that meets nothing stays put. One undo step.
  */

@@ -34,6 +34,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
 import type { SnapBegin } from './snapDep';
 import type { Point } from '@weasel-js/geom';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Which scene layer an invocation edits, read once as it starts. `undefined`
  *  means none: the action runs in the camera's world. */
@@ -85,8 +86,8 @@ export function carryPose<P>(d: PoseDescriptor<P>, pose: P, m: PlaneMap | null):
  *  names. An action in a scene with no `parallax` layer, or invoked with no
  *  scene or view to read a plane from, runs exactly as it would unwrapped.
  *
- *  An immediate action's world point is `params.worldX` / `params.worldY`,
- *  the dispatcher's convention for a click; it is carried when present. */
+ *  An immediate action's points are its params' `world` and `press`; each
+ *  is carried when present. */
 export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A {
   const inner = action.invoker;
   if (!inner) return action;
@@ -101,12 +102,14 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
         run(deps: ActionDeps, params?: Record<string, unknown>): void | 'pass' {
           const plane = livePlane(deps, layerOf(deps), declared, null);
           if (plane === null) return inner.run(deps, params);
-          const wx = params?.['worldX'];
-          const wy = params?.['worldY'];
-          const at = typeof wx === 'number' && typeof wy === 'number'
-            ? toPlane(plane.map(), { x: wx, y: wy })
-            : null;
-          return inner.run(plane.deps, at ? { ...params, worldX: at.x, worldY: at.y } : params);
+          const { world, press } = (params ?? {}) as ImmediateParams;
+          if (!world && !press) return inner.run(plane.deps, params);
+          const m = plane.map();
+          return inner.run(plane.deps, {
+            ...params,
+            ...(world ? { world: toPlane(m, world) } : {}),
+            ...(press ? { press: toPlane(m, press) } : {}),
+          });
         },
       },
     } as A;

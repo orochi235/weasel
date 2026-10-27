@@ -49,6 +49,12 @@ export function strokeToPath(path: Path, stroke: Stroke, opts: StrokeToPathOptio
 }
 
 function outlineOf(path: Path, stroke: Stroke, opts: StrokeToPathOptions): PolygonPath {
+  // The ribbon, the heads and the booleans all work in the path's own offsets.
+  if (path.kind === 'polygon' && path.origin) {
+    const { origin, ...offsets } = path;
+    const out = outlineOf(offsets, stroke, opts);
+    return out.coords.length === 0 ? out : { ...out, origin };
+  }
   const width = resolveStrokeWidth(stroke.width ?? 1, opts.scale ?? 1);
   if (!(width > 0)) return EMPTY;
   const tolerance = opts.flattenTolerance;

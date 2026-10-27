@@ -24,6 +24,7 @@ import { LANE_AFFORDANCE_KIND, laneLayer, laneScratchOf, poolsOf, type LaneLayer
 import { MIN_LANE_SIZE } from './laneStack';
 import { titleInFrame } from './titlePose';
 import { diagramContainerOf, titleIdOf } from './trait';
+import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action that drags a lane's boundary. */
 export const LANE_RESIZE_ACTION_ID = 'diagram.resizeLane';
@@ -160,9 +161,10 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const pressed = laneScratchOf((params as { affordance?: { payload?: unknown } } | undefined)?.affordance);
-        if (pressed === null || pressed.laneId !== undefined) return;
-        const world = { x: Number(params?.worldX), y: Number(params?.worldY) };
+        const p = params as ImmediateParams | undefined;
+        const pressed = laneScratchOf(p?.affordance as { payload?: unknown } | undefined);
+        const world = p?.world;
+        if (pressed === null || pressed.laneId !== undefined || !world) return;
         commit(pressed.poolId, { world, modifiers: NO_MODIFIERS, deps } as InvocationCtx);
       },
     },

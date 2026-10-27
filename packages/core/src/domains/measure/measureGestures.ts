@@ -9,6 +9,7 @@ import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';
 import { addMeasureOp, moveEndOps, moveMeasureOps, translatedMeasure } from './measureEdits';
 import { MEASURE_ACTION_IDS } from './actionIds';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -83,10 +84,10 @@ export function measurePickAtAction(ms: Measurements): Action {
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const p = params as { pressX?: number; pressY?: number } | undefined;
+        const press = (params as ImmediateParams | undefined)?.press;
         const scene = deps.scene as AnyScene | undefined;
-        if (!scene || p?.pressX === undefined || p.pressY === undefined) return;
-        const hit = measureAt(scene, ms, { x: p.pressX, y: p.pressY }, pxToWorld(deps, MEASURE_HIT_PX));
+        if (!scene || !press) return;
+        const hit = measureAt(scene, ms, press, pxToWorld(deps, MEASURE_HIT_PX));
         ms.picked.set(hit?.id ?? null);
       },
     },

@@ -53,7 +53,7 @@ describe('useCanvasIngestion: ingest', () => {
     const file = new File(['x'], 'a.png', { type: 'image/png' });
     expect(result.current.ingest([file], { x: 3, y: 4 })).toBe(true);
     expect(trigger).toHaveBeenCalledWith('ingest', {
-      items: [expect.objectContaining({ kind: 'file', file })], worldX: 3, worldY: 4,
+      items: [expect.objectContaining({ kind: 'file', file })], world: { x: 3, y: 4 },
     });
     result.current.ingest([TEXT]);
     expect(trigger).toHaveBeenLastCalledWith('ingest', { items: [TEXT] });

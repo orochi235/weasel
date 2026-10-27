@@ -172,10 +172,8 @@ describe('pointerDown bindings', () => {
     act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
     act(() => { fire(canvas, 'pointerup', { clientX: 12, clientY: 12, pointerId: 1 }); });
     expect(spy).toHaveBeenCalledTimes(1);
-    const params = spy.mock.calls[0][0] as Record<string, number>;
-    expect(params.pressX).toBe(10);
-    expect(params.pressY).toBe(10);
-    expect(params.worldX).toBe(12);
-    expect(params.worldY).toBe(12);
+    const params = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(params.press).toEqual({ x: 10, y: 10 });
+    expect(params.world).toEqual({ x: 12, y: 12 });
   });
 });

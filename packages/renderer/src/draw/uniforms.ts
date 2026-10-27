@@ -132,6 +132,31 @@ export function setColorMatrixUniforms(
  *  a float32 there is coarser than 1/128 px, and at 2^24 than a whole one. */
 export const REBASE_TRANSLATION_PX = 65536;
 
+/**
+ * The model a draw places its vertices by: the group's transform, moved to
+ * the origin of the mesh being drawn when it has one. Composed in doubles,
+ * so a far-off origin reaches the rebase below whole.
+ */
+export function drawModel(ctx: DrawContext): GlMat3 {
+  const o = ctx.meshOrigin;
+  return o ? mat3.translated(ctx.state.transform, o.x, o.y) : ctx.state.transform;
+}
+
+/** `draw()` with `ctx.meshOrigin` set to `origin`, for a mesh whose vertices
+ *  are measured from it. */
+export function atMeshOrigin<T>(
+  ctx: DrawContext, origin: { readonly x: number; readonly y: number } | undefined, draw: () => T,
+): T {
+  const outer = ctx.meshOrigin;
+  if (origin === outer) return draw();
+  ctx.meshOrigin = origin;
+  try {
+    return draw();
+  } finally {
+    ctx.meshOrigin = outer;
+  }
+}
+
 const MODEL_SCRATCH = new Float32Array(9);
 const PROJ_SCRATCH = new Float32Array(9);
 
@@ -147,7 +172,7 @@ const PROJ_SCRATCH = new Float32Array(9);
  */
 export function setProjAndModel(
   ctx: DrawContext, prog: ShaderProgram,
-  model: GlMat3 = ctx.state.transform,
+  model: GlMat3 = drawModel(ctx),
   proj: GlMat3 = projFor(ctx),
 ): void {
   const gl = ctx.gl;

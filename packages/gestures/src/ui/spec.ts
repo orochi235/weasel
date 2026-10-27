@@ -200,7 +200,7 @@ export interface PointerDownSpec {
  * A hover binding claims nothing. Every live binding that matches the move
  * runs, not only the best one, and the move still reaches the hover-cursor
  * pump. There is no press to own, so bind an immediate action, not an ongoing
- * one. Its params carry `worldX` / `worldY`, `clientX` / `clientY`,
+ * one. Its params carry `world`, `clientX` / `clientY`,
  * `affordance`, `bodyTarget`, `mods`, and `held`.
  */
 export interface HoverSpec {

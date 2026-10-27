@@ -1,36 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import polygonClipping from 'polygon-clipping';
-import { pathUnion, pathIntersect, pathSubtract, pathExclude, pathToMultiPolygon, type MultiPolygon } from './index';
+import { pathUnion, pathIntersect, pathSubtract, pathExclude, pathFacePieces, pathToMultiPolygon, type MultiPolygon } from './index';
+import { splitCubicAt } from '../curve';
 import { curveBoolean } from './curveBoolean';
-import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
+import { PATH_C, PATH_L, PATH_M, PATH_Z } from '../commands';
 import type { Path, PolygonPath } from '../path';
-import { ellipsePath } from '../paths/builder';
-import { parseContours, windingAt } from './contours';
-
-const circle = (cx: number, cy: number, r: number): PolygonPath =>
-  ellipsePath({ x: cx - r, y: cy - r, width: 2 * r, height: 2 * r });
-const rect = (x: number, y: number, width: number, height: number): Path => ({ kind: 'rect', x, y, width, height });
-
-const ringArea = (ring: [number, number][]): number => {
-  let a = 0;
-  for (let i = 0; i + 1 < ring.length; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
-  return a / 2;
-};
-const mpArea = (mp: MultiPolygon): number =>
-  mp.reduce((s, poly) => s + poly.reduce((t, ring, i) => t + (i === 0 ? 1 : -1) * Math.abs(ringArea(ring)), 0), 0);
-/** Area a fill of `p` covers, from a fine flattening resolved by the clipper. */
-const area = (p: Path): number => {
-  const mp = pathToMultiPolygon(p, { tolerance: 0.005 });
-  return mp.length === 0 ? 0 : mpArea(polygonClipping.union(mp));
-};
-
-/** Whether a fill of `p` covers (x, y), against the exact curves. */
-const pointInPath = (p: Path, x: number, y: number): boolean => {
-  const w = windingAt({ x, y }, parseContours(p));
-  return p.kind === 'polygon' && p.fillRule === 'evenodd' ? (w & 1) !== 0 : w !== 0;
-};
-
-const hasCurves = (p: PolygonPath): boolean => p.commands.some((c) => c === PATH_C || c === PATH_Q);
+import { area, circle, hasCurves, mpArea, multiPath, nearOutline, pointInPath, rect, rng, shape } from './curveShapes.fixtures';
 
 type Op = 'union' | 'intersect' | 'subtract' | 'exclude';
 const OPS: Record<Op, (a: Path, b: Path) => PolygonPath> = {
@@ -126,34 +101,66 @@ describe('where curve booleans hand over to the flattened clipper', () => {
     expect(curveBoolean([rect(0, 0, 10, 10), rect(5, 5, 10, 10)], KEEP.union)).toBeNull();
   });
 
-  it('declines a circle united with itself, and the fallback still answers', () => {
-    const a = circle(0, 0, 10);
-    expect(curveBoolean([a, a], KEEP.union)).toBeNull();
-    expect(hasCurves(pathUnion(a, a))).toBe(false);
-    expect(area(pathUnion(a, a)) / area(a)).toBeCloseTo(1, 1);
+});
+
+/** The same circle drawn from the opposite point: every arc coincides, no segment repeats. */
+function turned(a: PolygonPath): PolygonPath {
+  const coords = new Float32Array(a.coords.length);
+  for (let i = 0; i < coords.length; i += 2) { coords[i] = -a.coords[i]; coords[i + 1] = -a.coords[i + 1]; }
+  return { ...a, coords };
+}
+
+/** A half disk whose straight side runs along y = 0, drawn as two lines. */
+const half: PolygonPath = {
+  kind: 'polygon',
+  commands: Uint8Array.of(PATH_M, PATH_C, PATH_L, PATH_Z),
+  coords: Float32Array.of(0, 0, 0, 20, 20, 20, 20, 0, 10, 0),
+  fillRule: 'nonzero',
+};
+
+/** The cap a chord cuts off `a`'s first arc, its curve a piece of that arc from t = 0.3 on. */
+function cap(a: PolygonPath): PolygonPath {
+  const c = a.coords;
+  const [, right] = splitCubicAt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], 0.3);
+  return { kind: 'polygon', commands: Uint8Array.of(PATH_M, PATH_C, PATH_Z), coords: Float32Array.from(right), fillRule: 'nonzero' };
+}
+
+describe('coincident outlines', () => {
+  const a = circle(0, 0, 10);
+  const cases: [string, Path, Path][] = [
+    ['a circle and itself', a, a],
+    ['a circle and itself drawn from the opposite point', a, turned(a)],
+    ['a half disk and a rect sharing part of its straight side', half, rect(5, -10, 10, 10)],
+    ['a circle and a cap sharing part of one arc', a, cap(a)],
+  ];
+  for (const [name, x, y] of cases) {
+    for (const op of Object.keys(OPS) as Op[]) {
+      it(`${op}s ${name} with curves, matching the flattened area`, () => {
+        const out = curveBoolean([x, y], KEEP[op]);
+        expect(out).not.toBeNull();
+        expect(area(out!)).toBeCloseTo(flatArea(op, x, y), 1);
+      });
+    }
+  }
+
+  it('gives back a circle united or intersected with itself as its own cubics', () => {
+    for (const out of [pathUnion(a, a), pathIntersect(a, a)]) {
+      expect([...out.commands]).toEqual([...a.commands]);
+      expect([...out.coords]).toEqual([...a.coords]);
+    }
+    expect(pathSubtract(a, a).commands).toHaveLength(0);
   });
 
-  it('declines circles that share an arc without sharing its segments', () => {
-    // The same circle drawn from another start point: every arc coincides, no segment repeats.
-    const a = circle(0, 0, 10);
-    const coords = new Float32Array(a.coords.length);
-    for (let i = 0; i < coords.length; i += 2) { coords[i] = -a.coords[i]; coords[i + 1] = -a.coords[i + 1]; }
-    const b: PolygonPath = { ...a, coords };
-    expect(curveBoolean([a, b], KEEP.intersect)).toBeNull();
-    expect(area(pathIntersect(a, b)) / area(a)).toBeCloseTo(1, 1);
+  it('unites two faces of a divide, which share an edge, back into one curved outline', () => {
+    const faces = pathFacePieces(a, rect(-2, -20, 4, 40));
+    const left = faces.find((f) => f.sources.length === 1 && pointInPath(f.path, -6, 0))!;
+    const mid = faces.find((f) => f.sources.length === 2)!;
+    const u = curveBoolean([left.path, mid.path], KEEP.union);
+    expect(u).not.toBeNull();
+    expect(u!.commands.filter((c) => c === PATH_M)).toHaveLength(1);
+    expect(hasCurves(u!)).toBe(true);
+    expect(area(u!)).toBeCloseTo(area(left.path) + area(mid.path), 1);
   });
-
-  it('declines a rect sharing part of an edge with a curved shape', () => {
-    const half: PolygonPath = {
-      kind: 'polygon',
-      commands: Uint8Array.of(PATH_M, PATH_C, PATH_L, PATH_Z),
-      coords: Float32Array.of(0, 0, 0, 20, 20, 20, 20, 0, 10, 0),
-      fillRule: 'nonzero',
-    };
-    expect(curveBoolean([half, rect(5, -10, 10, 10)], KEEP.union)).toBeNull();
-    expect(area(pathUnion(half, rect(5, -10, 10, 10))) / (area(half) + 100)).toBeCloseTo(1, 1);
-  });
-
 });
 
 describe('touching outlines', () => {
@@ -176,56 +183,6 @@ describe('touching outlines', () => {
   });
 });
 
-/** Seeded xorshift, so a failing case can be replayed. */
-function rng(seed: number): () => number {
-  let s = seed >>> 0 || 1;
-  return () => {
-    s ^= s << 13; s >>>= 0;
-    s ^= s >>> 17;
-    s ^= s << 5; s >>>= 0;
-    return s / 0x100000000;
-  };
-}
-
-/** A closed blob of cubics around a center, star-shaped so it never crosses itself. */
-function blob(r: () => number, cx: number, cy: number, size: number): PolygonPath {
-  const n = 3 + Math.floor(r() * 4);
-  const pts: [number, number][] = [];
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + r() * 0.5;
-    const d = size * (0.5 + r() * 0.5);
-    pts.push([cx + Math.cos(a) * d, cy + Math.sin(a) * d]);
-  }
-  const cmds: number[] = [PATH_M];
-  const xs: number[] = [pts[0][0], pts[0][1]];
-  for (let i = 0; i < n; i++) {
-    const p = pts[i], q = pts[(i + 1) % n];
-    const k = 0.3 + r() * 0.3;
-    // Bulge the controls outward along the radius.
-    const out = (x: number, y: number) => [cx + (x - cx) * (1 + k), cy + (y - cy) * (1 + k)];
-    if (r() < 0.2) {
-      cmds.push(PATH_L);
-      xs.push(q[0], q[1]);
-    } else {
-      cmds.push(PATH_C);
-      xs.push(...out(p[0] * 0.67 + q[0] * 0.33, p[1] * 0.67 + q[1] * 0.33), ...out(p[0] * 0.33 + q[0] * 0.67, p[1] * 0.33 + q[1] * 0.67), q[0], q[1]);
-    }
-  }
-  cmds.push(PATH_Z);
-  return { kind: 'polygon', commands: Uint8Array.from(cmds), coords: Float32Array.from(xs), fillRule: 'nonzero' };
-}
-
-/** A random shape; on `grid`, centers and sizes fall on multiples of 5, so outlines touch at joints and run along each other. */
-function shape(r: () => number, grid = false): Path {
-  const snap = (v: number) => (grid ? Math.round(v / 5) * 5 : v);
-  const cx = snap(r() * 40), cy = snap(r() * 40), size = snap(8 + r() * 20);
-  const pick = r();
-  if (pick < 0.3) return circle(cx, cy, size);
-  if (pick < 0.45) return rect(cx - size, cy - size * 0.6, size * 2, size * 1.2);
-  if (pick < 0.55) return ellipsePath({ x: cx - size, y: cy - size / 2, width: size * 2, height: size });
-  return blob(r, cx, cy, size);
-}
-
 describe('agreement with the flattened clipper on random shapes', () => {
   const TRIALS = 60;
   for (const [op, grid] of (Object.keys(OPS) as Op[]).flatMap((o) => [[o, false], [o, true]] as const)) {
@@ -242,7 +199,7 @@ describe('agreement with the flattened clipper on random shapes', () => {
         const got = area(out);
         expect(Math.abs(got - want), `trial ${trial}`).toBeLessThan(0.5 + 0.002 * Math.abs(want));
         const flat = FLAT[op](pathToMultiPolygon(a, { tolerance: 0.005 }), pathToMultiPolygon(b, { tolerance: 0.005 }));
-        const ref = { kind: 'polygon', ...multi(flat) } as PolygonPath;
+        const ref = multiPath(flat);
         for (let k = 0; k < 40; k++) {
           const x = -30 + r() * 100, y = -30 + r() * 100;
           if (nearOutline(ref, x, y)) continue;
@@ -250,26 +207,7 @@ describe('agreement with the flattened clipper on random shapes', () => {
         }
       }
       // The point is to exercise the curve path, not the fallback.
-      expect(curved).toBeGreaterThan(TRIALS * (grid ? 0.5 : 0.8));
+      expect(curved).toBeGreaterThan(TRIALS * 0.9);
     });
   }
 });
-
-function multi(mp: MultiPolygon): { commands: Uint8Array; coords: Float32Array; fillRule: 'evenodd' } {
-  const cmds: number[] = [];
-  const xs: number[] = [];
-  for (const poly of mp) for (const ring of poly) {
-    ring.slice(0, -1).forEach(([x, y], i) => { cmds.push(i === 0 ? PATH_M : PATH_L); xs.push(x, y); });
-    cmds.push(PATH_Z);
-  }
-  return { commands: Uint8Array.from(cmds), coords: Float32Array.from(xs), fillRule: 'evenodd' };
-}
-
-/** Whether a probe sits too close to an outline for two flattenings to agree on it. */
-function nearOutline(p: PolygonPath, x: number, y: number): boolean {
-  for (const [dx, dy] of [[0.02, 0], [-0.02, 0], [0, 0.02], [0, -0.02]]) {
-    if (pointInPath(p, x + dx, y + dy) !== pointInPath(p, x, y)) return true;
-  }
-  return false;
-}
-

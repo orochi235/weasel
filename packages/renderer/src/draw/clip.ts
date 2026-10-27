@@ -172,7 +172,8 @@ function rasterizePathToStencil(ctx: DrawContext, path: Path, model: GlMat3): vo
   const handle = fillMeshHandle(ctx, path);
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
-  setProjAndModel(ctx, ctx.pathFill, model);
+  const o = path.kind === 'polygon' ? path.origin : undefined;
+  setProjAndModel(ctx, ctx.pathFill, o ? mat3.translated(model, o.x, o.y) : model);
   drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   gl.bindVertexArray(null);
 }

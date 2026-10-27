@@ -91,6 +91,30 @@ describe('RetainedSurfaces', () => {
     expect(store.bytes).toBe(40 * 30 * 4);
     expect(rec.calls.filter((c) => c.name === 'deleteRenderbuffer')).toHaveLength(2);
   });
+
+  it('draws a surface larger than a tile in tiles, through a scratch buffer no larger than one', () => {
+    const rec = makeGLRecorder();
+    const store = new RetainedSurfaces(rec.gl, Infinity);
+    store.tile = 32;
+    store.beginFrame([]);
+    const draw = store.reserve('a', W, H, { x: 10, y: 20, width: 70, height: 40 })!;
+    expect(draw.tiles).toEqual([
+      { x: 10, y: 20, width: 32, height: 32 }, { x: 42, y: 20, width: 32, height: 32 }, { x: 74, y: 20, width: 6, height: 32 },
+      { x: 10, y: 52, width: 32, height: 8 }, { x: 42, y: 52, width: 32, height: 8 }, { x: 74, y: 52, width: 6, height: 8 },
+    ]);
+    for (const tile of draw.tiles) draw.resolve(tile);
+    draw.commit(key());
+    const storage = rec.calls.filter((c) => c.name === 'renderbufferStorage').map((c) => [c.args[2], c.args[3]]);
+    expect(storage).toEqual([[32, 32], [32, 32]]);
+    // Each tile lands at its place from the texture's bottom-left.
+    const blits = rec.calls.filter((c) => c.name === 'blitFramebuffer').map((c) => c.args.slice(4, 8));
+    expect(blits).toEqual([
+      [0, 8, 32, 40], [32, 8, 64, 40], [64, 8, 70, 40],
+      [0, 0, 32, 8], [32, 0, 64, 8], [64, 0, 70, 8],
+    ]);
+    store.endFrame();
+    expect(store.bytes).toBe(70 * 40 * 4 + 32 * 32 * 8);
+  });
 });
 
 const rect = (x: number, y: number, width: number, height: number): DrawCommand => ({

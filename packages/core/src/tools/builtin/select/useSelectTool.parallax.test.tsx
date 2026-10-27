@@ -33,7 +33,7 @@ function pressAt(x: number, y: number): readonly string[] {
   if (invoker?.timing !== 'immediate') throw new Error('select.pick missing');
   act(() => {
     invoker.run({ selection: result.current.sel } as unknown as ActionDeps, {
-      worldX: x, worldY: y, mods: { alt: false, ctrl: false, meta: false, shift: false },
+      world: { x, y }, mods: { alt: false, ctrl: false, meta: false, shift: false },
     });
   });
   return result.current.sel.current;

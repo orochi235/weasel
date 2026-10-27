@@ -21,6 +21,7 @@ import type { SceneArrivalHandler } from './arrivalTypes';
 import type { RegisteredOp } from './registeredOp';
 import type { SpecsFromSerializedOptions } from './serialization';
 import type { RectPose } from '../geometry/rectPose';
+import type { SceneRegistry } from './sceneRegistry';
 export type { RectPose, RegisteredOp, SceneArrivalHandler, SceneOptions, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
@@ -52,7 +53,7 @@ export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, Sh
 
 /** Opaque branded id. Treat as opaque outside the kit. */
 import type { NodeId } from '@weasel-js/routing';
-export type { NodeId };
+export type { NodeId, SceneRegistry };
 
 /** Brand a string as a NodeId. */
 export const asNodeId = (s: string): NodeId => s as NodeId;
@@ -135,6 +136,12 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  A copy is a copy of the clipped content — the clip travels with it.
    *  Re-evaluated each render; `null` or `[]` draws no copies. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
+  /** Its children are the operands of its own geometry, drawn only through
+   *  it: the render walk paints none of them, and a press, a region select
+   *  or select-all reaches one only while this node, or a group inside it, is
+   *  entered. A node that consumes its children is entered as a group is.
+   *  The boolean group (`booleanGroupFields`) is the kit's one. */
+  consumesChildren?: boolean;
   /** How this node arranges its children. Whenever the node's
    *  child set or order changes, its bounds change size, or a child's pose is
    *  written, the scene hands the change to the strategy — `depart` for children that left it,
@@ -189,6 +196,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   clipFromPose?: ClipFromPoseFn<TPose>;
   /** Mirrors `SceneNode.clip`. */
   clip?: NodeClip;
+  /** Mirrors `SceneNode.consumesChildren`. */
+  consumesChildren?: boolean;
   /** Mirrors `SceneNode.copiesFromPose`. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.dependsOn`. */
@@ -202,24 +211,6 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   layout?: LayoutStrategy<TPose>;
   /** Mirrors `SceneNode.units`. */
   units?: UnitScope;
-}
-
-/** Per-scene registry mapping string keys to live function references.
- *  Passed to `createScene({ ..., registry })` and `sceneFromJSON(json, { registry })`.
- *  Each function-field type has its own keyed map. */
-export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = string> {
-  /** Maps registry keys to `clipFromPose` factory functions for nodes. */
-  clipFromPose?: Readonly<Record<string, ClipFromPoseFn<TPose>>>;
-  /** Maps registry keys to `copiesFromPose` functions for nodes. */
-  copiesFromPose?: Readonly<Record<string, CopiesFromPoseFn<TPose, TData, TLayer>>>;
-  /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
-  derivePath?: Readonly<Record<string, DerivePathFn<TPose, TData, TLayer>>>;
-  /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */
-  derivePose?: Readonly<Record<string, DerivePoseFn<TPose, TData, TLayer>>>;
-  /** Maps registry keys to layout strategies. */
-  layout?: Readonly<Record<string, LayoutStrategy<TPose>>>;
-  // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
-  // plus its entry here; the field name is the registry key by construction.
 }
 
 /**

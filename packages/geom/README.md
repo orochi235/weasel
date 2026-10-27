@@ -142,12 +142,12 @@ const custom = resolveEasing({ bezier: [0.4, 0, 0.2, 1] });
 The `./3d` entry reuses names from the root (`dot`, `scale`, `invert`,
 `identity`), so import from one or the other, or alias at the import.
 
-Boolean operations work on what a fill covers. Union, intersect, subtract and
-exclude keep curves: each curve in the result is a piece of an input curve, so
-the ellipse below comes back as cubics. Inputs that are all straight lines,
-and the few cases the curve path declines (outlines that coincide, a cubic
-that crosses itself), go through `polygon-clipping` instead, with curves
-flattened. Divide, crop, trim and merge always flatten.
+Boolean operations work on what a fill covers. Union, intersect, subtract,
+exclude, divide, crop, trim, merge and the face pieces keep curves: each curve
+in the result is a piece of an input curve, so the ellipse below comes back as
+cubics. Inputs that are all straight lines, and the few cases the curve path
+declines (a cubic that crosses itself, some tangencies), go through
+`polygon-clipping` instead, with curves flattened.
 
 ```ts
 import { ellipsePath, rectPath } from '@weasel-js/geom';

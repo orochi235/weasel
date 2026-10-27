@@ -16,6 +16,7 @@ import {
 } from '@weasel-js/geom';
 import { pathThroughPoseFrame } from '@weasel-js/geom';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
+import { setDepOutlineReader } from 'core/scene/booleanOfChildren';
 import type { Node } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewport/screenSlop';
@@ -159,6 +160,9 @@ export function findShapeSilhouette<TData, TPose>(
   }
   return nodeMemo(node as { data?: unknown }, SILHOUETTE_SLOT, pose, build);
 }
+
+// A boolean group's operands are its children's outlines.
+setDepOutlineReader((dep) => findShapeSilhouette(dep.node, dep.pose, { derivedPath: dep.path }));
 
 /** Find the painter for `node` and ask how it inks its silhouette. Returns
  *  the painter's declared {@link NodeInk}, or `null` when no painter matches

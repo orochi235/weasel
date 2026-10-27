@@ -153,7 +153,7 @@ describe('editing a node on a parallax plane', () => {
     // Anchor 1 is sky (140,100): camera (120,50).
     run.run(
       { editAnchors, scene, view: viewDep(), selection: { get: () => [] } } as never,
-      { worldX: 120, worldY: 50, additive: false },
+      { world: { x: 120, y: 50 }, additive: false },
     );
     expect([...editAnchors.selectedAnchors]).toEqual([1]);
   });

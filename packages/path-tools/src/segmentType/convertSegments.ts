@@ -9,6 +9,7 @@ import {
   anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 const LABEL = 'Convert segments';
 
@@ -67,10 +68,9 @@ export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'immediate',
     run(deps, params) {
-      const wx = params?.worldX as number | undefined;
-      const wy = params?.worldY as number | undefined;
-      if (typeof wx !== 'number' || typeof wy !== 'number') return;
-      const under = segmentUnder(deps, wx, wy);
+      const world = (params as ImmediateParams | undefined)?.world;
+      if (!world) return;
+      const under = segmentUnder(deps, world.x, world.y);
       if (!under) return;
       const { dep, path, hit } = under;
       const next = editAnchorSetTracked(path, (set) => convertSegments(set, [hit], typeOf(params)));

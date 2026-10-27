@@ -5,6 +5,7 @@
  */
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ViewApi } from '@weasel-js/core';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Action id for `minimapCenterAction`. */
 export const MINIMAP_CENTER = 'minimap.center';
@@ -37,10 +38,10 @@ export function minimapCenterAction(): Action {
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const p = params as { worldX?: number; worldY?: number } | undefined;
+        const world = (params as ImmediateParams | undefined)?.world;
         const root = rootOf(deps);
-        if (!root || p?.worldX === undefined || p.worldY === undefined) return;
-        centerRootOn(root, p.worldX, p.worldY);
+        if (!root || !world) return;
+        centerRootOn(root, world.x, world.y);
       },
     },
   };

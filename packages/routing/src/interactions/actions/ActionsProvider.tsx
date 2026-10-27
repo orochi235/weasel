@@ -20,7 +20,8 @@ import {
   type DepName,
 } from './depRegistry';
 import { buildDepsFromRequires } from './buildDeps';
-import type { ActionDeps } from './invoker';
+import type { ActionDeps, WorldPoint } from './invoker';
+import type { ImmediateParams } from '../dispatcher/inputFacts';
 import type { Dispatcher } from '../dispatcher/dispatcher';
 import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } from './registry';
 import { createMenuHost, type MenuHost } from '../../menus/menuHost';
@@ -309,10 +310,9 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
 
 const NO_PREVIEW = (): void => {};
 
-/** The world point a trigger's params carry, when they carry both coordinates. */
-function pointOf(params: Record<string, unknown> | undefined): { x: number; y: number } | undefined {
-  const { worldX: x, worldY: y } = params ?? {};
-  return typeof x === 'number' && typeof y === 'number' ? { x, y } : undefined;
+/** The world point a trigger's params carry, if any. */
+function pointOf(params: Record<string, unknown> | undefined): WorldPoint | undefined {
+  return (params as ImmediateParams | undefined)?.world;
 }
 
 /** The node last activated on the page, across every tree: where a key that

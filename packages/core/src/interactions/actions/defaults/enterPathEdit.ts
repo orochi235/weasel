@@ -16,6 +16,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { ActionDisabledReason, isBody } from '@weasel-js/routing';
 import { effectSourceFor } from 'domains/pathEffects/effectSources';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 export const enterPathEditAction: Action & { requires: string[] } = {
   id: 'enterPathEdit',
@@ -42,9 +43,8 @@ export const enterPathEditAction: Action & { requires: string[] } = {
       if (!editAnchors || !selection) return;
       // The path under the pointer wins: with several selected, the first may not be the one
       // double-clicked.
-      const x = params?.worldX, y = params?.worldY;
-      const pointed = typeof x === 'number' && typeof y === 'number';
-      const under = pointed ? deps.nodeAtPoint?.({ x, y }) : null;
+      const world = (params as ImmediateParams | undefined)?.world;
+      const under = world ? deps.nodeAtPoint?.(world) : null;
       if (under && editAnchors.getEditablePath(under)) {
         editAnchors.setEditingId(under);
         return;
@@ -57,7 +57,7 @@ export const enterPathEditAction: Action & { requires: string[] } = {
       for (const id of ids) {
         // An effect hiding its path edits that path when entered from the selection. A double-click never does: on the
         // effect's glyphs it is the text's, and between them it is aimed at nothing.
-        const target = (!pointed && scene ? effectSourceFor(scene, id, 'path') : null) ?? id;
+        const target = (!world && scene ? effectSourceFor(scene, id, 'path') : null) ?? id;
         if (editAnchors.getEditablePath(target)) {
           editAnchors.setEditingId(target);
           return;

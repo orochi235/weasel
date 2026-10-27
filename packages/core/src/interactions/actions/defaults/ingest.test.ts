@@ -27,7 +27,7 @@ describe('ingestAction', () => {
   it('routes params.items through the handler registry with a point', async () => {
     const handle = vi.fn();
     registerContentHandler({ id: 't', match: 'image/*', handle });
-    runIngestAction(deps(), { items: [png], worldX: 10, worldY: 20 });
+    runIngestAction(deps(), { items: [png], world: { x: 10, y: 20 } });
     await vi.waitFor(() => expect(handle).toHaveBeenCalled());
     const [items, ctx] = handle.mock.calls[0];
     expect(items).toEqual([png]);
@@ -64,7 +64,7 @@ describe('ingestAction', () => {
     const handle = vi.fn();
     registerContentHandler({ id: 't', match: 'image/*', handle });
     const snap = { begin: vi.fn() };
-    runIngestAction({ ...deps(), snap }, { items: [png], worldX: 10, worldY: 20 });
+    runIngestAction({ ...deps(), snap }, { items: [png], world: { x: 10, y: 20 } });
     await vi.waitFor(() => expect(handle).toHaveBeenCalled());
     expect(handle.mock.calls[0][1].snap).toBe(snap);
   });

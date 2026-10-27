@@ -220,7 +220,7 @@ describe('constrainAnchors and unconstrainAnchors', () => {
     const t = setup([{ kind: 'horizontal', segment: [0, 1] }, { kind: 'vertical', segment: [1, 2] }]);
     t.select(2);
     // The bottom edge's mark sits 12 inside its midpoint, toward the square's center.
-    t.run(selectAnchorAction, { worldX: 50, worldY: 12 });
+    t.run(selectAnchorAction, { world: { x: 50, y: 12 } });
     expect(selectedConstraintOf(t.dep())).toBe(0);
     expect(t.dep().selectedAnchors.size).toBe(0);
     // Delete and Backspace are bound once, to deleteAnchors, which deletes the selected constraint.

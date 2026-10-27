@@ -61,6 +61,8 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   units?: UnitScope;
   /** Mirrors `SceneNode.clip`. Omitted when the node declares none. */
   clip?: NodeClip;
+  /** Mirrors `SceneNode.consumesChildren`. Omitted when the node draws its children. */
+  consumesChildren?: boolean;
 }
 
 /** A node as version 1 saves wrote it: the kinds were `leaf` and `container`. */

@@ -15,6 +15,7 @@ import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
 import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
 import { createEmitter } from '@weasel-js/registry';
 import { icon } from '../../../icons.gen';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Options for `useSliceTool`. */
 export interface UseSliceToolOptions {
@@ -101,9 +102,9 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
         invoker: {
           timing: 'immediate',
           run: (deps, params) => {
-            const p = params as { pressX?: number; pressY?: number } | undefined;
-            if (p?.pressX === undefined || p.pressY === undefined) return;
-            place(deps, p.pressX, p.pressY);
+            const press = (params as ImmediateParams | undefined)?.press;
+            if (!press) return;
+            place(deps, press.x, press.y);
           },
         },
       },

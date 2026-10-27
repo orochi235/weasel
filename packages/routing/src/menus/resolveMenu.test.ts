@@ -61,8 +61,8 @@ describe('resolveSchemaMenu: action leaves', () => {
   });
   it('runs through trigger with the menu params and the point, the point winning', () => {
     const src = sources();
-    run(resolveSchemaMenu(menu({ cut: act('cut') }), src, { x: 3, y: 4 }, { nodeId: 'n1', worldX: 99 })[0]);
-    expect(src.trigger).toHaveBeenCalledWith('cut', { nodeId: 'n1', worldX: 3, worldY: 4 });
+    run(resolveSchemaMenu(menu({ cut: act('cut') }), src, { x: 3, y: 4 }, { nodeId: 'n1', world: { x: 99, y: 99 } })[0]);
+    expect(src.trigger).toHaveBeenCalledWith('cut', { nodeId: 'n1', world: { x: 3, y: 4 } });
   });
   it('sends no point when opened without one', () => {
     const src = sources();

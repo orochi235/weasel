@@ -30,7 +30,7 @@ interface ScratchPaint {
  * path paints this, with nothing asked of it beyond what a path asks.
  *
  * The region is snapped out to the device-pixel grid and clamped to the
- * drawing buffer, so each texel is one device pixel of the target and a glyph
+ * window of the drawing buffer the target holds, so each texel is one device pixel of the target and a glyph
  * fragment reads its own. The kind sees the same transform, alpha and paint
  * space it would for a path here; only the projection differs, aimed at the
  * scratch buffer instead of the target. No clip and no scissor apply inside:
@@ -47,11 +47,14 @@ export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: Screen
   const ratio = ctx.deviceWidth && ctx.widthCss > 0 ? ctx.deviceWidth / ctx.widthCss : 1;
   const deviceW = ctx.deviceWidth ?? Math.round(ctx.widthCss);
   const deviceH = ctx.deviceHeight ?? Math.round(ctx.heightCss);
-  const px0 = Math.max(0, Math.floor(rect.x0 * ratio));
-  const py0 = Math.max(0, Math.floor(rect.y0 * ratio));
+  // The target's window: inside an effects buffer reaching past the drawing
+  // buffer, glyphs there are drawn and need their paint too.
+  const win = ctx.renderTarget?.window ?? { x: 0, y: 0, width: deviceW, height: deviceH };
+  const px0 = Math.max(win.x, Math.floor(rect.x0 * ratio));
+  const py0 = Math.max(win.y, Math.floor(rect.y0 * ratio));
   const maxSide = ctx.imageCache.maxTextureSide;
-  const pw = Math.min(maxSide, Math.min(deviceW, Math.ceil(rect.x1 * ratio)) - px0);
-  const ph = Math.min(maxSide, Math.min(deviceH, Math.ceil(rect.y1 * ratio)) - py0);
+  const pw = Math.min(maxSide, Math.min(win.x + win.width, Math.ceil(rect.x1 * ratio)) - px0);
+  const ph = Math.min(maxSide, Math.min(win.y + win.height, Math.ceil(rect.y1 * ratio)) - py0);
   if (!(pw > 0 && ph > 0)) return null;
 
   // The region in screen px, and the two matrices a kind's vertex stage

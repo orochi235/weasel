@@ -17,6 +17,7 @@ import {
 } from './warpTargets';
 import { icon } from '../icons.gen';
 import { warpSettingsForm } from './warpSettingsForm';
+import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What a press on a warp control hands the drag that follows. */
 export interface WarpHandleScratch {
@@ -129,9 +130,8 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
 
 /** A click's world point: where the press landed. */
 function clickPoint(params: Record<string, unknown> | undefined): Point | null {
-  const x = (params?.pressX ?? params?.worldX) as number | undefined;
-  const y = (params?.pressY ?? params?.worldY) as number | undefined;
-  return typeof x === 'number' && typeof y === 'number' ? { x, y } : null;
+  const p = params as ImmediateParams | undefined;
+  return p?.press ?? p?.world ?? null;
 }
 
 /**

@@ -305,7 +305,7 @@ describe('flip about a reference', () => {
 
   it("pivot 'pointer' mirrors about the line through the click", () => {
     const scene = makeStubScene(initial);
-    runFlip({ selection: makeSelection(['a', 'b']), scene }, { axis: 'x', pivot: 'pointer', worldX: 50, worldY: 0 });
+    runFlip({ selection: makeSelection(['a', 'b']), scene }, { axis: 'x', pivot: 'pointer', world: { x: 50, y: 0 } });
     expect(scene.poses.get('a')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
     expect(scene.poses.get('b')).toEqual({ x: 60, y: 0, width: 10, height: 10 });
   });

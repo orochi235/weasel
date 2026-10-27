@@ -269,7 +269,7 @@ describe('align reference', () => {
   it("'pointer' aligns to the click's world point when a click invoked it", () => {
     const { scene, current } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runWith(alignLeftAction, { selection, scene }, { to: 'pointer', worldX: 100, worldY: 5 });
+    runWith(alignLeftAction, { selection, scene }, { to: 'pointer', world: { x: 100, y: 5 } });
     expect(current.a).toMatchObject({ x: 100, y: 0 });
     expect(current.b).toMatchObject({ x: 100, y: 20 });
   });
