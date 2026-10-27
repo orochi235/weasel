@@ -1,8 +1,7 @@
 import type { MeasureRowText } from '../body';
-import { IDENTITY_POSE_COMPOSITION } from '@weasel-js/core';
 import { insetOf } from '../cluster';
 import { groupLabelIdOf } from '../dataGroups';
-import { diagramScene, type DataNode, type DiagramRouter } from '../fromData';
+import type { DataNode, DiagramRouter } from '../fromData';
 import { nestGroups } from '../groupTree';
 import { diagramNodeOf } from '../trait';
 import type { PortSpec } from '../types';
@@ -11,7 +10,7 @@ import {
   wireEdges, type EffectLook, type LookThemeOptions, type RunRowOptions, type TypeColor,
 } from './draw';
 import { columnLefts, laneColumns, type LaneBlock, type Span } from './laneColumns';
-import { inkOf, routeWires, TRACK_GAP, type Box } from './lanesRoutes';
+import { inkOf, routeWires, TRACK_GAP, worldSpecs, type Box } from './lanesRoutes';
 import { mainChain } from './mainChain';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectGroup, EffectPipeline, EffectPort, EffectStage } from './types';
@@ -108,10 +107,7 @@ type Overhang = { left: number; top: number; right: number; bottom: number };
  *  insets of the group boxes around it, a title's included. And the width
  *  of each labeled group's title. */
 function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], measure: MeasureRowText | undefined) {
-  // Laid out to be measured, in world.
-  const specs = diagramScene({ nodes, edges: [], groups }, {
-    layout: 'none', composition: IDENTITY_POSE_COMPOSITION, ...(measure !== undefined ? { measure } : {}),
-  });
+  const specs = worldSpecs({ nodes, edges: [], groups }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
   const pose = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
   const spec = new Map(specs.map((s) => [s.id as string, s]));
   const nested = nestGroups(groups, (id) => nodes.some((n) => n.id === id))

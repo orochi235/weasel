@@ -8,7 +8,8 @@ import type { MeasureRowText } from '../body';
 import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
 import {
-  diagramScene, edgeIdOf, LABEL_PLACEMENT, type DataEdge, type DataGroup, type DataNode, type DiagramRouter, type DiagramSpec, type EdgeStyle,
+  diagramScene, edgeIdOf, LABEL_PLACEMENT, type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramRouter,
+  type DiagramSceneOptions, type DiagramSpec, type EdgeStyle,
 } from '../fromData';
 import { nestGroups } from '../groupTree';
 import { labelCenter } from '../label';
@@ -228,7 +229,12 @@ export function clearLabel(
   return undefined;
 }
 
-/** What a node draws: its box, and each of its rows and marks, some of which sit outside it. */
+/** `diagramScene`'s specs for `data`, each pose where it draws rather than in the frame of the node above it, so
+ *  a node and its rows can be read side by side. Every measurement the lanes look takes goes through this. */
+export const worldSpecs = (data: DiagramData, options: Omit<DiagramSceneOptions, 'composition'>): DiagramSpec[] =>
+  diagramScene(data, { ...options, composition: IDENTITY_POSE_COMPOSITION });
+
+/** What a node draws, in specs from {@link worldSpecs}: its box, and each of its rows and marks, some of which sit outside it. */
 export const inkOf = (id: string, specs: readonly DiagramSpec[]): Box[] =>
   specs.filter((s) => s.id === id || s.parent === id || String(s.id).startsWith(`${id}/mark:`)).map((s) => s.pose as Box);
 
@@ -271,9 +277,8 @@ function walledIn(grid: LaneGrid, walls: readonly Wall[]): LaneGrid {
 export function routeWires(
   wires: readonly { edge: DataEdge; style: EdgeStyle }[], nodes: readonly DataNode[], laid: Laid,
 ): { edges: { edge: DataEdge; style: EdgeStyle }[]; tracks: ReadonlyMap<number, number> } {
-  // Laid out to be measured, in world.
-  const specs = diagramScene({ nodes, edges: wires.map((w) => w.edge), ...(laid.groups !== undefined ? { groups: laid.groups } : {}) }, {
-    layout: 'none', router: laid.router, composition: IDENTITY_POSE_COMPOSITION, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
+  const specs = worldSpecs({ nodes, edges: wires.map((w) => w.edge), ...(laid.groups !== undefined ? { groups: laid.groups } : {}) }, {
+    layout: 'none', router: laid.router, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
   });
   const spec = new Map(specs.map((s) => [s.id as string, s]));
   const ink = new Map(nodes.map((n) => [n.id, inkOf(n.id, specs)]));
