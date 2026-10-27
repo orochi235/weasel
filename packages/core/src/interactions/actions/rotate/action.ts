@@ -8,7 +8,7 @@ import { commitRotate } from './commit';
 import { nextFrame } from './frame';
 import { beginRotate, type RotateFrame } from './session';
 import { recordTransform } from '../transform-again/memory';
-import { SNAP_ROLES } from 'features/snap/roles';
+import { SNAP_ROLES } from 'domains/snap/roles';
 
 /**
  * Pointer-driven rotation of the selection, committed as one undo entry.

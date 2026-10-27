@@ -2,8 +2,8 @@ import type { Action, ActionDeps, BindingOpts, InvocationCtx, OngoingHandle } fr
 import { resolveParams } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
-import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from 'features/snap/roles';
-import { spanSnap } from 'features/snap/spanSnap';
+import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from 'domains/snap/roles';
+import { spanSnap } from 'domains/snap/spanSnap';
 import { measureBetween, measureEndsOf, withMeasureEnd, type MeasureEnd, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';

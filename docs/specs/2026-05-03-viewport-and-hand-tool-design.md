@@ -111,7 +111,7 @@ Pure pointer-on-empty selection from the select tool is not affected: hand owns 
 
 ### Deprecate `usePan`
 
-`src/features/viewport/usePan.ts` is `React.MouseEvent`-based and uses the inverse sign convention (additive translate, not camera position). The new hand tool does not use it. Mark it `@deprecated` in JSDoc with a pointer to `useHandTool`. Don't physically delete: it remains exported from `src/index.ts` and is referenced by the bezier-zoom design doc. Removal can ride with Phase 2c when zoom lands and the bezier demo migrates off the CSS-scale hack.
+`src/domains/viewport/usePan.ts` is `React.MouseEvent`-based and uses the inverse sign convention (additive translate, not camera position). The new hand tool does not use it. Mark it `@deprecated` in JSDoc with a pointer to `useHandTool`. Don't physically delete: it remains exported from `src/index.ts` and is referenced by the bezier-zoom design doc. Removal can ride with Phase 2c when zoom lands and the bezier demo migrates off the CSS-scale hack.
 
 ## Testing surface
 

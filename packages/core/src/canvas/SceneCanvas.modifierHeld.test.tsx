@@ -7,7 +7,7 @@ import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { modifierHeld } from 'features/chrome-caps';
+import { modifierHeld } from 'domains/chrome-caps';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type P = { x: number; y: number; width: number; height: number };

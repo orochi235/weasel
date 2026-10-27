@@ -66,7 +66,7 @@ flowchart TB
 
   subgraph DV["Dev organization"]
     direction TB
-    Ft["Feature"]
+    Ft["Domain"]
     Pr["Primitive"]
     Hk["Hook"]
     Rt["Role taxonomy"]
@@ -659,78 +659,78 @@ references. See
 
 The vocabulary kit authors use when extending or organizing the kit.
 
-### Feature
+### Domain
 
-A directory under `packages/core/src/features/<name>/` that bundles related primitives sharing a
-domain. Examples: `selection`, `text`, `paths`, `ingestion`, `modes`,
+A directory under `packages/core/src/domains/<name>/` that bundles the related primitives of
+one area of the kit. Examples: `selection`, `text`, `paths`, `ingestion`, `modes`,
 `viewports`. Not a runtime concept — an organizing principle
 for the repo. Distinct from a [Contribution](#contribution) (which
-bundles parts with consumer-facing composition rules) in that features are internal
-to the kit — though a feature often exports one.
+bundles parts with consumer-facing composition rules) in that domains are internal
+to the kit — though a domain often exports one.
 
-The `<SceneCanvas features>` prop is a different thing that shares the word. It
-takes behavior presets: `FeaturePreset` objects
+The `<SceneCanvas features>` prop is a different thing. It takes behavior presets: `FeaturePreset` objects
 (`packages/core/src/canvas/SceneCanvas/features.ts`), core's by name (`select`,
 `move`, `draw`) or a package's by import. A preset turns behavior on for one
-canvas, where a feature directory only organizes source, and neither list is
-drawn from the other.
+canvas, where a domain directory only organizes source, and neither list is
+drawn from the other. The directory was `features/`, sharing the prop's word. Ruled 2026-10-11
+that the directory takes a new word; "domain" chosen 2026-10-24. The prop keeps `features`.
 
-**Bundle-shaped vs protocol-shaped features.** Features fall on a spectrum:
+**Bundle-shaped vs protocol-shaped domains.** Domains fall on a spectrum:
 
-- **Bundle-shaped** features are self-contained. Their primitives compose locally;
+- **Bundle-shaped** domains are self-contained. Their primitives compose locally;
   the rest of the kit doesn't need to know they exist. Text
   is mostly bundle-shaped — if you don't import it, nothing breaks; if you do,
   you wire it at one or two call sites.
 
-- **Protocol-shaped** features introduce a *concept* that other code must honor.
+- **Protocol-shaped** domains introduce a *concept* that other code must honor.
   Selection is the canonical case: "current selection" is read by overlay layers,
   written by gestures, threaded through [Adapter](#adapter) contracts (e.g.
   `AreaSelectAdapter.setSelection`, `getSelection` on Move/Resize/Rotate adapters),
-  and conditioned on by [Actions](#action). The selection feature doesn't just
+  and conditioned on by [Actions](#action). The selection domain doesn't just
   contribute (api/attrs/layers); it *imposes* — anything that interacts with the
   scene has to understand what selection is and behave accordingly.
 
-The [Role taxonomy](#role-taxonomy) captures contributions *out* of a feature; it
-doesn't (yet) capture the protocol surface a protocol-shaped feature *requires* of
+The [Role taxonomy](#role-taxonomy) captures contributions *out* of a domain; it
+doesn't (yet) capture the protocol surface a protocol-shaped domain *requires* of
 other code. In practice the protocol surface is expressed as TypeScript
 interfaces (`SelectionApi`, `AreaSelectAdapter`, etc.) — the type system is the
 protocol contract, validated at compile time. See
-[Feature dependency layers](#feature-dependency-layers) for how this affects the
+[Domain dependency layers](#domain-dependency-layers) for how this affects the
 kit's internal partial order.
 
-**Feature-authoring guide.** When adding or restructuring a feature:
+**Domain-authoring guide.** When adding or restructuring a domain:
 
-1. **Each feature is a directory under `packages/core/src/features/<name>/`.**
+1. **Each domain is a directory under `packages/core/src/domains/<name>/`.**
 
-2. **Each feature has an `index.ts` barrel.** The barrel re-exports the feature's public primitives — every hook, layer factory, exported type, or helper a consumer or another feature might import. Internal helpers stay un-exported (or are exported only through deeper paths if needed for internal cross-feature wiring).
+2. **Each domain has an `index.ts` barrel.** The barrel re-exports the domain's public primitives — every hook, layer factory, exported type, or helper a consumer or another domain might import. Internal helpers stay un-exported (or are exported only through deeper paths if needed for internal cross-domain wiring).
 
-3. **The kit's main barrel (`packages/core/src/index.ts`) imports from feature barrels, not from feature-internal paths.** This is the load-bearing discipline — once enforced, internal restructures (renaming a file, splitting a primitive into two) don't ripple through the main barrel.
+3. **The kit's main barrel (`packages/core/src/index.ts`) imports from domain barrels, not from domain-internal paths.** This is the load-bearing discipline — once enforced, internal restructures (renaming a file, splitting a primitive into two) don't ripple through the main barrel.
 
-4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias and no `useFooFeature()` hook.
+4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a domain's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias and no `useFooFeature()` hook.
 
-5. **Protocol-shaped features document their protocol surface explicitly.** Selection's `SelectionApi`, `AreaSelectAdapter`, and the `getSelection`/`setSelection` methods threaded into Move/Resize/Rotate adapters are the model. When a feature introduces a cross-cutting concept other code must honor, name the contracts in TypeScript interfaces and reference them in the feature's docs.
+5. **Protocol-shaped domains document their protocol surface explicitly.** Selection's `SelectionApi`, `AreaSelectAdapter`, and the `getSelection`/`setSelection` methods threaded into Move/Resize/Rotate adapters are the model. When a domain introduces a cross-cutting concept other code must honor, name the contracts in TypeScript interfaces and reference them in the domain's docs.
 
 ### Primitive
 
-An exported building block from a feature — a hook, layer factory, type, helper,
-or utility function. The unit of public consumption. Per-feature primitives compose
+An exported building block from a domain — a hook, layer factory, type, helper,
+or utility function. The unit of public consumption. Per-domain primitives compose
 into the consumer-side abstractions. Examples: `useCanvasFocus`, `gateLayer`,
 `createSelectionOverlayLayer`, `pathOriginProjection`. Primitives are exported
-directly; features are directories.
+directly; domains are directories.
 
 ### Role taxonomy
 
-A thinking tool for sorting a feature's primitives — not a code shape. Three roles:
+A thinking tool for sorting a domain's primitives — not a code shape. Three roles:
 
-- **`api`** — typed surface for cross-feature consumption: live state, refs,
-  getters/setters. Cross-feature deps are typed function arguments,
+- **`api`** — typed surface for cross-domain consumption: live state, refs,
+  getters/setters. Cross-domain deps are typed function arguments,
   not a runtime registry.
 - **`attrs`** — native DOM attributes and handlers to spread onto the canvas
   host element: `tabIndex`, `onFocus`, `onPointerMove`, `aria-*`. Distinct from
   React props the `<SceneCanvas>` component itself defines.
-- **`layers`** — render layers the feature contributes.
+- **`layers`** — render layers the domain contributes.
 
-A feature that ships as one installable unit is a `SurfaceContribution`
+A domain that ships as one installable unit is a `SurfaceContribution`
 (`docs/extending.md`), not an `{ api, attrs, layers }` object.
 
 ### Chrome state
@@ -745,10 +745,10 @@ React-idiomatic way. The kit's architecture choice: no classes, no event emitter
 no singleton stores — hooks compose. Nearly every consumer-side abstraction is
 accessed through a hook.
 
-### Feature dependency layers
+### Domain dependency layers
 
-The kit's features form an implicit partial order based on what they import and
-what protocols they consume. Documented here so authors of new features know where
+The kit's domains form an implicit partial order based on what they import and
+what protocols they consume. Documented here so authors of new domains know where
 they fit.
 
 - **Foundation** (nothing kit-internal depends on these): `viewport`, `scene`,
@@ -758,9 +758,9 @@ they fit.
   `SelectionApi`, `useSelection`, `ChromeState`, `MULTI_RESIZE_TARGET_ID` —
   is core (`packages/core/src/core/selection/`), because affordances and tools
   both read it and the layering runs `core` → `affordances` → `tools` →
-  `features`. What sits in `packages/core/src/features/selection/` is the part
+  `domains`. What sits in `packages/core/src/domains/selection/` is the part
   built *on* that protocol: the overlay render layers, and the ambient
-  `SelectionContext`. The feature barrel covers those two and says so; moving
+  `SelectionContext`. The domain barrel covers those two and says so; moving
   the protocol up to join them would invert the layering.
 - **Mid-layer** (depend on foundation): `paths`, `text`.
 - **Gestures** (depend on foundation + adapter contracts): `useDragRect`,
@@ -776,7 +776,7 @@ they fit.
 This order is descriptive, not enforced; TypeScript module imports are the actual
 dependency graph.
 
-**Cycle-breaking conventions.** Some features have bidirectional needs. Selection
+**Cycle-breaking conventions.** Some domains have bidirectional needs. Selection
 ↔ scene is the canonical case:
 
 - Selection needs to react to scene mutations (e.g., remove a deleted node's id
@@ -789,7 +789,7 @@ The kit avoids module-level cycles by making one side **subscribe** instead of
 events but does not import selection. The runtime relationship is bidirectional,
 but compile-time imports stay acyclic.
 
-**Convention:** when two features have bidirectional needs, one side owns state
+**Convention:** when two domains have bidirectional needs, one side owns state
 and exposes a `subscribe` (or callback) API; the other side subscribes.
 
 ---
@@ -1039,7 +1039,7 @@ combined `createSelectionOverlayLayer`. The overlay reads overlay-aware pose
 lookups (live gesture pose wins over committed adapter pose) so handles track
 objects during a drag. The selection overlay is screen-space-constant for handle
 sizes but world-space for object positions. See
-`packages/core/src/features/selection/overlay.ts`. The
+`packages/core/src/domains/selection/overlay.ts`. The
 kit-level affordance factories (`createCornerResizeAffordance`,
 `createRotationAffordance`) render the same chrome via reusable primitives;
 `createSelectionOverlayLayer` is the legacy presentational helper, and
@@ -1060,10 +1060,10 @@ Distinct from gesture-level [Behaviors](#behavior) which already ship.
 
 ### Capability registry (deferred)
 
-A runtime DAG for cross-feature dependency resolution — typed indirect references
-between features (a "provides/requires" contract) rather than direct TypeScript
+A runtime DAG for cross-domain dependency resolution — typed indirect references
+between domains (a "provides/requires" contract) rather than direct TypeScript
 import arguments. Explicitly deferred: the in-tree dependency graph is TypeScript
-imports; typed function arguments carry cross-feature
+imports; typed function arguments carry cross-domain
 deps for now. Tracked in the feature-roles spec.
 
 ### Behaviors at the component level (deferred)

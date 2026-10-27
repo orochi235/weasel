@@ -23,8 +23,8 @@ import type { SceneCanvasProps } from './SceneCanvas/props';
 import type { CanvasViewCamera, SceneCanvasApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
 import type { NodeId } from 'core/scene/types';
-import type { ViewMarkerProps } from 'features/viewports/viewMarker';
-import { createViewMarkerContribution } from 'features/viewports/viewMarkerDrag';
+import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
+import { createViewMarkerContribution } from 'domains/viewports/viewMarkerDrag';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

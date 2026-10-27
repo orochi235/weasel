@@ -1,7 +1,7 @@
 /**
  * `ingest` — routes externally-arrived content (OS drop, clipboard paste,
  * file picker / `CanvasExtensionApi.ingest`) through the content-handler
- * registry (`features/ingestion/contentHandlers`).
+ * registry (`domains/ingestion/contentHandlers`).
  *
  * Registered ambient with both `drop` and `paste` default bindings, so
  * external content works regardless of the active tool. A tool can still
@@ -24,7 +24,7 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason, type ActionDeps } from '@weasel-js/routing';
 import {
   couldClaim, runIngest, type ContentHandlerEntry, type IngestCtx, type RunIngestOptions,
-} from 'features/ingestion/contentHandlers';
+} from 'domains/ingestion/contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { MOVE_NODES_REQUIRES } from '../moveNodes';

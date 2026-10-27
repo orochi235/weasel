@@ -91,10 +91,10 @@ Both things a 2D layer needs and an earlier draft of this spec claimed were miss
 do not build them again.
 
 - **Dashed strokes.** `Stroke.dash` (`core/paint-types.ts:134`) split at flatten time by
-  `splitForDash` (`features/paths/tessellate/stroke.ts:329`), with the pattern in the stroke mesh
+  `splitForDash` (`domains/paths/tessellate/stroke.ts:329`), with the pattern in the stroke mesh
   cache key. It carries anchor parameters across dash boundaries and handles closed subpaths.
 - **Hairlines.** `RenderLayer.draw` receives `(data, view, dims)`, so a layer computes
-  `1 / meanScale(view.scale)` itself — `features/grid/layer.ts:78` does.
+  `1 / meanScale(view.scale)` itself — `domains/grid/layer.ts:78` does.
 
 `Stroke.width: { px }` was added on top of these as sugar: it moves that division into the renderer
 and lets the mesh cache key see the resolved width. It resolves against the **accumulated**

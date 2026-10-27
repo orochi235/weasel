@@ -9,11 +9,11 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import { useMeasureTool } from './useMeasureTool';
-import { createMeasurements, measureIds } from 'features/measure/measurements';
-import { measureEndsOf } from 'features/measure/measurement';
-import { measurementsContribution } from 'features/measure/measureContribution';
-import { measureEndSource } from 'features/measure/measureHit';
-import { MEASURE_ACTION_IDS } from 'features/measure/actionIds';
+import { createMeasurements, measureIds } from 'domains/measure/measurements';
+import { measureEndsOf } from 'domains/measure/measurement';
+import { measurementsContribution } from 'domains/measure/measureContribution';
+import { measureEndSource } from 'domains/measure/measureHit';
+import { MEASURE_ACTION_IDS } from 'domains/measure/actionIds';
 
 const ms0 = () => createMeasurements({ layer: 'notes' });
 

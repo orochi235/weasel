@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
-import { createSelectionOverlayLayer } from 'features/selection/overlay';
+import { createSelectionOverlayLayer } from 'domains/selection/overlay';
 import { createCornerResizeAffordance } from './cornerResize';
 import { hitAffordanceRegions } from './hitAffordanceRegions';
 import { createSlopsDebugLayer } from 'canvas/slopsDebugLayer';

@@ -1,5 +1,5 @@
 import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
-import { SNAP_ROLES, snapMods } from 'features/snap/roles';
+import { SNAP_ROLES, snapMods } from 'domains/snap/roles';
 import type { InsertExtras } from '../depSchema';
 import { inPlane, insertLayer } from '../planeInput';
 import { enterInsertedText } from './commit';

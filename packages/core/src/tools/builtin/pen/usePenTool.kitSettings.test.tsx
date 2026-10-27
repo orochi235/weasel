@@ -2,12 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { KitSettingsProvider } from '@weasel-js/react';
-import { createPenPreviewLayer, PEN_CLOSE_HIT_PX } from 'features/paths/penPreviewLayer';
+import { createPenPreviewLayer, PEN_CLOSE_HIT_PX } from 'domains/paths/penPreviewLayer';
 import { usePenTool } from './usePenTool';
 import { setup } from './testing/penHarness';
 
-vi.mock('features/paths/penPreviewLayer', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('features/paths/penPreviewLayer')>();
+vi.mock('domains/paths/penPreviewLayer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('domains/paths/penPreviewLayer')>();
   return { ...actual, createPenPreviewLayer: vi.fn(actual.createPenPreviewLayer) };
 });
 

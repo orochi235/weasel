@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
-import { SHAPE_COUNT_RANGE } from 'features/paths/shapeGenerator';
+import { SHAPE_COUNT_RANGE } from 'domains/paths/shapeGenerator';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';

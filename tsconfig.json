@@ -181,7 +181,7 @@
       "@weasel-js/ui/floating": ["./packages/ui/src/floating/index.ts"],
       "@weasel-js/ui/testing/*": ["./packages/ui/src/testing/*"],
       "core/*": ["./packages/core/src/core/*"],
-      "features/*": ["./packages/core/src/features/*"],
+      "domains/*": ["./packages/core/src/domains/*"],
       "affordances/*": ["./packages/core/src/affordances/*"],
       "interactions/*": ["./packages/core/src/interactions/*"],
       "tools/*": ["./packages/core/src/tools/*"],

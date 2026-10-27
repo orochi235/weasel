@@ -1,7 +1,7 @@
 import { findPathSnap, findPathSnaps, PATH_SNAP_KINDS, type PathSnapKind } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
-import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
-import type { SnapSource } from 'features/snap/types';
+import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
+import type { SnapSource } from 'domains/snap/types';
 import { PATH_SNAP_LABELS } from './glyphs';
 import { sceneSnapIndex } from './sceneIndex';
 

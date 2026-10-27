@@ -15,8 +15,8 @@ import { mergeContributions, type SurfaceContribution } from './surfaceContribut
 import type { CanvasViewHandle, SceneCanvasApi } from './canvasExtension';
 import type { CanvasViewProps } from './canvasViewProps';
 import type { View } from 'core/viewport/view';
-import type { ViewMarkerProps } from 'features/viewports/viewMarker';
-import { rectAim } from 'features/viewports/aim';
+import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
+import { rectAim } from 'domains/viewports/aim';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

@@ -8,7 +8,7 @@ import type { DepName, DepSchema } from 'interactions/actions/depSchema';
 import type { Contribution } from '../tools/overlayBinding';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { CanvasViewProps } from './CanvasView';
-import type { ViewMarkerProps } from '../features/viewports/viewMarker';
+import type { ViewMarkerProps } from '../domains/viewports/viewMarker';
 import type { View } from '../core/viewport/view';
 import type { KitRequirements } from './kitRequirements';
 

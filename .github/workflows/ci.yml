@@ -84,7 +84,7 @@ jobs:
       - run: npm run audit:jsdoc -- --quiet --check
       - run: npm run typecheck
       # Two things (eslint.config.js). The scoped no-restricted-imports blocks
-      # guard one-way dependency arrows — core/ ← features/, and the leaf purity
+      # guard one-way dependency arrows — core/ ← domains/, and the leaf purity
       # of @weasel-js/font and @weasel-js/audio — whose violation is a
       # bundler-duplicated module, a silent failure tsc can't see. The baseline
       # block catches bugs: stale hook dependencies, conditional hooks, `any` on

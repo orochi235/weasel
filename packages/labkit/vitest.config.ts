@@ -6,7 +6,7 @@ import { type AliasOptions, defineConfig } from 'vitest/config';
 const weaselRoot = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
 
 // Reuse the monorepo's canonical alias map so tests resolve @weasel-js/core*
-// (and weasel's bare core/ features/ imports) against source — same as the
+// (and weasel's bare core/ domains/ imports) against source — same as the
 // root vite/vitest configs.
 async function weaselAlias(): Promise<AliasOptions> {
   const aliasesUrl = new URL(`file://${weaselRoot}/scripts/vite-aliases.ts`);

@@ -13,8 +13,8 @@ import type { SceneCanvasProps } from './SceneCanvas';
 import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import { never } from 'features/chrome-caps';
-import type { VisibilityRules } from 'features/chrome-caps';
+import { never } from 'domains/chrome-caps';
+import type { VisibilityRules } from 'domains/chrome-caps';
 
 type D = { kind: string };
 type L = 'main';

@@ -4,8 +4,8 @@ import { setup } from './testing/penHarness';
 
 // The real layer, recorded: the pen keeps its state to itself, and the one
 // place it hands that object out is to the preview layer that paints from it.
-vi.mock('features/paths/penPreviewLayer', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('features/paths/penPreviewLayer')>();
+vi.mock('domains/paths/penPreviewLayer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('domains/paths/penPreviewLayer')>();
   return { ...actual, createPenPreviewLayer: vi.fn(actual.createPenPreviewLayer) };
 });
 

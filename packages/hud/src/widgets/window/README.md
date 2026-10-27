@@ -54,4 +54,4 @@ moves by that instead.
 ## Related
 
 - [`../../loupe`](../../loupe) — the first consumer: window plus a magnified lens.
-- [`@weasel-js/core` viewports](../../../../core/src/features/viewports/README.md) — the lens itself.
+- [`@weasel-js/core` viewports](../../../../core/src/domains/viewports/README.md) — the lens itself.

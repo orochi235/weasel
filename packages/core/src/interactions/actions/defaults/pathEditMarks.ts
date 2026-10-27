@@ -3,7 +3,7 @@
 
 import type { ActionDeps } from '@weasel-js/routing';
 import { pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
-import type { PathEditMark, PathEditTarget } from 'features/paths/pathEditExtension';
+import type { PathEditMark, PathEditTarget } from 'domains/paths/pathEditExtension';
 import type { EditAnchorsDep } from '../depSchema';
 
 /** The open path as extensions read it, or null with none open. */

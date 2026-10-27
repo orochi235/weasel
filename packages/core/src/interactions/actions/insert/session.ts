@@ -1,7 +1,7 @@
 import type { BindingOpts, DragSample, InvocationCtx } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
-import { SNAP_ANGLE_STEP, snapMods } from 'features/snap/roles';
-import { spanSnap, type SpanSnap } from 'features/snap/spanSnap';
+import { SNAP_ANGLE_STEP, snapMods } from 'domains/snap/roles';
+import { spanSnap, type SpanSnap } from 'domains/snap/spanSnap';
 import { pointerStateOf } from '../pointerState';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';

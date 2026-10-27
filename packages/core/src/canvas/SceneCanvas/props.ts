@@ -9,8 +9,8 @@ import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
-import type { ContentHandlerEntry } from 'features/ingestion';
-import type { SceneCanvasSnap } from 'features/snap/types';
+import type { ContentHandlerEntry } from 'domains/ingestion';
+import type { SceneCanvasSnap } from 'domains/snap/types';
 import type { SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
@@ -427,7 +427,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * `defaultVisibilityRules`. Set an id to `never` to suppress a chrome element
      * entirely (also unhittable), or to `always` to force-show.
      */
-    chromeVisibility?: import('features/chrome-caps').VisibilityRules;
+    chromeVisibility?: import('domains/chrome-caps').VisibilityRules;
 
     /**
      * The app's mode registry (`createModeRegistry` in `@weasel-js/modes`).

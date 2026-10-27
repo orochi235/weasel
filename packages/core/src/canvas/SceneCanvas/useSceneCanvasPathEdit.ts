@@ -2,8 +2,8 @@ import type { ActiveMode } from '@weasel-js/modes';
 import { useMemo } from 'react';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { isSelectedNode } from 'features/paths/pathEditState';
-import { usePathEditState, type UsePathEditStateOptions } from 'features/paths/usePathEdit';
+import { isSelectedNode } from 'domains/paths/pathEditState';
+import { usePathEditState, type UsePathEditStateOptions } from 'domains/paths/usePathEdit';
 import type { SceneCanvasProps } from './props';
 
 /**

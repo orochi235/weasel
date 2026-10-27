@@ -7,7 +7,7 @@ import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
 import { nextFrame } from './frame';
 import { commitMove } from './commit';
 import { recordTransform } from '../transform-again/memory';
-import { SNAP_ROLES } from 'features/snap/roles';
+import { SNAP_ROLES } from 'domains/snap/roles';
 export type { ReparentOnDrop };
 
 /**

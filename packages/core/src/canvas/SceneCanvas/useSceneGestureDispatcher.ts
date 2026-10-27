@@ -4,7 +4,7 @@ import { useActionsRegistry, useDepRegistry, useGestureDispatcher, type DepRegis
 import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
-import type { RuleCtx } from 'features/chrome-caps';
+import type { RuleCtx } from 'domains/chrome-caps';
 import type React from 'react';
 import { useCallback, useEffect, useInsertionEffect, useMemo, useState } from 'react';
 import type { Contribution } from '../../tools/overlayBinding';
@@ -19,7 +19,7 @@ import { useOptionalViewRegistry, type ViewRegistry } from '../viewRegistry';
 import { useSurfaceRouting } from './useSurfaceRouting';
 import { traceConversion, type CoordTraceEntry } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
-import { VIEW_MARKER_ENTRY_ID } from '../../features/viewports/viewMarkerDrag';
+import { VIEW_MARKER_ENTRY_ID } from '../../domains/viewports/viewMarkerDrag';
 
 /** What `<SceneCanvas>` hands {@link useSceneGestureDispatcher}. */
 export interface SceneGestureDispatcherInputs {

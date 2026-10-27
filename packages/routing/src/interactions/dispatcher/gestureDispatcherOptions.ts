@@ -52,7 +52,7 @@ export interface DispatcherViewTarget {
 
 
 /**
- * The part of `features/viewports`' `ViewResolver` the dispatcher needs: which
+ * The part of `domains/viewports`' `ViewResolver` the dispatcher needs: which
  * view a client point belongs to, pinned to the view a gesture began in.
  *
  * @internal Structural on purpose — a `ViewResolver` satisfies it, and the

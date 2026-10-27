@@ -26,7 +26,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
-import type { ShapeGenerator } from 'features/paths/shapeGenerator';
+import type { ShapeGenerator } from 'domains/paths/shapeGenerator';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { cycleFill, solid, strokeOf } from '../../util/paint';

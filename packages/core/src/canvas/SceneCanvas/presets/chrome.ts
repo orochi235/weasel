@@ -1,4 +1,4 @@
-import type { ChromeId } from 'features/chrome-caps/types';
+import type { ChromeId } from 'domains/chrome-caps/types';
 
 /** The selection chrome each core preset owns. Apart from the presets, so
  *  hiding a preset's chrome does not load its actions. */

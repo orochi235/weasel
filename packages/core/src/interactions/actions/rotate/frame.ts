@@ -1,7 +1,7 @@
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import type { NodeId } from 'core/scene/types';
-import { snapMods } from 'features/snap/roles';
+import { snapMods } from 'domains/snap/roles';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
 import { carryPose, planeOf } from '../planeInput';

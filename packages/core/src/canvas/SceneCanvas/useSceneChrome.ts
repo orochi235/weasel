@@ -3,13 +3,13 @@ import { useLatest } from '@weasel-js/react';
 import type { Dispatcher, RuleCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import { never, useHoverTracking, type HoverTracking, type VisibilityRules } from 'features/chrome-caps';
+import { never, useHoverTracking, type HoverTracking, type VisibilityRules } from 'domains/chrome-caps';
 import {
   useChromeCaps,
   type ChromeCaps,
   type ChromeCapsSource,
   type ViewRuleInputs,
-} from 'features/chrome-caps/useChromeCaps';
+} from 'domains/chrome-caps/useChromeCaps';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { useOptionalViewRegistry } from '../viewRegistry';
 import { presetChromeRules, type EnabledPresets } from './features';

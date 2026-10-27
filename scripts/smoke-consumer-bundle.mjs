@@ -7,7 +7,7 @@
 //
 //   1. An UNDECLARED specifier — core emitting `@weasel-js/foo` without
 //      `foo` in its `dependencies` — is unresolvable for a consumer.
-//   2. A repo-internal path alias (`core/ops/registry`, `features/…`,
+//   2. A repo-internal path alias (`core/ops/registry`, `domains/…`,
 //      `debug/flag`) leaking into dist: a consumer has no `baseUrl`/`paths`.
 //   3. An INLINED sub-package: a consumer holding both core and, say,
 //      @weasel-js/geom would get two copies, each holding its own registries.
@@ -70,7 +70,7 @@ try {
 // Only real import/export statements: a bare grep would also match an import
 // sample inside a JSDoc block.
 const STMT = /^\s*(?:import|export)\b[^;'"]*?from\s*['"]([^'"]+)['"]/gm;
-const REPO_ALIASES = /^(core|features|affordances|interactions|tools|canvas|debug)\//;
+const REPO_ALIASES = /^(core|domains|affordances|interactions|tools|canvas|debug)\//;
 
 // JS and .d.ts are tracked SEPARATELY. They come from two builds with two
 // external lists — vite.config.ts for the JS, tsup (deps + peerDeps) for the

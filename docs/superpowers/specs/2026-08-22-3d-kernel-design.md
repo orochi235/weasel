@@ -84,7 +84,7 @@ lab, and the lab settled it the other way: the kernel reuses core's `Scene`, its
 dispatcher, its actions, `resolveOverlays` and the pose feed, and every one of
 those lives in core. Lifting `Scene` out instead is not cheap — `RectPose` is
 *declared inside* `core/scene/types.ts` and imported back by
-`geometry/unionBounds.ts` and `features/groups/composePose.ts`, so a scene
+`geometry/unionBounds.ts` and `domains/groups/composePose.ts`, so a scene
 package and core would import each other. So `kernel3d` takes core as a peer,
 the tier `svg`, `diagram` and `loupe` already occupy. Core still takes no diff,
 which is the constraint that mattered.

@@ -18,15 +18,15 @@ import { locksOf, type EditAnchorsParams } from 'interactions/actions/edit-ancho
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
-import { anchorDataPatch } from 'features/paths/anchorData';
-import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'features/paths/editablePath';
-import { representationOf } from 'features/paths/pathRepresentation';
-import type { PathEditExtension } from 'features/paths/pathEditExtension';
+import { anchorDataPatch } from 'domains/paths/anchorData';
+import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'domains/paths/editablePath';
+import { representationOf } from 'domains/paths/pathRepresentation';
+import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import {
   finishCtx, finishEdit, otherOps, pathEditFollower, reshapeOps, type EditableNode,
 } from './pathEditCommits';
 import { useTransformFollower } from './transformFollowers';
-import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
+import { createPathEditState, isSelectedNode, type PathEditState } from 'domains/paths/pathEditState';
 import { resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 

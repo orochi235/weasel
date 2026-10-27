@@ -4,7 +4,7 @@
  */
 import { useCallback, useEffect } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { ViewMarkerProps } from 'features/viewports/viewMarker';
+import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
 import { useOptionalViewRegistry } from './viewRegistry';
 
 /**

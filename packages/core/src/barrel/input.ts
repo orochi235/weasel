@@ -38,8 +38,8 @@ export { createLongPressStore, LONG_PRESS_MS } from '@weasel-js/routing';
 export type { PendingLongPress, LongPressState, LongPressStore, LongPressOptions } from '@weasel-js/routing';
 export {
   createLongPressFeedbackContribution, LONG_PRESS_FEEDBACK_ID,
-} from '../features/longPress/longPressFeedback';
-export type { LongPressFeedbackOptions } from '../features/longPress/longPressFeedback';
+} from '../domains/longPress/longPressFeedback';
+export type { LongPressFeedbackOptions } from '../domains/longPress/longPressFeedback';
 export {
   buildSceneViewCommands,
   renderSceneToCanvas,

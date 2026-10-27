@@ -12,9 +12,9 @@ import { createMeasurements, currentMeasureId, measureIds } from './measurements
 import { measureCommands } from './measureCommands';
 import { measureCreateAction, measureDragAction, measurePickAtAction } from './measureGestures';
 import { measureEndSource, type MeasureHit } from './measureHit';
-import type { SnapCollect } from 'features/snap/types';
+import type { SnapCollect } from 'domains/snap/types';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
-import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
+import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type Pt = { x: number; y: number };

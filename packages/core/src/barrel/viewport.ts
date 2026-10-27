@@ -8,7 +8,7 @@
 export { VERSION } from '../version';
 
 // ─── Features: multi-viewport composition ───────────────────────────────────
-export * from '../features/viewports';
+export * from '../domains/viewports';
 export {
   deriveParallaxView, planeMap, toPlane, fromPlane, rectToPlane, rectFromPlane, planeToPlane, planeMatrix,
 } from '../core/viewport/parallax';
@@ -28,7 +28,7 @@ export type {
   UseSimulationOptions,
 } from '@weasel-js/simulation';
 export { useSimulation } from '@weasel-js/simulation/react';
-export * from '../features/poseRun';
+export * from '../domains/poseRun';
 export { useNodeOverlayFrame } from '../core/viewport/useNodeOverlayFrame';
 export type {
   NodeOverlayFrame,
@@ -117,11 +117,11 @@ export type { CanvasViewCamera } from '../canvas/canvasExtension';
 export { ViewMarker } from '../canvas/ViewMarker';
 export {
   createViewMarkerLayer, grabViewMarker, VIEW_MARKER_DEFAULT_STYLE, VIEW_MARKER_HIT_SLOP_PX,
-} from '../features/viewports/viewMarker';
+} from '../domains/viewports/viewMarker';
 export type {
   ViewMarkerProps, ViewMarkerStyle, ViewMarkerHost, AimSource, ViewMarkerGrab,
-} from '../features/viewports/viewMarker';
-export { VIEW_MARKER_DRAG, viewMarkerDragAction, createViewMarkerContribution } from '../features/viewports/viewMarkerDrag';
+} from '../domains/viewports/viewMarker';
+export { VIEW_MARKER_DRAG, viewMarkerDragAction, createViewMarkerContribution } from '../domains/viewports/viewMarkerDrag';
 
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a

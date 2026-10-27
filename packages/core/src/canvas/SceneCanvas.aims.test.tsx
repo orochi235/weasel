@@ -8,7 +8,7 @@ import { createRef, type RefObject } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { createScene } from 'core/scene/scene';
-import { rectAim } from 'features/viewports/aim';
+import { rectAim } from 'domains/viewports/aim';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
 

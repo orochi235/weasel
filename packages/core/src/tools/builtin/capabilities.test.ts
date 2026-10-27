@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import * as builtins from './index';
-import { createMeasurements } from 'features/measure/measurements';
+import { createMeasurements } from 'domains/measure/measurements';
 
 // Hooks here are pure factories at top level — we instantiate each by
 // calling its hook in a renderHook environment with a minimal set of

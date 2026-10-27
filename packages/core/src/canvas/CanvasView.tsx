@@ -11,7 +11,7 @@ import {
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
-import { createViewportLayer } from 'features/viewports/viewportLayer';
+import { createViewportLayer } from 'domains/viewports/viewportLayer';
 import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
