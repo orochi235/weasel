@@ -17,3 +17,12 @@ export const checkRate = (rate: number, seekable: boolean): void => {
   if (rate < 0 && !seekable)
     throw new RangeError('a clock that is not seekable cannot run backward');
 };
+
+export const checkSpeed = (speed: number): void => {
+  if (!(speed > 0) || !Number.isFinite(speed))
+    throw new RangeError(`a clock's speed is finite and positive, not ${speed}`);
+};
+
+export const checkOrigin = (origin: number): void => {
+  if (!Number.isFinite(origin)) throw new RangeError(`a clock's origin is finite, not ${origin}`);
+};

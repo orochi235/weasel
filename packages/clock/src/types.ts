@@ -15,6 +15,12 @@ export interface ClockSpec {
   /** Where a new run opens, in ms, clamped to the run; `'end'` is the end of
    *  its last pass. Default `0`. A reopened run opens where it stood. */
   start?: number | 'end';
+  /** The time `elapsed` 0 is shown as, in ms. Display only: nothing in the
+   *  run moves with it. Default `0`. */
+  origin?: number;
+  /** The unsigned speed a transport plays a paused clock at. Default `|rate|`,
+   *  or `1` for a clock that opens paused. */
+  speed?: number;
   /** The speeds a transport offers, unsigned. Default {@link CLOCK_RATES}. */
   rates?: readonly number[];
   /** `false` for a clock whose state is built up by running, so time can
@@ -54,6 +60,10 @@ export interface Clock {
   /** ms per pass; `Infinity` for a run that never ends. A write keeps `pass`
    *  and `phase`, so the playhead holds its place in the content. */
   duration: number;
+  /** The time `elapsed` 0 is shown as; display only. */
+  readonly origin: number;
+  /** The unsigned speed a transport plays a paused clock at. */
+  readonly speed: number;
   /** The speeds a transport offers, unsigned and ascending. */
   readonly rates: readonly number[];
   /** Whether `seek` and a negative `rate` are allowed. */
@@ -105,6 +115,11 @@ export interface ClockHandle {
   /** Back to where it opened, at the declared rate — a Reset,
    *  allowed on a clock that is not seekable. */
   reset(): void;
+  /** Takes up `spec`'s `duration`, `origin`, `loop` and `speed`. The shown
+   *  time (`origin + elapsed`) is kept and clamped to the new run; play state
+   *  and rate are left alone. Notifies like a seek. Unlike assigning
+   *  `duration`, this does not keep `phase`. */
+  declare(spec: ClockSpec): void;
   /** Called after each sync that moved the clock or followed a change. */
   onFrame(fn: (elapsed: number, pass: number) => void): () => void;
 }

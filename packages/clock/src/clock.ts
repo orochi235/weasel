@@ -3,7 +3,7 @@ import { followMix } from './mixFollow';
 import { passesOf, placeOf } from './place';
 import { type Ramp, stepRamp } from './ramp';
 import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
-import { checkDuration, checkRate, ratesOf } from './validate';
+import { checkDuration, checkOrigin, checkRate, checkSpeed, ratesOf } from './validate';
 
 /** Where `clock` stands, for a record to reopen it at; `declared` is the
  *  duration its spec gave. */
@@ -22,6 +22,8 @@ interface Run {
   duration: number;
   loop: boolean | number;
   span: number;
+  origin: number;
+  speed: number;
   rate: number;
   elapsed: number;
   edge: boolean;
@@ -71,6 +73,25 @@ function setDuration(run: Run, hub: Hub, next: number): void {
     run.span = run.duration * passesOf(run.loop);
     run.elapsed = clamp(run, run.elapsed);
   }
+  change(run, hub);
+  hub.subs.emit();
+}
+
+function declareRun(run: Run, hub: Hub, spec: ClockSpec): void {
+  const duration = spec.duration ?? Number.POSITIVE_INFINITY;
+  const origin = spec.origin ?? 0;
+  const speed = spec.speed ?? (Math.abs(run.rate) || 1);
+  checkDuration(duration);
+  checkOrigin(origin);
+  checkSpeed(speed);
+  const shown = run.origin + run.elapsed;
+  run.duration = duration;
+  run.loop = spec.loop ?? false;
+  run.span = duration * passesOf(run.loop);
+  run.origin = origin;
+  run.speed = speed;
+  run.elapsed = clamp(run, shown - origin);
+  run.edge = false;
   change(run, hub);
   hub.subs.emit();
 }
@@ -128,6 +149,12 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
     },
     set duration(next: number) {
       setDuration(run, hub, next);
+    },
+    get origin() {
+      return run.origin;
+    },
+    get speed() {
+      return run.speed;
     },
     rates,
     seekable,
@@ -194,11 +221,15 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   checkRate(openRate, seekable);
   const rates = ratesOf(spec);
 
+  checkOrigin(spec.origin ?? 0);
+  if (spec.speed !== undefined) checkSpeed(spec.speed);
   const loop = spec.loop ?? false;
   const run: Run = {
     duration,
     loop,
     span: duration * passesOf(loop),
+    origin: spec.origin ?? 0,
+    speed: spec.speed ?? (Math.abs(openRate) || 1),
     rate: at ? at.rate : openRate,
     elapsed: 0,
     edge: at?.passEnd ?? false,
@@ -239,6 +270,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
       change(run, hub);
       hub.subs.emit();
     },
+    declare: (next) => declareRun(run, hub, next),
     onFrame: hub.frames.subscribe,
   };
 }
