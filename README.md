@@ -199,6 +199,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `history` |  | undo/redo with scoped sub-histories |
 | `routing` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration |
 | `select` |  | selection as a value: which ids a press selects, with toggle, range and anchor rules |
+| `headless` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | component behavior a DOM component and a canvas-drawn widget share: a list's roving highlight and typeahead |
 | `menu` |  | the headless model behind context menus: entries, a controller for highlight, submenus, keyboard and typeahead, and placement |
 | `registry` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | keyed registries you can enumerate and subscribe to |
 | `icons` |  | namespaced icon names and the icon registry; no React, no DOM, no glyphs of its own |

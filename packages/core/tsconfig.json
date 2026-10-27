@@ -99,6 +99,7 @@
       "@weasel-js/labkit/styles.css": ["../labkit/src/styles.less"],
       "@weasel-js/labkit/loupe": ["../labkit/src/loupe/index.ts"],
       "@weasel-js/loupe": ["../loupe/src/index.ts"],
+      "@weasel-js/headless": ["../headless/src/index.ts"],
       "@weasel-js/menu": ["../menu/src/index.ts"],
       "@weasel-js/minimap": ["../minimap/src/index.ts"],
       "@weasel-js/modes": ["../modes/src/index.ts"],

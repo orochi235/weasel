@@ -1,3 +1,4 @@
+import { firstStop, rovingKey, type ListShape } from '@weasel-js/headless';
 import { entriesAt, isRow, type MenuEntry } from './entries';
 
 /** The highlighted index at each open level; its length is how many are open. */
@@ -13,20 +14,12 @@ export type KeyEffect =
 
 const NONE: KeyEffect = { kind: 'none' };
 
+/** A menu level as a list: the highlight lands on every row, and never on a separator. */
+const MENU_LIST: ListShape<MenuEntry> = { canStop: isRow };
+
 /** Index of the first row, or null for a level with none. */
 export function firstRow(entries: readonly MenuEntry[]): number | null {
-  const i = entries.findIndex(isRow);
-  return i < 0 ? null : i;
-}
-
-function step(entries: readonly MenuEntry[], from: number | null, dir: 1 | -1): number | null {
-  const n = entries.length;
-  let i = from ?? (dir === 1 ? -1 : n);
-  for (let k = 0; k < n; k++) {
-    i = (i + dir + n) % n;
-    if (isRow(entries[i]!)) return i;
-  }
-  return null;
+  return firstStop(entries, MENU_LIST);
 }
 
 function withTop(stack: MenuStack, index: number | null): MenuStack {
@@ -52,11 +45,9 @@ export function keyStep(
   const rows = entriesAt(root, stack, level);
   const at = stack[level] ?? null;
   const done = (s: MenuStack, effect: KeyEffect = NONE) => ({ stack: s, effect, handled: true });
+  const roved = rovingKey(rows, at, key, MENU_LIST);
+  if (roved.handled) return done(withTop(stack, roved.at));
   switch (key) {
-    case 'ArrowDown': return done(withTop(stack, step(rows, at, 1)));
-    case 'ArrowUp': return done(withTop(stack, step(rows, at, -1)));
-    case 'Home': return done(withTop(stack, step(rows, null, 1)));
-    case 'End': return done(withTop(stack, step(rows, null, -1)));
     case 'ArrowRight': {
       const opened = openSub(root, stack);
       return opened ? done(opened) : done(stack, { kind: 'edge', dir: 1 });

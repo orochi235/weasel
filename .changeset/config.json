@@ -13,6 +13,7 @@
       "@weasel-js/geom",
       "@weasel-js/gestures",
       "@weasel-js/history",
+      "@weasel-js/headless",
       "@weasel-js/menu",
       "@weasel-js/quantity",
       "@weasel-js/simulation",
