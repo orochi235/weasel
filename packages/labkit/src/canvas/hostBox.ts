@@ -52,7 +52,9 @@ export function embedScale(win: Window | null | undefined): number {
       break;
     }
     if (!el) break;
-    scale *= scaleOf(el.getBoundingClientRect().width, (el as HTMLElement).offsetWidth);
+    // CSS zoom on the frame or above it already reaches the frame's devicePixelRatio; only a transform does not.
+    const zoom = el.currentCSSZoom || 1;
+    scale *= scaleOf(el.getBoundingClientRect().width, (el as HTMLElement).offsetWidth * zoom);
     w = el.ownerDocument.defaultView;
   }
   return scale;
