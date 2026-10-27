@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentType } from 'react';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { BarPopover } from '@weasel-js/ui/components/Bar';
 import type { AssetLeafRenderer } from './types';
@@ -12,6 +12,6 @@ export const blockLeaf = (kind: string, name: string, rest?: Partial<PrefLeaf>):
   appLeaf(kind, name, { block: true, ...rest });
 
 /** Draws a leaf's control in a bar as a button named `label` opening it. */
-export const inPopover = (label: string, Content: () => ReactNode): AssetLeafRenderer => () => (
+export const inPopover = (label: string, Content: ComponentType): AssetLeafRenderer => () => (
   <BarPopover label={label}><Content /></BarPopover>
 );
