@@ -4,47 +4,78 @@
  * only preset objects never reaches it.
  */
 import type { Action } from '@weasel-js/routing';
-import type { BaseFeature, CompositeFeature, FeaturePreset, NamedPresets, PresetSource } from './features';
-import { arrangePreset } from './presets/arrange';
-import { editPreset } from './presets/edit';
+import type { Feature, FeaturePreset, NamedPresets, PresetSource } from './features';
+import {
+  alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset,
+} from './presets/arrange';
+import { drawPreset, pickPreset, transformPreset } from './presets/composites';
+import {
+  clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
+  nudgePreset, selectAllPreset, stylePreset,
+} from './presets/edit';
 import { ingestPreset } from './presets/ingest';
-import { pathsPreset } from './presets/paths';
+import {
+  anchorKeysPreset, outlinesPreset, pathCommandsPreset, pathEditPreset, pathfinderPreset, pathsPreset,
+} from './presets/paths';
 import { selectPreset } from './presets/select';
 import { toolDrivenActions } from './presets/toolDriven';
+import {
+  drawToolsPreset, pageToolsPreset, selectToolsPreset, shapeToolsPreset, typeToolsPreset, viewToolsPreset,
+} from './presets/tools';
 import { BASELINE_ACTIONS } from './presets/baseline';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 import { viewPreset } from './presets/view';
 
-/** Each core preset by name. `draw` turns them on in this order. */
-export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
+/** Each core preset by name, in the order `SCENE_CANVAS_FEATURES` lists them. */
+export const FEATURE_PRESETS: Readonly<Record<Feature, FeaturePreset>> = {
+  'tools:select': selectToolsPreset,
+  'tools:view': viewToolsPreset,
+  'tools:shape': shapeToolsPreset,
+  'tools:draw': drawToolsPreset,
+  'tools:type': typeToolsPreset,
+  'tools:page': pageToolsPreset,
   view: viewPreset,
   select: selectPreset,
   outline: outlinePreset,
+  pick: pickPreset,
+  move: movePreset,
   resize: resizePreset,
   rotate: rotatePreset,
-  move: movePreset,
+  transform: transformPreset,
+  escape: escapePreset,
+  contextMenu: contextMenuPreset,
+  selectAll: selectAllPreset,
+  duplicate: duplicatePreset,
+  delete: deletePreset,
+  group: groupPreset,
+  nudge: nudgePreset,
+  style: stylePreset,
+  clipboard: clipboardPreset,
   edit: editPreset,
+  flip: flipPreset,
+  reorder: reorderPreset,
+  align: alignPreset,
+  distribute: distributePreset,
   arrange: arrangePreset,
+  anchorKeys: anchorKeysPreset,
+  pathfinder: pathfinderPreset,
+  outlines: outlinesPreset,
+  pathEdit: pathEditPreset,
+  pathCommands: pathCommandsPreset,
   paths: pathsPreset,
   ingest: ingestPreset,
+  draw: drawPreset,
 };
 
-const BASE_FEATURES = Object.keys(FEATURE_PRESETS) as BaseFeature[];
-
-/** The base presets each composite preset turns on. */
-export const COMPOSITE_FEATURES: Readonly<Record<CompositeFeature, readonly BaseFeature[]>> = {
-  pick: ['select', 'outline'],
-  transform: ['resize', 'rotate'],
-  draw: BASE_FEATURES,
-};
+const FEATURES = Object.keys(FEATURE_PRESETS) as Feature[];
 
 /** The names `<SceneCanvas>` resolves. */
-export const CORE_NAMED_PRESETS: NamedPresets = { base: FEATURE_PRESETS, composite: COMPOSITE_FEATURES };
+export const CORE_NAMED_PRESETS: NamedPresets = FEATURE_PRESETS;
 
-/** The kit-standard action ids each preset registers. */
+/** The kit-standard action ids each preset registers itself, leaving out those of the presets it includes. */
 export const FEATURE_ACTION_IDS = Object.fromEntries(
-  BASE_FEATURES.map((f): [BaseFeature, readonly string[]] => [f, (FEATURE_PRESETS[f].actions ?? []).map((a) => a.id)]),
-) as Readonly<Record<BaseFeature, readonly string[]>>;
+  FEATURES.map((f): [Feature, readonly string[]] => [f, (FEATURE_PRESETS[f].actions ?? []).map((a) => a.id)]),
+) as Readonly<Record<Feature, readonly string[]>>;
 
 /**
  * Kit-standard actions no preset registers: they belong to the tools that bind
@@ -60,7 +91,7 @@ export const BASELINE_ACTION_IDS: readonly string[] = BASELINE_ACTIONS.map((a) =
  *  tool-driven ones. */
 export const KIT_STANDARD_ACTIONS: readonly Action[] = [
   ...BASELINE_ACTIONS,
-  ...BASE_FEATURES.flatMap((f) => FEATURE_PRESETS[f].actions ?? []),
+  ...FEATURES.flatMap((f) => FEATURE_PRESETS[f].actions ?? []),
   ...toolDrivenActions,
 ];
 

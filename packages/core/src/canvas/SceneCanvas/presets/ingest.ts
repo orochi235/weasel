@@ -5,5 +5,6 @@ import type { FeaturePreset } from '../features';
  *  `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop. */
 export const ingestPreset: FeaturePreset = {
   id: 'ingest',
+  label: 'Ingest',
   actions: [ingestAction],
 };

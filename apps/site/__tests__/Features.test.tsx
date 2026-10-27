@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { COMPOSITE_FEATURES, FEATURE_PRESETS } from '@weasel-js/core';
+import { FEATURE_PRESETS } from '@weasel-js/core';
 import { Features } from '../Features/Features';
 import { FEATURES_ID, routeOf } from '../routes';
 
@@ -25,12 +25,12 @@ describe('the canvas features page', () => {
     expect(edit.textContent).not.toMatch(/Undo/);
   });
 
-  it('lists what each shorthand turns on', () => {
+  it('lists the presets each one includes', () => {
     render(<Features />);
-    const shorthands = screen.getAllByRole('table')[1]!;
-    expect(rowNames(shorthands)).toEqual(Object.keys(COMPOSITE_FEATURES));
-    const pick = within(shorthands).getAllByRole('row').find((r) => r.textContent?.startsWith('pick'))!;
-    expect(pick.textContent).toBe(`pick${COMPOSITE_FEATURES.pick.join('')}`);
+    const pick = within(screen.getAllByRole('table')[0]!).getAllByRole('row')
+      .find((r) => within(r).queryByRole('rowheader')?.textContent === 'pick')!;
+    const cells = within(pick).getAllByRole('cell');
+    expect(cells.at(-1)!.textContent).toBe(FEATURE_PRESETS.pick.includes!.map((p) => p.id).join(''));
   });
 
   it('is a page the site routes to', () => {
