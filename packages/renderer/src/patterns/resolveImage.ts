@@ -8,7 +8,7 @@
  */
 
 import type { ImagePatternPaint } from '@weasel-js/paint';
-import { getImageBitmap } from '../images/imageCache';
+import { getImageBitmap, imageNaturalSize } from '../images/imageCache';
 import {
   ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
   type TextureHandle,
@@ -26,10 +26,13 @@ export function resolveImagePattern(paint: Pick<ImagePatternPaint, 'src'>): Text
  *  cache owns that bitmap and closes it when it drops it, so an entry left
  *  pointing at the old one would upload a closed bitmap. */
 function sync(id: string): void {
-  const bitmap = getImageBitmap(id.slice(ID_PREFIX.length));
+  const src = id.slice(ID_PREFIX.length);
+  const bitmap = getImageBitmap(src);
   const held = textureRegistry.get(id)?.source;
   if (bitmap === held) return;
-  if (bitmap) registerTextureAs(id, bitmap);
+  // An image node drawing the same SVG re-rasterizes it to its own size; the
+  // tile a paint with no extent repeats at stays the picture's natural size.
+  if (bitmap) registerTextureAs(id, bitmap, imageNaturalSize(src));
   else unregisterTexture({ id });
 }
 

@@ -12,6 +12,9 @@ export type { TextureHandle };
 /** A registered texture's image source, uploaded to GL lazily at first draw. */
 export interface TextureEntry {
   source: HTMLImageElement | ImageBitmap;
+  /** The size the texture stands for, when `source` is a resampling of a
+   *  picture whose raster can change size (a re-rasterized SVG). */
+  size?: { width: number; height: number };
 }
 
 let counter = 0;
@@ -113,8 +116,9 @@ export function registerTexture(
 export function registerTextureAs(
   id: string,
   image: HTMLImageElement | ImageBitmap,
+  size?: TextureEntry['size'],
 ): TextureHandle {
-  registry.set(id, { source: image });
+  registry.set(id, size ? { source: image, size } : { source: image });
   return { id };
 }
 

@@ -1,7 +1,7 @@
 import type { Paint, TexturePaint } from '@weasel-js/paint';
 import type { PaintBindContext, PaintResources } from '../paintKinds';
 import { createPaintResources } from '../paintResources';
-import { getTexture, isOwnedTextureId } from '../textures/registerTexture';
+import { getTexture, isOwnedTextureId, type TextureEntry } from '../textures/registerTexture';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { patternTileSpace } from '../math/patternSpace';
@@ -75,7 +75,7 @@ export function bindPattern(
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, model);
   setColorMatrixUniforms(ctx, prog);
-  const [tw, th] = tileExtent(fill, entry.source);
+  const [tw, th] = tileExtent(fill, entry);
   // The tile repeats, so whole tiles come out of the translation here, in
   // doubles: far from the origin a float32 has no bits left for the texel.
   tileSpace[6] -= Math.floor(tileSpace[6] / tw) * tw;
@@ -90,11 +90,11 @@ export function bindPattern(
 }
 
 /** Tile extent in paint-space units — one tile spans this many units of
- *  whatever space `units` names. A side the paint leaves out is the
- *  texture's pixel size. */
-function tileExtent(fill: TexturePaint, source: HTMLImageElement | ImageBitmap): [number, number] {
-  const w = fill.width ?? ('naturalWidth' in source ? source.naturalWidth : source.width);
-  const h = fill.height ?? ('naturalHeight' in source ? source.naturalHeight : source.height);
+ *  whatever space `units` names. A side the paint leaves out is the size the
+ *  texture stands for, else its pixel size. */
+function tileExtent(fill: TexturePaint, { source, size }: TextureEntry): [number, number] {
+  const w = fill.width ?? size?.width ?? ('naturalWidth' in source ? source.naturalWidth : source.width);
+  const h = fill.height ?? size?.height ?? ('naturalHeight' in source ? source.naturalHeight : source.height);
   return [w > 0 ? w : 1, h > 0 ? h : 1];
 }
 

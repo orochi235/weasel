@@ -5,7 +5,7 @@ import { makeGLRecorder } from '../testing/glRecorder';
 import { WeaselRenderer } from '../WeaselRenderer';
 import type { DrawCommand } from '../DrawCommand';
 import { _resetTextureRegistryForTests, getTexture } from '../textures/registerTexture';
-import { __setImageLoaderForTests, _resetImageCacheForTests, releaseImage } from '../images/imageCache';
+import { __setImageLoaderForTests, _resetImageCacheForTests, getImageBitmap, releaseImage } from '../images/imageCache';
 import { resolveFillPattern } from './resolveSpec';
 
 const SRC = 'data:image/png;base64,AAAA';
@@ -123,6 +123,22 @@ describe('drawing an image pattern', () => {
     const { rec, r } = draw(paint);
     const prog = r._patternFill();
     const loc = prog.uniform('u_tileSize');
+    const sent = rec.calls.filter((c) => c.name === 'uniform2f' && c.args[0] === loc).at(-1);
+    expect(sent?.args.slice(1)).toEqual([8, 4]);
+  });
+
+  it('tiles an SVG at its natural size after an image node re-rasterizes it larger', async () => {
+    const SVG = 'data:image/svg+xml,%3Csvg%3E';
+    __setImageLoaderForTests(async (_src, size) => fakeBitmap(size?.width ?? 8, size?.height ?? 4));
+    const paint = resolveFillPattern({ kind: 'image', src: SVG });
+    draw(paint);
+    await settle();
+    // What an image node drawing the same picture at 4x asks of the cache.
+    getImageBitmap(SVG, { width: 32, height: 16 });
+    await settle();
+    expect(getImageBitmap(SVG)?.width).toBe(32);
+    const { rec, r } = draw(paint);
+    const loc = r._patternFill().uniform('u_tileSize');
     const sent = rec.calls.filter((c) => c.name === 'uniform2f' && c.args[0] === loc).at(-1);
     expect(sent?.args.slice(1)).toEqual([8, 4]);
   });
