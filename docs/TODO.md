@@ -940,16 +940,13 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) [waiting] Chart's "gives a wire routed under Rack back to the look from Format › Connector › Reset
-  route" timed out once.** The `locator.click` at `apps/chart/src/pipeline/pipeline.browser.test.tsx:157`
-  exceeded 38.7 s in the full fleet run of `main` at `6d941e1db` (2026-10-26). The same file passed in
-  both branch runs of that merge's code. If it recurs, look at what the menu waits on before it
-  takes a click.
-- **(P3) [waiting] `segmentsAlong`'s first "a lit end segment fills the well round its cap" case failed
-  intermittently** (full fleet run of `main` at `437648aa4`, 2026-10-26). Since ac92a714c the test waits
-  for `document.fonts.ready` after a first frame; that the face was the cause is inferred, not
-  reproduced. Delete the entry if the next full runs pass it.
-- **(P3) [agent] `rowHelp.browser.test.tsx`'s "a click on a described row's control opens no help" fails
+- **(P3) `segmentsAlong`'s first "a lit end segment fills the well round its cap" case fails
+  intermittently.** In `packages/ui/src/components/segmentsAlong.browser.test.tsx`, only the first
+  parameterized case failed, taking 329 ms where its siblings took 69. That was the full fleet run of
+  `main` at the 2026-10-26 composition merge (`437648aa4`). The same case failed on that branch's
+  first run and passed on its next two. The file touches no scene code. A face or layout read before
+  it settles is the first thing to suspect, as with the `SegmentsArcView` miss.
+- **(P3) `rowHelp.browser.test.tsx`'s "a click on a described row's control opens no help" fails
   under load.** In `packages/ui/src/components/Properties/rowHelp.browser.test.tsx`, the click on
   the Author input timed out at 45 s because the row's open help tooltip covered it and intercepted
   the pointer. It failed in both full fleet runs of the `diagram-drop-refuse` branch on 2026-10-26
