@@ -344,8 +344,12 @@ Owner tags, after the priority (2026-10-26):
   - `lang` on a run or `TextStyle` (2026-10-27) reaches only the shaper. SVG import and export do not read or write
     `xml:lang`/`lang`, the edit overlay does not set the `lang` attribute,
     and `textTransform` uppercases without it, so Turkish dotted i does not come out right.
-  - harfbuzzjs awaits at its module's top level, so a bundler targeting below ES2022 fails on it; whether Vite
-    pre-bundling loses its `.wasm` is unchecked (the README advises `optimizeDeps.exclude`).
+  - harfbuzzjs awaits at its module's top level, so a consumer bundling for a target below ES2022 fails (esbuild
+    0.27 errors; Vite 8 warns), even though `loadShaper` reaches it only through a dynamic `import()`.
+    `@weasel-js/shape` cannot avoid it: harfbuzzjs 1.6.4, the latest, exports only that module and not its
+    `init`. Fixing it needs an upstream entry without the `await`, or a vendored copy of harfbuzzjs's helpers.
+    The `.wasm` itself survives Vite 8 with no config, in both `vite build` and the dev pre-bundle (measured in a
+    throwaway consumer, 2026-10-27).
   - PDF export of a mark that is its own cluster (Arabic fatha) reads back in poppler with a space before it,
     because the mark is set off the baseline. pdf.js ignores `/ActualText`, so it reads a cluster's unmapped
     glyphs as control characters (`\u0007`) and drops some raised dots.

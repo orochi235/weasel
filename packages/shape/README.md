@@ -50,5 +50,11 @@ against it.
 ## Bundling
 
 harfbuzzjs finds its `.wasm` beside its own module with `new URL('harfbuzz.wasm',
-import.meta.url)`. Bundlers that pre-bundle dependencies can lose that file; in Vite, add
-`harfbuzzjs` to `optimizeDeps.exclude`.
+import.meta.url)`. Vite needs no configuration for it: a production build emits the file
+as an asset and points the URL at it, and the dev server's dependency pre-bundle points the
+URL back at the file in `node_modules`.
+
+harfbuzzjs awaits at its module's top level, so the bundle must target ES2022 or later.
+Loading it through `loadShaper`'s dynamic `import()` does not hide that from a bundler:
+esbuild (and Vite 7 and earlier, which pre-bundle with it) refuses a lower target, while
+Vite 8 warns and leaves the `await` in place.
