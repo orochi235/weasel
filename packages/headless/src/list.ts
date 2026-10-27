@@ -2,8 +2,10 @@
 export interface ListShape<T> {
   /** Whether the highlight can land on `item`. A separator or a heading can't. Default: every item. */
   canStop?(item: T): boolean;
-  /** Which arrow keys move the highlight. Default `'vertical'`. */
-  orientation?: 'vertical' | 'horizontal';
+  /** Which arrow keys move the highlight. `'both'` answers to all four, the way a radio group does. Default `'vertical'`. */
+  orientation?: 'vertical' | 'horizontal' | 'both';
+  /** The inline direction the items are laid out in. Under `'rtl'` Left steps forward and Right back. Default `'ltr'`. */
+  dir?: 'ltr' | 'rtl';
   /** An arrow past either end comes round to the other. Default true. */
   wrap?: boolean;
 }
@@ -39,14 +41,25 @@ export function stepStop<T>(
 /** What one key does to a list's highlight. `handled` false for a key that is not the list's to move. */
 export type RovingResult = { handled: false } | { handled: true; at: number | null };
 
+/** Which way an arrow key steps a list of `shape`: 1, -1, or 0 for a key that is not one of its arrows. */
+function arrowDir(key: string, shape: ListShape<unknown>): 1 | -1 | 0 {
+  const orientation = shape.orientation ?? 'vertical';
+  if (orientation !== 'horizontal') {
+    if (key === 'ArrowDown') return 1;
+    if (key === 'ArrowUp') return -1;
+  }
+  if (orientation !== 'vertical') {
+    const forward = shape.dir === 'rtl' ? -1 : 1;
+    if (key === 'ArrowRight') return forward;
+    if (key === 'ArrowLeft') return -forward as 1 | -1;
+  }
+  return 0;
+}
+
 /** Move the highlight `at` by one key: the arrows along the list's orientation, Home and End. */
 export function rovingKey<T>(items: readonly T[], at: number | null, key: string, shape: ListShape<T> = {}): RovingResult {
-  const [back, forward] = shape.orientation === 'horizontal' ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
-  switch (key) {
-    case forward: return { handled: true, at: stepStop(items, at, 1, shape) };
-    case back: return { handled: true, at: stepStop(items, at, -1, shape) };
-    case 'Home': return { handled: true, at: stepStop(items, null, 1, shape) };
-    case 'End': return { handled: true, at: stepStop(items, null, -1, shape) };
-    default: return { handled: false };
-  }
+  if (key === 'Home') return { handled: true, at: stepStop(items, null, 1, shape) };
+  if (key === 'End') return { handled: true, at: stepStop(items, null, -1, shape) };
+  const dir = arrowDir(key, shape as ListShape<unknown>);
+  return dir === 0 ? { handled: false } : { handled: true, at: stepStop(items, at, dir, shape) };
 }

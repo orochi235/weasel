@@ -37,7 +37,8 @@ function onKey(rows: readonly Row[], key: string): void {
 ```
 
 A list's shape says which items the highlight can land on (`canStop`), which arrows move it
-(`orientation`, vertical by default) and whether it wraps at the ends (`wrap`, on by default).
+(`orientation`, vertical by default, or `'both'` for all four), whether Left and Right swap for a
+right-to-left layout (`dir`), and whether it wraps at the ends (`wrap`, on by default).
 `@weasel-js/menu` runs every menu level on these.
 
 ## Focus
