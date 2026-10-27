@@ -180,6 +180,13 @@ export function FrameView(props: FrameViewProps) {
     [copyId, globals, setup],
   );
 
+  // No observer in the frame sees the lens's transform, which is outside its document, so a canvas there measures the
+  // scale it is shown at again only on a resize.
+  const factor = copy?.factor;
+  useEffect(() => {
+    if (factor !== undefined) iframeRef.current?.contentWindow?.dispatchEvent(new Event('resize'));
+  }, [factor]);
+
   // Applied once the copy has rendered, when its document is tall enough to stand where the trial's does.
   const main = copy?.main;
   useEffect(() => {

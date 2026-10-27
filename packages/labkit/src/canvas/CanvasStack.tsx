@@ -14,6 +14,7 @@ import { normalize2DView } from '../state/view';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
 import { CanvasStackContext } from './CanvasStackContext';
 import { type CameraGestures, resolveGestures, touchMode } from './cameraGestures';
+import { embedScale } from './hostBox';
 import { LinkedCursor } from './LinkedCursor';
 import { type CanvasLayerDescriptor, useLayerScheduler } from './useLayerScheduler';
 import { resolveFrame, type ViewportSize, type WorldSpec } from './worldSpec';
@@ -65,7 +66,8 @@ export function backingDensity(width: number, height: number, dpr: number, scale
 /**
  * The element's layout size in CSS px and the backing density its canvases need, kept current. Measured from layout,
  * not from its client rect, which a scaled ancestor (a lens, a `<Stage>`) inflates or shrinks: the scale goes into
- * the density instead, so a magnified stack is drawn sharp rather than enlarged.
+ * the density instead, so a magnified stack is drawn sharp rather than enlarged. In a frame, the scale the embedding
+ * pages show the frame at goes in too.
  */
 function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
   width: number;
@@ -76,6 +78,7 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const win = el.ownerDocument.defaultView;
     // The layout box as the observer last reported it; a transform does not reach it.
     let layout: { width: number; height: number } | null = null;
     const update = (entries?: readonly ResizeObserverEntry[]) => {
@@ -86,7 +89,7 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
       // was rounded would place a view a second time.
       const scaled = layout !== null && rect.width > 0 && Math.abs(rect.width - layout.width) > 0.5;
       const box = scaled && layout ? layout : rect;
-      const scale = box.width > 0 ? rect.width / box.width : 1;
+      const scale = (box.width > 0 ? rect.width / box.width : 1) * embedScale(win);
       const { width, height } = box;
       const dpr = backingDensity(width, height, window.devicePixelRatio ?? 1, scale);
       setSize((prev) => {
@@ -97,10 +100,14 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
     update();
     // A window moved to a display of another density keeps its CSS box, so no observer fires.
     const unwatchDensity = watchDevicePixelRatio(() => update());
+    // Nor does a page changing the transform it shows this frame at; it says so with a resize.
+    const remeasure = () => update();
+    win?.addEventListener('resize', remeasure);
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
     ro?.observe(el);
     return () => {
       unwatchDensity();
+      win?.removeEventListener('resize', remeasure);
       ro?.disconnect();
     };
   }, [ref]);

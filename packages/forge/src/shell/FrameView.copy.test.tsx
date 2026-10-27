@@ -26,7 +26,7 @@ const ready: Ready = {
 /** The trial's own frame host, whose scroll a copy follows. */
 const main = document.createElement('div');
 main.dataset.fgHost = 't1';
-const COPY = { id: 't1~lens-a', main, globals: { mode: 'dark' }, args: { label: 'B' } } as const;
+const COPY = { id: 't1~lens-a', main, globals: { mode: 'dark' }, args: { label: 'B' }, factor: 2 } as const;
 
 let frames: TrialFrames;
 let mainSend: (msg: ToFrame) => void;
@@ -59,10 +59,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+type CopyProp = { readonly id: string; readonly main: HTMLElement; readonly globals: { readonly mode: string };
+  readonly args: { readonly label: string }; readonly factor: number };
+
 /** A copy of the trial `t1`'s isolated story, or with `null` the trial's own view, its frame's half of the protocol
  *  played by the test. */
-async function mountCopy(copy: typeof COPY | null = COPY): Promise<{ frame: Channel<ToFrame, FromFrame>; sent: ToFrame[]; container: HTMLElement }> {
-  const { container } = render(
+async function mountCopy(copy: CopyProp | null = COPY): Promise<{
+  frame: Channel<ToFrame, FromFrame>; sent: ToFrame[]; container: HTMLElement; rerender: (copy: CopyProp) => void;
+}> {
+  const tree = (copy: CopyProp | null) => (
     <LabContext.Provider value={lab}>
       <FramePoolContext.Provider value={pool}>
         <TrialFramesContext.Provider value={frames}>
@@ -81,13 +86,14 @@ async function mountCopy(copy: typeof COPY | null = COPY): Promise<{ frame: Chan
           </TrialIdContext.Provider>
         </TrialFramesContext.Provider>
       </FramePoolContext.Provider>
-    </LabContext.Provider>,
+    </LabContext.Provider>
   );
+  const { container, rerender } = render(tree(copy));
   const { frame, received } = connectFrame(container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
   closers.push(() => frame.close());
   frame.send(ready);
   await flush();
-  return { frame, sent: received, container };
+  return { frame, sent: received, container, rerender: (next) => rerender(tree(next)) };
 }
 
 describe('FrameView copy', () => {
@@ -113,6 +119,15 @@ describe('FrameView copy', () => {
     frame.send({ type: 'open', id: other.id });
     await flush();
     expect(lab.swapTrial).not.toHaveBeenCalled();
+  });
+
+  it('tells its frame the page has rescaled it when the lens changes its factor', async () => {
+    const { container, rerender } = await mountCopy();
+    const win = container.querySelector<HTMLIFrameElement>('iframe.fg-frame-view')!.contentWindow!;
+    const resized = vi.fn();
+    win.addEventListener('resize', resized);
+    rerender({ ...COPY, factor: 3 });
+    expect(resized).toHaveBeenCalledTimes(1);
   });
 
   it('drops a write to an arg the comparison sets, and passes others to the trial', async () => {
