@@ -211,7 +211,7 @@ function TrialRuntime({
   });
   const { camera, view2d } = cam;
 
-  const annotationsCap = instrument.annotations;
+  const annotationsCap = useLabCommands().marks ? instrument.annotations : undefined;
   const {
     annotations,
     provided,
@@ -219,7 +219,7 @@ function TrialRuntime({
   } = useTrialMarks({
     record,
     config,
-    capability: annotationsCap,
+    capability: instrument.annotations,
     keptMarks,
     save: updateTrialAnnotations,
   });
@@ -481,7 +481,7 @@ function TrialRuntime({
     <TrialIdProvider trialId={record.id}>
       <TrialOrbitProvider orbit={cam.orbit} instrument={instrument} trialId={record.id}>
         <TrialClockContext.Provider value={clockHandle}>
-          <AnnotationsContext.Provider value={annotationsCap ? provided : null}>
+          <AnnotationsContext.Provider value={instrument.annotations ? provided : null}>
             <CameraWheelContext.Provider value={wheelSlot}>
               <TrialChrome
                 job={jobCap ? job : undefined}

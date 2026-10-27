@@ -25,12 +25,14 @@ export interface StoreCommandsOptions {
   focus(id: string): void;
   configRules?: readonly ConfigRule[] | undefined;
   controls?: Record<string, ControlRenderer> | undefined;
+  marks: boolean;
+  setMarks: (shown: boolean) => void;
 }
 
 /** A lab's commands, each written against `store`. */
 export function useStoreCommands(
   store: LabStore,
-  { instruments, clocks, focusedTrialId, focus, configRules, controls }: StoreCommandsOptions,
+  { instruments, clocks, focusedTrialId, focus, configRules, controls, marks, setMarks }: StoreCommandsOptions,
 ): LabCommands {
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const mode = useStore(store, (s) => s.mode);
@@ -115,6 +117,8 @@ export function useStoreCommands(
       setMode: (m) => {
         store.getState().setMode(m);
       },
+      marks,
+      setMarks,
       configRules,
       controls,
     };
@@ -128,5 +132,7 @@ export function useStoreCommands(
     store,
     configRules,
     controls,
+    marks,
+    setMarks,
   ]);
 }

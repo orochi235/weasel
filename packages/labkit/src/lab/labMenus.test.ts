@@ -110,4 +110,12 @@ describe('labMenuBar', () => {
       );
     }
   });
+
+  it('offers Marks in View only when an instrument takes marks', () => {
+    expect(Object.keys(menu(labMenuBar(base), 'view').children)).toEqual(['zoom', 'theme']);
+    const annotating = { ...make('Marked'), annotations: { targets: () => [] } };
+    const view = menu(labMenuBar({ ...base, instruments: [annotating] }), 'view');
+    expect(Object.keys(view.children)).toEqual(['zoom', 'marks', 'theme']);
+    expect((view.children.marks as PrefGroup).children).toEqual({ marks: pref.action('lab.marks') });
+  });
 });

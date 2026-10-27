@@ -39,8 +39,13 @@ function settingsWrites(ctx: TrialChromeContext) {
  *  toggle appears once a lens mounts, after the trial's first render, the
  *  expand toggle only inside a lightbox, and the zoom controls, scale and FPS
  *  meter once the trial has a view, which an `initialView` sized to the
- *  viewport does not until the canvas is measured. */
+ *  viewport does not until the canvas is measured. Marks, export, and the undo
+ *  pair marks alone bring come and go with the lab's Marks switch. */
 export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
+  'undo',
+  'redo',
+  'export',
+  'marks',
   'loupe',
   'expand',
   'zoom-out',

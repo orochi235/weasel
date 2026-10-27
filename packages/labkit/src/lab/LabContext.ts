@@ -32,6 +32,11 @@ export interface LabContextValue {
   deleteSnapshot: (snapshotId: string) => void;
   mode: LabMode;
   setMode: (m: LabMode) => void;
+  /** Whether the lab shows marks: its annotation targets' overlays, each
+   *  trial's Marks section and export, and the drawing tools in its rail. The
+   *  marks themselves are kept either way. */
+  marks: boolean;
+  setMarks: (shown: boolean) => void;
   /** Lab-wide rules run over every instrument's config leaves, before
    *  labkit's own inference. */
   configRules?: readonly ConfigRule[];

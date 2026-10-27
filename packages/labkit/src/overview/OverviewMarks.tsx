@@ -10,6 +10,7 @@ import { useAnnotationsOptional } from '../annotations/AnnotationsContext';
 import { markSvgNodes } from '../annotations/svgNodes';
 import type { AnnotationsApi } from '../annotations/types';
 import type { CameraContextValue } from '../canvas/CameraInput';
+import { useLabCommandsOptional } from '../lab/LabContext';
 
 /** A target's box, in the camera's frame-local units. */
 interface LocalRect {
@@ -64,13 +65,14 @@ export interface OverviewMarksProps {
 /**
  * The marks of every target in the annotations store in scope, placed where
  * each target's element sits on the stage. Draws nothing outside an annotating
- * trial, and takes no input.
+ * trial or while the lab hides marks, and takes no input.
  */
 export function OverviewMarks({ fit, camera }: OverviewMarksProps) {
   const api = useAnnotationsOptional();
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   useEffect(() => api?.subscribe(redraw), [api]);
-  if (!api) return null;
+  const shown = useLabCommandsOptional()?.marks !== false;
+  if (!api || !shown) return null;
   const s = fit.scale.x;
   return (
     <>
