@@ -135,10 +135,20 @@ export function PropertyRow({
   const rowRef = useRef<HTMLElement | null>(null);
   const labelRef = useRef<HTMLSpanElement | null>(null);
   const multiline = useMultiline(rowRef, labelRef, resolved === 'inline');
-  const name = onAutoChange ? (
+  const own = onAutoChange ? (
     <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} disabled={disabled} />
   ) : (
     label
+  );
+  // The hint flows on from the name's last word: as a flex item of its own, it went to the column's edge
+  // whenever the name wrapped, since a wrapped name's box fills the line.
+  const name = hint != null ? (
+    <span className={s.rowName}>
+      {own}
+      <span className={s.rowHint} data-wzl-subordinate="">{hint}</span>
+    </span>
+  ) : (
+    own
   );
   const head = (
     <span className={s.rowLabel} ref={labelRef}>
@@ -149,7 +159,6 @@ export function PropertyRow({
       ) : (
         name
       )}
-      {hint != null && <span className={s.rowHint} data-wzl-subordinate="">{hint}</span>}
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );

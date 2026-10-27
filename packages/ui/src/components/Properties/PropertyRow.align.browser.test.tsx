@@ -140,6 +140,31 @@ test('a label that wraps keeps its help glyph on its first line', async () => {
   expect(Math.abs(box(label).top + line / 2 - mid(box(help)))).toBeLessThan(1);
 });
 
+test('a label that wraps carries its hint after its last word, not at the column edge', async () => {
+  renderWithIcons(
+    <KitSettingsProvider value={{ help: { icon: true } }}>
+      <PropertyList className="narrow-labels">
+        <PropertyRow label="Silhouette outline width" description="How wide." hint="from theme" layout="inline">
+          <input aria-label="Silhouette outline width" />
+        </PropertyRow>
+      </PropertyList>
+    </KitSettingsProvider>,
+  );
+  await frames();
+  const hint = screen.getByText('from theme');
+  const label = hint.closest('[class*="rowLabel"]')!;
+  const help = label.querySelector('[class*="help"]')!;
+  const line = Number.parseFloat(getComputedStyle(label).lineHeight);
+  expect(box(label).height).toBeGreaterThan(line * 1.5);
+  // The hint follows the name's last line, and the glyph stays on its first.
+  expect(box(hint).top).toBeGreaterThan(box(label).top + line / 2);
+  expect(Math.abs(box(label).top + line / 2 - mid(box(help)))).toBeLessThan(1);
+  const words = document.createRange();
+  words.selectNodeContents(screen.getByText('Silhouette outline width', { exact: false, selector: 'span' }).firstChild!);
+  const last = [...words.getClientRects()].at(-1)!;
+  expect(box(hint).left - last.right).toBeLessThan(16);
+});
+
 test('a dropdown row sets its value at the label size, on the label baseline', async () => {
   renderWithIcons(
     <PropertyList className="split-sizes">
