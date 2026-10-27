@@ -1,0 +1,14 @@
+Every run: HVD_ALLOC=1 HVD_UPDATES=every-frame HVD_CAMERAS=fixed,moving HVD_APPROACHES=hud,dom
+HVD_GLYPHS=2500,5000 npm run test:perf -- hud-vs-dom, through onto do --solo on msb-uai
+(Apple M3 Max, 14 cores), one run each, each from a clean throwaway worktree (dirty: false).
+
+1-before          d67dcb7aa, before this round; load 2.5 at start
+2-objects         ec07e24d4, line boxes, paintings, groups and cache entries refilled; strings memoized; load 4.8
+3-indexed-loops   e6e48bb02, placeLine, breakLines and runsHash walk by index; load 2.1
+4-no-inlining     e6e48bb02 with --no-turbo-inlining --no-maglev-inlining added to Chromium's
+                  --js-flags in tests/perf/lib/launchArgs.ts (not committed); a diagnostic run,
+                  so each function's allocation is its own; its times are not comparable; load 1.9
+5-loop-not-fill   7690dc0d9, LayoutColumns.recycle clears its references with a loop, not fill; load 2.8
+
+Run 4 showed the 180 KB a frame charged to dropRuns in runs 1 to 3 sitting in LayoutColumns.recycle,
+inlined into it; run 5 removed it.
