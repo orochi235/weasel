@@ -142,7 +142,8 @@ describe('WeaselChart pipeline mode', () => {
 
     const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
     const r = canvas.getBoundingClientRect();
-    const all = ['src', 'a', 'b'].map((id) => specs.find((s) => s.id === id)!.pose as RectPose);
+    // The fit takes in the wire's waypoint as well as the stages.
+    const all = [...['src', 'a', 'b'].map((id) => specs.find((s) => s.id === id)!.pose as RectPose), { ...bend, width: 0, height: 0 }];
     const left = Math.min(...all.map((b) => b.x));
     const top = Math.min(...all.map((b) => b.y));
     const bounds = { x: left, y: top, width: Math.max(...all.map((b) => b.x + b.width)) - left, height: Math.max(...all.map((b) => b.y + b.height)) - top };
