@@ -75,8 +75,13 @@ export function targetInFrame(rect: DOMRectReadOnly, target: Element, frame: HTM
   const block = blockFrame(containingBlock(frame));
   const doc = frame.ownerDocument;
   const root = doc.documentElement;
-  const corner = clientToBlock({ x: 0, y: 0 }, block);
-  const size = { width: root.clientWidth / block.scaleX, height: root.clientHeight / block.scaleY };
+  // React Aria floors a placement in the frame's px; on a whole px of the block, that lands on the block's own grid.
+  const exact = clientToBlock({ x: 0, y: 0 }, block);
+  const corner = { x: Math.floor(exact.x), y: Math.floor(exact.y) };
+  const size = {
+    width: root.clientWidth / block.scaleX + exact.x - corner.x,
+    height: root.clientHeight / block.scaleY + exact.y - corner.y,
+  };
   frame.style.left = `${corner.x}px`;
   frame.style.top = `${corner.y}px`;
   frame.style.width = `${size.width}px`;
