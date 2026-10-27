@@ -56,6 +56,23 @@ const passAt = (run: Run): number =>
   placeOf(run.elapsed, run.duration, passesOf(run.loop), run.edge).pass;
 const phaseAt = (run: Run): number =>
   placeOf(run.elapsed, run.duration, passesOf(run.loop), run.edge).phase;
+/** The speed a transport plays a paused clock at, when none is declared. */
+const restingSpeed = (rate: number): number => Math.abs(rate) || 1;
+
+/** Which pass `elapsed` falls in and how far into it, in ms; a pass's end stands as its own. */
+function passOf(run: Run): { pass: number; into: number } {
+  const { pass } = placeOf(run.elapsed, run.duration, passesOf(run.loop), run.edge);
+  return { pass, into: pass === 0 ? run.elapsed : run.elapsed - pass * run.duration };
+}
+
+/** Places `into` ms into pass `pass` of the run, the pass clamped to the run's last and
+ *  `into` to the pass; a time on a boundary stands as the end of the pass before. */
+function placeIn(run: Run, pass: number, into: number): void {
+  const last = passesOf(run.loop) - 1;
+  const within = Math.min(Math.max(0, into), run.duration);
+  run.elapsed = clamp(run, Math.min(pass, last) * run.duration + within);
+  run.edge = run.elapsed > 0 && run.elapsed % run.duration === 0;
+}
 
 function change(run: Run, hub: Hub): void {
   run.changed = true;
@@ -98,26 +115,31 @@ function declaredOf(run: Run, spec: ClockSpec): Declared {
     duration: spec.duration ?? Number.POSITIVE_INFINITY,
     origin: spec.origin ?? 0,
     loop: spec.loop ?? false,
-    speed: spec.speed ?? (Math.abs(run.rate) || 1),
+    speed: spec.speed ?? restingSpeed(run.rate),
   };
 }
 
-/** Takes up `declared` with `override` laid over it, keeping the shown time, clamped. */
+/** Takes up `declared` with `override` laid over it, keeping the pass and the
+ *  shown time within it, clamped. */
 function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride): void {
   const duration = override?.duration ?? declared.duration;
   const origin = override?.origin ?? declared.origin;
   checkDuration(duration);
   checkOrigin(origin);
   checkSpeed(declared.speed);
-  const shown = run.origin + run.elapsed;
+  const finite = Number.isFinite(run.duration) && Number.isFinite(duration);
+  const { pass, into } = finite ? passOf(run) : { pass: 0, into: run.elapsed };
+  const shown = run.origin + into;
   run.duration = duration;
   run.loop = declared.loop;
   run.span = duration * passesOf(run.loop);
   run.origin = origin;
   run.speed = declared.speed;
-  run.elapsed = clamp(run, shown - origin);
-  // A shown time kept onto a pass boundary is the end of the pass before, as `holdAt` places one.
-  run.edge = run.elapsed > 0 && Number.isFinite(duration) && run.elapsed % duration === 0;
+  if (Number.isFinite(duration)) placeIn(run, pass, shown - origin);
+  else {
+    run.elapsed = clamp(run, shown - origin);
+    run.edge = false;
+  }
   change(run, hub);
   hub.subs.emit();
 }
@@ -201,9 +223,10 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
       return run.loop;
     },
     set loop(next: boolean | number) {
+      const { pass, into } = passOf(run);
       run.loop = next;
       run.span = run.duration * passesOf(run.loop);
-      run.elapsed = Math.min(run.elapsed, run.span);
+      if (run.elapsed > run.span) placeIn(run, pass, into);
       change(run, hub);
       hub.subs.emit();
     },
@@ -247,15 +270,16 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   checkRate(openRate, seekable);
   const rates = ratesOf(spec);
 
-  checkOrigin(spec.origin ?? 0);
+  const origin = at?.origin ?? spec.origin ?? 0;
+  checkOrigin(origin);
   if (spec.speed !== undefined) checkSpeed(spec.speed);
   const loop = spec.loop ?? false;
   const run: Run = {
     duration,
     loop,
     span: duration * passesOf(loop),
-    origin: spec.origin ?? 0,
-    speed: spec.speed ?? (Math.abs(openRate) || 1),
+    origin,
+    speed: spec.speed ?? restingSpeed(openRate),
     rate: at ? at.rate : openRate,
     elapsed: 0,
     edge: at?.passEnd ?? false,
@@ -286,7 +310,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
 
   let declared: Declared = {
     duration: spec.duration ?? Number.POSITIVE_INFINITY,
-    origin: run.origin,
+    origin: spec.origin ?? 0,
     loop: run.loop,
     speed: run.speed,
   };
@@ -305,12 +329,14 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
       hub.subs.emit();
     },
     declare(next) {
+      const was = declared.loop;
       declared = declaredOf(run, next);
-      applyRun(run, hub, declared, override);
+      // A declaration that keeps its loop leaves one set since, as a transport's toggle.
+      applyRun(run, hub, { ...declared, loop: declared.loop !== was ? declared.loop : run.loop }, override);
     },
     override(next) {
       override = next ? { ...next } : null;
-      applyRun(run, hub, declared, override);
+      applyRun(run, hub, { ...declared, loop: run.loop }, override);
     },
     onFrame: hub.frames.subscribe,
   };

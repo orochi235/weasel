@@ -80,4 +80,54 @@ describe('clock origin, speed and declare', () => {
     h.override({ origin: -300 });
     expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([4000, 0, 1]);
   });
+  it('declare keeps the pass and the shown time within it on a looping clock', () => {
+    const h = createClock({ duration: 3000, loop: true });
+    h.clock.seek(4500);
+    h.declare({ duration: 4000, loop: true });
+    expect([h.clock.pass, h.clock.elapsed]).toEqual([1, 5500]);
+    h.declare({ duration: 1000, loop: true });
+    expect([h.clock.pass, h.clock.phase]).toEqual([1, 1]);
+  });
+  it('declare turning a loop off shows the same time within the pass', () => {
+    const h = createClock({ duration: 3000, loop: true });
+    h.clock.seek(4500);
+    h.declare({ duration: 4000 });
+    expect([h.clock.loop, h.clock.elapsed]).toEqual([false, 1500]);
+  });
+  it('declare clamps an origin move to the pass it was in', () => {
+    const h = createClock({ duration: 1000, loop: true });
+    h.clock.seek(1900);
+    h.declare({ duration: 1000, loop: true, origin: -500 });
+    expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([2000, 1, 1]);
+  });
+  it('declare leaves a loop set since alone while the declared loop stays put', () => {
+    const h = createClock({ duration: 3000, loop: true });
+    h.clock.loop = false;
+    h.declare({ duration: 4000, loop: true });
+    expect(h.clock.loop).toBe(false);
+    h.declare({ duration: 4000, loop: 2 });
+    expect(h.clock.loop).toBe(2);
+  });
+  it('override leaves a loop set since alone', () => {
+    const h = createClock({ duration: 1000 });
+    h.clock.loop = true;
+    h.override({ duration: 2000 });
+    expect(h.clock.loop).toBe(true);
+  });
+  it('folds a run into its pass when the loop shrinks it', () => {
+    const h = createClock({ duration: 3000, loop: true });
+    h.clock.seek(4500);
+    h.clock.loop = false;
+    expect([h.clock.elapsed, h.clock.ended]).toEqual([1500, false]);
+    h.clock.loop = 3;
+    h.clock.seek(8000);
+    h.clock.loop = 2;
+    expect([h.clock.pass, h.clock.elapsed]).toEqual([1, 5000]);
+  });
+  it('reopens at a recorded origin', () => {
+    const h = createClock({ duration: 1000, origin: -200 }, { elapsed: 300, rate: 0, origin: -500 });
+    expect([h.clock.origin, h.clock.origin + h.clock.elapsed]).toEqual([-500, -200]);
+    h.declare({ duration: 1000, origin: -200 });
+    expect([h.clock.origin, h.clock.elapsed]).toEqual([-200, 0]);
+  });
 });
