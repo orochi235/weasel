@@ -1,4 +1,4 @@
-import { chevron, onCircle } from '../../icons/scripts/lib/base.mjs';
+import { chevron, GRID_HEAD, onCircle, px } from '../../icons/scripts/lib/base.mjs';
 
 // ── transport ────────────────────────────────────────────────────────────
 // Transport glyphs stand as tall as close or search, about 12.5 units; drawn smaller they read as shrunk beside them.
@@ -130,10 +130,10 @@ const STATE = {
   live: `<circle cx="7.66" cy="10" r="3.38" fill="currentColor"/><path d="M16.76 4.02v11.96"/>`,
   record: `<circle cx="10" cy="10" r="5.8"/><circle cx="10" cy="10" r="2.5" fill="currentColor" stroke="none"/>`,
   loop: `
-    <path d="M4.2 10.2V8.4a2.4 2.4 0 0 1 2.4-2.4h9"/>
-    <path d="${chevron([15.6, 6], [1, 0], 2.6, 40)}"/>
-    <path d="M15.8 9.8v1.8a2.4 2.4 0 0 1-2.4 2.4h-9"/>
-    <path d="${chevron([4.4, 14], [-1, 0], 2.6, 40)}"/>`,
+    <path d="M${px(3)} 10.2V8.025a2.4 2.4 0 0 1 2.4-2.4H${px(12)}"/>
+    <path d="${chevron([px(12), px(4)], [1, 0], ...GRID_HEAD)}"/>
+    <path d="M${px(12)} 9.8v2.175a2.4 2.4 0 0 1-2.4 2.4H${px(3)}"/>
+    <path d="${chevron([px(3), px(11)], [-1, 0], ...GRID_HEAD)}"/>`,
   // A dial and its needle.
   speed: `<path d="M4 14.4a6.6 6.6 0 1 1 12 0"/><path d="M10 11.6 13.2 7.8"/><circle cx="10" cy="11.6" r="1.1" fill="currentColor" stroke="none"/>`,
 

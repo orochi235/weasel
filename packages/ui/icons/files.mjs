@@ -1,11 +1,11 @@
-import { chevron, TRAY } from '../../icons/scripts/lib/base.mjs';
+import { chevron, GRID_HEAD, px, TRAY } from '../../icons/scripts/lib/base.mjs';
 
 export const FILES = {
   // `export`'s tray, the arrow leaving it.
   import: `
     ${TRAY}
-    <path d="M10 11.9V3.4"/>
-    <path d="${chevron([10, 3.4], [0, -1], 2.9, 36)}"/>`,
+    <path d="M${px(7)} ${px(9)}V${px(2)}"/>
+    <path d="${chevron([px(7), px(2)], [0, -1], ...GRID_HEAD)}"/>`,
 
   // A disk: the cut corner, the shutter and the label.
   save: `

@@ -1,4 +1,4 @@
-import { chevron, chevronOn } from '../../icons/scripts/lib/base.mjs';
+import { chevron, chevronOn, GRID_HEAD, px } from '../../icons/scripts/lib/base.mjs';
 
 const rad = (deg) => (deg * Math.PI) / 180;
 
@@ -132,8 +132,11 @@ function turn(flip, swap) {
 }
 
 // ── dolly ────────────────────────────────────────────────────────────────
-// A floor running back to the horizon, and an arrow along it.
-const floor = `<path d="M7 3.8h6l3.6 12.4H3.4Z"/>`;
+// A floor running back to the horizon, and an arrow along it. The arrow runs down pixel 7, and the floor's
+// edges sit on pixels 2 and 12 about it.
+const floor = `<path d="M6.375 ${px(2)}h6l3.6 12.5H2.775Z"/>`;
+const upright = (from, tip) =>
+  `<path d="M${px(7)} ${px(from)}V${px(tip)}"/><path d="${chevron([px(7), px(tip)], [0, Math.sign(tip - from)], ...GRID_HEAD)}"/>`;
 
 // ── orbit ────────────────────────────────────────────────────────────────
 // A level ring round a body, open on its lower right. It sweeps up the right side, over the back and down the
@@ -141,7 +144,6 @@ const floor = `<path d="M7 3.8h6l3.6 12.4H3.4Z"/>`;
 // the head sit on 16px 1x pixel centers (`px(k)` is the center of pixel k); the earlier tilted ring with its
 // head on the bend closed up into a dot there.
 const n = (v) => Math.round(v * 1e4) / 1e4;
-const px = (k) => 0.625 + 1.25 * k;
 const RING = { left: px(1), right: px(14), top: px(4), bottom: px(12) };
 const ORBIT_START_X = 17.6;
 const orbit = (() => {
@@ -153,22 +155,22 @@ const orbit = (() => {
   const tip = [px(11), RING.bottom];
   return (
     `<path d="M${n(ORBIT_START_X)} ${n(startY)}A${n(rx)} ${n(ry)} 0 1 0 ${n(cx)} ${n(RING.bottom)}H${tip[0]}"/>` +
-    `<path d="${chevron(tip, [1, 0], 2.5 * Math.SQRT2, 45)}"/>`
+    `<path d="${chevron(tip, [1, 0], ...GRID_HEAD)}"/>`
   );
 })();
 
 // ── rise / sink ──────────────────────────────────────────────────────────
-const ground = `<path d="M4 16.4h12"/>`;
+const ground = `<path d="M${px(2)} ${px(12)}H${px(12)}"/>`;
 
 export const CAMERA = {
-  dollyIn: `${floor}<path d="M10 13.6V7"/><path d="${chevron([10, 7], [0, -1], 2.7, 40)}"/>`,
-  dollyOut: `${floor}<path d="M10 6.8V13.4"/><path d="${chevron([10, 13.4], [0, 1], 2.7, 40)}"/>`,
+  dollyIn: floor + upright(10, 5),
+  dollyOut: floor + upright(5, 10),
   turnLeft: turn(false, false),
   turnRight: turn(true, false),
   pitchUp: turn(false, true),
   pitchDown: turn(true, true),
-  rise: `${ground}<path d="M10 13.6V3.6"/><path d="${chevron([10, 3.6], [0, -1], 3.2, 42)}"/>`,
-  sink: `${ground}<path d="M10 3.6V13.2"/><path d="${chevron([10, 13.2], [0, 1], 3.2, 42)}"/>`,
+  rise: ground + upright(10, 2),
+  sink: ground + upright(2, 10),
   orbit: `${orbit}<circle cx="10" cy="10" r="1.75" fill="currentColor" stroke="none"/>`,
   home: `
     <path d="M3.4 9.8 10 3.8l6.6 6"/>

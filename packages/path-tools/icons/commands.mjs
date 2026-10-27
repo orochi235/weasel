@@ -1,7 +1,7 @@
 // Path-structure commands: direction, start, corners, segment type and extremes.
+import { px } from '../../icons/scripts/lib/base.mjs';
+
 const n = (v) => Math.round(v * 1e4) / 1e4;
-/** The center of pixel `k` at 16px 1x. */
-const px = (k) => 0.625 + 1.25 * k;
 const anchor = (cx, cy, s = 2.5) =>
   `<rect x="${n(cx - s / 2)}" y="${n(cy - s / 2)}" width="${s}" height="${s}" fill="currentColor" stroke="none"/>`;
 const dot = (cx, cy, r) => `<circle cx="${n(cx)}" cy="${n(cy)}" r="${r}" fill="currentColor" stroke="none"/>`;

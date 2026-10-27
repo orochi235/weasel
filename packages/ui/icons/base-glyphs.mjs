@@ -1,4 +1,4 @@
-import { n, R, STROKE, chevron, onCircle, TRAY } from '../../icons/scripts/lib/base.mjs';
+import { n, R, STROKE, chevron, GRID_HEAD, onCircle, px, TRAY } from '../../icons/scripts/lib/base.mjs';
 
 /** Unit tangent at `deg` for counterclockwise travel. */
 const ccwTangent = (deg) => [-Math.sin(R(deg)), -Math.cos(R(deg))];
@@ -12,17 +12,19 @@ const resetArc = `M${rStart[0]} ${rStart[1]}A5.8 5.8 0 1 0 ${rEnd[0]} ${rEnd[1]}
 const resetHead = chevron(rEnd, ccwTangent(62), 2.9, 40);
 
 // ── export ───────────────────────────────────────────────────────────────
-const exportHead = chevron([10, 11.7], [0, 1], 2.9, 36);
+const exportHead = chevron([px(7), px(9)], [0, 1], ...GRID_HEAD);
 
 // ── pan ──────────────────────────────────────────────────────────────────
-// Shafts start at the hub rim so nothing crosses the center.
+// Shafts start at the hub rim so nothing crosses the center, which is pixel 7's; the tips are on pixels 1
+// and 13, far enough out that neighboring barbs stay apart.
 const HUB = 1.9;
-const panShafts = `M10 ${10 - HUB}V3.2M10 ${10 + HUB}V16.8M${10 - HUB} 10H3.2M${10 + HUB} 10H16.8`;
+const PAN = px(7);
+const panShafts = `M${PAN} ${PAN - HUB}V${px(1)}M${PAN} ${PAN + HUB}V${px(13)}M${PAN - HUB} ${PAN}H${px(1)}M${PAN + HUB} ${PAN}H${px(13)}`;
 const panHeads = [
-  chevron([10, 3.2], [0, -1], 2.7, 40),
-  chevron([10, 16.8], [0, 1], 2.7, 40),
-  chevron([3.2, 10], [-1, 0], 2.7, 40),
-  chevron([16.8, 10], [1, 0], 2.7, 40),
+  chevron([PAN, px(1)], [0, -1], ...GRID_HEAD),
+  chevron([PAN, px(13)], [0, 1], ...GRID_HEAD),
+  chevron([px(1), PAN], [-1, 0], ...GRID_HEAD),
+  chevron([px(13), PAN], [1, 0], ...GRID_HEAD),
 ].join('');
 
 // ── zoom ─────────────────────────────────────────────────────────────────
@@ -74,7 +76,7 @@ export const BASE = {
 
   export: `
     ${TRAY}
-    <path d="M10 3.2v8.5"/>
+    <path d="M${px(7)} ${px(2)}V${px(9)}"/>
     <path d="${exportHead}"/>`,
 
   zoom: `
@@ -106,7 +108,7 @@ export const BASE = {
   pan: `
     <path d="${panShafts}"/>
     <path d="${panHeads}"/>
-    <circle cx="10" cy="10" r="${HUB}"/>`,
+    <circle cx="${PAN}" cy="${PAN}" r="${HUB}"/>`,
 };
 
 export const BASE_ORDER = ['clone', 'reset', 'close', 'export', 'zoom', 'zoom-out', 'fit', 'fit-contain', 'fit-fill', 'fit-stretch', 'pan'];

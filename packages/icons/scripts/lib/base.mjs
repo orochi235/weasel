@@ -9,6 +9,15 @@
 // turned the glyph into the IEC power symbol.
 
 export const R = (deg) => (deg * Math.PI) / 180;
+
+/** The center of pixel `k` of a glyph drawn at 16px 1x: an odd multiple of 0.625. A stroke centered on one
+ *  fills its column, where one on a whole unit smears across two half-gray ones. */
+export const px = (k) => 0.625 + 1.25 * k;
+
+/** `chevron`'s length and spread for a straight arrow drawn on `px` centers: its barbs end two whole pixels
+ *  back from the tip and two either side, at 45 degrees. At 36 to 42 they sit off the grid and close up into a
+ *  dot at 1x. */
+export const GRID_HEAD = [2.5 * Math.SQRT2, 45];
 export const n = (v) => Math.round(v * 100) / 100;
 
 /** Open-V arrowhead whose vertex is exactly `tip`, trailing back along `dir`.
@@ -72,4 +81,4 @@ export const onCircle = (cx, cy, r, deg) => [
 ];
 
 /** The tray `export` drops into and `import` lifts out of, with its fill line. */
-export const TRAY = `<path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/><path d="M6.8 14.7h6.4" stroke-width="1"/>`;
+export const TRAY = `<path d="M3.125 12.6v2.775a1.5 1.5 0 0 0 1.5 1.5h9.5a1.5 1.5 0 0 0 1.5-1.5V12.6"/><path d="M5.625 14.375h7.5" stroke-width="1"/>`;
