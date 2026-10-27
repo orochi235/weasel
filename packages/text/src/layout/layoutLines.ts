@@ -6,13 +6,15 @@
 import type { LineOrder } from './bidiLines';
 import { doubles, LineBox, type LayoutColumns } from './layoutColumns';
 import type { Entry } from './layoutEntries';
-import { hangs, wrapLines } from './lineBreak/wrapLines';
+import { hangs, wrapSpans } from './lineBreak/wrapLines';
 import { tabAdvance, widthWithTabs } from './tabStops';
 
 /** One line's entries, measured and not yet placed. */
 export interface Line {
   /** Index of its first entry among the entries that were broken. */
   start: number;
+  /** One past its last, excluding the hard break that closed it. */
+  end: number;
   /** In logical order. The first has dropped the kerning before it, and a tab
    *  has run out to its stop. */
   entries: Entry[];
@@ -40,6 +42,42 @@ function aboveBaseline(e: Entry, lineHeight: number): number {
   return (e.lineSize * lineHeight - ascent - e.metrics.descent * k) / 2 + ascent;
 }
 
+const NONE: readonly Entry[] = [];
+/** The entries the width callbacks below read, set for one {@link breakLines}
+ *  call and cleared after it, so the wrap builds no closure a call. */
+let cur = NONE;
+/** `sum[k]`: width of entries `[0, k)` set end to end. Grown, never shrunk. */
+let sum: number[] = doubles(64);
+/** Indices of the tabs among `cur`, ascending. */
+const tabs: number[] = [];
+/** The lines a call broke, and every line object any call has made, reused by index. */
+const broken: Line[] = [];
+const linePool: Line[] = [];
+/** The most line objects the pool keeps. */
+const LINE_POOL_MAX = 64;
+
+/** An entry opening a line drops the kerning before it. */
+function flatWidth(start: number, end: number): number {
+  return cur[start].advance + cur[start].tracking + sum[end] - sum[start + 1];
+}
+const stopOf = (k: number) => cur[k].tab!;
+function tabbedWidth(start: number, end: number): number {
+  return widthWithTabs(start, end, tabs, stopOf, flatWidth);
+}
+
+function pushSpan(start: number, end: number, wrapped: boolean): void {
+  const i = broken.length;
+  let line = linePool[i];
+  if (line === undefined) {
+    line = { start: 0, entries: [], width: 0.5, height: 0.5, ascent: 0.5, wrapped: false, srcEnd: 0, end: 0 };
+    if (i < LINE_POOL_MAX) linePool[i] = line;
+  }
+  line.start = start; line.end = end; line.wrapped = wrapped;
+  line.entries.length = 0;
+  line.width = 0; line.height = 0; line.ascent = 0; line.srcEnd = 0;
+  broken.push(line);
+}
+
 /**
  * Break `entries` into lines: at hard breaks, and at UAX #14 opportunities
  * when `maxWidth` is finite. A line is as tall as its tallest entry's line
@@ -47,6 +85,10 @@ function aboveBaseline(e: Entry, lineHeight: number): number {
  * it — from unshifted ascents, so a `baselineShift` cannot drag the rest of
  * the line with it. A blank line takes both from the hard break that closed
  * it, the only carrier of a size it has.
+ *
+ * The entry opening each line has its kerning zeroed, and each tab its
+ * advance set, in place. The lines and their `entries` arrays are reused by
+ * the next call, so they are valid only until then.
  */
 export function breakLines(
   entries: readonly Entry[],
@@ -54,46 +96,39 @@ export function breakLines(
   maxWidth: number,
   lineHeight: number,
 ): Line[] {
-  /** `sum[k]`: width of entries `[0, k)` set end to end. */
-  const sum = doubles(entries.length + 1);
+  if (sum.length < entries.length + 1) sum = doubles(entries.length + 1);
   sum[0] = 0;
-  const tabs: number[] = [];
-  entries.forEach((e, k) => {
+  tabs.length = 0;
+  broken.length = 0;
+  for (let k = 0; k < entries.length; k++) {
+    const e = entries[k];
     sum[k + 1] = sum[k] + e.kerningBefore + e.advance + e.tracking;
     if (e.tab) tabs.push(k);
-  });
-  // An entry opening a line drops the kerning before it.
-  const flatWidth = (start: number, end: number): number =>
-    entries[start].advance + entries[start].tracking + sum[end] - sum[start + 1];
-  const widthOf = tabs.length === 0 ? flatWidth : (start: number, end: number): number =>
-    widthWithTabs(start, end, tabs, (k) => entries[k].tab!, flatWidth);
+  }
+  cur = entries;
+  wrapSpans(cps, maxWidth, tabs.length === 0 ? flatWidth : tabbedWidth, pushSpan);
+  cur = NONE;
 
-  return wrapLines(cps, maxWidth, widthOf).map((span): Line => {
-    const line: Line = {
-      start: span.start, entries: [], width: 0, height: 0, ascent: 0,
-      wrapped: span.wrapped, srcEnd: 0,
-    };
-    if (span.start === span.end) {
-      const brk = entries[span.end];
+  for (const line of broken) {
+    if (line.start === line.end) {
+      const brk = entries[line.end];
       line.height = brk.lineSize * lineHeight;
       line.ascent = aboveBaseline(brk, lineHeight);
       line.srcEnd = brk.srcIndex;
-      return line;
+      continue;
     }
-    for (let k = span.start; k < span.end; k++) {
+    for (let k = line.start; k < line.end; k++) {
       const e = entries[k];
-      const opened = k > span.start ? e : { ...e, kerningBefore: 0 };
-      const placed = e.tab
-        ? { ...opened, advance: tabAdvance(line.width, e.tab.stop, e.tab.min) }
-        : opened;
-      line.entries.push(placed);
-      line.width += placed.kerningBefore + placed.advance + placed.tracking;
+      if (k === line.start) e.kerningBefore = 0;
+      if (e.tab) e.advance = tabAdvance(line.width, e.tab.stop, e.tab.min);
+      line.entries.push(e);
+      line.width += e.kerningBefore + e.advance + e.tracking;
       line.height = Math.max(line.height, e.lineSize * lineHeight);
-      line.ascent = Math.max(line.ascent, aboveBaseline(placed, lineHeight));
+      line.ascent = Math.max(line.ascent, aboveBaseline(e, lineHeight));
     }
-    line.srcEnd = entries[span.end - 1].srcEnd;
-    return line;
-  });
+    line.srcEnd = entries[line.end - 1].srcEnd;
+  }
+  return broken;
 }
 
 /** Width of the white space a line ends in. CSS aligns a line on its ink, so
@@ -130,13 +165,16 @@ function alignOffset(align: 'left' | 'center' | 'right', alignWidth: number, ink
 
 const NO_GAPS: ReadonlySet<number> = new Set();
 
-/** A line set at its place in the text. */
+/** A line set at its place in the text: one object every {@link placeLine}
+ *  call rewrites, so it is valid only until the next. */
 export interface PlacedLine {
   box: LineBox;
   /** Width of the line's ink, hung white space left out and any justified
    *  spread counted. */
   inkWidth: number;
 }
+
+const placed: PlacedLine = { box: null as unknown as LineBox, inkWidth: 0.5 };
 
 /**
  * Set `line` with its top at `y`: align it in `alignWidth`, spread it when it
@@ -197,11 +235,10 @@ export function placeLine(
     penX += step;
   }
 
-  return {
-    box: new LineBox({
-      x0: left, y0: y, x1: left + line.width + spread, y1: y + line.height,
-      baselineY: lineBaselineY, srcEnd: line.srcEnd, justified: spread > 0,
-    }, cols, start, entries.length),
-    inkWidth: inkWidth + spread,
-  };
+  placed.box = new LineBox(
+    left, y, left + line.width + spread, y + line.height, lineBaselineY, line.srcEnd, spread > 0,
+    cols, start, entries.length,
+  );
+  placed.inkWidth = inkWidth + spread;
+  return placed;
 }

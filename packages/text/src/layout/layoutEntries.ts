@@ -66,10 +66,14 @@ export interface Entry {
  * needed, so a caller that is done with them before it measures again
  * allocates none: the entries of a label re-laid out every frame were a tenth
  * of a HUD readout's garbage. They are then valid only until the next call
- * given the same pool. A pool keeps at most `POOL_MAX` of them.
+ * given the same pool. A pool keeps at most `POOL_MAX` of them. With `into`,
+ * the list returned is that array, emptied and refilled.
  */
-export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?: Entry[]): Entry[] {
-  const entries: Entry[] = [];
+export function measureRuns(
+  runs: readonly ResolvedRun[], tabSize: number, pool?: Entry[], into?: Entry[],
+): Entry[] {
+  const entries: Entry[] = into ?? [];
+  entries.length = 0;
   /** The entry the next one kerns against; none across a break, a tab, or a
    *  run with no metrics. */
   let prev: Entry | undefined;
@@ -88,7 +92,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?
     }
     const runBase = srcIndex;
     const map = run.srcMap;
-    const clusterEnds = graphemeEnds(run.text);
+    const clusterEnds = graphemeEnds(run.text, CLUSTER_ENDS);
     let cluster = 0;
     let clusterStart = 0;
     /** The color glyph of the cluster being walked, when it has one. */
@@ -162,6 +166,9 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number, pool?
   });
   return entries;
 }
+
+/** The cluster ends of the run being measured, refilled for each. */
+const CLUSTER_ENDS: number[] = [];
 
 /** What `resolveGlyph` answers into, which `ink` copies out of at once. */
 const HIT: ResolvedGlyph = { resolved: null as unknown as ResolveResult, metrics: null as unknown as GlyphMetrics, advance: 0, font: null, glyph: null };

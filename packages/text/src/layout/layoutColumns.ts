@@ -134,9 +134,6 @@ export function blankGlyph(): PlacedGlyph {
   };
 }
 
-/** What a line box carries besides its cells and glyphs. */
-export type LineFields = Omit<LaidOutLineBox, 'cells' | 'glyphs'>;
-
 /**
  * A line box whose `cells` and `glyphs` are code points `[start, start +
  * count)` of `cols`, built on first read and kept. They are own enumerable
@@ -154,9 +151,12 @@ export class LineBox implements LaidOutLineBox {
   readonly #start: number;
   readonly #count: number;
 
-  constructor(f: LineFields, cols: LayoutColumns, start: number, count: number) {
-    this.x0 = f.x0; this.y0 = f.y0; this.x1 = f.x1; this.y1 = f.y1;
-    this.baselineY = f.baselineY; this.srcEnd = f.srcEnd; this.justified = f.justified;
+  constructor(
+    x0: number, y0: number, x1: number, y1: number, baselineY: number, srcEnd: number, justified: boolean,
+    cols: LayoutColumns, start: number, count: number,
+  ) {
+    this.x0 = x0; this.y0 = y0; this.x1 = x1; this.y1 = y1;
+    this.baselineY = baselineY; this.srcEnd = srcEnd; this.justified = justified;
     this.#cols = cols; this.#start = start; this.#count = count;
     Object.defineProperties(this, LineBox.#views);
   }
