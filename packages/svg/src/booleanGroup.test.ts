@@ -73,9 +73,8 @@ describe('a boolean group in SVG', () => {
     const scene = makeScene('intersect', undefined, 200);
     const [g] = svgNodesFromKit(scene as unknown as SvgKitTree) as SvgGroupNode[];
     expect(g!.children.map((c) => c.kind)).toEqual(['group']);
-    const warnings: string[] = [];
-    const parsed = parseSvg(serializeSvg([g!]), { onWarn: (m) => warnings.push(m) });
-    expect(warnings).toEqual([]);
+    const parsed = parseSvg(serializeSvg([g!]));
+    expect(parsed.warnings).toEqual([]);
     let n = 0;
     const drafts = svgNodesToKitDrafts(parsed, () => `n${n++}`);
     expect(drafts.map((d) => [d.kind, d.parentId])).toEqual([['mark', null], ['mark', 'n0'], ['mark', 'n0']]);
