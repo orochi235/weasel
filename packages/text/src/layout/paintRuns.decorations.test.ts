@@ -110,11 +110,8 @@ describe('layoutRuns — decoration geometry', () => {
       { paint: { kind: 'solid', color: '#000' } },
       { paint: { kind: 'solid', color: '#f00' } },
     ]);
-    // Each piece covers its own glyphs' advance boxes, so the join carries
-    // the kerning: the pen backs up by 1 before B, and a new span opens at
-    // the pen, so these two overlap by 1. Positive kerning would leave a gap
-    // of the same size instead. Only at zero kerning do they abut exactly.
-    expect(out.decorations[0].x1).toBeCloseTo(23, 6);
+    // A's step takes the -1 kerning before B, so the pieces abut at B's pen.
+    expect(out.decorations[0].x1).toBeCloseTo(22, 6);
     expect(out.decorations[1].x0).toBeCloseTo(22, 6);
   });
 
@@ -174,8 +171,8 @@ describe('layoutRuns — decoration geometry', () => {
       OPTS,
       );
     expect(out.decorations.map((d) => d.kind)).toEqual(['underline', 'strikethrough']);
-    // The underline stops at A; it does not run on under B.
-    expect(out.decorations[0].x1).toBeCloseTo(23, 6);
+    // The underline stops where B starts; it does not run on under B.
+    expect(out.decorations[0].x1).toBeCloseTo(22, 6);
     expect(out.decorations[1].x0).toBeCloseTo(22, 6);
   });
 

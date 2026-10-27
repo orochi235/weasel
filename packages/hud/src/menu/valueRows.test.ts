@@ -195,6 +195,20 @@ describe('createMenuWidget: value rows', () => {
     expect(other.set).toHaveBeenCalledExactlyOnceWith('Layer 1?');
   });
 
+  it('puts the caret where the typed text is pressed, starting the edit or during it', () => {
+    const row = textRow();
+    const { w, click } = widget([row]);
+    const p = w.bounds;
+    const y = p.y + m.padY + m.rowHeight / 2;
+    // Typed text is set right against p.w - padX - 3, 7px a character: offset i of n characters is here.
+    const xAt = (i: number, n: number) => p.x + p.w - m.padX - 3 - (n - i) * 7;
+    click(xAt(5, 7) + 2, y);
+    type(w, ['!']);
+    click(xAt(1, 8) - 2, y);
+    type(w, ['_', 'Enter']);
+    expect(row.set).toHaveBeenCalledExactlyOnceWith('L_ayer! 1');
+  });
+
   it('does not edit a disabled text row', () => {
     const row = textRow({ disabled: true });
     const { w } = widget([row]);

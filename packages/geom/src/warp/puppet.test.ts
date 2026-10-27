@@ -37,8 +37,16 @@ describe('factorSymmetric', () => {
       b[i] += v * x[j];
       if (i !== j) b[j] += v * x[i];
     }));
-    const solved = factorSymmetric(rows)!.solve(b);
+    const factored = factorSymmetric(rows)!;
+    const solved = factored.solve(b);
     solved.forEach((v, i) => expect(v).toBeCloseTo(x[i], 9));
+    const other = Float64Array.from(b, (v, i) => v * (i % 3) - 1);
+    const pair = factored.solvePair(Float64Array.from({ length: 2 * n }, (_, k) => (k & 1 ? other : b)[k >> 1]));
+    const second = factored.solve(other);
+    for (let i = 0; i < n; i++) {
+      expect(pair[2 * i]).toBe(solved[i]);
+      expect(pair[2 * i + 1]).toBe(second[i]);
+    }
   });
 
   it('refuses a singular system', () => {

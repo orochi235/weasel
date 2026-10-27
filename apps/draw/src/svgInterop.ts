@@ -11,8 +11,8 @@
  * exports as.
  */
 
-import type { Fill, NodeClip, TextStyle } from '@weasel-js/core';
-import { resolveFill, resolveStroke } from '@weasel-js/core';
+import type { Fill, NodeClip, Page, PlacedPage, TextStyle } from '@weasel-js/core';
+import { pagesBounds, resolveFill, resolveStroke } from '@weasel-js/core';
 import {
   svgImageFromKit,
   svgLeafFromKit,
@@ -32,7 +32,9 @@ import type {
   SvgTextNode,
 } from '@weasel-js/svg';
 import { downloadBlob, pickFile } from '@editor/index';
-import { isPaperSize, type PaperSizeKey } from './paperSizes';
+import { onePage, paperSizeOf } from './pages/drawPages';
+import { isPaperSize, PAPER_PRESETS } from './paperSizes';
+import { pageElements, pagesOfParsed } from './svgPages';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 import { cornerAttrs, pathWithCorners } from './svgCorners';
 import { decodeEffectAttrs, encodeEffectAttrs, type EffectAttrs, type EffectObj } from './svgEffects';
@@ -45,15 +47,12 @@ import { decodeEffectAttrs, encodeEffectAttrs, type EffectAttrs, type EffectObj 
 export const SWILL_NS = 'https://weaseldraw.app/svg-ext';
 export const SWILL_NAMESPACES = { wd: SWILL_NS } as const;
 
-/** The paper-size key round-tripped via `wd:paperSize`. */
-export type WeaselDrawPaperSize = PaperSizeKey;
-
 /** WeaselDraw's notion of the on-disk document, distilled to the bits
  *  svgInterop needs to write the root `<svg>` correctly. */
 export interface WeaselDrawDoc {
   title: string;
-  size: { width: number; height: number };
-  paperSize: WeaselDrawPaperSize;
+  /** Every page, placed; the `viewBox` is the box around them. */
+  pages: readonly PlacedPage[];
 }
 
 /** Output of {@link parsedToDoc}: a partial doc patch the caller layers on
@@ -62,16 +61,20 @@ export interface WeaselDrawDoc {
 export interface ParsedDocPatch {
   title?: string;
   size?: { width: number; height: number };
-  paperSize?: WeaselDrawPaperSize;
+  /** The file's `wd:page` list, else one page of its `wd:paperSize`. */
+  pages?: Page[];
   backgroundColor?: string;
 }
 
-/** The page background as the leading node of an export, marked so an import
+/** A page's background as a leading node of an export, marked so an import
  *  reads it back as the document's color and not as a shape. */
-export function backgroundSvgNode(color: string, width: number, height: number): SvgPathNode {
+export function backgroundSvgNode(
+  color: string,
+  rect: { x: number; y: number; width: number; height: number },
+): SvgPathNode {
   return {
     kind: 'path',
-    path: { kind: 'rect', x: 0, y: 0, width, height },
+    path: { kind: 'rect', x: rect.x, y: rect.y, width: rect.width, height: rect.height },
     fill: { kind: 'solid', color },
     meta: { wd: { attrs: { role: 'background' } } },
   };
@@ -81,28 +84,30 @@ function isBackgroundNode(n: SvgNode): n is SvgPathNode {
   return n.kind === 'path' && n.meta?.wd?.attrs?.role === 'background';
 }
 
-/** {@link SerializeOptions} for a WeaselDraw doc: the paper-size enum and `units` go under the
- *  `wd:` namespace. */
+/** {@link SerializeOptions} for a WeaselDraw doc: the page list and `units` go under the `wd:`
+ *  namespace, with the first page's paper size as `wd:paperSize` when it is one draw offers, which
+ *  is what a reader from before pages takes. */
 export function docToSerializeOptions(doc: WeaselDrawDoc): SerializeOptions {
+  const box = pagesBounds(doc.pages) ?? { x: 0, y: 0, width: 0, height: 0 };
+  const first = doc.pages[0];
+  const paperSize = first ? paperSizeOf(first) : null;
   return {
-    viewBox: { x: 0, y: 0, width: doc.size.width, height: doc.size.height },
-    width: doc.size.width,
-    height: doc.size.height,
+    viewBox: box,
+    width: box.width,
+    height: box.height,
     title: doc.title || undefined,
     namespaces: SWILL_NAMESPACES,
     documentMeta: {
       wd: {
-        attrs: {
-          paperSize: doc.paperSize,
-          units: 'px',
-        },
+        attrs: { ...(paperSize ? { paperSize } : {}), units: 'px' },
+        elements: { page: pageElements(doc.pages) },
       },
     },
   };
 }
 
-/** A {@link ParseResult} as a partial doc patch. `paperSize` is only set when the source
- *  declares a value we recognize. */
+/** A {@link ParseResult} as a partial doc patch. `pages` is only set when the source lists its
+ *  pages or declares a paper size we recognize. */
 export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
   const out: ParsedDocPatch = {};
   if (parsed.title != null) out.title = parsed.title;
@@ -110,7 +115,8 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
     out.size = { width: parsed.viewBox.width, height: parsed.viewBox.height };
   }
   const ps = parsed.documentMeta?.wd?.attrs?.paperSize;
-  if (isPaperSize(ps)) out.paperSize = ps;
+  const pages = pagesOfParsed(parsed) ?? (isPaperSize(ps) ? [...onePage(PAPER_PRESETS[ps]).pages] : undefined);
+  if (pages) out.pages = pages;
   const bg = parsed.nodes.find(isBackgroundNode);
   if (bg?.fill.kind === 'solid') out.backgroundColor = bg.fill.color;
   return out;

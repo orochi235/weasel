@@ -12,6 +12,7 @@ import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import {
   asNodeId, createScene, derivedDepOf, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathEffectParts, rectPath,
   type AddNodeSpec, type NodeId, type SerializedScene, solid,
+  layoutPages,
 } from '@weasel-js/core';
 import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { serializeReplacer } from '@editor/index';
@@ -69,7 +70,7 @@ describe('a draw document with a blend', () => {
   it('exports what the blend shows, its steps as ordinary paths in their own paint', async () => {
     const warnings: string[] = [];
     const svg = await sceneToSvgString(withBlend(), {
-      filename: 'x.svg', paperSize: 'letter' as never, paperWidth: 400, paperHeight: 300,
+      filename: 'x.svg', pages: layoutPages([{ id: 'page-1', width: 400, height: 300 }]),
       backgroundColor: '#ffffff', onWarn: (m) => warnings.push(m),
     });
     // Two sources and three steps.
@@ -82,7 +83,7 @@ describe('a draw document with a blend', () => {
 });
 
 const exportOf = (scene: ReturnType<typeof drawScene>) => sceneToSvgString(scene, {
-  filename: 'x.svg', paperSize: 'letter' as never, paperWidth: 400, paperHeight: 300, backgroundColor: '#ffffff',
+  filename: 'x.svg', pages: layoutPages([{ id: 'page-1', width: 400, height: 300 }]), backgroundColor: '#ffffff',
 });
 
 /** The nodes in `scene` holding a path effect, in render order. */

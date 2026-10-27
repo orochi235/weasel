@@ -31,24 +31,24 @@ export function hexColor(text: string, alpha: boolean, keep?: string): string | 
 
 /**
  * `entries` with every color row that has a `set` and is not disabled made a submenu: one row per `palette` color,
- * drawn as its swatch, which writes that color and closes the menu, then a text row holding the hex, which writes
- * what is typed into it while the menu stays open. `c` is the controller the entries go to, read only once a row
+ * drawn as its swatch, which writes that color, then a text row holding the hex, which writes what is typed into
+ * it. Both leave the menu open. `c` is the controller the entries go to, read only once a row
  * is drawn or chosen.
  */
 export function withColorPickers(
   entries: readonly MenuEntry[], palette: readonly string[], c: () => Pick<MenuController, 'colorValue' | 'setColor'>,
 ): HudColorPickers {
   const swatches = new Map<MenuEntry, () => string | undefined>();
-  const picker = (e: MenuColorEntry, set: (value: string) => void): MenuEntry => {
+  const picker = (e: MenuColorEntry): MenuEntry => {
     const now = () => c().colorValue(e);
     const alpha = e.alpha === true;
     const rows: MenuEntry[] = palette.map((color) => {
       const value = hexColor(color, alpha, e.value) ?? color;
       const row: MenuEntry = {
         kind: 'item', key: `${e.key}/${color}`, label: color,
+        keepOpen: true,
         get checked() { return hexColor(now() ?? '', alpha) === hexColor(value, alpha); },
-        // The controller is closed by the time an item runs, so this writes the row itself.
-        run: () => set(hexColor(color, alpha, now()) ?? color),
+        run: () => c().setColor(e, hexColor(color, alpha, now()) ?? color),
       };
       swatches.set(row, () => value);
       return row;
@@ -70,7 +70,7 @@ export function withColorPickers(
   };
   const walk = (es: readonly MenuEntry[]): MenuEntry[] => es.map((e) => {
     if (e.kind === 'submenu') return { ...e, entries: walk(e.entries) };
-    if (e.kind === 'color' && e.set && !e.disabled) return picker(e, e.set.bind(e));
+    if (e.kind === 'color' && e.set && !e.disabled) return picker(e);
     return e;
   });
   const out = walk(entries);

@@ -33,7 +33,8 @@ function attached() {
   const hud = createHud();
   attachHud(api, hud, { font: 'sans-serif' });
   const paint = (dims = DIMS) => layer!.draw(null, VIEW, { ...dims });
-  return { hud, paint };
+  const layerDeps = (dims = DIMS) => layer!.deps!(null, VIEW, { ...dims });
+  return { hud, paint, layerDeps };
 }
 
 function plain(extra: Partial<Widget> = {}): Widget {
@@ -73,6 +74,21 @@ describe('attachHud: widget command cache', () => {
     paint(); paint();
     expect(draw).toHaveBeenCalledTimes(2);
     expect(paint()[0]).toMatchObject({ runs: [expect.objectContaining({ text: 'two' })] });
+  });
+
+  it('follows a readout rewritten every frame, then holds once it stops', () => {
+    // The cache entry is refilled in place and a widget's deps array kept
+    // until it changes, so neither may hold a frame's answer over.
+    const { hud, paint } = attached();
+    const label = hud.text({ id: 't', x: 10, y: 10, text: '0', fontSize: 14 });
+    const draw = vi.spyOn(label, 'draw');
+    for (let f = 1; f <= 4; f++) {
+      label.setText(String(f));
+      expect(paint()[0]).toMatchObject({ runs: [expect.objectContaining({ text: String(f) })] });
+    }
+    const held = paint();
+    expect(paint()[0]).toBe(held[0]);
+    expect(draw).toHaveBeenCalledTimes(4);
   });
 
   it('rebuilds when a widget moves', () => {
@@ -145,6 +161,16 @@ describe('attachHud: widget command cache', () => {
     value = 2;
     paint(); paint();
     expect(draw).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives its layer deps that hold while no widget changed, so a canvas can skip it', () => {
+    const { hud, layerDeps } = attached();
+    const label = hud.text({ id: 't', x: 10, y: 10, text: 'static label', fontSize: 14 });
+    const held = layerDeps();
+    expect(layerDeps()).toBe(held);
+    label.setText('changed');
+    expect(layerDeps()).not.toBe(held);
+    expect(layerDeps({ ...DIMS, width: 500 })).not.toBe(held);
   });
 
   it('rebuilds a widget that declares no deps on every repaint', () => {

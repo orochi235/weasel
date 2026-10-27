@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { getFont, textureCacheKey, _resetFontRegistryForTests } from './registerFont';
+import { registerTestFont } from './testing/registerTestFont';
 import {
   GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8, SYNTH_BOLD_AMOUNT, glyphFieldScale, syntheticBoldGrowth,
 } from './textSdf';
@@ -67,6 +69,30 @@ describe('glyphFieldScale', () => {
 
   it('answers undefined for an atlas nobody registered', () => {
     expect(glyphFieldScale('atlas', 'never-registered', 400, 'normal')).toBeUndefined();
+  });
+
+  it('answers each of two atlases with its own scale, back and forth', async () => {
+    // The last answer is kept, so switching back has to be told apart from it.
+    _resetFontRegistryForTests();
+    await registerTestFont('fs-a');
+    await registerTestFont('fs-b');
+    const b = getFont('fs-b', 400, 'normal')!.font;
+    b.common = { ...b.common, scaleW: b.common.scaleW * 2 };
+    const a = glyphFieldScale('atlas', 'fs-a', 400, 'normal')!;
+    expect(glyphFieldScale('atlas', 'fs-a', 400, 'normal')).toEqual(a);
+    expect(glyphFieldScale('atlas', 'fs-b', 400, 'normal')).toEqual([a[0] * 2, a[1]]);
+    expect(glyphFieldScale('atlas', 'fs-a', 400, 'normal')).toEqual(a);
+  });
+});
+
+describe('textureCacheKey', () => {
+  it('names each variant apart, back and forth', () => {
+    expect(textureCacheKey('inter', 400, 'normal')).toBe('inter|400|normal');
+    expect(textureCacheKey('inter', 400, 'normal')).toBe('inter|400|normal');
+    expect(textureCacheKey('inter', 700, 'normal')).toBe('inter|700|normal');
+    expect(textureCacheKey('inter', 700, 'italic')).toBe('inter|700|italic');
+    expect(textureCacheKey('mono', 700, 'italic')).toBe('mono|700|italic');
+    expect(textureCacheKey('inter', 400, 'normal')).toBe('inter|400|normal');
   });
 });
 

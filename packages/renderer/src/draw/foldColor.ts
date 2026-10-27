@@ -46,6 +46,16 @@ export function foldColor(
   return out;
 }
 
+/** {@link foldColor}, written into `out` where no matrix maps it, the case
+ *  every frame of plain text takes, rather than into a new array. */
+export function foldColorInto(
+  ctx: DrawContext, r: number, g: number, b: number, a: number, out: [number, number, number, number],
+): readonly [number, number, number, number] {
+  if (!isIdentityColorMatrix(ctx.state.colorMatrix)) return foldColor(ctx, r, g, b, a);
+  out[0] = r; out[1] = g; out[2] = b; out[3] = a * ctx.state.alpha;
+  return out;
+}
+
 /** Channel scales for a textured vertex; the fourth multiplies its alpha after the texel's. */
 export type Tint = readonly [number, number, number, number];
 

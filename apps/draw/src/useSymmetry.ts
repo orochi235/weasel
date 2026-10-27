@@ -24,18 +24,19 @@ function existingGroup(scene: DrawScene, ctrl: SymmetryController): NodeId | nul
 
 /**
  * Live symmetry, driven by the View preferences. While it is on, every tool
- * draws into one symmetry group, made at the page center the first time and
+ * draws into one symmetry group, made at the center of `page` the first time and
  * kept in the document after; the axis preference sets that group's kind.
  * Turning it off stops drawing into the group, whose copies stay.
  */
-export function useSymmetry(scene: DrawScene, page: { width: number; height: number }) {
+export function useSymmetry(scene: DrawScene, page: { x?: number; y?: number; width: number; height: number }) {
   const [on, setOn] = usePref('view.symmetry');
   const [axisPref] = usePref('view.symmetryAxis');
   const spec = SPECS[axisPref] ?? SPECS.vertical!;
   const ctrl = useMemo(() => createSymmetry(scene as never), [scene]);
   const group = useRef<NodeId | null>(null);
 
-  const { width, height } = page;
+  const cx = (page.x ?? 0) + page.width / 2;
+  const cy = (page.y ?? 0) + page.height / 2;
   useLayoutEffect(() => {
     if (!on) {
       ctrl.setActive(null);
@@ -43,11 +44,11 @@ export function useSymmetry(scene: DrawScene, page: { width: number; height: num
     }
     const id = (ctrl.read(group.current) ? group.current : null)
       ?? existingGroup(scene, ctrl)
-      ?? ctrl.create({ center: { x: width / 2, y: height / 2 }, symmetry: spec });
+      ?? ctrl.create({ center: { x: cx, y: cy }, symmetry: spec });
     group.current = id;
     ctrl.setActive(id);
     if (!sameSpec(ctrl.read(id)!.spec, spec)) ctrl.update(id, { spec });
-  }, [ctrl, scene, on, spec, width, height]);
+  }, [ctrl, scene, on, spec, cx, cy]);
 
   const commands: Pick<AppCommands, 'symmetryOn' | 'toggleSymmetry'> = {
     symmetryOn: on,

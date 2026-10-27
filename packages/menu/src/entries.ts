@@ -32,6 +32,8 @@ export interface MenuItemEntry {
   href?: string;
   /** The row for the page that is open. */
   current?: boolean;
+  /** Choosing the row runs it and leaves the menu open, as editing a value row does. */
+  keepOpen?: boolean;
   run(): void;
 }
 

@@ -1,7 +1,8 @@
 /** `@weasel-js/geom/nd` — geometry over plain number arrays, in any
  *  dimension, so a tuple `[x, y, z]` passes as it is: the port-curve rule,
  *  flats (points, lines and planes as affine subspaces), the snap
- *  resolver built on them, and a BVH over axis-aligned boxes. The root
+ *  resolver built on them, a BVH over axis-aligned boxes, and the settled
+ *  cache that decides when an index is worth building. The root
  *  barrel and `./3d` wrap the port-curve functions in their own vector
  *  types.
  *
@@ -18,3 +19,4 @@ export {
 } from '../snap/resolve';
 export { stepLine } from '../snap/stepLine';
 export { createBvh, type BoxN, type Bvh, type HalfSpace } from '../bvh/bvh';
+export { createSettledCache, type SettledCache, type SettledCacheOptions } from '../bvh/settledCache';

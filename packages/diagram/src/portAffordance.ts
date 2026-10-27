@@ -28,6 +28,7 @@ import type {
   CommandFill,
 } from '@weasel-js/core';
 import { ellipsePath, paintsLayer, viewToTransform } from '@weasel-js/core';
+import { createSettledCache } from '@weasel-js/geom/nd';
 import { boxIndex, boxesMeeting, keyedIndex } from './keyedIndex';
 import { portsOf } from './ports';
 import type { DiagramNodeLike, DiagramNodeReader } from './trait';
@@ -71,8 +72,9 @@ export function offersPorts(
  *  the geometry is testable without one, and so a consumer whose participants
  *  come from somewhere else needs no adapter.
  *
- *  With `generation`, a press is tested against an index of the ports rather
- *  than every one: it must answer differently whenever the thunk can yield
+ *  With `generation`, the ports are read once per generation, so a frame paints
+ *  them without reading any, and a press is tested against an index of them
+ *  rather than every one: it must answer differently whenever the thunk can yield
  *  something different (`sceneParticipants` answers the scene's version and
  *  its overrides' generation). */
 export type ParticipantSource<TPose> = (() => Iterable<ParticipantPose<TPose>>) & {
@@ -191,17 +193,33 @@ export function createPortAffordance<TPose>(
     offersPorts(participant, state) && (opts.shows === undefined || opts.shows(participant.node, state));
   const showsPort = (port: Port): boolean => opts.showsPort === undefined || opts.showsPort(port);
 
-  // Every participant's ports, gated by nothing that reads the chrome state, boxed at their points.
-  const index = keyedIndex(participants.generation ?? (() => undefined), () => {
-    const at: { participant: ParticipantPose<TPose>; port: Port }[] = [];
+  // Every participant's ports, gated by nothing that reads the chrome state, each with its region
+  // once one is asked for. Held while the source's generation holds, so painting reads no ports.
+  type PortAt = { participant: ParticipantPose<TPose>; port: Port; region?: AffordanceRegion };
+  const generation = participants.generation;
+  const allPorts = (): PortAt[] => {
+    const at: PortAt[] = [];
     for (const participant of participants()) {
       for (const port of portsOf(participant.node, participant.pose, portOpts)) at.push({ participant, port });
     }
+    return at;
+  };
+  const held = createSettledCache<PortAt[]>({ reads: 1 });
+  const portsAt = (key: readonly unknown[]): PortAt[] => held.read(key, allPorts) ?? allPorts();
+  const regionAt = (entry: PortAt): AffordanceRegion => (entry.region ??= regionOf(entry.participant.node, entry.port));
+  const index = keyedIndex(generation ?? (() => undefined), () => {
+    const at = portsAt(generation!());
     return { at, boxes: boxIndex(at.map(({ port: { point: p } }) => [p.x, p.y, p.x, p.y] as const)) };
   });
 
   const regions = (state: ChromeState): readonly AffordanceRegion[] => {
     const out: AffordanceRegion[] = [];
+    if (generation !== undefined) {
+      for (const entry of portsAt(generation())) {
+        if (shown(entry.participant, state) && showsPort(entry.port)) out.push(regionAt(entry));
+      }
+      return out;
+    }
     for (const participant of participants()) {
       if (!shown(participant, state)) continue;
       for (const port of portsOf(participant.node, participant.pose, portOpts)) {
@@ -223,8 +241,8 @@ export function createPortAffordance<TPose>(
       if (!built || !near) return regions(state);
       const out: AffordanceRegion[] = [];
       for (const i of near) {
-        const { participant, port } = built.at[i]!;
-        if (shown(participant, state) && showsPort(port)) out.push(regionOf(participant.node, port));
+        const entry = built.at[i]!;
+        if (shown(entry.participant, state) && showsPort(entry.port)) out.push(regionAt(entry));
       }
       return out;
     },

@@ -35,6 +35,8 @@ export function createText(opts: TextOptions): TextWidget {
   let text = opts.text;
   let hidden = false;
   let placed: { text: string; color: string; fontFamily: string; cmd: DrawCommand } | null = null;
+  /** What `draw` returns: `placed.cmd` at the corner `x`, `y`. */
+  let moved: { x: number; y: number; out: DrawCommand[] } | null = null;
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
@@ -55,14 +57,18 @@ export function createText(opts: TextOptions): TextWidget {
       // The renderer's layout cache is keyed on the runs array, so a move
       // reuses the placed command rather than resolving fresh runs.
       if (!placed || placed.text !== text || placed.color !== color || placed.fontFamily !== fontFamily) {
-        placed = {
-          text, color, fontFamily,
-          cmd: textCommandFromRuns(0, 0, [{ text, fill: { paint: { kind: 'solid', color } } }], {
-            fontFamily, fontSize: opts.fontSize,
-          }),
-        };
+        // Built at the corner it is drawn at, so new text costs one command.
+        const cmd = textCommandFromRuns(bounds.x, bounds.y, [{ text, fill: { paint: { kind: 'solid', color } } }], {
+          fontFamily, fontSize: opts.fontSize,
+        });
+        placed = { text, color, fontFamily, cmd };
+        moved = { x: bounds.x, y: bounds.y, out: [cmd] };
       }
-      return [{ ...placed.cmd, x: bounds.x, y: bounds.y } as DrawCommand];
+      if (moved === null || moved.x !== bounds.x || moved.y !== bounds.y) {
+        const cmd = { ...placed.cmd, x: bounds.x, y: bounds.y } as DrawCommand;
+        moved = { x: bounds.x, y: bounds.y, out: [cmd] };
+      }
+      return moved.out;
     },
     hitTest() { return false; },
     claims: [],

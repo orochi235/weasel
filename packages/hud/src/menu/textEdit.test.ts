@@ -54,6 +54,17 @@ describe('editKey', () => {
     expect(run('abc', [['z', { mod: true }]])!.draft).toBe('abc');
   });
 
+  it('moves by a word with Alt, collapsing a selection first, and selects by a word with Alt+Shift', () => {
+    const alt = { alt: true };
+    expect(shown(run('one two  three', [['ArrowLeft', alt]]))).toBe('one two  |three');
+    expect(shown(run('one two  three', [['ArrowLeft', alt], ['ArrowLeft', alt]]))).toBe('one |two  three');
+    expect(shown(run('one, two', ['Home', ['ArrowRight', alt], ['ArrowRight', alt]]))).toBe('one, two|');
+    expect(shown(run('héllo wörld', ['Home', ['ArrowRight', alt]]))).toBe('héllo| wörld');
+    const sel = run('ab cd ef', [['ArrowLeft', { shift: true }], ['ArrowLeft', { shift: true, alt: true }]])!;
+    expect([sel.caret, sel.anchor]).toEqual([6, 8]);
+    expect(editKey(sel, 'ArrowLeft', alt).edit).toMatchObject({ caret: 3, anchor: 3 });
+  });
+
   it('counts a character outside the BMP as one', () => {
     expect(shown(run('a😀b', ['ArrowLeft', 'ArrowLeft', 'Backspace']))).toBe('|😀b');
   });

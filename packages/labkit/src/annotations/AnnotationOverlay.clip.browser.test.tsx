@@ -242,3 +242,24 @@ test('a mark on scrolled content moves with it as its target scrolls', async () 
     { timeout: 5000 },
   );
 });
+
+test('a wheel over a target with no camera scrolls it while a drawing tool holds the box', async () => {
+  renderWithIcons(
+    <div className="lk-clip-lab-host">
+      <Lab instruments={[Scrolling]} defaultInstrument="Scrolling" />
+    </div>,
+  );
+  await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
+  await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
+  const input = document.querySelector('.lk-annotate__input') as HTMLElement;
+  const el = scroller.current as HTMLElement;
+  const box = el.getBoundingClientRect();
+  await waitFor(() => expect(input.getBoundingClientRect().height).toBeCloseTo(box.height, 0));
+  const at = { clientX: box.left + 100, clientY: box.top + 100 };
+  expect(document.elementFromPoint(at.clientX, at.clientY)).toBe(input);
+
+  const wheel = new WheelEvent('wheel', { ...at, deltaY: 120, bubbles: true, cancelable: true });
+  input.dispatchEvent(wheel);
+  expect(el.scrollTop).toBe(120);
+  expect(wheel.defaultPrevented).toBe(true);
+});

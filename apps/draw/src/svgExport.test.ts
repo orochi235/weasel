@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { parseSvg } from '@weasel-js/svg';
-import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type TextStyle } from '@weasel-js/core';
+import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type TextStyle, layoutPages } from '@weasel-js/core';
 import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
@@ -195,7 +195,7 @@ describe('text export', () => {
 });
 
 describe('Save then Open', () => {
-  const PAGE = { filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff' } as const;
+  const PAGE = { filename: 'page', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor: '#ffffff' } as const;
 
   it('keeps a rectangle with fill None unfilled', async () => {
     const scene = fakeScene({
@@ -226,7 +226,7 @@ describe('Export leaves annotations out', () => {
     });
     scene.add(measureNode(scene.mintId(), ANNOTATION_LAYER, { x: 0, y: 0 }, { x: 50, y: 50 }) as never);
     const svg = await sceneToSvgString(scene, {
-      filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff',
+      filename: 'page', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor: '#ffffff',
     });
     let n = 0;
     expect(svgNodesToSceneDrafts(parseSvg(svg), () => `n${n++}`)).toHaveLength(1);
@@ -241,7 +241,7 @@ describe('Export writes hidden nodes hidden', () => {
     const off = scene.add({ kind: 'mark', layer: 'default', pose: { x: 50, y: 20, width: 30, height: 40 }, data: shown });
     scene.setHidden(off, true);
     const svg = await sceneToSvgString(scene, {
-      filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff',
+      filename: 'page', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor: '#ffffff',
     });
     expect(svg.match(/display="none"/g)).toHaveLength(1);
     expect(parseSvg(svg).nodes).toHaveLength(1);
@@ -258,7 +258,7 @@ describe('Save then Open: the page background', () => {
       },
     }, ['r']);
     const svg = await sceneToSvgString(scene, {
-      filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffcc',
+      filename: 'page', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor: '#ffffcc',
     });
 
     const parsed = parseSvg(svg, { namespaces: SWILL_NAMESPACES });
@@ -580,7 +580,7 @@ describe('what the SVG cannot carry', () => {
     }, ['r']);
     const warnings: string[] = [];
     await sceneToSvgString(scene, {
-      filename: 'a', paperSize: 'letter' as never, paperWidth: 100, paperHeight: 100,
+      filename: 'a', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]),
       backgroundColor: '#ffffff', onWarn: (w) => warnings.push(w),
     });
     expect(warnings).toHaveLength(1);
@@ -651,7 +651,7 @@ describe('pose composition', () => {
 
   it('lowers a leaf at its world pose under a composing strategy', async () => {
     const svg = await sceneToSvgString(framedScene(), {
-      filename: 'f', paperSize: 'letter', paperWidth: 100, paperHeight: 100,
+      filename: 'f', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]),
       backgroundColor: '#ffffff',
     });
     const a = leafOf(svg);
@@ -699,7 +699,7 @@ describe('a paint kind that loads on demand', () => {
     }, ['a']);
   }
 
-  const PAGE = { filename: 'f', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff' } as const;
+  const PAGE = { filename: 'f', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor: '#ffffff' } as const;
 
   it('writes its def in a page export', async () => {
     const warnings: string[] = [];

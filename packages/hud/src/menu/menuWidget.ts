@@ -6,7 +6,7 @@ import { accessibleMenu } from './accessibleMenu';
 import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuIcons, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
-import { chipAt } from './valueRows';
+import { caretAt, chipAt } from './valueRows';
 import { createTextEditor } from './textEdit';
 import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
@@ -38,9 +38,19 @@ function underOnCanvas(r: Rect, toCanvas: (client: Point) => Point): Rect {
   return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
 }
 
+/** The box around every panel. */
+function union(panels: readonly Rect[]): WidgetBounds {
+  const x0 = Math.min(...panels.map((p) => p.x));
+  const y0 = Math.min(...panels.map((p) => p.y));
+  const x1 = Math.max(...panels.map((p) => p.x + p.w));
+  const y1 = Math.max(...panels.map((p) => p.y + p.h));
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
 /** A widget that draws `open` as one panel per open level, driven by a menu controller it owns. */
 export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const m = opts.metrics ?? DEFAULT_MENU_METRICS;
+  const measure = opts.measure ?? measureLabel;
   const rev = createRevision(opts.onChange);
   const pickers = withColorPickers(
     withLinks(opts.open.entries, (href) => window.location.assign(href)), opts.palette ?? DEFAULT_MENU_PALETTE, () => c,
@@ -52,7 +62,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     anchor: opts.toCanvas(opts.open.client),
     ...(opts.open.under ? { under: underOnCanvas(opts.open.under, opts.toCanvas) } : {}),
     canvasSize: opts.canvasSize,
-    measure: opts.measure ?? measureLabel, metrics: m,
+    measure, metrics: m,
   });
   // The hud's font is known only once it draws.
   let family: string | null = null;
@@ -70,14 +80,6 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       if (x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) return i;
     }
     return -1;
-  };
-
-  const union = (): WidgetBounds => {
-    const x0 = Math.min(...panels.map((p) => p.x));
-    const y0 = Math.min(...panels.map((p) => p.y));
-    const x1 = Math.max(...panels.map((p) => p.x + p.w));
-    const y1 = Math.max(...panels.map((p) => p.y + p.h));
-    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   };
 
   /** The pointer is now over `level` (null: no panel). Leaving a panel clears
@@ -106,16 +108,18 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       typing.leave(entries[index]);
       c.press(level, index);
       typing.start(entries[index]);
-      // A number row's chips step it, since this menu has no field to type in.
       const e = entries[index];
-      const dir = e?.kind === 'number' ? chipAt(panels[level]!.w, m, evt.x - panels[level]!.x) : null;
+      const { w } = panels[level]!, x = evt.x - panels[level]!.x;
+      typing.place(e, (draft) => caretAt(draft, w, m, x, (s) => measure(s, m.fontSize, family ?? '')));
+      // A number row's chips step it, since this menu has no field to type in.
+      const dir = e?.kind === 'number' ? chipAt(w, m, x) : null;
       if (e?.kind === 'number' && dir !== null) c.spin(e, dir > 0 ? 'ArrowUp' : 'ArrowDown');
     }
   };
 
   const key = (evt: HudKeyEvent): boolean => {
     if (evt.type !== 'keydown') return false;
-    if (typing.key(evt.key, { shift: evt.shiftKey, mod: evt.ctrlKey || evt.metaKey })) return true;
+    if (typing.key(evt.key, { shift: evt.shiftKey, mod: evt.ctrlKey || evt.metaKey, alt: evt.altKey })) return true;
     const level = c.stack().length - 1;
     const at = c.stack()[level];
     const row = at == null ? undefined : c.entriesAt(level)[at];
@@ -129,7 +133,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
 
   return {
     id: `weasel-menu-${opts.open.seq}`,
-    get bounds() { return union(); },
+    get bounds() { return union(panels); },
     hidden: false,
     get disposed() { return disposed; },
     claims: CLAIMS,
@@ -143,7 +147,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       panels = place(c, family);
       const values = {
         number: c.numberValue, text: c.textValue, editing: typing.current(), swatch: pickers.swatchOf,
-        measure: opts.measure ?? measureLabel,
+        measure,
       };
       return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons, values));
     },

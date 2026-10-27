@@ -25,6 +25,8 @@ export function addSymmetric(rows: SymmetricRows, i: number, j: number, v: numbe
 /** A factored matrix. `solve` returns `x` with `A x = b`. */
 export interface Factored {
   solve(b: ArrayLike<number>): Float64Array;
+  /** Two systems at once, `b` and the result interleaved `x, y`: one pass over the factor for both. */
+  solvePair(b: ArrayLike<number>): Float64Array;
 }
 
 /** Reverse Cuthill–McKee over the matrix's graph: `order[k]` is the old index placed at `k`. */
@@ -108,6 +110,26 @@ export function factorSymmetric(rows: SymmetricRows): Factored | null {
       }
       const x = new Float64Array(n);
       for (let k = 0; k < n; k++) x[order[k]] = y[k];
+      return x;
+    },
+    solvePair(b) {
+      const y = new Float64Array(2 * n);
+      for (let k = 0; k < n; k++) { y[2 * k] = b[2 * order[k]]; y[2 * k + 1] = b[2 * order[k] + 1]; }
+      for (let i = 0; i < n; i++) {
+        const fi = first[i], si = start[i];
+        let sx = y[2 * i], sy = y[2 * i + 1];
+        for (let k = fi; k < i; k++) { const l = L[si + k - fi]; sx -= l * y[2 * k]; sy -= l * y[2 * k + 1]; }
+        const d = L[si + i - fi];
+        y[2 * i] = sx / d; y[2 * i + 1] = sy / d;
+      }
+      for (let i = n - 1; i >= 0; i--) {
+        const fi = first[i], si = start[i];
+        const d = L[si + i - fi];
+        const yx = (y[2 * i] /= d), yy = (y[2 * i + 1] /= d);
+        for (let k = fi; k < i; k++) { const l = L[si + k - fi]; y[2 * k] -= l * yx; y[2 * k + 1] -= l * yy; }
+      }
+      const x = new Float64Array(2 * n);
+      for (let k = 0; k < n; k++) { x[2 * order[k]] = y[2 * k]; x[2 * order[k] + 1] = y[2 * k + 1]; }
       return x;
     },
   };

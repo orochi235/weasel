@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { asNodeId, createScene, solid, type NodeId } from '@weasel-js/core';
+import { asNodeId, createScene, PAGES_DOC_KEY, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { importSvgText, openSvgFile, openSvgText } from './openSvg';
 import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
 
 function sceneWithOneShape() {
-  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+  const legal = { width: 816, height: 1344 };
+  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
+    systemLayers: [{ id: 'default' }],
+    doc: { [PAGES_DOC_KEY]: { pages: [{ id: 'page-1', ...legal }, { id: 'page-2', ...legal }] } },
+  });
   scene.add({
     kind: 'mark', layer: 'default', id: asNodeId('old'),
     pose: { x: 0, y: 0, width: 10, height: 10 },
@@ -44,9 +48,18 @@ describe('openSvgText', () => {
     expect(openSvgText(sceneWithOneShape(), svg(TWO), 'art.svg').filename).toBe('art.svg');
   });
 
-  it('takes the paper size the file declares, and none when it declares none', () => {
-    expect(openSvgText(sceneWithOneShape(), svg(TWO, 'wd:paperSize="a4"'), 'a.svg').paperSize).toBe('a4');
-    expect(openSvgText(sceneWithOneShape(), svg(TWO), 'a.svg').paperSize).toBeUndefined();
+  it('opens as one page of the paper size the file declares, in the Open entry', () => {
+    const scene = sceneWithOneShape();
+    openSvgText(scene, svg(TWO, 'wd:paperSize="a4"'), 'a.svg');
+    expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 794, height: 1123 }]);
+    scene.undo();
+    expect(pagesOf(scene)?.pages).toHaveLength(2);
+  });
+
+  it('opens a file that declares no paper size as one page of the first page\'s size', () => {
+    const scene = sceneWithOneShape();
+    openSvgText(scene, svg(TWO), 'a.svg');
+    expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 816, height: 1344 }]);
   });
 
   it('resets the background to white when the file names none', () => {
@@ -79,7 +92,7 @@ describe('a clipped group', () => {
 });
 
 describe('Save then Open: a mark with children', () => {
-  const PAGE = { filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff' } as const;
+  const PAGE = { filename: 'page', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor: '#ffffff' } as const;
   const rect = (w: number, h: number) => ({ kind: 'rect' as const, x: 0, y: 0, width: w, height: h });
 
   /** A group holding a red mark that holds two blue ones; `clip` is the red mark's. */
@@ -160,7 +173,7 @@ describe('openSvgFile', () => {
   const target = (scene = sceneWithOneShape()) => ({
     scene,
     setFilename: vi.fn(),
-    setPaperSize: vi.fn(),
+    showFirstPage: vi.fn(),
     setBackgroundColor: vi.fn(),
   });
 
@@ -171,15 +184,9 @@ describe('openSvgFile', () => {
     expect(t.scene.get(asNodeId('old'))).toBeUndefined();
     expect(t.scene.roots).toHaveLength(2);
     expect(t.setFilename).toHaveBeenCalledWith('art.svg');
-    expect(t.setPaperSize).toHaveBeenCalledWith('a4');
+    expect(pagesOf(t.scene)?.pages[0]).toMatchObject({ width: 794, height: 1123 });
     expect(t.setBackgroundColor).toHaveBeenCalledWith('#ffffff');
-  });
-
-  it('keeps the paper size when the file declares none', async () => {
-    pick(new File([svg(TWO)], 'art.svg'));
-    const t = target();
-    await openSvgFile(t);
-    expect(t.setPaperSize).not.toHaveBeenCalled();
+    expect(t.showFirstPage).toHaveBeenCalledOnce();
   });
 
   it('leaves the document alone when the picker is canceled', async () => {
@@ -188,5 +195,6 @@ describe('openSvgFile', () => {
     await openSvgFile(t);
     expect(t.scene.roots).toEqual([asNodeId('old')]);
     expect(t.setFilename).not.toHaveBeenCalled();
+    expect(t.showFirstPage).not.toHaveBeenCalled();
   });
 });

@@ -47,20 +47,35 @@ describe('layoutRuns — bidi seam', () => {
 
   it('gives every cell its advance so a consumer can find its extent', async () => {
     await registerFixture('inter', [{}]);
-    // 'AA' rather than 'AB': the fixture kerns A→B, and kerning is a gap
-    // *between* cells rather than part of either one's width.
     const out = layoutAndPaint([RUN_PLAIN('AA')], OPTS);
     const cells = out.lines[0].cells;
     expect(cells[0].advance).toBeGreaterThan(0);
     expect(cells[0].x + cells[0].advance).toBeCloseTo(cells[1].x, 10);
   });
 
-  it('leaves kerning between cells rather than inside one', async () => {
+  it('counts the kerning before the next glyph in a cell\'s advance', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutAndPaint([RUN_PLAIN('AB')], OPTS);
+    // The fixture kerns A→B by -1: A advances 23 and B starts at 22.
+    for (const runs of [[RUN_PLAIN('AB')], [RUN_PLAIN('A'), RUN_PLAIN('B')]]) {
+      const line = layoutAndPaint(runs, OPTS).lines[0];
+      const [a, b] = line.cells;
+      expect(b.x).toBeCloseTo(22, 10);
+      expect(a.x + a.advance).toBeCloseTo(b.x, 10);
+      // The pen step is the same gap, so a decoration rule ends where the next starts.
+      expect(line.glyphs[0].step).toBeCloseTo(22, 10);
+      expect(line.glyphs[0].advance).toBe(23);
+    }
+  });
+
+  it('gives the kerning to the visually left cell once the engine reverses a line', async () => {
+    await registerFixture('inter', [{}]);
+    // Reversed, B is painted first and A after it; the gap the wrap measured
+    // for A→B still sits between them, and belongs to B, now on the left.
+    const out = layoutAndPaint([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
     const [a, b] = out.lines[0].cells;
-    // The fixture kerns A→B by -1, so B starts a unit before A's extent ends.
-    expect(b.x).toBeCloseTo(a.x + a.advance - 1, 10);
+    expect(b.x).toBeCloseTo(0, 10);
+    expect(b.x + b.advance).toBeCloseTo(a.x, 10);
+    expect(out.lines[0].x1).toBeCloseTo(a.x + a.advance, 10);
   });
 
   it('reports the resolved level per cell', async () => {

@@ -82,8 +82,13 @@ export function glyphFieldScale(
   const font = getFont(family, weight, style)?.font;
   if (!font) return undefined;
   const range = font.distanceRange ?? DEFAULT_MSDF_RANGE;
-  return [font.common.scaleW / range, font.common.scaleH / range];
+  const u = font.common.scaleW / range, v = font.common.scaleH / range;
+  // Asked once per text command per frame, so the last answer is kept.
+  if (lastFieldScale[0] !== u || lastFieldScale[1] !== v) lastFieldScale = [u, v];
+  return lastFieldScale;
 }
+
+let lastFieldScale: readonly [number, number] = [NaN, NaN];
 
 /**
  * How far the field threshold drops for a glyph faked bold from a lighter

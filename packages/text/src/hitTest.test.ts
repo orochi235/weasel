@@ -74,7 +74,8 @@ describe('caretIndexAt', () => {
   });
 
   it('snaps on the midpoint of the advance cell the layout produced', () => {
-    // 'A' spans 0..23; kerning pulls 'B' back to 22..44. Midpoints 11 and 33.
+    // Kerning pulls 'B' back to 22..44, and A's cell takes the gap: 0..22.
+    // Midpoints 11 and 33.
     const p = textPose();
     expect(caretIndexAt(10, 5, p)).toBe(0);
     expect(caretIndexAt(12, 5, p)).toBe(1);

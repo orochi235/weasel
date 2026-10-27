@@ -344,10 +344,30 @@ run. Those files and the two intermediate runs, with each run's commit and load,
 `recorded/hud-vs-dom-columns-2026-10-24/`; `recorded/hud-vs-dom-alloc-2026-10-20/` holds the
 earlier cuts, which took the HUD from 9.7 MB a frame to 6.0.
 
-What is left, at 5,000 glyphs: the column arrays themselves, `measureRuns`' entries (544 KB), the
-cache's structural key, a string of every label's text (`runsKey`, about 200 KB under
-`cachedLayoutRuns`), a resolved glyph per code point (`resolveGlyph`, 201), and the style each
-command resolves (`resolveTextStyle`, 206).
+A second round of cuts took out every key string the readout built a frame: the layout cache
+looks fresh runs up by a hash compared field by field (`cachedLayoutRuns`, 569 KB self before),
+the paint cache builds a painting's key only once a second runs array asks for it, `groupFor`
+matches a glyph against the groups by field, and drawing a group allocates no texture key, field
+scale or color. Lines without a bidi engine share one order per length. KB allocated a frame, and
+renderer main thread in ms a frame, median [min–max] of 4 samples:
+
+| Camera | Glyphs | HUD before | HUD after | DOM after |
+|---|---:|---:|---:|---:|
+| fixed  | 2,500 | 2,287, 2.28 [2.19–2.41] | 1,605, 2.12 [2.02–2.41] |  72, 2.12 [2.08–2.37] |
+| fixed  | 5,000 | 4,506, 4.10 [3.62–4.25] | 3,152, 3.76 [3.06–4.05] | 104, 2.80 [2.73–3.28] |
+| moving | 2,500 | 2,308, 2.35 [2.11–2.58] | 1,637, 1.82 [1.60–2.23] | 104, 2.25 [1.86–2.30] |
+| moving | 5,000 | 4,578, 3.40 [3.39–4.04] | 3,247, 3.20 [3.06–3.58] | 169, 3.24 [3.17–3.85] |
+
+Allocation fell 29–30% in every cell; main-thread time moved inside its spread. Measured on
+msb-uai (Apple M3 Max) on 2026-10-27, one run of each tree without the worker-pool census, at
+`047ce8005` and `25140ecdb`. **Freezing an array that `placeLine` walks with `for...of` cost an allocation per element**: with
+the shared line orders frozen, the profile showed 132 KB a frame under `next`, gone once they were
+not. The runs are in `recorded/hud-vs-dom-alloc-2026-10-27/`.
+
+What is left, at 5,000 glyphs: the column and quad arrays (`slice`, 916 KB), `layoutRuns`' own
+garbage (298: its code point list, a line box per line), `breakLines` (206), `paintRuns` (214),
+`resolveRuns` and `resolveTextStyle` building the new command (155 and 100), `placeLine` (153),
+and a boxed number per read of an atlas face's `descent` (`get descent`, 122).
 
 ### Widget command caching
 

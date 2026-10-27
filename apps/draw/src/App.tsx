@@ -10,7 +10,7 @@ import './app.css';
 import { DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { Editor } from './Editor';
 import { useModality } from './modality/useModality';
-import { loadInitial } from './sceneLoading';
+import { loadInitial, loadInitialDoc } from './sceneLoading';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { useSessionPersistence } from './useSessionPersistence';
 
@@ -23,10 +23,12 @@ const INITIAL_STROKE: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR
 
 export function App(): ReactElement {
   const [initialScene] = useState(loadInitial);
+  const [initialDoc] = useState(loadInitialDoc);
   const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: DRAW_LAYERS,
     registry: DRAW_REGISTRY,
     initial: initialScene,
+    doc: initialDoc,
   });
   const selection = useSelection({ mode: 'multi', scene });
   const modality = useModality(scene);

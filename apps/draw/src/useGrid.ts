@@ -1,14 +1,14 @@
-import { usePageGrid } from '@editor/index';
+import { usePageGrid, type PageGridOptions } from '@editor/index';
 import type { AppCommands } from './appCommands';
 import { usePref } from './prefs';
 
 /**
- * The page grid, driven by the View preferences: the layer to draw while it
+ * The grid over `page`, driven by the View preferences: the layer to draw while it
  * is shown, the snap source to hand the canvas while snapping is on, and the
  * two toggles the command bar fires. The pitch drawn and the pitch snapped to are
  * the one "Grid density" preference.
  */
-export function useGrid(page: { width: number; height: number }, backgroundColor: string) {
+export function useGrid(page: PageGridOptions['page'], backgroundColor: string) {
   const [gridVisible, setGridVisible] = usePref('view.gridVisible');
   const [snapToGrid, setSnapToGrid] = usePref('view.snapToGrid');
   const [spacing] = usePref('view.gridDensity');

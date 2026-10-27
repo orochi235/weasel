@@ -7,12 +7,13 @@ import {
   solid,
   starPath,
   type ShapeGenerator,
+  layoutPages,
 } from '@weasel-js/core';
 import { svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
 import { sceneToSvgString } from './svgExport';
 
-const PAGE = { filename: 'page', paperSize: 'letter', paperWidth: 200, paperHeight: 200, backgroundColor: '#ffffff' } as const;
+const PAGE = { filename: 'page', pages: layoutPages([{ id: 'page-1', width: 200, height: 200 }]), backgroundColor: '#ffffff' } as const;
 const STAR: ShapeGenerator = { kind: 'star', points: 6, innerRadiusRatio: 0.4, rotation: 0.25 };
 
 function sceneOf(data: Record<string, unknown>) {

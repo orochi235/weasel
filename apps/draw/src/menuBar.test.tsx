@@ -11,6 +11,7 @@ import {
   useActionsRegistry,
   type ActionsRegistry,
   type ToolsApi,
+  pagesOf,
 } from '@weasel-js/core';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
@@ -51,13 +52,12 @@ function setup() {
     pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
   });
-  const setPaperSize = vi.fn();
   let registry: ActionsRegistry | null = null;
   let tools: ToolsApi | null = null;
   function Probe() {
     useFileCommands({
-      scene, filename: 'a', paperSize: 'letter', backgroundColor: '#ffffff',
-      setFilename: vi.fn(), setPaperSize, setBackgroundColor: vi.fn(),
+      scene, filename: 'a', paperSize: 'letter', page: null, backgroundColor: '#ffffff',
+      setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn(),
     });
     registry = useActionsRegistry();
     return null;
@@ -76,7 +76,7 @@ function setup() {
     { wrapper: withIcons },
   );
   return {
-    commands, setPaperSize, scene,
+    commands, scene,
     registry: registry as unknown as ActionsRegistry,
     tools: () => tools as unknown as ToolsApi,
   };
@@ -91,7 +91,7 @@ const labels = () => [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HT
   .map((r) => r.children[1]!.textContent);
 
 const ROWS = {
-  File: ['New', 'Open…', 'Import…', 'Save'],
+  File: ['New', 'Open…', 'Import…', 'Save', 'Export Page as SVG…'],
   Edit: ['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Duplicate', 'Delete', 'Select All'],
   Arrange: ['Group', 'Ungroup', 'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back',
     'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',
@@ -135,7 +135,7 @@ describe('DRAW_MENU_BAR', () => {
     act(() => { fireEvent.click(menu().getByRole('menuitem', { name: /^New/ })); });
     expect(labels()).toEqual(['US Letter', 'A4', 'Legal']);
     act(() => { fireEvent.click(menu().getByRole('menuitem', { name: 'A4' })); });
-    expect(t.setPaperSize).toHaveBeenCalledWith('a4');
+    expect(pagesOf(t.scene)?.pages[0]).toMatchObject({ width: 794, height: 1123 });
   });
 
   it('runs the action a row names', () => {

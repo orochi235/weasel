@@ -70,6 +70,17 @@ export interface MenuController {
   dispose(): void;
 }
 
+/** Heading from `from`, the point the deferral began, toward the near edge of the child of `level`'s panel. */
+function headingIntoChild(
+  panels: ReadonlyMap<number, Rect>, stack: MenuStack, from: Point | null, level: number, p: Point,
+): boolean {
+  const child = panels.get(level + 1);
+  const parent = panels.get(level);
+  if (!child || !parent || !from || stack.length <= level + 1) return false;
+  const edge = child.x >= parent.x ? child.x : child.x + child.w;
+  return inTriangle(p, from, { x: edge, y: child.y }, { x: edge, y: child.y + child.h });
+}
+
 /** Creates the controller that runs one open menu: highlight, keys, submenus and typeahead. */
 export function createMenuController(opts: MenuControllerOptions): MenuController {
   const { entries: root, onClose } = opts;
@@ -105,6 +116,13 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   const choose = (level: number, index: number) => {
     const e = entryAt(level, index);
     if (e?.kind !== 'item' || e.disabled) return;
+    if (e.keepOpen) {
+      // Highlighted, so a pointer press leaves the keyboard on the row it ran.
+      if (stack[level] !== index || stack.length !== level + 1) set([...stack.slice(0, level), index]);
+      e.run();
+      notify();
+      return;
+    }
     finish();
     e.run();
   };
@@ -113,15 +131,6 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
     const e = entryAt(level, index);
     const base = [...stack.slice(0, level), index];
     set(e?.kind === 'submenu' && !e.disabled ? [...base, null] : base);
-  };
-
-  /** Heading from the point the deferral began toward the open child's near edge. */
-  const headingIntoChild = (level: number, p: Point): boolean => {
-    const child = panels.get(level + 1);
-    const parent = panels.get(level);
-    if (!child || !parent || !lastPoint || stack.length <= level + 1) return false;
-    const edge = child.x >= parent.x ? child.x : child.x + child.w;
-    return inTriangle(p, lastPoint, { x: edge, y: child.y }, { x: edge, y: child.y + child.h });
   };
 
   const hoverNow = (level: number, index: number | null) => {
@@ -158,7 +167,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
       if (closed || level >= stack.length) return;
       if (index !== null && !isRowAt(level, index)) return;
       const sameRow = index === stack[level];
-      if (point && !sameRow && headingIntoChild(level, point)) {
+      if (point && !sameRow && headingIntoChild(panels, stack, lastPoint, level, point)) {
         deferred = { level, index };
         if (pendingKind !== 'diagonal') {
           later('diagonal', () => { if (deferred) hoverNow(deferred.level, deferred.index); }, DIAGONAL_GRACE_MS);

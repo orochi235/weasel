@@ -55,7 +55,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   useDebugCommands();
   useFileCommands({
     scene, filename: 'probe', paperSize: 'letter', backgroundColor: '#ffffff',
-    setFilename: noop, setPaperSize: noop, setBackgroundColor: noop,
+    setFilename: noop, showFirstPage: noop, page: null, setBackgroundColor: noop,
   });
 
   // `onToolsCreated` fires every render because `useTools` synthesizes a new ToolsApi literal

@@ -1,12 +1,14 @@
 import {
   ActiveToolContextProvider,
   createMeasurements,
+  placedPagesOf,
   type SceneCanvasApi,
   type SelectionApi,
   type Tool,
   type ToolsApi,
   toolSetHas,
   useActionsRegistry,
+  useCanvasSize,
   type View
 } from '@weasel-js/core';
 import { RESHAPE_TOOLS } from '@weasel-js/path-tools';
@@ -20,7 +22,8 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
-import { PAPER_PRESETS } from './docPersistence';
+import { usePageFit, usePages } from '@editor/index';
+import { DEFAULT_PAPER_SIZE, PAPER_PRESETS } from './paperSizes';
 import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
 import { EditorStatusBar } from './EditorStatusBar';
 import { showFirstRunNotice } from './firstRunNotice';
@@ -49,6 +52,8 @@ const isCoreTool = (tool: Tool): boolean => !toolSetHas(RESHAPE_TOOLS, tool.id);
 const PATH_TOOL_GROUPS = ['shape', 'path', 'warp'] as const;
 const CORE_TOOL_STACKS = [['rect', 'ellipse', 'polygon', 'star'], ['pen', 'spiro', 'pencil']];
 const PATH_TOOL_STACKS = [['trim', 'extend'], ['distort', 'envelope', 'puppet']];
+/** What the view fits before the scene has a page to fit. */
+const FALLBACK_PAGE = { x: 0, y: 0, ...PAPER_PRESETS[DEFAULT_PAPER_SIZE] };
 
 export interface EditorProps {
   scene: DrawScene;
@@ -70,9 +75,22 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   useEffect(() => showFirstRunNotice(), []);
   useMachineFontOutlines();
 
-  const doc = useDocumentState(selection.current.length > 0);
   const rightSidebar = useRightSidebarWidth();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  // `hostRef.current` is null on the first render and populated by the time the canvas mounts,
+  // which re-renders this component, so the overlay always has a container before an edit can
+  // start.
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const hostDims = useCanvasSize(hostRef);
+  const pages = usePages(scene, view, hostDims, setView);
+  const shownPage = pages.shown ?? FALLBACK_PAGE;
+  const recenter = usePageFit(hostDims, 'draw', shownPage, setView);
+  const { goTo } = pages;
+  const showFirstPage = useCallback(() => {
+    const first = placedPagesOf(scene)[0];
+    if (first) goTo(first.id);
+  }, [scene, goTo]);
+  const doc = useDocumentState(pages, selection.current.length > 0);
   // Measurements are nodes on the annotation layer; this is which one is picked.
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }));
 
@@ -86,14 +104,10 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
     canvasRef.current = api;
     setCanvasReady(api !== null);
   }, []);
-  const loupeSource = useLoupeSource(scene, PAPER_PRESETS[doc.paperSize], doc.backgroundColor);
+  const loupeSource = useLoupeSource(scene, pages.placed, doc.backgroundColor);
 
   const surfaceHost = useEditorSurfaceHost({ scene, selection, measurements, doc, cornerSelection: modality.cornerSelection });
 
-  // `hostRef.current` is null on the first render and populated by the time the canvas mounts,
-  // which re-renders this component, so the overlay always has a container before an edit can
-  // start.
-  const hostRef = useRef<HTMLDivElement | null>(null);
   const textEdit = useTextEditSession(scene, hostRef.current, modality.machine);
   // The character strip shows only during a text edit, and moves the workspace as it comes and goes.
   const optionsRef = useRef<HTMLDivElement | null>(null);
@@ -109,7 +123,8 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
               scene={scene}
               selection={selection}
               paperSize={doc.paperSize}
-              setPaperSize={doc.setPaperSize}
+              showFirstPage={showFirstPage}
+              page={pages.shown}
               filename={doc.filename}
               setFilename={doc.setFilename}
               backgroundColor={doc.backgroundColor}
@@ -164,7 +179,10 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                     textEdit={textEdit}
                     view={view}
                     onViewChange={setView}
-                    paperSize={doc.paperSize}
+                    hostDims={hostDims}
+                    pages={pages}
+                    shownPage={shownPage}
+                    recenter={recenter}
                     backgroundColor={doc.backgroundColor}
                     onToolsCreated={setTools}
                     onCanvas={attachCanvas}

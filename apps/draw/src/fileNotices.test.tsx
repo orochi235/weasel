@@ -40,7 +40,7 @@ describe('opening and importing an SVG', () => {
   };
   const target = () => ({
     scene: newScene(),
-    setFilename: vi.fn(), setPaperSize: vi.fn(), setBackgroundColor: vi.fn(),
+    setFilename: vi.fn(), showFirstPage: vi.fn(), setBackgroundColor: vi.fn(),
   });
 
   it('toasts what Open could not read, and stays quiet about a clean file', async () => {
@@ -64,7 +64,7 @@ describe('opening and importing an SVG', () => {
 });
 
 describe('saving an SVG', () => {
-  const doc = { filename: 'art', paperSize: 'letter', backgroundColor: '#ffffff' } as const;
+  const doc = { filename: 'art', backgroundColor: '#ffffff' } as const;
   const click = () => {
     // jsdom's URL cannot take a Blob from this realm.
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:saved');

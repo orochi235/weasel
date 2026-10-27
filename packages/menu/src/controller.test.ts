@@ -54,6 +54,20 @@ describe('createMenuController', () => {
     expect(ran).toEqual(['cut']);
   });
 
+  it('runs an item that keeps the menu open without closing, and tells subscribers', () => {
+    const run = vi.fn();
+    const onClose = vi.fn();
+    const c = createMenuController({ entries: [{ kind: 'item', key: 'k', label: 'K', keepOpen: true, run }], onClose });
+    const heard = vi.fn();
+    c.subscribe(heard);
+    c.press(0, 0);
+    c.key('Enter');
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(heard).toHaveBeenCalled();
+    expect(c.stack()).toEqual([0]);
+  });
+
   it('ignores a press on a disabled item', () => {
     const { c, ran, onClose } = setup();
     c.press(0, 1);

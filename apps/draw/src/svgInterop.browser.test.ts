@@ -6,11 +6,11 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
-import { asPaint, IDENTITY_POSE_COMPOSITION, registerPaintKindLoader } from '@weasel-js/core';
+import { asPaint, IDENTITY_POSE_COMPOSITION, registerPaintKindLoader, layoutPages } from '@weasel-js/core';
 import { downloadSvg } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
 
-const PAGE = { filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff' } as const;
+const PAGE = { filename: 'page', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor: '#ffffff' } as const;
 
 /** A scene with one rect filled by paint kind `id`, whose loader takes `ms`. */
 function slowPaintScene(id: string, ms: number) {

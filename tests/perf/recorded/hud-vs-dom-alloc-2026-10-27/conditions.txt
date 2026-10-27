@@ -1,0 +1,16 @@
+Every run: HVD_ALLOC=1 HVD_UPDATES=every-frame HVD_APPROACHES=hud,dom HVD_GLYPHS=2500,5000
+HVD_CAMERAS=fixed,moving npm run test:perf -- hud-vs-dom, through onto do --solo, one run each.
+The trees were the shared batch worktree, so each carried other sessions' uncommitted files
+(the .log's "updated weasel on <node> at <base> + N uncommitted file(s)" line); none touched
+the HUD text path except where noted.
+
+1-before          msb-uai (Apple M3 Max)  047ce8005  load 4.15 at start
+2-partial-keiei   keiei (Apple M2)        a2ce048f5  load 8.44; the layout-cache, paint-cache,
+                                                     glyph-group and HUD widget cuts only, and
+                                                     another session's kerning edit in
+                                                     packages/text/src/layout (allocation-neutral)
+3-frozen-orders   msb-uai                 e23101bb7  load 2.54; every cut, the shared line
+                                                     orders frozen (132 KB a frame under next)
+4-after           msb-uai                 25140ecdb  load 2.51; every cut, orders unfrozen
+
+Digest: node ../hud-vs-dom-2026-10-24-studio/digest.mjs *.json

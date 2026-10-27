@@ -171,6 +171,8 @@ export function placeLine(
 
   let penX = left;
   let prevPos = -1;
+  /** The last code point the pen moved past, which the kerning after it widens. */
+  let wide = -1;
   let slot = 0;
   for (const pos of order.visual) {
     const e = entries[pos];
@@ -178,12 +180,17 @@ export function placeLine(
     // it logically. Reordering can put a different pair side by side: take
     // the gap that belongs to whichever of the two is logically second, and
     // none across a direction boundary, where the pair never touched.
-    penX += prevPos < 0 ? 0
+    const kern = prevPos < 0 ? 0
       : pos === prevPos + 1 ? e.kerningBefore
       : prevPos === pos + 1 ? entries[prevPos].kerningBefore
       : 0;
+    // The gap belongs to the cell on its left, so the cells tile the line;
+    // a mark that takes no room leaves it to the glyph it sits on.
+    if (kern !== 0) cols.widen(start + (wide >= 0 ? wide : prevPos), kern);
+    penX += kern;
     prevPos = pos;
     const step = e.advance + e.tracking + (gaps.has(pos) ? gapExtra : 0);
+    if (step !== 0) wide = pos;
     // Positive raises, and y grows down, so the shift subtracts.
     cols.set(start + pos, e, order.levels[pos], penX, step, lineBaselineY - e.baselineShift);
     cols.setVisual(start, slot++, pos);

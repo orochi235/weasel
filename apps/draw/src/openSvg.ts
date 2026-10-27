@@ -3,7 +3,7 @@ import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { DEFAULT_BG_COLOR } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { reportSvgWarnings } from './fileNotices';
-import type { PaperSizeKey } from './paperSizes';
+import { firstPageSize, onePage, replacePages } from './pages/drawPages';
 import { leafOfObj } from './svgImport';
 import { parsedToDoc, pickSvgFileNamed, type SceneDraft, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 
@@ -12,8 +12,6 @@ type OnWarn = (warning: ParseResult['warnings'][number]) => void;
 /** The document-level state an opened file sets, beside the scene it filled. */
 export interface OpenedSvg {
   filename: string;
-  /** Absent when the file declares no size draw knows; the caller keeps its own. */
-  paperSize?: PaperSizeKey;
   backgroundColor: string;
 }
 
@@ -68,7 +66,9 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
 /**
  * Open an SVG file as the document: the scene's nodes are removed and the
  * file's take their place, in one undo entry. The document takes the file's
- * name and its background, or white when it has none.
+ * name and its background, or white when it has none, and the pages it
+ * lists; a file listing none is one page of the paper size it declares, or of
+ * the document's first page's size when it declares none.
  */
 export function openSvgText(
   scene: DrawScene,
@@ -78,20 +78,21 @@ export function openSvgText(
 ): OpenedSvg {
   const { parsed, drafts } = parseDrafts(text, onWarn);
   const doc = parsedToDoc(parsed);
+  const pages = doc.pages ? { pages: doc.pages } : onePage(firstPageSize(scene));
   scene.batch('Open', () => {
     scene.removeMany([...scene.renderOrder()]);
+    replacePages(scene, pages);
     addDrafts(scene, drafts);
   });
   return {
     filename: fileName,
-    ...(doc.paperSize ? { paperSize: doc.paperSize } : {}),
     backgroundColor: doc.backgroundColor ?? DEFAULT_BG_COLOR,
   };
 }
 
 /**
  * Add an SVG file's nodes on top of the document's own, in one undo entry.
- * The document keeps its name, paper size, and background.
+ * The document keeps its name, pages, and background.
  */
 export function importSvgText(scene: DrawScene, text: string, onWarn: OnWarn = () => {}): void {
   const { drafts } = parseDrafts(text, onWarn);
@@ -102,8 +103,9 @@ export function importSvgText(scene: DrawScene, text: string, onWarn: OnWarn = (
 export interface OpenSvgTarget {
   scene: DrawScene;
   setFilename(name: string): void;
-  setPaperSize(size: PaperSizeKey): void;
   setBackgroundColor(color: string): void;
+  /** Fit the view to the document's first page, once it has been replaced. */
+  showFirstPage(): void;
 }
 
 /**
@@ -117,8 +119,8 @@ export async function openSvgFile(target: OpenSvgTarget): Promise<void> {
   const opened = openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w));
   reportSvgWarnings('Opened', warnings);
   target.setFilename(opened.filename);
-  if (opened.paperSize) target.setPaperSize(opened.paperSize);
   target.setBackgroundColor(opened.backgroundColor);
+  target.showFirstPage();
 }
 
 /**

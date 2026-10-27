@@ -4,12 +4,15 @@ import {
   isSerializedScene,
   rectPath,
   SCENE_HISTORY_FORM,
+  type SerializedDoc,
   type SerializedSceneHistory,
   solid,
   strokeOf
 } from '@weasel-js/core';
-import { readStored } from '@editor/index';
+import { docFromSnapshot, readStored } from '@editor/index';
+import { loadDoc, PAPER_PRESETS } from './docPersistence';
 import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { drawDoc } from './pages/drawPages';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 
 export const LS_KEY = 'weaseldraw:scene-v1';
@@ -29,10 +32,21 @@ export function loadInitial(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, Weas
   return readStored(LS_KEY, parseScene, starterScene);
 }
 
-function parseScene(raw: string): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
+/** The persisted scene's document values, its page list always among them: a drawing saved
+ *  before draw had pages gets one page of the paper size its document settings kept. */
+export function loadInitialDoc(): SerializedDoc {
+  const saved = readStored(LS_KEY, (raw) => docFromSnapshot(savedScene(raw)), () => undefined);
+  return drawDoc(saved, PAPER_PRESETS[loadDoc().paperSize]);
+}
+
+function savedScene(raw: string) {
   const json: unknown = JSON.parse(raw);
   if (!isSerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>(json)) throw new Error('Not a saved drawing');
-  return nodeSpecsFromSnapshot(json, DRAW_REGISTRY);
+  return json;
+}
+
+function parseScene(raw: string): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
+  return nodeSpecsFromSnapshot(savedScene(raw), DRAW_REGISTRY);
 }
 
 function starterScene(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
