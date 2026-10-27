@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createScene,
   moveAction,
+  RIGID_POSE_COMPOSITION,
   type InvocationCtx,
   type LayoutDep,
   type NodeId,
@@ -81,5 +82,18 @@ describe('tileGrid as a scene layout', () => {
     h.onEnd!(ctx(125), 'commit');
     expect(scene.get(z)!.parent).toBe(scene.roots[0]);
     expect(scene.get(z)!.pose).toEqual(box(100));
+  });
+
+  it('fills a turned grid\'s cells along its own axes', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RIGID_POSE_COMPOSITION });
+    const G = scene.add({
+      kind: 'group', layer: 'main', data: {}, pose: { ...box(100, 100, 150, 50), rotation: Math.PI / 6 },
+      layout: tileGrid<RectPose>({ cols: 3, rows: 1 }),
+    });
+    const ids = [0, 1, 2].map(() => scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0, 5, 5), parent: G }));
+    ids.forEach((id, i) => {
+      const p = scene.get(id)!.pose;
+      for (const [k, v] of Object.entries(box(i * 50))) expect(p[k as keyof RectPose]).toBeCloseTo(v as number, 9);
+    });
   });
 });

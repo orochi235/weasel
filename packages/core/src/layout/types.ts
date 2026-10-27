@@ -134,6 +134,10 @@ export interface LayoutDragged<TPose> {
  * children or size change or a child is moved, `getDropTargets` enumerates where a drag could
  * land, `reflowPoses` is the live preview once a target is picked, and
  * `commitDrop` turns the result into ops so the drop is undoable.
+ *
+ * Poses and bounds are in world. `childPoses`, `arrive` and `depart` see a
+ * turned container upright instead: in its own frame, placed where its
+ * unturned box sits, so a strategy lays children out along its axes.
  */
 export interface LayoutStrategy<TPose> {
   childPoses(

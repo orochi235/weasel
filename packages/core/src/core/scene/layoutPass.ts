@@ -9,8 +9,10 @@
  * resized, had a child moved, or gained or lost children with neither hook —
  * is put back in its resting arrangement, `childPoses`.
  *
- * `LayoutStrategy` is world-framed, so each pose is composed to world before
- * a strategy sees it and each result is rebased into its node's parent frame
+ * A strategy sees the container upright: an upright container and its
+ * children in world, and a turned one in its own frame, placed where its
+ * unturned box sits, so children are laid out along the container's axes.
+ * Each result is taken back to world and rebased into its node's parent frame
  * after. A child already where the strategy puts it is left out, so a pass
  * that changes nothing writes nothing. A child the pass moves takes its own
  * descendants along (`carriedDescendants`). A container this pass resizes is
@@ -63,6 +65,31 @@ export function resized<TPose>(frame: ResolvedLayoutFrame<TPose>, id: NodeId, fr
   return a.width !== b.width || a.height !== b.height;
 }
 
+/** How a strategy sees a container at world `pose`: upright, in its own
+ *  frame placed where its world box sits, so a turned container's children
+ *  are laid out along its axes; an upright one is seen as it is. */
+function strategyView<TPose>(
+  pose: TPose,
+  id: NodeId,
+  frame: ResolvedLayoutFrame<TPose>,
+  { compose, decompose }: PoseComposition<TPose>,
+) {
+  const own = decompose(pose, pose);
+  const from = frame.bounds(own, id);
+  const at = frame.bounds(pose, id);
+  if (from === null || at === null) return null;
+  const upright = frame.remap(own, from, { ...from, x: at.x, y: at.y }, id);
+  const bounds = frame.bounds(upright, id);
+  if (bounds === null) return null;
+  const turned = !samePoseValue(upright, pose);
+  return {
+    upright,
+    bounds,
+    toStrategy: (p: TPose): TPose => (turned ? compose(upright, decompose(pose, p)) : p),
+    toWorld: (p: TPose): TPose => (turned ? compose(pose, decompose(upright, p)) : p),
+  };
+}
+
 /** How many times one pass may arrange a container before giving up on it —
  *  only nested layouts that keep resizing each other get close. */
 const MAX_PASSES = 16;
@@ -102,17 +129,16 @@ export function runLayoutPass<TPose>(
   };
   let current: NodeId | null = null;
 
-  /** The container and its children as the strategy sees them, in world,
-   *  with every write this pass has made so far folded in. */
+  /** The container and its children as the strategy sees them, with every
+   *  write this pass has made so far folded in. */
   const frameOf = (containerId: NodeId) => {
-    const pose = world(containerId);
-    const bounds = frame.bounds(pose, containerId);
-    if (bounds === null) return null;
+    const view = strategyView(world(containerId), containerId, frame, source.composition);
+    if (view === null) return null;
     const children: LayoutChild<TPose>[] = source.childrenOf(containerId).map((cid) => ({
       id: cid as string,
-      pose: world(cid),
+      pose: view.toStrategy(world(cid)),
     }));
-    return { world: pose, container: { id: containerId as string, bounds }, children };
+    return { ...view, container: { id: containerId as string, bounds: view.bounds }, children };
   };
   const apply = (
     containerId: NodeId,
@@ -121,14 +147,14 @@ export function runLayoutPass<TPose>(
   ): void => {
     if (result.bounds) {
       const node = source.get(containerId)!;
-      const sized = frame.remap(at.world, at.container.bounds, result.bounds, containerId);
+      const sized = at.toWorld(frame.remap(at.upright, at.container.bounds, result.bounds, containerId));
       write(containerId, rebaseLocalPose(pa, sized, node.parent, compose, decompose));
     }
     for (const [cid, pose] of result.poses) {
       const id = cid as NodeId;
       if (source.get(id)?.parent !== containerId) continue;
       const before = frame.bounds(world(id), id);
-      write(id, rebaseLocalPose(pa, pose, containerId, compose, decompose));
+      write(id, rebaseLocalPose(pa, at.toWorld(pose), containerId, compose, decompose));
       carry(id, before);
     }
   };
