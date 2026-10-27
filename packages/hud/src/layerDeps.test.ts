@@ -11,7 +11,7 @@ const ctx = (width = 400, height = 300): HudDrawCtx =>
 function plain(extra: Partial<Widget> = {}): Widget {
   return {
     id: 'plain', bounds: { x: 0, y: 0, w: 10, h: 10 }, hidden: false,
-    draw: () => [], hitTest: () => false, onPointer: () => {},
+    draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     ...extra,
   };
 }
