@@ -1,10 +1,11 @@
 import type { NodeId, SnapProbeAt } from '@weasel-js/core';
 import { add, dot, scale, type Aabb, type Vec3 } from '@weasel-js/geom/3d';
-import { boundsOfNode, type Node3d, type World3d } from '../world';
+import { boxAt, measuredBoxAt, withDescendants, worldPoses, type Node3d, type World3d } from '../world';
 
 /** What a 3D move drags, at press. */
 export interface Subject3d {
-  /** The union of the subject's world boxes. */
+  /** The union of the world boxes of the subject and everything under it,
+   *  which moves with it. */
   box: Aabb;
   /** The node whose `translate` the session answers for exactly: the first
    *  of the subject still in the scene, which is the move's lead, so every
@@ -15,16 +16,20 @@ export interface Subject3d {
 export function subjectOf<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, ids: readonly string[], up: Vec3,
 ): Subject3d | null {
+  const { scene } = world;
+  const poseOf = worldPoses(scene, 'shown');
+  const nodeOf = (id: string) => scene.get(id as NodeId) as Node3d<TData, TLayer> | undefined;
+  const lead = ids.find((id) => nodeOf(id) !== undefined);
+  if (lead === undefined) return null;
+  const leadPose = poseOf(lead as NodeId);
+  const anchor = { box: measuredBoxAt(world, nodeOf(lead)!, leadPose), height: dot(up, leadPose.position) };
   let box: Aabb | null = null;
-  let anchor: Subject3d['anchor'] | null = null;
-  for (const id of ids) {
-    const node = world.scene.get(id as NodeId) as Node3d<TData, TLayer> | undefined;
-    if (!node) continue;
-    const b = boundsOfNode(world, node);
-    anchor ??= { box: b, height: dot(up, node.pose.position) };
-    box = box ? union(box, b) : b;
+  for (const id of withDescendants(scene, ids)) {
+    const node = nodeOf(id);
+    const b = node && boxAt(world, node, poseOf(node.id));
+    if (b) box = box ? union(box, b) : b;
   }
-  return box && anchor ? { box, anchor } : null;
+  return { box: box ?? anchor.box, anchor };
 }
 
 function union(a: Aabb, b: Aabb): Aabb {

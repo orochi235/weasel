@@ -14,13 +14,14 @@ export {
   type Camera3d, type OrbitLimits,
 } from './camera';
 export { UNIT_CUBE, pose3, poseMatrix, aabbOfPose, type Pose3 } from './pose3';
+export { POSE3_COMPOSITION } from './composePose3';
 export {
   screenToNdc, ndcToScreen, rayThroughScreenPoint, projectAabbToScreen,
   type ChromeBox, type ScreenBox,
 } from './screen';
 export {
   screenBoxOf, createNodeAtPoint, createAreaSelect, createSnap,
-  createPoseDescriptor,
+  createPoseDescriptor, worldPoseOf,
   type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
   type ViewportSource, type World3d,
 } from './deps';

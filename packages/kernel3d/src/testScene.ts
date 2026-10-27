@@ -4,12 +4,14 @@
  * like, so its fixture does not say.
  */
 
-import { IDENTITY_POSE_COMPOSITION, createScene, type NodeId, type PoseComposition } from '@weasel-js/core';
-import { aabbAround, add, quatFromAxisAngle, type Aabb, type Vec3 } from '@weasel-js/geom/3d';
+import { IDENTITY_POSE_COMPOSITION, createScene, type NodeId } from '@weasel-js/core';
+import { aabbAround, quatFromAxisAngle, type Aabb } from '@weasel-js/geom/3d';
+import { POSE3_COMPOSITION } from './composePose3';
 import { pose3, aabbOfPose, type Pose3 } from './pose3';
 import type { Node3d, Scene3d } from './deps';
 
-/** `round` bounds itself the way a sphere does — the same under any rotation. */
+/** `round` bounds itself the way a sphere does — the same under any rotation.
+ *  A group draws nothing, so it occupies nothing. */
 export interface TestData {
   round?: boolean;
 }
@@ -18,7 +20,8 @@ export type TestLayer = 'solids';
 export type TestScene = Scene3d<TestData, TestLayer>;
 export type TestNode = Node3d<TestData, TestLayer>;
 
-export function boundsOfTestNode(node: TestNode): Aabb {
+export function boundsOfTestNode(node: TestNode): Aabb | null {
+  if (node.kind === 'group') return null;
   if (!node.data.round) return aabbOfPose(node.pose);
   const s = node.pose.scale;
   return aabbAround(
@@ -48,32 +51,6 @@ export function createTestScene(): TestScene {
   });
 }
 
-/** The angle of a rotation about +y, the only kind the framed fixture holds. */
-const yawOf = (pose: Pose3) => 2 * Math.atan2(pose.rotation[1], pose.rotation[3]);
-const yawed = (v: Vec3, a: number): Vec3 => ({
-  x: v.x * Math.cos(a) + v.z * Math.sin(a), y: v.y, z: -v.x * Math.sin(a) + v.z * Math.cos(a),
-});
-
-/** A container composition for poses turned only about +y and unscaled frames:
- *  a child's position is turned and offset by its frame, its turn added on. */
-export const YAW_POSE_COMPOSITION: PoseComposition<Pose3> = {
-  compose: (parent, child) => ({
-    ...child,
-    position: add(parent.position, yawed(child.position, yawOf(parent))),
-    rotation: quatFromAxisAngle({ x: 0, y: 1, z: 0 }, yawOf(parent) + yawOf(child)),
-  }),
-  decompose: (parent, world) => {
-    const p = world.position;
-    const q = parent.position;
-    return {
-      ...world,
-      position: yawed({ x: p.x - q.x, y: p.y - q.y, z: p.z - q.z }, -yawOf(parent)),
-      rotation: quatFromAxisAngle({ x: 0, y: 1, z: 0 }, yawOf(world) - yawOf(parent)),
-    };
-  },
-  closure: 'rigid',
-};
-
 /**
  * The test solids under container composition: the first and second at the
  * root, the third stored in a container turned a quarter about +y and raised.
@@ -82,14 +59,40 @@ export const YAW_POSE_COMPOSITION: PoseComposition<Pose3> = {
 export function createFramedTestScene(): { scene: TestScene; framed: NodeId; frame: NodeId } {
   const plain = createTestScene();
   const [a, b, c] = [...plain.renderOrder()].map((id) => plain.get(id)!);
-  const scene = createScene<TestData, TestLayer, Pose3>({ composition: YAW_POSE_COMPOSITION,
+  const scene = createScene<TestData, TestLayer, Pose3>({ composition: POSE3_COMPOSITION,
     systemLayers: [{ id: 'solids' }],
   });
   for (const n of [a!, b!]) scene.add({ kind: 'mark', layer: 'solids', pose: n.pose, data: n.data });
   const framePose = pose3({ x: 1, y: 0.25, z: 0.5 }, undefined, quatFromAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI / 2));
   const frame = scene.add({ kind: 'group', layer: 'solids', pose: framePose, data: {} });
   const framed = scene.add({
-    kind: 'mark', layer: 'solids', parent: frame, pose: YAW_POSE_COMPOSITION.decompose(framePose, c!.pose), data: c!.data,
+    kind: 'mark', layer: 'solids', parent: frame, pose: POSE3_COMPOSITION.decompose(framePose, c!.pose), data: c!.data,
   });
   return { scene, framed, frame };
+}
+
+/**
+ * A solid two containers deep, beside one at the root: `outer` is turned about
+ * +y, doubled and raised; `inner`, inside it, is tipped about +x and offset;
+ * `deep` sits in `inner` at a local position that is nowhere near its world
+ * one.
+ */
+export function createNestedTestScene(): { scene: TestScene; root: NodeId; outer: NodeId; inner: NodeId; deep: NodeId } {
+  const scene = createScene<TestData, TestLayer, Pose3>({ composition: POSE3_COMPOSITION,
+    systemLayers: [{ id: 'solids' }],
+  });
+  const root = scene.add({ kind: 'mark', layer: 'solids', pose: pose3({ x: -3, y: 0.5, z: 0 }), data: {} });
+  const outer = scene.add({
+    kind: 'group', layer: 'solids', data: {},
+    pose: pose3({ x: 2, y: 1, z: -1 }, { x: 2, y: 2, z: 2 }, quatFromAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI / 2)),
+  });
+  const inner = scene.add({
+    kind: 'group', layer: 'solids', parent: outer, data: {},
+    pose: pose3({ x: 0.5, y: 0, z: 0.25 }, undefined, quatFromAxisAngle({ x: 1, y: 0, z: 0 }, Math.PI / 6)),
+  });
+  const deep = scene.add({
+    kind: 'mark', layer: 'solids', parent: inner, data: {},
+    pose: pose3({ x: 0, y: 0.5, z: 0.75 }, { x: 0.5, y: 0.25, z: 0.5 }),
+  });
+  return { scene, root, outer, inner, deep };
 }

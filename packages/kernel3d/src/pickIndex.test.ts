@@ -32,8 +32,9 @@ interface FuzzData extends TestData {
   odd?: 'nan' | 'inf' | 'inverted';
 }
 
-function fuzzBounds(node: TestNode): Aabb {
+function fuzzBounds(node: TestNode): Aabb | null {
   const box = boundsOfTestNode(node);
+  if (box === null) return null;
   const odd = (node.data as FuzzData).odd;
   if (odd === 'nan') return { min: { ...box.min, x: NaN }, max: box.max };
   if (odd === 'inf') return { min: { ...box.min, y: -Infinity }, max: { ...box.max, y: Infinity } };
@@ -99,8 +100,9 @@ function scanNearest(world: World3d<TestData, TestLayer>, point: { x: number; y:
   let bestT = Infinity;
   for (const node of world.scene.renderOrderNodes()) {
     if (excluded?.has(node.id)) continue;
-    const { min, max } = world.bounds!(node);
-    const t = intersectRayAabb(ray, min, max);
+    const box = world.bounds!(node);
+    if (!box) continue;
+    const t = intersectRayAabb(ray, box.min, box.max);
     if (t !== null && t < bestT) {
       bestT = t;
       best = node.id;
@@ -139,8 +141,9 @@ function scanRay(world: World3d<TestData, TestLayer>, ray: Ray, excluded: Readon
   let bestT = Infinity;
   for (const node of world.scene.renderOrderNodes()) {
     if (excluded?.has(node.id)) continue;
-    const { min, max } = world.bounds!(node);
-    const t = intersectRayAabb(ray, min, max);
+    const box = world.bounds!(node);
+    if (!box) continue;
+    const t = intersectRayAabb(ray, box.min, box.max);
     if (t !== null && t < bestT) {
       bestT = t;
       best = node.id;

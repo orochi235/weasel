@@ -1,8 +1,9 @@
 /**
- * The 3D world's pick index: one BVH over every node's world box, rebuilt
- * whole on the first pick after the scene, its overrides or the world's
- * `bounds` function can have changed. A node whose box the tree refuses
- * (non-finite or inverted) is tested on every pick, the way the scan did.
+ * The 3D world's pick index: one BVH over every node's world box as shown,
+ * rebuilt whole on the first pick after the scene, its overrides or the
+ * world's `bounds` function can have changed. A node whose box the tree
+ * refuses (non-finite or inverted) is tested on every pick, the way the scan
+ * did; one that occupies nothing is never picked.
  */
 
 import type { NodeId } from '@weasel-js/core';
@@ -10,7 +11,7 @@ import { intersectRayAabb, type Aabb, type Ray } from '@weasel-js/geom/3d';
 import { createBvh, type Bvh, type HalfSpace } from '@weasel-js/geom/nd';
 import { rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { projectAabbToScreen, screenToNdc, type ScreenBox } from './screen';
-import { boundsOfNode, type Node3d, type World3d } from './world';
+import { boxAt, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
 
 export interface WorldPickIndex {
   /** The nearest node the ray enters; a tie on distance goes to the first in render order. */
@@ -26,12 +27,9 @@ export function screenBoxOf<TData, TLayer extends string>(
   viewport: Viewport3d,
 ): ScreenBox | null {
   const node = world.scene.get(id) as Node3d<TData, TLayer> | undefined;
-  if (!node) return null;
-  return projectAabbToScreen(
-    boundsOfNode(world, node),
-    viewProjectionOf(viewport),
-    rectOf(viewport),
-  );
+  const pose = node && worldPoseOf(world.scene, id);
+  const box = node && pose && boxAt(world, node, pose);
+  return box ? projectAabbToScreen(box, viewProjectionOf(viewport), rectOf(viewport)) : null;
 }
 
 function overlaps(a: ScreenBox, b: ScreenBox): boolean {
@@ -82,9 +80,8 @@ function sidePlanes(vp: Viewport3d, rect: ScreenBox): HalfSpace[] {
 
 class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
   constructor(
-    private readonly world: World3d<TData, TLayer>,
     private readonly order: readonly Node3d<TData, TLayer>[],
-    private readonly boxes: readonly Aabb[],
+    private readonly boxes: readonly (Aabb | null)[],
     private readonly tree: Bvh<number>,
     private readonly always: readonly number[],
   ) {}
@@ -94,8 +91,9 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
     let best = -1;
     let bestT = Infinity;
     const consider = (i: number) => {
+      const box = boxes[i]!;
       if (excluded?.has(order[i]!.id)) return;
-      const t = intersectRayAabb(ray, boxes[i]!.min, boxes[i]!.max);
+      const t = intersectRayAabb(ray, box.min, box.max);
       if (t !== null && (t < bestT || (t === bestT && i < best))) {
         bestT = t;
         best = i;
@@ -119,10 +117,11 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
     });
     candidates.sort((a, b) => a - b);
     const hits: NodeId[] = [];
+    const m = viewProjectionOf(vp);
+    const pane = rectOf(vp);
     for (const i of candidates) {
-      const id = this.order[i]!.id;
-      const box = screenBoxOf(this.world, id, vp);
-      if (box && overlaps(box, rect)) hits.push(id);
+      const box = projectAabbToScreen(this.boxes[i]!, m, pane);
+      if (box && overlaps(box, rect)) hits.push(this.order[i]!.id);
     }
     return hits;
   }
@@ -153,14 +152,16 @@ function build<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   order: readonly Node3d<TData, TLayer>[],
 ): WorldPickIndex {
-  const boxes = order.map((node) => boundsOfNode(world, node));
+  const boxOf = worldBoxes(world, 'shown');
+  const boxes = order.map(boxOf);
   const entries: [number, number[]][] = [];
   const always: number[] = [];
   boxes.forEach((b, i) => {
+    if (b === null) return;
     if (boxValid(b)) entries.push([i, padded(b)]);
     else always.push(i);
   });
-  return new BuiltIndex(world, order, boxes, createBvh<number>(3, entries), always);
+  return new BuiltIndex(order, boxes, createBvh<number>(3, entries), always);
 }
 
 /** The index for `world`, current as of this call. */

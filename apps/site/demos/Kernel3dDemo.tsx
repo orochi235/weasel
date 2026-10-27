@@ -17,7 +17,7 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { multiply, quatFromAxisAngle, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
   cameraEye, cameraViewProjection, createCamera, createNodeAtPoint, createPoseDescriptor,
-  dollyAction, ndcToScreen, orbitAction, pose3, poseMatrix, useOrbitTool,
+  dollyAction, ndcToScreen, orbitAction, pose3, poseMatrix, useOrbitTool, worldPoseOf,
   type Camera3d, type Camera3dDep, type Pose3, type Scene3d, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import styles from './Kernel3dDemo.module.css';
@@ -90,7 +90,10 @@ function solidsLayer(camera: Camera3d, scene: Scene3d<Solid, 'solids'>): RenderL
     draw: (_data, _view, size) => {
       const vp = cameraViewProjection(camera, size.width / size.height);
       const out = groundGrid(vp, size);
-      const far = [...scene.renderOrderNodes()].sort((a, b) => distance(b.pose) - distance(a.pose));
+      const far = scene.renderOrderNodes()
+        .filter((n) => n.kind === 'mark')
+        .map((n) => ({ pose: worldPoseOf(scene, n.id)!, data: n.data }))
+        .sort((a, b) => distance(b.pose) - distance(a.pose));
       for (const { pose, data } of far) {
         const model = poseMatrix(pose);
         const world = CORNERS.map((c) => {

@@ -11,8 +11,9 @@ import { aabbOfPose, pose3, type Pose3 } from './pose3';
 import { projectPoint, rayAt, type Viewport3d } from './project';
 import { boxSnapSource } from './snap/sources';
 import {
-  YAW_POSE_COMPOSITION, boundsOfTestNode, createFramedTestScene, createTestScene, type TestScene,
+  boundsOfTestNode, createFramedTestScene, createTestScene, type TestScene,
 } from './testScene';
+import { POSE3_COMPOSITION } from './composePose3';
 
 function viewport(): Viewport3d {
   return {
@@ -184,7 +185,7 @@ describe('a 3D move of several roots, one stored under a container', () => {
   function framedRoots() {
     const { scene, framed, frame } = createFramedTestScene();
     const lead = [...scene.renderOrder()][0]! as NodeId;
-    const worldOfFramed = () => YAW_POSE_COMPOSITION.compose(scene.get(frame)!.pose, scene.get(framed)!.pose);
+    const worldOfFramed = () => POSE3_COMPOSITION.compose(scene.get(frame)!.pose, scene.get(framed)!.pose);
     const before = { lead: scene.get(lead)!.pose, framed: worldOfFramed() };
     const poseDescriptor = createPoseDescriptor(worldOf(scene));
     const moved = () => ({
