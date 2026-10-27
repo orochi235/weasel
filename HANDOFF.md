@@ -39,8 +39,8 @@ Two commits in batch 7 do not build alone (5b7d0acfe, 11e2b7d6f); the merge's tr
 **What is left of the `[agent]` entries:** later arcs of work in flight (shaping, headless layer, boolean
 groups, far-origin readers, HUD garbage, retained surfaces, batch clips), fleet-infra measurement that needs
 quiet nodes, multi-arc platform projects (WebGPU, worker offload, headless Node), wake entries
-waiting on wake's own branches, and three onto fixes merged in onto (bd536ed, 2026-10-27, unpushed) that
-reach the fleet only after `onto push` to the nodes.
+waiting on wake's own branches. onto bd536ed (on every node since 2026-10-27, not pushed to its origin)
+unblocks the tessellate baseline re-record.
 
 ## Overnight TODO batch, merged 2026-10-25 (not pushed)
 
