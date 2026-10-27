@@ -3,7 +3,7 @@ import { createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, it } from 'vitest';
 import type { View } from '@weasel-js/core';
-import { DiagramView, type DiagramViewApi, type ReorderChange } from './DiagramView';
+import { DiagramView, type DiagramViewApi, type DiagramViewProps, type ReorderChange } from './DiagramView';
 import { diagramScene, type DiagramData } from './fromData';
 
 const DATA: DiagramData = {
@@ -26,7 +26,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-async function mount(more: { selected?: string; onViewChange?: (v: View) => void } = {}, specs = SPECS) {
+async function mount(more: { selected?: string; onViewChange?: (v: View) => void; onMove?: DiagramViewProps['onMove'] } = {}, specs = SPECS) {
   const host = document.createElement('div');
   document.body.append(host);
   const api = createRef<DiagramViewApi>();
@@ -104,6 +104,16 @@ it('reports a container member dragged past the next one as the container\'s new
   const { api, canvas, changes } = await mount({}, ROW);
   await drag(canvas, middle(api.current!.rectOf('m1')!), 0, 110);
   expect(changes).toEqual([{ parent: 'k', order: ['m2', 'm1', 'm3'] }]);
+});
+
+it('moves a container member dragged out of the container\'s box out of it, and reorders nothing', async () => {
+  const moves: { id: string; parent?: string | null }[] = [];
+  const { api, canvas, changes } = await mount({ onMove: (m) => moves.push(...m) }, ROW);
+  const k = api.current!.rectOf('k')!;
+  const from = middle(api.current!.rectOf('m2')!);
+  await drag(canvas, from, k.y + k.height + 80 - from.y);
+  expect(changes).toEqual([]);
+  expect(moves.filter((m) => m.id === 'm2').at(-1)).toMatchObject({ id: 'm2', parent: null });
 });
 
 it('steps the selected container member with Alt and an arrow key', async () => {

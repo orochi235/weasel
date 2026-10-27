@@ -423,8 +423,9 @@ A `DataContainer` takes `reorder` the same way, with the same drag, the same
 Alt and arrow key, and the same report: `parent` is the container's id and
 `order` its members in their new order. Nothing moves until the data does, so
 place the members by their order and write it to `members`. A body drag on a
-member of a reorderable container reorders it, so it cannot be dragged out of
-the container that way.
+member of a reorderable container reorders it until the pointer leaves the
+container's box; from there it is a move, reported to `onMove` with the
+`parent` it lands in, as any shape dragged out of a container is.
 
 ### Dropping items from a palette
 

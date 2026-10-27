@@ -1,7 +1,7 @@
 /**
  * Reordering a group or container marked `reorder`: a member dragged along that axis among
  * its siblings, which slide into the places they would take, or the selected
- * one stepped with Alt and an arrow key. Nothing is written: the host hears
+ * one stepped with Alt and an arrow key. A container's member dragged out of its box goes to the move instead. Nothing is written: the host hears
  * the new order, writes it to its data, and layout keeps it.
  */
 import {
@@ -14,6 +14,7 @@ import {
   type Scene,
   type Vec2,
 } from '@weasel-js/core';
+import { diagramContainerOf } from './containers/trait';
 import { worldRectOf } from './overlays';
 import type { DiagramSceneData } from './fromData';
 import { reorderContribution, sequenceSlots, type ReorderSlots } from './reorder';
@@ -90,16 +91,28 @@ export function createStepReorderAction(report: (change: ReorderChange) => void)
   };
 }
 
+/** The box of the container `member` stands in, which a drag of it leaves to be moved out; `null` for a group's
+ *  member, which has nowhere to go. */
+function containerRegion(deps: ActionDeps, member: string) {
+  const scene = sceneOf(deps);
+  const parent = targetAt(deps, member)?.parent;
+  const node = parent === undefined ? undefined : scene?.get(parent as never);
+  if (scene === undefined || node === undefined || diagramContainerOf(node)?.role !== 'container') return null;
+  return worldRectOf(scene, parent!);
+}
+
 const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');
 
 /** Everything `DiagramView` installs for `onReorder`: the reorder drag,
- *  sliding, pressed on a node's body, and the step action. */
+ *  sliding, pressed on a node's body, and the step action. A container's member
+ *  dragged out of the container's box is handed to the move. */
 export function groupReorderContribution(report: (change: ReorderChange) => void): Contribution {
   const drag = reorderContribution({
     slots: groupReorderSlots,
     requires: ['nodeAtPoint'],
     show: 'slide',
     on: onBody,
+    region: (deps, item) => containerRegion(deps, item.id),
     commit: (move, ctx) => {
       const parent = targetAt(ctx.deps, move.id)?.parent;
       if (parent !== undefined) report({ parent, order: move.order });

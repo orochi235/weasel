@@ -115,6 +115,17 @@ describe('createReorderAction with the insertion bar', () => {
     expect(canDrop).toHaveBeenCalledTimes(1);
   });
 
+  it('passes the drag on once it leaves its region, and keeps it while inside', () => {
+    const region = vi.fn(() => box(-50, -50, 500, 150));
+    const { handle, commit } = open({ region });
+    expect(region).toHaveBeenCalledWith({ scene }, SLOTS.items[0]);
+    expect(handle.onMove!(ctx(250, 90))).toBeUndefined();
+    expect(handle.onMove!(ctx(250, 120))).toBe('pass');
+    handle.onEnd!(ctx(250, 120), 'cancel');
+    expect(commit).not.toHaveBeenCalled();
+    expect(open({ region: () => null }).handle.onMove!(ctx(250, 900))).toBeUndefined();
+  });
+
   it('does nothing on a refused drop, a drop where it was, or a cancel', () => {
     const refused = open({ canDrop: () => false });
     refused.handle.onEnd!(ctx(250, 20), 'commit');

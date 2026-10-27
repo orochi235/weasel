@@ -129,7 +129,9 @@ export interface DiagramViewProps {
   /** Set to let a member of a group marked `reorder` be dragged along that
    *  axis among its siblings, or the selected one stepped with Alt and an
    *  arrow key. Reports the members' new order and moves nothing: write it to
-   *  the group's `members`, which layered layout keeps. */
+   *  the group's `members`, which layered layout keeps. A container's member
+   *  dragged out of the container's box becomes a move, as `onMove` reports
+   *  one, and lands wherever it is dropped. */
   onReorder?: (change: ReorderChange) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;
