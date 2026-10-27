@@ -7,7 +7,8 @@
  *     the cases `curveBoolean` declines (coincident outlines, self-crossing
  *     cubics, some tangencies) are flattened and clipped by `polygon-clipping`
  *     instead, so their result has only M/L/Z commands.
- *   - Divide, crop, trim, merge and the face pieces always flatten.
+ *   - Divide, crop, trim, merge and the face pieces keep curves the same
+ *     way (`curvePieces`), and fall back to the clipper in the same cases.
  *   - Open contours are treated as closed (a polyline has zero area and would
  *     otherwise be silently dropped).
  *   - Output `fillRule` is always `'nonzero'`.
@@ -19,6 +20,7 @@ import polygonClipping from 'polygon-clipping';
 import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon, type Polygon } from './adapter';
 import { arrangementFaces } from './arrangementFaces';
 import { curveBoolean } from './curveBoolean';
+import { curveDivide, curveMerge, curveTrim, type CurvePiece } from './curvePieces';
 import type { Path, PolygonPath } from '../path';
 import { keepCorners } from '../paths/cornerRestore';
 
@@ -81,6 +83,10 @@ export function pathCrop(...paths: Path[]): PolygonPath[] {
   return pathCropPieces(...paths).map((p) => p.path);
 }
 
+/** Curved pieces with the corners of `sources` they still draw whole kept as corners. */
+const cornered = (pieces: CurvePiece[], sources: readonly Path[]): BooleanPiece[] =>
+  pieces.map(({ path, sources: s }) => ({ path: keepCorners(sources, path), sources: s }));
+
 /** The faces the paths' outlines cut the plane into, each naming the inputs covering it. */
 function faces(paths: Path[]): { polygon: Polygon; sources: number[] }[] {
   const clean = paths.map((p) => {
@@ -101,6 +107,8 @@ function faces(paths: Path[]): { polygon: Polygon; sources: number[] }[] {
  * outputs (A−B, B−A, A∩B). Pieces with fewer sources come first.
  */
 export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
+  const curved = curveDivide(paths, false);
+  if (curved) return cornered(curved, paths);
   const regions = new Map<string, { polygons: Polygon[]; sources: number[] }>();
   for (const { polygon, sources } of faces(paths)) {
     const key = sources.join(',');
@@ -120,6 +128,8 @@ export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
  * edges and their crossings rather than with the subsets of the inputs.
  */
 export function pathFacePieces(...paths: Path[]): BooleanPiece[] {
+  const curved = curveDivide(paths, true);
+  if (curved) return cornered(curved, paths);
   return faces(paths).map(({ polygon, sources }) => ({ path: toPath([polygon], paths), sources }));
 }
 
@@ -129,6 +139,8 @@ export function pathFacePieces(...paths: Path[]): BooleanPiece[] {
  * One piece per input in input order, less the inputs wholly hidden.
  */
 export function pathTrim(...paths: Path[]): BooleanPiece[] {
+  const curved = curveTrim(paths);
+  if (curved) return cornered(curved, paths);
   const mps = paths.map((p) => pathToMultiPolygon(p));
   const out: BooleanPiece[] = [];
   // Front to back, so the cover over each input is built once.
@@ -149,6 +161,8 @@ export function pathTrim(...paths: Path[]): BooleanPiece[] {
  * of several contours.
  */
 export function pathMerge(paths: readonly Path[], keyOf: (index: number) => unknown): BooleanPiece[] {
+  const curved = curveMerge(paths, keyOf);
+  if (curved) return cornered(curved, paths);
   const groups = new Map<unknown, BooleanPiece[]>();
   for (const piece of pathTrim(...paths)) {
     const key = keyOf(piece.sources[0]!);
@@ -173,12 +187,11 @@ export function pathMerge(paths: readonly Path[], keyOf: (index: number) => unkn
  */
 export function pathCropPieces(...paths: Path[]): BooleanPiece[] {
   if (paths.length < 2) return [];
-  const mps = paths.map((p) => pathToMultiPolygon(p));
-  const mask = mps[mps.length - 1];
+  const mask = paths[paths.length - 1];
   const out: BooleanPiece[] = [];
-  for (let i = 0; i < mps.length - 1; i++) {
-    const clipped = polygonClipping.intersection(mps[i], mask);
-    if (clipped.length > 0) out.push({ path: toPath(clipped, paths), sources: [i] });
+  for (let i = 0; i < paths.length - 1; i++) {
+    const clipped = pathIntersect(paths[i], mask);
+    if (clipped.commands.length > 0) out.push({ path: clipped, sources: [i] });
   }
   return out;
 }

@@ -1,4 +1,4 @@
-/** Which edges of a cut arrangement bound a boolean's result, by the winding on either side. */
+/** Which operands cover either side of each edge of a cut arrangement, by exact-curve winding. */
 
 import type { PathFillRule } from '../path';
 import type { Point } from '../paths/cubicMath';
@@ -44,23 +44,22 @@ function winding(q: Point, set: WindingSet): number {
 
 const filled = (w: number, rule: PathFillRule): boolean => (rule === 'evenodd' ? (w & 1) !== 0 : w !== 0);
 
-const reversed = (e: Edge): Edge => ({ ...e, seg: e.seg.slice().reverse(), from: e.to, to: e.from, reversed: true });
+export const reversed = (e: Edge): Edge => ({ ...e, seg: e.seg.slice().reverse(), from: e.to, to: e.from, reversed: true });
+
+/** An edge, and which operands cover the points just to its left and its right. */
+export interface CoveredEdge {
+  edge: Edge;
+  inL: boolean[];
+  inR: boolean[];
+}
 
 /**
- * The edges where `keep` changes across them, each turned so the kept side
- * is on its left. `keep` is given whether each operand covers a point.
- * Null when an edge lies along another operand's outline, or along a second
- * stretch of its own, which the winding on its two sides gives away.
+ * Which operands cover either side of every edge. Null when an edge lies
+ * along another operand's outline, or along a second stretch of its own,
+ * which the winding on its two sides gives away.
  */
-export function classifyEdges(
-  edges: readonly Edge[],
-  sets: readonly WindingSet[],
-  keep: (inside: boolean[]) => boolean,
-  probe: number,
-): Edge[] | null {
-  const out: Edge[] = [];
-  const inL: boolean[] = new Array<boolean>(sets.length);
-  const inR: boolean[] = new Array<boolean>(sets.length);
+export function coverEdges(edges: readonly Edge[], sets: readonly WindingSet[], probe: number): CoveredEdge[] | null {
+  const out: CoveredEdge[] = [];
   for (const e of edges) {
     // Probe the source curve rather than the cut piece, whose ends were snapped.
     const tm = (e.t0 + e.t1) / 2;
@@ -75,14 +74,15 @@ export function classifyEdges(
     }
     const nx = -tan.y / len * probe, ny = tan.x / len * probe;
     const L = { x: m.x + nx, y: m.y + ny }, R = { x: m.x - nx, y: m.y - ny };
+    const inL: boolean[] = new Array<boolean>(sets.length);
+    const inR: boolean[] = new Array<boolean>(sets.length);
     for (let k = 0; k < sets.length; k++) {
       const wl = winding(L, sets[k]), wr = winding(R, sets[k]);
       if (k === e.operand ? Math.abs(wl - wr) !== 1 : wl !== wr) return null;
       inL[k] = filled(wl, sets[k].fillRule);
       inR[k] = filled(wr, sets[k].fillRule);
     }
-    const l = keep(inL), r = keep(inR);
-    if (l !== r) out.push(l ? e : reversed(e));
+    out.push({ edge: e, inL, inR });
   }
   return out;
 }
