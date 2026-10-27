@@ -4,7 +4,8 @@
 // Path convention (see core `NodePropertiesEntry`): a node's property
 // schema is a `PrefSection`, so a leaf's OWN KEY is its node path — a dotted
 // path of any depth rooted at `pose` or `data` (`pose.x`, `data.fill`,
-// `data.style.fontSize`) — and a section's key is no part of it. A
+// `data.style.fontSize`), or a field the node declares for its children
+// (`clip`, `units`) — and a section's key is no part of it. A
 // preferences schema (`PrefGroup`) reads the other way and is not accepted.
 
 import {
@@ -32,6 +33,7 @@ import {
   type PrefSectionAs,
 } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
+import { declaredField, nodeRoot } from './declaredFields';
 
 // Re-exported under its existing public name here: the kit-wide "these
 // values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
@@ -201,14 +203,15 @@ export function effectiveSections(
 }
 
 /** Read a node value at a dotted path of any depth (`pose.x`,
- *  `data.style.fontSize`, `data.style.fill.paint.color`). Returns `undefined` if
- *  the path is dotless (mirrors `commit`'s no-op on a malformed schema
+ *  `data.style.fontSize`, `data.style.fill.paint.color`), or at a field the
+ *  node declares for its children (`clip`, `units.unit`). Returns `undefined`
+ *  for a bare `pose` or `data` (mirrors `commit`'s no-op on a malformed schema
  *  key) or if any intermediate segment is missing or not an object. */
 export function nodeValueAt(node: AnyNode, path: string): unknown {
   const segments = path.split('.');
-  if (segments.length < 2) return undefined;
   const head = segments[0];
-  let cursor: unknown = head === 'pose' ? node.pose : head === 'data' ? node.data : undefined;
+  if (segments.length < 2 && !declaredField(head)) return undefined;
+  let cursor: unknown = nodeRoot(node, head);
   for (let i = 1; i < segments.length; i++) {
     if (cursor == null || typeof cursor !== 'object') return undefined;
     cursor = (cursor as Record<string, unknown>)[segments[i]];

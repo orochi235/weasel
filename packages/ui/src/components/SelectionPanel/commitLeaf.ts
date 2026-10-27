@@ -1,5 +1,6 @@
 import { asNodeId, type NodeId, type NodePropertiesEntry, type Scene, type SelectionApi } from '@weasel-js/core';
 import { boundAtNode } from './nodeBounds';
+import { declaredField, nodeRoot } from './declaredFields';
 import { nodeLeafValue, nodeValueAt, setAtPath, type AnyNode, type PanelLeaf } from './model';
 
 type Next = (prev: unknown) => unknown;
@@ -23,6 +24,13 @@ function writeLeaf<TData, TLayer extends string, TPose>(
     if (!node) continue;
     const held = nodeValueAt(node as AnyNode, leaf.path);
     const value = boundAtNode(leaf.leaf, node as AnyNode, next(nodeLeafValue(leaf.leaf, held)), held);
+    const declared = declaredField(head);
+    if (declared) {
+      const field = nodeRoot(node as AnyNode, head);
+      const to = rest.length === 0 ? value : setAtPath((field ?? {}) as object, rest, value);
+      if (to !== field) declared.write(scene, id, to);
+      continue;
+    }
     // `setAtPath` spreads plain objects/arrays down the schema path;
     // consumer `pose`/`data` are assumed plain-object-shaped along
     // that path (a class instance's prototype would be dropped by
@@ -41,7 +49,8 @@ function writeLeaf<TData, TLayer extends string, TPose>(
   }
 }
 
-const writable = (leaf: PanelLeaf): boolean => /^(pose|data)\../.test(leaf.path);
+const writable = (leaf: PanelLeaf): boolean =>
+  /^(pose|data)\../.test(leaf.path) || declaredField(leaf.path.split('.')[0]) !== undefined;
 
 /**
  * Writes, into every selected node, what `next` derives from the value that
@@ -68,13 +77,16 @@ export interface LeafWrites {
   draft(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: Next): void;
 }
 
+/** What a node held before a draft wrote over it. */
+interface Held { pose: unknown; data: unknown; field: unknown }
+
 /** The writes of one panel over `scene`. Keep one per panel: it holds what the drafts in flight wrote over. */
 export function leafWrites<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   settleOf: SettleOf = NO_SETTLE,
 ): LeafWrites {
-  // By leaf path: the pose and data each node held before the first draft of the edit in flight.
-  const drafted = new Map<string, Map<NodeId, { pose: unknown; data: unknown }>>();
+  // By leaf path: the pose, data and declared field each node held before the first draft of the edit in flight.
+  const drafted = new Map<string, Map<NodeId, Held>>();
 
   const restore = (leaf: PanelLeaf): void => {
     const before = drafted.get(leaf.path);
@@ -86,6 +98,9 @@ export function leafWrites<TData, TLayer extends string, TPose>(
         if (!node) continue;
         if (node.pose !== held.pose) scene.setPose(id, held.pose as TPose);
         if (node.data !== held.data) scene.update(id, { data: held.data as TData });
+        const head = leaf.path.split('.')[0];
+        const field = declaredField(head);
+        if (field && nodeRoot(node as AnyNode, head) !== held.field) field.write(scene, id, held.field);
       }
     });
   };
@@ -99,11 +114,13 @@ export function leafWrites<TData, TLayer extends string, TPose>(
     draft: (selection, leaf, next) => {
       if (!writable(leaf)) return;
       const ids = selection.current.map(asNodeId);
-      const before = drafted.get(leaf.path) ?? new Map<NodeId, { pose: unknown; data: unknown }>();
+      const before = drafted.get(leaf.path) ?? new Map<NodeId, Held>();
       drafted.set(leaf.path, before);
       for (const id of ids) {
         const node = scene.get(id);
-        if (node && !before.has(id)) before.set(id, { pose: node.pose, data: node.data });
+        if (node && !before.has(id)) {
+          before.set(id, { pose: node.pose, data: node.data, field: nodeRoot(node as AnyNode, leaf.path.split('.')[0]) });
+        }
       }
       scene.untracked(() => writeLeaf(scene, ids, leaf, next, settleOf));
     },

@@ -6,9 +6,10 @@ import type { PrefSection } from '@weasel-js/prefs';
  *
  * `schema` is a `PrefSection`, not the `PrefGroup` a preferences schema
  * is: a leaf's own key is its whole dotted node path (`pose.x`,
- * `data.fill`, `data.style.fontSize`), rooted at `pose` or `data`. The
- * sections it nests are headings only; their keys do not contribute to
- * the node path.
+ * `data.fill`, `data.style.fontSize`), rooted at `pose` or `data`, or a
+ * field the node declares for its children (`clip`, `units.unit`), which a
+ * panel writes through `scene.setClip` / `scene.setUnits`. The sections it
+ * nests are headings only; their keys do not contribute to the node path.
  *
  * Kind names share the routing trait's vocabulary — an entry registered
  * as `'rect'` describes nodes `NodeRouting.classify` maps to `'rect'`.
