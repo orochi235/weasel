@@ -7,10 +7,10 @@
   pointer-events: none;
 }
 
-/* Fixed makes a stacking context, so it takes React Aria's overlay z-index for the overlays it holds. */
+/* Fixed makes a stacking context, so it takes the popover rung for the overlays it holds. */
 .fixed {
   position: fixed;
-  z-index: 100000;
+  z-index: var(--wzl-z-popover);
 }
 
 .frame > * {
