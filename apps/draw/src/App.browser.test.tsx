@@ -159,7 +159,8 @@ describe('WeaselDraw', () => {
   it('saves the scene and the document to local storage', async () => {
     await mountApp();
     await expect.poll(() => localStorage.getItem(LS_KEY)).toContain('starter-1');
-    await expect.poll(() => localStorage.getItem(DOC_KEY)).toContain('letter');
+    await expect.poll(() => localStorage.getItem(LS_KEY)).toContain('core:pages');
+    await expect.poll(() => localStorage.getItem(DOC_KEY)).toContain('untitled.svg');
   });
 
   it('selects the starter rect on a click', async () => {
@@ -197,5 +198,41 @@ describe('WeaselDraw', () => {
     exit!.click();
     await expect.poll(() => host.dataset.mode).toBe('normal');
     await expect.poll(editor).toBeNull();
+  });
+});
+
+const tabs = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('.wd-pages [role="tab"]')];
+const lit = (): number => tabs().findIndex((t) => t.getAttribute('aria-selected') === 'true');
+const savedPageIds = (): string[] | undefined =>
+  (JSON.parse(localStorage.getItem(LS_KEY) ?? '{}') as { doc?: { 'core:pages'?: { pages: { id: string }[] } } })
+    .doc?.['core:pages']?.pages.map((p) => p.id);
+
+describe('WeaselDraw pages', () => {
+  it('puts the page tabs under the workspace, across its width', async () => {
+    const { host } = await mountApp();
+    const strip = document.querySelector('.wd-pages')!.getBoundingClientRect();
+    const box = host.getBoundingClientRect();
+    expect(strip.top).toBeCloseTo(box.bottom, 0);
+    expect(strip.left).toBeCloseTo(box.left, 0);
+    expect(strip.width).toBeCloseTo(box.width, 0);
+    expect(box.height).toBeGreaterThan(400);
+    expect(tabs().map((t) => t.textContent)).toEqual(['Page 1']);
+  });
+
+  it('adds a page and goes to it, keeps it through a reload, and steps back on Page Up', async () => {
+    await mountApp();
+    await userEvent.click(page.getByRole('button', { name: 'Add page' }));
+    await expect.poll(() => tabs().length).toBe(2);
+    await expect.poll(lit).toBe(1);
+    await expect.poll(savedPageIds).toEqual(['page-1', 'page-2']);
+    root?.unmount();
+    mountPoint?.remove();
+    await mountApp();
+    expect(tabs()).toHaveLength(2);
+    await expect.poll(lit).toBe(0);
+    key('PageDown');
+    await expect.poll(lit).toBe(1);
+    key('PageUp');
+    await expect.poll(lit).toBe(0);
   });
 });
