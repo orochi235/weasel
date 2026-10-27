@@ -367,6 +367,18 @@ export default [
     rules: { 'no-console': 'off' },
   },
   {
+    /**
+     * The Playwright suites: a perf or pixel spec reports its numbers on stdout, and a fixture's
+     * callback is named `use`, which rules-of-hooks reads as React's. Components here are `.tsx`.
+     */
+    files: ['tests/**/*.{ts,tsx,js,mjs}'],
+    rules: { 'no-console': 'off' },
+  },
+  {
+    files: ['tests/**/*.ts'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
+  },
+  {
     /** forge's `weaselforge` CLI, where stdout is likewise the interface. */
     files: ['packages/forge/src/cli/**'],
     rules: { 'no-console': 'off' },
