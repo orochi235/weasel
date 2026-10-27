@@ -117,22 +117,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Viewport
 
-- **(P3) [agent] Raw WebGL that skips `useOrbitView` escapes labkit's missing-camera check.** A trial with
-  `orbit` undeclared flags a 3D view in the console and with a "no camera" title-bar badge when the
-  instrument calls `useOrbitView()` or a three.js `WebGLRenderer` or `WebGPURenderer` lands in it
-  (`packages/labkit/src/trial/threeWatch.ts`); a hand-written WebGL view does neither. Watching
-  `getContext('webgl2')` on canvases in the trial cannot tell it apart, because weasel's own 2D
-  renderer opens the same context there.
+- **(P3) [agent] A raw WebGPU view escapes labkit's missing-camera check.** WebGL views are caught when they
+  turn on depth testing (2026-10-26, `packages/labkit/src/trial/watch3d.ts`).
 
-- **(P3) [agent] A loupe over a view takes that view's camera but not its layers or selection.** A lens
-  aimed over a `<CanvasView>` panel magnifies and edits the panel's world (`SceneCanvasApi.viewAt`),
-  but it paints the canvas's whole stack — a layer the panel hides shows in the lens — and acts on
-  the canvas's selection where the panel owns one. Its view would need to follow the view under its
-  aim the way a `parent` does, without being measured from or cut to that view's rect.
-
-- **(P3) [agent] Long-press feedback is left out under a `tools` takeover.** Its entry needs `attach`
-  and its layer, which run only for `tools.registry` / `ambient` (`useContributionRoles`). The view
-  marker drag installs beside a takeover since 2026-10-26 (`useCanvasTools`' `surface`).
+- **(P3) [agent] A loupe over a view acts on the canvas's selection where the panel owns one.** It paints and
+  picks the panel's layers since `<CanvasView follows>` (2026-10-26); its dispatch target and selection
+  chrome still come from the canvas, and making them follow the aimed view needs a selection that switches
+  with the aim.
 
 - **(P3) [maintainer] Which plane 2D and 3D views share.** kernel3d's frustum outlines into a 2D view
   as its footprint on z = 0, which in kernel3d's y-up world is a wall facing yaw 0, where a top-down
@@ -144,9 +135,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Paths & booleans
 
-- **(P3) [agent] Decorations along a path for Text Along Path.** Underline, strikethrough and overline are not drawn on
-  curved text (`packages/core/src/core/scene/pathEffects/textAlong.ts`).
-
 - **(P3) [maintainer] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it would change the output of saved documents.
 
@@ -156,14 +144,11 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [recheck] Path edit through a text-along effect dims the curved text with everything else.** Lighting it would make
   it pressable in that mode; a design call.
 
-- **(P3) [agent] svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
-  read as letter spacing (`packages/svg/src/glyphShifts.ts`), and so is a `dx` on a `<text>`
-  holding only text. `rotate`, list-valued per-glyph `x` / `y`, and a `dx` on a `<text>` that
-  holds a `<tspan>` are not applied; each warns
-  (`packages/svg/src/tspanLines.ts`). Kerned text exported with an `x` per glyph imports with the
-  glyphs run together: turning a position into a letter spacing or a space needs the advance of
-  the glyphs before it, which a parse with no face loaded cannot measure.
-  `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
+- **(P3) [agent] svg import: turned and vertically placed glyphs are not read.** `rotate`, a list-valued `y`
+  or `dy`, and a `dx` on a `<text>` holding a `<tspan>` still warn (`packages/svg/src/tspanLines.ts`);
+  `rotate` needs per-glyph rotation in the text model. An `x` or `dx` list is read as letter spacing
+  where a loaded face measures the glyphs (`packages/svg/src/glyphShifts.ts`), but not in right-to-left
+  text. `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
   unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
 ### Path editing tricks
@@ -323,12 +308,11 @@ Owner tags, after the priority (2026-10-26):
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) [agent] Some path commands have no icons.** The anchor selection commands and
-  `setSpiroKind`'s variants show as text in draw's bar. The warp labs' tool lists borrow
-  `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the warp tools' own glyphs.
-  `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and `core:harmonize`
-  (`packages/core/icons/anchor.mjs`) and `path-tools:spiro` (`packages/path-tools/icons/tools.mjs`)
-  are first drafts, not proofed at high resolution, and `path-tools:resamplePath` is soft at 1x.
+- **(P3) [agent] Some path command glyphs are unproofed.** The warp labs' tool lists borrow `ui:fitStretch`,
+  `ui:grid` and `ui:pin` rather than the warp tools' own glyphs. `core:symmetricHandles`,
+  `core:simplifyBrush`, `core:harmonize` and `path-tools:spiro` are first drafts, not proofed at high
+  resolution, and `path-tools:spiroSmooth` and `spiroG4` are soft at 1x, where an S-curve can only render as
+  a gray diagonal.
 - **(P3) [agent] A puppet warp's bends add anchors.** `warpPath` refits a puppet-warped outline with more
   anchors than its shape needs, and a smoother map does not fix it. Measured with `foldCases.ts` at
   tolerance 0.5 (2026-10-20), the squashed 4-anchor disc refits with 5 anchors under the piecewise-affine
@@ -351,7 +335,11 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [agent] Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) [agent] True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) [agent] Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make, each in the paint it would wear (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas; nor does the keymap have a hold-to-preview form (press shows, release fires, Escape cancels) for any action.
+- **(P3) [agent] Preview a Boolean operation by holding its key over a path.** `holdPreview(action)`
+  (routing, 2026-10-26) shows an action's preview while its `held(…)` key is down and runs it on release; no
+  Pathfinder action has a key bound through it yet. In a keymap held open by its leader, Escape closes the
+  keymap rather than canceling the hold, so the release still runs (`keymapRoute.ts`, the `isPlainEscape`
+  branch).
 
 ## Rendering & paint
 
@@ -393,15 +381,12 @@ Owner tags, after the priority (2026-10-26):
   `vitest-bench.json`. It did not run on 2026-10-21: onto's solo check (`soloBlock` in
   `~/src/onto/queuesolo.go`) counts studio's idle `brick-spot-render` service as a running job, so a
   `--solo` job never starts there.
+  The onto fix is on onto's `solo-ignores-idle-service` branch (d113785, 2026-10-26), unmerged; the re-record
+  waits on it merging and the binary being rebuilt.
 
 ---
 
 ## Text
-
-- **(P2) [agent] `<SceneCanvas>` has no default text editor.** The text and sticky tools bind
-  `enterTextEdit`, and without a host wiring `useSceneTextEdit` a placed node cannot be typed into
-  (`apps/site/demos/StickyNotesDemo.tsx` shows the wiring). The stub `textEdit` dep mounted by default
-  already warns in development when `startEdit` is called (`canvas/deps/textEdit.ts`; read, not run).
 
 - **(P3) [maintainer] The edit overlay's text lands on whole CSS pixels; the canvas's does not.** The overlay
   cannot follow a fractional canvas baseline: moving its `top` by 0.4px moves its ink by exactly
@@ -450,25 +435,14 @@ Owner tags, after the priority (2026-10-26):
   synthesized (capitals scaled by x-height over cap height), and a face with an `smcp` feature
   should get its own small-cap glyphs instead.
 
-- **(P3) [agent] Icons drawn before the 45-degree rule still use spreads of 36 to 42.** The straight
-  arrows in `files.mjs`, `base-glyphs.mjs`, `arrows.mjs`, `state.mjs`, `actions.mjs`, and
-  `camera.mjs`'s dolly, rise and sink (`docs/icons.md`, "Drawing rules"). Separately, `ui:centralTopic`'s
-  ellipse is rough and `path-tools:blend` is gray at 16px 1x.
-
 ---
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] No panel switches a node's declared clip** (2026-10-23). `scene.setClip` writes it as one
-  undo step; nothing in a property panel calls it.
-
-- **(P3) [agent] Several hit tests still scan every node or shape linearly.** Marquee, lasso, point
-  picks and `findPathSnaps` consult a BVH (`packages/core/src/canvas/pickIndex/`); these do not:
-  core's `features/text/textHitAt.ts`, which needs a pose descriptor plumbed from
-  `useSceneTextEdit`, and `features/measure/measureHit.ts`, which scans only measurement nodes;
-  `diagram/src/portLayer.ts`, `diagram/src/labelDragLayer.ts`, `labkit/src/loupe/lens/lensHitBoxes.ts`;
-  and `boxesOf` in kernel3d's `snap/sources.ts`, whose `world.bounds` is a consumer function with no
-  generation to cache against, so it needs one first.
+- **(P3) [agent] Several hit tests still scan every node or shape linearly.** Core's
+  `features/text/textHitAt.ts` (needs a pose descriptor from `useSceneTextEdit`), `diagram/src/portLayer.ts`,
+  `diagram/src/labelDragLayer.ts`, and `boxesOf` in kernel3d's `snap/sources.ts`, whose `world.bounds` needs a
+  generation to cache against first.
 
 - **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
   marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
@@ -494,10 +468,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Symmetry follow-ups
 
-- **(P3) [agent] The symmetry lab has no control for `glideRows`** (2026-10-26). A pgg or p4g preset
-  sets it (`SymmetrySpec.glideRows`, `packages/symmetry/src/kinds.ts`) and the lab keeps it, but
-  nothing in `apps/site/demos/SymmetryLabDemo.tsx` turns it on or off.
-
 ### Container layout strategies
 
 - **(P3) [agent] A member of a diagram container marked `reorder` cannot be dragged out of it.** The
@@ -505,17 +475,24 @@ Owner tags, after the priority (2026-10-26):
   it only along the axis, so the move's reparent never runs; a group's members have the same limit,
   but a container's are scene children that could leave. A drag that leaves the container's body
   could hand off to the move instead (2026-10-26).
-- **(P3) [agent] An item carried in with `dragItemProps` draws no ghost of itself over the canvas.** The
+  Two arcs (2026-10-26): core's dispatcher has nothing that hands a drag in progress to another action, so
+  first that handoff, then `groupReorder` handing off to move when the pointer leaves the body.
+- **(P3) [recheck] An item carried in with `dragItemProps` draws no ghost of itself over the canvas.** The
   canvas outlines the target and marks the index (`packages/diagram/src/itemDrop.ts`), and labkit
   draws its own `DragGhost` for its palette; diagram leaves it to the host. A ghost from the item's
   own element, or a preview of the shape it would make, would belong beside `startItemDrag`
   (2026-10-26).
-- **(P3) [agent] A diagram edge that crosses a node draws over it.** In the `diagram-drop` demo, dropping
-  two steps into the row between `filter` and `mix` leaves the `filter → mix` edge running straight
-  through both new boxes. The line shows over their fill and through their labels, as a
-  strikethrough (seen headless, 2026-10-26). Either edges paint above member nodes inside a
-  container, or the straight router ignores members as obstacles. Check the paint order against
-  the composition merge (`437648aa4`) first.
+  diagram does not depend on ui, so ui's `DragGhost` is out of reach: the ghost belongs to routing's
+  `startCarry` as a cloned element, or to a diagram hook that adds a ui dependency, and its look is a call
+  (2026-10-26).
+
+- **(P3) [agent] The effect editor's lanes may read members in the wrong frame.** `effect/lanesRoutes.ts` and
+  `lanes.ts` read `s.pose` across specs whose parent is a lane, as `router="avoid"`, `hops` and
+  `labels="dodge"` did before 2026-10-26 (`e9ea01b10`, `b6686242b`); unchecked, and the effect tests pass.
+- **(P3) [maintainer] Diagram edges paint above every node.** `mainSpecs` pushes edge specs last, so in the
+  `diagram-drop` demo a straight `filter → mix` edge strikes through the two boxes dropped between them.
+  Painting edges under nodes needs an edge between a container's fill and its members, or the edge hidden
+  under the container; the alternative is `router="avoid"` in the demo. A pick between those (2026-10-26).
 - **(P3) [agent] Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its
   overflow past the container's last visible line and reports the region through
   `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
@@ -580,10 +557,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
 
-- **(P2) [agent] A curved run reads left to right in a right-to-left locale.** `trackRun` (`geom/src/track/run.ts`)
-  derives reading direction from the shape's geometry alone, and nothing in `Along` or `Bar` reads `dir`, so a
-  Hebrew or Arabic curved bar puts item 1 at the left end while the same bar laid out straight starts on the
-  right. Reading order needs an inline direction input, which bears on the `'reading' | 'track'` decision above.
+- **(P3) [agent] Some curved runs still read left to right in a right-to-left locale.** `trackRun` takes a
+  `direction` and `useReadingRun` reads the root's (2026-10-26), wired into the curved `Bar`, segmented
+  row, `RadioGroup`, `TabList` and `PageTabs`. `CurvedLabel` (needs bidi), `JogAlong` (media controls
+  usually stay unmirrored; undecided), the arc `Slider` and `SwatchRings` build `trackRun` without it, and
+  `segmentsAlong.shapeAt` and `JogAlong` each repeat `trackRun`'s g-to-shape-fraction mapping.
 
 - **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
   `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
@@ -607,6 +585,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
     no text entry. The DOM menu's text field was checked in a browser
     (`MenuTextValue.browser.test.tsx`): typed keys reach it, Enter commits without closing, and it fits its row.
   - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
+  For the color leaf (2026-10-26): first `MenuColorEntry` gets `set`/`alpha`, the controller holds a color
+  value as it does `textValue`, and `resolveMenu.colorRows` passes `set`; then ui's `MenuColorValue` opens the
+  kit's picker in a popover the menu's dismiss counts as inside.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -635,16 +616,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   to the two sources' `roles` (`'origin'` to `'box'`). Insert and the pen are a different case and
   stay as they are: they snap the pointer, before the node has a stroke to measure.
 
-- **(P3) [agent] The theme prefs form: long token names, and references shown raw.** In
-  `apps/theme-editor`'s `#/prefs` page a label too long for its column still breaks mid-name, with its
-  "from theme" tag pushed to the column's right edge (Stance page: `clarify-nested-surface`,
-  `advanced-title-color`); a token's name drops its group's prefix since 348a40013. The cause is in
-  `PropertyRow`, so it hits any long label carrying a hint: the label line is a flex row, and a name
-  that wraps keeps its box's full width. `flex-wrap: wrap` fixes the tag but sends the help glyph to
-  the second line, which fails `PropertyRow.align.browser.test.tsx`'s "a label that wraps keeps its
-  help glyph on its first line". A token whose value refers to another still shows the reference as
-  raw text, `var(--btn-glass)`. Nothing drives `applyTheme`'s `weights` from an animator either, which
-  is the same gap as the selector weights under "What the split rows in `PrefsForm` left".
+- **(P3) [agent] The theme prefs form at narrow widths.** A hint wider than the label track ("FROM THEME",
+  the mode chip and the split toggle) overflows into the control, seen at an 880px viewport (2026-10-26);
+  a row's hint follows its label's last word since 089609ac4. A token whose value refers to another still
+  shows the reference as raw text, `var(--btn-glass)`. Nothing drives `applyTheme`'s `weights` from an
+  animator either, which is the same gap as the selector weights under "What the split rows in
+  `PrefsForm` left".
 
 - **(P3) [agent] What the split rows in `PrefsForm` left.** The split mark in a row's label line has been
   seen (theme-editor's `DARK` chip beside "from theme", 2026-10-26); the one in a bar cell is tested
@@ -663,7 +640,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
 
-- **(P3) [agent] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
+- **(P3) [recheck] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
   `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
   `SidebarRegion`'s section head and undock button against `SidebarPanel`, which takes no
@@ -759,7 +736,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
   `MatrixEditor` always lists an enum as radios.
 
-- **(P3) [agent] What each group `as` draws differs across the params surfaces.** The run of neighboring
+- **(P3) [recheck] What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
   is a bordered box in ui and a plain `PropertyGroup` in labkit; `section` is a `Subpanel` in
   labkit and a heading elsewhere; a group's `description` shows under a tab in `PrefsPane` and is
@@ -909,9 +886,10 @@ only story runner in the repo.
   again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
   fix belongs in windease; the workaround goes when it lands.
 
-- **(P3) [agent] A forge dev server runs out of memory as package files change.** Every saved package
-  file restarts it through `scripts/vite-prebundle.ts`, and its heap climbs with each restart until it
-  hits the 4 GB limit, about 6 minutes into a session with several agents editing (2026-10-26).
+- **(P3) [agent] A forge dev server's RSS climbs about 200 MB a restart, outside the JS heap.** With the
+  heap leak fixed (`restartLeavingNothing`, `scripts/vite-prebundle.ts`), heap after GC goes 89 to 113 MB
+  over 6 restarts where it went to 269, but `scripts/probe-dev-restarts.ts` on teitou (2026-10-26) still
+  shows RSS growing, so it is native memory, rolldown's presumably (not traced).
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
@@ -944,12 +922,6 @@ only story runner in the repo.
   intermittently** (full fleet run of `main` at `437648aa4`, 2026-10-26). Since ac92a714c the test waits
   for `document.fonts.ready` after a first frame; that the face was the cause is inferred, not
   reproduced. Delete the entry if the next full runs pass it.
-- **(P3) [agent] `rowHelp.browser.test.tsx`'s "a click on a described row's control opens no help" fails
-  under load.** In `packages/ui/src/components/Properties/rowHelp.browser.test.tsx`, the click on
-  the Author input timed out at 45 s because the row's open help tooltip covered it and intercepted
-  the pointer. It failed in both full fleet runs of the `diagram-drop-refuse` branch on 2026-10-26
-  (at `8b14236e5` and `b8893e8e6`, both on teitou), which touch no ui code, and passed 3 of 3 alone on
-  the fleet. A tooltip that has not closed before the next click is the first thing to suspect.
 - **(P3) [waiting] `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the
@@ -962,13 +934,16 @@ only story runner in the repo.
   of the file at 4× throttling settled all 540 cases within 321 ms. The lab has no `storageKey`
   here, so no persisted sidebar width carries between tests or files.
 
-- **(P2) [agent] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
+- **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
   `savedBody().row.data.text` stayed `''` past the poll after Escape, so the six typed `M`s
   presumably went somewhere other than the open editor overlay (inferred; no screenshot survives).
   Twice in two Linux runs, so likely Linux-specific rather than a flake; not reproduced in 158
   fleet runs of the test on 2026-10-21. The fleet sweep's failures of this
   test were a different thing, pixels read from the frame before the repaint, fixed 2026-10-21.
+  Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
+  (Playwright's Linux image under Docker, arm64 rather than CI's x86), not yet run end to end because
+  Docker is not running on studio (2026-10-26).
 
 - **(P3) [waiting] `effect-chart.spec.ts`'s `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`.** Its
   baselines were first captured on 2026-10-26 (CI run 40266349908); once a few CI runs have compared
@@ -1043,19 +1018,11 @@ only story runner in the repo.
   Fixed on onto's `logs-both-streams` branch (2026-10-26), unmerged; retire it once that merges and the binary
   is rebuilt and pushed to the nodes.
 
-- **(P3) [agent] The `forge-stories` project still raises "ResizeObserver loop completed with undelivered
-  notifications".** The guard is `scripts/vitest-resize-loops.setup.ts`, which names the skipped
-  observers when it fails. Loaded on forge-stories on 2026-10-26 it failed `LabFullChrome.stories.tsx`'s
-  "All Chrome" and "Undockable Panels"; the skipped callbacks were windease's `ContainerHost`,
-  `PropertyRow.tsx:181`, `Slider/useBoxes.ts:38` and `labkit/primitives/splitFloors.ts:28`, all under a
-  story host measuring 414×0. Keycap and SelectionPanel did not loop that run. Fix those, then add the
-  setup to forge-stories' `setupFiles`.
-
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
 
-- **(P2) [recheck] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
+- **(P2) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
   `ubuntu-latest`, while every fleet node is a Mac. CI run 39349499006 (2026-10-20, at
   `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
   `CutCtrl+X` where it expects `Cut`, `Badge.browser.test.tsx`, `Bar.overflow.browser.test.tsx`
@@ -1066,6 +1033,9 @@ only story runner in the repo.
   Linux headless Chromium snaps glyph advances to whole pixels (inferred from the numbers, not
   observed), so that file now skips where a probe sees snapped advances. The fix is a Linux node
   (or container) for the `browser` project. (CI's Node 22 leg has a fleet twin since 2026-10-21: `npm run test:fleet:matrix`.)
+  Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
+  (Playwright's Linux image under Docker, arm64 rather than CI's x86), not yet run end to end because
+  Docker is not running on studio (2026-10-26).
 
 - **(P3) [maintainer] Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
   (8 cores, 24 GB, 7–11 GB of swap) failed `packages/forge/src/timeline/timeline.test.tsx` in five
@@ -1210,10 +1180,10 @@ only story runner in the repo.
     threads against 5.91, and 5.3 MB allocated a frame against 0.10 (msb-uai, 2026-10-24; README,
     "What the HUD allocates"). A layout and its painting now hold their numbers in columns, which
     cut allocation 12% and left time inside the spread between runs. What is left is a few kinds
-    of per-glyph or per-label garbage, none dominant: the column arrays themselves (924 KB),
-    `measureRuns`' entry per code point (544), the layout cache's structural key, a string of
-    every label's text (about 200), `resolveGlyph`'s result per code point (201), and
-    `resolveTextStyle` per command (206), which the `perf/hud-and-batch` branch skips.
+    of per-glyph or per-label garbage, none dominant: the column arrays themselves (919 KB a frame),
+    the layout cache's structural key (`runsKey`, 202), `frameCommands`' string of every label's text
+    (193), `groupFor` (305), `breakLines` (203), and `resolveTextStyle` per command (100), which the
+    `perf/hud-and-batch` branch skips: 4.48 MB a frame in all (teitou, 2026-10-26, from 5.20).
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
@@ -1397,8 +1367,8 @@ only story runner in the repo.
     still drawn straight through (below). Two things are open: a frame that redraws can hold the
     budget plus one canvas-sized multisampled buffer (131 MB at 4x), which drawing in tiles would
     cap; and whether the default should scale with the drawing buffer.
-  - **Bounds for text and custom shaders.** Text needs its laid-out extent plus glyph overhang;
-    a custom shader may read `gl_FragCoord`, which the offset viewport moves.
+  - **Bounds for custom shaders.** A custom shader may read `gl_FragCoord`, which the offset viewport
+    moves. Text is bounded by its laid-out glyph cells plus margins since 3803ba262.
   - **Retaining through camera motion.** A world layer stops retaining while the view moves, and its
     surface is freed after a frame without it, so a pan resubmits every layer and reallocates on the
     first still frame. An oversized, bounded surface could be translated instead of redrawn.
@@ -1444,8 +1414,3 @@ only story runner in the repo.
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
   Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
   groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
-
-- **(P3) [agent] The draw.io shape names diagram-formats writes are unchecked in draw.io.** BPMN and
-  network outlines go out as `mxgraph.bpmn.*` / `mxgraph.networks.*` shapes, named from memory
-  (2026-10-26); they round-trip through our own reader, but no file has been opened in draw.io.
-  `globe` still goes out as a rectangle.
