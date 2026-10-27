@@ -143,6 +143,13 @@ export function energyAt(terms: EnergyTerms, eps: number): number {
   return E;
 }
 
+/** The untangling energy of the piece at rest, or moved rigidly: the least it can take at `eps` 0. */
+export function restEnergy(piece: Piece): number {
+  let E = 0;
+  for (const a of piece.frames.area) E += a * (2 + 2 * AREA);
+  return E;
+}
+
 /** The smallest determinant among `terms`. */
 export function leastOf(terms: EnergyTerms): number {
   let least = Infinity;
@@ -237,11 +244,12 @@ export function untangleRound(
     if (f >= 0) { gf[2 * f] = g[2 * i]; gf[2 * f + 1] = g[2 * i + 1]; }
   }
   const precondition = (q: Float64Array) => step2.factored.solvePair(q);
-  let df = descent(memory, gf, precondition);
+  // At eps 0 the edge system alone overstates a step about twice over, and the line search halved nearly every one.
+  let df = descent(memory, gf, precondition, eps === 0);
   let slope = dot(gf, df);
   if (!(slope < 0)) {
     forget(memory);
-    df = precondition(gf).map((v) => -v);
+    df = memory.lastBent!.map((v) => -v);
     slope = dot(gf, df);
   }
   const d = new Float64Array(pos.length);

@@ -33,7 +33,8 @@ describe.each([discSquash, barS])('a hard puppet warp: $name', (c) => {
     expect(backwardStretches(c, puppetMap(c.shape, c.pins))).toBe(0);
   });
 
-  // The preconditioned gradient alone took 28 and 51 rounds (2026-10-19); L-BFGS under one softening floor 17 and 45 (2026-10-26).
+  // The preconditioned gradient alone took 28 and 51 rounds (2026-10-19); L-BFGS under one softening floor 17 and 45 (2026-10-26),
+  // and 18 and 41 before the stop at eps 0 was read against the energy above a rigid motion (2026-10-27).
   it('untangles in a few dozen rounds at most', () => {
     const { targets, solver } = solved(c);
     let rounds = 0;
@@ -74,9 +75,9 @@ it('leaves a mesh at rest where it is', () => {
   at.forEach((x, i) => expect(x).toBeCloseTo(mesh.vertices[i], 9));
 });
 
-// Before the L-BFGS solve, the refit that split at the worst sample took 6 and 22 here, and 4 and 10 before
-// the softening shrank faster while a triangle was turned over (2026-10-27).
-it.each([{ c: discSquash, anchors: 5 }, { c: barS, anchors: 11 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
+// Before the L-BFGS solve, the refit that split at the worst sample took 6 and 22 here; under the stop
+// relative to the whole energy, 5 and 11 (2026-10-27).
+it.each([{ c: discSquash, anchors: 4 }, { c: barS, anchors: 10 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
   const out = warpPath(c.shape, puppetMap(c.shape, c.pins), { tolerance: 0.5 });
   expect(pathToAnchors(out).anchors[0]).toHaveLength(anchors);
 });
