@@ -71,4 +71,13 @@ describe('holdAt', () => {
     expect(hold.pending()).toBeNull();
     expect(h.clock.elapsed).toBe(0);
   });
+  it('re-seeks to the held time when the loop count changes the span', () => {
+    const h = createClock({ duration: 1000, loop: 2 });
+    const hold = holdAt(h, 2500);
+    expect(h.clock.elapsed).toBe(2000);
+    expect(hold.pending()).toBe(2500);
+    h.clock.loop = 3;
+    expect(h.clock.elapsed).toBe(2500);
+    expect(hold.pending()).toBeNull();
+  });
 });
