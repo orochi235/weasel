@@ -139,9 +139,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Lets pose-transform actions (move, resize, nudge, flip — NOT rotate) also rewrite a
-     * node's data-held geometry. Given a node and the affine `m` applied to its pose,
-     * `transform(node, m)` returns updated `data`, or `null` for nodes with no data-held
-     * geometry. When absent, the kit emits only the pose op and leaves `data` untouched.
+     * node's data-held geometry: `transform(node, m, change)` returns updated `data`, or
+     * `null` for nodes with no data-held geometry. When absent, the kit emits only the pose
+     * op and leaves `data` untouched.
      *
      * @see GeometryProjection
      */

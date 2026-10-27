@@ -51,6 +51,22 @@ describe('geometryProjection seam', () => {
     expect(boundsOfPath(datas.get('n')!.path).x).toBeCloseTo(1, 6);
   });
 
+  it('hands the transform the stored pose before and after', () => {
+    const { scene, applyOps } = setup(rectPath(0, 0, 10, 10));
+    const changes: unknown[] = [];
+    const geometryProjection = {
+      transform: (_node: unknown, _m: Affine, change: unknown) => { changes.push(change); return null; },
+    };
+    (nudgeRightAction.invoker as ImmediateInvoker).run(
+      { selection: { get: () => ['n'] }, scene, applyOps, geometryProjection } as never,
+      { magnitude: 'small' },
+    );
+    expect(changes).toEqual([{
+      from: { x: 0, y: 0, width: 10, height: 10 },
+      to: { x: 1, y: 0, width: 10, height: 10 },
+    }]);
+  });
+
   it('leaves data.path untouched when the dep is absent', () => {
     const path = rectPath(0, 0, 10, 10);
     const { scene, datas, applyOps } = setup(path);

@@ -41,14 +41,10 @@ export function translateNodeOps(
     // pose is its derivation, and writing that back would lose the
     // placeholder undo restores.
     const from = node.pose;
-    ops.push(createTransformOp<unknown>({
-      id: id as string,
-      from,
-      to: translatePoseViaDescriptor(from, l.dx, l.dy, descriptorOf(id)),
-      label,
-    }));
+    const to = translatePoseViaDescriptor(from, l.dx, l.dy, descriptorOf(id));
+    ops.push(createTransformOp<unknown>({ id: id as string, from, to, label }));
     const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
-    const dataOp = geometryDataOp(geometryProjection, { id: id as string, data: node.data, pose: from }, m, label);
+    const dataOp = geometryDataOp(geometryProjection, { id: id as string, data: node.data, pose: from }, m, to, label);
     if (dataOp) ops.push(dataOp);
   }
   return ops;

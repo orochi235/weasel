@@ -359,9 +359,10 @@ declare module '@weasel-js/routing' {
     /**
      * Optional consumer seam for the eager-sync layer: lets pose-transform
      * actions (resize/move/nudge/flip — NOT rotate) ALSO rewrite a node's
-     * data-held geometry. Given a node and the affine `m` applied to its pose,
-     * `transform(node, m)` returns updated `data` (geometry mapped by `m`) or
-     * `null` for nodes with no data-held geometry.
+     * data-held geometry. Given a node, the affine `m` applied to its pose,
+     * and the pose change itself, `transform(node, m, change)` returns updated
+     * `data` (geometry mapped the same way) or `null` for nodes with no
+     * data-held geometry. A host whose poses are not planar reads `change`.
      *
      * Strictly opt-in: when absent (or when `transform` returns null), the kit
      * emits only the pose op and leaves `data` untouched. Rotate intentionally
