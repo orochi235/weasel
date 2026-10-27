@@ -132,7 +132,7 @@ export function parseTextElement(
   const inheritedShift = ownValue(el, 'baseline-shift', onWarn) ?? {};
 
   const tracker = new LineTracker(el, onWarn);
-  const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle.letterSpacing, gradients, leafStyle, onWarn);
+  const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle, gradients, leafStyle, onWarn);
   const plain = runs.map((r) => r.text).join('');
   const pitched = laid ? numberAttr(el, LINE_HEIGHT_ATTR) : tracker.lineHeight(fontSize);
   if (pitched !== undefined) textStyle.lineHeight = pitched;
@@ -197,7 +197,7 @@ function readRuns(
   el: Element,
   tracker: LineTracker,
   inheritedShift: Pick<StyledRun, 'script' | 'baselineShift'>,
-  letterSpacing: TextStyle['letterSpacing'],
+  textStyle: TextStyle,
   gradients: GradientTable,
   leafStyle: StyleContext,
   onWarn: (m: string) => void,
@@ -206,9 +206,9 @@ function readRuns(
   let leading = 0;
   let lead = 0;
   const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
-  if (holdsOnlyText(el) && el.hasAttribute('dx')) {
+  if (holdsOnlyText(el) && (el.hasAttribute('dx') || el.hasAttribute('x'))) {
     const t = el.textContent ?? '';
-    if (t) lead = placeTspanRun(el, { text: t, ...inheritedShift }, runLines, letterSpacing, onWarn);
+    if (t) lead = placeTspanRun(el, { text: t, ...inheritedShift }, runLines, textStyle, onWarn);
   } else for (let i = 0; i < el.childNodes.length; i++) {
     const child = el.childNodes[i];
     if (child.nodeType === 3 /* TEXT_NODE */) {
@@ -230,7 +230,7 @@ function readRuns(
       // line unless it says how many it stepped.
       if (runLines.length === 1 && runLines[0].length === 0 && statesLines(sp)) leading = lines;
       else for (let n = 0; n < lines; n++) runLines.push([]);
-      lead += placeTspanRun(sp, readTspanRun(sp, gradients, leafStyle, onWarn), runLines, letterSpacing, onWarn);
+      lead += placeTspanRun(sp, readTspanRun(sp, gradients, leafStyle, onWarn), runLines, textStyle, onWarn);
     }
   }
   if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);

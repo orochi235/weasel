@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import type { SvgTextNode } from './types';
@@ -71,5 +73,55 @@ describe('a tspan dx list read as letter spacing', () => {
     expect(node.x).toBeCloseTo(13);
     expect(node.text).toBe('abc');
     expect(spacing(node)).toEqual([['a', 1], ['b', 2], ['c', undefined]]);
+  });
+});
+
+// FIXTURE_FONT at 32: A advances 23 and B 22, and A kerns -1 before B, so 'ABA' lays its glyphs at 0, 22 and 44.
+describe('a per-glyph x list, where a loaded face measures the glyphs', () => {
+  const realFetch = global.fetch;
+  const realBitmap = global.createImageBitmap;
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    global.fetch = vi.fn().mockImplementation((url: string) => url.endsWith('.json')
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) })
+      : Promise.resolve({ ok: true, blob: () => Promise.resolve(new Blob([new Uint8Array(3)], { type: 'image/png' })) })) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({ width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap);
+    await registerFont('inter', {}, '/f/inter.json', '/f/inter.png');
+  });
+  afterEach(() => {
+    _resetFontRegistryForTests();
+    global.fetch = realFetch;
+    global.createImageBitmap = realBitmap;
+  });
+  const set = (attrs: string, body = 'ABA') =>
+    text(`<text font-family="inter" font-size="32" y="40"><tspan ${attrs}>${body}</tspan></text>`);
+
+  it('reads each position as the spacing that puts the glyph there', () => {
+    const { node, warnings } = set('x="0 30 50"');
+    expect(warnings).toEqual([]);
+    expect(spacing(node)).toEqual([['A', 8], ['B', -2], ['A', undefined]]);
+  });
+
+  it('lets the glyphs past a short list flow on', () => {
+    expect(spacing(set('x="0 30"').node)).toEqual([['A', 8], ['BA', undefined]]);
+  });
+
+  it('adds a dx list on top of the positions', () => {
+    expect(spacing(set('x="0 30 50" dx="0 1"').node)).toEqual([['A', 9], ['B', -3], ['A', undefined]]);
+  });
+
+  it('reads the list on a text holding only text the same way', () => {
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="5 35 55" y="40">ABA</text>');
+    expect(warnings).toEqual([]);
+    expect(node.x).toBeCloseTo(5);
+    expect(spacing(node)).toEqual([['A', 8], ['B', -2], ['A', undefined]]);
+  });
+});
+
+describe('a per-glyph x list with no face loaded', () => {
+  it('is left unread, and says so', () => {
+    const { node, warnings } = text('<text font-size="32"><tspan x="0 30 50">ABA</tspan></text>');
+    expect(warnings).toEqual([expect.stringMatching(/x="0 30 50"> positions each glyph; only the first value is read/)]);
+    expect(node.runs).toBeUndefined();
   });
 });
