@@ -58,3 +58,10 @@ before/after taken in the browser.
 not dirty the surface, so the loop reports zero uploads as though the caches had absorbed
 the work, and a cache that does nothing scores the same as one that works. Count draw
 calls alongside whatever else the loop counts.
+
+**A timed-out test keeps running, and its retry gets its aborted `signal`.** vitest 5.0.2 moves on at
+the timeout without stopping the test body, so whatever it still posts reaches the next test's
+mounts: in `Lab.messages.test.tsx` that read as a play rate of 0 and one state report too many
+(2026-10-27). The retry is handed the attempt's already-aborted `context.signal`, so guarding on it
+fails every retry at once; guard on a per-test fixture that ends with the attempt instead
+(`Lab.messages.test.tsx`'s `host`).
