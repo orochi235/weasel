@@ -183,24 +183,78 @@ export function placeTspanRun(
 /** A stretch of a `<text>`'s `dx` list, and the list as written. */
 export interface Inherited { dx: readonly number[]; raw: string | null }
 
+/** One of a `<text>`'s runs, and the `<tspan>` it came from, or `null` for bare text. */
+export interface Piece { tspan: Element | null; run: StyledRun }
+
+/**
+ * A `<text>`'s `x` list folded into its `dx` list, as `foldPositions` folds a
+ * run's, or the reason it cannot be. The glyphs it places are measured
+ * together, through every run they fall in, in `style`, the text's own.
+ */
+function foldTextPositions(
+  x: readonly number[], dx: readonly number[], pieces: readonly Piece[], style: TextStyle,
+): number[] | string {
+  const reached: StyledRun[] = [];
+  for (let at = 0, k = 0; at < x.length && k < pieces.length; k++) {
+    const { tspan, run } = pieces[k]!;
+    const own = tspan && (['x', 'dx'] as const).find((n) => tspan.hasAttribute(n));
+    if (own) return `a <tspan> it reaches has its own ${own}`;
+    reached.push(run);
+    at += Array.from(run.text).length;
+  }
+  const rtl = style.direction === 'rtl';
+  const resolved = resolveTextStyle(style);
+  const { lines } = layoutRuns(resolveRuns(reached, resolved), {
+    maxWidth: Infinity, lineHeight: resolved.lineHeight, align: rtl ? 'right' : 'left',
+    direction: rtl ? 'rtl' : 'ltr', tabSize: resolved.tabSize,
+  });
+  const line = lines.length === 1 ? lines[0]! : null;
+  const glyphs = reached.reduce((n, r) => n + Array.from(r.text).length, 0);
+  if (!line || line.cells.length !== glyphs || !(line.x1 > line.x0)) return 'no loaded face measures its glyphs';
+  if (!allRead(line.cells, rtl)) {
+    return 'in right-to-left text it is read only where a bidi engine says every glyph reads right to left';
+  }
+  const placed = Math.min(x.length, glyphs);
+  const pen = (i: number): number => (rtl ? line.cells[i]!.x + line.cells[i]!.advance : line.cells[i]!.x);
+  const at = (i: number): number => x[i]! + (dx[i] ?? 0);
+  return Array.from({ length: Math.max(dx.length, placed) }, (_, i) => (
+    i === 0 || i >= placed ? dx[i] ?? 0 : at(i) - at(i - 1) - (pen(i) - pen(i - 1))
+  ));
+}
+
 /**
  * A `<text>`'s `dx` list, handed out to the runs of its children in order:
  * each value moves one glyph, counting through the text and every `<tspan>`.
+ * Its `x` list past the first value, which places the text, is folded in,
+ * measured over `pieces`, the text's runs, in `style`.
  */
 export class TextShifts {
   private readonly dx: number[];
   private readonly raw: string | null;
   private at = 0;
 
-  constructor(text: Element, private readonly onWarn: (m: string) => void) {
+  constructor(
+    text: Element, private readonly onWarn: (m: string) => void, pieces: readonly Piece[] = [], style: TextStyle = {},
+  ) {
     this.raw = text.getAttribute('dx');
     const dx = readList(text, 'dx', onWarn);
+    const x = readList(text, 'x', onWarn);
     // Collapsing white space moves which glyph each value names.
-    const collapses = dx.some((v) => v !== 0) && COLLAPSIBLE.test(text.textContent ?? '');
+    const collapsible = COLLAPSIBLE.test(text.textContent ?? '');
+    const collapses = dx.some((v) => v !== 0) && collapsible;
     if (collapses) {
       onWarn(`<text dx="${this.raw}"> is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
     }
     this.dx = collapses ? [] : dx;
+    if (x.length < 2) return;
+    const folded = collapsible
+      ? 'its text has white space SVG collapses, which moves the glyphs the list names'
+      : foldTextPositions(x, this.dx, pieces, style);
+    if (typeof folded === 'string') {
+      onWarn(`<text x="${text.getAttribute('x')?.trim()}"> positions each glyph; only the first value is read: ${folded}`);
+    } else {
+      this.dx = folded;
+    }
   }
 
   /** The values over the next `run`'s glyphs, empty when they move none. */

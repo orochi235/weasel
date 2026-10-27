@@ -150,19 +150,11 @@ export class LineTracker {
 export const holdsOnlyText = (el: Element): boolean =>
   !Array.from(el.childNodes).some((child) => child.nodeType === 1 /* ELEMENT_NODE */);
 
-/** Report the glyph positioning on a `<text>` or `<tspan>` that import does
- *  not read: a `rotate` that is not all zeros, and on a `<text>` holding a
- *  `<tspan>` every `x` after the first. `dx`, `y` and `dy` lists, and an `x`
- *  list on a `<tspan>` or on a `<text>` holding only text, are read by
+/** Report a `rotate` on a `<text>` or `<tspan>` that is not all zeros, which
+ *  import does not read. The other glyph positioning lists are read by
  *  `glyphShifts` and `glyphRises`, which report what they cannot read. */
 export function warnUnreadPositions(el: Element, onWarn: (message: string) => void): void {
   const tag = el.tagName.toLowerCase();
-  if (tag === 'text' && !holdsOnlyText(el)) {
-    const raw = el.getAttribute('x')?.trim() ?? '';
-    if (raw.split(/[\s,]+/).length > 1) {
-      onWarn(`<text x="${raw}"> positions each glyph; only the first value is read`);
-    }
-  }
   const rotate = el.getAttribute('rotate')?.trim() ?? '';
   if (rotate.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
     onWarn(`<${tag} rotate="${rotate}"> is not read; the glyphs keep their own angle`);

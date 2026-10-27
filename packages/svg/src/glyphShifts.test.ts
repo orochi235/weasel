@@ -118,9 +118,40 @@ describe('a per-glyph x list, where a loaded face measures the glyphs', () => {
     expect(node.x).toBeCloseTo(5);
     expect(spacing(node)).toEqual([['A', 8], ['B', -2], ['A', undefined]]);
   });
+
+  it('reads a text\'s list through its tspans, measuring the glyphs across runs', () => {
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="5 35 55" y="40">A<tspan fill="red">BA</tspan></text>');
+    expect(warnings).toEqual([]);
+    expect(node.x).toBeCloseTo(5);
+    expect(node.text).toBe('ABA');
+    expect(spacing(node)).toEqual([['A', 8], ['B', -2], ['A', undefined]]);
+  });
+
+  it('measures each glyph in its own run\'s size', () => {
+    // B at 16 advances 11, half of what it does at 32.
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 50" y="40">A<tspan font-size="16">B</tspan>A</text>');
+    expect(warnings).toEqual([]);
+    expect(spacing(node)).toEqual([['A', 8], ['B', 9], ['A', undefined]]);
+  });
+
+  it('adds the text\'s dx list on top of its positions', () => {
+    const { node } = text('<text font-family="inter" font-size="32" x="0 30 50" dx="0 1" y="40">A<tspan fill="red">BA</tspan></text>');
+    expect(spacing(node)).toEqual([['A', 9], ['B', -3], ['A', undefined]]);
+  });
+
+  it('leaves a text\'s list unread, and says why, where a tspan it reaches has its own x', () => {
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 50" y="40">A<tspan x="30">BA</tspan></text>');
+    expect(warnings).toEqual([expect.stringMatching(/<text x="0 30 50"> positions each glyph; only the first value is read: a <tspan> it reaches has its own x/)]);
+    expect(node.runs).toBeUndefined();
+  });
 });
 
 describe('a per-glyph x list with no face loaded', () => {
+  it('is left unread on a text holding tspans, and says why', () => {
+    const { warnings } = text('<text font-size="32" x="0 30 50">A<tspan fill="red">BA</tspan></text>');
+    expect(warnings).toEqual([expect.stringMatching(/<text x="0 30 50"> positions each glyph; only the first value is read: no loaded face/)]);
+  });
+
   it('is left unread, and says so', () => {
     const { node, warnings } = text('<text font-size="32"><tspan x="0 30 50">ABA</tspan></text>');
     expect(warnings).toEqual([expect.stringMatching(/x="0 30 50"> positions each glyph; only the first value is read/)]);
