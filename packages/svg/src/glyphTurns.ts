@@ -6,7 +6,7 @@
  * turn as `rotate`, one run per stretch of glyphs at one angle.
  */
 import type { StyledRun } from '@weasel-js/core';
-import { COLLAPSIBLE } from './glyphShifts';
+import { collapses } from './glyphShifts';
 
 /** `el`'s own `rotate` list, empty where it has none or white space SVG
  *  collapses would move the glyphs its values name, which is reported. */
@@ -18,7 +18,7 @@ export function turnsOf(el: Element, onWarn: (m: string) => void): number[] {
     onWarn(`<${el.tagName.toLowerCase()} rotate="${raw}"> is not read: it is not a list of numbers`);
     return [];
   }
-  if (list.some((v) => v !== list[0]) && COLLAPSIBLE.test(el.textContent ?? '')) {
+  if (list.some((v) => v !== list[0]) && collapses(el)) {
     onWarn(`<${el.tagName.toLowerCase()} rotate="${raw}"> is not read: its text has white space SVG collapses,`
       + ' which moves the glyphs the list names');
     return [];

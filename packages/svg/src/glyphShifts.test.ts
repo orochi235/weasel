@@ -69,6 +69,16 @@ describe('a tspan dx list read as letter spacing', () => {
     expect(node.text).toBe('a b');
     expect(warnings).toEqual([expect.stringMatching(/dx="0 2 2"/)]);
   });
+
+  it('reads a list over white space xml:space="preserve" keeps, on a tspan or the text', () => {
+    const tspan = text('<text xml:space="preserve"><tspan dx="0 0 2 2">a  b</tspan></text>');
+    expect(tspan.warnings).toEqual([]);
+    expect(spacing(tspan.node)).toEqual([['a', undefined], ['  ', 2], ['b', undefined]]);
+    const own = text('<text dx="0 0 2 2" xml:space="preserve">a  b</text>');
+    expect(own.warnings).toEqual([]);
+    expect(spacing(own.node)).toEqual([['a', undefined], ['  ', 2], ['b', undefined]]);
+  });
+
   it('reads a dx list on a text holding only text, the same way', () => {
     const { node, warnings } = text('<text x="10" y="5" dx="3 1 2">abc</text>');
     expect(warnings).toEqual([]);

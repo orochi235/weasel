@@ -75,6 +75,12 @@ describe('glyphs moved off their line, read as baseline shift', () => {
     expect(node.y).toBeCloseTo(20 - 1 - 10);
   });
 
+  it('reads the whole list over white space xml:space="preserve" keeps', () => {
+    const { node, warnings } = text('<text y="20" font-size="10" xml:space="preserve"><tspan dy="0 0 0 3">a  b</tspan></text>');
+    expect(warnings).toEqual([]);
+    expect(shifts(node)).toEqual([['a  ', undefined], ['b', -0.3]]);
+  });
+
   it('moves the box by another writer\'s dy on <text>, and not by the half leading weasel writes there', () => {
     const bare = text('<text y="20" dy="5" font-size="10">a</text>');
     expect(bare.warnings).toEqual([]);

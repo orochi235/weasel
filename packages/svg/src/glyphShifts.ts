@@ -13,10 +13,15 @@ import {
   layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle, type StyledRun, type TextStyle,
 } from '@weasel-js/core';
 import { resolveLength } from './lengths';
+import { preservesSpace } from './textWhitespace';
 
-/** White space SVG's default handling would drop or fold, which moves every
- *  glyph after it to another place in the list. */
-export const COLLAPSIBLE = /^\s|\s$|\s\s|[\n\t\r]/;
+const COLLAPSIBLE = /^\s|\s$|\s\s|[\n\t\r]/;
+
+/** Whether `text`, `el`'s own by default, has white space SVG's default
+ *  handling would drop or fold, which moves every glyph after it to another
+ *  place in a list. `xml:space="preserve"` keeps every character a glyph. */
+export const collapses = (el: Element, text = el.textContent ?? ''): boolean =>
+  COLLAPSIBLE.test(text) && !preservesSpace(el);
 
 /** A glyph positioning list: `x`, `dx`, `y` or `dy`. */
 export function readList(el: Element, name: 'x' | 'dx' | 'y' | 'dy', onWarn: (m: string) => void): number[] {
@@ -28,6 +33,8 @@ export function readList(el: Element, name: 'x' | 'dx' | 'y' | 'dy', onWarn: (m:
 
 /** The lists one run is placed by, and where they were written. */
 interface Lists {
+  /** The element the run is read from, whose `xml:space` applies. */
+  el: Element;
   tag: string;
   dx: readonly number[];
   x: readonly number[];
@@ -123,7 +130,7 @@ function placeRun(
   const line = lines[lines.length - 1];
   const names = (['dx', 'x'] as const).filter((n) => (n === 'dx' ? lists.dx.some((v) => v !== 0) : lists.x.length > 1));
   const named = `<${lists.tag} ${names.map((n) => `${n}="${lists.raw[n]}"`).join(' ')}>`;
-  if (names.length > 0 && COLLAPSIBLE.test(run.text)) {
+  if (names.length > 0 && collapses(lists.el, run.text)) {
     onWarn(`${named} is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
     line.push(run);
     return 0;
@@ -184,6 +191,7 @@ export function placeTspanRun(
   // Name the text in a message about a list that is all the text's.
   const theirs = borrows && own.length === 0;
   return placeRun({
+    el: tspan,
     tag: theirs ? 'text' : tspan.tagName.toLowerCase(),
     dx: borrows ? [...own, ...inherited.dx.slice(own.length)] : own,
     x: inherited.merged ? [] : readList(tspan, 'x', onWarn),
@@ -290,18 +298,18 @@ export class TextShifts {
   private merged = 0;
 
   constructor(
-    text: Element, private readonly onWarn: (m: string) => void, pieces: readonly Piece[] = [], style: TextStyle = {},
+    private readonly text: Element, private readonly onWarn: (m: string) => void,
+    pieces: readonly Piece[] = [], style: TextStyle = {},
   ) {
     this.raw = text.getAttribute('dx');
     const dx = readList(text, 'dx', onWarn);
     const x = readList(text, 'x', onWarn);
-    // Collapsing white space moves which glyph each value names.
-    const collapsible = COLLAPSIBLE.test(text.textContent ?? '');
-    const collapses = dx.some((v) => v !== 0) && collapsible;
-    if (collapses) {
+    const collapsible = collapses(text);
+    const unread = dx.some((v) => v !== 0) && collapsible;
+    if (unread) {
       onWarn(`<text dx="${this.raw}"> is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
     }
-    this.dx = collapses ? [] : dx;
+    this.dx = unread ? [] : dx;
     if (x.length < 2) return;
     const folded = collapsible
       ? 'its text has white space SVG collapses, which moves the glyphs the list names'
@@ -330,6 +338,6 @@ export class TextShifts {
       lines[lines.length - 1].push(run);
       return 0;
     }
-    return placeRun({ tag: 'text', dx, x: [], raw: { dx: this.raw, x: null } }, run, lines, style, this.onWarn);
+    return placeRun({ el: this.text, tag: 'text', dx, x: [], raw: { dx: this.raw, x: null } }, run, lines, style, this.onWarn);
   }
 }
