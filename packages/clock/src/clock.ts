@@ -116,7 +116,8 @@ function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride
   run.origin = origin;
   run.speed = declared.speed;
   run.elapsed = clamp(run, shown - origin);
-  run.edge = false;
+  // A shown time kept onto a pass boundary is the end of the pass before, as `holdAt` places one.
+  run.edge = run.elapsed > 0 && Number.isFinite(duration) && run.elapsed % duration === 0;
   change(run, hub);
   hub.subs.emit();
 }

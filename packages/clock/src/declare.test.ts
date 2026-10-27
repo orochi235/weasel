@@ -74,4 +74,10 @@ describe('clock origin, speed and declare', () => {
     expect([h.clock.duration, h.clock.origin]).toEqual([3000, -200]);
     expect(heard).toHaveBeenCalledTimes(1);
   });
+  it('keeps a shown time that lands on a pass boundary as the end of the pass before', () => {
+    const h = createClock({ duration: 4000, loop: true });
+    h.clock.seek(3700);
+    h.override({ origin: -300 });
+    expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([4000, 0, 1]);
+  });
 });
