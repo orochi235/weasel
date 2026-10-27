@@ -30,6 +30,7 @@
   "dependencies": {
     "@weasel-js/geom": "1.13.0",
     "@weasel-js/gestures": "1.13.0",
+    "@weasel-js/headless": "1.13.0",
     "@weasel-js/icons": "1.13.0",
     "@weasel-js/loupe": "1.13.0",
     "@weasel-js/menu": "1.13.0",

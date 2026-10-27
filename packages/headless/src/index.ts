@@ -10,3 +10,5 @@ export {
   typeaheadMatch, typeaheadStep, EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS,
 } from './typeahead';
 export type { TypeaheadBuffer, TypeaheadShape } from './typeahead';
+export { tabSort, tabStep } from './focus';
+export type { FocusScope, FocusScopeOptions } from './focus';
