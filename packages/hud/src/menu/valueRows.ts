@@ -28,7 +28,8 @@ export function chipAt(panelW: number, m: MenuMetrics, x: number): 1 | -1 | null
 export function valueRowWidth(e: MenuEntry, m: MenuMetrics, measure: (text: string, fontSize: number) => number): number | undefined {
   if (e.kind === 'number') return m.padX + numberChips(0, m).width;
   if (e.kind === 'color') return Math.max(m.rowHeight, m.padX + measure(e.value ?? '—', m.fontSize));
-  if (e.kind === 'text') return m.padX + measure(e.value ?? '—', m.fontSize);
+  // Room to type into, as the DOM menu's 12ch field gives.
+  if (e.kind === 'text') return m.padX + Math.max(measure(e.value ?? '—', m.fontSize), m.fontSize * 7);
   return undefined;
 }
 
@@ -60,14 +61,23 @@ export function numberCommands(
   ];
 }
 
-/** A text row's value at the row's end, muted: nothing in a HUD menu edits it. */
+/** A text row's value at the row's end: muted while disabled, and followed by a caret while it is typed into. */
 export function textCommands(
   b: WidgetBounds, r: { y: number; h: number }, value: string | undefined, m: MenuMetrics, ink: ValueInk,
+  mode: 'off' | 'live' | 'typing' = 'live',
 ): DrawCommand[] {
-  return [textCommandFromRuns(
-    b.x + m.padX, b.y + r.y, [{ text: value ?? '—', fill: solid(ink.muted) }],
-    { ...ink.font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2,
+  const typing = mode === 'typing';
+  const end = b.x + b.w - m.padX;
+  const out: DrawCommand[] = [textCommandFromRuns(
+    b.x + m.padX, b.y + r.y, [{ text: typing ? value ?? '' : value ?? '—', fill: solid(mode === 'off' ? ink.muted : ink.fg) }],
+    { ...ink.font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2 - (typing ? 3 : 0),
   )];
+  if (typing) {
+    const half = ink.font.fontSize * 0.6;
+    const cy = b.y + r.y + r.h / 2;
+    out.push(mark(`M ${end - 1} ${cy - half} L ${end - 1} ${cy + half}`, ink.fg));
+  }
+  return out;
 }
 
 /** The swatch a color row draws in its icon column, and its hex at the row's end. */

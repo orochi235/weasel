@@ -7,6 +7,7 @@ import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuIcons, type MenuMetric
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
 import { chipAt } from './valueRows';
+import { createTextEditor } from './textEdit';
 import type { Point } from '@weasel-js/geom';
 
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
@@ -54,6 +55,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let disposed = false;
   let armed = false;
   let hoverPanel: number | null = null;
+  const typing = createTextEditor(c, rev.changed);
   c.subscribe(() => { panels = place(c, family); rev.changed(); });
 
   /** The topmost panel under (x, y), or -1. */
@@ -96,7 +98,9 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     const index = rowAt(entries, m, evt.y - panels[level]!.y);
     if (!choose) c.hover(level, index, { x: evt.x, y: evt.y });
     else if (index !== null) {
+      typing.leave(entries[index]);
       c.press(level, index);
+      typing.start(entries[index]);
       // A number row's chips step it, since this menu has no field to type in.
       const e = entries[index];
       const dir = e?.kind === 'number' ? chipAt(panels[level]!.w, m, evt.x - panels[level]!.x) : null;
@@ -106,7 +110,12 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
 
   const key = (evt: HudKeyEvent): boolean => {
     if (evt.type !== 'keydown') return false;
-    if (!evt.ctrlKey && !evt.metaKey && !evt.altKey) c.key(evt.key);
+    if (!evt.ctrlKey && !evt.metaKey && typing.key(evt.key)) return true;
+    const level = c.stack().length - 1;
+    const at = c.stack()[level];
+    const row = at == null ? undefined : c.entriesAt(level)[at];
+    if (evt.key === 'Enter' && row?.kind === 'text') typing.start(row);
+    else if (!evt.ctrlKey && !evt.metaKey && !evt.altKey) c.key(evt.key);
     // Every key belongs to the open menu, so no canvas binding fires under it.
     return true;
   };
@@ -127,12 +136,18 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     draw: (ctx) => {
       family = ctx.defaultFont;
       panels = place(c, family);
-      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons, c.numberValue));
+      const values = { number: c.numberValue, text: c.textValue, editing: typing.current() };
+      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons, values));
     },
     hitTest: (x, y) => levelAt(x, y) >= 0,
     cursorAt: () => 'default',
     onPointer: pointer,
     onKey: key,
-    dispose() { disposed = true; c.dispose(); },
+    dispose() {
+      // Dismissed mid-edit, the menu keeps what was typed, as the DOM menu's field does on blur.
+      typing.leave();
+      disposed = true;
+      c.dispose();
+    },
   };
 }

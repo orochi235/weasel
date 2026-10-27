@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import type { OpenMenu } from '@weasel-js/core';
 import { percent } from '@weasel-js/quantity';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { MenuEntry, MenuNumberEntry } from '@weasel-js/menu';
+import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import type { HudDrawCtx, HudKeyEvent } from '../widget';
-import { DEFAULT_MENU_METRICS as m, drawPanel, panelSize } from './drawPanel';
+import { DEFAULT_MENU_METRICS as m, drawPanel, OPENED_VALUES, panelSize } from './drawPanel';
 import { createMenuWidget } from './menuWidget';
 import { numberChips } from './valueRows';
 
@@ -26,7 +26,8 @@ function zoomRow(extra: Partial<MenuNumberEntry> = {}): MenuNumberEntry {
   return { kind: 'number', key: 'zoom', label: 'Magnification', value: 8, min: 2, max: 16, step: 1, suffix: '×', set: vi.fn(), ...extra };
 }
 const color: MenuEntry = { kind: 'color', key: 'color', label: 'Color', value: '#336699' };
-const text: MenuEntry = { kind: 'text', key: 'name', label: 'Name', value: 'Layer 1', set: vi.fn() };
+const text: MenuTextEntry = { kind: 'text', key: 'name', label: 'Name', value: 'Layer 1', set: vi.fn() };
+const textRow = (extra: Partial<MenuTextEntry> = {}): MenuTextEntry => ({ ...text, set: vi.fn(), ...extra });
 
 describe('drawPanel: value rows', () => {
   it('draws a number row as its label, its value and unit, and a step chip either side', () => {
@@ -41,13 +42,13 @@ describe('drawPanel: value rows', () => {
   });
 
   it('draws what it is given to show over what the row opened with', () => {
-    expect(textOf(drawPanel(ctx, b, [zoomRow()], null, m, undefined, () => 12))).toContain('12×');
+    expect(textOf(drawPanel(ctx, b, [zoomRow()], null, m, undefined, { ...OPENED_VALUES, number: () => 12 }))).toContain('12×');
     expect(textOf(drawPanel(ctx, b, [zoomRow({ value: undefined })], null, m))).toContain('—');
     expect(textOf(drawPanel(ctx, b, [zoomRow({ value: 0.5, suffix: undefined, display: percent() })], null, m))).toContain('50%');
   });
 
   it('draws infinity as its word with no unit, and keeps the step chip live at an endless end', () => {
-    const at = (value: number) => drawPanel(ctx, b, [zoomRow({ endless: 'max', infinity: 'never' })], null, m, undefined, () => value);
+    const at = (value: number) => drawPanel(ctx, b, [zoomRow({ endless: 'max', infinity: 'never' })], null, m, undefined, { ...OPENED_VALUES, number: () => value });
     expect(textOf(at(Infinity))).toContain('never');
     const plusColor = (cmds: readonly DrawCommand[]) => JSON.stringify(cmds.filter((c) => c.kind === 'path' && c.stroke && !c.fill).at(-1));
     expect(plusColor(at(16))).toContain('#eee');
@@ -61,13 +62,22 @@ describe('drawPanel: value rows', () => {
     expect(JSON.stringify(cmds.filter((c) => c.kind === 'text')[0])).toContain('#888');
   });
 
-  it('draws a text row as its label and its value, muted, since nothing here edits it', () => {
+  it('draws a text row as its label and its value, muted only while disabled, with room to type', () => {
     const cmds = drawPanel(ctx, b, [text], null, m);
     expect(textOf(cmds)).toEqual(['Name', 'Layer 1']);
-    for (const c of cmds.filter((x) => x.kind === 'text')) expect(JSON.stringify(c)).toContain('#888');
+    for (const c of cmds.filter((x) => x.kind === 'text')) expect(JSON.stringify(c)).toContain('#eee');
+    const off = drawPanel(ctx, b, [textRow({ disabled: true })], null, m);
+    for (const c of off.filter((x) => x.kind === 'text')) expect(JSON.stringify(c)).toContain('#888');
     const label = 'L'.repeat(30);
     expect(panelSize([{ ...text, label } as MenuEntry], m, measure).w)
-      .toBe(label.length * 7 + m.padX + 'Layer 1'.length * 7 + m.padX * 2 + m.rowHeight);
+      .toBe(label.length * 7 + m.padX + m.fontSize * 7 + m.padX * 2 + m.rowHeight);
+  });
+
+  it('draws what is typed into a text row, and a caret after it', () => {
+    const plain = drawPanel(ctx, b, [text], null, m);
+    const typing = drawPanel(ctx, b, [text], null, m, undefined, { ...OPENED_VALUES, editing: { entry: text, draft: 'Lay' } });
+    expect(textOf(typing)).toEqual(['Name', 'Lay']);
+    expect(typing.filter((c) => c.kind === 'path').length).toBe(plain.filter((c) => c.kind === 'path').length + 1);
   });
 
   it('widens the panel for a number row\'s chips and a color row\'s swatch and hex', () => {
@@ -133,10 +143,61 @@ describe('createMenuWidget: value rows', () => {
     ]);
   });
 
-  it('names a text row by label and value in its tree, disabled', () => {
+  it('names a text row by label and value in its tree', () => {
     const { w } = widget([text]);
     expect(w.accessibleTree!.read().children).toEqual([
-      { role: 'menuitem', key: 'name', label: 'Name: Layer 1', disabled: true },
+      { role: 'menuitem', key: 'name', label: 'Name: Layer 1' },
     ]);
+  });
+
+  const type = (w: ReturnType<typeof widget>['w'], keys: readonly string[]) => { for (const k of keys) w.onKey!(keydown(k)); };
+
+  it('takes typed text on Enter, menu letters included, and writes it on Enter without closing', () => {
+    const row = textRow();
+    const nudge: MenuEntry = { kind: 'item', key: 'nudge', label: 'Nudge', run: vi.fn() };
+    const { w, close } = widget([row, nudge]);
+    type(w, ['ArrowDown', 'Enter', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace']);
+    // `n` would move the highlight to Nudge if the menu read it.
+    type(w, ['N', 'e', 's', 't', ' ', 'n']);
+    expect(textOf(w.draw(ctx) as DrawCommand[])).toContain('Nest n');
+    expect(row.set).not.toHaveBeenCalled();
+    type(w, ['Enter']);
+    expect(row.set).toHaveBeenCalledExactlyOnceWith('Nest n');
+    expect(textOf(w.draw(ctx) as DrawCommand[])).toContain('Nest n');
+    expect(w.accessibleTree!.read().children![0]).toMatchObject({ label: 'Name: Nest n', active: true });
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('puts the value back on Escape and stays open; a second Escape closes', () => {
+    const row = textRow();
+    const { w, close } = widget([row]);
+    type(w, ['ArrowDown', 'Enter', 'x', 'Escape']);
+    expect(row.set).not.toHaveBeenCalled();
+    expect(textOf(w.draw(ctx) as DrawCommand[])).toContain('Layer 1');
+    expect(close).not.toHaveBeenCalled();
+    type(w, ['Escape']);
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('starts an edit when pressed, and keeps what was typed when another row is pressed or the menu goes', () => {
+    const row = textRow();
+    const other = textRow({ key: 'other', label: 'Other' });
+    const { w, click } = widget([row, other]);
+    const p = w.bounds;
+    const y = p.y + m.padY + m.rowHeight / 2;
+    click(p.x + 20, y);
+    type(w, ['!']);
+    click(p.x + 20, y + m.rowHeight);
+    expect(row.set).toHaveBeenCalledExactlyOnceWith('Layer 1!');
+    type(w, ['?']);
+    w.dispose();
+    expect(other.set).toHaveBeenCalledExactlyOnceWith('Layer 1?');
+  });
+
+  it('does not edit a disabled text row', () => {
+    const row = textRow({ disabled: true });
+    const { w } = widget([row]);
+    type(w, ['ArrowDown', 'Enter', 'x', 'Enter']);
+    expect(row.set).not.toHaveBeenCalled();
   });
 });

@@ -23,7 +23,7 @@ function level(c: MenuController, at: number): HudAccessibleNode[] {
       label: labelOf(c, e),
       ...(deepest && stack[at] === i ? { active: true } : {}),
       ...(e.kind === 'item' && e.checked !== undefined ? { checked: e.checked } : {}),
-      ...(e.disabled || e.kind === 'color' || e.kind === 'text' ? { disabled: true } : {}),
+      ...(e.disabled || e.kind === 'color' ? { disabled: true } : {}),
       ...(e.kind === 'submenu' ? { expanded: open } : {}),
       ...(open ? { children: [{ role: 'menu', key: 'menu', label: e.label, children: level(c, at + 1) }] } : {}),
     };
