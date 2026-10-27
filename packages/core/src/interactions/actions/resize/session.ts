@@ -18,6 +18,7 @@ import { drawnBoxes } from '../drawnBoxes';
 import type { MinSize } from 'core/scene/minSize';
 import { boxMinimum } from './minimum';
 import { boxFrame } from './boxFrame';
+import { captureHeld, type HeldNode } from './held';
 import { localToWorld } from 'core/geometry/targetFrame';
 import { outsetBox } from 'core/geometry/inkExtents';
 import type { SnapBegin, SnapSession } from '../snapDep';
@@ -55,6 +56,8 @@ export interface ResizeSession {
   readonly startPoses: ReadonlyMap<NodeId, unknown>;
   /** Start poses in world, the frame the anchor math and the drag share. */
   readonly startWorlds: ReadonlyMap<NodeId, unknown>;
+  /** What the written frames hold that the resize leaves where it draws. */
+  readonly held: ReadonlyMap<NodeId, HeldNode>;
   /** Where the pointer pressed. */
   readonly startWorld: { x: number; y: number };
   readonly geometryOf: (id: NodeId) => PoseDescriptor<unknown>;
@@ -93,7 +96,7 @@ export interface ResizeFrame {
  *  they share, and where each starts. */
 export type ResizePlace = Pick<
   ResizeSession,
-  'scene' | 'writeIds' | 'sharedBox' | 'box' | 'startPoses' | 'startWorlds' | 'geometryOf' | 'poseFrame' | 'view' | 'minimum'
+  'scene' | 'writeIds' | 'sharedBox' | 'box' | 'startPoses' | 'startWorlds' | 'held' | 'geometryOf' | 'poseFrame' | 'view' | 'minimum'
 >;
 
 /** Capture what resizing `ids` from `anchor` acts on. Null when nothing it
@@ -139,6 +142,7 @@ export function captureResize(
       box,
       startPoses: starts.startPoses,
       startWorlds: starts.startWorlds,
+      held: captureHeld(scene, written, poseFrame),
       geometryOf,
       poseFrame,
       view,

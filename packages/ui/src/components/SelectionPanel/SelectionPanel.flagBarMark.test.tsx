@@ -1,5 +1,5 @@
 import { cleanup, render } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MARKED } from '../Prefs/selection';
@@ -26,7 +26,7 @@ const routing: NodeRoutingEntry[] = [{ name: 'thing', matches: () => true }];
 const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: SCHEMA }];
 
 function marked(selected: readonly string[], renderers?: Record<string, PropertyRenderer>): Array<string | null> {
-  const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
   const { container } = render(
     <SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing}

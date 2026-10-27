@@ -44,6 +44,11 @@ export {
   grabPortBindings,
 } from './connect';
 export type { CanConnect, ConnectActionOptions, MovingEnd, PendingEdge } from './connect';
+export type { DropRefusal, DropVerdict } from '@weasel-js/core';
+export {
+  DIAGRAM_ITEM_CARRY, ITEM_DROP_ACTION_ID, createItemDropAction, dragItemProps, itemDropContribution, startItemDrag,
+} from './itemDrop';
+export type { CanDropItem, ItemDrop, ItemDropOptions, ItemDropTarget } from './itemDrop';
 export { bodyAt, isBodyEnd } from './connectTargets';
 export type { BodyEnd, BodyHit, ConnectEnd, ConnectView } from './connectTargets';
 export { CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool } from './connectorTool';

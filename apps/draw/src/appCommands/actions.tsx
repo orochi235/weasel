@@ -63,6 +63,7 @@ export const toggleSnapAction: AppAction = {
 export const togglePathDirectionAction: AppAction = {
   id: 'view.pathDirection',
   label: 'Show path direction',
+  icon: icon('pathDirection'),
   group: 'view',
   requires: ['appCommands'],
   active: (deps) => read(deps)?.pathDirection === true,

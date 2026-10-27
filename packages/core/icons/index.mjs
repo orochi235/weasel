@@ -8,6 +8,7 @@ import { ANCHOR } from './anchor.mjs';
 import { OUTLINE } from './outline.mjs';
 import { HISTORY } from './history.mjs';
 import { PAINT } from './paint.mjs';
+import { MARKER } from './marker.mjs';
 import { PARAGRAPH, TEXT } from './text.mjs';
 
 export const namespace = 'core';
@@ -25,4 +26,5 @@ export const groups = [
   ['Character styling', TEXT],
   ['Paragraph alignment', PARAGRAPH],
   ['Stroke and paint', PAINT],
+  ['Stroke markers', MARKER],
 ];

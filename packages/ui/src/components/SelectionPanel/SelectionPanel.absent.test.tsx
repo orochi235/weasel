@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
 import { MIXED, aggregateValue, type AnyNode } from './model';
@@ -16,7 +16,7 @@ const turn: PrefLeaf = { kind: 'number', name: 'Turn', description: '', default:
 const size: PrefLeaf = { kind: 'number', name: 'Size', description: '', default: 12 };
 
 function setup(nodes: Record<string, Record<string, unknown>>) {
-  const scene = createScene<Data, Layer, Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<Data, Layer, Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   for (const [id, pose] of Object.entries(nodes)) {
     scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: pose as Record<string, number>, data: { kind: 'thing' } });
   }
@@ -77,7 +77,7 @@ describe('a field of an object leaf whose absent value is its default', () => {
   } as PrefLeaf;
 
   function setupBox(nodes: Record<string, Record<string, unknown>>) {
-    const scene = createScene<Data, Layer, Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+    const scene = createScene<Data, Layer, Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
     for (const [id, data] of Object.entries(nodes)) {
       scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', ...data } });
     }

@@ -56,6 +56,7 @@ export {
   removeWires,
   setLaneOrder,
   setParam,
+  setWireLabel,
   setWireRoute,
 } from './effect/edit';
 export {

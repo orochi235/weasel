@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from 'react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   asNodeId,
   defaultCommitAdapter,
   PATH_L,
@@ -106,7 +106,7 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
 }
 
 function InteractivePanel() {
-  const scene = useScene<PanelItem, 'default', PolygonPath>({
+  const scene = useScene<PanelItem, 'default', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
   });

@@ -203,13 +203,20 @@ rect-flavored math (resize, area-select, snap origin) still works.
 
 `getPose` / `setPose` are **local-coordinate** — relative to the object's
 parent — and `getWorldPose` is the composed reading that rendering, picking and
-chrome consume. The two are the same value unless the scene composes poses: by
-default a parent groups its children and imposes no transform, so every node's
-stored pose is already world. Pass
-`useScene({ composition: RIGID_POSE_COMPOSITION })` to make a container's pose
-a frame, so rotating it rotates its contents and moving it writes one pose. The
-scene holds the strategy as `scene.composition`, and the canvas, the adapter,
-the layout pass, picking, and every built-in action read it from there.
+chrome consume. A container's pose is a frame: a child's stored pose is in it,
+so moving the container writes one pose, rotating it rotates its contents, and
+resizing it leaves them where they draw. A container whose pose derives from
+its children (`dependsOn: 'children'` with a `derivePose`) is an envelope, not a
+frame, and its children share the frame above it. The default strategy is
+`RIGID_POSE_COMPOSITION`, which reads a rect pose's `x`, `y`, `width`,
+`height`, `rotation` and `transform`; a scene of any other pose names its own in
+`useScene({ composition })` — the type requires it — or names
+`IDENTITY_POSE_COMPOSITION`, under which every pose is world and a container
+groups its children without carrying them. The scene holds the strategy as
+`scene.composition`, and the canvas, the adapter, the layout pass, picking, and
+every built-in action read it from there. A saved scene from before version 3
+stored every pose as world, and loading one makes each local
+(`localizeWorldPoses`).
 
 ## Pose override
 

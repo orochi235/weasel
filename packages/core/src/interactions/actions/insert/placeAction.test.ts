@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
 import type { InsertDep, SnapDep } from '../depSchema';
@@ -68,7 +69,7 @@ describe('placeAction', () => {
   });
 
   it('tells the snap session the container the node lands in', () => {
-    const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const g = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
     const told: Array<string | undefined> = [];
     const spy = { id: 'spy', roles: ['pointer'], *collect(q: { parent?: string }) { told.push(q.parent); } };

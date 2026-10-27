@@ -11,6 +11,7 @@ import { pathCrossings } from '../intersect/pathCrossings';
 import { intersectSegments } from '../intersect/segmentIntersections';
 import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { perpendicularTsFrom, segmentExtremaT, segmentMidT, tangentTsFrom } from './segmentFeatures';
+import { createBvh, type Bvh } from '../bvh/bvh';
 
 /**
  * What a snap target is.
@@ -163,6 +164,53 @@ function quadrantPoints(segs: readonly PathSegment[]): Point[] {
   return out;
 }
 
+/** An index's targets and segments in BVHs, built the first time a probe asks and kept while the lists stand. */
+interface Spatial {
+  targets: Map<StaticPathSnapKind, { list: readonly PathSnapTarget[]; tree: Bvh<number> }>;
+  segments?: { list: PathSnapIndex['segments']; tree: Bvh<number>; at: (readonly [number, number])[] };
+}
+
+const SPATIAL = new WeakMap<PathSnapIndex, Spatial>();
+
+function spatialOf(index: PathSnapIndex): Spatial {
+  let sp = SPATIAL.get(index);
+  if (!sp) SPATIAL.set(index, (sp = { targets: new Map() }));
+  return sp;
+}
+
+/** The indices of `kind`'s targets inside `box`, ascending, so a tie keeps the order a scan gives. */
+function targetsIn(index: PathSnapIndex, kind: StaticPathSnapKind, box: readonly number[]): number[] {
+  const sp = spatialOf(index);
+  const list = index.targets(kind);
+  let held = sp.targets.get(kind);
+  if (held?.list !== list) {
+    const tree = createBvh<number>(2, list.map((t, i) => [i, [t.x, t.y, t.x, t.y]] as const));
+    sp.targets.set(kind, (held = { list, tree }));
+  }
+  const out: number[] = [];
+  held.tree.queryBox(box, (i) => { out.push(i); });
+  return out.sort((a, b) => a - b);
+}
+
+/** The segments whose boxes meet `box`, as [path, segment] pairs in path then segment order. */
+function segmentsIn(index: PathSnapIndex, box: readonly number[]): (readonly [number, number])[] {
+  const sp = spatialOf(index);
+  const list = index.segments;
+  if (sp.segments?.list !== list) {
+    const at: (readonly [number, number])[] = [];
+    const entries: (readonly [number, readonly number[]])[] = [];
+    list.forEach((segs, path) => segs.forEach((seg, k) => {
+      entries.push([at.length, [seg.box.x0, seg.box.y0, seg.box.x1, seg.box.y1]]);
+      at.push([path, k]);
+    }));
+    sp.segments = { list, tree: createBvh<number>(2, entries), at };
+  }
+  const { tree, at } = sp.segments;
+  const found: number[] = [];
+  tree.queryBox(box, (i) => { found.push(i); });
+  return found.sort((a, b) => a - b).map((i) => at[i]!);
+}
+
 function nearestOnSeg(s: Seg, p: Point): { x: number; y: number; dist: number } {
   if (s.length === 2) return nearestOnLine(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y);
   if (s.length === 3) return nearestOnQuadratic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y);
@@ -198,41 +246,41 @@ export function findPathSnaps(index: PathSnapIndex, probe: Point, query: PathSna
     if (distance <= r) hits.push({ kind, x, y, distance, paths });
   };
 
+  // An axis scaled to nothing puts every target along it in range.
+  const rx = sx > 0 ? r / sx : Infinity, ry = sy > 0 ? r / sy : Infinity;
+  const box = [probe.x - rx, probe.y - ry, probe.x + rx, probe.y + ry];
   for (const kind of STATIC_KINDS) {
     if (!kinds.has(kind)) continue;
-    for (const t of index.targets(kind)) if (!t.paths.some(skip)) offer(kind, t.x, t.y, t.paths);
+    const list = index.targets(kind);
+    for (const i of targetsIn(index, kind, box)) {
+      const t = list[i]!;
+      if (!t.paths.some(skip)) offer(kind, t.x, t.y, t.paths);
+    }
   }
 
-  const rx = r / (sx || 1), ry = r / (sy || 1);
-  const near = (s: PathSegment) =>
-    s.box.x0 - rx <= probe.x && probe.x <= s.box.x1 + rx && s.box.y0 - ry <= probe.y && probe.y <= s.box.y1 + ry;
   const o = query.origin;
-  if (o && (kinds.has('tangent') || kinds.has('perpendicular'))) {
-    index.segments.forEach((segs, path) => {
-      if (skip(path)) return;
-      for (const s of segs) {
-        if (!near(s)) continue;
-        const lists: Array<[PathSnapKind, number[]]> = [];
-        if (kinds.has('tangent')) lists.push(['tangent', tangentTsFrom(s.pts, o)]);
-        if (kinds.has('perpendicular')) lists.push(['perpendicular', perpendicularTsFrom(s.pts, o)]);
-        for (const [kind, ts] of lists) {
-          for (const t of ts) {
-            const p = evalSeg(s.pts, t);
-            if (metric(p.x - o.x, p.y - o.y) > r) offer(kind, p.x, p.y, [path]);
-          }
+  const tangents = o !== undefined && (kinds.has('tangent') || kinds.has('perpendicular'));
+  if (!tangents && !kinds.has('nearest')) return hits;
+  const near = segmentsIn(index, box).filter(([path]) => !skip(path));
+  if (o && tangents) {
+    for (const [path, k] of near) {
+      const s = index.segments[path]![k]!;
+      const lists: Array<[PathSnapKind, number[]]> = [];
+      if (kinds.has('tangent')) lists.push(['tangent', tangentTsFrom(s.pts, o)]);
+      if (kinds.has('perpendicular')) lists.push(['perpendicular', perpendicularTsFrom(s.pts, o)]);
+      for (const [kind, ts] of lists) {
+        for (const t of ts) {
+          const p = evalSeg(s.pts, t);
+          if (metric(p.x - o.x, p.y - o.y) > r) offer(kind, p.x, p.y, [path]);
         }
       }
-    });
+    }
   }
 
   if (hits.length > 0 || !kinds.has('nearest')) return hits;
-  index.segments.forEach((segs, path) => {
-    if (skip(path)) return;
-    for (const s of segs) {
-      if (!near(s)) continue;
-      const n = nearestOnSeg(s.pts, probe);
-      offer('nearest', n.x, n.y, [path]);
-    }
-  });
+  for (const [path, k] of near) {
+    const n = nearestOnSeg(index.segments[path]![k]!.pts, probe);
+    offer('nearest', n.x, n.y, [path]);
+  }
   return hits;
 }

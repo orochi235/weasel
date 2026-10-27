@@ -1,5 +1,6 @@
 import type { Page } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import type { DiagramLabel } from '../labelTrait';
 
 /** An effects pipeline as plain data. It says what is wired to what and
  *  nothing about how any of it is drawn. */
@@ -43,6 +44,9 @@ export interface EffectPort {
   /** Default the id. */
   label?: string;
   type: string;
+  /** An input that takes any number of wires, which a runner combines: the
+   *  audio runner sums them, as Web Audio does. Default one wire. */
+  many?: boolean;
 }
 
 /** A connection from one stage's output to another stage's input. */
@@ -133,6 +137,9 @@ export interface EffectDoc {
   routes?: Readonly<Record<string, readonly Vec2[]>>;
   /** The routes a person drew under `rack` and `lanes`, by look, then by wire id. */
   lookRoutes?: LookRoutes;
+  /** Where a person put each wire's label, by wire id. Along the route and
+   *  off it, so it holds under every look, and over where a look puts it. */
+  labels?: Readonly<Record<string, DiagramLabel>>;
   /** Each group's box under `nodeGraph`, by group id, beside the pipeline as
    *  `places` is. A group with none fits its members. */
   groupBoxes?: Readonly<Record<string, EffectBox>>;

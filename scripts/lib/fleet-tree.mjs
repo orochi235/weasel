@@ -72,16 +72,16 @@ export const checkTree = (root, env) => {
 };
 
 /**
- * The paths a branch run limits the suite to, absolute, for vitest's `related`: what the commit
- * changes plus `always`. Undefined, so everything runs, unless the marker asks for selection and is
- * this run's, and when a changed path matches one of `triggers`.
+ * The paths a branch run limits the suite to, absolute, for vitest's `related`: the marker's `select`
+ * list plus `always`. Undefined, so everything runs, unless the marker carries that list and is this
+ * run's, and when a listed path matches one of `triggers`.
  */
 export const selection = (root, env, { always, triggers }) => {
   const at = join(root, MARKER);
   if (!existsSync(at)) return undefined;
   const marker = JSON.parse(readFileSync(at, 'utf8'));
-  if (!marker.select || env[STEP_ENV] || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
-  const changed = Object.keys(marker.files);
+  if (!Array.isArray(marker.select) || env[STEP_ENV] || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
+  const changed = marker.select;
   if (changed.some((path) => triggers.some((glob) => matchesGlob(path, glob)))) return undefined;
   return [...changed, ...always].map((path) => join(root, path));
 };

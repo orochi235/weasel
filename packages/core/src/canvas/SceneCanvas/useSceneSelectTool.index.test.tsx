@@ -8,6 +8,7 @@ import { renderHook } from '@testing-library/react';
 import { rectPath, PATH_L, PATH_M, PATH_Z, type Path } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { rectRegion, regionOf } from 'core/geometry/regionHit';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { regionPickQuery } from 'canvas/deps/hitTestArea';
@@ -34,7 +35,7 @@ function overridden(composed: boolean): AnyScene {
 
 /** A 1,000-node grid, each node a 20×20 rect 30 apart. */
 function grid(): AnyScene {
-  const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   for (let i = 0; i < 1000; i++) {
     scene.add({
       id: asNodeId(`n${i}`), kind: 'mark', layer: 'main', data: null,
@@ -108,7 +109,7 @@ describe('useSceneSelectTool through the pick index', () => {
   it('a click tests a path-overridden node against its path', () => {
     // Through `getWorldPose` the point pick read no override path for a node that derives none,
     // and took the whole pose box for a triangle.
-    const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'main' }] }) as AnyScene;
+    const scene = createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as AnyScene;
     const A = asNodeId('a');
     scene.add({ id: A, kind: 'mark', layer: 'main', data: null, pose: { x: 500, y: 500, width: 20, height: 20 } } as never);
     const triangle: Path = {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
 import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { LayoutStrategy } from '../../../layout/types';
@@ -9,7 +10,7 @@ import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/c
 type S = Scene<object, 'main', CirclePose>;
 
 function circleScene(): S {
-  return createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
+  return createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
 }
 
 function drag(

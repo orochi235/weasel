@@ -86,6 +86,21 @@ describe('EffectEditor', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('takes a second wire into an input that takes many, but not the same wire twice', () => {
+    const many: EffectDoc = {
+      ...doc,
+      pipeline: {
+        ...doc.pipeline,
+        stages: doc.pipeline.stages.map((s) => (s.id === 'blur' ? { ...s, inputs: [{ id: 'image', type: 'image', many: true }] } : s)),
+      },
+    };
+    const { onChange, view } = mount(many);
+    expect(view().canConnect!(port('mix', 'out', 'image'), port('blur', 'image', 'image'))).toBe(true);
+    expect(view().canConnect!(port('src', 'out', 'image'), port('blur', 'image', 'image'))).toBe(false);
+    view().onConnect!({ from: 'mix', fromPort: 'out', to: 'blur', toPort: 'image' });
+    expect(onChange.mock.calls[0]![0].pipeline.wires[1]).toMatchObject({ from: { stage: 'mix', port: 'out' }, to: { stage: 'blur', port: 'image' } });
+  });
+
   it('deletes a stage with its wires and place', () => {
     const { onChange, view } = mount();
     view().onDelete!({ nodes: ['blur'], edges: ['w1'] });

@@ -66,6 +66,9 @@ export interface PrefGroup {
    *  with `lead: 'icon'` starts its line with it; the button a bar opens the
    *  group from and its submenu row in a menu carry it beside its name. */
   icon?: IconRef;
+  /** The name of the motif its frame is drawn in, where a form draws it framed, defined by an app's `<DefaultMotif
+   *  named>` (`@weasel-js/ui`). Unset, or a name nothing defines, the form's own look. */
+  motif?: string;
   /** The letter that picks this in a menu, and with the menu bar's chord opens a top-level menu. One character; supported, never required. */
   access?: string;
   /** Drawn, with everything under it, only while this holds. */
@@ -102,6 +105,8 @@ export interface PrefSection {
   icon?: IconRef;
   /** As a {@link PrefGroup}'s. */
   access?: string;
+  /** As a {@link PrefGroup}'s. */
+  motif?: string;
   /** As a {@link PrefGroup}'s. */
   showIf?: PrefCondition;
   /** As a {@link PrefGroup}'s. */

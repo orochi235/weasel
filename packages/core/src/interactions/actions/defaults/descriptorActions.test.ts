@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
@@ -12,7 +13,7 @@ import { rotateAction } from '../rotate/action';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 type S = Scene<object, 'main', CirclePose>;
-const scene = (): S => createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
+const scene = (): S => createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
 const leaf = (s: S, p: CirclePose) => s.add({ kind: 'mark', layer: 'main', pose: p, data: {} });
 const deps = (s: S, ids: NodeId[]) => ({
   selection: { get: () => ids, set: () => {} },

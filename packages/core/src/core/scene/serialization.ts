@@ -7,18 +7,21 @@ import {
 } from './nodeFnFields';
 import type { SerializedDoc } from './docValues';
 import { treePreorder } from './treeOrder';
+import type { PoseComposition } from './composeFrame';
+import { RIGID_POSE_COMPOSITION } from './composePose';
+import { localizeWorldPoses } from './worldSave';
 import type {
-  AddNodeSpec, LayerRecord, Node, NodeId, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
-  SerializedScene, SerializedSceneV1,
+  AddNodeSpec, LayerRecord, Node, NodeId, SavedScene, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
+  SerializedScene,
 } from './types';
 
 /** Whether `value` is a snapshot `specsFromSerialized` reads, as against a live scene. */
 export function isSerializedScene<TData, TLayer extends string, TPose>(
   value: unknown,
-): value is SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose> {
+): value is SavedScene<TData, TLayer, TPose> {
   const version = typeof value === 'object' && value != null
     ? (value as { version?: unknown }).version : undefined;
-  return (version === 1 || version === 2)
+  return (version === 1 || version === 2 || version === 3)
     && Array.isArray((value as { nodes?: unknown }).nodes);
 }
 
@@ -95,7 +98,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     }
     return layer;
   });
-  return { version: 2, systemLayers, nodes, ...(doc ? { doc } : {}) };
+  return { version: 3, systemLayers, nodes, ...(doc ? { doc } : {}) };
 }
 
 /** Decides what a version 1 `container` becomes; `leaf` is always a mark. */
@@ -112,6 +115,9 @@ export interface SpecsFromSerializedOptions<TData, TLayer extends string, TPose>
   unknownKeys?: 'throw' | 'skip';
   /** Hears each key `unknownKeys: 'skip'` leaves out, as it is left out. */
   onSkip?: (skipped: SkippedKey) => void;
+  /** How a version 1 or 2 save's world poses are made local to their
+   *  containers' frames. Default `RIGID_POSE_COMPOSITION`; a scene passes its own. */
+  composition?: PoseComposition<TPose>;
 }
 
 /** A registry key a load left out: the node, the function field it named,
@@ -128,18 +134,29 @@ export interface SkippedKey {
  *  throws on an unsupported version, and on an unknown registry key unless
  *  `opts.unknownKeys` is `'skip'`. */
 export function specsFromSerialized<TData, TLayer extends string, TPose>(
-  json: SerializedScene<TData, TLayer, TPose> | SerializedSceneV1<TData, TLayer, TPose>,
+  json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer>,
   opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
+): AddNodeSpec<TData, TLayer, TPose>[] {
+  const specs = currentSpecs(json, registry, opts);
+  if (json.version === 3) return specs;
+  return localizeWorldPoses(specs, opts.composition ?? (RIGID_POSE_COMPOSITION as PoseComposition<TPose>));
+}
+
+/** `json`'s nodes as specs, with every pose as the save stored it. */
+function currentSpecs<TData, TLayer extends string, TPose>(
+  json: SavedScene<TData, TLayer, TPose>,
+  registry: SceneRegistry<TPose, TData, TLayer>,
+  opts: SpecsFromSerializedOptions<TData, TLayer, TPose>,
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   type Entry = { n: Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>; kind: 'mark' | 'group' };
   let entries: Entry[];
   if (json.version === 1) {
     entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(1, n, opts.classifyV1) }));
-  } else if (json.version === 2) {
+  } else if (json.version === 2 || json.version === 3) {
     entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(2, n) }));
   } else {
-    throw new Error(`Scene: unsupported version ${String(Reflect.get(json, 'version'))}; versions 1 and 2 are supported`);
+    throw new Error(`Scene: unsupported version ${String(Reflect.get(json, 'version'))}; versions 1, 2 and 3 are supported`);
   }
   return entries.map(({ n, kind }) => {
     const spec: AddNodeSpec<TData, TLayer, TPose> = {
@@ -186,11 +203,11 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
  *  is what `clip: 'outline'` draws on a group. One a classifier makes a mark
  *  gets no clip, since which painter claims it is not known here; one whose
  *  clip key was skipped loads as it would have without it. */
-function clipsAsV1(version: 1 | 2, spec: { kind: string; clipFromPose?: unknown }): boolean {
+function clipsAsV1(version: 1 | 2 | 3, spec: { kind: string; clipFromPose?: unknown }): boolean {
   return version === 1 && spec.kind === 'group' && spec.clipFromPose === undefined;
 }
 
-/** The kind a saved node loads as: its own on version 2; on version 1 a `leaf` is a
+/** The kind a saved node loads as: its own from version 2; on version 1 a `leaf` is a
  *  mark and a `container` goes to `classify`, or is a group without one. */
 export function nodeKindOf<TData, TLayer extends string, TPose>(
   version: 1 | 2,

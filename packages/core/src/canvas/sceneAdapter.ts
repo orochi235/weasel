@@ -34,10 +34,10 @@ import {
 } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
+import { memoizeCompose } from 'core/scene/composeFrame';
 import { insertSite } from './deps/insertSite';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
-import { cascadingSetPose, containerCascade } from './poseCascade';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -137,13 +137,8 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
 
 /** Derive the adapter for a scene. Reads go straight to the scene; writes are
  *  ops applied through its history, so anything done through the adapter is
- *  undoable.
- *
- *  Moving a container carries its contents either way the scene composes
- *  poses. Under a frame (`scene.composition`) the one pose written moves them.
- *  Under the absolute-pose model `setPose` on a container translates every
- *  descendant by the same delta, and a batch that poses descendants too undoes
- *  exactly only when it goes through this adapter's `applyOps`. */
+ *  undoable. A container's pose is a frame its children are stored in, so the
+ *  one pose written moves its contents. */
 export function sceneToAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
@@ -161,16 +156,14 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
 
   const composition = scene.composition;
   const composes = composesFrames(composition);
+  const compose = memoizeCompose(composition.compose);
   const pickOpts: ScenePickSourceOptions<unknown> = {};
   // The asking view's layer gate and camera, over the adapter's own options.
   const pickOptsFor = (view: RegionPickView | undefined): ScenePickSourceOptions<unknown> =>
     (view ? { ...pickOpts, ...regionPickOptions(view, undefined) } : pickOpts);
 
-  const cascade = composes ? null : { setPose: cascadingSetPose(scene, d) };
-
   const clipboardEnv: SceneClipboardEnv<TData, TLayer, TPose> = {
     scene,
-    composes,
     worldPoseOf: (id) => adapter.getWorldPose(id),
     frameAtOrAbove: (id) => frameAtOrAbove(adapter, id),
     poseBounds,
@@ -197,20 +190,12 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     },
     getWorldPose(id) {
       if (!composes) return adapter.getPose(id);
-      return composeWorldPose(adapter, id, composition.compose);
+      return composeWorldPose(adapter, id, compose);
     },
     // Only present when it would do something: the render walk skips the fold
     // entirely when this is absent, which is the absolute-pose path.
-    ...(composes ? { composePose: composition.compose } : {}),
-    ...(cascade ? { setPose: (id: string, pose: TPose) => cascade.setPose(asNodeId(id), pose) } : {}),
-    poseTarget(id, descriptor) {
-      if (cascade === null || scene.get(asNodeId(id))?.kind !== 'group') {
-        return scenePoseTarget(scene, id, descriptor ?? d);
-      }
-      // Its descendants hold poses of their own: a commit moves them, and they are shown beside it.
-      const carried = containerCascade(scene, asNodeId(id), d, (pose) => adapter.setPose(id, pose));
-      return scenePoseTarget(scene, id, descriptor ?? d, carried);
-    },
+    ...(composes ? { composePose: compose } : {}),
+    poseTarget: (id, descriptor) => scenePoseTarget(scene, id, descriptor ?? d),
     getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
     subscribeLayers: (listener) => scene.subscribe(listener),
     getLayout: (id) => scene.layoutOf(asNodeId(id)),

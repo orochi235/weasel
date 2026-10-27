@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  asNodeId, createScene, findShapeSilhouette, RECT_POSE_COMPOSITION, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
+  asNodeId, composeWorldPose, createScene, findShapeSilhouette, RECT_POSE_COMPOSITION, scenePoseAdapter, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
   type SceneRegistry,
 } from '@weasel-js/core';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
@@ -17,10 +17,15 @@ function setup() {
   const group = sym.create({ center: { x: 100, y: 0 }, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS } });
   const leaf = scene.add({
     kind: 'mark', layer: 'main', parent: group, id: asNodeId('sq'),
-    pose: { x: 120, y: 10, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+    // Stored in the group's frame, whose origin is its center: (120, 10) in the world.
+    pose: { x: 20, y: 10, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
   });
   return { scene, sym, group, leaf };
 }
+
+/** Where `id` draws, its stored pose folded through its containers' frames. */
+const worldOf = (scene: { composition: { compose: unknown } }, id: NodeId): RectPose & { rotation?: number; transform?: unknown } =>
+  composeWorldPose(scenePoseAdapter(scene as never), id, scene.composition.compose as never) as RectPose;
 
 const copiesOf = (scene: ReturnType<typeof setup>['scene'], id: NodeId) => {
   const node = scene.get(id)!;
@@ -46,7 +51,7 @@ describe('createSymmetry', () => {
     const { scene, sym, group, leaf } = setup();
     sym.update(group, { center: { x: 150, y: 0 } });
     expect(copiesOf(scene, group)[0][4]).toBeCloseTo(300);
-    expect(scene.get(leaf)!.pose.x).toBe(120);
+    expect(worldOf(scene, leaf).x).toBeCloseTo(120);
     scene.undo();
     expect(copiesOf(scene, group)[0][4]).toBeCloseTo(200);
   });
@@ -104,6 +109,12 @@ describe('the contribution\'s deps', () => {
     sym.update(group, { spec: { kind: 'repeat', count: 4 } });
     expect(sym.contribution.deps!.pathSymmetry!(() => undefined)!.transforms(leaf)).toEqual([]);
   });
+
+  it('answers a wallpaper\'s cell for anchor edits, not its lattice', () => {
+    const { sym, group, leaf } = setup();
+    sym.update(group, { spec: { kind: 'wallpaper', cell: 'both' } });
+    expect(sym.contribution.deps!.pathSymmetry!(() => undefined)!.transforms(leaf)).toHaveLength(3);
+  });
 });
 
 describe('bake', () => {
@@ -116,8 +127,7 @@ describe('bake', () => {
     const kids = scene.childrenOf(out.group);
     expect(kids).toHaveLength(2);
     expect(kids[0]).toBe(leaf);
-    const copy = scene.get(kids[1])!;
-    expect(copy.pose).toEqual({ x: 70, y: 10, width: 10, height: 10, transform: [-1, 0, 0, 1] });
+    expect(worldOf(scene, kids[1]!)).toEqual({ x: 70, y: 10, width: 10, height: 10, transform: [-1, 0, 0, 1] });
     expect(scene.historyEntries()).toHaveLength(before + 1);
     scene.undo();
     expect(isSymmetryGroup(scene as never, group)).toBe(true);
@@ -128,34 +138,34 @@ describe('bake', () => {
     const { scene, sym, group } = setup();
     scene.add({
       kind: 'mark', layer: 'main', parent: group, id: asNodeId('label'),
-      pose: { x: 0, y: 0, width: 5, height: 5 }, data: { text: 'hi' },
+      pose: { x: -100, y: 0, width: 5, height: 5 }, data: { text: 'hi' },
     });
     const out = sym.bake(group)!;
     expect(out.skipped).toEqual([]);
     const copies = scene.childrenOf(out.group).map((id) => scene.get(id)!).filter((n) => (n.data as { text?: string }).text);
     expect(copies).toHaveLength(2);
-    expect(copies[1].pose).toEqual({ x: 195, y: 0, width: 5, height: 5, transform: [-1, 0, 0, 1] });
+    expect(worldOf(scene, copies[1]!.id)).toEqual({ x: 195, y: 0, width: 5, height: 5, transform: [-1, 0, 0, 1] });
   });
 
   it('mirrors a clipping group\'s clip with it, so the copy still shows its content', () => {
     const { scene, sym, group } = setup();
     const clipped = scene.add({
       kind: 'group', layer: 'main', parent: group, clip: 'outline',
-      pose: { x: 110, y: 0, width: 20, height: 20 }, data: { path: rectPath(0, 0, 20, 20) },
+      pose: { x: 10, y: 0, width: 20, height: 20 }, data: { path: rectPath(0, 0, 20, 20) },
     });
     scene.add({
       kind: 'mark', layer: 'main', parent: clipped,
-      pose: { x: 115, y: 5, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+      pose: { x: 5, y: 5, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
     });
     const out = sym.bake(group)!;
     const copy = scene.childrenOf(out.group).map((id) => scene.get(id)!).find((n) => n.kind === 'group' && n.id !== clipped)!;
     expect(copy.clip).toBe('outline');
-    const clip = boundsOfPath(findShapeSilhouette(copy as never, copy.pose)!);
+    const clip = boundsOfPath(findShapeSilhouette(copy as never, worldOf(scene, copy.id))!);
     expect(clip.x).toBeCloseTo(70);
     expect(clip.width).toBeCloseTo(20);
-    const [kid] = scene.childrenOf(copy.id).map((id) => scene.get(id)!);
-    expect(kid!.pose.x).toBeCloseTo(75);
-    expect(kid!.pose.x + kid!.pose.width).toBeLessThanOrEqual(clip.x + clip.width + 1e-9);
+    const kid = worldOf(scene, scene.childrenOf(copy.id)[0]!);
+    expect(kid.x).toBeCloseTo(75);
+    expect(kid.x + kid.width).toBeLessThanOrEqual(clip.x + clip.width + 1e-9);
   });
 
   it('copies a mark with its children, and the flags and unit scope each node states', () => {
@@ -163,19 +173,19 @@ describe('bake', () => {
     const units = { system: { base: 'mm', units: { mm: 1 } }, scale: 1 };
     const box = scene.add({
       kind: 'mark', layer: 'main', parent: group, units,
-      pose: { x: 110, y: 0, width: 20, height: 20 }, data: { path: rectPath(0, 0, 20, 20) },
+      pose: { x: 10, y: 0, width: 20, height: 20 }, data: { path: rectPath(0, 0, 20, 20) },
     });
     scene.add({
       kind: 'mark', layer: 'main', parent: box, pickable: false, hidden: true,
-      pose: { x: 115, y: 5, width: 10, height: 10 }, data: { text: 'row' },
+      pose: { x: 5, y: 5, width: 10, height: 10 }, data: { text: 'row' },
     });
     const out = sym.bake(group)!;
     const copy = scene.childrenOf(out.group).map((id) => scene.get(id)!).find((n) => n.id !== box && scene.childrenOf(n.id).length > 0)!;
     expect(copy.units).toEqual(units);
-    expect(copy.pose.x).toBeCloseTo(70);
+    expect(worldOf(scene, copy.id).x).toBeCloseTo(70);
     const [row] = scene.childrenOf(copy.id).map((id) => scene.get(id)!);
     expect(row).toMatchObject({ pickable: false, hidden: true, data: { text: 'row' } });
-    expect(row!.pose.x).toBeCloseTo(75);
+    expect(worldOf(scene, row!.id).x).toBeCloseTo(75);
   });
 
   it('turns a copy through its pose, so a paint laid out in its box turns with it', () => {
@@ -183,7 +193,7 @@ describe('bake', () => {
     sym.update(group, { spec: { kind: 'point' } });
     const out = sym.bake(group)!;
     const copy = scene.get(scene.childrenOf(out.group).find((id) => id !== leaf)!)!;
-    const pose = copy.pose as RectPose & { rotation?: number; transform?: unknown };
+    const pose = worldOf(scene, copy.id);
     expect(pose.x).toBeCloseTo(70);
     expect(pose.y).toBeCloseTo(-20);
     expect(pose.rotation).toBeCloseTo(Math.PI);
@@ -258,7 +268,7 @@ describe('the guide\'s angle knob', () => {
     const { scene, sym, group } = setup();
     scene.add({
       kind: 'mark', layer: 'main', parent: group, id: asNodeId('petal'),
-      pose: { x: 100, y: 60, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+      pose: { x: 0, y: 60, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
     });
     const guide = guideOf(sym);
     // The petal's far corner is hypot(10, 70) from the center at (100, 0).

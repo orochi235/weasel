@@ -107,11 +107,10 @@ export function readGroup(scene: Scene<unknown, string, unknown>, id: NodeId | s
 
 /**
  * Every transform a path inside group `id` should stay its own image under
- * while it is edited, or none for a kind that is not a group. In world
- * coordinates, for the `pathSymmetry` dep.
+ * while it is edited: its kind's point group. In world coordinates, for the
+ * `pathSymmetry` dep.
  */
 export function editSymmetries(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): Affine[] {
   const g = readGroup(scene, id);
-  if (g === null || !SYMMETRY_KINDS[g.spec.kind].group) return [];
-  return symmetryTransforms(g.spec, g.center);
+  return g === null ? [] : SYMMETRY_KINDS[g.spec.kind].pointGroup(g.spec, g.center);
 }

@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { SelectionPanel } from './SelectionPanel';
@@ -33,7 +33,7 @@ const routing: NodeRoutingEntry[] = [{ name: 'card', matches: () => true }];
 for (const mode of ['light', 'dark']) {
   it(`sets a field in a panel section apart from the panel, in ${mode} mode`, () => {
     document.documentElement.setAttribute('data-wzl-mode', mode);
-    const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+    const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
     scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
     render(<SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing} />);
     const panel = screen.getByRole('group', { name: 'Edge' });

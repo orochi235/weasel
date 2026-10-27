@@ -6,7 +6,7 @@
  * counts unless `measure` is given, so layout runs without a canvas and gives
  * the same answer in node and in a browser.
  */
-import type { RectPose } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type RectPose } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { placeContainers, containerSpecs } from './dataContainerPlace';
 import { containerLayoutNodes, resolveContainers, type ContainerLayout } from './dataContainers';
@@ -124,8 +124,9 @@ function nodeSpecs(
 export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> & { layer: TLayer }): DiagramSpec<TLayer>[];
 export function diagramScene(data: DiagramData, opts?: DiagramSceneOptions): DiagramSpec[];
 export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> = {}): DiagramSpec<TLayer>[] {
-  const { layer, ...rest } = opts;
-  const specs = mainSpecs(data, rest);
+  const { layer, composition = RIGID_POSE_COMPOSITION, ...rest } = opts;
+  // Laid out in world; each spec is stored in its container's frame.
+  const specs = localizeWorldPoses(mainSpecs(data, rest), composition);
   return (layer === undefined ? specs : specs.map((s) => ({ ...s, layer }))) as DiagramSpec<TLayer>[];
 }
 

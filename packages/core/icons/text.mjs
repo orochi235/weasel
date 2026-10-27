@@ -1,3 +1,5 @@
+import { chevron } from '../../icons/scripts/lib/base.mjs';
+
 // Character-styling glyphs: the run flags a text tool's options bar carries,
 // plus the two scripts. The code face is drawn in @weasel-js/ui.
 //
@@ -60,6 +62,19 @@ const lines = (shortStart) =>
 // edge and row sits on a 1x pixel center at 16px, like the rows above, and
 // the block clears the box's inner edge by the same 2.5 units top and bottom,
 // so the three read as one block moved rather than three drawings.
+// Start and end: the alignment named by reading order, not by an edge. Two lines of text over an arrow in the
+// reading direction, the short line and the arrow flush to the edge reading starts from or ends at. The arrow
+// takes the third and fourth rows, so its head clears the short line; its ends and the lines' sit on 1x pixel
+// centers, and its head is 45 degrees with barbs two pixels long.
+const EDGE = [3.125, 16.875];
+const READ_ROW = 15.625;
+const READ_ARROW = 10;
+const reading = (short0, from) => {
+  const tip = from + READ_ARROW;
+  return `<path d="${rule(EDGE[0], EDGE[1], ROWS[0])}${rule(short0, short0 + 8.75, ROWS[1])}${rule(from, tip, READ_ROW)}"/>`
+    + `<path d="${chevron([tip, READ_ROW], [1, 0], 2.5 * Math.SQRT2, 45)}"/>`;
+};
+
 const BOX = `<rect x="1.875" y="1.875" width="16.25" height="16.25" rx="2" stroke-width="1"/>`;
 const GAP = 3.75;
 const block = (y) => `<path d="${rule(5.5, 14.5, y)}${rule(7, 13, y + GAP)}"/>`;
@@ -71,6 +86,8 @@ export const PARAGRAPH = {
   textAlignJustify: `<path d="${ROWS.map((y, i) =>
     i < ROWS.length - 1 ? rule(LONG[0], LONG[1], y) : rule(LONG[0], LONG[0] + SHORT, y),
   ).join('')}"/>`,
+  textAlignStart: reading(EDGE[0], EDGE[0]),
+  textAlignEnd: reading(EDGE[1] - 8.75, EDGE[1] - READ_ARROW),
   textAlignTop: BOX + block(5.625),
   textAlignMiddle: BOX + block(10 - GAP / 2),
   textAlignBottom: BOX + block(14.375 - GAP),

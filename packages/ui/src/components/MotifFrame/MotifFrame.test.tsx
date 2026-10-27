@@ -47,6 +47,22 @@ describe('MotifFrame', () => {
     expect(screen.getByRole('group', { name: 'Glow' })).toHaveAttribute('data-motif', 'tab');
   });
 
+  it('draws a motif asked for by name from what a DefaultMotif above names, and a name nothing defines as if unset', () => {
+    render(
+      <DefaultMotif named={{ hero: stereo(), wall: notch() }}>
+        <DefaultMotif group={titlebar()} named={{ hero: tab() }}>
+          <MotifFrame title="Inner" motif="hero">x</MotifFrame>
+          <MotifFrame title="Outer" motif="wall">x</MotifFrame>
+          <MotifFrame title="Nobody" motif="nobody">x</MotifFrame>
+        </DefaultMotif>
+      </DefaultMotif>,
+    );
+    const motif = (name: string) => screen.getByRole('group', { name }).getAttribute('data-motif');
+    expect(motif('Inner')).toBe('tab');
+    expect(motif('Outer')).toBe('notch');
+    expect(motif('Nobody')).toBe('titlebar');
+  });
+
   it('keeps a default per kind: a group default leaves subpanels in their divider', () => {
     render(
       <DefaultMotif group={titlebar()}>

@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PrefSelectHow } from '../Prefs';
@@ -44,7 +44,7 @@ const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: SCHEMA }];
 const selection = { current: [asNodeId('n')] };
 
 function panel(selected?: readonly string[], onSelect?: (path: string, how: PrefSelectHow) => void) {
-  const scene = createScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { stroke: {} } });
   const view = (now?: readonly string[]) => (
     <SelectionPanel scene={scene} selection={selection} properties={properties} routing={routing} selected={now} onSelect={onSelect} />

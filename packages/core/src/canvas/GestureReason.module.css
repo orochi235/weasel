@@ -1,0 +1,14 @@
+/* A refusal's reason, held beside the pointer while a drag is over what refuses it. */
+.reason {
+  position: fixed;
+  z-index: var(--wzl-z-hud, 900);
+  max-width: 280px;
+  padding: var(--wzl-space-2, 4px) var(--wzl-space-3, 6px);
+  border-left: 3px solid var(--wzl-danger, #d93636);
+  border-radius: var(--wzl-radius-sm, 3px);
+  background: var(--wzl-surface-popover, #fff);
+  color: var(--wzl-fg, #1a1a1a);
+  box-shadow: var(--wzl-shadow, 0 1px 4px rgba(0, 0, 0, 0.25));
+  font: var(--wzl-font-size-sm, 12px) / 1.35 system-ui, sans-serif;
+  pointer-events: none;
+}

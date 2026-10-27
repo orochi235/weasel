@@ -48,11 +48,15 @@ function projectedGeometry(
  *  its preview, each preceded by its data op when the geometry projection
  *  answers for the node. */
 export function resizeOps(
-  leaves: Pick<ResizeSession, 'scene' | 'writeIds' | 'startPoses' | 'geometryOf' | 'geometryProjection'>,
+  leaves: Pick<ResizeSession, 'scene' | 'writeIds' | 'startPoses' | 'geometryOf' | 'geometryProjection'> & Partial<Pick<ResizeSession, 'held'>>,
   previews: ReadonlyMap<NodeId, unknown>,
   label: string,
 ): Op[] {
   const ops: Op[] = [];
+  for (const [id, h] of leaves.held ?? []) {
+    const to = previews.get(id);
+    if (to !== undefined) ops.push(createTransformOp<unknown>({ id: id as string, from: h.from, to, label }));
+  }
   for (const id of leaves.writeIds) {
     const next = previews.get(id);
     if (next === undefined) continue;

@@ -1,0 +1,25 @@
+.demo {
+  display: flex;
+  gap: var(--wzl-space-6);
+  align-items: flex-start;
+}
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  padding: var(--wzl-space-3) var(--wzl-space-5);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}

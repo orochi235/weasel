@@ -24,7 +24,7 @@ export {
 } from 'core/scene/composePose';
 export type { PoseAdapter, PoseComposition, PoseClosure } from 'core/scene/composePose';
 export { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
-export { carriedDescendants, sceneCarrySource } from 'core/scene/carryDescendants';
+export { carriedDescendants, heldInFrame, sceneCarrySource } from 'core/scene/carryDescendants';
 export type { CarrySource } from 'core/scene/carryDescendants';
 export { nestedHitTester } from 'core/scene/nestedHit';
 export { unionOfChildrenVia } from 'core/scene/unionOfChildren';
@@ -70,11 +70,11 @@ export * from '../core/adapters/types';
 
 // ─── Scene primitive (kit-owned tree of marks and groups) ──────────────
 export {
-  createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, sceneSelectionStore, useScene, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
+  createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, isSerializedScene, localizeInScene, localizeWorldPoses, worldPosesOf, sceneSelectionStore, useScene, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentOf, documentPose, effectivePose, nodeAsShown,
   CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneSharedUnitScopes, sceneUnitScopes,
 } from '../core/scene';
-export type { PoseSource, PosedNode, ScopedScene, ShownDataSource } from '../core/scene';
+export type { PlacedSpec, PoseSource, PosedNode, ScopedScene, ShownDataSource } from '../core/scene';
 export type {
   AddLayerSpec,
   AddNodeSpec,
@@ -116,6 +116,8 @@ export type {
   SerializedNodeV1,
   SerializedScene,
   SerializedSceneV1,
+  SerializedSceneV2,
+  SavedScene,
   SkippedKey,
   SpecsFromSerializedOptions,
   StatedNodeFields,
@@ -124,6 +126,7 @@ export type {
   SystemLayerRecord,
   SystemLayerSpec,
   UserLayerRecord,
+  SceneOptions,
   UseSceneOptions,
 } from '../core/scene';
 export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docValues';

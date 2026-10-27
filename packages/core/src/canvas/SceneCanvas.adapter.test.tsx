@@ -11,7 +11,6 @@ import { SceneCanvas } from './SceneCanvas';
 import { useOptionalViewInputs } from './viewInputs';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
-import { RECT_POSE_COMPOSITION } from 'core/scene/composePose';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -27,11 +26,8 @@ beforeAll(() => {
   proto.getContext = vi.fn(() => null);
 });
 
-function makeScene(framed = false): Scene<D, L, P> {
-  const s = createScene<D, L, P>({
-    systemLayers: [{ id: 'main' }],
-    ...(framed ? { composition: RECT_POSE_COMPOSITION } : {}),
-  });
+function makeScene(): Scene<D, L, P> {
+  const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.add({ id: asNodeId('box'), kind: 'group', layer: 'main', pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'rect' } });
   s.add({ id: asNodeId('kid'), kind: 'mark', layer: 'main', parent: asNodeId('box'), pose: { x: 10, y: 10, width: 5, height: 5 }, data: { kind: 'rect' } });
   s.history.clear();
@@ -69,23 +65,14 @@ describe('SceneCanvas adapter', () => {
     expect(seen[seen.length - 1]).toBe(first);
   });
 
-  it('moves a container’s children with it, as one undo entry', () => {
-    seen.length = 0;
-    const scene = makeScene();
-    render(<Host scene={scene} />);
-    const adapter = seen[seen.length - 1];
-    act(() => adapter.setPose('box', { x: 120, y: 90, width: 50, height: 50 }));
-    expect(scene.get(asNodeId('kid'))!.pose).toEqual({ x: 30, y: 0, width: 5, height: 5 });
-    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['move container']);
-  });
-
   it('under a frame, reads world poses through it and leaves children where they are', () => {
     seen.length = 0;
-    const scene = makeScene(true);
+    const scene = makeScene();
     render(<Host scene={scene} />);
     const adapter = seen[seen.length - 1];
     expect(adapter.getWorldPose('kid')).toEqual({ x: 110, y: 110, width: 5, height: 5 });
     act(() => adapter.setPose('box', { x: 120, y: 90, width: 50, height: 50 }));
     expect(scene.get(asNodeId('kid'))!.pose).toEqual({ x: 10, y: 10, width: 5, height: 5 });
+    expect(scene.history.entries().undo).toHaveLength(1);
   });
 });

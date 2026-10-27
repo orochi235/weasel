@@ -53,6 +53,9 @@ tools also ships `ToolSet`s naming them (core's `SHAPE_TOOLS`, path-tools'
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
 
+**Never read `docs/TODO.md` whole** (114 KB). Search it — `grep -n '(P2)'`, `grep -n '\[agent\]'`, a
+keyword — and read only the lines around a hit.
+
 When work merges, update `docs/TODO.md` in the same change — retire the entry, or
 rewrite it around what is actually left. An entry describing work that shipped is
 worse than no entry: a reader plans against it. Don't reintroduce a summary index
@@ -113,17 +116,8 @@ If a change is genuinely breaking or genuinely additive, say so in the
 changeset *prose*. The words are what a reader acts on; the number can always
 be raised deliberately later. Don't otherwise discuss the number.
 
-**Don't trust what a publish says it did.** `changeset publish` has twice
-listed a package under "Successfully published" that never reached npm, with no
-error anywhere in the log. `npm run check:published` asks the registry whether
-every workspace's current version is really there, and `npm run
-test:smoke:registry` installs the whole set into an empty tree to catch the
-consumer-facing half — one missing sibling breaks `npm i @weasel-js/core` while
-seventeen versions are perfectly present. Both run in the release workflow after
-the publish; run either by hand to answer "did the last release land?".
-Within an hour of a publish a missing version may only be staged — npm has hidden
-a fresh upload for 55 minutes, and republishing it fails with E409 — so check with
-`npm run check:published -- --wait` before re-dispatching anything.
+Whether a publish really landed, and how to check: `docs/releasing.md` ("Checking a publish").
+
 
 ## Package manager
 
@@ -163,70 +157,9 @@ real. Full rule: `docs/proposals/2026-08-26-loops-stop-when-unseen.md`.
 
 ## Drawing icons
 
-Where glyphs live, how code names one, and how a build trims them: `docs/icons.md`.
+Where glyphs live, how code names one, and how a build trims them, and the rules for drawing
+one: `docs/icons.md`. Read its "Drawing rules" before drawing or editing any glyph.
 
-**Proof SVG icons at 10–15× their display size.** A glyph authored on a 20×20
-viewBox gets inspected at ~240–320px before anyone looks at it small. At
-chrome size a misplaced arrowhead or a join that doesn't meet is two blurry
-pixels and reads as fine; blown up it is obviously broken. Render small only
-afterward, as a legibility check — never as the design surface.
-
-Compute terminus geometry, don't eyeball it. `M x y A rx ry rot laf sf dx dy`
-ends at `(x+dx, y+dy)` — an arrowhead capping that arc puts its vertex
-*there*. Same for a handle meeting a circle's rim: solve for the point on the
-circle rather than guessing a coordinate that looks close.
-
-**An arrowhead goes on a straight run, on a compass direction.** A head set on the end of a curve
-and aimed along its tangent leans outward, and its inside barb closes up against the bending shaft;
-below a radius of about twice the head's length it reads as a hook or a flag, and aiming it along
-the chord instead only helps above radius 5. So end the curve early and carry the head on a
-straight run at least as long as the barbs trail back.
-Pick where the curve ends so that run points along an axis or a diagonal. On a diagonal run use
-`chevron`'s spread of 45, which lays both barbs on the pixel axes; at 36–42 they sit a few degrees
-off and blur at 16px. A head also needs a shaft showing behind its barbs, or it reads as a caret.
-A ring or an open arc is free to turn: before reshaping anything, slide its gap round until the
-head lands on the flattest stretch that is clear of other strokes.
-Where there is no room for a straight run, hang the head on the shaft instead of on its tangent:
-walk one trail of arc back from the tip and put the two barb ends on the curve's normal there, the
-same distance either side. That holds down to a bend radius of about 1.2 head lengths; tighter,
-the inner barb fills the bend, and the head wants to be solid. `chevronOn` in `packages/icons/scripts/lib/base.mjs`
-draws this head, and `turn` in `packages/ui/icons/camera.mjs` uses it.
-
-**Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
-gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt
-cap is only that where the two cross at a right angle *and* the stroke in front is straight there.
-The gap is measured along the stroke being cut, and it is the same at every point across it: the
-cut end is the front stroke's edge slid along by the gap, not an offset at right angles to it.
-Behind a straight stroke, draw the back stroke on past the cut inside a nested `<svg>` whose
-viewport ends at the cut line — it clips to its box and needs no id. Behind a curved one, make the
-front stroke out of circular arcs, whose stroked edges are arcs again, fill the back stroke, and
-end it on that edge arc slid by the gap: `turn` in `camera.mjs` builds its ring as a four-arc oval
-for this, since an ellipse's edges are no curve path data can follow. Keep such coordinates to four
-places. Never call a cut close enough by its size; he measures these zoomed in. One optical
-exception: a short cut end facing a long curved edge reads flatter than the edge even when it
-measures parallel, because the eye takes the edge's curvature from its whole run, so `turn`'s upper
-axis end is bent 2.5 times as far as the ring beneath it, its middle kept at the gap. Round caps
-stopped short of the crossing are worse again: the gap pinches, and the strokes read as unrelated.
-
-**The small check is a separate check, and it is the pixel grid.** Proofing
-large tells you nothing about chrome size. Rasterise at the size the chrome
-actually renders — labkit's chrome regions draw glyphs at `size={16}` — magnify with
-nearest-neighbour, and look at the pixels the renderer produced. A 16px glyph
-inside a screenshot of a proof page has been resampled twice before you see it.
-
-**Check 1× and 2× separately; they disagree.** At 1× a 16px icon gets 16 device
-pixels and fine detail collapses; at 2× it gets 32 and the same drawing
-resolves. Neither grid is the answer on its own, and a conclusion drawn from one
-does not transfer.
-
-**Path order is z-order.** `gen:icons` emits paths in source order, so the
-sequence in each package's `icons/` definitions is load-bearing wherever a glyph gets
-depth from overlap. Reordering paths for tidiness breaks it silently.
-
-Fuller notes from the session that produced these — what stroke weight can and
-cannot fix, why rounded corners move numeric constraints, how `currentColor`
-behaves across inline / `<img>` / `mask-image`, and the size cost of sampled
-curves — are in `clone-icons/STYLE-LESSONS.md` in Mike's iCloud Drive.
 
 ## Demo conventions
 
@@ -279,38 +212,9 @@ cores, less 3 kept for it, leave jsdom at least 4 workers (`scripts/vitest-overl
 reading); that saved 16–23% on 10-, 14- and 18-core nodes on 2026-10-21. The reserve came from
 `scripts/bench-overlap-reserve.mjs`, whose runs are in `scripts/bench-overlap-reserve.runs.jsonl`.
 
-**On a branch, a fleet run tests only what the branch reaches.** The test files whose imports lead to
-a changed path run, and the gate always runs whole; `main` and a bare commit run everything, and so
-does `--full`. A change to a manifest, a tsconfig, a setup file, or anything `vitest.config.ts` loads
-runs everything too — the `triggers` list there. A file read at build time rather than imported,
-such as an icon definition a plugin generates from, selects nothing on a branch and is caught only by
-the full run on `main` after the merge. Add such a path to `triggers` once it has slipped through.
+What a branch run selects, the gate, `test:fleet:postbuild`, the Node matrix, the draw view
+checkout and `dev:fleet`: `docs/fleet.md`.
 
-**Draw is served from `.claude/worktrees/view`, a detached checkout of `main`**, so edits to the
-main checkout don't reload the browser tab mid-session. A local `pre-push` hook runs
-`scripts/advance-view.mjs` on every push to `main`, moving it to the pushed commit (and running
-`npm ci` and restarting draw when the lockfile changed); `npm run view:advance` does the same by hand.
-
-**`npm run dev:fleet -- draw forge` serves dev servers from a fleet node instead of this machine.**
-It installs into one scratch tree there (`weasel-dev`), runs the apps as an onto service, prints each
-address, and syncs every edit made here until Ctrl-C stops the servers; `--drop` removes the tree. Drive
-it headless from here with chrome-devtools or Playwright by the printed IP: headless Chrome resolves no
-`.local` names. `DRAW_E2E_URL=http://<ip>:33452 npm run test:e2e:draw` runs draw's e2e suite against it.
-
-**The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
-read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
-this is what says a commit would fail there. `npm run test:gate` runs it here, in about two
-minutes; run it before merging a branch.
-
-**The gate stops at ci.yml's first build; `npm run test:fleet:postbuild -- <ref>` runs the rest.**
-From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
-and React-free checks, both consumer smokes, the site builds — reading the list from ci.yml through
-`scripts/lib/ci-steps.mjs`, as the gate does. It builds in a node tree of its own
-(`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21; run it
-beside `test:fleet` before merging any branch.
-`npm run test:fleet:matrix -- <ref>` runs that whole ci.yml job under each matrix Node the fleet
-doesn't (22), in its own `weasel-node22` tree; it took 13.9 min wall on 2026-10-21, so run it before
-merging a branch that touches dependencies, build tooling, or anything loaded through a native module.
 
 ## Test and typecheck commands
 
@@ -335,87 +239,6 @@ program an editor shows for a file in that package. Name packages after `--` to 
 
 Things that pass every test and are still wrong.
 
-**A visual baseline cannot see a batched run's composition.** The renderer merges
-neighbouring commands into one draw, and what a screenshot shows is the topmost
-thing drawn — so a wall of thumbnails, whose atlas quad covers its own ground
-rect, hides whatever the ground painted. Solid fills spent a day drawing
-multiplied by the atlas texel beside them with all 51 baselines green; an outside
-consumer found it against a canvas2d reference in an afternoon. Anything that
-changes what shares a draw needs `tests/visual/batch-pixels.spec.ts`'s kind of
-check — build the command list, read the framebuffer channel by channel, and
-probe a pixel the covering command does *not* cover.
-
-**jsdom cannot catch a layout collapse.** Arc 3 of the labkit pass wrapped the workspace in a
-row whose `flex: 1` resolved to nothing inside a block container, so the lab rendered as an empty
-page — with all 7903 tests green. Screenshot anything that changes a container's box.
-
-**A jsdom API that exists but has no consequence produces a test that cannot fail.**
-`setPointerCapture` is a real function there: it records the call and does nothing else, so
-`pointerup` is never retargeted and the element the browser would synthesize `click` on does not
-change. `FloatingPanel` captured on pointerdown — which in a browser kills the click on every
-non-native child — and the obvious test, that the child's `onClick` fired, passed before the fix
-and after it. This is what makes watch-it-fail the load-bearing half of TDD rather than a step of
-write-it-first: when a test written to fail doesn't, you are asserting the emulation. Assert a
-proxy on this side of the boundary instead — here, that nothing called `setPointerCapture` — and
-say in the test that it is a proxy. A stand-in that drops *cost* rather than behavior does the
-same to an efficiency claim: a fake client makes "refetches only when its inputs changed" green
-against a hook that refetches unconditionally.
-
-**The CSS-module proxy in the `weasel-ui` vitest project answers to any key.** `s.thisNeverExisted`
-comes back as `_thisNeverExisted_<filehash>`, so asserting a class proves only that the component
-asked for that key — never that a rule defines it, and a class whose rule was deleted still reads
-as present. The hash is per stylesheet, so an assertion can still tell *which* module a class came
-from; to know a rule survives, read the stylesheet or check it in a browser.
-
-**Only `[data-wzl-mode]` switches the theme — an attribute named anything else is inert.**
-`tokens.css` keys its mode blocks off it, and `applyTheme` is what writes it. forge's `mode`
-global goes through `applyTheme` onto the frame's `<html>`, so every story in the workshop,
-bare `@weasel-js/ui` included, follows Auto/Light/Dark without a decorator of its own. A story
-that sets `data-theme`, or wraps itself to restate the mode, is either doing nothing or
-verifying one mode twice — Storybook's `theme` global was the original source of that, and both
-it and the workarounds it needed are gone.
-
-**A `var()` inside a custom property is substituted where that property is declared.** So
-`--wzl-x: 0 1px 3px var(--wzl-shadow)` in `:root` bakes in the default mode's shadow and
-inherits that frozen value into every other mode's block. In a real property it resolves per
-element and is fine. `build-tokens.ts` now redeclares any token whose reference chain reaches a
-mode semantic inside every mode block, so authoring one is safe — but hand-written CSS is not
-covered, and jsdom resolves neither `var()` nor `color-mix()`, so only a browser can tell you.
-
-**A consumer overriding a theme token at matching specificity loses silently.** `applyTheme`
-emits one flat rule carrying the whole resolved token set on
-`[data-wzl-theme='x'][data-wzl-mode='dark'][data-wzl-density='comfortable']` — (0,3,0). The
-build-time emitter behind `tokens.css` is a different path that splits per axis and tops out at
-(0,2,0), so grepping the generated file finds no such selector and makes this look untrue. A
-consumer restated the type scale on `:root [data-wzl-theme][data-wzl-mode]` — also (0,3,0) — and
-lost the tie on source order, since an adopted stylesheet comes after every author sheet. The app
-fell back to the default density everywhere with no console warning: chrome text at 13px where
-15px was intended, read with `getComputedStyle`. It looked like one panel being small rather than
-a dead token block, because the app's own rem rules were unaffected. A consumer picks the axis
-(`selection={{ density: 'roomy' }}`) instead of restating its numbers, and a kit default meant to
-be overridden either sits in `:where()` or is read as a `var()` fallback, so there is no tie to
-lose.
-
-**A `:where()` override hook covers only the declarations inside it.** `Dialog` moved its
-body's `padding` and `overflow` into `:where(.body)` so `bodyClassName` could turn them off, and
-left `min-height: 0` in the plain rule beside it. That one declaration then beat the consumer
-class on source order, and a dialog told to hold a settled height resized itself around whichever
-pane was open — the two properties it had been given worked, which is what made the third look
-like something else. Move the whole set a consumer must beat, not the ones that prompted the fix.
-
-**`--wzl-fg-on-accent` is the text-on-accent token; `--wzl-accent-fg` is the accent used *as*
-text** (it resolves to `--wzl-accent-strong`). Reach for the second to label a selected row in an
-accent-filled rail and it paints the text in its own background color, invisible. The fallback in
-`var(--wzl-accent-fg, #fff)` never fires either, because the token does exist — nothing warns, no
-test sees it, and the row reads as an empty highlight bar in a screenshot.
-
-**`theme/base.less` element defaults live in `:where()` on purpose.** Bare `button` nested under
-`.lk-root` is specificity (0,1,1) and outranks every component class. Don't unwrap them. The flip
-side bites too: specificity cannot stop a default from filling in a property a component never
-sets — its `height` crushed a 16px glyph to 2px and forced ToggleBar segments out of their track.
-So the button default matches only a class-less or `lk-` button; widen that selector and every
-weasel-ui button inside a lab inherits it again.
-
 **The git stash stack is shared by every worktree of this repo.** A `stash`/`pop` pair run in one
 worktree can pop another session's work into it. Use a throwaway worktree for a baseline instead;
 if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry by tag.
@@ -425,180 +248,15 @@ if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry b
 `test:smoke:consumer` calls `<repo>/node_modules/.bin/tsc` and fails with an empty error. Run
 `npm ci` in the worktree before building or smoke-testing anything in it.
 
-**A backtick in a GLSL comment ends the shader.** Every shader in this repo is
-a template literal, so a comment written the way the surrounding TypeScript is
-— `like this` — closes it and reopens it, and what was between becomes
-JavaScript. It does not always fail the typecheck: an even number of them
-re-balances into something that parses and then dies at runtime with
-`SyntaxError: Expected a semicolon` from an `eval` frame, naming no file. Write
-GLSL comments with no backticks at all.
+Read the file for the area before changing anything in it:
 
-**A uniform with no location is written through `null`, and GL says nothing.**
-`gl.uniform*(null, …)` is a legal no-op, so the uniform keeps its zero default —
-a zeroed `u_model` collapses every vertex to a point and the draw produces no
-fragments at all. `WeaselRenderer.registerProgram` used to scan only the
-*fragment* source for uniform names, so a registered program supplying its own
-vertex shader got no location for anything it declared there; the mesh paint
-bound, baked, drew, and painted nothing, with 31 green unit tests behind it.
-The recorder cannot catch this — it answers every `getUniformLocation` — so the
-test asserts the renderer *asked* for the name, and the browser is what proves
-the pixels. Both stages are scanned now.
+| Touching | Read |
+|---|---|
+| the renderer, shaders, paints, the batch, GL tests | `docs/traps/rendering.md` |
+| jsdom or browser tests, test helpers, perf loops | `docs/traps/testing.md` |
+| tokens, themes, stylesheets, `:where()` defaults | `docs/traps/css-theme.md` |
+| package exports, `.d.ts`, vite config, dev servers | `docs/traps/build-dev.md` |
 
-**A shader variant a compiler can fold measures nothing.** `fill-rate.spec.ts`
-gated its glyph math on `mix(..., u_color.a * 0.0)`, which folds to zero — so
-every line feeding that arm was dead and the variant timed the same shader as
-its control, reporting the glyph math as free (and sometimes negative). A
-runtime zero that is not a compile-time zero (`u_color.a - 0.5` where the
-uniform is 0.5) is what keeps the code alive. The same trap waits for any
-"with and without" shader pair.
-
-**No gradient is a run-breaker any more.** Linear, radial and conic all ride the
-vertices off the ramp atlas and join the run, and so do images and text. A test
-reaching for "a paint the batch cannot express" wants per-vertex colors or a
-pattern, and should count draws to pin that premise: tests written against the
-old behavior went on passing for the wrong reason, twice.
-
-**A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
-disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any
-function owning its own stencil state — `drawPathStrokeStenciled`, `drawPathFillStencil` —
-binds with `bindPathFillByKind` and draws itself. Calling `drawPathFillByKind` from either
-one paints the full doubled ribbon, or fills the holes of an even-odd path, with every test
-green. Write the naive version first and watch the guard test fail before fixing it.
-
-**`tryStageSolid(ctx, mesh, undefined)` flushes the staged run and returns `false`.** Pass
-`undefined` for a non-batchable paint rather than hand-rolling a `flushSolids`, or draw
-ordering breaks.
-
-**`export * from '@weasel-js/<pkg>'` in core's barrel emits no binding in the
-bundle.** A star re-export of an *external* package survives typecheck and the
-unit suite, then fails at the consumer's bundler — `No matching export in
-core/dist/index.js` — because esbuild cannot see through the package boundary
-to enumerate the names. Re-export from another workspace package by name, the
-way core already does for `@weasel-js/font`. Only `npm run test:smoke:consumer`
-catches it.
-
-**A `declare module` augmentation merges through one re-export hop, not two.** TS merges into
-the module where the interface is *declared*; aimed at a module that only re-exports it, it
-declares a fresh one in that module's scope instead. One hop survives — a consumer augmenting
-`'@weasel-js/core'` reaches `DepSchema` declared in `@weasel-js/routing`'s barrel. Two does not:
-put the declaration in a submodule the barrel re-exports and the shadowed alias poisons every
-`DepSchema[K]`, reported as TS2536 inside routing's own source, nowhere near the augmentation
-that caused it. So the interface has to sit in the barrel core re-exports from.
-`scripts/smoke-consumer-bundle.mjs`'s `smokeDep` check is the guard, and it has to run against
-the *published* `.d.ts` — in-repo typechecks resolve to source and cannot see the flattening.
-
-**A bare `export type { X } from '…'` does not bring `X` into the file's own scope.** Replacing a
-local declaration with a re-export leaves every use of the name in that same file unresolved — and
-if a DOM global answers to it, silently wrong rather than an error. `SelectionMode` is one:
-lib.dom declares `"select" | "start" | "end" | "preserve"`, so `mode: 'multi'` started failing in
-eleven demos while the file that lost the declaration compiled clean. Write `import type { X } …`
-then `export type { X };`.
-
-**The consumer smoke test cannot catch an undeclared dependency.** It packs every `@weasel-js`
-package into the tree, so a bare specifier resolves whether or not the importer declared it.
-`npm run check:imports` is the check that works: it compares each package's source imports with
-its manifest. `check:manifests` reads no imports, only that advertised paths exist in the tarball.
-
-**`glRecorder`'s proxy answers to every name.** An ALL-CAPS property the constants table
-does not carry comes back as `0`, so an assertion naming a missing flag compares 0 against
-whatever else answers 0 and passes on a renderer that never touched it. A lowercase one
-comes back as a recording *function*, so a y-flip computed from a mistyped
-`drawingbufferheight` is silently `NaN`. Add the constant to `GL_CONSTANTS` first, and
-watch the assertion fail before trusting it.
-
-**Every jsdom test file runs in its own realm (`pool: 'vmThreads'`).** Its `Object`,
-`Set`, `RegExp` and `Uint8Array` are not Node's, and `structuredClone` hands back Node's,
-so an `instanceof` or `=== Object.prototype` check fails on a clone and `toEqual(new
-Set(…))` reports two identical values as different. Use `isPlainObject` from core, or
-check the tag with `Object.prototype.toString`. Node globals no longer leak in either — a
-browser API jsdom lacks goes in `vitest.setup.ts`. A test that starts a real vite server
-belongs in `forge-node`, on the threads pool: rolldown's native binding rejects a foreign
-`RegExp`.
-
-**A test file that passes alone and fails in a full run is measuring load, not your
-change.** Bisecting with the file in isolation at one end and the whole suite at the
-other produced a clean, entirely false "both parents green, merge red" — the two ends
-were different experiments. Use one probe across the whole range.
-
-**Run vitest with `--reporter=default` to see a passing test's console output.** The
-reporter vitest picks on its own when an agent runs it drops stderr from passing tests, so
-React's "not wrapped in act(...)" warnings looked like they only happened in CI. They
-reproduce locally once the reporter prints them.
-
-**A windease store notifies its subscribers on a microtask, so a sync `act` ends before
-they re-render.** That covers every lab: `Workspace` and `Split` register nodes while they
-mount, and every `addTrial`, `rerender` or mark added does the same. Mount through
-`renderSettled` (`@weasel-js/react/testing/renderSettled`), and make a store-changing
-`act` async, so the notify lands inside it.
-
-**`useScene` builds its scene once into a ref and never rebuilds it.** Editing a demo's
-`initial` nodes and saving leaves the previous scene live under HMR, so the canvas paints
-the old data with no error and no warning. A hard reload is the only way to trust a
-before/after taken in the browser.
-
-**opentype.js runs 2.0.0 and is typed by `@types/opentype.js@1.3.10`.** 2.0.0 ships
-no typings, so TS resolves the module to the DefinitelyTyped package for the 1.x API.
-Harmless while `outline/opentypeParser.ts` keeps its narrow surface — every point it
-touches exists in both majors — but the failure would be silent: the 1.x typings
-declare `load()` and `loadSync()` as working, and in 2.0.0 they are deprecation stubs
-that `console.error` and return `undefined`. A call to either typechecks clean and
-fails at runtime. If that surface ever widens, hand-write a local `.d.ts` covering
-only what the kit calls.
-
-**`import.meta.glob`'s two arguments must be inline literals.** Vite resolves it by
-static analysis, so hoisting the patterns or the options object into a `const` leaves
-it unable to read them — it silently drops `eager` and every matched file becomes its
-own dynamic chunk. That turned one modulepreload into 87 in `apps/draw` and, measured
-cold on Slow 4G, looked exactly like "lazy-loading the dev surfaces caused a 6x FCP
-regression". Bisect before believing a chunk-count regression.
-
-**Keep a real file extension off a virtual module id, or add `.js`.** A virtual id
-ending in a real extension gets claimed by vite's css/json/jsx transforms — postcss
-will try to parse a JS module as CSS. `virtual:demo-source:<path>.js` is the shape
-that survives.
-
-**A single-threaded static server invents load regressions.** `python3 -m http.server`
-handles one request at a time, which serializes a many-chunk build into a slowdown no
-real host would show. Use a threaded server, and quote build-output byte counts rather
-than emulated FCP — the timings vary too much between runs to compare.
-
-**A bare `getContext('webgl2')` on a shared buffer can cripple every tenant of it.**
-Called on a canvas no renderer has opened yet, it creates the context with default
-attributes, and the renderer's later `getContext('webgl2', { stencil: true, … })`
-gets that same context back without a stencil buffer — every path fill then draws
-nothing, with no error anywhere. A labkit surface clear did this to every
-annotation mark. Only touch a shared context once a tenant has painted into it. A test's
-pixel reader counts: one reading before the app's first paint refuses the canvas
-(`weasel: this canvas cannot be painted: … no stencil buffer` on stderr), so a reader
-asks for `{ preserveDrawingBuffer: true, stencil: true }`.
-
-**A tile repainted before its position commits leaves a ghost after a clear.**
-`<Canvas paintInto>` reads its `x`/`y` from the last render, so a surface painter
-that sets React state and then asks for a redraw can paint the tile where it *was*
-— after that frame's whole-buffer clear, which nothing then erases.
-`AnnotationOverlay` commits the rect with `flushSync` first. A GL trace of
-`scissor` against `clear` is what shows it; the screenshot only shows a stray mark.
-
-**A second site dev server takes over the first.** The vite config loads `wake`
-(`scripts/vite-wake.ts`), which keeps one copy of each app per machine and ignores
-`--port`, so a server started from another worktree kills whichever one is running. Start
-any extra copy with `WAKE_EXTRA=<port>`, which neither takes over nor gets taken over.
-
-**A dev server serves the packages pre-bundled, so a package edit reloads rather than patches.**
-`scripts/vite-prebundle.ts` bundles every `@weasel-js/*` and `@editor/*` specifier an app imports,
-re-bundling on a saved package file in a few seconds. forge keeps every package holding stories (ui,
-labkit, forge, diagram, devtools, diagram-elk) as source, so edits there still hot-update.
-`WEASEL_DEV_BUNDLE_STORIES=1` bundles ui and labkit, whose stories import through package specifiers:
-on 2026-10-21 a forge load fell from 1,624 requests to 1,270 and, at 20 ms of emulated latency, from
-7.1 s to 4.5 s to network idle, while a ui component edit went from a 0.28 s hot update to a ~3.6 s
-re-bundle and reload. Whatever source imports from a bundled package by relative path is left out of
-the bundle and served from source, so it loads once. A stack trace into a bundled package points at
-`node_modules/.vite-*/deps`. `WEASEL_DEV_SOURCE=1` serves every package file by file again.
-
-**A perf loop driven by hover events measures vsync.** A hover that changes no state does
-not dirty the surface, so the loop reports zero uploads as though the caches had absorbed
-the work, and a cache that does nothing scores the same as one that works. Count draw
-calls alongside whatever else the loop counts.
 
 ## Terminology
 

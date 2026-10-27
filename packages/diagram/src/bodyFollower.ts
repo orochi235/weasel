@@ -32,7 +32,11 @@ function restacked(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: Reado
     if (before.width === after.width && before.height === after.height) continue;
     const rows = recordedRows(layout);
     if (rows === null) continue;
-    const boxes = layoutBody({ outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign }, after);
+    // Rows are stored in the body's own frame.
+    const boxes = layoutBody(
+      { outline: trait.outline, rows, padding: layout.padding, gap: layout.gap, verticalAlign: layout.verticalAlign },
+      { x: 0, y: 0, width: after.width, height: after.height },
+    );
     for (const child of sc.childrenOf(id as never)) {
       const c = sc.get(child)!;
       const index = (c.data as { bodyRow?: unknown } | null)?.bodyRow;

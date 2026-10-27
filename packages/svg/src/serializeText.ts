@@ -2,7 +2,7 @@
 
 import { escapeAttr } from './xmlEscape';
 import type { FontRequest, StyledRun, TextPoseLayout } from '@weasel-js/core';
-import { isSolidPaint, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
+import { halfLeadingFor, isSolidPaint, numericWeight, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
 import { metaAttrsXml, metaElementsXml } from './metaXml';
 import type { SvgTextNode } from './types';
 import { trimNumber } from './transform';
@@ -18,6 +18,9 @@ import { LAID_ATTR, laidLinesXml, layoutMeasured } from './laidLines';
  * edge, center, or right edge as its alignment resolves.
  * `dominant-baseline="text-before-edge"` makes `y` the top of the box, and
  * the width and height, which SVG text doesn't model, go in `data-weasel-*`.
+ * That sets the face's ascent on the box top, where weasel's layout puts half
+ * the leading first, so a `dy` moves the lines down by it; weasel's reader
+ * reads only `y`. A face nothing measured gets no `dy`.
  *
  * Given the node's `layout`, each line is written where it lays out instead
  * (`laidLinesXml`), and `y` stays the box top for weasel's own reader.
@@ -27,11 +30,16 @@ export function textXml(
   given?: TextPoseLayout | null,
 ): string {
   const layout = given && layoutMeasured(given, node.text) ? given : null;
+  const resolved = resolveTextStyle(node.style);
   const x = node.x + anchorOffset(node.style, node.width, node.text);
+  const leading = layout ? undefined : halfLeadingFor(
+    resolved.fontFamily, numericWeight(resolved.fontWeight), resolved.fontStyle, resolved.fontSize, resolved.lineHeight,
+  );
   const attrs: string[] = [
     `x="${trimNumber(x)}"`,
     `y="${trimNumber(node.y)}"`,
     layout ? `${LAID_ATTR}="lines"` : `dominant-baseline="text-before-edge"`,
+    ...(leading ? [`dy="${trimNumber(leading)}"`] : []),
     // SVG's default whitespace handling would collapse indentation and runs
     // of spaces away on re-import.
     `xml:space="preserve"`,
@@ -112,7 +120,6 @@ export function textXml(
   const pieces = node.runs && node.runs.length > 0
     ? node.runs.map((r) => ({ text: r.text, attrs: runAttrs(r, style, registry, warn) }))
     : [{ text: node.text, attrs: null }];
-  const resolved = resolveTextStyle(style);
   const body = layout
     ? laidLinesXml(pieces, layout, { anchor, rtl: direction === 'rtl' })
     : linesXml(pieces, x, resolved.fontSize * resolved.lineHeight);

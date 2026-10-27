@@ -34,8 +34,8 @@ async function mount() {
   const enter = vi.fn();
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', pose: box(20, 200), data: {} } as never);
-  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'main', parent: asNodeId('g'), pose: box(20), data: { path: triangle(20), fill: FILL } } as never);
-  scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'main', parent: asNodeId('g'), pose: box(160), data: { path: triangle(160), fill: FILL } } as never);
+  scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'main', parent: asNodeId('g'), pose: { ...box(0), y: 0 }, data: { path: triangle(20), fill: FILL } } as never);
+  scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'main', parent: asNodeId('g'), pose: { ...box(140), y: 0 }, data: { path: triangle(160), fill: FILL } } as never);
   let sel!: SelectionApi;
   let deps!: DepRegistry;
   function Probe() {

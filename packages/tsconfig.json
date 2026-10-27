@@ -24,6 +24,8 @@
     "*/src/**/*.d.ts",
     "../apps/**/*.d.ts",
     "../scripts/vitest-browser-commands.ts",
+    "../scripts/vitest-request-log.setup.ts",
+    "../scripts/vitest-resize-loops.setup.ts",
     "../vitest.browser.setup.ts"
   ],
   "exclude": ["**/node_modules", "**/dist"]

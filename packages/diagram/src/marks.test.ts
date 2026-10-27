@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import { diagramScene, type DiagramData } from './fromData';
 import { dataKeyReader } from './trait';
 import { diagramMarkOf, markShape } from './marks';
@@ -15,13 +16,15 @@ const DATA: DiagramData = {
 };
 const specs = diagramScene(DATA, { layout: 'none', font: { fontFamily: 'sans-serif', fontSize: 10 } });
 const drawn = specs.find((s) => s.id === ('a/mark:0' as never))!;
+const drawnAt = worldPosesOf(specs, RIGID_POSE_COMPOSITION).get('a/mark:0')!;
 const text = specs.find((s) => s.id === ('a/mark:1' as never))!;
 
 describe('marks', () => {
   it('makes a drawn mark a child of its node, over the node\'s whole box', () => {
     expect(drawn.parent).toBe('a');
     expect(drawn.pickable).toBe(false);
-    expect(drawn.pose).toEqual({ x: 100, y: 200, width: 40, height: 80 });
+    expect(drawn.pose).toEqual({ x: 0, y: 0, width: 40, height: 80 });
+    expect(drawnAt).toEqual({ x: 100, y: 200, width: 40, height: 80 });
     expect(diagramMarkOf(drawn)).toEqual({ d: 'M0 0.5 H1' });
   });
 
@@ -30,7 +33,7 @@ describe('marks', () => {
   });
 
   it('stretches the unit path over the box it is painted in', () => {
-    const [cmd] = markShape().paint(drawn as never, drawn.pose as never);
+    const [cmd] = markShape().paint(drawn as never, drawnAt as never);
     const path = (cmd as { path: { coords: Float32Array } }).path;
     expect([...path.coords]).toEqual([100, 240, 140, 240]);
   });
@@ -38,7 +41,7 @@ describe('marks', () => {
   it('paints an \'inherit\' fill and stroke in what it inherits', () => {
     const node = { ...drawn, data: { ...drawn.data, fill: 'inherit', stroke: 'inherit' } };
     const inherited = { fill: { paint: { color: '#0f0' } }, stroke: { paint: { color: '#00f' }, width: 2 } };
-    const [cmd] = markShape().paint(node as never, drawn.pose as never, { inherited } as never);
+    const [cmd] = markShape().paint(node as never, drawnAt as never, { inherited } as never);
     expect(cmd).toMatchObject({ fill: { paint: { color: '#0f0' } }, stroke: { paint: { color: '#00f' }, width: 2 } });
   });
 

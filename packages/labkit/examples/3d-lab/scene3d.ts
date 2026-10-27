@@ -5,7 +5,7 @@
  * tested — nothing here subclasses, wraps or works around it.
  */
 
-import { createScene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
 import type { Scene, SceneNode } from '@weasel-js/core';
 import { aabbAround, type Aabb } from '@weasel-js/geom/3d';
 import { aabbOfPose, pose3, type Pose3 } from '@weasel-js/kernel3d';
@@ -44,7 +44,7 @@ export function aabbOfSolid(pose: Pose3, kind: SolidKind): Aabb {
 }
 
 export function createSolidScene(): SolidScene {
-  return createScene<SolidData, SolidLayer, Pose3>({
+  return createScene<SolidData, SolidLayer, Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'solids' }],
     initial: [
       {

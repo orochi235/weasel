@@ -150,6 +150,9 @@ export function runDropPass(
 
   const dest = pickContainer(session, dragged, dropCenter);
   if (!dest) return { dropCenter, pass: null, reflow: new Map() };
+  if (dest.refused !== undefined) {
+    return { dropCenter, pass: null, reflow: new Map(), refused: { id: dest.id, bounds: dest.bounds, reason: dest.refused } };
+  }
 
   const container: LayoutContainer = { id: dest.id as string, bounds: dest.bounds };
   const placed = placeAll(session, dest, container, dragged, probeOffset);

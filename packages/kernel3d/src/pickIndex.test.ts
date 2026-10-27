@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type NodeId } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, type NodeId } from '@weasel-js/core';
 import { intersectRayAabb, normalize, quatFromAxisAngle, type Aabb, type Ray } from '@weasel-js/geom/3d';
 import { createCamera } from './camera';
 import { createAreaSelect, createNodeAtPoint, screenBoxOf } from './deps';
@@ -61,7 +61,7 @@ function randomScene(r: Rand, n: number): TestScene {
     else if (roll < 0.03) data.odd = 'inverted';
     initial.push({ kind: 'mark' as const, layer: 'solids' as const, pose: randomPose(r), data });
   }
-  return createScene<TestData, TestLayer, Pose3>({ systemLayers: [{ id: 'solids' }], initial });
+  return createScene<TestData, TestLayer, Pose3>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'solids' }], initial });
 }
 
 /** Cameras far outside the cloud, and inside it, where boxes straddle and sit behind the eye. */
@@ -123,7 +123,7 @@ function scanArea(world: World3d<TestData, TestLayer>, b: ScreenBox): NodeId[] {
 
 /** A world whose nodes are the given boxes, in render order. */
 function boxWorld(boxes: readonly Aabb[]): { world: World3d<TestData, TestLayer>; ids: NodeId[] } {
-  const scene = createScene<TestData, TestLayer, Pose3>({
+  const scene = createScene<TestData, TestLayer, Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'solids' }],
     initial: boxes.map(() => ({ kind: 'mark' as const, layer: 'solids' as const, pose: pose3({ x: 0, y: 0, z: 0 }), data: {} })),
   });
@@ -206,7 +206,7 @@ describe('worldPickIndex', () => {
 
   it('gives a tie on t to the first node in render order', () => {
     const box = pose3({ x: 0, y: 0, z: 0 });
-    const scene = createScene<TestData, TestLayer, Pose3>({
+    const scene = createScene<TestData, TestLayer, Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'solids' }],
       initial: [
         { kind: 'mark', layer: 'solids', pose: box, data: {} },

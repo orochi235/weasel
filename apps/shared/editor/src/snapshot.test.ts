@@ -11,7 +11,7 @@ describe('snapshot — scene snapshot to node specs', () => {
 
   it('preserves containers and parent links so nesting survives reload', () => {
     const json: SerializedScene<Data, Layer, Pose> = {
-      version: 2,
+      version: 3,
       systemLayers: [{ id: 'default' }],
       // Layer-major DFS-preorder, exactly as toJSON() emits: parent before child.
       nodes: [
@@ -62,7 +62,7 @@ describe('snapshot — scene snapshot to node specs', () => {
 
   it('revives typed arrays inside node data', () => {
     const json: SerializedScene<Data, Layer, Pose> = {
-      version: 2,
+      version: 3,
       systemLayers: [{ id: 'default' }],
       nodes: [
         { id: 'a', kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { coords: [1.5, 2.5, 3.5] } },
@@ -93,7 +93,7 @@ describe('snapshot — scene snapshot to node specs', () => {
   it('restores a container\'s layout by its key, and the pickable, hidden, and locked flags', () => {
     const layout = { snap: { pickTarget: () => null } } as never;
     const json: SerializedScene<Data, Layer, Pose> = {
-      version: 2,
+      version: 3,
       systemLayers: [{ id: 'default' }],
       nodes: [
         { id: 'g', kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {}, layoutKey: 'stack', locked: true },

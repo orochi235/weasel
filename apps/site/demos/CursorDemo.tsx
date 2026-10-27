@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { SceneCanvas, defineTool, useScene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, SceneCanvas, defineTool, useScene } from '@weasel-js/core';
 import {
   CURSOR_MAX_CSS_PX,
   GLYPHS,
@@ -55,7 +55,7 @@ export function CursorDemo() {
   const [glyph, setGlyph] = useState<CursorGlyphName>('pencil');
   const [size, setSize] = useState(48);
 
-  const scene = useScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
+  const scene = useScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   const tool = useMemo(
     () => defineTool({ id: 'cursor', cursor: { glyph, size, fallback: FALLBACK } }),
     [glyph, size],

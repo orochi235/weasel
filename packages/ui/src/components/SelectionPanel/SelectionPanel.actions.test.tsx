@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { ActionsProvider, asNodeId, createScene, type Action, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, ActionsProvider, asNodeId, createScene, type Action, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import { pref, type PrefLeaf } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
 import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
@@ -13,7 +13,7 @@ const routing: NodeRoutingEntry[] = [{ name: 'thing', matches: (d) => (d as Data
 const act = (id: string, label: string): Action => ({ id, label, group: 'arrange', invoker: { timing: 'immediate', run: () => {} } });
 
 function setup(members: Record<string, PrefLeaf>) {
-  const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+  const scene = createScene<Data, 'default', Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { size: 3 }, data: { kind: 'thing' } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];
   return render(

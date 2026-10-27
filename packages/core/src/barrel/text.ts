@@ -35,6 +35,7 @@ export {
   SCRIPT_METRICS,
   scriptMetrics,
   scriptMetricsFor,
+  halfLeadingFor,
   DEFAULT_DECORATION_METRICS,
   decorationMetrics,
   numericWeight,

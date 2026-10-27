@@ -67,7 +67,8 @@ describe('moveAction — reparent-on-drop behind the other behaviors', () => {
     const { scene, nodeAtPoint } = drop(195, { deps: { layout: { getLayout: (id: string) => (id === T ? layout : null) } } });
     expect(nodeAtPoint).not.toHaveBeenCalled();
     expect(scene.get(A)!.parent).toBe(T);
-    expect(scene.get(A)!.pose).toEqual(SLOT);
+    // The slot is in world; the target at (100, 100) stores it in its frame.
+    expect(scene.get(A)!.pose).toEqual({ ...SLOT, x: SLOT.x - 100, y: SLOT.y - 100 });
   });
 
   it('does not look for one, or commit, on a drag that went nowhere', () => {

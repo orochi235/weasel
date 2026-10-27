@@ -7,6 +7,7 @@ import { runDropPass } from '../layout/dropPass';
 import { landReleased, releasedPoses, stepGlide, type Released } from '../layout/glide';
 import type { DropPass } from '../layout/types';
 import type { MoveGesture } from '../session';
+import { refusalOverlays } from '../refusal';
 
 /**
  * The move behavior that drops the selection into the layout container under
@@ -38,15 +39,18 @@ export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> {
         { x: ctx.pointer.worldX, y: ctx.pointer.worldY },
       );
       const opaque = drop?.pass?.reflowIds;
+      const overlays = drop?.refused ? refusalOverlays(drop.refused, { x: ctx.pointer.worldX, y: ctx.pointer.worldY }) : undefined;
       const reflow = session.layout?.reflow;
-      if (!reflow) return { poses: drop?.reflow, opaque };
+      if (!reflow) return { poses: drop?.reflow, opaque, overlays };
       stepGlide(reflow, gliding, drop?.reflow ?? new Map());
-      return { opaque };
+      return { opaque, overlays };
     },
 
     onEnd(_ctx, end): Op[] | null | void {
       noteReleased();
       if (end.answered) return;
+      // Released over a container that refuses the drop: the drag goes home.
+      if (drop?.refused) return null;
       const session = move.session();
       const { delta } = move.frame();
       // No-op if no movement (sub-threshold drag or zero delta).

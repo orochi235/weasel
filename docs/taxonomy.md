@@ -804,10 +804,10 @@ The snapshot of a scene object's geometry that the kit reads and writes.
 Shape is generic (`TPose`). Common shapes: rect (`{x, y, width, height}`),
 `RotatedPose` (rect + `rotation: number` in radians, pivot at AABB center),
 `Path` (polygon/bezier command stream), `TextPose`. Poses are **local-coordinate**
-— relative to the object's direct parent (world-frame for root objects). Under
-the default absolute-pose model a parent imposes no transform, so local and
-world coincide; give the scene a `composition` and a container's pose becomes a
-frame its children are expressed in, which `getWorldPose` folds.
+— relative to the frame of the nearest container above that defines one
+(world-frame for root objects). A scene's `composition` folds them to world,
+which `getWorldPose` reads; the default, `RIGID_POSE_COMPOSITION`, makes a rect
+container's pose a frame, and a scene of another pose names its own.
 See `packages/core/src/core/geometry/poseDescriptor.ts` (`RotatedPose`) and
 `packages/geom/src/path.ts` (`Path`).
 

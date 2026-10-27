@@ -70,7 +70,7 @@ export const AtCursorSize: StoryObj = {
 };
 
 /**
- * Geometry check. CLAUDE.md ("Drawing icons") wants a glyph inspected at
+ * Geometry check. docs/icons.md ("Drawing rules") wants a glyph inspected at
  * 10–15× before anyone looks at it small; a join that does not meet is two
  * blurry pixels at cursor size and obvious here.
  */

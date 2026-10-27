@@ -4,6 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { IDENTITY_POSE_COMPOSITION } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core';
 import { diagramScene, portsOf } from '@weasel-js/diagram';
 import { editorScene, previewRowId, type EffectDoc } from '@weasel-js/diagram/effect';
@@ -66,7 +67,7 @@ function portAt(stage: string, port: string): { x: number; y: number } {
   const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
   const r = canvas.getBoundingClientRect();
   const { data, scene } = editorScene(saved());
-  const s = diagramScene(data, scene).find((x) => x.id === stage)!;
+  const s = diagramScene(data, { ...scene, composition: IDENTITY_POSE_COMPOSITION }).find((x) => x.id === stage)!;
   const p = portsOf({ id: stage, kind: s.kind, data: s.data }, s.pose as RectPose).find((x) => x.id === port)!;
   return { x: r.left + p.point.x, y: r.top + p.point.y };
 }
@@ -87,7 +88,7 @@ async function slotPixels(): Promise<number[][][]> {
   const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
   const r = canvas.getBoundingClientRect();
   const drawn = editorScene(saved(), 'nodeGraph', { showValues: false, showPreviews: true });
-  const box = diagramScene(drawn.data, drawn.scene).find((s) => s.id === `${OSC}/${previewRowId('out')}`)!.pose as RectPose;
+  const box = diagramScene(drawn.data, { ...drawn.scene, composition: IDENTITY_POSE_COMPOSITION }).find((s) => s.id === `${OSC}/${previewRowId('out')}`)!.pose as RectPose;
   const dpr = canvas.width / r.width;
   // Edge to edge: a sine's spectrum is one bar at the left.
   const x = Math.round(box.x * dpr);

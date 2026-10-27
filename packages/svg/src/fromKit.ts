@@ -8,6 +8,7 @@
 import {
   fillInPoseFrame,
   clipOutline,
+  definesFrame,
   pathInPoseFrame,
   pathThroughPoseFrame,
   poseFrameOf,
@@ -214,11 +215,14 @@ export interface SvgKitTreeNode {
 }
 
 /** The read side of a scene that {@link svgNodesFromKit} walks. A kit
- *  `Scene` is one as it stands. */
+ *  `Scene` is one as it stands. With `composition`, a node's pose is stored in
+ *  the frame of the nearest container above it that defines one, as a scene's
+ *  is; without, every pose is world. */
 export interface SvgKitTree<TId extends string = string> {
   readonly roots: readonly TId[];
   childrenOf(id: TId): readonly TId[];
   get(id: TId): SvgKitTreeNode | undefined;
+  readonly composition?: { compose(parent: never, child: never): unknown };
 }
 
 /** Options for {@link svgNodesFromKit}. */
@@ -257,12 +261,36 @@ export function svgNodesFromKit<TId extends string>(
   options: SvgNodesFromKitOptions<TId> = {},
 ): SvgNode[] {
   const { include, leaf, group, mark } = options;
-  const emit = (id: TId, up: UpPaint): SvgNode | null => {
-    const node = tree.get(id);
-    const out = node && (!include || include(id)) ? lower(id, node, up) : null;
+  const compose = tree.composition?.compose as ((parent: SvgKitPose, child: SvgKitPose) => SvgKitPose) | undefined;
+  // `frame`: the world pose of the frame `id` is stored in, null at the top.
+  const emit = (id: TId, up: UpPaint, frame: SvgKitPose | null): SvgNode | null => {
+    const stored = tree.get(id);
+    const node = stored && compose && frame ? { ...stored, pose: compose(frame, stored.pose) } : stored;
+    const own = node && definesFrame(node as { dependsOn?: unknown; derivePose?: unknown }) ? node.pose : frame;
+    const out = node && (!include || include(id)) ? lower(id, node, up, own) : null;
     return out && node?.hidden === true ? { ...out, hidden: true } : out;
   };
-  const lower = (id: TId, node: SvgKitTreeNode, up: UpPaint): SvgNode | null => {
+  // A walk that starts below the top starts in the frame its first id is stored in.
+  const frameAbove = (id: TId): SvgKitPose | null => {
+    if (!compose) return null;
+    const chain: SvgKitTreeNode[] = [];
+    const seen = new Set<string>([id]);
+    let at = (tree.get(id) as { parent?: TId | null } | undefined)?.parent ?? null;
+    while (at !== null && !seen.has(at)) {
+      seen.add(at);
+      const n = tree.get(at);
+      if (!n) break;
+      chain.unshift(n);
+      at = (n as { parent?: TId | null }).parent ?? null;
+    }
+    let frame: SvgKitPose | null = null;
+    for (const n of chain) {
+      const pose: SvgKitPose = frame ? compose(frame, n.pose) : n.pose;
+      if (definesFrame(n as { dependsOn?: unknown; derivePose?: unknown })) frame = pose;
+    }
+    return frame;
+  };
+  const lower = (id: TId, node: SvgKitTreeNode, up: UpPaint, frame: SvgKitPose | null): SvgNode | null => {
     const own = node.data as SvgKitLeafData | null;
     const isGroup = node.kind === 'group';
     const self = isGroup ? null : markInherits(
@@ -278,7 +306,7 @@ export function svgNodesFromKit<TId extends string>(
     const emitChildren = (): SvgNode[] => {
       const children: SvgNode[] = [];
       for (const c of kids) {
-        const child = emit(c, below);
+        const child = emit(c, below, frame);
         if (child) children.push(child);
       }
       return children;
@@ -304,7 +332,7 @@ export function svgNodesFromKit<TId extends string>(
   };
   const out: SvgNode[] = [];
   for (const id of options.roots ?? tree.roots) {
-    const n = emit(id, NO_UP_PAINT);
+    const n = emit(id, NO_UP_PAINT, frameAbove(id));
     if (n) out.push(n);
   }
   return out;

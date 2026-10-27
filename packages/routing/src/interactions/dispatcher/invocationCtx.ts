@@ -42,9 +42,20 @@ function pressDrag(
   };
 }
 
+type ToLocal = ((clientX: number, clientY: number) => Point2) | undefined;
+
+// Both ends mapped now, so a host whose rect moved mid-drag still measures the pointer's travel.
+function localDelta(toLocal: ToLocal, fromX: number, fromY: number, toX: number, toY: number): Point2 {
+  if (!toLocal) return { x: toX - fromX, y: toY - fromY };
+  const a = toLocal(fromX, fromY);
+  const b = toLocal(toX, toY);
+  return { x: b.x - a.x, y: b.y - a.y };
+}
+
 function pumpDrag(
   event: InputEvent & { kind: 'pointermove' | 'pointerup' },
   facts: GestureFacts,
+  toLocal: ToLocal,
 ): Pick<InvocationCtx, 'world' | 'drag'> {
   const cx = event.x;
   const cy = event.y;
@@ -72,7 +83,7 @@ function pumpDrag(
       current: { x: cx, y: cy },
       delta: { x: cx - ox, y: cy - oy },
       ...(hasClient
-        ? { screenDelta: { x: eventClientX! - origin!.clientX!, y: eventClientY! - origin!.clientY! } }
+        ? { screenDelta: localDelta(toLocal, origin!.clientX!, origin!.clientY!, eventClientX!, eventClientY!) }
         : {}),
       ...(points !== undefined ? { points } : {}),
     },
@@ -107,6 +118,7 @@ export function buildInvocationCtx(
   deps: ActionDeps,
   viewId: string | null | undefined,
   facts: GestureFacts = {},
+  toLocal?: (clientX: number, clientY: number) => Point2,
 ): InvocationCtx {
   const base: InvocationCtx = {
     world: { x: 0, y: 0 },
@@ -135,7 +147,7 @@ export function buildInvocationCtx(
   ) {
     Object.assign(base, pressDrag(event));
   } else if (event.kind === 'pointermove' || event.kind === 'pointerup') {
-    Object.assign(base, pumpDrag(event, facts));
+    Object.assign(base, pumpDrag(event, facts, toLocal));
   } else if (event.kind === 'multitouch') {
     base.multiTouch = multiTouchOf(event, facts);
   } else if (event.kind === 'carry') {

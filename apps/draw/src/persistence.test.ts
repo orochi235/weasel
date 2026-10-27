@@ -155,7 +155,7 @@ describe('persistence — legacy string paint migration', () => {
   type Pose = { x: number; y: number; width: number; height: number };
 
   const sceneOf = (data: Data): SerializedScene<Data, Layer, Pose> => ({
-    version: 2,
+    version: 3,
     systemLayers: [{ id: 'default' }],
     nodes: [{ id: 'a', kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data }],
   });

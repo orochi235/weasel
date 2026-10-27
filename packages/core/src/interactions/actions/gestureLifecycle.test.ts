@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { createReparentOp } from 'core/ops/reparent';
@@ -115,7 +116,7 @@ describe('runBehaviorCancel', () => {
 
 describe('closeGesture', () => {
   function closing(onSettled: (ctx: string, committed: boolean) => void, onGestureEnd: (committed: boolean) => void) {
-    const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const lifecycle = readGestureLifecycle({ onGestureEnd }, 'Test');
     lifecycle.start([]);
     return {

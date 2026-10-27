@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene } from '@weasel-js/core';
+import { createScene, type RectPose } from '@weasel-js/core';
 import { diagramPages } from './dataPages';
 import { diagramScene, type DataNode, type DiagramData } from './fromData';
 import { withDiagramRegistry } from './edge';
@@ -37,7 +37,7 @@ describe('diagramScene with pages', () => {
     const edge = specs.find((s) => diagramEdgeOf(s) !== null)!;
     expect(diagramEdgeOf(edge)!.offPage).toEqual({ ref: 'A', from: 'p1', to: 'p2' });
     expect(tagIds(specs)).toEqual([`${edge.id}/offpage-from`, `${edge.id}/offpage-to`]);
-    const scene = createScene({ systemLayers: [{ id: 'main' as const }], initial: specs, registry: withDiagramRegistry() });
+    const scene = createScene({ systemLayers: [{ id: 'main' as const }], initial: specs, registry: withDiagramRegistry<RectPose>() });
     expect(scene.get(`${edge.id}/offpage-to` as never)).toBeDefined();
   });
 

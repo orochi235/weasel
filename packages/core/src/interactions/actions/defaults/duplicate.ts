@@ -1,5 +1,4 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
-import { composesFrames } from 'core/scene/composePose';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { copySelection } from './copySubtree';
 import { requiresSelection } from './requiresSelection';
@@ -35,14 +34,12 @@ export function duplicateSelection(
 
   const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps.poseDescriptor));
   const frame = scenePoseFrame(scene);
-  // Under a frame a child's pose is relative, so offsetting the root
-  // carries the subtree and offsetting a child again would double it.
-  const offsetDescendants = !composesFrames(scene.composition);
   const { ops, copies } = copySelection(
     scene,
     ids,
     (id, node, isRoot) => {
-      if (!isRoot && !offsetDescendants) return node.pose;
+      // A child's pose is relative to its frame, which the root's offset carries.
+      if (!isRoot) return node.pose;
       const l = storedDelta(frame, descriptorOf(id), id, dx, dy);
       return translatePoseViaDescriptor(node.pose, l.dx, l.dy, descriptorOf(id));
     },

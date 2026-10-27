@@ -40,7 +40,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-      let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: new Map(), opaque: new Set() };
+      let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: new Map(), opaque: new Set(), overlays: [] };
       const begun = beginMove(ctx, opts, () => frame);
       if (!begun) return {};
       const { session, readers } = begun;
@@ -81,6 +81,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         previewIds: preview.previewIds,
         previewData: preview.previewData,
         previewOpaqueIds: () => (frame.opaque.size === 0 ? null : frame.opaque),
+        overlay: () => (frame.overlays.length === 0 ? null : frame.overlays),
       };
     },
   },

@@ -15,6 +15,7 @@ import {
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramEdgeOf, samePoints, type DiagramEdge } from './edgeTrait';
+import { worldWith } from './worldWith';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -40,16 +41,15 @@ function carried(edge: DiagramEdge, d: Vec2): DiagramEdge {
  *  nodes it moves. */
 function followers(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
   const out: TransformPreviewNode[] = [];
+  const before = worldWith(sc);
+  const after = worldWith(sc, frame);
   for (const node of sc.renderOrderNodes()) {
     const edge = diagramEdgeOf(node);
     const ends = node.dependsOn;
     if (edge === null || (edge.waypoints ?? []).length === 0 || !Array.isArray(ends) || ends.length !== 2) continue;
-    const [from, to] = ends.map((id) => sc.get(id));
-    const fromAfter = frame.get(ends[0]!);
-    const toAfter = frame.get(ends[1]!);
-    if (from === undefined || to === undefined || fromAfter === undefined || toAfter === undefined) continue;
-    const d = offsetOf(geometry, from.pose, fromAfter);
-    const e = offsetOf(geometry, to.pose, toAfter);
+    if (sc.get(ends[0]!) === undefined || sc.get(ends[1]!) === undefined) continue;
+    const d = offsetOf(geometry, before(ends[0]!), after(ends[0]!));
+    const e = offsetOf(geometry, before(ends[1]!), after(ends[1]!));
     if (Math.abs(d.x - e.x) > EPS || Math.abs(d.y - e.y) > EPS || (d.x === 0 && d.y === 0)) continue;
     const data = node.data as Record<string, unknown>;
     out.push({ id: node.id, pose: node.pose, data: { ...data, diagram: carried(edge, d) } });
@@ -78,10 +78,10 @@ export function waypointFollower<TPose>(
   const sc = scene as unknown as AnyScene;
   const geo = geometry as PoseDescriptor<unknown>;
   return {
-    preview: (frame) => (frame.size < 2 ? [] : followers(sc, geo, frame)),
+    preview: (frame) => (frame.size === 0 ? [] : followers(sc, geo, frame)),
     finish(ops, label) {
       const moved = posesMovedBy(sc, ops);
-      if (moved === null || moved.size < 2) return [...ops];
+      if (moved === null || moved.size === 0) return [...ops];
       const changes = followers(sc, geo, moved).map((c) => createSetDataOp({
         id: c.id, from: sc.get(c.id as never)!.data, to: c.data, label,
       }));

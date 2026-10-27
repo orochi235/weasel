@@ -24,7 +24,7 @@ export function useSceneCanvasTools(args: {
   groupEntry: Contribution;
 }) {
   const { props, select, enabled } = args;
-  const { tools, internal, takeover } = useCanvasTools({
+  const { tools, internal, takeover, surface } = useCanvasTools({
     select,
     groupEntry: enabled.has('select') ? args.groupEntry : null,
     enabled,
@@ -42,6 +42,7 @@ export function useSceneCanvasTools(args: {
   const { contributions, standardActions } = useFeatureBindings({
     enabled, pool: args.presetSource.pool, baseline: args.presetSource.baseline,
     tools,
+    surface,
     move: args.move as FeatureBindingOptions['move'],
     rotate: (props.selectTool?.rotate || undefined) as FeatureBindingOptions['rotate'],
   });

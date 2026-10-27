@@ -12,6 +12,7 @@ import { moveAction } from './action';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
+import { unionOfChildren } from 'core/scene/kitRegistry';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 
@@ -33,11 +34,14 @@ function ctx(
   } as unknown as InvocationCtx;
 }
 
-/** A container holding a leaf and a child that derives its pose 30 to the
- *  leaf's right, authored at a placeholder nowhere near there. */
+/** An envelope holding a leaf and a child that derives its pose 30 to the
+ *  leaf's right, authored at a placeholder nowhere near there. An envelope is
+ *  no frame, so a drag of it writes its children. */
 function fixture() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const c = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 200, 200) });
+  const c = scene.add({
+    kind: 'group', layer: 'main', data: {}, pose: box(0, 0, 200, 200), dependsOn: 'children', derivePose: unionOfChildren,
+  });
   const s = scene.add({ kind: 'mark', parent: c, layer: 'main', data: {}, pose: box(10, 10) });
   const d = scene.add({
     kind: 'mark',

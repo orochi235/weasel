@@ -26,7 +26,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-async function mount(more: { selected?: string; onViewChange?: (v: View) => void } = {}) {
+async function mount(more: { selected?: string; onViewChange?: (v: View) => void } = {}, specs = SPECS) {
   const host = document.createElement('div');
   document.body.append(host);
   const api = createRef<DiagramViewApi>();
@@ -34,7 +34,7 @@ async function mount(more: { selected?: string; onViewChange?: (v: View) => void
   await act(async () => {
     root = createRoot(host);
     root.render(
-      <DiagramView ref={api} specs={SPECS} width={700} height={500} onReorder={(c) => changes.push(c)} {...more} />,
+      <DiagramView ref={api} specs={specs} width={700} height={500} onReorder={(c) => changes.push(c)} {...more} />,
     );
   });
   return { host, api, changes, canvas: host.querySelector('canvas')! };
@@ -61,7 +61,7 @@ it('reports the new order when a row is dragged past the next one', async () => 
   const a = api.current!.rectOf('a')!;
   const b = api.current!.rectOf('b')!;
   await drag(canvas, middle(api.current!.rectOf('a.patch')!), b.y + b.height - (a.y + a.height) + 4);
-  expect(changes).toEqual([{ group: 'layers', order: ['b', 'a', 'c'] }]);
+  expect(changes).toEqual([{ parent: 'layers', order: ['b', 'a', 'c'] }]);
 });
 
 it('reports nothing for a drag that leaves the order as it was', async () => {
@@ -89,6 +89,32 @@ it('steps the selected row with Alt and an arrow key', async () => {
   await act(async () => {
     canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', code: 'ArrowUp', altKey: true, bubbles: true, cancelable: true }));
   });
-  expect(changes).toEqual([{ group: 'layers', order: ['a', 'c', 'b'] }]);
+  expect(changes).toEqual([{ parent: 'layers', order: ['a', 'c', 'b'] }]);
 });
 
+
+/** A container whose three members stand in a row, marked to reorder along it. */
+const ROW = diagramScene({
+  nodes: ['m1', 'm2', 'm3'].map((id, k) => ({ id, lines: [id], width: 60, height: 40, at: { x: 60 + 100 * k, y: 140 }, pinned: true })),
+  edges: [],
+  containers: [{ id: 'k', role: 'container', label: 'K', members: ['m1', 'm2', 'm3'], reorder: 'x', box: { x: 40, y: 100, width: 320, height: 100 }, pinned: true }],
+}, { layout: 'none' });
+
+it('reports a container member dragged past the next one as the container\'s new order', async () => {
+  const { api, canvas, changes } = await mount({}, ROW);
+  await drag(canvas, middle(api.current!.rectOf('m1')!), 0, 110);
+  expect(changes).toEqual([{ parent: 'k', order: ['m2', 'm1', 'm3'] }]);
+});
+
+it('steps the selected container member with Alt and an arrow key', async () => {
+  const { api, canvas, changes } = await mount({}, ROW);
+  const { x, y } = middle(api.current!.rectOf('m3')!);
+  await act(async () => {
+    fire(canvas, 'pointerdown', x, y);
+    fire(canvas, 'pointerup', x, y);
+  });
+  await act(async () => {
+    canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', code: 'ArrowLeft', altKey: true, bubbles: true, cancelable: true }));
+  });
+  expect(changes).toEqual([{ parent: 'k', order: ['m1', 'm3', 'm2'] }]);
+});

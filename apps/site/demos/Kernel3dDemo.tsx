@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   type CanvasSize,
   type DrawCommand,
   PATH_L,
@@ -128,7 +128,7 @@ const deg = (r: number) => qty((Math.atan2(Math.sin(r), Math.cos(r)) * 180) / Ma
  * identity, so the kit's world point is the canvas pixel a ray starts from.
  */
 export function Kernel3dDemo() {
-  const scene = useScene<Solid, 'solids', Pose3>({ systemLayers: [{ id: 'solids' }], initial: SOLIDS });
+  const scene = useScene<Solid, 'solids', Pose3>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'solids' }], initial: SOLIDS });
   const [camera, setCamera] = useState(() =>
     createCamera({ distance: 11, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }));
   const [tools, setTools] = useState<ToolsApi | null>(null);

@@ -1,4 +1,4 @@
-import type { InvocationCtx } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import type { NodeId } from 'core/scene/types';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
@@ -13,9 +13,10 @@ function foldBehaviors(
   moveCtx: InvocationCtx,
   dx: number,
   dy: number,
-): { dx: number; dy: number; posed: Map<NodeId, unknown>; opaque: Set<NodeId> } {
+): { dx: number; dy: number; posed: Map<NodeId, unknown>; opaque: Set<NodeId>; overlays: OngoingOverlay[] } {
   const posed = new Map<NodeId, unknown>();
   const opaque = new Set<NodeId>();
+  const overlays: OngoingOverlay[] = [];
   const gctx = session.gestureCtx;
   gctx.modifiers = { ...moveCtx.modifiers };
   gctx.pointer = pointerStateOf(moveCtx.drag!.current, moveCtx);
@@ -36,10 +37,11 @@ function foldBehaviors(
     if (!r) continue;
     if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
     if (r.opaque) for (const id of r.opaque) opaque.add(id as NodeId);
+    if (r.overlays) overlays.push(...r.overlays);
     if (r.transform) transform = r.transform;
     if (r.snap !== undefined) gctx.snap = r.snap;
   }
-  return { dx: transform.dx, dy: transform.dy, posed, opaque };
+  return { dx: transform.dx, dy: transform.dy, posed, opaque, overlays };
 }
 
 /** The pointer's delta, moved so the subject lands on what the snap session
@@ -57,7 +59,7 @@ function snapDelta(session: MoveSession, moveCtx: InvocationCtx): { dx: number; 
  *  behaviors posed. */
 export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx: InvocationCtx): MoveFrame {
   const snapped = snapDelta(session, moveCtx);
-  const { dx, dy, posed, opaque } = foldBehaviors(session, readers, moveCtx, snapped.dx, snapped.dy);
+  const { dx, dy, posed, opaque, overlays } = foldBehaviors(session, readers, moveCtx, snapped.dx, snapped.dy);
 
   // The delta stays in the frame — no scene writes, no history entries.
   const delta = { dx, dy };
@@ -69,5 +71,5 @@ export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx
     previews.set(id, session.carried.has(id) ? dragged : posed.get(id) ?? dragged);
   }
   for (const [id, pose] of posed) if (!session.startPoses.has(id)) previews.set(id, pose);
-  return { delta, previews, opaque };
+  return { delta, previews, opaque, overlays };
 }

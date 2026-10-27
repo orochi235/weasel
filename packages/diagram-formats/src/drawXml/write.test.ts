@@ -175,4 +175,31 @@ describe('writing what the format cannot carry', () => {
     expect(back.nodes.map((n) => n.outline)).toEqual([...OUTLINES]);
     expect(back.edges.map((e) => e.colors?.markerEnd)).toEqual([...MARKERS]);
   });
+
+  it('round-trips the BPMN and network outlines without a warning, their labels left where they were', async () => {
+    const OUTLINES = [
+      'event', 'intermediateEvent', 'exclusiveGateway', 'parallelGateway', 'inclusiveGateway', 'eventGateway', 'subprocess',
+      'server', 'router', 'switch', 'firewall', 'laptop', 'desktop', 'phone', 'printer', 'user',
+    ] as const;
+    const doc: DiagramDocument = { pages: [{ id: 'p', width: 1700, height: 200, data: {
+      nodes: OUTLINES.map((outline, i) => ({ id: outline, lines: [outline], outline, at: { x: i * 100, y: 0 }, width: 90, height: 80 })),
+      edges: [],
+    } }] };
+    const written = DRAW_XML.write!(doc);
+    expect(written.warnings).toEqual([]);
+    const back = (await DRAW_XML.read!(written.text)).document.pages[0]!.data;
+    expect(back.nodes.map((n) => n.outline)).toEqual([...OUTLINES]);
+    expect(back.nodes.filter((n) => n.verticalAlign !== undefined)).toEqual([]);
+  });
+
+  it('reads a BPMN figure it has no outline for as the nearest one it has', async () => {
+    const cell = (id: string, style: string) =>
+      `<mxCell id="${id}" value="${id}" style="${style}" vertex="1" parent="1"><mxGeometry x="0" y="0" width="50" height="50" as="geometry"/></mxCell>`;
+    const text = `<mxfile><diagram id="d"><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${
+      cell('end', 'shape=mxgraph.bpmn.event;outline=end;symbol=terminate;')}${
+      cell('complex', 'shape=mxgraph.bpmn.gateway2;gwType=complex;')}${
+      cell('task', 'shape=mxgraph.bpmn.task;taskMarker=user;rounded=1;')}</root></mxGraphModel></diagram></mxfile>`;
+    const back = (await DRAW_XML.read!(text)).document.pages[0]!.data;
+    expect(back.nodes.map((n) => [n.id, n.outline])).toEqual([['end', 'event'], ['complex', 'diamond'], ['task', 'roundRect']]);
+  });
 });

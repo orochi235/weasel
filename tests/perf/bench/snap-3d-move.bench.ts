@@ -11,7 +11,7 @@
  *
  * `SNAP3D_BENCH_SIZES=50,200` picks the box counts; the default is 50 and 200.
  */
-import { createScene, type NodeId } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, type NodeId } from '@weasel-js/core';
 import {
   alignPlaneSource, boxSnapSource, createCamera, createSnap, groundGridSource, pose3, screenBoxOf,
   type Pose3, type Viewport3d,
@@ -24,7 +24,7 @@ const FREE = { suspend: false, constrain: false };
 
 function frames(n: number, spacing: number): () => void {
   const side = Math.ceil(Math.sqrt(n));
-  const scene = createScene<object, 'solids', Pose3>({
+  const scene = createScene<object, 'solids', Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'solids' }],
     initial: Array.from({ length: n }, (_, i) => ({
       kind: 'mark' as const,

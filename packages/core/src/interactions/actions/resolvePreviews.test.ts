@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { asNodeId, type Scene } from 'core/scene/types';
 import type { GesturePreviewSource } from '../../canvas/gestureBounds';
 import { flattenPreviews, resolvePreviews } from './resolvePreviews';
@@ -92,7 +93,26 @@ describe('resolvePreviews', () => {
       const roots = resolvePreviews([source({ [parent]: AT(50), [kid]: AT(51) })], scene);
       expect(roots).toHaveLength(1);
       expect(roots[0]?.id).toBe(parent);
-      expect(roots[0]?.children.map((c) => c.id)).toEqual([kid]);
+      expect(roots[0]?.children.map((c) => c.id)).toContain(kid);
+    });
+
+    it('poses a child in world, through its previewed container\'s frame', () => {
+      const { scene, parent, kid } = makeScene();
+      const [root] = resolvePreviews([source({ [parent]: AT(50), [kid]: AT(5) })], scene);
+      expect(root?.children.find((c) => c.id === kid)?.pose).toEqual(AT(55));
+    });
+
+    it('brings the children a previewed frame carries, at the poses it carries them to', () => {
+      const { scene, parent, other } = makeScene();
+      const [root] = resolvePreviews([source({ [parent]: AT(50) })], scene);
+      expect(root?.children.find((c) => c.id === other)?.pose).toEqual(AT(52));
+    });
+
+    it('poses a previewed child whose container is not previewing in world', () => {
+      const { scene, parent, kid } = makeScene();
+      scene.setPose(asNodeId(parent), AT(100));
+      const [root] = resolvePreviews([source({ [kid]: AT(5) })], scene);
+      expect(root?.pose).toEqual(AT(105));
     });
 
     it('leaves a previewed child a root of its own when the parent is not previewing', () => {
@@ -101,8 +121,15 @@ describe('resolvePreviews', () => {
       expect(roots.map((r) => r.id)).toEqual([kid]);
     });
 
-    it('does not pull in a sibling the gesture is not previewing', () => {
-      const { scene, parent, kid } = makeScene();
+    it('does not pull in a sibling the gesture is not previewing when no frame carries it', () => {
+      const { scene: framed } = makeScene();
+      const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }], composition: IDENTITY_POSE_COMPOSITION });
+      for (const id of framed.renderOrder()) {
+        const n = framed.get(id)!;
+        scene.add({ id, kind: n.kind, layer: 'main', pose: n.pose, data: n.data, ...(n.parent ? { parent: n.parent } : {}) });
+      }
+      const parent = framed.roots[0]!;
+      const kid = framed.childrenOf(parent)[0]!;
       const roots = resolvePreviews([source({ [parent]: AT(50), [kid]: AT(51) })], scene);
       expect(flattenPreviews(roots).map((e) => e.node.data.label)).toEqual(['parent', 'kid']);
     });

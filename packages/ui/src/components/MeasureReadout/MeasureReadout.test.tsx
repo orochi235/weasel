@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   ActionsProvider,
   createMeasurements,
   createScene,
@@ -25,7 +25,7 @@ function Deps({ scene, selected }: { scene: AnyScene; selected: string[] }) {
 }
 
 function setup() {
-  const scene = createScene<unknown, 'main' | 'notes', unknown>({
+  const scene = createScene<unknown, 'main' | 'notes', unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
   }) as unknown as AnyScene;
   const ms = createMeasurements({ layer: 'notes' });

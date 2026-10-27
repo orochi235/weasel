@@ -1,4 +1,4 @@
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOpts, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { isPathEditPart, resolveParams } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -7,7 +7,8 @@ import type { PoseComposition } from 'core/scene/composePose';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { CanDropIntoDep, LayoutDep, NodeAtPointDep } from '../depSchema';
-import { admitsChild } from '../admitsChild';
+import { childVerdict } from '../admitsChild';
+import type { DropVerdict } from '../dropVerdict';
 import type { GeometryProjection } from '../geometryProjection';
 import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
@@ -62,8 +63,12 @@ export interface MoveSession {
   readonly geometryProjection?: GeometryProjection;
   readonly lifecycle: GestureLifecycle;
   readonly nodeAtPoint: NodeAtPointDep | undefined;
-  /** Whether a node admits the dragged roots; with no `canDropInto`, a group does and a mark does not. */
+  /** Whether a node takes the dragged roots; with no `canDropInto`, a group does and a mark does not. */
+  readonly verdict: (parent: NodeId) => DropVerdict;
+  /** Whether {@link verdict} lets them land. */
   readonly admits: (parent: NodeId) => boolean;
+  /** Whether a `canDropInto` dep is there to refuse with a reason. */
+  readonly mayRefuse: boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
   /** The drag's snapping, begun once the drag passes its threshold; null
@@ -81,6 +86,8 @@ export interface MoveFrame {
   readonly previews: Map<NodeId, unknown>;
   /** Ids the behaviors asked to have painted at full opacity. */
   readonly opaque: ReadonlySet<NodeId>;
+  /** What the behaviors asked to have painted beside the drag. */
+  readonly overlays: readonly OngoingOverlay[];
 }
 
 /** What the behaviors the action builds itself read of the drag they belong
@@ -92,13 +99,13 @@ export interface MoveGesture {
   frame(): MoveFrame;
 }
 
-function admitsOf(
+function verdictOf(
   canDropInto: CanDropIntoDep | undefined,
   ids: readonly NodeId[],
   scene: { get(id: NodeId): { kind: string } | undefined },
-): (parent: NodeId) => boolean {
+): (parent: NodeId) => DropVerdict {
   const roots = ids as readonly string[];
-  return (parent) => admitsChild(scene, parent, roots, canDropInto);
+  return (parent) => childVerdict(scene, parent, roots, canDropInto);
 }
 
 /** Capture a drag at press. Null when there is nothing to move. Runs each
@@ -153,6 +160,7 @@ export function beginMove(
   for (const b of behaviors) b.onStart?.(gestureCtx);
 
   const press = ctx.drag?.start ?? ctx.world;
+  const verdict = verdictOf(ctx.deps.canDropInto, ids, scene);
   const session: MoveSession = {
     startPoses,
     ids,
@@ -175,7 +183,9 @@ export function beginMove(
     geometryProjection,
     lifecycle,
     nodeAtPoint: ctx.deps.nodeAtPoint,
-    admits: admitsOf(ctx.deps.canDropInto, ids, scene),
+    verdict,
+    admits: (parent) => verdict(parent) === true,
+    mayRefuse: ctx.deps.canDropInto !== undefined,
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }),
     press,

@@ -73,6 +73,24 @@ describe('pasting a derived node', () => {
     expect(omitted).toEqual([{ id: edge, reason: 'dependency-not-copied', missing: [b] }]);
   });
 
+  it('carries the hidden nodes a copied node depends on, still hidden, since none can be selected', () => {
+    const { scene, a, b, edge } = makeScene();
+    scene.setHidden(b, true);
+    const { byLabel, omitted } = paste(scene, copy(scene, [a, edge]));
+    expect(omitted).toEqual([]);
+    expect(byLabel.get('b')!.hidden).toBe(true);
+    expect(byLabel.get('edge')!.dependsOn).toEqual([byLabel.get('a')!.id, byLabel.get('b')!.id]);
+  });
+
+  it('carries hidden sources through a chain, and copies each once', () => {
+    const { scene, a, b, edge, label } = makeScene();
+    scene.setHidden(edge, true);
+    scene.setHidden(b, true);
+    const items = copy(scene, [a, label]) as { id: string }[];
+    expect(items.map((n) => n.id).sort()).toEqual([a, b, edge, label].sort());
+    expect(items.findIndex((n) => n.id === edge)).toBeLessThan(items.findIndex((n) => n.id === label));
+  });
+
   it('drops what depended on a dropped node', () => {
     const { scene, a, b, edge, label } = makeScene();
     const { created, omitted } = paste(scene, copy(scene, [a, edge, label]));

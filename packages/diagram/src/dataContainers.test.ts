@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
 import { POOL_HEADER_SIZE } from './containers/laneStack';
 import { resolveContainers } from './dataContainers';
@@ -8,7 +9,7 @@ import { DIAGRAM_THEMES } from './theme/themes';
 
 const specOf = (specs: readonly DiagramSpec[], id: string) => specs.find((s) => s.id === id)!;
 const boxOf = (specs: readonly DiagramSpec[], id: string) => {
-  const { x, y, width, height } = specOf(specs, id).pose;
+  const { x, y, width, height } = worldPosesOf(specs, RIGID_POSE_COMPOSITION).get(id)!;
   return { x, y, width, height };
 };
 const inside = (inner: { x: number; y: number; width: number; height: number }, outer: typeof inner) =>

@@ -25,8 +25,15 @@ const groupKey = (group: string): string => (group === THEME_PREFS_AXIS ? `${THE
 /** The locus of a value that differs along `axes`, each level keyed by its axis's leaf. */
 export const locusByAxis = (axis: string, members: Record<string, unknown>): PrefLocus => ({ $by: themeAxisPath(axis), $of: members });
 
+// On its group's page a token's group prefix says nothing; its whole name stays a tag, so a filter still finds it.
+const shortName = (row: TokenRow): string => (row.name.startsWith(`${row.group}-`) ? row.name.slice(row.group.length + 1) : row.name);
+
 function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>, splitBy: readonly string[]): PrefLeaf {
-  const leaf = { ...tokenLeafKind(row), name: row.name, description: row.description, default: undefined as unknown, splitBy } as PrefLeaf;
+  const name = shortName(row);
+  const leaf = {
+    ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown, splitBy,
+    ...(name === row.name ? {} : { tags: [row.name] }),
+  } as PrefLeaf;
   const fallback = row.css[selectionKey(table.axes, {})] ?? Object.values(row.css)[0];
   const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, row.css[selectionKey(table.axes, selection)] ?? fallback), locusByAxis);
   leaf.default = prefOfCss(leaf, fallback);
@@ -37,7 +44,8 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>, splitBy:
 /**
  * `theme` as a preferences schema. Under `axis`, an `enum` for each of the
  * theme's axes, set to its default. Then a page for each token group, holding
- * a leaf for every token the theme resolves and every override hook: a
+ * a leaf for every token the theme resolves and every override hook, named
+ * without its group's prefix: a
  * `color`, a `number` in the token's unit, or a `string` of CSS text for what
  * neither holds. A leaf is at `<group>.<token>`, the token named without
  * `--wzl-`, and may be split by every axis.

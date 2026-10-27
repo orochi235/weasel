@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   createScene, defaultCommitAdapter, deleteAnchorsAction, editAnchorsAction, nudgeAnchorsUpAction, selectAnchorAction,
   type EditAnchorsDep, type NodeId, type PathEditMark, type Scene, type SelectionApi,
 } from '@weasel-js/core';
@@ -31,7 +31,7 @@ const SQUARE = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y:
 
 /** `pose`, a 100-unit square at the origin by default, as a polygon pose in edit mode, carrying `constraints`. */
 function setup(constraints: PathConstraint[] = PARALLELOGRAM, pose: PolygonPath = SQUARE) {
-  const scene = createScene<Data, 'main', PolygonPath>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<Data, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const id = scene.add({
     kind: 'mark', layer: 'main',
     pose,

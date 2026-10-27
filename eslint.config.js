@@ -328,7 +328,7 @@ export default [
   },
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['**/*.browser.test.{ts,tsx}', 'vitest.browser.setup.ts'],
+    ignores: ['**/*.browser.test.{ts,tsx}', 'vitest.browser.setup.ts', 'scripts/vitest-request-log.setup.ts'],
     rules: {
       // Its matcher types clash with jest-dom's; only browser tests and their setup file,
       // typechecked on their own by `packages/tsconfig.json`, may load them.

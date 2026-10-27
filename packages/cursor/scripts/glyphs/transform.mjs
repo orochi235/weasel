@@ -7,7 +7,7 @@
 // centre in a viewBox that does not grow, so geometry outside the inscribed
 // circle is sheared off at some angles and not others.
 //
-// Geometry is computed, not eyeballed — see CLAUDE.md ("Drawing icons").
+// Geometry is computed, not eyeballed — see docs/icons.md ("Drawing rules").
 
 const n = (v) => Math.round(v * 100) / 100;
 const C = 12;

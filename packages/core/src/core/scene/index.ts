@@ -4,7 +4,8 @@ export { useScene } from './useScene';
 export { asNodeId } from './types';
 export { hasChildren, isLeaf } from './treeShape';
 export { statedFields, type StatedNodeFields } from './statedFields';
-export { nodeKindOf, specsFromSerialized } from './serialization';
+export { isSerializedScene, nodeKindOf, specsFromSerialized } from './serialization';
+export { localizeInScene, localizeWorldPoses, worldPosesOf, type PlacedSpec } from './worldSave';
 export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from './serialization';
 export { SCENE_HISTORY_FORM } from './historyForm';
 export type { SerializedSceneHistory } from './historyForm';
@@ -42,9 +43,12 @@ export type {
   SerializedNodeV1,
   SerializedScene,
   SerializedSceneV1,
+  SerializedSceneV2,
+  SavedScene,
   SystemLayerRecord,
   SystemLayerSpec,
   UserLayerRecord,
+  SceneOptions,
   UseSceneOptions,
 } from './types';
 export { createPoseOverrides } from './poseOverrides';

@@ -283,6 +283,8 @@ function overlayFromPlane(ov: OngoingOverlay, m: PlaneMap): OngoingOverlay {
     case 'polyline':
     case 'brush':
       return { ...ov, points: ov.points.map(pt) };
+    case 'reason':
+      return { ...ov, at: pt(ov.at) };
     case 'insertPreview':
       return {
         ...ov,

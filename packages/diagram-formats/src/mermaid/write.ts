@@ -10,6 +10,12 @@ const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
   parallelogram: ['[/', '/]'], trapezoid: ['[/', '\\]'], cylinder: ['[(', ')]'], doubleEllipse: ['(((', ')))'], roundRect: ['(', ')'],
 };
 
+/** BPMN's figures as the Mermaid shape nearest each: an event's circle, a gateway's diamond without its marker. */
+const NEAREST: Readonly<Record<string, string>> = {
+  event: 'ellipse', intermediateEvent: 'doubleEllipse', exclusiveGateway: 'diamond', parallelGateway: 'diamond',
+  inclusiveGateway: 'diamond', eventGateway: 'diamond', subprocess: 'roundRect',
+};
+
 const valid = (id: string) => /^[A-Za-z_]\w*$/.test(id) && !RESERVED.has(id.toLowerCase());
 
 /** An id Mermaid reads for each of `ids`: itself where it can be, else a cleaned spelling no other id takes. */
@@ -61,7 +67,11 @@ class MermaidWriter {
 
   node(node: DataNode, indent: string): void {
     const outline: Outline = node.outline ?? 'rect';
-    const brackets = typeof outline === 'string' ? BRACKETS[outline] : undefined;
+    const nearest = typeof outline === 'string' ? NEAREST[outline] : undefined;
+    if (nearest !== undefined) {
+      this.out.warnings.add('Mermaid has no BPMN figures; events were written as circles, gateways as diamonds without their markers, and subprocesses as rounded rectangles.');
+    }
+    const brackets = typeof outline === 'string' ? BRACKETS[nearest ?? outline] : undefined;
     if (brackets === undefined && typeof outline === 'string') {
       this.out.warnings.add('Mermaid has no bracket shape for some outlines; they were written as rectangles.');
     }

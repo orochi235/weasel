@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "systemLayers": [{ "id": "default" }],
   "nodes": [
     {
@@ -31,7 +31,7 @@
       "parent": "F",
       "kind": "mark",
       "layer": "default",
-      "pose": { "x": 50, "y": 80, "width": 30, "height": 30 },
+      "pose": { "x": 40, "y": 40, "width": 30, "height": 30 },
       "data": { "color": "#f5b7a3", "isContainer": false }
     },
     {
@@ -39,7 +39,7 @@
       "parent": "G",
       "kind": "mark",
       "layer": "default",
-      "pose": { "x": 210, "y": 40, "width": 90, "height": 90 },
+      "pose": { "x": 0, "y": 0, "width": 90, "height": 90 },
       "data": { "color": "#a3f5b7", "isContainer": false }
     },
     {
@@ -47,7 +47,7 @@
       "parent": "S",
       "kind": "mark",
       "layer": "default",
-      "pose": { "x": 420, "y": 50, "width": 30, "height": 30 },
+      "pose": { "x": 10, "y": 10, "width": 30, "height": 30 },
       "data": { "color": "#a3b7f5", "isContainer": false }
     }
   ]

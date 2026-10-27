@@ -41,6 +41,12 @@
   user-select: none;
 }
 
+/* One control is as long as its cells, in a block host or a stretching column. In `:where()` so a host class sizes it. */
+:where(.segmented) {
+  inline-size: fit-content;
+  max-inline-size: 100%;
+}
+
 /* Opening what does not fit, a bar asks for the length that holds every cell (`--bar-natural`, which it measures),
    so a host sized to its content gives it that much. Squeezed below it, the bar shrinks and opens the rest from a
    menu; given room again, it grows back to it. */

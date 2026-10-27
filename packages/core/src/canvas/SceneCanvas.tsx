@@ -20,6 +20,7 @@ import { forwardRef, useEffect, useMemo, useRef } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { Canvas } from './Canvas';
 import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
+import { GestureReason } from './GestureReason';
 import { CanvasKitProviders } from './SceneCanvas/CanvasKitProviders';
 import { canvasPassThrough } from './SceneCanvas/canvasPassThrough';
 import { SceneCanvasInput, type SceneCanvasInputOptions } from './SceneCanvas/SceneCanvasInput';
@@ -158,6 +159,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         detachedInput={props.paintInto ? props.inputElement ?? null : undefined}
         viewRef={viewRef} pickEvery={picking.pickEvery} pickBest={picking.pickBest}
       />
+      <GestureReason dispatcher={dispatcher} canvasRef={internalCanvasRef} viewRef={viewRef} />
       <SceneCanvasInput
         props={props as SceneCanvasInputOptions} scene={scene as Scene<unknown, string, unknown>}
         selection={selection} descriptor={descriptor as PoseDescriptor<unknown>}

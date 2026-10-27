@@ -62,9 +62,9 @@ function setup(handlers: ModeTriggerHandlers, enteredId?: string) {
   // outer > inner > member, all drawn over x 120..150.
   scene.add({ id: asNodeId('outer'), kind: 'group', layer: 'main', pose: square(120), data: {} } as never);
   scene.add({ id: asNodeId('inner'), kind: 'group', layer: 'main', parent: asNodeId('outer'),
-    pose: square(120), data: {} } as never);
+    pose: square(0), data: {} } as never);
   scene.add({ id: asNodeId('member'), kind: 'mark', layer: 'main', parent: asNodeId('inner'),
-    pose: square(120), data: { path: triangle() } } as never);
+    pose: square(0), data: { path: triangle() } } as never);
   const entered = createEnteredGroup(scene);
   if (enteredId) entered.enter(asNodeId(enteredId));
   const { container } = render(

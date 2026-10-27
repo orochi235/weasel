@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { polygonFromPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import {
+import { IDENTITY_POSE_COMPOSITION,
   asNodeId, createScene, flipAction, type NodeId, type RectPose, resizeAction, rotateAction, type Scene,
 } from '@weasel-js/core';
 import { constraintConflictsOf } from './pathConstraints';
@@ -29,7 +29,7 @@ const LENGTH = 5;
 const RECT = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }, { x: 0, y: 50 }];
 
 function polygonScene() {
-  const scene = createScene<{ constraints: PathConstraint[] }, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<{ constraints: PathConstraint[] }, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   scene.add({ id: ID, kind: 'mark', layer: 'main', pose: polygonFromPoints(RECT), data: { constraints: CONSTRAINTS } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }

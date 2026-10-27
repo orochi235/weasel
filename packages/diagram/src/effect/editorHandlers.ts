@@ -1,11 +1,12 @@
 /** `EffectEditor`'s edit callbacks: each turns what `DiagramView` reports
  *  into an edit of the latest doc. */
+import { RIGID_POSE_COMPOSITION, worldPosesOf, type PlacedSpec, type RectPose } from '@weasel-js/core';
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
-import type { ContainerEdit, DeleteReport, NodeMove, ReconnectChange, RouteChange } from '../DiagramView';
+import type { ContainerEdit, DeleteReport, LabelMove, NodeMove, ReconnectChange, RouteChange } from '../DiagramView';
 import type { DataEdge, DiagramSpec } from '../fromData';
 import {
-  addWire, canWire, ensureWireIds, reconnectWire, removeStages, removeWires, setWireRoute,
+  addWire, canWire, ensureWireIds, reconnectWire, removeStages, removeWires, setWireLabel, setWireRoute,
 } from './edit';
 import type { EditorLook, EditorScene } from './editorMapping';
 import { dragEdit, type DragReports } from './groupHandlers';
@@ -24,14 +25,21 @@ function orient(p: EffectPipeline, a: Ref, b: Ref): EffectWire | null {
   return null;
 }
 
-/** Whether a wire other than `except` already feeds input `to`. */
-const fed = (p: EffectPipeline, to: Ref, except?: string) =>
-  p.wires.some((w) => w.to.stage === to.stage && w.to.port === to.port && (except === undefined || w.id !== except));
+const same = (a: Ref, b: Ref) => a.stage === b.stage && a.port === b.port;
+const takesMany = (p: EffectPipeline, to: Ref) =>
+  p.stages.find((s) => s.id === to.stage)?.inputs?.find((i) => i.id === to.port)?.many === true;
 
-/** A wire may join only an output to a free input of its type. */
+/** Whether input `to` may not take wire `from`–`to`, `except` aside: it is fed
+ *  already, or for an input that takes many, fed already from `from`. */
+const fed = (p: EffectPipeline, from: Ref, to: Ref, except?: string) => {
+  const many = takesMany(p, to);
+  return p.wires.some((w) => same(w.to, to) && (!many || same(w.from, from)) && (except === undefined || w.id !== except));
+};
+
+/** A wire may join only an output to an input of its type that is free, or takes many. */
 function wireFor(p: EffectPipeline, a: Ref, b: Ref, except?: string): EffectWire | null {
   const wire = orient(p, a, b);
-  return wire !== null && !fed(p, wire.to, except) ? wire : null;
+  return wire !== null && !fed(p, wire.from, wire.to, except) ? wire : null;
 }
 
 /** The doc with every stage layout placed pinned where it shows, so a later
@@ -44,7 +52,8 @@ export function pinShown(doc: EffectDoc, specs: Shown): EffectDoc {
 /** Each stage's box as drawn, by stage id. */
 export function stageBoxes(doc: EffectDoc, specs: Shown): Map<string, Box> {
   const ids = new Set(doc.pipeline.stages.map((s) => s.id));
-  return new Map(specs.filter((s) => ids.has(s.id as string)).map((s) => [s.id as string, s.pose as Box]));
+  const world = worldPosesOf(specs as readonly PlacedSpec<RectPose>[], RIGID_POSE_COMPOSITION);
+  return new Map(specs.filter((s) => ids.has(s.id as string)).map((s) => [s.id as string, world.get(s.id as string) as Box]));
 }
 
 /** What the handlers read, as of each report. */
@@ -78,7 +87,7 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
       held = false;
       const reports = { moves: drag.moves.splice(0), boxes: drag.boxes.splice(0) };
       const { doc, built, specs, onChange } = now();
-      const boxes = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
+      const boxes = worldPosesOf(specs, RIGID_POSE_COMPOSITION) as Map<string, Box>;
       const out = dragEdit(pinShown(ensureWireIds(doc), specs), built, reports, (id) => boxes.get(id));
       if (out !== null) onChange(out.doc, out.label);
     });
@@ -103,7 +112,7 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
       if (id === undefined || wire === undefined || c.port === undefined) return null;
       const moved = { stage: c.node, port: c.port };
       const [from, to] = c.end === 'from' ? [moved, wire.to] : [wire.from, moved];
-      return canWire(d.pipeline, from, to) && !fed(d.pipeline, to, id) ? reconnectWire(d, id, c.end, moved) : null;
+      return canWire(d.pipeline, from, to) && !fed(d.pipeline, from, to, id) ? reconnectWire(d, id, c.end, moved) : null;
     }),
     onEditRoute: (c: RouteChange) => commit('Edit route', (d, b) => {
       const id = b.wireOf(c.edge);
@@ -116,6 +125,11 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
       }
       const ends = wireEnds(specs, c.edge);
       return ends === undefined ? null : setLookRoute(d, look, id, c.waypoints, ends);
+    }),
+    onMoveLabel: (m: LabelMove) => commit('Move label', (d, b) => {
+      const id = b.wireOf(m.edge);
+      if (id === undefined || (m.placement === null && d.labels?.[id] === undefined)) return null;
+      return setWireLabel(d, id, m.placement);
     }),
     onDelete: (r: DeleteReport) => commit('Delete', (d, b) => {
       // A freed wire id is minted again for the next wire, which would come back picked.

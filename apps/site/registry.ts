@@ -650,6 +650,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DiagramReorderDemo.tsx',
   },
   {
+    id: 'diagram-drop',
+    title: 'Refusals, container reorder, and palette drops',
+    package: 'diagram',
+    description: "One answer serves every \"may this land here?\" check in DiagramView: true, false for a silent no, or { refuse } with a reason. canConnect, canReparent and canDropItem all give it; over a refusal the canvas draws the target refused and shows the reason beside the pointer, and a release there reports nothing. A container marked reorder: 'x' lets onReorder drag its members along the row, as a group's are. dragItemProps makes the palette's list items sources: onDropItem hears the item, what it landed on, and its index among the container's members, while a bar marks the place.",
+    hint: 'Drag a palette item into the row, or onto the locked shelf. Drag a step along the row. Connect a step to source.',
+    load: () => import('./demos/DiagramDropDemo').then((m) => m.DiagramDropDemo),
+    path: 'apps/site/demos/DiagramDropDemo.tsx',
+  },
+  {
     id: 'diagram-overlays',
     title: 'Diagram overlays',
     package: 'diagram',
@@ -1109,8 +1118,8 @@ const DEMO_META: DemoMeta[] = [
     title: 'Symmetry',
     package: 'symmetry',
     description:
-      'A live symmetry group: its copies are drawn from the shapes inside it, never stored, so moving or reshaping a shape moves every copy with it, and a click on a copy selects the shape it copies. Anything drawn with the tools lands in the group. The petal is open in path edit, and it is its own mirror image across the axis it sits on, so dragging one of its anchors or handles moves the mirrored one too. On the canvas, drag the round center to move the group, the white knob to turn the axis, and, for Repeat, the white handle to set the step.',
-    hint: 'Drag a petal anchor, then draw an ellipse anywhere. Switch Kind between Mirror, Radial and Repeat, change Count, and drag the white knob with <kbd>Shift</kbd> held.',
+      'A live symmetry group: its copies are drawn from the shapes inside it, never stored, so moving or reshaping a shape moves every copy with it, and a click on a copy selects the shape it copies. Anything drawn with the tools lands in the group. The petal is open in path edit, and it is its own mirror image across the axis it sits on, so dragging one of its anchors or handles moves the mirrored one too. Wallpaper tiles the group across a lattice, with a copy at every lattice point inside the dashed extent, and draws the Cell kind about each point; Wallpaper group sets the fields for one of the fifteen groups a lattice and a cell can make. On the canvas, drag the round center to move the group, the white knob to turn the axis, and, for Repeat and Wallpaper, the white handles to set the step and the row.',
+    hint: 'Drag a petal anchor, then draw an ellipse anywhere. Switch Kind between Mirror, Radial, Repeat, and Wallpaper, change Count, try a few wallpaper groups, and drag the white knob with <kbd>Shift</kbd> held.',
     load: () => import('./demos/SymmetryLabDemo').then((m) => m.SymmetryLabDemo),
     path: 'apps/site/demos/SymmetryLabDemo.tsx',
   },

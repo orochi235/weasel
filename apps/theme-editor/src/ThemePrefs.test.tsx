@@ -28,7 +28,7 @@ describe('<ThemePrefs>', () => {
   it('pins an edit over the theme, and draws the preview in what it pins', () => {
     mount();
     fireEvent.click(within(screen.getByRole('navigation')).getByText('Gray'));
-    const field = screen.getByLabelText('gray-50');
+    const field = screen.getByLabelText('50');
     fireEvent.input(field, { target: { value: '#ff3366' } });
     fireEvent.change(field, { target: { value: '#ff3366' } });
     const pinned = document.querySelector('[data-wzl-theme="weasel-prefs"]');

@@ -5,8 +5,16 @@ import type { SystemLayerSpec } from './layerTypes';
 import type { AddNodeSpec, RectPose, RegisteredOp, SceneRegistry } from './types';
 
 /** Options for `useScene` — the layers the scene has, what it starts out
- *  holding, and how its history behaves. */
-export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose> {
+ *  holding, and how its history behaves. A scene whose `TPose` is not a
+ *  {@link RectPose} has no default composition and must name one. */
+export type UseSceneOptions<TData, TLayer extends string, TPose = RectPose> =
+  SceneOptions<TData, TLayer, TPose> & NamesComposition<TPose>;
+
+/** `composition` is required unless `TPose` is a rect the default can fold. */
+type NamesComposition<TPose> = [TPose] extends [RectPose] ? unknown : { composition: PoseComposition<TPose> };
+
+/** Everything `useScene` takes, with `composition` optional. */
+export interface SceneOptions<TData, TLayer extends string, TPose = RectPose> {
   systemLayers: readonly SystemLayerSpec<TLayer>[];
   initial?: readonly AddNodeSpec<TData, TLayer, TPose>[];
   /** The document values the scene starts with, outside history. See `Scene.doc`. */
@@ -25,7 +33,12 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
    *  Required only when serializing/deserializing scenes that use function fields. */
   registry?: SceneRegistry<TPose, TData, TLayer>;
-  /** How a child's pose folds into its container's. Default: it does not, and every pose is world. */
+  /** How a child's pose folds into its container's frame. A stored child pose
+   *  is local to the nearest container that defines a frame, and moving a
+   *  container writes one pose. Default `RIGID_POSE_COMPOSITION`, which reads
+   *  `x`, `y`, `width`, `height`, `rotation` and `transform`; a scene of any
+   *  other pose names its own, or `IDENTITY_POSE_COMPOSITION`, under which every
+   *  pose is world and a container never carries its children. */
   composition?: PoseComposition<TPose>;
   /** How laid-out containers are measured. See {@link LayoutFrame}. */
   layoutFrame?: LayoutFrame<TPose>;

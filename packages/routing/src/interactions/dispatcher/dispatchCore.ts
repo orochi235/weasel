@@ -100,9 +100,14 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
     const keymaps = src.context().keymaps;
     return keymaps ? keymaps.batch(fn) : fn();
   };
-  const ctxNow = (): DispatcherContext => ({
-    ...src.context(), depRegistry: routedDeps, getRuleCtx: routedRuleCtx, viewId: target().id,
-  });
+  // Only a host's own mapping can scale: the element rect alone shifts a point and leaves a delta be.
+  const ctxNow = (): DispatcherContext => {
+    const toLocal = src.clientToLocal();
+    return {
+      ...src.context(), depRegistry: routedDeps, getRuleCtx: routedRuleCtx, viewId: target().id,
+      ...(toLocal ? { toLocal } : {}),
+    };
+  };
 
   return {
     canvas,

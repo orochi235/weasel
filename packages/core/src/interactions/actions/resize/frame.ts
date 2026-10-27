@@ -1,4 +1,5 @@
 import { poseFrameOf } from '@weasel-js/geom';
+import { holdInPlace } from './held';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import { localToWorld, worldDeltaToLocal, type TargetTransform } from 'core/geometry/targetFrame';
@@ -177,5 +178,5 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
 
   const { previews, proposed, lone } = posesInBox(session, constrained);
   if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, outsetBox(boundsForRules(lone.g, lone.world), box.extents)]]);
-  return { previews, proposed };
+  return { previews: holdInPlace(previews, session.held, session.poseFrame), proposed };
 }

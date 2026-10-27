@@ -1,6 +1,6 @@
 /**
- * `moveNodes` moves ids the way a drag of them commits: the same ops, under a
- * composing strategy as well as the default absolute poses.
+ * `moveNodes` moves ids the way a drag of them commits: the same ops, under an
+ * upright frame and a turned one.
  */
 import { describe, expect, it } from 'vitest';
 import type { ActionDeps, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
@@ -19,11 +19,11 @@ const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: 
 
 const selectionOf = (ids: readonly string[]) => ({ get: () => ids } as unknown as SelectionApi);
 
-/** A container holding a leaf, both stored as world poses, and a leaf outside it. */
-function absolute(): { scene: AnyScene; group: NodeId; child: NodeId; free: NodeId } {
+/** A container holding a leaf stored in its frame, and a leaf outside it. */
+function upright(): { scene: AnyScene; group: NodeId; child: NodeId; free: NodeId } {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const group = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 100, 60, 60) });
-  const child = scene.add({ kind: 'mark', parent: group, layer: 'main', data: {}, pose: box(10, 110) });
+  const child = scene.add({ kind: 'mark', parent: group, layer: 'main', data: {}, pose: box(10, 10) });
   const free = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(200, 0) });
   return { scene: scene as unknown as AnyScene, group, child, free };
 }
@@ -48,16 +48,16 @@ const depsOf = (scene: AnyScene) => ({ scene }) as unknown as ActionDeps;
 const posesOf = (scene: AnyScene) => [...scene.renderOrder()].map((id) => scene.get(id)!.pose);
 
 describe('moveNodes', () => {
-  it('moves a container and the children stored as world poses under it, and nothing else', () => {
-    const { scene, group, child, free } = absolute();
+  it('moves a container, which carries the child stored in its frame, and nothing else', () => {
+    const { scene, group, child, free } = upright();
     expect(moveNodes(depsOf(scene), [group], { dx: 30, dy: -5 })).toBe(true);
     expect(scene.get(group)!.pose).toEqual(box(30, 95, 60, 60));
-    expect(scene.get(child)!.pose).toEqual(box(40, 105));
+    expect(scene.get(child)!.pose).toEqual(box(10, 10));
     expect(scene.get(free)!.pose).toEqual(box(200, 0));
   });
 
   it.each([
-    ['a container and its world-pose child', () => { const f = absolute(); return { scene: f.scene, ids: [f.group, f.free] }; }],
+    ['an upright container and its child', () => { const f = upright(); return { scene: f.scene, ids: [f.group, f.free] }; }],
     ['a turned frame', () => ({ scene: makeFrameFixture() as unknown as AnyScene, ids: [FRAME_FIXTURE_IDS.group] }) ],
     ['a leaf stored in a turned frame', () => ({ scene: makeFrameFixture() as unknown as AnyScene, ids: [FRAME_FIXTURE_IDS.turned] }) ],
   ])('writes what a drag commits: %s', (_name, make) => {
@@ -69,7 +69,7 @@ describe('moveNodes', () => {
   });
 
   it('is one undo entry, and joins an open batch rather than making its own', () => {
-    const { scene, group } = absolute();
+    const { scene, group } = upright();
     let added: NodeId | null = null;
     scene.batch('Drop', () => {
       added = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
@@ -84,7 +84,7 @@ describe('moveNodes', () => {
   });
 
   it('commits through applyOps, finished by every transform follower', () => {
-    const { scene, free } = absolute();
+    const { scene, free } = upright();
     const seen: string[] = [];
     let committed: { ops: Op[]; label: string } | null = null;
     const deps = {
@@ -102,7 +102,7 @@ describe('moveNodes', () => {
   });
 
   it('commits nothing when a follower refuses, or for a zero delta', () => {
-    const { scene, free } = absolute();
+    const { scene, free } = upright();
     const before = scene.historyEntries().length;
     const refuse = { scene, transformFollowers: [{ preview: () => [], finish: () => null }] } as unknown as ActionDeps;
     expect(moveNodes(refuse, [free], { dx: 1, dy: 0 })).toBe(false);
@@ -112,8 +112,8 @@ describe('moveNodes', () => {
   });
 
   it('builds the ops without committing them', () => {
-    const { scene, group } = absolute();
-    expect(moveNodesOps(scene, [group], { dx: 1, dy: 1 })).toHaveLength(2);
+    const { scene, group } = upright();
+    expect(moveNodesOps(scene, [group], { dx: 1, dy: 1 })).toHaveLength(1);
     expect(scene.get(group)!.pose).toEqual(box(0, 100, 60, 60));
   });
 

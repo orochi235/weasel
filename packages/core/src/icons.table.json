@@ -407,6 +407,16 @@
       "group": "Paragraph alignment",
       "tags": []
     },
+    "textAlignStart": {
+      "body": "<path d=\"M3.125 4.375H16.875M3.125 8.125H11.875M3.125 15.625H13.125\"/><path d=\"M10.63 13.13 13.13 15.63 10.63 18.13\"/>",
+      "group": "Paragraph alignment",
+      "tags": []
+    },
+    "textAlignEnd": {
+      "body": "<path d=\"M3.125 4.375H16.875M8.125 8.125H16.875M6.875 15.625H16.875\"/><path d=\"M14.38 13.13 16.88 15.63 14.38 18.13\"/>",
+      "group": "Paragraph alignment",
+      "tags": []
+    },
     "textAlignTop": {
       "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"2\" stroke-width=\"1\"/><path d=\"M5.5 5.625H14.5M7 9.375H13\"/>",
       "group": "Paragraph alignment",
@@ -537,9 +547,94 @@
       "group": "Stroke and paint",
       "tags": []
     },
+    "paintInherit": {
+      "body": "<path d=\"M2.8571 2.8571H8.5714V8.5714H2.8571Z\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M5 8.5714V13.5714H10.7143\"/><path d=\"M10.7143 10.7143H16.4286V16.4286H10.7143Z\" stroke-linejoin=\"miter\"/>",
+      "group": "Stroke and paint",
+      "tags": []
+    },
     "paintNone": {
       "body": "<path d=\"M3.4 3.4H16.6V16.6H3.4Z\"/><path d=\"M3.4 16.6L16.6 3.4\" stroke=\"var(--wzl-danger, #d94a3f)\" stroke-width=\"1.8\" stroke-linecap=\"butt\"/>",
       "group": "Stroke and paint",
+      "tags": []
+    },
+    "markerNone": {
+      "body": "<path d=\"M1.75 10.625H17.5\" stroke-linecap=\"butt\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerArrow": {
+      "body": "<path d=\"M1.75 10.625H11.5\" stroke-linecap=\"butt\"/><path d=\"M17.5 10.625L11.5 7.625L11.5 13.625Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerArrowOpen": {
+      "body": "<path d=\"M1.75 10.625H17.5\" stroke-linecap=\"butt\"/><path d=\"M11.766 6.611L17.5 10.625L11.766 14.639\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerArrowConcave": {
+      "body": "<path d=\"M1.75 10.625H13.5\" stroke-linecap=\"butt\"/><path d=\"M17.5 10.625L11.5 7.625L13.5 10.625L11.5 13.625Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerTriangleHollow": {
+      "body": "<path d=\"M1.75 10.625H9.5\" stroke-linecap=\"butt\"/><path d=\"M17.5 10.625L9.5 6.625L9.5 14.625Z\" stroke-width=\"1\" stroke-linejoin=\"miter\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerDiamond": {
+      "body": "<path d=\"M1.75 10.625H9.5\" stroke-linecap=\"butt\"/><path d=\"M17.5 10.625L13.5 8.225L9.5 10.625L13.5 13.025Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerDiamondHollow": {
+      "body": "<path d=\"M1.75 10.625H9.5\" stroke-linecap=\"butt\"/><path d=\"M17.5 10.625L13.5 8.225L9.5 10.625L13.5 13.025Z\" stroke-width=\"1\" stroke-linejoin=\"miter\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerCircle": {
+      "body": "<path d=\"M1.75 10.625H13.5\" stroke-linecap=\"butt\"/><path d=\"M13.5 10.625A2 2 0 1 0 17.5 10.625A2 2 0 1 0 13.5 10.625Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerSquare": {
+      "body": "<path d=\"M1.75 10.625H13.5\" stroke-linecap=\"butt\"/><path d=\"M17.5 8.625L17.5 12.625L13.5 12.625L13.5 8.625Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerBar": {
+      "body": "<path d=\"M1.75 10.625H17.5\" stroke-linecap=\"butt\"/><path d=\"M17.5 7.625L17.5 13.625\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerDot": {
+      "body": "<path d=\"M1.75 10.625H17.5\" stroke-linecap=\"butt\"/><circle cx=\"10\" cy=\"10.625\" r=\"2.4\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerCrowOne": {
+      "body": "<path d=\"M1.75 10.625H17.5\" stroke-linecap=\"butt\"/><path d=\"M14.5 7.625L14.5 13.625M11.5 7.625L11.5 13.625\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerCrowMany": {
+      "body": "<path d=\"M1.75 10.625H17.5\" stroke-linecap=\"butt\"/><path d=\"M11.5 10.625L17.5 6.875M11.5 10.625L17.5 14.375\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerCrowZeroOne": {
+      "body": "<path d=\"M1.75 10.625H6.25\" stroke-linecap=\"butt\"/><path d=\"M14.5 7.625L14.5 13.625M6.25 10.625A3 3 0 1 0 12.25 10.625A3 3 0 1 0 6.25 10.625ZM12.25 10.625L17.5 10.625\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerCrowOneMany": {
+      "body": "<path d=\"M1.75 10.625H17.5\" stroke-linecap=\"butt\"/><path d=\"M11.5 10.625L17.5 6.875M11.5 10.625L17.5 14.375M9.25 7.625L9.25 13.625\"/>",
+      "group": "Stroke markers",
+      "tags": []
+    },
+    "markerCrowZeroMany": {
+      "body": "<path d=\"M1.75 10.625H3.25\" stroke-linecap=\"butt\"/><path d=\"M11.5 10.625L17.5 6.875M11.5 10.625L17.5 14.375M3.25 10.625A3 3 0 1 0 9.25 10.625A3 3 0 1 0 3.25 10.625ZM9.25 10.625L17.5 10.625\"/>",
+      "group": "Stroke markers",
       "tags": []
     }
   }

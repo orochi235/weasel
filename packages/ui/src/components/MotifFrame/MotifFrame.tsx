@@ -11,8 +11,16 @@ const BUILT_IN: Readonly<Record<FrameKind, Motif>> = { panel: sheet(), group: ru
 /** Only what a `<DefaultMotif>` named, so a frame's `fallback` can sit between it and the built-in motif. */
 const MotifContext = createContext<Readonly<Partial<Record<FrameKind, Motif>>>>({});
 
+/** The motifs a `<DefaultMotif named>` above defines, for a frame asked for one by name. */
+const NamedMotifContext = createContext<Readonly<Record<string, Motif>>>({});
+
 /** Props for `<DefaultMotif>`: the motif for each kind of frame, where it changes. */
-export type DefaultMotifProps = Partial<Record<FrameKind, Motif>> & { children: ReactNode };
+export type DefaultMotifProps = Partial<Record<FrameKind, Motif>> & {
+  /** Motifs a frame below can ask for by name, as a schema's group does with its `motif`. A name defined further
+   *  up and again here takes this one. */
+  named?: Readonly<Record<string, Motif>>;
+  children: ReactNode;
+};
 
 /**
  * Names the motif each kind of `<MotifFrame>` below draws in when it is given
@@ -28,9 +36,11 @@ export type DefaultMotifProps = Partial<Record<FrameKind, Motif>> & { children: 
  * A kind decides a frame's colors and title type — a panel reads the
  * `--wzl-panel-*` slots in any motif — and the motif only its geometry.
  */
-export function DefaultMotif({ children, ...kinds }: DefaultMotifProps) {
+export function DefaultMotif({ children, named, ...kinds }: DefaultMotifProps) {
   const outer = useContext(MotifContext);
-  return <MotifContext.Provider value={{ ...outer, ...kinds }}>{children}</MotifContext.Provider>;
+  const outerNamed = useContext(NamedMotifContext);
+  const frames = <MotifContext.Provider value={{ ...outer, ...kinds }}>{children}</MotifContext.Provider>;
+  return named ? <NamedMotifContext.Provider value={{ ...outerNamed, ...named }}>{frames}</NamedMotifContext.Provider> : frames;
 }
 
 /**
@@ -70,8 +80,10 @@ export function MotifFrame({
   const titleId = useId();
   const appearance = useAppearance({ stance, grade, emphasis, tint });
   const inherited = useContext(MotifContext);
+  const named = useContext(NamedMotifContext);
   if (hidden) return null;
-  const chosen = motif ?? inherited[kind] ?? fallback ?? BUILT_IN[kind];
+  const asked = typeof motif === 'string' ? (Object.hasOwn(named, motif) ? named[motif] : undefined) : motif;
+  const chosen = asked ?? inherited[kind] ?? fallback ?? BUILT_IN[kind];
   const root: RootProps = {
     ...attrs,
     ...appearance,

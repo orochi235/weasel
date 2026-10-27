@@ -1,6 +1,7 @@
 /** An insert snapping through the `snap` dep's `point` sessions. */
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
@@ -31,7 +32,7 @@ const edges: SnapSource = {
 };
 
 function rig(sources: readonly SnapSource[] | null, siblings: readonly Bounds[] = []) {
-  const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
+  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
   for (const pose of siblings) scene.add({ kind: 'mark', layer: 'main', data: {}, pose });
   const committed: Array<{ bounds: Bounds; extras: InsertExtras }> = [];
   const insert: InsertDep = {
@@ -124,7 +125,7 @@ describe('insert snapping', () => {
     /** A scene with a container `g` and a leaf `l`, and a drawn rect whose
      *  `insertInto` names `into`: the `parent` each collect was told. */
     function drawInto(into: (ids: { g: string; l: string }) => string | null) {
-      const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
+      const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
       const g = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
       const l = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 } }) as string;
       const told: Array<string | undefined> = [];

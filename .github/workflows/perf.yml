@@ -29,8 +29,9 @@ concurrency:
 jobs:
   perf:
     runs-on: [self-hosted, macOS, ARM64, gpu]
-    # The runner is a single machine, so a hung job blocks every later run.
-    timeout-minutes: 45
+    # The runner is a single machine, so a hung job blocks every later run. One full test:perf
+    # took 54 min on keiei (M2) on 2026-10-15, hud-vs-dom 27 of them.
+    timeout-minutes: 75
     env:
       NPM_CONFIG_LOGLEVEL: error
 

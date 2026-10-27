@@ -7,6 +7,9 @@ const START = 252;
 const END = 108;
 /** Px from the body's edge to the zoom's centerline: past the rim, with room for the stop labels outside the band. */
 export const ZOOM_INSET = 24;
+/** Px from a square body's sides to its straight zoom's ends: nearer than {@link ZOOM_INSET}, since its corners take
+ *  no labels, so that seven stop labels across a 160px body stand apart. */
+const LINE_SIDE_INSET = 16;
 
 /** The track a body's zoom lies along: an arc on a round body, an ellipse on a stretched one, straight on a square. */
 export type ZoomTrack =
@@ -33,8 +36,8 @@ const LINE: ZoomTrack = {
   kind: 'line',
   shape: ({ width, height }) =>
     lineShape(
-      { x: ZOOM_INSET, y: height - ZOOM_INSET },
-      { x: Math.max(ZOOM_INSET, width - ZOOM_INSET), y: height - ZOOM_INSET },
+      { x: LINE_SIDE_INSET, y: height - ZOOM_INSET },
+      { x: Math.max(LINE_SIDE_INSET, width - LINE_SIDE_INSET), y: height - ZOOM_INSET },
     ),
 };
 

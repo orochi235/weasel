@@ -89,7 +89,7 @@ function segmentItems(
 ): readonly ToggleBarItem<PaintKind>[] {
   return [
     ...(allowNone ? [segment(NONE, 'None', icon('core:paintNone'))] : []),
-    ...(allowInherit ? [segment(INHERIT, 'Inherit', undefined)] : []),
+    ...(allowInherit ? [segment(INHERIT, 'Inherit', icon('core:paintInherit'))] : []),
     ...[...firstOf].map(([id, entry]) => segment(
       id, entry.family?.label ?? entry.label, entry.family ? entry.family.icon : entry.icon,
     )),

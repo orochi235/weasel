@@ -1,5 +1,34 @@
 // Path-structure commands: direction, start, corners, segment type and extremes.
+const n = (v) => Math.round(v * 1e4) / 1e4;
+/** The center of pixel `k` at 16px 1x. */
+const px = (k) => 0.625 + 1.25 * k;
+const anchor = (cx, cy, s = 2.5) =>
+  `<rect x="${n(cx - s / 2)}" y="${n(cy - s / 2)}" width="${s}" height="${s}" fill="currentColor" stroke="none"/>`;
+const dot = (cx, cy, r) => `<circle cx="${n(cx)}" cy="${n(cy)}" r="${r}" fill="currentColor" stroke="none"/>`;
+
+// Resample: an arch drawn thin, so the anchors set along it at even steps stand off it.
+const ARCH = { cx: 10, cy: px(12), r: 6.875 };
+const onArch = (deg) => [ARCH.cx + ARCH.r * Math.cos((deg * Math.PI) / 180), ARCH.cy - ARCH.r * Math.sin((deg * Math.PI) / 180)];
+const resamplePath = `<path d="M${n(ARCH.cx - ARCH.r)} ${n(ARCH.cy)}A${ARCH.r} ${ARCH.r} 0 0 1 ${n(ARCH.cx + ARCH.r)} ${n(ARCH.cy)}" stroke-width="1"/>`
+  + [180, 135, 90, 45, 0].map((deg) => anchor(...onArch(deg))).join('');
+
+// Convert a spiro to a path: spiro's round points at the ends, and at the top an anchor with its handles out.
+const releaseSpiro = `<path d="M${px(2)} ${px(13)}C${px(2)} ${px(5)} ${px(13)} ${px(5)} ${px(13)} ${px(13)}" stroke-width="1"/>`
+  + dot(px(2), px(13), 1.6) + dot(px(13), px(13), 1.6)
+  + `<path d="M${px(3)} ${px(7)}H${px(12)}" stroke-width="1"/>` + anchor(px(7.5), px(7), 3)
+  + dot(px(3), px(7), 1.1) + dot(px(12), px(7), 1.1);
+
+// A blend's two ends, `blend`'s circle and box, joined by its spine: a path the steps follow, or the straight
+// run they take once it is released.
+const BLEND_ENDS = `<circle cx="${px(3)}" cy="${px(12)}" r="2.5"/><rect x="${px(10)}" y="${px(1)}" width="3.75" height="3.75" rx="0.6"/>`;
+const setBlendSpine = BLEND_ENDS + `<path d="M${px(5)} ${px(12)}C11 ${px(12)} 9 ${px(4)} ${px(10)} ${px(4)}" stroke-width="1"/>`;
+const releaseBlendSpine = BLEND_ENDS + `<path d="M6.25 13.75L${px(10)} 6.875" stroke-width="1" stroke-dasharray="1.3 1.3"/>`;
+
 export const COMMANDS = {
+  resamplePath,
+  releaseSpiro,
+  setBlendSpine,
+  releaseBlendSpine,
   reversePath: `
     <path d="M4.5 6.875 H15.5 M15.5 13.125 H4.5"/>
     <path d="M6.5 5.175 L4.5 6.875 L6.5 8.575 M13.5 11.425 L15.5 13.125 L13.5 14.825"/>`,

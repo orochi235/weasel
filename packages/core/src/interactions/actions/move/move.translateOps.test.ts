@@ -34,7 +34,7 @@ function fixture() {
   const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
   const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(50, 0) });
   const group = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 100, 60, 60) });
-  const child = scene.add({ kind: 'mark', parent: group, layer: 'main', data: {}, pose: box(10, 110) });
+  const child = scene.add({ kind: 'mark', parent: group, layer: 'main', data: {}, pose: box(10, 10) });
   return { scene, a, b, group, child };
 }
 
@@ -68,11 +68,11 @@ describe('MoveEnd.translateOps', () => {
     expect(scene.get(b)!.pose).toEqual(box(100, 0));
   });
 
-  it('takes the descendants that follow a named root, and no other root', () => {
+  it('moves a named root, whose frame carries its children, and no other root', () => {
     const { scene, b, group, child } = fixture();
     commit(scene, [b, group], (end) => end.translateOps([group]));
     expect(scene.get(group)!.pose).toEqual(box(100, 100, 60, 60));
-    expect(scene.get(child)!.pose).toEqual(box(110, 110));
+    expect(scene.get(child)!.pose).toEqual(box(10, 10));
     expect(scene.get(b)!.pose).toEqual(box(50, 0));
   });
 
@@ -81,7 +81,7 @@ describe('MoveEnd.translateOps', () => {
     let ops: Op[] | null = null;
     commit(scene, [a, group], (end) => (ops = end.translateOps([child, b, 'nowhere'])));
     expect(ops).toEqual([]);
-    expect(scene.get(child)!.pose).toEqual(box(10, 110));
+    expect(scene.get(child)!.pose).toEqual(box(10, 10));
     expect(scene.get(b)!.pose).toEqual(box(50, 0));
   });
 });

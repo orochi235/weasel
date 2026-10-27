@@ -10,7 +10,9 @@ const choice = (value: string, ...options: string[]): EffectParamControl =>
   ({ kind: 'enum', value, options: options.map((o) => ({ value: o, label: o[0]!.toUpperCase() + o.slice(1) })) });
 
 const port = (id: string): EffectPort => ({ id, type: 'audio' });
-const IN = [port('in')];
+/** Every audio input sums whatever is wired into it. */
+const input = (id: string): EffectPort => ({ ...port(id), many: true });
+const IN = [input('in')];
 const OUT = [port('out')];
 
 /** Stage types over audio, each with a graph node in `audioStageNodes` except
@@ -56,7 +58,7 @@ export const AUDIO_STAGE_TYPES: readonly EffectStageType[] = [
     params: [param('threshold', amount(-24, -60, 0, 1, 'dB')), param('ratio', amount(4, 1, 20, 0.5))],
   },
   {
-    type: 'audio.mix', title: 'Mix', inputs: [port('a'), port('b')], outputs: OUT,
+    type: 'audio.mix', title: 'Mix', inputs: [input('a'), input('b')], outputs: OUT,
     params: [param('a', amount(1, 0, 2, 0.01)), param('b', amount(1, 0, 2, 0.01))],
   },
   { type: 'audio.output', title: 'Output', kind: 'sink', inputs: IN },

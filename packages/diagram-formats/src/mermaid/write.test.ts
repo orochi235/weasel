@@ -131,4 +131,21 @@ describe('writing Mermaid', () => {
     });
     expect(warnings).toContain('Mermaid has no bracket shape for some outlines; they were written as rectangles.');
   });
+
+  it('writes BPMN figures as the nearest bracket shape, and says what they lost', () => {
+    const data: DiagramData = {
+      nodes: [
+        { id: 'a', lines: ['Start'], outline: 'event' },
+        { id: 'b', lines: ['Wait'], outline: 'intermediateEvent' },
+        { id: 'c', lines: ['Which'], outline: 'exclusiveGateway' },
+        { id: 'd', lines: ['Sub'], outline: 'subprocess' },
+      ],
+      edges: [],
+    };
+    const { text, warnings } = writeMermaid(pageOf(data));
+    expect(shapes(readMermaid(text).document.pages[0]!.data)).toEqual({
+      a: ['ellipse', ['Start']], b: ['doubleEllipse', ['Wait']], c: ['diamond', ['Which']], d: ['roundRect', ['Sub']],
+    });
+    expect(warnings).toEqual([expect.stringMatching(/^Mermaid has no BPMN figures; .*gateways as diamonds without their markers/)]);
+  });
 });
