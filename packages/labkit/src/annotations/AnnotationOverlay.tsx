@@ -14,6 +14,7 @@ import {
   useContext,
   useEffect,
   useInsertionEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -125,6 +126,15 @@ function insertFactories(
     };
   }
   return factories;
+}
+
+/** The whole target's camera, shifted so the canvas starts at the part that shows. */
+function cameraFor(target: AnnotationTarget, { rect, visible }: Placement): View {
+  const whole = target.view ?? fitView(target.content, { w: rect.w, h: rect.h }, target.shown);
+  return toWeaselView({
+    zoom: whole.zoom,
+    pan: { x: whole.pan.x - (visible.x - rect.x), y: whole.pan.y - (visible.y - rect.y) },
+  });
 }
 
 /**
@@ -247,17 +257,16 @@ export function AnnotationOverlay({
     [surface, tileId],
   );
 
-  const container = surface?.getContainer() ?? null;
-  if (!container || !placement) return null;
-  const { rect, visible } = placement;
+  const view = placement ? cameraFor(target, placement) : null;
+  // A camera moving under a still tile (a scroll) gets no frame of its own.
+  const viewKey = view ? `${view.x},${view.y},${view.scale.x},${view.scale.y}` : '';
+  useLayoutEffect(() => {
+    if (viewKey) sceneCanvas.current?.requestRedraw();
+  }, [viewKey]);
 
-  // The camera is the whole target's; the canvas starts at the visible part.
-  const whole = toWeaselView(target.view ?? fitView(target.content, { w: rect.w, h: rect.h }));
-  const view: View = {
-    ...whole,
-    x: whole.x - (visible.x - rect.x),
-    y: whole.y - (visible.y - rect.y),
-  };
+  const container = surface?.getContainer() ?? null;
+  if (!container || !placement || !view) return null;
+  const { visible } = placement;
 
   const drawOne = createMarkDrawOne({
     content: target.content,

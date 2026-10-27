@@ -142,7 +142,7 @@ export {
   ANNOTATION_WEASEL_TOOLS,
   annotationToolInfo,
 } from './annotations/toolMap';
-export type { ContentSize, PaneSize } from './annotations/view';
+export type { ContentSize, ContentWindow, PaneSize } from './annotations/view';
 export { fitView, fromWeaselView, toWeaselView } from './annotations/view';
 export type {
   CameraContextValue,

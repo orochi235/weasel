@@ -16,10 +16,11 @@ export interface AnnotationTargetsProps {
 }
 
 /**
- * Renders again when a target's element attaches or changes size, so `targets` is asked again: a target whose
- * content box is its element's own size would otherwise keep the size it had at the trial's last render.
+ * Renders again when a target's element attaches, changes size or scrolls anything inside it, so `targets` is asked
+ * again: a target whose content box is its element's own size, or whose `shown` follows a scroll offset, would
+ * otherwise keep what it had at the trial's last render.
  */
-function useTargetResizes(refs: readonly RefObject<HTMLElement | null>[]): void {
+function useTargetChanges(refs: readonly RefObject<HTMLElement | null>[]): void {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   const sizes = useRef(new Map<Element, string>());
   const observer = useRef<ResizeObserver | null>(null);
@@ -40,6 +41,7 @@ function useTargetResizes(refs: readonly RefObject<HTMLElement | null>[]): void 
     return () => {
       ro.disconnect();
       observer.current = null;
+      for (const el of seen.keys()) el.removeEventListener('scroll', bump, true);
       seen.clear();
     };
   }, []);
@@ -51,12 +53,15 @@ function useTargetResizes(refs: readonly RefObject<HTMLElement | null>[]): void 
     for (const el of [...sizes.current.keys()]) {
       if (live.has(el as HTMLElement)) continue;
       ro.unobserve(el);
+      el.removeEventListener('scroll', bump, true);
       sizes.current.delete(el);
     }
     for (const el of live) {
       if (sizes.current.has(el)) continue;
       sizes.current.set(el, '');
       ro.observe(el);
+      // `scroll` does not bubble; capturing on the target hears a scroller anywhere inside it.
+      el.addEventListener('scroll', bump, { capture: true, passive: true });
     }
   });
 }
@@ -71,7 +76,7 @@ export function AnnotationTargets({
   activeToolId,
 }: AnnotationTargetsProps) {
   const targets = capability.targets(state, config, trial);
-  useTargetResizes(targets.map((t) => t.ref));
+  useTargetChanges(targets.map((t) => t.ref));
 
   return (
     <>

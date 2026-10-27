@@ -76,4 +76,45 @@ describe('AnnotationTargets', () => {
     act(() => fire(box, 320, 200));
     expect(asked.mock.calls.length).toBe(before + 2);
   });
+
+  it('asks for its targets again when anything inside a target scrolls, and stops once it is gone', () => {
+    stubObserver();
+    const asked = vi.fn();
+    const store = createAnnotationStore({ targets: () => [] });
+    function Host() {
+      const ref = useRef<HTMLDivElement | null>(null);
+      const capability: AnnotationsCapability = {
+        targets: () => {
+          asked();
+          return [{ id: 'box', ref, content: { w: 10, h: 10 } }];
+        },
+      };
+      return (
+        <>
+          <div ref={ref} data-testid="box">
+            <div data-testid="scroller" />
+          </div>
+          <AnnotationTargets
+            capability={capability}
+            state={null}
+            config={null}
+            trial={{ id: 't', view: null }}
+            annotations={store}
+            activeToolId={null}
+          />
+        </>
+      );
+    }
+    const { getByTestId, unmount } = render(<Host />);
+    const scroller = getByTestId('scroller');
+    const before = asked.mock.calls.length;
+    // `scroll` does not bubble, as in a browser.
+    act(() => {
+      scroller.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(asked.mock.calls.length).toBe(before + 1);
+    unmount();
+    scroller.dispatchEvent(new Event('scroll', { bubbles: false }));
+    expect(asked.mock.calls.length).toBe(before + 1);
+  });
 });

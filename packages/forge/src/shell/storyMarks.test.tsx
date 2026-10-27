@@ -22,6 +22,20 @@ function sized(el: HTMLElement, width: number, height: number) {
   Object.defineProperty(el, 'offsetHeight', { configurable: true, value: height });
 }
 
+/** A host of `width × height` whose scroller holds `content`, scrolled down by `top`. */
+function scrolled(width: number, height: number, content: { width: number; height: number; top: number }) {
+  const host = document.createElement('div');
+  host.className = 'fg-story';
+  sized(host, width, height);
+  const scroller = document.createElement('div');
+  scroller.className = 'fg-story__scroll';
+  Object.defineProperty(scroller, 'scrollWidth', { configurable: true, value: content.width });
+  Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: content.height });
+  scroller.scrollTop = content.top;
+  host.append(scroller);
+  return host;
+}
+
 const loaded = loadNativeModule({ default: meta({ title: 'Test/Shape' }), Shape: story({ render: () => <p>hello</p> }) }, 'Test/Auto')[0]!;
 const entry = { id: loaded.id, title: 'Test/Shape', name: 'Shape', exportName: 'Shape', file: '/shape.stories.tsx' };
 
@@ -46,6 +60,15 @@ describe('storyMarks', () => {
     const host = document.createElement('div');
     hosts.attach('t2', host);
     expect(before.ref.current).toBe(host);
+  });
+
+  it('places the host in the content its scroller scrolls, which is the content box', () => {
+    const hosts = createStoryHosts();
+    const host = scrolled(320, 200, { width: 320, height: 900, top: 150 });
+    hosts.attach('t5', host);
+    const target = storyMarks(hosts).targets(null, {}, { id: 't5', view: null })[0]!;
+    expect(target.content).toEqual({ w: 320, h: 900 });
+    expect(target.shown).toEqual({ x: 0, y: 150, w: 320, h: 200 });
   });
 
   it('exports the marks over a capture of the host', async () => {
@@ -73,6 +96,18 @@ describe('captureHost', () => {
     expect(doc.getElementsByTagName('parsererror')).toHaveLength(0);
     expect(doc.documentElement.localName).toBe('svg');
     expect(doc.getElementsByTagName('foreignObject')).toHaveLength(1);
+  });
+
+  it('pictures the whole scrolled content, sizing the copy of the host to it', () => {
+    const host = scrolled(320, 200, { width: 320, height: 900, top: 150 });
+    document.body.append(host);
+    cleanups.push(() => host.remove());
+    const doc = parse(captureHost(host).markup);
+    expect(doc.documentElement.getAttribute('height')).toBe('900');
+    expect(doc.documentElement.getAttribute('viewBox')).toBe('0 0 320 900');
+    expect(doc.getElementsByTagName('style')[0]?.textContent).toContain(
+      '[data-fg-capture] > .fg-story{width:320px;height:900px}',
+    );
   });
 
   it("restates the custom properties as they resolve on the host, which no :root rule reaches", () => {

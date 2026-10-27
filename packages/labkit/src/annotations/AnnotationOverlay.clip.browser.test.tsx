@@ -24,8 +24,17 @@ const CONTENT = { w: 300, h: 120 };
 const pane: { current: HTMLDivElement | null } = { current: null };
 
 function Count() {
-  return <output data-testid="count">{useAnnotations().query().length}</output>;
+  const marks = useAnnotations().query();
+  return (
+    <output data-testid="count" data-frac={JSON.stringify(marks[0]?.frac ?? null)}>
+      {marks.length}
+    </output>
+  );
 }
+
+/** Where the first mark is stored, in fractions of its target's content box. */
+const storedFrac = (): { x: number; y: number; w: number; h: number } =>
+  JSON.parse(screen.getByTestId('count').dataset.frac ?? 'null');
 
 const Clipped = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Clipped',
@@ -71,6 +80,32 @@ async function line(x0: number, y0: number, x1: number, y1: number): Promise<Pix
   return out;
 }
 
+/** A mouse drag over `input` in eight steps, one a frame, in viewport px. */
+async function drag(input: HTMLElement, [x0, y0]: [number, number], [x1, y1]: [number, number]): Promise<void> {
+  const fire = (type: string, x: number, y: number, buttons: number): void => {
+    input.dispatchEvent(
+      new PointerEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        pointerId: 1,
+        pointerType: 'mouse',
+        isPrimary: true,
+        button: 0,
+        buttons,
+        clientX: x,
+        clientY: y,
+      }),
+    );
+  };
+  fire('pointerdown', x0, y0, 1);
+  for (let i = 1; i <= 8; i++) {
+    fire('pointermove', x0 + ((x1 - x0) * i) / 8, y0 + ((y1 - y0) * i) / 8, 1);
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+  fire('pointerup', x1, y1, 0);
+}
+
 const BLUE = '0,0,255';
 const GREEN = '0,255,0';
 const not = (color: string, pixels: Pixel[]): number =>
@@ -102,34 +137,17 @@ test('a mark is cut where its target is, and takes no press past it', async () =
 
   // A rectangle from the visible corner out past the cut: 20px inside the
   // whole target on every side, so its left 80px lie under the neighbor.
-  const fire = (type: string, x: number, y: number, buttons: number): void => {
-    input.dispatchEvent(
-      new PointerEvent(type, {
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        pointerId: 1,
-        pointerType: 'mouse',
-        isPrimary: true,
-        button: 0,
-        buttons,
-        clientX: x,
-        clientY: y,
-      }),
-    );
-  };
   const x0 = whole.right - 20;
   const y0 = whole.bottom - 20;
   const x1 = whole.left + 20;
   const y1 = whole.top + 20;
-  fire('pointerdown', x0, y0, 1);
-  for (let i = 1; i <= 8; i++) {
-    fire('pointermove', x0 + ((x1 - x0) * i) / 8, y0 + ((y1 - y0) * i) / 8, 1);
-    await new Promise((r) => requestAnimationFrame(r));
-  }
-  fire('pointerup', x1, y1, 0);
+  await drag(input, [x0, y0], [x1, y1]);
   await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
   input.blur();
+  // Stored against the whole target, the part cut off included.
+  const clipped = storedFrac();
+  expect(clipped.x).toBeCloseTo(20 / CONTENT.w, 1);
+  expect(clipped.x + clipped.w).toBeCloseTo(280 / CONTENT.w, 1);
 
   await waitFor(
     async () => {
@@ -143,6 +161,77 @@ test('a mark is cut where its target is, and takes no press past it', async () =
       expect(not(GREEN, along)).toBe(0);
       const across = await line(x1, whole.top + 2, x1, whole.bottom - 2);
       expect(not(GREEN, across)).toBe(0);
+    },
+    { timeout: 5000 },
+  );
+});
+
+const scroller: { current: HTMLDivElement | null } = { current: null };
+
+// The target is the scroller's own box; its marks live in the content it scrolls.
+const Scrolling = defineInstrument<Record<string, never>, Record<string, never>>({
+  name: 'Scrolling',
+  defaultConfig: () => ({}),
+  initialState: () => ({}),
+  render: () => (
+    <>
+      <div className="lk-clip-lab-scroller" ref={scroller}>
+        <div className="lk-clip-lab-tall" />
+      </div>
+      <Count />
+    </>
+  ),
+  annotations: {
+    targets: () => {
+      const el = scroller.current;
+      const w = el?.offsetWidth || 1;
+      const h = el?.offsetHeight || 1;
+      return [
+        {
+          id: 'scroller',
+          ref: scroller,
+          content: { w: Math.max(w, el?.scrollWidth ?? 0), h: Math.max(h, el?.scrollHeight ?? 0) },
+          shown: { x: el?.scrollLeft ?? 0, y: el?.scrollTop ?? 0, w, h },
+        },
+      ];
+    },
+  },
+});
+
+test('a mark on scrolled content moves with it as its target scrolls', async () => {
+  renderWithIcons(
+    <div className="lk-clip-lab-host">
+      <Lab instruments={[Scrolling]} defaultInstrument="Scrolling" />
+    </div>,
+  );
+  await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
+  await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
+  const input = document.querySelector('.lk-annotate__input') as HTMLElement;
+  const el = scroller.current as HTMLElement;
+  const box = el.getBoundingClientRect();
+  await waitFor(() => expect(input.getBoundingClientRect().height).toBeCloseTo(box.height, 0));
+
+  el.scrollTop = 30;
+  // Edges 40px and 140px down the box: 70px and 170px down the content.
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await drag(input, [box.left + 40, box.top + 40], [box.left + 200, box.top + 140]);
+  await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+  input.blur();
+  const stored = storedFrac();
+  expect(stored.y * el.scrollHeight).toBeCloseTo(70, -1);
+  expect((stored.y + stored.h) * el.scrollHeight).toBeCloseTo(170, -1);
+
+  const x = box.left + 120;
+  const across = (y: number) => line(x, box.top + y - 6, x, box.top + y + 6);
+  await waitFor(async () => expect(not(BLUE, await across(140))).toBeGreaterThan(0), { timeout: 5000 });
+
+  el.scrollTop = 90;
+  expect(el.scrollTop).toBe(90);
+  // The bottom edge has risen by the scroll, and nothing is left where it was.
+  await waitFor(
+    async () => {
+      expect(not(BLUE, await across(80))).toBeGreaterThan(0);
+      expect(not(BLUE, await across(140))).toBe(0);
     },
     { timeout: 5000 },
   );
