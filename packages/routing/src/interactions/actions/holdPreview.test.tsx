@@ -23,9 +23,10 @@ function rig(opts: { enabled?: Action['enabled'] } = {}) {
   const unite: Action = {
     id: 'unite',
     label: 'Unite',
+    requires: ['keymaps'],
     ...(opts.enabled ? { enabled: opts.enabled } : {}),
-    preview: (_deps, params) => { shown(params); return hidden; },
-    invoker: { timing: 'immediate', run: (_deps, params) => run(params) },
+    preview: (deps, params) => { shown(params, deps); return hidden; },
+    invoker: { timing: 'immediate', run: (deps, params) => run(params, deps) },
   };
   // What core's cancelGesture is: Escape, live only while a gesture is in flight.
   const cancel: Action = {
@@ -76,13 +77,14 @@ describe('holdPreview', () => {
     const r = rig();
     r.tap('p');
     r.send('keydown', 'u');
-    expect(r.shown).toHaveBeenCalledWith({ op: 'union' });
+    expect(r.shown).toHaveBeenCalledWith({ op: 'union' }, expect.anything());
     expect(r.run).not.toHaveBeenCalled();
     r.send('keydown', 'u');
     expect(r.shown).toHaveBeenCalledTimes(1);
     r.send('keyup', 'u');
     expect(r.hidden).toHaveBeenCalledTimes(1);
-    expect(r.run).toHaveBeenCalledWith({ op: 'union' });
+    // With the press's deps: the release's own ctx carries none.
+    expect(r.run).toHaveBeenCalledWith({ op: 'union' }, expect.objectContaining({ keymaps: expect.anything() }));
   });
 
   it('takes the preview down and runs nothing when the hold is canceled', () => {
