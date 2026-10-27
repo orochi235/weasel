@@ -13,8 +13,8 @@ import { heldPose } from '../testUtils';
 import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';
 import { resizeAction } from './action';
+import type { Point } from '@weasel-js/geom';
 
-type Point = { x: number; y: number };
 type Pose = Bounds & { rotation?: number };
 type AnyScene = Scene<unknown, string, unknown>;
 

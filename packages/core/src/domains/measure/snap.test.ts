@@ -1,7 +1,7 @@
 /** A measurement snapping through the `snap` dep's `point` sessions. */
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { pathFromD } from '@weasel-js/geom';
+import { pathFromD, type Point } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { SnapDep } from 'interactions/actions/snapDep';
@@ -17,7 +17,6 @@ import { measureCreateAction, measureDragAction } from './measureGestures';
 import { measureEndSource } from './measureHit';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
 
-type Point = { x: number; y: number };
 type AnyScene = Scene<unknown, string, unknown>;
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };

@@ -1,5 +1,5 @@
 import { closestOnFlat, resolveSnap, type SnapCandidate } from '@weasel-js/geom/nd';
-import type { View } from '@weasel-js/geom';
+import type { View, Point } from '@weasel-js/geom';
 import type { DebugSink } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -14,8 +14,6 @@ import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { resizedBox, resizeEdges, resizeSubject, type ResizeSubject } from './resizeBox';
 import { screenOf } from './screen';
 import type { SnapCollect, SnapFrame, SnapMark, SnapProbeAt, SnapSource } from './types';
-
-type Point = { x: number; y: number };
 
 /** The canvas's reach when neither a source nor the kit settings name one. */
 export const DEFAULT_SNAP_PX = 8;

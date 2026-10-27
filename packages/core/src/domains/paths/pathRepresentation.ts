@@ -8,7 +8,7 @@
  * edit edits the drawn path, and the edit drops the form.
  */
 import type { ActionDeps, OngoingHandle, WorldPoint } from '@weasel-js/routing';
-import type { PolygonPath } from '@weasel-js/geom';
+import type { PolygonPath, Point } from '@weasel-js/geom';
 import type { PathEditExtension } from './pathEditExtension';
 
 /** What `data.representation` holds: a form named by `kind`, with whatever
@@ -17,8 +17,6 @@ export interface PathForm {
   readonly kind: string;
   readonly [field: string]: unknown;
 }
-
-type Point = { x: number; y: number };
 
 /** The outline of an anchor's marker, in screen space: `size` px across at
  *  `at`, with the anchor's neighbors along its subpath, null past an open

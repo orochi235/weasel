@@ -8,8 +8,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapGeometry, SnapMods } from 'interactions/actions/snapDep';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** The positions a target allows: `at` plus any combination of `dirs`. No
  *  dirs is a point, one a line, two a plane. */

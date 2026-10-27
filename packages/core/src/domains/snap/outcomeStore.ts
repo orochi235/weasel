@@ -1,6 +1,5 @@
 import type { SnapMark } from './types';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** The marks of the snap in flight, for the readout to draw. */
 export interface SnapOutcomeStore<P = Point> {

@@ -1,7 +1,5 @@
 import type { PathDrawCommand } from '@weasel-js/renderer';
-import { circlePath, polylineFromPoints } from '@weasel-js/geom';
-
-type Point = { x: number; y: number };
+import { circlePath, polylineFromPoints, type Point } from '@weasel-js/geom';
 
 /** The colors a brush overlay paints with: `fill` for the area swept, `stroke`
  *  for the footprint's rim. */

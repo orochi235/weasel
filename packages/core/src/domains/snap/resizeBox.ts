@@ -3,8 +3,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { fixedCornerOf, movedEdges, movingPoint } from 'interactions/actions/resize/cornerHandles';
 import type { SnapResizeBox } from 'interactions/actions/snapDep';
 import type { SnapEdge, SnapEdges, SnapProbeAt } from './types';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 export const EPS = 1e-9;
 

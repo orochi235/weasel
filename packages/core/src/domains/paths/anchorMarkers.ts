@@ -5,7 +5,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { WorldPoint } from '@weasel-js/routing';
 import {
-  circlePath, linePath, pathToAnchors, resolveCorners, squarePath, type PenAnchor, type PolygonPath, type View,
+  circlePath, linePath, pathToAnchors, resolveCorners, squarePath, type PenAnchor, type PolygonPath, type View, type Point,
 } from '@weasel-js/geom';
 import type { AnchorMarkerShape } from './pathRepresentation';
 
@@ -50,8 +50,6 @@ export const DEFAULT_OVERLAY_STYLE: Required<PathEditingOverlayStyle> = {
   marqueeStroke: '#3478f6',
   marqueeFill: 'rgba(52, 120, 246, 0.08)',
 };
-
-type Point = { x: number; y: number };
 
 export function worldToScreen(p: WorldPoint, view: View): Point {
   return { x: (p.x - view.x) * view.scale.x, y: (p.y - view.y) * view.scale.y };

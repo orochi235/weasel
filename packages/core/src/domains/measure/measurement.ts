@@ -1,7 +1,8 @@
 import type { Node, NodeId, RectPose } from 'core/scene/types';
+import type { Point } from '@weasel-js/geom';
 
 /** A world-space point. */
-export interface MeasurePoint { x: number; y: number }
+export type MeasurePoint = Point;
 
 /**
  * The offset from `start` to `end`, in world units. `dx` and `dy` are on the

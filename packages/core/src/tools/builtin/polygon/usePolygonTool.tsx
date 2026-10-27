@@ -4,12 +4,12 @@ import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { SHAPE_COUNT_RANGE } from 'domains/paths/shapeGenerator';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
-import type { Action } from '@weasel-js/routing';
+import type { Action, WorldPoint } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 
 /** A point in world coordinates. */
-export interface PolygonPoint { x: number; y: number }
+export type PolygonPoint = WorldPoint;
 
 /** Options for `usePolygonTool`. */
 export interface UsePolygonToolOptions extends InsertToolOptions {

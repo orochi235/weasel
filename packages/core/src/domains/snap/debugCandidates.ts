@@ -2,8 +2,7 @@ import { closestOnFlat, type SnapCandidate } from '@weasel-js/geom/nd';
 import type { DebugSink } from '@weasel-js/routing';
 import { fromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { SnapProbeAt } from './types';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** Replaces the sink's snap records with one frame's candidates: where each
  *  would put its probe, accepted when the result meets it. Camera world. */

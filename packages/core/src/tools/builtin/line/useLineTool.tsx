@@ -3,11 +3,12 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
+import type { WorldPoint } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 
 /** An endpoint of a line, in world coordinates. */
-export interface LinePoint { x: number; y: number }
+export type LinePoint = WorldPoint;
 
 /**
  * Drag-to-draw line tool. The `drag` binding routes to `insertAction`, which

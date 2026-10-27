@@ -1,7 +1,6 @@
 import type { SnapBegin, SnapConstrain, SnapDep, SnapMods, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
 import { inputSession } from './session2d';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** A two-point gesture's snapping: a drawn line, a measurement, a box. */
 export interface SpanSnap {

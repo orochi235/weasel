@@ -1,7 +1,6 @@
 import type { SnapBegin, SnapDep, SnapMods, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
 import { inputSession } from './session2d';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 const FREE: SnapMods = { suspend: false, constrain: false };
 

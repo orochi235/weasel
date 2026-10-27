@@ -17,6 +17,7 @@ import type { ViewApi } from '../actions/depSchema';
 import { viewportDragPanAction } from '../actions/defaults/viewportDragPan';
 import { dragPanContribution, DRAG_PAN_ID } from '../../tools/builtin/hand/dragPanContribution';
 import type { InputEvent } from '@weasel-js/routing';
+import type { Point } from '@weasel-js/geom';
 
 /** The panel occupies x ∈ [100, 200) of a canvas whose origin is (0, 0). */
 const PANEL_RECT = { x: 100, y: 0, w: 100, h: 100 };
@@ -222,8 +223,6 @@ describe('useGestureDispatcher view routing', () => {
     expect(kinds(root.seen)).toContain('pointerdown');
   });
 });
-
-type Point = { x: number; y: number };
 
 /**
  * The hook applies the routed view's `clientToWorld` before it calls either
