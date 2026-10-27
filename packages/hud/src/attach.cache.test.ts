@@ -75,6 +75,21 @@ describe('attachHud: widget command cache', () => {
     expect(paint()[0]).toMatchObject({ runs: [expect.objectContaining({ text: 'two' })] });
   });
 
+  it('follows a readout rewritten every frame, then holds once it stops', () => {
+    // The cache entry is refilled in place and a widget's deps array kept
+    // until it changes, so neither may hold a frame's answer over.
+    const { hud, paint } = attached();
+    const label = hud.text({ id: 't', x: 10, y: 10, text: '0', fontSize: 14 });
+    const draw = vi.spyOn(label, 'draw');
+    for (let f = 1; f <= 4; f++) {
+      label.setText(String(f));
+      expect(paint()[0]).toMatchObject({ runs: [expect.objectContaining({ text: String(f) })] });
+    }
+    const held = paint();
+    expect(paint()[0]).toBe(held[0]);
+    expect(draw).toHaveBeenCalledTimes(4);
+  });
+
   it('rebuilds when a widget moves', () => {
     const { hud, paint } = attached();
     const label = hud.text({ id: 't', x: 10, y: 10, text: 'one', fontSize: 14 });

@@ -101,10 +101,11 @@ export function createRevision(onChange: (() => void) | undefined): {
   changed(): void;
   deps(): readonly unknown[];
 } {
-  let revision = 0;
+  // One array a revision, so asking unchanged builds nothing.
+  let deps: readonly unknown[] = [0];
   return {
-    changed() { revision++; onChange?.(); },
-    deps: () => [revision],
+    changed() { deps = [(deps[0] as number) + 1]; onChange?.(); },
+    deps: () => deps,
   };
 }
 

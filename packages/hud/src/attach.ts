@@ -90,24 +90,7 @@ export function attachHud(
 
   // Keyed weakly, so a widget removed from the HUD takes its entry with it.
   const cache = new WeakMap<Widget, CachedFrame>();
-  const frameCommands = (w: Widget, ctx: HudDrawCtx, focus: number): DrawCommand[] => {
-    if (!w.deps) return w.draw(ctx);
-    const deps = w.deps(ctx);
-    const b = w.bounds;
-    const hit = cache.get(w);
-    if (hit && hit.focus === focus && hit.tokens === ctx.tokens && hit.font === ctx.defaultFont
-      && hit.width === ctx.dims.width && hit.height === ctx.dims.height
-      && hit.x === b.x && hit.y === b.y && hit.w === b.w && hit.h === b.h
-      && depsUnchanged(hit.deps, deps)) {
-      return hit.cmds;
-    }
-    const cmds = w.draw(ctx);
-    cache.set(w, {
-      deps, cmds, focus, tokens: ctx.tokens, font: ctx.defaultFont,
-      width: ctx.dims.width, height: ctx.dims.height, x: b.x, y: b.y, w: b.w, h: b.h,
-    });
-    return cmds;
-  };
+  const frameCommands = (w: Widget, ctx: HudDrawCtx, focus: number) => cachedCommands(cache, w, ctx, focus);
 
   const layer: RenderLayer<unknown> = {
     id: 'weasel-hud',
@@ -211,6 +194,34 @@ export function attachHud(
 }
 
 /** One widget's last frame commands and every input they were built from. */
+/** `w`'s commands, reused from `cache` while nothing they are drawn from changed. */
+function cachedCommands(
+  cache: WeakMap<Widget, CachedFrame>, w: Widget, ctx: HudDrawCtx, focus: number,
+): DrawCommand[] {
+  if (!w.deps) return w.draw(ctx);
+  const deps = w.deps(ctx);
+  const b = w.bounds;
+  const hit = cache.get(w);
+  if (hit && hit.focus === focus && hit.tokens === ctx.tokens && hit.font === ctx.defaultFont
+    && hit.width === ctx.dims.width && hit.height === ctx.dims.height
+    && hit.x === b.x && hit.y === b.y && hit.w === b.w && hit.h === b.h
+    && depsUnchanged(hit.deps, deps)) {
+    return hit.cmds;
+  }
+  const cmds = w.draw(ctx);
+  if (!hit) {
+    cache.set(w, {
+      deps, cmds, focus, tokens: ctx.tokens, font: ctx.defaultFont,
+      width: ctx.dims.width, height: ctx.dims.height, x: b.x, y: b.y, w: b.w, h: b.h,
+    });
+    return cmds;
+  }
+  // Refilled in place, so a widget redrawn every frame leaves no entry behind.
+  hit.deps = deps; hit.cmds = cmds; hit.focus = focus; hit.tokens = ctx.tokens; hit.font = ctx.defaultFont;
+  hit.width = ctx.dims.width; hit.height = ctx.dims.height; hit.x = b.x; hit.y = b.y; hit.w = b.w; hit.h = b.h;
+  return cmds;
+}
+
 interface CachedFrame {
   deps: readonly unknown[];
   cmds: DrawCommand[];

@@ -28,6 +28,21 @@ describe('text widget', () => {
     expect((cmds[0] as { runs: Array<{ text: string }> }).runs[0].text).toBe('b');
   });
 
+  it('keeps its runs across a move and its corner across new text', () => {
+    const t = createText({ id: 't', x: 0, y: 10, text: 'a', fontSize: 14, color: '#000' });
+    const first = t.draw(ctx);
+    expect(t.draw(ctx)).toBe(first);
+    t.setBounds({ x: 5, y: 20, w: 0, h: 14 });
+    const moved = t.draw(ctx)[0] as TextDrawCommand;
+    expect(moved).toMatchObject({ x: 5, y: 20 });
+    expect(moved.runs).toBe((first[0] as TextDrawCommand).runs);
+    t.setText('b');
+    const rewritten = t.draw(ctx)[0] as TextDrawCommand;
+    expect(rewritten).toMatchObject({ x: 5, y: 20, runs: [{ text: 'b' }] });
+    t.setBounds({ x: 0, y: 10, w: 0, h: 14 });
+    expect(t.draw(ctx)[0]).toMatchObject({ x: 0, y: 10, runs: [{ text: 'b' }] });
+  });
+
   it('onChange fires when state mutates', () => {
     const onChange = vi.fn();
     const t = createText({ id: 't', x: 0, y: 0, text: 'x', fontSize: 13, color: '#000', onChange });
