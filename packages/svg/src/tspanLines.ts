@@ -88,7 +88,12 @@ export class LineTracker {
     const from = this.at;
     const dy = readLength(tspan, 'dy', 'y', 0, this.onWarn);
     this.at = (y != null ? readLength(tspan, 'y', 'y', from, this.onWarn) : from) + dy;
-    if (!tspan.hasAttribute('x') || !(movedY || dy !== 0)) return 0;
+    if (!(movedY || dy !== 0)) return 0;
+    if (!tspan.hasAttribute('x')) {
+      const name = dy !== 0 ? 'dy' : 'y';
+      this.onWarn(`<tspan ${name}="${tspan.getAttribute(name)}"> is not read: it moves glyphs off the line without starting a new one`);
+      return 0;
+    }
     // `0` is a line a layout wrapped onto: it moves down and breaks nothing.
     const stated = Number(tspan.getAttribute(LINES_ATTR) ?? NaN);
     const lines = Number.isInteger(stated) && stated >= 0 ? stated : 1;
@@ -127,9 +132,12 @@ export const holdsOnlyText = (el: Element): boolean =>
 export function warnUnreadPositions(el: Element, onWarn: (message: string) => void): void {
   const tag = el.tagName.toLowerCase();
   const own = tag === 'tspan' || holdsOnlyText(el);
-  for (const name of own ? ['y'] : ['x', 'y']) {
+  for (const name of own ? ['y', 'dy'] : ['x', 'y', 'dy']) {
     const raw = el.getAttribute(name)?.trim() ?? '';
-    if (/[\s,]/.test(raw)) onWarn(`<${tag} ${name}="${raw}"> positions each glyph; only the first value is read`);
+    const rest = raw.split(/[\s,]+/).slice(1);
+    if (name === 'dy' ? rest.some((v) => parseFloat(v) !== 0) : rest.length > 0) {
+      onWarn(`<${tag} ${name}="${raw}"> positions each glyph; only the first value is read`);
+    }
   }
   const rotate = el.getAttribute('rotate')?.trim() ?? '';
   if (rotate.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
