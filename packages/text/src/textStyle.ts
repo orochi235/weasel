@@ -193,6 +193,9 @@ export interface TextPaint {
   stroke?: Stroke | null;
 }
 
+/** What an absent optional field spreads, rather than a new `{}` a call. */
+const NOTHING = Object.freeze({});
+
 /**
  * Fill in a partial `TextStyle` with defaults from `DEFAULT_TEXT_STYLE`,
  * taking the glyph paint from the node rather than from the style.
@@ -215,7 +218,7 @@ export function resolveTextStyle(
         fill,
         caretColor: paintColor((fill?.paint ?? null)),
         selectionBackground: defaultSelectionBackground(paintColor((fill?.paint ?? null))),
-        ...(stroke !== undefined ? { stroke } : {}),
+        ...(stroke !== undefined ? { stroke } : NOTHING),
       };
   }
   const caretColor = style.caretColor ?? paintColor((fill?.paint ?? null));
@@ -247,8 +250,8 @@ export function resolveTextStyle(
     overline: style.overline ?? DEFAULT_TEXT_STYLE.overline,
     textTransform: style.textTransform ?? DEFAULT_TEXT_STYLE.textTransform,
     fontVariantCaps: style.fontVariantCaps ?? DEFAULT_TEXT_STYLE.fontVariantCaps,
-    ...(style.script !== undefined ? { script: style.script } : {}),
-    ...(stroke !== undefined ? { stroke } : {}),
+    ...(style.script !== undefined ? { script: style.script } : NOTHING),
+    ...(stroke !== undefined ? { stroke } : NOTHING),
   };
 }
 
