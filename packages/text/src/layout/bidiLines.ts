@@ -118,9 +118,27 @@ export function restoreRemoved(
 /** One line's visual order. */
 export interface LineOrder {
   /** Positions within the line, in visual order, left to right. */
-  visual: number[];
+  readonly visual: readonly number[];
   /** Resolved embedding level per position; even reads left to right. */
-  levels: number[];
+  readonly levels: readonly number[];
+}
+
+/** Lines this long or shorter share one logical order per length. */
+const SHARED_ORDER_LIMIT = 1024;
+const logicalOrders: LineOrder[] = [];
+
+/** `count` code points read left to right in the order they are stored: what
+ *  every line laid out without a bidi engine gets, shared per length because
+ *  a readout re-laid out every frame would build two arrays a line. */
+function logicalOrder(count: number): LineOrder {
+  const known = logicalOrders[count];
+  if (known !== undefined) return known;
+  const order: LineOrder = {
+    visual: Object.freeze(Array.from({ length: count }, (_, pos) => pos)),
+    levels: Object.freeze(new Array<number>(count).fill(0)),
+  };
+  if (count <= SHARED_ORDER_LIMIT) logicalOrders[count] = order;
+  return order;
 }
 
 /**
@@ -134,8 +152,8 @@ export function orderLine(
   start: number,
   count: number,
 ): LineOrder {
+  if (paragraphs === null || count === 0) return logicalOrder(count);
   const levels = new Array<number>(count).fill(0);
-  if (paragraphs === null || count === 0) return { visual: levels.map((_, pos) => pos), levels };
   const r = paragraphs.reorder(start, start + count);
   for (let pos = 0; pos < count; pos++) {
     const level = r.levels[pos];
