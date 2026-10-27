@@ -169,3 +169,74 @@ describe('rack order', () => {
     }
   });
 });
+
+describe('rack direction: down', () => {
+  const drawn = rack(SKIP, { direction: 'down' });
+  const node = (d: typeof drawn, id: string) => d.data.nodes.find((n) => n.id === id)!;
+  const port = (d: typeof drawn, id: string, p: string) => node(d, id).ports!.find((q) => q.id === p)!;
+  type Box = { x: number; y: number; width: number; height: number };
+  const boxes = (d: typeof drawn) => {
+    const specs = diagramScene(d.data, d.scene);
+    return (id: string) => specs.find((s) => s.id === id)!.pose as Box;
+  };
+
+  it('lays out with the chain layout, flowing down', () => {
+    expect(drawn.scene.layoutOptions).toMatchObject({ direction: 'down', chain: ['src', 'blur', 'mix', 'out'], chainSide: 'after' });
+  });
+
+  it('puts the main signal on a stage\'s top and bottom, and a side input on its right', () => {
+    expect(port(drawn, 'blur', 'in').at).toEqual({ u: 0.5, v: 0 });
+    expect(port(drawn, 'blur', 'out').at).toEqual({ u: 0.5, v: 1 });
+    expect(port(drawn, 'blur', 'radius')).toMatchObject({ at: { u: 1 }, normal: { x: 1, y: 0 } });
+    expect(port(drawn, 'osc', 'value')).toMatchObject({ at: { u: 0 }, normal: { x: -1, y: 0 } });
+  });
+
+  it('hangs a side stage to the right of the column for side: below, and the left for above', () => {
+    const at = boxes(drawn);
+    expect(at('osc').x).toBeGreaterThan(at('blur').x + at('blur').width);
+    const above = rack(SKIP, { direction: 'down', side: 'above' });
+    expect(above.scene.layoutOptions?.chainSide).toBe('before');
+    expect(port(above, 'blur', 'radius')).toMatchObject({ at: { u: 0 }, normal: { x: -1, y: 0 } });
+    expect(port(above, 'osc', 'value').at.u).toBe(1);
+    const atAbove = boxes(above);
+    expect(atAbove('osc').x + atAbove('osc').width).toBeLessThan(atAbove('blur').x);
+  });
+
+  it('runs a collapsed skip\'s arc down the edge away from the side stages', () => {
+    expect(port(drawn, 'src', '~skip-out').at).toEqual({ u: 0, v: 0.75 });
+    expect(port(drawn, 'mix', '~skip-in').at).toEqual({ u: 0, v: 0.25 });
+    expect(danglingEnds(drawn.data)).toEqual([]);
+    expect(danglingEnds(rack(ADJACENT, { direction: 'down' }).data)).toEqual([]);
+  });
+
+  it('makes a stage tall enough that its side ports sit apart', () => {
+    const knobs = Array.from({ length: 8 }, (_, i) => `k${i}`);
+    const many: EffectPipeline = {
+      types: { number: { control: true } },
+      stages: [
+        io('src', { inputs: [] }),
+        io('fx', { inputs: [{ id: 'in', type: 'image' }, ...knobs.map((k) => ({ id: k, type: 'number' }))] }),
+        io('out', { outputs: [] }),
+        ...knobs.map((k) => ({ id: `osc-${k}`, title: 'o', outputs: [{ id: 'value', type: 'number' }] })),
+      ],
+      wires: [w(['src', 'out'], ['fx', 'in']), w(['fx', 'out'], ['out', 'in']), ...knobs.map((k) => w([`osc-${k}`, 'value'], ['fx', k]))],
+    };
+    const tall = rack(many, { direction: 'down' });
+    const { height } = boxes(tall)('fx');
+    const vs = node(tall, 'fx').ports!.filter((p) => knobs.includes(p.id)).map((p) => p.at.v).sort();
+    expect(Math.min(...vs.slice(1).map((v, i) => (v - vs[i]!) * height))).toBeGreaterThanOrEqual(SIDE_PORT_GAP - 1e-9);
+    expect(vs[0]! * height).toBeGreaterThanOrEqual(SIDE_PORT_GAP - 1e-9);
+  });
+
+  it('reorders along y, each gap between the drawn boxes of its neighbors', () => {
+    expect(drawn.order!.axis).toBe('y');
+    const at = boxes(drawn);
+    const items = drawn.order!.items.map(({ id }) => ({ id, bounds: at(id) }));
+    const { gaps } = sequenceSlots('y', items);
+    for (let k = 1; k < items.length; k++) {
+      const [a, b] = [items[k - 1]!.bounds, items[k]!.bounds];
+      expect(gaps[k]!.a.y).toBeGreaterThan(a.y + a.height);
+      expect(gaps[k]!.a.y).toBeLessThan(b.y);
+    }
+  });
+});

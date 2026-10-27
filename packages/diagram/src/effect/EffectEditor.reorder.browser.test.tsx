@@ -8,7 +8,7 @@ import { diagramScene } from '../fromData';
 import { sequenceSlots } from '../reorder';
 import { EFFECT_MIN_SCALE } from './EffectChart';
 import { EffectEditor } from './EffectEditor';
-import { editorScene } from './editorMapping';
+import { editorScene, type EditorLookOptions } from './editorMapping';
 import { mainChain } from './mainChain';
 import type { EffectDoc, EffectStage } from './types';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
@@ -35,6 +35,9 @@ const DOC: EffectDoc = {
   places: {},
 };
 const SIZE = { width: 720, height: 300 };
+const TALL = { width: 300, height: 720 };
+type Size = typeof SIZE;
+type RackEditorOptions = EditorLookOptions['rack'];
 const INSERT = [31, 143, 255];
 const REFUSED = [255, 93, 93];
 
@@ -46,20 +49,23 @@ const fire = (el: Element, type: string, x: number, y: number) =>
   }));
 
 /** World to canvas CSS pixels, fitted the way the editor fits, and the rack's slots as drawn. */
-function drawn() {
-  const built = editorScene(DOC, 'rack');
+function drawn(options?: RackEditorOptions, size: Size = SIZE) {
+  const built = editorScene(DOC, 'rack', options);
   const specs = diagramScene(built.data, built.scene);
-  const t = viewToTransform(fitDiagram(specs, SIZE, { anchor: 'start', minScale: EFFECT_MIN_SCALE })!);
+  const t = viewToTransform(fitDiagram(specs, size, { anchor: 'start', minScale: EFFECT_MIN_SCALE })!);
   const box = (id: string) => specs.find((s) => s.id === id)!.pose as RectPose;
-  const slots = sequenceSlots('x', built.order!.items.map(({ id }) => ({ id, bounds: box(id) })));
+  const slots = sequenceSlots(built.order!.axis, built.order!.items.map(({ id }) => ({ id, bounds: box(id) })));
   const screen = (p: { x: number; y: number }) => ({ x: t.panX + p.x * t.zoom.x, y: t.panY + p.y * t.zoom.y });
   const center = (id: string) => screen({ x: box(id).x + box(id).width / 2, y: box(id).y + box(id).height / 2 });
-  const gap = (k: number) => screen({ x: slots.gaps[k]!.a.x, y: (slots.gaps[k]!.a.y + slots.gaps[k]!.b.y) / 2 });
+  const gap = (k: number) => {
+    const { a, b } = slots.gaps[k]!;
+    return screen(slots.axis === 'x' ? { x: a.x, y: (a.y + b.y) / 2 } : { x: (a.x + b.x) / 2, y: a.y });
+  };
   return { center, gap };
 }
 
-function pixel(canvas: HTMLCanvasElement, at: { x: number; y: number }): number[] {
-  const dpr = canvas.width / SIZE.width;
+function pixel(canvas: HTMLCanvasElement, at: { x: number; y: number }, size: Size = SIZE): number[] {
+  const dpr = canvas.width / size.width;
   const gl = canvasGl(canvas);
   const px = new Uint8Array(4);
   gl.readPixels(Math.round(at.x * dpr), canvas.height - 1 - Math.round(at.y * dpr), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
@@ -74,12 +80,12 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-async function mount(onChange: (next: EffectDoc, label: string) => void): Promise<HTMLCanvasElement> {
+async function mount(onChange: (next: EffectDoc, label: string) => void, options?: RackEditorOptions, size: Size = SIZE): Promise<HTMLCanvasElement> {
   const host = document.createElement('div');
   document.body.append(host);
   await act(async () => {
     root = createRoot(host);
-    root.render(<EffectEditor doc={DOC} onChange={onChange} look="rack" {...SIZE} />);
+    root.render(<EffectEditor doc={DOC} onChange={onChange} look="rack" {...(options ? { options } : {})} {...size} />);
   });
   await frame();
   await frame();
@@ -121,5 +127,17 @@ describe('<EffectEditor look="rack">', () => {
     await release();
     await frame();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('drags a stage down the column under direction: down', async () => {
+    const onChange = vi.fn();
+    const down = { direction: 'down' } as const;
+    const canvas = await mount(onChange, down, TALL);
+    const { center, gap } = drawn(down, TALL);
+    const release = await press(canvas, center('a'), { x: center('a').x, y: gap(3).y });
+    expect(near(pixel(canvas, gap(3), TALL), INSERT), `bar pixel ${pixel(canvas, gap(3), TALL).join(',')}`).toBe(true);
+    await release();
+    await expect.poll(() => onChange.mock.calls.length).toBe(1);
+    expect(mainChain(onChange.mock.calls[0]![0].pipeline)).toEqual(['src', 'b', 'a', 'out']);
   });
 });

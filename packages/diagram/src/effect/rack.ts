@@ -13,7 +13,13 @@ import type { EffectPipeline, EffectPort, EffectStage } from './types';
 export interface RackOptions extends RunRowOptions, LookThemeOptions {
   /** The stage ids on the line, in order. Default the longest path over data wires. */
   chain?: readonly string[];
-  /** Where what feeds the chain from the side sits. Default `'below'`. */
+  /** Which way the main signal runs: `'right'` (default) along a row, or
+   *  `'down'` as a column, entering each stage at its top and leaving at its
+   *  bottom. */
+  direction?: 'right' | 'down';
+  /** Where what feeds the chain from the side sits. Default `'below'`. Under
+   *  `direction: 'down'`, `'below'` hangs it on the right of the column and
+   *  `'above'` on the left. */
   side?: 'below' | 'above';
   nodeGap?: number;
   rankGap?: number;
@@ -55,15 +61,41 @@ interface Line {
  *  port to the box's corner. */
 export const SIDE_PORT_GAP = 24;
 
-/** Ports spread along the edge at `v`, each facing straight out of it rather
- *  than away from the box's center, so a wire leaves square to the edge. */
-const spreadAt = (ports: readonly EffectPort[], v: number): PortSpec[] =>
-  ports.map((p, i) => ({ id: p.id, type: p.type, at: { u: (i + 1) / (ports.length + 1), v }, normal: { x: 0, y: v * 2 - 1 } }));
+/** A box's axes as the rack reads them: `along` the line, from where the
+ *  main signal enters to where it leaves, and `across` it, from 0 to 1. */
+interface Frame {
+  anchor: (along: number, across: number) => PortAnchor;
+  along: (at: PortAnchor) => number;
+  across: (at: PortAnchor) => number;
+  normal: (across: number) => { x: number; y: number };
+}
 
-/** The narrowest a box may be so the ports along its top and its bottom each
- *  sit `SIDE_PORT_GAP` apart. */
-function roomFor(ports: readonly PortSpec[]): number {
-  const count = (v: number) => ports.filter((p) => p.at.v === v && p.at.u > 0 && p.at.u < 1).length;
+const ROW: Frame = {
+  anchor: (along, across) => ({ u: along, v: across }),
+  along: (at) => at.u,
+  across: (at) => at.v,
+  normal: (across) => ({ x: 0, y: across * 2 - 1 }),
+};
+
+const COLUMN: Frame = {
+  anchor: (along, across) => ({ u: across, v: along }),
+  along: (at) => at.v,
+  across: (at) => at.u,
+  normal: (across) => ({ x: across * 2 - 1, y: 0 }),
+};
+
+/** Ports spread along the edge at `across`, each facing straight out of it
+ *  rather than away from the box's center, so a wire leaves square to the edge. */
+const spreadAt = (frame: Frame, ports: readonly EffectPort[], across: number): PortSpec[] =>
+  ports.map((p, i) => ({ id: p.id, type: p.type, at: frame.anchor((i + 1) / (ports.length + 1), across), normal: frame.normal(across) }));
+
+/** The least extent along the line a box may have so the ports on each edge
+ *  parallel to it sit `SIDE_PORT_GAP` apart. */
+function roomFor(frame: Frame, ports: readonly PortSpec[]): number {
+  const count = (across: number) => ports.filter((p) => {
+    const along = frame.along(p.at);
+    return frame.across(p.at) === across && along > 0 && along < 1;
+  }).length;
   return (Math.max(count(0), count(1)) + 1) * SIDE_PORT_GAP;
 }
 
@@ -99,23 +131,24 @@ function lineOf(pipeline: EffectPipeline, ordered: readonly string[], chain: rea
   return { at: new Map(chain.map((id, i) => [id, i])), mainIn, mainOut };
 }
 
-/** `near` and `far` are the `v` of the edge facing the side stages and the one facing away. */
-function portsOf(stage: EffectStage, line: Line, wires: readonly RackWire[], near: number, far: number): PortSpec[] {
-  if (!line.at.has(stage.id)) return [...spreadAt(stage.outputs ?? [], far), ...spreadAt(stage.inputs ?? [], near)];
+/** `near` and `far` are where across the box the edge facing the side stages
+ *  and the one facing away sit. */
+function portsOf(stage: EffectStage, line: Line, wires: readonly RackWire[], frame: Frame, near: number, far: number): PortSpec[] {
+  if (!line.at.has(stage.id)) return [...spreadAt(frame, stage.outputs ?? [], far), ...spreadAt(frame, stage.inputs ?? [], near)];
   const typed = (p: EffectPort, anchor: PortAnchor): PortSpec => ({ id: p.id, type: p.type, at: anchor });
   const out: PortSpec[] = [];
   const side: EffectPort[] = [];
   for (const p of stage.inputs ?? []) {
-    if (p.id === line.mainIn.get(stage.id)) out.push(typed(p, { u: 0, v: 0.5 }));
+    if (p.id === line.mainIn.get(stage.id)) out.push(typed(p, frame.anchor(0, 0.5)));
     else side.push(p);
   }
   for (const p of stage.outputs ?? []) {
-    if (p.id === line.mainOut.get(stage.id)) out.push(typed(p, { u: 1, v: 0.5 }));
+    if (p.id === line.mainOut.get(stage.id)) out.push(typed(p, frame.anchor(1, 0.5)));
     else side.push(p);
   }
-  out.push(...spreadAt(side, near));
+  out.push(...spreadAt(frame, side, near));
   const type = portOn(stage, line.mainOut.get(stage.id) ?? line.mainIn.get(stage.id) ?? '')?.type;
-  const arc = (id: string, u: number): PortSpec => ({ id, at: { u, v: far }, ...(type !== undefined ? { type } : {}) });
+  const arc = (id: string, along: number): PortSpec => ({ id, at: frame.anchor(along, far), ...(type !== undefined ? { type } : {}) });
   if (wires.some((w) => w.arc && w.from.stage === stage.id)) out.push(arc(SKIP_OUT, 0.75));
   if (wires.some((w) => w.arc && w.to.stage === stage.id)) out.push(arc(SKIP_IN, 0.25));
   return out;
@@ -126,6 +159,8 @@ function portsOf(stage: EffectStage, line: Line, wires: readonly RackWire[], nea
 export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const theme = options.theme ?? LOOK_THEME;
   const color = typeColors(pipeline, options.colors, theme.series);
+  const down = options.direction === 'down';
+  const frame = down ? COLUMN : ROW;
   const below = options.side !== 'above';
   const near = below ? 1 : 0;
   const far = below ? 0 : 1;
@@ -142,11 +177,12 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const controlSide = below ? 'bottom' : 'top';
   const nodes = kept.map((stage) => {
     if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide, style: stageStyle(stage, theme) }) };
-    const ports = portsOf(stage, line, wires, near, far);
+    const ports = portsOf(stage, line, wires, frame, near, far);
     const node = boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports, run: options });
-    const room = roomFor(ports);
-    // One port per edge needs less than diagramScene's own minimum width; leave that in charge.
-    return room > 2 * SIDE_PORT_GAP ? { ...node, width: room } : node;
+    const room = roomFor(frame, ports);
+    // One port per edge fits the box diagramScene sizes anyway; leave that in charge.
+    if (room <= 2 * SIDE_PORT_GAP) return node;
+    return down ? { ...node, height: Math.max(node.height ?? 0, room) } : { ...node, width: room };
   });
 
   const byId = new Map(kept.map((s) => [s.id, s]));
@@ -170,7 +206,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
     scene: {
       layout: 'chain',
       layoutOptions: {
-        direction: 'right',
+        direction: down ? 'down' : 'right',
         chain,
         chainSide: below ? 'after' : 'before',
         ...(options.nodeGap !== undefined ? { nodeGap: options.nodeGap } : {}),
@@ -180,7 +216,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
       ...sceneStyles(kept, edges, theme),
     },
     color,
-    order: { axis: 'x', items: chain.map((id) => ({ id })) },
+    order: { axis: down ? 'y' : 'x', items: chain.map((id) => ({ id })) },
     exits: new Map(wires.flatMap((wire, i) => (wire.exit === undefined ? [] : [[edgeIdOf(edges[i]!.edge), wire.exit]]))),
   };
 };
