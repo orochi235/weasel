@@ -18,6 +18,7 @@
       "@weasel-js/menu",
       "@weasel-js/quantity",
       "@weasel-js/simulation",
+      "@weasel-js/clock",
       "@weasel-js/stroke",
       "@weasel-js/renderer",
       "@weasel-js/pdf",

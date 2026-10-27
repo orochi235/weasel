@@ -1,5 +1,5 @@
+import type { ClockRegistry } from '@weasel-js/clock';
 import { useEffect, useSyncExternalStore } from 'react';
-import type { ClockRegistry } from '../clock/clockRegistry';
 import { transportControl } from '../clock/transportControl';
 import { transportHoldOf } from '../clock/transportHold';
 import type { TrialClockHandle } from '../clock/trialClock';

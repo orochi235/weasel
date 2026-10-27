@@ -131,9 +131,6 @@
   "packages/labkit/src/chrome/builtins.tsx": {
     "longestFunction": 223
   },
-  "packages/labkit/src/clock/trialClock.ts": {
-    "longestFunction": 199
-  },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
     "longestFunction": 136
   },

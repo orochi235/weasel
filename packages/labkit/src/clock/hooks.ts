@@ -1,7 +1,7 @@
 import { useLatest } from '@weasel-js/core';
 import { useContext, useEffect, useReducer, useSyncExternalStore } from 'react';
 import { useLabCommandsOptional } from '../lab/LabContext';
-import { ClockRegistryContext, TrialClockContext } from './clockRegistry';
+import { ClockRegistryContext, TrialClockContext } from './contexts';
 import type { ClockedMix, TrialClock, TrialClockHandle } from './trialClock';
 
 const NO_SUBSCRIBE = () => () => {};
@@ -39,7 +39,7 @@ export function useTrialClockHandle(trialId?: string): TrialClockHandle | null {
     if (trialId !== undefined) return registry?.get(trialId) ?? null;
     if (own) return own;
     const focused = lab?.focusedTrialId;
-    return (focused ? registry?.get(focused) : null) ?? registry?.lab ?? null;
+    return (focused ? registry?.get(focused) : null) ?? registry?.shared ?? null;
   }
   return resolve();
 }

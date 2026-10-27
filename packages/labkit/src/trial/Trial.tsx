@@ -25,7 +25,7 @@ import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraReg
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
-import { ClockRegistryContext, TrialClockContext } from '../clock/clockRegistry';
+import { ClockRegistryContext, TrialClockContext } from '../clock/contexts';
 import { clockPosition, createTrialClock } from '../clock/trialClock';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
@@ -165,11 +165,11 @@ function TrialRuntime({
   const spec = instrument.clock;
   const [clockHandle] = useState(() => {
     if (spec === 'lab') {
-      if (!clocks?.lab)
+      if (!clocks?.shared)
         throw new Error(
           `[labkit] instrument "${instrument.name}" plays on the lab's clock, and its <Lab> declares no \`clock\``,
         );
-      return clocks.lab;
+      return clocks.shared;
     }
     return spec ? createTrialClock(spec, record.clock) : null;
   });

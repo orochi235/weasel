@@ -1,6 +1,6 @@
+import type { ClockRegistry } from '@weasel-js/clock';
 import { useMemo } from 'react';
 import { useStore } from 'zustand/react';
-import type { ClockRegistry } from '../clock/clockRegistry';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { LabStore } from '../state/store';
@@ -109,7 +109,7 @@ export function useStoreCommands(
         }));
         const handle = clocks.get(id);
         // The lab's clock is every trial's on it, so resetting one leaves it.
-        if (handle !== clocks.lab) handle?.reset();
+        if (handle !== clocks.shared) handle?.reset();
       },
       savedSnapshots,
       saveSnapshot: (trialId, name) => {

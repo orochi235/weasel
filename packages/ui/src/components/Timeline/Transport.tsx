@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { CLOCK_RATES } from '@weasel-js/clock';
 import { multiplier, qty } from '@weasel-js/quantity';
 import { DetentSlider } from '../DetentSlider';
 import { QuantityText } from '../QuantityText';
@@ -11,7 +12,7 @@ import { Icon } from '../../icons/Icon';
 const RATE = multiplier({ symbol: 'x' });
 
 /** Playback rates the transport offers by default, slowest first. */
-export const TRANSPORT_RATES = [0.25, 0.5, 1, 2, 4] as const;
+export const TRANSPORT_RATES = CLOCK_RATES;
 
 /** Props for {@link Transport}. Times are in ms. */
 export interface TransportProps {

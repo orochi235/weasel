@@ -1,6 +1,6 @@
+import type { ClockRegistry } from '@weasel-js/clock';
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand/react';
-import type { ClockRegistry } from '../clock/clockRegistry';
 import type { LabStore } from '../state/store';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { type PresentationMessageOptions, usePresentationMessages } from './presentationMessages';

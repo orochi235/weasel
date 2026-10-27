@@ -1,14 +1,14 @@
+import { type ClockRegistry, createClockRegistry } from '@weasel-js/clock';
+import { useClockLoop } from '@weasel-js/clock/react';
 import type { RecordCache } from '@weasel-js/storage';
 import { useEffect, useState } from 'react';
 import { valueRecord } from '../state/labRecords';
-import { type ClockRegistry, createClockRegistry } from './clockRegistry';
 import {
   type ClockCapability,
   type ClockPosition,
   clockPosition,
   createTrialClock,
 } from './trialClock';
-import { useClockLoop } from './useClockLoop';
 
 const LAB_CLOCK_RECORD = valueRecord(null, 'lk-lab-clock');
 
@@ -26,7 +26,7 @@ export function useLabClocks(
     ),
   );
   useEffect(() => {
-    const lab = clocks.lab;
+    const lab = clocks.shared;
     if (!lab) return;
     return lab.clock.subscribe(() =>
       records.set(LAB_CLOCK_RECORD, clockPosition(lab.clock, spec?.duration)),

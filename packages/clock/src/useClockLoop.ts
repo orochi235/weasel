@@ -1,9 +1,9 @@
-import { useVisibleRaf } from '@weasel-js/core';
+import { useVisibleRaf } from '@weasel-js/react';
 import { useEffect } from 'react';
-import type { ClockRegistry } from './clockRegistry';
+import type { ClockRegistry } from './registry';
 
 /**
- * The lab's one frame loop for every trial clock: syncs each clock that is not
+ * The one frame loop for every clock in a registry: syncs each clock that is not
  * inert, and sleeps once every clock is, until one wakes. Shaped like a blits
  * `ticker`, so one could take its place.
  */

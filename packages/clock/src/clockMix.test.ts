@@ -1,7 +1,7 @@
 import { kit, mix, patch, sum } from '@msb235/blits';
 import { createHistory } from '@weasel-js/history';
 import { describe, expect, it } from 'vitest';
-import { createTrialClock } from './trialClock';
+import { createClock } from './clock';
 
 interface Pose {
   x: number;
@@ -9,11 +9,15 @@ interface Pose {
 const K = kit<Pose>({ x: sum() });
 const part = 'part';
 /** x climbs from 0 to 100 over one second. */
-const climb = patch<string, Pose>(1000, (phase) => ({ x: phase * 100 }), { writes: ['x'] });
+const climb = patch<string, Pose>(1000, (phase) => ({ x: phase * 100 }), {
+  writes: ['x'],
+});
 
 function trial(start?: { elapsed: number; rate: number }) {
-  const m = mix<string, Pose>(K, { history: { ms: 10_000, tape: createHistory } });
-  const handle = createTrialClock({ duration: 2000, rate: 1, mix: () => m }, start);
+  const m = mix<string, Pose>(K, {
+    history: { ms: 10_000, tape: createHistory },
+  });
+  const handle = createClock({ duration: 2000, rate: 1, mix: () => m }, start);
   handle.clock.sync(0);
   return { ...handle, m, x: () => m.probe(part).x };
 }
