@@ -5,12 +5,14 @@ import {
 } from '@weasel-js/core';
 import type { Affine } from '@weasel-js/geom';
 import { createCamera } from './camera';
-import { add, intersectRayPlane, pointOnRay, type Vec3 } from '@weasel-js/geom/3d';
+import { add, intersectRayPlane, pointOnRay, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { createPoseDescriptor, createSnap, screenBoxOf } from './deps';
 import { aabbOfPose, pose3, type Pose3 } from './pose3';
 import { projectPoint, rayAt, type Viewport3d } from './project';
 import { boxSnapSource } from './snap/sources';
-import { boundsOfTestNode, createTestScene, type TestScene } from './testScene';
+import {
+  YAW_POSE_COMPOSITION, boundsOfTestNode, createFramedTestScene, createTestScene, type TestScene,
+} from './testScene';
 
 function viewport(): Viewport3d {
   return {
@@ -177,3 +179,38 @@ describe('a 3D move of several roots', () => {
     expect(max.y).toBe(1.5);
   });
 });
+
+describe('a 3D move of several roots, one stored under a container', () => {
+  function framedRoots() {
+    const { scene, framed, frame } = createFramedTestScene();
+    const lead = [...scene.renderOrder()][0]! as NodeId;
+    const worldOfFramed = () => YAW_POSE_COMPOSITION.compose(scene.get(frame)!.pose, scene.get(framed)!.pose);
+    const before = { lead: scene.get(lead)!.pose, framed: worldOfFramed() };
+    const poseDescriptor = createPoseDescriptor(worldOf(scene));
+    const moved = () => ({
+      lead: sub(scene.get(lead)!.pose.position, before.lead.position),
+      framed: sub(worldOfFramed().position, before.framed.position),
+    });
+    return { scene, ids: [lead, framed as NodeId], poseDescriptor, moved };
+  }
+
+  it('drags the framed root by the world delta it lands the first one', () => {
+    const { scene, ids, poseDescriptor, moved } = framedRoots();
+    drag({ selection: { get: () => ids, set: () => {} }, scene, poseDescriptor }, { x: 40, y: 10 });
+    const { lead, framed } = moved();
+    expect(lead.x).not.toBeCloseTo(0, 3);
+    expect(framed.x).toBeCloseTo(lead.x, 9);
+    expect(framed.y).toBeCloseTo(0, 9);
+    expect(framed.z).toBeCloseTo(lead.z, 9);
+  });
+
+  it('nudges the framed root by the world delta it moves the first one', () => {
+    const { scene, ids, poseDescriptor, moved } = framedRoots();
+    moveNodes({ scene, poseDescriptor } as never, ids, { dx: 12, dy: -4 }, 'Nudge');
+    const { lead, framed } = moved();
+    expect(lead.x).not.toBeCloseTo(0, 3);
+    expect(framed.x).toBeCloseTo(lead.x, 9);
+    expect(framed.z).toBeCloseTo(lead.z, 9);
+  });
+});
+

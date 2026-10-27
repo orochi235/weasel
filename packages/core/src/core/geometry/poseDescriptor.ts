@@ -2,6 +2,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { multiply, poseLinearOf, rotate } from '@weasel-js/geom';
 import type { TargetAxes } from '@weasel-js/animator';
+import type { PoseComposition } from 'core/scene/composeFrame';
 
 /** `Bounds` with a required rotation angle (radians). Pivot is the AABB
  *  center of the unrotated `{x, y, width, height}`. */
@@ -10,10 +11,22 @@ export interface RotatedPose extends Bounds {
 }
 
 /** One pose before and after a translate, handed to the translate of another
- *  pose in the same move. Both are world poses. */
+ *  pose in the same move. Both are in the frame the translated pose is stored
+ *  in: world for a root, its frame's coordinates for a pose under a container. */
 export interface TranslateLead<TPose> {
   readonly from: TPose;
   readonly to: TPose;
+}
+
+/** A world `lead` expressed in the frame whose world pose is `frameWorld`, for a
+ *  pose stored there; `null` is the root frame, where it is unchanged. */
+export function leadUnder<TPose>(
+  pc: Pick<PoseComposition<TPose>, 'decompose'>,
+  frameWorld: TPose | null,
+  lead: TranslateLead<TPose>,
+): TranslateLead<TPose> {
+  if (frameWorld === null) return lead;
+  return { from: pc.decompose(frameWorld, lead.from), to: pc.decompose(frameWorld, lead.to) };
 }
 
 /**

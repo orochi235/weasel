@@ -1,6 +1,8 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Affine } from '@weasel-js/geom';
-import { translatePoseViaDescriptor, type PoseDescriptor, type TranslateLead } from 'core/geometry/poseDescriptor';
+import {
+  leadUnder, translatePoseViaDescriptor, type PoseDescriptor, type TranslateLead,
+} from 'core/geometry/poseDescriptor';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -72,17 +74,19 @@ export function moveNodesOps(
   const frame = scenePoseFrame(scene);
   const sources = moveSources(scene, ids);
   const targets = translateTargets(scene, frame, sources);
-  // The first one stored in world space leads the rest, as in a drag.
-  const inWorld = targets.filter((id) => frame.frame(id) === null);
-  const first = inWorld.find((id) => id === sources[0]) ?? inWorld[0];
-  const from = first === undefined ? undefined : scene.get(first)?.pose;
-  const lead: TranslateLead<unknown> | undefined = first === undefined || from === undefined
+  // The first one leads the rest, as in a drag: each is moved by its world change.
+  const first = targets.find((id) => id === sources[0]) ?? targets[0];
+  const from = first === undefined ? undefined : frame.world(first);
+  const lead: TranslateLead<unknown> | undefined = first === undefined
     ? undefined
     : { from, to: translatePoseViaDescriptor(from, dx, dy, descriptorOf(first)) };
   return translateNodeOps(
     scene,
     targets,
-    (id) => frame.frame(id) === null && lead ? { dx, dy, lead } : storedDelta(frame, descriptorOf(id), id, dx, dy),
+    (id) => {
+      const own = storedDelta(frame, descriptorOf(id), id, dx, dy);
+      return lead ? { ...own, lead: leadUnder(frame.pc, frame.parentWorld(id), lead) } : own;
+    },
     descriptorOf,
     deps?.geometryProjection,
     label,

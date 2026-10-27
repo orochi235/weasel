@@ -293,12 +293,11 @@ export function createPoseDescriptor<TData, TLayer extends string>(
       },
 
       /**
-       * Screen-space deltas resolve against the plane the node already sits
-       * on. That plane differs per node, so in a move of several each follows
-       * the lead's world delta instead, and the group moves as one body.
-       */
+       * Screen-space deltas resolve against the plane the node already sits on. That
+       * plane differs per node, so in a move of several each takes the lead's change
+       * whole (it kept its height already), and the group moves as one body. */
       translate(pose, dx, dy, lead) {
-        if (lead) return movedOnLevel(pose, sub(lead.to.position, lead.from.position), upAxis);
+        if (lead) return { ...pose, position: add(pose.position, sub(lead.to.position, lead.from.position)) };
         const vp = castableViewport();
         const box = vp && boundsIn(vp, pose);
         if (!vp || !box) return pose;

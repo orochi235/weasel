@@ -1,5 +1,5 @@
 import type { NodeId } from 'core/scene/types';
-import { translatePoseViaDescriptor, type TranslateLead } from 'core/geometry/poseDescriptor';
+import { leadUnder, translatePoseViaDescriptor, type TranslateLead } from 'core/geometry/poseDescriptor';
 import { toPlane } from 'core/viewport/parallax';
 import { composeWorldPose, type PoseAdapter } from 'core/scene/composePose';
 import { planeOf } from '../planeInput';
@@ -65,10 +65,11 @@ function leadFor(session: MoveSession, id: NodeId, dx0: number, dy0: number): Tr
   return own.dx === m.dx && own.dy === m.dy ? m.lead : undefined;
 }
 
-/** The lead for translating `id`'s stored pose: only a pose stored in world
- *  space, since a lead is a world pose. */
+/** The lead for translating `id`'s stored pose: the world lead, carried into
+ *  the frame `id` is stored in. */
 export function storedLeadFor(session: MoveSession, id: NodeId, dx0: number, dy0: number): TranslateLead<unknown> | undefined {
-  return session.frames.has(id) ? undefined : leadFor(session, id, dx0, dy0);
+  const lead = leadFor(session, id, dx0, dy0);
+  return lead && leadUnder(session.pc, session.frames.get(id)?.frameWorld ?? null, lead);
 }
 
 /** The pose `id` stores once dragged by `(dx, dy)` from `start`, its stored
