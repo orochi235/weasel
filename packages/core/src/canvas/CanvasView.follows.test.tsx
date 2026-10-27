@@ -85,7 +85,7 @@ describe('<CanvasView follows>', () => {
   });
 
   it('acts on and draws the selection of the view it follows, while that view owns one', () => {
-    const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     let registry: ViewRegistry | null = null;
     function Probe() {
       const r = useOptionalViewRegistry();
@@ -106,7 +106,7 @@ describe('<CanvasView follows>', () => {
     act(() => { scene.setSelection(['s' as NodeId]); });
     const lens = registry!.get('lens')!;
     const chromeSelection = () => {
-      lens.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300 });
+      lens.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300, dpr: 1 });
       return (seen as { getChromeState(): { selection: readonly NodeId[] } }).getChromeState().selection;
     };
 
