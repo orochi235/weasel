@@ -219,7 +219,7 @@ describe('Slider stop labels', () => {
       <Slider min={0} max={100} stops={STOPS} thumbs={[{ value: 25 }, { value: 100 }]} onInput={() => {}} />,
     );
     expect(labelsOf(container).map(l => l.dataset.selected)).toEqual([undefined, 'true', 'true']);
-    expect(labelsOf(container).map(l => l.dataset.edge)).toEqual(['start', undefined, 'end']);
+    expect(labelsOf(container).map(l => l.dataset.edge)).toEqual(['left', undefined, 'right']);
   });
 
   // jsdom has no layout, so this asserts the proxy: inside the track, the row
