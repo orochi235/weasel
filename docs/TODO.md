@@ -1097,6 +1097,17 @@ only story runner in the repo.
   Fixed on onto's `spread-resync` branch (2026-10-26), unmerged; retire it once that merges and the binary
   is rebuilt and pushed to the nodes.
 
+- **(P3) [agent] The overlap's jsdom worker count subtracts busy cores the reserve sweep never did.**
+  `roomToOverlap` (`scripts/lib/node-load.mjs`) gives jsdom `floor(cores - busy) - reserve` workers, but
+  the 2026-10-21 sweep that chose the reserve ran `cores - reserve` regardless of load
+  (`scripts/bench-overlap-reserve.mjs`). On studio, busy read 1.5–6.3 cores in that sweep, where the
+  shipped rule would have given 2–5 workers or no overlap at all. At 58f8810f9 (2026-10-26, studio, 2.1
+  busy) it gave 4: the browser projects finished in 338 s and the jsdom ones in 479 s, while the sweep's
+  R 3–4 runs at 6–7 workers took 347–357 s for the whole suite (other commits; inferred, not compared
+  head to head). The busy cut does keep a co-scheduled onto job from being oversubscribed, so the
+  question is how much of the reading to subtract: measure the shipped rule against `cores - reserve` on
+  studio, a pass each first, and keep every run's raw numbers in the sweep's file.
+
 - **(P3) [agent] The `browser` project spends about a second per file outside its tests.** Alone on teitou
   (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
   310 s; the rest is each file's page and module load, and from 35 s on the run is a stream of small
