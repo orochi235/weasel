@@ -133,9 +133,11 @@ const logicalOrders: LineOrder[] = [];
 function logicalOrder(count: number): LineOrder {
   const known = logicalOrders[count];
   if (known !== undefined) return known;
+  // Not frozen, though shared: V8 iterates a frozen array through a
+  // generic iterator, which allocated a result object per code point.
   const order: LineOrder = {
-    visual: Object.freeze(Array.from({ length: count }, (_, pos) => pos)),
-    levels: Object.freeze(new Array<number>(count).fill(0)),
+    visual: Array.from({ length: count }, (_, pos) => pos),
+    levels: new Array<number>(count).fill(0),
   };
   if (count <= SHARED_ORDER_LIMIT) logicalOrders[count] = order;
   return order;

@@ -10,10 +10,7 @@ describe('orderLine without an engine', () => {
     }
   });
 
-  it('hands out an order no caller can change for the next line', () => {
-    // Lines of one length share an order, so it is frozen.
-    const order = orderLine(null, 0, 4);
-    expect(Object.isFrozen(order.visual) && Object.isFrozen(order.levels)).toBe(true);
-    expect(orderLine(null, 9, 4)).toBe(order);
+  it('shares one order between lines of one length', () => {
+    expect(orderLine(null, 9, 4)).toBe(orderLine(null, 0, 4));
   });
 });
