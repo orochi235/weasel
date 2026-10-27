@@ -24,6 +24,7 @@ import { effectiveGlobals, GLOBALS_KEY } from './globals';
 import { useHostConditions } from './hostConditions';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryScroller } from './StoryScroller';
+import { useStoryHost } from './storyHosts';
 import { TrialFramesContext } from './trialFrames';
 
 /** Props for `TrialHost`. */
@@ -143,6 +144,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     };
   }, [host, hostId, trialId, frames, copy, overridesRef, rendered]);
 
+  useStoryHost(trialId, copy ? null : host);
   // The host is hidden until its first commit has painted with its fonts, so a new trial never shows a jump.
   const announced = useRef(false);
   useEffect(() => {

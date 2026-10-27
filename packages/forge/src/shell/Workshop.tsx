@@ -26,6 +26,7 @@ import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { ForgeLoupe } from './loupe/ForgeLoupe';
 import type { Revision } from './loupe/captureContext';
 import { LoupeProvider } from './loupe/CaptureInputs';
+import { createStoryHosts, StoryHostsContext } from './storyHosts';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { RoutePlayhead } from '../timeline/RoutePlayhead';
 import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
@@ -100,6 +101,22 @@ function useDocumentTitle(title: string) {
   }, [title]);
 }
 
+/** A pool of warm frames at `frameUrl` while `framed`; null otherwise. */
+function useFramePool(frameUrl: string, framed: boolean): FramePool | null {
+  const [pool, setPool] = useState<FramePool | null>(null);
+  useEffect(() => {
+    if (!framed) return;
+    const next = createFramePool(frameUrl);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- publishes the frame pool this effect creates
+    setPool(next);
+    return () => {
+      next.dispose();
+      setPool(null);
+    };
+  }, [frameUrl, framed]);
+  return pool;
+}
+
 /** What the workshop shows when the index is empty, naming the globs it was built from. */
 function NoStories({ stories }: { stories: readonly string[] }) {
   return (
@@ -125,20 +142,10 @@ export function Workshop(props: WorkshopProps) {
   const title = config?.title ?? DEFAULT_TITLE;
   useDocumentTitle(title);
   const [frames] = useState(createTrialFrames);
+  const [hosts] = useState(createStoryHosts);
   const [clocks] = useState(createTrialClocks);
-  const [pool, setPool] = useState<FramePool | null>(null);
   // Warm frames are for the stories that render in one: every story when no importers are given, else the isolated.
-  const framed = importers === undefined || index.some((entry) => entry.isolate !== undefined);
-  useEffect(() => {
-    if (!framed) return;
-    const next = createFramePool(frameUrl);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- publishes the frame pool this effect creates
-    setPool(next);
-    return () => {
-      next.dispose();
-      setPool(null);
-    };
-  }, [frameUrl, framed]);
+  const pool = useFramePool(frameUrl, importers === undefined || index.some((entry) => entry.isolate !== undefined));
   const entries = useMemo(() => [...index, ...indexEntries(index)], [index]);
   const table = config?.libraries;
   const libraries = useMemo(() => librariesFrom(table), [table]);
@@ -146,6 +153,7 @@ export function Workshop(props: WorkshopProps) {
     frameUrl,
     globals: declarations,
     libraries,
+    hosts,
     ...(importers ? { importers } : {}),
     ...(setup ? { setup } : {}),
   });
@@ -196,6 +204,7 @@ export function Workshop(props: WorkshopProps) {
       <DependenciesContext.Provider value={dependencies ?? null}>
         <FramePoolContext.Provider value={pool}>
           <TrialFramesContext.Provider value={frames}>
+            <StoryHostsContext.Provider value={hosts}>
             <TrialClocksContext.Provider value={clocks}>
             <LoupeProvider captureBase={props.captureBase} revision={props.revision}>
               <Lab
@@ -208,6 +217,7 @@ export function Workshop(props: WorkshopProps) {
                 {...(storage ? { storage } : {})}
                 labChrome={labChrome}
                 addTrial={false}
+                marks={false}
                 {...(menus ? { menus } : {})}
                 {...(config?.controls ? { controls: config.controls } : {})}
                 {...(config?.pages ? { pages: config.pages } : {})}
@@ -229,6 +239,7 @@ export function Workshop(props: WorkshopProps) {
               </Lab>
             </LoupeProvider>
             </TrialClocksContext.Provider>
+            </StoryHostsContext.Provider>
           </TrialFramesContext.Provider>
         </FramePoolContext.Provider>
       </DependenciesContext.Provider>
