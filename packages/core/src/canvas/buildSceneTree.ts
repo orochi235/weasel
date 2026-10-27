@@ -19,6 +19,9 @@ export interface HierarchicalAdapter<TNode, TPose> {
    *  scene stores absolute poses and a parent contributes no transform —
    *  see `PoseComposition`. */
   composePose?(parent: TPose, child: TPose): TPose;
+  /** The frame a container gives its children from its world pose: moved by
+   *  its scroll offset where the view scrolls it. Absent means the pose itself. */
+  childFrame?(id: string, world: TPose): TPose;
 }
 
 /** A clip on the chain, with the layer whose world it is drawn in, or the
@@ -92,6 +95,7 @@ export function buildSceneTree<
   }
 
   const compose = adapter.composePose?.bind(adapter);
+  const scrolled = compose ? adapter.childFrame?.bind(adapter) : undefined;
   const carry = clipCarrier(planeViews ? scenePlaneOf(layers, view) : null);
 
   function visit(
@@ -135,7 +139,7 @@ export function buildSceneTree<
     if (bucket) bucket.push(wrap(self));
 
     // An envelope's children share its own parent's frame.
-    const childFrame = definesFrame(node as never) ? pose : parentFrame;
+    const childFrame = definesFrame(node as never) ? (scrolled ? scrolled(id, pose) : pose) : parentFrame;
     const children = adapter.getChildren(id);
     for (const cid of children) visit(cid, ownClips, childFrame, copied);
 

@@ -114,6 +114,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   // Override writes never bump the scene version, so the version subscription
   // above cannot see them.
   useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
+  useEffect(() => scene.scroll?.subscribe(requestRedraw), [scene, requestRedraw]);
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
 
   return (

@@ -9,6 +9,8 @@ export type { Mixed } from '@weasel-js/registry';
 
 // ─── Group/parent composition: world pose, rebase, ordered groups ───────────
 export {
+  childFrameAt,
+  composeChildFrame,
   composesFrames,
   composeWorldPose,
   composeRectPose,
@@ -16,14 +18,18 @@ export {
   composeRigidPose,
   decomposeRigidPose,
   rebaseLocalPose,
+  scrollRectPose,
+  scrollRigidPose,
   translateRectPose,
   worldPoseLookup,
   IDENTITY_POSE_COMPOSITION,
   RECT_POSE_COMPOSITION,
   RIGID_POSE_COMPOSITION,
 } from 'core/scene/composePose';
-export type { PoseAdapter, PoseComposition, PoseClosure } from 'core/scene/composePose';
-export { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+export type { PoseAdapter, PoseComposition, PoseClosure, ScrollOffset } from 'core/scene/composePose';
+export { scenePoseAdapter, sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
+export { createScrollOffsets, scrolledFrames, viewPoseAdapter } from 'core/scene/scrollOffsets';
+export type { SceneScroll, ScrollOffsets, ScrollSource } from 'core/scene/scrollOffsets';
 export { carriedDescendants, heldInFrame, sceneCarrySource } from 'core/scene/carryDescendants';
 export type { CarrySource } from 'core/scene/carryDescendants';
 export { nestedHitTester } from 'core/scene/nestedHit';

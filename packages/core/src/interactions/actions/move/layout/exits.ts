@@ -2,7 +2,7 @@ import type { NodeId } from 'core/scene/types';
 import { poseDescriptorForNode } from 'core/geometry/poseDescriptor';
 import { toPlane } from 'core/viewport/parallax';
 import { composeWorldPose } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { LayoutStrategy } from '../../../../layout/types';
 import { planeOf } from '../../planeInput';
 import type { MoveSession } from '../session';
@@ -22,7 +22,7 @@ export function resolveLayoutExits(
   const center = dropCenter;
   if (!layoutDep || !center) return out;
   const { scene, pc, projection: d } = session;
-  const poseAdapter = scenePoseAdapter(scene);
+  const poseAdapter = sceneViewPoseAdapter(scene);
   const excluded = new Set<NodeId>([...session.ids, ...session.cascadeIds]);
   const holds = (id: NodeId, layout: LayoutStrategy<unknown> | null): boolean => {
     const node = scene.get(id)!;

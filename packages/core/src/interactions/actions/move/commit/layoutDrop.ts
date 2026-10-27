@@ -3,7 +3,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { asNodeId } from 'core/scene/types';
 import { rebaseLocalPose } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { LayoutPass } from '../layout/types';
 import type { MoveSession } from '../session';
 import { rebaseTransformOp } from './rebase';
@@ -13,7 +13,7 @@ import { rebaseTransformOp } from './rebase';
 export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
   const lp = pass;
   const pc = session.pc;
-  const commitAdapter = scenePoseAdapter(session.scene);
+  const commitAdapter = sceneViewPoseAdapter(session.scene);
   const destId = lp.container.id;
   const draggedIds = new Set<string>(session.ids.map((id) => id as string));
   // commitDrop returns world poses (the contract is world in/out).

@@ -7,7 +7,8 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { composesFrames, composeWorldPose } from 'core/scene/composePose';
+import { composeChildFrame, composesFrames, type PoseAdapter } from 'core/scene/composePose';
+import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import type { RemovedNode } from 'core/scene/poseWrites';
 import type { Node, NodeId, Scene } from 'core/scene/types';
@@ -37,11 +38,11 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
       const sc = sceneRef.current;
       const { compose } = sc.composition;
       const composes = composesFrames(sc.composition);
-      const frames = {
+      const frames = viewPoseAdapter(sc, {
         getParent: (id: string) => sc.get(id as NodeId)?.parent ?? null,
         getPose: (id: string) => effectivePose(sc, sc.get(id as NodeId)!),
         definesFrame: (id: string) => definesFrame(sc.get(id as NodeId)!),
-      };
+      } as PoseAdapter<TPose>);
       const viewOf = (layer: string): View => {
         const parallax = sc.layers.find((l) => l.id === layer)?.parallax;
         return parallax ? deriveParallaxView(view, parallax) : view;
@@ -52,7 +53,7 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
       };
       return leaving.map(({ removal, pose, alpha }): DrawCommand => {
         const parent = removal.parent !== null && sc.get(removal.parent) ? removal.parent : null;
-        const world = composes && parent !== null ? compose(composeWorldPose(frames, parent, compose), pose) : pose;
+        const world = composes && parent !== null ? compose(composeChildFrame(frames, parent, compose), pose) : pose;
         const children: DrawCommand[] = [];
         draw(removal, world, children);
         return { kind: 'group', alpha: Math.max(0, Math.min(1, alpha)), children };

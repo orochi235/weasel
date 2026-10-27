@@ -1,8 +1,8 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { documentPose } from 'core/scene/effectivePose';
-import { composeWorldPose, frameAtOrAbove, rebaseLocalPose } from 'core/scene/composePose';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { composeChildFrame, frameAtOrAbove, rebaseLocalPose } from 'core/scene/composePose';
+import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../../layout/types';
 import type { MoveSession } from '../session';
 
@@ -46,13 +46,13 @@ export interface Released {
 export function releasedPoses(session: MoveSession, previews: ReadonlyMap<NodeId, unknown>): Map<NodeId, Released> {
   const out = new Map<NodeId, Released>();
   const { scene, pc } = session;
-  const adapter = scenePoseAdapter(scene);
+  const adapter = sceneViewPoseAdapter(scene);
   for (const id of session.startPoses.keys()) {
     const local = previews.get(id);
     if (local === undefined) continue;
     const parent = scene.get(id)?.parent ?? null;
     const frame = frameAtOrAbove(adapter, parent);
-    const world = frame === null ? local : pc.compose(composeWorldPose(adapter, frame, pc.compose), local);
+    const world = frame === null ? local : pc.compose(composeChildFrame(adapter, frame, pc.compose), local);
     out.set(id, { local, parent, world });
   }
   return out;
@@ -67,7 +67,7 @@ export function landReleased(
   released: Map<NodeId, Released>,
 ): void {
   const { scene, pc } = session;
-  const adapter = scenePoseAdapter(scene);
+  const adapter = sceneViewPoseAdapter(scene);
   for (const id of session.startPoses.keys()) {
     const r = released.get(id);
     if (!r) {
