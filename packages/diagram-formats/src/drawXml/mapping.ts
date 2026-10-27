@@ -11,7 +11,7 @@ type StylePart = string | [string, string | number];
 const LABEL_BELOW: StylePart[] = [['verticalLabelPosition', 'bottom'], ['verticalAlign', 'top']];
 const event = (outline: string): StylePart[] =>
   [['shape', 'mxgraph.bpmn.event'], ['outline', outline], ['symbol', 'general'], ...LABEL_BELOW];
-const gateway = (type: string): StylePart[] => [['shape', 'mxgraph.bpmn.gateway2'], ['gwType', type], ...LABEL_BELOW];
+const gateway = (...parts: StylePart[]): StylePart[] => [['shape', 'mxgraph.bpmn.gateway2'], ...parts, ...LABEL_BELOW];
 const device = (name: string): StylePart[] => [['shape', `mxgraph.networks.${name}`], ...LABEL_BELOW];
 
 /**
@@ -46,10 +46,16 @@ export const SHAPES: ReadonlyArray<{
   { name: 'mxgraph.bpmn.event', when: ['outline', 'catching'], outline: 'intermediateEvent', write: event('catching') },
   { name: 'mxgraph.bpmn.event', when: ['outline', 'throwing'], outline: 'intermediateEvent' },
   { name: 'mxgraph.bpmn.event', outline: 'event' },
-  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'exclusive'], outline: 'exclusiveGateway', write: gateway('exclusive') },
-  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'parallel'], outline: 'parallelGateway', write: gateway('parallel') },
-  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'inclusive'], outline: 'inclusiveGateway', write: gateway('inclusive') },
-  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'eventBased'], outline: 'eventGateway', write: gateway('eventBased') },
+  // As draw.io's own BPMN palette (Sidebar-BPMN.js) writes them: only exclusive, parallel and complex are a `gwType`;
+  // the default, `event`, draws the event `outline` and `symbol` name inside the diamond.
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'exclusive'], outline: 'exclusiveGateway', write: gateway(['outline', 'none'], ['symbol', 'none'], ['gwType', 'exclusive']) },
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'parallel'], outline: 'parallelGateway', write: gateway(['outline', 'none'], ['symbol', 'none'], ['gwType', 'parallel']) },
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'complex'], outline: 'diamond' },
+  { name: 'mxgraph.bpmn.gateway2', when: ['outline', 'end'], outline: 'inclusiveGateway', write: gateway(['outline', 'end'], ['symbol', 'general']) },
+  { name: 'mxgraph.bpmn.gateway2', when: ['outline', 'catching'], outline: 'eventGateway', write: gateway(['outline', 'catching'], ['symbol', 'multiple']) },
+  // What this package wrote before 2026-10-27, which draw.io draws as a bare diamond.
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'inclusive'], outline: 'inclusiveGateway' },
+  { name: 'mxgraph.bpmn.gateway2', when: ['gwType', 'eventBased'], outline: 'eventGateway' },
   { name: 'mxgraph.bpmn.gateway2', outline: 'diamond' },
   {
     name: 'mxgraph.bpmn.task', when: ['isLoopSub', '1'], outline: 'subprocess',
@@ -64,6 +70,8 @@ export const SHAPES: ReadonlyArray<{
   { name: 'mxgraph.networks.mobile', outline: 'phone', write: device('mobile') },
   { name: 'mxgraph.networks.printer', outline: 'printer', write: device('printer') },
   { name: 'mxgraph.networks.user_male', outline: 'user', write: device('user_male') },
+  // mxgraph.networks has no globe; this is the Office set's.
+  { name: 'mxgraph.office.concepts.globe_internet', outline: 'globe', write: [['shape', 'mxgraph.office.concepts.globe_internet'], ...LABEL_BELOW] },
 ];
 
 /** The entry a cell's style reads as: its shape name, and the pair that narrows it where one does. */
