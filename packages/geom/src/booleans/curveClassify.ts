@@ -53,10 +53,18 @@ export interface CoveredEdge {
   inR: boolean[];
 }
 
+/** How many times each operand's outline runs along `e`, counting a piece against it as -1. */
+function runs(e: Edge, operands: number): number[] {
+  const n = new Array<number>(operands).fill(0);
+  n[e.operand] = 1;
+  for (const { operand, sign } of e.also ?? []) n[operand] += sign;
+  return n;
+}
+
 /**
  * Which operands cover either side of every edge. Null when an edge lies
- * along another operand's outline, or along a second stretch of its own,
- * which the winding on its two sides gives away.
+ * along an outline the cut did not merge into it, which the winding on its
+ * two sides gives away.
  */
 export function coverEdges(edges: readonly Edge[], sets: readonly WindingSet[], probe: number): CoveredEdge[] | null {
   const out: CoveredEdge[] = [];
@@ -74,11 +82,12 @@ export function coverEdges(edges: readonly Edge[], sets: readonly WindingSet[], 
     }
     const nx = -tan.y / len * probe, ny = tan.x / len * probe;
     const L = { x: m.x + nx, y: m.y + ny }, R = { x: m.x - nx, y: m.y - ny };
+    const along = runs(e, sets.length);
     const inL: boolean[] = new Array<boolean>(sets.length);
     const inR: boolean[] = new Array<boolean>(sets.length);
     for (let k = 0; k < sets.length; k++) {
       const wl = winding(L, sets[k]), wr = winding(R, sets[k]);
-      if (k === e.operand ? Math.abs(wl - wr) !== 1 : wl !== wr) return null;
+      if (Math.abs(wl - wr) !== Math.abs(along[k])) return null;
       inL[k] = filled(wl, sets[k].fillRule);
       inR[k] = filled(wr, sets[k].fillRule);
     }

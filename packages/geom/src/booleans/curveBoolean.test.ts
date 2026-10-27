@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import polygonClipping from 'polygon-clipping';
-import { pathUnion, pathIntersect, pathSubtract, pathExclude, pathToMultiPolygon, type MultiPolygon } from './index';
+import { pathUnion, pathIntersect, pathSubtract, pathExclude, pathFacePieces, pathToMultiPolygon, type MultiPolygon } from './index';
+import { splitCubicAt } from '../curve';
 import { curveBoolean } from './curveBoolean';
 import { PATH_C, PATH_L, PATH_M, PATH_Z } from '../commands';
 import type { Path, PolygonPath } from '../path';
@@ -100,34 +101,66 @@ describe('where curve booleans hand over to the flattened clipper', () => {
     expect(curveBoolean([rect(0, 0, 10, 10), rect(5, 5, 10, 10)], KEEP.union)).toBeNull();
   });
 
-  it('declines a circle united with itself, and the fallback still answers', () => {
-    const a = circle(0, 0, 10);
-    expect(curveBoolean([a, a], KEEP.union)).toBeNull();
-    expect(hasCurves(pathUnion(a, a))).toBe(false);
-    expect(area(pathUnion(a, a)) / area(a)).toBeCloseTo(1, 1);
+});
+
+/** The same circle drawn from the opposite point: every arc coincides, no segment repeats. */
+function turned(a: PolygonPath): PolygonPath {
+  const coords = new Float32Array(a.coords.length);
+  for (let i = 0; i < coords.length; i += 2) { coords[i] = -a.coords[i]; coords[i + 1] = -a.coords[i + 1]; }
+  return { ...a, coords };
+}
+
+/** A half disk whose straight side runs along y = 0, drawn as two lines. */
+const half: PolygonPath = {
+  kind: 'polygon',
+  commands: Uint8Array.of(PATH_M, PATH_C, PATH_L, PATH_Z),
+  coords: Float32Array.of(0, 0, 0, 20, 20, 20, 20, 0, 10, 0),
+  fillRule: 'nonzero',
+};
+
+/** The cap a chord cuts off `a`'s first arc, its curve a piece of that arc from t = 0.3 on. */
+function cap(a: PolygonPath): PolygonPath {
+  const c = a.coords;
+  const [, right] = splitCubicAt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], 0.3);
+  return { kind: 'polygon', commands: Uint8Array.of(PATH_M, PATH_C, PATH_Z), coords: Float32Array.from(right), fillRule: 'nonzero' };
+}
+
+describe('coincident outlines', () => {
+  const a = circle(0, 0, 10);
+  const cases: [string, Path, Path][] = [
+    ['a circle and itself', a, a],
+    ['a circle and itself drawn from the opposite point', a, turned(a)],
+    ['a half disk and a rect sharing part of its straight side', half, rect(5, -10, 10, 10)],
+    ['a circle and a cap sharing part of one arc', a, cap(a)],
+  ];
+  for (const [name, x, y] of cases) {
+    for (const op of Object.keys(OPS) as Op[]) {
+      it(`${op}s ${name} with curves, matching the flattened area`, () => {
+        const out = curveBoolean([x, y], KEEP[op]);
+        expect(out).not.toBeNull();
+        expect(area(out!)).toBeCloseTo(flatArea(op, x, y), 1);
+      });
+    }
+  }
+
+  it('gives back a circle united or intersected with itself as its own cubics', () => {
+    for (const out of [pathUnion(a, a), pathIntersect(a, a)]) {
+      expect([...out.commands]).toEqual([...a.commands]);
+      expect([...out.coords]).toEqual([...a.coords]);
+    }
+    expect(pathSubtract(a, a).commands).toHaveLength(0);
   });
 
-  it('declines circles that share an arc without sharing its segments', () => {
-    // The same circle drawn from another start point: every arc coincides, no segment repeats.
-    const a = circle(0, 0, 10);
-    const coords = new Float32Array(a.coords.length);
-    for (let i = 0; i < coords.length; i += 2) { coords[i] = -a.coords[i]; coords[i + 1] = -a.coords[i + 1]; }
-    const b: PolygonPath = { ...a, coords };
-    expect(curveBoolean([a, b], KEEP.intersect)).toBeNull();
-    expect(area(pathIntersect(a, b)) / area(a)).toBeCloseTo(1, 1);
+  it('unites two faces of a divide, which share an edge, back into one curved outline', () => {
+    const faces = pathFacePieces(a, rect(-2, -20, 4, 40));
+    const left = faces.find((f) => f.sources.length === 1 && pointInPath(f.path, -6, 0))!;
+    const mid = faces.find((f) => f.sources.length === 2)!;
+    const u = curveBoolean([left.path, mid.path], KEEP.union);
+    expect(u).not.toBeNull();
+    expect(u!.commands.filter((c) => c === PATH_M)).toHaveLength(1);
+    expect(hasCurves(u!)).toBe(true);
+    expect(area(u!)).toBeCloseTo(area(left.path) + area(mid.path), 1);
   });
-
-  it('declines a rect sharing part of an edge with a curved shape', () => {
-    const half: PolygonPath = {
-      kind: 'polygon',
-      commands: Uint8Array.of(PATH_M, PATH_C, PATH_L, PATH_Z),
-      coords: Float32Array.of(0, 0, 0, 20, 20, 20, 20, 0, 10, 0),
-      fillRule: 'nonzero',
-    };
-    expect(curveBoolean([half, rect(5, -10, 10, 10)], KEEP.union)).toBeNull();
-    expect(area(pathUnion(half, rect(5, -10, 10, 10))) / (area(half) + 100)).toBeCloseTo(1, 1);
-  });
-
 });
 
 describe('touching outlines', () => {
@@ -174,7 +207,7 @@ describe('agreement with the flattened clipper on random shapes', () => {
         }
       }
       // The point is to exercise the curve path, not the fallback.
-      expect(curved).toBeGreaterThan(TRIALS * (grid ? 0.5 : 0.8));
+      expect(curved).toBeGreaterThan(TRIALS * 0.9);
     });
   }
 });

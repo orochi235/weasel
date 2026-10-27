@@ -41,9 +41,11 @@ export interface CurveCut {
 /**
  * `paths` cut against each other, curves kept. Null where the polygon
  * clipper should answer instead: when no input has a curve, when the inputs
- * are very large, and in the cases this cannot represent — outlines that
- * coincide or overlap along a stretch (shared edges, coincident curves), or a
- * cubic that crosses itself.
+ * are very large, and in the cases this cannot represent — a cubic that
+ * crosses itself, or two curves that run nearly along each other without
+ * being pieces of one curve. Outlines that share a stretch of one line or
+ * curve are cut where it starts and ends, and the pieces along it become one
+ * edge that both own.
  */
 export function cutPaths(paths: readonly Path[]): CurveCut | null {
   if (!paths.some(hasCurve)) return null;

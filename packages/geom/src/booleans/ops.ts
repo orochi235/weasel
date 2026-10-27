@@ -4,8 +4,8 @@
  *   - Union, intersect, subtract and exclude keep curves: where any input has
  *     a curve, each curve in the result is a piece of an input curve
  *     (`curveBoolean`). Inputs of straight lines only, very large inputs, and
- *     the cases `curveBoolean` declines (coincident outlines, self-crossing
- *     cubics, some tangencies) are flattened and clipped by `polygon-clipping`
+ *     the cases `curveBoolean` declines (self-crossing cubics, some
+ *     tangencies) are flattened and clipped by `polygon-clipping`
  *     instead, so their result has only M/L/Z commands.
  *   - Divide, crop, trim, merge and the face pieces keep curves the same
  *     way (`curvePieces`), and fall back to the clipper in the same cases.

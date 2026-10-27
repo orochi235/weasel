@@ -146,7 +146,7 @@ Boolean operations work on what a fill covers. Union, intersect, subtract,
 exclude, divide, crop, trim, merge and the face pieces keep curves: each curve
 in the result is a piece of an input curve, so the ellipse below comes back as
 cubics. Inputs that are all straight lines, and the few cases the curve path
-declines (outlines that coincide, a cubic that crosses itself), go through
+declines (a cubic that crosses itself, some tangencies), go through
 `polygon-clipping` instead, with curves flattened.
 
 ```ts

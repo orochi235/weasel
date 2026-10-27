@@ -55,6 +55,24 @@ describe('curve-preserving divide and face pieces', () => {
     expect(pointInPath(ring[0].path, 0, 0)).toBe(false);
     same(ring[1].path, inner);
   });
+
+  it('divides a circle and a copy of it into one piece both cover, the circle itself', () => {
+    const a = circle(0, 0, 10);
+    const pieces = pathDividePieces(a, a);
+    expect(pieces.map((p) => p.sources)).toEqual([[0, 1]]);
+    same(pieces[0].path, a);
+  });
+
+  it('divides a circle and a semicircle sharing its arc into two curved pieces', () => {
+    const a = circle(0, 0, 10);
+    const lower = pathTrim(a, rect(-20, 0, 40, 20))[0].path;
+    const pieces = pathDividePieces(a, lower);
+    expect(pieces.map((p) => p.sources)).toEqual([[0], [0, 1]]);
+    for (const p of pieces) {
+      expect(hasCurves(p.path)).toBe(true);
+      expect(area(p.path)).toBeCloseTo(area(a) / 2, 1);
+    }
+  });
 });
 
 describe('curve-preserving trim, merge and crop', () => {
@@ -132,7 +150,7 @@ describe('agreement with the flattened pieces on random shapes', () => {
           }
         }
       }
-      expect(curved).toBeGreaterThan(TRIALS * (grid ? 0.4 : 0.8));
+      expect(curved).toBeGreaterThan(TRIALS * 0.9);
     });
 
     it(`trims${grid ? ' on a grid' : ''}: every point lies in the piece of the topmost input covering it`, () => {
@@ -157,7 +175,7 @@ describe('agreement with the flattened pieces on random shapes', () => {
           expect(h === null || h === 'several' ? h : h.sources[0], `trial ${trial} at ${x},${y}`).toEqual(top < 0 ? null : top);
         }
       }
-      expect(curved).toBeGreaterThan(TRIALS * (grid ? 0.4 : 0.8));
+      expect(curved).toBeGreaterThan(TRIALS * 0.9);
     });
   }
 });
