@@ -42,3 +42,25 @@ describe('createClockRegistry', () => {
     expect([...registry.all()]).toEqual([shared, own]);
   });
 });
+
+describe('ClockRegistry targets', () => {
+  it('lists each registration of a clock, and drops one on release', () => {
+    const registry = createClockRegistry();
+    const h = createClock({});
+    const a = () => null;
+    const b = () => null;
+    const releaseA = registry.register('t1', h, a);
+    registry.register('t2', h, b);
+    expect(registry.targets(h)).toEqual([a, b]);
+    releaseA();
+    expect(registry.targets(h)).toEqual([b]);
+  });
+
+  it('lists none when any registration names no target', () => {
+    const registry = createClockRegistry();
+    const h = createClock({});
+    registry.register('t1', h, () => null);
+    registry.register('t2', h);
+    expect(registry.targets(h)).toEqual([]);
+  });
+});
