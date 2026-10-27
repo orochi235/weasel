@@ -79,8 +79,10 @@ export class LayoutColumns {
    *  layout's code points, so only a layout nobody holds is recycled. */
   recycle(): void {
     giveDoubles(this.num);
-    this.ref.fill(undefined);
-    giveRefs(this.ref);
+    // A loop, not `fill`, which Chromium's allocation profile charged 400 bytes a call.
+    const { ref } = this;
+    for (let i = 0; i < ref.length; i++) ref[i] = undefined;
+    giveRefs(ref);
     this.num = EMPTY_NUM;
     this.ref = EMPTY_REF;
     this.paintings.length = 0;
