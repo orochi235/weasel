@@ -4,12 +4,12 @@
  * and chrome states, and stop reading every participant once the index holds.
  */
 import { describe, expect, it } from 'vitest';
-import { createScene, documentPose, type ChromeState, type Scene, type View } from '@weasel-js/core';
+import { createScene, documentPose, type AffordanceRegion, type ChromeState, type Scene, type View } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
 import { edgeLabelSpec } from './edgeLabel';
 import { labelDragLayer, labelUnder } from './labelDragLayer';
 import { portLayer, sceneParticipants } from './portLayer';
-import type { ParticipantSource } from './portAffordance';
+import { createPortAffordance, type ParticipantSource } from './portAffordance';
 
 interface Rect { x: number; y: number; width: number; height: number; rotation?: number }
 type Sc = Scene<unknown, 'back' | 'main', Rect>;
@@ -113,8 +113,8 @@ describe('portLayer through its index', () => {
           }
         }
       }
-      // Read once by the first test, which scans, and once to build the index on the second.
-      expect(reads).toBe(2);
+      // Read once, by the first test's scan; the index the second builds reuses those ports.
+      expect(reads).toBe(1);
       expect(hits).toBeGreaterThan(100);
     });
   }
@@ -129,6 +129,30 @@ describe('portLayer through its index', () => {
     scene.setPose('n0' as never, { x: 1000, y: 1000, width: 40, height: 40 });
     expect(layer.hitTest(1040, 1020, s, view, DIMS)).toMatchObject({ initialScratch: { nodeId: 'n0', portId: 'e' } });
     expect(layer.hitTest(1040, 1020, s, view, DIMS)).toMatchObject({ initialScratch: { nodeId: 'n0', portId: 'e' } });
+  });
+});
+
+describe('painting ports', () => {
+  it('paints what reading every participant paints, reading them once per generation', () => {
+    const scene = diagram(5);
+    const src = sceneParticipants(scene);
+    let reads = 0;
+    const counted: ParticipantSource<Rect> = Object.assign(() => { reads++; return src(); }, { generation: src.generation! });
+    const opts = { shows: (node: { id: string }) => !node.id.endsWith('3'), showsPort: (port: { id: string }) => port.id !== 's' };
+    const linear = createPortAffordance<Rect>(() => src(), opts);
+    const cached = createPortAffordance<Rect>(counted, opts);
+    const states = [state([], () => true), state([], (l) => l !== 'back')];
+    const strip = (rs: readonly AffordanceRegion[]) => rs.map(({ bind: _bind, ...r }) => r);
+    for (let frame = 0; frame < 3; frame++) {
+      for (const s of states) expect(strip(cached.regions(s))).toEqual(strip(linear.regions(s)));
+    }
+    expect(reads).toBe(1);
+    expect(cached.regions(states[0]!)[0]).toBe(cached.regions(states[0]!)[0]);
+
+    scene.setPose('n0' as never, { x: 1000, y: 1000, width: 40, height: 40 });
+    const moved = cached.regions(states[0]!).find((r) => r.id === 'n0:e');
+    expect(moved?.shape).toMatchObject({ x: 1040, y: 1020 });
+    expect(reads).toBe(2);
   });
 });
 
