@@ -50,7 +50,7 @@ describe('categoryOf', () => {
     expect(categoryOf(abs('packages/routing/src/index.ts'), 'DepSchema')).toBe('Selection & actions');
   });
 
-  it("files routing's ambient contexts where core's feature directories had them", () => {
+  it("files routing's ambient contexts where core's domain directories had them", () => {
     expect(categoryOf(abs('packages/routing/src/ambient/PointerContext.tsx'), 'usePointerPosition')).toBe(
       'Extension points',
     );
