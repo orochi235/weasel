@@ -197,15 +197,21 @@ export function startingEps(piece: Piece, pos: Float64Array): number {
   return Math.max(1e-3, 2 * Math.abs(Math.min(0, leastArea(piece, pos))));
 }
 
+/** The least share a round shrinks the softening by while a triangle is turned over, and once none is. */
+const SHRINK_TURNED = 0.2;
+const SHRINK_CLEAR = 0.05;
+
 /**
  * The softening for the next round, after a round took the energy from
  * `before` to `after` (both at `eps`) and left `least` the smallest
  * determinant: small enough that it keeps pressing a
  * turned triangle towards positive area, never below zero, and zero once
- * every triangle has some.
+ * every triangle has some. It shrinks fast while a triangle is turned over and
+ * slowly after: a softening dropped soon after the last one rights itself
+ * leaves the descent stepping short of some nearly flat triangle.
  */
 export function nextEps(least: number, eps: number, before: number, after: number): number {
-  const sigma = Math.max(1 - after / before, 0.1);
+  const sigma = Math.max(1 - after / before, least > 0 ? SHRINK_CLEAR : SHRINK_TURNED);
   const mu = (1 - sigma) * chi(least, eps);
   return least < mu ? 2 * Math.sqrt(mu * (mu - least)) : 0;
 }
