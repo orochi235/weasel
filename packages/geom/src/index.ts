@@ -41,7 +41,7 @@ export {
 } from './paths/builder';
 export { boundsOfPath } from './paths/bounds';
 export {
-  ORIGIN_THRESHOLD, addOrigin, coordsFrom, originFor, originOf, pathPoint, worldCoords,
+  ORIGIN_THRESHOLD, addOrigin, coordsFrom, joinPaths, originFor, originOf, pathPoint, worldCoords,
 } from './paths/pathOrigin';
 export {
   cornerCuts, cornerFrameAt, cornerFrames, remapPerAnchor, resolveCorners,

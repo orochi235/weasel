@@ -4,9 +4,9 @@
  * one by one, as text along a path does.
  */
 import { faceMetricsOf, glyphGeneration } from '@weasel-js/font';
-import type { PolygonPath } from '@weasel-js/geom';
+import { joinPaths, type PolygonPath } from '@weasel-js/geom';
 import type { Fill, Stroke } from '@weasel-js/paint';
-import { concat, paintsOf, placedGlyphOutline } from './glyphOutlines';
+import { paintsOf, placedGlyphOutline } from './glyphOutlines';
 import { lineDecorations, type DecorationKind } from './layout/decorationMetrics';
 import { layoutRuns, type PlacedGlyph } from './layout/layoutRuns';
 import { runFaces } from './layout/paintRuns';
@@ -121,7 +121,7 @@ function clustersOf(data: TextOutlineSource, width: number, scale: number): Text
       if (outline) parts[paintOf[g.run]!]!.push(outline);
     }
     const paths: TextPaintPath[] = [];
-    parts.forEach((p, k) => { if (p.length > 0) paths.push({ ...paints[k]!, path: concat(p) }); });
+    parts.forEach((p, k) => { if (p.length > 0) paths.push({ ...paints[k]!, path: joinPaths(p) }); });
     const rules: TextClusterRule[] = [];
     for (const r of lineRules) {
       const x0 = Math.max(r.x0, left);

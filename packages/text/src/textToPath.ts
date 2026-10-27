@@ -9,10 +9,10 @@ import type { Stroke, Fill } from '@weasel-js/paint';
 
 import { loadFontOutlines, resolveFontVariant, type FontStyle } from '@weasel-js/font';
 import {
-  PATH_L, PATH_M, PATH_Z, poseFrameOf, transformPath, type PathInWorldPose, type PolygonPath,
+  PATH_L, PATH_M, PATH_Z, coordsFrom, joinPaths, originFor, poseFrameOf, transformPath, type PathInWorldPose, type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  assertOutlinable, colorGlyphError, concat, paintsOf, placedGlyphOutline,
+  assertOutlinable, colorGlyphError, paintsOf, placedGlyphOutline,
 } from './glyphOutlines';
 import { lineDecorations } from './layout/decorationMetrics';
 import { layoutRuns } from './layout/layoutRuns';
@@ -100,11 +100,14 @@ export function outlineLayoutInput(
 }
 
 function ruleContour(x0: number, y0: number, x1: number, y1: number): PolygonPath {
+  const xy = [x0, y0, x1, y0, x1, y1, x0, y1];
+  const origin = originFor(xy);
   return {
     kind: 'polygon',
     commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
-    coords: new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]),
+    coords: coordsFrom(origin, xy),
     fillRule: 'nonzero',
+    ...(origin ? { origin } : {}),
   };
 }
 
@@ -144,7 +147,7 @@ function walkOutlines(
 
   const frame = poseFrameOf(pose);
   const paths = parts.map((glyphs, i) => {
-    const path = concat([...glyphs, ...rules[i]!]);
+    const path = joinPaths([...glyphs, ...rules[i]!]);
     if (!frame || path.commands.length === 0) return path;
     return transformPath(path, frame) as PolygonPath;
   });
@@ -171,7 +174,7 @@ export function textToPath(
   pose: PathInWorldPose,
   opts: TextToPathOptions = {},
 ): PolygonPath {
-  return concat(walkOutlines(data, pose, opts).paths);
+  return joinPaths(walkOutlines(data, pose, opts).paths);
 }
 
 /**

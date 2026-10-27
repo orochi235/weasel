@@ -166,17 +166,3 @@ export function colorGlyphError(run: ResolvedRun, caller: string): TextOutlinesE
   return new TextOutlinesError('color-glyph', run.fontFamily, run.fontWeight, run.fontStyle,
     'the text holds an emoji, which is drawn in its own colors and has no outline.', caller);
 }
-
-/** `parts` as one `'nonzero'` compound path. */
-export function concat(parts: readonly PolygonPath[]): PolygonPath {
-  let nc = 0, nk = 0;
-  for (const p of parts) { nc += p.commands.length; nk += p.coords.length; }
-  const commands = new Uint8Array(nc);
-  const coords = new Float32Array(nk);
-  let ci = 0, ki = 0;
-  for (const p of parts) {
-    commands.set(p.commands, ci); ci += p.commands.length;
-    coords.set(p.coords, ki); ki += p.coords.length;
-  }
-  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
-}

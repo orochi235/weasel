@@ -8,7 +8,7 @@ import { withCorner } from './cornerSpec';
 import { pathToCubicContours } from './cubicContours';
 import { pathDistanceToPoint } from './pathDistance';
 import { pathFromD } from './pathFromD';
-import { ORIGIN_THRESHOLD, originFor, worldCoords } from './pathOrigin';
+import { ORIGIN_THRESHOLD, joinPaths, originFor, worldCoords } from './pathOrigin';
 import { pathToD } from './pathToD';
 import { translatePath } from './transform';
 import { transformPath } from './transformPath';
@@ -93,6 +93,24 @@ describe('readers of a path measured from an origin', () => {
     expect(pathToCubicContours(square())[0].segs[0].c[0]).toBeCloseTo(X, 6);
     const mesh = puppetMesh(square(), [], { vertices: 20 });
     expect(Math.min(...mesh.vertices.filter((_, i) => i % 2 === 0))).toBeCloseTo(X, 4);
+  });
+});
+
+describe('joinPaths', () => {
+  it('measures every part from the first part\'s origin', () => {
+    const other = new PathBuilder().setOrigin(FAR + 64, 0).moveTo(X + 64, 1).lineTo(X + 65, 1).lineTo(X + 65, 2).close().build();
+    const joined = joinPaths([square(), other]);
+    expect(joined.origin).toEqual({ x: FAR, y: 0 });
+    expect(joined.fillRule).toBe('nonzero');
+    const w = worldCoords(joined);
+    expect(w[0]).toBeCloseTo(X, 6);
+    expect(w[8]).toBeCloseTo(X + 64, 4);
+  });
+
+  it('gives parts with no origin none', () => {
+    const a = new PathBuilder().moveTo(1, 1).lineTo(2, 1).build();
+    expect(joinPaths([a, a]).origin).toBeUndefined();
+    expect(joinPaths([a, a]).coords.length).toBe(8);
   });
 });
 

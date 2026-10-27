@@ -83,6 +83,17 @@ describe('textToPath', () => {
     expect(b.x).toBeLessThan(POSE.x + 15);
   });
 
+  it('keeps glyphs and rules exact far from 0, measured from an origin', () => {
+    const FAR = 262_144;
+    const src = text('H', { underline: true });
+    const near = boundsOfPath(textToPath(src, { ...POSE, x: 0.3 }));
+    const path = textToPath(src, { ...POSE, x: FAR + 0.3 });
+    expect(path.origin).toBeDefined();
+    // Float32 coords that far out step by 1/32, which this would see.
+    expect(boundsOfPath(path).x - FAR).toBeCloseTo(near.x, 4);
+    expect(boundsOfPath(path).width).toBeCloseTo(near.width, 4);
+  });
+
   it('fills the stems and leaves the gap between them empty', () => {
     const path = textToPath(text('H'), POSE);
     const b = boundsOfPath(path);
