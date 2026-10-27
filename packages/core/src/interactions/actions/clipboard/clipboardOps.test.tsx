@@ -16,7 +16,7 @@ function makeAdapter(initial: { selection?: string[]; offsetOverride?: { dx: num
   let nextId = 0;
   const inserts: Obj[] = [];
   const batches: { ops: Op[]; label: string }[] = [];
-  const pasteCtxLog: ({ dropPoint?: { worldX: number; worldY: number } } | undefined)[] = [];
+  const pasteCtxLog: ({ dropPoint?: { x: number; y: number } } | undefined)[] = [];
   const adapter: InsertAdapter<Obj> = {
     ...rootsTree<Obj>(),
     commitInsert: () => null,
@@ -169,12 +169,12 @@ describe('useClipboardOps', () => {
     const { result } = renderHook(() =>
       useClipboardOps(helpers.adapter, {
         getSelection: () => [asNodeId('a')],
-        getDropPoint: () => ({ worldX: 50, worldY: 60 }),
+        getDropPoint: () => ({ x: 50, y: 60 }),
       }),
     );
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
-    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 50, worldY: 60 } }]);
+    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { x: 50, y: 60 } }]);
   });
 
   it('passes undefined ctx when getDropPoint returns null', () => {
@@ -209,7 +209,7 @@ describe('useClipboardOps', () => {
     const { result } = renderHook(() =>
       useClipboardOps(helpers.adapter, {
         getSelection: () => [asNodeId('a')],
-        getDropPoint: () => { calls++; return { worldX: 1, worldY: 2 }; },
+        getDropPoint: () => { calls++; return { x: 1, y: 2 }; },
       }),
     );
     act(() => { result.current.copy(); });
@@ -261,7 +261,7 @@ describe('useClipboardOps', () => {
     const { result } = renderHook(() =>
       useClipboardOps(helpers.adapter, {
         getSelection: () => [asNodeId('a')],
-        getDropPoint: () => ({ worldX: 50, worldY: 60 }),
+        getDropPoint: () => ({ x: 50, y: 60 }),
       }),
     );
     act(() => { result.current.copy(); });
@@ -299,7 +299,7 @@ describe('useClipboardOps', () => {
     ctxHandle!.set({ world: { x: 77, y: 88 }, viewId: null });
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
-    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 77, worldY: 88 } }]);
+    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { x: 77, y: 88 } }]);
   });
 
   it('explicit getDropPoint wins over the surrounding PointerContext', () => {
@@ -316,14 +316,14 @@ describe('useClipboardOps', () => {
     const { result } = renderHook(
       () => useClipboardOps(helpers.adapter, {
         getSelection: () => [asNodeId('a')],
-        getDropPoint: () => ({ worldX: 1, worldY: 2 }),
+        getDropPoint: () => ({ x: 1, y: 2 }),
       }),
       { wrapper },
     );
     ctxHandle!.set({ world: { x: 999, y: 999 }, viewId: null });
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
-    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 1, worldY: 2 } }]);
+    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { x: 1, y: 2 } }]);
   });
 });
 

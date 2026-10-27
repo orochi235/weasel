@@ -531,7 +531,7 @@ describe('clipboard seam', () => {
     const created = adapter.commitPaste!(
       snap,
       { dx: 12, dy: 12 },
-      { dropPoint: { worldX: 100, worldY: 50 } },
+      { dropPoint: { x: 100, y: 50 } },
     ) as unknown as SnapItem[];
     // Cluster origin (root bounds min corner: 10,10) lands on the drop point;
     // the child rides along in its frame.

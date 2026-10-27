@@ -1,7 +1,7 @@
 /**
  * The deps behind text editing, the clipboard, and Slice.
  */
-import type { Point2 } from '@weasel-js/routing';
+import type { Point2, WorldPoint } from '@weasel-js/routing';
 
 /**
  * Dep for `enterTextEditAction`. `<SceneCanvas>` answers it with its own
@@ -42,7 +42,7 @@ export interface TextEditDep {
  */
 export interface ClipboardDep {
   copy(): void;
-  paste(at?: { worldX: number; worldY: number }): void;
+  paste(at?: WorldPoint): void;
   isEmpty(): boolean;
 }
 

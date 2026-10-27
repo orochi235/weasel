@@ -226,8 +226,8 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
       if (b.y < minY) minY = b.y;
     }
     if (Number.isFinite(minX) && Number.isFinite(minY)) {
-      dx = ctx.dropPoint.worldX - minX;
-      dy = ctx.dropPoint.worldY - minY;
+      dx = ctx.dropPoint.x - minX;
+      dy = ctx.dropPoint.y - minY;
     }
   }
   const site = env.landing?.();
