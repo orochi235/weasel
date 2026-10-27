@@ -1,0 +1,420 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "vitest-bench",
+  "git": {
+    "sha": "3a4e1bc22f045a2edea7f569fda1f80cc5e6075a",
+    "dirty": true
+  },
+  "timestamp": "2026-10-27T20:07:37.144Z",
+  "machine": {
+    "glRenderer": null,
+    "softwareGl": null,
+    "browser": null,
+    "cpu": "Apple M1 Max",
+    "cores": 10,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.1",
+    "loadavg": [
+      1.4,
+      2,
+      2.23
+    ]
+  },
+  "params": {
+    "filters": [
+      "tests/perf/bench/tessellate.bench.ts"
+    ]
+  },
+  "items": [
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellate — curve count (default tolerance 0.5) > 8 cubics",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellate — curve count (default tolerance 0.5)",
+        "name": "8 cubics"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.056749999999738066,
+          "unit": "ms",
+          "stat": "median of 17308 samples"
+        },
+        "min": {
+          "value": 0.0525830000001406,
+          "unit": "ms",
+          "stat": "min of 17308 samples"
+        },
+        "mean": {
+          "value": 0.05777749768892807,
+          "unit": "ms",
+          "stat": "mean of 17308 samples"
+        },
+        "rme": {
+          "value": 0.25399423546881283,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellate — curve count (default tolerance 0.5) > 64 cubics",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellate — curve count (default tolerance 0.5)",
+        "name": "64 cubics"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.18483300000025338,
+          "unit": "ms",
+          "stat": "median of 5325 samples"
+        },
+        "min": {
+          "value": 0.17137499999989814,
+          "unit": "ms",
+          "stat": "min of 5325 samples"
+        },
+        "mean": {
+          "value": 0.18782031417840744,
+          "unit": "ms",
+          "stat": "mean of 5325 samples"
+        },
+        "rme": {
+          "value": 0.2851525831091512,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellate — curve count (default tolerance 0.5) > 512 cubics",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellate — curve count (default tolerance 0.5)",
+        "name": "512 cubics"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.7462079999995694,
+          "unit": "ms",
+          "stat": "median of 1326 samples"
+        },
+        "min": {
+          "value": 0.6884590000008757,
+          "unit": "ms",
+          "stat": "min of 1326 samples"
+        },
+        "mean": {
+          "value": 0.7546873453996937,
+          "unit": "ms",
+          "stat": "mean of 1326 samples"
+        },
+        "rme": {
+          "value": 0.3774285457164653,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellate — flatten tolerance (64 cubics) > tolerance 2",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellate — flatten tolerance (64 cubics)",
+        "name": "tolerance 2"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.10420900000099209,
+          "unit": "ms",
+          "stat": "median of 9411 samples"
+        },
+        "min": {
+          "value": 0.09650000000146974,
+          "unit": "ms",
+          "stat": "min of 9411 samples"
+        },
+        "mean": {
+          "value": 0.10626752810540271,
+          "unit": "ms",
+          "stat": "mean of 9411 samples"
+        },
+        "rme": {
+          "value": 0.2504694513151265,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellate — flatten tolerance (64 cubics) > tolerance 0.5",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellate — flatten tolerance (64 cubics)",
+        "name": "tolerance 0.5"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.18337500000052387,
+          "unit": "ms",
+          "stat": "median of 5374 samples"
+        },
+        "min": {
+          "value": 0.1712500000012369,
+          "unit": "ms",
+          "stat": "min of 5374 samples"
+        },
+        "mean": {
+          "value": 0.18608144045403288,
+          "unit": "ms",
+          "stat": "mean of 5374 samples"
+        },
+        "rme": {
+          "value": 0.26450005304912,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellate — flatten tolerance (64 cubics) > tolerance 0.25",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellate — flatten tolerance (64 cubics)",
+        "name": "tolerance 0.25"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.26616699999976845,
+          "unit": "ms",
+          "stat": "median of 3703 samples"
+        },
+        "min": {
+          "value": 0.24604099999851314,
+          "unit": "ms",
+          "stat": "min of 3703 samples"
+        },
+        "mean": {
+          "value": 0.2701229162840966,
+          "unit": "ms",
+          "stat": "mean of 3703 samples"
+        },
+        "rme": {
+          "value": 0.3095551220028291,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellate — flatten tolerance (64 cubics) > tolerance 0.05",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellate — flatten tolerance (64 cubics)",
+        "name": "tolerance 0.05"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.6252500000000509,
+          "unit": "ms",
+          "stat": "median of 1587 samples"
+        },
+        "min": {
+          "value": 0.5805000000000291,
+          "unit": "ms",
+          "stat": "min of 1587 samples"
+        },
+        "mean": {
+          "value": 0.6301756339004511,
+          "unit": "ms",
+          "stat": "mean of 1587 samples"
+        },
+        "rme": {
+          "value": 0.3320763899085926,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellate — rect fast path > rect",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellate — rect fast path",
+        "name": "rect"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0010830000010173535,
+          "unit": "ms",
+          "stat": "median of 909341 samples"
+        },
+        "min": {
+          "value": 0.0009160000008705538,
+          "unit": "ms",
+          "stat": "min of 909341 samples"
+        },
+        "mean": {
+          "value": 0.0010996982408138375,
+          "unit": "ms",
+          "stat": "mean of 909341 samples"
+        },
+        "rme": {
+          "value": 0.1441076816119181,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > mesh cache — hit vs miss (64 cubics) > getMesh hit",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "mesh cache — hit vs miss (64 cubics)",
+        "name": "getMesh hit"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.00020899999981338624,
+          "unit": "ms",
+          "stat": "median of 4354850 samples"
+        },
+        "min": {
+          "value": 0.0001249999986612238,
+          "unit": "ms",
+          "stat": "min of 4354850 samples"
+        },
+        "mean": {
+          "value": 0.0002296290632283801,
+          "unit": "ms",
+          "stat": "mean of 4354850 samples"
+        },
+        "rme": {
+          "value": 0.039557366266028134,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > mesh cache — hit vs miss (64 cubics) > getMesh miss",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "mesh cache — hit vs miss (64 cubics)",
+        "name": "getMesh miss"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.18445900000006077,
+          "unit": "ms",
+          "stat": "median of 5309 samples"
+        },
+        "min": {
+          "value": 0.1705839999995078,
+          "unit": "ms",
+          "stat": "min of 5309 samples"
+        },
+        "mean": {
+          "value": 0.18839172311168953,
+          "unit": "ms",
+          "stat": "mean of 5309 samples"
+        },
+        "rme": {
+          "value": 0.3373087883000252,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellateStroke — curve count > 8 cubics",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellateStroke — curve count",
+        "name": "8 cubics"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.23395899999741232,
+          "unit": "ms",
+          "stat": "median of 4217 samples"
+        },
+        "min": {
+          "value": 0.21600000000034925,
+          "unit": "ms",
+          "stat": "min of 4217 samples"
+        },
+        "mean": {
+          "value": 0.23714306663509013,
+          "unit": "ms",
+          "stat": "mean of 4217 samples"
+        },
+        "rme": {
+          "value": 0.3156162352470265,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellateStroke — curve count > 64 cubics",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellateStroke — curve count",
+        "name": "64 cubics"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.5041249999994761,
+          "unit": "ms",
+          "stat": "median of 653 samples"
+        },
+        "min": {
+          "value": 1.4028749999997672,
+          "unit": "ms",
+          "stat": "min of 653 samples"
+        },
+        "mean": {
+          "value": 1.5335312419602225,
+          "unit": "ms",
+          "stat": "mean of 653 samples"
+        },
+        "rme": {
+          "value": 0.4683099776757237,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/tessellate.bench.ts > tessellateStroke — curve count > 512 cubics",
+      "params": {
+        "file": "tests/perf/bench/tessellate.bench.ts",
+        "group": "tessellateStroke — curve count",
+        "name": "512 cubics"
+      },
+      "metrics": {
+        "median": {
+          "value": 12.559375000000728,
+          "unit": "ms",
+          "stat": "median of 81 samples"
+        },
+        "min": {
+          "value": 11.657290999999532,
+          "unit": "ms",
+          "stat": "min of 81 samples"
+        },
+        "mean": {
+          "value": 12.497556691358271,
+          "unit": "ms",
+          "stat": "mean of 81 samples"
+        },
+        "rme": {
+          "value": 0.5385529453792255,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    }
+  ]
+}

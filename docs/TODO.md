@@ -274,22 +274,13 @@ Owner tags, after the priority (2026-10-26):
   against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
   paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`).
 
-- **(P3) [agent] The tessellate rows of `tests/perf/bench/BASELINE.md` predate two deliberate costs.**
-  Bisected on studio (2026-10-19), the node that measured the 2026-09-29 rows, which still
-  reproduces them at the baseline commit, so the node has not drifted. `tessellate` slowed about
-  40% at 2026-10-17's 7cbedd8b0, which checks every nonzero fill for crossings; a faster check
-  (2026-10-19) brought the 64-curve fill from 0.21 ms to 0.18 ms, against 0.15 ms before.
-  `tessellateStroke` slowed at 2026-10-14's ab9ea7afa, which caps a thick stroke's flattening at
-  10° of turn per vertex: the 4-wide benchmark stroke now flattens to 1258 points where the fill
-  takes 474, so 64 curves take 1.44 ms against 0.48 ms, and 512 curves 12.0 ms against 1.65 ms. Left:
-  re-record those rows; and decide whether the cap should still subdivide wiggles smaller than
-  the stroke is wide, which is where the 512-curve case spends its 10034 points.
-  The re-record is one command, `bash tests/perf/recorded/tessellate-bench-2026-10-21/run.sh` sent with
-  `onto do --kind bench --node studio --solo`, then `node tests/perf/bench-report.mjs --merge` on its
-  `vitest-bench.json`. It did not run on 2026-10-21: onto's solo check (`soloBlock` in
-  `~/src/onto/queuesolo.go`) counts studio's idle `brick-spot-render` service as a running job, so a
-  `--solo` job never starts there.
-  The onto fix is on every node as of 2026-10-27 (onto bd536ed), so the re-record can run.
+- **(P3) [agent] A thick stroke's 10° flattening cap subdivides wiggles smaller than the stroke is wide.**
+  2026-10-14's ab9ea7afa caps a thick stroke's flattening at 10° of turn per vertex, so the 4-wide benchmark
+  stroke flattens to 1258 points where the fill takes 474, and the 512-curve case spends 10034 points:
+  `tessellateStroke` takes 1.50 ms at 64 curves and 12.56 ms at 512, against 0.48 and 1.65 before (studio,
+  2026-10-27, `tests/perf/recorded/tessellate-bench-2026-10-21/studio/`). Decide whether the cap should still
+  apply below the stroke's width. The same run, now the `BASELINE.md` rows, has the mesh cache's hit at 209 ns
+  against 42 ns at the 2026-09-29 baseline, which neither deliberate cost explains; not bisected.
 
 ---
 
