@@ -93,10 +93,9 @@ describe('lines of text written as positioned tspans', () => {
     expect(warnings).toEqual([expect.stringMatching(/<tspan x="10 20 30">/)]);
   });
 
-  it('reports the rotate, and the dx on a text, it does not read', () => {
-    const { warnings } = text('<text x="10" y="5" rotate="45" dx="1 2"><tspan rotate="10">a</tspan><tspan dx="0">b</tspan></text>');
+  it('reports the rotate it does not read', () => {
+    const { warnings } = text('<text x="10" y="5" rotate="45"><tspan rotate="10">a</tspan><tspan rotate="0">b</tspan></text>');
     expect(warnings).toEqual([
-      expect.stringMatching(/<text dx="1 2">/),
       expect.stringMatching(/<text rotate="45">/),
       expect.stringMatching(/<tspan rotate="10">/),
     ]);

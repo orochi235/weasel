@@ -4,6 +4,10 @@
  * glyph before it draws the same text, and takes no font to work out. An `x`
  * list placing each glyph reads the same way once a loaded face says how far
  * each glyph would have gone on its own.
+ *
+ * `dx` moves toward +x whichever way the text reads, so in right-to-left text,
+ * where the glyphs after one sit to its left, it narrows the gap before the
+ * glyph instead of widening it.
  */
 import {
   layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle, type StyledRun, type TextStyle,
@@ -20,34 +24,58 @@ function readList(el: Element, name: 'x' | 'dx', onWarn: (m: string) => void): n
   return raw.split(/[\s,]+/).map((v) => resolveLength(v, el, name, 'x', 0, onWarn));
 }
 
-/** Where each glyph of `run` sits on a line of its own, from the first glyph's
- *  pen position, or `null` where no loaded face measures them all or the
- *  layout does not give one place per glyph. */
-function penPositions(run: StyledRun, style: TextStyle): number[] | null {
+/** The lists one run is placed by, and where they were written. */
+interface Lists {
+  tag: string;
+  dx: readonly number[];
+  x: readonly number[];
+  /** The `dx` and `x` attributes as written, for messages. */
+  raw: { dx: string | null; x: string | null };
+}
+
+type Cells = ReturnType<typeof layoutRuns>['lines'][number]['cells'];
+
+/** `run`'s cells on a line of its own, or `null` where the layout does not
+ *  give one per glyph. */
+function cellsOf(run: StyledRun, style: TextStyle, rtl: boolean): { cells: Cells; width: number } | null {
   const resolved = resolveTextStyle(style);
-  if (resolved.direction === 'rtl') return null;
   const { lines } = layoutRuns(resolveRuns([run], resolved), {
-    maxWidth: Infinity, lineHeight: resolved.lineHeight, align: 'left', direction: 'ltr', tabSize: resolved.tabSize,
+    maxWidth: Infinity, lineHeight: resolved.lineHeight, align: rtl ? 'right' : 'left',
+    direction: rtl ? 'rtl' : 'ltr', tabSize: resolved.tabSize,
   });
   const line = lines[0];
-  const glyphs = Array.from(run.text).length;
-  if (lines.length !== 1 || !line || line.cells.length !== glyphs || !(line.x1 - line.x0 > 0)) return null;
-  return line.cells.map((c) => c.x - line.cells[0]!.x);
+  if (lines.length !== 1 || !line || line.cells.length !== Array.from(run.text).length) return null;
+  return { cells: line.cells, width: line.x1 - line.x0 };
+}
+
+/** Whether every cell reads the paragraph's way: a shift that moves the
+ *  glyphs after one moves only those on one side of it. */
+const allRead = (cells: Cells, rtl: boolean): boolean => cells.every((c) => c.level % 2 === (rtl ? 1 : 0));
+
+/** Where each glyph's pen sits on a line of its own, from the first glyph's:
+ *  its left edge, or in right-to-left text its right. `null` where no loaded
+ *  face measures them all or a glyph reads against the paragraph. */
+function penPositions(run: StyledRun, style: TextStyle, rtl: boolean): number[] | null {
+  const laid = cellsOf(run, style, rtl);
+  if (!laid || !(laid.width > 0) || !allRead(laid.cells, rtl)) return null;
+  const pen = (c: Cells[number]): number => (rtl ? c.x + c.advance : c.x);
+  return laid.cells.map((c) => pen(c) - pen(laid.cells[0]!));
 }
 
 /**
- * `el`'s `dx` list with its `x` list folded in: the extra advance each glyph
- * `i` takes after the one before it, `dx[0]` moving the first. `null` when it
- * moves nothing. An `x` list placing more than its first glyph is read only
- * where a loaded face measures `run`'s glyphs; otherwise it is reported.
+ * The `dx` list with the `x` list folded in: how far toward +x glyph `i` moves
+ * from where the one before it leaves it, `dx[0]` moving the first. `null`
+ * when it moves nothing. An `x` list placing more than its first glyph is
+ * read only where a loaded face measures `run`'s glyphs; otherwise it is
+ * reported.
  */
 function foldPositions(
-  el: Element, dx: readonly number[], x: readonly number[], run: StyledRun, style: TextStyle,
-  onWarn: (m: string) => void,
+  lists: Lists, run: StyledRun, style: TextStyle, rtl: boolean, onWarn: (m: string) => void,
 ): number[] | null {
-  const pens = x.length > 1 ? penPositions(run, style) : null;
+  const { dx, x } = lists;
+  const pens = x.length > 1 ? penPositions(run, style, rtl) : null;
   if (x.length > 1 && !pens) {
-    onWarn(`<${el.tagName.toLowerCase()} x="${el.getAttribute('x')?.trim()}"> positions each glyph; only the first value is read`);
+    onWarn(`<${lists.tag} x="${lists.raw.x?.trim()}"> positions each glyph; only the first value is read`);
   }
   const placed = pens ? Math.min(x.length, pens.length) : 0;
   const out = Array.from({ length: Math.max(dx.length, placed) }, (_, i) => {
@@ -76,10 +104,55 @@ function spread(run: StyledRun, extra: readonly number[], style: TextStyle): Sty
   return out;
 }
 
+/** Add `run` to the last of `lines`, spaced as `lists` say. See `placeTspanRun`. */
+function placeRun(
+  lists: Lists, run: StyledRun, lines: StyledRun[][], style: TextStyle, onWarn: (m: string) => void,
+): number {
+  const line = lines[lines.length - 1];
+  const names = (['dx', 'x'] as const).filter((n) => (n === 'dx' ? lists.dx.some((v) => v !== 0) : lists.x.length > 1));
+  const named = `<${lists.tag} ${names.map((n) => `${n}="${lists.raw[n]}"`).join(' ')}>`;
+  if (names.length > 0 && COLLAPSIBLE.test(run.text)) {
+    onWarn(`${named} is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
+    line.push(run);
+    return 0;
+  }
+  const rtl = style.direction === 'rtl';
+  const shifts = names.length > 0 ? foldPositions(lists, run, style, rtl, onWarn) : null;
+  // Spacing moves the glyphs after one to one side only, which a glyph read
+  // against the paragraph's direction does not keep.
+  const laid = shifts && rtl ? cellsOf(run, style, rtl) : null;
+  if (shifts && rtl && !(laid && allRead(laid.cells, rtl))) {
+    onWarn(`${named} is not read: in right-to-left text it is read only where a bidi engine says every glyph reads right to left`);
+    line.push(run);
+    return 0;
+  }
+  if (!shifts) {
+    line.push(run);
+    return 0;
+  }
+  const dx = rtl ? shifts.map((v) => -v) : shifts;
+  let lead = 0;
+  let before = line.length - 1;
+  while (before >= 0 && line[before].text === '') before--;
+  if (dx[0] !== 0 && before >= 0) {
+    const glyphs = Array.from(line[before].text);
+    line.splice(before, 1, ...spread(line[before], [...glyphs.slice(1).map(() => 0), dx[0]], style));
+  } else if (dx[0] !== 0 && lines.length === 1) {
+    // Moves the whole line, which is a distance toward +x either way.
+    lead = shifts[0];
+  } else if (dx[0] !== 0) {
+    onWarn(`${named} opens a line; the line starts at the box edge, and the rest of the list is read`);
+  }
+  line.push(...spread(run, dx.slice(1), style));
+  return lead;
+}
+
 /**
  * Add `tspan`'s run to the last of `lines`, spaced as its `dx` and `x` lists
  * say, in `style`, the text's own. `tspan` may be a `<text>` holding only
- * text, whose lists read the same way.
+ * text, whose lists read the same way. `inherited` is the stretch of the
+ * enclosing `<text>`'s `dx` list over this run's glyphs, which the tspan's own
+ * values replace where it has them.
  * Glyph `i` takes `dx[i + 1]` as extra advance, and `dx[0]` goes on the glyph
  * before the tspan. With no glyph before it, `dx[0]` moves where the line
  * starts: returned for the first line, whose start is the text's own `x`, and
@@ -91,35 +164,58 @@ export function placeTspanRun(
   lines: StyledRun[][],
   style: TextStyle,
   onWarn: (m: string) => void,
+  inherited: Inherited = { dx: [], raw: null },
 ): number {
-  const line = lines[lines.length - 1];
-  const tag = tspan.tagName.toLowerCase();
-  const dxList = readList(tspan, 'dx', onWarn);
-  const xList = readList(tspan, 'x', onWarn);
-  if (COLLAPSIBLE.test(run.text) && (dxList.some((v) => v !== 0) || xList.length > 1)) {
-    const lists = [dxList.some((v) => v !== 0) ? 'dx' : null, xList.length > 1 ? 'x' : null]
-      .flatMap((n) => (n ? [`${n}="${tspan.getAttribute(n)}"`] : []));
-    onWarn(`<${tag} ${lists.join(' ')}> is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
-    line.push(run);
-    return 0;
+  const own = readList(tspan, 'dx', onWarn);
+  const borrows = own.length < inherited.dx.length;
+  // Name the text in a message about a list that is all the text's.
+  const theirs = borrows && own.length === 0;
+  return placeRun({
+    tag: theirs ? 'text' : tspan.tagName.toLowerCase(),
+    dx: borrows ? [...own, ...inherited.dx.slice(own.length)] : own,
+    x: readList(tspan, 'x', onWarn),
+    raw: { dx: theirs ? inherited.raw : tspan.getAttribute('dx'), x: tspan.getAttribute('x') },
+  }, run, lines, style, onWarn);
+}
+
+/** A stretch of a `<text>`'s `dx` list, and the list as written. */
+export interface Inherited { dx: readonly number[]; raw: string | null }
+
+/**
+ * A `<text>`'s `dx` list, handed out to the runs of its children in order:
+ * each value moves one glyph, counting through the text and every `<tspan>`.
+ */
+export class TextShifts {
+  private readonly dx: number[];
+  private readonly raw: string | null;
+  private at = 0;
+
+  constructor(text: Element, private readonly onWarn: (m: string) => void) {
+    this.raw = text.getAttribute('dx');
+    const dx = readList(text, 'dx', onWarn);
+    // Collapsing white space moves which glyph each value names.
+    const collapses = dx.some((v) => v !== 0) && COLLAPSIBLE.test(text.textContent ?? '');
+    if (collapses) {
+      onWarn(`<text dx="${this.raw}"> is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
+    }
+    this.dx = collapses ? [] : dx;
   }
-  const dx = foldPositions(tspan, dxList, xList, run, style, onWarn);
-  if (!dx) {
-    line.push(run);
-    return 0;
+
+  /** The values over the next `run`'s glyphs, empty when they move none. */
+  take(run: StyledRun): Inherited {
+    const n = Array.from(run.text).length;
+    const out = this.dx.slice(this.at, this.at + n);
+    this.at += n;
+    return { dx: out.some((v) => v !== 0) ? out : [], raw: this.raw };
   }
-  const raw = tspan.getAttribute('dx') ?? tspan.getAttribute('x');
-  let lead = 0;
-  let before = line.length - 1;
-  while (before >= 0 && line[before].text === '') before--;
-  if (dx[0] !== 0 && before >= 0) {
-    const glyphs = Array.from(line[before].text);
-    line.splice(before, 1, ...spread(line[before], [...glyphs.slice(1).map(() => 0), dx[0]], style));
-  } else if (dx[0] !== 0 && lines.length === 1) {
-    lead = dx[0];
-  } else if (dx[0] !== 0) {
-    onWarn(`<${tag} dx="${raw}"> opens a line; the line starts at the box edge, and the rest of the list is read`);
+
+  /** Add a bare text run of the `<text>` to `lines`, spaced by its stretch of the list. */
+  place(run: StyledRun, lines: StyledRun[][], style: TextStyle): number {
+    const { dx } = this.take(run);
+    if (dx.length === 0) {
+      lines[lines.length - 1].push(run);
+      return 0;
+    }
+    return placeRun({ tag: 'text', dx, x: [], raw: { dx: this.raw, x: null } }, run, lines, style, this.onWarn);
   }
-  line.push(...spread(run, dx.slice(1), style));
-  return lead;
 }

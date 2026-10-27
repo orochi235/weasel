@@ -14,7 +14,7 @@ import {
   DEFAULT_LINE_HEIGHT, holdsOnlyText, joinLines, LINE_HEIGHT_ATTR, LineTracker, statesLines, warnUnreadPositions,
 } from './tspanLines';
 import { LAID_ATTR } from './laidLines';
-import { placeTspanRun } from './glyphShifts';
+import { placeTspanRun, TextShifts } from './glyphShifts';
 import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
@@ -206,22 +206,21 @@ function readRuns(
   const runLines: StyledRun[][] = [[]];
   let leading = 0;
   let lead = 0;
-  const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
   if (holdsOnlyText(el) && (el.hasAttribute('dx') || el.hasAttribute('x'))) {
     const t = el.textContent ?? '';
     if (t) lead = placeTspanRun(el, { text: t, ...inheritedShift }, runLines, textStyle, onWarn);
-  } else for (let i = 0; i < el.childNodes.length; i++) {
+  } else for (let i = 0, shifts = new TextShifts(el, onWarn); i < el.childNodes.length; i++) {
     const child = el.childNodes[i];
     if (child.nodeType === 3 /* TEXT_NODE */) {
       const t = child.textContent ?? '';
       if (!t) continue;
-      push({ text: t, ...inheritedShift });
+      lead += shifts.place({ text: t, ...inheritedShift }, runLines, textStyle);
     } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
       const sp = child as Element;
       if (sp.tagName.toLowerCase() !== 'tspan') {
         onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
         const t = sp.textContent ?? '';
-        if (t) push({ text: t, ...inheritedShift });
+        if (t) lead += shifts.place({ text: t, ...inheritedShift }, runLines, textStyle);
         continue;
       }
       warnUnreadPositions(sp, onWarn);
@@ -231,7 +230,8 @@ function readRuns(
       // line unless it says how many it stepped.
       if (runLines.length === 1 && runLines[0].length === 0 && statesLines(sp)) leading = lines;
       else for (let n = 0; n < lines; n++) runLines.push([]);
-      lead += placeTspanRun(sp, readTspanRun(sp, gradients, leafStyle, onWarn), runLines, textStyle, onWarn);
+      const run = readTspanRun(sp, gradients, leafStyle, onWarn);
+      lead += placeTspanRun(sp, run, runLines, textStyle, onWarn, shifts.take(run));
     }
   }
   if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);

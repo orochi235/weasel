@@ -121,9 +121,9 @@ export const holdsOnlyText = (el: Element): boolean =>
 
 /** Report the glyph positioning on a `<text>` or `<tspan>` that import does
  *  not read: every value after the first in a `y` list, a `rotate` that is
- *  not all zeros, and on a `<text>` holding a `<tspan>` such a `dx` and every
- *  `x` after the first. A `dx` or `x` list on a `<tspan>`, or on a `<text>`
- *  holding only text, is `placeTspanRun`'s to read or report. */
+ *  not all zeros, and on a `<text>` holding a `<tspan>` every `x` after the
+ *  first. A `dx` list, and an `x` list on a `<tspan>` or on a `<text>`
+ *  holding only text, are `glyphShifts`' to read or report. */
 export function warnUnreadPositions(el: Element, onWarn: (message: string) => void): void {
   const tag = el.tagName.toLowerCase();
   const own = tag === 'tspan' || holdsOnlyText(el);
@@ -131,11 +131,9 @@ export function warnUnreadPositions(el: Element, onWarn: (message: string) => vo
     const raw = el.getAttribute(name)?.trim() ?? '';
     if (/[\s,]/.test(raw)) onWarn(`<${tag} ${name}="${raw}"> positions each glyph; only the first value is read`);
   }
-  for (const name of own ? ['rotate'] : ['dx', 'rotate']) {
-    const raw = el.getAttribute(name)?.trim() ?? '';
-    if (raw.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
-      onWarn(`<${tag} ${name}="${raw}"> is not read; the glyphs keep their own advance and angle`);
-    }
+  const rotate = el.getAttribute('rotate')?.trim() ?? '';
+  if (rotate.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
+    onWarn(`<${tag} rotate="${rotate}"> is not read; the glyphs keep their own angle`);
   }
 }
 
