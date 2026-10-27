@@ -180,7 +180,8 @@ const placed: PlacedLine = { box: null as unknown as LineBox, inkWidth: 0.5 };
 /**
  * Set `line` with its top at `y`: align it in `alignWidth`, spread it when it
  * is `justify`'s to spread, then walk the pen through `order`, storing every
- * entry's cell and placed glyph in `cols` from index `start`.
+ * entry's cell and placed glyph in `cols` from index `start`. Its box is
+ * `cols.boxes[at]`, refilled where the columns already hold one.
  */
 export function placeLine(
   line: Line,
@@ -191,6 +192,7 @@ export function placeLine(
   justify: boolean,
   cols: LayoutColumns,
   start: number,
+  at: number,
 ): PlacedLine {
   const { entries } = line;
   const hung = hungWidth(entries);
@@ -236,10 +238,12 @@ export function placeLine(
     penX += step;
   }
 
-  placed.box = new LineBox(
-    left, y, left + line.width + spread, y + line.height, lineBaselineY, line.srcEnd, spread > 0,
-    cols, start, entries.length,
-  );
+  const x1 = left + line.width + spread;
+  const y1 = y + line.height;
+  const prior = cols.boxes[at];
+  placed.box = prior !== undefined
+    ? prior.refill(left, y, x1, y1, lineBaselineY, line.srcEnd, spread > 0, start, entries.length)
+    : (cols.boxes[at] = new LineBox(left, y, x1, y1, lineBaselineY, line.srcEnd, spread > 0, cols, start, entries.length));
   placed.inkWidth = inkWidth + spread;
   return placed;
 }

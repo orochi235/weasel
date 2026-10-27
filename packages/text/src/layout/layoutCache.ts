@@ -145,17 +145,40 @@ function release(laid: LaidOutRuns): void {
   cols.recycle();
 }
 
+/** Entries and variants of runs arrays `dropRuns` forgot, for the next
+ *  runs arrays to fill. */
+const spareEntries: Entry[] = [];
+const spareVariants: Variant[] = [];
+const SPARE_MAX = 1024;
+
 function disown(vs: Variant[]): void {
-  for (const v of vs) {
+  for (let i = 0; i < vs.length; i++) {
+    const v = vs[i];
     const cols = columnsOf(v.laid);
-    if (cols === null) continue;
-    cols.owners--;
-    release(v.laid);
+    if (cols !== null) {
+      cols.owners--;
+      release(v.laid);
+    }
+    v.laid = NO_LAYOUT;
+    if (spareVariants.length < SPARE_MAX) spareVariants.push(v);
   }
   vs.length = 0;
 }
 
+const NO_LAYOUT: LaidOutRuns = { lines: [], bounds: { width: 0, height: 0 } };
+
+/** Set `v` to `opts` and `laid`, defaults filled in. */
+function fill<V extends Variant>(v: V, opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): V {
+  v.maxWidth = opts.maxWidth; v.alignWidth = opts.alignWidth ?? opts.maxWidth; v.lineHeight = opts.lineHeight;
+  v.align = opts.align; v.justify = opts.justify === true || opts.align === 'justify';
+  v.direction = opts.direction ?? 'auto'; v.tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE; v.bidi = bidi;
+  v.shaper = layoutShaper(opts); v.laid = laid;
+  return v;
+}
+
 function variant(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Variant {
+  const spare = spareVariants.pop();
+  if (spare !== undefined) return fill(spare, opts, bidi, laid);
   return {
     maxWidth: opts.maxWidth, alignWidth: opts.alignWidth ?? opts.maxWidth, lineHeight: opts.lineHeight,
     align: opts.align, justify: opts.justify === true || opts.align === 'justify',
@@ -255,7 +278,8 @@ export function cachedLayoutRuns(
   const bidi = layoutBidi(opts);
   let entry = cache.get(runs);
   if (entry === undefined) {
-    entry = { generation: fonts, variants: [] };
+    entry = spareEntries.pop() ?? { generation: fonts, variants: [] };
+    entry.generation = fonts;
     cache.set(runs, entry);
   } else if (entry.generation !== fonts) {
     entry.generation = fonts;
@@ -294,6 +318,7 @@ export function dropRuns(runs: readonly ResolvedRun[]): void {
   if (entry === undefined) return;
   cache.delete(runs);
   disown(entry.variants);
+  if (spareEntries.length < SPARE_MAX) spareEntries.push(entry);
 }
 
 function structuralLayout(
@@ -318,13 +343,20 @@ function structuralLayout(
   const full = structural.length >= LAYOUT_CACHE_STRUCTURAL_LIMIT;
   if (full) unlist(structural[oldest]);
   const laid = layoutRuns(runs, opts);
-  const filled = variant(opts, bidi, laid) as Structural;
+  // The evicted entry is refilled in place.
+  const filled = full ? fill(structural[oldest], opts, bidi, laid) : structuralEntry(opts, bidi, laid);
   filled.hash = hash; filled.runs = runs; filled.used = ++clock;
   const cols = columnsOf(laid);
   if (cols !== null) cols.listed = true;
-  if (full) structural[oldest] = filled;
-  else structural.push(filled);
+  if (!full) structural.push(filled);
   return laid;
+}
+
+function structuralEntry(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Structural {
+  return fill({
+    maxWidth: 0, alignWidth: 0, lineHeight: 0, align: 'left', justify: false, direction: 'auto', tabSize: 0,
+    bidi: null, shaper: null, laid, hash: 0, runs: [], used: 0,
+  }, opts, bidi, laid);
 }
 
 function unlist(s: Structural): void {

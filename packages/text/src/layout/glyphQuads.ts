@@ -57,9 +57,14 @@ export function writeGlyphQuad(g: PlacedGlyph, out: number[], at: number): void 
   out[at + 10] = g.rotate ?? 0;
 }
 
+/** Groups whose `quads` view was built, which holds their quads as a value
+ *  from then on and so cannot be refilled. */
+export const quadsViewed = new WeakSet<LaidOutGroup>();
+
 /** The `quads` view over a group's `quadData`. */
 export const quadViews: PropertyDescriptorMap = {
   quads: lazy('quads', (group: LaidOutGroup) => {
+    quadsViewed.add(group);
     const d = group.quadData;
     const out: LaidOutQuad[] = [];
     for (let at = 0, k = 0; at < d.length; at += QUAD_STRIDE, k++) {
