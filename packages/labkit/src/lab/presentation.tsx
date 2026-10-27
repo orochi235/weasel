@@ -145,7 +145,8 @@ export function usePresentedTransport(trialId: string): PresentedTransportOption
 
 /** Whether the trial `trialId` is the one its lab is presenting, and a ref for
  *  its root: while presented, the lab's shared surface is scoped to it, so the
- *  tiles hidden behind it stop painting. */
+ *  tiles hidden behind it stop painting. The ref also publishes the root as
+ *  the trial's, which its clock registers as the element showing it. */
 export function usePresentedTrial(trialId: string): {
   presented: boolean;
   ref: (el: HTMLElement | null) => void;
@@ -153,13 +154,13 @@ export function usePresentedTrial(trialId: string): {
   const presented = useIsPresented(trialId);
   const surface = useSurfaceOptional();
   const [el, setEl] = useState<HTMLElement | null>(null);
-  const root = useContext(TrialRootContext);
+  const rootRef = useContext(TrialRootContext);
   const ref = useCallback(
     (node: HTMLElement | null) => {
       setEl(node);
-      if (root) root.current = node;
+      if (rootRef) rootRef.current = node;
     },
-    [root],
+    [rootRef],
   );
   useLayoutEffect(() => {
     if (!presented || !el || !surface) return;
