@@ -72,15 +72,19 @@ export function deleteScratch(gl: WebGL2RenderingContext, scratch: Scratch): voi
   gl.deleteRenderbuffer(scratch.stencil);
 }
 
-/** Copy the bottom-left `width × height` of `scratch` into `target`. */
+/** Copy the bottom-left `width × height` of `scratch` into `target`, leaving
+ *  the framebuffers and scissor test as it found them. */
 export function resolveInto(
   gl: WebGL2RenderingContext, scratch: Scratch, target: SurfaceTexture, width: number, height: number,
 ): void {
   const scissor = gl.isEnabled(gl.SCISSOR_TEST);
+  const read = (gl.getParameter(gl.READ_FRAMEBUFFER_BINDING) as WebGLFramebuffer | null) ?? null;
+  const draw = (gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING) as WebGLFramebuffer | null) ?? null;
   gl.disable(gl.SCISSOR_TEST);
   gl.bindFramebuffer(gl.READ_FRAMEBUFFER, scratch.fbo);
   gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, target.fbo);
   gl.blitFramebuffer(0, 0, width, height, 0, 0, width, height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, read);
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, draw);
   if (scissor) gl.enable(gl.SCISSOR_TEST);
 }

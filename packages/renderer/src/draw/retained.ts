@@ -101,8 +101,6 @@ export function drawRetainedGroup(
     flushBatch(ctx);
     if (draw.fbo) drawInto(ctx, drawn, clips, draw.fbo, draw.rect, dispatch);
     pixels = draw.commit(key);
-    // The resolve leaves the default framebuffer bound.
-    ctx.gl.bindFramebuffer(ctx.gl.FRAMEBUFFER, ctx.renderTarget?.fbo ?? null);
   }
   ctx.state.pop();
 
