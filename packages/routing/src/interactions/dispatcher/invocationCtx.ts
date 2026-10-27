@@ -137,6 +137,7 @@ export function buildInvocationCtx(
     base.key = { key: event.key, repeat: false };
   } else if (event.kind === 'wheel') {
     base.wheel = { deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: 0 };
+    if (event.x !== undefined && event.y !== undefined) base.world = { x: event.x, y: event.y };
   } else if (event.kind === 'pinch') {
     base.pinch = { scale: event.scale, rotation: event.rotation };
   } else if (

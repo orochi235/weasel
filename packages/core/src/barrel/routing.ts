@@ -71,6 +71,9 @@ export {
   makeViewportWheelPanAction,
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
+export {
+  containerScrollAction, scrollRange, scrollableAt, type ScrollRange,
+} from '../interactions/actions/defaults/containerScroll';
 export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
 export {
   deleteAnchorsAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,

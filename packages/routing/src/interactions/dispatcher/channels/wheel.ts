@@ -38,6 +38,8 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): (e: Wh
       deltaY: e.deltaY * toPx,
       clientX: local.x,
       clientY: local.y,
+      x: hitPoint.x,
+      y: hitPoint.y,
       ...underPointer(target(), e, hitPoint),
     };
     const result = dispatch(ev);

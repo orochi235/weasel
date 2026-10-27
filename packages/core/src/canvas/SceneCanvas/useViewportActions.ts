@@ -1,6 +1,8 @@
 /**
  * Registers the wheel pan, zoom, and pinch zoom actions from SceneCanvas's
- * `viewport` prop.
+ * `viewport` prop, and the wheel scroll of a container whose content runs
+ * past its bounds — first, so it is asked before the pan and yields to it
+ * anywhere else.
  *
  * Wheel pan and zoom are registered only here. `pinchZoom` is also a kit
  * standard action, so this hook re-registers a configured one over it, or
@@ -11,6 +13,7 @@
 import { useEffect } from 'react';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
+import { containerScrollAction } from 'interactions/actions/defaults/containerScroll';
 import {
   makeViewportWheelPanAction,
   type WheelPanOptions,
@@ -49,7 +52,7 @@ export function useViewportActions(args: {
   useEffect(() => {
     const r = regRef.current;
     if (!r) return;
-    const unregisters: Array<() => void> = [];
+    const unregisters: Array<() => void> = [r.register(containerScrollAction)];
     if (pan) {
       unregisters.push(
         r.register(makeViewportWheelPanAction(typeof pan === 'object' ? pan : {})),

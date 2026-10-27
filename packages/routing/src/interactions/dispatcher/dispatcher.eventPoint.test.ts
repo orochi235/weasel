@@ -127,4 +127,18 @@ describe('enabled() sees where the event landed', () => {
     expect(dispatcher.resolveOnly(altClick(3, 4), ctx)?.actionId).toBe('far');
     expect(dispatcher.resolveOnly(altClick(1, 0), ctx)?.actionId).toBe('near');
   });
+
+  it('hands a wheel its world point, and its immediate invoker the same point as worldX/worldY', () => {
+    const enabled = vi.fn().mockReturnValue(true);
+    const run = vi.fn();
+    const action: Action = {
+      id: 'probe', label: 'probe', defaultBinding: { kind: 'wheel' }, enabled, invoker: { timing: 'immediate', run },
+    };
+    createDispatcher().handleInput(
+      { kind: 'wheel', deltaX: 0, deltaY: 5, clientX: 10, clientY: 20, x: 7, y: 8, ...noMods },
+      makeCtx({ actions: makeRegistry([action]) }),
+    );
+    expect(enabled.mock.calls[0][1]).toEqual({ x: 7, y: 8 });
+    expect(run.mock.calls[0][1]).toMatchObject({ worldX: 7, worldY: 8, deltaY: 5 });
+  });
 });
