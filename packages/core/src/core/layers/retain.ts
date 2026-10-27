@@ -6,9 +6,10 @@ import type { LayerCommandCache, RenderLayer } from './render';
  * When `drawLayers` asks the renderer to keep a layer's pixels between frames
  * (`GroupDrawCommand.retain`) rather than submit its commands again.
  *
- * A layer is retained once its `deps` have held for a frame, the view has held
- * since the frame before (for a world-space layer, whose pixels move with
- * it), and it holds at least `minCommands` drawing commands. A layer changing
+ * A layer is retained once its `deps` have held for a frame, the view's zoom
+ * has held since the frame before (for a world-space layer, whose pixels move
+ * with it; the renderer moves a kept surface with a pan where it can), and it
+ * holds at least `minCommands` drawing commands. A layer changing
  * every frame is never retained: drawing it into its surface and compositing
  * that costs more than drawing it.
  */
@@ -33,9 +34,10 @@ export function countDrawCommands(cmds: readonly DrawCommand[]): number {
   return n;
 }
 
-function sameView(a: View | undefined, b: View): boolean {
-  return a !== undefined && a.x === b.x && a.y === b.y
-    && a.scale.x === b.scale.x && a.scale.y === b.scale.y;
+/** Whether the view held since the frame before, or only panned: a renderer
+ *  can move a kept surface with a pan, and decides itself when it cannot. */
+function sameZoom(a: View | undefined, b: View): boolean {
+  return a !== undefined && a.scale.x === b.scale.x && a.scale.y === b.scale.y;
 }
 
 /** The layer's id when the renderer should keep its pixels this frame. */
@@ -47,7 +49,7 @@ export function retainedId<TData>(
 ): string | undefined {
   const entry = cache.get(layer.id);
   if (!entry || !layer.deps) return undefined;
-  const viewHeld = (layer.space ?? 'world') === 'screen' || sameView(entry.view, view);
+  const viewHeld = (layer.space ?? 'world') === 'screen' || sameZoom(entry.view, view);
   entry.view = { x: view.x, y: view.y, scale: { x: view.scale.x, y: view.scale.y } };
   if (layer.retain === false || !entry.reused || !viewHeld) return undefined;
   return layer.retain === true || countDrawCommands(entry.cmds) >= policy.minCommands

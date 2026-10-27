@@ -37,9 +37,15 @@ describe('drawLayers retaining a layer', () => {
       .toEqual([undefined, 'big', 'big', undefined, 'big']);
   });
 
-  it('does not retain a world layer while the view moves under it', () => {
+  it('retains a world layer through a pan, which the renderer moves its surface with', () => {
     const moved = { x: 5, y: 0, scale: { x: 1, y: 1 } };
     expect(frames(layer(), [{ data: 1 }, { data: 1 }, { data: 1, view: moved }, { data: 1, view: moved }]))
+      .toEqual([undefined, 'big', 'big', 'big']);
+  });
+
+  it('does not retain a world layer through a zoom', () => {
+    const zoomed = { x: 0, y: 0, scale: { x: 2, y: 2 } };
+    expect(frames(layer(), [{ data: 1 }, { data: 1 }, { data: 1, view: zoomed }, { data: 1, view: zoomed }]))
       .toEqual([undefined, 'big', undefined, 'big']);
   });
 

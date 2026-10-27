@@ -44,6 +44,41 @@ export function sameKey(a: RetainedKey, b: RetainedKey): boolean {
     && sameClips(a.clips, b.clips) && a.isolate === b.isolate && sameEffects(a.effects, b.effects);
 }
 
+/**
+ * How far `b`'s pixels sit from `a`'s, in CSS pixels, when the two differ
+ * only by a translation of everything they were drawn under: the transform,
+ * the view matrix and every clip moved by the same amount. `null` otherwise.
+ * `[0, 0]` for keys that compare equal.
+ */
+export function keyShift(a: RetainedKey, b: RetainedKey): readonly [number, number] | null {
+  if (a.children !== b.children || a.alpha !== b.alpha || a.isolate !== b.isolate) return null;
+  if (!sameFloats(a.colorMatrix, b.colorMatrix) || !sameMatrix(a.screenMatrix, b.screenMatrix)) return null;
+  if (!sameEffects(a.effects, b.effects) || a.clips.length !== b.clips.length) return null;
+  const shift = translationBetween(a.transform, b.transform);
+  if (!shift) return null;
+  const moved = (x: GlMat3 | undefined, y: GlMat3 | undefined): boolean => {
+    if (x === undefined || y === undefined) return x === y;
+    const s = translationBetween(x, y);
+    return s !== null && near(s[0], shift[0]) && near(s[1], shift[1]);
+  };
+  if (!moved(a.viewMatrix, b.viewMatrix)) return null;
+  for (let i = 0; i < a.clips.length; i++) {
+    if (a.clips[i].path !== b.clips[i].path || !moved(a.clips[i].transform, b.clips[i].transform)) return null;
+  }
+  return shift;
+}
+
+/** `b`'s translation less `a`'s, when nothing else about them differs. */
+function translationBetween(a: GlMat3, b: GlMat3): [number, number] | null {
+  for (const i of [0, 1, 2, 3, 4, 5, 8]) if (a[i] !== b[i]) return null;
+  return [b[6] - a[6], b[7] - a[7]];
+}
+
+/** Translations composed through different matrices round differently. */
+function near(a: number, b: number): boolean {
+  return Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
+}
+
 /** Effects compared by what they run, so a list rebuilt each frame with the
  *  same passes still matches. */
 function sameEffects(a: readonly Effect[] | undefined, b: readonly Effect[] | undefined): boolean {

@@ -7,6 +7,7 @@ import { mat3 } from '@weasel-js/geom';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { applyClipTest } from './stencil';
+import { projFor } from './uniforms';
 import { isDev } from '@weasel-js/registry';
 
 const warnedUniforms = new Set<string>();
@@ -212,9 +213,8 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   }
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIbo);
 
-  const proj = mat3.screenToClip(ctx.widthCss, ctx.heightCss);
   const uProj = program.uniform('u_proj');
-  if (uProj !== undefined) gl.uniformMatrix3fv(uProj, false, mat3.toUniform(proj));
+  if (uProj !== undefined) gl.uniformMatrix3fv(uProj, false, mat3.toUniform(projFor(ctx)));
 
   const uBounds = program.uniform('u_bounds');
   if (uBounds !== undefined) {

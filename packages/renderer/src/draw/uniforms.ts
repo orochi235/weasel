@@ -83,8 +83,10 @@ export function setAlphaUniform(ctx: DrawContext, prog: ShaderProgram, alpha: nu
   uploaded.alpha = alpha;
 }
 
-/** The screen→clip matrix depends only on the frame's dimensions. */
-function projFor(ctx: DrawContext): GlMat3 {
+/** The screen→clip matrix: the frame's own, which depends only on its
+ *  dimensions, unless the target being drawn covers some other window. */
+export function projFor(ctx: DrawContext): GlMat3 {
+  if (ctx.projection) return ctx.projection;
   let proj = FRAME_PROJ.get(ctx);
   if (!proj) {
     proj = mat3.toUniform(mat3.screenToClip(ctx.widthCss, ctx.heightCss));
