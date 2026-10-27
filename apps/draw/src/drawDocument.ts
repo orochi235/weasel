@@ -1,4 +1,5 @@
 import type {
+  BooleanShapeOp,
   ImageNodeData,
   Path,
   Stroke,
@@ -55,6 +56,8 @@ export interface WeaselDrawData {
   generator?: ShapeGenerator;
   /** A live blend, bend or repeat: what this node derives from its sources. */
   pathEffect?: PathEffect;
+  /** A boolean group's operation over its children (core's `booleanGroupFields`). */
+  boolean?: BooleanShapeOp;
   label?: string;
 }
 

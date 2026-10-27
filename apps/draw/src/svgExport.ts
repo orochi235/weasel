@@ -136,6 +136,16 @@ function effectToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string
   return { id, effect: pathEffectOf(node)!, dependsOn, parts };
 }
 
+/** A boolean group as the path it draws, in its own paint; `undefined` while it draws nothing. */
+function booleanToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string): PathObj | undefined {
+  const node = scene.get(id as never)!;
+  const path = derivedDepOf(documentOf(scene), id as never)?.path;
+  if (!path) return undefined;
+  const { x, y, width, height } = boundsOfPath(path);
+  const data = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
+  return pathObj(id, path, { x, y, width, height }, resolveFill(data.fill), resolveStroke(data.stroke));
+}
+
 export interface SceneToSvgOptions {
   /** Document filename — used as the `<title>` element. */
   filename: string;
@@ -200,6 +210,7 @@ function sceneSourceOf<TLayer extends string>(
       const node = scene.get(id as never);
       if (!node || node.kind !== 'mark') return undefined;
       if (pathEffectOf(node) !== null) return effectToObj(scene, id);
+      if (node.consumesChildren === true) return booleanToObj(scene, id);
       return leafToObj(id, withInheritedPaint(node.data, inheritedPaintIn(scene, node)), poseOf(id)!) ?? undefined;
     },
   };

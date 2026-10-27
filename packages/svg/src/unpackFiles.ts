@@ -6,10 +6,12 @@ import { parseSvg } from './parse';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { svgNodesToKitDrafts } from './unpack';
 import {
+  booleanGroupFields,
   createInsertOp,
   dwarn,
   localizeWorldPoses,
   unionAABB,
+  type BooleanShapeOp,
   type IngestCtx,
   type Op,
   type PoseComposition,
@@ -49,6 +51,12 @@ function scaleLeafData(
     if (out.runs) out.runs = scaleRuns(out.runs as StyledRun[], scale);
   }
   return out;
+}
+
+/** A boolean group's fields and data, its path left to the derivation. */
+function asBooleanGroup(op: BooleanShapeOp, data: Record<string, unknown>) {
+  const { path: _path, ...rest } = data;
+  return { ...booleanGroupFields<SvgDraftPose>(), data: { ...rest, boolean: op } };
 }
 
 /**
@@ -124,6 +132,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
             layer,
             pose: placed[i]!.pose,
             data: d.kind === 'mark' ? scaleLeafData(d.data, scale) : d.data,
+            ...(d.kind === 'mark' && d.boolean ? asBooleanGroup(d.boolean, scaleLeafData(d.data, scale)) : {}),
             parent: d.parentId,
             ...(d.clip ? { clip: d.clip } : {}),
             ...(d.hidden ? { hidden: true } : {}),

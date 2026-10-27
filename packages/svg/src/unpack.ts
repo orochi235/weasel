@@ -24,6 +24,7 @@ import {
   registerMarker,
   solid,
   unionAABB,
+  type BooleanShapeOp,
   type Paint,
   type ImageNodeData,
   type NodeClip,
@@ -47,7 +48,13 @@ import type { SvgDraftBounds, SvgDraftPose } from './draftPose';
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
   | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
-  | { kind: 'mark'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData; clip?: NodeClip; hidden?: true };
+  | {
+    kind: 'mark'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData; clip?: NodeClip; hidden?: true;
+    /** A boolean group of the drafts under it, as `svgNodesFromKit` writes one: give it core's
+     *  `booleanGroupFields()` and this as `data.boolean`. Its data's `path` is the result as the
+     *  file drew it, which the derivation replaces. */
+    boolean?: BooleanShapeOp;
+  };
 
 /** A leaf `SvgNode`: everything but a group. */
 export type SvgLeafNode = Exclude<SvgNode, SvgGroupNode>;
@@ -155,6 +162,8 @@ function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
  *
  * `nextId` is handed the node each id is for. `options.leaf` replaces a leaf's
  * data; a group whose leaves it all leaves out is dropped like an empty one.
+ * A boolean group `svgNodesFromKit` wrote is drafted as a mark with `boolean`,
+ * its operands under it and shown.
  */
 export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
   input: ParseResult | readonly SvgNode[],
@@ -185,6 +194,9 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const takes = takesOf(n, from, k);
     if (n.kind === 'group') {
       const [own, kids, ...more] = n.children;
+      if (own && own.kind !== 'group' && kids?.kind === 'group' && kids.boolean) {
+        return visitMark(n, own, kids, more, parentId, k, takes);
+      }
       if (own && own.kind !== 'group' && (kids === undefined || kids.kind === 'group') && options.mark?.(n)) {
         if (n.clip) return visit(clippingGroup(n), parentId, inherited, from);
         return visitMark(n, own, kids, more, parentId, k, takes);
@@ -229,13 +241,14 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const under = mark?.id ?? parentId;
     if (mark && n.hidden) mark.hidden = true;
     if (mark && kids?.clip) mark.clip = 'outline';
+    if (mark && kids?.boolean) mark.boolean = kids.boolean;
     const poses = [pose];
     if (kids) {
       const at = drafts.length;
       const kk = k * (kids.opacity ?? 1);
       const below = groupTakes(kids, takesOf(kids, inner, kk), kk);
       for (const c of kids.children) poses.push(visit(c, under, kk, below));
-      if (kids.hidden) for (const d of drafts.slice(at)) if (d.parentId === under) d.hidden = true;
+      if (kids.hidden && !kids.boolean) for (const d of drafts.slice(at)) if (d.parentId === under) d.hidden = true;
     }
     for (const c of more) poses.push(visit(c, under, k, inner));
     return unionAABB(poses);
