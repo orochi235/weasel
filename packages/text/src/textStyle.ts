@@ -158,8 +158,17 @@ function paintColor(p: Paint | null): string {
   return isSolidPaint(p) ? p.color : '#000';
 }
 
+/** The last color {@link defaultSelectionBackground} mixed and its mix: text
+ *  restyled every frame mostly asks for the same one. */
+let mixedColor = '';
+let mixed = '';
+
 function defaultSelectionBackground(textColor: string): string {
-  return `color-mix(in srgb, ${textColor} 25%, transparent)`;
+  if (textColor !== mixedColor) {
+    mixed = `color-mix(in srgb, ${textColor} 25%, transparent)`;
+    mixedColor = textColor;
+  }
+  return mixed;
 }
 
 /** Default resolved style used when a `TextPose` omits `style`. */

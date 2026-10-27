@@ -4,6 +4,7 @@
  */
 
 import { textureCacheKey } from './textureCacheKey';
+import { variantKey } from './variantKey';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FontStyle } from './fontStyle';
 import { notifyGlyphReady } from './glyphReady';
@@ -44,10 +45,6 @@ const registry = createReflectable<FontFamilyFaces>();
 /** Every registered family and its faces, in registration order. `listFonts`
  *  is the same set shaped for a font picker. */
 export const fontRegistry: Reflection<FontFamilyFaces> = registry.reflection;
-
-function variantKey(weight: number, style: FontStyle): string {
-  return `${weight}|${style}`;
-}
 
 function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } {
   return {
@@ -717,7 +714,7 @@ function resolveFontVariantInternal(
   // A landed variant is not on its way, even before its load promise settles:
   // `fetchVariant` wakes subscribers first, and they resolve synchronously.
   const exactKey = variantKey(weight, style);
-  if (loads.has(`${family}|${exactKey}`) && !registry.get(family)?.has(exactKey)) {
+  if (loads.size > 0 && loads.has(`${family}|${exactKey}`) && !registry.get(family)?.has(exactKey)) {
     return pendingMiss(family, weight, style);
   }
   const familyMap = registry.get(family);
