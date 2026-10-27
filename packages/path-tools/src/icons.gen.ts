@@ -31,7 +31,18 @@ export type PathToolsIconName =
   | 'convertSegment'
   | 'straightenSegment'
   | 'curveSegment'
-  | 'extremeAnchors';
+  | 'extremeAnchors'
+  | 'growAnchorSelection'
+  | 'shrinkAnchorSelection'
+  | 'selectEveryNthAnchor'
+  | 'selectCornerAnchors'
+  | 'selectSmoothAnchors'
+  | 'invertAnchorSelection'
+  | 'spiroSmooth'
+  | 'spiroG4'
+  | 'spiroCorner'
+  | 'spiroLeft'
+  | 'spiroRight';
 
 /** This package's `icon()`: a bare name means `path-tools:<name>`. */
 export const icon = scopedIcon<PathToolsIconName>('path-tools');
@@ -75,6 +86,27 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "curveSegment",
       "extremeAnchors"
     ]
+  },
+  {
+    "label": "Anchor selection",
+    "names": [
+      "growAnchorSelection",
+      "shrinkAnchorSelection",
+      "selectEveryNthAnchor",
+      "selectCornerAnchors",
+      "selectSmoothAnchors",
+      "invertAnchorSelection"
+    ]
+  },
+  {
+    "label": "Spiro points",
+    "names": [
+      "spiroSmooth",
+      "spiroG4",
+      "spiroCorner",
+      "spiroLeft",
+      "spiroRight"
+    ]
   }
 ];
 
@@ -108,5 +140,16 @@ declare module '@weasel-js/icons' {
     'path-tools:straightenSegment': true;
     'path-tools:curveSegment': true;
     'path-tools:extremeAnchors': true;
+    'path-tools:growAnchorSelection': true;
+    'path-tools:shrinkAnchorSelection': true;
+    'path-tools:selectEveryNthAnchor': true;
+    'path-tools:selectCornerAnchors': true;
+    'path-tools:selectSmoothAnchors': true;
+    'path-tools:invertAnchorSelection': true;
+    'path-tools:spiroSmooth': true;
+    'path-tools:spiroG4': true;
+    'path-tools:spiroCorner': true;
+    'path-tools:spiroLeft': true;
+    'path-tools:spiroRight': true;
   }
 }

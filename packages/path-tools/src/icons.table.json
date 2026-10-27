@@ -141,6 +141,61 @@
       "body": "<path d=\"M3 16 C3 4.5 17 4.5 17 16\"/><path d=\"M3.5 7.4 H16.5\" stroke-width=\"1\"/><rect x=\"1.5\" y=\"14.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15.5\" y=\"14.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.5\" y=\"5.9\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Commands",
       "tags": []
+    },
+    "growAnchorSelection": {
+      "body": "<path d=\"M4.375 14.375H4.375M9.375 14.375H9.375M14.375 14.375H14.375\" stroke-width=\"1.25\"/><rect x=\"0.625\" y=\"13.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><rect x=\"5\" y=\"12.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"10\" y=\"12.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15.625\" y=\"13.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><path d=\"M6.875 4.375H1.875\" stroke-width=\"1.25\"/><path d=\"M4.38 6.88 1.88 4.38 4.38 1.88\" stroke-width=\"1.25\"/><path d=\"M11.875 4.375H16.875\" stroke-width=\"1.25\"/><path d=\"M14.38 1.88 16.88 4.38 14.38 6.88\" stroke-width=\"1.25\"/>",
+      "group": "Anchor selection",
+      "tags": []
+    },
+    "shrinkAnchorSelection": {
+      "body": "<path d=\"M4.375 14.375H4.375M9.375 14.375H9.375M14.375 14.375H14.375\" stroke-width=\"1.25\"/><rect x=\"0.625\" y=\"13.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><rect x=\"5\" y=\"12.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"10\" y=\"12.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15.625\" y=\"13.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><path d=\"M0.625 4.375H5.625\" stroke-width=\"1.25\"/><path d=\"M3.12 1.88 5.63 4.38 3.12 6.88\" stroke-width=\"1.25\"/><path d=\"M18.125 4.375H13.125\" stroke-width=\"1.25\"/><path d=\"M15.63 6.88 13.13 4.38 15.63 1.88\" stroke-width=\"1.25\"/>",
+      "group": "Anchor selection",
+      "tags": []
+    },
+    "selectEveryNthAnchor": {
+      "body": "<path d=\"M4.375 9.375H4.375M9.375 9.375H9.375M14.375 9.375H14.375\" stroke-width=\"1.25\"/><rect x=\"0\" y=\"7.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"5.625\" y=\"8.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><rect x=\"10\" y=\"7.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15.625\" y=\"8.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/>",
+      "group": "Anchor selection",
+      "tags": []
+    },
+    "selectCornerAnchors": {
+      "body": "<path d=\"M3.125 3.125H9.375A5 5 0 0 1 9.375 15.625H3.125Z\" stroke-width=\"1.25\"/><rect x=\"1.25\" y=\"1.25\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"1.25\" y=\"13.75\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"14.375\" y=\"8.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/>",
+      "group": "Anchor selection",
+      "tags": []
+    },
+    "selectSmoothAnchors": {
+      "body": "<path d=\"M3.125 3.125H9.375A5 5 0 0 1 9.375 15.625H3.125Z\" stroke-width=\"1.25\"/><rect x=\"1.875\" y=\"1.875\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><rect x=\"1.875\" y=\"14.375\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><rect x=\"13.75\" y=\"7.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Anchor selection",
+      "tags": []
+    },
+    "invertAnchorSelection": {
+      "body": "<path d=\"M5.625 4.375H6.875M11.875 4.375H13.125\" stroke-width=\"1.25\"/><rect x=\"1.25\" y=\"2.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.125\" y=\"3.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><rect x=\"13.75\" y=\"2.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M5.625 14.375H6.875M11.875 14.375H13.125\" stroke-width=\"1.25\"/><rect x=\"1.875\" y=\"13.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/><rect x=\"7.5\" y=\"12.5\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"14.375\" y=\"13.125\" width=\"2.5\" height=\"2.5\" stroke-width=\"1.25\"/>",
+      "group": "Anchor selection",
+      "tags": []
+    },
+    "spiroSmooth": {
+      "body": "<path d=\"M1.875 15.625C6.875 15.625 5.625 9.375 9.375 9.375C13.125 9.375 11.875 3.125 16.875 3.125\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"9.375\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Spiro points",
+      "tags": []
+    },
+    "spiroG4": {
+      "body": "<path d=\"M1.875 15.625C6.875 15.625 5.625 9.375 6.875 9.375M11.875 9.375C13.125 9.375 11.875 3.125 16.875 3.125\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"9.375\" r=\"2.5\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"9.375\" r=\"0.625\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Spiro points",
+      "tags": []
+    },
+    "spiroCorner": {
+      "body": "<path d=\"M1.875 15.625L9.375 8.125L16.875 15.625\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"8.125\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Spiro points",
+      "tags": []
+    },
+    "spiroLeft": {
+      "body": "<path d=\"M1.875 14.375H9.375C14.375 14.375 16.875 10.625 16.875 4.375\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"14.375\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Spiro points",
+      "tags": []
+    },
+    "spiroRight": {
+      "body": "<path d=\"M1.875 4.375C1.875 10.625 4.375 14.375 9.375 14.375H16.875\" stroke-width=\"1.25\"/><circle cx=\"9.375\" cy=\"14.375\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Spiro points",
+      "tags": []
     }
   }
 }
