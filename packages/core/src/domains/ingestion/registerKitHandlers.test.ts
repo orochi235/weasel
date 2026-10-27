@@ -17,12 +17,13 @@ describe('acquireKitContentHandlers (refcount)', () => {
     expect(kitImageCount()).toBe(1);
   });
 
-  it('registers the weasel-JSON clipboard handler alongside image/svg', () => {
+  it('registers the weasel-JSON clipboard handler and plain text alongside image/svg', () => {
     acquireKitContentHandlers();
     expect(getContentHandlers().map((h) => h.id)).toEqual([
       'kit:weasel-json', // priority -50 — runs before the other kit handlers
       'kit:svg',
       'kit:image',
+      'kit:text', // -110, last, so markup and node payloads in plain text go to the handlers above
     ]);
   });
 

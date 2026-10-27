@@ -27,7 +27,7 @@ the same `IngestItem`. Handlers never branch on where content came from.
 | `kitWeaselJsonHandler` | The kit's own clipboard format — full-fidelity node round-trip. |
 | `kitSvgHandler` | SVG files and SVG text (`sniffSvgText` catches markup pasted as a string). |
 | `kitImageHandler` | Raster images. |
-| `kitTextHandler` | Plain text, as a text node sized to the string. Not registered by default: pass it in `ingestion.handlers`. |
+| `kitTextHandler` | Plain text, as a text node sized to the string. Passes over strings that arrive beside a file, which describe it. |
 
 Registration order matters: the kit's JSON handler is what makes an internal
 copy/paste preserve everything rather than degrading to an image, so it must get
@@ -38,6 +38,13 @@ it to a predicate `match`. It asks `couldClaim` instead, which reads globs and a
 predicate handler's declared `types`, and refuses the drag when no handler could
 take it. A predicate handler with no `types` might take anything, so while one is
 registered no drag is refused.
+
+While a drag hovers, the dispatcher asks the action its drop would run for its
+`Action.preview`, with the drag's pending items (`pendingKindOf` tells a file
+from a string) and the world point. `ingest` answers with a ghost
+(`ghost.ts`): a box per file some handler could claim, or one line-shaped box
+for the strings, placed as `placement.ts` would place them, drawn through the
+`previewPaths` dep.
 
 `registerContentHandler` is the extension point — register your own to handle a
 domain format (a `.dxf`, a CSV that becomes a table) before the kit's fallbacks.
@@ -64,4 +71,5 @@ materializes items before any handler is asked.
 | `openFilePicker.ts` | Programmatic file picker → the same `IngestItem[]`. |
 | `registerKitHandlers.ts` | Refcounted default registration. |
 | `placement.ts` | Where arriving content lands: on the point or the viewport center, cascading. |
+| `ghost.ts` | What a drag in flight would land as, for `ingest`'s preview. |
 | `*Handler.ts` | The built-in handlers above. |

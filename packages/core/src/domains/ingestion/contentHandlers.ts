@@ -25,6 +25,10 @@ export interface IngestCtx {
    *  for paste and point-less calls — handlers pick their own policy
    *  (the kit image handler centers on the viewport). */
   point: { x: number; y: number } | null;
+  /** Every item the arrival carried, the ones other handlers took included:
+   *  a handler can tell that the string it was given rides beside a file.
+   *  Absent reads as the items the handler was handed. */
+  items?: readonly IngestItem[];
   /** Visible canvas area in world coordinates. */
   viewportWorldRect(): { x: number; y: number; width: number; height: number };
   /** The kit insert dep — id/layer/undoable-op supplied; the canonical way

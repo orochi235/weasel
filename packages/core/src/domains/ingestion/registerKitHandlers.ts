@@ -9,6 +9,7 @@
 import { registerContentHandler } from './contentHandlers';
 import { kitImageHandler } from './imageHandler';
 import { kitSvgHandler } from './svgHandler';
+import { kitTextHandler } from './textHandler';
 import { kitWeaselJsonHandler } from './weaselJsonHandler';
 
 let refs = 0;
@@ -17,7 +18,7 @@ let dispose: (() => void) | null = null;
 export function acquireKitContentHandlers(): () => void {
   refs++;
   if (refs === 1) {
-    const disposers = [kitImageHandler, kitSvgHandler, kitWeaselJsonHandler].map(registerContentHandler);
+    const disposers = [kitImageHandler, kitSvgHandler, kitWeaselJsonHandler, kitTextHandler].map(registerContentHandler);
     dispose = () => { for (const d of disposers) d(); };
   }
   let released = false;

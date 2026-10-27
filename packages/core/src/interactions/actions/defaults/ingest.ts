@@ -26,6 +26,7 @@ import {
   couldClaim, runIngest, type ContentHandlerEntry, type IngestCtx, type RunIngestOptions,
 } from 'domains/ingestion/contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
+import { previewIngest } from 'domains/ingestion/ghost';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { MOVE_NODES_REQUIRES } from '../moveNodes';
 
@@ -64,6 +65,7 @@ export function ingestFromEvent(
 
   const ctx: IngestCtx = {
     point,
+    items,
     viewportWorldRect: () => ingestion.viewportWorldRect(),
     insert,
     applyOps: (ops, label) => {
@@ -104,11 +106,13 @@ export const ingestAction: Action & { requires: string[] } = {
     { spec: { kind: 'drop', mods: ANY_INGEST_MODS }, opts: { id: 'ingest.drop' } },
     { spec: { kind: 'paste', mods: ANY_INGEST_MODS }, opts: { id: 'ingest.paste' } },
   ],
-  requires: [...INGEST_REQUIRES],
+  requires: [...INGEST_REQUIRES, 'previewPaths'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => ingestFromEvent(deps, params),
   },
+  // Asked by the dispatcher while an OS drag hovers: a ghost box per thing the drop would insert.
+  preview: (deps, params) => previewIngest(deps, params),
   // No `eligible` rule: external-content arrival is mode-agnostic. The
   // listener-level editable-target guard already keeps text-editing pastes
   // away from the scene.

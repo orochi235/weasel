@@ -80,4 +80,12 @@ describe('kitTextHandler', () => {
     expect(b1.x - b0.x).toBe(24);
     expect(b1.y - b0.y).toBe(24);
   });
+
+  it('passes over a string that arrives beside a file, which it describes', async () => {
+    const file: IngestItem = { kind: 'file', mime: 'image/png', file: new File(['x'], 'a.png') };
+    const name = text('a.png');
+    const c = ctx({ items: [file, name] });
+    await handler.handle([name], c);
+    expect(c.insert.commit).not.toHaveBeenCalled();
+  });
 });
