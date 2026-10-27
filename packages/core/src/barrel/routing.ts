@@ -20,7 +20,7 @@ export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useActi
 export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
 export { useMenuHost, useMenus } from '@weasel-js/routing/react';
-export type { MenuDef, MenuHit, MenuHost, MenuOpenRequest, MenuSources, OpenMenu } from '@weasel-js/routing';
+export type { MenuDef, MenuHit, MenuHost, MenuOpenRequest, MenuSources, MenuCustomAt, MenuAccess, OpenMenu } from '@weasel-js/routing';
 export { resolveSchemaMenu } from '@weasel-js/routing';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { actionCursor } from '@weasel-js/routing';

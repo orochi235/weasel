@@ -225,4 +225,5 @@ export { mergeMenuDefs, pickMenu } from './menus/pickMenu';
 export { resolveMenu, resolveSchemaMenu } from './menus/resolveMenu';
 export { createMenuHost } from './menus/menuHost';
 export type { MenuHost, MenuOpenRequest, OpenMenu } from './menus/menuHost';
-export type { MenuSources } from './menus/resolveMenu';
+export type { MenuCustomAt, MenuSources } from './menus/resolveMenu';
+export type { MenuAccess } from './menus/compoundRows';
