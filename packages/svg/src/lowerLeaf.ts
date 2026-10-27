@@ -5,7 +5,7 @@ import {
 } from '@weasel-js/core';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath, parsePoints, polylineToPath,
-  polygonToPath, AUTO_ORIGIN,
+  polygonToPath,
 } from './shapes';
 import { hasOpenSubpath, worldCoords } from '@weasel-js/geom';
 import type { Matrix } from './types';
@@ -46,7 +46,7 @@ export function lowerLeaf(
       return null;
     }
     const raw = pathFromD(d, onWarn);
-    const transformed = transformPath(raw, m, AUTO_ORIGIN);
+    const transformed = transformPath(raw, m);
     // Reconstitute axis-aligned rectangles so a `{ kind: 'rect' }` source
     // node round-trips back into a `{ kind: 'rect' }` parsed node.
     if (transformed.kind === 'polygon') {

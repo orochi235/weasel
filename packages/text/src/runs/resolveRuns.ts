@@ -76,6 +76,9 @@ export interface ResolvedRun {
    *  caps drawn from the face's own glyphs). Absent is none; a run that is not
    *  shaped ignores it. */
   fontFeatures?: readonly string[];
+  /** BCP 47 language tag a shaper selects the face's forms by: the run's own,
+   *  else the node's. Absent is none. */
+  lang?: string;
 }
 
 const SMALL_CAPS_FEATURES: readonly string[] = Object.freeze(['smcp']);
@@ -222,6 +225,7 @@ export function resolveRuns(
         sizeMap = caps.small.map((s) => (s ? small : fontSize));
       }
     }
+    const lang = run.lang ?? style.lang;
     out.push({
       text,
       ...(srcMap ? { srcMap } : NOTHING),
@@ -247,6 +251,7 @@ export function resolveRuns(
       ...(relative ? { strutSize: style.fontSize } : NOTHING),
       ...(run.rotate && Number.isFinite(run.rotate) ? { rotate: run.rotate } : NOTHING),
       ...(fontFeatures ? { fontFeatures } : NOTHING),
+      ...(lang ? { lang } : NOTHING),
     });
   }
   return out;

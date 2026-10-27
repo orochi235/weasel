@@ -111,12 +111,16 @@ function run(command: PresentationCommand, handle: TrialClockHandle): void {
 /**
  * While `active`, work trial `trialId`'s clock from the messages the host page
  * posts to `view`, and post that clock's state to the window around `view`.
+ * A trial whose instrument declares a clock (`clocked`) is neither listened to
+ * nor announced until that clock is registered, so the first state a host
+ * reads is true and a command it sends on reading it reaches the clock.
  */
 export function usePresentationMessages(
   active: boolean,
   view: Window | null,
   clocks: ClockRegistry,
   trialId: string | null,
+  clocked: boolean,
   { name, origins }: PresentationMessageOptions,
 ): void {
   const handle = useSyncExternalStore(clocks.subscribe, () =>
@@ -124,7 +128,7 @@ export function usePresentationMessages(
   );
   const allowed = origins?.join(' ');
   useEffect(() => {
-    if (!active || !view) return;
+    if (!active || !view || (clocked && !handle)) return;
     const host = view.parent;
     const post = (): void => host.postMessage(presentationState(handle, name), '*');
     const onMessage = (event: MessageEvent): void => {
@@ -144,5 +148,5 @@ export function usePresentationMessages(
       offClock?.();
       offHold?.();
     };
-  }, [active, view, handle, name, allowed]);
+  }, [active, view, handle, clocked, name, allowed]);
 }

@@ -34,6 +34,14 @@ function evictAll(tag: string): void {
   }
 }
 
+/** Fill the structural list behind `a` so that the next layout evicts it,
+ *  and takes what it recycles. */
+function fillBehind(tag: string): void {
+  for (let i = 0; i < LAYOUT_CACHE_STRUCTURAL_LIMIT - 1; i++) {
+    cachedLayoutRuns([RUN_PLAIN(`${tag} filler ${i} and more`)], OPTS, 'read');
+  }
+}
+
 /** A text drawn the way the renderer draws it: laid out and painted, read. */
 function draw(text: string) {
   const runs = [RUN_PLAIN(text)];
@@ -124,5 +132,32 @@ describe('recycling a layout', () => {
     const again = cachedLayoutRuns(a.runs, OPTS, 'read');
     expect(again).not.toBe(a.laid);
     expect(again.lines[0].cells).toEqual(layoutRuns([RUN_PLAIN('AB 12')], OPTS).lines[0].cells);
+  });
+
+  it('refills a recycled layout\'s line boxes and its paintings\' groups, in a result of its own', () => {
+    const a = draw('AB 12');
+    const box = a.laid.lines[0];
+    const group = a.painted.groups[0];
+    dropRuns(a.runs);
+    fillBehind('x');
+    const b = draw('BA 21');
+    expect(b.laid).not.toBe(a.laid);
+    expect(b.laid.lines[0]).toBe(box);
+    expect(b.painted.groups).toContain(group);
+  });
+
+  it('rebuilds a refilled line box\'s views, and leaves a group whose quads were read', () => {
+    const a = draw('AB 12');
+    expect(a.laid.lines[0].cells).toHaveLength(5);
+    const group = a.painted.groups[0];
+    expect(group.quads.length).toBeGreaterThan(0);
+    dropRuns(a.runs);
+    fillBehind('x');
+    const b = draw('BAB');
+    const fresh = layoutRuns([RUN_PLAIN('BAB')], OPTS);
+    expect(b.laid.lines[0].cells).toEqual(fresh.lines[0].cells);
+    expect(b.laid.lines[0].glyphs).toEqual(fresh.lines[0].glyphs);
+    expect(b.painted.groups).not.toContain(group);
+    expect(b.painted.groups.map((g) => g.quads)).toEqual(paintRuns(fresh, [RUN_PLAIN('BAB')]).groups.map((g) => g.quads));
   });
 });

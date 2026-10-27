@@ -10,8 +10,10 @@ import { paintKey, strokeKey } from '@weasel-js/paint';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { giveDoubles } from './arrayPool';
 import type { CacheUse } from './layoutCache';
+import { LineBox } from './layoutColumns';
 import type { LaidOutRuns } from './layoutRuns';
-import { paintRuns, type PaintedRuns, type PaintRunsOpts } from './paintRuns';
+import { giveGroup, NO_QUADS } from './paintGroups';
+import { paintRunsInto, type PaintedRuns, type PaintRunsOpts } from './paintRuns';
 
 /** Paintings held for one layout on behalf of runs arrays that have since
  *  gone, before the least recently used is dropped. Sized for a palette. */
@@ -55,8 +57,39 @@ interface OwnPainting {
   painting: Painting;
   min: number | undefined;
 }
-/** Most recently used last. */
+/** Each layout's paintings, most recently used last: on its columns, or here
+ *  for a layout built by hand. */
 const shared = new WeakMap<LaidOutRuns, Painting[]>();
+
+function listOf(laid: LaidOutRuns): Painting[] {
+  const cols = laid.lines.length > 0 ? LineBox.columns(laid.lines[0]) : null;
+  if (cols !== null) return cols.paintings as Painting[];
+  let list = shared.get(laid);
+  if (list === undefined) shared.set(laid, (list = []));
+  return list;
+}
+
+/** Paintings of recycled layouts, their groups and decorations arrays
+ *  emptied, for the next painting. */
+const spare: Painting[] = [];
+const SPARE_MAX = 1024;
+
+function painting(
+  laid: LaidOutRuns, runs: readonly ResolvedRun[], opts: PaintRunsOpts,
+  generation: number, key: string | null, bucket: number,
+): Painting {
+  const p = spare.pop();
+  if (p === undefined) {
+    return {
+      generation, key, bucket, runs: key === null ? runs : null,
+      painted: paintRunsInto(laid, runs, opts, { groups: [], decorations: [] }), pinned: false,
+    };
+  }
+  p.generation = generation; p.key = key; p.bucket = bucket; p.runs = key === null ? runs : null;
+  p.pinned = false;
+  paintRunsInto(laid, runs, opts, p.painted);
+  return p;
+}
 
 /**
  * How many of the distinct font sizes present in `runs` reach `min`. The
@@ -129,35 +162,35 @@ export function cachedPaintRuns(
     return handOut(mine.painting, use);
   }
 
-  let list = shared.get(laid);
-  if (list === undefined) {
-    list = [];
-    shared.set(laid, list);
-  }
-  let painting: Painting | null = null;
+  const list = listOf(laid);
+  let p: Painting | null = null;
   if (list.length > 0) {
     const key = variantKey(runs, bucket);
     for (let i = 0; i < list.length; i++) {
-      const p = list[i];
-      if (p.bucket !== bucket || keyOf(p) !== key) continue;
+      const held = list[i];
+      if (held.bucket !== bucket || keyOf(held) !== key) continue;
       list.splice(i, 1);
-      if (p.generation === generation) painting = p;
+      if (held.generation === generation) p = held;
       break;
     }
-    if (painting === null) {
-      painting = { generation, key, bucket, runs: null, painted: paintRuns(laid, runs, opts), pinned: false };
-    }
+    p ??= painting(laid, runs, opts, generation, key, bucket);
   } else {
-    painting = { generation, key: null, bucket, runs, painted: paintRuns(laid, runs, opts), pinned: false };
+    p = painting(laid, runs, opts, generation, null, bucket);
   }
   if (list.length >= PAINT_CACHE_VARIANT_LIMIT) list.shift();
-  list.push(painting);
+  list.push(p);
   if (mine !== undefined) {
-    mine.laid = laid; mine.painting = painting; mine.min = min;
+    mine.laid = laid; mine.painting = p; mine.min = min;
   } else {
-    own.set(runs, { laid, painting, min });
+    const o = spareOwn.pop();
+    if (o === undefined) {
+      own.set(runs, { laid, painting: p, min });
+    } else {
+      o.laid = laid; o.painting = p; o.min = min;
+      own.set(runs, o);
+    }
   }
-  return handOut(painting, use);
+  return handOut(p, use);
 }
 
 function handOut(p: Painting, use: CacheUse): PaintedRuns {
@@ -168,23 +201,43 @@ function handOut(p: Painting, use: CacheUse): PaintedRuns {
 /** Forget the painting held for `runs`, which `dropRuns` was told will not be
  *  drawn again. */
 export function forgetPaintRuns(runs: readonly ResolvedRun[]): void {
+  const mine = own.get(runs);
+  if (mine === undefined) return;
   own.delete(runs);
+  if (spareOwn.length < SPARE_MAX) spareOwn.push(mine);
 }
+
+/** Entries `forgetPaintRuns` let go, for the next runs arrays' own paintings. */
+const spareOwn: OwnPainting[] = [];
 
 /** Drop every painting of `laid`, which no caller can reach any more, giving
- *  the quad arrays of those no caller kept back to the pool. */
+ *  those no caller kept, with their groups and quad arrays, to the next
+ *  paintings. */
 export function recyclePaintings(laid: LaidOutRuns): void {
-  const list = shared.get(laid);
-  if (list === undefined) return;
-  shared.delete(laid);
-  for (const p of list) {
-    if (p.pinned) continue;
-    for (const group of p.painted.groups) {
-      if (group.quadData.length === 0) continue;
-      giveDoubles(group.quadData as number[]);
-      group.quadData = EMPTY;
-    }
+  const cols = laid.lines.length > 0 ? LineBox.columns(laid.lines[0]) : null;
+  let list: Painting[] | undefined;
+  if (cols !== null) {
+    list = cols.paintings as Painting[];
+  } else {
+    list = shared.get(laid);
+    if (list === undefined) return;
+    shared.delete(laid);
   }
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    if (p.pinned) continue;
+    const { groups } = p.painted;
+    for (let k = 0; k < groups.length; k++) {
+      const group = groups[k];
+      if (group.quadData.length > 0) giveDoubles(group.quadData as number[]);
+      group.quadData = NO_QUADS;
+      giveGroup(group);
+    }
+    groups.length = 0;
+    p.painted.decorations.length = 0;
+    p.runs = null;
+    p.key = null;
+    if (spare.length < SPARE_MAX) spare.push(p);
+  }
+  list.length = 0;
 }
-
-const EMPTY: readonly number[] = [];

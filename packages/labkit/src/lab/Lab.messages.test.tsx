@@ -1,7 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { afterEach, it as base, beforeEach, describe, expect, type MockInstance, vi } from 'vitest';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -52,6 +52,34 @@ const send = (data: unknown, init: MessageEventInit = {}) =>
     );
   });
 
+// A test that times out keeps running once vitest has moved on, and a message it
+// sent then would reach the next test's lab, so its host stops at its next step.
+// Not by the test's `signal`: vitest 5.0.2 hands a retry the one that aborted.
+function hostFor(live: () => boolean) {
+  const check = (): void => {
+    if (!live()) throw new Error('this test has already ended');
+  };
+  return {
+    mount: (spec: ClockCapability | undefined, props?: Partial<LabProps>) => {
+      check();
+      return mountLab(spec, props);
+    },
+    send: (data: unknown, init?: MessageEventInit) => {
+      check();
+      return send(data, init);
+    },
+  };
+}
+
+const it = base.extend<{ host: ReturnType<typeof hostFor> }>({
+  // biome-ignore lint/correctness/noEmptyPattern: vitest reads a fixture's dependencies from this pattern
+  host: async ({}, provide) => {
+    let live = true;
+    await provide(hostFor(() => live));
+    live = false;
+  },
+});
+
 let posted: MockInstance<typeof window.postMessage>;
 const states = (): PresentationState[] =>
   posted.mock.calls
@@ -69,36 +97,36 @@ afterEach(() => {
 });
 
 describe('a presented lab’s messages', () => {
-  it('plays and pauses on the host’s word', async () => {
-    await mountLab({ duration: SPAN });
-    await send({ type: 'labkit:play' });
+  it('plays and pauses on the host’s word', async ({ host }) => {
+    await host.mount({ duration: SPAN });
+    await host.send({ type: 'labkit:play' });
     expect(c().rate).toBe(1);
-    await send({ type: 'labkit:pause' });
+    await host.send({ type: 'labkit:pause' });
     expect(c().rate).toBe(0);
   });
 
-  it('plays at the speed the transport holds, and moves its button', async () => {
-    await mountLab({ duration: SPAN, rate: 2 });
-    await send({ type: 'labkit:pause' });
+  it('plays at the speed the transport holds, and moves its button', async ({ host }) => {
+    await host.mount({ duration: SPAN, rate: 2 });
+    await host.send({ type: 'labkit:pause' });
     expect(screen.getByRole('button', { name: 'Play' })).not.toBeNull();
-    await send({ type: 'labkit:play' });
+    await host.send({ type: 'labkit:play' });
     expect(c().rate).toBe(2);
     expect(screen.getByRole('button', { name: 'Pause' })).not.toBeNull();
   });
 
-  it('plays with the controls left off', async () => {
-    await mountLab({ duration: SPAN }, { transport: false });
-    await send({ type: 'labkit:play' });
+  it('plays with the controls left off', async ({ host }) => {
+    await host.mount({ duration: SPAN }, { transport: false });
+    await host.send({ type: 'labkit:play' });
     expect(c().rate).toBe(1);
   });
 
-  it('starts an ended run over on play', async () => {
+  it('starts an ended run over on play', async ({ host }) => {
     // On a real clock a slow mount outlasts the replay hold, and the replay has moved
     // the run on from 0 by the time play arrives.
     vi.useFakeTimers();
     try {
-      await mountLab({ duration: 4000, start: 'end' });
-      await send({ type: 'labkit:play' });
+      await host.mount({ duration: 4000, start: 'end' });
+      await host.send({ type: 'labkit:play' });
       expect(c().elapsed).toBe(0);
       expect(c().rate).toBe(1);
     } finally {
@@ -106,17 +134,17 @@ describe('a presented lab’s messages', () => {
     }
   });
 
-  it('seeks within the pass', async () => {
-    await mountLab({ duration: 4000 });
-    await send({ type: 'labkit:seek', time: 1500 });
+  it('seeks within the pass', async ({ host }) => {
+    await host.mount({ duration: 4000 });
+    await host.send({ type: 'labkit:seek', time: 1500 });
     expect(c().elapsed).toBe(1500);
   });
 
-  it('stops the replay of an ended run once the host has spoken', async () => {
+  it('stops the replay of an ended run once the host has spoken', async ({ host }) => {
     vi.useFakeTimers();
     try {
-      await mountLab({ duration: 4000, start: 'end' });
-      await send({ type: 'labkit:pause' });
+      await host.mount({ duration: 4000, start: 'end' });
+      await host.send({ type: 'labkit:pause' });
       await act(async () => vi.advanceTimersByTime(5000));
       expect(c().elapsed).toBe(4000);
       expect(c().rate).toBe(0);
@@ -125,8 +153,10 @@ describe('a presented lab’s messages', () => {
     }
   });
 
-  it('reports its state as it starts, on a change, and when asked', async () => {
-    await mountLab({ duration: SPAN });
+  it('reports its state as it starts, on a change, and when asked', async ({ host }) => {
+    await host.mount({ duration: SPAN });
+    // Not first `clock: false` from before the trial's clock is in.
+    expect(states()).toHaveLength(1);
     expect(lastState()).toEqual({
       type: 'labkit:state',
       clock: true,
@@ -139,67 +169,67 @@ describe('a presented lab’s messages', () => {
     });
     expect(posted.mock.calls.at(-1)?.[1]).toBe('*');
 
-    await send({ type: 'labkit:play' });
+    await host.send({ type: 'labkit:play' });
     expect(lastState()?.playing).toBe(true);
 
     const before = states().length;
-    await send({ type: 'labkit:query' });
+    await host.send({ type: 'labkit:query' });
     expect(states()).toHaveLength(before + 1);
   });
 
-  it('reports a trial without a clock as having none', async () => {
-    await mountLab(undefined);
+  it('reports a trial without a clock as having none', async ({ host }) => {
+    await host.mount(undefined);
     expect(lastState()).toMatchObject({ clock: false, playing: false, duration: null });
-    await send({ type: 'labkit:play' });
+    await host.send({ type: 'labkit:play' });
   });
 
-  it('answers only its host: the window around it, or its own', async () => {
-    await mountLab({ duration: 4000 });
-    await send({ type: 'labkit:play' }, { source: null });
+  it('answers only its host: the window around it, or its own', async ({ host }) => {
+    await host.mount({ duration: 4000 });
+    await host.send({ type: 'labkit:play' }, { source: null });
     expect(c().rate).toBe(0);
   });
 
-  it('takes only the origins it is given', async () => {
-    await mountLab({ duration: SPAN }, { messages: { origins: ['https://host.example'] } });
-    await send({ type: 'labkit:play' });
+  it('takes only the origins it is given', async ({ host }) => {
+    await host.mount({ duration: SPAN }, { messages: { origins: ['https://host.example'] } });
+    await host.send({ type: 'labkit:play' });
     expect(c().rate).toBe(0);
-    await send({ type: 'labkit:play' }, { origin: 'https://host.example' });
+    await host.send({ type: 'labkit:play' }, { origin: 'https://host.example' });
     expect(c().rate).toBe(1);
   });
 
-  it('takes a message addressed to another lab as not its own', async () => {
-    await mountLab({ duration: SPAN }, { messages: { name: 'hero' } });
-    await send({ type: 'labkit:play', lab: 'other' });
+  it('takes a message addressed to another lab as not its own', async ({ host }) => {
+    await host.mount({ duration: SPAN }, { messages: { name: 'hero' } });
+    await host.send({ type: 'labkit:play', lab: 'other' });
     expect(c().rate).toBe(0);
-    await send({ type: 'labkit:play', lab: 'hero' });
+    await host.send({ type: 'labkit:play', lab: 'hero' });
     expect(c().rate).toBe(1);
     expect(lastState()?.lab).toBe('hero');
   });
 
-  it('ignores what is not a message of its own', async () => {
-    await mountLab({ duration: 4000 });
-    await send('labkit:play');
-    await send(null);
-    await send({ type: 'play' });
-    await send({ type: 'labkit:seek', time: 'soon' });
+  it('ignores what is not a message of its own', async ({ host }) => {
+    await host.mount({ duration: 4000 });
+    await host.send('labkit:play');
+    await host.send(null);
+    await host.send({ type: 'play' });
+    await host.send({ type: 'labkit:seek', time: 'soon' });
     expect(c().rate).toBe(0);
     expect(c().elapsed).toBe(0);
   });
 
-  it('is off with `messages={false}`, in a still, and outside a presentation', async () => {
-    const off = await mountLab({ duration: 4000 }, { messages: false });
-    await send({ type: 'labkit:play' });
+  it('is off with `messages={false}`, in a still, and outside a presentation', async ({ host }) => {
+    const off = await host.mount({ duration: 4000 }, { messages: false });
+    await host.send({ type: 'labkit:play' });
     expect(c().rate).toBe(0);
     off.unmount();
 
-    const still = await mountLab({ duration: 4000 }, { still: true });
-    await send({ type: 'labkit:play' });
+    const still = await host.mount({ duration: 4000 }, { still: true });
+    await host.send({ type: 'labkit:play' });
     expect(c().rate).toBe(0);
     still.unmount();
 
     posted.mockClear();
-    await mountLab({ duration: 4000 }, { present: false });
-    await send({ type: 'labkit:play' });
+    await host.mount({ duration: 4000 }, { present: false });
+    await host.send({ type: 'labkit:play' });
     expect(c().rate).toBe(0);
     expect(states()).toHaveLength(0);
   });

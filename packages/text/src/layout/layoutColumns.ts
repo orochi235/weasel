@@ -35,11 +35,22 @@ const REF = 5;
 const EMPTY_NUM: number[] = [];
 const EMPTY_REF: unknown[] = [];
 
+/** Recycled columns, for {@link LayoutColumns.take}. Sized for a frame of
+ *  HUD labels, each of which recycles its last frame's layout. */
+const spare: LayoutColumns[] = [];
+const SPARE_MAX = 1024;
+
 /** Every code point of one layout. Index `i` is a code point's place in the
  *  text, in logical order, newlines left out. */
 export class LayoutColumns {
   num: number[];
   ref: unknown[];
+  /** The layout's line boxes, its `lines`. A recycled layout's are refilled
+   *  by the next layout to take its columns. */
+  readonly boxes: LineBox[] = [];
+  /** The paint cache's paintings of this layout, kept here rather than in a
+   *  map keyed by the layout, so that recycling one deletes no map entry. */
+  readonly paintings: unknown[] = [];
   /** The layout cache's record of who can still reach this layout: runs
    *  arrays it is filed under, whether its structural list holds it, and
    *  whether any caller was handed it to keep. Only a layout with none of the
@@ -48,19 +59,37 @@ export class LayoutColumns {
   listed = false;
   pinned = false;
 
-  constructor(size: number) {
+  private constructor(size: number) {
     this.num = takeDoubles(size * NUM);
     this.ref = takeRefs(size * REF);
   }
 
-  /** Give the arrays back to the pool. A line box still reading these columns
-   *  afterwards reads nothing, rather than another layout's numbers. */
+  /** Columns for `size` code points: a recycled layout's, refilled, when the
+   *  pool holds one. */
+  static take(size: number): LayoutColumns {
+    const cols = spare.pop();
+    if (cols === undefined) return new LayoutColumns(size);
+    cols.num = takeDoubles(size * NUM);
+    cols.ref = takeRefs(size * REF);
+    return cols;
+  }
+
+  /** Give the arrays back to the pool, and these columns with their line
+   *  boxes to the next layout. A line box still held afterwards reads that
+   *  layout's code points, so only a layout nobody holds is recycled. */
   recycle(): void {
     giveDoubles(this.num);
-    this.ref.fill(undefined);
-    giveRefs(this.ref);
+    // A loop, not `fill`, which Chromium's allocation profile charged 400 bytes a call.
+    const { ref } = this;
+    for (let i = 0; i < ref.length; i++) ref[i] = undefined;
+    giveRefs(ref);
     this.num = EMPTY_NUM;
     this.ref = EMPTY_REF;
+    this.paintings.length = 0;
+    this.owners = 0;
+    this.listed = false;
+    this.pinned = false;
+    if (spare.length < SPARE_MAX) spare.push(this);
   }
 
   /** Store code point `i`: entry `e`, set at `x` on a baseline at `baselineY`,
@@ -158,8 +187,10 @@ export class LineBox implements LaidOutLineBox {
   srcEnd: number;
   justified: boolean;
   readonly #cols: LayoutColumns;
-  readonly #start: number;
-  readonly #count: number;
+  #start: number;
+  #count: number;
+  /** Whether a view was built, replacing its accessor with a value. */
+  #viewed = false;
 
   constructor(
     x0: number, y0: number, x1: number, y1: number, baselineY: number, srcEnd: number, justified: boolean,
@@ -171,15 +202,30 @@ export class LineBox implements LaidOutLineBox {
     Object.defineProperties(this, LineBox.#views);
   }
 
-  /** The line's code points in its layout's columns, for a reader that walks
-   *  them without building the views; null for a line built by hand. */
-  static span(line: LaidOutLineBox): { cols: LayoutColumns; start: number; count: number } | null {
-    return line instanceof LineBox ? { cols: line.#cols, start: line.#start, count: line.#count } : null;
+  /** Set this box to another line of the same columns, as the constructor
+   *  would, its views unbuilt again. */
+  refill(
+    x0: number, y0: number, x1: number, y1: number, baselineY: number, srcEnd: number, justified: boolean,
+    start: number, count: number,
+  ): this {
+    this.x0 = x0; this.y0 = y0; this.x1 = x1; this.y1 = y1;
+    this.baselineY = baselineY; this.srcEnd = srcEnd; this.justified = justified;
+    this.#start = start; this.#count = count;
+    if (this.#viewed) {
+      this.#viewed = false;
+      Object.defineProperties(this, LineBox.#views);
+    }
+    return this;
   }
 
-  /** The columns a line reads, without the object {@link span} builds. */
+  /** The columns a line reads; null for a line built by hand. */
   static columns(line: LaidOutLineBox): LayoutColumns | null {
     return line instanceof LineBox ? line.#cols : null;
+  }
+
+  /** Where a line built by layout starts in its columns; 0 for one built by hand. */
+  static start(line: LaidOutLineBox): number {
+    return line instanceof LineBox ? line.#start : 0;
   }
 
   /** How many code points the line holds, without building a view. */
@@ -189,11 +235,13 @@ export class LineBox implements LaidOutLineBox {
 
   static #views: PropertyDescriptorMap = {
     cells: lazy('cells', (l: LineBox) => {
+      l.#viewed = true;
       const out: LaidOutCell[] = new Array(l.#count);
       for (let pos = 0; pos < l.#count; pos++) out[pos] = l.#cols.cell(l.#start, pos);
       return out;
     }),
     glyphs: lazy('glyphs', (l: LineBox) => {
+      l.#viewed = true;
       const out: PlacedGlyph[] = new Array(l.#count);
       for (let slot = 0; slot < l.#count; slot++) {
         out[slot] = l.#cols.glyph(l.#start, l.#cols.visual(l.#start, slot), blankGlyph());

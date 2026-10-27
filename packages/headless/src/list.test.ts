@@ -50,4 +50,22 @@ describe('rovingKey', () => {
     expect(rovingKey(items, 1, 'ArrowLeft', row)).toEqual({ handled: true, at: 3 });
     expect(rovingKey(items, 1, 'ArrowDown', row)).toEqual({ handled: false });
   });
+  it('moves on all four arrows for a list laid out both ways', () => {
+    const both = { ...shape, orientation: 'both' as const };
+    expect(rovingKey(items, 1, 'ArrowRight', both)).toEqual({ handled: true, at: 3 });
+    expect(rovingKey(items, 1, 'ArrowDown', both)).toEqual({ handled: true, at: 3 });
+    expect(rovingKey(items, 3, 'ArrowLeft', both)).toEqual({ handled: true, at: 1 });
+    expect(rovingKey(items, 3, 'ArrowUp', both)).toEqual({ handled: true, at: 1 });
+  });
+  it('swaps Left and Right right to left, and leaves Up and Down alone', () => {
+    const rtl = { orientation: 'both' as const, dir: 'rtl' as const };
+    expect(rovingKey(items, 1, 'ArrowLeft', rtl)).toEqual({ handled: true, at: 2 });
+    expect(rovingKey(items, 1, 'ArrowRight', rtl)).toEqual({ handled: true, at: 0 });
+    expect(rovingKey(items, 1, 'ArrowDown', rtl)).toEqual({ handled: true, at: 2 });
+    expect(rovingKey(items, 1, 'ArrowUp', { dir: 'rtl' })).toEqual({ handled: true, at: 0 });
+  });
+  it('holds at an end without wrap', () => {
+    expect(rovingKey(items, 3, 'ArrowDown', { wrap: false })).toEqual({ handled: true, at: 3 });
+    expect(rovingKey(items, 0, 'ArrowUp', { wrap: false })).toEqual({ handled: true, at: 0 });
+  });
 });

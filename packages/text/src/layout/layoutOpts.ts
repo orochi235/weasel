@@ -73,19 +73,24 @@ export interface ResolvedLayoutOpts {
   tabSize: number;
 }
 
-/** Fill in the defaults `layoutRuns` lays out with. */
-export function resolveLayoutOpts(opts: LayoutRunsOpts): ResolvedLayoutOpts {
-  return {
-    maxWidth: opts.maxWidth,
-    alignWidth: opts.alignWidth ?? opts.maxWidth,
-    lineHeight: opts.lineHeight,
-    align: opts.align,
-    justify: opts.justify === true || opts.align === 'justify',
-    bidi: layoutBidi(opts),
-    shaper: layoutShaper(opts),
-    direction: opts.direction ?? 'auto',
-    tabSize: opts.tabSize ?? DEFAULT_TAB_SIZE,
-  };
+/** Fill in the defaults `layoutRuns` lays out with: into `out`, when given. */
+export function resolveLayoutOpts(
+  opts: LayoutRunsOpts,
+  out: ResolvedLayoutOpts = {
+    maxWidth: 0, alignWidth: 0, lineHeight: 0, align: 'left', justify: false,
+    bidi: null, shaper: null, direction: 'auto', tabSize: 0,
+  },
+): ResolvedLayoutOpts {
+  out.maxWidth = opts.maxWidth;
+  out.alignWidth = opts.alignWidth ?? opts.maxWidth;
+  out.lineHeight = opts.lineHeight;
+  out.align = opts.align;
+  out.justify = opts.justify === true || opts.align === 'justify';
+  out.bidi = layoutBidi(opts);
+  out.shaper = layoutShaper(opts);
+  out.direction = opts.direction ?? 'auto';
+  out.tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE;
+  return out;
 }
 
 /** The bidi engine `opts` lays out with: its own, else the registered one. */

@@ -10,7 +10,7 @@
  */
 import type { InheritedPaint } from './inheritedPaint';
 import {
-  coordsFrom, cubicContoursToPath, pathToCubicContours, worldCoords, type Path, type PolygonPath,
+  cubicContoursToPath, joinPaths, pathToCubicContours, type Path, type PolygonPath,
 } from '@weasel-js/geom';
 import {
   resolveFill, resolveStroke, type Fill, type Inherit, type PaintedFill, type PaintedStroke, type Stroke,
@@ -62,29 +62,5 @@ export function derivedPartsOf(path: Path | null | undefined): readonly DerivedP
 }
 
 function concatPaths(paths: readonly Path[]): PolygonPath {
-  const polys = paths.map((p) => (p.kind === 'rect' ? cubicContoursToPath(pathToCubicContours(p)) : p));
-  let commands = 0;
-  let coords = 0;
-  for (const p of polys) {
-    commands += p.commands.length;
-    coords += p.coords.length;
-  }
-  // Every part is measured from the first one's origin.
-  const origin = polys[0]?.origin;
-  const out: PolygonPath = {
-    kind: 'polygon',
-    commands: new Uint8Array(commands),
-    coords: new Float32Array(coords),
-    fillRule: 'nonzero',
-    ...(origin ? { origin } : {}),
-  };
-  let ci = 0;
-  let xi = 0;
-  for (const p of polys) {
-    out.commands.set(p.commands, ci);
-    out.coords.set(p.origin === origin ? p.coords : coordsFrom(origin, worldCoords(p)), xi);
-    ci += p.commands.length;
-    xi += p.coords.length;
-  }
-  return out;
+  return joinPaths(paths.map((p) => (p.kind === 'rect' ? cubicContoursToPath(pathToCubicContours(p)) : p)));
 }

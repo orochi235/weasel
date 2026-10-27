@@ -23,6 +23,7 @@
 
 import type { GlMat3, Path } from '@weasel-js/geom';
 import { PATH_L, PATH_M, PATH_Z, polygonFromPoints } from '@weasel-js/geom';
+import type { ClipRect } from './batchClip';
 
 /** Half-planes one set of clips can hold, nested clips' together. */
 export const HULL_PLANES = 8;
@@ -103,6 +104,50 @@ export function hullOf(path: Path, m: GlMat3, map: WindowMap): Hull | null {
   const hull = buildHull(path, m, map);
   built.set(path, { m: Float64Array.of(m[0], m[1], m[3], m[4], m[6], m[7]), map, hull });
   return hull;
+}
+
+/** A rect clip on the hull grid: the rect staged geometry is cut to, and the
+ *  same rect as a hull, for an item the cut refuses. */
+export interface SnappedRect {
+  readonly rect: ClipRect;
+  readonly hull: Hull;
+}
+
+const snappedRects = new WeakMap<Hull, SnappedRect>();
+
+/**
+ * An axis-aligned rect clip snapped to the grid `hullOf` uses, or `null` where
+ * `map` turns the axes. The cut edges and the half-planes then run through the
+ * same points, so an item cut on the CPU and one tested in the shader keep the
+ * same pixels.
+ */
+export function snappedRectOf(path: Path, m: GlMat3, map: WindowMap): SnappedRect | null {
+  if (map.bx !== 0 || map.ay !== 0) return null;
+  const hull = hullOf(path, m, map);
+  if (hull === null) return null;
+  let snapped = snappedRects.get(hull);
+  if (snapped === undefined) {
+    snapped = { rect: boundsOf(hull.path), hull };
+    snappedRects.set(hull, snapped);
+  }
+  return snapped;
+}
+
+function boundsOf(path: Path): ClipRect {
+  if (path.kind === 'rect') {
+    return { x0: path.x, y0: path.y, x1: path.x + path.width, y1: path.y + path.height };
+  }
+  const ox = path.origin?.x ?? 0;
+  const oy = path.origin?.y ?? 0;
+  const c = path.coords;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i < c.length; i += 2) {
+    const x = c[i] + ox;
+    const y = c[i + 1] + oy;
+    if (x < x0) x0 = x; if (x > x1) x1 = x;
+    if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  return { x0, y0, x1, y1 };
 }
 
 function sameTransform(a: Float64Array, m: GlMat3): boolean {

@@ -186,7 +186,7 @@ function LabRuntime({
 
   useFocusPick(labBody, store, setFocusPick);
   const options = { transport, messages };
-  const presentation = useLabPresentation(start, focusedTrialId, labBody, clocks, options);
+  const presentation = useLabPresentation(start, focusedTrialId, labBody, clocks, store, options);
   const presenting = presentation.active;
   const workspacePanels = useMemo(() => panelsOf(undockedPanels), [undockedPanels]);
   const resolvedMode = useResolvedColorMode(modeValue);

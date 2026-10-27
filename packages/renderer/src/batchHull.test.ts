@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mat3, pathFromD, type GlMat3 } from '@weasel-js/geom';
-import { concatHulls, hullOf, windowMap, HULL_PLANES, type HullSet } from './batchHull';
+import { concatHulls, hullOf, snappedRectOf, windowMap, HULL_PLANES, type HullSet } from './batchHull';
 
 /** An 800×600 frame at dpr 1, its projection as `u_proj` holds it. */
 const MAP = windowMap(mat3.toUniform(mat3.screenToClip(800, 600)), [0, 0], 800, 600);
@@ -70,5 +70,35 @@ describe('hullOf', () => {
     const both = concatHulls(a, a)!;
     expect(both.count).toBe(8);
     expect(concatHulls(both, a)).toBeNull();
+  });
+});
+
+describe('snappedRectOf', () => {
+  const rect = (x: number, y: number, width: number, height: number) => ({ kind: 'rect' as const, x, y, width, height });
+
+  it('moves a rect clip\'s edges to the nearest sixteenth of a pixel', () => {
+    const { rect: r } = snappedRectOf(rect(10.03, 20.47, 30.5, 9.99), ID, MAP)!;
+    expect(r).toEqual({ x0: 10, y0: 20.5, x1: 40.5, y1: 30.4375 });
+  });
+
+  it('keeps the pixel centers its hull keeps, ties going the rasterizer\'s way', () => {
+    // Edges through pixel centers and a sixteenth either side of them.
+    for (const [x, y, w, h] of [[10.5, 20.5, 7, 5], [10.5625, 20.4375, 6.875, 5.125], [3.97, 8.03, 4.06, 3.94]]) {
+      const { rect: r, hull } = snappedRectOf(rect(x, y, w, h), ID, MAP)!;
+      for (let px = 0; px < 24; px++) {
+        for (let py = 0; py < 32; py++) {
+          // A screen pixel center; window y = 600 - screen y. The left and
+          // bottom-in-window (bottom-on-screen) edges keep a center on them.
+          const cx = px + 0.5;
+          const cy = py + 0.5;
+          const kept = cx >= r.x0 && cx < r.x1 && cy > r.y0 && cy <= r.y1;
+          expect(inside(hull.set, px, 599 - py)).toBe(kept);
+        }
+      }
+    }
+  });
+
+  it('declines a window map that turns the axes', () => {
+    expect(snappedRectOf(rect(0, 0, 10, 10), ID, { ...MAP, bx: 1 })).toBeNull();
   });
 });

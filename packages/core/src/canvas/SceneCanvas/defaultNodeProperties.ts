@@ -308,6 +308,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[]; boo
                         letterSpacing: { kind: 'number', display: TWO_PLACES, name: 'Tracking', description: 'Extra advance per glyph, world units.', absentIsDefault: true, default: 0, step: 0.1 },
                         textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', absentIsDefault: true, default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: ['–'] }, { value: 'uppercase', label: 'Uppercase', short: ['AA'] }, { value: 'lowercase', label: 'Lowercase', short: ['aa'] }, { value: 'capitalize', label: 'Capitalize', short: ['Aa'] }] },
                         fontVariantCaps: { kind: 'enum', name: 'Small caps', description: 'Draw lowercase letters as smaller capitals. The text itself is unchanged.', absentIsDefault: true, default: 'normal', control: 'toggle', options: [{ value: 'normal', label: 'Normal', short: ['–'] }, { value: 'small-caps', label: 'Small caps', short: ['Sc'] }] },
+                        lang: { kind: 'string', name: 'Language', description: 'A BCP 47 tag, such as sr or ur, that picks the forms a font draws for that language. Empty means none.', default: '' },
                       },
                     },
                     paragraph: {

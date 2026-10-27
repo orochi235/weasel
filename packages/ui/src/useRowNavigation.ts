@@ -1,3 +1,4 @@
+import { rovingKey } from '@weasel-js/headless';
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { nudgeOf } from './nudgeKey';
 import { modsOf, type PressModifiers } from './useReorderDragList';
@@ -59,13 +60,8 @@ export interface RowNavigation<E extends HTMLElement> {
   onKeyDown(id: string, e: KeyboardEvent): boolean;
 }
 
-/** The row Up, Down, Home and End go to from row `i` of `n`. */
-const STEPS: Partial<Record<string, (i: number, n: number) => number>> = {
-  ArrowDown: (i) => i + 1,
-  ArrowUp: (i) => i - 1,
-  Home: () => 0,
-  End: (_, n) => n - 1,
-};
+/** Up and Down stop at the ends of a list of rows, every one of which takes focus. */
+const ROWS = { wrap: false } as const;
 
 /**
  * One row of a list in the tab order, and the keys that move between rows: Up/Down and Home/End, Shift to extend a
@@ -189,9 +185,9 @@ function rowKeyHandler({ rows, opts, typeahead, focus, focusLater, go }: KeyCtx)
       if (opts.onNudge(id, delta) !== false) focusLater(id);
       return true;
     }
-    const step = STEPS[e.key];
-    if (step) {
-      go(id, step(i, rows.length), e.shiftKey);
+    const step = rovingKey(rows, i, e.key, ROWS);
+    if (step.handled) {
+      if (step.at !== null) go(id, step.at, e.shiftKey);
       return true;
     }
     if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && opts.tree) return treeKey(opts.tree, id, i, e.key);

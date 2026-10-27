@@ -260,12 +260,6 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [recheck] WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
-### Pathfinder follow-ups (post-v1)
-
-- **(P3) [agent] An empty boolean group does not survive SVG.** A boolean group whose result is empty exports as just
-  its hidden children, with no result path, so it imports back as a plain hidden group rather than a boolean group
-  (2026-10-27).
-
 ## Rendering & paint
 
 - **(P3) [agent] Renderer: geometry far from the origin is still single precision.** The transform stack
@@ -273,19 +267,12 @@ Owner tags, after the priority (2026-10-26):
   `u_origin`), and a gradient's or a pattern's paint space is rebased the same way (`bindGradient`
   measures from the gradient's own start, `bindPattern` drops whole tiles). Both are proven by
   float32 arithmetic (`draw.precision.test.ts`, `draw.paintPrecision.test.ts`), not in a browser
-  far from the origin. Near it, `gradientStart.browser.test.ts` shows the shader honors the rebase:
-  a linear, radial and conic ramp each land where their paint says in headless Chromium on the
-  fleet, and all three fail with `bindGradient` handing over the unrebased inverse (2026-10-21).
-  Still float32 for a consumer's own stage, which has no origin to rebase against: the model (`u_view` on a
-  shader command, `u_model` in a registered paint kind) and the paint matrix a registered kind asks for
-  (`PaintBindContext.spaceInverse`). A path's coordinates can be measured from `PolygonPath.origin`
-  (2026-10-27), and every reader of `coords` adds it through `worldCoords`/`pathPoint`
-  (`geom/src/paths/pathOrigin.ts`). The pen tool, `pathFromD`, the booleans and SVG import give a path past
-  `ORIGIN_THRESHOLD` (2^14) an origin of its own. Three cases still write float32 world coords far out:
-  `transformPath` by default (resize, `pathInWorld`), an SVG element's own non-rotation `transform`, which
-  `svg/src/parse.ts` bakes in without `autoOrigin`, and `concatParts` in `text/src/glyphOutlines.ts`, which drops
-  an origin; apps/site's `CompoundPathsDemo` reads coords raw. A rect drawn on its own (`tessellateRect`) is still
-  built from float32 corners.
+  far from the origin. Near it, `gradientStart.browser.test.ts` shows the shader honors the rebase
+  (2026-10-21). A path's coords are measured from `PolygonPath.origin` past `ORIGIN_THRESHOLD`
+  (2^14) wherever geometry is made or mapped — `transformPath` by default, `joinPaths`, rect
+  tessellation (2026-10-27). Still float32 for a consumer's own stage, which has no origin to rebase
+  against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
+  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`).
 
 - **(P3) [agent] The tessellate rows of `tests/perf/bench/BASELINE.md` predate two deliberate costs.**
   Bisected on studio (2026-10-19), the node that measured the 2026-09-29 rows, which still
@@ -352,15 +339,11 @@ Owner tags, after the priority (2026-10-26):
   or OpenType bytes, and PDF export writes shaped glyphs by index since 966c37fdc. Text drawn from an atlas (baked or
   canvas) is still laid out one code point at a time, because atlases look glyphs up by code point and cannot draw
   a shaped glyph index. Open pieces:
-  - A ligature that spans several grapheme clusters puts its whole advance on its first code point, so a caret
-    inside it lands at its end. Splitting the advance across its grapheme ends needs the cluster's drawing
-    direction: right to left, the opening code point is rightmost, so its glyphs must shift left by the other
-    shares (`clusterSlot` in `packages/text/src/layout/shapedRuns.ts`).
   - Script pieces are cut over a fixed list of scripts. Any other script is one piece, and its direction is
     guessed from the right-to-left Unicode blocks.
-  - Language is never set, so locale-specific forms (Serbian, Urdu digits) are not selected. Runs carry no
-    language at all: it needs a `lang` on the run and style, carried through `resolveRuns` and the layout cache
-    key, a `language` argument on `TextShaper.shape`, and the HarfBuzz buffer's language set from it.
+  - `lang` on a run or `TextStyle` (2026-10-27) reaches only the shaper. SVG import and export do not read or write
+    `xml:lang`/`lang`, the edit overlay does not set the `lang` attribute,
+    and `textTransform` uppercases without it, so Turkish dotted i does not come out right.
   - harfbuzzjs awaits at its module's top level, so a bundler targeting below ES2022 fails on it; whether Vite
     pre-bundling loses its `.wasm` is unchecked (the README advises `optimizeDeps.exclude`).
   - PDF export of a mark that is its own cluster (Arabic fatha) reads back in poppler with a space before it,
@@ -475,12 +458,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P4) [agent] A headless-component layer shared by DOM and WebGL chrome.** `@weasel-js/headless` (added
   2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type (`rovingKey`,
   `stepStop`, `typeaheadStep`), and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
-  `@weasel-js/menu` runs each menu level on the list half, ui's `useRowNavigation` types ahead through it, `Hud` is a
-  `FocusScope<Widget>`, and ui's `domFocusScope(root)` is the same contract over DOM elements. Left, in order: a
-  measure/draw contract a DOM component and a hud widget both implement; then porting a button and a list onto it.
-  The list port should also move ui's arrow/Home/End stepping onto `rovingKey`: `useRowNavigation`'s `STEPS` and
-  `useRovingTabIndex`'s `rovingTarget` are two more copies of it. A page that has both DOM controls and a hud canvas
-  still joins the two at `attach.ts`'s `wireFocus`, not through `FocusScope`.
+  `@weasel-js/menu` runs each menu level on the list half, ui's `useRowNavigation` and `useRovingTabIndex` step and
+  type ahead through it, `Hud` is a `FocusScope<Widget>`, and ui's `domFocusScope(root)` is the same contract over DOM
+  elements. Left, in order: a measure/draw contract a DOM component and a hud widget both implement; then porting a
+  button and a list onto it. A page that has both DOM controls and a hud canvas still joins the two at `attach.ts`'s
+  `wireFocus`, not through `FocusScope`.
 - **(P2) [maintainer] Publish `@weasel-js/headless` and `@weasel-js/shape` for the first time.** Both were added
   2026-10-27; each needs a first publish by hand, then `setup-trusted-publishing.mjs` and a committed
   `trust-pending.json` (`docs/releasing.md`). Until then `check:first-publish` fails the release job.
@@ -949,15 +931,13 @@ only story runner in the repo.
   its stories onto package specifiers first (2026-10-21); the tests would need the same.
 
 - **(P3) [agent] labkit's Lab-mounting tests stall for 20 s on the fleet now and then.** `Lab.messages.test.tsx`'s
-  "reports its state as it starts, on a change, and when asked" timed out on studio (0.4 of 10 cores busy) in
-  the batch-5 gate at 9d51e9d04, where it takes 62 ms locally, and its retry counted one state report too many,
-  presumably the timed-out attempt's lab still answering. `TrialTransport.test.tsx`'s "shares the chosen speed
-  between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both
-  2026-10-27). What they wait on is unknown: the next sighting wants the attempt's stack at the timeout.
-  "plays with the controls left off" has now read play rate 0 after a play message twice: at 041b87fa7, and on
-  main at 0125be239 (2026-10-27), in a run where four other `Lab.messages` tests timed out and passed on retry.
-  Its clock spans an hour, so it did not run out; a play message landing before the lab's listener is wired
-  under load is the likely shape (inferred, not checked).
+  "reports its state as it starts, on a change, and when asked" timed out on studio (0.4 of 10 cores busy) in the
+  batch-5 gate at 9d51e9d04, where it takes 62 ms locally, and `TrialTransport.test.tsx`'s "shares the chosen speed
+  between two transports over one clock" timed out once on main at 9666c02d4 and passed on retry (both 2026-10-27).
+  What they wait on is unknown: the next sighting wants the attempt's stack at the timeout. The follow-on failures
+  — a play rate of 0, one state report too many — were the timed-out attempt still sending messages to the next
+  lab; `Lab.messages` stops a test that has ended from doing so (2026-10-27). `TrialTransport.test.tsx` and other
+  files that mount a lab have no such guard.
 
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
@@ -1019,16 +999,18 @@ only story runner in the repo.
   logs lived in a session scratchpad and are not kept.
 
 - **(P2) [agent] HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.** With the readout
-  changing every frame the HUD allocates 1.95 MB a frame at 5,000 glyphs on a fixed camera against the DOM's 0.10
-  (msb-uai, 2026-10-27, down from 2.68; `tests/perf/hud-vs-dom.spec.ts`, README "What the HUD allocates"). A
-  layout's column and quad arrays now go back to a pool once no runs array files it, the structural list has evicted
-  it, and every caller only read it. What is left: `placeLine`'s line box and `layoutRuns`' lines and result (242,
-  174 KB); `paintRuns` and `groupFor` building the returned groups (177, 88); 179 under `dropRuns`, which nothing it
-  visibly does should allocate and an in-process Node profile of the same loop does not show;
-  `resolveFontVariantInternal`'s result object and two key strings per run (95; caching it per font entry would
-  change result identity); `resolveTextStyle` and `resolveRuns` building the command (74, 69). Main-thread time did
-  not move clearly: three later runs put moving 5,000 glyphs at 3.23–4.33 ms against 3.46 before. A still HUD drawn
-  through `drawLayers` costs the main thread what the DOM does (README, "A still HUD through `drawLayers`").
+  changing every frame the HUD allocates 978 KB a frame at 5,000 glyphs on a fixed camera against the DOM's 102
+  (msb-uai, 2026-10-27, down from 1,942; `tests/perf/hud-vs-dom.spec.ts`, README "What the HUD allocates"). A
+  recycled layout now hands its line boxes, paintings and groups to the next one, and the 180 KB once charged to
+  `dropRuns` was `Array.prototype.fill` in `LayoutColumns.recycle`. What is left, self KB a frame: `cachedCommands`
+  in the HUD (135); `layoutRuns` (111) and `breakLines` (77), neither of whose visible work should allocate
+  (`measureRuns` in `layoutEntries.ts` still walks runs with a `forEach` closure and text with `for...of`);
+  `resolveRuns` (69) and `resolveTextStyle` (56) building the command; `paintRunsInto` (49) and `groupFor` (37);
+  `resolveFontVariantInternal`'s result object (36; caching it per font entry would change result identity);
+  `graphemeEnds` (39). A run with Chromium's inlining off (`--js-flags=--no-turbo-inlining --no-maglev-inlining`)
+  shows where a function's allocation really sits. Main-thread time fell, with ranges apart in two of four cells,
+  from one run each. A still HUD drawn through `drawLayers` costs the main thread what the DOM does (README, "A
+  still HUD through `drawLayers`").
 
 - **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
@@ -1095,11 +1077,14 @@ only story runner in the repo.
     1/16 px, and the stencil, when needed, is drawn from the same corners. `hullClip.browser.test.ts`
     (SwiftShader) and `clip-cost.spec.ts` (teitou, ANGLE Metal, 0 differing pixels) pin the agreement. 512
     slanted clips on a single-sampled canvas: 32 draws and 0.46 ms a frame, against 1536 draws and 14.93 ms on
-    the stencil (`tests/perf/recorded/hull-clip-2026-10-27/`). What still flushes: every such clip on a
+    the stencil (`tests/perf/recorded/hull-clip-2026-10-27/`). A rect clip there is snapped to the same grid
+    and carries itself as a hull, so a slanted item across it stays in the run too: 512 such clips, 32 draws
+    and 0.78 ms against 1536 draws and 6.01 ms on the stencil, 0 differing pixels
+    (`tests/perf/recorded/rect-clip-hull-2026-10-27/`). What still flushes: every such clip on a
     multisampled target, which is the browser default (WebGL2 has no `gl_SampleMask`, and scaling alpha by
     sample coverage leaves the color beneath showing at the clip edge where layers stack, inferred from the
-    blend math); a non-convex or curved clip; nesting past 8 planes; a clip inside a retained or effect target;
-    and a rect clip with a slanted item crossing it, which needs rect clips snapped to the same grid.
+    blend math); a non-convex or curved clip; nesting past 8 planes, rect clips included (three nested
+    rect clips are 12); and a clip inside a retained or effect target.
   - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
     reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and
     made a frame of 20,000 stroked rects 30% slower, with both renderers interleaved in one page.

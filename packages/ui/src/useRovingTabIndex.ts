@@ -1,3 +1,4 @@
+import { rovingKey } from '@weasel-js/headless';
 import {
   useCallback,
   useEffect,
@@ -63,7 +64,7 @@ export function inlineDirection(el: Element): RovingDirection {
   return getComputedStyle(el).direction === 'rtl' ? 'rtl' : 'ltr';
 }
 
-const MIRRORED: Record<string, string> = { ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
+const isStop = (enabled: boolean) => enabled;
 
 /** Where `key` takes focus from `current`, or null if it does not move it.
  *  Arrows skip disabled items and wrap; Home and End go to the first and last
@@ -75,25 +76,8 @@ export function rovingTarget(
   orientation: RovingOrientation = 'both',
   dir: RovingDirection = 'ltr',
 ): number | null {
-  const key = dir === 'rtl' ? (MIRRORED[pressed] ?? pressed) : pressed;
-  const n = enabled.length;
-  const horizontal = orientation !== 'vertical';
-  const vertical = orientation !== 'horizontal';
-  let step = 0;
-  if ((horizontal && key === 'ArrowRight') || (vertical && key === 'ArrowDown')) step = 1;
-  else if ((horizontal && key === 'ArrowLeft') || (vertical && key === 'ArrowUp')) step = -1;
-  else if (key === 'Home') {
-    const i = enabled.indexOf(true);
-    return i < 0 ? null : i;
-  } else if (key === 'End') {
-    const i = enabled.lastIndexOf(true);
-    return i < 0 ? null : i;
-  } else return null;
-  for (let k = 1; k <= n; k++) {
-    const i = (((current + step * k) % n) + n) % n;
-    if (enabled[i]) return i;
-  }
-  return null;
+  const step = rovingKey(enabled, current, pressed, { canStop: isStop, orientation, dir });
+  return step.handled ? step.at : null;
 }
 
 /** Where `key` takes focus from `current` in a grid whose `rows` list item indices in reading

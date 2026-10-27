@@ -89,6 +89,15 @@ describe('loadShaper — features, outlines and mixed scripts', () => {
     expect(mixed.every((g) => !g.rtl)).toBe(true);
   });
 
+  it('selects a language\'s own forms: Sindhi meem differs from the default', () => {
+    const plain = shaper.shape(ARABIC, 'م');
+    const sindhi = shaper.shape(ARABIC, 'م', [], 'sd');
+    expect(sindhi[0].gid).not.toBe(plain[0].gid);
+    // A language whose forms the face does not distinguish draws the default.
+    expect(gids(shaper.shape(ARABIC, 'م', [], 'ar'))).toEqual(gids(plain));
+    expect(shaper.shape(ARABIC, 'م', [], '')).toBe(plain);
+  });
+
   it('hands back the same array for the same request', () => {
     expect(shaper.shape(LATIN, 'Abc')).toBe(shaper.shape(LATIN, 'Abc'));
   });

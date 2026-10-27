@@ -4,7 +4,7 @@ import {
   type Path, type PolygonPath, PATH_L, PATH_M, PATH_Z, getMarker, resolveMarkerSize, solid,
   type MarkerEntry, type MarkerPaint,
 } from '@weasel-js/core';
-import { worldCoords } from '@weasel-js/geom';
+import { joinPaths, worldCoords } from '@weasel-js/geom';
 import type { Matrix, SvgNode, ScreenLength } from './types';
 import { multiply, parseTransform } from './transform';
 import { styleAt } from './styleAt';
@@ -272,15 +272,9 @@ function markerEntryFrom(
     onWarn(`<marker id="${id}"> paints its parts differently; all take the first part's paint`);
   }
 
-  let commandCount = 0, coordCount = 0;
-  for (const p of parts) { commandCount += p.path.commands.length; coordCount += p.path.coords.length; }
-  const commands = new Uint8Array(commandCount);
-  const coords = new Float32Array(coordCount);
-  let ci = 0, pi = 0;
-  for (const p of parts) {
-    commands.set(p.path.commands, ci); ci += p.path.commands.length;
-    coords.set(worldCoords(p.path), pi); pi += p.path.coords.length;
-  }
+  const joined = joinPaths(parts.map((p) => p.path));
+  const commands = joined.commands;
+  const coords = worldCoords(joined);
   const fillRule = parts[0].path.fillRule ?? 'nonzero';
 
   const inset = markerInsetAttr(el);

@@ -1,6 +1,7 @@
 import earcut from 'earcut';
 import { forEachSegment, PATH_M, PATH_L, PATH_Z, PATH_C, PATH_Q } from '../commands';
 import { resolveCorners } from '../paths/corners';
+import { coordsFrom, originFor } from '../paths/pathOrigin';
 import { rectToContour } from '../box';
 import type { Path, PolygonPath, RectPath } from '../path';
 import { fillsOpenSubpaths } from '../openFill';
@@ -30,13 +31,15 @@ export function tessellate(path: Path, opts: TessellateOptions = {}): Mesh {
 }
 
 function tessellateRect(p: RectPath): Mesh {
-  const { x, y, width: w, height: h } = p;
+  const corners = rectToContour(p.x, p.y, p.width, p.height);
+  const origin = originFor(corners);
   return {
-    vertices: Float32Array.from(rectToContour(x, y, w, h)),
+    vertices: coordsFrom(origin, corners),
     indices: new Uint32Array([0, 1, 2, 0, 2, 3]),
     anchorA: new Uint32Array([0, 1, 2, 3]),
     anchorB: new Uint32Array([0, 1, 2, 3]),
     anchorT: new Float32Array([0, 0, 0, 0]),
+    ...(origin ? { origin } : {}),
   };
 }
 

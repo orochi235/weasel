@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IDENTITY_POSE_COMPOSITION,
   DEFAULT_HANDLE_SIZE,
   SceneCanvas,
+  asPolygonPath,
   composePath,
   pathPoseDescriptor,
   PathBuilder,
@@ -10,6 +11,7 @@ import { IDENTITY_POSE_COMPOSITION,
   asNodeId,
   textCommandFromRuns,
 } from '@weasel-js/core';
+import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
 import type { Path } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -61,25 +63,7 @@ function duck(): Path {
   const eyeLocal = polygonFromPoints([
     { x: 95, y: -35 }, { x: 102, y: -35 }, { x: 102, y: -28 }, { x: 95, y: -28 },
   ]);
-  return composeMany([body, composePath(body, headLocal), composePath(body, beakLocal), composePath(body, eyeLocal)]);
-}
-
-function composeMany(parts: Path[]): Path {
-  const b = new PathBuilder();
-  for (const p of parts) {
-    if (p.kind !== 'polygon') continue;
-    const { commands, coords } = p;
-    let ci = 0;
-    for (let i = 0; i < commands.length; i++) {
-      const c = commands[i];
-      if (c === 0) { b.moveTo(coords[ci], coords[ci + 1]); ci += 2; }
-      else if (c === 1) { b.lineTo(coords[ci], coords[ci + 1]); ci += 2; }
-      else if (c === 2) { b.curveTo(coords[ci], coords[ci + 1], coords[ci + 2], coords[ci + 3], coords[ci + 4], coords[ci + 5]); ci += 6; }
-      else if (c === 3) { b.quadTo(coords[ci], coords[ci + 1], coords[ci + 2], coords[ci + 3]); ci += 4; }
-      else if (c === 4) { b.close(); }
-    }
-  }
-  return b.build();
+  return joinPaths([body, ...[headLocal, beakLocal, eyeLocal].map((p) => asPolygonPath(composePath(body, p)))]);
 }
 
 function hamburglar(): Path {

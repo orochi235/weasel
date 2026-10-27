@@ -34,7 +34,7 @@ export function rangeWeight(
  *  have no node-level counterpart, so they only ever come from the range. */
 const OVERRIDES = [
   'fontFamily', 'fontSize', 'letterSpacing', 'fill', 'script', 'baselineShift', 'fontScale',
-  'textTransform', 'fontVariantCaps', 'rotate',
+  'textTransform', 'fontVariantCaps', 'rotate', 'lang',
 ] as const;
 
 /**
@@ -65,6 +65,7 @@ export function effectiveRangeStyle(
     fontVariantCaps: resolved.fontVariantCaps,
   };
   if (resolved.fill !== null) out.fill = resolved.fill;
+  if (resolved.lang !== undefined) out.lang = resolved.lang;
   Object.assign(out, rangeWeight(range, style));
   for (const key of FLAGS) {
     const on = nodeHasFlag(node, key);

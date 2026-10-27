@@ -197,6 +197,10 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       if (own && own.kind !== 'group' && kids?.kind === 'group' && kids.boolean) {
         return visitMark(n, own, kids, more, parentId, k, takes);
       }
+      // A boolean group whose result is empty is written with no path before its operands.
+      if (own?.kind === 'group' && own.boolean) {
+        return visitMark(n, emptyResultOf(n), own, [kids, ...more].filter((c) => c !== undefined), parentId, k, takes, true);
+      }
       if (own && own.kind !== 'group' && (kids === undefined || kids.kind === 'group') && options.mark?.(n)) {
         if (n.clip) return visit(clippingGroup(n), parentId, inherited, from);
         return visitMark(n, own, kids, more, parentId, k, takes);
@@ -233,7 +237,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
   // A mark its leaf leaves out leaves its children to its parent.
   const visitMark = (
     n: SvgGroupNode, own: SvgLeafNode, kids: SvgGroupNode | undefined, more: readonly SvgNode[],
-    parentId: string | null, k: number, takes: { fill: boolean; stroke: boolean },
+    parentId: string | null, k: number, takes: { fill: boolean; stroke: boolean }, empty = false,
   ): SvgDraftPose | null => {
     const inner = groupTakes(n, takes, k);
     const pose = visit(own, parentId, k, inner);
@@ -251,7 +255,11 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       if (kids.hidden && !kids.boolean) for (const d of drafts.slice(at)) if (d.parentId === under) d.hidden = true;
     }
     for (const c of more) poses.push(visit(c, under, k, inner));
-    return unionAABB(poses);
+    if (!empty) return unionAABB(poses);
+    // An empty result has no box of its own, so the mark takes its operands'.
+    const box = unionAABB(poses.slice(1));
+    if (mark && box) mark.pose = box;
+    return box;
   };
 
   for (const n of nodes) visit(n, null, 1, NO_TAKES);
@@ -331,6 +339,15 @@ function containerPaint(
   return {
     ...(takes.fill ? { fill: INHERIT } : fill ? { fill: { paint: fadeFill(fill, k) } } : {}),
     ...(takes.stroke ? { stroke: INHERIT } : stroke ? { stroke: fadeStroke(stroke, k) } : {}),
+  };
+}
+
+/** The leaf a boolean group `n` draws when its result is empty: no outline, in `n`'s paint. */
+function emptyResultOf(n: SvgGroupNode): SvgLeafNode {
+  const path: Path = { kind: 'polygon', commands: new Uint8Array(0), coords: new Float32Array(0), fillRule: 'nonzero' };
+  return {
+    kind: 'path', path, fill: n.fill ?? { kind: 'none' },
+    ...(n.stroke ? { stroke: n.stroke } : {}), ...(n.inherits ? { inherits: n.inherits } : {}),
   };
 }
 

@@ -14,7 +14,7 @@ const RED = { paint: { kind: 'solid' as const, color: '#ff0000' } };
 const rect = (x: number, y: number): Path => ({ kind: 'rect', x, y, width: 100, height: 100 });
 
 /** A boolean group over a back square at (0, 0) and a front one at (50, 50). */
-function makeScene(op: string, framedAt?: number) {
+function makeScene(op: string, framedAt?: number, apart = 50) {
   const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const frame = framedAt === undefined
     ? null
@@ -23,7 +23,7 @@ function makeScene(op: string, framedAt?: number) {
     ...booleanGroupFields<RectPose>(), layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, parent: frame,
     data: { fill: RED, boolean: op },
   });
-  for (const [x, y] of [[0, 0], [50, 50]] as const) {
+  for (const [x, y] of [[0, 0], [apart, apart]] as const) {
     scene.add({ kind: 'mark', layer: 'main', parent: group, pose: { x, y, width: 100, height: 100 }, data: { path: rect(x, y), fill: RED } });
   }
   return scene;
@@ -67,5 +67,20 @@ describe('a boolean group in SVG', () => {
     const parsed = parseSvg(serializeSvg(exported('union')));
     const [g] = parsed.nodes as SvgGroupNode[];
     expect(g!.children[1]).toMatchObject({ boolean: 'union', hidden: true });
+  });
+
+  it('round-trips when its result is empty: no path, then its operands', () => {
+    const scene = makeScene('intersect', undefined, 200);
+    const [g] = svgNodesFromKit(scene as unknown as SvgKitTree) as SvgGroupNode[];
+    expect(g!.children.map((c) => c.kind)).toEqual(['group']);
+    const parsed = parseSvg(serializeSvg([g!]));
+    expect(parsed.warnings).toEqual([]);
+    let n = 0;
+    const drafts = svgNodesToKitDrafts(parsed, () => `n${n++}`);
+    expect(drafts.map((d) => [d.kind, d.parentId])).toEqual([['mark', null], ['mark', 'n0'], ['mark', 'n0']]);
+    expect(drafts[0]).toMatchObject({
+      boolean: 'intersect', pose: { x: 0, y: 0, width: 300, height: 300 }, data: { fill: { paint: { color: '#ff0000' } } },
+    });
+    expect(drafts.slice(1).every((d) => !d.hidden)).toBe(true);
   });
 });

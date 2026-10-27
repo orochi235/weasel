@@ -39,11 +39,15 @@ export interface Shaper {
    * Shape `text` set in the face whose font file is `face` (an sfnt: TrueType
    * or OpenType, not WOFF), with the OpenType `features` turned on.
    *
+   * `language` is a BCP 47 tag (`'sr'`, `'ur'`) and selects the face's forms
+   * for that language: Serbian Cyrillic italics, Urdu digits. Absent, the
+   * face's default forms are drawn.
+   *
    * Glyphs come in logical order: clusters by ascending `cluster`, and a
    * cluster's own glyphs in the order they are drawn, left to right. The array
    * is shared with later calls asking the same; never mutate it.
    */
-  shape(face: ArrayBuffer, text: string, features?: readonly string[]): readonly ShapedGlyph[];
+  shape(face: ArrayBuffer, text: string, features?: readonly string[], language?: string): readonly ShapedGlyph[];
   /** Em-space SVG path data for glyph `gid` of `face`, moved by `(dx, dy)`
    *  ems; y grows downward and the origin is the pen on the baseline. Null for
    *  a glyph with no contours. */
@@ -109,14 +113,17 @@ class HarfBuzzShaper implements Shaper {
     return f;
   }
 
-  shape(bytes: ArrayBuffer, text: string, features: readonly string[] = []): readonly ShapedGlyph[] {
+  shape(
+    bytes: ArrayBuffer, text: string, features: readonly string[] = [], language?: string,
+  ): readonly ShapedGlyph[] {
     const rec = this.#face(bytes);
-    const key = `${features.join(',')}\u0000${text}`;
+    const lang = language || undefined;
+    const key = `${features.join(',')}\u0000${lang ?? ''}\u0000${text}`;
     const held = rec.shapes.get(key);
     if (held) return held;
     const hbFeatures = features.map((tag) => this.#feature(tag));
     const out: ShapedGlyph[] = [];
-    for (const piece of scriptPieces(text)) this.#piece(rec, text, piece, hbFeatures, out);
+    for (const piece of scriptPieces(text)) this.#piece(rec, text, piece, hbFeatures, lang, out);
     if (rec.shapes.size >= SHAPE_CACHE_LIMIT) rec.shapes.clear();
     rec.shapes.set(key, out);
     return out;
@@ -124,13 +131,17 @@ class HarfBuzzShaper implements Shaper {
 
   /** Shape `piece` of `text`, the rest of `text` around it as context, and
    *  append its glyphs to `out` in logical order. */
-  #piece(rec: FaceRecord, text: string, piece: ScriptPiece, features: HbFeature[], out: ShapedGlyph[]): void {
+  #piece(
+    rec: FaceRecord, text: string, piece: ScriptPiece, features: HbFeature[], lang: string | undefined,
+    out: ShapedGlyph[],
+  ): void {
     const hb = this.#hb;
     const { start, end, rtl } = piece;
     const buffer = new hb.Buffer();
     buffer.addText(text, start, end - start);
     buffer.setDirection(rtl ? hb.Direction.RTL : hb.Direction.LTR);
-    // Fills in the script and language; the direction set above stands.
+    if (lang !== undefined) buffer.setLanguage(lang);
+    // Fills in the script, and the language when none was set; what was set stands.
     buffer.guessSegmentProperties();
     // Marks keep clusters of their own, so each lands in the slot of the
     // character it was written as rather than merging into its base's.

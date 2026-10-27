@@ -192,6 +192,9 @@ export interface LaidOutRuns {
 const ENTRY_POOL: Entry[] = [];
 const ENTRIES: Entry[] = [];
 const CPS: number[] = [];
+/** The options of the layout running now, read into locals before anything
+ *  else can lay out. */
+const OPTS = resolveLayoutOpts({ maxWidth: 0, lineHeight: 0, align: 'left' });
 
 /**
  * Lay out `runs` into lines of placed glyphs. Wrapping, baselines and tracking
@@ -201,39 +204,43 @@ export function layoutRuns(
   runs: readonly ResolvedRun[],
   opts: LayoutRunsOpts,
 ): LaidOutRuns {
-  const o = resolveLayoutOpts(opts);
-  const entries = measureRuns(runs, o.tabSize, ENTRY_POOL, ENTRIES, o.shaper);
+  const {
+    maxWidth, alignWidth, lineHeight, align, justify, bidi, shaper, direction, tabSize,
+  } = resolveLayoutOpts(opts, OPTS);
+  const entries = measureRuns(runs, tabSize, ENTRY_POOL, ENTRIES, shaper);
   const cps = CPS;
   cps.length = entries.length;
   for (let k = 0; k < entries.length; k++) cps[k] = entries[k].cp;
-  const { bidi } = o;
   // Each paragraph is analyzed once; each line then asks for its own range,
   // because L1 resets trailing whitespace against a line's end.
   const paragraphs = bidi
-    ? analyzeParagraphs(bidi, cps, (i) => isHardLineBreak(cps[i]), o.direction)
+    ? analyzeParagraphs(bidi, cps, (i) => isHardLineBreak(cps[i]), direction)
     : null;
   if (!bidi) warnRtlWithoutEngine(cps);
 
-  const broken = breakLines(entries, cps, o.maxWidth, o.lineHeight);
+  const broken = breakLines(entries, cps, maxWidth, lineHeight);
   let size = 0;
-  for (const line of broken) size += line.entries.length;
-  const cols = new LayoutColumns(size);
-  const lines: LaidOutLineBox[] = [];
+  for (let i = 0; i < broken.length; i++) size += broken[i].entries.length;
+  const cols = broken.length > 0 ? LayoutColumns.take(size) : null;
+  const lines: LaidOutLineBox[] = cols !== null ? cols.boxes : [];
   let y = 0;
   let width = 0;
   let start = 0;
-  for (const line of broken) {
+  for (let i = 0; i < broken.length; i++) {
+    const line = broken[i];
     const order = orderLine(paragraphs, line.start, line.entries.length);
     // L4, done per line rather than during analysis: the same code point
     // mirrors in one run and not in another, and the level is known only now.
     if (bidi) line.entries = mirrorEntries(line.entries, order.levels, (cp) => bidi.mirror(cp), runs);
-    const reads = o.direction !== 'auto' ? o.direction
+    const reads = direction !== 'auto' ? direction
       : directionOfLevel(line.entries.length > 0 ? paragraphs?.baseLevel(line.start) ?? 0 : 0);
-    const placed = placeLine(line, y, order, resolveAlign(o.align, reads), o.alignWidth, o.justify, cols, start);
+    const placed = placeLine(
+      line, y, order, resolveAlign(align, reads), alignWidth, justify, cols!, start, i,
+    );
     start += line.entries.length;
-    lines.push(placed.box);
     width = Math.max(width, placed.inkWidth);
     y += line.height;
   }
+  lines.length = broken.length;
   return { lines, bounds: { width, height: y } };
 }

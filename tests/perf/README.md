@@ -402,12 +402,33 @@ three later runs of near-identical trees put the HUD at 5,000 glyphs on the movi
 4.14 and 4.33 ms. Measured on msb-uai on 2026-10-27, one run of each tree, at `22472a12b` and
 `f645651dd`; those and the later runs are in `recorded/hud-vs-dom-recycle-2026-10-27/`.
 
-What is left, at 5,000 glyphs: `placeLine` (242 KB, the line box) and `layoutRuns` (174, the
-lines array and the result); `paintRuns` (177) and `groupFor` (88), building the groups a
-painting returns; 179 under `dropRuns`, which nothing it visibly does should allocate and which
-an in-process Node profile of the same loop does not show; `resolveFontVariantInternal` (95, a
-result object and two key strings a run); and `resolveTextStyle` and `resolveRuns` building the
-new command (74 and 69).
+A fifth round reused the objects around those arrays. A recycled layout gives its line boxes and
+`lines` array to the next layout, and its paintings their groups, group lists and result objects to
+the next paintings; the layout cache refills the entries and variants `dropRuns` lets go and the
+structural entry it evicts. A layout's result object stays new, because the paint cache finds a runs
+array's own painting by layout identity. KB allocated a frame and renderer main thread in ms a
+frame, median [min–max] of 4 samples:
+
+| Camera | Glyphs | HUD before | HUD after | DOM after |
+|---|---:|---:|---:|---:|
+| fixed  | 2,500 |   991, 2.04 [2.04–2.12] |   510, 1.78 [1.69–1.83] |  73, 2.21 [2.14–2.37] |
+| fixed  | 5,000 | 1,942, 3.36 [2.73–3.43] |   978, 2.36 [2.26–2.95] | 102, 3.13 [3.05–3.60] |
+| moving | 2,500 | 1,036, 2.12 [1.55–2.19] |   550, 1.75 [1.72–1.84] | 103, 2.50 [2.21–2.69] |
+| moving | 5,000 | 2,028, 2.99 [2.66–3.42] | 1,056, 2.33 [2.30–2.40] | 169, 3.44 [3.07–3.94] |
+
+Allocation fell 47–50% in every cell. Main-thread time fell with the ranges apart at 2,500 glyphs on
+the fixed camera and 5,000 on the moving one, and overlapping in the other two; the HUD's range sat
+below the DOM's in all four, in renderer main-thread time only. One run of each tree, so neither is
+shown as settled. **The 180 KB a frame the profile charged to `dropRuns` was `Array.prototype.fill`**
+in `LayoutColumns.recycle`, inlined into it: a run with Chromium's inlining off put it in `recycle`,
+and replacing `fill` with a loop removed it (an in-process Node profile of the same call allocates
+nothing). Measured on msb-uai on 2026-10-27, at `d67dcb7aa` and `7690dc0d9`, one run of each; the
+runs between them, the diagnostic one among them, are in `recorded/hud-vs-dom-objrecycle-2026-10-27/`.
+
+What is left, at 5,000 glyphs on the fixed camera, self KB a frame: `cachedCommands` in the HUD
+(135); `layoutRuns` (111) and `breakLines` (77), neither of whose visible work should allocate;
+`resolveRuns` (69) and `resolveTextStyle` (56) building the command; `paintRunsInto` (49) and
+`groupFor` (37); `resolveFontVariantInternal`'s result object (36); and `graphemeEnds` (39).
 
 ### A still HUD through `drawLayers`
 

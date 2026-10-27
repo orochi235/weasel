@@ -76,3 +76,19 @@ export function originFor(xy: ArrayLike<number>): { x: number; y: number } | und
   if (!(reach >= ORIGIN_THRESHOLD) || !Number.isFinite(reach)) return undefined;
   return { x: Math.round((minX + maxX) / 2), y: Math.round((minY + maxY) / 2) };
 }
+
+/** `parts` as one `'nonzero'` compound path, measured from the first part's
+ *  origin: a part measured from another is re-measured from it in doubles. */
+export function joinPaths(parts: readonly PolygonPath[]): PolygonPath {
+  let nc = 0, nk = 0;
+  for (const p of parts) { nc += p.commands.length; nk += p.coords.length; }
+  const origin = parts[0]?.origin;
+  const commands = new Uint8Array(nc);
+  const coords = new Float32Array(nk);
+  let ci = 0, ki = 0;
+  for (const p of parts) {
+    commands.set(p.commands, ci); ci += p.commands.length;
+    coords.set(p.origin === origin ? p.coords : coordsFrom(origin, worldCoords(p)), ki); ki += p.coords.length;
+  }
+  return { kind: 'polygon', commands, coords, fillRule: 'nonzero', ...(origin ? { origin } : {}) };
+}

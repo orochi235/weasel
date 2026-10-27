@@ -120,7 +120,7 @@ describe('leaves that read an absent value as their default', () => {
   it('flags the text style fields `resolveTextStyle` defaults, each at `DEFAULT_TEXT_STYLE`\'s value', () => {
     const style = members('text', 'text')['data.style'] as PrefObject;
     const fields = Object.fromEntries(prefSectionLeaves(style.children));
-    // `fontStyle` and `script` read absence themselves.
+    // `fontStyle`, `script` and `lang` read absence themselves.
     expect(flagged(fields)).toEqual([
       'align', 'direction', 'fontFamily', 'fontSize', 'fontVariantCaps', 'fontWeight', 'letterSpacing', 'lineHeight',
       'overline', 'strikethrough', 'tabSize', 'textTransform', 'underline', 'wrap',
@@ -294,6 +294,7 @@ describe('inferredNodeProperties', () => {
       'letterSpacing',
       'textTransform',
       'fontVariantCaps',
+      'lang',
       // No `fill`: a text node's color is its own `data.fill`, in Appearance,
       // the same leaf every other node kind paints from.
     ]);
@@ -308,6 +309,7 @@ describe('inferredNodeProperties', () => {
       fontSize: true, fontFamily: true, fontWeight: true, fontStyle: true, align: true,
       direction: true, lineHeight: true, tabSize: true, wrap: true, letterSpacing: true, underline: true,
       strikethrough: true, overline: true, textTransform: true, fontVariantCaps: true, script: true,
+      lang: true,
     };
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const style = ((entry.schema.members.text as PrefSection).members['data.style']) as PrefObject;

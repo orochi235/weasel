@@ -131,6 +131,9 @@ window.addEventListener('message', ({ data }) => {
 });
 ```
 
+A message sent before the lab's first `labkit:state` arrives is not seen, so
+a host that plays on load waits for that first state.
+
 `<Lab transport={false}>` leaves the lab's own controls off for a page that
 draws its own. `<Lab messages={{ name: 'hero' }}>` names a lab on a page with
 several: a message carrying `lab: 'hero'` reaches only it, and its state says

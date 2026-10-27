@@ -12,7 +12,7 @@ import {
   faceMetricsOf, glyphOutline, resolveFontVariant, type BmFontChar, type FaceMetrics, type FontStyle,
 } from '@weasel-js/font';
 import {
-  fillHasInk, paintKey, strokeHasInk, strokeKey, type Fill, type Stroke,
+  fillHasInk, paintKey, strokeHasInk, type Fill, type Stroke,
 } from '@weasel-js/paint';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { emboldenGlyphD } from '../syntheticBold';
@@ -20,7 +20,9 @@ import { lineDecorations, type DecorationKind } from './decorationMetrics';
 import { doubles, takeDoubles } from './arrayPool';
 import { blankGlyph, LineBox } from './layoutColumns';
 import type { LaidOutRuns, PlacedGlyph } from './layoutRuns';
-import { hasGlyphQuad, quadViews, QUAD_STRIDE, writeGlyphQuad, type LaidOutQuad } from './glyphQuads';
+import { hasGlyphQuad, QUAD_STRIDE, writeGlyphQuad, type LaidOutQuad } from './glyphQuads';
+import { groupFor, NO_QUADS, takeGroups } from './paintGroups';
+
 
 /**
  * One glyph the renderer should tessellate rather than sample.
@@ -176,106 +178,15 @@ export function runFaces(runs: readonly ResolvedRun[]): (run: number) => FaceMet
 
 const isDecorated = (r: ResolvedRun): boolean => r.underline || r.strikethrough || r.overline;
 
-/** The group the previous glyph joined, and every input it was matched on. */
-interface LastGroup {
-  group: LaidOutGroup | null;
-  run: number; family: string; weight: number; style: FontStyle;
-  bold: boolean; italic: boolean; source: LaidOutGroup['source']; page: number;
-}
-
-/** A group, the run whose glyph opened it, and what that run paints, as a
- *  string built only when a glyph of another run has to be compared with it. */
-interface GroupSlot {
-  group: LaidOutGroup;
-  run: number;
-  paint: string | null;
-}
-
-/** What a glyph of `run` on `source` paints with: its fill, and its stroke
- *  where the tier can draw one. */
-function strokeOn(run: ResolvedRun, source: LaidOutGroup['source']): Stroke | undefined {
-  // Only the outline tier can paint a stroke; an SDF group carrying one would
-  // be a promise the renderer cannot keep.
-  return source === 'outline' && strokeHasInk(run.stroke) ? run.stroke : undefined;
-}
-
-function paintOf(run: ResolvedRun, source: LaidOutGroup['source']): string {
-  return `${paintKey(run.fill?.paint)}|${strokeKey(strokeOn(run, source))}`;
-}
-
-function groupFor(
-  slots: GroupSlot[],
-  runs: readonly ResolvedRun[],
-  g: PlacedGlyph,
-  source: LaidOutGroup['source'],
-  last: LastGroup,
-): LaidOutGroup {
-  const { family, weight, style } = g.resolved.resolved;
-  const { synthetic } = g.resolved;
-  const page = source === 'outline' ? 0 : g.glyph!.page;
-  // A glyph matching the one before it joins that group without a search.
-  if (last.group !== null && last.run === g.run && last.source === source && last.page === page
-    && last.family === family && last.weight === weight && last.style === style
-    && last.bold === synthetic.bold && last.italic === synthetic.italic) {
-    return last.group;
-  }
-  const run = runs[g.run];
-  let group: LaidOutGroup | null = null;
-  let paint: string | null = null;
-  for (const slot of slots) {
-    const c = slot.group;
-    if (c.source !== source || c.page !== page || c.family !== family || c.weight !== weight
-      || c.style !== style || c.synthetic.bold !== synthetic.bold || c.synthetic.italic !== synthetic.italic) continue;
-    // One run paints one way, so only a glyph of another run builds the strings.
-    if (slot.run !== g.run) {
-      paint ??= paintOf(run, source);
-      slot.paint ??= paintOf(runs[slot.run], source);
-      if (slot.paint !== paint) continue;
-    }
-    group = c;
-    break;
-  }
-  if (group === null) {
-    const stroke = strokeOn(run, source);
-    group = {
-      family, weight, style, synthetic: { bold: synthetic.bold, italic: synthetic.italic }, source, page,
-      fill: run.fill, quadData: [], glyphs: [],
-    } as unknown as LaidOutGroup;
-    if (stroke) group.stroke = stroke;
-    if (source === 'color') group.colorGlyphs = [];
-    const i = slots.length;
-    let slot = slotPool[i];
-    if (slot === undefined) {
-      slot = { group, run: g.run, paint };
-      if (i < SLOT_POOL_MAX) slotPool[i] = slot;
-    } else {
-      slot.group = group; slot.run = g.run; slot.paint = paint;
-    }
-    slots.push(slot);
-  }
-  last.group = group;
-  last.run = g.run; last.family = family; last.weight = weight; last.style = style;
-  last.bold = synthetic.bold; last.italic = synthetic.italic; last.source = source; last.page = page;
-  return group;
-}
-
 /** One glyph walks a layout's columns, so painting builds no object a glyph,
  *  nor one a painting: each glyph is read before the next is filled in. */
 const cursor = blankGlyph();
 
-/** A painting's groups so far and the one its last glyph joined, reused by
- *  every painting and emptied after each so they hold no group. */
-const slots: GroupSlot[] = [];
-const slotPool: GroupSlot[] = [];
-const SLOT_POOL_MAX = 64;
 /** The first group's quads while a painting fills them, before they are
  *  copied out at their final length. */
 let scratch: number[] = [];
 /** Longest {@link scratch} grows to; a longer text's group gets its own. */
 const SCRATCH_MAX = 1 << 14;
-const last: LastGroup = {
-  group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
-};
 
 /**
  * Derive what to draw for `laid`, the layout of `runs` — or of runs that
@@ -286,9 +197,19 @@ export function paintRuns(
   runs: readonly ResolvedRun[],
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
-  slots.length = 0;
-  last.group = null;
-  const decorations: LaidOutDecoration[] = [];
+  return paintRunsInto(laid, runs, opts, { groups: [], decorations: [] });
+}
+
+/** {@link paintRuns}, emptying `out`'s arrays and filling them. */
+export function paintRunsInto(
+  laid: LaidOutRuns,
+  runs: readonly ResolvedRun[],
+  opts: PaintRunsOpts,
+  out: PaintedRuns,
+): PaintedRuns {
+  const { groups, decorations } = out;
+  groups.length = 0;
+  decorations.length = 0;
   const faceOf = runs.some(isDecorated) ? runFaces(runs) : null;
   // A rule is a solid rect with only a fill to paint it.
   const rulePaint = faceOf && ((run: number): string | null =>
@@ -297,25 +218,28 @@ export function paintRuns(
   // sized for every glyph, copied out at its final length; any other grows
   // as it fills.
   let glyphCount = 0;
-  for (const line of laid.lines) glyphCount += LineBox.count(line);
+  const { lines } = laid;
+  for (let i = 0; i < lines.length; i++) glyphCount += LineBox.count(lines[i]);
   const need = glyphCount * QUAD_STRIDE;
   if (need <= SCRATCH_MAX && scratch.length < need) scratch = doubles(need);
   const buf = need <= SCRATCH_MAX ? scratch : doubles(need);
   let sized: LaidOutGroup | null = null;
   let sizedAt = 0;
 
-  for (const line of laid.lines) {
-    const span = LineBox.span(line);
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    const cols = LineBox.columns(line);
+    const start = cols !== null ? LineBox.start(line) : 0;
     const count = LineBox.count(line);
     const rules = faceOf && lineDecorations(runs, faceOf, rulePaint!);
     for (let slot = 0; slot < count; slot++) {
-      const pos = span ? span.cols.visual(span.start, slot) : -1;
-      const g = span ? span.cols.glyph(span.start, pos, cursor) : line.glyphs[slot];
+      const pos = cols !== null ? cols.visual(start, slot) : -1;
+      const g = cols !== null ? cols.glyph(start, pos, cursor) : line.glyphs[slot];
       rules?.add(g);
       const run = runs[g.run];
       // A color cluster's leading code points draw no ink of their own, though
       // an outline face has a glyph for each: a keycap would paint its digit.
-      const inks = span ? span.cols.drawsInk(span.start, pos) : line.cells[g.cell].drawsInk;
+      const inks = cols !== null ? cols.drawsInk(start, pos) : line.cells[g.cell].drawsInk;
       // Asked before the quad: a dynamic glyph still waiting for its bake has
       // no atlas rect, but its outline is available right now.
       const outline = inks ? glyphOutlineD(g, run, opts.outlineMinSize) : null;
@@ -326,16 +250,17 @@ export function paintRuns(
       if (outline !== null) {
         const placed: LaidOutOutlineGlyph = { ...outline, x: g.x, baselineY: g.baselineY, scale: g.fontSize };
         if (g.rotate) placed.rotate = g.rotate;
-        groupFor(slots, runs, g, 'outline', last).glyphs.push(placed);
+        groupFor(runs, g, 'outline').glyphs.push(placed);
         continue;
       }
       if (!hasGlyphQuad(g)) continue;
-      const group = groupFor(slots, runs, g, g.glyph!.color ? 'color' : g.resolved.source, last);
+      const group = groupFor(runs, g, g.glyph!.color ? 'color' : g.resolved.source);
       if (sized === null) {
         sized = group;
         group.quadData = buf;
       }
-      const quads = group.quadData as number[];
+      let quads = group.quadData as number[];
+      if (quads === NO_QUADS) group.quadData = quads = [];
       if (group === sized) {
         writeGlyphQuad(g, quads, sizedAt);
         sizedAt += QUAD_STRIDE;
@@ -357,12 +282,6 @@ export function paintRuns(
     for (let k = 0; k < sizedAt; k++) quads[k] = scratch[k];
     sized.quadData = quads;
   }
-  const out: LaidOutGroup[] = [];
-  for (const slot of slots) {
-    out.push(Object.defineProperties(slot.group, quadViews));
-    slot.group = null as unknown as LaidOutGroup;
-  }
-  slots.length = 0;
-  last.group = null;
-  return { groups: out, decorations };
+  takeGroups(groups);
+  return out;
 }

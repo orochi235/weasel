@@ -34,8 +34,10 @@ export interface ShapedGlyph {
  */
 export interface TextShaper {
   /** Glyphs in logical order: clusters by ascending `cluster`, and the glyphs
-   *  of one cluster in the order they are drawn, left to right. */
-  shape(face: ArrayBuffer, text: string, features?: readonly string[]): readonly ShapedGlyph[];
+   *  of one cluster in the order they are drawn, left to right. `language` is
+   *  a BCP 47 tag selecting the face's forms for that language; absent draws
+   *  its default forms. */
+  shape(face: ArrayBuffer, text: string, features?: readonly string[], language?: string): readonly ShapedGlyph[];
   /** Em-space path data for glyph `gid`, moved by `(dx, dy)`; null for one
    *  with no contours. */
   glyphD(face: ArrayBuffer, gid: number, dx?: number, dy?: number): string | null;

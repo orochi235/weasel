@@ -8,7 +8,7 @@ import { withCorner } from './cornerSpec';
 import { pathToCubicContours } from './cubicContours';
 import { pathDistanceToPoint } from './pathDistance';
 import { pathFromD } from './pathFromD';
-import { ORIGIN_THRESHOLD, originFor, worldCoords } from './pathOrigin';
+import { ORIGIN_THRESHOLD, joinPaths, originFor, worldCoords } from './pathOrigin';
 import { pathToD } from './pathToD';
 import { translatePath } from './transform';
 import { transformPath } from './transformPath';
@@ -96,6 +96,24 @@ describe('readers of a path measured from an origin', () => {
   });
 });
 
+describe('joinPaths', () => {
+  it('measures every part from the first part\'s origin', () => {
+    const other = new PathBuilder().setOrigin(FAR + 64, 0).moveTo(X + 64, 1).lineTo(X + 65, 1).lineTo(X + 65, 2).close().build();
+    const joined = joinPaths([square(), other]);
+    expect(joined.origin).toEqual({ x: FAR, y: 0 });
+    expect(joined.fillRule).toBe('nonzero');
+    const w = worldCoords(joined);
+    expect(w[0]).toBeCloseTo(X, 6);
+    expect(w[8]).toBeCloseTo(X + 64, 4);
+  });
+
+  it('gives parts with no origin none', () => {
+    const a = new PathBuilder().moveTo(1, 1).lineTo(2, 1).build();
+    expect(joinPaths([a, a]).origin).toBeUndefined();
+    expect(joinPaths([a, a]).coords.length).toBe(8);
+  });
+});
+
 describe('producers that pick an origin', () => {
   it('leave a path within the threshold alone and center one past it', () => {
     expect(originFor([ORIGIN_THRESHOLD - 1, 0])).toBeUndefined();
@@ -109,13 +127,20 @@ describe('producers that pick an origin', () => {
     expect(worldCoords(far)[0]).toBeCloseTo(X, 6);
   });
 
-  it('map a path far out with an origin under transformPath\'s autoOrigin', () => {
+  it('map a path far out with an origin under transformPath, unless told not to', () => {
     const near = new PathBuilder().moveTo(0, 0).lineTo(1, 0).lineTo(1, 1).close().build();
     const m = [1, 0, 0, 1, X, 0] as const;
-    expect((transformPath(near, [...m]) as PolygonPath).origin).toBeUndefined();
-    const far = transformPath(near, [...m], { autoOrigin: true }) as PolygonPath;
+    const far = transformPath(near, [...m]) as PolygonPath;
     expect(far.origin).toBeDefined();
     expect(worldCoords(far)[0]).toBeCloseTo(X, 6);
+    expect((transformPath(near, [...m], { autoOrigin: false }) as PolygonPath).origin).toBeUndefined();
+    expect((transformPath(near, [1, 0, 0, 1, 5, 0]) as PolygonPath).origin).toBeUndefined();
+  });
+
+  it('keep a rect rotated far out exact through transformPath', () => {
+    const turned = transformPath({ kind: 'rect', x: X, y: 1, width: 1, height: 1 }, [0, 1, -1, 0, 0, 0]) as PolygonPath;
+    expect(turned.origin).toBeDefined();
+    expect(worldCoords(turned)[1]).toBeCloseTo(X, 6);
   });
 
   it('read SVG path data reaching past the threshold into a path with an origin', () => {
