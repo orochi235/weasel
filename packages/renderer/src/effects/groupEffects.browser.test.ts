@@ -8,6 +8,7 @@ import { pathFromD } from '@weasel-js/geom';
 import { WeaselRenderer } from '../WeaselRenderer';
 import { registerEffect } from './types';
 import { registerTexture } from '../textures/registerTexture';
+import { blur } from './builtins';
 import type { DrawCommand } from '../DrawCommand';
 
 const SIZE = 8;
@@ -129,6 +130,22 @@ void main() { outColor = texture(u_source, v_uv) * texture(u_tint, vec2(0.5)); }
       children: [RED],
     }]);
     expect(at(4, 4)).toEqual([255, 0, 0, 255]);
+  });
+});
+
+describe('a blurred group past the edge of the buffer, in a real context', () => {
+  // Wholly above the buffer: only its blur can reach in.
+  const ABOVE: DrawCommand = { ...RED, path: { kind: 'rect', x: 0, y: -4, width: SIZE, height: 3 } };
+
+  it('blurs what lies past the edge into it', () => {
+    const at = paint([{ kind: 'group', effects: blur({ radius: 6 }), children: [ABOVE] }]);
+    expect(at(4, 0)[3]).toBeGreaterThan(0);
+    expect(at(4, 0)[0]).toBeGreaterThan(0);
+  });
+
+  it('leaves the far side, past its reach, untouched', () => {
+    const at = paint([{ kind: 'group', effects: blur({ radius: 6 }), children: [ABOVE] }]);
+    expect(at(4, 7)).toEqual([0, 0, 0, 0]);
   });
 });
 

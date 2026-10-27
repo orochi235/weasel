@@ -1,3 +1,5 @@
+import { mat3 } from '@weasel-js/geom';
+import type { DeviceRect } from '../retain/contentBounds';
 import type { ShaderUniform } from '../shaders/registerProgram';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { DrawContext } from './drawContext';
@@ -75,4 +77,34 @@ export function drawFullscreenQuad(
   if (aUv !== undefined && aUv >= 0) gl.disableVertexAttribArray(aUv);
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+}
+
+/** Draw `texture` over `rect` of the drawing buffer, device pixels, into the
+ *  target `ctx.renderTarget` names, then put that target's viewport back. */
+export function compositeOver(
+  ctx: DrawContext, program: ShaderProgram, texture: WebGLTexture, rect: DeviceRect,
+  composite: { alpha: number; colorMatrix: Float32Array },
+): void {
+  const gl = ctx.gl;
+  const width = ctx.deviceWidth!;
+  const height = ctx.deviceHeight!;
+  const target = ctx.renderTarget ?? null;
+  const [ox, oy] = (target ? target.fragOrigin : ctx.fragOrigin) ?? [0, 0];
+  gl.viewport(ox + rect.x, oy + height - rect.y - rect.height, rect.width, rect.height);
+  drawFullscreenQuad(ctx, program, texture, rect.width, rect.height, undefined, composite);
+  if (!target) ctx.restoreTargetRect?.();
+  else if (target.restore) target.restore();
+  else gl.viewport(0, 0, width, height);
+}
+
+/** Screen→clip aimed at `rect`, device pixels, of a buffer `scale` device
+ *  pixels to the CSS pixel. */
+export function windowProjection(rect: DeviceRect, scale: number): Float32Array {
+  const toClip = mat3.screenToClip(rect.width / scale, rect.height / scale);
+  return mat3.toUniform(mat3.translated(toClip, -rect.x / scale, -rect.y / scale));
+}
+
+/** Whether `rect` lies inside a `width × height` drawing buffer. */
+export function insideBuffer(rect: DeviceRect, width: number, height: number): boolean {
+  return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height;
 }

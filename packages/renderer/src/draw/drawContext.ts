@@ -10,6 +10,7 @@ import { DrawBatch } from '../drawBatch';
 import type { ClipRect } from '../batchClip';
 import type { EffectTargets } from '../effects/EffectTargets';
 import type { RetainedSurfaces } from '../retain/RetainedSurfaces';
+import type { DeviceRect } from '../retain/contentBounds';
 import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
 import type { FlattenTolerance } from './flattenTolerance';
@@ -89,27 +90,32 @@ export interface DrawContext {
    *  framebuffer. Tracked here rather than read back with `getParameter`
    *  because a group's effects nest, and each has to restore its parent's.
    *  `restore` puts back the viewport and scissor of a target that does not
-   *  draw to the whole of `fbo` from its corner, and `fragOrigin` where that
-   *  target puts the drawing buffer's bottom-left corner, `[0, 0]` absent. */
-  renderTarget?: { readonly fbo: WebGLFramebuffer; restore?(): void; readonly fragOrigin?: readonly [number, number] } | null;
+   *  draw to the whole of `fbo` from its corner, `fragOrigin` where that
+   *  target puts the drawing buffer's bottom-left corner, `[0, 0]` absent,
+   *  and `window` the rect of the drawing buffer it holds, the whole buffer
+   *  absent. */
+  renderTarget?: {
+    readonly fbo: WebGLFramebuffer; restore?(): void; readonly fragOrigin?: readonly [number, number];
+    readonly window?: DeviceRect;
+  } | null;
   /** Where the default framebuffer puts this renderer's bottom-left corner,
    *  in device pixels: a custom shader's `u_fragOrigin` while
    *  `renderTarget` is `null`. Absent, `[0, 0]`. */
   fragOrigin?: readonly [number, number];
   /** Screen→clip for a target covering a window other than the drawing
    *  buffer, as `mat3.toUniform` makes it; absent, the frame's own. Set while
-   *  a retained surface reaching past the buffer is drawn. */
+   *  a retained surface or a group's effects buffer reaching past the buffer
+   *  is drawn. */
   projection?: GlMat3;
   /** Where groups carrying `retain` keep their pixels between frames. Absent
    *  without a renderer behind the context, and then they draw straight
    *  through. */
   retained?: RetainedSurfaces;
-  /** Device-pixel size of the drawing buffer, which is what an offscreen
-   *  target is sized to. */
+  /** Device-pixel size of the drawing buffer. */
   deviceWidth?: number;
   deviceHeight?: number;
   /** Put the viewport and scissor back to the renderer's own rect after a
-   *  group's effects have borrowed them for a full-buffer pass. The renderer
+   *  group's effects have borrowed them for an offscreen pass. The renderer
    *  owns that rect — see `WeaselRenderer.applyTarget` — and a second copy of
    *  its y-flip here would be a second thing to keep in step. */
   restoreTargetRect?(): void;

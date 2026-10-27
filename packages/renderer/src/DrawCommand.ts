@@ -107,7 +107,7 @@ export interface GroupDrawCommand {
    * of an eighth of the buffer each side. A move by a fraction of a pixel is
    * drawn straight through until it holds a frame. Not for a group holding a
    * custom shader, a paint in screen units, a texture paint on text, or a
-   * group with effects, isolation or its own composite: none of those moves
+   * group whose effects do not say how far they reach: none of those moves
    * with the transform, so they are drawn straight through while it moves,
    * as a layer whose margin does not fit `retainBudget` is.
    *
@@ -127,7 +127,9 @@ export interface GroupDrawCommand {
    * they hold together.
    *
    * A group with `effects` or `isolate` keeps the pixels its own surface
-   * composites, effects run, so a still frame runs none of its passes.
+   * composites, effects run, so a still frame runs none of its passes. Its
+   * effects buffer reaches past the drawing buffer as far as they read, so a
+   * blurred layer follows a pan too.
    *
    * Ignored, and the group drawn as usual, inside another retained group, or
    * where it or anything in it composites with something other than
