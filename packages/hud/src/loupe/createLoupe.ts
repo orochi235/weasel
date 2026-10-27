@@ -194,9 +194,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const backdrop = (ctx: HudContentCtx): DrawCommand => backdropOf(ctx, backdropColor(ctx));
 
   const aimedView = () => host?.viewAt?.(model.aim, { except: LENS_VIEW }) ?? null;
-  const innerView = (outer: View, rect: WidgetBounds): View => (
-    lensCamera(model.aim, aimedView(), outer, rect, model.factor)
-  );
+  const innerView = (outer: View, rect: WidgetBounds): View => lensCamera(model.aim, aimedView(), outer, rect, model.factor);
 
   const drawVector = (ctx: HudContentCtx): DrawCommand[] => {
     if (host) return lens ? [backdrop(ctx), ...lens.draw(ctx.data, ctx.view, ctx.dims)] : [backdrop(ctx)];

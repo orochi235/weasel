@@ -60,9 +60,8 @@ export interface SceneCanvasLongPress {
    * Default: a ring that fills around the press point
    * (`createLongPressFeedbackContribution()`), static under
    * `prefers-reduced-motion`. `false` shows nothing; a contribution replaces
-   * it, reading the `longPress` dep. Installed beside `ambient`, and beside a
-   * `tools` takeover too, unless the takeover's ambient holds an entry of the
-   * same id.
+   * it, reading the `longPress` dep. Installed beside `ambient` and beside a `tools`
+   * takeover, unless the takeover's ambient holds an entry of the same id.
    */
   feedback?: boolean | SurfaceContribution;
   /** Default true. A long-press some binding handled pulses
