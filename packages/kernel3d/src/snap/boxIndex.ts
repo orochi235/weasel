@@ -1,0 +1,105 @@
+/** The world boxes a snap source reads, narrowed by a BVH to the ones a
+ *  query can reach. Keyed on the scene's version and the world's `bounds`:
+ *  `NodeBounds` is a function of the node alone, and a move's overrides
+ *  leave the version alone, so one index serves every frame of a drag.
+ *  The first query at a new key scans and records it; the second builds. */
+
+import type { NodeId } from '@weasel-js/core';
+import type { Aabb } from '@weasel-js/geom/3d';
+import { createBvh, type BoxN, type Bvh } from '@weasel-js/geom/nd';
+import { boundsOfNode, type Node3d, type World3d } from '../world';
+
+interface Built {
+  ids: readonly NodeId[];
+  boxes: readonly Aabb[];
+  tree: Bvh<number>;
+  /** Boxes the tree refuses (non-finite or inverted), read by every query. */
+  always: readonly number[];
+}
+
+interface Cached {
+  version: number;
+  bounds: unknown;
+  index: Built | null;
+}
+
+const CACHE = new WeakMap<object, Cached>();
+
+let builds = 0;
+
+/** How many box indexes have been built, for tests that pin when one rebuilds. */
+export function snapBoxIndexBuildCount(): number {
+  return builds;
+}
+
+function nodesOf<TData, TLayer extends string>(world: World3d<TData, TLayer>): readonly Node3d<TData, TLayer>[] {
+  return world.scene.renderOrderNodes() as readonly Node3d<TData, TLayer>[];
+}
+
+function boxValid({ min, max }: Aabb): boolean {
+  return (
+    Number.isFinite(min.x) && Number.isFinite(min.y) && Number.isFinite(min.z) &&
+    Number.isFinite(max.x) && Number.isFinite(max.y) && Number.isFinite(max.z) &&
+    min.x <= max.x && min.y <= max.y && min.z <= max.z
+  );
+}
+
+function build<TData, TLayer extends string>(world: World3d<TData, TLayer>): Built {
+  builds++;
+  const nodes = nodesOf(world);
+  const boxes = nodes.map((node) => boundsOfNode(world, node));
+  const entries: [number, number[]][] = [];
+  const always: number[] = [];
+  boxes.forEach(({ min, max }, i) => {
+    if (boxValid(boxes[i]!)) entries.push([i, [min.x, min.y, min.z, max.x, max.y, max.z]]);
+    else always.push(i);
+  });
+  return { ids: nodes.map((n) => n.id), boxes, tree: createBvh<number>(3, entries), always };
+}
+
+function current<TData, TLayer extends string>(world: World3d<TData, TLayer>): Built | null {
+  const version = world.scene.getVersion();
+  const hit = CACHE.get(world);
+  if (hit && hit.version === version && hit.bounds === world.bounds) {
+    hit.index ??= build(world);
+    return hit.index;
+  }
+  CACHE.set(world, { version, bounds: world.bounds, index: null });
+  return null;
+}
+
+/** Grows a query box by a relative epsilon, so rounding between the tree's
+ *  overlap test and a source's exact one only ever adds candidates. */
+export function padQuery(box: number[]): number[] {
+  let m = 0;
+  for (const v of box) if (Number.isFinite(v)) m = Math.max(m, Math.abs(v));
+  const e = 1e-9 * (1 + m);
+  return [box[0]! - e, box[1]! - e, box[2]! - e, box[3]! + e, box[4]! + e, box[5]! + e];
+}
+
+/**
+ * Each node's world box, in render order, leaving out `exclude`. With
+ * `near`, the index may drop any box that meets none of those boxes
+ * (`[minX, minY, minZ, maxX, maxY, maxZ]`, already padded); a box that
+ * meets one is always kept. Without an index, every box is returned.
+ */
+export function snapBoxes<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+  exclude: readonly string[],
+  near: readonly BoxN[],
+): Aabb[] {
+  const excluded = new Set<string>(exclude);
+  const index = near.every((b) => Array.prototype.every.call(b, (v: number) => !Number.isNaN(v))) ? current(world) : null;
+  if (index === null) {
+    const out: Aabb[] = [];
+    for (const node of nodesOf(world)) if (!excluded.has(node.id)) out.push(boundsOfNode(world, node));
+    return out;
+  }
+  const found = new Set<number>(index.always);
+  for (const box of near) index.tree.queryBox(box, (i) => { found.add(i); });
+  const out: Aabb[] = [];
+  for (const i of [...found].sort((a, b) => a - b)) {
+    if (!excluded.has(index.ids[i]!)) out.push(index.boxes[i]!);
+  }
+  return out;
+}

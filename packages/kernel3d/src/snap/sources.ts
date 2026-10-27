@@ -4,7 +4,8 @@
 
 import type { SnapCollect, SnapMark, SnapSource, SourceCandidate } from '@weasel-js/core';
 import { add, distance, dot, len, normalize, scale, sub, type Aabb, type Vec3 } from '@weasel-js/geom/3d';
-import { DEFAULT_UP, boundsOfNode, type Node3d, type World3d } from '../world';
+import { DEFAULT_UP, type World3d } from '../world';
+import { padQuery, snapBoxes } from './boxIndex';
 import { planeBasis } from './plane';
 import { boxCorner } from './probes3d';
 
@@ -16,13 +17,22 @@ const BITS = [1, 2, 4] as const;
 const UNIT: Record<Axis, Vec3> = { x: { x: 1, y: 0, z: 0 }, y: { x: 0, y: 1, z: 0 }, z: { x: 0, y: 0, z: 1 } };
 const ACROSS: Record<Axis, readonly Vec3[]> = { x: [UNIT.y, UNIT.z], y: [UNIT.x, UNIT.z], z: [UNIT.x, UNIT.y] };
 
-function boxesOf<TData, TLayer extends string>(world: World3d<TData, TLayer>, q: SnapCollect<Vec3>): Aabb[] {
-  const excluded = new Set(q.exclude);
-  const out: Aabb[] = [];
-  for (const node of world.scene.renderOrderNodes() as readonly Node3d<TData, TLayer>[]) {
-    if (!excluded.has(node.id)) out.push(boundsOfNode(world, node));
-  }
-  return out;
+/** The boxes within `r` of a probe on every axis, a superset of those within `r` of it. */
+function boxesNear<TData, TLayer extends string>(world: World3d<TData, TLayer>, q: SnapCollect<Vec3>, r: number): Aabb[] {
+  return snapBoxes(world, q.exclude, q.probes.map(({ at: p }) => padQuery([p.x - r, p.y - r, p.z - r, p.x + r, p.y + r, p.z + r])));
+}
+
+/** The boxes reaching within `r` of a probe along some axis: every box with a side or center plane in reach. */
+function boxesInSlabs<TData, TLayer extends string>(world: World3d<TData, TLayer>, q: SnapCollect<Vec3>, r: number): Aabb[] {
+  const slabs = q.probes.flatMap(({ at: p }) => AXES.map((axis) => {
+    const lo = [-Infinity, -Infinity, -Infinity];
+    const hi = [Infinity, Infinity, Infinity];
+    const k = AXES.indexOf(axis);
+    lo[k] = p[axis] - r;
+    hi[k] = p[axis] + r;
+    return padQuery([...lo, ...hi]);
+  }));
+  return snapBoxes(world, q.exclude, slabs);
 }
 
 function distanceToBox(p: Vec3, box: Aabb): number {
@@ -44,7 +54,7 @@ export function boxSnapSource<TData, TLayer extends string>(world: World3d<TData
     roles: ['geometry', 'pointer'],
     *collect(q) {
       const r = q.reachWorld(q.reachPx);
-      for (const box of boxesOf(world, q)) {
+      for (const box of boxesNear(world, q, r)) {
         for (const p of q.probes) {
           if (distanceToBox(p.at, box) <= r) yield* boxLoci(p.id, p.at, box, r);
         }
@@ -105,7 +115,7 @@ export function alignPlaneSource<TData, TLayer extends string>(world: World3d<TD
     roles: ['box', 'pointer'],
     *collect(q) {
       const r = q.reachWorld(q.reachPx);
-      for (const [axis, planes] of planesOf(boxesOf(world, q))) {
+      for (const [axis, planes] of planesOf(boxesInSlabs(world, q, r))) {
         for (const [value, ends] of planes) {
           for (const p of q.probes) {
             if (Math.abs(p.at[axis] - value) > r) continue;
