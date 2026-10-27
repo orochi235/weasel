@@ -1,6 +1,8 @@
 import type { Contribution, Paint, PlacedPage, RectPose, View } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { CanConnect } from './connect';
+import type { CanReparent } from './containers/canDropInto';
+import type { CanDropItem, ItemDrop } from './itemDrop';
 import type { DiagramContributionOptions } from './contribution';
 import type { DataEdge, DiagramSpec } from './fromData';
 import type { DiagramLabel } from './labelTrait';
@@ -153,8 +155,27 @@ export interface DiagramViewProps {
    *  is set. */
   enableKeybindings?: boolean;
   /** Which ports may be joined. Default: a port may not join itself, and two
-   *  typed ports must share a type. */
+   *  typed ports must share a type. A refusal (`{ refuse }`) draws the port
+   *  refused with its reason beside the pointer; a connect or reconnect
+   *  released there reports nothing. */
   canConnect?: CanConnect;
+  /** Whether a drag may move nodes into a container or lane they are not in,
+   *  asked only of a move the diagram's own rules allow (a pool takes lanes, a
+   *  container takes shapes and containers). `false` passes the container
+   *  over, as if the drop were not on it; a refusal draws it refused with
+   *  its reason beside the pointer, and a release there moves nothing. */
+  canReparent?: CanReparent;
+  /** Set to take items carried in from outside the canvas, from an element
+   *  made a source with `dragItemProps(item)`. While one is over the canvas,
+   *  the shape or container it would land on is outlined, and in a container
+   *  marked `reorder`, a bar marks its place. Reports the item, what it was
+   *  dropped on, the container that would hold it, and its index among that
+   *  container's members; adds nothing. */
+  onDropItem?: (drop: ItemDrop) => void;
+  /** Whether a carried item may land where it is over. A refusal draws the
+   *  target refused with its reason beside the pointer, and a release there
+   *  reports nothing. Default: everywhere. */
+  canDropItem?: CanDropItem;
   /** How ports look and answer the pointer, and the router a connect's
    *  preview draws with. */
   portOptions?: Pick<

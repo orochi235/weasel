@@ -38,6 +38,8 @@ export interface DataRegion {
   fitted: boolean;
   /** A lane's place in its pool. */
   index: number;
+  /** A container's reorder axis. */
+  reorder?: 'x' | 'y';
 }
 
 /** Every region, outer before inner, and the region each node or region is directly inside. */
@@ -72,6 +74,7 @@ export function resolveContainers(
       ...(c.label !== undefined ? { label: c.label } : {}), ...(c.style !== undefined ? { style: c.style } : {}),
       ...(c.colors !== undefined ? { colors: c.colors } : {}),
       ...(c.box !== undefined ? { box: { ...c.box } } : {}),
+      ...(c.role === 'container' && c.reorder !== undefined ? { reorder: c.reorder } : {}),
     });
     if (c.role !== 'pool') continue;
     (c.lanes ?? []).forEach((l, index) => {

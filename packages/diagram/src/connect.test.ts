@@ -148,6 +148,20 @@ describe('createConnectAction', () => {
     expect(commit).not.toHaveBeenCalled();
   });
 
+  it('snaps to a port `canConnect` refuses with a reason, draws it refused with the reason, and commits nothing', () => {
+    const commit = vi.fn();
+    const canConnect = () => ({ refuse: 'b takes no input' });
+    const handle = open({ participants: PARTICIPANTS, commit, canConnect });
+    handle.onMove!(ctxAt(295, 22));
+    const overlays = overlaysOf(handle);
+    expect(overlays[0]).toMatchObject({ kind: 'polyline', role: 'refused' });
+    expect(previewEnd(handle)).toEqual({ x: 300, y: 20 });
+    expect(overlays).toContainEqual({ kind: 'reason', at: { x: 295, y: 22 }, text: 'b takes no input' });
+    expect(overlays.some((o) => o.kind === 'polyline' && o.role === 'refused' && o.points.length === 5)).toBe(true);
+    handle.onEnd!(ctxAt(300, 20), 'commit');
+    expect(commit).not.toHaveBeenCalled();
+  });
+
   it('will not snap to or commit on a port `showsPort` hides', () => {
     const commit = vi.fn();
     const handle = open({ participants: PARTICIPANTS, commit, showsPort: (port) => port.id !== 'w' });

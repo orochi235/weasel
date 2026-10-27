@@ -5,7 +5,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import type { KitSettingsStore } from '@weasel-js/react';
 
-import type { ModifierState } from '@weasel-js/routing';
+import type { ModifierState, OngoingOverlay } from '@weasel-js/routing';
 import type { GestureFrames } from './frames';
 export type { GestureFrames, ModifierState };
 
@@ -148,6 +148,8 @@ export interface BehaviorResult<TPose> {
    *  ghost, added to those of the other behaviors. */
   opaque?: Iterable<string>;
   snap?: SnapTarget<TPose> | null;
+  /** Chrome to paint beside the drag this frame, added to the other behaviors'. */
+  overlays?: readonly OngoingOverlay[];
 }
 
 /** What a move behavior's `onEnd` is told. */

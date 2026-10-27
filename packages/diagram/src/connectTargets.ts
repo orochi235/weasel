@@ -5,7 +5,7 @@
  * the edge resolves to whichever port faces the other end each time it is
  * routed (`resolveEnd`), so it follows the shape around as things move.
  */
-import type { DerivedDep } from '@weasel-js/core';
+import { refusalOf, type DerivedDep, type DropVerdict, type OngoingOverlay } from '@weasel-js/core';
 import {
   AUTO_POSE_DESCRIPTOR,
   rotatePoint,
@@ -85,53 +85,105 @@ export function bodyAt<TPose>(
   return hit;
 }
 
+/** A refused end's marks: its shape's box outlined refused, and the reason at the pointer. */
+function refusalMarks(box: { x: number; y: number; width: number; height: number } | null, at: Vec2, reason: string): OngoingOverlay[] {
+  const out: OngoingOverlay[] = [];
+  if (box !== null) {
+    const { x, y, width, height } = box;
+    out.push({ kind: 'polyline', points: [{ x, y }, { x: x + width, y }, { x: x + width, y: y + height }, { x, y: y + height }, { x, y }], role: 'refused' });
+  }
+  out.push({ kind: 'reason', at: { x: at.x, y: at.y }, text: reason });
+  return out;
+}
+
 /** What {@link createTargets} needs from the connect action's options. */
 export interface TargetOptions<TPose> extends PortsOptions<TPose> {
   participants: ParticipantSource<TPose>;
   /** Asked with the end that stays put first, and the candidate second. */
-  canConnect: (fixed: ConnectEnd, candidate: ConnectEnd) => boolean;
+  canConnect: (fixed: ConnectEnd, candidate: ConnectEnd) => DropVerdict;
   showsPort?: (port: Port) => boolean;
   snapRadius: number;
   bodies: boolean;
 }
 
+/** What the pointer is over: an end a connect may land on, or one that
+ *  refuses it with `refuse`, the reason. */
+export interface Landing {
+  end: ConnectEnd;
+  refuse: string | null;
+}
+
 /** One resolver for what a connect lands on, and the port each end is drawn
- *  to, shared by the preview and the commit. */
+ *  to, shared by the preview and the commit, with what it paints on the way. */
 export function createTargets<TPose>(opts: TargetOptions<TPose>) {
+  const resolver = createResolver(opts);
+  const { landing, preview, boxOf } = resolver;
+
+  /**
+   * What a connect paints with the pointer at `at`: the run `preview` routes,
+   * as a connector, or over an end that refuses it, refused, with that end's
+   * shape outlined refused and the reason at the pointer.
+   */
+  function overlays(
+    route: Router,
+    fixed: ConnectEnd,
+    at: Vec2,
+    view: ConnectView,
+    moving: 'from' | 'to' = 'to',
+    waypoints: readonly Vec2[] = [],
+  ): OngoingOverlay[] {
+    const points = preview(route, fixed, at, view, moving, waypoints);
+    const hit = landing(fixed, at, view);
+    const run: OngoingOverlay[] = points.length < 2 ? [] : [{ kind: 'polyline', points, role: hit?.refuse != null ? 'refused' : 'connector' }];
+    if (hit === null || hit.refuse === null) return run;
+    return [...run, ...refusalMarks(boxOf(hit.end.nodeId), at, hit.refuse)];
+  }
+
+  return { ...resolver, overlays };
+}
+
+function createResolver<TPose>(opts: TargetOptions<TPose>) {
   const portOpts: PortsOptions<TPose> = {
     ...(opts.geometry ? { geometry: opts.geometry } : {}),
     ...(opts.read ? { read: opts.read } : {}),
   };
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
 
-  /** The port the pointer is over and may legally land on, or `null`. */
-  function portTarget(from: ConnectEnd, at: Vec2, view: ConnectView): Port | null {
-    let best: Port | null = null;
+  /** The nearest port in reach that `canConnect` does not silently turn away, or `null`. */
+  function portTarget(from: ConnectEnd, at: Vec2, view: ConnectView): Landing | null {
+    let best: Landing | null = null;
     let bestD2 = opts.snapRadius * opts.snapRadius;
     for (const participant of opts.participants()) {
       if (!offersPorts(participant, view)) continue;
       for (const port of portsOf(participant.node, participant.pose, portOpts)) {
         if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
-        if (!opts.canConnect(from, port)) continue;
         const d2 = (port.point.x - at.x) ** 2 + (port.point.y - at.y) ** 2;
-        if (d2 <= bestD2) {
-          bestD2 = d2;
-          best = port;
-        }
+        if (d2 > bestD2) continue;
+        const verdict = opts.canConnect(from, port);
+        if (verdict === false) continue;
+        bestD2 = d2;
+        best = { end: port, refuse: refusalOf(verdict) };
       }
     }
     return best;
   }
 
-  /** What a release at `at` lands on: a port in reach beats the body under it.
-   *  A body with no ports is no target, since an edge glued to it has nothing
-   *  to route to. */
-  function target(from: ConnectEnd, at: Vec2, view: ConnectView): ConnectEnd | null {
+  /** What the pointer at `at` is over: a port in reach beats the body under
+   *  it. A body with no ports is nothing, since an edge glued to it has
+   *  nothing to route to. */
+  function landing(from: ConnectEnd, at: Vec2, view: ConnectView): Landing | null {
     const port = portTarget(from, at, view);
     if (port !== null || !opts.bodies) return port;
     const body = bodyAt(opts.participants, at, { ...portOpts, view });
     if (body === null || portsOf(body.participant.node, body.participant.pose, portOpts).length === 0) return null;
-    return opts.canConnect(from, body.end) ? body.end : null;
+    const verdict = opts.canConnect(from, body.end);
+    return verdict === false ? null : { end: body.end, refuse: refusalOf(verdict) };
+  }
+
+  /** What a release at `at` lands on, or `null` where nothing may land. */
+  function target(from: ConnectEnd, at: Vec2, view: ConnectView): ConnectEnd | null {
+    const hit = landing(from, at, view);
+    return hit === null || hit.refuse !== null ? null : hit.end;
   }
 
   function participantOf(nodeId: string): ParticipantPose<TPose> | undefined {
@@ -175,7 +227,7 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
     moving: 'from' | 'to' = 'to',
     waypoints: readonly Vec2[] = [],
   ): readonly Vec2[] {
-    const landed = target(fixed, at, view);
+    const landed = landing(fixed, at, view)?.end ?? null;
     const [fixedCenter, landedCenter] = [centerOf(fixed), landed === null ? at : centerOf(landed)];
     const aims = moving === 'to'
       ? endAims(fixedCenter, landedCenter, waypoints)
@@ -191,5 +243,12 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
       : route({ from: free, to: anchored, waypoints });
   }
 
-  return { target, portFor, preview };
+  /** The world box of `nodeId`'s participant, or `null`. */
+  function boxOf(nodeId: string): { x: number; y: number; width: number; height: number } | null {
+    const participant = participantOf(nodeId);
+    return participant === undefined ? null : geometry.getBounds(participant.pose);
+  }
+
+  return { target, landing, portFor, preview, boxOf };
 }
+

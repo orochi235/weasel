@@ -1,18 +1,19 @@
 import { act } from '@testing-library/react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DiagramView, type ContainerEdit, type EdgeRoute, type NodeMove } from './DiagramView';
+import { DiagramView, type ContainerEdit, type DiagramViewProps, type EdgeRoute, type NodeMove } from './DiagramView';
 import { diagramScene, type DiagramData } from './fromData';
 
-/** A container `k`, a pool `p` of two rows, and two shapes outside both, all pinned. */
+/** A container `k` holding `c`, a pool `p` of two rows, and two shapes outside both, all pinned. */
 const DATA: DiagramData = {
   nodes: [
     { id: 'a', lines: ['a'], width: 60, height: 40, at: { x: 60, y: 300 }, pinned: true },
     { id: 'b', lines: ['b'], width: 60, height: 40, at: { x: 60, y: 380 }, pinned: true },
+    { id: 'c', lines: ['c'], width: 60, height: 40, at: { x: 160, y: 100 }, pinned: true },
   ],
   edges: [],
   containers: [
-    { id: 'k', role: 'container', label: 'K', box: { x: 40, y: 40, width: 200, height: 140 }, pinned: true },
+    { id: 'k', role: 'container', label: 'K', box: { x: 40, y: 40, width: 200, height: 140 }, pinned: true, members: ['c'] },
     {
       id: 'p', role: 'pool', label: 'P', box: { x: 300, y: 40, width: 280, height: 240 }, pinned: true,
       lanes: [{ id: 'l1', label: 'one', size: 120 }, { id: 'l2', label: 'two', size: 120 }],
@@ -30,7 +31,7 @@ afterEach(() => {
 
 const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
-async function mount() {
+async function mount(more: Partial<DiagramViewProps> = {}) {
   const host = document.createElement('div');
   document.body.append(host);
   const moves: (readonly NodeMove[])[] = [];
@@ -41,6 +42,7 @@ async function mount() {
       <DiagramView
         specs={diagramScene(DATA, { layout: 'none' })} width={640} height={480} view={VIEW} onViewChange={() => {}}
         onMove={(m: readonly NodeMove[], _r: readonly EdgeRoute[]) => moves.push(m)} onEditContainer={(e) => edits.push(e)}
+        {...more}
       />,
     );
   });
@@ -51,11 +53,14 @@ async function mount() {
     bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
     button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: r.left + x, clientY: r.top + y,
   }));
-  const drag = async (from: { x: number; y: number }, to: { x: number; y: number }) => {
+  const drag = async (from: { x: number; y: number }, to: { x: number; y: number }, midway?: () => void) => {
     await act(async () => {
       fire('pointermove', from.x, from.y);
       fire('pointerdown', from.x, from.y);
       for (let i = 1; i <= 10; i++) fire('pointermove', from.x + ((to.x - from.x) * i) / 10, from.y + ((to.y - from.y) * i) / 10);
+    });
+    midway?.();
+    await act(async () => {
       fire('pointerup', to.x, to.y);
     });
     await frame();
@@ -96,6 +101,30 @@ describe('DiagramView containers from data', () => {
     const { moves, drag } = await mount();
     await drag({ x: 90, y: 400 }, { x: 450, y: 220 });
     expect(moves).toEqual([[{ id: 'b', x: 420, y: 200, parent: 'l2' }]]);
+  });
+
+  it('reports a shape dragged from a container into a lane with the lane as its parent', async () => {
+    const { moves, drag } = await mount();
+    await drag({ x: 190, y: 120 }, { x: 450, y: 220 });
+    expect(moves).toEqual([[{ id: 'c', x: 420, y: 200, parent: 'l2' }]]);
+  });
+
+  it('shows the reason a container refuses a shape while it is dragged over it, and moves nothing on release', async () => {
+    const asked: [readonly string[], string][] = [];
+    const { moves, drag } = await mount({
+      canReparent: (ids, into) => {
+        asked.push([ids, into]);
+        return into === 'k' ? { refuse: 'K takes no more shapes' } : true;
+      },
+    });
+    let shown: string | null = null;
+    await drag({ x: 90, y: 320 }, { x: 130, y: 110 }, () => {
+      shown = document.querySelector('[role="status"]')?.textContent ?? null;
+    });
+    expect(shown).toBe('K takes no more shapes');
+    expect(asked).toContainEqual([['a'], 'k']);
+    expect(moves).toEqual([]);
+    expect(document.querySelector('[role="status"]')).toBeNull();
   });
 
   it('reports a lane boundary dragged as the pool\'s lane sizes, once', async () => {

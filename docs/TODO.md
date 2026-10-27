@@ -530,6 +530,22 @@ Priority tags:
 
 ### Container layout strategies
 
+- **(P3) A member of a diagram container marked `reorder` cannot be dragged out of it.** The
+  reorder drag (`packages/diagram/src/groupReorder.ts`) takes every body press on a member and moves
+  it only along the axis, so the move's reparent never runs; a group's members have the same limit,
+  but a container's are scene children that could leave. A drag that leaves the container's body
+  could hand off to the move instead (2026-10-26).
+- **(P3) An item carried in with `dragItemProps` draws no ghost of itself over the canvas.** The
+  canvas outlines the target and marks the index (`packages/diagram/src/itemDrop.ts`), and labkit
+  draws its own `DragGhost` for its palette; diagram leaves it to the host. A ghost from the item's
+  own element, or a preview of the shape it would make, would belong beside `startItemDrag`
+  (2026-10-26).
+- **(P3) A diagram edge that crosses a node draws over it.** In the `diagram-drop` demo, dropping
+  two steps into the row between `filter` and `mix` leaves the `filter → mix` edge running straight
+  through both new boxes. The line shows over their fill and through their labels, as a
+  strikethrough (seen headless, 2026-10-26). Either edges paint above member nodes inside a
+  container, or the straight router ignores members as obstacles. Check the paint order against
+  the composition merge (`437648aa4`) first.
 - **(P3) Reparent-on-layout-drop lives in the move action's `layoutDrop` behavior
   (`actions/move/commit/layoutDrop.ts`), not the strategies' `commitDrop`** (which are pose-only),
   as does choosing the destination container (`<SceneCanvas layoutDropTarget>`,
@@ -984,6 +1000,12 @@ only story runner in the repo.
   `main` at the 2026-10-26 composition merge (`437648aa4`). The same case failed on that branch's
   first run and passed on its next two. The file touches no scene code. A face or layout read before
   it settles is the first thing to suspect, as with the `SegmentsArcView` miss.
+- **(P3) `rowHelp.browser.test.tsx`'s "a click on a described row's control opens no help" fails
+  under load.** In `packages/ui/src/components/Properties/rowHelp.browser.test.tsx`, the click on
+  the Author input timed out at 45 s because the row's open help tooltip covered it and intercepted
+  the pointer. It failed in both full fleet runs of the `diagram-drop-refuse` branch on 2026-10-26
+  (at `8b14236e5` and `b8893e8e6`, both on teitou), which touch no ui code, and passed 3 of 3 alone on
+  the fleet. A tooltip that has not closed before the next click is the first thing to suspect.
 - **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the

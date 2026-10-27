@@ -1,4 +1,5 @@
 import type { NodeId } from 'core/scene/types';
+import type { MoveRefusal } from '../refusal';
 import type {
   LayoutStrategy,
   LayoutContainer,
@@ -40,4 +41,6 @@ export interface DropPass {
   pass: LayoutPass | null;
   /** Displaced siblings' poses this frame, in each one's stored frame. */
   reflow: Map<NodeId, unknown>;
+  /** The container under the drop that refuses it with a reason. */
+  refused?: MoveRefusal;
 }

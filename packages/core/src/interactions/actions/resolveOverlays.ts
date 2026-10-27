@@ -30,7 +30,8 @@ export type OverlayVisibilityId =
   | 'action.lasso'
   | 'action.insert-preview'
   | 'action.polyline'
-  | 'action.brush';
+  | 'action.brush'
+  | 'action.reason';
 
 /**
  * One in-flight overlay, in world coordinates.
@@ -94,6 +95,13 @@ export type ResolvedOverlay =
       points: ReadonlyArray<Point>;
       /** On screen: a painter draws it at this size at every zoom. */
       radiusPx: number;
+    }
+  | {
+      kind: 'reason';
+      visibilityId: 'action.reason';
+      /** The pointer, which a painter shows `text` beside. */
+      at: Point;
+      text: string;
     };
 
 /** The overlays worth painting, in the order the handles published them. */
@@ -159,6 +167,11 @@ export function resolveOverlays(overlays: Iterable<OngoingOverlay>): ResolvedOve
       case 'brush': {
         if (ov.points.length === 0 || !(ov.radiusPx > 0)) break;
         out.push({ kind: 'brush', visibilityId: 'action.brush', points: ov.points, radiusPx: ov.radiusPx });
+        break;
+      }
+      case 'reason': {
+        if (ov.text === '') break;
+        out.push({ kind: 'reason', visibilityId: 'action.reason', at: ov.at, text: ov.text });
         break;
       }
     }
