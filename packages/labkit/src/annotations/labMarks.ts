@@ -20,7 +20,10 @@ export const withMarks = (instrument: Instrument, shown: boolean): Instrument =>
  * Whether the lab shows marks: `initial` until someone flips it, then their choice, kept in the lab's records so a
  * stored lab reopens the way it was left.
  */
-export function useLabMarks(records: RecordCache, initial: boolean): [boolean, (shown: boolean) => void] {
+export function useLabMarks(
+  records: RecordCache,
+  initial: boolean,
+): [boolean, (shown: boolean) => void] {
   const subscribe = useCallback(
     (notify: () => void) =>
       records.subscribe((changes) => {

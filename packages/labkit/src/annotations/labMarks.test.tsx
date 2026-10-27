@@ -55,7 +55,8 @@ function shows(): boolean {
   const rail = screen.queryByRole('button', { name: 'Rectangle' }) !== null;
   const section = screen.queryByText('Marks') !== null;
   const undo = screen.queryByRole('button', { name: 'Undo' }) !== null;
-  if (rail !== section || section !== undo) throw new Error(`rail ${rail}, section ${section}, undo ${undo}`);
+  if (rail !== section || section !== undo)
+    throw new Error(`rail ${rail}, section ${section}, undo ${undo}`);
   return rail;
 }
 
@@ -84,7 +85,8 @@ describe("a lab's Marks switch", () => {
       { wrapper: withIcons },
     );
     expect(shows()).toBe(false);
-    if (!api) throw new Error('an instrument reading useAnnotations lost it while marks are hidden');
+    if (!api)
+      throw new Error('an instrument reading useAnnotations lost it while marks are hidden');
     const store = api;
     act(() => {
       store.add(MARK);

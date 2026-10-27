@@ -17,7 +17,10 @@ export function useLabChromeAll(
   tools: readonly TrialTool[] | undefined,
   labChrome: readonly LabContribution[] | undefined,
 ): LabContribution[] {
-  const annotationTools = useMemo(() => (marks ? labAnnotationTools(instruments) : []), [instruments, marks]);
+  const annotationTools = useMemo(
+    () => (marks ? labAnnotationTools(instruments) : []),
+    [instruments, marks],
+  );
   return useMemo(
     () => labContributions([...annotationTools, ...(tools ?? [])], labChrome),
     [annotationTools, tools, labChrome],

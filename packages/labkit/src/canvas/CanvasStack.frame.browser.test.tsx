@@ -39,7 +39,10 @@ function mountScaled(scale: number, inFrame: boolean) {
 /** The canvas's backing width against the device px it covers on the top-level page. */
 function backingAgainstShown(canvas: HTMLCanvasElement, frame: HTMLIFrameElement | null) {
   const frameScale = frame ? frame.getBoundingClientRect().width / frame.offsetWidth : 1;
-  return { backing: canvas.width, shown: canvas.getBoundingClientRect().width * frameScale * devicePixelRatio };
+  return {
+    backing: canvas.width,
+    shown: canvas.getBoundingClientRect().width * frameScale * devicePixelRatio,
+  };
 }
 
 function expectSharpNow(canvas: HTMLCanvasElement, frame: HTMLIFrameElement | null) {

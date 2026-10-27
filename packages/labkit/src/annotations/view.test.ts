@@ -23,7 +23,9 @@ describe('fitView', () => {
 
 describe('fitView over the part of the content a target shows', () => {
   it('fits that part to the pane and pans its corner to the origin', () => {
-    expect(fitView({ w: 300, h: 900 }, { w: 600, h: 400 }, { x: 0, y: 150, w: 300, h: 200 })).toEqual({
+    expect(
+      fitView({ w: 300, h: 900 }, { w: 600, h: 400 }, { x: 0, y: 150, w: 300, h: 200 }),
+    ).toEqual({
       zoom: 2,
       pan: { x: 0, y: -300 },
     });

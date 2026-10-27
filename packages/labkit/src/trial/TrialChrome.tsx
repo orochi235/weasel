@@ -1,9 +1,9 @@
 import { DevtoolsLabel } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
+import { withMarks } from '../annotations/labMarks';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
-import { withMarks } from '../annotations/labMarks';
 import { builtinContributions, TRANSIENT_BUILTINS } from '../chrome/builtins';
 import { mergeContributions, suppressContributions } from '../chrome/merge';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';

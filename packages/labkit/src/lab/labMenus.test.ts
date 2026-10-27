@@ -116,6 +116,8 @@ describe('labMenuBar', () => {
     const annotating = { ...make('Marked'), annotations: { targets: () => [] } };
     const view = menu(labMenuBar({ ...base, instruments: [annotating] }), 'view');
     expect(Object.keys(view.children)).toEqual(['zoom', 'marks', 'theme']);
-    expect((view.children.marks as PrefGroup).children).toEqual({ marks: pref.action('lab.marks') });
+    expect((view.children.marks as PrefGroup).children).toEqual({
+      marks: pref.action('lab.marks'),
+    });
   });
 });

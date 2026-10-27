@@ -44,7 +44,11 @@ export function fromWeaselView(v: View): ViewTransform {
  * when the pane happens to be the content's size, and a mark drawn on a
  * scaled-down pane otherwise lands outside it.
  */
-export function fitView(content: ContentSize, pane: PaneSize, shown?: ContentWindow): ViewTransform {
+export function fitView(
+  content: ContentSize,
+  pane: PaneSize,
+  shown?: ContentWindow,
+): ViewTransform {
   const part = shown ?? { x: 0, y: 0, w: content.w, h: content.h };
   const fit = part.w > 0 && part.h > 0 ? Math.min(pane.w / part.w, pane.h / part.h) : 1;
   const zoom = Number.isFinite(fit) && fit > 0 ? fit : 1;

@@ -32,7 +32,16 @@ export interface StoreCommandsOptions {
 /** A lab's commands, each written against `store`. */
 export function useStoreCommands(
   store: LabStore,
-  { instruments, clocks, focusedTrialId, focus, configRules, controls, marks, setMarks }: StoreCommandsOptions,
+  {
+    instruments,
+    clocks,
+    focusedTrialId,
+    focus,
+    configRules,
+    controls,
+    marks,
+    setMarks,
+  }: StoreCommandsOptions,
 ): LabCommands {
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const mode = useStore(store, (s) => s.mode);

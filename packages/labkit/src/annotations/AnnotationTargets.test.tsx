@@ -29,7 +29,10 @@ function stubObserver(): { fire: Fire; observed: Set<Element> } {
     },
   );
   const fire: Fire = (target, width, height) =>
-    callback([{ target, contentRect: { width, height } } as ResizeObserverEntry], {} as ResizeObserver);
+    callback(
+      [{ target, contentRect: { width, height } } as ResizeObserverEntry],
+      {} as ResizeObserver,
+    );
   return { fire, observed };
 }
 

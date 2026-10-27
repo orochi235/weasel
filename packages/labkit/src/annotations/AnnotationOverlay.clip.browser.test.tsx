@@ -81,7 +81,11 @@ async function line(x0: number, y0: number, x1: number, y1: number): Promise<Pix
 }
 
 /** A mouse drag over `input` in eight steps, one a frame, in viewport px. */
-async function drag(input: HTMLElement, [x0, y0]: [number, number], [x1, y1]: [number, number]): Promise<void> {
+async function drag(
+  input: HTMLElement,
+  [x0, y0]: [number, number],
+  [x1, y1]: [number, number],
+): Promise<void> {
   const fire = (type: string, x: number, y: number, buttons: number): void => {
     input.dispatchEvent(
       new PointerEvent(type, {
@@ -223,7 +227,9 @@ test('a mark on scrolled content moves with it as its target scrolls', async () 
 
   const x = box.left + 120;
   const across = (y: number) => line(x, box.top + y - 6, x, box.top + y + 6);
-  await waitFor(async () => expect(not(BLUE, await across(140))).toBeGreaterThan(0), { timeout: 5000 });
+  await waitFor(async () => expect(not(BLUE, await across(140))).toBeGreaterThan(0), {
+    timeout: 5000,
+  });
 
   el.scrollTop = 90;
   expect(el.scrollTop).toBe(90);
