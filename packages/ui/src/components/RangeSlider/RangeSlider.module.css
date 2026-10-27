@@ -55,6 +55,11 @@
   border-radius: var(--wzl-radius-sm);
 }
 
+.slider[data-orientation="vertical"] .fill {
+  left: 0;
+  right: 0;
+}
+
 .thumb {
   composes: thumbSlop from '../sliderSlop.module.css';
   /* RAC positions the thumb along the track and translates it by half its own

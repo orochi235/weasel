@@ -41,4 +41,15 @@ describe('RangeSlider', () => {
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
     expect(onChange).toHaveBeenCalledWith(6);
   });
+
+  it('runs a vertical fill up the track from its bottom, not across it', () => {
+    const { container } = render(
+      <RangeSlider aria-label="V" orientation="vertical" defaultValue={[20, 70]} minValue={0} maxValue={100} />,
+    );
+    const fill = container.querySelector<HTMLElement>('[data-range-fill]')!;
+    expect(fill.style.bottom).toBe('20%');
+    expect(fill.style.top).toBe('30%');
+    expect(fill.style.insetInlineStart).toBe('');
+    expect(fill.style.insetInlineEnd).toBe('');
+  });
 });
