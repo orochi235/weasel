@@ -1,6 +1,8 @@
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Header, ListBox, ListBoxItem, ListBoxSection } from 'react-aria-components';
+import type { IconRef } from '@weasel-js/icons';
 import { Icon } from '../../icons';
+import { DisclosureMark } from '../Disclosure';
 import { PaneHeader } from './PaneHeader';
 import { headingOf, type AssetHeading, type ListedAsset, type ShownAsset } from './workspace';
 
@@ -11,17 +13,34 @@ import { icon } from '../../icons.gen';
 /** The headings the assets are listed under, in order. */
 const HEADINGS: readonly AssetHeading[] = ['Dialogs', 'Node properties', 'Panels', 'Toolbars', 'Menus', 'Bundles'];
 
+const HEADING_ICON: Record<AssetHeading, IconRef> = {
+  Dialogs: icon('formPage'),
+  'Node properties': icon('core:tune'),
+  Panels: icon('formPanel'),
+  Toolbars: icon('formBar'),
+  Menus: icon('menu'),
+  Bundles: icon('cloudCube'),
+};
+
 /** `rows` with the ones `order` names first, as it names them, and the rest after as they stood. */
 function inOrder<T extends { id: string }>(rows: readonly T[], order: readonly string[]): T[] {
   const at = (row: T) => { const i = order.indexOf(row.id); return i < 0 ? order.length : i; };
   return [...rows].sort((a, b) => at(a) - at(b));
 }
 
+const byName = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+/** `rows` sorted by label. */
+function byLabel<T extends { label: string }>(rows: readonly T[]): T[] {
+  return [...rows].sort((a, b) => byName.compare(a.label, b.label));
+}
+
 /**
  * The editor's assets, to pick the one it shows: dialogs and node kinds' properties, then the panels, toolbars, and
  * menus that point into them, then the feature bundles.
- * What another editor holds is listed after this one's under the same headings, or where `order` puts it, and a
- * pick of one is the host's.
+ * Each heading's assets are sorted by name, this editor's and another's alike, unless `order` puts them otherwise;
+ * a pick of another editor's is the host's. Each heading folds its assets away, and unfolds again when the one
+ * shown moves under it.
  */
 export function AssetList({ assets, elsewhere = NONE, order, selected, changed, onSelect, onElsewhere }: {
   assets: readonly ShownAsset[];
@@ -37,7 +56,16 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
     ...assets.map((asset) => ({ id: asset.id, label: asset.label, under: headingOf(asset), readOnly: asset.readOnly, changed: changed.has(asset.id), held: true })),
     ...elsewhere.filter((other) => !assets.some((asset) => asset.id === other.id)).map((other) => ({ ...other, held: false })),
   ];
-  const rows = order ? inOrder(listed, order) : listed;
+  const rows = order ? inOrder(listed, order) : byLabel(listed);
+  const headingOfSelected = rows.find((row) => row.id === selected)?.under;
+  const [folded, setFolded] = useState<ReadonlySet<AssetHeading>>(new Set());
+  const [lastSelected, setLastSelected] = useState(selected);
+  if (selected !== lastSelected) {
+    setLastSelected(selected);
+    if (headingOfSelected !== undefined && folded.has(headingOfSelected)) setFolded(new Set([...folded].filter((h) => h !== headingOfSelected)));
+  }
+  const fold = (title: AssetHeading): void =>
+    setFolded(folded.has(title) ? new Set([...folded].filter((h) => h !== title)) : new Set([...folded, title]));
   return (
     <>
       <PaneHeader title="Assets" />
@@ -51,10 +79,17 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
         }}>
         {HEADINGS.map((title) => {
           const held = rows.filter((row) => row.under === title);
+          const open = !folded.has(title);
           return held.length === 0 ? null : (
             <ListBoxSection key={title} className={s.group}>
-              <Header className={s.heading}>{title}</Header>
-              {held.map((row) => (
+              <Header className={s.heading}>
+                <button type="button" className={s.fold} aria-expanded={open} onClick={() => fold(title)}>
+                  <DisclosureMark open={open} />
+                  <Icon name={HEADING_ICON[title]} size={16} className={s.headingIcon} />
+                  <span>{title}</span>
+                </button>
+              </Header>
+              {open && held.map((row) => (
                 <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={row.changed || undefined}
                   data-rail-mark={row.id === selected ? 'current' : undefined} className={s.row}>
                   <span className={row.changed ? `${s.label} ${s.changed}` : s.label}>{row.label}</span>
