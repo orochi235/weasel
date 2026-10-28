@@ -12,7 +12,7 @@ export {
 } from './schemaTree';
 export { isValidKey, keyClashes, keyFromName, keyProblem, keysTakenAt, takesDottedKey, undigit, uniqueKey } from './schemaKeys';
 export { heldValuePaths, rebaseValuePaths, valueMove, valuePathOf, valuePathsAt, type ValueMove } from './valuePaths';
-export { aliasNodes, aliasOf, canAlias, copyNodes } from './schemaCopy';
+export { aliasNodes, aliasOf, canAlias, copyNodes, VALUE_LINKS, type LinkRule } from './schemaCopy';
 
 export function addNode<R extends SchemaRoot>(root: R, parent: string | null, key: string, node: SchemaNode, index?: number): R {
   const host = nodeAt(root, parent);
