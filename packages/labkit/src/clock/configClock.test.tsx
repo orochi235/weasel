@@ -1,8 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react';
+import type { ClockHandle, ClockRegistry } from '@weasel-js/clock';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
-import { useContext } from 'react';
-import { describe, expect, it } from 'vitest';
+import { StrictMode, useContext } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
@@ -12,17 +13,19 @@ import type { LabStore } from '../state/store';
 import { ClockRegistryContext } from './contexts';
 import { useTrialClock, useTrialClockHandle } from './hooks';
 import { TrialTransport } from './TrialTransport';
+import type { ClockCapability } from './trialClock';
 
 let lab: LabContextValue | null = null;
 let store: LabStore | null = null;
-let rootOfClock: object | null | undefined;
+let registry: ClockRegistry | null = null;
+let handle: ClockHandle | null = null;
+const rootOfClock = () => (handle ? registry?.targets(handle)[0]?.() : undefined);
 
 function Probe() {
   lab = useLabContext();
   store = useContext(LabStoreContext)?.store ?? null;
-  const registry = useContext(ClockRegistryContext);
-  const handle = useTrialClockHandle();
-  rootOfClock = handle ? registry?.targets(handle)[0]?.() : undefined;
+  registry = useContext(ClockRegistryContext);
+  handle = useTrialClockHandle();
   return null;
 }
 
@@ -33,7 +36,7 @@ function Readout() {
   );
 }
 
-type Declare = (seconds: number) => { duration: number } | null;
+type Declare = (seconds: number) => ClockCapability | null;
 
 const make = (clock: Declare) =>
   defineInstrument({
@@ -112,8 +115,8 @@ describe('a clock declared from config, in the trial', () => {
 
   it('registers the trial root as the element showing it', async () => {
     await mount((s) => ({ duration: s * 1000 }));
-    expect(rootOfClock).toBeInstanceOf(HTMLElement);
-    expect((rootOfClock as HTMLElement).classList.contains('lk-trial')).toBe(true);
+    expect(rootOfClock()).toBeInstanceOf(HTMLElement);
+    expect((rootOfClock() as HTMLElement).classList.contains('lk-trial')).toBe(true);
   });
 
   it('holds a reopened time its first span cannot reach until the span grows', async () => {
@@ -129,5 +132,23 @@ describe('a clock declared from config, in the trial', () => {
     expect(readout()).toHaveTextContent('2000/2000');
     await click('four');
     expect(readout()).toHaveTextContent('3000/4000');
+  });
+});
+
+describe('a clock declared from config, under StrictMode', () => {
+  it('makes one clock, and calls its mix factory once', async () => {
+    const mix = vi.fn(() => ({ sync() {}, seek() {}, now: 0 }));
+    await renderSettled(
+      <StrictMode>
+        <Lab
+          title="T"
+          instruments={[make((s) => ({ duration: s * 1000, mix }))]}
+          defaultInstrument="Config clock"
+        />
+      </StrictMode>,
+      { wrapper: withIcons },
+    );
+    expect(readout()).toHaveTextContent('0/2000');
+    expect(mix).toHaveBeenCalledTimes(1);
   });
 });

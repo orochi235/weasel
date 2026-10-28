@@ -22,12 +22,6 @@ interface Held {
   reopenAt: number | null;
 }
 
-/** The trial's own clock, and whether a mount has made one yet. */
-interface Own {
-  held: Held | null;
-  seeded: boolean;
-}
-
 const shape = (s: ClockCapability): string =>
   `${s.duration}|${s.origin ?? 0}|${s.loop ?? false}|${s.speed}`;
 
@@ -38,6 +32,31 @@ function open(spec: ClockCapability, at: ClockPosition | undefined): Held {
   const saved = at ? shownAt(at, spec.origin ?? 0, duration, clock.loop) : null;
   const shown = shownInPass(clock.origin, clock.elapsed, clock.duration, clock.loop);
   return { handle, reopenAt: saved !== null && shown !== saved ? saved : null };
+}
+
+/**
+ * The clock `make` opens while `live`, made in a layout effect so a render
+ * makes none and StrictMode's second effect pass reuses the first one's.
+ * `seeded`: a clock was made earlier in this mount.
+ */
+function useOwnClock(live: boolean, make: (seeded: boolean) => Held | null): Held | null {
+  const [held, setHeld] = useState<Held | null>(null);
+  const made = useRef<Held | null>(null);
+  const seeded = useRef(false);
+  const latestMake = useLatest(make);
+  useLayoutEffect(() => {
+    if (!live) {
+      made.current = null;
+      setHeld(null);
+      return;
+    }
+    if (!made.current) {
+      made.current = latestMake.current(seeded.current);
+      seeded.current = true;
+    }
+    setHeld(made.current);
+  }, [live, latestMake]);
+  return live ? held : null;
 }
 
 interface Args {
@@ -72,14 +91,12 @@ export function useTrialClockSetup({
       `[labkit] instrument "${instrument.name}" plays on the lab's clock, and its <Lab> declares no \`clock\``,
     );
 
-  const [own, setOwn] = useState<Own>(() =>
-    spec ? { held: open(spec, record.clock), seeded: true } : { held: null, seeded: false },
-  );
-  if (spec && !own.held)
-    setOwn({ held: open(spec, own.seeded ? undefined : record.clock), seeded: true });
-  else if (!spec && own.held) setOwn({ held: null, seeded: own.seeded });
-
-  const held = spec ? own.held : null;
+  const declaredSpec = useLatest(spec);
+  const seed = useLatest(record.clock);
+  const held = useOwnClock(spec !== null, (seeded) => {
+    const declared = declaredSpec.current;
+    return declared ? open(declared, seeded ? undefined : seed.current) : null;
+  });
   const handle = onLab ? (clocks?.shared ?? null) : (held?.handle ?? null);
 
   const declaredShape = spec ? shape(spec) : null;
@@ -97,7 +114,6 @@ export function useTrialClockSetup({
     return clocks.register(record.id, handle, onLab ? undefined : target);
   }, [clocks, handle, record.id, target, onLab]);
 
-  const declaredSpec = useLatest(spec);
   useEffect(() => {
     if (!handle || onLab) return;
     const { clock } = handle;
