@@ -1,11 +1,30 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { type LabContextValue, useLabContext } from '../lab/LabContext';
 import { useTrialClock } from './hooks';
+
+const released = vi.hoisted(() => ({ count: 0 }));
+
+vi.mock('@weasel-js/clock', async (original) => {
+  const clock = await original<typeof import('@weasel-js/clock')>();
+  return {
+    ...clock,
+    holdElapsed: (...args: Parameters<typeof clock.holdElapsed>) => {
+      const hold = clock.holdElapsed(...args);
+      return {
+        ...hold,
+        release: () => {
+          released.count++;
+          hold.release();
+        },
+      };
+    },
+  };
+});
 
 let lab: LabContextValue | null = null;
 
@@ -96,5 +115,18 @@ describe('a trial clock in a snapshot', () => {
     expect(shown()).toBe('0');
     act(() => lab!.loadSnapshot(trialId, lab!.savedSnapshots[0]!.id));
     expect(shown()).toBe('2500');
+  });
+  it("lets go of a trial's load hold when the trial closes", async () => {
+    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, {
+      wrapper: withIcons,
+    });
+    const trialId = lab!.trials[0]!.id;
+    act(() => lab!.saveSnapshot(trialId, 'held'));
+    act(() => lab!.loadSnapshot(trialId, lab!.savedSnapshots[0]!.id));
+    act(() => lab!.addTrial('Timed'));
+    const before = released.count;
+    act(() => lab!.closeTrial(trialId));
+    expect(lab!.trials.map((t) => t.id)).not.toContain(trialId);
+    expect(released.count).toBe(before + 1);
   });
 });
