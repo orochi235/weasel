@@ -55,8 +55,8 @@
 }
 
 .input {
-  flex: 1 0 4rem;
-  min-inline-size: 4rem;
+  flex: 1 0 7rem;
+  min-inline-size: 7rem;
   block-size: calc(var(--wzl-field-h, var(--wzl-control-h)) - 2 * var(--wzl-space-1) - 2px);
   padding: 0 var(--wzl-space-1);
 }

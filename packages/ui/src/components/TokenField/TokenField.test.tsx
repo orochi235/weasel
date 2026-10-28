@@ -34,6 +34,11 @@ describe('TokenField', () => {
     expect((field() as HTMLInputElement).value).toBe('');
   });
 
+  it('keeps its placeholder once it holds tokens', () => {
+    renderWithIcons(<TokenField aria-label="Tag" placeholder="Add tag…" value={['red']} onChange={() => {}} />);
+    expect(field()).toHaveAttribute('placeholder', 'Add tag…');
+  });
+
   it('adds what is typed when the field loses focus', () => {
     const onChange = vi.fn();
     renderWithIcons(<Controlled initial={['a']} onChange={onChange} />);

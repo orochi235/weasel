@@ -151,7 +151,7 @@ export function TokenField<T>({
         className={s.input}
         aria-label={ariaLabel ? `Add to ${ariaLabel}` : 'Add'}
         value={draft}
-        placeholder={value.length === 0 ? placeholder : undefined}
+        placeholder={placeholder}
         disabled={disabled || full}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={onInputKey}
