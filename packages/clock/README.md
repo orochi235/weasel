@@ -34,7 +34,10 @@ changes what lies beneath.
 the first pass, and keeps placing it there as the span moves; a time past the
 pass's end waits at the end until the span reaches it. Its limit: a foreign
 seek to exactly the held, clamped value looks the same as the hold's own, so it
-does not release it.
+does not release it. `holdElapsed(handle, position)` holds the same way at a
+recorded `elapsed` across the whole run, so a clock of several passes comes back
+in the pass it stood in; a position recorded under another `duration` or
+`origin` keeps its pass and the time it showed within it.
 
 ## Visibility
 

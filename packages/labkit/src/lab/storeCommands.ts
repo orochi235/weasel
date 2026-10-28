@@ -1,5 +1,5 @@
-import type { ClockRegistry, PlayheadHold } from '@weasel-js/clock';
-import { useMemo, useState } from 'react';
+import type { ClockRegistry } from '@weasel-js/clock';
+import { useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
@@ -14,7 +14,7 @@ import {
   swapTrial as swapTrialOp,
 } from '../trial/trialOps';
 import type { LabCommands } from './LabContext';
-import { snapshotCommands } from './snapshotCommands';
+import { snapshotCommands, useLoadHolds } from './snapshotCommands';
 import type { TrialLayout } from './Workspace';
 
 /** What a lab's commands read besides its store. */
@@ -46,7 +46,7 @@ export function useStoreCommands(
 ): LabCommands {
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const mode = useStore(store, (s) => s.mode);
-  const [loadHolds] = useState(() => new Map<string, PlayheadHold>());
+  const loadHolds = useLoadHolds(store);
   return useMemo<LabCommands>(() => {
     const replaceTrials = (next: TrialRecord[]): void => {
       const currentById = new Map(store.getState().trials.map((w) => [w.id, w]));

@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 export { clockPosition, createClock } from './clock';
-export { holdAt, type PlayheadHold, shownInPass } from './hold';
+export { type HeldPosition, holdAt, holdElapsed, type PlayheadHold, shownInPass } from './hold';
 export { CLOCK_RATES } from './rates';
 export { type ClockRegistry, type ClockTarget, createClockRegistry } from './registry';
 export type {

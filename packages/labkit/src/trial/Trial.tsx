@@ -143,7 +143,7 @@ function TrialRuntime({
 
   const rootRef = useRef<HTMLElement | null>(null);
   const clockTarget = useCallback(() => rootRef.current, []);
-  const clockHandle = useTrialClockSetup({
+  const { handle: clockHandle, provided: providedClock } = useTrialClockSetup({
     instrument,
     config,
     record,
@@ -407,7 +407,7 @@ function TrialRuntime({
   return (
     <TrialIdProvider trialId={record.id}>
       <TrialOrbitProvider orbit={cam.orbit} instrument={instrument} trialId={record.id}>
-        <TrialClockContext.Provider value={clockHandle}>
+        <TrialClockContext.Provider value={providedClock}>
           <TrialRootContext.Provider value={rootRef}>
             <AnnotationsContext.Provider value={instrument.annotations ? provided : null}>
               <CameraWheelContext.Provider value={wheelSlot}>

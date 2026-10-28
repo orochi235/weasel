@@ -1,13 +1,21 @@
-import { type ClockRegistry, clockPosition, holdAt, type PlayheadHold } from '@weasel-js/clock';
-import { declaredClock, shownAt } from '../clock/trialClock';
+import {
+  type ClockRegistry,
+  clockPosition,
+  holdElapsed,
+  type PlayheadHold,
+} from '@weasel-js/clock';
+import { useEffect, useState } from 'react';
+import { declaredClock } from '../clock/trialClock';
 import type { InstrumentList } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { LabCommands } from './LabContext';
 
 /**
  * A lab's snapshot save and load, which also carry a trial's own clock: a save
- * records where the clock stands now, and a load holds it at the saved time.
- * `holds` keeps each trial's load hold, released by the next load.
+ * records where the clock stands now, and a load holds it at the saved
+ * `elapsed`, in the pass it stood in.
+ * `holds` keeps each trial's load hold, released by the next load or once
+ * the trial is gone ({@link useLoadHolds}).
  */
 export function snapshotCommands(
   store: LabStore,
@@ -42,10 +50,34 @@ export function snapshotCommands(
       const after = store.getState().trials.find((w) => w.id === trialId);
       const position = store.getState().savedSnapshots.find((s) => s.id === snapshotId)?.clock;
       const handle = ownClock(trialId);
-      if (after === before || !position || !handle) return;
+      if (after === before) return;
       holds.get(trialId)?.release();
-      const { origin, duration, loop } = handle.clock;
-      holds.set(trialId, holdAt(handle, shownAt(position, origin, duration, loop)));
+      holds.delete(trialId);
+      if (position && handle) holds.set(trialId, holdElapsed(handle, position));
     },
   };
+}
+
+/** The load holds `snapshotCommands` keeps, each released and dropped once
+ *  its trial leaves `store`, and all of them on unmount. */
+export function useLoadHolds(store: LabStore): Map<string, PlayheadHold> {
+  const [holds] = useState(() => new Map<string, PlayheadHold>());
+  useEffect(() => {
+    const off = store.subscribe(() => {
+      if (holds.size > 0) pruneLoadHolds(holds, new Set(store.getState().trials.map((w) => w.id)));
+    });
+    return () => {
+      off();
+      pruneLoadHolds(holds, new Set());
+    };
+  }, [store, holds]);
+  return holds;
+}
+
+function pruneLoadHolds(holds: Map<string, PlayheadHold>, live: ReadonlySet<string>): void {
+  for (const [id, hold] of holds) {
+    if (live.has(id)) continue;
+    hold.release();
+    holds.delete(id);
+  }
 }

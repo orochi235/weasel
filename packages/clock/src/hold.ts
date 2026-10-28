@@ -1,5 +1,5 @@
 import { passesOf } from './place';
-import type { ClockHandle } from './types';
+import type { Clock, ClockHandle, ClockPosition } from './types';
 
 /** The time a clock standing `elapsed` into a run of `loop` passes shows
  *  within its pass: a time on a pass boundary past the start shows as the end
@@ -33,6 +33,63 @@ export interface PlayheadHold {
  * clock that is not seekable is never held.
  */
 export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold {
+  return holdWhere(
+    handle,
+    (clock) => {
+      const within = Math.min(shown === null ? 0 : shown - clock.origin, clock.duration);
+      return [within, within > 0 && within === clock.duration ? 'end' : 'start'];
+    },
+    (clock) => (shown === null || clock.origin + clock.elapsed === shown ? null : shown),
+  );
+}
+
+/** A recorded position `holdElapsed` holds at. */
+export type HeldPosition = Pick<ClockPosition, 'elapsed' | 'passEnd' | 'duration' | 'origin'>;
+
+/**
+ * As {@link holdAt}, but at a recorded position across the whole run, so a
+ * clock of several passes comes back in the pass it stood in. A position
+ * recorded under another `duration` or `origin` keeps its pass and the time it
+ * showed within it. `pending` reports the `elapsed` it holds for, on the
+ * clock's current span.
+ */
+export function holdElapsed(handle: ClockHandle, at: HeldPosition): PlayheadHold {
+  return holdWhere(
+    handle,
+    (clock) => elapsedOn(clock, at),
+    (clock) => {
+      const [target] = elapsedOn(clock, at);
+      return clock.elapsed === target ? null : target;
+    },
+  );
+}
+
+/** Where `at` stands on `clock`'s span: the same pass, and the same time shown in it. */
+function elapsedOn(clock: Clock, at: HeldPosition): [elapsed: number, line: Line] {
+  const line: Line = at.passEnd ? 'end' : 'start';
+  const from = at.duration ?? clock.duration;
+  const origin = at.origin ?? clock.origin;
+  if (from === clock.duration && origin === clock.origin) return [at.elapsed, line];
+  if (!Number.isFinite(from) || !Number.isFinite(clock.duration))
+    return [at.elapsed + origin - clock.origin, line];
+  let pass = Math.floor(at.elapsed / from);
+  let into = at.elapsed - pass * from;
+  if (at.passEnd && into === 0 && pass > 0) {
+    pass -= 1;
+    into = from;
+  }
+  const within = Math.min(Math.max(0, origin + into - clock.origin), clock.duration);
+  const end = within > 0 && within === clock.duration;
+  return [pass * clock.duration + within, end ? 'end' : 'start'];
+}
+
+type Line = 'start' | 'end';
+
+function holdWhere(
+  handle: ClockHandle,
+  where: (clock: Clock) => [elapsed: number, line: Line],
+  wanted: (clock: Clock) => number | null,
+): PlayheadHold {
   const { clock } = handle;
   let released = false;
   let busy = false;
@@ -51,9 +108,7 @@ export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold 
   const place = (): void => {
     busy = true;
     try {
-      const { duration } = clock;
-      const within = Math.min(shown === null ? 0 : shown - clock.origin, duration);
-      clock.seek(within, within > 0 && within === duration ? 'end' : 'start');
+      clock.seek(...where(clock));
     } finally {
       busy = false;
     }
@@ -77,10 +132,7 @@ export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold 
   }
 
   return {
-    pending: () => {
-      if (released || shown === null) return null;
-      return clock.origin + clock.elapsed === shown ? null : shown;
-    },
+    pending: () => (released ? null : wanted(clock)),
     release,
   };
 }

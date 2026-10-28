@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createClock } from './clock';
-import { holdAt, shownInPass } from './hold';
+import { holdAt, holdElapsed, shownInPass } from './hold';
 
 describe('holdAt', () => {
   it('holds a time the span cannot reach, then reaches it once declared', () => {
@@ -102,5 +102,56 @@ describe('holdAt', () => {
     expect(hold.pending()).toBeNull();
     holdAt(h, 0);
     expect([h.clock.pass, h.clock.phase]).toEqual([0, 0]);
+  });
+});
+
+describe('holdElapsed', () => {
+  it('comes back in the pass it stood in, with what is left of the run', () => {
+    const h = createClock({ duration: 1000, loop: 3 });
+    const hold = holdElapsed(h, { elapsed: 2500 });
+    expect([h.clock.elapsed, h.clock.pass, h.clock.ended]).toEqual([2500, 2, false]);
+    expect(hold.pending()).toBeNull();
+    holdElapsed(h, { elapsed: 3000 });
+    expect(h.clock.ended).toBe(true);
+  });
+  it('stands at the end of a pass another follows when the position did', () => {
+    const h = createClock({ duration: 1000, loop: 3 });
+    holdElapsed(h, { elapsed: 2000, passEnd: true });
+    expect([h.clock.pass, h.clock.phase]).toEqual([1, 1]);
+  });
+  it('waits for a run long enough to reach it, then reaches it', () => {
+    const h = createClock({ duration: 1000, loop: 2 });
+    const hold = holdElapsed(h, { elapsed: 2500 });
+    expect(h.clock.elapsed).toBe(2000);
+    expect(hold.pending()).toBe(2500);
+    h.declare({ duration: 1000, loop: 3 });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([2500, 2]);
+    expect(hold.pending()).toBeNull();
+  });
+  it('converts a position recorded under another span, keeping its pass', () => {
+    const h = createClock({ duration: 2000, loop: 3 });
+    const hold = holdElapsed(h, { elapsed: 2500, duration: 1000 });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([4500, 2]);
+    expect(hold.pending()).toBeNull();
+    h.clock.duration = 1000;
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([2500, 2]);
+  });
+  it('reports the converted target while a run too short holds it back', () => {
+    const h = createClock({ duration: 2000, loop: 2 });
+    const hold = holdElapsed(h, { elapsed: 2500, duration: 1000 });
+    expect(h.clock.elapsed).toBe(4000);
+    expect(hold.pending()).toBe(4500);
+    h.clock.loop = 3;
+    expect(h.clock.elapsed).toBe(4500);
+    expect(hold.pending()).toBeNull();
+  });
+  it('keeps the shown time across a recorded origin, and a pass end', () => {
+    const h = createClock({ duration: 1000, loop: 3, origin: 0 });
+    holdElapsed(h, { elapsed: 1200, origin: -100 });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([1100, 1]);
+    holdElapsed(h, { elapsed: 1000, duration: 500, passEnd: true });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([1500, 1]);
+    holdElapsed(h, { elapsed: 1000, duration: 500 });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([2000, 2]);
   });
 });

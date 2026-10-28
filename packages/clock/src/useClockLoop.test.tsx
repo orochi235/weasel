@@ -7,7 +7,7 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClock } from './clock';
-import { createClockRegistry, type ClockRegistry } from './registry';
+import { type ClockRegistry, createClockRegistry } from './registry';
 import { useClockLoop } from './useClockLoop';
 
 interface Watcher {
@@ -207,5 +207,32 @@ describe('useClockLoop visibility', () => {
     expect(observedBy()).toEqual([el]);
     act(() => release());
     expect(observedBy()).toEqual([]);
+  });
+});
+
+describe('useClockLoop per frame', () => {
+  it('reads the registry only when it changes, never in a frame', () => {
+    const frames = makeFrames();
+    const registry = createClockRegistry();
+    const el = makeEl();
+    const h = createClock({ rate: 1 });
+    registry.register('t1', h, () => el);
+    const all = vi.spyOn(registry, 'all');
+    const targets = vi.spyOn(registry, 'targets');
+    mount(registry, frames);
+    all.mockClear();
+    targets.mockClear();
+    frames.flushAt(0);
+    frames.flushAt(16);
+    frames.flushAt(32);
+    expect(h.clock.elapsed).toBe(32);
+    expect(all).not.toHaveBeenCalled();
+    expect(targets).not.toHaveBeenCalled();
+    const late = createClock({ rate: 1 });
+    act(() => void registry.register('t2', late));
+    expect(all).toHaveBeenCalled();
+    frames.flushAt(48);
+    frames.flushAt(64);
+    expect(late.clock.elapsed).toBe(16);
   });
 });
