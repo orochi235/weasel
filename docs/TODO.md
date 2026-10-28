@@ -423,6 +423,22 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   stays clock-free; only the hook changes.
 - **(P3) [agent] `useEffectRunner` (`diagram`) runs its own frame loop.** Same move, so a diagram's
   effects can be paused and scrubbed with the rest of a trial.
+- **(P3) [agent] Loose ends from moving the trial clock into `@weasel-js/clock` (2026-10-27).**
+  - Loading a snapshot of a clock with a finite loop count (`loop: n`) lands in pass 0 at the saved
+    in-pass time. The shown time is right, but `pass`, `ended` and the time left are not.
+  - `loadHolds` in labkit's store commands keeps a hold for every trial ever loaded. Drop a trial's
+    entry when the trial closes.
+  - A snapshot whose config turns a clock on doesn't take up the snapshot's position. No handle
+    exists at load time, and the new clock opens already seeded.
+  - `useClockLoop` calls `registry.all()` and `targets()` on every frame, allocating
+    O(clocks × registrations) at 60 Hz. Cache the list, and update it when the registry changes.
+  - forge's `useTimeline` subscribes to the focused trial's transport even when the clock it resolved
+    is not the story's own, so an index page re-renders on every frame of the focused trial.
+  - `useTrialClockSetup` still makes a clock during render, from the `useState` initializer and
+    `setOwn`. Under StrictMode that makes one spare clock, which is dropped. Nothing leaks today, but
+    a `mix` factory with side effects would run twice.
+  - No test presents a trial whose function clock resolves to a spec. It posts `clock: false`, then
+    `clock: true` once the clock registers.
 
 ## Audio
 
