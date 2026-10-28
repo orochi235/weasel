@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/diagram/effect';
 import { Select } from '@weasel-js/ui/components/Select';
 import { DemoStage } from './DemoStage';
+import { paint, radiusAt } from './effectChartPictures';
 
 const image = (id: string, label?: string) => ({ id, type: 'image', ...(label ? { label } : {}) });
 
@@ -70,7 +71,7 @@ const SHOW_VALUES = { showValues: true };
  *  radius, and every two seconds the quality check flips, skipping the blur. */
 export function runAt(frame: number): EffectRun {
   const t = frame / 60;
-  const radius = 6 + 4 * Math.sin(t * 2);
+  const radius = radiusAt(t);
   const high = Math.floor(t / 2) % 2 === 0;
   return {
     stages: {
@@ -111,42 +112,29 @@ export function EffectChartRunDemo() {
 
 const SHOW_PREVIEWS = { showPreviews: true, previewSize: { width: 64, height: 36 } };
 
-/** A frame of a stand-in picture for one output: a band of `hue` sweeping across. */
-function thumbnail(scratch: OffscreenCanvas, hue: number, t: number): ImageBitmap {
-  const ctx = scratch.getContext('2d')!;
-  ctx.fillStyle = `hsl(${hue} 40% 18%)`;
-  ctx.fillRect(0, 0, scratch.width, scratch.height);
-  ctx.fillStyle = `hsl(${hue} 80% 60%)`;
-  ctx.fillRect(((t * 30 + hue) % (scratch.width + 16)) - 16, 0, 16, scratch.height);
-  return scratch.transferToImageBitmap();
-}
-
-/** The hue of the stand-in picture on a stage's preview slot for `port`: its own for an output, and
- *  for an input, such as Out's, the picture of the stage wired into it. */
-export function pictureOf(stageId: string, port: string): number | undefined {
-  const index = (id: string) => PIPELINE.stages.findIndex((s) => s.id === id);
-  const stage = PIPELINE.stages[index(stageId)];
-  if (stage?.outputs?.some((p) => p.id === port)) return index(stageId) * 47;
-  const from = PIPELINE.wires.find((w) => w.to.stage === stageId && w.to.port === port)?.from;
-  return from === undefined ? undefined : pictureOf(from.stage, from.port);
-}
-
-/** `runAt(frame)` with a new preview on every slot the run reached. */
-function withPreviews(run: EffectRun, scratch: OffscreenCanvas, frame: number): EffectRun {
-  const stages = Object.fromEntries(PIPELINE.stages.flatMap((stage): [string, EffectStageRun][] => {
+/** `runAt(frame)` with a picture on every slot the run reached, each drawn from what is wired into it.
+ *  A decision shows a picture only on the output it took. */
+function withPreviews(run: EffectRun, canvases: Map<string, OffscreenCanvas>, frame: number): EffectRun {
+  const slots = PIPELINE.stages.flatMap((stage) => {
     const ran = run.stages[stage.id];
     if (ran === undefined) return [];
-    const previews = Object.fromEntries(shownPorts(stage).flatMap((p): [string, ImageBitmap][] => {
-      const hue = pictureOf(stage.id, p.id);
-      return hue === undefined ? [] : [[p.id, thumbnail(scratch, hue, frame / 60)]];
+    return shownPorts(stage)
+      .filter((p) => ran.taken === undefined || p.id === ran.taken)
+      .map((p) => `${stage.id}/${p.id}`);
+  });
+  const bitmaps = paint(canvases, SHOW_PREVIEWS.previewSize, slots, { t: frame / 60, high: run.stages.q?.taken === 'yes' });
+  const stages = Object.fromEntries(Object.entries(run.stages).map(([id, ran]): [string, EffectStageRun] => {
+    const previews = Object.fromEntries([...bitmaps].flatMap(([slot, bitmap]) => {
+      const [stage, port] = slot.split('/') as [string, string];
+      return stage === id ? [[port, bitmap]] : [];
     }));
-    return [[stage.id, { ...ran, previews }]];
+    return [id, { ...ran, previews }];
   }));
   return { stages };
 }
 
 export function EffectChartPreviewDemo() {
-  const [scratch] = useState(() => new OffscreenCanvas(SHOW_PREVIEWS.previewSize.width, SHOW_PREVIEWS.previewSize.height));
+  const [canvases] = useState(() => new Map<string, OffscreenCanvas>());
   const [frame, setFrame] = useState(0);
   const loop = useVisibleRaf((_now, loop) => {
     loop.request();
@@ -156,7 +144,7 @@ export function EffectChartPreviewDemo() {
     loop.request();
     return () => loop.cancel();
   }, [loop]);
-  const run = useMemo(() => withPreviews(runAt(frame), scratch, frame), [frame, scratch]);
+  const run = useMemo(() => withPreviews(runAt(frame), canvases, frame), [frame, canvases]);
   return (
     <DemoStage width={W} height={H}>
       <EffectChart
