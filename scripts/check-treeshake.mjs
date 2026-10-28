@@ -37,7 +37,7 @@ const MESH_REGISTRATION = /label:\s*(`Mesh`|"Mesh")/;
 // A canvas handed one preset object carries that preset's actions, the undo and redo every canvas has, and no
 // other's: not core's named presets, and none of the heavy action families.
 const LEAN_CANVAS = 'LeanSceneCanvas, selectPreset';
-const UNASKED_PRESET = /core\/dist\/(canvas\/SceneCanvas\/(namedPresets|presets\/(?!select|chrome|toolDriven|baseline))|interactions\/actions\/(booleans|outlines|pathCommands|pathEffects)\/)/;
+const UNASKED_PRESET = /core\/dist\/(canvas\/SceneCanvas\/(namedPresets|presets\/(?!select|chrome|toolDriven|baseline|tools))|interactions\/actions\/(booleans|outlines|pathCommands|pathEffects)\/)/;
 
 const entryCode = (symbol, from) => `import { ${symbol} } from '${from}';\nconsole.log(${symbol});\n`;
 const EXTERNAL = [/^react($|\/)/, /^react-dom($|\/)/];
