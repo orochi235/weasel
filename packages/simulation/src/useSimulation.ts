@@ -32,10 +32,6 @@ export function useSimulation<TNode extends SimulationNode>(
   const endedRef = useRef(false);
   const mountedRef = useRef(true);
 
-  const steps = useSteps(opts, () => step());
-  // The handle below is made once, and a new clock makes new steps.
-  const stepsRef = useLatest(steps);
-
   /** One integration step; false once there is no next, settled or unmounted. */
   const step = (): boolean => {
     if (!mountedRef.current) return false;
@@ -44,7 +40,6 @@ export function useSimulation<TNode extends SimulationNode>(
     optsRef.current.onTick?.(core.nodes);
 
     if (core.alpha() < core.alphaMin()) {
-      steps.stop();
       if (!endedRef.current) {
         endedRef.current = true;
         optsRef.current.onEnd?.();
@@ -53,6 +48,10 @@ export function useSimulation<TNode extends SimulationNode>(
     }
     return true;
   };
+
+  const steps = useSteps(opts, () => step());
+  // The handle below is made once, and a new clock makes new steps.
+  const stepsRef = useLatest(steps);
 
   const startRaf = (): void => {
     if (!mountedRef.current) return;
