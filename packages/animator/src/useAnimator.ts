@@ -1,25 +1,38 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 import { isDev, useLatest, useVisibleRaf } from '@weasel-js/react';
+import type { Clock } from '@weasel-js/clock';
 import { ColorOverrideRegistry } from './colorRegistry';
 import { createAnimatorCore, type AnimatorCore } from './engine/core';
-import type { Animator, UseAnimatorOptions } from './types';
+import type { Animator } from './types';
+import type { UseAnimatorOptions } from './useAnimatorOptions';
 
 /** Create the animator for a canvas. One rAF loop drives every animation it
- *  owns, and everything still running is canceled on unmount. */
+ *  owns, or the clock in `opts.clock` does, and everything still running is
+ *  canceled on unmount. */
 export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const optsRef = useLatest(opts);
   const colorOverrides = useRef<ColorOverrideRegistry>(new ColorOverrideRegistry());
 
   // The loop runs behind the visibility gate. The core is built in the memo
   // below, so the frame callback reaches it through a ref, published once the
-  // memo's render commits.
+  // memo's render commits. On a clock, the clock's frames advance it, and the
+  // loop only shows a change made between them, at the time the clock stands.
   const coreRef = useRef<AnimatorCore | null>(null);
+  const followingRef = useRef(false);
+  const follow = useCallback((clock: Clock) => {
+    followingRef.current = true;
+    try { coreRef.current?.follow(clock.elapsed, clock.rate); } finally { followingRef.current = false; }
+  }, []);
   const frameLoop = useVisibleRaf(
-    useCallback((t: number) => { coreRef.current?.tick(t); }, []),
+    useCallback((t: number) => {
+      const handle = optsRef.current.clock;
+      if (handle) follow(handle.clock);
+      else coreRef.current?.tick(t);
+    }, [follow, optsRef]),
     {
       requestFrame: opts.requestFrame,
       cancelFrame: opts.cancelFrame,
-      onResume: () => coreRef.current?.resumed(),
+      onResume: () => { if (!optsRef.current.clock) coreRef.current?.resumed(); },
     },
   );
   const frameLoopRef = useLatest(frameLoop);
@@ -53,11 +66,16 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     // Using Date.now() here would mix epoch-millis with page-relative-millis,
     // producing huge negative `elapsed` values that clamp tween `t` to 0
     // forever (never reaching completion).
-    const now = (): number =>
-      (optsRef.current.now ?? (typeof performance !== 'undefined' ? performance.now.bind(performance) : Date.now))();
+    const now = (): number => {
+      const handle = optsRef.current.clock;
+      if (handle) return handle.clock.elapsed;
+      return (optsRef.current.now ?? (typeof performance !== 'undefined' ? performance.now.bind(performance) : Date.now))();
+    };
     return createAnimatorCore({
       now,
-      requestFrame: () => frameLoopRef.current.request(),
+      // On a clock, a frame asked for from inside one comes with the clock's next move: one shown
+      // at the same time would only ask again.
+      requestFrame: () => { if (!followingRef.current) frameLoopRef.current.request(); },
       cancelFrame: () => frameLoopRef.current.cancel(),
       tripwire,
       colorOverrides: colorOverrides.current,
@@ -74,6 +92,14 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   // animator keeps ticking with stale callbacks pointing at the unmounted
   // adapter, while the SECOND mount creates its own animator on top —
   // visible to the user as every animation playing twice.
+  const handle = opts.clock;
+  useEffect(() => {
+    if (!handle) return;
+    // The last frame's time may stand on another clock's.
+    core.resumed();
+    return handle.onFrame(() => { if (core.api.isActive()) follow(handle.clock); });
+  }, [core, handle, follow]);
+
   const { api } = core;
   useEffect(() => {
     const overrides = colorOverrides.current;

@@ -1,3 +1,5 @@
+import type { ClockHandle } from '@weasel-js/clock';
+
 /**
  * Matches d3-force's node shape exactly so d3-force's bundled forces work
  * without translation. Consumers extend this with additional fields.
@@ -32,6 +34,12 @@ export interface UseSimulationOptions<TNode extends SimulationNode>
   onTick?: (nodes: TNode[]) => void;
   /** Fired once when the sim settles (alpha < alphaMin && alphaTarget === 0). */
   onEnd?: () => void;
+  /** Steps the integrator on this clock rather than a frame loop of its own: once per `step` ms
+   *  of its time (the clock's `step`, else 1000/60), so the clock's pause, rate and visibility
+   *  gating govern it, and a host's `useClockLoop` syncs it. A run is built up by stepping and
+   *  cannot be unwound, so declare the clock `seekable: false`; time it goes back, as on a
+   *  `reset`, steps nothing, and the nodes stay where they are. */
+  clock?: ClockHandle;
 
   // Test injection (mirrors useAnimator):
   /** Optional rAF injection. Defaults to window.requestAnimationFrame. */
@@ -75,9 +83,9 @@ export interface SimulationCore<TNode extends SimulationNode> {
 
 /** A {@link SimulationCore} running on a frame loop. */
 export interface Simulation<TNode extends SimulationNode> extends SimulationCore<TNode> {
-  /** Resume the RAF loop. If alpha < alphaMin, reset alpha to 1. */
+  /** Resume the RAF loop, or stepping on the clock. If alpha < alphaMin, reset alpha to 1. */
   restart(): this;
-  /** Cancel the RAF loop. Does not change alpha. */
+  /** Cancel the RAF loop, or stop stepping on the clock. Does not change alpha. */
   stop(): this;
 }
 

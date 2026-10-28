@@ -163,16 +163,6 @@ export interface DecayOptions<T> {
   label?: string;
 }
 
-/** Options for `useAnimator`. Everything here is an injection seam for tests;
- *  the defaults are the real clock and rAF. */
-export interface UseAnimatorOptions {
-  /** Optional clock injection for tests. Returns ms since some epoch. */
-  now?: () => number;
-  /** Optional rAF / cAF injection for tests. Defaults to window.requestAnimationFrame. */
-  requestFrame?: (cb: (t: number) => void) => number;
-  cancelFrame?: (handle: number) => void;
-}
-
 /**
  * Owns every running animation on a canvas and drives them from one rAF loop.
  * Beyond the primitives (`tween`, `spring`, `decay`, `physics`) it offers

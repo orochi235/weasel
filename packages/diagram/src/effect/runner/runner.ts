@@ -33,6 +33,10 @@ export interface EffectRunner {
   /** Moves the play clock on by `seconds` while playing, and starts a run
    *  unless one is still going. A frame source calls it once a frame. */
   advance(seconds: number): void;
+  /** Moves the play clock to `seconds`, playing or not, and starts a run at
+   *  it; while one is still going, one more follows it at the latest time. A
+   *  clock that can be scrubbed calls it on every frame it moves. */
+  seek(seconds: number): void;
   /** The next run, step, or played frame follows `pipeline`. A step run under
    *  way starts over. */
   setPipeline(pipeline: EffectPipeline): void;
@@ -54,6 +58,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
   let controller = new AbortController();
   let tail: Promise<void> = Promise.resolve();
   let pending = 0;
+  let behind = false;
   // Runs published and not yet known to be off screen, oldest first.
   let published: EffectRun[] = [];
   const listeners = new Set<() => void>();
@@ -111,12 +116,24 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
       controller.abort();
       controller = new AbortController();
       dropStepping();
+      behind = false;
       set({ run: undefined, playing: false, time: 0 });
     },
     advance(seconds) {
       if (!state.playing) return;
       state = { ...state, time: state.time + seconds };
       if (pending === 0) void enqueue(wholeRun(state.time));
+    },
+    seek(seconds) {
+      state = { ...state, time: seconds };
+      if (pending === 0) void enqueue(wholeRun(seconds));
+      else if (!behind) {
+        behind = true;
+        void enqueue((signal) => {
+          behind = false;
+          return wholeRun(state.time)(signal);
+        });
+      }
     },
     setPipeline(next) {
       if (next === pipeline) return;

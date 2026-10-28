@@ -24,7 +24,7 @@ animator.spring({ target, to: 40 }); // bends the motion; neither cancels the ot
 
 | Export | What it is |
 |---|---|
-| `useAnimator()` | The animator: `tween`, `spring`, `physics`, `decay`, `hold`, `loop`, `stagger`, `timeline`, `watch`, and `live`, with `pause`, `resume`, and `setTimeScale` over everything it runs. The frame loop stops while its host is unseen. |
+| `useAnimator()` | The animator: `tween`, `spring`, `physics`, `decay`, `hold`, `loop`, `stagger`, `timeline`, `watch`, and `live`, with `pause`, `resume`, and `setTimeScale` over everything it runs. The frame loop stops while its host is unseen. Given a `clock` from `@weasel-js/clock`, it advances with that clock instead, so the clock pauses, seeks and gates it. |
 | `createTarget(opts)` | One value an animator moves. Animations on a target add, so a second one bends the first. `target.axisIndexes(['y'])` answers where the axes it names sit among the target's numbers. |
 | `createTargetTable(opts)` | Many like values as rows of flat arrays, shown in one pass. |
 | `sampleTrack`, the `Track` types | Keyframe tracks for `animator.timeline`. |

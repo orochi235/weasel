@@ -209,6 +209,31 @@ describe('rack direction: down', () => {
     expect(danglingEnds(rack(ADJACENT, { direction: 'down' }).data)).toEqual([]);
   });
 
+  it('turns a decision kept as its symbol to the column: signal in at the top, exits out the bottom, control on the side stages\' side', () => {
+    const gated: EffectPipeline = {
+      ...SKIP,
+      stages: SKIP.stages.map((s) => (s.id === 'q' ? { ...s, inputs: [...s.inputs!, { id: 'when', type: 'number' }] } : s)),
+      wires: [...SKIP.wires, w(['osc', 'value'], ['q', 'when'])],
+    };
+    for (const branch of ['diamond', 'switch', 'demux', 'hexagon', 'comparator', 'fork'] as const) {
+      for (const side of ['below', 'above'] as const) {
+        const kept = rack(gated, { direction: 'down', collapseSkips: false, branch, side });
+        const at = (p: string) => port(kept, 'q', p).at;
+        expect(at('in').v, `${branch} ${side}`).toBe(0);
+        // A diamond's second exit leaves by a side vertex, as along a row it leaves by the bottom one.
+        for (const exit of ['yes', 'no']) expect(at(exit).v, `${branch} ${side} ${exit}`).toBeGreaterThanOrEqual(0.5);
+        expect(at('yes').v, `${branch} ${side}`).toBeGreaterThan(0.5);
+        const when = at('when');
+        if (side === 'below') expect(when.u, `${branch} ${side}`).toBeGreaterThan(0.5);
+        else expect(when.u, `${branch} ${side}`).toBeLessThan(0.5);
+        expect(when.v, `${branch} ${side}`).toBeGreaterThan(0);
+        expect(when.v, `${branch} ${side}`).toBeLessThan(1);
+        expect(danglingEnds(kept.data)).toEqual([]);
+        expect(() => diagramScene(kept.data, kept.scene)).not.toThrow();
+      }
+    }
+  });
+
   it('makes a stage tall enough that its side ports sit apart', () => {
     const knobs = Array.from({ length: 8 }, (_, i) => `k${i}`);
     const many: EffectPipeline = {

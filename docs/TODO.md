@@ -346,14 +346,6 @@ Owner tags, after the priority (2026-10-26):
   `tests/perf/bench/scene-ops.bench.ts`, or a plain loop over `scene.add`/`scene.remove` under
   `tests/perf/bench/node-hooks.mjs`.
 
-- **(P3) [agent] A decision drawn as its symbol in a `direction: 'down'` rack still faces right**
-  (2026-10-27). The branch symbols (`packages/diagram/src/effect/symbolParts.ts`) take the signal in on their
-  left and send exits out on their right, and `BranchOptions.controlSide` knows only `'top' | 'bottom'`, so
-  in a column a decision that does not collapse to an arc (`collapseSkips: false`, or one that does more than
-  skip ahead) bends its main wires in from the side and draws its control input on an edge the side stages do
-  not face. Fix: give the symbols a flow direction, with `controlSide` taking `'left' | 'right'`, and have
-  `rack` pass both.
-
 - **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
   marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
   8.97 ms at 394b86d43 (medians, keiei, one session, 2026-10-22); the pick-index branch's own full
@@ -415,14 +407,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ### Engines still on their own frame loops
 
-- **(P3) [agent] `useAnimator` (`animator`) runs its own frame loop, so it can be neither paused nor scrubbed.**
-  Running it on `@weasel-js/clock` gives it `holdAt`, seeking and the clock's visibility gating
-  for free, and removes a second place that decides when time advances.
-- **(P3) [agent] `useSimulation` (`simulation`) runs its own frame loop.** Same move: step the
-  integrator from a `@weasel-js/clock` clock so a run can be paused and scrubbed. `createSimulation`
-  stays clock-free; only the hook changes.
-- **(P3) [agent] `useEffectRunner` (`diagram`) runs its own frame loop.** Same move, so a diagram's
-  effects can be paused and scrubbed with the rest of a trial.
+- **(P3) [maintainer] Should `useFrameClock` move onto `@weasel-js/clock`?** It is the last second
+  elapsed-time clock (pause, rebase on resume), but `@weasel-js/clock` depends on `@weasel-js/react`,
+  so folding it means moving public API out of `@weasel-js/react` and core's re-export into
+  `@weasel-js/clock/react`, and its runs-only-while-subscribed behavior has no clock equivalent.
+  Its one user is the site's `CustomShaderDemo` (2026-10-28).
+- **(P3) [agent] A turned `step` symbol's title and its cut labels both sit on the right**, so in a
+  `direction: 'down'` rack they can overlap when a cut falls near the middle (2026-10-28).
 
 ## Audio
 

@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@msb235/blits": "0.12.0",
+    "@weasel-js/clock": "1.13.0",
     "@weasel-js/geom": "1.13.0",
     "@weasel-js/paint": "1.13.0",
     "@weasel-js/react": "1.13.0",

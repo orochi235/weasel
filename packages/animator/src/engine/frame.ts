@@ -14,6 +14,9 @@ export interface AnimatorClock {
   elapsed: number;
   timeScale: number;
   paused: boolean;
+  /** -1 while an outside clock runs it backward, turning every animation as a negative time
+   *  scale does; otherwise 1. */
+  drive: 1 | -1;
 }
 
 /** What {@link createFrame} needs of the animator around it. */
@@ -67,7 +70,7 @@ export function createFrame(host: FrameHost): Frame {
     // next, or a zero-duration loop would chain inside one frame and never leave it.
     for (const anim of all ? [...animations.values()] : table.ticks()) {
       if (animations.get(anim.id) !== anim) continue;
-      const scale = clock.paused ? 0 : clock.timeScale * (anim.paused ? 0 : anim.timeScale);
+      const scale = clock.paused ? 0 : clock.timeScale * clock.drive * (anim.paused ? 0 : anim.timeScale);
       tickDepth += 1;
       try {
         if (anim.tick(table.clockOf(anim), scale)) finished.push(anim);
@@ -93,8 +96,8 @@ export function createFrame(host: FrameHost): Frame {
       // `t` comes from the frame clock, and `frameT` is seeded from `now()` while the animator
       // is idle. The two share a time origin in a browser, where the rAF timestamp and
       // `performance.now()` are both page-relative, but not everywhere: jsdom starts them
-      // ~600ms apart. Time never runs backwards, so a negative sample is never real.
-      const frameDt = clock.frameT == null ? 0 : Math.max(0, t - clock.frameT);
+      // ~600ms apart. Time never runs against the way it is driven, so such a sample is never real.
+      const frameDt = clock.frameT == null ? 0 : Math.max(0, (t - clock.frameT) * clock.drive);
       clock.frameT = t;
       framing = true;
       // Backward is each animation's own rate: the clock under them only goes forward.
