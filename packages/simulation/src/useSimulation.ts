@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import { useLatest, useVisibleRaf } from '@weasel-js/react';
+import { useLatest } from '@weasel-js/react';
 import { createSimulation } from './createSimulation';
+import { useSteps } from './useSteps';
 import {
   type Simulation,
   type SimulationCore,
@@ -11,7 +12,7 @@ import {
 
 /**
  * Continuous N-body simulation primitive: `createSimulation`'s integrator on a
- * frame loop.
+ * frame loop, or on `opts.clock`.
  *
  * The kit is adapter-agnostic — `onTick(nodes)` fires after each integration
  * step and the consumer decides how (and whether) to write through to scene
@@ -31,42 +32,31 @@ export function useSimulation<TNode extends SimulationNode>(
   const endedRef = useRef(false);
   const mountedRef = useRef(true);
 
-  // The loop runs behind the visibility gate: a settling simulation stops
-  // integrating on a page nobody is looking at, and picks up where it left off.
-  // Its step is fixed rather than time-based, so there is no clock to rebase.
-  // The gate defaults an absent clock to `requestAnimationFrame`, so an
-  // injected one passes straight through rather than being defaulted twice.
-  const frameLoop = useVisibleRaf(
-    () => { rafTick(); },
-    {
-      requestFrame: opts.requestFrame,
-      cancelFrame: opts.cancelFrame,
-    },
-  );
+  const steps = useSteps(opts, () => step());
+  // The handle below is made once, and a new clock makes new steps.
+  const stepsRef = useLatest(steps);
 
-  const stopRaf = (): void => { frameLoop.cancel(); };
-
-  const rafTick = (): void => {
-    if (!mountedRef.current) return;
+  /** One integration step; false once there is no next, settled or unmounted. */
+  const step = (): boolean => {
+    if (!mountedRef.current) return false;
 
     core.tick();
     optsRef.current.onTick?.(core.nodes);
 
     if (core.alpha() < core.alphaMin()) {
-      stopRaf();
+      steps.stop();
       if (!endedRef.current) {
         endedRef.current = true;
         optsRef.current.onEnd?.();
       }
-      return;
+      return false;
     }
-
-    frameLoop.request();
+    return true;
   };
 
   const startRaf = (): void => {
     if (!mountedRef.current) return;
-    frameLoop.request();
+    stepsRef.current.start();
   };
 
   // Starts on every mount, StrictMode's simulated remount included, and in a
@@ -74,12 +64,12 @@ export function useSimulation<TNode extends SimulationNode>(
   // `createSimulation` has already primed the nodes.
   useLayoutEffect(() => {
     mountedRef.current = true;
-    frameLoop.request();
+    steps.start();
     return () => {
       mountedRef.current = false;
-      frameLoop.cancel();
+      steps.stop();
     };
-  }, [frameLoop]);
+  }, [steps]);
 
   // Stable handle. All methods read through the core, so a fixed identity is safe.
   const handle = useMemo<Simulation<TNode>>(() => {
@@ -130,7 +120,7 @@ export function useSimulation<TNode extends SimulationNode>(
         return h;
       },
       stop() {
-        stopRaf();
+        stepsRef.current.stop();
         return h;
       },
       tick(iterations: number = 1) {

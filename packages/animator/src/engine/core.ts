@@ -26,12 +26,16 @@ export interface AnimatorCore {
   api: Animator;
   /** Runs one frame at timestamp `t`. */
   tick(t: number): void;
+  /** Runs one frame at time `t` of an outside clock, which may have gone back since the last:
+   *  the animations then play backward over the difference, as under a negative time scale.
+   *  `rate` is the clock's, which sets the direction when it has not moved. */
+  follow(t: number, rate: number): void;
   /** Says the frame loop is back after time unseen, which is charged to no animation. */
   resumed(): void;
 }
 
 export function createAnimatorCore(host: CoreHost): AnimatorCore {
-  const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false };
+  const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
   const codec = createCodec((on) => {
     // A move behind a row's holds runs in its table's lane for moves; the rest of a row's voices
@@ -61,7 +65,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     codec,
     hub,
     elapsed: () => clock.elapsed,
-    direction: () => (clock.timeScale < 0 ? -1 : 1),
+    direction: () => (clock.timeScale * clock.drive < 0 ? -1 : 1),
     seedClock,
     showNow: (target) => targets.showNow(target),
     resting: () => targets.resting,
@@ -131,6 +135,12 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   return {
     api,
     tick: frame.tick,
+    follow(t, rate) {
+      const moved = clock.frameT == null ? 0 : t - clock.frameT;
+      const drive = moved < 0 || (moved === 0 && rate < 0) ? -1 : 1;
+      if (drive !== clock.drive) table.turn(() => { clock.drive = drive; });
+      frame.tick(t);
+    },
     resumed() {
       // An hour spent hidden is not an hour the animation ran: dropping the last frame's
       // timestamp makes the resuming frame advance the clock by nothing.

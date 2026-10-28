@@ -184,9 +184,6 @@
   "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144
   },
-  "packages/simulation/src/useSimulation.ts": {
-    "longestFunction": 130
-  },
   "packages/storage/src/indexedDb.ts": {
     "longestFunction": 133
   },

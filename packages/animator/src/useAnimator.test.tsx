@@ -3,7 +3,8 @@ import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
 import { linear } from '@weasel-js/geom';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import type { Animator, UseAnimatorOptions } from './types';
+import type { Animator } from './types';
+import type { UseAnimatorOptions } from './useAnimatorOptions';
 
 /** Minimal manual rAF codec for deterministic tests. */
 function makeClock() {

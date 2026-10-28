@@ -26,6 +26,7 @@
     "react": { "optional": true }
   },
   "dependencies": {
+    "@weasel-js/clock": "1.13.0",
     "@weasel-js/react": "1.13.0"
   },
   "author": "orochi235",
