@@ -59,7 +59,7 @@ it('marks an asset another editor holds where the host says it changed', () => {
   expect(marked('Shell')).toBe(false);
 });
 
-const names = () => screen.getAllByRole('option').map((o) => o.firstElementChild?.textContent);
+const names = () => screen.getAllByRole('option').map((o) => o.children[1]?.textContent);
 
 it('sorts each heading\'s assets by name, another editor\'s among this one\'s', () => {
   const assets: ShownAsset[] = [{ id: 'z', label: 'Zoom', kind: 'schema', root }, { id: 'a', label: 'app', kind: 'schema', root }];

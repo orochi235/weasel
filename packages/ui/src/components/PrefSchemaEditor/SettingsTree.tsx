@@ -8,6 +8,7 @@ import { GROUP_ICON, type PaletteDrag } from './Palette';
 import { childrenOf, joinPath, valuePathOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { pointable, pointedAt, pointersTo } from './settingPointers';
 import { leafLabel, nodeLabel } from './structureRows';
+import { nodeIcon } from './nodeIcon';
 import s from './PrefSchemaEditor.module.css';
 import { icon } from '../../icons.gen';
 
@@ -20,7 +21,7 @@ function toRows(over: SchemaRoot, node: SchemaNode, path: string | null, placed:
       if (!pointable(over, id)) return [];
       const label = nodeLabel(child.name, key);
       const pointed = placed.has(valuePathOf(over, id));
-      return [{ ...row, label: leafLabel(pointed ? <span className={s.pointed}>{label}</span> : label), trailing: <PrefKindBadge kind={child.type ?? child.kind} /> }];
+      return [{ ...row, label: leafLabel(pointed ? <span className={s.pointed}>{label}</span> : label), leading: nodeIcon(child, false), trailing: <PrefKindBadge kind={child.type ?? child.kind} /> }];
     }
     const children = toRows(over, child, id, placed);
     if (children.length === 0) return [];

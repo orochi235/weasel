@@ -134,9 +134,7 @@
 .paneTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
 .treeKey { font-size: var(--wzl-font-size-sm); font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
 /* A leaf's row: no glyph before its label, which is set in the plain weight under a group's bolder one. */
-.treeLeaf { padding-inline-start: var(--wzl-space-1); font-weight: var(--wzl-font-weight-normal); }
-/* A leaf with fields under it: its glyph comes first, as a group's does, and its label stays a leaf's. */
-.treeFields { font-weight: var(--wzl-font-weight-normal); }
+.treeLeaf { font-weight: var(--wzl-font-weight-normal); }
 /* A setting the layout shown already points at. */
 .pointed { color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }
@@ -256,7 +254,7 @@
 .identityIcon {
   position: absolute; inset-block-start: 0; inset-inline-end: var(--identity-end, 0);
   display: grid; place-items: center; inline-size: var(--identity-icon); block-size: var(--identity-tall, var(--identity-icon));
-  border: 1px solid var(--wzl-border); border-radius: var(--wzl-radius-sm); color: var(--wzl-fg);
+  color: var(--wzl-fg);
 }
 .identityIcon > svg { inline-size: calc(var(--identity-icon) * 2 / 3); block-size: calc(var(--identity-icon) * 2 / 3); }
 

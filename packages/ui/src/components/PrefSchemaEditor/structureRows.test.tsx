@@ -13,12 +13,12 @@ const ROOT: PrefGroup = {
 };
 
 describe('toTreeNodes', () => {
-  it('gives a leaf with fields under it a glyph for its bracket to hang from, and a leaf with none no glyph', () => {
+  it('gives every leaf a glyph, with or without fields under it', () => {
     const rows = toTreeNodes(ROOT, null, new Set());
     const byId = Object.fromEntries(rows.map((row) => [row.id, row]));
     expect(byId.shape!.leading).toBeTruthy();
     expect(byId.shape!.children).toHaveLength(1);
     expect(byId.many!.leading).toBeTruthy();
-    expect(byId.plain!.leading).toBeUndefined();
+    expect(byId.plain!.leading).toBeTruthy();
   });
 });

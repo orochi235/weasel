@@ -130,7 +130,7 @@ describe('PrefSchemaEditor', () => {
     expect(within(structure()).getByRole('treeitem', { name: /^bare 0$/ })).toBeInTheDocument();
   });
 
-  it('draws a group\'s row with the glyph of the palette tool that makes it, and a leaf\'s with none', () => {
+  it('draws a group\'s row with the glyph of the palette tool that makes it, and a leaf\'s with its kind\'s', () => {
     renderWithIcons(<Live start={{ name: 'Prefs', children: { view: { ...START.children.view!, children: {
       box: { name: 'Box', as: 'panel', children: {} },
       grid: (START.children.view as PrefGroup).children.grid!,
@@ -140,7 +140,8 @@ describe('PrefSchemaEditor', () => {
     const leading = (key: string) => glyph(row(key).closest('[role="treeitem"]')!.querySelector('[class*="leading"]'));
     expect(leading('view')).toBe(tool('Page'));
     expect(leading('box')).toBe(tool('Panel'));
-    expect(leading('grid')).toBeUndefined();
+    expect(leading('grid')).toBeTruthy();
+    expect(leading('grid')).not.toBe(tool('Page'));
   });
 
   it('opens a page from a press and release on its rail entry in the preview, with no click of the browser\'s', () => {

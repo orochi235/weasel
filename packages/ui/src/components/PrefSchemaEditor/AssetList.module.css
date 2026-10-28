@@ -35,7 +35,7 @@
   text-align: start;
   cursor: pointer;
 }
-.headingIcon { flex: none; color: var(--wzl-fg-muted); }
+.headingIcon, .rowIcon { flex: none; color: var(--wzl-fg-muted); }
 .fold:focus-visible {
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: -2px;

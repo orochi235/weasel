@@ -62,8 +62,8 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
   onSelect(id: string): void;
   onElsewhere?(id: string): void;
 }): ReactElement {
-  const listed: Array<ListedAsset & { held: boolean }> = [
-    ...assets.map((asset) => ({ id: asset.id, label: asset.label, under: headingOf(asset), readOnly: asset.readOnly, changed: changed.has(asset.id), held: true })),
+  const listed: Array<ListedAsset & { held: boolean; icon?: IconRef }> = [
+    ...assets.map((asset) => ({ id: asset.id, label: asset.label, under: headingOf(asset), readOnly: asset.readOnly, changed: changed.has(asset.id), held: true, ...(asset.root.icon ? { icon: asset.root.icon } : {}) })),
     ...elsewhere.filter((other) => !assets.some((asset) => asset.id === other.id)).map((other) => ({ ...other, held: false })),
   ];
   const rows = order ? inOrder(listed, order) : byLabel(listed);
@@ -101,6 +101,7 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
               {open && held.map((row) => (
                 <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={row.changed || undefined}
                   data-rail-mark={row.id === selected ? 'current' : undefined} className={s.row}>
+                  <Icon name={row.icon ?? HEADING_ICON[title]} size={16} className={s.rowIcon} />
                   <Text slot="label" className={row.changed ? `${s.label} ${s.changed}` : s.label}>{row.label}</Text>
                   <Badge size="xs" variant="subtle" tint={{ ref: '--_heading' }} className={`${s.badge} ${HEADING_BADGE[title].tint}`}>{HEADING_BADGE[title].word}</Badge>
                   {row.readOnly && <Icon name={icon('bolt')} size={16} label="Dynamic" className={s.dynamic} />}
