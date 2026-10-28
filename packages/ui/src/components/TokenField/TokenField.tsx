@@ -1,11 +1,9 @@
-import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { useReorderDragList, type ReorderItem } from '../../useReorderDragList';
-import { movedEntry } from '../ListEditor/listEntries';
-import { wrapLine } from '../../wrapLine';
-import { Badge } from '../Badge';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import f from '../field.module.css';
+import { TokenChip } from './TokenChip';
+import { useTokenDrag } from './tokenDrag';
 import { TokenEditor, TokenText } from './TokenEditor';
-import { useTokenFocus } from './tokenFocus';
+import { chipKey, useTokenFocus } from './tokenFocus';
 import s from './TokenField.module.css';
 
 /** Props for {@link TokenField}. */
@@ -78,26 +76,11 @@ export function TokenField<T>({
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState<number | null>(null);
   const focus = useTokenFocus();
-  const container = useRef<HTMLDivElement | null>(null);
   const movable = reorder && !disabled;
   const removable = !disabled && value.length > minItems;
   const full = value.length >= maxItems;
   const edit = (at: number): void => { if (!disabled && locked?.(at) !== true) setEditing(at); };
-
-  const items = useMemo((): ReorderItem[] => value.map((_, i) => ({ id: String(i), label: '' })), [value]);
-  const line = useMemo(() => wrapLine(() => [...(container.current?.querySelectorAll(':scope > [data-token]') ?? [])]), []);
-  const drag = useReorderDragList({
-    items,
-    selectedIds: [],
-    line,
-    rowSelector: '[data-token]',
-    onReorder: ([id], target) => {
-      const from = Number(id);
-      onChange(movedEntry(value, from, target));
-      focus.request(target > from ? target - 1 : target);
-    },
-    onPress: (id) => edit(Number(id)),
-  });
+  const { drag, ref } = useTokenDrag(value, (next, at) => { onChange(next); focus.request(at); }, edit);
 
   const commit = (): void => {
     const text = draft.trim();
@@ -125,68 +108,43 @@ export function TokenField<T>({
     }
   };
   const onChipKey = (e: KeyboardEvent<HTMLElement>, at: number): void => {
-    if (e.target !== e.currentTarget || disabled) return;
-    const by = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
-    if (by !== 0 && e.altKey) {
-      e.preventDefault();
-      if (movable && drag.nudge(String(at), at, by)) focus.request(at + by);
-    } else if (by !== 0) {
-      e.preventDefault();
-      focus.request(at + by >= value.length ? 'input' : Math.max(0, at + by));
-    } else if (e.key === 'Backspace' || e.key === 'Delete') {
-      e.preventDefault();
-      remove(at);
-    }
+    const act = e.target === e.currentTarget && !disabled ? chipKey(e) : null;
+    if (act === null) return;
+    e.preventDefault();
+    if (act.kind === 'remove') remove(at);
+    else if (act.kind === 'move') { if (movable && drag.nudge(String(at), at, act.by)) focus.request(at + act.by); }
+    else focus.request(at + act.by >= value.length ? 'input' : Math.max(0, at + act.by));
   };
 
   const open = editing !== null && editing < value.length ? editing : null;
   return (
     <div
-      ref={(el) => {
-        container.current = el;
-        drag.containerProps.ref(el);
-      }}
+      ref={ref}
       className={[f.frame, s.field, className].filter(Boolean).join(' ')}
       role="group"
       aria-label={ariaLabel}
       data-disabled={disabled ? '' : undefined}
       onClick={(e) => { if (e.target === e.currentTarget) focus.request('input'); }}
     >
-      {value.map((token, i) => {
-        const text = label(token);
-        const name = text === '' ? 'Empty' : text;
-        const wrong = problem?.(value, i);
-        const tip = tooltip?.(token);
-        return (
-          // Tokens have no identity beyond their position, and two may be equal.
-          <span
-            key={i}
-            data-token=""
-            className={s.slot}
-            data-drop-before={drag.state.targetIndex === i ? '' : undefined}
-            data-drop-after={drag.state.targetIndex === value.length && i === value.length - 1 ? '' : undefined}
-            data-dragging={drag.state.draggedIds?.includes(String(i)) ? '' : undefined}
-          >
-            <Badge
-              ref={(el) => { focus.chips.current[i] = el; }}
-              className={s.token}
-              variant="subtle"
-              grade={wrong === undefined ? undefined : 'danger'}
-              aria-label={wrong === undefined ? name : `${name}, ${wrong}`}
-              tooltip={wrong === undefined ? tip : <>{tip}{tip != null && <br />}{wrong}</>}
-              onClick={disabled ? undefined : () => edit(i)}
-              onRemove={removable ? () => remove(i) : undefined}
-              removeLabel={`Remove ${name}`}
-              labelProps={{
-                onKeyDown: (e) => onChipKey(e, i),
-                ...(movable && { onPointerDown: drag.rowProps(String(i), i).onPointerDown }),
-              }}
-            >
-              {text === '' ? ' ' : text}
-            </Badge>
-          </span>
-        );
-      })}
+      {value.map((token, i) => (
+        // Tokens have no identity beyond their position, and two may be equal.
+        <TokenChip
+          key={i}
+          text={label(token)}
+          problem={problem?.(value, i)}
+          tooltip={tooltip?.(token)}
+          index={i}
+          count={value.length}
+          drag={drag.state}
+          chipRef={(el) => { focus.chips.current[i] = el; }}
+          onEdit={disabled ? undefined : () => edit(i)}
+          onRemove={removable ? () => remove(i) : undefined}
+          labelProps={{
+            onKeyDown: (e) => onChipKey(e, i),
+            ...(movable && { onPointerDown: drag.rowProps(String(i), i).onPointerDown }),
+          }}
+        />
+      ))}
       <input
         ref={focus.input}
         type="text"
@@ -203,10 +161,7 @@ export function TokenField<T>({
         <TokenEditor
           anchor={focus.chips.current[open] ?? null}
           title={`Edit ${label(value[open]!) || 'empty token'}`}
-          onClose={() => {
-            setEditing(null);
-            focus.request(open);
-          }}
+          onClose={() => { setEditing(null); focus.request(open); }}
         >
           {renderEditor
             ? renderEditor(value[open]!, (next) => set(open, next), open)

@@ -16,12 +16,12 @@ import {
   PrefActionButton,
   PrefActionRows,
   PrefControl,
+  PrefTextList,
   PrefWords,
   prefDrawsActionRow,
   prefDrawsNoControl,
   prefListIsText,
   prefListTexts,
-  PrefTextList,
   withRowControl,
 } from '@weasel-js/ui/components/Prefs';
 import {
