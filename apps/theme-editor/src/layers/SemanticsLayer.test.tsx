@@ -120,15 +120,15 @@ describe('<SemanticsLayer>', () => {
     expect(field).toHaveValue('gray-10');
   });
 
-  it('keeps what is typed into Against and writes every name', async () => {
+  it('adds each name typed into Against as a token, and flags one no semantic has', async () => {
     const onChange = renderEditing(setSemantic(weasel, 'fg-muted', { ramp: 'gray', contrast: { min: 4.5, against: ['surface'] } }));
     await userEvent.click(screen.getByRole('button', { name: 'fg-muted' }));
-    const field = screen.getByRole('textbox', { name: 'Against' });
-    await userEvent.clear(field);
-    await userEvent.type(field, 'surface, surface-raised');
-    expect(field).toHaveValue('surface, surface-raised');
-    await userEvent.tab();
+    const field = screen.getByRole('textbox', { name: 'Add to Against' });
+    await userEvent.type(field, 'surface-raised,');
+    expect(field).toHaveValue('');
     expect(lastDef(onChange).semantics!['fg-muted']).toMatchObject({ contrast: { against: ['surface', 'surface-raised'] } });
+    await userEvent.type(field, 'nope{Enter}');
+    expect(screen.getByRole('button', { name: 'nope, No semantic by this name' })).toBeInTheDocument();
   });
 
   it("starts a new rule that does not point at its own token", async () => {
