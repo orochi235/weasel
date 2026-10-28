@@ -15,7 +15,7 @@ import { Shelf } from './Shelf';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import type { PrefSchemaEditorProps } from './PrefSchemaEditor';
-import { NO_TYPES } from './types';
+import { NO_TYPES, type PrefTypes } from './types';
 import { aliasNodes, copyNodes, heirAfter, joinPath, parentPath, rebasePaths, VALUE_LINKS, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedAttributes, changedPaths } from './schemaExport';
 import { drawsNode } from './previewDrop';
@@ -24,7 +24,7 @@ import { usePreviewDropZone } from './usePreviewDropZone';
 import { useRowMarks } from './useRowMarks';
 import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
-import { useAssetChanges, type SubmitAssets } from './useAssetChanges';
+import { useAssetChanges, type SubmitAssets, type WorkspaceChanges } from './useAssetChanges';
 import { useActionCatalog } from './useActionCatalog';
 import { useBundleView } from './useBundleView';
 import { useAssetView } from './useAssetView';
@@ -109,6 +109,16 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
  * them, and a row picked there shows its attributes, where what a pref dragged out of it carries is edited. Start
  * one from `actionCatalog`. With none the pane lists the host's actions by their keys, and nothing sorts them.
  */
+/** What the shown asset exports and has changed since its baseline: every change, the paths they touch, and the
+ *  attributes changed on the row `lead`. */
+function useShownChanges(changedAssets: WorkspaceChanges, assetId: string, types: PrefTypes | undefined, lead: string | null) {
+  const exported = changedAssets.exported(assetId, types);
+  const changes = changedAssets.of(assetId);
+  const changed = useMemo(() => changedPaths(changes), [changes]);
+  const changedAttrs = useMemo(() => changedAttributes(changes, lead), [changes, lead]);
+  return { exported, changes, changed, changedAttrs };
+}
+
 export function AssetEditor(
   { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
@@ -153,12 +163,9 @@ export function AssetEditor(
   };
 
   const changedAssets = useAssetChanges(base, workspace, same, onChangedAssets);
-  const exported = changedAssets.exported(assetId, types);
-  const changes = changedAssets.of(assetId);
+  const { exported, changes, changed, changedAttrs } = useShownChanges(changedAssets, assetId, types, selection.lead);
   // The document packs every asset as sent, so every changed one is handed over, whichever is shown.
   const submit: SubmitChanges | undefined = onSubmit && (() => doc.send(() => onSubmit(changedAssets.sent(types))));
-  const changed = useMemo(() => changedPaths(changes), [changes]);
-  const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
   const actionList = useEditorActions(actions);
   const catalog = useActionCatalog({ workspace, current: () => latest.current.workspace, actions: actionList, write: doc.commit, onPick: () => { selection.set([]); setNotice(null); } });
   // A row picked among the actions is what the attributes show, until one of the structure's is.
