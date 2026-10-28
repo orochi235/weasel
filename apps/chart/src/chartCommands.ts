@@ -7,6 +7,7 @@ import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
 import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, replaceChart } from './chartPersistence';
 import { EXPORT_MENU } from './exportCommands';
+import { icon } from './icons.gen';
 import { IMPORT_ACTION } from './importExport';
 import { run, type ChartMenuContributions } from './menuBar';
 import { PAGE_MENU } from './pages/pageCommands';
@@ -15,7 +16,8 @@ import { THEME_MENU } from './theme/themeCommands';
 
 export const CHART_ACTIONS = {
   new: 'chart.new', open: 'chart.open', save: 'chart.save', preferences: 'chart.preferences',
-  grid: 'chart.view.grid', snapToGrid: 'chart.view.snapToGrid', autoLayout: 'chart.arrange.autoLayout',
+  grid: 'chart.view.grid', snapToGrid: 'chart.view.snapToGrid', snapToShapes: 'chart.view.snapToShapes',
+  snapToGaps: 'chart.view.snapToGaps', autoLayout: 'chart.arrange.autoLayout',
 } as const;
 
 /** Chart mode's File (Import and Export included), Edit, View, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, Reset label, Line jumps, and Release members are the diagram package's. */
@@ -31,6 +33,7 @@ export const CHART_MENUS: ChartMenuContributions = {
   },
   view: {
     grid: run({ grid: CHART_ACTIONS.grid, snapToGrid: CHART_ACTIONS.snapToGrid }),
+    snap: run({ snapToShapes: CHART_ACTIONS.snapToShapes, snapToGaps: CHART_ACTIONS.snapToGaps }),
     prefs: run({ preferences: CHART_ACTIONS.preferences }),
   },
   format: {
@@ -57,7 +60,7 @@ async function openChart(scene: ChartScene): Promise<void> {
   replaceChart(scene, chartFromJson(await file.text()), 'Open chart');
 }
 
-/** Registers Open and Save, and View's Show grid and Snap to grid, on the nearest `<ActionsProvider>`. New… is
+/** Registers Open and Save, and View's grid and snapping toggles, on the nearest `<ActionsProvider>`. New… is
  *  `NewChart`'s, which owns its dialog. */
 export function useChartCommands(scene: ChartScene): void {
   useCommand(CHART_ACTIONS.open, 'Open…', () => {
@@ -70,11 +73,23 @@ export function useChartCommands(scene: ChartScene): void {
   const [snapToGrid, setSnapToGrid] = useChartPref('view.snapToGrid');
   // Photoshop's View › Show › Grid and View › Snap. Shift turns ; into :, so Snap names both and the physical key.
   useCommand(CHART_ACTIONS.grid, 'Show grid', () => setGridVisible(!gridVisible), {
+    icon: icon('ui:grid'),
     active: () => gridVisible,
     keys: { kind: 'key', key: "'", code: 'Quote', mods: { mod: true } },
   });
   useCommand(CHART_ACTIONS.snapToGrid, 'Snap to grid', () => setSnapToGrid(!snapToGrid), {
+    icon: icon('ui:snap'),
     active: () => snapToGrid,
     keys: { kind: 'key', key: [';', ':'], code: 'Semicolon', mods: { mod: true, shift: true } },
+  });
+  const [snapToShapes, setSnapToShapes] = useChartPref('view.alignmentSnap');
+  const [snapToGaps, setSnapToGaps] = useChartPref('view.spacingSnap');
+  useCommand(CHART_ACTIONS.snapToShapes, 'Snap to other shapes', () => setSnapToShapes(!snapToShapes), {
+    icon: icon('snapShapes'),
+    active: () => snapToShapes,
+  });
+  useCommand(CHART_ACTIONS.snapToGaps, 'Snap to equal gaps', () => setSnapToGaps(!snapToGaps), {
+    icon: icon('snapGaps'),
+    active: () => snapToGaps,
   });
 }

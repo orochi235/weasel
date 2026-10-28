@@ -49,7 +49,12 @@ export type DiagramIconName =
   | 'mainTopic'
   | 'subtopic'
   | 'floatingNote'
-  | 'mindMap';
+  | 'mindMap'
+  | 'routerStraight'
+  | 'routerOrthogonal'
+  | 'routerCurved'
+  | 'routerAvoid'
+  | 'lineJumps';
 
 /** This package's `icon()`: a bare name means `diagram:<name>`. */
 export const icon = scopedIcon<DiagramIconName>('diagram');
@@ -136,6 +141,16 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DiagramIconN
       "floatingNote",
       "mindMap"
     ]
+  },
+  {
+    "label": "Connectors",
+    "names": [
+      "routerStraight",
+      "routerOrthogonal",
+      "routerCurved",
+      "routerAvoid",
+      "lineJumps"
+    ]
   }
 ];
 
@@ -187,5 +202,10 @@ declare module '@weasel-js/icons' {
     'diagram:subtopic': true;
     'diagram:floatingNote': true;
     'diagram:mindMap': true;
+    'diagram:routerStraight': true;
+    'diagram:routerOrthogonal': true;
+    'diagram:routerCurved': true;
+    'diagram:routerAvoid': true;
+    'diagram:lineJumps': true;
   }
 }

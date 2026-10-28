@@ -5,7 +5,6 @@ import {
 import { diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
-import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
@@ -20,6 +19,7 @@ import { ChartPageStrip } from './pages/ChartPageStrip';
 import { PAGE_FIT_PADDING, useChartPages } from './pages/useChartPages';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { StylePanel } from './theme/StylePanel';
+import { ChartToolbar } from './toolbar/ChartToolbar';
 import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
 import { ThemePanel } from './theme/ThemePanel';
 import {
@@ -63,7 +63,7 @@ export function ChartWorkspace(): ReactElement {
   const fitted = useRef<View | null>(null);
   const setFitted = useCallback((fit: View) => { fitted.current = fit; setView(fit); }, []);
   const recenter = usePageFit(dims, 'chart', pages.shown ?? pages.placed[0] ?? CHART_PAGE, setFitted, PAGE_FIT_PADDING);
-  // The toolbar fills in after the first fit and shrinks the host: until the view is moved, keep the page fitted.
+  // The tool palette fills in after the first fit and shrinks the host: until the view is moved, keep the page fitted.
   const viewRef = useLatest(view);
   useEffect(() => {
     if (fitted.current !== null && viewRef.current === fitted.current) recenter();
@@ -91,9 +91,7 @@ export function ChartWorkspace(): ReactElement {
 
   return (
     <div className="wc-workspace">
-      <div className="wc-toolbar">
-        {tools && <ToolPalette tools={tools} include={isPaletteTool} orientation="horizontal" />}
-      </div>
+      <ChartToolbar tools={tools} include={isPaletteTool} view={view} setView={setView} dims={dims} />
       <div className="wc-body">
         <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes">
           {tools && <StencilPanel tools={tools} scene={scene} />}
@@ -117,7 +115,7 @@ export function ChartWorkspace(): ReactElement {
                 tools={diagram.tools}
                 selectTool={selectTool}
                 ambient={diagram.ambient}
-                  onToolsCreated={setTools}
+                onToolsCreated={setTools}
                 alphaFor={alphaFor}
                 layers={layers}
               >
