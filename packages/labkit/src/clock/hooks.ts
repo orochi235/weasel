@@ -25,7 +25,7 @@ export function useTrialClock(trialId?: string | null): TrialClock | null {
  * `null` when it declares none. Probe it per frame inside {@link useClockFrame}
  * or a `timed` layer, which run after the mix has followed the clock.
  */
-export function useTrialMix<M extends ClockedMix = ClockedMix>(trialId?: string): M | null {
+export function useTrialMix<M extends ClockedMix = ClockedMix>(trialId?: string | null): M | null {
   return (useTrialClockHandle(trialId)?.mix ?? null) as M | null;
 }
 
@@ -54,7 +54,10 @@ export function useTrialClockHandle(trialId?: string | null): TrialClockHandle |
  * changes every frame written into a ref. The clock is resolved as
  * {@link useTrialClock}, so a lab-level readout follows one too.
  */
-export function useClockFrame(fn: (elapsed: number, pass: number) => void, trialId?: string): void {
+export function useClockFrame(
+  fn: (elapsed: number, pass: number) => void,
+  trialId?: string | null,
+): void {
   const handle = useTrialClockHandle(trialId);
   const latest = useLatest(fn);
   useEffect(
