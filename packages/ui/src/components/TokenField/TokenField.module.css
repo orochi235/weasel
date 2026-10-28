@@ -4,7 +4,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wzl-space-1);
+  gap: var(--wzl-space-1) var(--wzl-space-2);
   min-block-size: var(--wzl-field-h, var(--wzl-control-h));
   padding: var(--wzl-space-1);
   box-sizing: border-box;
@@ -33,19 +33,25 @@
 }
 
 .slot[data-drop-before]::before {
-  inset-inline-start: calc(-1 * var(--wzl-space-1) / 2 - 1px);
+  inset-inline-start: calc(-1 * var(--wzl-space-2) / 2 - 1px);
 }
 
 .slot[data-drop-after]::before {
-  inset-inline-end: calc(-1 * var(--wzl-space-1) / 2 - 1px);
+  inset-inline-end: calc(-1 * var(--wzl-space-2) / 2 - 1px);
 }
 
-/* A token is a value as typed, not a status: it keeps its case and the field's text size. */
+/* A token is a value as typed, not a status: it keeps its case and the field's text size. Ungraded, its
+   tint is the muted text color, since the border gray a badge falls back to vanishes on a sunken field. */
 .field .token {
   --badge-font-size: var(--wzl-font-size-sm);
+  --badge-emphasis-edge: var(--wzl-fg-muted);
   text-transform: none;
   letter-spacing: normal;
   max-inline-size: 100%;
+}
+
+.field .slot .token:not([data-grade]) {
+  --badge-fg: var(--wzl-fg);
 }
 
 .input {
