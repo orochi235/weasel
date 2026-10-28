@@ -66,7 +66,9 @@
 /* A titled list: the header keeps its place and the rows scroll under it, as the structure's do. */
 .listPane { display: flex; flex-direction: column; overflow: hidden; }
 .listBody { flex: 1; min-height: 0; }
-.treeArea { flex: 1; --wzl-tree-leaf-indent: var(--wzl-space-2); }
+.treeArea { flex: 1; }
+/* A setting starts its name where its group's name starts, past the group's glyph. */
+.treeArea, .settingsTree { --wzl-tree-leaf-indent: var(--wzl-space-2); }
 /* A group's glyph folds it, and says it is open. */
 :is(.treeArea, .storedArea, .shelfPane) [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }
 /* Padded all the time, so the outline a drop draws inside its edge has room and nothing moves when it appears. */
@@ -103,6 +105,8 @@
 .treeKey { font-size: var(--wzl-font-size-sm); font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
 /* A leaf's row: no glyph before its label, which is set in the plain weight under a group's bolder one. */
 .treeLeaf { padding-inline-start: var(--wzl-space-1); font-weight: var(--wzl-font-weight-normal); }
+/* A leaf with fields under it: its glyph comes first, as a group's does, and its label stays a leaf's. */
+.treeFields { font-weight: var(--wzl-font-weight-normal); }
 /* A setting the layout shown already points at. */
 .pointed { color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }
