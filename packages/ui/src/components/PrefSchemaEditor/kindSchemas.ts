@@ -35,13 +35,11 @@ const optNumber = (name: string, description: string): PrefLeaf => ({ kind: 'opt
 const choice = (name: string, description: string, values: readonly string[]): PrefLeaf =>
   ({ kind: 'enum', name, description, default: undefined, clearable: true, options: values.map((v) => ({ value: v, label: v })) }) as PrefLeaf;
 const strings = (name: string, description: string): PrefLeaf =>
-  ({ kind: 'list', name, description, default: [], item: { kind: 'string', name: '', description: '', default: '' } }) as PrefLeaf;
+  ({ kind: 'list', name, description, default: [], control: 'tokens', item: { kind: 'string', name: '', description: '', default: '' } }) as PrefLeaf;
 /** Text the code spells, which the editor sets in monospace. */
 const symbol = (name: string, description: string): PrefLeaf => ({ kind: 'symbol', name, description, default: '' });
 /** The attribute kind an `icon` is edited as: a picker over every registered icon. */
 export const ICON_KIND = 'icon';
-const symbols = (name: string, description: string): PrefLeaf =>
-  ({ kind: 'list', name, description, default: [], item: symbol('', '') }) as PrefLeaf;
 /** The attribute kind a `showIf` or an `enableIf` is edited as: a `PrefCondition` over the schema's other leaves. */
 export const CONDITION_KIND = 'condition';
 const condition = (name: string, description: string): PrefLeaf => ({ kind: CONDITION_KIND, name, description, default: undefined });
@@ -88,11 +86,12 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   paint: { alpha: flag('Alpha', 'Offer an alpha channel.') },
   object: {},
   field: {
-    kinds: symbols('Kinds', 'Only fields of these kinds may be named. Empty: any.'),
+    kinds: strings('Kinds', 'Only fields of these kinds may be named. Empty: any.'),
   },
   list: {
     minItems: optNumber('Fewest', 'Entries cannot be removed at this many.'),
     maxItems: optNumber('Most', 'Entries cannot be added at this many.'),
+    control: control(['list', 'tokens']),
   },
   map: {},
   union: { tag: symbol('Tag', 'The field of the value that names its variant.') },
@@ -173,7 +172,7 @@ function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }):
     case 'field': return { ...base, kind: 'field', default: '', kinds: (leaf as PrefField).kinds } as PrefLeaf;
     case 'list': {
       const l = leaf as PrefList;
-      return { ...base, kind: 'list', default: [], item: l.item, minItems: l.minItems, maxItems: l.maxItems } as PrefLeaf;
+      return { ...base, kind: 'list', default: [], item: l.item, minItems: l.minItems, maxItems: l.maxItems, control: l.control } as PrefLeaf;
     }
     default: return null;
   }

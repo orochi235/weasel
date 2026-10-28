@@ -34,28 +34,30 @@ describe('attribute controls', () => {
     expect(setValue).toHaveBeenLastCalledWith(undefined);
   });
 
-  it('enum-options edits a value and adds a row', () => {
+  it('enum-options shows each option by its label, edits one in its popover, and adds one as typed', () => {
     const setValue = vi.fn();
     renderWithIcons(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', [{ value: 'a', label: 'A' }], setValue))}</>);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Option 1 value' }), { target: { value: 'b' } });
+    fireEvent.click(screen.getByRole('button', { name: 'A' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Value stored' }), { target: { value: 'b' } });
     expect(setValue).toHaveBeenLastCalledWith([{ value: 'b', label: 'A' }]);
-    fireEvent.click(screen.getByRole('button', { name: 'Add option' }));
-    expect(setValue).toHaveBeenLastCalledWith([{ value: 'a', label: 'A' }, { value: '', label: '' }]);
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    const add = screen.getByRole('textbox', { name: 'Add to Options' });
+    fireEvent.change(add, { target: { value: 'c' } });
+    fireEvent.keyDown(add, { key: 'Enter' });
+    expect(setValue).toHaveBeenLastCalledWith([{ value: 'a', label: 'A' }, { value: 'c', label: 'c' }]);
   });
 
   it('enum-options flags a value that is empty or repeats an earlier one, and still takes the edit', () => {
     const setValue = vi.fn();
     const rows = [{ value: 'a', label: 'A' }, { value: '', label: '' }, { value: 'a', label: 'Again' }];
     renderWithIcons(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', rows, setValue))}</>);
-    const value = (n: number) => screen.getByRole('textbox', { name: `Option ${n} value` });
-    expect(value(1)).not.toHaveAttribute('aria-invalid');
-    expect(value(2)).toHaveAttribute('aria-invalid', 'true');
-    expect(value(2)).toHaveAccessibleDescription('Value is empty');
-    expect(value(3)).toHaveAttribute('aria-invalid', 'true');
-    expect(value(3)).toHaveAccessibleDescription('Repeats an earlier value');
-    expect(screen.getByRole('textbox', { name: 'Option 2 label' })).not.toHaveAttribute('aria-invalid');
-    fireEvent.change(value(3), { target: { value: 'a' } });
-    fireEvent.change(value(3), { target: { value: 'ab' } });
+    expect(screen.getByRole('button', { name: 'A' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Empty, Value is empty' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Again, Repeats an earlier value' }));
+    const value = screen.getByRole('textbox', { name: 'Value stored' });
+    expect(value).toHaveAttribute('aria-invalid', 'true');
+    expect(value).toHaveAccessibleDescription('Repeats an earlier value');
+    fireEvent.change(value, { target: { value: 'ab' } });
     expect(setValue).toHaveBeenLastCalledWith([rows[0], rows[1], { value: 'ab', label: 'Again' }]);
   });
 });

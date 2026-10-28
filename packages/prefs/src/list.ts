@@ -15,4 +15,12 @@ export interface PrefList extends PrefValueBase<'list', readonly unknown[]> {
   minItems?: number;
   /** A stored list longer than this reads cut to it, and a UI stops adding at it. */
   maxItems?: number;
+  control?: PrefListControl;
 }
+
+/**
+ * How a schema-driven UI should present a list whose entries are plain text: a field per entry, one under another,
+ * or `tokens`, a chip per entry in a row that wraps, for entries short enough to read as one. A list of anything else
+ * is drawn a control per entry whatever this says.
+ */
+export type PrefListControl = 'list' | 'tokens';

@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { FocusEvent, HTMLAttributes, KeyboardEvent, ReactNode } from 'react';
 import s from './Badge.module.css';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 
@@ -29,6 +29,8 @@ interface BadgeTargetProps {
   'aria-label'?: string;
   tooltip?: ReactNode;
   onFocusChange: (focused: boolean) => void;
+  /** Attributes the badge's caller puts on the label; its own handlers run after these. */
+  extra?: HTMLAttributes<HTMLElement>;
   children: ReactNode;
 }
 
@@ -37,12 +39,13 @@ interface BadgeTargetProps {
  * if it could: a root `<button>` or `<a>` may not hold the remove button.
  */
 export function BadgeTarget(props: BadgeTargetProps) {
-  const { element, href, onClick, tooltip, onFocusChange, children } = props;
+  const { element, href, onClick, tooltip, onFocusChange, extra, children } = props;
   const shared = {
+    ...extra,
     className: s.target,
     'aria-label': props['aria-label'],
-    onFocus: () => onFocusChange(true),
-    onBlur: () => onFocusChange(false),
+    onFocus: (e: FocusEvent<HTMLElement>) => { extra?.onFocus?.(e); onFocusChange(true); },
+    onBlur: (e: FocusEvent<HTMLElement>) => { extra?.onBlur?.(e); onFocusChange(false); },
   };
   const onOwnKey = (key: string, act: (e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
     if (e.key === key && e.target === e.currentTarget) act(e);
@@ -58,6 +61,8 @@ export function BadgeTarget(props: BadgeTargetProps) {
         tabIndex={0}
         onClick={onClick}
         onKeyDown={(e) => {
+          extra?.onKeyDown?.(e);
+          if (e.defaultPrevented) return;
           onOwnKey('Enter', () => onClick?.())(e);
           // Space acts on release, as a native button does; held, it must not scroll the page.
           onOwnKey(' ', (ev) => ev.preventDefault())(e);

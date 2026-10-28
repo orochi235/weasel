@@ -78,7 +78,7 @@ export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from 
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
 export type { PrefLabel, PrefSeparator } from './label';
 export { prefObjectBase, prefObjectWithField } from './object';
-export type { PrefList } from './list';
+export type { PrefList, PrefListControl } from './list';
 export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
 export { prefType } from './type';

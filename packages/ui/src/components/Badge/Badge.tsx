@@ -59,6 +59,9 @@ export interface BadgeOwnProps extends AppearanceProps {
    * On a badge with `onRemove`, the label is the trigger rather than the root.
    */
   tooltip?: ReactNode;
+  /** Attributes for the label of a removable badge that has an action, the element that takes the action and
+   *  focus: handlers that must see a press or a key on the label itself. Ignored where the label is not split off. */
+  labelProps?: HTMLAttributes<HTMLElement>;
 }
 
 /** DOM attributes a badge passes through to its root element, e.g. the ones
@@ -124,7 +127,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     base,
     baseParams,
     effects,
-    tooltip,
+    tooltip, labelProps,
     as: _as,
     'aria-label': ariaLabelProp,
     onFocus,
@@ -208,7 +211,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
       {decoSvg}
       <span ref={contentRef} className={s.content}>
         {split ? (
-          <BadgeTarget element={element} href={href} onClick={onClick} aria-label={ariaLabel} tooltip={tooltip} onFocusChange={setFocused}>
+          <BadgeTarget element={element} href={href} onClick={onClick} aria-label={ariaLabel} tooltip={tooltip} onFocusChange={setFocused} extra={labelProps}>
             {children}
           </BadgeTarget>
         ) : <span>{children}</span>}

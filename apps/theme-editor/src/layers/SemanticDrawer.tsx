@@ -1,14 +1,13 @@
 import { isByAxis, type AxisDefs, type Varying } from '@weasel-js/theme';
 import type { SemanticRule } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
-import { PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui/components/Properties';
+import { PropertyField, PropertyGroup, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
+import { TokenField } from '@weasel-js/ui/components/TokenField';
 import { useState } from 'react';
 import styles from '../ThemeEditor.module.css';
 import { RULE_KINDS, defaultRule, ruleKind, type SemanticRowView } from '../theme/semantics';
 
 type Ramps = Readonly<Record<string, readonly string[]>>;
-
-const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 export interface SemanticDrawerProps {
   readonly name: string;
@@ -31,25 +30,21 @@ const DIRECTIONS = [
   { value: 'away', label: 'Away' },
 ] as const;
 
-const parseNames = (text: string) =>
-  text
-    .split(',')
-    .map((n) => n.trim())
-    .filter(Boolean);
-
-function AgainstRow({ against, onChange }: { against: readonly string[]; onChange: (against: string[]) => void }) {
-  const [raw, setRaw] = useState(() => against.join(', '));
-  const text = sameJson(parseNames(raw), against) ? raw : against.join(', ');
+function AgainstRow({ against, semantics, onChange }: {
+  against: readonly string[];
+  semantics: readonly string[];
+  onChange: (against: string[]) => void;
+}) {
   return (
-    <PropertyField
-      kind="string"
-      label="Against"
-      value={text}
-      onChange={(v) => {
-        setRaw(v);
-        onChange(parseNames(v));
-      }}
-    />
+    <PropertyRow label="Against" group>
+      <TokenField
+        aria-label="Against"
+        reorder
+        value={against}
+        onChange={onChange}
+        problem={(names, i) => (semantics.includes(names[i]!) ? undefined : 'No semantic by this name')}
+      />
+    </PropertyRow>
   );
 }
 
@@ -100,6 +95,7 @@ function RuleFields({
         />
         <AgainstRow
           against={rule.contrast.against}
+          semantics={semantics}
           onChange={(against) => onChange({ ...rule, contrast: { ...rule.contrast, against } }, 'contrast.against')}
         />
       </>

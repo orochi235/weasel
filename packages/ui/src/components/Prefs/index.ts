@@ -20,7 +20,8 @@ export { PrefLabelLine, PrefRule, PrefWords, prefDrawsNoControl } from './PrefWo
 export { useLeafAction, type LeafAction } from './useLeafAction';
 export { PrefControl, type PrefControlProps } from './PrefControl';
 export { entriesDisabled, entryApplier, entryDisabledAt, type EntryAt, type EntryConditions } from './entry';
-export { prefListEntry, prefListIsText, prefListTexts } from './ListLeaf';
+export { PrefTextList, prefListEntry, prefListIsText, prefListTexts } from './ListLeaf';
+export type { PrefTextListProps } from './ListLeaf';
 export { MapEditor, type MapEditorProps } from './MapEditor';
 export { UnionPicker, type UnionPickerProps } from './UnionPicker';
 export { PrefsRail, type PrefsRailProps } from './PrefsRail';

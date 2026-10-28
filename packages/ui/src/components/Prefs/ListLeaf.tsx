@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import { prefLeafValue, type PrefList, type PrefString } from '@weasel-js/prefs';
-import { ListEditor } from '../ListEditor';
+import { ListEditor, type ListEditorProps } from '../ListEditor';
+import { TokenField } from '../TokenField';
 import { entriesDisabled, entryConditions, entryDisabledAt } from './entry';
 import type { PrefRenderContext, PrefRenderer } from './PrefsRow';
 
 /**
- * Whether a list's entries are plain text, drawn by `ListEditor`'s own fields: with them come Enter to add an
- * entry and Backspace to remove an empty one. `drawn` says the surface has its own renderer for strings.
+ * Whether a list's entries are plain text, drawn by {@link PrefTextList} as `ListEditor`'s own fields or as
+ * `TokenField`'s chips. `drawn` says the surface has its own renderer for strings.
  */
 export function prefListIsText(pref: PrefList, drawn: boolean): boolean {
   return pref.item.kind === 'string' && !drawn && (pref.item as PrefString).control !== 'textarea';
@@ -15,6 +16,18 @@ export function prefListIsText(pref: PrefList, drawn: boolean): boolean {
 /** The entries of a text list as `ListEditor` takes them: anything that is not a string reads as empty. */
 export function prefListTexts(value: unknown): string[] {
   return (Array.isArray(value) ? value : []).map((e) => (typeof e === 'string' ? e : ''));
+}
+
+/** Props for {@link PrefTextList}: a text list's entries and limits, as `ListEditor` takes them. */
+export type PrefTextListProps = Pick<
+  ListEditorProps<string>,
+  'value' | 'onChange' | 'minItems' | 'maxItems' | 'placeholder' | 'disabled' | 'entryDisabled' | 'aria-label'
+> & { pref: PrefList };
+
+/** A text list's control: a field per entry, or a chip per entry where the list's `control` is `tokens`. */
+export function PrefTextList({ pref, entryDisabled, ...props }: PrefTextListProps) {
+  if (pref.control === 'tokens') return <TokenField {...props} reorder locked={entryDisabled} />;
+  return <ListEditor {...props} entryDisabled={entryDisabled} />;
 }
 
 /** What an entry of a list reads as: one holding nothing is the item's default, which is what a new entry starts as. */
@@ -44,7 +57,7 @@ export function ListLeaf({
   const entries = Array.isArray(ctx.value) ? (ctx.value as unknown[]) : [];
   if (prefListIsText(pref, renderers?.string !== undefined)) {
     const texts = prefListTexts(ctx.value);
-    return <ListEditor {...shared} disabled={entriesDisabled(ctx)} entryDisabled={entryDisabledAt(ctx, item, texts)} value={texts} />;
+    return <PrefTextList {...shared} pref={pref} disabled={entriesDisabled(ctx)} entryDisabled={entryDisabledAt(ctx, item, texts)} value={texts} />;
   }
   return (
     <ListEditor<unknown>

@@ -1,0 +1,73 @@
+/* A frame that grows a line at a time as its chips wrap, rather than the one-line height a field keeps. */
+.field {
+  --_frame-h: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-1) var(--wzl-space-2);
+  min-block-size: var(--wzl-field-h, var(--wzl-control-h));
+  padding: var(--wzl-space-1);
+  box-sizing: border-box;
+  cursor: text;
+}
+
+.slot {
+  position: relative;
+  display: inline-flex;
+  max-inline-size: 100%;
+  cursor: default;
+}
+
+.slot[data-dragging] {
+  opacity: 0.5;
+}
+
+/* Where a dragged chip would land: a bar on the edge of the chip it would land against. */
+.slot:is([data-drop-before], [data-drop-after])::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inline-size: 2px;
+  background: var(--wzl-accent);
+  border-radius: var(--wzl-radius-pill);
+}
+
+.slot[data-drop-before]::before {
+  inset-inline-start: calc(-1 * var(--wzl-space-2) / 2 - 1px);
+}
+
+.slot[data-drop-after]::before {
+  inset-inline-end: calc(-1 * var(--wzl-space-2) / 2 - 1px);
+}
+
+/* A token is a value as typed, not a status: it keeps its case and the field's text size. Ungraded, its
+   tint is the muted text color, since the border gray a badge falls back to vanishes on a sunken field. */
+.field .token {
+  --badge-font-size: var(--wzl-font-size-sm);
+  --badge-emphasis-edge: var(--wzl-fg-muted);
+  text-transform: none;
+  letter-spacing: normal;
+  max-inline-size: 100%;
+}
+
+.field .slot .token:not([data-grade]) {
+  --badge-fg: var(--wzl-fg);
+}
+
+.input {
+  flex: 1 0 4rem;
+  min-inline-size: 4rem;
+  block-size: calc(var(--wzl-field-h, var(--wzl-control-h)) - 2 * var(--wzl-space-1) - 2px);
+  padding: 0 var(--wzl-space-1);
+}
+
+.popover {
+  outline: none;
+}
+
+.editor {
+  display: grid;
+  gap: var(--wzl-space-2);
+  inline-size: 220px;
+  padding: var(--wzl-space-3);
+}

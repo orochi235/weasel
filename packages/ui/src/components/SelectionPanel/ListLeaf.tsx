@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { PrefList } from '@weasel-js/prefs';
 import { ListEditor } from '../ListEditor';
 import { entriesDisabled, entryConditions, entryDisabledAt } from '../Prefs/entry';
-import { prefListEntry, prefListIsText, prefListTexts } from '../Prefs/ListLeaf';
+import { PrefTextList, prefListEntry, prefListIsText, prefListTexts } from '../Prefs/ListLeaf';
 import { PrefMixed } from '../Prefs/PrefMixed';
 import type { PropertyRenderContext } from './renderContext';
 
@@ -33,7 +33,7 @@ export function ListLeaf({
   };
   if (prefListIsText(pref, drawsStrings)) {
     const texts = prefListTexts(ctx.value);
-    return <ListEditor {...shared} disabled={entriesDisabled(ctx)} entryDisabled={entryDisabledAt(ctx, item, texts)} value={texts} />;
+    return <PrefTextList {...shared} pref={pref} disabled={entriesDisabled(ctx)} entryDisabled={entryDisabledAt(ctx, item, texts)} value={texts} />;
   }
   return (
     <ListEditor<unknown>
