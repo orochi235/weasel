@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BRANCH_SYMBOLS, branchNode, symbolNameFor } from './symbols';
+import { BRANCH_SYMBOLS, branchNode, symbolNameFor, thrownToSecond } from './symbols';
 import type { EffectPipeline, EffectStage } from './types';
 
 const P: EffectPipeline = { stages: [], wires: [], types: { bool: { control: true } } };
@@ -60,6 +60,33 @@ describe('branch symbols', () => {
     for (const choice of ['demux', 'switch'] as const) expect(bottom(yesNo, 'when', choice).v).toBe(1);
     const steered = { ...bands, inputs: [{ id: 'x', type: 'number' }, { id: 'sig', type: 'number' }] };
     expect(bottom(steered, 'x', 'bar').v).toBe(1);
+  });
+
+  it('runs down a column under direction: down, its control input on the side it is told', () => {
+    const down = (side: 'left' | 'right') => branchNode(yesNo, P, 'diamond', { direction: 'down', controlSide: side });
+    const at = (side: 'left' | 'right', id: string) => down(side).ports!.find((p) => p.id === id)!;
+    expect(at('left', 'in').at).toEqual({ u: 0.5, v: 0 });
+    expect(at('left', 'when').at).toEqual({ u: 0, v: 0.5 });
+    expect(at('left', 'yes').at).toEqual({ u: 0.5, v: 1 });
+    expect(at('left', 'no').at).toEqual({ u: 1, v: 0.5 });
+    expect(at('right', 'when').at).toEqual({ u: 0.75, v: 0.25 });
+    expect(at('right', 'no').sites).toEqual([{ u: 0, v: 0.5 }]);
+    const sw = branchNode(yesNo, P, 'switch', { direction: 'down', controlSide: 'right' });
+    expect(sw.ports!.find((p) => p.id === 'when')!.at).toEqual({ u: 1, v: 0.5 });
+    expect(sw.marks!.find((m) => 'text' in m)).toMatchObject({ at: { u: 0, v: 0.5 }, self: { u: 1, v: 0.5 } });
+  });
+
+  it('turns a symbol\'s box and outline with it, keeping a diamond\'s name', () => {
+    const bar = branchNode(bands, P, 'bar', { direction: 'down' });
+    const along = branchNode(bands, P, 'bar');
+    expect([bar.width, bar.height]).toEqual([along.height, along.width]);
+    expect(branchNode(yesNo, P, 'diamond', { direction: 'down' }).outline).toBe('diamond');
+    expect(typeof branchNode(yesNo, P, 'demux', { direction: 'down' }).outline).toBe('object');
+  });
+
+  it('throws a switch turned down a column to its second exit, as it does along a row', () => {
+    const marks = branchNode(yesNo, P, 'switch', { direction: 'down' }).marks!.flatMap((m) => ('d' in m ? [m.d] : []));
+    expect(marks.filter((d) => thrownToSecond(d) !== undefined)).toHaveLength(3);
   });
 
   it('keeps a diamond\'s second exit on the bottom vertex when control comes from below', () => {

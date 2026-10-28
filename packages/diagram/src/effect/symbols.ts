@@ -1,11 +1,13 @@
 /**
  * Branch symbols: the node a decision stage draws as. Each answers with the
  * outline, ports and marks of a diagram data node; a look adds the id and the
- * style. All of them read left to right: signal in on the left, exits on the right.
+ * style. All of them read left to right, signal in on the left and exits on
+ * the right, or top to bottom under `direction: 'down'`.
  */
 import type { DataMark } from '../marks';
 import type { PortSpec } from '../types';
 import { comparator, crossover, fork, hexagon, step } from './glyphs';
+import { flowing, transposeD } from './symbolFlow';
 import {
   bandExits, canBand, cutLabels, diamond, dot, inputs, spread, styleOf, tintsOf, title, twoExits,
   type BranchNode, type BranchOptions, type BranchSymbol,
@@ -65,10 +67,14 @@ const CONTACT_SECOND = dot(0.8, 0.75, 0.07);
  *  when it is thrown to the second, by path data, and the path it takes then:
  *  the lever, and the two contacts, which trade places so the filled one is
  *  the closed one. */
-const THROWN_SECOND: ReadonlyMap<string, string> = new Map([
+const THROWN_ALONG: readonly (readonly [string, string])[] = [
   [LEVER_FIRST, 'M0.2 0.5 L0.78 0.73'],
   [CONTACT_FIRST, CONTACT_SECOND],
   [CONTACT_SECOND, CONTACT_FIRST],
+];
+const THROWN_SECOND: ReadonlyMap<string, string> = new Map([
+  ...THROWN_ALONG,
+  ...THROWN_ALONG.map(([from, to]) => [transposeD(from), transposeD(to)] as const),
 ]);
 
 /** The path data a `switch` mark drawn as `d` takes with the lever thrown to
@@ -104,15 +110,15 @@ const switchSymbol: BranchSymbol = (stage, pipeline, options) => {
  *  the `diamond` instead: a `bar`, `step` or `crossover` with no sound split,
  *  or a `switch` or `comparator` without exactly two exits. */
 export const BRANCH_SYMBOLS: Readonly<Record<Exclude<BranchChoice, 'auto'>, BranchSymbol>> = Object.freeze({
-  diamond,
-  bar,
-  demux,
-  switch: switchSymbol,
-  hexagon,
-  step,
-  comparator,
-  crossover,
-  fork,
+  diamond: flowing(diamond),
+  bar: flowing(bar),
+  demux: flowing(demux),
+  switch: flowing(switchSymbol),
+  hexagon: flowing(hexagon),
+  step: flowing(step),
+  comparator: flowing(comparator),
+  crossover: flowing(crossover),
+  fork: flowing(fork),
 });
 
 /** What a symbol needs of a stage to draw it; one not listed draws any decision. */

@@ -11,9 +11,14 @@ import type { EffectPipeline, EffectPort, EffectStage } from './types';
 export type BranchNode = Pick<DataNode, 'outline' | 'lines' | 'rows' | 'ports' | 'marks' | 'width' | 'height' | 'padding'>;
 /** How a look wants a branch symbol drawn. */
 export interface BranchOptions {
+  /** Which way the signal runs through the symbol: in on the left and out on
+   *  the right, or, for `'down'`, in at the top and out at the bottom. Default `'right'`. */
+  direction?: 'right' | 'down';
   /** The edge control inputs enter by: the side the stages driving them sit
-   *  on. Default `'top'`. */
-  controlSide?: 'top' | 'bottom';
+   *  on, `'top'` or `'bottom'` along a row and `'left'` or `'right'` down a
+   *  column. A side the signal runs through counts as the default, `'top'`
+   *  along a row and `'left'` down a column. */
+  controlSide?: 'top' | 'bottom' | 'left' | 'right';
   /** The style the look draws the stage's node in: lines, dots and ticks
    *  take its `text` color. Default `stageStyle(stage)`. */
   style?: NodeStyle;
