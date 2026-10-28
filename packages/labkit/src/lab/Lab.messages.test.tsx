@@ -172,6 +172,20 @@ describe('a presented lab’s messages', () => {
     expect(states()).toHaveLength(before + 1);
   });
 
+  it('reports a function clock that resolves to a spec once it registers, and plays it', async ({
+    host,
+  }) => {
+    const resolves: Instrument = { ...timed(undefined), clock: () => ({ duration: SPAN }) };
+    await host.mount(undefined, { instruments: [resolves] });
+    expect(states().map((s) => s.clock)).toEqual([false, true]);
+    expect(lastState()).toMatchObject({ clock: true, playing: false, duration: SPAN });
+    await host.send({ type: 'labkit:play' });
+    expect(c().rate).toBe(1);
+    expect(lastState()?.playing).toBe(true);
+    await host.send({ type: 'labkit:pause' });
+    expect(c().rate).toBe(0);
+  });
+
   it('answers only its host: the window around it, or its own', async ({ host }) => {
     await host.mount({ duration: 4000 });
     await host.send({ type: 'labkit:play' }, { source: null });
