@@ -147,6 +147,20 @@ describe('a clock declared from config, in the trial', () => {
     expect(readout()).toHaveTextContent('2500/1000');
   });
 
+  it('reopens a position recorded under another duration on that duration, in its pass', async () => {
+    await mount(() => ({ duration: 2000, loop: 3 }));
+    const first = lab?.trials[0]?.id as string;
+    await act(async () => {
+      store?.getState().updateTrialClock(first, { elapsed: 2500, rate: 0, duration: 1000 });
+      lab?.cloneTrial(first);
+    });
+    await act(async () => {
+      lab?.closeTrial(first);
+    });
+    expect(readout()).toHaveTextContent('2500/1000');
+    expect(registry?.get(lab?.trials[0]?.id as string)?.clock.pass).toBe(2);
+  });
+
   it('holds a reopened time its first span cannot reach until the span grows', async () => {
     await mount((s) => ({ duration: s * 1000 }));
     const first = lab?.trials[0]?.id as string;

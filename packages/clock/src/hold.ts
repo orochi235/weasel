@@ -50,13 +50,17 @@ export type HeldPosition = Pick<ClockPosition, 'elapsed' | 'passEnd' | 'duration
  * As {@link holdAt}, but at a recorded position across the whole run, so a
  * clock of several passes comes back in the pass it stood in. A position
  * recorded under another `duration` or `origin` keeps its pass and the time it
- * showed within it. `pending` reports the held `elapsed`.
+ * showed within it. `pending` reports the `elapsed` it holds for, on the
+ * clock's current span.
  */
 export function holdElapsed(handle: ClockHandle, at: HeldPosition): PlayheadHold {
   return holdWhere(
     handle,
     (clock) => elapsedOn(clock, at),
-    (clock) => (clock.elapsed === elapsedOn(clock, at)[0] ? null : at.elapsed),
+    (clock) => {
+      const [target] = elapsedOn(clock, at);
+      return clock.elapsed === target ? null : target;
+    },
   );
 }
 

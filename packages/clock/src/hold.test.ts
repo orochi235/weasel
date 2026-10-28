@@ -136,6 +136,15 @@ describe('holdElapsed', () => {
     h.clock.duration = 1000;
     expect([h.clock.elapsed, h.clock.pass]).toEqual([2500, 2]);
   });
+  it('reports the converted target while a run too short holds it back', () => {
+    const h = createClock({ duration: 2000, loop: 2 });
+    const hold = holdElapsed(h, { elapsed: 2500, duration: 1000 });
+    expect(h.clock.elapsed).toBe(4000);
+    expect(hold.pending()).toBe(4500);
+    h.clock.loop = 3;
+    expect(h.clock.elapsed).toBe(4500);
+    expect(hold.pending()).toBeNull();
+  });
   it('keeps the shown time across a recorded origin, and a pass end', () => {
     const h = createClock({ duration: 1000, loop: 3, origin: 0 });
     holdElapsed(h, { elapsed: 1200, origin: -100 });
