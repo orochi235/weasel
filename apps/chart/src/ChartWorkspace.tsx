@@ -5,7 +5,6 @@ import {
 import { diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
-import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
@@ -21,6 +20,7 @@ import { PAGE_FIT_PADDING, useChartPages } from './pages/useChartPages';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
 import { StylePanel } from './theme/StylePanel';
+import { ChartToolbar } from './toolbar/ChartToolbar';
 import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
 import { ThemePanel } from './theme/ThemePanel';
 import {
@@ -85,55 +85,57 @@ export function ChartWorkspace(): ReactElement {
   }, [canvas, diagram.layers]);
 
   return (
-    <div className="wc-body">
-      <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes and tools">
-        {tools && <ToolPalette tools={tools} include={isPaletteTool} orientation="horizontal" />}
-        {tools && <StencilPanel tools={tools} scene={scene} />}
-      </Sidebar>
-      <div className="wc-stage">
-        <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
-          {dims.width > 0 && dims.height > 0 && (
-            <SceneCanvas<ChartData, ChartLayer, ChartPose>
-              aria-label="Chart"
-              ref={setCanvas}
-              features={features}
-              snap={snap}
-              claimKeys
-              scene={scene}
-              selection={selection}
-              width={dims.width}
-              height={dims.height}
-              view={view}
-              onViewChange={setView}
-              viewport={{ recenter }}
-              tools={diagram.tools}
-              selectTool={selectTool}
-              ambient={diagram.ambient}
-              ingestion={INGESTION}
-              onToolsCreated={setTools}
-              alphaFor={alphaFor}
-              layers={layers}
-            >
-              <StencilInsertPublisher theme={theme} />
-              <WaypointFollowerPublisher scene={scene} />
-              <BodyFollowerPublisher scene={scene} />
-              <AvoidRoutingPublisher scene={scene} />
-              <HopsPublisher scene={scene} />
-              <ContainerDropPublisher scene={scene} />
-              <TextEditDepPublisher edit={textEdit} />
-            </SceneCanvas>
-          )}
+    <div className="wc-workspace">
+      <ChartToolbar tools={tools} include={isPaletteTool} view={view} setView={setView} dims={dims} />
+      <div className="wc-body">
+        <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes">
+          {tools && <StencilPanel tools={tools} scene={scene} />}
+        </Sidebar>
+        <div className="wc-stage">
+          <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
+            {dims.width > 0 && dims.height > 0 && (
+              <SceneCanvas<ChartData, ChartLayer, ChartPose>
+                aria-label="Chart"
+                ref={setCanvas}
+                features={features}
+                snap={snap}
+                claimKeys
+                scene={scene}
+                selection={selection}
+                width={dims.width}
+                height={dims.height}
+                view={view}
+                onViewChange={setView}
+                viewport={{ recenter }}
+                tools={diagram.tools}
+                selectTool={selectTool}
+                ambient={diagram.ambient}
+                ingestion={INGESTION}
+                onToolsCreated={setTools}
+                alphaFor={alphaFor}
+                layers={layers}
+              >
+                <StencilInsertPublisher theme={theme} />
+                <WaypointFollowerPublisher scene={scene} />
+                <BodyFollowerPublisher scene={scene} />
+                <AvoidRoutingPublisher scene={scene} />
+                <HopsPublisher scene={scene} />
+                <ContainerDropPublisher scene={scene} />
+                <TextEditDepPublisher edit={textEdit} />
+              </SceneCanvas>
+            )}
+          </div>
+          <ChartPageStrip pages={pages} />
         </div>
-        <ChartPageStrip pages={pages} />
+        <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
+          <StylePanel scene={scene} selected={selection.current} theme={theme} />
+          {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}
+        </Sidebar>
+        <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
+        <ImportExportCommands scene={scene} pages={pages} />
+        <NewChart scene={scene} />
+        <ToastRegion />
       </div>
-      <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
-        <StylePanel scene={scene} selected={selection.current} theme={theme} />
-        {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}
-      </Sidebar>
-      <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
-      <ImportExportCommands scene={scene} pages={pages} />
-      <NewChart scene={scene} />
-      <ToastRegion />
     </div>
   );
 }

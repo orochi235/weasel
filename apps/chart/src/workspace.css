@@ -1,3 +1,10 @@
+.wc-workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .wc-body {
   display: flex;
   flex: 1;
