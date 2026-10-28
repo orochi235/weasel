@@ -1,6 +1,8 @@
 [
   "@weasel-js/devtools",
   "@weasel-js/diagram-formats",
+  "@weasel-js/headless",
   "@weasel-js/pdf",
-  "@weasel-js/rig"
+  "@weasel-js/rig",
+  "@weasel-js/shape"
 ]

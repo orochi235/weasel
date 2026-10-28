@@ -474,9 +474,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   elements. Left, in order: a measure/draw contract a DOM component and a hud widget both implement; then porting a
   button and a list onto it. A page that has both DOM controls and a hud canvas still joins the two at `attach.ts`'s
   `wireFocus`, not through `FocusScope`.
-- **(P2) [maintainer] Publish `@weasel-js/headless` and `@weasel-js/shape` for the first time.** Both were added
-  2026-10-27; each needs a first publish by hand, then `setup-trusted-publishing.mjs` and a committed
-  `trust-pending.json` (`docs/releasing.md`). Until then `check:first-publish` fails the release job.
+- **(P2) [maintainer] Publish `@weasel-js/clock` for the first time.** Added 2026-10-27; it needs a first
+  publish by hand, then `setup-trusted-publishing.mjs` and a committed `trust-pending.json`
+  (`docs/releasing.md`). Until then `check:first-publish` fails the release job.
 
 - **(P3) [maintainer] Should grid and guide snaps line up the stroke?** Decision for the maintainer.
   `gridSnapSource` and `guideSnapSource` (`packages/guides/src/sources/`) snap the subject's
