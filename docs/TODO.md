@@ -610,7 +610,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   diagonal bands that `packages/ui/src/components/workspace.module.css` defines for the asset editor's preview.
   Draw can't compose a ui-internal stylesheet without that becoming public surface, so the fix is a public one:
   a theme token holding the whole layer (the colors already are tokens, `--wzl-workspace-surface` and
-  `--wzl-workspace-line`), or an exported ui class. Filed 2026-10-28.
+  `--wzl-workspace-line`), or an exported ui class. Filed 2026-10-28. Since then the two differ: the asset editor's
+  ground is `--wzl-surface-raised` with its tint taken out, lighter than draw's `--wzl-workspace-surface` (2026-10-28),
+  so a shared layer means deciding which ground both take.
 
 ---
 
