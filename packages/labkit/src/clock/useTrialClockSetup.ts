@@ -5,7 +5,7 @@ import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
-import { ClockRegistryContext } from './contexts';
+import { ClockRegistryContext, PENDING_CLOCK } from './contexts';
 import {
   type ClockCapability,
   type ClockPosition,
@@ -76,15 +76,14 @@ interface Args {
  * edits that keep one (`declare` only), and dropped when it goes `null`.
  * `record.clock` seeds the first clock of a mount, and a later one when it was
  * written while there was none; a write while there is one, this tab's or
- * another's, leaves the clock where it stands.
+ * another's, leaves the clock where it stands. `provided` is what the trial
+ * puts in `TrialClockContext`: the handle, or {@link PENDING_CLOCK} for a
+ * declared clock not made yet, which it is for the trial's first render.
  */
-export function useTrialClockSetup({
-  instrument,
-  config,
-  record,
-  store,
-  target,
-}: Args): TrialClockHandle | null {
+export function useTrialClockSetup({ instrument, config, record, store, target }: Args): {
+  handle: TrialClockHandle | null;
+  provided: TrialClockHandle | typeof PENDING_CLOCK | null;
+} {
   const clocks = useContext(ClockRegistryContext);
   const updateTrialClock = useStore(store, (s) => s.updateTrialClock);
   const onLab = instrument.clock === 'lab';
@@ -132,5 +131,6 @@ export function useTrialClockSetup({
     return holdElapsed(held.handle, held.reopenAt).release;
   }, [held]);
 
-  return handle;
+  const pending = !onLab && spec !== null && held === null;
+  return { handle, provided: pending ? PENDING_CLOCK : handle };
 }

@@ -1,7 +1,7 @@
 import { useLatest } from '@weasel-js/core';
 import { useContext, useEffect, useReducer, useSyncExternalStore } from 'react';
 import { useLabCommandsOptional } from '../lab/LabContext';
-import { ClockRegistryContext, TrialClockContext } from './contexts';
+import { ClockRegistryContext, PENDING_CLOCK, TrialClockContext } from './contexts';
 import type { ClockedMix, TrialClock, TrialClockHandle } from './trialClock';
 
 const NO_SUBSCRIBE = () => () => {};
@@ -33,13 +33,15 @@ export function useTrialMix<M extends ClockedMix = ClockedMix>(trialId?: string)
  *  only when which handle that is changes. */
 export function useTrialClockHandle(trialId?: string | null): TrialClockHandle | null {
   const registry = useContext(ClockRegistryContext);
-  const own = useContext(TrialClockContext);
+  const trial = useContext(TrialClockContext);
+  const own = trial === PENDING_CLOCK ? null : trial;
   const lab = useLabCommandsOptional();
   useSyncExternalStore(registry?.subscribe ?? NO_SUBSCRIBE, () => (registry ? resolve() : own));
   function resolve() {
     if (trialId === null) return null;
     if (trialId !== undefined) return registry?.get(trialId) ?? null;
     if (own) return own;
+    if (trial === PENDING_CLOCK) return null;
     const focused = lab?.focusedTrialId;
     return (focused ? registry?.get(focused) : null) ?? registry?.shared ?? null;
   }
