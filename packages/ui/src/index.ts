@@ -117,6 +117,7 @@ export * from './components/PointPlotter';
 export * from './components/ColorField';
 export * from './components/CommandPalette';
 export * from './components/TokenPanel';
+export * from './components/TokenField';
 export * from './components/GradientEditor';
 export * from './components/BandEditor';
 export * from './components/Jog';
