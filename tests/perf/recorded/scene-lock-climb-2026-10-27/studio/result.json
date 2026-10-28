@@ -1,0 +1,991 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "vitest-bench",
+  "git": {
+    "sha": "3a4e1bc22f045a2edea7f569fda1f80cc5e6075a",
+    "dirty": true
+  },
+  "timestamp": "2026-10-28T00:11:53.998Z",
+  "machine": {
+    "glRenderer": null,
+    "softwareGl": null,
+    "browser": null,
+    "cpu": "Apple M1 Max",
+    "cores": 10,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.1",
+    "loadavg": [
+      3.2,
+      3.27,
+      5.11
+    ]
+  },
+  "params": {
+    "filters": [
+      "--maxWorkers=1",
+      "tests/perf/bench/scene-ops.bench.ts"
+    ]
+  },
+  "items": [
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.add — leaf, by tree depth > depth 4",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.add — leaf, by tree depth",
+        "name": "depth 4"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0011660000000119908,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.0009579999998550193,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0012546134000002262,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 3.562734831784971,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.add — leaf, by tree depth > depth 16",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.add — leaf, by tree depth",
+        "name": "depth 16"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.001125000000001819,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.0009579999998550193,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0013381658000005054,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 5.54902516390042,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.add — leaf, by tree depth > depth 0",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.add — leaf, by tree depth",
+        "name": "depth 0"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.001291999999921245,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.0008749999999508873,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0014811292500005447,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 6.411493914474674,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.add + scene.remove — round trip, by tree depth > depth 16",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.add + scene.remove — round trip, by tree depth",
+        "name": "depth 16"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.002208999999993466,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.0018749999999272404,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0025232260499995565,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 3.1143318928964545,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.add + scene.remove — round trip, by tree depth > depth 0",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.add + scene.remove — round trip, by tree depth",
+        "name": "depth 0"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.002334000000018932,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.001958000000058746,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0025851961999997165,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 3.2144342589116635,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.add + scene.remove — round trip, by tree depth > depth 4",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.add + scene.remove — round trip, by tree depth",
+        "name": "depth 4"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.002375000000029104,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.0019999999999527063,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.002669760399999689,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 2.808647371931652,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.setPose — by tree depth > depth 16",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.setPose — by tree depth",
+        "name": "depth 16"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005419999999958236,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.00045799999998052954,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0005703160499994457,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 3.5698922727105296,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.setPose — by tree depth > depth 4",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.setPose — by tree depth",
+        "name": "depth 4"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005419999999958236,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.00045799999998052954,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0005902962000003743,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 1.0050680997350212,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.setPose — by tree depth > depth 0",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.setPose — by tree depth",
+        "name": "depth 0"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005419999999958236,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.00041600000008656934,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0005976453500008333,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 4.20534649401718,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > per-frame pose write — one node, three paths > the pose object alone",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "per-frame pose write — one node, three paths",
+        "name": "the pose object alone"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.000041999999893960194,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.00004005834999957189,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 8.536922945074835,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > per-frame pose write — one node, three paths > override, mutated in place — records nothing",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "per-frame pose write — one node, three paths",
+        "name": "override, mutated in place — records nothing"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.00020900000004075991,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.00016599999980826396,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.00024082819999982695,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 1.519439690172289,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > per-frame pose write — one node, three paths > setPose, fresh object — records a step",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "per-frame pose write — one node, three paths",
+        "name": "setPose, fresh object — records a step"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005000000001018634,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.00041599999985919567,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0005314348000002645,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 6.214632562247534,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > per-frame pose write — setPose, untracked > setPose inside untracked — records nothing",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "per-frame pose write — setPose, untracked",
+        "name": "setPose inside untracked — records nothing"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0002919999999448919,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.00024999999982355803,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.0003423012500000484,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 11.904707579386073,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > scene.setPose — 10k-node scene, one node > 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "scene.setPose — 10k-node scene, one node",
+        "name": "10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005830000000059954,
+          "unit": "ms",
+          "stat": "median of 20000 samples"
+        },
+        "min": {
+          "value": 0.00045799999998052954,
+          "unit": "ms",
+          "stat": "min of 20000 samples"
+        },
+        "mean": {
+          "value": 0.000623737949999927,
+          "unit": "ms",
+          "stat": "mean of 20000 samples"
+        },
+        "rme": {
+          "value": 6.417480985715615,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — flat scene, fully drained > 100 nodes",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — flat scene, fully drained",
+        "name": "100 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.00004200000012133387,
+          "unit": "ms",
+          "stat": "median of 16892333 samples"
+        },
+        "min": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "min of 16892333 samples"
+        },
+        "mean": {
+          "value": 0.000059198454233633866,
+          "unit": "ms",
+          "stat": "mean of 16892333 samples"
+        },
+        "rme": {
+          "value": 0.04028279503128286,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — flat scene, fully drained > 1000 nodes",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — flat scene, fully drained",
+        "name": "1000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005000000001018634,
+          "unit": "ms",
+          "stat": "median of 1962812 samples"
+        },
+        "min": {
+          "value": 0.0002919999988080235,
+          "unit": "ms",
+          "stat": "min of 1962812 samples"
+        },
+        "mean": {
+          "value": 0.0005094732256581614,
+          "unit": "ms",
+          "stat": "mean of 1962812 samples"
+        },
+        "rme": {
+          "value": 0.03944001002841668,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — flat scene, fully drained > 10000 nodes",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — flat scene, fully drained",
+        "name": "10000 nodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.004917000000205007,
+          "unit": "ms",
+          "stat": "median of 202783 samples"
+        },
+        "min": {
+          "value": 0.003457999999227468,
+          "unit": "ms",
+          "stat": "min of 202783 samples"
+        },
+        "mean": {
+          "value": 0.004931395984869516,
+          "unit": "ms",
+          "stat": "mean of 202783 samples"
+        },
+        "rme": {
+          "value": 0.03386660825889166,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 10k nodes, by layer count > 1 layers",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — 10k nodes, by layer count",
+        "name": "1 layers"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.004915999999866472,
+          "unit": "ms",
+          "stat": "median of 204501 samples"
+        },
+        "min": {
+          "value": 0.003416999999899417,
+          "unit": "ms",
+          "stat": "min of 204501 samples"
+        },
+        "mean": {
+          "value": 0.00488995549166171,
+          "unit": "ms",
+          "stat": "mean of 204501 samples"
+        },
+        "rme": {
+          "value": 0.03353829604805904,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 10k nodes, by layer count > 16 layers",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — 10k nodes, by layer count",
+        "name": "16 layers"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.004916999998386018,
+          "unit": "ms",
+          "stat": "median of 203911 samples"
+        },
+        "min": {
+          "value": 0.003416999999899417,
+          "unit": "ms",
+          "stat": "min of 203911 samples"
+        },
+        "mean": {
+          "value": 0.00490411348088297,
+          "unit": "ms",
+          "stat": "mean of 203911 samples"
+        },
+        "rme": {
+          "value": 0.03225675683349473,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 10k nodes, by layer count > 64 layers",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — 10k nodes, by layer count",
+        "name": "64 layers"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.004917000000205007,
+          "unit": "ms",
+          "stat": "median of 202055 samples"
+        },
+        "min": {
+          "value": 0.0034159999995608814,
+          "unit": "ms",
+          "stat": "min of 202055 samples"
+        },
+        "mean": {
+          "value": 0.004949159332853665,
+          "unit": "ms",
+          "stat": "mean of 202055 samples"
+        },
+        "rme": {
+          "value": 0.0468063335510695,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 10k nodes, by layer count > 4 layers",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — 10k nodes, by layer count",
+        "name": "4 layers"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.004957999999533058,
+          "unit": "ms",
+          "stat": "median of 200219 samples"
+        },
+        "min": {
+          "value": 0.003457999999227468,
+          "unit": "ms",
+          "stat": "min of 200219 samples"
+        },
+        "mean": {
+          "value": 0.00499453477442172,
+          "unit": "ms",
+          "stat": "mean of 200219 samples"
+        },
+        "rme": {
+          "value": 0.052657812568676444,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 1000 leaves under a container chain > depth 0",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — 1000 leaves under a container chain",
+        "name": "depth 0"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005000000019208528,
+          "unit": "ms",
+          "stat": "median of 1990093 samples"
+        },
+        "min": {
+          "value": 0.00029100000028847717,
+          "unit": "ms",
+          "stat": "min of 1990093 samples"
+        },
+        "mean": {
+          "value": 0.0005024892208549776,
+          "unit": "ms",
+          "stat": "mean of 1990093 samples"
+        },
+        "rme": {
+          "value": 0.035052698241607505,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 1000 leaves under a container chain > depth 16",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — 1000 leaves under a container chain",
+        "name": "depth 16"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005000000019208528,
+          "unit": "ms",
+          "stat": "median of 1972995 samples"
+        },
+        "min": {
+          "value": 0.00029099999665049836,
+          "unit": "ms",
+          "stat": "min of 1972995 samples"
+        },
+        "mean": {
+          "value": 0.0005068437360474316,
+          "unit": "ms",
+          "stat": "mean of 1972995 samples"
+        },
+        "rme": {
+          "value": 0.027163955263137113,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 1000 leaves under a container chain > depth 4",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — 1000 leaves under a container chain",
+        "name": "depth 4"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0005000000019208528,
+          "unit": "ms",
+          "stat": "median of 1969216 samples"
+        },
+        "min": {
+          "value": 0.0002920000006270129,
+          "unit": "ms",
+          "stat": "min of 1969216 samples"
+        },
+        "mean": {
+          "value": 0.0005078163787027083,
+          "unit": "ms",
+          "stat": "mean of 1969216 samples"
+        },
+        "rme": {
+          "value": 0.035377738478928694,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers) > drain — cached",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)",
+        "name": "drain — cached"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.004916999998386018,
+          "unit": "ms",
+          "stat": "median of 202207 samples"
+        },
+        "min": {
+          "value": 0.0034589999995660037,
+          "unit": "ms",
+          "stat": "min of 202207 samples"
+        },
+        "mean": {
+          "value": 0.004945443337763018,
+          "unit": "ms",
+          "stat": "mean of 202207 samples"
+        },
+        "rme": {
+          "value": 0.03074961520037614,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers) > drain — cold, after a layer reorder",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)",
+        "name": "drain — cold, after a layer reorder"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.3367499999985739,
+          "unit": "ms",
+          "stat": "median of 2874 samples"
+        },
+        "min": {
+          "value": 0.3273750000007567,
+          "unit": "ms",
+          "stat": "min of 2874 samples"
+        },
+        "mean": {
+          "value": 0.34806549199720493,
+          "unit": "ms",
+          "stat": "mean of 2874 samples"
+        },
+        "rme": {
+          "value": 0.6490211945003479,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder → nodes vs renderOrderNodes > 100 nodes — via renderOrderNodes",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder → nodes vs renderOrderNodes",
+        "name": "100 nodes — via renderOrderNodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.00004199999966658652,
+          "unit": "ms",
+          "stat": "median of 14498674 samples"
+        },
+        "min": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "min of 14498674 samples"
+        },
+        "mean": {
+          "value": 0.00006897182970011658,
+          "unit": "ms",
+          "stat": "mean of 14498674 samples"
+        },
+        "rme": {
+          "value": 1.17621794082359,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder → nodes vs renderOrderNodes > 1000 nodes — via renderOrderNodes",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder → nodes vs renderOrderNodes",
+        "name": "1000 nodes — via renderOrderNodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0002500000045984052,
+          "unit": "ms",
+          "stat": "median of 2909710 samples"
+        },
+        "min": {
+          "value": 0.00004199999966658652,
+          "unit": "ms",
+          "stat": "min of 2909710 samples"
+        },
+        "mean": {
+          "value": 0.00034367691969440625,
+          "unit": "ms",
+          "stat": "mean of 2909710 samples"
+        },
+        "rme": {
+          "value": 1.3604556459538735,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder → nodes vs renderOrderNodes > 10000 nodes — via renderOrderNodes",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder → nodes vs renderOrderNodes",
+        "name": "10000 nodes — via renderOrderNodes"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.001291000000492204,
+          "unit": "ms",
+          "stat": "median of 663400 samples"
+        },
+        "min": {
+          "value": 0.0009169999975711107,
+          "unit": "ms",
+          "stat": "min of 663400 samples"
+        },
+        "mean": {
+          "value": 0.0015073864109103475,
+          "unit": "ms",
+          "stat": "mean of 663400 samples"
+        },
+        "rme": {
+          "value": 0.6149441928314489,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder → nodes vs renderOrderNodes > 100 nodes — via renderOrder + get",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder → nodes vs renderOrderNodes",
+        "name": "100 nodes — via renderOrder + get"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0017499999994470272,
+          "unit": "ms",
+          "stat": "median of 555303 samples"
+        },
+        "min": {
+          "value": 0.0016249999971478246,
+          "unit": "ms",
+          "stat": "min of 555303 samples"
+        },
+        "mean": {
+          "value": 0.001800819430114133,
+          "unit": "ms",
+          "stat": "mean of 555303 samples"
+        },
+        "rme": {
+          "value": 0.3217656641456114,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder → nodes vs renderOrderNodes > 1000 nodes — via renderOrder + get",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder → nodes vs renderOrderNodes",
+        "name": "1000 nodes — via renderOrder + get"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.025625000002037268,
+          "unit": "ms",
+          "stat": "median of 36222 samples"
+        },
+        "min": {
+          "value": 0.0232079999987036,
+          "unit": "ms",
+          "stat": "min of 36222 samples"
+        },
+        "mean": {
+          "value": 0.027608080282703427,
+          "unit": "ms",
+          "stat": "mean of 36222 samples"
+        },
+        "rme": {
+          "value": 7.99301406036846,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/scene-ops.bench.ts > renderOrder → nodes vs renderOrderNodes > 10000 nodes — via renderOrder + get",
+      "params": {
+        "file": "tests/perf/bench/scene-ops.bench.ts",
+        "group": "renderOrder → nodes vs renderOrderNodes",
+        "name": "10000 nodes — via renderOrder + get"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.2912499999947613,
+          "unit": "ms",
+          "stat": "median of 3349 samples"
+        },
+        "min": {
+          "value": 0.27066699999704724,
+          "unit": "ms",
+          "stat": "min of 3349 samples"
+        },
+        "mean": {
+          "value": 0.2986227984472655,
+          "unit": "ms",
+          "stat": "mean of 3349 samples"
+        },
+        "rme": {
+          "value": 2.327170024757092,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    }
+  ]
+}

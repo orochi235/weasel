@@ -1,0 +1,7 @@
+start: 2026-10-28T00:11:53Z
+commit: 3a4e1bc22f045a2edea7f569fda1f80cc5e6075a dirty-paths: 45
+cpu: Apple M1 Max (10 threads, 32 GB)
+node: v26.8.1
+load before: { 3.20 3.27 5.11 }
+load after: { 2.37 3.05 4.95 }
+end: 2026-10-28T00:12:33Z
