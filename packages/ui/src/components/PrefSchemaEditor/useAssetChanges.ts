@@ -77,7 +77,7 @@ export function useAssetChanges(
       }),
       exported(id, types) {
         const held = made.get(id);
-        if (held?.types === types) return held.out;
+        if (held && held.types === types) return held.out;
         const out = exportOf(assetOf(current, id)!, base, origins.of(id), types);
         made.set(id, { types, out });
         return out;

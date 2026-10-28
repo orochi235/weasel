@@ -57,16 +57,22 @@ const linkTo = (root: SchemaRoot, path: string): PrefAlias => ({ kind: 'alias', 
 
 /** A bundle tree's links: a bundle shown inside another, which then includes it. A link can be linked again. */
 export const BUNDLE_LINKS: LinkRule = {
-  can: (root, path) => isBundleAt(root, path) || (isPrefLeaf(nodeAt(root, path) ?? root) && nodeAt(root, path)?.kind === 'alias'),
+  can: (root, path) => {
+    const node = nodeAt(root, path);
+    return isBundleAt(root, path) || (node !== undefined && isPrefLeaf(node) && node.kind === 'alias');
+  },
   of: (root, path) => (isBundleAt(root, path) ? linkTo(root, path) : nodeAt(root, path)!),
   label: 'Include',
   title: 'Include each selected bundle again, to be dragged into the bundle that takes it',
 };
 
-/** The leaves `members` make, keyed as the tree keys them. */
-function leavesOf(d: PresetDescription, byId: ReadonlyMap<string, PresetDescription>, pathOf: (id: string) => string): ChildMap {
-  const kids: ChildMap = {};
-  const put = (id: string, node: SchemaNode) => { kids[uniqueKey(kids, actionLeafKey(id))] = node; };
+/** What a group under a group root holds. */
+type GroupKids = Record<string, PrefGroup | PrefLeaf>;
+
+/** The leaves a bundle's description makes, keyed as the tree keys them. */
+function leavesOf(d: PresetDescription, byId: ReadonlyMap<string, PresetDescription>, pathOf: (id: string) => string): GroupKids {
+  const kids: GroupKids = {};
+  const put = (id: string, node: PrefLeaf) => { kids[uniqueKey(kids, actionLeafKey(id))] = node; };
   for (const inner of d.includes) {
     const held = byId.get(inner);
     if (held?.atom) put(inner, atomNode(held));
@@ -99,7 +105,7 @@ export function bundleTree(presets: readonly PresetDescription[]): PrefGroup {
   const included = new Set(presets.filter((d) => !d.atom).flatMap((d) => d.includes));
   const children = Object.fromEntries(packages.map((pkg) => {
     const own = presets.filter((d) => d.package === pkg);
-    const kids: ChildMap = {};
+    const kids: GroupKids = {};
     for (const d of own.filter((p) => !p.atom)) {
       kids[bundleKey(d.id)] = { name: d.label, description: '', bundle: d.id, children: leavesOf(d, byId, pathOf) } as PrefGroup;
     }
@@ -157,7 +163,7 @@ export const memberKey = (m: BundleMember): string => `${m.kind}:${m.id}`;
 /** Every action, tool, and atom the presets name, once each, as leaves to drag into a bundle: a group of each kind. */
 export function bundleParts(presets: readonly PresetDescription[]): PrefGroup {
   const group = (name: string, leaves: Array<[string, PrefLeaf]>): PrefGroup => {
-    const kids: ChildMap = {};
+    const kids: GroupKids = {};
     for (const [id, leaf] of leaves) kids[uniqueKey(kids, actionLeafKey(id))] = leaf;
     return { name, description: '', children: kids };
   };
