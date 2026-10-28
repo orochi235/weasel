@@ -4,6 +4,7 @@ import { isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValu
 import { resolveIcon } from '../../icons/resolveIcon';
 import { BarMenu, useBarMenuResolver } from '../Bar/BarMenu';
 import { DragGhost } from '../DragGhost';
+import { InlineRange } from '../InlineRange';
 import { useRegisteredActions } from '../Prefs/registeredActions';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
@@ -95,14 +96,19 @@ function rangeIn(how: PrefSelectHow, treePath: (path: string) => string | null |
 
 function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, over }: GroupPreviewProps) {
   const [vertical, setVertical] = useState(false);
+  const [zoom, setZoom] = useState(1);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
   const marked = useMemo(() => selected.map((p) => keysOf(p).join('.')), [selected]);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview">
         <Switch isSelected={vertical} onChange={setVertical}>Vertical</Switch>
+        <label className={s.zoom}>
+          <InlineRange aria-label="Zoom" min={1} max={4} step={0.25} value={zoom} onChange={(e) => setZoom(Number(e.currentTarget.value))} />
+          <span className={s.zoomReadout}>{Math.round(zoom * 100)}%</span>
+        </label>
       </PaneHeader>
-      <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown}>
+      <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-zoom': zoom } as CSSProperties}>
         <PrefsForm className={s.previewBar} schema={schema} values={NO_VALUES} renderers={renderers} orientation={vertical ? 'vertical' : 'horizontal'}
           showHidden showEmpty markHidden drop={drop} selected={marked} over={over}
           onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
