@@ -35,3 +35,22 @@ test('is as wide as what it holds when given no width', () => {
   expect(own).toBeGreaterThan(0);
   expect(own).toBeLessThan(ghostIn('', 200).width);
 });
+
+test('centers itself on the client point when asked, with no surface under a bare one', () => {
+  const host = document.createElement('div');
+  host.setAttribute('data-wzl-theme', 'weasel');
+  document.body.append(host);
+  const from = document.createElement('i');
+  host.append(from);
+  render(
+    <DragGhost at={{ left: 120, top: 90 }} from={from} centered bare>
+      <svg width={40} height={20} />
+    </DragGhost>,
+  );
+  const ghost = host.querySelector('[aria-hidden="true"]')!;
+  const rect = ghost.getBoundingClientRect();
+  const shadow = getComputedStyle(ghost).boxShadow;
+  host.remove();
+  expect([Math.round(rect.left + rect.width / 2), Math.round(rect.top + rect.height / 2)]).toEqual([120, 90]);
+  expect(shadow).toBe('none');
+});

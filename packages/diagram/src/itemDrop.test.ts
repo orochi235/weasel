@@ -20,7 +20,7 @@ const DATA: DiagramData = {
 function setup(opts: Partial<Parameters<typeof createItemDropAction>[0]> = {}) {
   const scene = createScene<DiagramSceneData, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
   for (const spec of diagramScene(DATA, { layout: 'none' })) scene.add(spec as never);
-  const report = vi.fn<(drop: ItemDrop) => void>();
+  const report = vi.fn<(drop: ItemDrop, deps: unknown) => void>();
   const action = createItemDropAction({ participants: sceneParticipants<RectPose>(scene as never), report, ...opts });
   const ctxAt = (x: number, y: number) => ({
     world: { x, y }, screen: { x, y }, modifiers: { alt: false, shift: false, meta: false, ctrl: false },
@@ -40,14 +40,14 @@ describe('the item drop', () => {
     const bar = overlaysOf(handle).find((o) => o.kind === 'polyline' && o.role === 'insert');
     expect(bar).toBeDefined();
     handle.onEnd!(ctxAt(240, 160), 'commit');
-    expect(report).toHaveBeenCalledWith({ item: { kind: 'blur' }, target: 'row', container: 'row', index: 2, at: { x: 240, y: 160 } });
+    expect(report).toHaveBeenCalledWith({ item: { kind: 'blur' }, target: 'row', container: 'row', index: 2, at: { x: 240, y: 160 } }, expect.anything());
   });
 
   it('reports a drop on a member as that node, in its container, at the place the pointer is', () => {
     const { report, carry, ctxAt } = setup();
     const handle = carry(170, 160);
     handle.onEnd!(ctxAt(170, 160), 'commit');
-    expect(report).toHaveBeenCalledWith({ item: { kind: 'blur' }, target: 'r2', container: 'row', index: 1, at: { x: 170, y: 160 } });
+    expect(report).toHaveBeenCalledWith({ item: { kind: 'blur' }, target: 'r2', container: 'row', index: 1, at: { x: 170, y: 160 } }, expect.anything());
   });
 
   it('places a drop in a container that does not reorder by where it is, and one on bare canvas at none', () => {
@@ -68,6 +68,18 @@ describe('the item drop', () => {
     handle.onEnd!(ctxAt(600, 230), 'commit');
     expect(report).not.toHaveBeenCalled();
     expect(canDrop).toHaveBeenCalledWith({ kind: 'blur' }, expect.objectContaining({ target: 'bag', container: 'bag', index: 1 }));
+  });
+
+  it('asks for the deps named in requires, and hands report the ones the carry came over with', () => {
+    const { report, ctxAt } = setup();
+    const action = createItemDropAction({ participants: (() => []) as never, report, requires: ['insert', 'scene'] });
+    expect(action.requires).toEqual(['scene', 'insert']);
+    const invoker = action.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const start = ctxAt(0, 0);
+    // The dispatcher hands onEnd an empty deps bag.
+    invoker.start(start).onEnd!({ ...ctxAt(800, 600), deps: {} } as never, 'commit');
+    expect(report.mock.calls[0]![1]).toBe(start.deps);
   });
 
   it('reports nothing for a carry that leaves the canvas', () => {

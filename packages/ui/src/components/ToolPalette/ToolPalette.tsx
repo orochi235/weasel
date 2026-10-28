@@ -1,6 +1,6 @@
 import { Fragment, type DragEvent, type ReactNode } from 'react';
 import {
-  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolSetHas, type Tool, type ToolSet, type ToolsApi,
+  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolSetHas, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
 } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
@@ -13,6 +13,7 @@ import { Icon } from '../../icons/Icon';
 import { groupTools } from './order';
 import { slotsOf, stackIndex, type PaletteSlot } from './stacks';
 import { ToolStack, type StackCycleModifier, type StackMember } from './ToolStack';
+import { useToolCarry } from './useToolCarry';
 
 function toolGlyph(tool: Tool): ReactNode {
   return <Icon name={tool.presentation?.icon ?? icon('core:unknown')} />;
@@ -67,6 +68,14 @@ export interface ToolPaletteProps {
   /** Makes each tool's button a drag source, so dragging one out can do what clicking it would
    *  then do on the canvas (drop a node, say). Called as a drag starts; set the drag's data here. */
   onToolDragStart?: (tool: Tool, e: DragEvent<HTMLButtonElement>) => void;
+  /** Makes each tool's button the source of an in-app carry (`startCarry`): a press carries what
+   *  this returns for the tool over the page, to a canvas whose bindings take its `type`. A press
+   *  that moves less than a click's slop still picks the tool; one that moves further carries and
+   *  picks nothing. Return `null` to leave a tool's button a plain button. */
+  carryTool?: (tool: Tool) => CarryPayload | null;
+  /** What follows the pointer, centered on it, while a tool `carryTool` carries is on the move: the
+   *  thing it drops, at the size it lands. Unset, nothing follows it. */
+  carryGhost?: (tool: Tool) => ReactNode;
 }
 
 const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.tool] : slot.members);
@@ -85,8 +94,9 @@ export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
     groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
-    columns, onToolDragStart,
+    columns, onToolDragStart, carryTool, carryGhost,
   } = props;
+  const carry = useToolCarry(carryTool, carryGhost);
   const shows = include === undefined ? () => true
     : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
   const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && shows(t));
@@ -161,9 +171,10 @@ export function ToolPalette(props: ToolPaletteProps) {
                   shortcut={shortcut}
                   active={tools.active === tool.id}
                   ariaDisabled={!enabled}
-                  className={[s.paletteBtn, !enabled && s.ineligibleBtn].filter(Boolean).join(' ')}
+                  className={[s.paletteBtn, !enabled && s.ineligibleBtn, carryTool?.(tool) != null && s.carrySource].filter(Boolean).join(' ')}
                   title={resolvedTitle}
-                  onClick={enabled ? () => tools.setActive(tool.id) : () => {}}
+                  onClick={enabled ? () => { if (!carry.carried()) tools.setActive(tool.id); } : () => {}}
+                  onPointerDown={carryTool && enabled ? (e) => carry.press(tool, e) : undefined}
                   onDragStart={onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined}
                 />
               );
@@ -171,6 +182,7 @@ export function ToolPalette(props: ToolPaletteProps) {
           </ToolGroup>
         </Fragment>
       ))}
+      {carry.ghost}
     </div>
   );
 }

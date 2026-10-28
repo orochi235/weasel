@@ -455,8 +455,11 @@ nothing.
 
 Give each entry `touch-action: none` so a touch drag is a carry, not a scroll.
 `startItemDrag(event, item)` starts one from a pointer event of your own, and
-`createItemDropAction` is the canvas half for a `SceneCanvas` of your own; the
-carry travels as `DIAGRAM_ITEM_CARRY`.
+`createItemDropAction` (or `itemDropContribution`, to pass as `ambient`) is the
+canvas half for a `SceneCanvas` of your own; the carry travels as
+`DIAGRAM_ITEM_CARRY`. There its `report` gets the canvas's deps as well as the
+drop, and `requires` names the ones it reads, so it can add the item itself
+through `insert`. A `ToolPalette` carries from its buttons with `carryTool`.
 
 ### Stencils
 
@@ -1083,7 +1086,11 @@ wires (`mainChain(pipeline)` returns it). Its `direction` is `'right'`
 signal enters at each stage's top and leaves at its bottom, which a reorder
 drags along vertically. `side` is `'below'` (default) or `'above'`; in a
 column, `'below'` hangs the side stages on the column's right and `'above'`
-on its left, and a collapsed skip's arc runs down the other edge.
+on its left, and a collapsed skip's arc runs down the other edge. A wire from
+a stage's main output into the side input of a stage further down the line,
+past at least one stage, leaves from a tap on the side stages' edge (a port
+named `~tap:<output>`), so it runs beside the stages between rather than
+through them; the editor and a run read it as the output it taps.
 
 `lanes` puts the lanes top down in the order their types first appear on the
 pipeline's ports, after any it is given in `lanes`. A stage stands

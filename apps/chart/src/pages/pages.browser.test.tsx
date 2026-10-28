@@ -11,9 +11,8 @@ import { isDiagramBody } from '@weasel-js/diagram';
 import { CHART_PAGE } from '../chartDocument';
 import { CHART_SCENE_KEY } from '../chartPersistence';
 import { chartPrefs } from '../prefs';
-import { STENCIL_MIME } from '../stencilDrop';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
-import { drag } from '../testing/pointer';
+import { carryStencil, drag } from '../testing/pointer';
 import { PAGE_FIT_PADDING } from './useChartPages';
 
 registerCanvasFont('sans-serif');
@@ -90,15 +89,10 @@ describe('WeaselChart pages', () => {
 
   it('lays the snap grid from the corner of the page in view', async () => {
     chartPrefs().set('view.snapToGrid', true);
-    const { host, canvas } = await mountChartApp();
+    const { host } = await mountChartApp();
     await userEvent.click(page.getByRole('button', { name: 'Add page' }));
     await expect.poll(lit).toBe(1);
-    const dt = new DataTransfer();
-    dt.setData(STENCIL_MIME, 'decision');
-    const p = onPage(host, 1, 400, 300);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-    }
+    await carryStencil('decision', onPage(host, 1, 400, 300));
     await expect.poll(bodyX).toBeDefined();
     // Page 2 starts at x 1096, off the world's 12-unit lattice: on the page's own grid the Decision's origin,
     // 340 from the corner unsnapped, lands on 336, where a lattice from world 0 would put it at 344.

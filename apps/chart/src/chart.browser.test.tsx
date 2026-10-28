@@ -9,10 +9,9 @@ import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
-import { STENCIL_MIME } from './stencilDrop';
 import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
-import { click, doubleClick, drag } from './testing/pointer';
+import { carryStencil, click, doubleClick, drag } from './testing/pointer';
 
 const paper = DIAGRAM_THEMES.paper!;
 
@@ -212,19 +211,33 @@ describe('WeaselChart chart mode', () => {
   });
 
   it('drops a stencil dragged from the Shapes panel centered on the drop point', async () => {
-    const { host, canvas } = await mountApp();
-    const dt = new DataTransfer();
-    dt.setData(STENCIL_MIME, 'decision');
-    const p = at(host, 400, 300);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-    }
+    const { host } = await mountApp();
+    await carryStencil('decision', at(host, 400, 300));
     await expect.poll(() => bodies().length).toBe(1);
     const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; data: unknown; pose: { x: number; y: number; width: number; height: number } }[] })
       .nodes.find(isDiagramBody)!.pose;
     // A pointer event's client point is whole pixels, about a world unit at this zoom.
     expect(Math.abs(pose.x + pose.width / 2 - 400)).toBeLessThan(2);
     expect(Math.abs(pose.y + pose.height / 2 - 300)).toBeLessThan(2);
+  });
+
+  it('carries the stencil itself to the canvas, centered on the pointer, and drops it there', async () => {
+    const { host } = await mountApp();
+    const to = at(host, 400, 300);
+    let ghost: DOMRect | null = null;
+    await carryStencil('decision', to, () => {
+      ghost = document.querySelector('[data-stencil="decision"]')?.getBoundingClientRect() ?? null;
+    });
+    expect(ghost).not.toBeNull();
+    const { x, y, width, height } = ghost!;
+    expect(Math.abs(x + width / 2 - to.x)).toBeLessThan(1);
+    expect(Math.abs(y + height / 2 - to.y)).toBeLessThan(1);
+    await expect.poll(() => bodies().length).toBe(1);
+    // Drawn at the size it lands: the body's box, its stroke around it.
+    const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; data: unknown; pose: { width: number; height: number } }[] })
+      .nodes.find(isDiagramBody)!.pose;
+    expect(width / height).toBeCloseTo((pose.width + 2) / (pose.height + 2), 2);
+    expect(document.querySelector('[data-stencil]')).toBeNull();
   });
 
   it('snaps a moved body to the grid once View › Snap to grid is on', async () => {
@@ -249,14 +262,9 @@ describe('WeaselChart chart mode', () => {
 
   it('drops a stencil with its origin on the grid under snap to grid', async () => {
     chartPrefs().set('view.snapToGrid', true);
-    const { host, canvas } = await mountApp();
-    const dt = new DataTransfer();
-    dt.setData(STENCIL_MIME, 'decision');
+    const { host } = await mountApp();
     // A Decision is 120 by 80, so its origin would sit at (340, 260): the grid's (336, 264).
-    const p = at(host, 400, 300);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-    }
+    await carryStencil('decision', at(host, 400, 300));
     await expect.poll(() => bodies().length).toBe(1);
     const pose = bodies()[0]!.pose!;
     expect([pose.x, pose.y, pose.width, pose.height].map(Math.round)).toEqual([336, 264, 120, 80]);
@@ -265,10 +273,7 @@ describe('WeaselChart chart mode', () => {
     chartPrefs().set('view.snapToGrid', false);
     chartPrefs().set('view.alignmentSnap', false);
     chartPrefs().set('view.spacingSnap', false);
-    const q = at(host, 700, 500);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: q.x, clientY: q.y }));
-    }
+    await carryStencil('decision', at(host, 700, 500));
     await expect.poll(() => bodies().length).toBe(2);
     // A label is stored in its body's frame.
     const labelOffset = (body: SavedNode) => {
@@ -280,21 +285,14 @@ describe('WeaselChart chart mode', () => {
 
   it('lines a dropped stencil up with its neighbor the way a move would, in one undo step', async () => {
     chartPrefs().set('view.spacingSnap', false);
-    const { host, canvas } = await mountApp();
-    const drop = (stencil: string, x: number, y: number) => {
-      const dt = new DataTransfer();
-      dt.setData(STENCIL_MIME, stencil);
-      const p = at(host, x, y);
-      for (const type of ['dragenter', 'dragover', 'drop']) {
-        canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-      }
-    };
+    const { host } = await mountApp();
+    const drop = (stencil: string, x: number, y: number) => carryStencil(stencil, at(host, x, y));
     // A Decision spanning y 260..340.
-    drop('decision', 400, 300);
+    await drop('decision', 400, 300);
     await expect.poll(() => bodies().length).toBe(1);
     // A Process centered at y 312 spans 282..342: its corner is out of reach of every line, its
     // bottom edge 2 from the Decision's. A move lines the bottoms up; a corner-only snap left it at 282.
-    drop('process', 640, 312);
+    await drop('process', 640, 312);
     await expect.poll(() => bodies().length).toBe(2);
     const decision = bodies().find((b) => b.pose!.height === 80)!.pose!;
     const process = bodies().find((b) => b.pose!.height === 60)!.pose!;

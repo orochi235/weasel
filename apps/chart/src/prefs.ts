@@ -12,6 +12,11 @@ const LOOK_OPTIONS = [
   { value: 'lanes', label: 'Lanes' },
 ] as const satisfies readonly { value: EditorLook; label: string }[];
 
+const RACK_DIRECTION_OPTIONS = [
+  { value: 'right', label: 'Across' },
+  { value: 'down', label: 'Down' },
+] as const;
+
 // Fails to typecheck when `EditorLook` gains a look the options leave out.
 const everyLookOffered: [Exclude<EditorLook, (typeof LOOK_OPTIONS)[number]['value']>] extends [never] ? true : false = true;
 void everyLookOffered;
@@ -70,6 +75,13 @@ export const CHART_PREFS = {
           description: 'How the pipeline editor draws stages and wires.',
           default: 'nodeGraph',
           options: LOOK_OPTIONS,
+        },
+        rackDirection: {
+          kind: 'enum',
+          name: 'Rack direction',
+          description: 'Which way the Rack look runs its main line: across the page, or down it.',
+          default: 'right',
+          options: RACK_DIRECTION_OPTIONS,
         },
       },
     },

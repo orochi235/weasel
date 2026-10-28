@@ -17,6 +17,11 @@
    Carries no styles; deleting it breaks keyboard navigation. */
 .paletteBtn {}
 
+/* A button a press carries out: a touch drag carries rather than scrolls. */
+.carrySource {
+  touch-action: none;
+}
+
 /* Applied to ineligible tool buttons in the active mode. */
 .ineligibleBtn {
   opacity: 0.35;

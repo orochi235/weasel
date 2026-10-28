@@ -62,3 +62,31 @@ describe('ToolPalette onToolDragStart', () => {
     expect(screen.getByRole('button', { name: 'a' }).getAttribute('draggable')).toBeNull();
   });
 });
+
+describe('ToolPalette carryTool', () => {
+  const carryTool = (t: Tool) => (t.id === 'b' ? null : { type: 'test/tool', value: t.id });
+
+  it('still picks the tool on a press that does not move', () => {
+    const tools = fakeTools([tool('a')]);
+    renderWithIcons(<ToolPalette tools={tools} carryTool={carryTool} />);
+    const a = screen.getByRole('button', { name: 'a' });
+    fireEvent.pointerDown(a, { button: 0, pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(document, { button: 0, pointerId: 1, clientX: 11, clientY: 10 });
+    fireEvent.click(a);
+    expect(tools.setActive).toHaveBeenCalledWith('a');
+  });
+
+  it('picks nothing with the click that ends a carry, and picks again on the next click', async () => {
+    const tools = fakeTools([tool('a')]);
+    renderWithIcons(<ToolPalette tools={tools} carryTool={carryTool} />);
+    const a = screen.getByRole('button', { name: 'a' });
+    fireEvent.pointerDown(a, { button: 0, pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(document, { button: 0, buttons: 1, pointerId: 1, clientX: 60, clientY: 40 });
+    fireEvent.pointerUp(document, { button: 0, pointerId: 1, clientX: 60, clientY: 40 });
+    fireEvent.click(a);
+    expect(tools.setActive).not.toHaveBeenCalled();
+    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.click(a);
+    expect(tools.setActive).toHaveBeenCalledWith('a');
+  });
+});

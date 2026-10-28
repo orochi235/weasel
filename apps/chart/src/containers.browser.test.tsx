@@ -11,10 +11,9 @@ import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import { isDiagramBody } from '@weasel-js/diagram';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
-import { STENCIL_MIME } from './stencilDrop';
 import { at } from './testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
-import { click, drag } from './testing/pointer';
+import { carryStencil, click, drag } from './testing/pointer';
 
 registerCanvasFont('sans-serif');
 
@@ -143,12 +142,7 @@ describe('WeaselChart containers', () => {
     await drag(canvas, at(host, 100, 100), at(host, 500, 400));
     await expect.poll(() => role('container').length).toBe(1);
     const box = role('container')[0]!.id;
-    const dt = new DataTransfer();
-    dt.setData(STENCIL_MIME, 'decision');
-    const p = at(host, 300, 250);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-    }
+    await carryStencil('decision', at(host, 300, 250));
     await expect.poll(() => bodies().length).toBe(1);
     const body = bodies()[0]!;
     expect(body.parent).toBe(box);

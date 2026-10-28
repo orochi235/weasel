@@ -83,7 +83,7 @@ describe('WeaselChart pipeline mode', () => {
     await choose('Mode', /^Pipeline/);
     await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: 'View' }));
     await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Look/.test(el.textContent ?? ''))!);
-    await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Rack/.test(el.textContent ?? ''))!);
+    await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Rack(?!\s*Direction)/.test(el.textContent ?? ''))!);
     await new Promise((r) => setTimeout(r, 100));
 
     const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
@@ -137,7 +137,7 @@ describe('WeaselChart pipeline mode', () => {
     await choose('Mode', /^Pipeline/);
     await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: 'View' }));
     await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Look/.test(el.textContent ?? ''))!);
-    await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Rack/.test(el.textContent ?? ''))!);
+    await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Rack(?!\s*Direction)/.test(el.textContent ?? ''))!);
     await new Promise((r) => setTimeout(r, 100));
 
     const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;

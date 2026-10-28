@@ -1,6 +1,6 @@
 import { EffectEditor, type EditorLook, type EffectEditorApi, type EffectStageType } from '@weasel-js/diagram/effect';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
-import { useCallback, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import { ParamPanel } from './ParamPanel';
 import { usePipelineCommands } from './pipelineCommands';
 import { useGroupCommands } from './pipelineGroups';
@@ -18,10 +18,11 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
   setLook: (look: EditorLook) => void;
 }): ReactElement {
   usePipelineCommands(pipeline);
-  useLookCommands(look, setLook);
+  const direction = useLookCommands(look, setLook);
   usePipelinePageCommands(pipeline);
   const { doc, change } = pipeline;
   const { run, rows } = usePipelineRun(doc.pipeline);
+  const options = useMemo(() => ({ ...rows, direction }), [rows, direction]);
   const editor = useRef<EffectEditorApi | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
   const [pickedGroup, setPickedGroup] = useState<string | null>(null);
@@ -56,7 +57,9 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
       </Sidebar>
       <div className="wc-host">
         <EffectEditor
-          ref={editor} doc={doc} onChange={change} look={look} options={rows} run={run} selected={selected} onSelect={pick}
+          // The editor opens fitted, so a new direction gets a new editor, as a new look does.
+          key={look === 'rack' ? direction : look}
+          ref={editor} doc={doc} onChange={change} look={look} options={options} run={run} selected={selected} onSelect={pick}
           selectedGroup={group} onSelectGroup={pickGroup}
         />
       </div>

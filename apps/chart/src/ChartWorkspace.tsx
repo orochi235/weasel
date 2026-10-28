@@ -18,7 +18,6 @@ import { NewChart } from './NewChartDialog';
 import { ChartPageStrip } from './pages/ChartPageStrip';
 import { PAGE_FIT_PADDING, useChartPages } from './pages/useChartPages';
 import { isStencilTool, StencilPanel } from './StencilPanel';
-import { stencilDropHandler } from './stencilDrop';
 import { StylePanel } from './theme/StylePanel';
 import { ChartToolbar } from './toolbar/ChartToolbar';
 import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
@@ -31,7 +30,6 @@ import { useChartSnap } from './useChartSnap';
 import './workspace.css';
 
 // Module consts: SceneCanvas keys its wiring off these props' identity.
-const INGESTION = { handlers: [stencilDropHandler] };
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
 const NO_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
@@ -96,7 +94,7 @@ export function ChartWorkspace(): ReactElement {
       <ChartToolbar tools={tools} include={isPaletteTool} view={view} setView={setView} dims={dims} />
       <div className="wc-body">
         <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes">
-          {tools && <StencilPanel tools={tools} scene={scene} />}
+          {tools && <StencilPanel tools={tools} scene={scene} theme={theme} scale={Math.abs(view.scale.x)} />}
         </Sidebar>
         <div className="wc-stage">
           <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
@@ -117,7 +115,6 @@ export function ChartWorkspace(): ReactElement {
                 tools={diagram.tools}
                 selectTool={selectTool}
                 ambient={diagram.ambient}
-                ingestion={INGESTION}
                 onToolsCreated={setTools}
                 alphaFor={alphaFor}
                 layers={layers}

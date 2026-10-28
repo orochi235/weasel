@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useAutoLayoutCommand } from './autoLayout';
 import type { ChartPose, ChartScene } from './chartDocument';
 import { PAGE_FIT_PADDING } from './pages/useChartPages';
+import { stencilDrop } from './stencilDrop';
 import { CHART_DEFAULT_THEME } from './theme/themeCommands';
 
 /** New connectors route around shapes unless the chart's type names a router; saved ones keep the router they have. */
@@ -46,8 +47,8 @@ export interface ChartDiagram {
 }
 
 /** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, where they
- *  settle and dragging them, lanes, off-page tags, the connector and the stencils, and Arrange › Auto layout. What
- *  it inserts is drawn in `theme`, its connectors as `type` starts them. */
+ *  settle and dragging them, lanes, off-page tags, the connector and the stencils, a stencil carried in from the
+ *  Shapes panel, and Arrange › Auto layout. What it inserts is drawn in `theme`, its connectors as `type` starts them. */
 export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme, type: DiagramType): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
   useLabelPlacement<ChartPose>(scene as never, LABEL_PLACEMENT);
@@ -69,16 +70,17 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
   const labelDrag = useMemo(() => diagramLabelDrag({ scene: scene as never, selected }), [scene, selected]);
   const connector = useConnectorTool<ChartPose>({ participants, router, edgeStroke });
   const label = useMemo(() => edgeLabel(theme), [theme]);
+  const drop = useMemo(() => stencilDrop(participants), [participants]);
   useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });
   return useMemo(() => ({
     // Edge ends last: an edge's end sits on a port and beside a route handle, and a press on it must start neither.
     layers: [containers.layer, labelDrag.layer, ports.layer, route.layer, ends.layer],
     ambient: [
       containers.contribution, labelDrag.contribution, ports.contribution, route.contribution, ends.contribution, label,
-      OFF_PAGE,
+      OFF_PAGE, drop,
     ],
     tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS },
-  }), [containers, labelDrag, ports, route, ends, connector, label]);
+  }), [containers, labelDrag, ports, route, ends, connector, label, drop]);
 }
 
 /**
