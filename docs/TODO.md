@@ -750,6 +750,12 @@ only story runner in the repo.
   of the file at 4× throttling settled all 540 cases within 321 ms. The lab has no `storageKey`
   here, so no persisted sidebar width carries between tests or files.
 
+- **(P3) [waiting] `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is" failed once
+  in a full fleet run.** At 98d525569 on 2026-10-28 (teitou) the browser project read 534.3125 against
+  533.078125 (tolerance 0.5); the same file passed 3 of 3 alone on the fleet at that commit and 3 of 3 at
+  its parent. A 1.23 px miss suggests layout read before a reflow settled under load (inferred). Delete the
+  entry if the next full runs pass it.
+
 - **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
   On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
   `savedBody().row.data.text` stayed `''` past the poll after Escape, so the six typed `M`s
