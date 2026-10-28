@@ -28,7 +28,7 @@
     "longestFunction": 134
   },
   "packages/core/src/core/scene/kitOps.ts": {
-    "longestFunction": 230
+    "longestFunction": 190
   },
   "packages/core/src/core/scene/nodeStore.ts": {
     "longestFunction": 203
