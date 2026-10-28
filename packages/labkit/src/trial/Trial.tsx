@@ -22,7 +22,6 @@ import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelC
 import { CanvasStack } from '../canvas/CanvasStack';
 import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
-import { applyCamera } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import { TrialClockContext, TrialRootContext } from '../clock/contexts';
 import { useTrialClockSetup } from '../clock/useTrialClockSetup';
@@ -30,17 +29,10 @@ import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
-import type {
-  Instrument,
-  InstrumentList,
-  LayerDescriptor,
-  PaletteItem,
-  RenderContext,
-} from '../instrument/types';
+import type { Instrument, InstrumentList, PaletteItem, RenderContext } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
-import type { LayerListItem } from '../passthrough/weasel-ui';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
@@ -56,6 +48,7 @@ import { trialUndoBindings } from './trialUndo';
 import { useKeptMarks } from './useKeptMarks';
 import { TrialOrbitProvider } from './useOrbitView';
 import { useTrialCamera } from './useTrialCamera';
+import { useTrialLayers } from './useTrialLayers';
 import { useTrialMarks } from './useTrialMarks';
 import { useTrialWrites } from './useTrialWrites';
 
@@ -148,14 +141,6 @@ function TrialRuntime({
   }, []);
   const loupeSwitch = useMemo(() => ({ on: loupeOn, mount: mountLens }), [loupeOn, mountLens]);
 
-  const visibleLayers = useMemo(
-    () =>
-      (instrument.canvas?.layers ?? [])
-        .filter((l) => layerVisibility[l.id] !== false)
-        .map((l) => l.id),
-    [instrument.canvas, layerVisibility],
-  );
-
   const rootRef = useRef<HTMLElement | null>(null);
   const clockTarget = useCallback(() => rootRef.current, []);
   const clockHandle = useTrialClockSetup({
@@ -169,6 +154,15 @@ function TrialRuntime({
     () => (clockHandle ? (fn: () => void) => clockHandle.onFrame(() => fn()) : undefined),
     [clockHandle],
   );
+
+  const { visibleLayers, canvasLayers, layerDescriptors, layerItems } = useTrialLayers({
+    instrument,
+    state: record.state,
+    config,
+    layerVisibility,
+    layerOrder,
+    clock: clockHandle?.clock,
+  });
 
   const undoCap = instrument.undo;
   const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
@@ -270,56 +264,6 @@ function TrialRuntime({
 
   const loupeBindings: LoupeBindings | undefined =
     lenses > 0 ? { on: loupeOn, toggle: () => setLoupeOn((v) => !v) } : undefined;
-
-  const canvasLayers: CanvasLayerDescriptor[] = useMemo(() => {
-    if (!instrument.canvas) return [];
-    const baseLayers = instrument.canvas.layers;
-    const ordered = layerOrder
-      ? [...baseLayers].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
-      : baseLayers;
-    const clock = clockHandle?.clock;
-    return ordered.map((layer) => ({
-      id: layer.id,
-      visible: layerVisibility[layer.id] !== false,
-      timed: layer.timed === true,
-      render: (ctx, view, frame) => {
-        // Camera applied here, so a layer draws in world coordinates. `zoom`
-        // stays in the args for line widths, which must not scale with it.
-        applyCamera(ctx, view, frame);
-        layer.draw(ctx, {
-          state: record.state,
-          config,
-          zoom: view.zoom,
-          elapsed: clock?.elapsed ?? 0,
-          pass: clock?.pass ?? 0,
-          phase: clock?.phase ?? 0,
-        });
-      },
-    }));
-  }, [instrument.canvas, record.state, config, layerVisibility, layerOrder, clockHandle]);
-
-  const layerDescriptors: LayerDescriptor[] = useMemo(() => {
-    if (!instrument.layers) return [];
-    return instrument.layers.ids.map((l) => (typeof l === 'string' ? { id: l, label: l } : l));
-  }, [instrument.layers]);
-
-  // In the order the canvas draws them, with the always-on layers pinned
-  // below the rest, where a drag cannot reach past them.
-  const layerItems: LayerListItem[] = useMemo(() => {
-    const ordered = layerOrder
-      ? [...layerDescriptors].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
-      : layerDescriptors;
-    const pinnedLast = [
-      ...ordered.filter((l) => !l.alwaysOn),
-      ...ordered.filter((l) => l.alwaysOn),
-    ];
-    return pinnedLast.map((l) => ({
-      id: l.id,
-      label: l.label,
-      fixed: l.alwaysOn === true,
-      visible: l.alwaysOn === true || layerVisibility[l.id] !== false,
-    }));
-  }, [layerDescriptors, layerOrder, layerVisibility]);
 
   const dragDropResult = useDragDrop({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
