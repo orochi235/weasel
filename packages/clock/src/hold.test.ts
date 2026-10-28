@@ -128,4 +128,21 @@ describe('holdElapsed', () => {
     expect([h.clock.elapsed, h.clock.pass]).toEqual([2500, 2]);
     expect(hold.pending()).toBeNull();
   });
+  it('converts a position recorded under another span, keeping its pass', () => {
+    const h = createClock({ duration: 2000, loop: 3 });
+    const hold = holdElapsed(h, { elapsed: 2500, duration: 1000 });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([4500, 2]);
+    expect(hold.pending()).toBeNull();
+    h.clock.duration = 1000;
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([2500, 2]);
+  });
+  it('keeps the shown time across a recorded origin, and a pass end', () => {
+    const h = createClock({ duration: 1000, loop: 3, origin: 0 });
+    holdElapsed(h, { elapsed: 1200, origin: -100 });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([1100, 1]);
+    holdElapsed(h, { elapsed: 1000, duration: 500, passEnd: true });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([1500, 1]);
+    holdElapsed(h, { elapsed: 1000, duration: 500 });
+    expect([h.clock.elapsed, h.clock.pass]).toEqual([2000, 2]);
+  });
 });
