@@ -99,16 +99,6 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   onSubmit?: SubmitAssets;
 }
 
-/**
- * The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its
- * history and draft are the workspace's. With `list` its far pane lists the assets, to pick the one shown; picking is
- * not an edit, and an undo or a redo shows the asset it changed. A setting re-keyed, moved, or removed in a dialog
- * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
- *
- * A workspace's `actions` asset is the catalog its Actions pane lists: the reader drags its rows to sort and group
- * them, and a row picked there shows its attributes, where what a pref dragged out of it carries is edited. Start
- * one from `actionCatalog`. With none the pane lists the host's actions by their keys, and nothing sorts them.
- */
 /** What the shown asset exports and has changed since its baseline: every change, the paths they touch, and the
  *  attributes changed on the row `lead`. */
 function useShownChanges(changedAssets: WorkspaceChanges, assetId: string, types: PrefTypes | undefined, lead: string | null) {
@@ -119,6 +109,16 @@ function useShownChanges(changedAssets: WorkspaceChanges, assetId: string, types
   return { exported, changes, changed, changedAttrs };
 }
 
+/**
+ * The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its
+ * history and draft are the workspace's. With `list` its far pane lists the assets, to pick the one shown; picking is
+ * not an edit, and an undo or a redo shows the asset it changed. A setting re-keyed, moved, or removed in a dialog
+ * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
+ *
+ * A workspace's `actions` asset is the catalog its Actions pane lists: the reader drags its rows to sort and group
+ * them, and a row picked there shows its attributes, where what a pref dragged out of it carries is edited. Start
+ * one from `actionCatalog`. With none the pane lists the host's actions by their keys, and nothing sorts them.
+ */
 export function AssetEditor(
   { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
