@@ -24,11 +24,11 @@ test('an unset auto value draws its switch before a faded control on one line, a
   );
   fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('gap'));
   const attributes = within(screen.getByRole('region', { name: 'Attributes' }));
-  const input = attributes.getByRole('spinbutton', { name: 'Auto value' });
+  const input = attributes.getByRole('spinbutton', { name: 'Value' });
   input.scrollIntoView({ block: 'center' });
-  const toggle = attributes.getByRole('switch', { name: 'Set Auto value' }).closest('label')!.getBoundingClientRect();
+  const toggle = attributes.getByRole('switch', { name: 'Set Value' }).closest('label')!.getBoundingClientRect();
   const field = input.getBoundingClientRect();
-  const label = attributes.getByText('Auto value').getBoundingClientRect();
+  const label = attributes.getByText('Value').getBoundingClientRect();
 
   expect(toggle.width).toBeGreaterThan(0);
   expect(toggle.right).toBeLessThanOrEqual(field.left);
