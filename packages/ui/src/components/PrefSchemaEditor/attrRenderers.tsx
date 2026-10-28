@@ -1,9 +1,9 @@
 import type { PrefPair } from '@weasel-js/prefs';
 import type { PrefRenderContext, PrefRenderer } from '../Prefs';
-import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Input } from '../Input';
 import { Select } from '../Select';
+import { TokenField } from '../TokenField';
 import { NumberText } from './NumberText';
 import { IconAttrField } from './IconAttrField';
 import { UnitEditor } from './UnitAttr';
@@ -25,28 +25,28 @@ function optionProblem(rows: readonly Option[], i: number): string | undefined {
   return undefined;
 }
 
+/** An enum's options as chips: each shows its label, and its stored value on hover; typing adds one stored as typed. */
 function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
   const rows = (ctx.value as Option[] | undefined) ?? [];
-  const set = (i: number, patch: Partial<Option>) => ctx.setValue(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   return (
-    <div className={s.options}>
-      {rows.length > 0 && (
-        <div className={`${s.optionRow} ${s.optionHeads}`} aria-hidden="true">
-          <span>Value stored</span>
-          <span>Label shown</span>
-          <span className={s.optionHeadSpacer} />
-        </div>
-      )}
-      {rows.map((r, i) => (
-        <div key={i} className={s.optionRow}>
-          <Input className={s.symbol} placeholder="value" aria-label={`Option ${i + 1} value`} value={r.value} onChange={(v) => set(i, { value: v })}
+    <TokenField<Option>
+      aria-label="Options"
+      placeholder="Add option…"
+      reorder
+      value={rows}
+      onChange={ctx.setValue}
+      label={(o) => o.label || o.value}
+      tooltip={(o) => <code>{o.value}</code>}
+      create={(text) => ({ value: text, label: text })}
+      problem={optionProblem}
+      renderEditor={(o, set, i) => (
+        <>
+          <Input className={s.symbol} label="Value stored" value={o.value} onChange={(v) => set({ ...o, value: v })}
             isInvalid={optionProblem(rows, i) !== undefined} errorMessage={optionProblem(rows, i)} />
-          <Input placeholder="Label" aria-label={`Option ${i + 1} label`} value={r.label} onChange={(v) => set(i, { label: v })} />
-          <CloseButton ariaLabel={`Remove option ${i + 1}`} onClick={() => ctx.setValue(rows.filter((_, j) => j !== i))} />
-        </div>
-      ))}
-      <Button size="sm" onClick={() => ctx.setValue([...rows, { value: '', label: '' }])}>Add option</Button>
-    </div>
+          <Input label="Label shown" value={o.label} onChange={(v) => set({ ...o, label: v })} />
+        </>
+      )}
+    />
   );
 }
 

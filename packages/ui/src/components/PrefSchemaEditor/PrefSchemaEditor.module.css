@@ -1,6 +1,5 @@
 .options { display: grid; gap: var(--wzl-space-2); }
 .pairRow { display: grid; grid-template-columns: 1fr auto; gap: var(--wzl-space-2); align-items: center; }
-.optionRow { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--wzl-space-2); align-items: center; }
 .unitRow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--wzl-space-2); align-items: center; }
 .acceptRow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: var(--wzl-space-2); align-items: center; }
 .optionHeads { color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-xs); }
@@ -196,9 +195,6 @@
   top: -6px;
   right: -6px;
 }
-
-/* A flagged option's message makes its cell taller than the row's other two. */
-.optionRow:has([data-invalid]) { align-items: start; }
 
 .autoValue {
   display: flex;
