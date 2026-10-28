@@ -339,13 +339,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] Scene mutations got two to eight times slower between 2026-09-29 and 2026-10-27.** Under the same
-  bench harness (Vite's module runner) on studio, `scene.setPose` went from 292 to 875 ns at depth 0 and from 250 to
-  2,083 ns at depth 16; `scene.add` from 917 to 1,667 ns, and the add-and-remove round trip from 1,417 to 3,083 ns
-  (`tests/perf/bench/scene-ops.bench.ts`; the 2026-09-29 rows against
-  `tests/perf/recorded/bench-native-esm-2026-10-27/studio-module-runner/`). Not the harness: the native-import run
-  beside it reads within 25% of the runner's on these rows. The derived-path frame rows moved 1.6–1.9× under the
-  runner over the same dates. Bisect the scene and history changes between those dates with `scene-ops.bench.ts` alone.
+- **(P3) [agent] A scene add-and-remove round trip costs 2.4 µs, against 1.3 µs on 2026-09-29.** Native imports,
+  this machine, flat across tree depth since the lock guard stopped climbing (2026-10-27). About 0.4 µs is
+  2026-10-13 599685677, which records every scene edit as the kit ops it caused, and `setPose` pays the same
+  feature about 0.2 µs. The rest arrived across later scene commits and is not narrowed: probe with
+  `tests/perf/bench/scene-ops.bench.ts`, or a plain loop over `scene.add`/`scene.remove` under
+  `tests/perf/bench/node-hooks.mjs`.
 
 - **(P3) [agent] A decision drawn as its symbol in a `direction: 'down'` rack still faces right**
   (2026-10-27). The branch symbols (`packages/diagram/src/effect/symbolParts.ts`) take the signal in on their
