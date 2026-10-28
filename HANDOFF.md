@@ -22,9 +22,7 @@ found. The calls made without a ruling are in each commit body; the ones most li
 - A run's `lang` now reaches SVG (`xml:lang`), the edit overlay, and `textTransform`; labkit tests that mount a
   lab share a `live` guard that also prints a stalled step's stack in the timeout warning (batch 10).
 
-**Needs Mike before the next release:** first-publish `@weasel-js/clock` (headless and shape
-were seeded 2026-10-27; `docs/TODO.md`, P2 [maintainer]); `check:first-publish` fails the release job until then. Also filed for
-him: whether core snaps the view's translation to whole device pixels.
+**Filed for Mike:** whether core snaps the view's translation to whole device pixels.
 
 **Breaking for callers** (said in each changeset, all `patch`): pick functions take a `WorldPoint`;
 `PointerWorldPos` is `{ world, viewId }`; immediate actions' params carry `world`/`press` points; the
