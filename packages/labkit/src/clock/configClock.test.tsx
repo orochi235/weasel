@@ -103,6 +103,19 @@ describe('a clock declared from config', () => {
   });
 });
 
+describe('a clock declared from config, in a snapshot', () => {
+  it('opens at the snapshot position when loading the snapshot turns it back on', async () => {
+    await mount((s) => (s > 0 ? { duration: s * 1000 } : null));
+    await click('seek');
+    const trialId = lab?.trials[0]?.id as string;
+    await act(async () => lab?.saveSnapshot(trialId, 'on'));
+    await click('zero');
+    expect(readout()).toHaveTextContent('none');
+    await act(async () => lab?.loadSnapshot(trialId, lab.savedSnapshots[0]?.id as string));
+    expect(readout()).toHaveTextContent('1500/2000');
+  });
+});
+
 describe('a clock declared from config, in the trial', () => {
   it('shows a transport only while it has a clock', async () => {
     await mount((s) => (s > 0 ? { duration: s * 1000 } : null));

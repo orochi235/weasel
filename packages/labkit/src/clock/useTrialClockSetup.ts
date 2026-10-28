@@ -36,26 +36,33 @@ function open(spec: ClockCapability, at: ClockPosition | undefined): Held {
 
 /**
  * The clock `make` opens while `live`, made in a layout effect so a render
- * makes none and StrictMode's second effect pass reuses the first one's.
- * `seeded`: a clock was made earlier in this mount.
+ * makes none and StrictMode's second effect pass reuses the first one's. It
+ * opens at `seed` when it is the first of the mount, or when `seed` changed
+ * while there was none (a snapshot load turning it back on); else fresh.
  */
-function useOwnClock(live: boolean, make: (seeded: boolean) => Held | null): Held | null {
+function useOwnClock(
+  live: boolean,
+  seed: ClockPosition | undefined,
+  make: (at: ClockPosition | undefined) => Held | null,
+): Held | null {
   const [held, setHeld] = useState<Held | null>(null);
   const made = useRef<Held | null>(null);
-  const seeded = useRef(false);
-  const latestMake = useLatest(make);
+  /** The seed as the last clock was dropped; null before the mount's first. */
+  const dropped = useRef<{ seed: ClockPosition | undefined } | null>(null);
+  const latest = useLatest({ make, seed });
   useLayoutEffect(() => {
+    const { make, seed } = latest.current;
     if (!live) {
+      if (made.current) dropped.current = { seed };
       made.current = null;
       setHeld(null);
       return;
     }
-    if (!made.current) {
-      made.current = latestMake.current(seeded.current);
-      seeded.current = true;
-    }
+    made.current ??= make(
+      dropped.current === null || dropped.current.seed !== seed ? seed : undefined,
+    );
     setHeld(made.current);
-  }, [live, latestMake]);
+  }, [live, latest]);
   return live ? held : null;
 }
 
@@ -72,8 +79,9 @@ interface Args {
  * The trial's clock, from the instrument's `clock` (a function of `config` is
  * called every render). It is made when a declaration appears, kept across
  * edits that keep one (`declare` only), and dropped when it goes `null`.
- * `record.clock` seeds the first clock of a mount only; a later write to it,
- * this tab's or another's, leaves the clock where it stands.
+ * `record.clock` seeds the first clock of a mount, and a later one when it was
+ * written while there was none; a write while there is one, this tab's or
+ * another's, leaves the clock where it stands.
  */
 export function useTrialClockSetup({
   instrument,
@@ -92,10 +100,9 @@ export function useTrialClockSetup({
     );
 
   const declaredSpec = useLatest(spec);
-  const seed = useLatest(record.clock);
-  const held = useOwnClock(spec !== null, (seeded) => {
+  const held = useOwnClock(spec !== null, record.clock, (at) => {
     const declared = declaredSpec.current;
-    return declared ? open(declared, seeded ? undefined : seed.current) : null;
+    return declared ? open(declared, at) : null;
   });
   const handle = onLab ? (clocks?.shared ?? null) : (held?.handle ?? null);
 
