@@ -1,4 +1,5 @@
 import type { Action } from '@weasel-js/core';
+import { icon } from '../icons.gen';
 import { DEFAULT_HOP_SIZE, HOPS_DOC_KEY } from './types';
 
 /** The line jumps command's id. */
@@ -21,6 +22,7 @@ export function createSetHopsAction(opts: SetHopsOptions = {}): Action {
   return {
     id: SET_HOPS_ACTION_ID,
     label: 'Line jumps',
+    icon: icon('lineJumps'),
     group: 'diagram',
     requires: ['scene'],
     invoker: {
