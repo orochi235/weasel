@@ -108,7 +108,7 @@ describe('App', () => {
     expect(within(screen.getByRole('dialog')).getByText('Show grid')).toBeTruthy();
   });
 
-  it('flips the grid prefs from View in chart mode, each row held while its pref is on', () => {
+  it('flips the grid and snapping prefs from View in chart mode, each row held while its pref is on', () => {
     mount();
     const rows = () => {
       act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
@@ -116,13 +116,14 @@ describe('App', () => {
     };
     const label = (r: HTMLElement) => r.children[1]!.textContent;
     const first = rows();
-    expect(first.map(label)).toEqual(['Show grid', 'Snap to grid', 'Preferences…']);
+    expect(first.map(label)).toEqual(['Show grid', 'Snap to grid', 'Snap to other shapes', 'Snap to equal gaps', 'Preferences…']);
     act(() => { fireEvent.click(first[0]!); });
     expect(chartPrefs().get('view.gridVisible')).toBe(true);
     choose('View', 'Snap to grid');
     expect(chartPrefs().get('view.snapToGrid')).toBe(true);
     const again = rows();
-    expect(again.filter((r) => r.getAttribute('aria-checked') === 'true').map(label)).toEqual(['Show grid', 'Snap to grid']);
+    expect(again.filter((r) => r.getAttribute('aria-checked') === 'true').map(label))
+      .toEqual(['Show grid', 'Snap to grid', 'Snap to other shapes', 'Snap to equal gaps']);
     act(() => { fireEvent.click(again[0]!); });
     expect(chartPrefs().get('view.gridVisible')).toBe(false);
   });

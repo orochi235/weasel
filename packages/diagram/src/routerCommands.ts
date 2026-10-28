@@ -6,6 +6,7 @@
  */
 import { ActionDisabledReason, type Action, type InvocationCtx } from '@weasel-js/core';
 import { diagramEdgeOf, type DiagramEdge } from './edgeTrait';
+import { icon } from './icons.gen';
 import type { ParticipantSource } from './portAffordance';
 
 /** The router commands' ids, by router key. */
@@ -23,6 +24,13 @@ export const ROUTER_LABELS: Readonly<Record<keyof typeof SET_ROUTER_ACTION_IDS, 
   straight: 'Straight',
   bezier: 'Curved',
 };
+
+const ROUTER_ICONS = {
+  avoid: icon('routerAvoid'),
+  orthogonal: icon('routerOrthogonal'),
+  straight: icon('routerStraight'),
+  bezier: icon('routerCurved'),
+} as const;
 
 /** One connector's router changed. */
 export interface RouterEdit {
@@ -75,6 +83,7 @@ export function createSetRouterAction<TPose>(router: keyof typeof SET_ROUTER_ACT
   return {
     id: SET_ROUTER_ACTION_IDS[router],
     label: ROUTER_LABELS[router],
+    icon: ROUTER_ICONS[router],
     group: 'diagram',
     requires: ['scene'],
     invoker: {

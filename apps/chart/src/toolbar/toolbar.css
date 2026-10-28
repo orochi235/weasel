@@ -1,0 +1,8 @@
+.wc-toolbar {
+  flex-shrink: 0;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  background: var(--wzl-surface);
+  border-bottom: 1px solid var(--wzl-border);
+  font-size: 11px;
+}
