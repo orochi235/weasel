@@ -132,6 +132,21 @@ describe('a clock declared from config, in the trial', () => {
     expect((rootOfClock() as HTMLElement).classList.contains('lk-trial')).toBe(true);
   });
 
+  it('holds a reopened time past its first run in its own pass until the run grows', async () => {
+    await mount((s) => ({ duration: 1000, loop: s }));
+    const first = lab?.trials[0]?.id as string;
+    await act(async () => {
+      store?.getState().updateTrialClock(first, { elapsed: 2500, rate: 0 });
+      lab?.cloneTrial(first);
+    });
+    await act(async () => {
+      lab?.closeTrial(first);
+    });
+    expect(readout()).toHaveTextContent('2000/1000');
+    await click('three');
+    expect(readout()).toHaveTextContent('2500/1000');
+  });
+
   it('holds a reopened time its first span cannot reach until the span grows', async () => {
     await mount((s) => ({ duration: s * 1000 }));
     const first = lab?.trials[0]?.id as string;

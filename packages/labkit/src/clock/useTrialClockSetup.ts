@@ -1,4 +1,4 @@
-import { holdAt, shownInPass } from '@weasel-js/clock';
+import { holdElapsed } from '@weasel-js/clock';
 import { useLatest } from '@weasel-js/core';
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
@@ -12,14 +12,13 @@ import {
   clockPosition,
   createTrialClock,
   declaredClock,
-  shownAt,
   type TrialClockHandle,
 } from './trialClock';
 
 interface Held {
   handle: TrialClockHandle;
-  /** Where a reopened clock stood, when its first span could not hold it. */
-  reopenAt: number | null;
+  /** Where a reopened clock stood, when its first run could not reach it. */
+  reopenAt: ClockPosition | null;
 }
 
 const shape = (s: ClockCapability): string =>
@@ -27,11 +26,7 @@ const shape = (s: ClockCapability): string =>
 
 function open(spec: ClockCapability, at: ClockPosition | undefined): Held {
   const handle = createTrialClock(spec, at);
-  const { clock } = handle;
-  const duration = spec.duration ?? Number.POSITIVE_INFINITY;
-  const saved = at ? shownAt(at, spec.origin ?? 0, duration, clock.loop) : null;
-  const shown = shownInPass(clock.origin, clock.elapsed, clock.duration, clock.loop);
-  return { handle, reopenAt: saved !== null && shown !== saved ? saved : null };
+  return { handle, reopenAt: at && handle.clock.elapsed !== at.elapsed ? at : null };
 }
 
 /**
@@ -134,7 +129,7 @@ export function useTrialClockSetup({
 
   useEffect(() => {
     if (!held || held.reopenAt === null) return;
-    return holdAt(held.handle, held.reopenAt).release;
+    return holdElapsed(held.handle, held.reopenAt).release;
   }, [held]);
 
   return handle;
