@@ -34,6 +34,7 @@ const mount = async (onChange: (next: PrefGroup) => void = () => {}) => {
     </IconRegistryProvider>,
   );
   fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('Show grid'));
+  fireEvent.click(screen.getByRole('button', { name: 'Select icon' }));
   return { ...out, grid: await screen.findByRole('listbox', { name: 'Icons' }) };
 };
 
