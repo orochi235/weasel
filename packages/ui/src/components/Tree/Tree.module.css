@@ -43,11 +43,8 @@
   padding-inline-start: var(--wzl-tree-indent, var(--tree-gutter));
 }
 
-/* A bracket down the side of an open branch's rows: straight from under the middle of the branch's mark, and curving
-   in at its foot. The foot's edge is there, unseen, so the curve keeps its weight to the turn's middle and stops.
-   Each level stands a mark's width in from the one above, half of it past the bracket. */
+/* Each level stands a mark's width in from the one above, half of it past the bracket. */
 .tree[data-guides] .group {
-  position: relative;
   padding-inline-start: var(--wzl-tree-indent, var(--tree-mark));
 }
 
@@ -61,11 +58,16 @@
   padding-inline-start: var(--wzl-tree-root-leaf-indent, var(--wzl-tree-leaf-indent, 0));
 }
 
-.tree[data-guides] .group::before {
+/* A bracket down the side of an open branch's rows: straight from under the middle of the branch's mark, and curving
+   in at its foot. The foot's edge is there, unseen, so the curve keeps its weight to the turn's middle and stops.
+   A list that is not a tree takes it too, placed by `--guide-at` and with its top dropped by `--guide-from`. */
+.guide { position: relative; }
+
+.guide::before {
   content: '';
   position: absolute;
-  inset-block: 0 var(--wzl-space-1);
-  inset-inline-start: calc(var(--tree-mark) / 2);
+  inset-block: var(--guide-from, 0) var(--wzl-space-1);
+  inset-inline-start: var(--guide-at, calc(var(--tree-mark) / 2));
   inline-size: 10px;
   border-inline-start: 1px solid var(--wzl-tree-guide, var(--wzl-fg-subtle));
   border-block-end: 1px solid transparent;

@@ -22,7 +22,7 @@ describe('AssetEditor asset list headings', () => {
   it('lists what another editor holds among its own by name, and hands a pick of one to the host', () => {
     const onElsewhere = vi.fn();
     renderWithIcons(<Live elsewhere={[{ id: 'reader', label: 'Reader prefs', under: 'Dialogs' }]} onElsewhere={onElsewhere} />);
-    const dialogs = within(within(assets()).getByRole('group', { name: 'Dialogs' })).getAllByRole('option').map((o) => o.textContent);
+    const dialogs = within(within(assets()).getByRole('group', { name: 'Dialogs' })).getAllByRole('option').map((o) => o.firstElementChild?.textContent);
     expect(dialogs).toEqual(['Reader prefs', 'Settings']);
     fireEvent.click(asset('Reader prefs'));
     expect(onElsewhere).toHaveBeenCalledWith('reader');
@@ -32,7 +32,7 @@ describe('AssetEditor asset list headings', () => {
 
   it('lists its own and another editor\'s in the order the host gives', () => {
     renderWithIcons(<Live elsewhere={[{ id: 'reader', label: 'Reader prefs', under: 'Dialogs' }]} order={['reader', 'settings']} />);
-    const dialogs = within(within(assets()).getByRole('group', { name: 'Dialogs' })).getAllByRole('option').map((o) => o.textContent);
+    const dialogs = within(within(assets()).getByRole('group', { name: 'Dialogs' })).getAllByRole('option').map((o) => o.firstElementChild?.textContent);
     expect(dialogs).toEqual(['Reader prefs', 'Settings']);
   });
 

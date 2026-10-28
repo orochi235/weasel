@@ -1,8 +1,8 @@
 import { useState, type ReactElement } from 'react';
-import { Header, ListBox, ListBoxItem, ListBoxSection } from 'react-aria-components';
+import { Header, ListBox, ListBoxItem, ListBoxSection, Text } from 'react-aria-components';
 import type { IconRef } from '@weasel-js/icons';
 import { Icon } from '../../icons';
-import { DisclosureMark } from '../Disclosure';
+import { Badge } from '../Badge';
 import { PaneHeader } from './PaneHeader';
 import { headingOf, type AssetHeading, type ListedAsset, type ShownAsset } from './workspace';
 
@@ -20,6 +20,16 @@ const HEADING_ICON: Record<AssetHeading, IconRef> = {
   Toolbars: icon('formBar'),
   Menus: icon('menu'),
   Bundles: icon('cloudCube'),
+};
+
+/** What each heading's assets are called, one at a time, and the class that colors their badge. */
+const HEADING_BADGE: Record<AssetHeading, { word: string; tint: string | undefined }> = {
+  Dialogs: { word: 'dialog', tint: s.dialog },
+  'Node properties': { word: 'properties', tint: s.properties },
+  Panels: { word: 'panel', tint: s.panel },
+  Toolbars: { word: 'toolbar', tint: s.toolbar },
+  Menus: { word: 'menu', tint: s.menu },
+  Bundles: { word: 'bundle', tint: s.bundle },
 };
 
 /** `rows` with the ones `order` names first, as it names them, and the rest after as they stood. */
@@ -81,10 +91,9 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
           const held = rows.filter((row) => row.under === title);
           const open = !folded.has(title);
           return held.length === 0 ? null : (
-            <ListBoxSection key={title} className={s.group}>
+            <ListBoxSection key={title} className={open ? `${s.group} ${s.open}` : s.group}>
               <Header className={s.heading}>
                 <button type="button" className={s.fold} aria-expanded={open} onClick={() => fold(title)}>
-                  <DisclosureMark open={open} />
                   <Icon name={HEADING_ICON[title]} size={16} className={s.headingIcon} />
                   <span>{title}</span>
                 </button>
@@ -92,7 +101,8 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
               {open && held.map((row) => (
                 <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={row.changed || undefined}
                   data-rail-mark={row.id === selected ? 'current' : undefined} className={s.row}>
-                  <span className={row.changed ? `${s.label} ${s.changed}` : s.label}>{row.label}</span>
+                  <Text slot="label" className={row.changed ? `${s.label} ${s.changed}` : s.label}>{row.label}</Text>
+                  <Badge size="xs" variant="subtle" tint={{ ref: '--_heading' }} className={`${s.badge} ${HEADING_BADGE[title].tint}`}>{HEADING_BADGE[title].word}</Badge>
                   {row.readOnly && <Icon name={icon('bolt')} size={16} label="Dynamic" className={s.dynamic} />}
                 </ListBoxItem>
               ))}

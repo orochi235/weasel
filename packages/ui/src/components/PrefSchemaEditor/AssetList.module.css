@@ -2,13 +2,19 @@
 .list { composes: railList from '../Prefs/Prefs.module.css'; user-select: none; -webkit-user-select: none; }
 .row {
   composes: railItem from '../Prefs/Prefs.module.css';
-  margin-inline-start: calc(var(--wzl-space-7) - var(--wzl-space-3));
+  margin-inline-start: calc(var(--heading-icon) + var(--wzl-space-2));
   font-weight: var(--wzl-font-weight-light);
 }
 .label { composes: label from '../ItemList/ItemList.module.css'; min-width: 0; white-space: nowrap; }
 .changed { composes: changed from './PrefSchemaEditor.module.css'; }
 .row[data-rail-mark='current'] .changed { color: var(--wzl-secondary-strong); }
-.group { display: flex; flex-direction: column; gap: 1px; }
+.group { --heading-icon: 16px; display: flex; flex-direction: column; gap: 1px; }
+/* Bracketed as the structure tree brackets an open branch, from under the heading's glyph. */
+.open {
+  composes: guide from '../Tree/Tree.module.css';
+  --guide-from: var(--wzl-control-h);
+  --guide-at: calc(var(--wzl-space-3) + var(--heading-icon) / 2);
+}
 .group + .group { margin-block-start: var(--wzl-space-3); }
 .heading {
   font-size: var(--wzl-font-size);
@@ -19,7 +25,8 @@
   align-items: center;
   gap: var(--wzl-space-2);
   width: 100%;
-  padding: var(--wzl-space-2) var(--wzl-space-3);
+  block-size: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-3);
   border: 0;
   border-radius: var(--wzl-radius-sm);
   background: none;
@@ -33,4 +40,13 @@
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: -2px;
 }
+.badge { flex: none; margin-inline-start: auto; }
+/* Each heading names its badge's color in `--_heading`, leaning toward the foreground as a pref kind's badge does. */
+.dialog { --_heading: color-mix(in oklab, var(--wzl-swatch-violet) 55%, var(--wzl-fg)); }
+.properties { --_heading: color-mix(in oklab, var(--wzl-swatch-teal) 55%, var(--wzl-fg)); }
+.panel { --_heading: color-mix(in oklab, var(--wzl-swatch-blue) 55%, var(--wzl-fg)); }
+.toolbar { --_heading: color-mix(in oklab, var(--wzl-swatch-amber) 55%, var(--wzl-fg)); }
+.menu { --_heading: color-mix(in oklab, var(--wzl-swatch-rose) 55%, var(--wzl-fg)); }
+.bundle { --_heading: color-mix(in oklab, var(--wzl-swatch-green) 55%, var(--wzl-fg)); }
+.row[data-rail-mark='current'] .badge { --_heading: var(--wzl-fg-on-accent); }
 .dynamic { flex: none; color: var(--wzl-fg-muted); }
