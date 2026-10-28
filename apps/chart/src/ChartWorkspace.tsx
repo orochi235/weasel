@@ -1,5 +1,5 @@
 import {
-  SceneCanvas, isTextData, useCanvasSize, useScene, useSceneTextEdit, useSelection,
+  SceneCanvas, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
   type SceneCanvasApi, type Tool, type ToolsApi, type View,
 } from '@weasel-js/core';
 import { diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
@@ -62,7 +62,14 @@ export function ChartWorkspace(): ReactElement {
   const [view, setView] = useState<View>(NO_VIEW);
   const pages = useChartPages(scene, view, dims, setView);
   useExportCommands(scene, pages);
-  const recenter = usePageFit(dims, 'chart', pages.shown ?? pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
+  const fitted = useRef<View | null>(null);
+  const setFitted = useCallback((fit: View) => { fitted.current = fit; setView(fit); }, []);
+  const recenter = usePageFit(dims, 'chart', pages.shown ?? pages.placed[0] ?? CHART_PAGE, setFitted, PAGE_FIT_PADDING);
+  // The tool palette fills in after the first fit and shrinks the host: until the view is moved, keep the page fitted.
+  const viewRef = useLatest(view);
+  useEffect(() => {
+    if (fitted.current !== null && viewRef.current === fitted.current) recenter();
+  }, [dims.width, dims.height, recenter, viewRef]);
   const paperLayer = usePaperLayer(pages.placed, theme.page);
   const { gridLayer, snap, features } = useChartSnap(pages.shown ?? FALLBACK_PAGE, theme.page);
   const layers = useMemo(() => ({
