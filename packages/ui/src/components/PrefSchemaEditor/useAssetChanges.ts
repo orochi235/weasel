@@ -33,7 +33,7 @@ export interface WorkspaceChanges {
   text: string;
   /** What a submission hands over. */
   sent(types?: PrefTypes): SentAsset[];
-  /** What the asset `id` exports as it stands: the same object until the workspace or `types` is another. */
+  /** What the asset `id` exports as it stands. */
   exported(id: string, types?: PrefTypes): AssetExport;
   /** Follow every node from `before` to what it became in `after`, an edit made in one step, so it stays paired with
    *  its baseline whatever the later steps make of its key and its name. */
@@ -65,7 +65,6 @@ export function useAssetChanges(
   const changes = useMemo<WorkspaceChanges>(() => {
     const each = workspaceChanges(base, current, origins);
     const by = new Map(each.map((c) => [c.id, c.changes]));
-    const made = new Map<string, { types: PrefTypes | undefined; out: AssetExport }>();
     return {
       ids: new Set(by.keys()),
       of: (id) => by.get(id) ?? NO_CHANGES,
@@ -75,13 +74,7 @@ export function useAssetChanges(
         const asset = assetOf(current, id)!;
         return { id, kind: asset.kind, changes, literal: exportOf(asset, base, origins.of(id), types).text };
       }),
-      exported(id, types) {
-        const held = made.get(id);
-        if (held && held.types === types) return held.out;
-        const out = exportOf(assetOf(current, id)!, base, origins.of(id), types);
-        made.set(id, { types, out });
-        return out;
-      },
+      exported: (id, types) => exportOf(assetOf(current, id)!, base, origins.of(id), types),
       follow: origins.follow,
     };
   }, [base, current, origins]);

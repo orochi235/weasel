@@ -153,6 +153,7 @@ export function AssetEditor(
   };
 
   const changedAssets = useAssetChanges(base, workspace, same, onChangedAssets);
+  const exported = changedAssets.exported(assetId, types);
   const changes = changedAssets.of(assetId);
   // The document packs every asset as sent, so every changed one is handed over, whichever is shown.
   const submit: SubmitChanges | undefined = onSubmit && (() => doc.send(() => onSubmit(changedAssets.sent(types))));
@@ -281,7 +282,7 @@ export function AssetEditor(
           if (how.toggle && path !== null) { selection.toggle(path); picked(); }
           else reveal(how.range ?? (path === null ? [] : [path]));
         }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} hosted={preview?.(asset, over) ?? bundles?.preview(selection.lead)} />
-      <Shelf slot={setShelfSlot}><ExportPanel schema={schema} types={types} exported={changedAssets.exported(assetId, types)} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} /></Shelf>
+      <Shelf slot={setShelfSlot}><ExportPanel schema={schema} types={types} exported={exported} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} /></Shelf>
       {list && (
         <>
           <ResizeHandle className={s.asideHandle} invert {...asideSize} {...RANGE.aside} ariaLabel="Resize sidebar" />
