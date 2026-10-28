@@ -13,3 +13,9 @@ configure({ asyncUtilTimeout: 5000 });
 beforeAll(() => commands.collectGarbage());
 
 beforeAll(() => commands.settleFrame());
+
+// macOS draws classic scrollbars while a mouse is connected and lays them over the box otherwise, so a
+// scrollbar's 15px of width came and went with the node; every node lays out as the overlay does.
+const scrollbars = document.createElement('style');
+scrollbars.textContent = '* { scrollbar-width: none !important; }';
+document.head.append(scrollbars);
