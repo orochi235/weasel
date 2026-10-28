@@ -271,7 +271,7 @@ describe('SceneCanvas tools prop patch form', () => {
       );
     }
     render(<Harness />);
-    expect(Object.keys(captured!.registry)).toEqual(['select', 'slice']);
+    expect(Object.keys(captured!.registry)).toEqual(['select', 'lasso', 'slice']);
     expect(captured!.registry.slice.id).toBe('slice');
   });
 
@@ -289,7 +289,7 @@ describe('SceneCanvas tools prop patch form', () => {
       );
     }
     render(<Harness />);
-    expect(Object.keys(captured!.registry)).toEqual(['select', 'sticky']);
+    expect(Object.keys(captured!.registry)).toEqual(['select', 'lasso', 'sticky']);
     const click = captured!.registry.sticky.bindings!.find((b) => b.actionId === 'place');
     expect(click?.opts?.params).toEqual({ kind: 'sticky', minSize: STICKY_DEFAULTS.minSize, padding: 4, size });
   });

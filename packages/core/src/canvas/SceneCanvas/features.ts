@@ -93,9 +93,10 @@ export interface FeaturePreset {
    *  declare: deps, overlays, `attach`, views, frame hooks. A `tools` takeover
    *  brings its own ambient and leaves them out. */
   readonly contributions?: readonly SurfaceContribution[];
-  /** Ids of presets whose actions this one's register ahead of, so that where
-   *  both bind one gesture, this one's is tried first: anchor nudging ahead of
-   *  node nudging. A preset named here that is not on is ignored. */
+  /** Ids of presets whose actions, and those of every preset they include,
+   *  this one's register ahead of, so that where both bind one gesture, this
+   *  one's is tried first: anchor nudging ahead of node nudging. A preset named
+   *  here that is not on is ignored. */
   readonly refines?: readonly string[];
   /** Presets it turns on with itself, ahead of its own place in the order. */
   readonly includes?: readonly FeaturePreset[];
@@ -133,7 +134,7 @@ export interface EnabledPresets {
 
 /**
  * The presets a canvas runs with: names expanded, `includes` pulled in, each
- * preset once, and every one placed ahead of the presets it `refines`. Ties
+ * preset once, and every one placed ahead of the presets it `refines` and what those include. Ties
  * keep the order given. Where names resolve, a `viewport` config turns on the
  * `view` preset, since that prop only configures what `view` turns on.
  *
@@ -164,12 +165,22 @@ export function resolveFeatures(
   }
   if (opts.viewport && named?.view) add(named.view);
 
+  // Each preset's id and the ids of every preset that includes it, at any depth: what a refinement of it can name.
+  const parents = new Map<string, string[]>();
+  for (const p of listed) for (const inner of p.includes ?? []) parents.set(inner.id, [...(parents.get(inner.id) ?? []), p.id]);
+  const namesFor = (id: string, out = new Set<string>()): Set<string> => {
+    if (out.has(id)) return out;
+    out.add(id);
+    for (const up of parents.get(id) ?? []) namesFor(up, out);
+    return out;
+  };
   const ordered: FeaturePreset[] = [];
   const placed = new Set<string>();
   const place = (p: FeaturePreset): void => {
     if (placed.has(p.id)) return;
     placed.add(p.id);
-    for (const r of listed) if (r.refines?.includes(p.id)) place(r);
+    const names = namesFor(p.id);
+    for (const r of listed) if (r.refines?.some((id) => names.has(id))) place(r);
     ordered.push(p);
   };
   for (const p of listed) place(p);

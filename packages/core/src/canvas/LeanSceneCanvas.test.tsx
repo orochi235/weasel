@@ -58,7 +58,7 @@ describe('a preset object', () => {
     );
     expect(seen.actionIds).toContain('mine.go');
     expect(seen.actionIds).toContain('areaSelect');
-    expect(Object.keys(tools!.registry)).toEqual(['select', 'mine.tool']);
+    expect(Object.keys(tools!.registry)).toEqual(['select', 'lasso', 'mine.tool']);
     expect(seen.dep).toBe(42);
     expect(seen.extensions?.map((e) => e.id)).toEqual(['mine.marks']);
   });

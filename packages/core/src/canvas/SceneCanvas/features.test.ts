@@ -118,6 +118,14 @@ describe('resolveFeatures', () => {
     expect(ids([{ id: 'edit' }, { id: 'arrange' }, anchor])).toEqual(['anchor', 'edit', 'arrange']);
   });
 
+  it('places a preset refining a bundle ahead of everything that bundle includes', () => {
+    const widgets: FeaturePreset = { id: 'widgets', refines: ['paths'] };
+    const order = ids(['paths', widgets]);
+    for (const inner of ['anchorKeys', 'pathfinder', 'pathEdit', 'paths']) {
+      expect(order.indexOf('widgets'), inner).toBeLessThan(order.indexOf(inner));
+    }
+  });
+
   it('tries each path-edit key ahead of the node-level action bound to the same key', () => {
     const order = presetActions(resolve(['draw'])).map((a) => a.id);
     const before = (a: string, b: string) => expect(order.indexOf(a), `${a} before ${b}`).toBeLessThan(order.indexOf(b));
