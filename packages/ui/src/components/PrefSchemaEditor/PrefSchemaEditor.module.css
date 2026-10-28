@@ -81,18 +81,28 @@
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: safe center;
+  align-items: flex-start;
   justify-content: safe center;
+  padding: 24px;
   overflow: auto;
 }
-/* Through a drop: where centering last put it (`useHeldPlace`). */
-.previewStage[data-held] { align-items: flex-start; justify-content: flex-start; }
+/* Through a drop: where centering last put it (`useHeldPlace`), measured from the stage's edge. */
+.previewStage[data-held] { justify-content: flex-start; padding: 0; }
 .previewStage[data-held] > :first-child { margin-inline-start: var(--held-x); margin-block-start: var(--held-y); }
 /* The dialog at a width the reader drags, to see the form at the sizes an app might give it. */
 .previewDialog { flex: 0 1 var(--preview-w); min-width: 0; min-height: 0; }
 /* A host's own drawing of the asset, at whatever size it takes. */
 .previewHosted { flex: 1; min-height: 0; overflow: auto; padding: var(--wzl-space-3); }
-.previewPanel { flex: 1; min-height: 0; overflow: auto; max-inline-size: 420px; }
+/* A node's properties as a sidebar would hold them, raised off the workspace as the dialog is. */
+.previewPanel {
+  flex: none;
+  inline-size: min(360px, 100%);
+  max-block-size: 100%;
+  overflow: auto;
+  padding-inline: var(--wzl-space-4);
+  border-radius: var(--wzl-radius-md);
+  box-shadow: var(--wzl-bevel-raised, 0 8px 24px var(--wzl-shadow));
+}
 /* A bar is as wide or as tall as what it holds, magnified as the reader sets it. */
 .previewBar { flex: none; zoom: var(--preview-zoom, 1); }
 .zoom { display: flex; align-items: center; gap: var(--wzl-space-2); inline-size: 160px; }
