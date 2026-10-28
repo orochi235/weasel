@@ -58,13 +58,15 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
     const named = nodeLabel(name, key);
     const label = changed.has(p) ? <span className={s.changed}>{named}</span> : named;
     const run = actions && isActionsLeaf(child) ? drawnActionRows(p, child, actions) : undefined;
-    const glyph = run || !isPrefLeaf(child) ? nodeIcon(child, path === null) : null;
+    const grouping = run !== undefined || !isPrefLeaf(child);
+    // A leaf with fields under it takes a glyph too, for the bracket down its fields to hang from.
+    const glyph = grouping || kids ? nodeIcon(child, path === null) : null;
     return soughtRow({
       id: p,
-      label: glyph ? label : leafLabel(label),
+      label: grouping ? label : glyph ? <span className={s.treeFields}>{label}</span> : leafLabel(label),
       ...(child.description ? { tooltip: child.description } : {}),
       ...(glyph ? { leading: glyph } : {}),
-      trailing: glyph
+      trailing: grouping
         // Its glyph says how a grouping is drawn, so it carries no badge to say it again.
         ? <>{mark?.(p)}{countBadge(leafCount([child], actions))}</>
         : <>{mark?.(p)}<PrefKindBadge kind={(child as PrefLeaf).type ?? (child as PrefLeaf).kind} /></>,

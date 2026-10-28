@@ -1,0 +1,19 @@
+.picker { display: grid; gap: var(--wzl-space-2); inline-size: min(560px, 80vw); }
+.note { color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-sm); }
+/* The grid scrolls in its own pane so a long icon set never lengthens the dialog past the window. */
+.list {
+  display: grid; gap: var(--wzl-space-2);
+  max-block-size: 60vh; overflow-y: auto;
+  border: 1px solid var(--wzl-border); padding: var(--wzl-space-2);
+}
+.group { display: grid; gap: var(--wzl-space-1); }
+.heading { color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-xs); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, 2rem); gap: var(--wzl-space-1); }
+.cell { display: grid; place-items: center; block-size: 2rem; inline-size: 2rem; cursor: pointer; }
+.cell:hover { background: color-mix(in srgb, var(--wzl-accent) 15%, transparent); }
+.chosen, .chosen:hover {
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+  background: var(--wzl-accent); color: var(--wzl-fg-on-accent);
+}
+.list:focus-visible .active { outline: 2px solid var(--wzl-accent); outline-offset: -2px; }

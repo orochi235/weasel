@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { AssetList } from './AssetList';
 import type { ShownAsset } from './workspace';
@@ -57,4 +57,28 @@ it('marks an asset another editor holds where the host says it changed', () => {
     elsewhere={[{ id: 'r', label: 'Reader', under: 'Dialogs', changed: true }, { id: 's', label: 'Shell', under: 'Dialogs' }]} />);
   expect(marked('Reader')).toBe(true);
   expect(marked('Shell')).toBe(false);
+});
+
+const names = () => screen.getAllByRole('option').map((o) => o.textContent);
+
+it('sorts each heading\'s assets by name, another editor\'s among this one\'s', () => {
+  const assets: ShownAsset[] = [{ id: 'z', label: 'Zoom', kind: 'schema', root }, { id: 'a', label: 'app', kind: 'schema', root }];
+  render(<AssetList assets={assets} selected="a" changed={new Set()} onSelect={() => {}}
+    elsewhere={[{ id: 'r', label: 'Reader', under: 'Dialogs' }, { id: 'b', label: 'Board 10', under: 'Dialogs' }, { id: 'c', label: 'Board 9', under: 'Dialogs' }]} />);
+  expect(names()).toEqual(['app', 'Board 9', 'Board 10', 'Reader', 'Zoom']);
+});
+
+it('keeps the order a host gives over the sort', () => {
+  render(<AssetList assets={ASSETS} order={['b', 'a']} selected="a" changed={new Set()} onSelect={() => {}} />);
+  expect(names()).toEqual(['Board', 'App', 'Panel']);
+});
+
+it('folds a heading\'s assets away, and unfolds it when the one shown moves under it', () => {
+  const { rerender } = render(list('p', []));
+  const dialogs = screen.getByRole('button', { name: 'Dialogs' });
+  fireEvent.click(dialogs);
+  expect(dialogs.getAttribute('aria-expanded')).toBe('false');
+  expect(names()).toEqual(['Panel']);
+  rerender(list('b', []));
+  expect(names()).toEqual(['App', 'Board', 'Panel']);
 });

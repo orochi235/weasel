@@ -11,8 +11,26 @@
 .group { display: flex; flex-direction: column; gap: 1px; }
 .group + .group { margin-block-start: var(--wzl-space-3); }
 .heading {
-  padding: var(--wzl-space-2) var(--wzl-space-3);
   font-size: var(--wzl-font-size);
   color: var(--wzl-fg);
+}
+.fold {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  width: 100%;
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.headingIcon { flex: none; color: var(--wzl-fg-muted); }
+.fold:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
 }
 .dynamic { flex: none; color: var(--wzl-fg-muted); }

@@ -606,6 +606,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
 
+- **(P3) The workspace hatch is written twice.** `.wd-canvas-host` in `apps/draw/src/app.css` restates the
+  diagonal bands that `packages/ui/src/components/workspace.module.css` defines for the asset editor's preview.
+  Draw can't compose a ui-internal stylesheet without that becoming public surface, so the fix is a public one:
+  a theme token holding the whole layer (the colors already are tokens, `--wzl-workspace-surface` and
+  `--wzl-workspace-line`), or an exported ui class. Filed 2026-10-28.
+
 ---
 
 ### Domain bundles

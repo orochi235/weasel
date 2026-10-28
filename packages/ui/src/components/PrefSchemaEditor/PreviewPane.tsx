@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { BarMenu, useBarMenuResolver } from '../Bar/BarMenu';
 import { DragGhost } from '../DragGhost';
+import { InlineRange } from '../InlineRange';
 import { useRegisteredActions } from '../Prefs/registeredActions';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
@@ -11,6 +12,7 @@ import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPa
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';
 import { useEditorSize } from './editorPrefs';
+import { useHeldPlace } from './useHeldPlace';
 import { DraggedNodes } from './NodeGhost';
 import { placedOnly } from './loose';
 import { drawsNode } from './previewDrop';
@@ -95,14 +97,22 @@ function rangeIn(how: PrefSelectHow, treePath: (path: string) => string | null |
 
 function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, over }: GroupPreviewProps) {
   const [vertical, setVertical] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const own = useRef<HTMLDivElement | null>(null);
+  const stage = stageRef ?? own;
+  const { style: heldAt, ...held } = useHeldPlace(stage, !!drop);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
   const marked = useMemo(() => selected.map((p) => keysOf(p).join('.')), [selected]);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview">
         <Switch isSelected={vertical} onChange={setVertical}>Vertical</Switch>
+        <label className={s.zoom}>
+          <InlineRange aria-label="Zoom" min={1} max={4} step={0.25} value={zoom} onChange={(e) => setZoom(Number(e.currentTarget.value))} />
+          <span className={s.zoomReadout}>{Math.round(zoom * 100)}%</span>
+        </label>
       </PaneHeader>
-      <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown}>
+      <div className={s.previewStage} ref={stage} onPointerDown={onStagePointerDown} {...held} style={{ '--preview-zoom': zoom, ...heldAt } as CSSProperties}>
         <PrefsForm className={s.previewBar} schema={schema} values={NO_VALUES} renderers={renderers} orientation={vertical ? 'vertical' : 'horizontal'}
           showHidden showEmpty markHidden drop={drop} selected={marked} over={over}
           onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
@@ -139,6 +149,9 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
 
   const [showHidden, setShowHidden] = useState(true);
   const size = useEditorSize('previewWidth');
+  const own = useRef<HTMLDivElement | null>(null);
+  const stage = stageRef ?? own;
+  const { style: heldAt, ...held } = useHeldPlace(stage, !!drop);
   // What sits on no page is listed as unplaced, and the form would file it under a page of its own.
   const placed = useMemo(() => (pageless ? schema : placedOnly(schema)), [schema, pageless]);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
@@ -148,7 +161,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
       <PaneHeader title="Live preview">
         <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
       </PaneHeader>
-      <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-w': `${size.value}px` } as CSSProperties}>
+      <div className={s.previewStage} ref={stage} onPointerDown={onStagePointerDown} {...held} style={{ '--preview-w': `${size.value}px`, ...heldAt } as CSSProperties}>
       <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
         schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden} over={over}
         // An empty group is drawn too: it is somewhere to drop into.

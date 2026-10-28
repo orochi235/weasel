@@ -83,7 +83,7 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   /** Assets another editor holds, listed after this one's under the same headings. */
   elsewhere?: readonly ListedAsset[];
   /** Asset ids in the order the list shows them under each heading, this editor's and `elsewhere`'s alike, so two
-   *  editors that list each other's show one order. Left out, this editor's come first. */
+   *  editors that list each other's show one order. Left out, each heading's are sorted by name. */
   order?: readonly string[];
   /** The reader picked one of `elsewhere`; the host shows it, in whatever holds it. */
   onElsewhere?(id: string): void;

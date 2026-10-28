@@ -1,0 +1,7 @@
+/* The ground around what a workspace shows, struck with wide diagonal bands so what is on top reads as the thing
+ * shown. Compose `workspace` into the element's own class. */
+.workspace {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px)
+    var(--wzl-workspace-surface);
+}

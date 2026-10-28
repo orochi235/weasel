@@ -63,6 +63,7 @@ export function SettingsTree({ over, layout, sought, ghost, onDrag, onDrop }: {
   return (
     <Tree
       aria-label="Settings"
+      className={s.settingsTree}
       ghost={ghost}
       nodes={rows}
       empty={<p className={s.storedEmpty}>{all.length === 0 ? 'The dialog holds no settings.' : 'Nothing matches.'}</p>}

@@ -66,7 +66,9 @@
 /* A titled list: the header keeps its place and the rows scroll under it, as the structure's do. */
 .listPane { display: flex; flex-direction: column; overflow: hidden; }
 .listBody { flex: 1; min-height: 0; }
-.treeArea { flex: 1; --wzl-tree-leaf-indent: var(--wzl-space-2); }
+.treeArea { flex: 1; }
+/* A setting starts its name where its group's name starts, past the group's glyph. */
+.treeArea, .settingsTree { --wzl-tree-leaf-indent: var(--wzl-space-2); }
 /* A group's glyph folds it, and says it is open. */
 :is(.treeArea, .storedArea, .shelfPane) [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }
 /* Padded all the time, so the outline a drop draws inside its edge has room and nothing moves when it appears. */
@@ -74,14 +76,35 @@
 .storedArea[data-drop] { outline: 2px solid var(--wzl-accent); outline-offset: -2px; }
 .storedEmpty { margin: 0; color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-sm); }
 .previewPane { display: flex; flex-direction: column; overflow: hidden; }
+/* What the asset draws, centered in the workspace around it. `safe` keeps an overflowing preview's start in view. */
+.previewStage {
+  composes: workspace from '../workspace.module.css';
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: safe center;
+  justify-content: safe center;
+  overflow: auto;
+}
+/* Through a drop: where centering last put it (`useHeldPlace`). */
+.previewStage[data-held] { align-items: flex-start; justify-content: flex-start; }
+.previewStage[data-held] > :first-child { margin-inline-start: var(--held-x); margin-block-start: var(--held-y); }
 /* The dialog at a width the reader drags, to see the form at the sizes an app might give it. */
-.previewStage { flex: 1; min-height: 0; display: flex; }
 .previewDialog { flex: 0 1 var(--preview-w); min-width: 0; min-height: 0; }
 /* A host's own drawing of the asset, at whatever size it takes. */
 .previewHosted { flex: 1; min-height: 0; overflow: auto; padding: var(--wzl-space-3); }
 .previewPanel { flex: 1; min-height: 0; overflow: auto; max-inline-size: 420px; }
-/* A bar is as wide or as tall as what it holds, so the stage leaves it at its own size in the corner. */
-.previewBar { flex: 1; min-height: 0; overflow: auto; }
+/* A bar is as wide or as tall as what it holds, magnified as the reader sets it. */
+.previewBar { flex: none; zoom: var(--preview-zoom, 1); }
+.zoom { display: flex; align-items: center; gap: var(--wzl-space-2); inline-size: 160px; }
+/* Sized for 400%, so the range beside it holds still as the figure changes. */
+.zoomReadout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  flex: none;
+  min-inline-size: 4ch;
+  text-align: end;
+  font-size: var(--wzl-font-size-sm);
+}
 .paneHeader {
   display: flex;
   flex-wrap: wrap;
@@ -103,6 +126,8 @@
 .treeKey { font-size: var(--wzl-font-size-sm); font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
 /* A leaf's row: no glyph before its label, which is set in the plain weight under a group's bolder one. */
 .treeLeaf { padding-inline-start: var(--wzl-space-1); font-weight: var(--wzl-font-weight-normal); }
+/* A leaf with fields under it: its glyph comes first, as a group's does, and its label stays a leaf's. */
+.treeFields { font-weight: var(--wzl-font-weight-normal); }
 /* A setting the layout shown already points at. */
 .pointed { color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }
