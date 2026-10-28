@@ -1,40 +1,51 @@
 import { useVisibleRaf, type VisibleRafOptions } from '@weasel-js/react';
 import { useEffect, useRef } from 'react';
-import type { ClockRegistry } from './registry';
+import type { ClockRegistry, ClockTarget } from './registry';
 import type { ClockHandle } from './types';
 
-/** Whether `handle` is out of sight: not the shared clock, every registration of
- *  it names an element, and none intersects the viewport. A target not yet
- *  resolved, not an element, or not yet reported counts as seen. */
-function outOfSight(
-  registry: ClockRegistry,
-  handle: ClockHandle,
-  seen: ReadonlyMap<Element, boolean>,
-): boolean {
-  if (handle === registry.shared) return false;
-  const targets = registry.targets(handle);
-  if (targets.length === 0) return false;
-  return targets.every((target) => {
+/** A clock the loop syncs, and the targets its registrations name, as of the
+ *  registry's last change. */
+interface Entry {
+  handle: ClockHandle;
+  shared: boolean;
+  targets: readonly ClockTarget[];
+}
+
+const entriesOf = (registry: ClockRegistry): Entry[] =>
+  Array.from(registry.all(), (handle) => ({
+    handle,
+    shared: handle === registry.shared,
+    targets: registry.targets(handle),
+  }));
+
+/** Whether `entry`'s clock is out of sight: not the shared clock, every
+ *  registration of it names an element, and none intersects the viewport. A
+ *  target not yet resolved, not an element, or not yet reported counts as seen. */
+function outOfSight(entry: Entry, seen: ReadonlyMap<Element, boolean>): boolean {
+  if (entry.shared || entry.targets.length === 0) return false;
+  return entry.targets.every((target) => {
     const el = target();
     return el instanceof Element && seen.get(el) === false;
   });
 }
 
-/** Has `io` observe every element a registration names, and lets go of the rest. */
+/** Has `io` observe every element a registration names, and lets go of the
+ *  rest; `named` is scratch, reused across calls. */
 function syncObserved(
-  registry: ClockRegistry,
+  entries: readonly Entry[],
   io: IntersectionObserver | null,
   seen: Map<Element, boolean>,
+  named: Set<Element>,
 ): void {
   if (!io) return;
-  const named = new Set<Element>();
-  for (const handle of registry.all()) {
-    for (const target of registry.targets(handle)) {
+  named.clear();
+  for (const { targets } of entries) {
+    for (const target of targets) {
       const el = target();
       if (el instanceof Element) named.add(el);
     }
   }
-  for (const el of [...seen.keys()]) {
+  for (const el of seen.keys()) {
     if (named.has(el)) continue;
     io.unobserve(el);
     seen.delete(el);
@@ -59,15 +70,17 @@ export function useClockLoop(
   options?: Pick<VisibleRafOptions, 'requestFrame' | 'cancelFrame'>,
 ): void {
   const seen = useRef(new Map<Element, boolean>());
+  const named = useRef(new Set<Element>());
   const observer = useRef<IntersectionObserver | null>(null);
+  const entries = useRef<readonly Entry[]>([]);
 
   const loop = useVisibleRaf(
     (timestamp, loop) => {
-      syncObserved(registry, observer.current, seen.current);
+      syncObserved(entries.current, observer.current, seen.current, named.current);
       let live = false;
-      for (const handle of registry.all()) {
-        const { clock } = handle;
-        if (outOfSight(registry, handle, seen.current)) {
+      for (const entry of entries.current) {
+        const { clock } = entry.handle;
+        if (outOfSight(entry, seen.current)) {
           clock.rebase();
           continue;
         }
@@ -80,7 +93,7 @@ export function useClockLoop(
     {
       ...options,
       onResume: () => {
-        for (const { clock } of registry.all()) clock.rebase();
+        for (const { handle } of entries.current) handle.clock.rebase();
       },
     },
   );
@@ -110,8 +123,10 @@ export function useClockLoop(
     const attach = (): void => {
       for (const off of unwakes) off();
       unwakes = [];
-      syncObserved(registry, observer.current, seen.current);
-      for (const { clock } of registry.all()) {
+      entries.current = entriesOf(registry);
+      syncObserved(entries.current, observer.current, seen.current, named.current);
+      for (const { handle } of entries.current) {
+        const { clock } = handle;
         unwakes.push(clock.onWake(() => loop.request()));
         if (!clock.inert) loop.request();
       }
@@ -121,6 +136,7 @@ export function useClockLoop(
     return () => {
       off();
       for (const unwake of unwakes) unwake();
+      entries.current = [];
     };
   }, [registry, loop]);
 }
