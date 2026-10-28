@@ -181,6 +181,12 @@
   color: var(--wzl-fg);
 }
 
-.wd-prefs-panels :is(th, td):not(:first-child) {
+.wd-prefs-panels .wd-prefs-flag {
   text-align: center;
+}
+
+/* As tall as a row whose surface is picked from a list, so a row with one surface, or none, stands as high. A cell's
+   height counts the grid's 3px above and below, and the row's 1px rule. */
+.wd-prefs-panels td {
+  height: calc(var(--wzl-control-h) + 7px);
 }

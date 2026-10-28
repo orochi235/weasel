@@ -9,6 +9,7 @@ import { useRegisteredActions } from '../Prefs/registeredActions';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
+import { SidebarPanel } from '../SidebarPanel';
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';
 import { useEditorSize } from './editorPrefs';
@@ -230,13 +231,15 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, ove
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview" />
-      <div className={s.previewPanel}>
+      <div className={s.previewStage}>
+        <SidebarPanel className={s.previewPanel}>
         <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
           renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden over={over}
           onSelect={onSelect && ((path, how) => {
             const at = treePathOfPanel(schema, path);
             if (at !== null) onSelect(at, rangeIn(how, (row) => treePathOfPanel(schema, row)));
           })} />
+        </SidebarPanel>
       </div>
     </section>
   );

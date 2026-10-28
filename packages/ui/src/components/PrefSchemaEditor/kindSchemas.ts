@@ -43,76 +43,76 @@ export const ICON_KIND = 'icon';
 /** The attribute kind a `showIf` or an `enableIf` is edited as: a `PrefCondition` over the schema's other leaves. */
 export const CONDITION_KIND = 'condition';
 const condition = (name: string, description: string): PrefLeaf => ({ kind: CONDITION_KIND, name, description, default: undefined });
-const SHOW_IF = condition('Shown if', 'Drawn only while this holds of the other prefs\' values. None: always drawn.');
-const ENABLE_IF = condition('Enabled if', 'Takes input only while this holds of the other prefs\' values, and is drawn either way. None: always enabled.');
+const SHOW_IF = condition('Shown if', 'Shown only while this condition on other prefs holds. None: always shown.');
+const ENABLE_IF = condition('Enabled if', 'Editable only while this condition on other prefs holds, and shown grayed out otherwise. None: always editable.');
 /** An entry is drawn with its list, so it has no `showIf` to offer. */
-const ENTRY_ENABLE_IF = condition('Enabled if', 'One entry takes input only while this holds, of its own fields or of the other prefs\' values. None: always enabled.');
-const control = (values: readonly string[]) => choice('Control', 'Which control draws it. Unset: the kind\'s default.', values);
+const ENTRY_ENABLE_IF = condition('Enabled if', 'An entry is editable only while this condition holds, on its own fields or on other prefs. None: always editable.');
+const control = (values: readonly string[]) => choice('Control', 'Which control edits it. Unset: the usual control for its kind.', values);
 
 const LEAF_BASE: KindAttrs = {
-  name: text('Name', 'The label beside the control.'),
-  description: text('Description', 'Help text for the tooltip or the line under the label.', true),
-  tags: strings('Tags', 'Words a settings search also finds it by, and that gather it with others carrying them.'),
-  access: text('Access letter', 'The letter that picks it in a menu, and with the menu bar\'s chord opens a top-level menu. One character; optional.'),
-  hidden: flag('Hidden', 'Left out of a settings UI unless it shows hidden prefs.'),
+  name: text('Name', 'The label shown beside its control.'),
+  description: text('Description', 'Help shown in its tooltip, or under its label where there is room.', true),
+  tags: strings('Tags', 'Extra words a settings search finds it by. A search for a tag finds every pref carrying it.'),
+  access: text('Access letter', 'The letter that picks it in an open menu. For a top-level menu, the letter that opens it with the menu bar\'s shortcut. One character; optional.'),
+  hidden: flag('Hidden', 'Not shown in the app\'s settings, unless they are set to show hidden prefs.'),
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
-  block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
-  heading: flag('In heading', 'Drawn in the heading of the group holding it, in place of a row. A boolean or an enum only.'),
-  icon: { kind: ICON_KIND, name: 'Icon', description: 'An icon by qualified name, from the icon sets this app registered.', default: undefined } as PrefLeaf,
-  pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
-  short: strings('Short names', 'Shorter forms of the name, longest first.'),
-  absentIsDefault: flag('Absent is default', 'Where nothing is held, it reads as its default: for a node property whose reader does the same.'),
+  block: flag('Block', 'Takes the full width with no label, for a control that brings its own header.'),
+  heading: flag('In heading', 'Shown in its group\'s heading instead of as a row. A boolean or an enum only.'),
+  icon: { kind: ICON_KIND, name: 'Icon', description: 'An icon from the app\'s registered icon sets, by its full name.', default: undefined } as PrefLeaf,
+  pair: { kind: 'pair', name: 'Pair', description: 'Other fields shown on this one\'s row in property panels, and the label that row shows.', default: undefined },
+  short: strings('Short names', 'Shorter versions of the name, longest first, for where the full name does not fit.'),
+  absentIsDefault: flag('Absent is default', 'With nothing stored, show its default, because the code reading it treats a missing value as the default. For node properties, where a missing value otherwise means the node has no such property.'),
 };
 
 const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   number: {
-    min: optNumber('Min', 'Lowest value.'),
-    max: optNumber('Max', 'Highest value.'),
-    step: optNumber('Step', 'Increment.'),
-    unit: { kind: 'unit', name: 'Unit', description: 'What it is shown and typed in, over the unit it is stored in: stored = shown × scale + offset, shown to that many places. A suffix it also takes is typed in place of its own, where shown = typed × that suffix\'s scale + its offset.', default: undefined },
+    min: optNumber('Min', 'The lowest value it takes.'),
+    max: optNumber('Max', 'The highest value it takes.'),
+    step: optNumber('Step', 'How much one nudge changes it.'),
+    unit: { kind: 'unit', name: 'Unit', description: 'The unit it is shown and typed in, where that differs from the unit it is stored in: stored = shown × scale + offset, shown to the given decimal places. Each extra suffix lets it be typed in that unit instead, where shown = typed × that suffix\'s scale + its offset.', default: undefined },
     control: control(['input', 'slider']),
-    endless: choice('Endless', 'Which ends run to infinity.', ['min', 'max', 'both']),
-    measure: choice('Measure', 'What it measures. A length is stored in world units and shown in the unit scope of the node it belongs to.', ['length']),
+    endless: choice('Endless', 'Which ends have no limit.', ['min', 'max', 'both']),
+    measure: choice('Measure', 'What kind of quantity it is. A length is stored in world units and shown in the units of the node it belongs to.', ['length']),
   },
   boolean: { control: control(['checkbox', 'switch', 'toggle']) },
   string: { control: control(['input', 'textarea']) },
   enum: {
-    options: { kind: 'enum-options', name: 'Options', description: 'Values and their labels, in order.', default: [] },
-    clearable: flag('Clearable', 'Can be set back to no value.'),
+    options: { kind: 'enum-options', name: 'Options', description: 'The values it can take, each with the label shown for it, in order.', default: [] },
+    clearable: flag('Clearable', 'Can be cleared back to no value.'),
     control: control(['select', 'radio', 'toggle', 'menu']),
   },
-  color: { alpha: flag('Alpha', 'Offer an alpha channel.') },
-  paint: { alpha: flag('Alpha', 'Offer an alpha channel.') },
+  color: { alpha: flag('Alpha', 'Lets the color be partly transparent.') },
+  paint: { alpha: flag('Alpha', 'Lets the color be partly transparent.') },
   object: {},
   field: {
-    kinds: strings('Kinds', 'Only fields of these kinds may be named. Empty: any.'),
+    kinds: strings('Kinds', 'Only fields of these kinds can be picked. Empty: any field.'),
   },
   list: {
-    minItems: optNumber('Fewest', 'Entries cannot be removed at this many.'),
-    maxItems: optNumber('Most', 'Entries cannot be added at this many.'),
+    minItems: optNumber('Fewest', 'Entries cannot be removed once there are this few.'),
+    maxItems: optNumber('Most', 'Entries cannot be added once there are this many.'),
     control: control(['list', 'tokens']),
   },
   map: {},
-  union: { tag: symbol('Tag', 'The field of the value that names its variant.') },
+  union: { tag: symbol('Tag', 'The field of its value that says which variant it is.') },
   action: {
-    action: symbol('Action', 'The key of a registered action to fire: its id, or id:variant. It fires this over any code the pref carries.'),
-    label: text('Button', 'The button\'s text. Unset: the name.'),
+    action: symbol('Action', 'The registered action its button fires, as id or id:variant. It fires this instead of any code the pref carries.'),
+    label: text('Button', 'The text on its button. Unset: its name.'),
     control: control(['button', 'icon']),
   },
   actions: {
-    group: symbol('Group', 'The registry action group whose actions it draws, each as an action pref would be, in the order they were registered.'),
+    group: symbol('Group', 'The registered action group whose actions it shows, each as its own button, in the order they were registered.'),
   },
   label: {},
   separator: {},
-  alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
+  alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one mirrors: the same control is shown here too, editing the same stored value.', default: '' } as PrefLeaf },
 };
 
-const BAR_OVERFLOW = choice('Overflow', 'Drawn as a bar: what happens to the cells its line has no room for. scroll keeps them all on it, and menu opens the ones past its end from a button there. Unset: scroll.', ['scroll', 'menu']);
+const BAR_OVERFLOW = choice('Overflow', 'For a bar: what happens to items that do not fit on its line. scroll keeps them all on the line, and menu moves the extras into a menu at its end. Unset: scroll.', ['scroll', 'menu']);
 
-const BAR_LEAD = choice('Lead', 'Drawn as a bar: what its line starts with. label puts its name there, ahead of its cells, and icon its icon. Unset: its first cell.', ['label', 'icon']);
+const BAR_LEAD = choice('Lead', 'For a bar: what comes first on its line. label shows its name there, and icon its icon. Unset: its first item.', ['label', 'icon']);
 
-const GROUP_ICON_ATTR = { ...LEAF_BASE.icon!, description: 'Drawn as a bar led by its icon, this starts its line; drawn as a menu, page, tab, or panel, it sits beside the name on the button a bar opens it from, and on its submenu row in a menu. An icon by qualified name, from the icon sets this app registered.' } as PrefLeaf;
+const GROUP_ICON_ATTR = { ...LEAF_BASE.icon!, description: 'Its icon: first on its line in a bar whose Lead is icon, and beside its name on the button a bar opens it from and on its row in a menu. An icon from the app\'s registered icon sets, by its full name.' } as PrefLeaf;
 
 /** The attributes asked after how a group is drawn, which only some forms read. */
 const AS_ATTRS: Partial<Record<string, Array<[string, KindAttr]>>> = {
@@ -126,8 +126,8 @@ const AS_ATTRS: Partial<Record<string, Array<[string, KindAttr]>>> = {
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
-  tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
-  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, a bar: its prefs on one line in their bar forms, or a menu: a button opening it as a menu on a bar, a submenu in a menu, and a panel in a form. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
+  tags: strings('Tags', 'Tags every pref inside it carries too. A search for one finds all of them.'),
+  as: choice('Drawn as', 'How it is shown. page: its own page in the sidebar. tab: a tab beside its neighbors. panel: a bordered box. section: a heading over its rows. fragment: its rows among its neighbors\', with nothing around them. bar: its prefs on one line, in their compact forms. menu: a menu opened from a button on a bar, a submenu in a menu, and a panel in a form. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
   access: LEAF_BASE.access!,
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
@@ -135,16 +135,16 @@ const GROUP_ATTRS: KindAttrs = {
 const SECTION_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
-  tags: strings('Tags', 'Tags every pref under it carries too. A settings search matching one keeps all of them.'),
-  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, a bar: its prefs on one line in their bar forms, or a menu: a button opening it as a menu on a bar, a submenu in a menu, and a panel in a form. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
+  tags: strings('Tags', 'Tags every pref inside it carries too. A search for one finds all of them.'),
+  as: choice('Drawn as', 'How it is shown. tab: a tab beside its neighbors. panel: a bordered box. section: a heading over its rows. fragment: its rows among its neighbors\', with nothing around them. bar: its prefs on one line, in their compact forms. menu: a menu opened from a button on a bar, a submenu in a menu, and a panel in a form. Unset: a section.', ['tab', 'panel', 'section', 'fragment', 'bar', 'menu']),
   access: LEAF_BASE.access!,
   showIf: SHOW_IF,
   enableIf: ENABLE_IF,
 };
 
 const AUTO_FLAGS: KindAttrs = {
-  manual: flag('Never auto', 'Cannot be left for its owner to decide: its row gets no way to unpin it.'),
-  unpinned: flag('Starts auto', 'Begins unpinned, where it would begin at its default.'),
+  manual: flag('Never auto', 'The app can never choose its value: its row has no way to hand it to the app.'),
+  unpinned: flag('Starts auto', 'Starts with the app choosing its value, instead of at its default.'),
 };
 
 /** Stored as given, falsy or not: `false` and `0` are values a leaf can read while auto. */
@@ -184,7 +184,7 @@ function ownControl(leaf: PrefLeaf, base: { name: string; description: string })
   return { ...rest, ...base, default: leaf.default } as PrefLeaf;
 }
 
-function defaultAttr(leaf: PrefLeaf, description = 'The value before anything is stored.'): PrefLeaf | null {
+function defaultAttr(leaf: PrefLeaf, description = 'Its value until one is stored.'): PrefLeaf | null {
   if (leaf.kind === 'enum' && (leaf as PrefEnum).clearable) return null;
   const base = { name: 'Default', description };
   return valueAttr(leaf, base) ?? (leaf.type !== undefined ? ownControl(leaf, base) : null);
@@ -206,11 +206,11 @@ function entryAttrs(item: PrefLeaf, custom: CustomKinds): KindAttrs {
 
 function autoAttrs(leaf: PrefLeaf): KindAttrs {
   if (!prefHoldsValue(leaf)) return {};
-  const value = valueAttr(leaf, { name: 'Auto value', description: 'What it reads while auto, where nothing computes it. It need not be the default.' });
+  const value = valueAttr(leaf, { name: 'Auto value', description: 'What it reads while the app is choosing, if the app computes nothing for it. Off: no value at all. It need not match the default.' });
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
 
-const READOUT = flag('Readout', 'Drawn showing its value but not editable.');
+const READOUT = flag('Readout', 'Shows its value but cannot be edited.');
 
 /** The leaf kinds a menu draws a row for, besides a label, and so can give a letter. */
 const LETTERED: ReadonlySet<string> = new Set(['action', 'boolean', 'alias']);

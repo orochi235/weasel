@@ -1,7 +1,8 @@
 /* The ground around what a workspace shows, struck with wide diagonal bands so what is on top reads as the thing
- * shown. Compose `workspace` into the element's own class. */
+ * shown. The ground is a raised surface
+ * with its tint taken out. Compose `workspace` into the element's own class. */
 .workspace {
   background:
     repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px)
-    var(--wzl-workspace-surface);
+    oklch(from var(--wzl-surface-raised) l 0 h);
 }

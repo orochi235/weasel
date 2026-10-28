@@ -59,7 +59,7 @@ it('marks an asset another editor holds where the host says it changed', () => {
   expect(marked('Shell')).toBe(false);
 });
 
-const names = () => screen.getAllByRole('option').map((o) => o.textContent);
+const names = () => screen.getAllByRole('option').map((o) => o.firstElementChild?.textContent);
 
 it('sorts each heading\'s assets by name, another editor\'s among this one\'s', () => {
   const assets: ShownAsset[] = [{ id: 'z', label: 'Zoom', kind: 'schema', root }, { id: 'a', label: 'app', kind: 'schema', root }];
@@ -81,4 +81,10 @@ it('folds a heading\'s assets away, and unfolds it when the one shown moves unde
   expect(names()).toEqual(['Panel']);
   rerender(list('b', []));
   expect(names()).toEqual(['App', 'Board', 'Panel']);
+});
+
+it('badges each asset with its heading\'s kind, outside the name a row is found by', () => {
+  render(list('a', []));
+  expect(screen.getByRole('option', { name: 'Board' }).textContent).toContain('dialog');
+  expect(screen.getByRole('option', { name: 'Panel' }).textContent).toContain('panel');
 });

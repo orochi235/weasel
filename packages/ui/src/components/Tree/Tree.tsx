@@ -234,7 +234,7 @@ export const Tree = forwardRef(function Tree(
             {trailingId && <span id={trailingId} className={s.trailing}>{node.trailing}</span>}
           </TreeRowBox>
           {open && node.children!.length > 0 && (
-            <ul role="group" className={s.group}>
+            <ul role="group" className={guides ? `${s.group} ${s.guide}` : s.group}>
               {renderLevel(node.children!, level + 1)}
             </ul>
           )}

@@ -125,6 +125,7 @@ export function SurfacesEditor({ ctx }: { ctx: PrefRenderContext }) {
     id: field,
     header,
     sortable: false,
+    className: 'wd-prefs-flag',
     render: ({ id, label, asset }) => field === 'collapsed' && !asset ? null : (
       <Checkbox
         isSelected={!!surfaces[id]?.[field]}
