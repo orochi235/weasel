@@ -16,14 +16,6 @@ describe('aggregateAttributes', () => {
     expect(one.kind).toBe('number');
   });
 
-  it('reads the auto mode from manual and unpinned, which are mixed when the nodes say different ones', () => {
-    expect(aggregateAttributes([num({ manual: true }), num({ manual: true })]).values.$autoMode).toBe('never');
-    expect(aggregateAttributes([num({ unpinned: true })]).values.$autoMode).toBe('starts');
-    const apart = aggregateAttributes([num(), num({ unpinned: true })]);
-    expect(apart.mixed.has('$autoMode')).toBe(true);
-    expect('$autoMode' in apart.values).toBe(false);
-  });
-
   it('keeps an attribute the nodes agree on, and marks one they do not', () => {
     const both = aggregateAttributes([num(), num({ name: 'Other', min: 5 })]);
     expect(both.values.description).toBe('d');

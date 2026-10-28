@@ -142,37 +142,10 @@ const SECTION_ATTRS: KindAttrs = {
   enableIf: ENABLE_IF,
 };
 
-/** The row standing for a leaf's `manual` and `unpinned`, which name three states between them: one bar picks one. */
-export const AUTO_MODE = '$autoMode';
-
-/** The fields {@link AUTO_MODE} stands for. */
-const AUTO_MODE_FIELDS = new Set(['manual', 'unpinned']);
-
-export type AutoMode = 'allowed' | 'starts' | 'never';
-
-const AUTO_MODE_ATTR = {
-  kind: 'enum', name: 'Mode', control: 'toggle', default: 'allowed', heading: true,
-  description: 'Whether the app can choose its value instead of the user. Allowed: it starts with the user\'s value, and its row can hand it to the app. Starts auto: it starts with the app choosing. Never: the user always sets it.',
-  options: [{ value: 'allowed', label: 'Allowed' }, { value: 'starts', label: 'Starts auto' }, { value: 'never', label: 'Never' }],
-} as PrefLeaf;
-
-/** Which of the three a leaf's fields say. */
-export function autoModeOf(fields: { manual?: unknown; unpinned?: unknown }): AutoMode {
-  return fields.manual ? 'never' : fields.unpinned ? 'starts' : 'allowed';
-}
-
-/** The `manual` and `unpinned` that say `mode`, `undefined` for one left unset. */
-export function autoFieldsOf(mode: AutoMode): { manual: true | undefined; unpinned: true | undefined } {
-  return { manual: mode === 'never' || undefined, unpinned: mode === 'starts' || undefined };
-}
-
-/** What a node holds for the attribute `key`: its field of that name, or for {@link AUTO_MODE} what its fields say. */
-export function attrValue(node: Record<string, unknown>, key: string): unknown {
-  return key === AUTO_MODE ? autoModeOf(node) : node[key];
-}
-
-/** Whether an attribute `key` is one {@link AUTO_MODE} edits. */
-export const isAutoModeField = (key: string): boolean => AUTO_MODE_FIELDS.has(key);
+const AUTO_FLAGS: KindAttrs = {
+  manual: flag('Never auto', 'The app can never choose its value: its row has no way to hand it to the app.'),
+  unpinned: flag('Starts auto', 'Starts with the app choosing its value, instead of at its default.'),
+};
 
 /** Stored as given, falsy or not: `false` and `0` are values a leaf can read while auto. */
 const AS_GIVEN = new Set(['autoValue']);
@@ -233,8 +206,8 @@ function entryAttrs(item: PrefLeaf, custom: CustomKinds): KindAttrs {
 
 function autoAttrs(leaf: PrefLeaf): KindAttrs {
   if (!prefHoldsValue(leaf)) return {};
-  const value = valueAttr(leaf, { name: 'Value', description: 'What it reads while the app is choosing, if the app computes nothing for it. Off: no value at all. It need not match the default.' });
-  return { [AUTO_MODE]: AUTO_MODE_ATTR, ...(value ? { autoValue: value } : {}) };
+  const value = valueAttr(leaf, { name: 'Auto value', description: 'What it reads while the app is choosing, if the app computes nothing for it. Off: no value at all. It need not match the default.' });
+  return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
 
 const READOUT = flag('Readout', 'Shows its value but cannot be edited.');
@@ -304,7 +277,7 @@ export function attributeSchema(
   const undrawn = node.kind === 'separator' ? SEPARATOR_UNDRAWN : NO_ATTRS;
   // Every leaf carries a `default`, which says nothing of one that holds no value.
   const listed = (k: string): boolean => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k === 'default' && !prefHoldsValue(node));
-  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k in auto) && !(Object.keys(auto).length > 0 && AUTO_MODE_FIELDS.has(k)));
+  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k in auto));
   if (node.kind === 'action') readOnly.push(...registeredFacts(actions?.find((a) => a.key === (node as { action?: string }).action)));
   return { shared, own, auto, entry, readOnly };
 }

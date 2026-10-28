@@ -11,7 +11,7 @@ import { Switch } from '../Switch';
 import { aggregateAttributes, catalogAttributes, isObjectField, setObjectField } from './attrAggregate';
 import { ATTR_RENDERERS } from './attrRenderers';
 import type { EditorAction } from './editorActions';
-import { AUTO_MODE, autoFieldsOf, changeKind, CONDITION_KIND, convertLeaf, entryOf, isAutoModeField, leafOf, normalizeAttr, type AutoMode, type CustomKinds } from './kindSchemas';
+import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { entryHolderAt, keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
@@ -241,7 +241,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
       ...(attr in shared || attr === KEY ? [attr] : []),
       ...(attr === 'kind' ? [KIND] : []),
       ...(attr in own ? [`${OWN}.${attr}`] : []),
-      ...(attr in auto ? [`${AUTO}.${attr}`] : isAutoModeField(attr) ? [`${AUTO}.${AUTO_MODE}`] : []),
+      ...(attr in auto ? [`${AUTO}.${attr}`] : []),
       // What an entry is shows on its picker; any other attribute of it, on that attribute's row.
       ...(attr === 'item' || attr === 'item.kind' || attr === 'item.type' ? [ENTRY_IS] : attr.startsWith('item.') ? [`${ENTRY}.${attr.slice(5)}`] : []),
     ]),
@@ -267,11 +267,6 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
             return;
           }
           const attr = attrOf(p);
-          if (attr === AUTO_MODE) {
-            const fields = Object.entries(autoFieldsOf(value as AutoMode));
-            onChange(targets.reduce<SchemaRoot>((root, at) => fields.reduce((r, [k, v]) => setAttribute(r, at, k, v), root), schema));
-            return;
-          }
           if (isObjectField(agg.schema, attr)) onChange(setObjectField(schema, targets, attr, value)); else writeAll(attr, normalizeAttr(attr, value, own[attr]));
         }}
       />

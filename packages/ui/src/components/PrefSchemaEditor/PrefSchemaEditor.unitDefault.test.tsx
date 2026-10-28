@@ -40,7 +40,7 @@ describe('PrefSchemaEditor: a number shown in a unit', () => {
     renderWithIcons(<Live />);
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('dim'));
     expect(attributes().getByRole('spinbutton', { name: 'Default' })).toHaveValue('50');
-    expect(attributes().getByRole('spinbutton', { name: 'Value' })).toHaveValue('25');
+    expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toHaveValue('25');
   });
 
   it('stores what is typed there in the stored unit', () => {
@@ -48,7 +48,7 @@ describe('PrefSchemaEditor: a number shown in a unit', () => {
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('dim'));
     type('Default', '80');
     expect(dim().default).toBeCloseTo(0.8);
-    type('Value', '10');
+    type('Auto value', '10');
     expect(dim().autoValue).toBeCloseTo(0.1);
   });
 });

@@ -34,33 +34,25 @@ describe('PrefSchemaEditor auto attributes', () => {
   it('sets whether a leaf can be auto and whether it starts so', () => {
     renderWithIcons(<Live />);
     select('gap');
-    const mode = within(attributes().getByRole('radiogroup', { name: 'Auto' }));
-    expect(mode.getByRole('radio', { name: 'Allowed' })).toHaveAttribute('aria-checked', 'true');
-    fireEvent.click(mode.getByRole('radio', { name: 'Never' }));
-    expect(leaf('gap')).toMatchObject({ manual: true });
-    expect('unpinned' in leaf('gap')).toBe(false);
-    // The two say three states between them, so picking one clears the other.
-    fireEvent.click(mode.getByRole('radio', { name: 'Starts auto' }));
-    expect(leaf('gap')).toMatchObject({ unpinned: true });
-    expect('manual' in leaf('gap')).toBe(false);
-    fireEvent.click(mode.getByRole('radio', { name: 'Allowed' }));
-    expect('manual' in leaf('gap') || 'unpinned' in leaf('gap')).toBe(false);
-    expect(mode.getByRole('radio', { name: 'Allowed' })).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(attributes().getByRole('checkbox', { name: 'Never auto' }));
+    expect(leaf('gap').manual).toBe(true);
+    fireEvent.click(attributes().getByRole('checkbox', { name: 'Starts auto' }));
+    expect(leaf('gap').unpinned).toBe(true);
   });
 
   it('leaves the auto value unset, its control off, until the switch beside it is on', () => {
     renderWithIcons(<Live />);
     select('gap');
-    const on = () => attributes().getByRole('switch', { name: 'Set Value' });
+    const on = () => attributes().getByRole('switch', { name: 'Set Auto value' });
     expect(on()).not.toBeChecked();
-    expect(attributes().getByRole('spinbutton', { name: 'Value' })).toBeDisabled();
+    expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toBeDisabled();
     expect(attributes().queryByText('not set')).toBeNull();
-    expect(attributes().queryByRole('button', { name: 'Pin Value' })).toBeNull();
+    expect(attributes().queryByRole('button', { name: 'Pin Auto value' })).toBeNull();
     expect('autoValue' in leaf('gap')).toBe(false);
     fireEvent.click(on());
     expect(leaf('gap').autoValue).toBe(12);
     expect(on()).toBeChecked();
-    expect(attributes().getByRole('spinbutton', { name: 'Value' })).toBeEnabled();
+    expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toBeEnabled();
     fireEvent.click(on());
     expect('autoValue' in leaf('gap')).toBe(false);
   });
@@ -68,23 +60,23 @@ describe('PrefSchemaEditor auto attributes', () => {
   it('keeps an auto value of false, which an optional attribute would drop', () => {
     renderWithIcons(<Live />);
     select('grid');
-    expect(attributes().getByRole('checkbox', { name: 'Value' })).toBeDisabled();
-    fireEvent.click(attributes().getByRole('switch', { name: 'Set Value' }));
+    expect(attributes().getByRole('checkbox', { name: 'Auto value' })).toBeDisabled();
+    fireEvent.click(attributes().getByRole('switch', { name: 'Set Auto value' }));
     expect(leaf('grid').autoValue).toBe(true);
-    fireEvent.click(attributes().getByRole('checkbox', { name: 'Value' }));
+    fireEvent.click(attributes().getByRole('checkbox', { name: 'Auto value' }));
     expect(leaf('grid').autoValue).toBe(false);
-    expect(attributes().getByRole('switch', { name: 'Set Value' })).toBeChecked();
+    expect(attributes().getByRole('switch', { name: 'Set Auto value' })).toBeChecked();
   });
 
   it('draws the switch and the control in a row that is not a label, which would hand its clicks to the switch', () => {
     renderWithIcons(<Live />);
     select('gap');
-    expect(attributes().getByRole('switch', { name: 'Set Value' }).closest('[data-property-row]')?.tagName).toBe('DIV');
+    expect(attributes().getByRole('switch', { name: 'Set Auto value' }).closest('[data-property-row]')?.tagName).toBe('DIV');
   });
 
   it('offers none of it for a leaf that holds no value', () => {
     renderWithIcons(<Live />);
     select('reset');
-    expect(attributes().queryByRole('radiogroup', { name: 'Mode' })).toBeNull();
+    expect(attributes().queryByRole('checkbox', { name: 'Never auto' })).toBeNull();
   });
 });

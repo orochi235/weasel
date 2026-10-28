@@ -1,6 +1,6 @@
 import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
-import { attrValue, attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
+import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
 import type { RegisteredAction } from './registeredActionAttrs';
 import { nodeAt, setAttribute, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
@@ -86,7 +86,7 @@ export function aggregateAttributes(
   actions?: readonly RegisteredAction[],
 ): AttributeAggregate {
   const [first, ...rest] = nodes.map((n) => attributeSchema(n, custom, actions));
-  const fields = nodes.map((n) => n as unknown as Record<string, unknown>);
+  const held = nodes.map((n) => n as unknown as Record<string, unknown>);
   const values: Record<string, unknown> = {};
   const mixed = new Set<string>();
   const apart: string[] = [];
@@ -94,15 +94,14 @@ export function aggregateAttributes(
     const out: KindAttrs = {};
     for (const [key, def] of Object.entries(first![part])) {
       if (!rest.every((s) => deepEqual(s[part][key], def))) continue;
-      const held = fields.map((f) => attrValue(f, key));
-      if (held.every((h) => deepEqual(h, held[0]))) {
+      if (held.every((h) => deepEqual(h[key], held[0]![key]))) {
         out[key] = def;
-        if (held[0] !== undefined) values[key] = held[0];
+        if (held[0]![key] !== undefined) values[key] = held[0]![key];
       } else if (drawsMixed(def.kind)) {
         out[key] = def;
         mixed.add(key);
       } else {
-        const split = def.kind === 'object' ? splitObject(def as PrefLeaf as PrefObject, held, key, drawsMixed) : null;
+        const split = def.kind === 'object' ? splitObject(def as PrefLeaf as PrefObject, held.map((h) => h[key]), key, drawsMixed) : null;
         if (split === null) {
           apart.push(key);
           continue;
