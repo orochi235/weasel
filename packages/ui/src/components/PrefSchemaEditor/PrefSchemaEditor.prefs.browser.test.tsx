@@ -11,7 +11,12 @@ import { renderWithIcons } from '../../testing/withIcons';
 
 // A drop into the live preview is hit-tested against the form's layout, which only a browser has.
 
-beforeAll(() => page.viewport(1500, 800));
+beforeAll(async () => {
+  await page.viewport(1500, 800);
+  const style = document.createElement('style');
+  style.textContent = '.editor-box { height: 700px; }';
+  document.head.append(style);
+});
 afterEach(cleanup);
 
 const leaf = (name: string) => ({ kind: 'boolean', name, description: '', default: false }) as const;
@@ -24,7 +29,9 @@ let latest = START;
 function Live() {
   const [schema, setSchema] = useState(START);
   latest = schema;
-  return <PrefSchemaEditor schema={schema} onChange={setSchema} />;
+  // A fixed height, as a host gives it: in one that grows with the attributes a press shows, the centered preview
+  // moves down under the points this file took before the press.
+  return <div className="editor-box"><PrefSchemaEditor schema={schema} onChange={setSchema} /></div>;
 }
 
 const preview = () => within(screen.getByRole('region', { name: 'Live preview' }));
