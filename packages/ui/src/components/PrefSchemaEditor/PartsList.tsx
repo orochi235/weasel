@@ -8,6 +8,7 @@ import { seekRows, soughtRow } from './rowSearch';
 import { GROUP_ICON, type PaletteDrag } from './Palette';
 import { childrenOf, joinPath, keyOf, nodeAt, type SchemaNode } from './schemaEdit';
 import { leafLabel, nodeLabel } from './structureRows';
+import { nodeIcon } from './nodeIcon';
 import s from './PrefSchemaEditor.module.css';
 import { icon } from '../../icons.gen';
 
@@ -28,6 +29,7 @@ function toRows(node: SchemaNode, path: string | null, where: PartsCatalog['wher
     return {
       ...row,
       label: leafLabel(row.label),
+      leading: nodeIcon(child, false),
       ...(held.length > 0 ? { tooltip: `In ${held.join(', ')}` } : {}),
       trailing: (
         <>

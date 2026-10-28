@@ -3,7 +3,8 @@ import { isPrefLeaf, type PrefActions, type PrefAlias, type PrefLeaf } from '@we
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import type { TreeNode } from '../Tree';
-import { nodeIcon } from './nodeIcon';
+import { Icon } from '../../icons';
+import { kindIcon, nodeIcon } from './nodeIcon';
 import type { EditorAction } from './editorActions';
 import { drawnLeaf } from './pointers';
 import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schemaEdit';
@@ -28,7 +29,7 @@ function leafCount(nodes: readonly SchemaNode[], actions?: readonly EditorAction
 /** A row's label for a node: its name before its key, and an unnamed node's key alone. */
 export const nodeLabel = (name: string, key: string): ReactNode => (name ? <>{name} <span className={s.treeKey}>{key}</span></> : key);
 
-/** A leaf's label: a row with no glyph before it, set in from where one would be and in the plain weight. */
+/** A leaf's label, in the plain weight where a group's is bolder. */
 export const leafLabel = (label: ReactNode): ReactNode => <span className={s.treeLeaf}>{label}</span>;
 
 const countBadge = (n: number) => <Badge size="xs" emphasis="low" variant="subtle" className={s.treeCount}>{n}</Badge>;
@@ -39,7 +40,7 @@ function drawnActionRows(path: string, leaf: PrefActions, actions: readonly Edit
   return drawnBy(leaf, actions).map((a) => soughtRow({
     id: `${path}${DRAWN_ACTION}${a.key}`,
     label: leafLabel(nodeLabel(a.label, a.key)),
-    ...(a.icon ? { leading: a.icon } : {}),
+    leading: a.icon ?? <Icon size={16} name={kindIcon('action')} />,
     disabled: true,
   }, { text: [a.label, a.key], tags: a.tags }));
 }
@@ -59,13 +60,11 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
     const label = changed.has(p) ? <span className={s.changed}>{named}</span> : named;
     const run = actions && isActionsLeaf(child) ? drawnActionRows(p, child, actions) : undefined;
     const grouping = run !== undefined || !isPrefLeaf(child);
-    // A leaf with fields under it takes a glyph too, for the bracket down its fields to hang from.
-    const glyph = grouping || kids ? nodeIcon(child, path === null) : null;
     return soughtRow({
       id: p,
-      label: grouping ? label : glyph ? <span className={s.treeFields}>{label}</span> : leafLabel(label),
+      label: grouping ? label : leafLabel(label),
       ...(child.description ? { tooltip: child.description } : {}),
-      ...(glyph ? { leading: glyph } : {}),
+      leading: nodeIcon(child, path === null, actions),
       trailing: grouping
         // Its glyph says how a grouping is drawn, so it carries no badge to say it again.
         ? <>{mark?.(p)}{countBadge(leafCount([child], actions))}</>

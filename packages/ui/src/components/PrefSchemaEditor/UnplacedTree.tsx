@@ -9,6 +9,7 @@ import { keyOf, type SchemaNode } from './schemaEdit';
 import { unplacedAt } from './unplaced';
 import s from './PrefSchemaEditor.module.css';
 import { leafLabel, nodeLabel } from './structureRows';
+import { nodeIcon } from './nodeIcon';
 import { icon } from '../../icons.gen';
 
 const SEP = '/';
@@ -21,7 +22,7 @@ function toRows(group: PrefGroup, path: string): TreeNode[] {
     const label = nodeLabel(child.name, key);
     const row = soughtRow({ id, label, ...(child.description ? { tooltip: child.description } : {}) }, { text: [child.name, key], tags: child.tags });
     return isPrefLeaf(child)
-      ? { ...row, label: leafLabel(label), trailing: <PrefKindBadge kind={child.kind} /> }
+      ? { ...row, label: leafLabel(label), leading: nodeIcon(child, false), trailing: <PrefKindBadge kind={child.kind} /> }
       : { ...row, leading: <Icon size={16} name={GROUP_ICON[child.as ?? 'section']} />, children: toRows(child, id) };
   });
 }
