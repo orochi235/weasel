@@ -1,0 +1,86 @@
+import { passesOf } from './place';
+import type { ClockHandle } from './types';
+
+/** The time a clock standing `elapsed` into a run of `loop` passes shows
+ *  within its pass: a time on a pass boundary past the start shows as the end
+ *  of the pass before, and one past the run's end runs on in its last pass. */
+export function shownInPass(
+  origin: number,
+  elapsed: number,
+  duration: number,
+  loop: boolean | number = true,
+): number {
+  if (!Number.isFinite(duration)) return origin + elapsed;
+  const last = (passesOf(loop) - 1) * duration;
+  if (elapsed > last + duration) return origin + elapsed - last;
+  const into = elapsed % duration;
+  return origin + (into === 0 && elapsed > 0 ? duration : into);
+}
+
+/** A clock held at a time its span may not reach yet. */
+export interface PlayheadHold {
+  /** The held time while the clock stands elsewhere (clamped), else null. */
+  pending(): number | null;
+  /** Stop holding. Idempotent. */
+  release(): void;
+}
+
+/**
+ * Pauses `handle`'s clock at `shown`, a time shown within a pass (`null`: the
+ * span's start), placed in the first pass, and keeps seeking there as `declare`
+ * or a `duration` write moves the span. A time past the pass's end waits at it.
+ * Any other change (a rate, a seek of someone else's) releases the hold. A
+ * clock that is not seekable is never held.
+ */
+export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold {
+  const { clock } = handle;
+  let released = false;
+  let busy = false;
+  let unsub: (() => void) | null = null;
+  let duration = clock.duration;
+  let origin = clock.origin;
+  let loop = clock.loop;
+  let set = clock.elapsed;
+
+  const release = (): void => {
+    released = true;
+    unsub?.();
+    unsub = null;
+  };
+
+  const place = (): void => {
+    busy = true;
+    try {
+      const { duration } = clock;
+      const within = Math.min(shown === null ? 0 : shown - clock.origin, duration);
+      clock.seek(within, within > 0 && within === duration ? 'end' : 'start');
+    } finally {
+      busy = false;
+    }
+    duration = clock.duration;
+    origin = clock.origin;
+    loop = clock.loop;
+    set = clock.elapsed;
+  };
+
+  if (!clock.seekable) {
+    released = true;
+  } else {
+    clock.rate = 0;
+    place();
+    unsub = clock.subscribe(() => {
+      if (busy || released) return;
+      if (clock.rate !== 0) release();
+      else if (clock.duration !== duration || clock.origin !== origin || clock.loop !== loop) place();
+      else if (clock.elapsed !== set) release();
+    });
+  }
+
+  return {
+    pending: () => {
+      if (released || shown === null) return null;
+      return clock.origin + clock.elapsed === shown ? null : shown;
+    },
+    release,
+  };
+}

@@ -252,8 +252,10 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   chrome?: TrialContribution[];
   /** Gives the trial a clock: playback time that layers, renderers and chrome
    *  read and drive. `'lab'` plays on the lab's own clock, which `<Lab clock>`
-   *  declares, so every trial declaring it shares one time. */
-  clock?: ClockCapability | 'lab';
+   *  declares, so every trial declaring it shares one time. A function is
+   *  called with the trial's config on every render: the clock follows it
+   *  (`null` for none), keeping its place when the declaration changes. */
+  clock?: ClockCapability | 'lab' | ((config: TC) => ClockCapability | null);
   /** Work too slow to do during a render. The runtime starts it, aborts it on
    *  unmount and on a `key` change, and renders progress into the trial. */
   job?: JobCapability<TS, TC, TItem>;

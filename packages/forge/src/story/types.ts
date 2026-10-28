@@ -1,7 +1,7 @@
 import type { ConfigSchema } from '@weasel-js/labkit/config';
 import type { ComponentType, ReactNode } from 'react';
 import type { Globals, Layout, Viewport } from '../protocol/messages.ts';
-import type { TimelineSpec } from '../timeline/clock.ts';
+import type { TimelineSpec } from '../timeline/types.ts';
 
 /** What a story's `render` and its decorators receive: the trial's config and state, the globals in force, and the
  *  story's own title and name. */

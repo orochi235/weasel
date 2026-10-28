@@ -1,39 +1,45 @@
+import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
+import { useClockLoop } from '@weasel-js/clock/react';
 import { useLatest } from '@weasel-js/core';
-import { type ReactNode, useContext, useEffect, useState } from 'react';
+import { type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import type { LoadedStory } from '../story/types';
-import { type Clock, createClock, type TimelineSpec } from './clock';
+import { clockSpecOf } from './clockSpec';
 import { ClockContext } from './context';
-import { useClockLoop } from './useClockLoop';
+import type { TimelineSpec } from './types';
+
+const keyOf = (spec: TimelineSpec | null): string | null =>
+  spec ? `${spec.start ?? 0}|${spec.duration}|${spec.loop ?? true}|${spec.rate ?? 1}` : null;
 
 /**
- * A clock for a story declaring `spec`, kept across renders and redeclared when the span it declares changes. It is
- * made when a declaration appears and dropped when it goes, as an edit can do either. `initial` is read only when
- * the clock is made.
+ * A clock of the story's own, where no lab makes one: made when `spec` appears, dropped when it goes, and redeclared
+ * when it changes; the clock keeps any span the story's `setSpan` laid over it.
  */
-export function useStoryClock(spec: TimelineSpec | null, initial: () => number | null): Clock | null {
-  const [clock, setClock] = useState(() => (spec ? createClock(spec, initial()) : null));
-  let current = clock;
-  if (spec && !clock) {
-    current = createClock(spec, initial());
-    setClock(current);
-  } else if (!spec && clock) {
+export function useOwnClock(spec: TimelineSpec | null): ClockHandle | null {
+  const [handle, setHandle] = useState(() => (spec ? createClock(clockSpecOf(spec)) : null));
+  let current = handle;
+  if (spec && !handle) {
+    current = createClock(clockSpecOf(spec));
+    setHandle(current);
+  } else if (!spec && handle) {
     current = null;
-    setClock(null);
+    setHandle(null);
   }
   const latest = useLatest(spec);
-  const spanKey = spec ? `${spec.start ?? 0}:${spec.duration}` : null;
+  const key = keyOf(spec);
+  const declared = useRef(key);
   useEffect(() => {
-    if (current && latest.current) current.declare(latest.current);
-  }, [current, spanKey, latest]);
+    if (!current || !latest.current || key === declared.current) return;
+    declared.current = key;
+    current.declare(clockSpecOf(latest.current));
+  }, [current, key, latest]);
   return current;
 }
 
-const NO_INITIAL = () => null;
-
 function OwnClock({ spec, children }: { spec: TimelineSpec; children: ReactNode }) {
-  const clock = useStoryClock(spec, NO_INITIAL);
-  useClockLoop(clock);
-  return <ClockContext.Provider value={clock}>{children}</ClockContext.Provider>;
+  const handle = useOwnClock(spec);
+  const [registry] = useState(() => createClockRegistry(handle));
+  useClockLoop(registry);
+  return <ClockContext.Provider value={handle}>{children}</ClockContext.Provider>;
 }
 
 /**

@@ -160,6 +160,18 @@ describe('a presented lab’s messages', () => {
     await host.send({ type: 'labkit:play' });
   });
 
+  it('answers a trial whose function clock resolves to none', async ({ host }) => {
+    const none: Instrument = { ...timed(undefined), clock: () => null };
+    await renderSettled(
+      <Lab {...({ instruments: [none], defaultInstrument: 'Timed', present: true } as LabProps)} />,
+      { wrapper: withIcons },
+    );
+    expect(lastState()).toMatchObject({ clock: false, duration: null });
+    const before = states().length;
+    await host.send({ type: 'labkit:query' });
+    expect(states()).toHaveLength(before + 1);
+  });
+
   it('answers only its host: the window around it, or its own', async ({ host }) => {
     await host.mount({ duration: 4000 });
     await host.send({ type: 'labkit:play' }, { source: null });

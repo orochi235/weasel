@@ -35,6 +35,10 @@ export const REACT_FREE_ENTRIES = [
     why: 'the integrator; the frame-loop hook lives behind @weasel-js/simulation/react',
   },
   {
+    spec: '@weasel-js/clock',
+    why: 'the clock and its registry; the frame-loop hook lives behind @weasel-js/clock/react',
+  },
+  {
     spec: '@weasel-js/animator',
     why: 'targets, timelines and axes, which core/math reaches; the hook lives behind @weasel-js/animator/react',
   },

@@ -1,4 +1,4 @@
-import type { TimelineSpec } from './clock';
+import type { TimelineSpec } from './types';
 
 const isSpec = (value: unknown): value is TimelineSpec =>
   !!value && typeof value === 'object' && typeof (value as { duration?: unknown }).duration === 'number';

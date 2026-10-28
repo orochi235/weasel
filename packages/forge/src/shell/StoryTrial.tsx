@@ -1,15 +1,11 @@
-import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
+import { type RenderContext, TrialIdContext, useTrialClockHandle } from '@weasel-js/labkit';
 import { useLatest } from '@weasel-js/core';
 import { type RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import type { Globals } from '../protocol/messages';
 import type { Decorator, LoadedStory } from '../story/types';
 import { ClockContext } from '../timeline/context';
-import { useStoryClock } from '../timeline/StoryClock';
-import { TrialClocksContext } from '../timeline/trialClocks';
-import { useClockLoop } from '../timeline/useClockLoop';
-import { usePersistedPlayhead } from '../timeline/usePersistedPlayhead';
-import { isForgePath, PLAYHEAD_KEY, storyConfig } from './globals';
+import { isForgePath, storyConfig } from './globals';
 import { LiveCopies, StoryCopy } from './loupe/LiveCopies';
 import { StoryBody } from './StoryBody';
 import { TrialHost } from './TrialHost';
@@ -60,17 +56,13 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   }, [latestRef]);
   const setState = useCallback((next: unknown) => latestRef.current.setState(next), [latestRef]);
 
-  // The story's clock lives with its trial: the trial's transport reads it from the registry, the story from context.
+  // The story's clock is the one labkit made for its trial from the timeline the instrument declares.
   const trialId = useContext(TrialIdContext);
-  const clocks = useContext(TrialClocksContext);
   const ownHost = useRef<HTMLElement | null>(null);
   const host = hostRef ?? ownHost;
-  const kept = (ctx.config as Record<string, unknown> | null)?.[PLAYHEAD_KEY];
-  const persisted = typeof kept === 'number' && Number.isFinite(kept) ? kept : null;
-  const clock = useStoryClock(story.timeline?.(config) ?? null, () => persisted);
-  useClockLoop(clock, host);
-  usePersistedPlayhead(clock, persisted, (time) => latestRef.current.setConfig(PLAYHEAD_KEY, time));
-  useEffect(() => (clock && clocks && trialId ? clocks.publish(trialId, clock) : undefined), [clock, clocks, trialId]);
+  const spec = story.timeline?.(config) ?? null;
+  const trialClock = useTrialClockHandle();
+  const clock = spec ? trialClock : null;
 
   const decorators = setup.decorators ?? NO_DECORATORS;
   const latestError = useLatest(onError);

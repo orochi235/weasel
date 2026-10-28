@@ -1,0 +1,133 @@
+import { describe, expect, it, vi } from 'vitest';
+import { createClock } from './clock';
+
+describe('clock origin, speed and declare', () => {
+  it('shows elapsed 0 at its origin', () => {
+    const { clock } = createClock({ duration: 3000, origin: -1000 });
+    expect(clock.origin).toBe(-1000);
+    expect(clock.elapsed).toBe(0);
+  });
+  it('declare keeps the shown time when the span moves', () => {
+    const h = createClock({ duration: 3000, origin: -1000 });
+    h.clock.seek(1500);
+    h.declare({ duration: 3000, origin: 0 });
+    expect(h.clock.origin + h.clock.elapsed).toBe(500);
+  });
+  it('declare clamps a shown time the new span cannot hold', () => {
+    const h = createClock({ duration: 3000 });
+    h.clock.seek(2500);
+    h.declare({ duration: 1000 });
+    expect(h.clock.elapsed).toBe(1000);
+  });
+  it('declare leaves a playing clock playing', () => {
+    const h = createClock({ duration: 3000, rate: 1 });
+    h.declare({ duration: 4000 });
+    expect(h.clock.rate).toBe(1);
+  });
+  it('a paused clock offers its declared speed', () => {
+    expect(createClock({ speed: 2 }).clock.speed).toBe(2);
+    expect(createClock({}).clock.speed).toBe(1);
+  });
+  it('declare takes up loop and speed, and notifies', () => {
+    const h = createClock({ duration: 1000 });
+    let n = 0;
+    h.clock.subscribe(() => n++);
+    h.declare({ duration: 1000, loop: 2, speed: 4 });
+    expect(h.clock.loop).toBe(2);
+    expect(h.clock.speed).toBe(4);
+    expect(n).toBe(1);
+  });
+  it('declare moves an infinite run to a finite one, clamped', () => {
+    const h = createClock({});
+    h.clock.seek(5000);
+    h.declare({ duration: 2000 });
+    expect(h.clock.elapsed).toBe(2000);
+  });
+  it('declare leaves rates and seekable alone', () => {
+    const h = createClock({ rates: [1, 3], seekable: false });
+    h.declare({ duration: 100 });
+    expect(h.clock.rates).toEqual([1, 3]);
+    expect(h.clock.seekable).toBe(false);
+  });
+  it('rejects a bad speed or duration', () => {
+    expect(() => createClock({ speed: 0 })).toThrow(RangeError);
+    expect(() => createClock({ speed: Number.NaN })).toThrow(RangeError);
+    const h = createClock({ duration: 100 });
+    expect(() => h.declare({ speed: -1 })).toThrow(RangeError);
+    expect(() => h.declare({ duration: 0 })).toThrow(RangeError);
+  });
+  it('override replaces the span until lifted, and a declare under it changes only what lies beneath', () => {
+    const h = createClock({ duration: 1000 });
+    h.clock.seek(600);
+    h.override({ duration: 4000, origin: -500 });
+    expect([h.clock.duration, h.clock.origin, h.clock.origin + h.clock.elapsed]).toEqual([4000, -500, 600]);
+    h.declare({ duration: 2000, speed: 3 });
+    expect([h.clock.duration, h.clock.origin, h.clock.speed]).toEqual([4000, -500, 3]);
+    h.override(null);
+    expect([h.clock.duration, h.clock.origin, h.clock.origin + h.clock.elapsed]).toEqual([2000, 0, 600]);
+  });
+  it('override takes only the fields it gives, and notifies once', () => {
+    const h = createClock({ duration: 1000, origin: -200 });
+    const heard = vi.fn();
+    h.clock.subscribe(heard);
+    h.override({ duration: 3000 });
+    expect([h.clock.duration, h.clock.origin]).toEqual([3000, -200]);
+    expect(heard).toHaveBeenCalledTimes(1);
+  });
+  it('keeps a shown time that lands on a pass boundary as the end of the pass before', () => {
+    const h = createClock({ duration: 4000, loop: true });
+    h.clock.seek(3700);
+    h.override({ origin: -300 });
+    expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([4000, 0, 1]);
+  });
+  it('declare keeps the pass and the shown time within it on a looping clock', () => {
+    const h = createClock({ duration: 3000, loop: true });
+    h.clock.seek(4500);
+    h.declare({ duration: 4000, loop: true });
+    expect([h.clock.pass, h.clock.elapsed]).toEqual([1, 5500]);
+    h.declare({ duration: 1000, loop: true });
+    expect([h.clock.pass, h.clock.phase]).toEqual([1, 1]);
+  });
+  it('declare turning a loop off shows the same time within the pass', () => {
+    const h = createClock({ duration: 3000, loop: true });
+    h.clock.seek(4500);
+    h.declare({ duration: 4000 });
+    expect([h.clock.loop, h.clock.elapsed]).toEqual([false, 1500]);
+  });
+  it('declare clamps an origin move to the pass it was in', () => {
+    const h = createClock({ duration: 1000, loop: true });
+    h.clock.seek(1900);
+    h.declare({ duration: 1000, loop: true, origin: -500 });
+    expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([2000, 1, 1]);
+  });
+  it('declare leaves a loop set since alone while the declared loop stays put', () => {
+    const h = createClock({ duration: 3000, loop: true });
+    h.clock.loop = false;
+    h.declare({ duration: 4000, loop: true });
+    expect(h.clock.loop).toBe(false);
+    h.declare({ duration: 4000, loop: 2 });
+    expect(h.clock.loop).toBe(2);
+  });
+  it('override leaves a loop set since alone', () => {
+    const h = createClock({ duration: 1000 });
+    h.clock.loop = true;
+    h.override({ duration: 2000 });
+    expect(h.clock.loop).toBe(true);
+  });
+  it('folds a run into its pass when the loop shrinks it', () => {
+    const h = createClock({ duration: 3000, loop: true });
+    h.clock.seek(4500);
+    h.clock.loop = false;
+    expect([h.clock.elapsed, h.clock.ended]).toEqual([1500, false]);
+    h.clock.loop = 3;
+    h.clock.seek(8000);
+    h.clock.loop = 2;
+    expect([h.clock.pass, h.clock.elapsed]).toEqual([1, 5000]);
+  });
+  it('reopens at a recorded origin', () => {
+    const h = createClock({ duration: 1000, origin: -200 }, { elapsed: 300, rate: 0, origin: -500 });
+    expect([h.clock.origin, h.clock.origin + h.clock.elapsed]).toEqual([-500, -200]);
+    h.declare({ duration: 1000, origin: -200 });
+    expect([h.clock.origin, h.clock.elapsed]).toEqual([-200, 0]);
+  });
+});

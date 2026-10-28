@@ -1,12 +1,8 @@
-import { useEffect, useReducer, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef } from 'react';
 import { Transport } from '../passthrough/weasel-ui';
-import { useTrialClock, useTrialClockHandle } from './hooks';
-import { transportControl } from './transportControl';
-import { type TransportHold, transportHoldOf } from './transportHold';
+import { useTrialClock } from './hooks';
+import { useTransportControl } from './useTransportControl';
 import { useTransportKeys } from './useTransportKeys';
-
-const NO_SUBSCRIBE = () => () => {};
-const NO_HOLD: TransportHold = { speed: 1, backward: false, touched: false };
 
 /** Props for `<TrialTransport>`. */
 export interface TrialTransportProps {
@@ -38,34 +34,24 @@ export function TrialTransport({
   className,
 }: TrialTransportProps) {
   const clock = useTrialClock(trialId);
-  const handle = useTrialClockHandle(trialId);
-  const [, frame] = useReducer((n: number) => n + 1, 0);
-  useEffect(() => handle?.onFrame(frame), [handle]);
-
-  const hold = clock ? transportHoldOf(clock) : null;
-  const held = useSyncExternalStore(hold?.subscribe ?? NO_SUBSCRIBE, () => hold?.get() ?? NO_HOLD);
-  const touch = (): void => hold?.touch();
-  const control = clock && hold ? transportControl(clock, held, hold.set) : null;
+  const control = useTransportControl(trialId);
   const root = useRef<HTMLDivElement | null>(null);
-  useTransportKeys(root, control, keys, touch);
+  useTransportKeys(root, control, keys);
 
+  const touched = control?.touched ?? false;
+  const speed = control?.speed;
   const ended = clock?.ended ?? false;
   useEffect(() => {
-    if (replay === undefined || held.touched || !ended || !clock?.seekable) return;
+    if (replay === undefined || touched || !ended || !clock?.seekable || speed === undefined)
+      return;
     const id = setTimeout(() => {
       clock.seek(0);
-      clock.rate = held.speed;
+      clock.rate = speed;
     }, replay);
     return () => clearTimeout(id);
-  }, [replay, held.touched, ended, clock, held.speed]);
+  }, [replay, touched, ended, clock, speed]);
 
   if (!clock || !control) return null;
-  const touching =
-    <A extends unknown[]>(fn: (...args: A) => void) =>
-    (...args: A): void => {
-      touch();
-      fn(...args);
-    };
   return (
     <div
       ref={root}
@@ -77,20 +63,22 @@ export function TrialTransport({
         rate={control.speed}
         rates={clock.rates}
         {...(formatRate ? { formatRate } : {})}
+        start={control.start}
         playhead={control.playhead}
         duration={control.length}
-        onPlay={touching(control.play)}
-        onPause={touching(control.pause)}
-        onLoopChange={touching((loop: boolean | number) => {
+        onPlay={control.play}
+        onPause={control.pause}
+        onLoopChange={(loop: boolean | number) => {
+          control.touch();
           // eslint-disable-next-line react-hooks/immutability -- the clock's loop is set by assignment
           clock.loop = loop;
-        })}
-        onRateChange={touching(control.setSpeed)}
+        }}
+        onRateChange={control.setSpeed}
         {...(control.scrubs
           ? {
-              onSeek: touching(control.seek),
+              onSeek: control.seek,
               reverse: control.backward,
-              onReverseChange: touching(control.setBackward),
+              onReverseChange: control.setBackward,
             }
           : {})}
       />

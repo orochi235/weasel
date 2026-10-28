@@ -1,8 +1,8 @@
+import { createClockRegistry } from '@weasel-js/clock';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAnnotationStore } from './annotations/store';
 import type { CameraView } from './canvas/CameraInput';
 import { createCameraRegistry } from './canvas/cameraRegistry';
-import { createClockRegistry } from './clock/clockRegistry';
 import { transportHoldOf } from './clock/transportHold';
 import { createTrialClock } from './clock/trialClock';
 import { createPanelHostRegistry } from './lab/panelHost';

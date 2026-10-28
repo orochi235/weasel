@@ -39,11 +39,11 @@ test("a timeline story's transport lays out in its trial's status bar, plays on 
   );
   const readout = await screen.findByRole('status', { name: 'playhead' }, { timeout: 15_000 });
   const trial = screen.getByRole('region', { name: /^Trial / });
-  const scrub = within(trial).getByRole('slider', { name: 'Scrub' });
+  const scrub = within(trial).getByRole('slider', { name: 'Position' });
   const play = within(trial).getByRole('button', { name: 'Play' });
 
   const trialBox = trial.getBoundingClientRect();
-  const scrubBox = scrub.closest('.fg-transport__scrub')!.getBoundingClientRect();
+  const scrubBox = scrub.parentElement!.getBoundingClientRect();
   const playBox = play.getBoundingClientRect();
   expect(scrubBox.width).toBeGreaterThan(80);
   expect(playBox.width).toBeGreaterThan(0);

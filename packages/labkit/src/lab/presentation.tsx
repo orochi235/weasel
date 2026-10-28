@@ -1,6 +1,15 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import type { ClockRegistry } from '@weasel-js/clock';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useStore } from 'zustand/react';
-import type { ClockRegistry } from '../clock/clockRegistry';
+import { TrialRootContext } from '../clock/contexts';
 import type { LabStore } from '../state/store';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { type PresentationMessageOptions, usePresentationMessages } from './presentationMessages';
@@ -85,7 +94,9 @@ export function useLabPresentation(
   const still = useStill(start.still, clocks, labBody);
   const clocked = useStore(store, (s) => {
     const record = s.trials.find((t) => t.id === focusedTrialId);
-    return Boolean(record && s.instruments?.find((i) => i.name === record.instrumentName)?.clock);
+    const declared = record && s.instruments?.find((i) => i.name === record.instrumentName)?.clock;
+    // A function may resolve to no clock, which never registers one to wait for.
+    return Boolean(declared) && typeof declared !== 'function';
   });
   usePresentationMessages(
     presenting && !start.still && options.messages !== false,
@@ -142,14 +153,23 @@ export function usePresentedTransport(trialId: string): PresentedTransportOption
 
 /** Whether the trial `trialId` is the one its lab is presenting, and a ref for
  *  its root: while presented, the lab's shared surface is scoped to it, so the
- *  tiles hidden behind it stop painting. */
+ *  tiles hidden behind it stop painting. The ref also publishes the root as
+ *  the trial's, which its clock registers as the element showing it. */
 export function usePresentedTrial(trialId: string): {
   presented: boolean;
   ref: (el: HTMLElement | null) => void;
 } {
   const presented = useIsPresented(trialId);
   const surface = useSurfaceOptional();
-  const [el, ref] = useState<HTMLElement | null>(null);
+  const [el, setEl] = useState<HTMLElement | null>(null);
+  const rootRef = useContext(TrialRootContext);
+  const ref = useCallback(
+    (node: HTMLElement | null) => {
+      setEl(node);
+      if (rootRef) rootRef.current = node;
+    },
+    [rootRef],
+  );
   useLayoutEffect(() => {
     if (!presented || !el || !surface) return;
     surface.scope(el);

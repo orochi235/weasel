@@ -8,7 +8,7 @@ import { AnnotationPreloadContext } from '../annotations/preload';
 import { CameraGesturesContext } from '../canvas/cameraGestures';
 import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
 import { LabFooterRegion, LabHeaderRegion } from '../chrome/LabChrome';
-import { ClockRegistryContext } from '../clock/clockRegistry';
+import { ClockRegistryContext } from '../clock/contexts';
 import { useLabClocks } from '../clock/useLabClocks';
 import { PersistenceContext } from '../state/Persistence';
 import type { UndockedPanels } from '../state/undock';

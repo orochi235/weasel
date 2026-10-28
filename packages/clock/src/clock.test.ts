@@ -1,32 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
-import { clockPosition, createTrialClock } from './trialClock';
+import { clockPosition, createClock } from './clock';
 
 /** A clock already synced once at t=0, so the next sync advances it. */
-function started(...args: Parameters<typeof createTrialClock>) {
-  const c = createTrialClock(...args);
+function started(...args: Parameters<typeof createClock>) {
+  const c = createClock(...args);
   c.clock.sync(0);
   return c;
 }
 
-describe('createTrialClock', () => {
+describe('createClock', () => {
   it('opens paused at 0, and inert', () => {
-    const { clock } = createTrialClock({});
+    const { clock } = createClock({});
     expect(clock.elapsed).toBe(0);
     expect(clock.rate).toBe(0);
     expect(clock.inert).toBe(true);
   });
 
   it('opens at the declared rate', () => {
-    const { clock } = createTrialClock({ rate: 2 });
+    const { clock } = createClock({ rate: 2 });
     expect(clock.rate).toBe(2);
     expect(clock.inert).toBe(false);
   });
 
   it('says how long a pass runs and whether it seeks', () => {
-    expect(createTrialClock({ duration: 800 }).clock.duration).toBe(800);
-    expect(createTrialClock({}).clock.duration).toBe(Number.POSITIVE_INFINITY);
-    expect(createTrialClock({}).clock.seekable).toBe(true);
-    expect(createTrialClock({ seekable: false }).clock.seekable).toBe(false);
+    expect(createClock({ duration: 800 }).clock.duration).toBe(800);
+    expect(createClock({}).clock.duration).toBe(Number.POSITIVE_INFINITY);
+    expect(createClock({}).clock.seekable).toBe(true);
+    expect(createClock({ seekable: false }).clock.seekable).toBe(false);
   });
 
   it('has ended once a finite run plays to its end, and not before', () => {
@@ -49,7 +49,7 @@ describe('createTrialClock', () => {
   });
 
   it('records the time on its first sync without advancing', () => {
-    const { clock } = createTrialClock({ rate: 1 });
+    const { clock } = createClock({ rate: 1 });
     clock.sync(5000);
     expect(clock.elapsed).toBe(0);
     clock.sync(5016);
@@ -138,7 +138,7 @@ describe('createTrialClock', () => {
 
   describe('seek', () => {
     it('is absolute, across passes', () => {
-      const { clock } = createTrialClock({ duration: 100, loop: true });
+      const { clock } = createClock({ duration: 100, loop: true });
       clock.seek(250);
       expect(clock.elapsed).toBe(250);
       expect(clock.pass).toBe(2);
@@ -176,19 +176,24 @@ describe('createTrialClock', () => {
     });
 
     it('keeps the end of a pass through a duration change and a reopen', () => {
-      const { clock } = createTrialClock({ duration: 100, loop: true });
+      const { clock } = createClock({ duration: 100, loop: true });
       clock.seek(200, 'end');
       clock.duration = 300;
       expect(clock.elapsed).toBe(600);
       expect([clock.pass, clock.phase]).toEqual([1, 1]);
       const position = clockPosition(clock, 100);
-      expect(position).toEqual({ elapsed: 600, rate: 0, duration: 300, passEnd: true });
-      const reopened = createTrialClock({ duration: 100, loop: true }, position).clock;
+      expect(position).toEqual({
+        elapsed: 600,
+        rate: 0,
+        duration: 300,
+        passEnd: true,
+      });
+      const reopened = createClock({ duration: 100, loop: true }, position).clock;
       expect([reopened.pass, reopened.phase]).toEqual([1, 1]);
     });
 
     it('clamps to the run', () => {
-      const { clock } = createTrialClock({ duration: 100, loop: 2 });
+      const { clock } = createClock({ duration: 100, loop: 2 });
       clock.seek(-5);
       expect(clock.elapsed).toBe(0);
       clock.seek(999);
@@ -209,13 +214,13 @@ describe('createTrialClock', () => {
 
   describe('seekable: false', () => {
     it('throws on any seek', () => {
-      const { clock } = createTrialClock({ seekable: false });
+      const { clock } = createClock({ seekable: false });
       expect(() => clock.seek(0)).toThrow();
       expect(() => clock.seek(10)).toThrow();
     });
 
     it('throws on a negative rate, set or ramped', () => {
-      const { clock } = createTrialClock({ seekable: false });
+      const { clock } = createClock({ seekable: false });
       expect(() => {
         clock.rate = -1;
       }).toThrow();
@@ -311,7 +316,7 @@ describe('createTrialClock', () => {
   });
 
   it('rejects a rate that is not a finite number', () => {
-    const { clock } = createTrialClock({});
+    const { clock } = createClock({});
     expect(() => {
       clock.rate = Number.NaN;
     }).toThrow();
@@ -322,7 +327,7 @@ describe('createTrialClock', () => {
 
   describe('duration', () => {
     it('keeps pass and phase when it changes', () => {
-      const { clock } = createTrialClock({ duration: 100, loop: 3 });
+      const { clock } = createClock({ duration: 100, loop: 3 });
       clock.seek(150);
       clock.duration = 400;
       expect(clock.pass).toBe(1);
@@ -331,14 +336,14 @@ describe('createTrialClock', () => {
     });
 
     it('keeps an ended run ended', () => {
-      const { clock } = createTrialClock({ duration: 100, start: 'end' });
+      const { clock } = createClock({ duration: 100, start: 'end' });
       clock.duration = 250;
       expect(clock.ended).toBe(true);
       expect(clock.elapsed).toBe(250);
     });
 
     it('notifies, and wakes the frame loop', () => {
-      const { clock } = createTrialClock({ duration: 100 });
+      const { clock } = createClock({ duration: 100 });
       const sub = vi.fn();
       const wake = vi.fn();
       clock.subscribe(sub);
@@ -349,65 +354,88 @@ describe('createTrialClock', () => {
     });
 
     it('rejects a duration that is not positive', () => {
-      const { clock } = createTrialClock({ duration: 100 });
+      const { clock } = createClock({ duration: 100 });
       expect(() => {
         clock.duration = 0;
       }).toThrow(RangeError);
-      expect(() => createTrialClock({ duration: -1 })).toThrow(RangeError);
+      expect(() => createClock({ duration: -1 })).toThrow(RangeError);
     });
 
     it('reopens at the duration it was changed to', () => {
-      const { clock } = createTrialClock({ duration: 100 });
+      const { clock } = createClock({ duration: 100 });
       clock.duration = 300;
       clock.seek(150);
       const position = clockPosition(clock, 100);
       expect(position).toEqual({ elapsed: 150, rate: 0, duration: 300 });
-      const reopened = createTrialClock({ duration: 100 }, position).clock;
+      const reopened = createClock({ duration: 100 }, position).clock;
       expect(reopened.duration).toBe(300);
       expect(reopened.phase).toBeCloseTo(0.5);
-      expect(clockPosition(createTrialClock({ duration: 100 }).clock, 100)).toEqual({
+      expect(clockPosition(createClock({ duration: 100 }).clock, 100)).toEqual({
         elapsed: 0,
         rate: 0,
       });
+    });
+
+    it('records an origin other than the declared one', () => {
+      const h = createClock({ duration: 100, origin: -20 });
+      expect(clockPosition(h.clock, 100, -20)).toEqual({ elapsed: 0, rate: 0 });
+      h.override({ origin: -50 });
+      expect(clockPosition(h.clock, 100, -20)).toEqual({ elapsed: 30, rate: 0, origin: -50 });
     });
   });
 
   describe('start', () => {
     it('opens where it is told, clamped to the run', () => {
-      expect(createTrialClock({ duration: 100, start: 40 }).clock.elapsed).toBe(40);
-      expect(createTrialClock({ duration: 100, start: 400 }).clock.elapsed).toBe(100);
-      const end = createTrialClock({ duration: 100, loop: 2, start: 'end' }).clock;
+      expect(createClock({ duration: 100, start: 40 }).clock.elapsed).toBe(40);
+      expect(createClock({ duration: 100, start: 400 }).clock.elapsed).toBe(100);
+      const end = createClock({ duration: 100, loop: 2, start: 'end' }).clock;
       expect(end.elapsed).toBe(200);
       expect(end.ended).toBe(true);
     });
 
     it("has no 'end' for a run that never ends", () => {
-      expect(() => createTrialClock({ start: 'end' })).toThrow(RangeError);
-      expect(() => createTrialClock({ duration: 100, loop: true, start: 'end' })).toThrow(
-        RangeError,
-      );
+      expect(() => createClock({ start: 'end' })).toThrow(RangeError);
+      expect(() => createClock({ duration: 100, loop: true, start: 'end' })).toThrow(RangeError);
     });
 
     it('is where Reset goes, and gives way to a reopened position', () => {
-      const c = createTrialClock({ duration: 100, start: 'end' });
+      const c = createClock({ duration: 100, start: 'end' });
       c.clock.seek(10);
       c.reset();
       expect(c.clock.elapsed).toBe(100);
       expect(
-        createTrialClock({ duration: 100, start: 'end' }, { elapsed: 30, rate: 0 }).clock.elapsed,
+        createClock({ duration: 100, start: 'end' }, { elapsed: 30, rate: 0 }).clock.elapsed,
       ).toBe(30);
     });
   });
 
   describe('rates', () => {
     it('offers the transport defaults unless told otherwise, sorted', () => {
-      expect(createTrialClock({}).clock.rates).toEqual([0.25, 0.5, 1, 2, 4]);
-      expect(createTrialClock({ rates: [1, 0.125, 0.5] }).clock.rates).toEqual([0.125, 0.5, 1]);
+      expect(createClock({}).clock.rates).toEqual([0.25, 0.5, 1, 2, 4]);
+      expect(createClock({ rates: [1, 0.125, 0.5] }).clock.rates).toEqual([0.125, 0.5, 1]);
     });
 
     it('rejects an empty list or a rate that is not positive', () => {
-      expect(() => createTrialClock({ rates: [] })).toThrow(RangeError);
-      expect(() => createTrialClock({ rates: [1, 0] })).toThrow(RangeError);
+      expect(() => createClock({ rates: [] })).toThrow(RangeError);
+      expect(() => createClock({ rates: [1, 0] })).toThrow(RangeError);
     });
+  });
+});
+
+describe('a subscriber that throws', () => {
+  it('does not stop the subscribers after it', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { clock } = createClock({ duration: 100 });
+    const heard = vi.fn();
+    clock.subscribe(() => {
+      throw new Error('boom');
+    });
+    clock.subscribe(heard);
+    expect(() => {
+      clock.rate = 1;
+    }).not.toThrow();
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(logged).toHaveBeenCalledTimes(1);
+    logged.mockRestore();
   });
 });

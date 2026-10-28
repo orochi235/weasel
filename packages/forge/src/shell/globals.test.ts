@@ -79,7 +79,7 @@ describe('storyConfig', () => {
     expect(storyConfig({ label: 'bye', grid: inner, $globals: { mode: 'dark' } }, previous)).toEqual({ label: 'bye', grid: inner });
   });
 
-  it('strips the kept playhead too, and a change to it alone is no change', () => {
+  it('strips a playhead an older forge kept in the config, and a change to it alone is no change', () => {
     const previous = storyConfig({ label: 'hi', $playhead: 1000 });
     expect(previous).toEqual({ label: 'hi' });
     expect(storyConfig({ label: 'hi', $playhead: 2000 }, previous)).toBe(previous);

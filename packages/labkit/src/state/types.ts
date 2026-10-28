@@ -77,6 +77,8 @@ export interface SavedSnapshot {
    *  Absent on a snapshot saved before snapshots carried them, which loads
    *  over the trial's current set rather than guessing one. */
   auto?: readonly string[];
+  /** Where the trial's clock stood when saved; absent for a trial with none. */
+  clock?: ClockPosition;
   savedAt: number;
 }
 

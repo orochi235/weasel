@@ -1,5 +1,5 @@
+import type { ClockRegistry } from '@weasel-js/clock';
 import { useEffect, useSyncExternalStore } from 'react';
-import type { ClockRegistry } from '../clock/clockRegistry';
 import { transportControl } from '../clock/transportControl';
 import { transportHoldOf } from '../clock/transportHold';
 import type { TrialClockHandle } from '../clock/trialClock';
@@ -15,7 +15,7 @@ export type PresentationCommand =
   /** As the play button: an ended run starts over. */
   | { type: 'labkit:play'; lab?: string }
   | { type: 'labkit:pause'; lab?: string }
-  /** Move to `time` ms within the current pass, on a clock that is `seekable`. */
+  /** Move to shown `time` ms (the clock's `origin` plus the time within the pass), on a clock that is `seekable`. */
   | { type: 'labkit:seek'; time: number; lab?: string }
   /** Ask for a `labkit:state`. */
   | { type: 'labkit:query'; lab?: string };

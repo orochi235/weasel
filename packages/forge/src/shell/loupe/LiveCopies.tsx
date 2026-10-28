@@ -12,7 +12,7 @@ import {
 import { createPortal } from 'react-dom';
 import type { FrameSetup } from '../../frame/FrameController';
 import type { Globals, Layout } from '../../protocol/messages';
-import type { Clock } from '../../timeline/clock';
+import type { ClockHandle } from '@weasel-js/clock';
 import { ClockContext } from '../../timeline/context';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryBody, type StoryBodyProps } from '../StoryBody';
@@ -38,7 +38,7 @@ export interface StoryCopyProps {
   /** The story's own body props; a copy replaces `config`, `setConfig` and `globals`. */
   body: Omit<StoryBodyProps, 'globals'>;
   /** The trial's clock; a copy reads it and never drives it. */
-  clock: Clock | null;
+  clock: ClockHandle | null;
   globals: Globals;
   args: Readonly<Record<string, unknown>>;
 }

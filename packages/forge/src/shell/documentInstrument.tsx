@@ -1,11 +1,12 @@
-import type { Instrument } from '@weasel-js/labkit';
+import { type Instrument, TrialTransport } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
 import { useEffect } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import type { IndexEntry } from '../story/types';
-import { TrialTransport } from '../timeline/TransportBar';
+import { clockSpecOf } from '../timeline/clockSpec';
+import '../timeline/transport.css';
 import { crumbTitle } from './Crumbs';
-import { type GlobalDeclarations, PLAYHEAD_KEY, withGlobals } from './globals';
+import { type GlobalDeclarations, storyConfig, withGlobals } from './globals';
 import { IndexTrial } from './IndexTrial';
 import type { Loaded } from '../story/indexBundle';
 import { CaptureInputs } from './loupe/CaptureInputs';
@@ -24,17 +25,12 @@ export interface DocumentInstrumentOptions {
   hosts?: StoryHosts;
 }
 
-/** `schema` with a hidden leaf for the paused playhead, which labkit then persists and snapshots with the trial. */
-function withPlayhead(schema: ConfigSchema<unknown>): ConfigSchema<unknown> {
-  return f.schema({ ...schema.nodes, [PLAYHEAD_KEY]: f.custom<number | null>('forge-playhead', null).hidden() }) as ConfigSchema<unknown>;
-}
-
 /** A loaded story, or index page, as a lab instrument rendering in the workshop document. */
 export function documentInstrument(options: DocumentInstrumentOptions): Instrument<unknown, unknown> {
   const { entry, loaded, setup, globals = {}, hosts } = options;
   const schema = loaded.kind === 'story' ? loaded.story.config : (f.schema({}) as ConfigSchema<unknown>);
-  const timed = loaded.kind === 'story' && loaded.story.timeline !== null;
-  const config = withGlobals(timed ? withPlayhead(schema) : schema, globals);
+  const timeline = loaded.kind === 'story' ? loaded.story.timeline : null;
+  const config = withGlobals(schema, globals);
   const initialState = loaded.kind === 'story' ? loaded.story.initialState : null;
   return {
     name: entry.id,
@@ -54,6 +50,7 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
           layout={loaded.kind === 'story' ? loaded.story.layout : 'fullscreen'}
           config={ctx.config}
           state={ctx.state}
+          timed={timeline !== null}
         />
       </>
     ),
@@ -61,8 +58,11 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
     ...(loaded.kind === 'story' && loaded.story.viewport
       ? { stage: { size: { width: loaded.story.viewport.width, height: loaded.story.viewport.height } } }
       : {}),
-    ...(timed
-      ? { chrome: [{ id: 'fg-transport', region: 'status', render: (c) => <TrialTransport trialId={c.trialId} /> }] }
+    ...(timeline
+      ? {
+          clock: (c: unknown) => clockSpecOf(timeline(storyConfig(c))),
+          chrome: [{ id: 'fg-transport', region: 'status', render: (c) => <TrialTransport trialId={c.trialId} className="fg-transport" /> }],
+        }
       : {}),
   };
 }

@@ -31,6 +31,9 @@ export interface TrialInputs {
   config: unknown;
   state: unknown;
   overrides: CssOverrides;
+  /** Where the story's playhead stands while paused, read when a capture is taken; null while it plays, or with no
+   *  timeline. */
+  playhead(): number | null;
 }
 
 /** Each story trial's inputs, by trial id, published by the trial and read by a Pixels lens over it. */

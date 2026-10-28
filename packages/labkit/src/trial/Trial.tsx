@@ -9,7 +9,6 @@ import {
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -23,25 +22,17 @@ import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelC
 import { CanvasStack } from '../canvas/CanvasStack';
 import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
-import { applyCamera } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
-import { ClockRegistryContext, TrialClockContext } from '../clock/clockRegistry';
-import { clockPosition, createTrialClock } from '../clock/trialClock';
+import { TrialClockContext, TrialRootContext } from '../clock/contexts';
+import { useTrialClockSetup } from '../clock/useTrialClockSetup';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
-import type {
-  Instrument,
-  InstrumentList,
-  LayerDescriptor,
-  PaletteItem,
-  RenderContext,
-} from '../instrument/types';
+import type { Instrument, InstrumentList, PaletteItem, RenderContext } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
-import type { LayerListItem } from '../passthrough/weasel-ui';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
@@ -57,6 +48,7 @@ import { trialUndoBindings } from './trialUndo';
 import { useKeptMarks } from './useKeptMarks';
 import { TrialOrbitProvider } from './useOrbitView';
 import { useTrialCamera } from './useTrialCamera';
+import { useTrialLayers } from './useTrialLayers';
 import { useTrialMarks } from './useTrialMarks';
 import { useTrialWrites } from './useTrialWrites';
 
@@ -130,7 +122,6 @@ function TrialRuntime({
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
-  const updateTrialClock = useStore(store, (s) => s.updateTrialClock);
   const updateTrialAnnotations = useStore(store, (s) => s.updateTrialAnnotations);
   const labToolId = useStore(store, (s) => s.activeToolId);
   const setLabTool = useStore(store, (s) => s.setLabTool);
@@ -150,42 +141,28 @@ function TrialRuntime({
   }, []);
   const loupeSwitch = useMemo(() => ({ on: loupeOn, mount: mountLens }), [loupeOn, mountLens]);
 
-  const visibleLayers = useMemo(
-    () =>
-      (instrument.canvas?.layers ?? [])
-        .filter((l) => layerVisibility[l.id] !== false)
-        .map((l) => l.id),
-    [instrument.canvas, layerVisibility],
-  );
-
-  // Read once: `record.clock` is where a reopened trial's clock stood, and the
-  // clock is the truth from then on. A swap mounts a new trial under a new id.
-  // A trial on the lab's clock holds the lab's: the lab keeps where it stands.
-  const clocks = useContext(ClockRegistryContext);
-  const spec = instrument.clock;
-  const [clockHandle] = useState(() => {
-    if (spec === 'lab') {
-      if (!clocks?.lab)
-        throw new Error(
-          `[labkit] instrument "${instrument.name}" plays on the lab's clock, and its <Lab> declares no \`clock\``,
-        );
-      return clocks.lab;
-    }
-    return spec ? createTrialClock(spec, record.clock) : null;
+  const rootRef = useRef<HTMLElement | null>(null);
+  const clockTarget = useCallback(() => rootRef.current, []);
+  const clockHandle = useTrialClockSetup({
+    instrument,
+    config,
+    record,
+    store,
+    target: clockTarget,
   });
-  useEffect(() => {
-    if (!clockHandle || !clocks) return;
-    return clocks.register(record.id, clockHandle);
-  }, [clocks, clockHandle, record.id]);
-  useEffect(() => {
-    if (!clockHandle || spec === 'lab') return;
-    const { clock } = clockHandle;
-    return clock.subscribe(() => updateTrialClock(record.id, clockPosition(clock, spec?.duration)));
-  }, [clockHandle, spec, record.id, updateTrialClock]);
   const ticks = useMemo(
     () => (clockHandle ? (fn: () => void) => clockHandle.onFrame(() => fn()) : undefined),
     [clockHandle],
   );
+
+  const { visibleLayers, canvasLayers, layerDescriptors, layerItems } = useTrialLayers({
+    instrument,
+    state: record.state,
+    config,
+    layerVisibility,
+    layerOrder,
+    clock: clockHandle?.clock,
+  });
 
   const undoCap = instrument.undo;
   const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
@@ -287,56 +264,6 @@ function TrialRuntime({
 
   const loupeBindings: LoupeBindings | undefined =
     lenses > 0 ? { on: loupeOn, toggle: () => setLoupeOn((v) => !v) } : undefined;
-
-  const canvasLayers: CanvasLayerDescriptor[] = useMemo(() => {
-    if (!instrument.canvas) return [];
-    const baseLayers = instrument.canvas.layers;
-    const ordered = layerOrder
-      ? [...baseLayers].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
-      : baseLayers;
-    const clock = clockHandle?.clock;
-    return ordered.map((layer) => ({
-      id: layer.id,
-      visible: layerVisibility[layer.id] !== false,
-      timed: layer.timed === true,
-      render: (ctx, view, frame) => {
-        // Camera applied here, so a layer draws in world coordinates. `zoom`
-        // stays in the args for line widths, which must not scale with it.
-        applyCamera(ctx, view, frame);
-        layer.draw(ctx, {
-          state: record.state,
-          config,
-          zoom: view.zoom,
-          elapsed: clock?.elapsed ?? 0,
-          pass: clock?.pass ?? 0,
-          phase: clock?.phase ?? 0,
-        });
-      },
-    }));
-  }, [instrument.canvas, record.state, config, layerVisibility, layerOrder, clockHandle]);
-
-  const layerDescriptors: LayerDescriptor[] = useMemo(() => {
-    if (!instrument.layers) return [];
-    return instrument.layers.ids.map((l) => (typeof l === 'string' ? { id: l, label: l } : l));
-  }, [instrument.layers]);
-
-  // In the order the canvas draws them, with the always-on layers pinned
-  // below the rest, where a drag cannot reach past them.
-  const layerItems: LayerListItem[] = useMemo(() => {
-    const ordered = layerOrder
-      ? [...layerDescriptors].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
-      : layerDescriptors;
-    const pinnedLast = [
-      ...ordered.filter((l) => !l.alwaysOn),
-      ...ordered.filter((l) => l.alwaysOn),
-    ];
-    return pinnedLast.map((l) => ({
-      id: l.id,
-      label: l.label,
-      fixed: l.alwaysOn === true,
-      visible: l.alwaysOn === true || layerVisibility[l.id] !== false,
-    }));
-  }, [layerDescriptors, layerOrder, layerVisibility]);
 
   const dragDropResult = useDragDrop({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
@@ -481,29 +408,31 @@ function TrialRuntime({
     <TrialIdProvider trialId={record.id}>
       <TrialOrbitProvider orbit={cam.orbit} instrument={instrument} trialId={record.id}>
         <TrialClockContext.Provider value={clockHandle}>
-          <AnnotationsContext.Provider value={instrument.annotations ? provided : null}>
-            <CameraWheelContext.Provider value={wheelSlot}>
-              <TrialChrome
-                job={jobCap ? job : undefined}
-                loupe={loupeBindings}
-                trialId={record.id}
-                record={record}
-                instrument={instrument}
-                isLastTrial={isLast}
-                undoBindings={undoBindings}
-                setConfig={setConfig}
-                trialChrome={extraChrome}
-                chrome={chrome}
-                suppress={suppress}
-                activeToolId={resolvedToolId}
-                setActiveTool={setActiveTool}
-              >
-                {scopedBody}
-                {annotationOverlays}
-                <PresentedTransport trialId={record.id} />
-              </TrialChrome>
-            </CameraWheelContext.Provider>
-          </AnnotationsContext.Provider>
+          <TrialRootContext.Provider value={rootRef}>
+            <AnnotationsContext.Provider value={instrument.annotations ? provided : null}>
+              <CameraWheelContext.Provider value={wheelSlot}>
+                <TrialChrome
+                  job={jobCap ? job : undefined}
+                  loupe={loupeBindings}
+                  trialId={record.id}
+                  record={record}
+                  instrument={instrument}
+                  isLastTrial={isLast}
+                  undoBindings={undoBindings}
+                  setConfig={setConfig}
+                  trialChrome={extraChrome}
+                  chrome={chrome}
+                  suppress={suppress}
+                  activeToolId={resolvedToolId}
+                  setActiveTool={setActiveTool}
+                >
+                  {scopedBody}
+                  {annotationOverlays}
+                  <PresentedTransport trialId={record.id} />
+                </TrialChrome>
+              </CameraWheelContext.Provider>
+            </AnnotationsContext.Provider>
+          </TrialRootContext.Provider>
         </TrialClockContext.Provider>
       </TrialOrbitProvider>
     </TrialIdProvider>

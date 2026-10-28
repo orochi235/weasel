@@ -131,9 +131,6 @@
   "packages/labkit/src/chrome/builtins.tsx": {
     "longestFunction": 223
   },
-  "packages/labkit/src/clock/trialClock.ts": {
-    "longestFunction": 199
-  },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
     "longestFunction": 136
   },
@@ -163,14 +160,14 @@
     "longestFunction": 212
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 227
+    "longestFunction": 200
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
     "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "lines": 519,
-    "longestFunction": 400
+    "lines": 448,
+    "longestFunction": 337
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 217

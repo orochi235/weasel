@@ -413,6 +413,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
   call.
 
+### Engines still on their own frame loops
+
+- **(P3) [agent] `useAnimator` (`animator`) runs its own frame loop, so it can be neither paused nor scrubbed.**
+  Running it on `@weasel-js/clock` gives it `holdAt`, seeking and the clock's visibility gating
+  for free, and removes a second place that decides when time advances.
+- **(P3) [agent] `useSimulation` (`simulation`) runs its own frame loop.** Same move: step the
+  integrator from a `@weasel-js/clock` clock so a run can be paused and scrubbed. `createSimulation`
+  stays clock-free; only the hook changes.
+- **(P3) [agent] `useEffectRunner` (`diagram`) runs its own frame loop.** Same move, so a diagram's
+  effects can be paused and scrubbed with the rest of a trial.
+
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`

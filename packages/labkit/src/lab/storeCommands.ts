@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import type { ClockRegistry, PlayheadHold } from '@weasel-js/clock';
+import { useMemo, useState } from 'react';
 import { useStore } from 'zustand/react';
-import type { ClockRegistry } from '../clock/clockRegistry';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { LabStore } from '../state/store';
@@ -14,6 +14,7 @@ import {
   swapTrial as swapTrialOp,
 } from '../trial/trialOps';
 import type { LabCommands } from './LabContext';
+import { snapshotCommands } from './snapshotCommands';
 import type { TrialLayout } from './Workspace';
 
 /** What a lab's commands read besides its store. */
@@ -45,6 +46,7 @@ export function useStoreCommands(
 ): LabCommands {
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const mode = useStore(store, (s) => s.mode);
+  const [loadHolds] = useState(() => new Map<string, PlayheadHold>());
   return useMemo<LabCommands>(() => {
     const replaceTrials = (next: TrialRecord[]): void => {
       const currentById = new Map(store.getState().trials.map((w) => [w.id, w]));
@@ -109,16 +111,10 @@ export function useStoreCommands(
         }));
         const handle = clocks.get(id);
         // The lab's clock is every trial's on it, so resetting one leaves it.
-        if (handle !== clocks.lab) handle?.reset();
+        if (handle !== clocks.shared) handle?.reset();
       },
       savedSnapshots,
-      saveSnapshot: (trialId, name) => {
-        const taken = store.getState().savedSnapshots.filter((s) => s.trialId === trialId).length;
-        store.getState().saveSnapshot(trialId, name ?? `Snapshot ${taken + 1}`);
-      },
-      loadSnapshot: (trialId, snapshotId) => {
-        store.getState().loadSnapshot(snapshotId, trialId);
-      },
+      ...snapshotCommands(store, clocks, instruments, loadHolds),
       deleteSnapshot: (snapshotId) => {
         store.getState().deleteSnapshot(snapshotId);
       },
@@ -133,6 +129,7 @@ export function useStoreCommands(
     };
   }, [
     clocks,
+    loadHolds,
     instruments,
     focusedTrialId,
     focus,

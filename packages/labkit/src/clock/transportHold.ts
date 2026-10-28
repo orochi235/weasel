@@ -21,12 +21,12 @@ export interface TransportHoldStore {
 const stores = new WeakMap<TrialClock, TransportHoldStore>();
 
 /** The hold every transport over `clock` shares, opened on the rate the clock
- *  runs at, or at `1` forward for one that is paused. */
+ *  runs at, or at its `speed` forward for one that is paused. */
 export function transportHoldOf(clock: TrialClock): TransportHoldStore {
   const kept = stores.get(clock);
   if (kept) return kept;
   let hold: TransportHold = {
-    speed: Math.abs(clock.rate) || 1,
+    speed: Math.abs(clock.rate) || clock.speed,
     backward: clock.rate < 0,
     touched: false,
   };

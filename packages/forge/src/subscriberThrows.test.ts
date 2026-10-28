@@ -5,8 +5,6 @@ import { createAnswerBook } from './shell/answers';
 import { createStoryChanges } from './shell/storyChanges';
 import { onRevealInTree, revealInTree } from './shell/treeReveal';
 import { createTrialFrames } from './shell/trialFrames';
-import { createClock } from './timeline/clock';
-import { createTrialClocks } from './timeline/trialClocks';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -34,16 +32,6 @@ describe('a subscriber that throws does not stop the ones after it', () => {
   it('in the story changes', () => {
     const changes = createStoryChanges();
     afterAThrow(changes.subscribe, () => changes.emit('a.stories.tsx'));
-  });
-
-  it('in the trial clocks', () => {
-    const clocks = createTrialClocks();
-    afterAThrow(clocks.subscribe, () => clocks.publish('t', createClock({ duration: 1000 })));
-  });
-
-  it('in a story clock', () => {
-    const clock = createClock({ duration: 1000 });
-    afterAThrow(clock.subscribe, () => clock.play());
   });
 
   it('in the trial frames', () => {

@@ -10,12 +10,18 @@ export interface TransportControl {
   /** Unsigned, one of the clock's `rates` or whatever it opened at. */
   readonly speed: number;
   readonly backward: boolean;
-  /** The playhead within the current pass, ms. */
+  /** Whether anyone has worked the clock from a transport. */
+  readonly touched: boolean;
+  /** The shown time the current pass starts at: the clock's `origin`. */
+  readonly start: number;
+  /** The shown time, ms: `origin` plus the time within the current pass. */
   readonly playhead: number;
   /** ms per pass; for a run with no end, the time played so far. */
   readonly length: number;
   /** Whether the playhead can be moved and the direction flipped. */
   readonly scrubs: boolean;
+  /** Mark the clock as worked by hand, for a change made outside these actions. */
+  touch(): void;
   play(): void;
   pause(): void;
   toggle(): void;
@@ -23,7 +29,7 @@ export interface TransportControl {
   /** One offered rate faster (`1`) or slower (`-1`). */
   stepSpeed(direction: 1 | -1): void;
   setBackward(backward: boolean): void;
-  /** Move to `ms` within the current pass. */
+  /** Move to shown time `ms`, within the current pass. */
   seek(ms: number): void;
 }
 
@@ -31,8 +37,9 @@ export interface TransportControl {
  *  and where to keep a change to either. */
 export function transportControl(
   clock: TrialClock,
-  held: { speed: number; backward: boolean },
+  held: { speed: number; backward: boolean; touched?: boolean },
   hold: (next: { speed: number; backward: boolean }) => void,
+  touch: () => void = () => {},
 ): TransportControl {
   const finite = Number.isFinite(clock.duration) && clock.duration > 0;
   const passStart = finite ? clock.pass * clock.duration : 0;
@@ -44,9 +51,12 @@ export function transportControl(
     playing,
     speed: held.speed,
     backward: held.backward,
-    playhead: finite ? clock.phase * clock.duration : clock.elapsed,
+    touched: held.touched ?? false,
+    start: clock.origin,
+    playhead: clock.origin + (finite ? clock.phase * clock.duration : clock.elapsed),
     length: finite ? clock.duration : clock.elapsed,
     scrubs,
+    touch,
     play() {
       // A run played to the end starts over, the way a player's play does.
       if (clock.seekable && !held.backward && clock.ended) clock.seek(0);
@@ -78,8 +88,9 @@ export function transportControl(
     },
     seek(ms) {
       if (!scrubs) return;
-      if (ms >= clock.duration) clock.seek((clock.pass + 1) * clock.duration, 'end');
-      else clock.seek(passStart + Math.max(ms, 0));
+      const within = ms - clock.origin;
+      if (within >= clock.duration) clock.seek((clock.pass + 1) * clock.duration, 'end');
+      else clock.seek(passStart + Math.max(within, 0));
     },
   };
   return control;
