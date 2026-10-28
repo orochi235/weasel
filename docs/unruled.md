@@ -458,6 +458,17 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `over`, so with one a removal still vanishes. `exits` defaults to every removal but an untracked
   one. A node that comes back mid-exit returns from where its ghost was, at full opacity.
 
+- 2026-10-28: `useAnimator` and `useSimulation` take `clock?: ClockHandle` and then run no frame
+  loop of their own. The animator plays backward to a clock that goes back, but an animation that
+  ended during a scrub is gone and a later seek does not bring it back; one started while the clock
+  runs backward ends at once, as under `setTimeScale(-1)`. Changes made between clock frames still
+  get one frame from the animator's own loop, and clock frames are skipped while nothing is active.
+- 2026-10-28: A simulation on a clock takes one integrator step per `handle.step` ms (else
+  1000/60), so `ClockSpec.step` is also the integrator's period; `onTick` fires per step. Its clock
+  is meant to be `seekable: false`: time going back owes no steps and the nodes stay put, rather than
+  replaying from the start. Time stopped or settled owes none either, and changing `clock` restarts
+  a `stop()`ped simulation like a remount.
+
 ## ui, prefs, and theme
 
 - 2026-10-20 (overnight pass): `useRovingTabIndex` swaps Left and Right under right-to-left, in
@@ -551,6 +562,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   being dropped. A worklet voice is never dropped as `stale`.
 - 2026-10-18: Audio's `Scheduler.schedule` takes a fourth argument, `{ reportLate: false }`, so
   `onLate` stays quiet for a worklet voice: the scheduler reaching it late does not make it sound late.
+
+- 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the
+  runner (new `EffectRunner.seek(seconds)`) each clock frame. With a clock, `runner.play()`/`pause()`
+  set the clock's rate to `speed` or 0, and `runner.reset()` resets only the runner, which the next
+  clock frame moves back to the clock's time. A seek behind a running pass queues one more.
+- 2026-10-28: In a `direction: 'down'` rack a branch symbol is its row form mirrored across the
+  diagonal; `controlSide` takes `'left' | 'right'`, and a side on the axis the signal runs through
+  counts as the default. Hexagon, demux, fork and comparator turn into path outlines with no content
+  box; a turned diamond's second exit leaves by its side vertex.
 
 ## draw
 
