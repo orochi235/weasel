@@ -15,7 +15,7 @@ describe('openChartPrefs', () => {
   it('starts every leaf at its default', () => {
     expect(make().values()).toEqual({
       view: { gridVisible: false, gridSpacing: 12, snapToGrid: false, alignmentSnap: true, spacingSnap: true },
-      pipeline: { look: 'nodeGraph' },
+      pipeline: { look: 'nodeGraph', rackDirection: 'right' },
     });
   });
 

@@ -1083,7 +1083,11 @@ wires (`mainChain(pipeline)` returns it). Its `direction` is `'right'`
 signal enters at each stage's top and leaves at its bottom, which a reorder
 drags along vertically. `side` is `'below'` (default) or `'above'`; in a
 column, `'below'` hangs the side stages on the column's right and `'above'`
-on its left, and a collapsed skip's arc runs down the other edge.
+on its left, and a collapsed skip's arc runs down the other edge. A wire from
+a stage's main output into the side input of a stage further down the line,
+past at least one stage, leaves from a tap on the side stages' edge (a port
+named `~tap:<output>`), so it runs beside the stages between rather than
+through them; the editor and a run read it as the output it taps.
 
 `lanes` puts the lanes top down in the order their types first appear on the
 pipeline's ports, after any it is given in `lanes`. A stage stands

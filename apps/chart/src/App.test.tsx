@@ -101,6 +101,29 @@ describe('App', () => {
     expect(held(looks())).toEqual(['Rack']);
   });
 
+  it('turns the rack down a column from View › Rack Direction, which only Rack enables', () => {
+    mount();
+    choose('Mode', 'Pipeline');
+    const directions = () => {
+      act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+      const sub = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+        .find((el) => el.textContent?.startsWith('Rack Direction'))!;
+      act(() => { fireEvent.click(sub); });
+      return [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    };
+    const off = directions();
+    expect(off.map((r) => r.children[1]!.textContent)).toEqual(['Across', 'Down']);
+    expect(off.every((r) => r.getAttribute('aria-disabled') === 'true')).toBe(true);
+    cleanup();
+    chartPrefs().set('pipeline.look', 'rack');
+    mount();
+    choose('Mode', 'Pipeline');
+    const on = directions();
+    expect(on.map((r) => r.getAttribute('aria-disabled'))).not.toContain('true');
+    act(() => { fireEvent.click(on[1]!); });
+    expect(chartPrefs().get('pipeline.rackDirection')).toBe('down');
+  });
+
   it('opens Preferences from View in chart mode', () => {
     mount();
     expect(screen.queryByRole('dialog')).toBeNull();

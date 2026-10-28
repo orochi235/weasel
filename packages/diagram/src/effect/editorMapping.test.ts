@@ -73,6 +73,28 @@ describe('editorScene', () => {
     expect(data.edges.map((e) => wireOf(edgeIdOf(e)))).toEqual(ensureWireIds(doc).pipeline.wires.map((w) => w.id));
   });
 
+  it('maps a wire rack starts at a tap back to its wire', () => {
+    const tapped: EffectDoc = {
+      pipeline: {
+        stages: [
+          { id: 'src', title: 'Source', kind: 'source', outputs: [{ id: 'out', type: 'image' }] },
+          { id: 'blur', title: 'Blur', inputs: [{ id: 'image', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] },
+          { id: 'mix', title: 'Mix', inputs: [{ id: 'a', type: 'image' }, { id: 'b', type: 'image' }], outputs: [] },
+        ],
+        wires: [
+          { id: 'line', from: { stage: 'src', port: 'out' }, to: { stage: 'blur', port: 'image' } },
+          { id: 'main', from: { stage: 'blur', port: 'out' }, to: { stage: 'mix', port: 'a' } },
+          { id: 'side', from: { stage: 'src', port: 'out' }, to: { stage: 'mix', port: 'b' } },
+        ],
+      },
+      places: {},
+    };
+    const { data, wireOf } = editorScene(tapped, 'rack');
+    const side = data.edges.find((e) => e.toPort === 'b')!;
+    expect(side.fromPort).toBe('~tap:out');
+    expect(wireOf(edgeIdOf(side))).toBe('side');
+  });
+
   it('hands lanes the doc’s lane order over the options’ own', () => {
     const typed: EffectDoc = {
       ...doc,

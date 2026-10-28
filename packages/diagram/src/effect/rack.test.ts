@@ -151,6 +151,43 @@ describe('rack', () => {
   });
 });
 
+/** src feeds blur on the line, and composite's side input past blur; blur feeds composite's main input. */
+const TAPPED: EffectPipeline = {
+  stages: [
+    io('src', { inputs: [] }), io('blur'),
+    io('composite', { inputs: [{ id: 'base', type: 'image' }, { id: 'top', type: 'image' }] }),
+    io('out', { outputs: [] }),
+  ],
+  wires: [
+    w(['src', 'out'], ['blur', 'in']), w(['blur', 'out'], ['composite', 'base']),
+    w(['src', 'out'], ['composite', 'top']), w(['composite', 'out'], ['out', 'in']),
+  ],
+};
+
+describe('rack taps', () => {
+  const ports = (data: Data, id: string) => data.nodes.find((n) => n.id === id)!.ports!;
+
+  it('starts a wire into a side input past a stage at a tap on its source\'s side edge, so it runs beside the line', () => {
+    const { data, exits } = rack(TAPPED);
+    expect(danglingEnds(data)).toEqual([]);
+    const top = data.edges.find((e) => e.toPort === 'top')!;
+    expect(top).toMatchObject({ from: 'src', fromPort: '~tap:out', to: 'composite' });
+    expect(ports(data, 'src').find((p) => p.id === '~tap:out')).toMatchObject({ at: { v: 1 }, normal: { x: 0, y: 1 } });
+    expect([...exits!.values()]).toEqual([{ stage: 'src', port: 'out' }]);
+    expect(data.edges.find((e) => e.to === 'blur')!.fromPort).toBe('out');
+  });
+
+  it('keeps a wire into the next stage\'s side input on the main output, with nothing between to cross', () => {
+    const { data } = rack({ ...TAPPED, wires: [w(['src', 'out'], ['composite', 'base']), w(['src', 'out'], ['composite', 'top'])] });
+    expect(data.edges.map((e) => e.fromPort)).toEqual(['out', 'out']);
+  });
+
+  it('puts the tap on the side stages\' edge of a column under direction: down', () => {
+    const { data } = rack(TAPPED, { direction: 'down' });
+    expect(ports(data, 'src').find((p) => p.id === '~tap:out')).toMatchObject({ at: { u: 1 }, normal: { x: 1, y: 0 } });
+  });
+});
+
 describe('rack order', () => {
   it('names the stages on the line, in order, as the sequence a reorder drags along', () => {
     expect(rack(SKIP).order).toEqual({ axis: 'x', items: ['src', 'blur', 'mix', 'out'].map((id) => ({ id })) });

@@ -36,6 +36,10 @@ export interface RackOptions extends RunRowOptions, LookThemeOptions {
 
 const SKIP_OUT = '~skip-out';
 const SKIP_IN = '~skip-in';
+const TAP = '~tap:';
+
+/** The port a rack edge's end stands for: a tap on a main output's side edge is that output. */
+export const untapped = (port: string): string => (port.startsWith(TAP) ? port.slice(TAP.length) : port);
 
 /** One wire the rack draws: a pipeline wire, or one made by collapsing a decision. */
 interface RackWire {
@@ -126,6 +130,19 @@ function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[]
   return wires;
 }
 
+/** Moves the start of a wire from a main output to a side input further down the line, past at least one stage, to
+ *  a tap on its stage's side edge, so the wire runs beside the stages between rather than through them. A decision
+ *  draws its own ports, so `boxed` keeps its wires where they are. */
+function tapped(wires: readonly RackWire[], line: Line, boxed: (stage: string) => boolean): RackWire[] {
+  return wires.map((w) => {
+    const from = line.at.get(w.from.stage);
+    const to = line.at.get(w.to.stage);
+    const across = from !== undefined && to !== undefined && to - from > 1 && !w.arc && boxed(w.from.stage)
+      && w.from.port === line.mainOut.get(w.from.stage) && w.to.port !== line.mainIn.get(w.to.stage);
+    return across ? { ...w, from: { stage: w.from.stage, port: TAP + w.from.port }, exit: w.exit ?? w.from } : w;
+  });
+}
+
 function lineOf(pipeline: EffectPipeline, ordered: readonly string[], chain: readonly string[]): Line {
   const { mainIn, mainOut } = chainLinks(pipeline, ordered);
   return { at: new Map(chain.map((id, i) => [id, i])), mainIn, mainOut };
@@ -146,6 +163,9 @@ function portsOf(stage: EffectStage, line: Line, wires: readonly RackWire[], fra
     if (p.id === line.mainOut.get(stage.id)) out.push(typed(p, frame.anchor(1, 0.5)));
     else side.push(p);
   }
+  const main = portOn(stage, line.mainOut.get(stage.id) ?? '');
+  const taps = new Set(wires.flatMap((w) => (w.from.stage === stage.id && w.from.port.startsWith(TAP) ? [w.from.port] : [])));
+  if (main !== undefined) for (const id of taps) side.push({ ...main, id });
   out.push(...spreadAt(frame, side, near));
   const type = portOn(stage, line.mainOut.get(stage.id) ?? line.mainIn.get(stage.id) ?? '')?.type;
   const arc = (id: string, along: number): PortSpec => ({ id, at: frame.anchor(along, far), ...(type !== undefined ? { type } : {}) });
@@ -170,8 +190,9 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const skips = options.collapseSkips === false ? [] : skipDecisions(pipeline, ordered);
   const gone = new Set(skips.map((s) => s.decision.id));
   const chain = ordered.filter((id) => !gone.has(id));
-  const wires = rackWires(pipeline, skips);
   const line = lineOf(pipeline, ordered, chain);
+  const decisions = new Set(stages.filter((st) => kindOf(st) === 'decision').map((st) => st.id));
+  const wires = tapped(rackWires(pipeline, skips), line, (id) => !decisions.has(id));
 
   const kept = stages.filter((s) => !gone.has(s.id));
   const flow = { direction: down ? 'down' : 'right', controlSide: down ? (below ? 'right' : 'left') : (below ? 'bottom' : 'top') } as const;

@@ -4,7 +4,7 @@ import { drawableWires, type EffectLookResult } from './draw';
 import { ensureWireIds } from './edit';
 import { lanes, type LanesOptions } from './lanes';
 import { nodeGraph, type NodeGraphOptions } from './nodeGraph';
-import { rack, type RackOptions } from './rack';
+import { rack, untapped, type RackOptions } from './rack';
 import type { EffectDoc, EffectWire } from './types';
 
 /** The looks an editor draws a doc in. */
@@ -34,7 +34,7 @@ export interface EditorScene extends EffectLookResult {
 }
 
 const endsKey = (from: EffectWire['from'], to: EffectWire['to']) => JSON.stringify([from.stage, from.port, to.stage, to.port]);
-const edgeEnds = (e: DataEdge) => endsKey({ stage: e.from, port: e.fromPort ?? '' }, { stage: e.to, port: e.toPort ?? '' });
+const edgeEnds = (e: DataEdge) => endsKey({ stage: e.from, port: untapped(e.fromPort ?? '') }, { stage: e.to, port: e.toPort ?? '' });
 
 /** The look's drawing of the doc's pipeline. Under `nodeGraph` every placed
  *  stage is pinned at its place, so layered layout places only the stages
