@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '../Button';
 import { CodeBlock } from '../CodeBlock';
 import { Tab, TabList, TabPanel, Tabs } from '../Tabs';
+import type { AssetExport } from './assetExport';
 import type { SchemaRoot } from './schemaEdit';
 import type { PrefTypes } from './types';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
@@ -34,9 +35,11 @@ function Submit({ changes, literal, onSubmit }: { changes: readonly SchemaChange
 /**
  * The schema as a TypeScript literal, and the list of changes since the baseline, a tab each. `changesText` is the list where
  * `changes` are not this schema's alone: an editor of several assets lists every one's, and submits them all.
+ * `exported` is what the asset exports in place of the literal, drawn and submitted as it is: a JSON document has its tab.
  */
-export function ExportPanel({ schema, types, changes, changesText, onSubmit }: { schema: SchemaRoot; types?: PrefTypes; changes: readonly SchemaChange[]; changesText?: string; onSubmit?: SubmitChanges }) {
-  const literal = useMemo(() => printSchema(schema, types), [schema, types]);
+export function ExportPanel({ schema, types, exported, changes, changesText, onSubmit }: { schema: SchemaRoot; types?: PrefTypes; exported?: AssetExport; changes: readonly SchemaChange[]; changesText?: string; onSubmit?: SubmitChanges }) {
+  const literal = useMemo(() => exported?.text ?? printSchema(schema, types), [exported, schema, types]);
+  const json = exported?.language === 'json';
   const list = useMemo(() => (changesText ?? formatChanges(changes)) || 'No changes.', [changes, changesText]);
   const [tab, setTab] = useState<'literal' | 'changes'>('literal');
   return (
@@ -44,7 +47,7 @@ export function ExportPanel({ schema, types, changes, changesText, onSubmit }: {
     <Tabs className={s.exportBody} selectedKey={tab} onSelectionChange={(key) => setTab(key as typeof tab)}>
       <div className={s.exportHead}>
         <TabList aria-label="Export" className={s.exportTabs}>
-          <Tab id="literal" className={s.exportTab}>Literal</Tab>
+          <Tab id="literal" className={s.exportTab}>{json ? 'JSON' : 'Literal'}</Tab>
           <Tab id="changes" className={s.exportTab}>Changes</Tab>
         </TabList>
         <div className={s.paneTools}>
@@ -55,7 +58,7 @@ export function ExportPanel({ schema, types, changes, changesText, onSubmit }: {
       </div>
       {/* Both stay mounted, so a tab comes back scrolled to where it was left. */}
       <TabPanel id="literal" shouldForceMount className={s.exportPane}>
-        <CodeBlock code={literal} language="tsx" className={s.code} data-testid="schema-literal" />
+        <CodeBlock code={literal} language={exported?.language ?? 'tsx'} className={s.code} data-testid="schema-literal" />
       </TabPanel>
       <TabPanel id="changes" shouldForceMount className={s.exportPane}>
         <pre className={`${s.code} ${s.changeList}`}>{list}</pre>
