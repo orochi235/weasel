@@ -35,7 +35,7 @@ function open(spec: ClockCapability, at: ClockPosition | undefined): Held {
  * opens at `seed` when it is the first of the mount, or when `seed` changed
  * while there was none (a snapshot load turning it back on); else fresh.
  */
-function useOwnClock(
+function useSeededClock(
   live: boolean,
   seed: ClockPosition | undefined,
   make: (at: ClockPosition | undefined) => Held | null,
@@ -94,7 +94,7 @@ export function useTrialClockSetup({ instrument, config, record, store, target }
     );
 
   const declaredSpec = useLatest(spec);
-  const held = useOwnClock(spec !== null, record.clock, (at) => {
+  const held = useSeededClock(spec !== null, record.clock, (at) => {
     const declared = declaredSpec.current;
     return declared ? open(declared, at) : null;
   });
