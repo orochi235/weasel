@@ -8,11 +8,12 @@ const NO_SUBSCRIBE = () => () => {};
 
 /**
  * A trial's clock: `trialId`'s, else the one of the trial this renders inside,
- * else the lab's focused trial's, else the lab's own. `null` when there is none.
+ * else the lab's focused trial's, else the lab's own. `null` when there is none,
+ * and for a `trialId` of `null`, which subscribes to no clock.
  * Re-renders on rate, seek and loop changes, never per frame — read `elapsed`
  * per frame through {@link useClockFrame}.
  */
-export function useTrialClock(trialId?: string): TrialClock | null {
+export function useTrialClock(trialId?: string | null): TrialClock | null {
   const clock = useTrialClockHandle(trialId)?.clock ?? null;
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => clock?.subscribe(bump), [clock]);
@@ -30,12 +31,13 @@ export function useTrialMix<M extends ClockedMix = ClockedMix>(trialId?: string)
 
 /** The handle behind {@link useTrialClock}, resolved the same way; re-renders
  *  only when which handle that is changes. */
-export function useTrialClockHandle(trialId?: string): TrialClockHandle | null {
+export function useTrialClockHandle(trialId?: string | null): TrialClockHandle | null {
   const registry = useContext(ClockRegistryContext);
   const own = useContext(TrialClockContext);
   const lab = useLabCommandsOptional();
   useSyncExternalStore(registry?.subscribe ?? NO_SUBSCRIBE, () => (registry ? resolve() : own));
   function resolve() {
+    if (trialId === null) return null;
     if (trialId !== undefined) return registry?.get(trialId) ?? null;
     if (own) return own;
     const focused = lab?.focusedTrialId;

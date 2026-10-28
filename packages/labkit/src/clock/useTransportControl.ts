@@ -9,9 +9,10 @@ const NO_HOLD: TransportHold = { speed: 1, backward: false, touched: false };
 /**
  * The transport control over a trial's clock, resolved as {@link useTrialClock};
  * `null` when there is none. Re-renders on every frame the clock moves, and each
- * action marks the clock as worked by hand before it acts.
+ * action marks the clock as worked by hand before it acts. A `trialId` of `null`
+ * resolves no clock, for a caller that needs the control only some of the time.
  */
-export function useTransportControl(trialId?: string): TransportControl | null {
+export function useTransportControl(trialId?: string | null): TransportControl | null {
   const clock = useTrialClock(trialId);
   const handle = useTrialClockHandle(trialId);
   const [, frame] = useReducer((n: number) => n + 1, 0);

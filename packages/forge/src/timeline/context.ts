@@ -65,11 +65,12 @@ export function usePlayhead(): number {
 const validRate = (rate: number): boolean => Number.isFinite(rate) && rate > 0;
 
 /** Play, pause and speed through the trial's transport, so the story and the transport share one speed, or on the
- *  clock itself where no transport works it. */
+ *  clock itself where no transport works it. A transport over another clock goes unread, so its frames re-render
+ *  nothing here. */
 function usePlayMoves(handle: ClockHandle): PlayMoves {
-  const control = useTransportControl();
   const resolved = useTrialClockHandle();
-  if (control === null || resolved !== handle) return ownMoves(handle.clock);
+  const control = useTransportControl(resolved === handle ? undefined : null);
+  if (control === null) return ownMoves(handle.clock);
   return { speed: () => control.speed, play: control.play, pause: control.pause, setSpeed: control.setSpeed };
 }
 

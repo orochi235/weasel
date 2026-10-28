@@ -1,7 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
-import { createClock } from '@weasel-js/clock';
+import { type Clock, createClock } from '@weasel-js/clock';
+import { type Instrument, Lab } from '@weasel-js/labkit';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
+import { installResizeObserver } from '../shell/labHarness';
 import { clockSpecOf } from './clockSpec';
 import { ClockContext, useTimeline } from './context';
 import { shownTime } from './shown';
@@ -84,5 +88,52 @@ describe('a story clock', () => {
     expect(hook.result.current.span).toEqual({ start: -500, end: 3500 });
     act(() => hook.result.current.setSpan(null));
     expect(hook.result.current.span).toEqual({ start: 0, end: 2000 });
+  });
+});
+
+describe('a story clock inside a lab', () => {
+  installResizeObserver();
+
+  it("does not re-render on the focused trial's frames when the clock is the story's own", async () => {
+    let trialClock: Clock | null = null;
+    const timed: Instrument = {
+      name: 'Timed',
+      defaultConfig: () => ({}),
+      initialState: () => ({}),
+      clock: { duration: 60_000 },
+      render: (ctx) => {
+        trialClock = ctx.trial.clock ?? null;
+        return null;
+      },
+    };
+    let renders = 0;
+    function IndexEntry() {
+      useTimeline();
+      renders++;
+      return null;
+    }
+    const own = createClock(clockSpecOf({ duration: 1000 }));
+    const index = () => (
+      <ClockContext.Provider value={own}>
+        <IndexEntry />
+      </ClockContext.Provider>
+    );
+    await renderSettled(
+      <Lab
+        instruments={[timed]}
+        defaultInstrument="Timed"
+        labChrome={[{ id: 'index', region: 'header', render: index }]}
+      />,
+      { wrapper: withIcons },
+    );
+    const clock = trialClock as Clock | null;
+    if (!clock) throw new Error('the trial made no clock');
+    act(() => {
+      clock.rate = 1;
+    });
+    const before = renders;
+    for (let t = 0; t <= 160; t += 16) act(() => clock.sync(t));
+    expect(clock.elapsed).toBeGreaterThan(0);
+    expect(renders).toBe(before);
   });
 });
