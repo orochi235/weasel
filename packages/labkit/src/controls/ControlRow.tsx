@@ -10,7 +10,6 @@ import {
   prefAliasName,
   prefIsCompound,
 } from '@weasel-js/prefs';
-import { ListEditor } from '@weasel-js/ui/components/ListEditor';
 import {
   entriesDisabled,
   entryDisabledAt,
@@ -22,6 +21,7 @@ import {
   prefDrawsNoControl,
   prefListIsText,
   prefListTexts,
+  PrefTextList,
   withRowControl,
 } from '@weasel-js/ui/components/Prefs';
 import {
@@ -146,7 +146,8 @@ function CompoundControl({
     const texts = prefListTexts(value);
     const ctx = { path, disabledAt: inside.disabledAt, entryAt: inside.entryAt };
     return (
-      <ListEditor
+      <PrefTextList
+        pref={list}
         aria-label={list.item.name || label}
         value={texts}
         onChange={onChange}

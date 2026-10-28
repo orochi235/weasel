@@ -126,6 +126,21 @@ describe('TokenField', () => {
     expect(onChange).toHaveBeenLastCalledWith([{ value: 'a', label: 'Apple' }, { value: 'v', label: 'Avocado' }]);
   });
 
+  it('stops removing at minItems and adding at maxItems', () => {
+    renderWithIcons(<TokenField aria-label="Tag" value={['a', 'b']} onChange={() => {}} minItems={2} maxItems={2} />);
+    expect(screen.queryByRole('button', { name: 'Remove a' })).toBeNull();
+    expect((field() as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it('opens no editor on a locked token, which can still be removed', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<TokenField aria-label="Tag" value={['a', 'b']} onChange={onChange} locked={(i) => i === 0} />);
+    fireEvent.click(chip('a'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove a' }));
+    expect(onChange).toHaveBeenLastCalledWith(['b']);
+  });
+
   it('takes no input when disabled', () => {
     renderWithIcons(<TokenField aria-label="Tag" value={['a']} onChange={() => {}} disabled />);
     expect((field() as HTMLInputElement).disabled).toBe(true);

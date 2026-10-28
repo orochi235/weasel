@@ -26,10 +26,16 @@ export interface TokenFieldProps<T = string> {
   problem?: (tokens: readonly T[], index: number) => string | undefined;
   /** Tokens can be moved: dragged, or Alt+Left / Alt+Right on a focused one. */
   reorder?: boolean;
+  /** Tokens cannot be removed at this many. */
+  minItems?: number;
+  /** Tokens cannot be added at this many. */
+  maxItems?: number;
   /** Shown in the text field while there are no tokens. */
   placeholder?: string;
   /** Takes no input: nothing is typed, edited, moved or removed. */
   disabled?: boolean;
+  /** Whether the token at `index` opens no editor. It can still be moved and removed. */
+  locked?: (index: number) => boolean;
   /** Names the field for assistive tech; each token is named by its label. */
   'aria-label'?: string;
   className?: string;
@@ -61,8 +67,11 @@ export function TokenField<T>({
   renderEditor,
   problem,
   reorder = false,
+  minItems = 0,
+  maxItems = Infinity,
   placeholder,
   disabled = false,
+  locked,
   'aria-label': ariaLabel,
   className,
 }: TokenFieldProps<T>) {
@@ -71,6 +80,9 @@ export function TokenField<T>({
   const focus = useTokenFocus();
   const container = useRef<HTMLDivElement | null>(null);
   const movable = reorder && !disabled;
+  const removable = !disabled && value.length > minItems;
+  const full = value.length >= maxItems;
+  const edit = (at: number): void => { if (!disabled && locked?.(at) !== true) setEditing(at); };
 
   const items = useMemo((): ReorderItem[] => value.map((_, i) => ({ id: String(i), label: '' })), [value]);
   const line = useMemo(() => wrapLine(() => [...(container.current?.querySelectorAll(':scope > [data-token]') ?? [])]), []);
@@ -84,18 +96,19 @@ export function TokenField<T>({
       onChange(movedEntry(value, from, target));
       focus.request(target > from ? target - 1 : target);
     },
-    onPress: (id) => setEditing(Number(id)),
+    onPress: (id) => edit(Number(id)),
   });
 
   const commit = (): void => {
     const text = draft.trim();
-    if (text === '') return;
+    if (text === '' || full) return;
     const token = create(text);
     if (token === undefined) return;
     onChange([...value, token]);
     setDraft('');
   };
   const remove = (at: number): void => {
+    if (!removable) return;
     onChange(value.filter((_, i) => i !== at));
     focus.request(value.length === 1 ? 'input' : Math.max(0, at - 1));
   };
@@ -161,8 +174,8 @@ export function TokenField<T>({
               grade={wrong === undefined ? undefined : 'danger'}
               aria-label={wrong === undefined ? name : `${name}, ${wrong}`}
               tooltip={wrong === undefined ? tip : <>{tip}{tip != null && <br />}{wrong}</>}
-              onClick={disabled ? undefined : () => setEditing(i)}
-              onRemove={disabled ? undefined : () => remove(i)}
+              onClick={disabled ? undefined : () => edit(i)}
+              onRemove={removable ? () => remove(i) : undefined}
               removeLabel={`Remove ${name}`}
               labelProps={{
                 onKeyDown: (e) => onChipKey(e, i),
@@ -181,7 +194,7 @@ export function TokenField<T>({
         aria-label={ariaLabel ? `Add to ${ariaLabel}` : 'Add'}
         value={draft}
         placeholder={value.length === 0 ? placeholder : undefined}
-        disabled={disabled}
+        disabled={disabled || full}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={onInputKey}
         onBlur={commit}
