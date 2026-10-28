@@ -4,7 +4,7 @@
  * call to `fit()` — each applied only while the view is still the last fit,
  * except `fit()`, which takes the view back.
  */
-import { RIGID_POSE_COMPOSITION, worldPosesOf, fitViewToBounds, useLatest, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, worldPosesOf, clampView, fitViewToBounds, useLatest, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { isBodyOrRegion } from './bodyNode';
 import { diagramEdgeOf } from './edgeTrait';
@@ -16,7 +16,12 @@ export interface DiagramFit {
   maxScale?: number;
   anchor?: 'center' | 'start';
   padding?: number;
+  /** A world rect every fit is kept inside, as `SceneCanvas` keeps every view inside its `viewBounds`. */
+  bounds?: Bounds;
 }
+
+/** The space a fit keeps clear around a diagram, in CSS pixels, and a bounded view's margin in world units. */
+export const DEFAULT_FIT_PADDING = 16;
 
 type Boxes = readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[];
 
@@ -52,12 +57,22 @@ export function fitDiagram(
 ): View | undefined {
   const bounds = diagramBounds(specs, extra);
   if (bounds === null) return undefined;
-  return fitViewToBounds(bounds, size, { x: 0, y: 0, scale: { x: 1, y: 1 } }, {
+  const view = fitViewToBounds(bounds, size, { x: 0, y: 0, scale: { x: 1, y: 1 } }, {
     maxScale: fit.maxScale ?? 1,
     ...(fit.minScale !== undefined ? { minScale: fit.minScale } : {}),
     ...(fit.anchor !== undefined ? { anchor: fit.anchor } : {}),
-    ...(fit.padding !== undefined ? { padding: fit.padding } : {}),
+    padding: fit.padding ?? DEFAULT_FIT_PADDING,
   });
+  // Clamped here as the canvas would clamp it, so the view the canvas holds is the fit itself, and
+  // a later fit still sees the view as untouched.
+  return fit.bounds === undefined ? view : clampView(view, fit.bounds, size);
+}
+
+/** The world rect a bounded diagram's view stays inside: every node box, group box and route
+ *  point, and `extra`, with `padding` world units around them; `undefined` for an empty diagram. */
+export function diagramViewBounds(specs: Boxes, padding: number, extra?: Bounds): Bounds | undefined {
+  const b = diagramBounds(specs, extra);
+  return b === null ? undefined : { x: b.x - padding, y: b.y - padding, width: b.width + 2 * padding, height: b.height + 2 * padding };
 }
 
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -90,13 +105,16 @@ export function useDiagramFit(args: {
   fit: DiagramFit;
   /** Further bounds every fit takes in, such as the pages'. */
   extra: Bounds | undefined;
+  /** When new specs refit a view still on its last fit: only once they run past it (`'overflow'`,
+   *  the default), or on every change (`'always'`). */
+  refit?: 'overflow' | 'always';
 }): DiagramFitting {
   const { canvasRef, specs, controlled, size, fit, extra } = args;
   // A filling canvas is 0 × 0 until measured, and no box to fit into.
   const unsized = size.width === 0 || size.height === 0;
   const defaultView = useMemo(
     () => (controlled || unsized ? undefined : fitDiagram(specs, size, fit, extra)),
-    // A later `specs` is the overflow check's to answer.
+    // A later `specs` is the refit check's to answer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [controlled, unsized, size.width, size.height, fit.minScale, fit.maxScale, fit.anchor, fit.padding, extra],
   );
@@ -104,7 +122,7 @@ export function useDiagramFit(args: {
   const [later, setLater] = useState<{ view: View | undefined; over: View | undefined } | null>(null);
   const target = later !== null && later.over === defaultView ? later.view : defaultView;
   const fitted = useRef(target);
-  const opts = useLatest({ controlled, unsized, size, fit, extra, defaultView, current: args.current });
+  const opts = useLatest({ controlled, unsized, size, fit, extra, defaultView, current: args.current, refit: args.refit ?? 'overflow' });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -122,10 +140,11 @@ export function useDiagramFit(args: {
       first.current = false;
       return;
     }
-    const { controlled: c, unsized: u, size: box, fit: f, extra: more, defaultView: over } = opts.current;
+    const { controlled: c, unsized: u, size: box, fit: f, extra: more, defaultView: over, refit } = opts.current;
     const canvas = canvasRef.current;
     const bounds = diagramBounds(specs, more);
-    if (c || u || canvas === null || bounds === null || inView(bounds, canvas.getView(), box)) return;
+    if (c || u || canvas === null || bounds === null) return;
+    if (refit === 'overflow' && inView(bounds, canvas.getView(), box)) return;
     setLater({ view: fitDiagram(specs, box, f, more), over });
   }, [specs, canvasRef, opts]);
 

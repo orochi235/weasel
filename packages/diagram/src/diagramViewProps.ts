@@ -206,6 +206,14 @@ export interface DiagramViewProps {
   /** Space kept clear around the diagram by the fit, in CSS pixels.
    *  Default 16. */
   fitPadding?: number;
+  /** Keep the view on the diagram: panning and zooming stop where the view would show more than
+   *  the diagram and `fitPadding` world units around it, and a view showing more than all of it
+   *  centers it. Unset, the plane pans without end. */
+  bounded?: boolean;
+  /** When new specs refit a view still on its last fit: only once they run past what it shows
+   *  (`'overflow'`, the default), or on every change (`'always'`), so the diagram stays fitted
+   *  as it grows and shrinks. A view panned or zoomed off its fit is never refitted. */
+  refit?: 'overflow' | 'always';
   /** What the canvas paints behind the diagram. Unset, it is transparent. */
   background?: Paint;
   /** Sheets painted under the diagram, one filled rect per page; `diagramPages(data)`

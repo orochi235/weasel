@@ -1,9 +1,10 @@
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { View } from '@weasel-js/core';
+import { clampView, type View } from '@weasel-js/core';
 import { createRef } from 'react';
 import { DiagramView, fitDiagram, type DiagramViewApi } from './DiagramView';
+import { DEFAULT_FIT_PADDING, diagramViewBounds } from './diagramFit';
 import type { LayoutPlanner } from './layout';
 import { diagramScene, type DiagramData } from './fromData';
 
@@ -98,6 +99,29 @@ describe('DiagramView refit on new specs', () => {
       rerender(<DiagramView specs={withB(500)} width={800} height={300} onViewChange={onViewChange} />);
     });
     expect(views.length).toBe(count);
+  });
+
+  it('fits again on every change with refit="always", while the view is still its fit', async () => {
+    const views: View[] = [];
+    const onViewChange = (v: View) => views.push(v);
+    const { rerender } = render(<DiagramView specs={SPECS} width={800} height={300} refit="always" onViewChange={onViewChange} />);
+    await act(async () => {
+      rerender(<DiagramView specs={withB(500)} width={800} height={300} refit="always" onViewChange={onViewChange} />);
+    });
+    expect(views.at(-1)).toEqual(fitDiagram(withB(500), { width: 800, height: 300 }));
+  });
+
+  it('stops a pan at the diagram and its padding when bounded', async () => {
+    const views: View[] = [];
+    const { container } = render(<DiagramView specs={SPECS} width={300} height={300} minScale={1} bounded onViewChange={(v) => views.push(v)} />);
+    for (let i = 0; i < 20; i++) {
+      await act(async () => {
+        container.querySelector('canvas')!.dispatchEvent(new WheelEvent('wheel', { deltaX: 400, bubbles: true, cancelable: true }));
+      });
+    }
+    const v = views.at(-1)!;
+    expect(v.x + 300 / v.scale.x).toBeCloseTo(640 + DEFAULT_FIT_PADDING);
+    expect(clampView(v, diagramViewBounds(SPECS, DEFAULT_FIT_PADDING)!, { width: 300, height: 300 })).toBe(v);
   });
 
   it('fits on fit(), even after the user moved the view', async () => {
