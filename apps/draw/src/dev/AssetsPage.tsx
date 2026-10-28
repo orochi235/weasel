@@ -16,9 +16,9 @@ const appDrawn: PrefRenderer = ({ pref }) => <span className={s.appDrawn}>{pref.
 const KINDS: CustomKinds = {
   ...Object.fromEntries(DRAW_LEAF_KINDS.map((kind) => [kind, {}])),
   'registry-enum': {
-    default: { kind: 'string', name: 'Default', description: 'The value before anything is stored.', default: '' },
-    source: { kind: 'string', name: 'Source', description: "Key into the modal's registryEnumSources.", default: '', required: true },
-    control: { kind: 'enum', name: 'Control', description: 'Which control draws it.', default: undefined, clearable: true,
+    default: { kind: 'string', name: 'Default', description: 'Its value until one is stored.', default: '' },
+    source: { kind: 'string', name: 'Source', description: "Which of the preferences modal's registryEnumSources lists its options.", default: '', required: true },
+    control: { kind: 'enum', name: 'Control', description: 'Which control edits it.', default: undefined, clearable: true,
       options: [{ value: 'select', label: 'select' }, { value: 'radio', label: 'radio' }] },
   },
   data: {},

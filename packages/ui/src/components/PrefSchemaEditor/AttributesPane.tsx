@@ -217,15 +217,15 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     ...(shared.name ? { name: { ...shared.name, kind: NAME_KIND } as PrefLeaf } : {}),
     ...(shared.description ? { description: shared.description } : {}),
     ...(keyed ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as PrefLeaf } : {}),
-    ...(keyed ? { [PATH]: { kind: PATH_KIND, name: 'Path', description: 'Where its value is stored now: its key under each group above it.', default: '' } as PrefLeaf } : {}),
-    ...(leaf ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as PrefLeaf } : {}),
+    ...(keyed ? { [PATH]: { kind: PATH_KIND, name: 'Path', description: 'Where its value is stored: its key, under the key of each group around it.', default: '' } as PrefLeaf } : {}),
+    ...(leaf ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of value it holds, which decides the control that edits it.', default: '' } as PrefLeaf } : {}),
     ...Object.fromEntries(Object.entries(shared).filter(([k]) => k !== 'name' && k !== 'description')),
     ...(Object.keys(own).length > 0 ? { [OWN]: { name: agg.kind === undefined ? 'group' : agg.kind ?? 'Common', children: own } } : {}),
     ...(item && Object.keys(entry).length > 0 ? {
       [ENTRY]: {
         name: 'Entry',
         children: {
-          $kind: { kind: ENTRY_KIND, name: 'Kind', description: 'What each entry is: a kind one control edits, or a type declared in code.', default: '' } as PrefLeaf,
+          $kind: { kind: ENTRY_KIND, name: 'Kind', description: 'What each entry is: a plain kind one control edits, or a type declared in code.', default: '' } as PrefLeaf,
           ...entry,
         },
       },
