@@ -1,6 +1,5 @@
 import { Badge, type BadgeProps } from '@weasel-js/ui/components/Badge';
 import { Button } from '@weasel-js/ui/components/Button';
-import { Code } from '@weasel-js/ui/components/Code';
 import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import s from '../RegistryInspector.module.css';
 import { BUNDLE_BADGE_PROPS, KIND_BADGE_PROPS } from '../badgeTokens';
@@ -10,10 +9,8 @@ export function KindBadge({ label }: { label: string }) {
   return <Badge {...(KIND_BADGE_PROPS as BadgeProps)}>{label}</Badge>;
 }
 
-export function BundleBadge({ id, label }: { id: string; label?: string }) {
-  const props = (BUNDLE_BADGE_PROPS as Record<string, Omit<BadgeProps, 'children'>>)[id];
-  if (!props) return <Code>{label ?? id}</Code>;
-  return <Badge {...(props as BadgeProps)}>{label ?? id}</Badge>;
+export function BundleBadge({ label, atom }: { label: string; atom: boolean }) {
+  return <Badge {...(BUNDLE_BADGE_PROPS[atom ? 'atom' : 'bundle'] as BadgeProps)}>{label}</Badge>;
 }
 
 /** Navigate to any entry in the inspector. The resolver in `RegistryInspector`

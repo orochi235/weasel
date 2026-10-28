@@ -32,7 +32,6 @@
 .leafBadge { --badge-font-size: calc(var(--wzl-font-size-2xs) - 1px); --badge-pad-y: 1px; transform: scale(0.85); transform-origin: right center; }
 
 .detailHeading { margin: 0 0 var(--wzl-space-6); font-size: calc(var(--wzl-font-size-xl) - 1px); }
-.diffSection { margin-top: var(--wzl-space-8); }
 .routeBadge { display: inline-flex; align-items: center; gap: var(--wzl-space-1); margin-right: var(--wzl-space-3); }
 
 .phaseGroup { display: inline-flex; align-items: center; gap: var(--wzl-space-1); }

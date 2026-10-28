@@ -61,30 +61,18 @@ export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntr
   return out;
 }
 
-/** What each bundle passes as `defaultTools` beside `features={['draw']}`,
- *  which brings select and hand itself. */
-export const BUNDLE_DEFAULT_TOOLS: Record<BundleEntry['id'], readonly Weasel.BuiltinToolId[]> = {
-  minimal: [],
-  // No `pencil`: freehand is a specialist instrument, not part of the
-  // everyday shape-drawing set. It stays in `exhaustive`, which means
-  // everything.
-  standard: ['rect', 'ellipse', 'line'],
-  exhaustive: Weasel.BUILTIN_TOOL_IDS,
-};
-
-const BUNDLE_LABELS: Record<BundleEntry['id'], string> = {
-  minimal: 'Minimal',
-  standard: 'Standard',
-  exhaustive: 'Exhaustive',
-};
-
+/** Core's named presets, in the order `SCENE_CANVAS_FEATURES` lists them, each with the tools its includes mount. */
 export function collectBundles(): readonly BundleEntry[] {
-  return (Object.keys(BUNDLE_DEFAULT_TOOLS) as BundleEntry['id'][]).map((id) => ({
-    kind: 'bundle',
-    id,
-    label: BUNDLE_LABELS[id] ?? id,
-    tools: [...new Set<string>(['select', 'hand', ...BUNDLE_DEFAULT_TOOLS[id]])],
-  }));
+  const described = Weasel.describePresets({ '@weasel-js/core': Object.values(Weasel.FEATURE_PRESETS) });
+  const byId = new Map(described.map((d) => [d.id, d]));
+  const toolsOf = (id: string): string[] => {
+    const d = byId.get(id)!;
+    return [...new Set([...d.includes.flatMap(toolsOf), ...d.tools])];
+  };
+  return Weasel.SCENE_CANVAS_FEATURES.map((id) => {
+    const d = byId.get(id)!;
+    return { kind: 'bundle', id, label: d.label, atom: d.atom, tools: toolsOf(id), includes: d.includes };
+  });
 }
 
 /** The `createXOp` barrel export behind each registered op kind. The kit

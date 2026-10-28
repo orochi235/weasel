@@ -8,12 +8,12 @@ import {
   presetAmbient,
   presetBuiltinTools,
   presetChromeRules,
-  type BaseFeature,
+  presetToolIds,
+  type Feature,
   type FeatureEntry,
   type FeaturePreset,
 } from './features';
 import {
-  COMPOSITE_FEATURES,
   CORE_NAMED_PRESETS,
   FEATURE_ACTION_IDS,
   FEATURE_PRESETS,
@@ -57,18 +57,27 @@ describe('resolveFeatures', () => {
     expect(resolve([]).presets).toEqual([]);
   });
 
-  it('expands draw to every preset no other one abbreviates', () => {
-    const all = SCENE_CANVAS_FEATURES.filter((f) => !(f in COMPOSITE_FEATURES));
-    expect(ids(['draw']).sort()).toEqual([...all].sort());
+  it('turns on, under draw, every core preset but the tools that make things and the shorthands beside it', () => {
+    const left = ['tools:shape', 'tools:draw', 'tools:type', 'tools:page', 'pick', 'transform'];
+    expect(ids(['draw']).sort()).toEqual(SCENE_CANVAS_FEATURES.filter((f) => !left.includes(f)).sort());
+  });
+
+  it('registers, under draw, every kit-standard action a preset owns', () => {
+    const owned = Object.values(FEATURE_ACTION_IDS).flat();
+    expect([...actionIds(['draw'])].sort()).toEqual([...owned].sort());
+  });
+
+  it('throws on a name no preset has', () => {
+    expect(() => resolve(['nope' as Feature])).toThrow(/no preset is named "nope"/);
   });
 
   it('adds view when a viewport config is passed', () => {
-    expect(resolve(['outline'], { viewport: true }).presets.map((p) => p.id).sort()).toEqual(['outline', 'view']);
+    expect(resolve(['outline'], { viewport: true }).presets.map((p) => p.id).sort()).toEqual(['outline', 'tools:view', 'view']);
   });
 
-  it('expands pick to select + outline and transform to resize + rotate', () => {
-    expect(ids(['pick']).sort()).toEqual(['outline', 'select']);
-    expect(ids(['transform']).sort()).toEqual(['resize', 'rotate']);
+  it('turns on select and outline under pick, and resize and rotate under transform', () => {
+    expect(ids(['pick'])).toEqual(['tools:select', 'select', 'outline', 'pick']);
+    expect(ids(['transform'])).toEqual(['resize', 'rotate', 'transform']);
   });
 
   it('registers resize without rotate', () => {
@@ -91,7 +100,7 @@ describe('resolveFeatures', () => {
 
   it('takes a preset object beside the names, once however often it is named', () => {
     const mine: FeaturePreset = { id: 'mine', actions: [action('mine.go')] };
-    expect(ids(['select', mine, mine])).toEqual(['select', 'mine']);
+    expect(ids(['select', mine, mine])).toEqual(['tools:select', 'select', 'mine']);
     expect(actionIds([mine]).has('mine.go')).toBe(true);
   });
 
@@ -106,8 +115,23 @@ describe('resolveFeatures', () => {
 
   it('places a preset ahead of the ones it refines, and ignores a refined preset that is off', () => {
     const anchor: FeaturePreset = { id: 'anchor', refines: ['edit', 'absent'] };
-    expect(ids(['edit', 'arrange', anchor])).toEqual(['anchor', 'edit', 'arrange']);
-    expect(ids(['draw']).indexOf('paths')).toBeLessThan(ids(['draw']).indexOf('edit'));
+    expect(ids([{ id: 'edit' }, { id: 'arrange' }, anchor])).toEqual(['anchor', 'edit', 'arrange']);
+  });
+
+  it('places a preset refining a bundle ahead of everything that bundle includes', () => {
+    const widgets: FeaturePreset = { id: 'widgets', refines: ['paths'] };
+    const order = ids(['paths', widgets]);
+    for (const inner of ['anchorKeys', 'pathfinder', 'pathEdit', 'paths']) {
+      expect(order.indexOf('widgets'), inner).toBeLessThan(order.indexOf(inner));
+    }
+  });
+
+  it('tries each path-edit key ahead of the node-level action bound to the same key', () => {
+    const order = presetActions(resolve(['draw'])).map((a) => a.id);
+    const before = (a: string, b: string) => expect(order.indexOf(a), `${a} before ${b}`).toBeLessThan(order.indexOf(b));
+    before('nudgeAnchors.up', 'nudge.up');
+    before('deleteAnchors', 'delete');
+    for (const exit of ['exitPathEdit', 'pathEditTool.exit']) for (const twin of ['escape', 'cancelGesture']) before(exit, twin);
   });
 
   it('resolves no names where none are given, and says which', () => {
@@ -131,16 +155,15 @@ describe('resolveFeatures', () => {
 });
 
 describe('FEATURE_PRESETS', () => {
-  const rows = Object.entries(FEATURE_PRESETS) as [BaseFeature, FeaturePreset][];
+  const rows = Object.entries(FEATURE_PRESETS) as [Feature, FeaturePreset][];
+  // A preset that includes others turns them on too, so what it alone brings is read from those that include none.
+  const leaves = rows.filter(([, row]) => !row.includes?.length);
   const all = resolve(['draw']);
 
-  it('has one row for every preset that abbreviates nothing, each under its own id', () => {
-    const bases = SCENE_CANVAS_FEATURES.filter((f) => !(f in COMPOSITE_FEATURES));
-    expect(rows.map(([id]) => id).sort()).toEqual([...bases].sort());
+  it('has one row for every name, each under its own id, and includes only named presets', () => {
+    expect(rows.map(([id]) => id)).toEqual([...SCENE_CANVAS_FEATURES]);
     for (const [id, row] of rows) expect(row.id).toBe(id);
-    for (const named of Object.values(COMPOSITE_FEATURES)) {
-      for (const f of named) expect(f in FEATURE_PRESETS, f).toBe(true);
-    }
+    for (const [, row] of rows) for (const inner of row.includes ?? []) expect(FEATURE_PRESETS[inner.id as Feature]).toBe(inner);
   });
 
   it('is where the action table comes from', () => {
@@ -149,7 +172,7 @@ describe('FEATURE_PRESETS', () => {
 
   it('names only built-in tools, and only chrome the kit has a rule for', () => {
     for (const [id, row] of rows) {
-      for (const tool of row.tools ?? []) expect(BUILTIN_TOOL_IDS, id).toContain(tool);
+      for (const tool of presetToolIds(row)) expect(BUILTIN_TOOL_IDS, id).toContain(tool);
       for (const chrome of row.chrome ?? []) expect(Object.keys(defaultVisibilityRules), id).toContain(chrome);
     }
   });
@@ -162,14 +185,14 @@ describe('FEATURE_PRESETS', () => {
   });
 
   it("mounts each preset's tools and no other", () => {
-    for (const [id, row] of rows) {
-      expect([...presetBuiltinTools(resolve([id]))], id).toEqual([...(row.tools ?? [])]);
+    for (const [id, row] of leaves) {
+      expect([...presetBuiltinTools(resolve([id]))], id).toEqual(presetToolIds(row));
     }
-    expect([...presetBuiltinTools(all)].sort()).toEqual(['hand', 'select']);
+    expect([...presetBuiltinTools(all)].sort()).toEqual(['hand', 'lasso', 'select']);
   });
 
   it("installs each preset's ambient entry alone, and handles ahead of the body when together", () => {
-    for (const [id, row] of rows) {
+    for (const [id, row] of leaves) {
       const entries = presetAmbient(resolve([id]), {});
       expect(entries.map((e) => e.id), id).toEqual(row.ambient ? [row.ambient({}).id] : []);
     }
@@ -203,9 +226,11 @@ describe('FEATURE_PRESETS', () => {
     const owned = PRESET_OWNED_CHROME;
     expect(Object.keys(presetChromeRules(resolve([]), owned)).sort()).toEqual([...owned].sort());
     expect(presetChromeRules(all, owned)).toEqual({});
-    for (const [id, row] of rows) {
-      const hidden = presetChromeRules(resolve([id]), owned);
-      expect(Object.keys(hidden).sort(), id).toEqual(owned.filter((c) => !(row.chrome ?? []).includes(c)).sort());
+    for (const [id] of rows) {
+      const on = resolve([id]);
+      const shown = on.presets.flatMap((p) => p.chrome ?? []);
+      const hidden = presetChromeRules(on, owned);
+      expect(Object.keys(hidden).sort(), id).toEqual(owned.filter((c) => !shown.includes(c)).sort());
       for (const rule of Object.values(hidden)) expect(rule).toBe(never);
     }
   });

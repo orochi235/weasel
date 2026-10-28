@@ -1,4 +1,6 @@
+import type { PresetDescription } from '@weasel-js/core';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
+import { bundleTree } from './bundleTree';
 import type { SchemaRoot } from './schemaEdit';
 
 interface AssetBase {
@@ -12,6 +14,8 @@ interface AssetBase {
 /** A dialog's schema. */
 export interface SchemaAsset extends AssetBase {
   kind: 'schema';
+  /** The scene node kind whose properties it holds. The list files it under Node properties, not Dialogs. */
+  nodeKind?: string;
 }
 
 /** A layout of pointers into a dialog. */
@@ -30,21 +34,37 @@ export interface ActionsAsset extends AssetBase {
   kind: 'actions';
 }
 
-/** An asset the editor shows in its structure tree, picked from the asset list. */
-export type ShownAsset = SchemaAsset | LayoutAsset;
+/**
+ * How the host's feature presets group their actions, tools, and atoms: a section per package, a group per bundle.
+ * Its export is a `weasel-bundles/1` document, not code.
+ */
+export interface BundlesAsset extends AssetBase {
+  kind: 'bundles';
+  /** The descriptions the tree was made from, which its export names as its base and its parts list offers. */
+  presets: readonly PresetDescription[];
+}
 
-/** One thing the editor edits: a dialog, a layout over one, or the catalog of the host's actions. */
+/** A Bundles asset over `presets`, its tree made from them. */
+export function bundlesAsset(id: string, label: string, presets: readonly PresetDescription[]): BundlesAsset {
+  return { id, label, kind: 'bundles', presets, root: bundleTree(presets) };
+}
+
+/** An asset the editor shows in its structure tree, picked from the asset list. */
+export type ShownAsset = SchemaAsset | LayoutAsset | BundlesAsset;
+
+/** One thing the editor edits: a dialog, a layout over one, the host's feature bundles, or the catalog of its actions. */
 export type Asset = ShownAsset | ActionsAsset;
 
 /** What the asset list files an asset under. */
-export type AssetHeading = 'Dialogs' | 'Panels' | 'Toolbars' | 'Menus';
+export type AssetHeading = 'Dialogs' | 'Node properties' | 'Panels' | 'Toolbars' | 'Menus' | 'Bundles';
 
 /**
- * Where the list files `asset`: a dialog; a layout drawn as a menu, or as a bar of nothing but menus, which is a
+ * Where the list files `asset`: the bundles; a dialog, or one holding a node kind's properties; a layout drawn as a menu, or as a bar of nothing but menus, which is a
  * menu bar; a layout drawn as any other bar; or any other layout.
  */
 export function headingOf(asset: ShownAsset): AssetHeading {
-  if (asset.kind === 'schema') return 'Dialogs';
+  if (asset.kind === 'bundles') return 'Bundles';
+  if (asset.kind === 'schema') return asset.nodeKind === undefined ? 'Dialogs' : 'Node properties';
   const root = asset.root;
   if (!('as' in root)) return 'Panels';
   if (root.as === 'menu') return 'Menus';

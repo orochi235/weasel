@@ -76,7 +76,9 @@ export interface PaletteDrag {
  * Tool buttons to drag into the tree or the live preview, each making one new node where it is dropped. The drag is
  * the palette's own, and what it is over is the owner's to work out.
  */
-export function Palette({ sections = false, ghost = true, disabled = false, pages = true, onDrag, onDrop, children }: {
+export function Palette({ items, sections = false, ghost = true, disabled = false, pages = true, onDrag, onDrop, children }: {
+  /** What it makes, in place of the groups a form is laid out with. */
+  items?: readonly PaletteItem[];
   /** The schema's root is a section, so what it makes are sections. */
   sections?: boolean;
   /** Draw the dragged node beside the pointer. Off while something else draws it where it would land. */
@@ -127,7 +129,7 @@ export function Palette({ sections = false, ghost = true, disabled = false, page
   return (
     <div className={s.palette} ref={root}>
       <ToolGroup orientation="horizontal" ariaLabel="Drag to add">
-        {(sections ? SECTION_PALETTE : PALETTE).map((item) => (
+        {(items ?? (sections ? SECTION_PALETTE : PALETTE)).map((item) => (
           // The drag rides on a wrapper: a ToolButton takes a press and nothing else.
           <span key={item.id} className={s.paletteTool} onPointerDown={(e) => press(item, e)}>
             <ToolButton icon={<Icon name={item.icon} />} label={item.label} title={`Drag to add a ${item.label.toLowerCase()}`} disabled={off(item)} onClick={() => {}} />

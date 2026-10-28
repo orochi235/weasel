@@ -77,10 +77,10 @@ describe('RegistryInspector', () => {
   });
 
   it('selects a deep-linked entry once it appears, and drops it when the filter excludes it', async () => {
-    window.history.replaceState(null, '', '/#/dev/registry?kind=bundle&id=minimal');
+    window.history.replaceState(null, '', '/#/dev/registry?kind=bundle&id=nudge');
     renderInspector();
-    await waitFor(() => expect(screen.getByRole('treeitem', { name: /^Minimal/ })).toHaveAttribute('aria-selected', 'true'));
-    expect(window.location.hash).toBe('#/dev/registry?kind=bundle&id=minimal');
+    await waitFor(() => expect(screen.getByRole('treeitem', { name: /^Nudge/ })).toHaveAttribute('aria-selected', 'true'));
+    expect(window.location.hash).toBe('#/dev/registry?kind=bundle&id=nudge');
     fireEvent.change(screen.getByLabelText('Filter registry'), { target: { value: 'zzz' } });
     await waitFor(() => expect(window.location.hash).toBe('#/dev/registry'));
   });

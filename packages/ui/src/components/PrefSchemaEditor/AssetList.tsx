@@ -9,7 +9,7 @@ import s from './AssetList.module.css';
 import { icon } from '../../icons.gen';
 
 /** The headings the assets are listed under, in order. */
-const HEADINGS: readonly AssetHeading[] = ['Dialogs', 'Panels', 'Toolbars', 'Menus'];
+const HEADINGS: readonly AssetHeading[] = ['Dialogs', 'Node properties', 'Panels', 'Toolbars', 'Menus', 'Bundles'];
 
 /** `rows` with the ones `order` names first, as it names them, and the rest after as they stood. */
 function inOrder<T extends { id: string }>(rows: readonly T[], order: readonly string[]): T[] {
@@ -18,7 +18,8 @@ function inOrder<T extends { id: string }>(rows: readonly T[], order: readonly s
 }
 
 /**
- * The editor's assets, to pick the one it shows: dialogs, then the panels and the toolbars that point into them.
+ * The editor's assets, to pick the one it shows: dialogs and node kinds' properties, then the panels, toolbars, and
+ * menus that point into them, then the feature bundles.
  * What another editor holds is listed after this one's under the same headings, or where `order` puts it, and a
  * pick of one is the host's.
  */

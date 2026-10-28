@@ -7,6 +7,7 @@ import { ActionList } from './ActionList';
 import { useEditorSize } from './editorPrefs';
 import { GROUP_ICON } from './Palette';
 import { ListPane } from './PaneHeader';
+import { PartsList, type PartsCatalog } from './PartsList';
 import type { ActionCatalog } from './useActionCatalog';
 import type { SchemaRoot } from './schemaEdit';
 import { SettingsTree } from './SettingsTree';
@@ -44,12 +45,14 @@ function ShelfList({ title, size, tools, children }: { title: string; size: 'she
 }
 
 /** The lists rows are dragged from into the structure tree, drawn into the shelf's `slot` once it is up. */
-export function ShelfLists({ slot, over, layout, actions, ...drag }: ListDrag & {
+export function ShelfLists({ slot, over, layout, actions, parts, ...drag }: ListDrag & {
   slot: HTMLElement | null;
   /** The dialog a layout points into, whose settings are listed. */
   over?: SchemaRoot;
   layout: SchemaRoot;
   actions?: ActionCatalog;
+  /** Leaves the tree takes copies of, listed before the actions. */
+  parts?: PartsCatalog;
 }) {
   if (!slot) return null;
   // What sorts the catalog, where there is one to sort.
@@ -63,6 +66,8 @@ export function ShelfLists({ slot, over, layout, actions, ...drag }: ListDrag & 
   return createPortal(
     <>
       {over !== undefined && <ShelfList title="Settings" size="shelfSettingsWidth"><SettingsTree over={over} layout={layout} {...drag} /></ShelfList>}
+      {/* A tree with parts points into no dialog, so the two lists share a width. */}
+      {parts !== undefined && <ShelfList title="Parts" size="shelfSettingsWidth"><PartsList parts={parts} {...drag} /></ShelfList>}
       {actions !== undefined && Object.keys(actions.root.children).length > 0 && (
         <ShelfList title="Actions" size="shelfActionsWidth" tools={tools || undefined}><ActionList catalog={actions} {...drag} /></ShelfList>
       )}

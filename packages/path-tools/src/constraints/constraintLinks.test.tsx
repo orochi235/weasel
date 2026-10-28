@@ -5,7 +5,7 @@ import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonP
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import { IDENTITY_POSE_COMPOSITION,
-  createScene, createTransformOp, defaultCommitAdapter, effectivePose, moveAction, pathsPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
+  createScene, createTransformOp, defaultCommitAdapter, effectivePose, moveAction, pathEditPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
   type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type Scene, type SelectionApi, type TransformFollower,
 } from '@weasel-js/core';
 import {
@@ -107,7 +107,7 @@ function setup() {
     editing = id;
     rerender();
     const at = (px: number, py: number): InvocationCtx => ({ ...ctx(px, py, 0), drag: undefined });
-    const bendSegment = pathsPreset.actions!.find((a) => a.id === 'bendSegment')!;
+    const bendSegment = pathEditPreset.actions!.find((a) => a.id === 'bendSegment')!;
     const handle = (bendSegment.invoker as OngoingInvoker).start(at(x, y), undefined);
     handle.onMove!(at(x + dx, y + dy));
     const ids = [...(handle.previewIds!() ?? [])];

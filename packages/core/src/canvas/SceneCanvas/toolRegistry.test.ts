@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
-import { resolveFeatures, type BaseFeature } from './features';
+import { resolveFeatures, type Feature } from './features';
 import { CORE_NAMED_PRESETS } from './namedPresets';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
@@ -18,7 +18,7 @@ vi.mock('core/shapeKinds', async (importOriginal) => {
 
 const tool = (id: string): Tool => ({ id, eligibility: { focus: true } }) as Tool;
 const builtins = Object.fromEntries(BUILTIN_TOOL_IDS.map((id) => [id, tool(id)])) as BuiltinTools;
-const presets = (...on: BaseFeature[]) => resolveFeatures(on, CORE_NAMED_PRESETS);
+const presets = (...on: Feature[]) => resolveFeatures(on, CORE_NAMED_PRESETS);
 const NONE = presets();
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -64,15 +64,15 @@ describe('resolveToolRegistry', () => {
   });
 
   it('brings the select tool with the select preset and the hand with view', () => {
-    expect(Object.keys(resolveToolRegistry({ builtins, enabled: presets('select'), patch: null }))).toEqual(['select']);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled: presets('select'), patch: null }))).toEqual(['select', 'lasso']);
     expect(Object.keys(resolveToolRegistry({ builtins, enabled: presets('view'), patch: null }))).toEqual(['hand']);
   });
 
   it("mounts a preset's own tool after the built-ins, and a patch's false drops it", () => {
     const own = tool('own');
     const enabled = resolveFeatures(['select', { id: 'mine', tools: ['hand', own] }], CORE_NAMED_PRESETS);
-    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['select', 'hand', 'own']);
-    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: { own: false } }))).toEqual(['select', 'hand']);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['select', 'lasso', 'hand', 'own']);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: { own: false } }))).toEqual(['select', 'lasso', 'hand']);
   });
 
   it('orders built-ins in palette order, whatever order they were asked in', () => {
@@ -108,7 +108,7 @@ describe('resolveToolRegistry', () => {
     const registry = resolveToolRegistry({
       builtins, defaultTools: ['rect' as BuiltinToolId], enabled, patch: { hand, own: mine }, dev: true,
     });
-    expect(Object.keys(registry)).toEqual(['select', 'hand', 'rect', 'own']);
+    expect(Object.keys(registry)).toEqual(['select', 'lasso', 'hand', 'rect', 'own']);
     expect(registry.hand).toBe(hand);
     expect(registry.own).toBe(mine);
     expect(warn).not.toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe('resolveToolRegistry', () => {
     const registry = resolveToolRegistry({
       builtins, defaultTools: ['rect' as BuiltinToolId], enabled: presets('select'), patch: { a, pen }, dev: true,
     });
-    expect(Object.keys(registry)).toEqual(['select', 'rect', 'a', 'pen']);
+    expect(Object.keys(registry)).toEqual(['select', 'lasso', 'rect', 'a', 'pen']);
     expect(registry.pen).toBe(pen);
     expect(warn).not.toHaveBeenCalled();
   });

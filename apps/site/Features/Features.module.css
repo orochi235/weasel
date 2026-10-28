@@ -7,10 +7,6 @@
   font-size: calc(var(--wzl-font-size-xl) + 2px);
 }
 
-.subheading {
-  margin: var(--wzl-space-lg) 0 var(--wzl-space-sm);
-}
-
 .table {
   width: 100%;
   border-collapse: collapse;

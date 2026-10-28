@@ -1,16 +1,17 @@
 /**
- * Toolkit Builder — assemble a canvas from a bundle preset, with or without
- * `@weasel-js/path-tools`, and inspect the resulting live registry, route
- * table, conflicts, and dispatch trace. Mounted
+ * Toolkit Builder — assemble a canvas from one of core's presets and any of its
+ * tool presets, with or without `@weasel-js/path-tools`, and inspect the
+ * resulting live registry, route table, conflicts, and dispatch trace. Mounted
  * under `#/dev/toolkits` (sibling to `RegistryInspector` at `#/dev/registry`).
  */
-import { asNodeId, type Fill, SceneCanvas, solid, useScene } from '@weasel-js/core';
+import {
+  asNodeId, type Feature, type FeatureEntry, type Fill, SCENE_CANVAS_FEATURES, SceneCanvas, solid, useScene,
+} from '@weasel-js/core';
 import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { type ReactElement, useEffect, useState } from 'react';
 import { DevShell } from './DevShell';
-import { BUNDLE_DEFAULT_TOOLS } from './registryData';
 import { ActionsWidget } from './toolkit/ActionsWidget';
 import { ConflictsWidget } from './toolkit/ConflictsWidget';
 import { DispatchTraceWidget } from './toolkit/DispatchTraceWidget';
@@ -20,24 +21,28 @@ import { ToolsWidget } from './toolkit/ToolsWidget';
 import { useLiveActions, useToolReflection } from './toolkit/useToolReflection';
 import s from './ToolkitBuilder.module.css';
 
-type ToolBundle = keyof typeof BUNDLE_DEFAULT_TOOLS;
-const BUNDLE_IDS: readonly ToolBundle[] = ['minimal', 'standard', 'exhaustive'];
-const DEFAULT_BUNDLE: ToolBundle = 'standard';
+const TOOL_PRESETS = SCENE_CANVAS_FEATURES.filter((f) => f.startsWith('tools:'));
+const BASES = SCENE_CANVAS_FEATURES.filter((f) => !f.startsWith('tools:'));
+const isFeature = (f: string): f is Feature => (SCENE_CANVAS_FEATURES as readonly string[]).includes(f);
 
-interface Setup { bundle: ToolBundle; paths: boolean }
+interface Setup { base: Feature; tools: readonly Feature[]; paths: boolean }
 
 function parseSetup(hash: string): Setup {
   const q = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
   const params = new URLSearchParams(q);
-  const b = params.get('bundle');
+  const base = params.get('base') ?? '';
+  const tools = params.get('tools');
   return {
-    bundle: b && (BUNDLE_IDS as readonly string[]).includes(b) ? b as ToolBundle : DEFAULT_BUNDLE,
+    base: isFeature(base) ? base : 'draw',
+    tools: tools === null ? ['tools:shape'] : tools.split(',').filter(isFeature),
     paths: params.get('paths') !== '0',
   };
 }
 
-function writeSetup({ bundle, paths }: Setup): void {
-  const next = `#/dev/toolkits?bundle=${bundle}${paths ? '' : '&paths=0'}`;
+const setupKey = ({ base, tools, paths }: Setup): string => `base=${base}&tools=${tools.join(',')}${paths ? '' : '&paths=0'}`;
+
+function writeSetup(setup: Setup): void {
+  const next = `#/dev/toolkits?${setupKey(setup)}`;
   if (window.location.hash !== next) window.history.replaceState(null, '', next);
 }
 
@@ -50,7 +55,7 @@ const INITIAL_NODES = [
   { kind: 'mark' as const, id: asNodeId('r3'), layer: 'default' as const, data: { fill: { paint: solid('#5a8bd0') } }, pose: { x: 140, y: 220, width: 160, height: 60 } },
 ];
 
-function ToolkitForSetup({ bundle, paths }: Setup): ReactElement {
+function ToolkitForSetup({ base, tools, paths }: Setup): ReactElement {
   const scene = useScene<ShapeData, 'default', ShapePose>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
@@ -58,17 +63,17 @@ function ToolkitForSetup({ bundle, paths }: Setup): ReactElement {
   const reflection = useToolReflection();
   const actions = useLiveActions();
   const pathToolsTools = usePathToolsTools();
+  const features: FeatureEntry[] = [base, ...tools, ...(paths ? [pathTools] : [])];
 
   return (
     <div className={s.layout}>
       {/* Left column: canvas. */}
       <section className={s.canvas}>
-        <SceneCanvas features={paths ? ['draw', pathTools] : ['draw']}
+        <SceneCanvas features={features}
           aria-label="Toolkit canvas"
           scene={scene}
           width={520}
           height={360}
-          defaultTools={BUNDLE_DEFAULT_TOOLS[bundle]}
           {...(paths ? { tools: pathToolsTools } : {})}
           onToolsCreated={reflection.onToolsCreated}
           className={s.scene}
@@ -107,14 +112,14 @@ function ToolkitForSetup({ bundle, paths }: Setup): ReactElement {
 
 export function ToolkitBuilder(): ReactElement {
   const [setup, setSetup] = useState<Setup>(() => parseSetup(window.location.hash));
-  const { bundle, paths } = setup;
+  const key = setupKey(setup);
 
   // Sync hash on a change + react to back/forward.
-  useEffect(() => { writeSetup({ bundle, paths }); }, [bundle, paths]);
+  useEffect(() => { writeSetup(setup); }, [setup]);
   useEffect(() => {
     const onHash = () => {
       const next = parseSetup(window.location.hash);
-      setSetup((prev) => (prev.bundle === next.bundle && prev.paths === next.paths ? prev : next));
+      setSetup((prev) => (setupKey(prev) === setupKey(next) ? prev : next));
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -125,15 +130,23 @@ export function ToolkitBuilder(): ReactElement {
       title="Toolkit Builder"
       header={
         <>
-          <Select<ToolBundle>
-            label="bundle"
+          <Select<Feature>
+            label="preset"
             orientation="row"
             width="fit"
-            options={BUNDLE_IDS.map((id) => ({ value: id, label: id }))}
-            selectedKey={bundle}
-            onSelectionChange={(next) => setSetup((prev) => ({ ...prev, bundle: next }))}
+            options={BASES.map((id) => ({ value: id, label: id }))}
+            selectedKey={setup.base}
+            onSelectionChange={(next) => setSetup((prev) => ({ ...prev, base: next }))}
           />
-          <Switch isSelected={paths} onChange={(next) => setSetup((prev) => ({ ...prev, paths: next }))}>
+          {TOOL_PRESETS.map((id) => (
+            <Switch key={id} isSelected={setup.tools.includes(id)}
+              onChange={(on) => setSetup((prev) => ({
+                ...prev, tools: TOOL_PRESETS.filter((t) => (t === id ? on : prev.tools.includes(t))),
+              }))}>
+              {id}
+            </Switch>
+          ))}
+          <Switch isSelected={setup.paths} onChange={(next) => setSetup((prev) => ({ ...prev, paths: next }))}>
             path-tools
           </Switch>
         </>
@@ -141,12 +154,12 @@ export function ToolkitBuilder(): ReactElement {
     >
       <div className={s.root}>
         <p className={s.subtitle}>
-          Mount a SceneCanvas with the chosen bundle, and with path-tools' presets
-          and tools when it is on, then inspect the live tool set, action
-          registry, route table, and dispatch trace it produces.
+          Mount a SceneCanvas with the chosen preset and tool presets, and with
+          path-tools' presets and tools when it is on, then inspect the live tool
+          set, action registry, route table, and dispatch trace it produces.
         </p>
         {/* Key by the setup so SceneCanvas rebuilds cleanly when it changes. */}
-        <ToolkitForSetup key={`${bundle}:${paths}`} bundle={bundle} paths={paths} />
+        <ToolkitForSetup key={key} {...setup} />
       </div>
     </DevShell>
   );

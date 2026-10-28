@@ -4,7 +4,6 @@ import { renderWithIcons } from '../testIcons';
 import { RegistryDetail } from './RegistryDetail';
 import { icon } from '../icons.gen';
 import { RouteBadge } from './detail/RouteBadge';
-import { collectBundles } from './registryData';
 import type { ActionEntry, TreeEntry } from './registryEntries';
 
 describe('RegistryDetail', () => {
@@ -16,20 +15,17 @@ describe('RegistryDetail', () => {
     expect(dt.nextElementSibling!.textContent).toBe('properties');
   });
 
-  it('names the bundle diff list by its heading, one row per other bundle', () => {
-    const entry = { kind: 'bundle', id: 'probe', label: 'Probe', tools: ['probeOnly'] } as unknown as TreeEntry;
+  it('says whether a preset is an atom and names the presets it includes', () => {
+    const entry: TreeEntry = { kind: 'bundle', id: 'pick', label: 'Pick', atom: false, tools: ['select'], includes: ['select', 'outline'] };
     renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
-    const heading = screen.getByRole('heading', { name: 'Diff vs other bundles' });
-    const list = document.querySelector(`dl[aria-labelledby="${heading.id}"]`)!;
-    const values = [...list.querySelectorAll('dd')];
-    expect(values.length).toBe(collectBundles().length);
-    for (const dd of values) expect(dd.textContent).toContain('+probeOnly');
+    expect(screen.getByText('bundle')).toBeInTheDocument();
+    expect(screen.getByText('outline')).toBeInTheDocument();
   });
 
   it('names a bundle\'s members without linking them: tools are the devtools panel\'s', () => {
     const entry: TreeEntry = {
-      kind: 'bundle', id: 'minimal', label: 'Minimal',
-      tools: ['select', 'hand'],
+      kind: 'bundle', id: 'view', label: 'View', atom: false,
+      tools: ['select', 'hand'], includes: [],
     };
     renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getAllByText('select').length).toBeGreaterThan(0);

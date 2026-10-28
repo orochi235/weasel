@@ -4,10 +4,12 @@
  * changed it; every behavior beyond that is turned on by a preset.
  *
  * A preset is a {@link FeaturePreset} object: the actions, tools, bindings,
- * chrome, and contributions one behavior brings. Core's own are named
- * (`'select'`, `'draw'`) and live in `namedPresets.ts`; a package ships its
- * own the same way and an app passes the object. Nothing here imports an
- * action, so a canvas reaches only the presets it is handed.
+ * chrome, and contributions one behavior brings, and the presets it includes.
+ * One that holds only actions, tools, and includes is a bundle, pure grouping;
+ * one with any other role is an atom, whose parts only work together. Core's
+ * own are named (`'select'`, `'draw'`) and live in `namedPresets.ts`; a
+ * package ships its own the same way and an app passes the object. Nothing
+ * here imports an action, so a canvas reaches only the presets it is handed.
  *
  * A preset is not one of the `packages/core/src/domains/<name>/` source
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
@@ -26,32 +28,19 @@ import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
 import type { BuiltinToolId } from './props';
 
-/** A core preset that names one behavior and abbreviates nothing. */
-export type BaseFeature =
-  | 'view'
-  | 'select'
-  | 'outline'
-  | 'move'
-  | 'resize'
-  | 'rotate'
-  | 'edit'
-  | 'arrange'
-  | 'paths'
-  | 'ingest';
-
-/** A core preset that abbreviates others: `pick` is `select` + `outline`,
- *  `transform` is `resize` + `rotate`, and `draw` is every base preset. */
-export type CompositeFeature = 'pick' | 'transform' | 'draw';
+/** Every core preset's name `<SceneCanvas features>` accepts, each after the
+ *  presets it includes. */
+export const SCENE_CANVAS_FEATURES = [
+  'tools:select', 'tools:view', 'tools:shape', 'tools:draw', 'tools:type', 'tools:page',
+  'view', 'select', 'outline', 'pick', 'move', 'resize', 'rotate', 'transform',
+  'escape', 'contextMenu', 'selectAll', 'duplicate', 'delete', 'group', 'nudge', 'style', 'clipboard', 'edit',
+  'flip', 'reorder', 'align', 'distribute', 'arrange',
+  'anchorKeys', 'pathfinder', 'outlines', 'pathEdit', 'pathCommands', 'paths',
+  'ingest', 'draw',
+] as const;
 
 /** A core preset's name, as `<SceneCanvas features>` takes it. */
-export type Feature = BaseFeature | CompositeFeature;
-
-/** Every name `<SceneCanvas features>` accepts, each composite after the
- *  presets it names. */
-export const SCENE_CANVAS_FEATURES: readonly Feature[] = [
-  'view', 'select', 'outline', 'pick', 'move', 'resize', 'rotate', 'transform',
-  'edit', 'arrange', 'paths', 'ingest', 'draw',
-];
+export type Feature = (typeof SCENE_CANVAS_FEATURES)[number];
 
 /** What a preset's ambient bindings are built from: the `selectTool` options
  *  that configure them. */
@@ -67,6 +56,8 @@ export interface FeatureBindingOptions {
  * passes it to `features`, and an app that does not never loads its code.
  */
 export interface FeaturePreset {
+  /** What a person calls it, where one is listed. Absent, the id. */
+  readonly label?: string;
   /** Unique per canvas. `refines` names presets by it, and two different
    *  presets with one id on one canvas throw. */
   readonly id: string;
@@ -102,9 +93,10 @@ export interface FeaturePreset {
    *  declare: deps, overlays, `attach`, views, frame hooks. A `tools` takeover
    *  brings its own ambient and leaves them out. */
   readonly contributions?: readonly SurfaceContribution[];
-  /** Ids of presets whose actions this one's register ahead of, so that where
-   *  both bind one gesture, this one's is tried first: anchor nudging ahead of
-   *  node nudging. A preset named here that is not on is ignored. */
+  /** Ids of presets whose actions, and those of every preset they include,
+   *  this one's register ahead of, so that where both bind one gesture, this
+   *  one's is tried first: anchor nudging ahead of node nudging. A preset named
+   *  here that is not on is ignored. */
   readonly refines?: readonly string[];
   /** Presets it turns on with itself, ahead of its own place in the order. */
   readonly includes?: readonly FeaturePreset[];
@@ -113,12 +105,8 @@ export interface FeaturePreset {
 /** What `<SceneCanvas features>` takes: a core preset's name or any preset. */
 export type FeatureEntry = Feature | FeaturePreset;
 
-/** The names a canvas resolves: one preset each, or the presets a composite
- *  abbreviates. */
-export interface NamedPresets {
-  readonly base: Readonly<Record<BaseFeature, FeaturePreset>>;
-  readonly composite: Readonly<Record<CompositeFeature, readonly BaseFeature[]>>;
-}
+/** The names a canvas resolves, each to its preset. */
+export type NamedPresets = Readonly<Record<string, FeaturePreset>>;
 
 /** Where a canvas finds presets beyond the objects it is handed: the names it
  *  resolves, if any, and the actions it registers once a tool binds them. */
@@ -146,7 +134,7 @@ export interface EnabledPresets {
 
 /**
  * The presets a canvas runs with: names expanded, `includes` pulled in, each
- * preset once, and every one placed ahead of the presets it `refines`. Ties
+ * preset once, and every one placed ahead of the presets it `refines` and what those include. Ties
  * keep the order given. Where names resolve, a `viewport` config turns on the
  * `view` preset, since that prop only configures what `view` turns on.
  *
@@ -172,17 +160,27 @@ export function resolveFeatures(
   for (const f of features ?? []) {
     if (typeof f !== 'string') add(f);
     else if (!named) throw new Error(`[SceneCanvas] this canvas resolves no preset names; pass the preset for "${f}"`);
-    else if (f in named.composite) for (const b of named.composite[f as CompositeFeature]) add(named.base[b]);
-    else add(named.base[f as BaseFeature]);
+    else if (!Object.hasOwn(named, f)) throw new Error(`[SceneCanvas] no preset is named "${f}"`);
+    else add(named[f]!);
   }
-  if (opts.viewport && named) add(named.base.view);
+  if (opts.viewport && named?.view) add(named.view);
 
+  // Each preset's id and the ids of every preset that includes it, at any depth: what a refinement of it can name.
+  const parents = new Map<string, string[]>();
+  for (const p of listed) for (const inner of p.includes ?? []) parents.set(inner.id, [...(parents.get(inner.id) ?? []), p.id]);
+  const namesFor = (id: string, out = new Set<string>()): Set<string> => {
+    if (out.has(id)) return out;
+    out.add(id);
+    for (const up of parents.get(id) ?? []) namesFor(up, out);
+    return out;
+  };
   const ordered: FeaturePreset[] = [];
   const placed = new Set<string>();
   const place = (p: FeaturePreset): void => {
     if (placed.has(p.id)) return;
     placed.add(p.id);
-    for (const r of listed) if (r.refines?.includes(p.id)) place(r);
+    const names = namesFor(p.id);
+    for (const r of listed) if (r.refines?.some((id) => names.has(id))) place(r);
     ordered.push(p);
   };
   for (const p of listed) place(p);
@@ -220,8 +218,14 @@ export function presetActions(enabled: EnabledPresets): Action[] {
 }
 
 /** Whether a preset's `tools` entry names built-ins, by id or set, rather than being a tool of its own. */
-const namesBuiltins = (t: ToolEntry<BuiltinToolId> | Tool): t is ToolEntry<BuiltinToolId> =>
+export const namesBuiltins = (t: ToolEntry<BuiltinToolId> | Tool): t is ToolEntry<BuiltinToolId> =>
   typeof t === 'string' || 'members' in t;
+
+/** The ids of the tools `preset` mounts itself: built-ins with their sets opened, then tools of its own. */
+export const presetToolIds = (preset: FeaturePreset): string[] => {
+  const tools = preset.tools ?? [];
+  return [...toolIdsOf(tools.filter(namesBuiltins)), ...tools.filter((t): t is Tool => !namesBuiltins(t)).map((t) => t.id)];
+};
 
 /** The built-in tool ids the given presets mount. */
 export function presetBuiltinTools(enabled: EnabledPresets): Set<BuiltinToolId> {

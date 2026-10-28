@@ -15,8 +15,8 @@ import { Shelf } from './Shelf';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import type { PrefSchemaEditorProps } from './PrefSchemaEditor';
-import { NO_TYPES } from './types';
-import { aliasNodes, copyNodes, heirAfter, joinPath, parentPath, rebasePaths, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { NO_TYPES, type PrefTypes } from './types';
+import { aliasNodes, copyNodes, heirAfter, joinPath, parentPath, rebasePaths, VALUE_LINKS, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedAttributes, changedPaths } from './schemaExport';
 import { drawsNode } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
@@ -24,8 +24,9 @@ import { usePreviewDropZone } from './usePreviewDropZone';
 import { useRowMarks } from './useRowMarks';
 import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
-import { useAssetChanges, type SubmitAssets } from './useAssetChanges';
+import { useAssetChanges, type SubmitAssets, type WorkspaceChanges } from './useAssetChanges';
 import { useActionCatalog } from './useActionCatalog';
+import { useBundleView } from './useBundleView';
 import { useAssetView } from './useAssetView';
 import { assetOf, overOf, sameRoots, shownAssets, withRoots, type Asset, type ListedAsset, type Workspace } from './workspace';
 import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './workspaceEdit';
@@ -98,6 +99,16 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   onSubmit?: SubmitAssets;
 }
 
+/** What the shown asset exports and has changed since its baseline: every change, the paths they touch, and the
+ *  attributes changed on the row `lead`. */
+function useShownChanges(changedAssets: WorkspaceChanges, assetId: string, types: PrefTypes | undefined, lead: string | null) {
+  const exported = changedAssets.exported(assetId, types);
+  const changes = changedAssets.of(assetId);
+  const changed = useMemo(() => changedPaths(changes), [changes]);
+  const changedAttrs = useMemo(() => changedAttributes(changes, lead), [changes, lead]);
+  return { exported, changes, changed, changedAttrs };
+}
+
 /**
  * The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its
  * history and draft are the workspace's. With `list` its far pane lists the assets, to pick the one shown; picking is
@@ -120,8 +131,10 @@ export function AssetEditor(
   const assetId = asset.id;
   const schema = asset.root;
   const readOnly = asset.readOnly === true;
-  const pageless = asset.kind === 'layout';
+  const pageless = asset.kind === 'layout' || asset.kind === 'bundles';
   const over = overOf(workspace, asset);
+  const bundles = useBundleView(asset, kinds);
+  const kindsShown = bundles?.kinds ?? kinds;
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
   const [shelfSlot, setShelfSlot] = useState<HTMLDivElement | null>(null);
 
@@ -150,18 +163,16 @@ export function AssetEditor(
   };
 
   const changedAssets = useAssetChanges(base, workspace, same, onChangedAssets);
-  const changes = changedAssets.of(assetId);
+  const { exported, changes, changed, changedAttrs } = useShownChanges(changedAssets, assetId, types, selection.lead);
   // The document packs every asset as sent, so every changed one is handed over, whichever is shown.
   const submit: SubmitChanges | undefined = onSubmit && (() => doc.send(() => onSubmit(changedAssets.sent(types))));
-  const changed = useMemo(() => changedPaths(changes), [changes]);
-  const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
   const actionList = useEditorActions(actions);
   const catalog = useActionCatalog({ workspace, current: () => latest.current.workspace, actions: actionList, write: doc.commit, onPick: () => { selection.set([]); setNotice(null); } });
   // A row picked among the actions is what the attributes show, until one of the structure's is.
   const ofActions = catalog !== null && catalog.selected.length > 0;
   const picked = () => { catalog?.clear(); setNotice(null); };
-  const treeMark = useRowMarks({ schema, over, changes, actions: actionList, rowMark });
-  const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(kinds)], [kinds]);
+  const treeMark = useRowMarks({ schema, over, changes, actions: actionList, bundles: bundles !== null, rowMark });
+  const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(kindsShown)], [kindsShown]);
   const editorPrefs = useEditorPrefs(prefs);
   const structureSize = useEditorSize('structureWidth', editorPrefs);
   const attributesSize = useEditorSize('attributesWidth', editorPrefs);
@@ -172,10 +183,7 @@ export function AssetEditor(
     selection.set(paths);
     picked();
   };
-  const pick = (ids: Iterable<string>) => {
-    selection.pick(ids);
-    picked();
-  };
+  const pick = (ids: Iterable<string>) => { selection.pick(ids); picked(); };
   /** Select nodes picked outside the tree, opening the branches above them so the tree shows them. */
   const reveal = (paths: readonly string[]) => {
     if (keepsSelection()) return;
@@ -207,7 +215,7 @@ export function AssetEditor(
   const aliasTo = (paths: readonly string[], target: SchemaTarget, restore?: readonly string[]) => {
     // `aliasNodes` reads tree paths as setting paths, which a layout's are not.
     if (assetOf(latest.current.workspace, assetId)?.kind === 'layout') { copyTo(paths, target, restore); return; }
-    const made = aliasNodes(latest.current.schema, paths, target);
+    const made = aliasNodes(latest.current.schema, paths, target, bundles?.structure.links ?? VALUE_LINKS);
     if (!commit(made.root)) return;
     if (keepsSelection() && restore !== undefined) selection.set(restore);
     reveal(made.paths);
@@ -252,8 +260,8 @@ export function AssetEditor(
       onKeyDownCapture={(e) => onEditorKey(e, step, ofActions ? catalog.remove : selection.paths.length > 0 ? remove : null)}>
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={doc.canUndo} canRedo={doc.canRedo} onStep={step}
         draftSavedAt={doc.draftSavedAt} onDiscard={() => { doc.commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
-      <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={kinds} renderers={renderers} types={types}
-        expanded={expanded} onExpandedChange={setExpanded} unplaced={over ? undefined : unplaced} actions={catalog ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
+      <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={kindsShown} renderers={renderers} types={types}
+        expanded={expanded} onExpandedChange={setExpanded} unplaced={over || bundles ? undefined : unplaced} {...bundles?.structure} actions={catalog ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} shelfSlot={shelfSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} over={over} />
       <ResizeHandle className={s.structureHandle} {...structureSize} {...RANGE.structure} ariaLabel="Resize structure" />
       <div className={s.middle}>
@@ -272,7 +280,7 @@ export function AssetEditor(
           onChange={(next) => commit(next, attrKey)}
           added={selection.paths.length === 1 && changes.some((c) => c.op === 'add' && c.path === selection.lead)}
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
-          kinds={kindList} custom={kinds} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly} onNotice={setNotice} />}
+          kinds={kindList} custom={kindsShown} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly || bundles?.locked(selection.paths)} onNotice={setNotice} />}
       </div>
       <ResizeHandle {...attributesSize} {...RANGE.attributes} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
@@ -280,8 +288,8 @@ export function AssetEditor(
           // The root's own entry names no node to add to a selection.
           if (how.toggle && path !== null) { selection.toggle(path); picked(); }
           else reveal(how.range ?? (path === null ? [] : [path]));
-        }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} hosted={preview?.(asset, over)} />
-      <Shelf slot={setShelfSlot}><ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} /></Shelf>
+        }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} hosted={preview?.(asset, over) ?? bundles?.preview(selection.lead)} />
+      <Shelf slot={setShelfSlot}><ExportPanel schema={schema} types={types} exported={exported} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} /></Shelf>
       {list && (
         <>
           <ResizeHandle className={s.asideHandle} invert {...asideSize} {...RANGE.aside} ariaLabel="Resize sidebar" />

@@ -141,22 +141,30 @@ export type {
 } from '../canvas/layerSlots';
 export type { SceneSlotConfig } from '../canvas/buildSceneLayer';
 export type { BuiltinToolId, Feature } from '../canvas/SceneCanvas';
-export type {
-  BaseFeature, CompositeFeature, FeatureBindingOptions, FeatureEntry, FeaturePreset,
-} from '../canvas/SceneCanvas/features';
+export type { FeatureBindingOptions, FeatureEntry, FeaturePreset, NamedPresets } from '../canvas/SceneCanvas/features';
+export { describePresets, isAtom, type PresetDescription } from '../canvas/SceneCanvas/describePresets';
 export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from '../canvas/SceneCanvas';
 export {
   BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
   SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
 } from '../canvas/SceneCanvas';
-export { BASELINE_ACTION_IDS, COMPOSITE_FEATURES, FEATURE_ACTION_IDS, FEATURE_PRESETS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
+export { BASELINE_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_PRESETS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
 export { BASELINE_ACTIONS } from '../canvas/SceneCanvas/presets/baseline';
 export { viewPreset } from '../canvas/SceneCanvas/presets/view';
 export { selectPreset } from '../canvas/SceneCanvas/presets/select';
 export { movePreset, outlinePreset, resizePreset, rotatePreset } from '../canvas/SceneCanvas/presets/transform';
-export { editPreset } from '../canvas/SceneCanvas/presets/edit';
-export { arrangePreset } from '../canvas/SceneCanvas/presets/arrange';
-export { pathsPreset } from '../canvas/SceneCanvas/presets/paths';
+export {
+  clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
+  nudgePreset, selectAllPreset, stylePreset,
+} from '../canvas/SceneCanvas/presets/edit';
+export { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from '../canvas/SceneCanvas/presets/arrange';
+export {
+  anchorKeysPreset, outlinesPreset, pathCommandsPreset, pathEditPreset, pathfinderPreset, pathsPreset,
+} from '../canvas/SceneCanvas/presets/paths';
+export {
+  drawToolsPreset, pageToolsPreset, selectToolsPreset, shapeToolsPreset, typeToolsPreset, viewToolsPreset,
+} from '../canvas/SceneCanvas/presets/tools';
+export { drawPreset, pickPreset, transformPreset } from '../canvas/SceneCanvas/presets/composites';
 export { ingestPreset } from '../canvas/SceneCanvas/presets/ingest';
 export { KIT_SHAPE_KINDS, SHAPE_KINDS } from '../core/shapeKinds';
 export type {

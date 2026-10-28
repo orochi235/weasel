@@ -1,6 +1,6 @@
 /**
  * A `<SceneCanvas>` running one preset installs what that preset's
- * `FEATURE_PRESETS` row says, and nothing from another row.
+ * `FEATURE_PRESETS` row and the rows it includes say, and nothing from another row.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
@@ -13,8 +13,8 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type { ToolsApi } from '../tools/overlayBinding';
 import { SceneCanvas } from './SceneCanvas';
-import type { BaseFeature } from './SceneCanvas/features';
-import { BASELINE_ACTION_IDS, FEATURE_PRESETS } from './SceneCanvas/namedPresets';
+import { presetToolIds, resolveFeatures, type Feature } from './SceneCanvas/features';
+import { BASELINE_ACTION_IDS, CORE_NAMED_PRESETS, FEATURE_PRESETS } from './SceneCanvas/namedPresets';
 import type { CanvasHelpers } from './useViewHelpers';
 
 type P = { x: number; y: number; width: number; height: number; rotation: number };
@@ -53,7 +53,7 @@ function Probe({ into }: { into: Seen }) {
   return null;
 }
 
-function mountWith(preset: BaseFeature) {
+function mountWith(preset: Feature) {
   const scene = createScene<{ kind: 'rect' }, 'main', P>({ systemLayers: [{ id: 'main' }] });
   let id!: NodeId;
   scene.batch('seed', () => {
@@ -77,6 +77,7 @@ function mountWith(preset: BaseFeature) {
   act(() => seen.selection!.set([id]));
   return {
     tools: Object.keys(tools!.registry),
+    toolBound: Object.values(tools!.registry).flatMap((t) => (t.bindings ?? []).map((b) => b.actionId)),
     actions: seen.actionIds.filter((a) => KIT_STANDARD_ACTION_IDS.includes(a) && !BASELINE_ACTION_IDS.includes(a)).sort(),
     ambient: [...mounted.ambient],
     isVisible: helpersRef.current!.getIsVisible(),
@@ -84,19 +85,22 @@ function mountWith(preset: BaseFeature) {
   };
 }
 
-const PRESET_IDS = Object.keys(FEATURE_PRESETS) as BaseFeature[];
+const PRESET_IDS = Object.keys(FEATURE_PRESETS) as Feature[];
 const OWNED_CHROME = PRESET_IDS.flatMap((id) => FEATURE_PRESETS[id].chrome ?? []);
 
 describe('<SceneCanvas features={[preset]}>', () => {
-  it.each(PRESET_IDS)("'%s' installs its row: tools, actions, ambient entry, and chrome", (preset) => {
-    const row = FEATURE_PRESETS[preset];
+  it.each(PRESET_IDS)("'%s' installs its rows: tools, actions, ambient entries, and chrome", (preset) => {
+    const rows = resolveFeatures([preset], CORE_NAMED_PRESETS).presets;
+    const chrome = rows.flatMap((row) => row.chrome ?? []);
     const got = mountWith(preset);
-    expect(got.tools).toEqual([...(row.tools ?? [])]);
-    expect(got.actions).toEqual((row.actions ?? []).map((a) => a.id).sort());
-    expect(got.ambient).toEqual(row.ambient ? [row.ambient({}).id] : []);
-    for (const chrome of OWNED_CHROME) {
-      expect(got.isVisible(chrome), chrome).toBe((row.chrome ?? []).includes(chrome));
-    }
+    expect([...got.tools].sort()).toEqual(rows.flatMap(presetToolIds).sort());
+    // `ingest` answers the paste event alone, so `clipboard.pasteEvent` is held back beside it.
+    const own = rows.flatMap((row) => (row.actions ?? []).map((a) => a.id))
+      .filter((a) => a !== 'clipboard.pasteEvent' || !rows.some((row) => row.id === 'ingest'));
+    // A tool registers the actions it binds, whichever row they belong to.
+    expect(got.actions).toEqual([...new Set([...own, ...got.toolBound.filter((a) => KIT_STANDARD_ACTION_IDS.includes(a))])].sort());
+    expect([...got.ambient].sort()).toEqual(rows.flatMap((row) => (row.ambient ? [row.ambient({}).id] : [])).sort());
+    for (const id of OWNED_CHROME) expect(got.isVisible(id), id).toBe(chrome.includes(id));
     got.unmount();
   });
 });

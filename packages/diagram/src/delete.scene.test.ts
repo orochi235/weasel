@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene, editPreset, type ActionDeps, type RectPose } from '@weasel-js/core';
+import { createScene, deletePreset, type ActionDeps, type RectPose } from '@weasel-js/core';
 import { reportDeleteAction } from './diagramEditing';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
@@ -27,7 +27,7 @@ describe("core's delete on a diagram", () => {
       set: vi.fn((next: string[]) => { ids = next; }),
       adapterMethods: { getSelection: () => ids, setSelection: (next: string[]) => { ids = next; } },
     };
-    const action = editPreset.actions!.find((a) => a.id === 'delete')!;
+    const action = deletePreset.actions!.find((a) => a.id === 'delete')!;
     const invoker = action.invoker as { run: (deps: ActionDeps) => void };
     invoker.run({ scene, selection } as unknown as ActionDeps);
 

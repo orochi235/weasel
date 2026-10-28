@@ -19,24 +19,35 @@ export function aliasOf(root: SchemaRoot, path: string): PrefAlias {
   return { kind: 'alias', name: '', description: '', default: undefined, of: valuePathOf(root, path) };
 }
 
+/** What a link drag sets down: whether the node at a path can be shown a second time, and the node that shows it. */
+export interface LinkRule {
+  can(root: SchemaRoot, path: string): boolean;
+  of(root: SchemaRoot, path: string): SchemaNode;
+  /** The bar's tool that makes one: its label, and what its tooltip says it does. */
+  label: string;
+  title: string;
+}
+
+/** A pref's links: an alias of a leaf that holds a value. */
+export const VALUE_LINKS: LinkRule = { can: canAlias, of: aliasOf, label: 'Add alias', title: 'Show each selected pref in a second place' };
+
 /** The key an alias of the leaf keyed `key` starts from. Under a section root a key is a value's path, and an alias holds no value to put at its leaf's. */
 function aliasKey(root: SchemaRoot, key: string): string {
   return isPrefSection(root) ? `${key.replaceAll('.', '_')}Alias` : key;
 }
 
 /**
- * `root` with an alias of each leaf at `paths` set at `target`, the leaves left where they are. An alias takes
- * its leaf's key where {@link keysTakenAt} has none like it for the target, and a numbered one where it does.
+ * `root` with a link of each node at `paths` set at `target`, as `links` makes them, the nodes left where they are.
+ * A link takes its node's key where {@link keysTakenAt} has none like it for the target, and a numbered one where it does.
  */
-export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string[], target: SchemaTarget): { root: R; paths: string[] } {
+export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string[], target: SchemaTarget, links: LinkRule = VALUE_LINKS): { root: R; paths: string[] } {
   const dest = target.parentPath;
   const destNode = nodeAt(root, dest) ?? root;
   if (!childrenOf(destNode)) throw new Error(`schemaEdit: ${dest} cannot hold children`);
   const made = paths.map((p) => {
-    const node = nodeAt(root, p);
-    if (!node || !isPrefLeaf(node)) throw new Error(`schemaEdit: no leaf at ${p} to alias`);
-    if (!canAlias(root, p)) throw new Error(`schemaEdit: ${p} cannot be aliased`);
-    const alias = aliasOf(root, p);
+    if (!nodeAt(root, p)) throw new Error(`schemaEdit: no node at ${p} to alias`);
+    if (!links.can(root, p)) throw new Error(`schemaEdit: ${p} cannot be aliased`);
+    const alias = links.of(root, p);
     checkFits(destNode, alias);
     return { key: keyOf(p), alias };
   });

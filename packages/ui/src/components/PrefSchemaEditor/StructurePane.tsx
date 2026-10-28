@@ -13,7 +13,8 @@ import type { ActionCatalog } from './useActionCatalog';
 import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
 import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
-import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
+import { GROUP_ICON, Palette, type PaletteDrag, type PaletteItem } from './Palette';
+import type { PartsCatalog } from './PartsList';
 import { treeTakesNew } from './previewDrop';
 import { ShelfLists } from './Shelf';
 import { StoredArea } from './StoredArea';
@@ -23,8 +24,8 @@ import { stillUnplaced } from './unplaced';
 import { blankGroup, blankSection, leafOf, type CustomKinds } from './kindSchemas';
 import { kindChoices, type PrefTypes } from './types';
 import {
-  addNode, aliasOf, branchUnder, canAlias, childrenOf, fitsUnder, joinPath, keyOf, keysOf, keysTakenAt, nodeAt, parentPath, pathOf,
-  uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget,
+  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, keysTakenAt, nodeAt, parentPath, pathOf,
+  uniqueKey, VALUE_LINKS, withinDepth, type LinkRule, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 import { icon } from '../../icons.gen';
@@ -70,6 +71,15 @@ export interface StructurePaneProps {
    *  root is a row of it and not unplaced, a pointer's row is named as its setting, and nothing adds a pref or a page.
    *  Its settings are listed in the shelf, to be dragged into the tree as pointers. */
   over?: SchemaRoot;
+  /** What sits directly under the root is a row of it and not unplaced, and nothing adds a pref or a page. Default:
+   *  whether `over` is given. */
+  pageless?: boolean;
+  /** What the bar's palette makes, in place of the groups a form is laid out with. */
+  palette?: readonly PaletteItem[];
+  /** What a link drag, and the bar's tool for one, sets down. Default: an alias of a leaf that holds a value. */
+  links?: LinkRule;
+  /** Leaves listed in the shelf, to be dragged into the tree as copies. */
+  parts?: PartsCatalog;
   /** What a host draws on a node's row before its kind, by the node's path in this tree. */
   rowMark?: (path: string) => ReactNode;
   /** Remove the selected nodes. */
@@ -108,17 +118,16 @@ function addTargetOf(schema: SchemaRoot, lead: string | null): { parent: string 
 
 /** Where the bar's aliases of the selected prefs go: together after the one that leads, to be dragged where they
  *  belong. Null when one of what is selected has no alias to make, or they do not fit there. */
-function aliasTargetOf(schema: SchemaRoot, selected: readonly string[], lead: string | null, maxDepth: number | undefined, pageless: boolean): SchemaTarget | null {
-  if (lead === null || !selected.every((p) => nodeAt(schema, p)) || !selected.every((p) => canAlias(schema, p))) return null;
+function aliasTargetOf(schema: SchemaRoot, selected: readonly string[], lead: string | null, maxDepth: number | undefined, pageless: boolean, links: LinkRule): SchemaTarget | null {
+  if (lead === null || !selected.every((p) => nodeAt(schema, p)) || !selected.every((p) => links.can(schema, p))) return null;
   const parent = parentPath(lead);
-  const fits = selected.every((p) => treeTakesNew(schema, aliasOf(schema, p), parent, maxDepth, pageless));
+  const fits = selected.every((p) => treeTakesNew(schema, links.of(schema, p), parent, maxDepth, pageless));
   if (!fits && !(parent === null && !isPrefSection(schema))) return null;
   const sibs = Object.keys(childrenOf(nodeAt(schema, parent) ?? schema) ?? {});
   return { parentPath: parent, index: sibs.indexOf(keyOf(lead)) + 1 };
 }
 
-export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, shelfSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
-  const pageless = over !== undefined;
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, shelfSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over, pageless = over !== undefined, palette, links = VALUE_LINKS, parts }: StructurePaneProps) {
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
     const all = toTreeNodes(schema, null, changed, rowMark, over, actions?.actions);
@@ -167,11 +176,11 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
 
   const nodesAt = (ids: readonly string[]): SchemaNode[] => ids.map((id) => nodeAt(schema, id)!);
   const canLand = (ids: readonly string[], effect: TreeDragEffect): boolean =>
-    effect !== 'link' || ids.every((id) => canAlias(schema, id));
+    effect !== 'link' || ids.every((id) => links.can(schema, id));
   /** What a drag would set down: the nodes themselves, or aliases of them. */
   const landing = (ids: readonly string[], effect: TreeDragEffect): SchemaNode[] =>
-    effect === 'link' ? ids.map((id) => aliasOf(schema, id)) : nodesAt(ids);
-  const aliasAt = readOnly ? null : aliasTargetOf(schema, selected, lead, maxDepth, pageless);
+    effect === 'link' ? ids.map((id) => links.of(schema, id)) : nodesAt(ids);
+  const aliasAt = readOnly ? null : aliasTargetOf(schema, selected, lead, maxDepth, pageless, links);
 
   // A drag from the palette: over the tree it lands where the tree marks, and elsewhere wherever `outside` takes it.
   const [paletteDrag, setPaletteDrag] = useState<PaletteDrag | null>(null);
@@ -224,10 +233,10 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         <Input value={query} onChange={setQuery} aria-label="Filter structure" placeholder="Filter" />
       </div>
       {toolSlot && createPortal(
-        <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} disabled={readOnly} pages={!pageless} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
+        <Palette items={palette} sections={isPrefSection(schema)} ghost={!outsideDraws} disabled={readOnly} pages={!pageless} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
           <ToolButton icon={<Icon name={icon('core:tune')} mark={icon('markAdd')} />} label="Add pref" disabled={readOnly || pageless} onClick={() => setAdding('pref')} />
           <ToolButton icon={<Icon name={GROUP_ICON.section} mark={icon('markAdd')} />} label={`Add ${branch}`} disabled={readOnly || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onClick={() => setAdding('branch')} />
-          <ToolButton icon={<Icon name={icon('link')} mark={icon('markAdd')} />} label="Add alias" title="Show each selected pref in a second place"
+          <ToolButton icon={<Icon name={icon('link')} mark={icon('markAdd')} />} label={links.label} title={links.title}
             disabled={aliasAt === null} onClick={() => { if (aliasAt) alias(selected, aliasAt); }} />
           <ToolButton icon={<Icon name={icon('core:delete')} />} label="Remove" disabled={readOnly || selected.length === 0} onClick={onRemove} />
         </Palette>,
@@ -302,7 +311,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
             selected={selected} onPick={onPick} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
         </StoredArea>
       )}
-      <ShelfLists slot={shelfSlot} over={readOnly ? undefined : over} layout={schema} actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+      <ShelfLists slot={shelfSlot} over={readOnly ? undefined : over} layout={schema} actions={actions} parts={readOnly ? undefined : parts} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
     </section>
   );
 }

@@ -119,18 +119,17 @@ const booleanTokenSet: BadgeTokenSet = {
 /** Per-bundle badge — looks run from low emphasis (minimal) to high (exhaustive)
  *  to convey the deliberate progression the bundles encode. */
 export const BUNDLE_BADGE_PROPS = {
-  minimal:    { shape: 'pill', size: 'sm', emphasis: 'low',  variant: 'outline' },
-  standard:   { shape: 'pill', size: 'sm', grade: 'info',   variant: 'outline' },
-  exhaustive: { shape: 'pill', size: 'sm', emphasis: 'high', variant: 'outline' },
+  bundle: { shape: 'pill', size: 'sm', grade: 'info',   variant: 'outline' },
+  atom:   { shape: 'pill', size: 'sm', emphasis: 'high', variant: 'outline' },
 } as const satisfies Record<string, Omit<BadgeProps, 'children'>>;
 
 const bundleTokenSet: BadgeTokenSet = {
   kind: 'badge',
   id: 'bundle',
-  label: 'Bundle id',
+  label: 'Preset',
   description:
-    'The inspector\'s named tool sets, each `features={[\'draw\']}` plus a `defaultTools` list. Badges run '
-    + 'from low emphasis through the info grade to high emphasis, for the minimal → standard → exhaustive progression.',
+    'Core\'s named feature presets: a bundle holds only actions, tools, and other presets, and an atom has a role '
+    + 'beyond those, so its parts only work together.',
   entries: (Object.entries(BUNDLE_BADGE_PROPS) as [keyof typeof BUNDLE_BADGE_PROPS, Omit<BadgeProps, 'children'>][])
     .map(([value, props]) => ({ value, props })),
 };
