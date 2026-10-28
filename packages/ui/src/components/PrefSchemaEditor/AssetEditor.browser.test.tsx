@@ -29,7 +29,7 @@ function Live({ start = DEMO_WORKSPACE }: { start?: Workspace }) {
 const box = (el: Element): DOMRect => el.getBoundingClientRect();
 const list = () => screen.getByRole('listbox', { name: 'Assets' });
 const option = (label: string) => within(list()).getByRole('option', { name: new RegExp(`^${label}`) });
-const labelOf = (row: HTMLElement) => row.firstElementChild as HTMLElement;
+const labelOf = (row: HTMLElement) => row.children[1] as HTMLElement;
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 const treeRow = (key: string) =>
   keyedRow(structure(), key)!.firstElementChild as HTMLElement;
