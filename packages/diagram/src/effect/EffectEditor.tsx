@@ -57,6 +57,13 @@ export interface EffectEditorBaseProps {
   /** CSS pixels. Omit both to fill the parent. */
   width?: number;
   height?: number;
+  /** The largest scale the fit may use, as `DiagramView`'s. Default 1; raise it to zoom a small
+   *  pipeline up to fill its box. */
+  maxScale?: number;
+  /** Keep the view on the pipeline, as `DiagramView`'s `bounded` does. */
+  bounded?: boolean;
+  /** When a changed doc refits the view, as `DiagramView`'s `refit`. */
+  refit?: 'overflow' | 'always';
   background?: Paint;
   className?: string;
 }
@@ -95,7 +102,7 @@ export interface EffectEditorApi {
  *  `labels`, and stays where it was put whatever the look. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
  *  as with `EffectChart`. */
 export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(function EffectEditor(
-  { doc, onChange, run, selected, onSelect, selectedGroup, onSelectGroup, look = 'nodeGraph', options, width, height, background, className },
+  { doc, onChange, run, selected, onSelect, selectedGroup, onSelectGroup, look = 'nodeGraph', options, width, height, maxScale, bounded, refit, background, className },
   ref,
 ) {
   const built = useMemo(() => editorScene(doc, look, options), [doc, look, options]);
@@ -169,6 +176,9 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       width={width}
       height={height}
       minScale={EFFECT_MIN_SCALE}
+      {...(maxScale !== undefined ? { maxScale } : {})}
+      {...(bounded !== undefined ? { bounded } : {})}
+      {...(refit !== undefined ? { refit } : {})}
       anchor="start"
       ports="connect"
       portOptions={portOptions}

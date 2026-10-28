@@ -23,7 +23,7 @@ import type { DiagramSceneData, DiagramSpec } from './fromData';
 import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
-import { useDiagramFit } from './diagramFit';
+import { DEFAULT_FIT_PADDING, diagramViewBounds, useDiagramFit } from './diagramFit';
 import { useMirroredSelection } from './mirrorSelection';
 import { screenRectOf, useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
@@ -71,7 +71,7 @@ function Inner({
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
-  minScale, maxScale, anchor, fitPadding, background, pages, view, onViewChange, className, apiRef,
+  minScale, maxScale, anchor, fitPadding, bounded, refit, background, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
   const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
@@ -107,10 +107,15 @@ function Inner({
   const { layers, box: pagesBox } = usePagesView(pages);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
   const current = useCallback(() => Array.from(source(), ({ node, pose }) => ({ ...node, pose })), [source]);
+  const viewBounds = useMemo(
+    () => (bounded ? diagramViewBounds(specs, fitPadding ?? DEFAULT_FIT_PADDING, pagesBox) : undefined),
+    [bounded, specs, fitPadding, pagesBox],
+  );
   const fitting = useDiagramFit({
     canvasRef, specs, current, controlled,
     size: { width: width ?? measured?.width ?? 0, height: height ?? measured?.height ?? 0 },
-    fit: { minScale, maxScale, anchor, padding: fitPadding }, extra: pagesBox,
+    fit: { minScale, maxScale, anchor, padding: fitPadding, ...(viewBounds ? { bounds: viewBounds } : {}) }, extra: pagesBox,
+    ...(refit ? { refit } : {}),
   });
   const { defaultView } = fitting;
   const settled = useLatest((moved: number) => {
@@ -166,6 +171,7 @@ function Inner({
         {...(defaultView ? { defaultView } : {})}
         {...(view ? { view } : {})}
         {...(onViewChange ? { onViewChange } : {})}
+        {...(viewBounds ? { viewBounds } : {})}
         {...(background ? { backgroundFill: background } : {})}
         {...(layers ? { layers } : {})}
       >
