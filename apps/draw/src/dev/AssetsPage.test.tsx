@@ -53,6 +53,14 @@ describe('AssetsPage', () => {
     },
   );
 
+  it("lists the feature bundles, with core's and path-tools' presets in their packages' sections", () => {
+    renderWithIcons(<AssetsPage />);
+    fireEvent.click(asset('Feature bundles'));
+    expect(within(tree()).getByText('@weasel-js/core')).toBeInTheDocument();
+    expect(within(tree()).getByText('@weasel-js/path-tools')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'JSON' })).toBeInTheDocument();
+  });
+
   it('lists the menu bar, and shows its titles in the structure tree', () => {
     renderWithIcons(<AssetsPage />);
     fireEvent.click(asset('Menu bar'));

@@ -1,6 +1,7 @@
-import { defaultNodeProperties } from '@weasel-js/core';
+import { defaultNodeProperties, describePresets, FEATURE_PRESETS } from '@weasel-js/core';
+import { pathTools } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefGroupAs } from '@weasel-js/prefs';
-import type { Asset, Workspace } from '@weasel-js/ui/components/PrefSchemaEditor';
+import { bundlesAsset, type Asset, type Workspace } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { DRAW_MENU_BAR } from '../menuBar';
 import { DRAW_MENUS } from '../menus';
 import { PREFS } from '../prefs';
@@ -42,10 +43,16 @@ const nodes: Asset[] = defaultNodeProperties.map((e) => ({
   id: `node:${e.name}`, label: e.name, kind: 'schema', nodeKind: e.name, root: e.schema,
 }));
 
+// The guides package's presets are made by factories that need the app's options, so they are not listed.
+const bundles = bundlesAsset('bundles', 'Feature bundles', describePresets({
+  '@weasel-js/core': Object.values(FEATURE_PRESETS),
+  '@weasel-js/path-tools': [pathTools],
+}));
+
 /**
- * Every schema WeaselDraw ships, as one workspace: its preferences and each node's properties as dialogs, and its
- * toolbar, panel, menu bar, and context-menu assets as layouts.
+ * Every schema WeaselDraw ships, as one workspace: its preferences and each node's properties as dialogs, its
+ * toolbar, panel, menu bar, and context-menu assets as layouts, and the feature presets it loads as bundles.
  */
 export const DRAW_WORKSPACE: Workspace = {
-  assets: [{ id: PREFS_ID, label: 'WeaselDraw preferences', kind: 'schema', root: PREFS }, ...nodes, ...surfaces, menuBar, ...menus],
+  assets: [{ id: PREFS_ID, label: 'WeaselDraw preferences', kind: 'schema', root: PREFS }, ...nodes, ...surfaces, menuBar, ...menus, bundles],
 };
