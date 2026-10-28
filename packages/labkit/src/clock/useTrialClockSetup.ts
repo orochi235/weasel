@@ -1,6 +1,14 @@
 import { holdElapsed } from '@weasel-js/clock';
 import { useLatest } from '@weasel-js/core';
-import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createEmitter } from '@weasel-js/registry';
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
 import type { LabStore } from '../state/store';
@@ -29,6 +37,22 @@ function open(spec: ClockCapability, at: ClockPosition | undefined): Held {
   return { handle, reopenAt: at && handle.clock.elapsed !== at.elapsed ? at : null };
 }
 
+/** Where {@link useSeededClock} keeps its clock, outside React state. Shaped
+ *  for `useSyncExternalStore`. */
+function createSlot() {
+  let held: Held | null = null;
+  const changed = createEmitter();
+  return {
+    get: (): Held | null => held,
+    set(next: Held | null): void {
+      if (next === held) return;
+      held = next;
+      changed.emit();
+    },
+    subscribe: changed.subscribe,
+  };
+}
+
 /**
  * The clock `make` opens while `live`, made in a layout effect so a render
  * makes none and StrictMode's second effect pass reuses the first one's. It
@@ -40,24 +64,21 @@ function useSeededClock(
   seed: ClockPosition | undefined,
   make: (at: ClockPosition | undefined) => Held | null,
 ): Held | null {
-  const [held, setHeld] = useState<Held | null>(null);
-  const made = useRef<Held | null>(null);
+  const [slot] = useState(createSlot);
+  const held = useSyncExternalStore(slot.subscribe, slot.get);
   /** The seed as the last clock was dropped; null before the mount's first. */
   const dropped = useRef<{ seed: ClockPosition | undefined } | null>(null);
   const latest = useLatest({ make, seed });
   useLayoutEffect(() => {
     const { make, seed } = latest.current;
     if (!live) {
-      if (made.current) dropped.current = { seed };
-      made.current = null;
-      setHeld(null);
+      if (slot.get()) dropped.current = { seed };
+      slot.set(null);
       return;
     }
-    made.current ??= make(
-      dropped.current === null || dropped.current.seed !== seed ? seed : undefined,
-    );
-    setHeld(made.current);
-  }, [live, latest]);
+    if (slot.get()) return;
+    slot.set(make(dropped.current === null || dropped.current.seed !== seed ? seed : undefined));
+  }, [live, latest, slot]);
   return live ? held : null;
 }
 
