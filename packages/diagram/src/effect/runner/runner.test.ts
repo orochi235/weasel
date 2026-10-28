@@ -52,6 +52,22 @@ describe('createEffectRunner', () => {
     expect(Object.keys(runner.state.run!.stages)).toEqual(['t']);
   });
 
+  it('seeks without playing, and a seek behind a run still going is run once after it, at the latest time', async () => {
+    const times: number[] = [];
+    const runner = createEffectRunner({
+      pipeline: PIPELINE,
+      evaluators: { ...EVAL, clock: ({ time }) => { times.push(time); return { outputs: { out: time } }; } },
+    });
+    runner.seek(1);
+    runner.seek(2);
+    runner.seek(3);
+    await settled();
+    await settled();
+    expect(times).toEqual([1, 3]);
+    expect(runner.state).toMatchObject({ playing: false, time: 3 });
+    expect(runner.state.run?.stages.b?.values).toEqual({ out: '5' });
+  });
+
   it('resets to no run, no play, and the clock at zero', async () => {
     const runner = createEffectRunner({ pipeline: PIPELINE, evaluators: EVAL });
     runner.play();
