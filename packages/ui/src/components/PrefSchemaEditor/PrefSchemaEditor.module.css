@@ -246,7 +246,7 @@
 .identityIcon {
   position: absolute; inset-block-start: 0; inset-inline-end: var(--identity-end, 0);
   display: grid; place-items: center; inline-size: var(--identity-icon); block-size: var(--identity-tall, var(--identity-icon));
-  border: 1px solid var(--wzl-border); border-radius: var(--wzl-radius-sm); color: var(--wzl-fg);
+  color: var(--wzl-fg);
 }
 .identityIcon > svg { inline-size: calc(var(--identity-icon) * 2 / 3); block-size: calc(var(--identity-icon) * 2 / 3); }
 
