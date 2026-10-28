@@ -19,11 +19,11 @@ describe('AssetEditor asset list headings', () => {
     expect(within(within(assets()).getByRole('group', { name: 'Panels' })).queryByRole('option', { name: 'Tools' })).toBeNull();
   });
 
-  it('lists what another editor holds after its own, and hands a pick of one to the host', () => {
+  it('lists what another editor holds among its own by name, and hands a pick of one to the host', () => {
     const onElsewhere = vi.fn();
     renderWithIcons(<Live elsewhere={[{ id: 'reader', label: 'Reader prefs', under: 'Dialogs' }]} onElsewhere={onElsewhere} />);
     const dialogs = within(within(assets()).getByRole('group', { name: 'Dialogs' })).getAllByRole('option').map((o) => o.textContent);
-    expect(dialogs).toEqual(['Settings', 'Reader prefs']);
+    expect(dialogs).toEqual(['Reader prefs', 'Settings']);
     fireEvent.click(asset('Reader prefs'));
     expect(onElsewhere).toHaveBeenCalledWith('reader');
     expect(asset('Settings')).toHaveAttribute('aria-selected', 'true');

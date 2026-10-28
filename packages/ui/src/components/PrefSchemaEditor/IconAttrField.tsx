@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useIconGlyph, useIconVariant } from '@weasel-js/core';
+import { toIconRef } from '@weasel-js/icons';
 import { Button } from '../Button';
 import { Dialog } from '../Dialog';
 import { Icon } from '../../icons/Icon';
@@ -20,10 +21,11 @@ export function IconAttrField({ value, mixed = false, onChange }: {
   const glyph = useIconGlyph(held);
   const { state } = useIconVariant('all');
   const unregistered = held !== undefined && glyph === undefined && (state === 'loaded' || state === 'unknown');
+  const shown = unregistered ? undefined : toIconRef(held);
   return (
     <div className={s.field}>
       <div className={s.bar}>
-        {held !== undefined && !unregistered && <Icon name={held} size={20} />}
+        {shown !== undefined && <Icon name={shown} size={20} />}
         <Button size="sm" onClick={() => setOpen(true)}>Select icon</Button>
         <Button size="sm" disabled={held === undefined && !mixed} onClick={() => onChange(undefined)}>No icon</Button>
       </div>

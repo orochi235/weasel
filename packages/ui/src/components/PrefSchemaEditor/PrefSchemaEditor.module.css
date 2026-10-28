@@ -86,6 +86,9 @@
   justify-content: safe center;
   overflow: auto;
 }
+/* Through a drop: where centering last put it (`useHeldPlace`). */
+.previewStage[data-held] { align-items: flex-start; justify-content: flex-start; }
+.previewStage[data-held] > :first-child { margin-inline-start: var(--held-x); margin-block-start: var(--held-y); }
 /* The dialog at a width the reader drags, to see the form at the sizes an app might give it. */
 .previewDialog { flex: 0 1 var(--preview-w); min-width: 0; min-height: 0; }
 /* A host's own drawing of the asset, at whatever size it takes. */
@@ -95,7 +98,13 @@
 .previewBar { flex: none; zoom: var(--preview-zoom, 1); }
 .zoom { display: flex; align-items: center; gap: var(--wzl-space-2); inline-size: 160px; }
 /* Sized for 400%, so the range beside it holds still as the figure changes. */
-.zoomReadout { flex: none; min-inline-size: 4ch; text-align: end; font-size: var(--wzl-font-size-sm); font-variant-numeric: tabular-nums; }
+.zoomReadout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  flex: none;
+  min-inline-size: 4ch;
+  text-align: end;
+  font-size: var(--wzl-font-size-sm);
+}
 .paneHeader {
   display: flex;
   flex-wrap: wrap;
