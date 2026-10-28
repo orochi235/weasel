@@ -92,12 +92,47 @@ export function nodeGates(scene: GateSource): NodeGates {
   };
 }
 
+/** Whether `test` holds on the node at `id` or any ancestor, without the
+ *  allocation {@link nodeGates} spends on a walk: the scene's lock guard asks
+ *  this on every mutation. A parent cycle answers false, as the walk's does. */
+function climbs(scene: GateSource, id: string, test: (node: GatedNode) => boolean): boolean {
+  let seen: Set<string> | null = null;
+  let hops = 0;
+  for (let at: string | null = id; at !== null; ) {
+    const node = scene.get(at as NodeId);
+    if (node === undefined) return false;
+    if (++hops > 64) {
+      seen ??= new Set();
+      if (seen.has(at)) return false;
+      seen.add(at);
+    }
+    if (test(node)) return true;
+    at = node.parent ?? null;
+  }
+  return false;
+}
+
+/** The layers flagged `flag`, or null when none is: the usual answer, which
+ *  lets a climb skip the layer test at every hop. */
+function flaggedLayers(scene: GateSource, flag: 'locked' | 'hidden'): Set<string> | null {
+  let out: Set<string> | null = null;
+  for (const l of scene.layers ?? []) {
+    if (flag === 'locked' ? l.locked === true : l.visible === false) (out ??= new Set()).add(l.id);
+  }
+  return out;
+}
+
 /** {@link NodeGates.hidden} for one id. */
 export function isNodeHidden(scene: GateSource, id: NodeId): boolean {
-  return nodeGates(scene).hidden(id);
+  const node = scene.get(id);
+  if (node === undefined) return false;
+  return flaggedLayers(scene, 'hidden')?.has(node.layer) === true || climbs(scene, id, hidesSubtree);
 }
 
 /** {@link NodeGates.locked} for one id. */
 export function isNodeLocked(scene: GateSource, id: NodeId): boolean {
-  return nodeGates(scene).locked(id);
+  const layers = flaggedLayers(scene, 'locked');
+  return climbs(scene, id, layers === null
+    ? (node) => node.locked === true
+    : (node) => node.locked === true || layers.has(node.layer));
 }

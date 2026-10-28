@@ -2,7 +2,7 @@
  * The scene's lock guard: what a lock refuses, what the selection may hold,
  * and how a caller that is restoring an already-legal state gets past it.
  */
-import { nodeGates } from './nodeGates';
+import { isNodeHidden, isNodeLocked, nodeGates } from './nodeGates';
 import type { Node, NodeId } from './types';
 
 /** What the guard reads of a scene's state. */
@@ -24,6 +24,10 @@ export interface LockGuard<TLayer extends string> {
   /** `ids` less the locked and hidden ones: the scene's selection never
    *  holds either, whoever writes it. */
   reachable(ids: readonly NodeId[]): readonly NodeId[];
+  /** Tell the guard `node` was just written. Until some node carries
+   *  `locked`, and no layer is locked, nothing is locked and a check need
+   *  not climb. Every write that can set the flag calls this. */
+  noteWritten(node: { readonly locked?: boolean }): void;
   /** Run `fn` with the guard lifted: `unlocked()`, `removeLayer`, and every
    *  replay — undo, redo, a journal stepping, a rollback — which restores a
    *  state that was legal when it was recorded. */
@@ -34,13 +38,17 @@ export function createLockGuard<TData, TLayer extends string, TPose>(
   state: LockGuardState<TData, TLayer, TPose>,
 ): LockGuard<TLayer> {
   let bypass = 0;
+  /** Whether any node has carried `locked` since the scene was made. It is
+   *  never cleared, so it can only err toward climbing. */
+  let nodeLockSeen = false;
 
   const source = { get layers() { return state.layers; }, get: (id: NodeId) => state.nodes.get(id) };
-  const isLocked = (id: NodeId): boolean => nodeGates(source).locked(id);
+  const isLocked = (id: NodeId): boolean =>
+    (nodeLockSeen || state.layers.some((l) => l.locked)) && isNodeLocked(source, id);
 
   return {
     isLocked,
-    isHidden: (id) => nodeGates(source).hidden(id),
+    isHidden: (id) => isNodeHidden(source, id),
     refuse(id, verb) {
       if (bypass > 0 || !isLocked(id)) return;
       throw new Error(`Scene: cannot ${verb} "${id}" — it is locked`);
@@ -54,6 +62,9 @@ export function createLockGuard<TData, TLayer extends string, TPose>(
       return ids.some((id) => gates.locked(id) || gates.hidden(id))
         ? ids.filter((id) => !gates.locked(id) && !gates.hidden(id))
         : ids;
+    },
+    noteWritten(node) {
+      if (node.locked === true) nodeLockSeen = true;
     },
     lifted(fn) {
       bypass++;

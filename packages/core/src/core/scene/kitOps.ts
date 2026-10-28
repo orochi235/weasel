@@ -57,6 +57,8 @@ export interface KitOpsEnv<TData, TLayer extends string, TPose> {
    *  are reusable, and one left behind would attach itself to whatever is
    *  added under that id next. */
   clearOverride(id: NodeId): void;
+  /** See `LockGuard.noteWritten`. */
+  noteWritten(node: Node<TData, TLayer, TPose>): void;
 }
 
 function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | undefined): void {
@@ -99,6 +101,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       attach(p.id, p.parent, p.index);
       if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
       Object.assign(node, statedFields(p));
+      env.noteWritten(node);
       dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
       trackChildDerived(p.id, p.dependsOn);
       // Two ways a function field comes back. Redo of a live add reads
@@ -152,6 +155,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
           : { ...n };
         restoreNodeFunctions(clone, keys.get(n.id));
         state.nodes.set(n.id, clone);
+        env.noteWritten(clone);
         dependents.add(n.id, clone.dependsOn === 'children' ? [] : clone.dependsOn ?? []);
         trackChildDerived(n.id, clone.dependsOn);
       }

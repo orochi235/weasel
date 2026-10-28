@@ -124,4 +124,23 @@ describe('Scene — node flags in a snapshot', () => {
     scene.undo();
     expect(scene.get(n)!.hidden).toBe(true);
   });
+
+  // The first lock a scene sees arrives each of these ways, and the guard has to notice it.
+  it('a lock that arrives with an added node refuses edits beneath it', () => {
+    const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }] });
+    const box = scene.add({ kind: 'group', layer: 'base', pose: POSE, data: { label: 'box' }, locked: true });
+    const kid = scene.unlocked(() =>
+      scene.add({ kind: 'mark', layer: 'base', pose: POSE, data: { label: 'kid' }, parent: box }));
+    expect(scene.isLocked(kid)).toBe(true);
+    expect(() => scene.setPose(kid, MOVED)).toThrow(/locked/);
+  });
+
+  it('a lock that arrives through loadState refuses edits', () => {
+    const { scene, kid } = tree();
+    scene.setLocked(kid, true);
+    const copy = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }, { id: 'top' }] });
+    copy.loadState(scene.toJSON());
+    expect(() => copy.setPose(kid, MOVED)).toThrow(/locked/);
+  });
 });
+

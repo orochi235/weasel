@@ -27,7 +27,7 @@ export interface SceneEditsEnv<TData, TLayer extends string, TPose> {
     docValues: Map<string, unknown>;
   };
   store: ReturnType<typeof createNodeStore<TData, TLayer, TPose>>;
-  locks: Pick<LockGuard<TLayer>, 'refuse' | 'refuseLayer' | 'lifted'>;
+  locks: Pick<LockGuard<TLayer>, 'refuse' | 'refuseLayer' | 'lifted' | 'noteWritten'>;
   layers: Pick<
     ReturnType<typeof createLayerStack<TLayer>>,
     'requireLayerIndex' | 'rebuildLayerIndex' | 'assertSubtreeLayer'
@@ -68,6 +68,7 @@ export function createSceneEdits<TData, TLayer extends string, TPose>(
     fnFields,
     narrowSelection: env.narrowSelection,
     clearOverride: env.clearOverride,
+    noteWritten: locks.noteWritten,
   });
 
   const { construct, ...treeEdits } = createTreeEdits<TData, TLayer, TPose>({
@@ -110,6 +111,7 @@ export function createSceneEdits<TData, TLayer extends string, TPose>(
     record: recorder.record,
     narrowSelection: () => env.narrowSelection(),
     invalidateDependents: store.invalidateDependents,
+    noteWritten: locks.noteWritten,
   });
 
   const declaredEdits = createDeclaredFieldSetters<TData, TLayer, TPose>({

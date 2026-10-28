@@ -16,6 +16,8 @@ export interface NodeFlagsEnv<TData, TLayer extends string, TPose> {
   narrowSelection(): void;
   /** Drop what derives from `id`: a derivation may leave a hidden node out. */
   invalidateDependents(id: NodeId): void;
+  /** See `LockGuard.noteWritten`. */
+  noteWritten(node: Node<TData, TLayer, TPose>): void;
 }
 
 interface FlagPayload { id: NodeId; from: boolean; to: boolean }
@@ -38,13 +40,17 @@ export function createNodeFlags<TData, TLayer extends string, TPose>(
     env.register(KIND[flag], {
       apply: (p) => {
         const { id, to } = p as FlagPayload;
-        write(env.requireNode(id), flag, to);
+        const node = env.requireNode(id);
+        write(node, flag, to);
+        env.noteWritten(node);
         if (flag === 'hidden') env.invalidateDependents(id);
         if (to) env.narrowSelection();
       },
       revert: (p) => {
         const { id, from } = p as FlagPayload;
-        write(env.requireNode(id), flag, from);
+        const node = env.requireNode(id);
+        write(node, flag, from);
+        env.noteWritten(node);
         if (flag === 'hidden') env.invalidateDependents(id);
       },
     });
