@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, type RefObject } from 'react';
+import { Fragment, useCallback, type ReactNode, type RefObject } from 'react';
 import { isPrefLeaf, prefAsBox, prefTabRuns, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { MotifFrame } from '../MotifFrame';
 import { FORM_FRAMES, headingInline } from './frames';
@@ -9,6 +9,7 @@ import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx 
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { aliasOfNothing } from './PrefWords';
 import { pathWithin, selectionAttrs, tabAttrs, useHeldTab } from './selection';
+import { markScrollbar } from './scrollbar';
 import { splitMarks } from './SplitRow';
 import { stuckHeadingRef } from './stuckHeading';
 import s from './Prefs.module.css';
@@ -47,10 +48,14 @@ export function PrefsPane(props: PrefsPaneProps) {
   const head = groupHeading(ctx, group, path);
   // Whatever hides it, a page is drawn apart from what it sits in, so it carries the mark itself.
   const marked = ctx.hidden?.has(path) === true;
+  const paneRef = useCallback((el: HTMLDivElement | null) => {
+    scrollRef.current = el;
+    return markScrollbar(el);
+  }, [scrollRef]);
 
   return (
     // A hidden page is marked whole: its heading and its rows share no element but this one.
-    <div className={[s.pane, className].filter(Boolean).join(' ')} ref={scrollRef} data-pref-into={path} data-pref-scroll="" {...hiddenAttrs(marked)}>
+    <div className={[s.pane, className].filter(Boolean).join(' ')} ref={paneRef} data-pref-into={path} data-pref-scroll="" {...hiddenAttrs(marked)}>
       <div className={s.paneHead} {...selectionAttrs(path, { selected: ctx.selected })}>
         <h3 className={[s.paneTitle, head.className].filter(Boolean).join(' ')}>{head.name}{marked && <HiddenBadge />}{head.control}</h3>
         {group.description !== undefined && (

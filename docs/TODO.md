@@ -627,13 +627,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `apps/draw/src/PreferencesModal.tsx` always draws a `RegistrySelect`. Either draw radios for `radio` or drop the
   attribute. Filed 2026-10-28.
 
-- **(P3) A prefs pane clears a classic scrollbar twice.** `.pane` and the rail in
-  `packages/ui/src/components/Prefs/Prefs.module.css` keep `scrollbar-gutter: stable` and pad their far side 16px to
-  clear an overlay scrollbar; where macOS draws classic ones (a mouse connected), the 15px gutter comes on top of
-  the padding. The asset editor's 360px panel preview then has 261px for its rows, under the 268px that two across
-  needs, so a mouse user sees one column where a trackpad user sees two (measured on studio, 2026-10-28). Browser
-  tests no longer see this: they run with scrollbars at zero width. Filed 2026-10-28.
-
 ---
 
 ### Domain bundles

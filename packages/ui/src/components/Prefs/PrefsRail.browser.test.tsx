@@ -53,3 +53,37 @@ it('keeps the rail\'s filter field and the pane\'s rows clear of the right edge 
   const pane = container.querySelector('[data-pref-into]')!;
   expect(clear(pane, pane.querySelector('[data-pref-path]')!)).toBeGreaterThanOrEqual(16);
 });
+
+it('clears a scrollbar that takes room of its own once, by its gutter and not by the far side\'s padding too', async () => {
+  const many: PrefGroup = { name: 'Preferences', children: Object.fromEntries(Array.from({ length: 24 }, (_, i) => [`s${i}`, { name: `Section ${i}`, children: flags(`Row ${i}`) }])) };
+  const clear = (box: Element, inner: Element) => box.getBoundingClientRect().left + box.clientWidth - inner.getBoundingClientRect().right;
+  // The setup lays every scrollbar over its box, and headless Chromium draws none, but a styled one's gutter takes
+  // 15px on any machine, as a classic scrollbar does. It goes in before the form mounts: Chrome reserves nothing
+  // for a box already laid out without it.
+  const sheet = document.createElement('style');
+  sheet.textContent = '.classic :is(nav, [data-pref-into]) { scrollbar-width: auto !important; scrollbar-gutter: stable; } .classic ::-webkit-scrollbar { width: 15px; }';
+  document.head.append(sheet);
+  try {
+    const { container } = render(
+      <div className="classic" style={{ width: 820, height: 300, display: 'flex' }}>
+        <PrefsForm layout="rail" schema={many} values={{}} onChange={() => {}} />
+      </div>,
+    );
+    const rail = container.querySelector('nav')!;
+    const pane = container.querySelector<HTMLElement>('[data-pref-into]')!;
+    await expect.poll(() => pane.hasAttribute('data-scrollbar') && rail.hasAttribute('data-scrollbar')).toBe(true);
+    expect(pane.offsetWidth - pane.clientWidth).toBe(15);
+    expect(clear(pane, pane.querySelector('[data-pref-path]')!)).toBeCloseTo(parseFloat(getComputedStyle(pane).paddingLeft), 0);
+    expect(clear(rail, rail.querySelector('button')!)).toBeCloseTo(parseFloat(getComputedStyle(rail).paddingLeft), 0);
+  } finally {
+    sheet.remove();
+  }
+});
+
+it('marks no scrollbar where it is laid over the box', () => {
+  const { container } = render(form('a'));
+  const pane = container.querySelector('[data-pref-into]')!;
+  expect(pane.scrollHeight).toBeGreaterThan(pane.clientHeight);
+  expect(pane.hasAttribute('data-scrollbar')).toBe(false);
+  expect(container.querySelector('nav')!.hasAttribute('data-scrollbar')).toBe(false);
+});

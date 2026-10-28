@@ -4,6 +4,7 @@ import { Disclosure } from '../Disclosure';
 import { dropSlot, isDropPath } from './drop';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { prefRailAbove, type PrefRailItem } from './schema';
+import { markScrollbar } from './scrollbar';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsRail}. */
@@ -129,7 +130,7 @@ export function PrefsRail(props: PrefsRailProps) {
     });
 
   return (
-    <nav className={s.rail} aria-label={ariaLabel} data-pref-scroll="">
+    <nav className={s.rail} ref={markScrollbar} aria-label={ariaLabel} data-pref-scroll="">
       {header}
       <div className={s.railList} ref={roving.rootRef} onKeyDown={onKeyDown}>
         {entries(null)}
