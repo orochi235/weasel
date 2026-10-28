@@ -23,6 +23,8 @@ export interface ToolButtonProps {
   ariaDisabled?: boolean;
   /** Click handler. */
   onClick(e: MouseEvent): void;
+  /** Pointer press handler. A `menu` button's own press handler wins. */
+  onPointerDown?(e: PointerEvent<HTMLButtonElement>): void;
   /** Makes the button a drag source, starting a drag with this. */
   onDragStart?(e: DragEvent<HTMLButtonElement>): void;
   /** The button opens a menu: it takes the menu trigger's ref, id and press handler, says
@@ -49,7 +51,7 @@ export interface ToolButtonProps {
 export function ToolButton(props: ToolButtonProps) {
   const {
     icon, label, shortcut, active, disabled, ariaDisabled,
-    onClick, onDragStart, title, className, menu,
+    onClick, onPointerDown, onDragStart, title, className, menu,
   } = props;
   const content = segmentTooltipContent({ tooltip: title, shortcut, label }) ?? label;
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
@@ -62,7 +64,7 @@ export function ToolButton(props: ToolButtonProps) {
         className={cls}
         aria-haspopup={menu ? 'menu' : undefined}
         aria-expanded={menu ? menu.expanded : undefined}
-        onPointerDown={menu?.onPointerDown}
+        onPointerDown={menu?.onPointerDown ?? onPointerDown}
         aria-current={active ? 'true' : undefined}
         aria-disabled={ariaDisabled ? 'true' : undefined}
         disabled={disabled}

@@ -5,10 +5,9 @@ import { DIAGRAM_THEMES, isDiagramBody } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_SCENE_KEY } from '../chartPersistence';
-import { STENCIL_MIME } from '../stencilDrop';
 import { at, colorAt, readClientPixels } from '../testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
-import { doubleClick } from '../testing/pointer';
+import { carryStencil, doubleClick } from '../testing/pointer';
 
 registerCanvasFont('sans-serif');
 
@@ -26,14 +25,9 @@ const { paper, blueprint } = DIAGRAM_THEMES as Record<string, (typeof DIAGRAM_TH
 
 const savedNodes = (): { data: unknown }[] => (JSON.parse(localStorage.getItem(CHART_SCENE_KEY) ?? '{"nodes":[]}') as { nodes: { data: unknown }[] }).nodes;
 
-/** Drops a Process stencil centered on world (400, 300), as a drag from the Shapes panel does. */
-async function dropProcess(canvas: HTMLCanvasElement, host: HTMLElement): Promise<void> {
-  const dt = new DataTransfer();
-  dt.setData(STENCIL_MIME, 'process');
-  const p = at(host, 400, 300);
-  for (const type of ['dragenter', 'dragover', 'drop']) {
-    canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-  }
+/** Drops a Process stencil centered on world (400, 300), as a carry from the Shapes panel does. */
+async function dropProcess(host: HTMLElement): Promise<void> {
+  await carryStencil('process', at(host, 400, 300));
   await expect.poll(() => savedNodes().some(isDiagramBody)).toBe(true);
 }
 
@@ -47,7 +41,7 @@ async function menu(...path: (string | RegExp)[]): Promise<void> {
 describe('Format › Theme', () => {
   it('repaints the page and a shape in the theme, and one undo puts both back', async () => {
     const { host, canvas } = await mountChartApp();
-    await dropProcess(canvas, host);
+    await dropProcess(host);
     // Inside the page, clear of the shape; and the shape's middle, clear of its outline and its (empty) text.
     const ground = at(host, 150, 650);
     const shape = at(host, 380, 290);
@@ -67,7 +61,7 @@ describe('Format › Theme', () => {
 describe('Format › Theme › Edit Theme…', () => {
   it('repaints a shape while its role color is dragged, and one undo restores the pixels and the theme', async () => {
     const { host, canvas } = await mountChartApp();
-    await dropProcess(canvas, host);
+    await dropProcess(host);
     const shape = at(host, 380, 290);
     await expect.poll(() => colorAt(canvas, shape)).toBe(paper!.roles.default!.fill);
 
@@ -113,7 +107,7 @@ function ink(host: HTMLElement, canvas: HTMLCanvasElement, x0: number, y0: numbe
 describe('the theme Size field', () => {
   it('grows a shape with its text, so the text stays inside it', async () => {
     const { host, canvas } = await mountChartApp();
-    await dropProcess(canvas, host);
+    await dropProcess(host);
     doubleClick(canvas, at(host, 400, 300));
     const editor = () => document.querySelector<HTMLElement>('.wc-host [contenteditable="true"]');
     await expect.poll(editor).not.toBeNull();

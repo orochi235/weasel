@@ -10,9 +10,11 @@ import {
   startCarry,
   useLatest,
   type Action,
+  type ActionDeps,
   type Carry,
   type CarryCallbacks,
   type Contribution,
+  type DepName,
   type DropVerdict,
   type InvocationCtx,
   type OngoingHandle,
@@ -64,7 +66,10 @@ export interface ItemDropOptions {
   participants: ParticipantSource<RectPose>;
   /** Default: every drop lands. */
   canDrop?: CanDropItem;
-  report: (drop: ItemDrop) => void;
+  /** Deps `report` reads beyond the scene, such as `insert` and `snap` to add the item itself. */
+  requires?: readonly DepName[];
+  /** Hears a drop that lands, with the canvas's deps as the carry came over it: `scene` and whatever `requires` names. */
+  report: (drop: ItemDrop, deps: ActionDeps) => void;
 }
 
 type DiagramScene = Scene<DiagramSceneData, 'main', RectPose>;
@@ -73,12 +78,12 @@ const ANY = 'optional' as const;
 
 /** The ongoing action a carried item runs from coming over the canvas to its release. */
 export function createItemDropAction(opts: ItemDropOptions): Action {
-  const { participants, report, canDrop = () => true } = opts;
+  const { participants, report, canDrop = () => true, requires = [] } = opts;
   return {
     id: ITEM_DROP_ACTION_ID,
     label: 'Drop an item',
     group: 'diagram',
-    requires: ['scene'],
+    requires: [...new Set<DepName>(['scene', ...requires])],
     defaultBinding: [{
       spec: { kind: 'carry', types: [DIAGRAM_ITEM_CARRY], mods: { alt: ANY, ctrl: ANY, meta: ANY, shift: ANY } },
       opts: { id: `${ITEM_DROP_ACTION_ID}.carry` },
@@ -89,6 +94,8 @@ export function createItemDropAction(opts: ItemDropOptions): Action {
         const scene = ctx.deps.scene as DiagramScene | undefined;
         if (scene === undefined || ctx.carry === undefined) return {};
         const item = ctx.carry.value;
+        // The dispatcher hands an ongoing handle's onEnd no deps, so report gets these.
+        const { deps } = ctx;
         // The host is asked once per place, not every frame.
         const verdicts = new Map<string, DropVerdict>();
         const over = (c: InvocationCtx) => {
@@ -118,7 +125,7 @@ export function createItemDropAction(opts: ItemDropOptions): Action {
             open = false;
             if (reason !== 'commit') return;
             now = over(endCtx);
-            if (now.verdict === true) report({ item, ...now.drop });
+            if (now.verdict === true) report({ item, ...now.drop }, deps);
           },
         };
       },

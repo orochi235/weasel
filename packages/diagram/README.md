@@ -455,8 +455,11 @@ nothing.
 
 Give each entry `touch-action: none` so a touch drag is a carry, not a scroll.
 `startItemDrag(event, item)` starts one from a pointer event of your own, and
-`createItemDropAction` is the canvas half for a `SceneCanvas` of your own; the
-carry travels as `DIAGRAM_ITEM_CARRY`.
+`createItemDropAction` (or `itemDropContribution`, to pass as `ambient`) is the
+canvas half for a `SceneCanvas` of your own; the carry travels as
+`DIAGRAM_ITEM_CARRY`. There its `report` gets the canvas's deps as well as the
+drop, and `requires` names the ones it reads, so it can add the item itself
+through `insert`. A `ToolPalette` carries from its buttons with `carryTool`.
 
 ### Stencils
 

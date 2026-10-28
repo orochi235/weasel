@@ -9,10 +9,9 @@ import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
-import { STENCIL_MIME } from './stencilDrop';
 import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
-import { click, doubleClick, drag } from './testing/pointer';
+import { carryStencil, click, doubleClick, drag } from './testing/pointer';
 
 const paper = DIAGRAM_THEMES.paper!;
 
@@ -212,13 +211,8 @@ describe('WeaselChart chart mode', () => {
   });
 
   it('drops a stencil dragged from the Shapes panel centered on the drop point', async () => {
-    const { host, canvas } = await mountApp();
-    const dt = new DataTransfer();
-    dt.setData(STENCIL_MIME, 'decision');
-    const p = at(host, 400, 300);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-    }
+    const { host } = await mountApp();
+    await carryStencil('decision', at(host, 400, 300));
     await expect.poll(() => bodies().length).toBe(1);
     const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; data: unknown; pose: { x: number; y: number; width: number; height: number } }[] })
       .nodes.find(isDiagramBody)!.pose;
@@ -249,14 +243,9 @@ describe('WeaselChart chart mode', () => {
 
   it('drops a stencil with its origin on the grid under snap to grid', async () => {
     chartPrefs().set('view.snapToGrid', true);
-    const { host, canvas } = await mountApp();
-    const dt = new DataTransfer();
-    dt.setData(STENCIL_MIME, 'decision');
+    const { host } = await mountApp();
     // A Decision is 120 by 80, so its origin would sit at (340, 260): the grid's (336, 264).
-    const p = at(host, 400, 300);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-    }
+    await carryStencil('decision', at(host, 400, 300));
     await expect.poll(() => bodies().length).toBe(1);
     const pose = bodies()[0]!.pose!;
     expect([pose.x, pose.y, pose.width, pose.height].map(Math.round)).toEqual([336, 264, 120, 80]);
@@ -265,10 +254,7 @@ describe('WeaselChart chart mode', () => {
     chartPrefs().set('view.snapToGrid', false);
     chartPrefs().set('view.alignmentSnap', false);
     chartPrefs().set('view.spacingSnap', false);
-    const q = at(host, 700, 500);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: q.x, clientY: q.y }));
-    }
+    await carryStencil('decision', at(host, 700, 500));
     await expect.poll(() => bodies().length).toBe(2);
     // A label is stored in its body's frame.
     const labelOffset = (body: SavedNode) => {
@@ -280,21 +266,14 @@ describe('WeaselChart chart mode', () => {
 
   it('lines a dropped stencil up with its neighbor the way a move would, in one undo step', async () => {
     chartPrefs().set('view.spacingSnap', false);
-    const { host, canvas } = await mountApp();
-    const drop = (stencil: string, x: number, y: number) => {
-      const dt = new DataTransfer();
-      dt.setData(STENCIL_MIME, stencil);
-      const p = at(host, x, y);
-      for (const type of ['dragenter', 'dragover', 'drop']) {
-        canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
-      }
-    };
+    const { host } = await mountApp();
+    const drop = (stencil: string, x: number, y: number) => carryStencil(stencil, at(host, x, y));
     // A Decision spanning y 260..340.
-    drop('decision', 400, 300);
+    await drop('decision', 400, 300);
     await expect.poll(() => bodies().length).toBe(1);
     // A Process centered at y 312 spans 282..342: its corner is out of reach of every line, its
     // bottom edge 2 from the Decision's. A move lines the bottoms up; a corner-only snap left it at 282.
-    drop('process', 640, 312);
+    await drop('process', 640, 312);
     await expect.poll(() => bodies().length).toBe(2);
     const decision = bodies().find((b) => b.pose!.height === 80)!.pose!;
     const process = bodies().find((b) => b.pose!.height === 60)!.pose!;

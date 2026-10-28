@@ -1,20 +1,20 @@
 import type { Tool, ToolsApi } from '@weasel-js/core';
 import {
-  STENCIL_GROUPS, addStencilGroup, diagramTypeDocOf, groupStencilIds, removeStencilGroup, stencilIdOf, type StencilGroup,
+  DIAGRAM_ITEM_CARRY, STENCIL_GROUPS, addStencilGroup, diagramTypeDocOf, groupStencilIds, removeStencilGroup, stencilIdOf, type StencilGroup,
 } from '@weasel-js/diagram';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
-import { useMemo, useState, type DragEvent, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
 import type { ChartScene } from './chartDocument';
-import { STENCIL_MIME } from './stencilDrop';
 
 /** A stencil's tool, which the Shapes panel holds rather than the main palette. */
 export const isStencilTool = (tool: Tool): boolean => stencilIdOf(tool.id) !== null;
 
-const onDragStart = (tool: Tool, e: DragEvent<HTMLButtonElement>): void => {
-  e.dataTransfer.setData(STENCIL_MIME, stencilIdOf(tool.id)!);
-  e.dataTransfer.effectAllowed = 'copy';
+/** A stencil's button carries its stencil id onto the canvas. */
+const carryStencil = (tool: Tool) => {
+  const id = stencilIdOf(tool.id);
+  return id === null ? null : { type: DIAGRAM_ITEM_CARRY, value: id };
 };
 
 function GroupPanel({ group, tools }: { group: StencilGroup; tools: ToolsApi }): ReactElement {
@@ -25,7 +25,7 @@ function GroupPanel({ group, tools }: { group: StencilGroup; tools: ToolsApi }):
   }, [group]);
   return (
     <SidebarPanel title={group.label} collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)}>
-      <ToolPalette tools={tools} include={include} columns={3} ariaLabel={group.label} onToolDragStart={onDragStart} />
+      <ToolPalette tools={tools} include={include} columns={3} ariaLabel={group.label} carryTool={carryStencil} />
     </SidebarPanel>
   );
 }

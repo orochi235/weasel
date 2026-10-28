@@ -1,6 +1,6 @@
-import { Fragment, type DragEvent, type ReactNode } from 'react';
+import { Fragment, useRef, type DragEvent, type PointerEvent, type ReactNode } from 'react';
 import {
-  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolSetHas, type Tool, type ToolSet, type ToolsApi,
+  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, startCarry, toolSetHas, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
 } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
@@ -67,7 +67,15 @@ export interface ToolPaletteProps {
   /** Makes each tool's button a drag source, so dragging one out can do what clicking it would
    *  then do on the canvas (drop a node, say). Called as a drag starts; set the drag's data here. */
   onToolDragStart?: (tool: Tool, e: DragEvent<HTMLButtonElement>) => void;
+  /** Makes each tool's button the source of an in-app carry (`startCarry`): a press carries what
+   *  this returns for the tool over the page, to a canvas whose bindings take its `type`. A press
+   *  that moves less than a click's slop still picks the tool; one that moves further carries and
+   *  picks nothing. Return `null` to leave a tool's button a plain button. */
+  carryTool?: (tool: Tool) => CarryPayload | null;
 }
+
+/** How far a press moves before it is a carry rather than a click, in CSS pixels. */
+const CARRY_SLOP_PX = 4;
 
 const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.tool] : slot.members);
 
@@ -85,8 +93,24 @@ export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
     groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
-    columns, onToolDragStart,
+    columns, onToolDragStart, carryTool,
   } = props;
+  // Set while the click that ends a carry is still to come, so the carry does not also pick its tool.
+  const carried = useRef(false);
+  const carryPress = (tool: Tool, e: PointerEvent<HTMLButtonElement>) => {
+    const payload = e.button === 0 ? carryTool?.(tool) ?? null : null;
+    if (payload === null) return;
+    const from = { x: e.clientX, y: e.clientY };
+    let moved = false;
+    startCarry(e.currentTarget, e, payload, {
+      onMove: (m) => { moved ||= Math.hypot(m.clientX - from.x, m.clientY - from.y) > CARRY_SLOP_PX; },
+      onEnd: () => {
+        if (!moved) return;
+        carried.current = true;
+        setTimeout(() => { carried.current = false; }, 0);
+      },
+    });
+  };
   const shows = include === undefined ? () => true
     : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
   const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && shows(t));
@@ -161,9 +185,10 @@ export function ToolPalette(props: ToolPaletteProps) {
                   shortcut={shortcut}
                   active={tools.active === tool.id}
                   ariaDisabled={!enabled}
-                  className={[s.paletteBtn, !enabled && s.ineligibleBtn].filter(Boolean).join(' ')}
+                  className={[s.paletteBtn, !enabled && s.ineligibleBtn, carryTool?.(tool) != null && s.carrySource].filter(Boolean).join(' ')}
                   title={resolvedTitle}
-                  onClick={enabled ? () => tools.setActive(tool.id) : () => {}}
+                  onClick={enabled ? () => { if (!carried.current) tools.setActive(tool.id); } : () => {}}
+                  onPointerDown={carryTool && enabled ? (e) => carryPress(tool, e) : undefined}
                   onDragStart={onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined}
                 />
               );

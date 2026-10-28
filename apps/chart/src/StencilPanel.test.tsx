@@ -6,7 +6,6 @@ import { toIconRef, type IconRef } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import { StencilPanel } from './StencilPanel';
-import { STENCIL_MIME } from './stencilDrop';
 import { renderWithIcons } from './testIcons';
 
 afterEach(cleanup);
@@ -98,12 +97,14 @@ describe('StencilPanel', () => {
     expect(screen.getByRole('button', { name: 'Process' }).getAttribute('aria-current')).toBeNull();
   });
 
-  it('carries the stencil id on a drag', () => {
-    panel();
+  it('still picks a stencil on a press that does not move, its button no longer a native drag source', () => {
+    const tools = chartTools();
+    panel(tools);
     const button = screen.getByRole('button', { name: 'Data' });
-    expect(button.getAttribute('draggable')).toBe('true');
-    const data = new Map<string, string>();
-    fireEvent.dragStart(button, { dataTransfer: { setData: (t: string, v: string) => data.set(t, v), effectAllowed: '' } });
-    expect(data.get(STENCIL_MIME)).toBe('data');
+    expect(button.getAttribute('draggable')).toBeNull();
+    fireEvent.pointerDown(button, { button: 0, pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerUp(document, { button: 0, pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.click(button);
+    expect(tools.setActive).toHaveBeenCalledWith('stencil:data');
   });
 });
