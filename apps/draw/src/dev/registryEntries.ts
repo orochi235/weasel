@@ -193,14 +193,17 @@ export interface PropertiesKindEntry {
   leafPaths: readonly string[];
 }
 
+/** One of core's named feature presets. */
 export interface BundleEntry {
   kind: 'bundle';
-  id: 'minimal' | 'standard' | 'exhaustive';
+  id: string;
   label: string;
-  /** Tool ids the bundle registers: `features={['draw']}` brings select and
-   *  hand, and `defaultTools` the rest. The kit names no bundles of its own;
-   *  these are the inspector's. */
+  /** It has a role beyond actions, tools, and includes, so its parts only work together. */
+  atom: boolean;
+  /** Tool ids it mounts, its includes' among them. */
   tools: readonly string[];
+  /** The ids of the presets it includes. */
+  includes: readonly string[];
 }
 
 export interface IconEntry {

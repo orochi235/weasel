@@ -25,28 +25,57 @@ import {
 import type { FeaturePreset } from '../features';
 
 /**
- * Pathfinder operations, path-edit entry, and anchor editing.
- *
- * It refines `edit`: anchor nudging and deleting are tried ahead of their
- * node-level twins, which bind the same keys and are enabled whenever
- * anything is selected.
+ * The path-edit keys that share a key with a node-level action: anchor nudging
+ * and deleting, and Escape out of path edit or its tool. Each is tried ahead of
+ * its twin, which is enabled whenever anything is selected.
  */
-export const pathsPreset: FeaturePreset = {
-  id: 'paths',
-  refines: ['edit'],
+export const anchorKeysPreset: FeaturePreset = {
+  id: 'anchorKeys',
+  label: 'Anchor keys',
+  refines: ['nudge', 'delete', 'escape'],
   actions: [
     nudgeAnchorsUpAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
-    deleteAnchorsAction,
+    deleteAnchorsAction, exitPathEditAction, exitPathEditToolAction,
+  ],
+};
+
+/** The pathfinder booleans, and the live boolean group. */
+export const pathfinderPreset: FeaturePreset = {
+  id: 'pathfinder',
+  label: 'Pathfinder',
+  actions: [
     pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction, pathfinderExcludeAction,
     pathfinderDivideAction, pathfinderCropAction, pathfinderTrimAction, pathfinderMergeAction,
     makeBooleanGroupAction,
-    createOutlinesAction, outlineStrokeAction,
-    editAnchorsAction,
-    enterPathEditAction, exitPathEditAction, insertPathAnchorAction, bendSegmentAction,
-    cutPathAtAnchorAction, exitPathEditToolAction,
-    retractHandlesAction, makeHandlesSymmetricAction,
-    averageAnchorsAction, joinAnchorsAction, setAnchorFieldAction,
-    simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction,
+  ],
+};
+
+/** Text and strokes to paths. */
+export const outlinesPreset: FeaturePreset = {
+  id: 'outlines', label: 'Outlines', actions: [createOutlinesAction, outlineStrokeAction],
+};
+
+/** Entering path edit, and editing anchors, handles, and segments in it. */
+export const pathEditPreset: FeaturePreset = {
+  id: 'pathEdit',
+  label: 'Path edit',
+  actions: [
+    editAnchorsAction, enterPathEditAction, insertPathAnchorAction, bendSegmentAction, cutPathAtAnchorAction,
+    retractHandlesAction, makeHandlesSymmetricAction, averageAnchorsAction, joinAnchorsAction, setAnchorFieldAction,
     marqueeAnchorsAction, selectAnchorAction,
   ],
+};
+
+/** Simplify, offset, snip at crossings, and join paths. */
+export const pathCommandsPreset: FeaturePreset = {
+  id: 'pathCommands',
+  label: 'Path commands',
+  actions: [simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction],
+};
+
+/** Pathfinder operations, path-edit entry, and anchor editing. */
+export const pathsPreset: FeaturePreset = {
+  id: 'paths',
+  label: 'Paths',
+  includes: [anchorKeysPreset, pathfinderPreset, outlinesPreset, pathEditPreset, pathCommandsPreset],
 };

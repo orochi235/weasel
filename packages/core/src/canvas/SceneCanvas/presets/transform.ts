@@ -13,6 +13,7 @@ import { PRESET_CHROME } from './chrome';
 /** The selection outline, drawn only while this is on. */
 export const outlinePreset: FeaturePreset = {
   id: 'outline',
+  label: 'Outline',
   chrome: PRESET_CHROME.outline,
 };
 
@@ -20,6 +21,7 @@ export const outlinePreset: FeaturePreset = {
  *  it refines `move`, whose binding matches a handle drag too. */
 export const resizePreset: FeaturePreset = {
   id: 'resize',
+  label: 'Resize',
   refines: ['move'],
   actions: [resizeAction],
   ambient: () => selectionResizeContribution(),
@@ -29,6 +31,7 @@ export const resizePreset: FeaturePreset = {
 /** The rotation handle, drawn and bound. It refines `move` as `resize` does. */
 export const rotatePreset: FeaturePreset = {
   id: 'rotate',
+  label: 'Rotate',
   refines: ['move'],
   actions: [rotateAction],
   ambient: ({ rotate }) => selectionRotateContribution({ rotate }),
@@ -39,6 +42,7 @@ export const rotatePreset: FeaturePreset = {
  *  claim the drag. */
 export const movePreset: FeaturePreset = {
   id: 'move',
+  label: 'Move',
   actions: [moveAction, cloneAction],
   ambient: ({ move }) => selectionMoveContribution({ move }),
 };

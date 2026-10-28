@@ -1,0 +1,73 @@
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> weasel@0.4.0 perf:bench
+> node tests/perf/bench.mjs --out /Users/mike/.config/onto/work/weasel/tests/perf/recorded/scene-lock-climb-2026-10-27/studio/result.json --raw /Users/mike/.config/onto/work/weasel/tests/perf/recorded/scene-lock-climb-2026-10-27/studio/vitest-bench.json --maxWorkers=1 tests/perf/bench/scene-ops.bench.ts
+
+npm warn Unknown env config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/mike/.config/onto/work/weasel[39m
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/scene-ops.bench.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 38372[2mms[22m[39m
+   [32m✓[39m scene.add — leaf, by tree depth[32m 126[2mms[22m[39m
+     [1mname    [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     depth 4   [34m853,432.12[39m  [36m0.0010[39m  [36m0.3388[39m  [36m0.0013[39m  [36m0.0012[39m  [36m0.0023[39m  [36m0.0033[39m  [36m0.0136[39m  [2m±3.56%[22m  [2m  20000[22m[1m[32m   fastest[39m[22m
+     depth 16  [34m854,749.57[39m  [36m0.0010[39m  [36m0.4229[39m  [36m0.0013[39m  [36m0.0012[39m  [36m0.0043[39m  [36m0.0052[39m  [36m0.0145[39m  [2m±5.55%[22m  [2m  20000[22m
+     depth 0   [34m766,935.81[39m  [36m0.0009[39m  [36m0.7180[39m  [36m0.0015[39m  [36m0.0014[39m  [36m0.0041[39m  [36m0.0044[39m  [36m0.0171[39m  [2m±6.41%[22m  [2m  20000[22m[1m[90m   slowest[39m[22m
+   [32m✓[39m scene.add + scene.remove — round trip, by tree depth[32m 197[2mms[22m[39m
+     [1mname    [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     depth 16  [34m435,758.64[39m  [36m0.0019[39m  [36m0.3743[39m  [36m0.0025[39m  [36m0.0024[39m  [36m0.0061[39m  [36m0.0067[39m  [36m0.0241[39m  [2m±3.11%[22m  [2m  20000[22m[1m[32m   fastest[39m[22m
+     depth 0   [34m418,806.14[39m  [36m0.0020[39m  [36m0.4465[39m  [36m0.0026[39m  [36m0.0025[39m  [36m0.0053[39m  [36m0.0070[39m  [36m0.0264[39m  [2m±3.21%[22m  [2m  20000[22m
+     depth 4   [34m404,993.01[39m  [36m0.0020[39m  [36m0.3502[39m  [36m0.0027[39m  [36m0.0025[39m  [36m0.0059[39m  [36m0.0070[39m  [36m0.0255[39m  [2m±2.81%[22m  [2m  20000[22m[1m[90m   slowest[39m[22m
+   [32m✓[39m scene.setPose — by tree depth[32m 58[2mms[22m[39m
+     [1mname    [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     depth 16  [34m1,850,605.62[39m  [36m0.0005[39m  [36m0.1991[39m  [36m0.0006[39m  [36m0.0005[39m  [36m0.0012[39m  [36m0.0015[39m  [36m0.0045[39m  [2m±3.57%[22m  [2m  20000[22m[1m[32m   fastest[39m[22m
+     depth 4   [34m1,763,814.47[39m  [36m0.0005[39m  [36m0.0271[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0013[39m  [36m0.0016[39m  [36m0.0059[39m  [2m±1.01%[22m  [2m  20000[22m
+     depth 0   [34m1,776,806.88[39m  [36m0.0004[39m  [36m0.2510[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0010[39m  [36m0.0023[39m  [36m0.0041[39m  [2m±4.21%[22m  [2m  20000[22m[1m[90m   slowest[39m[22m
+   [32m✓[39m per-frame pose write — one node, three paths[32m 36[2mms[22m[39m
+     [1mname                                        [22m  [1m           hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     the pose object alone                         [34m24,093,254.20[39m  [36m0.0000[39m  [36m0.0292[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0000[39m  [36m0.0001[39m  [2m±8.54%[22m  [2m  20000[22m[1m[32m   fastest[39m[22m
+     override, mutated in place — records nothing  [34m 4,379,957.23[39m  [36m0.0002[39m  [36m0.0158[39m  [36m0.0002[39m  [36m0.0003[39m  [36m0.0003[39m  [36m0.0006[39m  [36m0.0031[39m  [2m±1.52%[22m  [2m  20000[22m
+     setPose, fresh object — records a step        [34m 2,003,482.24[39m  [36m0.0004[39m  [36m0.2516[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0007[39m  [36m0.0008[39m  [36m0.0011[39m  [2m±6.21%[22m  [2m  20000[22m[1m[90m   slowest[39m[22m
+   [32m✓[39m per-frame pose write — setPose, untracked[32m 15[2mms[22m[39m
+     [1mname                                      [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m    rme[22m  [1msamples[22m
+     setPose inside untracked — records nothing  [34m3,295,725.33[39m  [36m0.0002[39m  [36m0.3277[39m  [36m0.0003[39m  [36m0.0003[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0028[39m  [2m±11.90%[22m  [2m  20000[22m
+   [32m✓[39m scene.setPose — 10k-node scene, one node[32m 35[2mms[22m[39m
+     [1mname       [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     10000 nodes  [34m1,710,958.06[39m  [36m0.0005[39m  [36m0.3568[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0008[39m  [36m0.0009[39m  [36m0.0035[39m  [2m±6.42%[22m  [2m  20000[22m
+   [33m[2m✓[22m[39m renderOrder — flat scene, fully drained[33m 9982[2mms[22m[39m
+     [1mname       [22m  [1m           hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1m samples[22m
+     100 nodes    [34m19,012,351.08[39m  [36m0.0000[39m  [36m0.0320[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0001[39m  [2m±0.04%[22m  [2m16892333[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 1,976,785.00[39m  [36m0.0003[39m  [36m0.0247[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0007[39m  [2m±0.04%[22m  [2m 1962812[22m
+     10000 nodes  [34m   203,276.76[39m  [36m0.0035[39m  [36m0.0725[39m  [36m0.0049[39m  [36m0.0050[39m  [36m0.0053[39m  [36m0.0054[39m  [36m0.0102[39m  [2m±0.03%[22m  [2m  202783[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m renderOrder — 10k nodes, by layer count[33m 5349[2mms[22m[39m
+     [1mname     [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     1 layers   [34m205,267.42[39m  [36m0.0034[39m  [36m0.0273[39m  [36m0.0049[39m  [36m0.0049[39m  [36m0.0051[39m  [36m0.0052[39m  [36m0.0102[39m  [2m±0.03%[22m  [2m 204501[22m[1m[32m   fastest[39m[22m
+     16 layers  [34m204,574.58[39m  [36m0.0034[39m  [36m0.0282[39m  [36m0.0049[39m  [36m0.0049[39m  [36m0.0052[39m  [36m0.0053[39m  [36m0.0101[39m  [2m±0.03%[22m  [2m 203911[22m
+     64 layers  [34m203,073.24[39m  [36m0.0034[39m  [36m0.0470[39m  [36m0.0049[39m  [36m0.0050[39m  [36m0.0054[39m  [36m0.0055[39m  [36m0.0124[39m  [2m±0.05%[22m  [2m 202055[22m
+     4 layers   [34m201,327.69[39m  [36m0.0035[39m  [36m0.0552[39m  [36m0.0050[39m  [36m0.0051[39m  [36m0.0055[39m  [36m0.0056[39m  [36m0.0130[39m  [2m±0.05%[22m  [2m 200219[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m renderOrder — 1000 leaves under a container chain[33m 5672[2mms[22m[39m
+     [1mname    [22m  [1m          hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     depth 0   [34m2,001,747.22[39m  [36m0.0003[39m  [36m0.0405[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0007[39m  [2m±0.04%[22m  [2m1990093[22m[1m[32m   fastest[39m[22m
+     depth 16  [34m1,982,363.10[39m  [36m0.0003[39m  [36m0.0299[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0007[39m  [2m±0.03%[22m  [2m1972995[22m
+     depth 4   [34m1,979,925.08[39m  [36m0.0003[39m  [36m0.0255[39m  [36m0.0005[39m  [36m0.0005[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0007[39m  [2m±0.04%[22m  [2m1969216[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)[33m 2674[2mms[22m[39m
+     [1mname                               [22m  [1m        hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     drain — cached                       [34m202,548.56[39m  [36m0.0035[39m  [36m0.0568[39m  [36m0.0049[39m  [36m0.0050[39m  [36m0.0053[39m  [36m0.0055[39m  [36m0.0099[39m  [2m±0.03%[22m  [2m 202207[22m[1m[32m   fastest[39m[22m
+     drain — cold, after a layer reorder  [34m  2,908.02[39m  [36m0.3274[39m  [36m2.3792[39m  [36m0.3481[39m  [36m0.3453[39m  [36m0.6600[39m  [36m0.6990[39m  [36m0.8388[39m  [2m±0.65%[22m  [2m   2874[22m
+   [33m[2m✓[22m[39m renderOrder → nodes vs renderOrderNodes[33m 14228[2mms[22m[39m
+     [1mname                               [22m  [1m           hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1m samples[22m
+     100 nodes — via renderOrderNodes     [34m19,362,336.51[39m  [36m0.0000[39m  [36m 0.5099[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0002[39m  [36m0.0004[39m  [2m±1.18%[22m  [2m14498674[22m[1m[32m   fastest[39m[22m
+     1000 nodes — via renderOrderNodes    [34m 3,995,962.52[39m  [36m0.0000[39m  [36m 0.5576[39m  [36m0.0003[39m  [36m0.0003[39m  [36m0.0007[39m  [36m0.0008[39m  [36m0.0013[39m  [2m±1.36%[22m  [2m 2909710[22m
+     10000 nodes — via renderOrderNodes   [34m   764,773.76[39m  [36m0.0009[39m  [36m 0.3769[39m  [36m0.0015[39m  [36m0.0013[39m  [36m0.0018[39m  [36m0.0027[39m  [36m0.0717[39m  [2m±0.61%[22m  [2m  663400[22m
+     100 nodes — via renderOrder + get    [34m   562,818.47[39m  [36m0.0016[39m  [36m 0.4796[39m  [36m0.0018[39m  [36m0.0018[39m  [36m0.0021[39m  [36m0.0023[39m  [36m0.0036[39m  [2m±0.32%[22m  [2m  555303[22m
+     1000 nodes — via renderOrder + get   [34m    38,731.84[39m  [36m0.0232[39m  [36m37.9004[39m  [36m0.0276[39m  [36m0.0260[39m  [36m0.0322[39m  [36m0.0343[39m  [36m0.0791[39m  [2m±7.99%[22m  [2m   36222[22m
+     10000 nodes — via renderOrder + get  [34m     3,418.85[39m  [36m0.2707[39m  [36m10.9977[39m  [36m0.2986[39m  [36m0.2945[39m  [36m0.3346[39m  [36m0.6276[39m  [36m0.7274[39m  [2m±2.33%[22m  [2m    3349[22m[1m[90m   slowest[39m[22m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 20:11:54
+[2m   Duration [22m 39.39s[2m (tests 98%, import 1%, environment 1%)[22m
+
+JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/results/.vitest-bench-lqDhji/vitest-bench.json
+perf result: tests/perf/recorded/scene-lock-climb-2026-10-27/studio/result.json

@@ -192,7 +192,7 @@ describe('aliases', () => {
   });
 
   it('refuses to alias a group', () => {
-    expect(() => aliasNodes(ROOT, ['a'], { parentPath: 'b', index: 0 })).toThrow(/no leaf at a to alias/);
+    expect(() => aliasNodes(ROOT, ['a'], { parentPath: 'b', index: 0 })).toThrow(/a cannot be aliased/);
   });
 
   it('keeps an alias pointed at a leaf that moves', () => {

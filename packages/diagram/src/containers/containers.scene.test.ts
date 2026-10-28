@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  commitOps, createScene, editPreset, scenePoseFrame, moveAction, resizeAction, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle,
+  commitOps, createScene, nudgePreset, scenePoseFrame, moveAction, resizeAction, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle,
   type OngoingInvoker, type RectPose,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -197,7 +197,7 @@ describe('pools in a scene', () => {
     const [first] = lanesOf(scene as never, pool);
     shape(scene, 's', { x: 100, y: 30, width: 40, height: 20 }, first);
     const entries = scene.historyIndex();
-    const nudge = editPreset.actions!.find((a) => a.id === 'nudge.down')!.invoker as { run: (d: never, p?: never) => void };
+    const nudge = nudgePreset.actions!.find((a) => a.id === 'nudge.down')!.invoker as { run: (d: never, p?: never) => void };
     nudge.run({ scene, selection: { get: () => [first!] } } as never, { magnitude: 'large' } as never);
     expect(pose(scene, first!)).toEqual({ x: 32, y: 0, width: 448, height: 120 });
     expect(pose(scene, 's')).toMatchObject({ y: 30 });

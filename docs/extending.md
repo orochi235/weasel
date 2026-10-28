@@ -49,11 +49,15 @@ app that does not import a preset never loads its code.
 ```ts
 interface FeaturePreset {
   id: string;
+  label?: string;                      // what a listing calls it; absent, the id
   actions?: Action[];                  // standard actions: `actions` and `tune` reach them
   tools?: (BuiltinToolId | ToolSet | Tool)[]; // mounted in the canvas's registry
   ambient?: (options) => Contribution; // always-live bindings, under a takeover too
   chrome?: ChromeId[];                 // selection chrome drawn only while it is on
   chromeRules?: VisibilityRules;       // default visibility for chrome of its own
+  moveBehaviors?: MoveBehavior[];      // folded into every move the ambient bindings run
+  snapSources?: SnapSource[];          // asked by every snap session on the canvas
+  layers?: Record<string, CustomLayerEntry>; // render-stack slots, under `<SceneCanvas layers>`
   pathEdit?: PathEditExtension[];      // what it adds to path edit
   contributions?: SurfaceContribution[]; // installed beside `ambient`
   refines?: string[];                  // preset ids whose actions its own go ahead of
@@ -62,8 +66,13 @@ interface FeaturePreset {
 ```
 
 Actions register in preset order, and a preset goes ahead of the presets it
-`refines`: core's `paths` refines `edit`, so anchor nudging is tried before
-node nudging on the same arrow key. Core's own presets are exported too
+`refines`: core's `anchorKeys` refines `nudge`, `delete`, and `escape`, so
+anchor nudging is tried before node nudging on the same arrow key. A preset
+with only `actions`, built-in `tools`, and `includes` is a bundle, pure
+grouping; one with any other role is an atom, whose parts only work together.
+`describePresets` reports both as data (each one's own action and tool ids,
+its includes, and whether it is an atom) for a tool that lists or rearranges
+them, such as the asset editor's Bundles asset. Core's own presets are exported too
 (`selectPreset`, `editPreset`, `pathsPreset`, …), and `<SceneCanvas>` resolves
 its names through them. `<SceneCanvas>` itself loads every core preset to
 resolve those names; `<LeanSceneCanvas>` takes objects only, so a bundle

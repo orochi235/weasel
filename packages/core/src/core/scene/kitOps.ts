@@ -5,14 +5,14 @@
  * machinery a consumer's ops do.
  */
 import type { UnitScope } from '@weasel-js/quantity';
-import type { ParallaxOpts } from 'core/viewport/parallax';
 import { dwarn } from 'debug/flag';
 import type { LayoutStrategy } from '../../layout/types';
+import { registerLayerOps } from './layerOps';
 import { restoreFn, type FnBearingNode, type NodeFnField } from './nodeFnFields';
 import { statedFields } from './statedFields';
 import type { createNodeStore } from './nodeStore';
 import type {
-  LayerRecord, Node, NodeClip, NodeId, RegisteredOp, UserLayerRecord,
+  LayerRecord, Node, NodeClip, NodeId, RegisteredOp,
 } from './types';
 
 /**
@@ -61,11 +61,6 @@ export interface KitOpsEnv<TData, TLayer extends string, TPose> {
   noteWritten(node: Node<TData, TLayer, TPose>): void;
 }
 
-function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | undefined): void {
-  if (to === undefined) delete record.parallax;
-  else record.parallax = to;
-}
-
 /** Register every kit op kind. Answers with the table a live `kit:setLayout`
  *  payload's strategies are kept in, which `scene.setLayout` fills. */
 export function registerKitOps<TData, TLayer extends string, TPose>(
@@ -73,7 +68,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
 ): {
   layoutRefs: WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>;
 } {
-  const { state, requireLayerIndex, rebuildLayerIndex, invalidateOrder, fnFields } = env;
+  const { state, requireLayerIndex, invalidateOrder, fnFields } = env;
   const {
     dependents, childDerived, invalidateDependents, invalidateChildDerivedFrom, trackChildDerived, retarget,
     requireNode, detach, attach, addedFns, restoreNodeFunctions,
@@ -254,49 +249,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     },
   });
 
-  registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerVisible', {
-    apply: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.to; if (!p.to) env.narrowSelection(); },
-    revert: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.from; },
-  });
-
-  registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerLocked', {
-    apply: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.to; if (p.to) env.narrowSelection(); },
-    revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; },
-  });
-
-  registerKitOp<{ layer: TLayer; from?: ParallaxOpts; to?: ParallaxOpts }>('kit:setLayerParallax', {
-    apply: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.to); },
-    revert: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.from); },
-  });
-
-  registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
-    apply: (p) => { state.layers.splice(p.index, 0, { ...p.record }); rebuildLayerIndex(); },
-    revert: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
-  });
-
-  registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {
-    apply: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
-    revert: (p) => { state.layers.splice(p.index, 0, { ...p.record } as LayerRecord<TLayer>); rebuildLayerIndex(); },
-  });
-
-  registerKitOp<{ layer: TLayer; from: string; to: string }>('kit:renameLayer', {
-    apply: (p) => { (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.to; },
-    revert: (p) => { (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.from; },
-  });
-
-  /** Finds the layer by id, not by where the payload last left it: moves of
-   *  one layer coalesce, and the entry then reverts the first payload from
-   *  wherever the last one put the layer. */
-  function placeLayer(layer: TLayer, index: number): void {
-    const [rec] = state.layers.splice(requireLayerIndex(layer), 1);
-    state.layers.splice(index, 0, rec);
-    rebuildLayerIndex();
-  }
-
-  registerKitOp<{ layer: TLayer; from: number; to: number }>('kit:moveLayer', {
-    apply: (p) => placeLayer(p.layer, p.to),
-    revert: (p) => placeLayer(p.layer, p.from),
-  });
+  registerLayerOps(env);
 
   return { layoutRefs };
 }

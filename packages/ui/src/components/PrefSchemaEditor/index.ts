@@ -12,5 +12,10 @@ export { diffSchemas, formatChanges, printSchema, type SchemaChange } from './sc
 export type { SchemaRoot } from './schemaTree';
 export type { PrefTypes } from './types';
 export type { SentAsset, SubmitAssets } from './useAssetChanges';
-export { headingOf, type ActionsAsset, type Asset, type AssetHeading, type LayoutAsset, type ListedAsset, type SchemaAsset, type ShownAsset, type Workspace } from './workspace';
+export type { Bundle, BundleMember } from './bundleTree';
+export type { BundleChange, BundlesDocument } from './bundleExport';
+export {
+  bundlesAsset, headingOf, type ActionsAsset, type Asset, type AssetHeading, type BundlesAsset, type LayoutAsset, type ListedAsset, type SchemaAsset,
+  type ShownAsset, type Workspace,
+} from './workspace';
 export { workspaceCodec } from './workspaceCodec';

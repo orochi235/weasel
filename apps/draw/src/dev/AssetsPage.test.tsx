@@ -13,7 +13,7 @@ const asset = (label: string) =>
 // first stylesheet parse, Prism compiling its grammar), so it is paid here, on a clock of its own.
 beforeAll(() => {
   renderWithIcons(<AssetsPage />);
-  fireEvent.click(asset('Node: rect'));
+  fireEvent.click(asset('rect'));
   fireEvent.click(within(tree()).getByText('pose.x'));
   cleanup();
 }, 30_000);
@@ -22,7 +22,7 @@ describe('AssetsPage', () => {
   it('opens on WeaselDraw preferences, and opens a node property schema picked from the list', () => {
     renderWithIcons(<AssetsPage />);
     expect(within(tree()).getByText('tools')).toBeInTheDocument();
-    fireEvent.click(asset('Node: rect'));
+    fireEvent.click(asset('rect'));
     fireEvent.click(within(tree()).getByText('pose.x'));
     expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('pose.x');
     expect(within(screen.getByRole('region', { name: 'Live preview' })).getByRole('heading', { name: 'Layout' })).toBeInTheDocument();
@@ -52,6 +52,14 @@ describe('AssetsPage', () => {
       expect(preview.queryByText(/no renderer/)).toBeNull();
     },
   );
+
+  it("lists the feature bundles, with core's and path-tools' presets in their packages' sections", () => {
+    renderWithIcons(<AssetsPage />);
+    fireEvent.click(asset('Feature bundles'));
+    expect(within(tree()).getByText('@weasel-js/core')).toBeInTheDocument();
+    expect(within(tree()).getByText('@weasel-js/path-tools')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'JSON' })).toBeInTheDocument();
+  });
 
   it('lists the menu bar, and shows its titles in the structure tree', () => {
     renderWithIcons(<AssetsPage />);

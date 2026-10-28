@@ -44,6 +44,14 @@ it('lists a menu asset under Menus, after Toolbars', () => {
   expect(screen.getByRole('option', { name: 'Edit menu' }).closest('[role="group"]')?.textContent).toContain('Menus');
 });
 
+it('lists a node kind\'s properties under their own heading, after Dialogs', () => {
+  const assets: ShownAsset[] = [...ASSETS, { id: 'n', label: 'rect', kind: 'schema', nodeKind: 'rect', root }];
+  render(<AssetList assets={assets} selected="a" changed={new Set()} onSelect={() => {}} />);
+  const headings = screen.getAllByRole('group').map((g) => g.querySelector('header')?.textContent);
+  expect(headings).toEqual(['Dialogs', 'Node properties', 'Panels']);
+  expect(screen.getByRole('option', { name: 'rect' }).closest('[role="group"]')?.textContent).toContain('Node properties');
+});
+
 it('marks an asset another editor holds where the host says it changed', () => {
   render(<AssetList assets={ASSETS} selected="a" changed={new Set()} onSelect={() => {}}
     elsewhere={[{ id: 'r', label: 'Reader', under: 'Dialogs', changed: true }, { id: 's', label: 'Shell', under: 'Dialogs' }]} />);

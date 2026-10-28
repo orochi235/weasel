@@ -34,12 +34,14 @@ describe('registryData static collectors', () => {
     expect(icons[2]?.actions).toEqual(['flip:y', 'app.thing']);
   });
 
-  it('collectBundles returns the three named tool bundles', () => {
+  it('collectBundles lists every core preset, each with the tools its includes mount', () => {
     const bundles = collectBundles();
-    expect(bundles.map((b) => b.id)).toEqual(['minimal', 'standard', 'exhaustive']);
-    const exhaustive = bundles.find((b) => b.id === 'exhaustive')!;
-    expect(exhaustive.tools).toContain('rect');
-    expect(exhaustive.tools).toContain('ellipse');
+    expect(bundles.map((b) => b.id)).toEqual([...Weasel.SCENE_CANVAS_FEATURES]);
+    const draw = bundles.find((b) => b.id === 'draw')!;
+    expect([...draw.tools].sort()).toEqual(['hand', 'lasso', 'select']);
+    expect(draw.atom).toBe(false);
+    expect(bundles.find((b) => b.id === 'resize')!.atom).toBe(true);
+    expect(bundles.find((b) => b.id === 'tools:shape')!.tools).toContain('rect');
   });
 
   it('collectOpKinds lists every op kind registered with the kit', () => {

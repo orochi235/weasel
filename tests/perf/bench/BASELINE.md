@@ -382,88 +382,88 @@ Every file was measured in one run on 2026-10-27, with Node importing the code n
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| depth 0 | 1.29e-3 | 9.16e-4 | 763,833 | ±6.8% | 20000 |
-| depth 4 | 1.42e-3 | 1.17e-3 | 679,400 | ±4.1% | 20000 |
-| depth 16 | 2.12e-3 | 1.87e-3 | 452,856 | ±3.0% | 20000 |
+| depth 4 | 1.17e-3 | 9.58e-4 | 853,432 | ±3.6% | 20000 |
+| depth 16 | 1.13e-3 | 9.58e-4 | 854,750 | ±5.5% | 20000 |
+| depth 0 | 1.29e-3 | 8.75e-4 | 766,936 | ±6.4% | 20000 |
 
 ### scene.add + scene.remove — round trip, by tree depth
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| depth 0 | 2.42e-3 | 2.04e-3 | 399,167 | ±2.6% | 20000 |
-| depth 4 | 3.04e-3 | 2.58e-3 | 321,735 | ±2.2% | 20000 |
-| depth 16 | 4.96e-3 | 4.21e-3 | 198,250 | ±1.7% | 20000 |
+| depth 16 | 2.21e-3 | 1.87e-3 | 435,759 | ±3.1% | 20000 |
+| depth 0 | 2.33e-3 | 1.96e-3 | 418,806 | ±3.2% | 20000 |
+| depth 4 | 2.38e-3 | 2.00e-3 | 404,993 | ±2.8% | 20000 |
 
 ### scene.setPose — by tree depth
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| depth 0 | 6.66e-4 | 5.41e-4 | 1,516,845 | ±4.8% | 20000 |
-| depth 4 | 8.75e-4 | 7.50e-4 | 1,118,953 | ±2.6% | 20000 |
-| depth 16 | 1.88e-3 | 1.75e-3 | 523,458 | ±1.8% | 20000 |
+| depth 16 | 5.42e-4 | 4.58e-4 | 1,850,606 | ±3.6% | 20000 |
+| depth 4 | 5.42e-4 | 4.58e-4 | 1,763,814 | ±1.0% | 20000 |
+| depth 0 | 5.42e-4 | 4.16e-4 | 1,776,807 | ±4.2% | 20000 |
 
 ### per-frame pose write — one node, three paths
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| the pose object alone | 4.20e-5 | 0.00e+0 | 23,505,174 | ±40.5% | 20000 |
-| override, mutated in place — records nothing | 2.50e-4 | 1.66e-4 | 4,305,808 | ±7.0% | 20000 |
-| setPose, fresh object — records a step | 5.84e-4 | 5.00e-4 | 1,547,974 | ±4.7% | 20000 |
+| the pose object alone | 4.20e-5 | 0.00e+0 | 24,093,254 | ±8.5% | 20000 |
+| override, mutated in place — records nothing | 2.09e-4 | 1.66e-4 | 4,379,957 | ±1.5% | 20000 |
+| setPose, fresh object — records a step | 5.00e-4 | 4.16e-4 | 2,003,482 | ±6.2% | 20000 |
 
 ### per-frame pose write — setPose, untracked
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| setPose inside untracked — records nothing | 4.17e-4 | 3.33e-4 | 2,423,084 | ±7.5% | 20000 |
+| setPose inside untracked — records nothing | 2.92e-4 | 2.50e-4 | 3,295,725 | ±11.9% | 20000 |
 
 ### scene.setPose — 10k-node scene, one node
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| 10000 nodes | 7.50e-4 | 5.84e-4 | 1,352,371 | ±5.0% | 20000 |
+| 10000 nodes | 5.83e-4 | 4.58e-4 | 1,710,958 | ±6.4% | 20000 |
 
 ### renderOrder — flat scene, fully drained
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| 100 nodes | 4.20e-5 | 0.00e+0 | 19,123,059 | ±0.0% | 17004658 |
-| 1000 nodes | 5.41e-4 | 2.91e-4 | 1,913,381 | ±0.1% | 1902507 |
-| 10000 nodes | 5.08e-3 | 3.50e-3 | 197,237 | ±0.0% | 196795 |
+| 100 nodes | 4.20e-5 | 0.00e+0 | 19,012,351 | ±0.0% | 16892333 |
+| 1000 nodes | 5.00e-4 | 2.92e-4 | 1,976,785 | ±0.0% | 1962812 |
+| 10000 nodes | 4.92e-3 | 3.46e-3 | 203,277 | ±0.0% | 202783 |
 
 ### renderOrder — 10k nodes, by layer count
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| 4 layers | 5.08e-3 | 3.46e-3 | 197,485 | ±0.0% | 196964 |
-| 16 layers | 5.08e-3 | 3.46e-3 | 197,172 | ±0.0% | 196629 |
-| 64 layers | 5.08e-3 | 3.50e-3 | 197,049 | ±0.0% | 196560 |
-| 1 layers | 5.08e-3 | 3.50e-3 | 196,846 | ±0.0% | 195962 |
+| 1 layers | 4.92e-3 | 3.42e-3 | 205,267 | ±0.0% | 204501 |
+| 16 layers | 4.92e-3 | 3.42e-3 | 204,575 | ±0.0% | 203911 |
+| 64 layers | 4.92e-3 | 3.42e-3 | 203,073 | ±0.0% | 202055 |
+| 4 layers | 4.96e-3 | 3.46e-3 | 201,328 | ±0.1% | 200219 |
 
 ### renderOrder — 1000 leaves under a container chain
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| depth 0 | 5.00e-4 | 3.33e-4 | 1,951,470 | ±0.0% | 1942020 |
-| depth 4 | 5.00e-4 | 2.91e-4 | 1,939,375 | ±0.0% | 1928784 |
-| depth 16 | 5.41e-4 | 3.33e-4 | 1,907,086 | ±0.0% | 1896324 |
+| depth 0 | 5.00e-4 | 2.91e-4 | 2,001,747 | ±0.0% | 1990093 |
+| depth 16 | 5.00e-4 | 2.91e-4 | 1,982,363 | ±0.0% | 1972995 |
+| depth 4 | 5.00e-4 | 2.92e-4 | 1,979,925 | ±0.0% | 1969216 |
 
 ### renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| drain — cached | 5.17e-3 | 3.50e-3 | 194,363 | ±0.1% | 193583 |
-| drain — cold, after a layer reorder | 0.3757 | 0.3631 | 2,609 | ±0.4% | 2593 |
+| drain — cached | 4.92e-3 | 3.46e-3 | 202,549 | ±0.0% | 202207 |
+| drain — cold, after a layer reorder | 0.3367 | 0.3274 | 2,908 | ±0.6% | 2874 |
 
 ### renderOrder → nodes vs renderOrderNodes
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
-| 100 nodes — via renderOrderNodes | 4.20e-5 | 0.00e+0 | 19,842,806 | ±1.0% | 16140201 |
-| 1000 nodes — via renderOrderNodes | 2.50e-4 | 4.10e-5 | 4,037,785 | ±1.0% | 3064197 |
-| 10000 nodes — via renderOrderNodes | 1.25e-3 | 8.75e-4 | 773,567 | ±0.5% | 688206 |
-| 100 nodes — via renderOrder + get | 1.58e-3 | 1.46e-3 | 619,127 | ±0.2% | 613118 |
-| 1000 nodes — via renderOrder + get | 0.0242 | 0.0230 | 41,022 | ±5.9% | 39254 |
-| 10000 nodes — via renderOrder + get | 0.2757 | 0.2700 | 3,593 | ±5.2% | 3450 |
+| 100 nodes — via renderOrderNodes | 4.20e-5 | 0.00e+0 | 19,362,337 | ±1.2% | 14498674 |
+| 1000 nodes — via renderOrderNodes | 2.50e-4 | 4.20e-5 | 3,995,963 | ±1.4% | 2909710 |
+| 10000 nodes — via renderOrderNodes | 1.29e-3 | 9.17e-4 | 764,774 | ±0.6% | 663400 |
+| 100 nodes — via renderOrder + get | 1.75e-3 | 1.62e-3 | 562,818 | ±0.3% | 555303 |
+| 1000 nodes — via renderOrder + get | 0.0256 | 0.0232 | 38,732 | ±8.0% | 36222 |
+| 10000 nodes — via renderOrder + get | 0.2912 | 0.2707 | 3,419 | ±2.3% | 3349 |
 
 ## tests/perf/bench/snap-3d-move.bench.ts
 

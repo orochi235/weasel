@@ -72,8 +72,7 @@ export function RegistryInspector() {
       { id: 'slots', label: 'Slots', entries: slots },
       { id: 'meta', label: 'Meta', entries: meta },
     ];
-    // Bundles convey a deliberate progression (minimal → standard →
-    // exhaustive); preserve their declared order rather than alphabetizing.
+    // Bundles keep the preset table's order, each after the presets it includes, rather than alphabetizing.
     // `meta` is pinned to the bottom regardless of alphabetic order.
     return all
       .map((n) => (n.id === 'bundles'

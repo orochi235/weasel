@@ -28,7 +28,7 @@
     "longestFunction": 134
   },
   "packages/core/src/core/scene/kitOps.ts": {
-    "longestFunction": 230
+    "longestFunction": 190
   },
   "packages/core/src/core/scene/nodeStore.ts": {
     "longestFunction": 203
@@ -258,13 +258,13 @@
     "longestFunction": 221
   },
   "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
-    "longestFunction": 186
+    "longestFunction": 183
   },
   "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
     "longestFunction": 185
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
-    "longestFunction": 189
+    "longestFunction": 188
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
     "longestFunction": 158

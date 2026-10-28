@@ -104,7 +104,7 @@ test('the Changes tab lists an edit', async ({ page }) => {
   await expect(page.getByRole('tabpanel', { name: 'Changes' })).toContainText('view/gridDensity.description');
 });
 
-for (const asset of ['Node: rect', 'Arrange', 'Menu bar', 'Selection']) {
+for (const asset of ['rect', 'Arrange', 'Menu bar', 'Selection']) {
   test(`opening ${asset} draws its structure and preview`, async ({ page }) => {
     await page.getByRole('listbox', { name: 'Assets' }).getByRole('option', { name: asset, exact: true }).click();
     await expect.poll(() => tree(page).getByRole('treeitem').count()).toBeGreaterThan(0);
