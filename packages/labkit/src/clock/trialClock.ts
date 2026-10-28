@@ -1,10 +1,4 @@
-import {
-  type Clock,
-  type ClockHandle,
-  type ClockPosition,
-  type ClockSpec,
-  createClock,
-} from '@weasel-js/clock';
+import { type Clock, type ClockHandle, type ClockSpec, createClock } from '@weasel-js/clock';
 import type { Instrument } from '../instrument/types';
 
 export { type ClockedMix, type ClockPosition, clockPosition } from '@weasel-js/clock';
