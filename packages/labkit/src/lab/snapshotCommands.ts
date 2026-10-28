@@ -1,12 +1,18 @@
-import { type ClockRegistry, clockPosition, holdAt, type PlayheadHold } from '@weasel-js/clock';
-import { declaredClock, shownAt } from '../clock/trialClock';
+import {
+  type ClockRegistry,
+  clockPosition,
+  holdElapsed,
+  type PlayheadHold,
+} from '@weasel-js/clock';
+import { declaredClock } from '../clock/trialClock';
 import type { InstrumentList } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { LabCommands } from './LabContext';
 
 /**
  * A lab's snapshot save and load, which also carry a trial's own clock: a save
- * records where the clock stands now, and a load holds it at the saved time.
+ * records where the clock stands now, and a load holds it at the saved
+ * `elapsed`, in the pass it stood in.
  * `holds` keeps each trial's load hold, released by the next load.
  */
 export function snapshotCommands(
@@ -44,8 +50,7 @@ export function snapshotCommands(
       const handle = ownClock(trialId);
       if (after === before || !position || !handle) return;
       holds.get(trialId)?.release();
-      const { origin, duration, loop } = handle.clock;
-      holds.set(trialId, holdAt(handle, shownAt(position, origin, duration, loop)));
+      holds.set(trialId, holdElapsed(handle, position));
     },
   };
 }

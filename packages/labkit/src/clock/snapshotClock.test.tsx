@@ -38,6 +38,24 @@ const timed: Instrument = {
   ),
 };
 
+const looped: Instrument = {
+  ...timed,
+  name: 'Looped',
+  clock: { duration: 1000, loop: 3 },
+  render: (ctx) => (
+    <>
+      <Readout />
+      <Probe />
+      <button type="button" onClick={() => ctx.trial.clock?.seek(2500)}>
+        seek
+      </button>
+      <button type="button" onClick={() => ctx.trial.clock?.seek(0)}>
+        home
+      </button>
+    </>
+  ),
+};
+
 const shown = () => screen.getByRole('status', { name: 'clock' }).textContent;
 
 describe('a trial clock in a snapshot', () => {
@@ -66,5 +84,17 @@ describe('a trial clock in a snapshot', () => {
     expect(shown()).toBe('1200');
     act(() => lab!.loadSnapshot(trialId, lab!.savedSnapshots[0]!.id));
     expect(shown()).toBe('700');
+  });
+  it('comes back in the pass it stood in, for a clock of several passes', async () => {
+    await renderSettled(<Lab instruments={[looped]} defaultInstrument="Looped" />, {
+      wrapper: withIcons,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'seek' }));
+    const trialId = lab!.trials[0]!.id;
+    act(() => lab!.saveSnapshot(trialId, 'third pass'));
+    fireEvent.click(screen.getByRole('button', { name: 'home' }));
+    expect(shown()).toBe('0');
+    act(() => lab!.loadSnapshot(trialId, lab!.savedSnapshots[0]!.id));
+    expect(shown()).toBe('2500');
   });
 });
