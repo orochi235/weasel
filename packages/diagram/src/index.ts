@@ -56,6 +56,7 @@ export { FLOWCHART_STENCILS, stencilBuild, stencilIdOf, stencilKind } from './st
 export type { DiagramStencil } from './stencil';
 export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export type { StencilInsertOptions } from './stencilTool';
+export { StencilGhost, type StencilGhostProps } from './StencilGhost';
 export * from './containers';
 export {
   GRAB_LABEL_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID,

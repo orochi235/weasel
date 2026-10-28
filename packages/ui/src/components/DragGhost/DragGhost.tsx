@@ -13,13 +13,17 @@ export interface DragGhostProps {
   from: Element;
   /** What to draw: copies of the dragged items, or any stand-in for them. */
   children: ReactNode;
+  /** `at` is the ghost's center rather than its top-left: for a thing that lands centered on the pointer. */
+  centered?: boolean;
+  /** Draw `children` alone, with no surface under them: for a stand-in that is already the shape it drops. */
+  bare?: boolean;
 }
 
 /**
  * What follows the pointer during a drag while the dragged items hold their place: `children` on a raised surface at
  * a client-space point. Hidden from assistive tech and from the pointer, so it never becomes the drop target.
  */
-export function DragGhost({ at, from, children }: DragGhostProps) {
+export function DragGhost({ at, from, children, centered, bare }: DragGhostProps) {
   const seat = fixedSeat(from);
   // Pixel positioning: the point is the pointer's, known only at runtime. So is the face: the host is an ancestor of
   // whatever set the list's font, and would hand the ghost its own.
@@ -28,7 +32,7 @@ export function DragGhost({ at, from, children }: DragGhostProps) {
     fontFamily: getComputedStyle(from).fontFamily,
   };
   return createPortal(
-    <div className={s.ghost} style={style} aria-hidden="true">
+    <div className={[s.ghost, centered && s.centered, bare && s.bare].filter(Boolean).join(' ')} style={style} aria-hidden="true">
       {children}
     </div>,
     seat.host,

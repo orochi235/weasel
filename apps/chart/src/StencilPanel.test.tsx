@@ -7,6 +7,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import { StencilPanel } from './StencilPanel';
 import { renderWithIcons } from './testIcons';
+import { chartThemeOf } from './theme/themeCommands';
 
 afterEach(cleanup);
 
@@ -21,8 +22,8 @@ const labelsIn = (name: string) => [...screen.getByRole('toolbar', { name }).que
 const titles = () => [...document.querySelectorAll('[role="toolbar"]')].map((t) => t.getAttribute('aria-label'));
 
 function panel(tools = chartTools(), scene = newScene()) {
-  const view = renderWithIcons(<StencilPanel tools={tools} scene={scene} />);
-  scene.subscribe(() => view.rerender(<StencilPanel tools={tools} scene={scene} />));
+  const view = renderWithIcons(<StencilPanel tools={tools} scene={scene} theme={chartThemeOf(scene)} scale={1} />);
+  scene.subscribe(() => view.rerender(<StencilPanel tools={tools} scene={scene} theme={chartThemeOf(scene)} scale={1} />));
   return { scene, tools, view };
 }
 

@@ -46,9 +46,9 @@ export function doubleClick(el: Element, p: Point): void {
   el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: p.x, clientY: p.y, detail: 2 }));
 }
 
-/** Carries the stencil `id` from its Shapes panel button to client point `to` in eight steps a frame apart, releases
- *  there, and waits a frame. */
-export async function carryStencil(id: string, to: Point): Promise<void> {
+/** Carries the stencil `id` from its Shapes panel button to client point `to` in eight steps a frame apart, runs
+ *  `before` there, releases, and waits a frame. */
+export async function carryStencil(id: string, to: Point, before?: () => void): Promise<void> {
   const label = Object.values(STENCIL_GROUPS).flatMap((g) => g.stencils).find((s) => s.id === id)!.label;
   const button = [...document.querySelectorAll<HTMLElement>('[aria-label="Shapes"] button')]
     .find((b) => b.children[1]?.textContent === label)!;
@@ -59,6 +59,7 @@ export async function carryStencil(id: string, to: Point): Promise<void> {
     pointer(document.body, 'pointermove', { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 });
     await frames();
   }
+  before?.();
   pointer(document.body, 'pointerup', to);
   await frames();
 }

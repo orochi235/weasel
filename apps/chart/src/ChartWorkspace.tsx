@@ -94,7 +94,7 @@ export function ChartWorkspace(): ReactElement {
       <ChartToolbar tools={tools} include={isPaletteTool} view={view} setView={setView} dims={dims} />
       <div className="wc-body">
         <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes">
-          {tools && <StencilPanel tools={tools} scene={scene} />}
+          {tools && <StencilPanel tools={tools} scene={scene} theme={theme} scale={Math.abs(view.scale.x)} />}
         </Sidebar>
         <div className="wc-stage">
           <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>

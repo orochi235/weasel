@@ -221,6 +221,25 @@ describe('WeaselChart chart mode', () => {
     expect(Math.abs(pose.y + pose.height / 2 - 300)).toBeLessThan(2);
   });
 
+  it('carries the stencil itself to the canvas, centered on the pointer, and drops it there', async () => {
+    const { host } = await mountApp();
+    const to = at(host, 400, 300);
+    let ghost: DOMRect | null = null;
+    await carryStencil('decision', to, () => {
+      ghost = document.querySelector('[data-stencil="decision"]')?.getBoundingClientRect() ?? null;
+    });
+    expect(ghost).not.toBeNull();
+    const { x, y, width, height } = ghost!;
+    expect(Math.abs(x + width / 2 - to.x)).toBeLessThan(1);
+    expect(Math.abs(y + height / 2 - to.y)).toBeLessThan(1);
+    await expect.poll(() => bodies().length).toBe(1);
+    // Drawn at the size it lands: the body's box, its stroke around it.
+    const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; data: unknown; pose: { width: number; height: number } }[] })
+      .nodes.find(isDiagramBody)!.pose;
+    expect(width / height).toBeCloseTo((pose.width + 2) / (pose.height + 2), 2);
+    expect(document.querySelector('[data-stencil]')).toBeNull();
+  });
+
   it('snaps a moved body to the grid once View › Snap to grid is on', async () => {
     chartPrefs().set('view.alignmentSnap', false);
     chartPrefs().set('view.spacingSnap', false);

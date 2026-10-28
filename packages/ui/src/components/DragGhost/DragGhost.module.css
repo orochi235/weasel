@@ -11,3 +11,14 @@
   opacity: 0.85;
   pointer-events: none;
 }
+
+.centered {
+  translate: -50% -50%;
+}
+
+.bare {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}

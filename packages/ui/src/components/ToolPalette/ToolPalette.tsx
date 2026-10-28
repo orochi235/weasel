@@ -1,6 +1,6 @@
-import { Fragment, useRef, type DragEvent, type PointerEvent, type ReactNode } from 'react';
+import { Fragment, type DragEvent, type ReactNode } from 'react';
 import {
-  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, startCarry, toolSetHas, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
+  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolSetHas, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
 } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
@@ -13,6 +13,7 @@ import { Icon } from '../../icons/Icon';
 import { groupTools } from './order';
 import { slotsOf, stackIndex, type PaletteSlot } from './stacks';
 import { ToolStack, type StackCycleModifier, type StackMember } from './ToolStack';
+import { useToolCarry } from './useToolCarry';
 
 function toolGlyph(tool: Tool): ReactNode {
   return <Icon name={tool.presentation?.icon ?? icon('core:unknown')} />;
@@ -72,10 +73,10 @@ export interface ToolPaletteProps {
    *  that moves less than a click's slop still picks the tool; one that moves further carries and
    *  picks nothing. Return `null` to leave a tool's button a plain button. */
   carryTool?: (tool: Tool) => CarryPayload | null;
+  /** What follows the pointer, centered on it, while a tool `carryTool` carries is on the move: the
+   *  thing it drops, at the size it lands. Unset, nothing follows it. */
+  carryGhost?: (tool: Tool) => ReactNode;
 }
-
-/** How far a press moves before it is a carry rather than a click, in CSS pixels. */
-const CARRY_SLOP_PX = 4;
 
 const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.tool] : slot.members);
 
@@ -93,24 +94,9 @@ export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
     groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
-    columns, onToolDragStart, carryTool,
+    columns, onToolDragStart, carryTool, carryGhost,
   } = props;
-  // Set while the click that ends a carry is still to come, so the carry does not also pick its tool.
-  const carried = useRef(false);
-  const carryPress = (tool: Tool, e: PointerEvent<HTMLButtonElement>) => {
-    const payload = e.button === 0 ? carryTool?.(tool) ?? null : null;
-    if (payload === null) return;
-    const from = { x: e.clientX, y: e.clientY };
-    let moved = false;
-    startCarry(e.currentTarget, e, payload, {
-      onMove: (m) => { moved ||= Math.hypot(m.clientX - from.x, m.clientY - from.y) > CARRY_SLOP_PX; },
-      onEnd: () => {
-        if (!moved) return;
-        carried.current = true;
-        setTimeout(() => { carried.current = false; }, 0);
-      },
-    });
-  };
+  const carry = useToolCarry(carryTool, carryGhost);
   const shows = include === undefined ? () => true
     : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
   const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && shows(t));
@@ -187,8 +173,8 @@ export function ToolPalette(props: ToolPaletteProps) {
                   ariaDisabled={!enabled}
                   className={[s.paletteBtn, !enabled && s.ineligibleBtn, carryTool?.(tool) != null && s.carrySource].filter(Boolean).join(' ')}
                   title={resolvedTitle}
-                  onClick={enabled ? () => { if (!carried.current) tools.setActive(tool.id); } : () => {}}
-                  onPointerDown={carryTool && enabled ? (e) => carryPress(tool, e) : undefined}
+                  onClick={enabled ? () => { if (!carry.carried()) tools.setActive(tool.id); } : () => {}}
+                  onPointerDown={carryTool && enabled ? (e) => carry.press(tool, e) : undefined}
                   onDragStart={onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined}
                 />
               );
@@ -196,6 +182,7 @@ export function ToolPalette(props: ToolPaletteProps) {
           </ToolGroup>
         </Fragment>
       ))}
+      {carry.ghost}
     </div>
   );
 }
