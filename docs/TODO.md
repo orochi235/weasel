@@ -856,19 +856,6 @@ only story runner in the repo.
   answered. Before removing it, run the jsdom projects on teitou without it a few times and check
   `~/Library/Logs/DiagnosticReports/node-*.ips` there for new reports.
 
-- **(P3) [agent] The overlap's jsdom worker count subtracts busy cores the reserve sweep never did.**
-  `roomToOverlap` (`scripts/lib/node-load.mjs`) gives jsdom `floor(cores - busy) - reserve` workers, but
-  the 2026-10-21 sweep that chose the reserve ran `cores - reserve` regardless of load
-  (`scripts/bench-overlap-reserve.mjs`). On studio, busy read 1.5–6.3 cores in that sweep, where the
-  shipped rule would have given 2–5 workers or no overlap at all. At 58f8810f9 (2026-10-26, studio, 2.1
-  busy) it gave 4: the browser projects finished in 338 s and the jsdom ones in 479 s, while the sweep's
-  R 3–4 runs at 6–7 workers took 347–357 s for the whole suite (other commits; inferred, not compared
-  head to head). Head to head on studio at 58f8810f9 (2026-10-26, one pass each, both in
-  `scripts/bench-overlap-reserve.runs.jsonl`): the shipped rule's 4 workers took 495 s launcher to
-  finish with 10 timed-out tests retried; `cores - 3`'s 7 workers took 562 s with none, its browser side
-  slowed from 338 s to 482 s. So the cut is not costing time there; whether 5–6 workers would keep the
-  retries away without slowing the browser side is the next pass.
-
 - **(P3) [agent] The `browser` project spends about a second per file outside its tests.** Alone on teitou
   (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
   310 s; the rest is each file's page and module load, and from 35 s on the run is a stream of small
