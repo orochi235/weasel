@@ -93,4 +93,33 @@ describe('nodeGates — one read', () => {
     expect(['k1', 'k2', 'free'].map((n) => gates.hidden(n))).toEqual([true, true, false]);
     expect(['k1', 'k2', 'free'].map((n) => gates.locked(n))).toEqual([true, true, false]);
   });
+
+  it('a remembered ancestor answers for nodes below it and not for nodes above it', () => {
+    const s = source(
+      [
+        { id: 'root', layer: 'a', parent: null },
+        { id: 'mid', layer: 'b', parent: 'root', hidden: true },
+        { id: 'leaf', layer: 'a', parent: 'mid' },
+        { id: 'leaf2', layer: 'a', parent: 'mid' },
+        { id: 'aunt', layer: 'a', parent: 'root' },
+        { id: 'cousin', layer: 'a', parent: 'aunt' },
+      ],
+      [{ id: 'a' }, { id: 'b', locked: true }],
+    );
+    const gates = nodeGates(s);
+    const order = ['leaf', 'cousin', 'aunt', 'leaf2', 'mid', 'root'];
+    expect(order.map((n) => gates.hidden(n))).toEqual([true, false, false, true, true, false]);
+    expect(order.map((n) => gates.locked(n))).toEqual([true, false, false, true, true, false]);
+  });
+
+  it('survives a parent cycle', () => {
+    const s = source([
+      { id: 'p', layer: 'a', parent: 'q' },
+      { id: 'q', layer: 'a', parent: 'p', locked: true },
+      { id: 'r', layer: 'a', parent: 'p' },
+    ]);
+    const gates = nodeGates(s);
+    expect(['p', 'q', 'r'].map((n) => gates.hidden(n))).toEqual([false, false, false]);
+    expect(['p', 'q', 'r'].map((n) => gates.locked(n))).toEqual([true, true, true]);
+  });
 });
