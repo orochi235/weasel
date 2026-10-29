@@ -81,11 +81,10 @@ Owner tags, after the priority (2026-10-26):
 
 ## Viewport
 
-- **(P3) [maintainer] Which plane 2D and 3D views share.** kernel3d's frustum outlines into a 2D view
-  as its footprint on z = 0, which in kernel3d's y-up world is a wall facing yaw 0, where a top-down
-  map wants the ground plane; `aimSpace3d` unprojects onto the same plane. A footprint the plane cuts
-  short now draws the frustum's cut through it, clipped at the far plane (2026-10-26). Settle the
-  plane before building a 3D minimap (`packages/kernel3d/src/aim.ts`).
+- **(P3) [agent] Put 2D on kernel3d's ground plane.** Ruled: the ground, at right angles to `up` as `insert` reads it (2026-10-28). kernel3d's frustum outlines into a 2D view as its footprint on z = 0, which in kernel3d's y-up world is a wall
+  facing yaw 0, and `aimSpace3d` unprojects onto the same plane, while `insert` already casts onto the plane through
+  the origin at right angles to its `up` (default y). Move `aim.ts` onto that ground through one function both share,
+  mapping 2D (x, y) to the two axes `up` is not, and say in a changeset that a 2D view's footprint and aim move.
 
 ---
 
@@ -372,19 +371,9 @@ Owner tags, after the priority (2026-10-26):
 
 ### Container layout strategies
 
-- **(P3) [recheck] An item carried in with `dragItemProps` draws no ghost of itself over the canvas.** The
-  canvas outlines the target and marks the index (`packages/diagram/src/itemDrop.ts`), and labkit
-  draws its own `DragGhost` for its palette; diagram leaves it to the host. A ghost from the item's
-  own element, or a preview of the shape it would make, would belong beside `startItemDrag`
-  (2026-10-26).
-  diagram does not depend on ui, so ui's `DragGhost` is out of reach: the ghost belongs to routing's
-  `startCarry` as a cloned element, or to a diagram hook that adds a ui dependency, and its look is a call
-  (2026-10-26).
-
-- **(P3) [maintainer] Diagram edges paint above every node.** `mainSpecs` pushes edge specs last, so in the
-  `diagram-drop` demo a straight `filter → mix` edge strikes through the two boxes dropped between them.
-  Painting edges under nodes needs an edge between a container's fill and its members, or the edge hidden
-  under the container; the alternative is `router="avoid"` in the demo. A pick between those (2026-10-26).
+- **(P3) [agent] The `diagram-drop` demo's straight edge strikes through the boxes dropped across it.** Ruled
+  (2026-10-28): edges keep painting above every node (`mainSpecs` pushes them last), and the demo
+  (`apps/site/demos/DiagramDropDemo.tsx`) routes with `router="avoid"` so its edges go round what is dropped.
 
 ---
 
@@ -433,13 +422,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P1) [maintainer] Rework how a pref leaf says it can be auto.** Three fields on a leaf say it today
+- **(P1) [agent] Rework how a pref leaf says it can be auto.** Three fields on a leaf say it today
   (`packages/prefs/src/schema.ts`): `manual` (never auto), `unpinned` (starts auto), and `autoValue` (what it reads
-  while auto, where its owner computes nothing; unset, it reads no value). `manual` and `unpinned` together name
-  three states, so a schema can set both, which contradicts itself, and an unset `autoValue` reads differently from
-  one equal to the default. Readers include `PrefsForm`'s `onAutoChange`, labkit's `rowAuto.ts`, and the schema
-  editor's Auto panel. An editor-only fix, one bar in the Auto heading that wrote both flags, was made and reverted
-  in favor of reworking the API (2026-10-28).
+  while auto, where its owner computes nothing; unset, it reads no value), and a schema can set them against each
+  other. Ruled (2026-10-28): one field, `auto`. Left out, the leaf can be auto and starts pinned at `default`;
+  `auto: false` is never auto; `auto: { on: true }` starts auto; `auto: { value: x }` reads `x` while auto, and
+  without `value` an auto leaf has no value, as now. The three old fields go, with every reader moved
+  (`PrefsForm`'s `onAutoChange`, labkit's `rowAuto.ts`, `autoConfig.ts`, `baseNode.ts`, `MatrixCell.tsx`, the schema
+  editor's Auto panel and `kindSchemas.ts`), and a changeset saying the schema shape changed.
 
 - **(P2) [maintainer] Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
@@ -614,13 +604,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
 
-- **(P3) The workspace hatch is written twice.** `.wd-canvas-host` in `apps/draw/src/app.css` restates the
-  diagonal bands that `packages/ui/src/components/workspace.module.css` defines for the asset editor's preview.
-  Draw can't compose a ui-internal stylesheet without that becoming public surface, so the fix is a public one:
-  a theme token holding the whole layer (the colors already are tokens, `--wzl-workspace-surface` and
-  `--wzl-workspace-line`), or an exported ui class. Filed 2026-10-28. Since then the two differ: the asset editor's
-  ground is `--wzl-surface-raised` with its tint taken out, lighter than draw's `--wzl-workspace-surface` (2026-10-28),
-  so a shared layer means deciding which ground both take.
+- **(P3) [agent] The workspace hatch is written twice.** `.wd-canvas-host` in `apps/draw/src/app.css` restates the
+  diagonal bands that `packages/ui/src/components/workspace.module.css` defines for the asset editor's preview, over a
+  different ground. Ruled (2026-10-28): one layer, as a theme token (`--wzl-workspace`) both use, and its ground is the
+  asset editor's lighter one (`--wzl-surface-raised` with its tint taken out), which `--wzl-workspace-surface` becomes;
+  the ground around draw's page gets lighter.
 
 - **(P3) Draw's `registry-enum` prefs offer a Control the control ignores.** The asset editor lists `select` and
   `radio` for it (`KINDS` in `apps/draw/src/dev/AssetsPage.tsx`), but `RegistryEnumControl` in
@@ -690,13 +678,15 @@ only story runner in the repo.
   props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
   whether a matrix story should take args and apply them to every cell.
 
-- **(P3) [recheck] The Issues panel has no tracker behind it** (2026-10-25). `shell/issues/IssuesPanel.tsx` takes
+- **(P3) [agent] The Issues panel has no tracker behind it** (2026-10-25). `shell/issues/IssuesPanel.tsx` takes
   `issues` and `onReport` as props, and the workshop passes neither, so it says "Not connected" and Report stays
   disabled. Settled so far: GitHub Issues is the tracker, a component's issues are those labeled
   `forge:<component>`, and a report attaches its story, a link reopening it with the same args and globals, and
   the branch and commit. A screenshot with the trial's marks on it goes into the issue by pasting it there;
-  never by committing it to the repo. Left to settle: how the workshop reaches GitHub, and whether marks come
-  back (next entry) to draw that screenshot.
+  never by committing it to the repo. Ruled (2026-10-28): forge's dev server lists a component's issues through
+  `gh issue list --label forge:<component>` (the local `gh` login, no token in the browser), and Report opens
+  GitHub's new-issue page with its title, body and label filled in, where the screenshot is pasted. Still open:
+  whether marks come back (next entry) to draw that screenshot.
 
 - **(P3) [recheck] The CSS Vars panel does not save a token the theme derives.** A token
   edited by hand saves when the definition writes its value out: a pin, a
@@ -1220,12 +1210,14 @@ only story runner in the repo.
     its commands. Measure before changing it.
   - **The threshold** was left at 250 after measurement (`tests/perf/layer-dispatch.spec.ts`; result files in
     `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`).
-- **(P3) [maintainer] Whether core snaps the view's translation to whole device pixels.** A pan by fractions of a
+- **(P3) [agent] Snap the view's translation to whole device pixels while it moves.** A pan by fractions of a
   device pixel (kit inertia, most trackpad momentum) never reuses a retained surface: the layer is drawn straight
   through and its surface redrawn once the view holds. Resampling was ruled out (2026-10-27: a 1-device-px
-  hairline at a half-pixel offset becomes two half-strength pixels and pops sharp at rest). The exact option is to
-  snap the translation core draws with to whole device pixels, which leaves drawn and hit-tested positions up to
-  half a device pixel apart for every consumer.
+  hairline at a half-pixel offset becomes two half-strength pixels and pops sharp at rest). Ruled (2026-10-28):
+  while the view is moving, core draws with its translation rounded to whole device pixels, and draws the exact
+  translation once it holds; hit-testing reads the exact view throughout, so drawn and hit positions differ by up
+  to half a device pixel only in motion. Not snapping stays available as an option a consumer sets, for one that
+  needs drawn and hit positions to agree exactly while moving (2026-10-28).
 
 - **(P3) [agent] The pull request benchmark job's new run time is unmeasured.** Since 2026-10-26 it runs
   `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a
