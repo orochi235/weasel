@@ -12,7 +12,7 @@ import { cubicBezierEasing, resolveEasing } from '@weasel-js/core';
 import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { Diamond } from './Diamond';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
-import { arrowMove } from '../../arrowKeys';
+import { arrowMove } from '@weasel-js/headless';
 import { handleHalf } from '../../handles';
 import { snapRadiusPx as kitSnapRadiusPx, snapToNearest } from '../../snap';
 import s from './CurveEditor.module.css';
@@ -376,7 +376,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
     const target = e.target as Element | null;
     if (target?.closest?.('[data-layer-id]')?.getAttribute('data-layer-id') !== id) return;
     const activate = e.key === 'Enter' || e.key === ' ';
-    const move = arrowMove(e);
+    const move = arrowMove(e.key, e.shiftKey);
     const dx = move?.dx ?? 0;
     // The model's y runs up, the screen's down.
     const dy = -(move?.dy ?? 0);

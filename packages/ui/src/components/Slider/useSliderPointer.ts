@@ -1,7 +1,8 @@
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, RefObject } from 'react';
 import { clamp } from '@weasel-js/geom';
 import type { SliderGeometry } from './sliderGeometry';
-import { clampOrdered, resolveBounds } from './stops';
+import { clampOrdered } from '@weasel-js/headless';
+import { resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useThumbDrags } from './useThumbDrags';
 

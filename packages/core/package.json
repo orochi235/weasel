@@ -119,6 +119,7 @@
     "@weasel-js/cursor": "1.13.0",
     "@weasel-js/geom": "1.13.0",
     "@weasel-js/gestures": "1.13.0",
+    "@weasel-js/headless": "1.13.0",
     "@weasel-js/history": "1.13.0",
     "@weasel-js/icons": "1.13.0",
     "@weasel-js/modes": "1.13.0",

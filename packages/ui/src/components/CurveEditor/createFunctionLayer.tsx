@@ -10,7 +10,7 @@ import { CurveFill } from './CurveFill';
 import { Diamond } from './Diamond';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
-import { arrowMove } from '../../arrowKeys';
+import { arrowMove } from '@weasel-js/headless';
 import { handleHalf } from '../../handles';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
@@ -376,7 +376,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     if (target?.closest?.('[data-layer-id]')?.getAttribute('data-layer-id') !== id) return;
     const el = target.closest('[data-anchor-index]');
     if (!el) return;
-    const move = arrowMove(e);
+    const move = arrowMove(e.key, e.shiftKey);
     if (move === null) return;
     e.preventDefault();
     const index = Number(el.getAttribute('data-anchor-index'));

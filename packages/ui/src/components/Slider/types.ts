@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TrackRun, TrackShape } from '@weasel-js/geom';
+import type { SliderStop as Stop } from '@weasel-js/headless';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
 
 /**
@@ -80,10 +81,7 @@ export type TrackCtx = {
 };
 
 /** A {@link Slider} stop that carries a label, drawn under the track at the stop. */
-export type SliderStop = {
-  value: number;
-  label?: ReactNode;
-};
+export type SliderStop = Stop<ReactNode>;
 
 /**
  * Props for {@link Slider}.

@@ -1,6 +1,7 @@
 import { clamp } from '@weasel-js/geom';
 import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
+import { COARSE_STEPS } from '@weasel-js/headless';
 import { snapToStep } from '@weasel-js/quantity';
 import s from './ResizeHandle.module.css';
 
@@ -39,7 +40,7 @@ export interface ResizeHandleProps {
   onChange?(next: number): void;
   /**
    * The granularity of `value`. Arrow keys move by one step (Shift by
-   * eight), and pointer drags snap to the same grid — a pointer reports
+   * ten), and pointer drags snap to the same grid — a pointer reports
    * fractional coordinates on a scaled display, and nobody wants
    * `362.9453125` in their persisted layout. Set a fractional step for a
    * pane measured in something finer than whole pixels.
@@ -127,7 +128,7 @@ export function ResizeHandle(props: ResizeHandleProps) {
   const onKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     const grow = orientation === 'vertical' ? 'ArrowRight' : 'ArrowDown';
     const shrink = orientation === 'vertical' ? 'ArrowLeft' : 'ArrowUp';
-    const amount = step * (e.shiftKey ? 8 : 1) * (invert ? -1 : 1);
+    const amount = step * (e.shiftKey ? COARSE_STEPS : 1) * (invert ? -1 : 1);
     let next: number | undefined;
     if (e.key === grow) next = value + amount;
     else if (e.key === shrink) next = value - amount;

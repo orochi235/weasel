@@ -42,7 +42,7 @@ export function stepStop<T>(
 export type RovingResult = { handled: false } | { handled: true; at: number | null };
 
 /** Which way an arrow key steps a list of `shape`: 1, -1, or 0 for a key that is not one of its arrows. */
-function arrowDir(key: string, shape: ListShape<unknown>): 1 | -1 | 0 {
+export function arrowDir(key: string, shape: ListShape<unknown>): 1 | -1 | 0 {
   const orientation = shape.orientation ?? 'vertical';
   if (orientation !== 'horizontal') {
     if (key === 'ArrowDown') return 1;
