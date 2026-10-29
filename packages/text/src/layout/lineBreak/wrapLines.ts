@@ -4,7 +4,7 @@
  * one place.
  */
 
-import { isHardLineBreak, lineBreakOpportunities, NO_BREAK } from './lineBreaks';
+import { isHardLineBreak, lineBreakOpportunities, lineBreakOpportunitiesInto, NO_BREAK } from './lineBreaks';
 
 /** One line of a wrap, as code point indices into the wrapped sequence. */
 export interface WrappedLine {
@@ -42,6 +42,14 @@ export function wrapLines(
   return lines;
 }
 
+/** The opportunities of the wrap under way, kept for the next. A wrap that
+ *  starts inside another's `widthOf` or `emit` finds them taken and builds its own. */
+let breakScratch = new Uint8Array(64);
+let breakScratchTaken = false;
+/** Code points past which a wrap builds its own opportunities rather than
+ *  growing the shared ones for good. */
+const BREAK_SCRATCH_MAX = 1 << 16;
+
 /** {@link wrapLines}, handing each line to `emit` in order rather than
  *  building an object for it. */
 export function wrapSpans(
@@ -51,7 +59,29 @@ export function wrapSpans(
   emit: (start: number, end: number, wrapped: boolean) => void,
 ): void {
   const n = cps.length;
-  const breaks = Number.isFinite(maxWidth) ? lineBreakOpportunities(cps) : null;
+  if (!Number.isFinite(maxWidth)) {
+    wrapAt(cps, maxWidth, widthOf, emit, null);
+  } else if (breakScratchTaken || n >= BREAK_SCRATCH_MAX) {
+    wrapAt(cps, maxWidth, widthOf, emit, lineBreakOpportunities(cps));
+  } else {
+    if (breakScratch.length < n + 1) breakScratch = new Uint8Array(Math.max(n + 1, breakScratch.length * 2));
+    breakScratchTaken = true;
+    try {
+      wrapAt(cps, maxWidth, widthOf, emit, lineBreakOpportunitiesInto(cps, breakScratch));
+    } finally {
+      breakScratchTaken = false;
+    }
+  }
+}
+
+function wrapAt(
+  cps: ArrayLike<number>,
+  maxWidth: number,
+  widthOf: (start: number, end: number) => number,
+  emit: (start: number, end: number, wrapped: boolean) => void,
+  breaks: Uint8Array | null,
+): void {
+  const n = cps.length;
   let start = 0;
   let i = 0;
   while (i < n) {

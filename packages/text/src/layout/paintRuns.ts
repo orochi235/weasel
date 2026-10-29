@@ -17,7 +17,7 @@ import {
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { emboldenGlyphD } from '../syntheticBold';
 import { lineDecorations, type DecorationKind } from './decorationMetrics';
-import { doubles, takeDoubles } from './arrayPool';
+import { doubles, takeDoubles, truncate } from './arrayPool';
 import { blankGlyph, LineBox } from './layoutColumns';
 import type { LaidOutRuns, PlacedGlyph } from './layoutRuns';
 import { hasGlyphQuad, QUAD_STRIDE, writeGlyphQuad, type LaidOutQuad } from './glyphQuads';
@@ -178,6 +178,13 @@ export function runFaces(runs: readonly ResolvedRun[]): (run: number) => FaceMet
 
 const isDecorated = (r: ResolvedRun): boolean => r.underline || r.strikethrough || r.overline;
 
+/** What paints a rule under run `run`: a solid rect with only its fill. Built
+ *  apart from `paintRunsInto`, whose every call allocated the scope a closure
+ *  over its `runs` lives in, decorated or not. */
+function rulePaintOf(runs: readonly ResolvedRun[]): (run: number) => string | null {
+  return (run) => (fillHasInk(runs[run].fill) ? paintKey(runs[run].fill!.paint) : null);
+}
+
 /** One glyph walks a layout's columns, so painting builds no object a glyph,
  *  nor one a painting: each glyph is read before the next is filled in. */
 const cursor = blankGlyph();
@@ -208,12 +215,10 @@ export function paintRunsInto(
   out: PaintedRuns,
 ): PaintedRuns {
   const { groups, decorations } = out;
-  groups.length = 0;
-  decorations.length = 0;
+  truncate(groups, 0);
+  truncate(decorations, 0);
   const faceOf = runs.some(isDecorated) ? runFaces(runs) : null;
-  // A rule is a solid rect with only a fill to paint it.
-  const rulePaint = faceOf && ((run: number): string | null =>
-    (fillHasInk(runs[run].fill) ? paintKey(runs[run].fill!.paint) : null));
+  const rulePaint = faceOf && rulePaintOf(runs);
   // Most text is one group. The first to take a quad fills a scratch array
   // sized for every glyph, copied out at its final length; any other grows
   // as it fills.

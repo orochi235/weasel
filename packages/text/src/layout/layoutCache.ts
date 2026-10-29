@@ -68,6 +68,7 @@
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { layoutBidi, layoutShaper, type LayoutRunsOpts } from './layoutOpts';
+import { truncate } from './arrayPool';
 import { LineBox, type LayoutColumns } from './layoutColumns';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
 import { forgetPaintRuns, recyclePaintings } from './paintCache';
@@ -162,7 +163,7 @@ function disown(vs: Variant[]): void {
     v.laid = NO_LAYOUT;
     if (spareVariants.length < SPARE_MAX) spareVariants.push(v);
   }
-  vs.length = 0;
+  truncate(vs, 0);
 }
 
 const NO_LAYOUT: LaidOutRuns = { lines: [], bounds: { width: 0, height: 0 } };

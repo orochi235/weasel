@@ -5,6 +5,7 @@
 import type { FontStyle } from '@weasel-js/font';
 import { paintKey, strokeHasInk, strokeKey, type Stroke } from '@weasel-js/paint';
 import type { ResolvedRun } from '../runs/resolveRuns';
+import { truncate } from './arrayPool';
 import { quadsViewed, quadViews } from './glyphQuads';
 import type { PlacedGlyph } from './layoutRuns';
 import type { LaidOutGroup } from './paintRuns';
@@ -116,7 +117,7 @@ export function giveGroup(group: LaidOutGroup): void {
   if (spareGroups.length >= SPARE_GROUPS_MAX || group.stroke !== undefined || group.colorGlyphs !== undefined
     || quadsViewed.has(group)) return;
   group.quadData = NO_QUADS;
-  group.glyphs.length = 0;
+  truncate(group.glyphs, 0);
   spareGroups.push(group);
 }
 
@@ -136,6 +137,6 @@ export function takeGroups(out: LaidOutGroup[]): void {
     out.push(slots[i].group);
     slots[i].group = null as unknown as LaidOutGroup;
   }
-  slots.length = 0;
+  truncate(slots, 0);
   last.group = null;
 }

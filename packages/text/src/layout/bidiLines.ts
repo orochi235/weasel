@@ -155,6 +155,12 @@ export function orderLine(
   count: number,
 ): LineOrder {
   if (paragraphs === null || count === 0) return logicalOrder(count);
+  return reorderedLine(paragraphs, start, count);
+}
+
+// Apart from `orderLine` so the closure below, and the scope it captures, is
+// built only for a line that has a bidi engine.
+function reorderedLine(paragraphs: AnalyzedParagraphs, start: number, count: number): LineOrder {
   const levels = new Array<number>(count).fill(0);
   const r = paragraphs.reorder(start, start + count);
   for (let pos = 0; pos < count; pos++) {

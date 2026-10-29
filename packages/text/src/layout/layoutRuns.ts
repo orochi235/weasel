@@ -38,6 +38,7 @@ import { LayoutColumns } from './layoutColumns';
 import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
 import { breakLines, placeLine } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
+import type { BidiResolver } from './bidiSeam';
 import type { ShapedCluster } from './shaperSeam';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
 
@@ -196,6 +197,16 @@ const CPS: number[] = [];
  *  else can lay out. */
 const OPTS = resolveLayoutOpts({ maxWidth: 0, lineHeight: 0, align: 'left' });
 
+// Neither closure is built inside `layoutRuns`: one that captured its locals
+// made every call allocate the scope they live in, bidi engine or not.
+const hardBreakAt = (i: number): boolean => isHardLineBreak(CPS[i]);
+
+function mirrorLine(
+  bidi: BidiResolver, entries: readonly Entry[], levels: readonly number[], runs: readonly ResolvedRun[],
+): Entry[] {
+  return mirrorEntries(entries, levels, (cp) => bidi.mirror(cp), runs);
+}
+
 /**
  * Lay out `runs` into lines of placed glyphs. Wrapping, baselines and tracking
  * follow the rules in this file's module doc.
@@ -214,7 +225,7 @@ export function layoutRuns(
   // Each paragraph is analyzed once; each line then asks for its own range,
   // because L1 resets trailing whitespace against a line's end.
   const paragraphs = bidi
-    ? analyzeParagraphs(bidi, cps, (i) => isHardLineBreak(cps[i]), direction)
+    ? analyzeParagraphs(bidi, cps, hardBreakAt, direction)
     : null;
   if (!bidi) warnRtlWithoutEngine(cps);
 
@@ -231,7 +242,7 @@ export function layoutRuns(
     const order = orderLine(paragraphs, line.start, line.entries.length);
     // L4, done per line rather than during analysis: the same code point
     // mirrors in one run and not in another, and the level is known only now.
-    if (bidi) line.entries = mirrorEntries(line.entries, order.levels, (cp) => bidi.mirror(cp), runs);
+    if (bidi) line.entries = mirrorLine(bidi, line.entries, order.levels, runs);
     const reads = direction !== 'auto' ? direction
       : directionOfLevel(line.entries.length > 0 ? paragraphs?.baseLevel(line.start) ?? 0 : 0);
     const placed = placeLine(

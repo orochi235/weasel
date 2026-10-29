@@ -19,7 +19,7 @@ import type { BmFont, BmFontChar, GlyphMetrics, ResolveResult } from '@weasel-js
 import type { Entry } from './layoutEntries';
 import type { LaidOutCell, LaidOutLineBox, PlacedGlyph } from './layoutRuns';
 import type { ShapedCluster } from './shaperSeam';
-import { giveDoubles, giveRefs, takeDoubles, takeRefs } from './arrayPool';
+import { giveDoubles, giveRefs, takeDoubles, takeRefs, truncate } from './arrayPool';
 
 /** Numbers per code point: pen x, step, the glyph's own advance, its size,
  *  its baseline, its source span, code point, bidi level, the two flags, its
@@ -85,7 +85,7 @@ export class LayoutColumns {
     giveRefs(ref);
     this.num = EMPTY_NUM;
     this.ref = EMPTY_REF;
-    this.paintings.length = 0;
+    truncate(this.paintings, 0);
     this.owners = 0;
     this.listed = false;
     this.pinned = false;

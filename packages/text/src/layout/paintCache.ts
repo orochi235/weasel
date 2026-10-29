@@ -8,7 +8,7 @@
 import { glyphGeneration } from '@weasel-js/font';
 import { paintKey, strokeKey } from '@weasel-js/paint';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { giveDoubles } from './arrayPool';
+import { giveDoubles, truncate } from './arrayPool';
 import type { CacheUse } from './layoutCache';
 import { LineBox } from './layoutColumns';
 import type { LaidOutRuns } from './layoutRuns';
@@ -233,11 +233,11 @@ export function recyclePaintings(laid: LaidOutRuns): void {
       group.quadData = NO_QUADS;
       giveGroup(group);
     }
-    groups.length = 0;
-    p.painted.decorations.length = 0;
+    truncate(groups, 0);
+    truncate(p.painted.decorations, 0);
     p.runs = null;
     p.key = null;
     if (spare.length < SPARE_MAX) spare.push(p);
   }
-  list.length = 0;
+  truncate(list, 0);
 }
