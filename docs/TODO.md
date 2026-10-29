@@ -259,6 +259,13 @@ Owner tags, after the priority (2026-10-26):
   against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
   paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`).
 
+- **(P3) [agent] `retained.tiles.browser.test.ts` saw tiled and whole differ by one level.** "matches
+  the surface drawn whole inside the buffer" asserts `max: 0` and got `{ max: 1, off: 24 }` on teitou
+  (GPU at 43% when the run started) at de0954bd5, a branch that touches no renderer code
+  (2026-10-29). It passed in every other run found. Whether a tile seam can round differently, or
+  `max: 0` is stricter than the GPU guarantees, is not known; read the failure screenshot at the
+  next sighting.
+
 ---
 
 ## Text
