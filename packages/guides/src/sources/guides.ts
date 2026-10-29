@@ -4,14 +4,15 @@ import { guideOffsetOn } from '../strategies/onPlane';
 import { axisLine } from './lines';
 
 /**
- * Ruler guides as snap targets: each guide within reach of an origin or
- * pointer probe is a line it may land on. Reads `getGuides` every frame, so
+ * Ruler guides as snap targets: each guide within reach of a box or
+ * pointer probe is a line it may land on: a moved box's edges and center,
+ * stroke included. Reads `getGuides` every frame, so
  * a guide added mid-drag counts at once.
  */
 export function guideSnapSource(getGuides: () => readonly Guide[]): SnapSource {
   return {
     id: 'guides',
-    roles: ['origin', 'pointer'],
+    roles: ['box', 'pointer'],
     *collect(q) {
       const guides = getGuides();
       if (guides.length === 0) return;

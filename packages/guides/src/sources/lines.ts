@@ -1,4 +1,4 @@
-import type { Locus, SnapCollect, SnapFrame } from '@weasel-js/core';
+import type { Bounds, Locus, SnapCollect, SnapFrame } from '@weasel-js/core';
 
 type Point = { x: number; y: number };
 type Axis = 'x' | 'y';
@@ -22,4 +22,20 @@ export function frameLine(frame: SnapFrame, axis: Axis, offset: number, near: Po
 /** How far the resolved move `delta` carries a probe from where `q` saw it. */
 export function landedShift(q: Pick<SnapCollect, 'delta0'>, delta: Point): Point {
   return { x: delta.x - q.delta0.x, y: delta.y - q.delta0.y };
+}
+
+/** The probe positions at which a side moving at `rate` per unit of the move
+ *  has moved by `by`: the line normal to `rate`, `by / |rate|` from `near`. */
+export function sideLine(near: Point, rate: Point, by: number): Locus {
+  const k = by / (rate.x * rate.x + rate.y * rate.y);
+  return { at: { x: near.x + rate.x * k, y: near.y + rate.y * k }, dirs: [{ x: -rate.y, y: rate.x }] };
+}
+
+/** Where the resolved move `delta` puts the subject's box: the session's
+ *  answer, else `box` carried along as a move carries it. */
+export function landedBox(q: Pick<SnapCollect, 'box' | 'boxAt' | 'delta0'>, delta: Point): Bounds | null {
+  if (q.boxAt) return q.boxAt(delta);
+  if (!q.box) return null;
+  const shift = landedShift(q, delta);
+  return { ...q.box, x: q.box.x + shift.x, y: q.box.y + shift.y };
 }

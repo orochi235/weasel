@@ -34,8 +34,10 @@ interface Lattice {
 }
 
 /**
- * A grid as snap targets: for each origin or pointer probe, the grid line on
- * either side of it on each axis. Its reach is unlimited and it is a
+ * A grid as snap targets: for each box or pointer probe, the grid line on
+ * either side of it on each axis, so a move lands the drawn box, stroke
+ * included, with an edge or its center on a line; on a turned container's
+ * lattice, which no world-axis box lines up with, its pose origin. Its reach is unlimited and it is a
  * fallback, so it holds every axis no target claims and never displaces one.
  * Its lines are the camera's, carried into the plane a gesture runs in.
  */
@@ -73,11 +75,13 @@ export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
     id: 'grid',
     tier: 'fallback',
     reachPx: Infinity,
-    roles: ['origin', 'pointer'],
+    roles: ['box', 'origin', 'pointer'],
     *collect(q) {
       const { pitch, frame } = latticeFor(q);
       const plane = q.plane ?? null;
+      const skip = frame && turns(frame) ? 'box' : 'origin';
       for (const p of q.probes) {
+        if (p.role === skip) continue;
         if (frame) {
           yield* framedLines(p.id, p.at, pitch, frame, plane);
           continue;
@@ -88,6 +92,19 @@ export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
       }
     },
   };
+}
+
+/** Whether `frame`'s axes are turned or skewed off the world's, so that a
+ *  world-axis box cannot line up with its lattice. */
+function turns(frame: SnapFrame): boolean {
+  const o = frame.toWorld({ x: 0, y: 0 });
+  const ex = frame.toWorld({ x: 1, y: 0 });
+  const ey = frame.toWorld({ x: 0, y: 1 });
+  const along = (a: Point, axis: 'x' | 'y') => {
+    const d = { x: a.x - o.x, y: a.y - o.y };
+    return axis === 'x' ? Math.abs(d.y) <= 1e-9 * Math.abs(d.x) : Math.abs(d.x) <= 1e-9 * Math.abs(d.y);
+  };
+  return !((along(ex, 'x') && along(ey, 'y')) || (along(ex, 'y') && along(ey, 'x')));
 }
 
 /** The lines of `frame`'s lattice either side of `at` on each of its axes,

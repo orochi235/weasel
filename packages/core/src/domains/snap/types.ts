@@ -43,11 +43,14 @@ export interface SourceCandidate<P = Point> {
  *  but asks only sources that name it. */
 export type SnapGesture = 'point' | 'move' | 'resize' | 'rotate' | 'handle';
 
-/** The sides of a box a gesture moves on one axis; null for neither. */
-export type SnapEdge = 'min' | 'max' | 'both' | null;
-
-/** Which sides of the subject's box a gesture moves, per axis. */
-export interface SnapEdges { x: SnapEdge; y: SnapEdge }
+/** One side of the subject's box a resize moves: on `axis`, its `side` moves
+ *  by `rate · (delta − delta0)`. A turned box's axis-aligned extent moves at
+ *  a rate off its axis, and both its sides on one axis may move at once. */
+export interface SnapSide<P = Point> {
+  axis: 'x' | 'y';
+  side: 'min' | 'max';
+  rate: P;
+}
 
 /** A point on the subject that should land on a locus. */
 export interface SnapProbeAt<P = Point> {
@@ -68,9 +71,12 @@ export interface SnapCollect<P = Point> {
    *  puts it: a move's union of boxes, or the box a resize drags. Absent for
    *  other gestures. */
   box?: Bounds;
-  /** Which sides of `box` the gesture moves on each axis. Default: both, as
-   *  a move does. */
-  edges?: SnapEdges;
+  /** The sides of `box` a resize moves; a side not listed stands still.
+   *  Absent for a move, which carries the whole box with it. */
+  sides?: readonly SnapSide<P>[];
+  /** The subject's drawn box where the resolved move `delta` (a function
+   *  mark's argument) puts it. Absent where `box` is. */
+  boxAt?(delta: P): Bounds;
   /** `id`'s drawn box, measured as `box` is. Absent in a host with no 2D
    *  scene. */
   drawnBox?(id: string): Bounds | undefined;
@@ -183,9 +189,9 @@ export interface SceneCanvasSnap {
   /** The reach of a source that sets none, in screen px. Default: the kit
    *  setting `targets.snapPx`. */
   reachPx?: number;
-  /** How a pose's origin is read, for the `origin` probe a grid or a ruler
-   *  guide snaps: a pose neither a rect nor a `Path` needs its own. Default
-   *  `AUTO_ORIGIN_PROJECTION`. */
+  /** How a pose's origin is read, for the `origin` probe a grid snaps on a
+   *  turned container's lattice: a pose neither a rect nor a `Path` needs
+   *  its own. Default `AUTO_ORIGIN_PROJECTION`. */
   originProjection?: OriginProjection<unknown>;
   /** Whether the canvas draws the snap marks. Default `true`. With `false`
    *  the marks are still written to the `snapReadout` dep's store, for a

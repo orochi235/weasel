@@ -31,8 +31,8 @@ is only ever offered probes of the roles it names:
 
 | Role | Probes | Typical sources |
 |---|---|---|
-| `origin` | each moved root's pose origin, read through an `OriginProjection` | grid, ruler guides |
-| `box` | the subject's drawn box (stroke included): its min, center and max corners; on a resize, the moving edges | alignment, equal spacing |
+| `origin` | each moved root's pose origin, read through an `OriginProjection` | grid, on a turned container's lattice |
+| `box` | the subject's drawn box (stroke included): its min, center and max corners; on a resize, the moving edges | grid, ruler guides, alignment, equal spacing |
 | `geometry` | the point of the subject's own outline nearest the press, on a move | path targets, 3D boxes |
 | `pointer` | the pointer, for point gestures; the dragged corner, for a resize | every source |
 
@@ -96,7 +96,7 @@ combination's: when three siblings share the edge you landed on, all three lines
 | `pathSnapSource(opts)` | core | target | path targets: anchors, box centers, crossings, tangent and perpendicular points from the gesture's `origin`, midpoints, extremes, quadrant points, the nearest point on a stroke; `only` and `kinds` pick them |
 | `measureEndSource(opts)` | core | target | measurement ends |
 | `rotationSnapSource()` | core | target | quarter turns and other nodes' angles, for a rotate |
-| `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each origin or pointer probe, on each axis; with `scopes`, on the pitch of the unit scope the subject sits in, or for an insert the scope of its `parent` |
+| `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each box or pointer probe, on each axis (the origin probe, on a turned container's lattice); with `scopes`, on the pitch of the unit scope the subject sits in, or for an insert the scope of its `parent` |
 | `guideSnapSource(getGuides)` | guides | target | ruler guides |
 | `alignmentSnapSource(opts)` | guides | target | siblings' edges and centers, and an optional page box |
 | `spacingSnapSource(opts)` | guides | target | positions that repeat a gap already between siblings, or center between two |
@@ -151,7 +151,8 @@ What `collect` is handed (`SnapCollect`):
 | `gesture` | `'point'`, `'move'`, `'resize'` |
 | `probes` | the probes of this source's roles, where `δ₀` puts them |
 | `delta0` | the raw move |
-| `box`, `edges` | the subject's drawn box at `δ₀` and the sides that move (move and resize) |
+| `box`, `boxAt(δ)` | the subject's drawn box at `δ₀`, and where another move puts it (move and resize) |
+| `sides` | on a resize, the sides of `box` the drag moves and each one's rate per unit of `δ`; a turned box's extent moves off its axis |
 | `drawnBox(id)` | another node's box, measured the way `box` is |
 | `ids`, `parent` | the subject; for a gesture with none yet, the container what it draws lands in, absent for the top of the tree |
 | `exclude`, `include` | nodes that offer nothing (the subject and its subtree); nodes that alone offer targets |
@@ -255,9 +256,15 @@ Calls made in the design, kept so they are not re-argued by accident:
 - One reach setting, `targets.snapPx`, default 8, with a per-source override (2026-10-17).
 - `snap.suspend` is Ctrl everywhere except path-edit handle drags; Alt keeps its own meanings
   (clone, insert from center, breaking a handle's mirror) (2026-10-17).
-- Probes keep what each source snapped before the pipeline: the origin for the grid and guides,
-  the drawn box for alignment and spacing (2026-10-17). Whether the grid and guides should snap the stroke's edge
-  is open (`docs/TODO.md`); either answer is a change to those two sources' `roles`.
+- The grid and ruler guides line up the drawn box, stroke included: the same box the selection chrome,
+  resize, alignment and spacing measure (ruled 2026-10-29). A stroked shape lands half a stroke
+  width from where its pose origin would. Insert and the pen still snap the pointer, before there
+  is a stroke to measure. On a turned container's lattice, which no world-axis box can line up
+  with, the grid keeps the pose origin.
+- On a resize that turns or skews the box, equal spacing measures the box's axis-aligned extent,
+  stroke included, as it measures siblings; the extent's sides the drag moves snap, each through
+  the resize along the handle's own axis. Alignment and spacing marks span the box where it lands
+  (ruled 2026-10-29).
 - Handle snapping stays angular: a one-dimensional angle about the anchor, keeping the length (2026-10-17).
 - A move gains Shift axis lock, and a rotate gains quarter-turn and sibling-angle targets without
   Shift (2026-10-17).

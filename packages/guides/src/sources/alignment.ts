@@ -1,9 +1,8 @@
-import type { Bounds, SnapCollect, SnapEdges, SnapMark, SnapProbeAt, SnapSource } from '@weasel-js/core';
-import { applyEdges } from '../guides/alignment/spacing';
+import type { Bounds, SnapCollect, SnapMark, SnapProbeAt, SnapSource } from '@weasel-js/core';
 import { deriveAlignmentGuides } from '../guides/alignment/derive';
 import { stretchSpan } from '../guides/alignment/match';
 import type { Guide } from '../guides/types';
-import { axisLine, landedShift } from './lines';
+import { axisLine, landedBox, landedShift } from './lines';
 import { cachedPerScene, type TargetFilter } from './targets';
 
 type Point = { x: number; y: number };
@@ -79,7 +78,6 @@ export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): Snap
       const indexes = linesFor(q);
       if (indexes.length === 0) return;
       const reach = q.reachWorld(q.reachPx);
-      const box = q.box ?? null;
       // A resize offers its dragged corner as pointer and as box; the box's
       // probes are the ones whose marks span it.
       const probes = q.probes.some((p) => p.role === 'box') ? q.probes.filter((p) => p.role === 'box') : q.probes;
@@ -90,7 +88,7 @@ export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): Snap
               yield {
                 probe: p.id,
                 locus: axisLine(axis, g.offset, p.at),
-                mark: (delta: Point) => lineMark(g, extentAcross(p, box, axis, landedShift(q, delta), q.edges), opts.color),
+                mark: (delta: Point) => lineMark(g, extentAcross(q, p, axis, delta), opts.color),
               };
             }
           }
@@ -102,12 +100,13 @@ export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): Snap
 
 /** Where the landed probe's box (its own point, for a pointer) spans the axis
  *  across `axis`. */
-function extentAcross(
-  p: SnapProbeAt, box: Bounds | null, axis: Axis, shift: Point, edges: SnapEdges = { x: 'both', y: 'both' },
-): [number, number] {
+function extentAcross(q: SnapCollect, p: SnapProbeAt, axis: Axis, delta: Point): [number, number] {
   const c = cross(axis);
-  if (p.role !== 'box' || box === null) return [p.at[c] + shift[c], p.at[c] + shift[c]];
-  const landed = applyEdges(box, shift.x, shift.y, edges);
+  const landed = p.role === 'box' ? landedBox(q, delta) : null;
+  if (landed === null) {
+    const shift = landedShift(q, delta);
+    return [p.at[c] + shift[c], p.at[c] + shift[c]];
+  }
   const lo = c === 'x' ? landed.x : landed.y;
   return [lo, lo + (c === 'x' ? landed.width : landed.height)];
 }

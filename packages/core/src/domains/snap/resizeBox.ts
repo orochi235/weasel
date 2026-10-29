@@ -2,7 +2,7 @@ import type { ResizeAnchor } from '@weasel-js/routing';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { fixedCornerOf, movedEdges, movingPoint } from 'interactions/actions/resize/cornerHandles';
 import type { SnapResizeBox } from 'interactions/actions/snapDep';
-import type { SnapEdge, SnapEdges, SnapProbeAt } from './types';
+import type { SnapProbeAt, SnapSide } from './types';
 import type { Point } from '@weasel-js/geom';
 
 export const EPS = 1e-9;
@@ -63,13 +63,18 @@ function movedBox(s: ResizeSubject, delta: Point): Bounds {
   return movedEdges(s.bounds, s.handle, local.x, local.y);
 }
 
-/** The box's axis-aligned extent once the handle has moved by `delta`. */
-export function resizedBox(s: ResizeSubject, delta: Point): Bounds {
+/** The box's corners in ctx coordinates once the handle has moved by `delta`. */
+function cornersAt(s: ResizeSubject, delta: Point): Point[] {
   const b = movedBox(s, delta);
-  const corners = [
+  return [
     s.at({ x: b.x, y: b.y }), s.at({ x: b.x + b.width, y: b.y }),
     s.at({ x: b.x, y: b.y + b.height }), s.at({ x: b.x + b.width, y: b.y + b.height }),
   ];
+}
+
+/** The box's axis-aligned extent once the handle has moved by `delta`. */
+export function resizedBox(s: ResizeSubject, delta: Point): Bounds {
+  const corners = cornersAt(s, delta);
   const xs = corners.map((c) => c.x);
   const ys = corners.map((c) => c.y);
   const x = Math.min(...xs);
@@ -77,18 +82,30 @@ export function resizedBox(s: ResizeSubject, delta: Point): Bounds {
   return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
 }
 
-/** The sides of {@link resizedBox} a drag of `delta` moves: the side across
- *  from the pinned one, or the pinned side's once the drag has flipped the
- *  box past it. A frame that turns or flips the box moves no side of its
- *  extent alone. */
-export function resizeEdges(s: ResizeSubject, delta: Point): SnapEdges {
-  const square = Math.abs(s.ex.y) < EPS && Math.abs(s.ey.x) < EPS && s.ex.x > 0 && s.ey.y > 0;
-  if (!square) return { x: null, y: null };
-  const b = movedBox(s, delta);
-  const moved = (pin: ResizeAnchor['x'], size: number): SnapEdge => {
-    if (pin === 'free') return null;
-    const far = pin === 'min' ? 'max' : 'min';
-    return size >= 0 ? far : pin;
-  };
-  return { x: moved(s.handle.x, b.width), y: moved(s.handle.y, b.height) };
+const near = (a: number, b: number, scale: number): boolean => Math.abs(a - b) <= 1e-9 * Math.max(1, scale);
+
+/** The sides of {@link resizedBox} a drag at `delta` moves, and how fast. A
+ *  side moves with the corners at its extreme; where two of them tie and move
+ *  apart, as a turned box's do at a kink of its extent, it is left out. */
+export function resizeSides(s: ResizeSubject, delta: Point): SnapSide[] {
+  const now = cornersAt(s, delta);
+  // The corners are affine in the drag, so a unit step reads their rate exactly.
+  const stepX = cornersAt(s, { x: delta.x + 1, y: delta.y });
+  const stepY = cornersAt(s, { x: delta.x, y: delta.y + 1 });
+  const out: SnapSide[] = [];
+  for (const axis of ['x', 'y'] as const) {
+    const vs = now.map((c) => c[axis]);
+    const span = Math.max(...vs) - Math.min(...vs);
+    for (const side of ['min', 'max'] as const) {
+      const edge = side === 'min' ? Math.min(...vs) : Math.max(...vs);
+      const rates = now.flatMap((c, i) => (near(c[axis], edge, span)
+        ? [{ x: stepX[i]![axis] - c[axis], y: stepY[i]![axis] - c[axis] }]
+        : []));
+      const rate = rates[0]!;
+      const size = Math.hypot(rate.x, rate.y);
+      if (size < EPS || rates.some((r) => !near(r.x, rate.x, size) || !near(r.y, rate.y, size))) continue;
+      out.push({ axis, side, rate });
+    }
+  }
+  return out;
 }

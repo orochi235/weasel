@@ -2,22 +2,31 @@ import { describe, expect, it } from 'vitest';
 import type { Guide } from '../guides/types';
 import { gridSnapSource } from './grid';
 import { guideSnapSource } from './guides';
-import { drive, expectNear, moveBy } from './testing/session';
+import { drive, expectNear, moveBy, sceneOf } from './testing/session';
 
 const X100: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
 const ORIGIN = { x: 0, y: 0, width: 10, height: 10 };
 
 describe('guideSnapSource', () => {
-  it('is a target over origin and pointer probes', () => {
+  it('is a target over box and pointer probes', () => {
     const s = guideSnapSource(() => X100);
     expect(s.tier).toBeUndefined();
-    expect(s.roles).toEqual(['origin', 'pointer']);
+    expect(s.roles).toEqual(['box', 'pointer']);
   });
 
-  it('lands a moved origin on a guide in reach', () => {
+  it('lands a moved box\'s edge on a guide in reach', () => {
     const out = moveBy({ sources: [guideSnapSource(() => X100)], box: ORIGIN, reachPx: 5 }).by(102, 50);
     expectNear(out.point, { x: 100, y: 50 });
     expect(out.held).toBe(true);
+  });
+
+  it('lands a stroked rect with its stroke\'s outer edge on the guide', () => {
+    // A 10-wide stroke reaches 5 past the rect, so its drawn left edge starts at 95.
+    const stroked = { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00' }, width: 10 } };
+    const { scene, ids } = sceneOf([{ x: 100, y: 0, width: 40, height: 40, data: stroked }]);
+    const out = moveBy({ sources: [guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 200 }])], scene, ids }).by(103, 0);
+    // The drawn edge, at 198, meets the guide; the rect's own edge sits at 205.
+    expectNear(out.point, { x: 105, y: 0 });
   });
 
   it('leaves a move alone past reach', () => {
@@ -58,8 +67,8 @@ describe('guideSnapSource', () => {
     expectNear(drive({ sources }).at({ x: 101, y: 17 }).point, { x: 103, y: 20 });
   });
 
-  it('meets a guide a move brings its origin near', () => {
-    // A 10.5 drag puts the origin at 110.5, inside reach of the guide at 111.
+  it('meets a guide a move brings the box\'s edge near', () => {
+    // A 10.5 drag puts the left edge at 110.5, inside reach of the guide at 111.
     const box = { x: 100, y: 50, width: 20, height: 20 };
     const out = moveBy({ sources: [guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 111 }])], box }).by(10.5, 0);
     expectNear(out.point, { x: 11, y: 0 });

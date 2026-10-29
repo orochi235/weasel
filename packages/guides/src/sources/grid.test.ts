@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IMPERIAL_INCHES, type Bounds, type OriginProjection, type SnapCollect } from '@weasel-js/core';
+import { IMPERIAL_INCHES, type SnapCollect } from '@weasel-js/core';
 import { polygonFromPoints } from '@weasel-js/geom';
 import { gridSnapSource } from './grid';
 import { drive, expectNear, moveBy, sceneOf } from './testing/session';
@@ -9,8 +9,8 @@ type Point = { x: number; y: number };
 const point = (source: ReturnType<typeof gridSnapSource>, p: Point) => drive({ sources: [source] }).at(p).point;
 
 describe('gridSnapSource', () => {
-  it('is an unlimited-reach fallback over origin and pointer probes', () => {
-    expect(gridSnapSource({ spacing: 10 })).toMatchObject({ tier: 'fallback', reachPx: Infinity, roles: ['origin', 'pointer'] });
+  it('is an unlimited-reach fallback over box, origin and pointer probes', () => {
+    expect(gridSnapSource({ spacing: 10 })).toMatchObject({ tier: 'fallback', reachPx: Infinity, roles: ['box', 'origin', 'pointer'] });
   });
 
   it('offers the grid line on either side of a probe on each axis', () => {
@@ -60,7 +60,7 @@ describe('gridSnapSource', () => {
     expectNear(point(gridSnapSource({ spacing: 10, origin: { x: 5, y: 5 } }), { x: 12, y: 13 }), { x: 15, y: 15 });
   });
 
-  it('lands a move where the pose origin rounds, not where the delta does', () => {
+  it('lands a move where the box rounds, not where the delta does', () => {
     const box = { x: 0, y: 0, width: 4, height: 4 };
     expectNear(moveBy({ sources: [gridSnapSource({ spacing: 1 })], box }).by(1.4, 2.6).point, { x: 1, y: 3 });
     // 0.2 + 0.2 lands on 0.5; the delta alone would round to 0.
@@ -75,36 +75,38 @@ describe('gridSnapSource', () => {
     expect(out.held).toBe(false);
   });
 
-  it('rounds a moved origin to the camera\'s grid', () => {
-    // A 6-unit drag puts the origin at 106, which a 10 grid rounds to 110.
+  it('rounds a moved box to the camera\'s grid', () => {
+    // A 6-unit drag puts the left edge at 106, which a 10 grid rounds to 110.
     const box = { x: 100, y: 50, width: 20, height: 20 };
     expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], box }).by(6, 0).point, { x: 10, y: 0 });
   });
 
   it('rounds a node on a parallax plane to the camera\'s grid', () => {
     // plane = 2 * camera - 100 on x, 2 * camera on y. A 12, 4 drag puts the
-    // origin at plane (112, 34): camera (106, 17), which rounds to (110, 20),
-    // plane (120, 40).
+    // box's center at plane (122, 44): camera (111, 22), which rounds to
+    // (110, 20), plane (120, 40).
     const plane = { scale: { x: 2, y: 2 }, offset: { x: -100, y: 0 } };
     const box = { x: 100, y: 30, width: 20, height: 20 };
-    expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], box, plane }).by(12, 4).point, { x: 20, y: 10 });
+    expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], box, plane }).by(12, 4).point, { x: 10, y: 0 });
   });
 
-  it('lands a path\'s bounds corner on the grid', () => {
+  it('lands whichever of a path\'s box edges and center is nearest a line', () => {
+    // The box spans 7..17 by 13..23; its center, (12, 18), is nearest on both axes.
     const { scene } = sceneOf([]);
     const id = scene.add({ kind: 'mark', layer: 'default', pose: polygonFromPoints([{ x: 7, y: 13 }, { x: 17, y: 13 }, { x: 12, y: 23 }]), data: {} }) as string;
-    expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], scene, ids: [id] }).by(0, 0).point, { x: 3, y: -3 });
+    expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], scene, ids: [id] }).by(0, 0).point, { x: -2, y: 2 });
   });
 
-  it('reads the origin through the session\'s OriginProjection', () => {
-    // The origin is the box's bottom-right corner, at (19, 27); its top-left
-    // would round the other way.
-    const corner: OriginProjection<unknown> = {
-      getOrigin: (p) => { const b = p as Bounds; return { x: b.x + b.width, y: b.y + b.height }; },
-      translate: (p, dx, dy) => { const b = p as Bounds; return { ...b, x: b.x + dx, y: b.y + dy }; },
-    };
-    const box = { x: 7, y: 13, width: 12, height: 14 };
-    expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], box, originProjection: corner }).by(0, 0).point, { x: 1, y: 3 });
+  it('lands a stroked rect with its stroke\'s outer edge on a line', () => {
+    // A 10-wide stroke reaches 5 past the rect at 102, 102: its drawn box
+    // starts at 97, 97, and moves 3 to put that corner on the 20 grid.
+    const stroked = { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00' }, width: 10 } };
+    const rect = { x: 102, y: 102, width: 100, height: 50 };
+    const grid = () => gridSnapSource({ spacing: 20 });
+    const { scene, ids } = sceneOf([{ ...rect, data: stroked }]);
+    expectNear(moveBy({ sources: [grid()], scene, ids }).by(0, 0).point, { x: 3, y: 3 });
+    // Unstroked, the rect's own corner is what lands, 2 back.
+    expectNear(moveBy({ sources: [grid()], box: rect }).by(0, 0).point, { x: -2, y: -2 });
   });
 
   it('moves the snapped point steadily as the pointer sweeps, zoomed far out', () => {

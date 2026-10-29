@@ -231,12 +231,6 @@ Owner tags, after the priority (2026-10-26):
   suspend; and that draw turns on the grid, measurement ends and anchors but not the other path kinds
   ([`docs/snapping.md`](./snapping.md), `packages/core/src/domains/snap/`,
   `packages/core/src/domains/paths/pathSnap/`).
-- **(P3) [maintainer] Equal spacing on a turned resize, and where its alignment marks sit.** Decision for the
-  maintainer (2026-10-18). A resize whose frame turns or skews the box moves no side of its
-  axis-aligned extent alone, so `resizeEdges` (`packages/core/src/domains/snap/resizeBox.ts`)
-  answers no edges and `spacingSnapSource` offers nothing; alignment still runs, but its marks span
-  the box at the press rather than where it lands. Open question: should spacing on a turned box
-  measure its extent, its own frame, or stay off?
 - **(P3) [recheck] Are the snap readout's drawing helpers public API?** Decision for the maintainer
   (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
   `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
@@ -429,15 +423,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Left, in order: a measure/draw contract a DOM component and a hud widget both implement; then porting a
   button and a list onto it. A page that has both DOM controls and a hud canvas still joins the two at `attach.ts`'s
   `wireFocus`, not through `FocusScope`.
-
-- **(P3) [maintainer] Should grid and guide snaps line up the stroke?** Decision for the maintainer.
-  `gridSnapSource` and `guideSnapSource` (`packages/guides/src/sources/`) snap the subject's
-  `origin` probe, its pose origin, so a rect with a centered stroke 10 wide lands with its stroke's
-  outer edge 5 short of the line. Snapping the drawn box instead would put the stroke's edge on it,
-  which is what the selection chrome, resize, and `alignmentSnapSource` measure, and every stroked
-  shape would land half a stroke from where it lands today. Either answer is now a one-line change
-  to the two sources' `roles` (`'origin'` to `'box'`). Insert and the pen are a different case and
-  stay as they are: they snap the pointer, before the node has a stroke to measure.
 
 - **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
   animator target the axes, and nothing yet asks for a transition.

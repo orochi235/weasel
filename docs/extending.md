@@ -490,9 +490,9 @@ The kit ships:
 - `ROTATED_POSE_DESCRIPTOR` — rect poses carrying a `rotation`.
 - `pathPoseDescriptor` — implementation for `Path`.
 
-A grid or a ruler guide snaps a pose's origin, read through an
-`OriginProjection`. The default reads rects and `Path`s; a pose that is neither
-passes its own:
+A source matching `origin` probes snaps a pose's origin, read through an
+`OriginProjection`, as the grid does on a turned container's lattice. The
+default reads rects and `Path`s; a pose that is neither passes its own:
 
 ```tsx
 import { gridSnapSource } from '@weasel-js/guides';

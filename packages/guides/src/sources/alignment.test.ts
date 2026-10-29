@@ -76,7 +76,8 @@ describe('alignmentSnapSource', () => {
 
   it('beats the grid on its axis while the grid holds the other', () => {
     const sources = [gridSnapSource({ spacing: 10 }), lines([{ id: 'L', axis: 'x', offset: 96 }])];
-    expectNear(moveBy({ sources, box: BOX }).by(0, 7).point, { x: -4, y: 10 });
+    // On y the box's center, at 132, is the nearest a grid line.
+    expectNear(moveBy({ sources, box: BOX }).by(0, 7).point, { x: -4, y: 5 });
   });
 
   it('aligns to a page box', () => {

@@ -148,8 +148,6 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   alignment used to add its delta on top of the grid's. A point target beats a line.
 - 2026-10-18: An anchor drag meets every point-gesture source, a grid included, and a pen anchor
   joins an open end within `targets.penCloseHitPx` before any snap.
-- 2026-10-18: A multi-root move offers each root's origin to the grid, and the nearest snaps; it
-  used to be the first node's alone.
 - 2026-10-18: Alignment and equal spacing measure siblings by their drawn box, stroke included, as
   the dragged subject already was.
 - 2026-10-18: A measurement end drag keeps its offset from the press, and no longer snaps to its own
