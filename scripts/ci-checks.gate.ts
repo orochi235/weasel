@@ -48,7 +48,9 @@ describe('the checks ci.yml runs as steps', () => {
   for (const args of [...checks].sort((a, b) => order(a[0]) - order(b[0]))) {
     const skip = skipReason(args[0], changes);
     if (skip) console.log(`gate: skipped npm run ${args[0]}: ${skip}`);
-    (skip ? it.skip : it.concurrent)(`npm run ${args.join(' ')}`, async () => {
+    // Concurrent when skipped too: vitest runs each unbroken run of concurrent tests as one batch, so
+    // a plain skip between two checks makes the second wait for the first to end.
+    (skip ? it.concurrent.skip : it.concurrent)(`npm run ${args.join(' ')}`, async () => {
       try {
         await run('npm', ['run', '--silent', ...args], { cwd: ROOT, env: CHECK_ENV, encoding: 'utf8', maxBuffer: 1 << 26 });
       } catch (error) {
