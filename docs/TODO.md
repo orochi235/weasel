@@ -406,6 +406,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P3) [agent] `quantity.spinKey` keeps its own ×10 for Page Up/Down** (2026-10-28). Every other coarse arrow step
+  reads `COARSE_STEPS` from `@weasel-js/headless`, but headless now depends on quantity, so quantity can't import it.
+  Move the constant down into quantity (headless re-exporting it), or move `spinKey` up.
+
 - **(P2) [agent] Enter commits mid-composition in two DOM text fields** (2026-10-28). `MenuTextValue`
   (`packages/ui/src/components/ContextMenu/MenuValue.tsx`) and `RenameField` (`PageTabs/RenameField.tsx`) pass every
   Enter to `editEnd`, so a Japanese or Chinese user confirming a candidate with Enter commits the half-typed text.
@@ -813,6 +817,12 @@ only story runner in the repo.
   better; that is a call on the mark, not made (2026-10-19).
 
 ## Release-gate & build hygiene
+
+- **(P2) [agent] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
+  label, keeps it on a reroute, and resets it" timed out on `expect.poll(() => savedLabel()?.dodge).toBe(false)`
+  (received `undefined`: the drag saved no label) in the fleet runs of `headless-slider-steps` (cacb14e98) and
+  `prefs-auto-field`, two branches that touch nothing in chart, on the same evening; every other run that day passed
+  it, including slider-steps' previous commit. Suspected (not shown): the drag lands before the label is placed.
 
 - **(P2) [agent] `npm ci` in a fresh worktree fails in forge's postinstall build** (2026-10-28, seen once, in a
   worktree cut from `main`): `TS7016: Could not find a declaration file for module '@weasel-js/labkit/config'`,

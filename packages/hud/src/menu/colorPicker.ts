@@ -1,3 +1,4 @@
+import { tryNormalizeHex } from '@weasel-js/paint';
 import type { MenuColorEntry, MenuController, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
 
 /** The swatches a HUD menu's color row offers when given no palette. */
@@ -14,19 +15,14 @@ export interface HudColorPickers {
   swatchOf(e: MenuEntry): string | undefined;
 }
 
-const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
-
 /** `text` as the `#rrggbb` (or with `alpha`, `#rrggbbaa`) a color row writes, or undefined when it is no hex color.
  *  Without `alpha`, an alpha typed is dropped; with it, a color typed without one takes `keep`'s, else opaque. */
 export function hexColor(text: string, alpha: boolean, keep?: string): string | undefined {
-  const m = HEX.exec(text.trim());
-  if (!m) return undefined;
-  let hex = m[1]!.toLowerCase();
-  if (hex.length === 3) hex = Array.from(hex, (ch) => ch + ch).join('');
-  const rgb = hex.slice(0, 6);
-  if (!alpha) return `#${rgb}`;
-  const kept = keep && /^#[0-9a-f]{8}$/i.test(keep) ? keep.slice(7).toLowerCase() : 'ff';
-  return `#${rgb}${hex.length === 8 ? hex.slice(6) : kept}`;
+  const written = tryNormalizeHex(text);
+  if (written === undefined) return undefined;
+  if (!alpha) return written.slice(0, 7);
+  if (written.length === 9) return written;
+  return `${written}${(keep && tryNormalizeHex(keep, 'rgba')?.slice(7)) || 'ff'}`;
 }
 
 /**

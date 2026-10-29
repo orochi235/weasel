@@ -21,3 +21,5 @@ export {
 } from './controller';
 export type { MenuController, MenuControllerOptions, MenuScheduler } from './controller';
 export { inTriangle } from './triangle';
+export { attachMenuDismiss } from './dismiss';
+export type { MenuDismissOptions, MenuDismissTarget } from './dismiss';

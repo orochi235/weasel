@@ -14,6 +14,12 @@ describe('toHex8', () => {
   it('passes through non-hex', () => {
     expect(toHex8('rgb(1,2,3)')).toBe('rgb(1,2,3)');
   });
+  it('passes through a malformed # value instead of expanding it', () => {
+    expect(toHex8('#xyz')).toBe('#xyz');
+    expect(toHex8('#12345')).toBe('#12345');
+    expect(withAlpha01('#xyz', 0.5)).toBe('#xyz');
+    expect(getAlpha01('#aabbcc8g')).toBe(1);
+  });
   it('expands #rgba to #rrggbbaa', () => {
     expect(toHex8('#F008')).toBe('#ff000088');
     expect(getAlpha01(toHex8('#f008'))).toBeCloseTo(0x88 / 255);
