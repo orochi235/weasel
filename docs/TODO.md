@@ -657,10 +657,20 @@ only story runner in the repo.
   again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
   fix belongs in windease; the workaround goes when it lands.
 
-- **(P3) [agent] A forge dev server's RSS climbs about 200 MB a restart, outside the JS heap.** With the
-  heap leak fixed (`restartLeavingNothing`, `scripts/vite-prebundle.ts`), heap after GC goes 89 to 113 MB
-  over 6 restarts where it went to 269, but `scripts/probe-dev-restarts.ts` on teitou (2026-10-26) still
-  shows RSS growing, so it is native memory, rolldown's presumably (not traced).
+- **(P3) [agent] A forge dev server's native memory climbs with every forced re-bundle, and rolldown holds it.** A
+  saved package file restarts the server and forces the dep optimizer to re-bundle the workspace packages
+  (`restartLeavingNothing`, `scripts/vite-prebundle.ts`). Measured on teitou (2026-10-29) with
+  `scripts/probe-dev-restarts.ts`: RSS went from 0.47 GB to 2.34 GB over 8 restarts with the JS heap at 100–140 MB,
+  the growth in mimalloc's memory (rolldown's and oxc's): 0.8 GB at the first forced re-bundle, about 100 MB at
+  each one after. Restarting without forcing one (`--keep-deps`) grows RSS about 35 MB a restart.
+  `scripts/probe-optimize-deps.ts` reproduces it with no server: 16 forced `optimizeDeps` runs in one process took
+  RSS from 0.32 GB to 2.28 GB, heap flat at 35 MB, still about 35 MB a run at the end; `MIMALLOC_PURGE_DELAY=0` cut
+  the footprint by a quarter without stopping the climb. Not traced inside rolldown (1.2.11); that script is the
+  repro for an upstream report. Separately, every server's id-resolver plugin containers outlive it, held from a
+  global handle on the `onWarn` callback rolldown's `viteResolvePlugin` keeps (heap snapshot retainer paths);
+  emptying the outgoing config left 24 native plugin wrappers after 6 restarts against 44 after 4, and RSS where it
+  was. Records:
+  `scripts/probe-dev-restarts.runs.jsonl`.
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
