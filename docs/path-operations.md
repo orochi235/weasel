@@ -99,6 +99,9 @@ Tag: `path-command`
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main | path-tools |
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
 | Text along a path | `textAlong` | Lays a text's glyphs along another shape's outline, hiding both sources | Alt+Shift+X | main | path-tools |
+| Roughen | `roughen` | Live random offsets of each selected shape's outline, hiding the shape | Alt+Shift+G | main | path-tools |
+| Zigzag | `zigzag` | Live ridges pushed alternately to either side of each selected shape's outline, hiding the shape | Alt+Shift+Z | main | path-tools |
+| Pucker & Bloat | `puckerBloat` | Live anchors pulled in and handles pushed out of each selected shape, or the reverse, hiding the shape | Alt+Shift+K | main | path-tools |
 | Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main | path-tools |
 | Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main | path-tools |
 | Spiro point kind | `setSpiroKind` | Makes the selected spiro points smooth, corner, or tangent to a line on either side, and solves the curve again | — | main | path-tools |

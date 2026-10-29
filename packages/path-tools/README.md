@@ -46,7 +46,7 @@ and an app that imports only some never loads the others:
 | `pathStructurePreset` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
 | `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
 | `cornerShapePreset` | Corner shape: a widget in each corner anchor whose drag sets its radius (`editCorner`), and `setCorners` and `cycleCornerShape` on the selected corners; `CORNER_CONTROLS` and `useCornerControls` are a panel over them |
-| `pathEffectsPreset` | Blend, Bend along, Repeat along, and Text along, and the actions that edit, release and expand them |
+| `pathEffectsPreset` | Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
 | `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` bring their own drags |
 
 ## Text Along Path

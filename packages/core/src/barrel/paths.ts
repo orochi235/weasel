@@ -108,6 +108,9 @@ export {
   bendAlongPath,
   repeatAlongPath,
   stationsAlongPath,
+  roughenPath,
+  zigzagPath,
+  puckerBloatPath,
   splitPathBySegment,
   splitPathByPolyline,
   snipPathByPolyline,
@@ -172,6 +175,9 @@ export type {
   BendAlongPathOptions,
   RepeatAlongPathOptions,
   RepeatStation,
+  RoughenPathOptions,
+  ZigzagPathOptions,
+  PuckerBloatPathOptions,
   SplitBySegmentOptions,
   SnipAtCrossingsOptions,
   OffsetPathOptions,
@@ -273,8 +279,11 @@ export type {
   PathEffectDerivations,
   PathEffect,
   PathEffectOptions,
+  PuckerBloatEffect,
   RepeatAlongEffect,
+  RoughenEffect,
   TextAlongEffect,
+  ZigzagEffect,
 } from '../core/scene/pathEffects';
 export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../domains/pathEffects';
 export { effectSourceFor, hiddenSourcesTakenWith, sourcesHiddenBy } from '../domains/pathEffects/effectSources';

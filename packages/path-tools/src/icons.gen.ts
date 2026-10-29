@@ -12,6 +12,9 @@ export type PathToolsIconName =
   | 'bendAlong'
   | 'repeatAlong'
   | 'textAlong'
+  | 'roughen'
+  | 'zigzag'
+  | 'puckerBloat'
   | 'expand'
   | 'balanceHandles'
   | 'equalizeHandles'
@@ -60,6 +63,9 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "bendAlong",
       "repeatAlong",
       "textAlong",
+      "roughen",
+      "zigzag",
+      "puckerBloat",
       "expand",
       "balanceHandles",
       "equalizeHandles",
@@ -120,6 +126,9 @@ declare module '@weasel-js/icons' {
     'path-tools:bendAlong': true;
     'path-tools:repeatAlong': true;
     'path-tools:textAlong': true;
+    'path-tools:roughen': true;
+    'path-tools:zigzag': true;
+    'path-tools:puckerBloat': true;
     'path-tools:expand': true;
     'path-tools:balanceHandles': true;
     'path-tools:equalizeHandles': true;

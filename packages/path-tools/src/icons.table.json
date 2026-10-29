@@ -42,6 +42,21 @@
       "group": "Tools",
       "tags": []
     },
+    "roughen": {
+      "body": "<path d=\"M3.125 3.125L9.375 4.375L15.625 1.875L16.875 9.375L18.125 16.875L10.625 15.625L3.125 18.125L4.375 10.625Z\" stroke-width=\"1.25\"/>",
+      "group": "Tools",
+      "tags": []
+    },
+    "zigzag": {
+      "body": "<path d=\"M0.625 11.875L4.375 8.125L8.125 11.875L11.875 8.125L15.625 11.875L19.375 8.125\" stroke-width=\"1.25\"/>",
+      "group": "Tools",
+      "tags": []
+    },
+    "puckerBloat": {
+      "body": "<path d=\"M9.375 1.875C9.375 6.5 12.25 9.375 16.875 9.375C12.25 9.375 9.375 12.25 9.375 16.875C9.375 12.25 6.5 9.375 1.875 9.375C6.5 9.375 9.375 6.5 9.375 1.875Z\" stroke-width=\"1.25\"/>",
+      "group": "Tools",
+      "tags": []
+    },
     "expand": {
       "body": "<circle cx=\"10\" cy=\"10\" r=\"6\" stroke-width=\"1.25\" stroke-dasharray=\"2 1.7\"/><rect x=\"8.5\" y=\"2.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"14.5\" y=\"8.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"8.5\" y=\"14.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"2.5\" y=\"8.5\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",

@@ -242,11 +242,6 @@ Owner tags, after the priority (2026-10-26):
   `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
   public surface, or they move to an `internal` entry (as `@weasel-js/routing/internal` does),
   which `audit:jsdoc` treats as a sibling-package surface.
-- **(P3) [maintainer] Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
-  branch stored effects as a `data.effects` list on the path itself, a design main did not take
-  (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
-  `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
-  effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
 - **(P3) [recheck] WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 

@@ -45,6 +45,12 @@ describe('effectSourceFor', () => {
     }
   });
 
+  it('answers no path for an effect of one shape', () => {
+    for (const kind of ['roughen', 'zigzag', 'puckerBloat'] as const) {
+      expect(effectSourceFor(sceneWith({ kind, hideSources: true } as PathEffect, ['q']), FX, 'path')).toBeNull();
+    }
+  });
+
   it("answers a blend's spine as its path, and none without one", () => {
     expect(effectSourceFor(sceneWith({ kind: 'blend', steps: 3, hideSources: true } as PathEffect, ['q', 's', 'p']), FX, 'path')).toBe(P);
     expect(effectSourceFor(sceneWith({ kind: 'blend', steps: 3, hideSources: true } as PathEffect, ['q', 's']), FX, 'path')).toBeNull();

@@ -561,7 +561,8 @@ blend, copies along a path — returns `pathFromParts([{ path, fill, stroke },
 …])`. Picking, bounds and every `dep.path` reader see one path holding every
 part's outline; the painter draws each part with its own `fill` and `stroke`,
 falling back to the node's `data` where a part names none. The kit's path
-effects (`pathEffectNode`: blend, bend along a path, repeat along a path) are
+effects (`pathEffectNode`: blend, bend along a path, repeat along a path, and
+roughen, zigzag and pucker & bloat of one shape) are
 built this way. They read a source's outline through its painter, so a scene
 holds them only when it registers them: `createScene({ registry:
 withPathEffectsRegistry() })`. Without that the actions that make one are

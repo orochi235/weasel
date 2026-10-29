@@ -7,7 +7,7 @@ import { groupNodeRouting, inferredNodeRouting, pathEffectOf, type NodeRoutingEn
 import { PATH_EFFECT_SETTINGS_SCHEMA } from '@weasel-js/path-tools';
 
 type EffectKind = PathEffect['kind'];
-const EFFECT_KINDS: readonly EffectKind[] = ['textAlong', 'blend', 'bendAlong', 'repeatAlong'];
+const EFFECT_KINDS: readonly EffectKind[] = ['textAlong', 'blend', 'bendAlong', 'repeatAlong', 'roughen', 'zigzag', 'puckerBloat'];
 
 /** An effect's name as its settings section and its menu item give it. */
 function effectName(kind: EffectKind): string {

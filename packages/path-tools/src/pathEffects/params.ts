@@ -3,7 +3,9 @@
  * is the right type, so a slider's number or a toggle's boolean passes and a
  * stray value is ignored rather than written into a document.
  */
-import type { BendAlongEffect, BlendEffect, PathEffect, RepeatAlongEffect, TextAlongEffect } from '@weasel-js/core';
+import type {
+  BendAlongEffect, BlendEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, TextAlongEffect, ZigzagEffect,
+} from '@weasel-js/core';
 
 type Params = Record<string, unknown> | undefined;
 
@@ -56,6 +58,20 @@ export function effectSettings(kind: PathEffect['kind'], params: Params): Partia
         overflow: oneOf(p.overflow, ['clip', 'fit'] as const),
         side: oneOf(p.side, ['auto', 'path', 'flipped'] as const),
       });
+    case 'roughen':
+      return defined<Partial<RoughenEffect>>({
+        size: num(p.size) === undefined ? undefined : Math.max(num(p.size)!, 0),
+        detail: num(p.detail) === undefined ? undefined : Math.max(Math.round(num(p.detail)!), 0),
+        seed: num(p.seed) === undefined ? undefined : Math.round(num(p.seed)!),
+      });
+    case 'zigzag':
+      return defined<Partial<ZigzagEffect>>({
+        size: num(p.size),
+        ridges: num(p.ridges) === undefined ? undefined : Math.max(Math.round(num(p.ridges)!), 0),
+        smooth: bool(p.smooth),
+      });
+    case 'puckerBloat':
+      return defined<Partial<PuckerBloatEffect>>({ amount: num(p.amount) });
   }
 }
 
@@ -75,6 +91,9 @@ export const EFFECT_DEFAULTS: { [K in PathEffect['kind']]: Extract<PathEffect, {
   bendAlong: { kind: 'bendAlong' },
   repeatAlong: { kind: 'repeatAlong' },
   textAlong: { kind: 'textAlong', hideSources: true },
+  roughen: { kind: 'roughen', size: 5, hideSources: true },
+  zigzag: { kind: 'zigzag', size: 5, hideSources: true },
+  puckerBloat: { kind: 'puckerBloat', amount: 0.5, hideSources: true },
 };
 
 /**

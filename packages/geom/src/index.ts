@@ -79,6 +79,9 @@ export { bendAlongPath, type BendAlongPathOptions } from './paths/bendAlongPath'
 export {
   repeatAlongPath, stationsAlongPath, type RepeatAlongPathOptions, type RepeatStation,
 } from './paths/repeatAlongPath';
+export { roughenPath, type RoughenPathOptions } from './paths/roughenPath';
+export { zigzagPath, type ZigzagPathOptions } from './paths/zigzagPath';
+export { puckerBloatPath, type PuckerBloatPathOptions } from './paths/puckerBloatPath';
 export { pathDistanceToPoint } from './paths/pathDistance';
 export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
 export { pathSegments, type PathSegment } from './intersect/pathSegments';

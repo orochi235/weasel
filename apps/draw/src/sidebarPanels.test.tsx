@@ -13,6 +13,9 @@ const EFFECTS: [PathEffect['kind'], string][] = [
   ['blend', 'Blend'],
   ['bendAlong', 'Bend Along Path'],
   ['repeatAlong', 'Repeat Along Path'],
+  ['roughen', 'Roughen'],
+  ['zigzag', 'Zigzag'],
+  ['puckerBloat', 'Pucker & Bloat'],
 ];
 
 function makeScene(kind: PathEffect['kind']) {

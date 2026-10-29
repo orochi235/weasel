@@ -3,7 +3,9 @@
  * `ActionParamSchema` so `<SceneCanvas tune>` types them.
  */
 import type { CornerShape, PathConstraintKind, SegmentType, SpiroKind } from '@weasel-js/geom';
-import type { BendAlongEffect, BlendEffect, PathEffect, RepeatAlongEffect } from '@weasel-js/core';
+import type {
+  BendAlongEffect, BlendEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, ZigzagEffect,
+} from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
 import type { LengthenPathParams } from './lengthen/lengthenPath';
 import type { ResamplePathParams } from './resample/resample';
@@ -18,6 +20,7 @@ type BlendParams = Omit<SettingsOf<BlendEffect>, 'reverse'> & { reverse?: boolea
 /** Either field left out keeps that part of each selected corner. */
 type SetCornersParams = { shape: CornerShape; radius: number };
 type EditPathEffectParams = BlendParams & SettingsOf<BendAlongEffect> & SettingsOf<RepeatAlongEffect>
+  & SettingsOf<RoughenEffect> & SettingsOf<ZigzagEffect> & SettingsOf<PuckerBloatEffect>
   & { ids?: readonly string[]; kind?: PathEffect['kind'] };
 
 declare module '@weasel-js/routing' {
@@ -25,6 +28,9 @@ declare module '@weasel-js/routing' {
     blend: BlendParams;
     bendAlong: SettingsOf<BendAlongEffect>;
     repeatAlong: SettingsOf<RepeatAlongEffect>;
+    roughen: SettingsOf<RoughenEffect>;
+    zigzag: SettingsOf<ZigzagEffect>;
+    puckerBloat: SettingsOf<PuckerBloatEffect>;
     editPathEffect: EditPathEffectParams;
     simplifyBrush: SimplifyBrushParams;
     smudgeBrush: SmudgeBrushParams;
