@@ -442,16 +442,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
 
-- **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
-  `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
-  (median of 12) with a node property schema open: `IconAttrField`'s grid of every registered icon
-  (489 cells, about 2,200 elements) costs about 105 ms of it, and highlighting the Export panel's
-  two literals about 70 ms (`pre[data-testid=schema-literal]`, about 1,800 elements since
-  `CodeBlock` stopped wrapping plain tokens). The rest is spread over every pane. Virtualizing
-  either list, or mounting the literal only while its panel is open, changes the UI.
-  The Literal tab is open by default, so mounting the literal only while its panel is open saves nothing
-  (2026-10-26).
-
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
