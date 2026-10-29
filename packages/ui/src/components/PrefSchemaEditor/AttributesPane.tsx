@@ -7,8 +7,9 @@ import { PrefConditionEditor } from '../PrefConditionEditor';
 import type { PrefRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
 import { Select } from '../Select';
-import { Switch } from '../Switch';
-import { aggregateAttributes, catalogAttributes, isObjectField, setObjectField } from './attrAggregate';
+import { aggregateAttributes, catalogAttributes, isObjectField, setAutoRow, setObjectField } from './attrAggregate';
+import type { AutoRow } from './autoRows';
+import { autoValueRenderer } from './autoValueRenderer';
 import { ATTR_RENDERERS } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
@@ -111,7 +112,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     return catalog ? catalogAttributes(all) : pointers ? { ...all, schema: pointerAttributes(all.schema) } : all;
   }, [nodes, custom, actions, pointers, catalog]);
   const mixedPaths = useMemo(
-    () => new Set([...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`, `${AUTO}.${k}`])),
+    () => new Set([...[...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`]), ...[...(agg?.auto.mixed ?? [])].map((k) => `${AUTO}.${k}`)]),
     [agg],
   );
   const [key, setKey] = useState(path === null ? '' : keyOf(path));
@@ -132,10 +133,12 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   const item = !several && isPrefLeaf(node) ? entryOf(node) : undefined;
   const held = agg.values;
   const setEntry = (next: PrefLeaf) => onChange(setAttribute(schema, path, 'item', next));
-  const noAutoValue = !agg.mixed.has('autoValue') && held.autoValue === undefined;
+  const autoHeld = agg.auto.values;
+  const noAutoValue = !agg.auto.mixed.has('value') && autoHeld.value === undefined;
   /** One attribute set on every node, as one edit. */
   const writeAll = (attr: string, value: unknown) =>
     onChange(targets.reduce<SchemaRoot>((root, p) => setAttribute(root, p, attr, value), schema));
+  const writeAuto = (row: AutoRow, value: unknown) => onChange(setAutoRow(schema, targets, row, value));
   // What each leaf is, as the Kind picker names it: one choice when they agree.
   const choices = nodes.map((n) => (isPrefLeaf(n) ? choiceOf(n) : null));
   const choice = choices.every((c) => c === choices[0]) ? choices[0]! : null;
@@ -166,16 +169,8 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
 
   const drawn = { ...renderers, ...ATTR_RENDERERS };
   const identity: Record<string, PrefRenderer> = {
-    // Unset, the control shows the default it would start from and takes no input.
-    [AUTO_VALUE_KIND]: Object.assign<PrefRenderer, { group: boolean }>((ctx) => (
-      <span className={s.autoValue}>
-        <Switch aria-label={`Set ${ctx.pref.name}`} isSelected={!noAutoValue}
-          onChange={(on) => writeAll('autoValue', on ? held.default : undefined)} />
-        <fieldset className={s.autoValueControl} disabled={noAutoValue}>
-          {renderPrefControl({ ...ctx, pref: auto.autoValue! }, drawn)}
-        </fieldset>
-      </span>
-    ), { group: true }),
+    [AUTO_VALUE_KIND]: autoValueRenderer(noAutoValue, (on) => writeAuto('value', on ? held.default : undefined),
+      (ctx) => renderPrefControl({ ...ctx, pref: auto.value! }, drawn)),
     [CONDITION_KIND]: conditionRenderer(schema, ownPaths, item ? (node as PrefList | PrefMap) : undefined, targets, over),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} mixed={mixed} onChange={setValue}
@@ -231,7 +226,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
       },
     } : {}),
     ...(Object.keys(auto).length > 0 ? {
-      [AUTO]: { name: 'Auto', children: { ...auto, ...(auto.autoValue ? { autoValue: { ...auto.autoValue, kind: AUTO_VALUE_KIND } } : {}) } },
+      [AUTO]: { name: 'Auto', children: { ...auto, ...(auto.value ? { value: { ...auto.value, kind: AUTO_VALUE_KIND } } : {}) } },
     } : {}),
   };
 
@@ -241,7 +236,8 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
       ...(attr in shared || attr === KEY ? [attr] : []),
       ...(attr === 'kind' ? [KIND] : []),
       ...(attr in own ? [`${OWN}.${attr}`] : []),
-      ...(attr in auto ? [`${AUTO}.${attr}`] : []),
+      // The panel's rows all live in `auto`, so a change to it marks each.
+      ...(attr === 'auto' ? Object.keys(auto).map((row) => `${AUTO}.${row}`) : []),
       // What an entry is shows on its picker; any other attribute of it, on that attribute's row.
       ...(attr === 'item' || attr === 'item.kind' || attr === 'item.type' ? [ENTRY_IS] : attr.startsWith('item.') ? [`${ENTRY}.${attr.slice(5)}`] : []),
     ]),
@@ -255,7 +251,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
         schema={{ name: 'Attributes', children }}
         layout="list" fields={fields}
         changed={marked}
-        values={{ ...held, [OWN]: held, [ENTRY]: item, [AUTO]: noAutoValue ? { ...held, autoValue: held.default } : held }}
+        values={{ ...held, [OWN]: held, [ENTRY]: item, [AUTO]: noAutoValue ? { ...autoHeld, value: held.default } : autoHeld }}
         mixed={mixedPaths}
         renderers={{ ...drawn, ...identity }}
         onChange={(p, value) => {
@@ -266,6 +262,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
             setEntry(next as unknown as PrefLeaf);
             return;
           }
+          if (p.startsWith(`${AUTO}.`)) { writeAuto(attrOf(p) as AutoRow, value); return; }
           const attr = attrOf(p);
           if (isObjectField(agg.schema, attr)) onChange(setObjectField(schema, targets, attr, value)); else writeAll(attr, normalizeAttr(attr, value, own[attr]));
         }}

@@ -258,7 +258,7 @@
     "longestFunction": 183
   },
   "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
-    "longestFunction": 185
+    "longestFunction": 181
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
     "longestFunction": 188

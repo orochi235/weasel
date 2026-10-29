@@ -130,10 +130,11 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    * already resolved; without, it reads `undefined`.
    */
   auto(resolve?: (config: Record<string, unknown>) => T): this {
+    const said = { auto: { ...this.options.auto } };
     return this.opt(
       resolve === undefined
-        ? { autoable: true }
-        : { autoable: true, autoResolve: resolve as (c: Record<string, unknown>) => unknown },
+        ? said
+        : { ...said, autoResolve: resolve as (c: Record<string, unknown>) => unknown },
     );
   }
 
@@ -144,6 +145,6 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    */
   initial(value: Auto): this {
     if (!isAuto(value)) throw new Error('[labkit] .initial() takes `auto` and nothing else');
-    return this.opt({ unpinned: true });
+    return this.opt({ auto: { ...this.options.auto, on: true } });
   }
 }

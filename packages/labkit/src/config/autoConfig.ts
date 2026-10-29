@@ -12,22 +12,18 @@ function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
 }
 
 /** What computes a leaf while it is auto: its `.auto()` resolver, or failing
- *  that the `autoValue` it declares as data. */
+ *  that the `auto.value` it declares as data. */
 export function autoResolverOf(leaf: PrefLeaf): Resolver | undefined {
   const resolve = extra<Resolver>(leaf, 'autoResolve');
   if (resolve !== undefined) return resolve;
-  return leaf.autoValue === undefined ? undefined : () => leaf.autoValue;
+  const value = leaf.auto === false ? undefined : leaf.auto?.value;
+  return value === undefined ? undefined : () => value;
 }
 
-/** Whether a leaf may be auto: it said `.auto()` or `.initial(auto)`, or, as data, `unpinned` or an
- *  `autoValue`. A leaf that says none of them is always pinned, and so is one marked `manual`. */
+/** Whether a leaf may be auto: `.auto()` and `.initial(auto)` write an object to `auto`, and every other
+ *  resolved leaf says `false`. */
 export function leafCanAuto(leaf: PrefLeaf): boolean {
-  if (leaf.manual === true) return false;
-  return (
-    extra<boolean>(leaf, 'autoable') === true ||
-    leaf.unpinned === true ||
-    autoResolverOf(leaf) !== undefined
-  );
+  return typeof leaf.auto === 'object';
 }
 
 /** Every leaf in a resolved schema, in schema order, with its dotted path.
@@ -45,7 +41,7 @@ function* leaves(group: PrefGroup, at = ''): Generator<[string, PrefLeaf]> {
 export function autoPathsOf(resolved: ResolvedConfig): string[] {
   const out: string[] = [];
   for (const [path, leaf] of leaves(resolved.group)) {
-    if (leaf.unpinned) out.push(path);
+    if (leaf.auto !== false && leaf.auto?.on === true) out.push(path);
   }
   return out;
 }

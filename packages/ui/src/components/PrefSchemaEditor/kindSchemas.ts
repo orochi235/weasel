@@ -17,6 +17,7 @@ import { replaceNode, nodeAt, type SchemaNode, type SchemaRoot } from './schemaE
 import { containsCode, STUB } from './schemaExport';
 import { findType, NO_TYPES, typeNamed, type PrefTypes } from './types';
 import { actionChoice, registeredFacts, type RegisteredAction } from './registeredActionAttrs';
+import { autoRowsOf, withAutoRow, type LeafAuto } from './autoRows';
 
 /** One attribute of a kind, as the leaf that edits it. `required` keeps it on a leaf when it is emptied, and seeds
  *  it, from this leaf's `default`, in a new leaf of the kind. */
@@ -143,12 +144,9 @@ const SECTION_ATTRS: KindAttrs = {
 };
 
 const AUTO_FLAGS: KindAttrs = {
-  manual: flag('Never auto', 'The app can never choose its value: its row has no way to hand it to the app.'),
-  unpinned: flag('Starts auto', 'Starts with the app choosing its value, instead of at its default.'),
+  never: flag('Never auto', 'The app can never choose its value: its row has no way to hand it to the app.'),
+  on: flag('Starts auto', 'Starts with the app choosing its value, instead of at its default.'),
 };
-
-/** Stored as given, falsy or not: `false` and `0` are values a leaf can read while auto. */
-const AS_GIVEN = new Set(['autoValue']);
 
 /** Written even when empty: a leaf without them is not a leaf. */
 const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'of', 'group']);
@@ -157,7 +155,7 @@ const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'o
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'access', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'tags', 'default', 'access', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'auto']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -207,7 +205,7 @@ function entryAttrs(item: PrefLeaf, custom: CustomKinds): KindAttrs {
 function autoAttrs(leaf: PrefLeaf): KindAttrs {
   if (!prefHoldsValue(leaf)) return {};
   const value = valueAttr(leaf, { name: 'Auto value', description: 'What it reads while the app is choosing, if the app computes nothing for it. Off: no value at all. It need not match the default.' });
-  return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
+  return { ...AUTO_FLAGS, ...(value ? { value } : {}) };
 }
 
 const READOUT = flag('Readout', 'Shows its value but cannot be edited.');
@@ -271,20 +269,22 @@ export function attributeSchema(
   const auto = autoAttrs(node);
   const entry = item && !typed ? entryAttrs(item, custom) : {};
   const fields = node as unknown as Record<string, unknown>;
-  for (const attrs of [shared, own, auto]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
+  for (const attrs of [shared, own]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
+  const rows = autoRowsOf(node) as Record<string, unknown>;
+  for (const k of Object.keys(auto)) if (containsCode(rows[k])) delete auto[k];
   for (const k of Object.keys(entry)) if (containsCode((item as unknown as Record<string, unknown>)[k])) delete entry[k];
   // What a type holds beyond the fields its use sets is the type's to show, where it is declared.
   const undrawn = node.kind === 'separator' ? SEPARATOR_UNDRAWN : NO_ATTRS;
   // Every leaf carries a `default`, which says nothing of one that holds no value.
   const listed = (k: string): boolean => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k === 'default' && !prefHoldsValue(node));
-  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k in auto));
+  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k === 'auto' && Object.keys(auto).length > 0));
   if (node.kind === 'action') readOnly.push(...registeredFacts(actions?.find((a) => a.key === (node as { action?: string }).action)));
   return { shared, own, auto, entry, readOnly };
 }
 
 /** The value to store for an edited attribute: an optional one left empty is removed rather than written. */
 export function normalizeAttr(key: string, value: unknown, attr?: KindAttr): unknown {
-  if (REQUIRED.has(key) || AS_GIVEN.has(key) || attr?.required) return value;
+  if (REQUIRED.has(key) || attr?.required) return value;
   if (value === undefined || value === '' || value === false) return undefined;
   if (Array.isArray(value) && value.length === 0) return undefined;
   return value;
@@ -330,7 +330,7 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout', 'manual', 'unpinned'];
+const SHARED = ['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout'];
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 
@@ -367,6 +367,13 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
     if (k === 'default') {
       if (!typed && carriesDefault(v, blank)) next.default = v;
       else dropped.push('default');
+      continue;
+    }
+    if (k === 'auto') {
+      // What it reads while auto is a value of the old kind.
+      const kept = withAutoRow(v as LeafAuto, 'value', undefined);
+      if (kept !== undefined) next.auto = kept;
+      if (autoRowsOf(leaf).value !== undefined) dropped.push('auto.value');
       continue;
     }
     if (SLOTS.has(k)) {

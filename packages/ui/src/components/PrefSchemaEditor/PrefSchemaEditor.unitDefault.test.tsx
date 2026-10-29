@@ -13,7 +13,7 @@ const START: PrefGroup = {
   children: {
     view: { name: 'View', children: {
       dim: {
-        kind: 'number', name: 'Dim', description: '', default: 0.5, min: 0, max: 1, autoValue: 0.25,
+        kind: 'number', name: 'Dim', description: '', default: 0.5, min: 0, max: 1, auto: { value: 0.25 },
         unit: { scale: 0.01, suffix: '%' },
       },
     } },
@@ -49,6 +49,6 @@ describe('PrefSchemaEditor: a number shown in a unit', () => {
     type('Default', '80');
     expect(dim().default).toBeCloseTo(0.8);
     type('Auto value', '10');
-    expect(dim().autoValue).toBeCloseTo(0.1);
+    expect((dim().auto as { value: number }).value).toBeCloseTo(0.1);
   });
 });

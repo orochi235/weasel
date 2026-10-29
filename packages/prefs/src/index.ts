@@ -108,6 +108,7 @@ export {
   PREF_KINDS,
   pairRowsOf,
   type BuiltinPref,
+  type PrefAuto,
   type PrefBase,
   type PrefValueBase,
   type PrefBoolean,

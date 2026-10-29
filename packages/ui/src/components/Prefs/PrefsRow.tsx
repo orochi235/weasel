@@ -179,7 +179,7 @@ export function prefRenderContext(
   const { onAutoChange } = ctx;
   const inside = at === undefined ? undefined : ctx.targets;
   const entryAt = inside?.entryAt ?? ctx.entryAt;
-  const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
+  const toggles = onAutoChange !== undefined && pref.auto !== false && (ctx.canInherit?.(path) ?? true);
   const renderCtx: PrefRenderContext = {
     path,
     pref: leafAtValues(pref, ctx.values),
