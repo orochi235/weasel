@@ -842,19 +842,17 @@ only story runner in the repo.
   its `lab/` import by path because ui does not export them; removing those needs a published
   subpath.
 
-- **(P3) [agent] Find what a long-lived vitest vm worker builds up that crashes V8, and drop
-  `--no-sparkplug` if it does nothing.** Fleet runs on teitou died partway from a worker SIGSEGV: a
-  jump to address 0 under `PromiseConstructor` while another worker ran a full GC. Under
-  `--stress-flush-code` on teitou it crashed 3 of 3 runs at vitest's default memory limit and 0 of 6
-  with `vmMemoryLimit: '1gb'` (2026-10-22). It is not a leak: one worker running 319 `weasel-ui`
-  files held a flat ~200 MB of live heap and ~1.9 GB RSS. vitest compares the limit with `heapUsed`
-  read without a GC (median ~300 MB), so the default (RAM / workers, 3–5 GB) never recycles a
-  worker, and 1 GB replaces each about once a run. The crash therefore tracks worker age rather than
-  heap size; what accumulates, and why only teitou crashed, is unknown. `--no-sparkplug` went in
-  (2026-10-19) for nodejs/node#62393, whose `0xe` signature none of these reports has; two from
-  10-15 and 10-17 (fault `0x89` in `MarkingWorklists::~Local`) are the only ones it might have
-  answered. Before removing it, run the jsdom projects on teitou without it a few times and check
-  `~/Library/Logs/DiagnosticReports/node-*.ips` there for new reports.
+- **(P3) [maintainer] Whether to find what a long-lived vitest vm worker builds up that crashed V8.**
+  Fleet runs on teitou died from a worker SIGSEGV (a jump to address 0 under `PromiseConstructor`
+  while another worker ran a full GC) until `vmMemoryLimit: '1gb'` (2026-10-22) made vitest replace
+  each vm worker about once a run; the default limit never does, because it compares against
+  `heapUsed` read without a GC. Nothing leaks: one worker over 319 `weasel-ui` files held a flat
+  ~200 MB of live heap. teitou has written no SIGSEGV report since, over 183 suite runs, and with
+  `--no-sparkplug` dropped the jsdom projects ran 3 of 3 clean under `--stress-flush-code`, which
+  crashed 3 of 3 at the default limit (2026-10-29). So the crash is held off, not explained: what an
+  aged worker accumulates, and why only teitou crashed, are unknown. The cost of not knowing is that
+  raising or removing the limit would bring it back. Whether that is worth a heap-snapshot hunt is
+  the open call.
 
 - **(P3) [agent] The `browser` project spends about a second per file outside its tests.** Alone on teitou
   (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
