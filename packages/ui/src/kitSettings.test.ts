@@ -3,7 +3,7 @@ import { prefLeaves, type PrefPath, type PrefValueAt } from '@weasel-js/prefs';
 import type { KitSettingAt, KitSettingPath } from '@weasel-js/react';
 import { ANCHOR_SNAP_PX, CURVE_HIT_PX as FUNCTION_CURVE_HIT_PX } from './components/CurveEditor/createFunctionLayer';
 import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEditor/createKeyframeLayer';
-import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './components/NumberField/useStepRepeat';
+import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/headless';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type ParamsSurface } from './components/Prefs/commitPolicy';
 import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';
 import { FOCUS_DELAY } from './components/Properties/rowHelp';

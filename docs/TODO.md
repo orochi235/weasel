@@ -466,7 +466,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `stepStop`, `typeaheadStep`), a tree's Right/Left (`treeKey`) and a row list's whole key dispatch (`rowKey`), and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
   `@weasel-js/menu` runs each menu level on the list half, ui's `useRowNavigation` and `useRovingTabIndex` step and
   type ahead through it (`useRowNavigation` takes every key but the nudge from `rowKey`), `Hud` is a `FocusScope<Widget>`, and ui's `domFocusScope(root)` is the same contract over DOM
-  elements. Left, in order: a measure/draw contract a DOM component and a hud widget both implement; then porting a
+  elements. Held steppers repeat through `createStepRepeat`, in ui's `UnitField` and on the hud menu's number chips.
+  Left, in order: a measure/draw contract a DOM component and a hud widget both implement; then porting a
   button and a list onto it. A page that has both DOM controls and a hud canvas still joins the two at `attach.ts`'s
   `wireFocus`, not through `FocusScope`.
 

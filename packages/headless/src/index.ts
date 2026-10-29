@@ -14,3 +14,7 @@ export { tabSort, tabStep } from './focus';
 export type { FocusScope, FocusScopeOptions } from './focus';
 export { treeKey } from './tree';
 export type { TreeShape, TreeKeyResult } from './tree';
+export { timerScheduler } from './scheduler';
+export type { Scheduler } from './scheduler';
+export { createStepRepeat, REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './stepRepeat';
+export type { StepRepeat, StepRepeatOptions } from './stepRepeat';
