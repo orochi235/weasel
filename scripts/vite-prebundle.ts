@@ -148,9 +148,9 @@ function viteQueriesExternal() {
  * Neither holder can be reached from here, so the outgoing environments are emptied once the new server is up, all but
  * the fields of vite's `PartialEnvironment` (`KEPT_AFTER_CLOSE`).
  */
-export async function restartLeavingNothing(server: ViteDevServer): Promise<void> {
+export async function restartLeavingNothing(server: ViteDevServer, force = true): Promise<void> {
   const outgoing = server.environments as Record<string, object>;
-  await server.restart(true);
+  await server.restart(force);
   if (server.environments === outgoing) return;
   for (const [name, env] of Object.entries(outgoing)) {
     for (const key of Object.keys(env)) if (!KEPT_AFTER_CLOSE.has(key)) delete (env as Record<string, unknown>)[key];
@@ -212,7 +212,10 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
     name: 'weasel:prebundle-workspace',
     apply: 'serve',
     config(user) {
-      if (off) return;
+      // vite's less/sass worker pool only unrefs its threads on close, so every restart left its workers running, each a
+      // whole isolate (vite 8.3). Compiling on the main thread starts none.
+      const css = { preprocessorMaxWorkers: 0 };
+      if (off) return { css };
       const servedFiles = [...filesUnder(served, read), ...filesUnder(storyTrees, (file) => STORY_FILE.test(file))];
       sourced = sourcedFromBundled(servedFiles, bundled);
       listed = new Set([...specifiersOf([...servedFiles, ...sourced])].filter(bundles));
@@ -222,6 +225,7 @@ export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options:
       const imported = [...sourced].filter((file) => !isStory(file)).length;
       if (imported) console.info(`prebundle: serving ${imported} module(s) of bundled packages from source, since source imports them by path`);
       return {
+        css,
         optimizeDeps: {
           // Only ever true: a `false` here would outrank the force a re-bundling restart asks for.
           ...(stale && { force: true }),
