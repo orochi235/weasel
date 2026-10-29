@@ -1,7 +1,7 @@
 import { type InstrumentList, TrialIdContext, useLabContext, useTrialState } from '@weasel-js/labkit';
 import { type ConfigSchema, valueAtPath } from '@weasel-js/labkit/config';
 import { useEffect, useRef, useState } from 'react';
-import { knobPaths, knobsToParams, paramsToKnobs, reservedParams, sameKnob } from '../route/url';
+import { knobPaths, knobsToParams, paramsToKnobs, paramsToPins, reservedParams, sameKnob, withoutPins } from '../route/url';
 import { routedTrial } from './routedTrial';
 import { readRouteParams, replaceRouteParams, takeRouteFromTrial, useRoute } from './useRoute';
 
@@ -12,9 +12,9 @@ interface KnobSyncProps {
 
 /**
  * Keeps one trial's knobs and the URL in step. On mount, and whenever the hash changes under it, the URL's knobs are
- * written over the trial's config, with every leaf the URL could name and does not set returned to its default; after
- * that each change to the config is written back to the URL in place. A route written for this trial as it stood
- * skips that first read.
+ * written over the trial's config, with every leaf the URL could name and does not set returned to its default, and the
+ * globals it pins pinned; after that each change to the config is written back to the URL in place, without the pins.
+ * A route written for this trial as it stood skips that first read.
  */
 function KnobSync({ schema, config }: KnobSyncProps) {
   const { setConfig } = useTrialState();
@@ -34,7 +34,8 @@ function KnobSync({ schema, config }: KnobSyncProps) {
     if (reading.current && takeRouteFromTrial()) reading.current = false;
     if (reading.current) {
       reading.current = false;
-      const knobs = paramsToKnobs(schema, readRouteParams());
+      const params = readRouteParams();
+      const knobs = paramsToKnobs(schema, params);
       let wrote = false;
       for (const { path, leaf } of knobPaths(schema)) {
         const target = path in knobs ? knobs[path] : leaf.default;
@@ -43,11 +44,16 @@ function KnobSync({ schema, config }: KnobSyncProps) {
         setConfig(path as never, target as never);
         wrote = true;
       }
+      for (const [path, pin] of Object.entries(paramsToPins(schema, params))) {
+        if (valueAtPath(config, path) === pin) continue;
+        setConfig(path as never, pin as never);
+        wrote = true;
+      }
       // The write comes back as a config change, which runs this again to put it in the URL.
       if (wrote) return;
     }
     const knobs = knobsToParams(schema, config);
-    replaceRouteParams((params) => ({ ...knobs, ...reservedParams(params) }));
+    replaceRouteParams((params) => ({ ...knobs, ...withoutPins(reservedParams(params)) }));
   }, [schema, config, setConfig, typed]);
 
   return null;

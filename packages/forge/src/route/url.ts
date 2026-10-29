@@ -1,6 +1,7 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
-import { stableStringify } from '../protocol/messages';
+import { type Globals, stableStringify } from '../protocol/messages';
+import { GLOBALS_KEY } from '../shell/globals';
 
 /**
  * Forge's URL, as pure functions: `#/<story id>?<params>`. The story and its params share the hash, so the page's
@@ -224,4 +225,36 @@ export function storyHref(
     if (raw !== undefined && isKnobParam(path)) encoded[path] = raw;
   }
   return formatRoute({ story, params: { ...encoded, ...reservedParams(params) } });
+}
+
+/** A param pinning one of the trial's globals is named by the pin's config path, `$globals.<key>`. */
+const PIN_PREFIX = `${GLOBALS_KEY}.`;
+
+/** The params pinning a trial's globals to `globals`. Not knobs: they are read once, as the story opens, and dropped. */
+export function pinParams(globals: Globals): Record<string, string> {
+  const params: Record<string, string> = {};
+  for (const [key, value] of Object.entries(globals)) if (typeof value === 'string') params[`${PIN_PREFIX}${key}`] = value;
+  return params;
+}
+
+/** `params` without the ones pinning globals. */
+export function withoutPins(params: Readonly<Record<string, string>>): Record<string, string> {
+  return Object.fromEntries(Object.entries(params).filter(([name]) => !name.startsWith(PIN_PREFIX)));
+}
+
+/** The pins `params` sets, by config path: each a value its global's leaf in `schema` offers; any other is left out. */
+export function paramsToPins(
+  schema: Pick<ConfigSchema<unknown>, 'nodes'>,
+  params: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const group = (schema.nodes as ConfigShape)[GLOBALS_KEY];
+  if (!group || !isConfigBranch(group)) return {};
+  const pins: Record<string, string> = {};
+  for (const [key, leaf] of Object.entries(group.children)) {
+    const raw = params[`${PIN_PREFIX}${key}`];
+    if (raw === undefined || isConfigBranch(leaf)) continue;
+    const decoded = decodeKnob(raw, leaf);
+    if (typeof decoded?.value === 'string') pins[`${PIN_PREFIX}${key}`] = decoded.value;
+  }
+  return pins;
 }

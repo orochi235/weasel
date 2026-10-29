@@ -7,9 +7,12 @@ import {
   knobParams,
   knobsToParams,
   paramsToKnobs,
+  paramsToPins,
   parseRoute,
+  pinParams,
   reservedParams,
   storyHref,
+  withoutPins,
 } from './url';
 
 const schema = f.schema({
@@ -176,5 +179,25 @@ describe('storyHref', () => {
   it('is read back by paramsToKnobs', () => {
     const href = storyHref('s', { size: 20, dark: true, tags: ['q'] });
     expect(paramsToKnobs(schema, parseRoute(href).params)).toEqual({ size: 20, dark: true, tags: ['q'] });
+  });
+});
+
+describe('pins in the URL', () => {
+  const pinned = f.schema({
+    label: f.string('Save'),
+    $globals: f.group({ mode: f.enum('lab', [{ value: 'lab', label: 'Lab' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]) }),
+  });
+
+  it('writes each global as a param named by its pin’s config path, which is never a knob', () => {
+    const params = pinParams({ mode: 'dark' });
+    expect(params).toEqual({ '$globals.mode': 'dark' });
+    expect(knobParams(params)).toEqual({});
+    expect(withoutPins({ ...params, t: '2', label: 'Go' })).toEqual({ t: '2', label: 'Go' });
+  });
+
+  it('reads back only a pin the schema declares, at a value it offers', () => {
+    expect(paramsToPins(pinned, { '$globals.mode': 'dark', '$globals.font': 'serif', label: 'Go' })).toEqual({ '$globals.mode': 'dark' });
+    expect(paramsToPins(pinned, { '$globals.mode': 'sepia' })).toEqual({});
+    expect(paramsToPins(schema, { '$globals.mode': 'dark' })).toEqual({});
   });
 });
