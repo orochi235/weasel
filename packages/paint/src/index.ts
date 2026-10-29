@@ -95,9 +95,11 @@ export {
   parseColorToRgba255,
   resolveColor,
   normalizeHex,
+  tryNormalizeHex,
   hexToRgba,
   rgbaToHex,
 } from './color';
+export type { HexForm } from './color';
 export {
   isGradientPaint,
   resolveGradientStops,

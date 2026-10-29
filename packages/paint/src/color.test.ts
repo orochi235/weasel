@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { hslToSrgb } from './colorSpaces';
-import { hexToRgba, normalizeHex, parseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
+import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
 // lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
@@ -218,6 +218,25 @@ describe('normalizeHex', () => {
   it('throws on invalid input', () => {
     expect(() => normalizeHex('#xyz')).toThrow();
     expect(() => normalizeHex('#ff000')).toThrow();
+  });
+
+  it("drops a named alpha for 'rgb'", () => {
+    expect(normalizeHex('#ff00aa80', 'rgb')).toBe('#ff00aa');
+    expect(normalizeHex('#f0a8', 'rgb')).toBe('#ff00aa');
+  });
+
+  it("writes alpha for 'rgba', ff when none was named", () => {
+    expect(normalizeHex('#F0A', 'rgba')).toBe('#ff00aaff');
+    expect(normalizeHex('ff00aa', 'rgba')).toBe('#ff00aaff');
+    expect(normalizeHex('#f0a8', 'rgba')).toBe('#ff00aa88');
+  });
+});
+
+describe('tryNormalizeHex', () => {
+  it('returns undefined where normalizeHex throws', () => {
+    expect(tryNormalizeHex('#xyz')).toBeUndefined();
+    expect(tryNormalizeHex('red', 'rgba')).toBeUndefined();
+    expect(tryNormalizeHex(' #ABC ', 'rgb')).toBe('#aabbcc');
   });
 });
 
