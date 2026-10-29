@@ -335,12 +335,13 @@ Owner tags, after the priority (2026-10-26):
   wires across the faces of wide boxes: into the Admin and Background function boxes from points inside their
   outline, and up through the bottom of both buckets (seen in a screenshot, 2026-10-29; cause not looked at).
 
-- **(P3) [agent] A scene add-and-remove round trip costs 2.4 µs, against 1.3 µs on 2026-09-29.** Native imports,
-  this machine, flat across tree depth since the lock guard stopped climbing (2026-10-27). About 0.4 µs is
-  2026-10-13 599685677, which records every scene edit as the kit ops it caused, and `setPose` pays the same
-  feature about 0.2 µs. The rest arrived across later scene commits and is not narrowed: probe with
-  `tests/perf/bench/scene-ops.bench.ts`, or a plain loop over `scene.add`/`scene.remove` under
-  `tests/perf/bench/node-hooks.mjs`.
+- **(P3) [agent] A scene add-and-remove round trip still costs about 0.26 µs more than on 2026-09-29, and
+  `setPose` about 0.14 µs more.** That is 599685677 (2026-10-13), which records every scene edit as the kit
+  ops it caused: it added 0.26 µs to the round trip and 0.11 µs to `setPose` at that commit alone. Everything
+  else that arrived after it was taken back on 2026-10-29; the largest share was the history building a step
+  object for every push with nobody observing steps. In a plain loop on studio the round trip was 1.07 µs at
+  9db2cae5f, 1.85 µs at 4d5f3483e and 1.34 µs after the fixes (medians of 5–7 runs). Runs, the probe and the
+  scripts that bisect it across commits: `tests/perf/recorded/scene-roundtrip-2026-10-29/`.
 
 - **(P3) [agent] The unindexed area walk got three times slower between 2026-09-29 and 2026-10-22.** The 25%
   marquee over 10,000 rect nodes (`hitTestArea`, `scatterScene`) took 3.04 ms at 9db2cae5f and
