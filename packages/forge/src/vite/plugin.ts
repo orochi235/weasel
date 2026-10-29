@@ -43,6 +43,32 @@ export interface ForgeOptions {
 
 const SCRIPT = /\.[cm]?[jt]sx?$/;
 
+interface SourceWatch {
+  files: readonly string[];
+  depGraph: () => DepGraphBuilder;
+  reindex: (server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink') => Promise<boolean>;
+  redeps: (server: ViteDevServer) => void;
+  logError: (err: unknown) => void;
+}
+
+/** Watches the story files and everything they import, reindexing a changed story and pushing new deps. */
+function watchSources(server: ViteDevServer, { files, depGraph, reindex, redeps, logError }: SourceWatch): void {
+  server.watcher.add([...files]);
+  void warnWhenWatchIsSilent(server);
+  for (const event of ['add', 'change', 'unlink'] as const) {
+    server.watcher.on(event, (path) => {
+      const file = resolve(path);
+      // A new file can answer an import that resolved to nothing before.
+      const added = event === 'add' && SCRIPT.test(file) && !file.split(sep).includes('node_modules');
+      if (added) depGraph().reset();
+      const read = added || (event !== 'add' && depGraph().invalidate(file));
+      reindex(server, file, event).then((indexed) => {
+        if (indexed || read) redeps(server);
+      }, logError);
+    });
+  }
+}
+
 /**
  * The vite plugin that serves the workshop: it indexes the story files, serves the workshop at `/` and the frame
  * document at `/frame.html`, pushes a new index to the open page as story files change, and builds both pages.
@@ -279,20 +305,7 @@ export function forge(options: ForgeOptions): Plugin[] {
         for (const file of storiesReaching(modules)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
       },
       configureServer(server) {
-        server.watcher.add([...files().keys()]);
-        void warnWhenWatchIsSilent(server);
-        for (const event of ['add', 'change', 'unlink'] as const) {
-          server.watcher.on(event, (path) => {
-            const file = resolve(path);
-            // A new file can answer an import that resolved to nothing before.
-            const added = event === 'add' && SCRIPT.test(file) && !file.split(sep).includes('node_modules');
-            if (added) depGraph().reset();
-            const read = added || (event !== 'add' && depGraph().invalidate(file));
-            reindex(server, file, event).then((indexed) => {
-              if (indexed || read) redeps(server);
-            }, logError);
-          });
-        }
+        watchSources(server, { files: [...files().keys()], depGraph, reindex, redeps, logError });
         capture = servePages(server, base, () => shellUnder(root));
         serveIssues(server, base, () => root);
       },

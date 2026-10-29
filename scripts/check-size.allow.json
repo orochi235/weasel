@@ -91,7 +91,7 @@
     "longestFunction": 183
   },
   "packages/forge/src/vite/plugin.ts": {
-    "longestFunction": 252
+    "longestFunction": 240
   },
   "packages/geom/src/tessellate/polyline.ts": {
     "longestFunction": 141
@@ -194,8 +194,8 @@
     "lines": 624
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 671,
-    "longestFunction": 370
+    "lines": 669,
+    "longestFunction": 368
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 173
@@ -249,7 +249,7 @@
     "longestFunction": 134
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 156
+    "longestFunction": 147
   },
   "packages/ui/src/components/Plot2D/Plot2D.tsx": {
     "longestFunction": 221

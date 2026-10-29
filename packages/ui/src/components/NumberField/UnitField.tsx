@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, type RefObject, useEffect, useRef, useState } from 'react';
 import { imeKey } from '@weasel-js/headless';
 import {
   canSpin, clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
@@ -224,17 +224,7 @@ export function UnitField({
             typing.current = null;
             setDraft(null);
           }}
-          onKeyDown={(e) => {
-            if (imeKey(e.nativeEvent)) return;
-            if (e.key === 'Enter') {
-              e.currentTarget.blur();
-            } else if (e.key === 'Escape') {
-              canceled.current = true;
-              e.currentTarget.blur();
-            } else if (spin(e.key)) {
-              e.preventDefault();
-            }
-          }}
+          onKeyDown={(e) => fieldKey(e, canceled, spin)}
         />
         {steppers && (
           <div className={s.steppers}>
@@ -245,6 +235,19 @@ export function UnitField({
       </div>
     </div>
   );
+}
+
+/** Enter commits, Escape cancels, and an arrow steps; an input method's keys are its own. */
+function fieldKey(e: KeyboardEvent<HTMLInputElement>, canceled: RefObject<boolean>, spin: (key: string) => boolean): void {
+  if (imeKey(e.nativeEvent)) return;
+  if (e.key === 'Enter') {
+    e.currentTarget.blur();
+  } else if (e.key === 'Escape') {
+    canceled.current = true;
+    e.currentTarget.blur();
+  } else if (spin(e.key)) {
+    e.preventDefault();
+  }
 }
 
 /** The wheel steps only a focused field, so scrolling past one changes nothing.
