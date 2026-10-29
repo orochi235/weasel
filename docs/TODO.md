@@ -1191,6 +1191,10 @@ only story runner in the repo.
   120-minute limit. Also unmeasured: whether the base, measured first, reads differently from the head
   for that reason alone.
 
+- **(P3) [agent] Recalibrate `scripts/ci-run.weights.json`.** The post-build gate's seconds weights describe a node
+  slower than teitou (steps ran 0.59–0.81× of plan, 2026-10-21), and matrix mode's steps are mostly unweighted.
+  `node scripts/ci-run.mjs --calibrate <log>` from a matrix run rewrites them.
+
 - **(P3) [agent] Merge-gate worktrees outlive their runs.** `scripts/lib/commit-tree.mjs` checks each gated commit
   out under `.worktrees/` (`fleet-*`, `postbuild-*`) and removes it on `drop()` or SIGINT/SIGTERM/SIGHUP, yet ten
   were left behind between 2026-10-22 and 2026-10-28, each holding only onto's `.onto/` files. A run killed by
