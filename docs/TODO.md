@@ -810,12 +810,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P1) [mike] Register `@weasel-js/text-shaping`'s trusted publisher (2026-10-28).** 1.13.0 is uploaded (its
-  version endpoint answers) and `@weasel-js/shape` is deprecated toward it, but the package's main record, which
-  `npm install` and `check:first-publish` read, was still 404 minutes later: npm's staged window. Once it appears
-  (`npm view @weasel-js/text-shaping`), run `node scripts/setup-trusted-publishing.mjs @weasel-js/text-shaping` in a
-  terminal; it records the package in `scripts/trust-pending.json`, which then gets committed.
-
 - **(P2) [agent] A dev server can die on vite's own optimizer timer after a restart** (2026-10-28, seen once on the
   site server). `restartLeavingNothing` (`scripts/vite-prebundle.ts`) deletes every key of the outgoing environments
   once the new server is up, to stop a ~30 MB-a-restart leak. vite's dep optimizer arms a 1 s timer that reads
