@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@weasel-js/clock": "1.13.0",
+    "@weasel-js/headless": "1.13.0",
     "@weasel-js/icons": "1.13.0"
   },
   "author": "orochi235",

@@ -12,6 +12,10 @@ export {
 export type { TypeaheadBuffer, TypeaheadShape } from './typeahead';
 export { tabSort, tabStep } from './focus';
 export type { FocusScope, FocusScopeOptions } from './focus';
+export {
+  moveItems, movedIndex, isNoopDrop, nudgeGap, gapByMidpoint, nearestGap, isNudgeChord, nudgeOf,
+} from './reorder';
+export type { NudgeKey } from './reorder';
 export { treeKey } from './tree';
 export type { TreeShape, TreeKeyResult } from './tree';
 export { timerScheduler } from './scheduler';

@@ -66,15 +66,16 @@ describe('Bar order', () => {
 
 describe('movedOrder', () => {
   const order = { g: ['p', 'q', 'r'] };
-  it('moves an entry down', () => {
-    expect(movedOrder(order, 'g', ['p', 'q', 'r'], 0, 2)).toEqual({ g: ['q', 'r', 'p'] });
+  it('moves an entry down to a gap counted before it is taken out', () => {
+    expect(movedOrder(order, 'g', ['p', 'q', 'r'], 0, 3)).toEqual({ g: ['q', 'r', 'p'] });
+    expect(movedOrder(order, 'g', ['p', 'q', 'r'], 0, 2)).toEqual({ g: ['q', 'p', 'r'] });
   });
   it('moves an entry up', () => {
     expect(movedOrder(order, 'g', ['p', 'q', 'r'], 2, 0)).toEqual({ g: ['r', 'p', 'q'] });
   });
   it('leaves the order as it was for an index out of range', () => {
     expect(movedOrder(order, 'g', ['p', 'q', 'r'], 3, 0)).toBe(order);
-    expect(movedOrder(order, 'g', ['p', 'q', 'r'], 0, 3)).toBe(order);
+    expect(movedOrder(order, 'g', ['p', 'q', 'r'], 0, 4)).toBe(order);
     expect(movedOrder(order, 'g', ['p', 'q', 'r'], -1, 0)).toBe(order);
   });
   it('sets a container with no prior entry, leaving the rest', () => {
