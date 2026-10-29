@@ -31,8 +31,8 @@ const ARRANGE = keymapContribution({
   bindings: [
     { spec: key('L'), actionId: 'align.left', opts: { id: 'arrange.left', params: { to: 'union' } } },
     { spec: key('T'), actionId: 'align.top', opts: { id: 'arrange.top', params: { to: 'union' } } },
-    { spec: key('H'), actionId: 'flip', opts: { id: 'arrange.flipX', params: { axis: 'x' } } },
-    { spec: key('V'), actionId: 'flip', opts: { id: 'arrange.flipY', params: { axis: 'y' } } },
+    { spec: key('H'), actionId: 'flip', opts: { id: 'arrange.flipX', params: { axis: 'x', pivot: 'union' } } },
+    { spec: key('V'), actionId: 'flip', opts: { id: 'arrange.flipY', params: { axis: 'y', pivot: 'union' } } },
     { spec: { kind: 'click' }, actionId: 'align.left', opts: { id: 'arrange.leftToPointer', params: { to: 'pointer' } } },
   ],
 });
