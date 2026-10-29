@@ -2,7 +2,8 @@
 // and current but for one edit. Runs both programs, each with --extendedDiagnostics, and writes every
 // run's log and one JSON line of its numbers to --out as the run finishes. `break` changes the type of
 // an export, keeping the file's mtime, and records whether the error reaches the files importing it,
-// which the build info had recorded as clean.
+// which the build info had recorded as clean. `seeded` reads a copy of main's build info through
+// --tsBuildInfoFile, which tsc treats as having none.
 //
 //   node scripts/bench-typecheck.mjs --out .bench/typecheck [--states warm,break,mended]
 import { execFile } from 'node:child_process';
@@ -17,6 +18,9 @@ mkdirSync(values.out, { recursive: true });
 const node = hostname().split('.')[0];
 const TSC = 'node_modules/.bin/tsc';
 const PROGRAMS = { root: [], browser: ['-p', 'packages'] };
+const INFO_FILES = { root: 'main.tsbuildinfo', browser: 'browser-tests.tsbuildinfo' };
+/** Under `seeded`, each program reads a copy of main's build info, as a fleet branch's first run does. */
+let infoPrefix;
 const LEAF = 'packages/geom/src/index.ts';
 const HUB = 'packages/core/src/index.ts';
 const TYPED = ['packages/geom/src/view.ts', 'export const ZOOM_FLOOR = 1e-9;', "export const ZOOM_FLOOR: string = '1e-9';"];
@@ -63,6 +67,14 @@ const ALL_STATES = [
   ['leaf-body', () => edit(LEAF, '\nexport const benchProbe = 1;\n')],
   ['hub-type', () => edit(HUB, '\nexport type BenchProbe = { probe: number };\n')],
   ['warm-after', () => {}],
+  ['seeded', () => {
+    infoPrefix = 'branch--bench--';
+    for (const name of Object.values(INFO_FILES)) copyFileSync(`.tsbuildinfo/${name}`, `.tsbuildinfo/${infoPrefix}${name}`);
+    return () => {
+      for (const name of Object.values(INFO_FILES)) rmSync(`.tsbuildinfo/${infoPrefix}${name}`, { force: true });
+      infoPrefix = undefined;
+    };
+  }],
   ['break', () => retype(TYPED)],
   ['mended', () => {}],
 ];
@@ -75,7 +87,7 @@ for (const [state, prepare] of STATES) {
   for (const [program, args] of Object.entries(PROGRAMS)) {
     n++;
     const loadBefore = await sampleLoad();
-    const r = await tsc(args);
+    const r = await tsc(infoPrefix ? [...args, '--tsBuildInfoFile', `.tsbuildinfo/${infoPrefix}${INFO_FILES[program]}`] : args);
     writeFileSync(join(values.out, `${node}-${state}-${program}.log`), r.text);
     const row = { node, cores: cpus().length, state, program, at: new Date().toISOString(), loadBefore, code: r.code, wallSeconds: r.wallSeconds, importerError: IMPORTERS.test(r.text), diagnostics: diagnostics(r.text) };
     appendFileSync(join(values.out, 'runs.jsonl'), `${JSON.stringify(row)}\n`);
