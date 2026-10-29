@@ -405,14 +405,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
   call.
 
-### Engines still on their own frame loops
-
-- **(P3) [maintainer] Should `useFrameClock` move onto `@weasel-js/clock`?** It is the last second
-  elapsed-time clock (pause, rebase on resume), but `@weasel-js/clock` depends on `@weasel-js/react`,
-  so folding it means moving public API out of `@weasel-js/react` and core's re-export into
-  `@weasel-js/clock/react`, and its runs-only-while-subscribed behavior has no clock equivalent.
-  Its one user is the site's `CustomShaderDemo` (2026-10-28).
-
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
