@@ -1,7 +1,7 @@
 import { mat3, type Path, type GlMat3 } from '@weasel-js/geom';
 import { axisAlignedClipRect, intersectClipRects, type ClipRect } from '../batchClip';
 import {
-  concatHulls, hullOf, snappedRectOf, windowMap, type Hull, type HullSet, type WindowMap,
+  meetHulls, hullOf, snappedRectOf, windowMap, type Hull, type HullSet, type WindowMap,
 } from '../batchHull';
 import type { ClipEntry, DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
@@ -45,7 +45,7 @@ function enterClip(ctx: DrawContext, path: Path, transform: GlMat3): void {
   const top = ctx.clipStack[ctx.clipStack.length - 1];
   const belowUncut = top === undefined ? null : top.uncutHulls;
   const hull = rect === null ? hullFor(ctx, path, transform) : null;
-  const hulls = hull && (below ? concatHulls(below, hull.set) : hull.set);
+  const hulls = hull && (below ? meetHulls(below, hull.set) : hull.set);
   if (rect !== null) {
     const own = snapped ? snapped.hull : null;
     const uncutHulls = own ? joinHulls(belowUncut, own.set) : false;
@@ -66,7 +66,7 @@ function enterClip(ctx: DrawContext, path: Path, transform: GlMat3): void {
 
 function joinHulls(below: HullSet | null | false, set: HullSet): HullSet | false {
   if (below === false) return false;
-  return (below ? concatHulls(below, set) : set) ?? false;
+  return (below ? meetHulls(below, set) : set) ?? false;
 }
 
 /** The map from screen space to the window a hull is built in, where this
