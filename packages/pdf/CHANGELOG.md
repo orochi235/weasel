@@ -1,5 +1,16 @@
 # @weasel-js/pdf
 
+## 1.14.1
+
+### Patch Changes
+
+- @weasel-js/font@1.14.1
+  - @weasel-js/geom@1.14.1
+  - @weasel-js/paint@1.14.1
+  - @weasel-js/renderer@1.14.1
+  - @weasel-js/stroke@1.14.1
+  - @weasel-js/text@1.14.1
+
 ## 1.14.0
 
 ### Patch Changes

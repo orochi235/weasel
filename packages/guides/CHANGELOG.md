@@ -1,5 +1,12 @@
 # @weasel-js/guides
 
+## 1.14.1
+
+### Patch Changes
+
+- @weasel-js/core@1.14.1
+  - @weasel-js/geom@1.14.1
+
 ## 1.14.0
 
 ### Patch Changes

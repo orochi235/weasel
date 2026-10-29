@@ -1,5 +1,15 @@
 # @weasel-js/animator
 
+## 1.14.1
+
+### Patch Changes
+
+- @weasel-js/clock@1.14.1
+  - @weasel-js/geom@1.14.1
+  - @weasel-js/paint@1.14.1
+  - @weasel-js/react@1.14.1
+  - @weasel-js/registry@1.14.1
+
 ## 1.14.0
 
 ### Patch Changes

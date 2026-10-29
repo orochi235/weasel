@@ -1,5 +1,20 @@
 # @weasel-js/diagram
 
+## 1.14.1
+
+### Patch Changes
+
+- @weasel-js/animator@1.14.1
+  - @weasel-js/audio@1.14.1
+  - @weasel-js/clock@1.14.1
+  - @weasel-js/core@1.14.1
+  - @weasel-js/font@1.14.1
+  - @weasel-js/geom@1.14.1
+  - @weasel-js/headless@1.14.1
+  - @weasel-js/icons@1.14.1
+  - @weasel-js/react@1.14.1
+  - @weasel-js/simulation@1.14.1
+
 ## 1.14.0
 
 ### Patch Changes

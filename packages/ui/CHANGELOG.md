@@ -1,5 +1,30 @@
 # @weasel-js/ui
 
+## 1.14.1
+
+### Patch Changes
+
+- a23117a: Exports the timeline's time ruler: `Ruler` and `RulerProps`, and the window math it lays out with, `toFraction`, `toPercent`, `spanFraction` and `spanPercent`. A `Ruler` draws tick labels across a `TimeWindow` with a playhead line, scrubs on pointer drag, and pans or zooms its window on the wheel. Browser tests in ui, renderer and hud also pass on Linux Chromium now.
+- @weasel-js/animator@1.14.1
+  - @weasel-js/bidi@1.14.1
+  - @weasel-js/clock@1.14.1
+  - @weasel-js/core@1.14.1
+  - @weasel-js/font@1.14.1
+  - @weasel-js/geom@1.14.1
+  - @weasel-js/gestures@1.14.1
+  - @weasel-js/headless@1.14.1
+  - @weasel-js/icons@1.14.1
+  - @weasel-js/menu@1.14.1
+  - @weasel-js/modes@1.14.1
+  - @weasel-js/paint@1.14.1
+  - @weasel-js/prefs@1.14.1
+  - @weasel-js/quantity@1.14.1
+  - @weasel-js/react@1.14.1
+  - @weasel-js/registry@1.14.1
+  - @weasel-js/select@1.14.1
+  - @weasel-js/svg@1.14.1
+  - @weasel-js/theme@1.14.1
+
 ## 1.14.0
 
 ### Patch Changes
