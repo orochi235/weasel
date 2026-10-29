@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import {
-  clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
+  canSpin, clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
 } from '@weasel-js/quantity';
 import f from '../field.module.css';
 import { fieldRootClass } from '../Field/fieldSlots';
@@ -153,7 +153,7 @@ export function UnitField({
   };
 
   /** Whether `key` has nowhere left to step to. */
-  const spent = (key: string): boolean => spinKey(key, from(), bounds) === from();
+  const spent = (key: string): boolean => !canSpin(key, from(), bounds);
 
   // The latest `spin` and `spent`, for the listeners below, which outlive a render.
   const latestSpin = useRef(spin);

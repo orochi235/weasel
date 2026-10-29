@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampToBounds, snapToStep, spinKey } from './spin';
+import { canSpin, clampToBounds, snapToStep, spinKey } from './spin';
 
 describe('snapToStep', () => {
   it('lands on the step grid without float dust', () => {
@@ -34,5 +34,22 @@ describe('an endless end', () => {
     expect(spinKey('End', 3, bounds)).toBe(Infinity);
     expect(spinKey('Home', 3, bounds)).toBe(0);
     expect(spinKey('ArrowUp', 10, { ...bounds, endless: undefined })).toBe(10);
+  });
+});
+
+describe('canSpin', () => {
+  it('is false at the bound a key heads for, and for a key that does not spin', () => {
+    const b = { step: 1, min: 0, max: 3 };
+    expect(canSpin('ArrowUp', 2, b)).toBe(true);
+    expect(canSpin('ArrowUp', 3, b)).toBe(false);
+    expect(canSpin('ArrowDown', 3, b)).toBe(true);
+    expect(canSpin('ArrowDown', 0, b)).toBe(false);
+    expect(canSpin('a', 1, b)).toBe(false);
+  });
+
+  it('steps past an endless bound to infinity, and no further', () => {
+    const b = { step: 1, min: 0, max: 3, endless: 'max' as const };
+    expect(canSpin('ArrowUp', 3, b)).toBe(true);
+    expect(canSpin('ArrowUp', Infinity, b)).toBe(false);
   });
 });

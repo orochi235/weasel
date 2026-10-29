@@ -49,6 +49,14 @@ focused, whether its ring shows, `focus`, `moveFocus` through a `tabOrder`, and
 `domFocusScope(root)` is one over the elements under `root`, so code that moves focus is
 written once for both. `tabSort` and `tabStep` are the order and the step both use.
 
+## Hold-to-repeat
+
+`createStepRepeat(step, spent, opts)` is a held stepper: `start(key)` steps once, then after
+`REPEAT_DELAY_MS` once every `REPEAT_EVERY_MS` until `stop()`, or until `spent(key)` says the value
+has nowhere left to go. Time comes from a `Scheduler` (`now`, and `set` returning a cancel), by
+default `timerScheduler`; pass your own to drive it from another clock or a test. `@weasel-js/ui`'s
+number field steppers and `@weasel-js/hud`'s menu number chips both hold through it.
+
 ## License
 
 MIT
