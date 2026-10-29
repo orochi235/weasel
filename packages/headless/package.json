@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/headless",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "Headless components: list behavior (roving highlight, typeahead) that a DOM component and a canvas-drawn widget share. No React, no DOM.",
   "license": "MIT",
   "type": "module",
@@ -37,8 +37,8 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.13.0",
-    "@weasel-js/quantity": "1.13.0"
+    "@weasel-js/geom": "1.14.0",
+    "@weasel-js/quantity": "1.14.0"
   },
   "publishConfig": {
     "access": "public",

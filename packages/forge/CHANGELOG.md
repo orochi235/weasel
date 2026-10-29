@@ -1,5 +1,262 @@
 # @weasel-js/forge
 
+## 1.14.0
+
+### Patch Changes
+
+- 9912c13: Loading a snapshot of a clock with a finite loop count (`loop: n`) brings it back in the pass it was saved in, with its `ended` and time left, where it used to land in the first pass at the saved time within the pass. A trial clock reopened at a position its first run cannot reach yet waits in that pass too. `holdElapsed(handle, position)` in `@weasel-js/clock` holds a clock at a recorded `HeldPosition` across the whole run the way `holdAt` holds a time within a pass, re-placing it as the span changes; a position recorded under another `duration` or `origin` keeps its pass and the time it showed within it. This adds API.
+  
+  A snapshot whose config turns a trial's clock back on opens the new clock at the snapshot's position. A lab lets go of a trial's snapshot hold when the trial closes.
+  
+  A trial's clock is made in a layout effect rather than during render, so under StrictMode a `ClockSpec.mix` factory runs once per clock. The clock is there by the first paint, but not in the trial's first render; in that render the trial's clock resolves to none, never to the focused trial's or the lab's.
+  
+  `useClockLoop` reads the registry's clocks and targets when the registry changes, not on every frame.
+  
+  `useTrialClock`, `useTrialClockHandle`, `useTrialMix`, `useClockFrame` and `useTransportControl` take a `trialId` of `null`, which resolves no clock and subscribes to none. forge's `useTimeline` uses it so a story with a clock of its own, such as one on an index page inside a lab, no longer re-renders on every frame of the focused trial.
+- 3d36f5e: New package `@weasel-js/clock`: labkit's trial clock, moved out so it has no React and no DOM. `createClock`, `clockPosition`, `ClockSpec`, `Clock`, `ClockHandle`, `ClockPosition`, `ClockedMix`, `CLOCK_RATES`, and `createClockRegistry`, whose `lab` field is now `shared`; the frame loop `useClockLoop` is in `@weasel-js/clock/react`. labkit keeps `ClockCapability`, `TrialClock`, `ClockPosition` and `ClockedMix` as aliases, and `TRANSPORT_RATES` in ui is `CLOCK_RATES`.
+  
+  `ClockSpec` takes `origin`, the time `elapsed` 0 is shown as (display only), and `speed`, the unsigned speed a transport plays a paused clock at. `Clock` reads both back. `ClockHandle.declare(spec)` takes up a new `duration`, `origin` and `speed`, and `loop` only when the declared `loop` changed, keeping the pass and the time shown within it, clamped to the new run. Writing `Clock.loop` so the run ends before `elapsed` keeps the time within the pass. `shownInPass` reads a looping clock's time within its pass. This adds API.
+  
+  `holdAt(handle, shown)` returns a `PlayheadHold`: it pauses the clock at a time shown within a pass and keeps it there as the span moves, waiting at the pass's end for a time the span cannot reach yet. `createClockRegistry`'s `register(id, handle, target)` takes a `ClockTarget` resolving the element showing a clock, and `targets(handle)` lists them; the frame loop stops advancing a clock, other than the shared one, while every target of it is out of the viewport, and rebases it when one comes back.
+  
+  The ui `Transport` takes `start`, where its scrub bar begins, so it can show a playhead before zero. labkit exports `useTransportControl` and `TransportControl`; `TransportControl` gains `start`, `touched` and `touch`, its `playhead` and `seek` work in shown time, and the keyboard Home and End and `labkit:seek` follow.
+  
+  labkit exports `useTrialClockHandle`, the resolver behind `useTrialClock`. A snapshot records where the trial's clock stands when it is saved, playing or never moved included, and loading it holds the clock at that time.
+  
+  `ClockHandle.override(span)` replaces the declared `duration` and `origin` until called with `null`, and a later `declare` leaves it in place. `ClockPosition` records `origin` when it differs from the declared one, `createClock` reopens at it, and a reopened trial clock comes back at the time it showed. `holdAt`, `declare` and `override` place a time on a pass boundary at the end of the pass before.
+  
+  forge's story timelines run on the shared clock. A story's `timeline` declares its trial's labkit clock, so the trial's transport is labkit's `TrialTransport` (its scrub bar is named "Position"), it shows a lead-in below zero, and the paused playhead is kept in the trial's record rather than in a `$playhead` config key. A config saved with `$playhead` still opens, without the key reaching the story. `usePlayhead`, `useTimeline` and the `TimelineSpec`, `TimelineSpan` and `SpanOverride` types keep their shape. The URL's `t` and a capture's playhead are the time shown within the pass. Changes in behavior: a span set at runtime keeps the playhead's shown time rather than following the span's start, and a story left playing reopens playing, where it used to reopen paused. A timeline with a duration or rate that is not a positive number runs as 1 ms or at speed 1 instead of throwing.
+- 34a12a2: The Accessibility panel no longer asks for a review of every story's text contrast. axe judged contrast against the whole workshop page, so it gave up on text under labkit's overlay canvas (light mode) or over the lab's starfield backdrop (dark mode); forge now judges those elements itself with the workshop left out, using axe's own stack, color parsing, and thresholds, and reports them as passes or violations. Text the story itself makes undecidable, such as a button's gloss, stays under "Needs review", and every review item now says why in plain words. `A11yNode` gains an optional `reason` carrying axe's message key and sentence.
+- a4e858e: The accessibility panel's automatic check on opening a story waits for the story's first render, so it reports what the story holds rather than an empty host ("0 violations · 0 to review").
+- e707130: An index page's examples no longer sit in a bordered frame: each story renders straight onto the page, on the same surface fill as before.
+- fc94e24: The workshop's Issues panel is connected under the dev server. It lists the focused component's open issues labeled `forge:<component>` in the repository the checkout's `origin` names, through `gh issue list` and the machine's own `gh` login, so no token reaches the browser; with `gh` missing or not logged in, the panel says so in place of the list. Report opens GitHub's new-issue page with the title, the `forge:<component>` label, and a body carrying the description, the story, a link reopening it with the trial's args and globals, and the branch and commit; a screenshot is pasted there. A built workshop has no dev server, and its panel still says it is not connected.
+  
+  A workshop URL can pin a trial's globals: a param named by the pin's config path (`$globals.mode=dark`) pins that global on the trial the story opens in, and is dropped from the URL once read. `mountWorkshop` and `Workshop` take `issuesBase`, the dev server base the panel asks.
+- f3e9cdb: The workshop's right sidebar gains an Issues panel for the focused story's component: a list of its open issues and a form for reporting one. No tracker is connected yet, so the list says so and Report stays disabled.
+- 785682b: A story that names no layout is now `padded` in both story formats; native stories defaulted to `centered` and CSF stories to `padded`. A prop typed `ReactNode`, or any union of a string with an object, no longer gets a text control from the prop reader, which put an empty text row on many stories; a union of a string with other scalars still does.
+- 9114edc: A mark export of a story that was never near the viewport now captures the story. Its host renders nothing while
+  out of view, so the export used to draw the marks over an empty background; the export now renders the story for
+  the capture, waits for it to paint, and lets it unmount again after.
+- 6d3da89: A mark export of a story captured before its first paint no longer comes out transparent: the capture's copy of
+  the story host drops the pending state that hides the host until its fonts have painted.
+- 69edb4c: Marks are back in the workshop, behind View → Marks, which starts off. A story or index page rendered in the
+  workshop document takes marks over its host, and an export draws them over a capture of the host. Isolated
+  stories, rendered in a frame, take none.
+- c9caa50: `TreeNode` takes an `href`, which draws the row as a link: a plain or Shift click activates it as before, while a Cmd, Ctrl, Alt or middle click is left to the browser, so a row can open in a new tab. It also takes `current`, which sets `aria-current` and colors the row with `--wzl-tree-current`. A link row shows the pointer cursor, and `--wzl-tree-row-h` sets every row's height, falling back to `--wzl-control-h` as before.
+  
+  forge's story sidebar is now built on `Tree`, so it gains the tree's type-ahead and row styling. Its rows keep their links, Shift-click still opens another trial, and the fold marks and the Lab and package badges stay where they were. A component's row is now a link to its index page too.
+- ab10a1d: A `<CanvasStack>` in a same-origin frame that the embedding page shows enlarged backs its canvases at the scale it is shown at, as it already did under a scaled ancestor in its own document, and measures again on its window's `resize`. A Live lens's copy of an isolated story is drawn sharp at its factor rather than enlarged, and forge sends the copy's frame a `resize` when the lens changes factor.
+- 47abfc3: Marks on a forge story now belong to its scrolled content: they move with it as the story scrolls, and an export
+  pictures the whole content rather than the top of it.
+  
+  Adds API to labkit: an annotation target can declare `shown`, the part of its content box its element shows (for a
+  scroller, its scroll offset and its own size), and `fitView` takes it as an optional third argument. A target is
+  asked for again whenever anything inside its element scrolls.
+  
+  Fixes `toWeaselView` and `fromWeaselView`, which copied labkit's pan (a screen translation) into weasel's `x`/`y`
+  (the world point at the corner) unchanged. A target whose camera pans, and a target cut off by a clipping ancestor,
+  drew and stored its marks in the wrong place.
+  
+  Marks a forge story already had were placed against the story's box; on a story taller than its trial they now land
+  against the content instead.
+- 4f68c3a: `@weasel-js/react` exports `useNearViewport(ref, margin, initial?)`, which says whether an element lies within a CSS margin of the viewport, and keeps following it as it scrolls away and back. It goes by where the element is, so content an `overflow` ancestor clips away still counts as near. forge's story frames use it from here; forge now depends on `@weasel-js/react`.
+- 1632abe: `runStory` gives a story with no `viewport` the page's height, as the workshop's stage fills its preview. Under an
+  auto height a story that fills its host was laid out 0 tall, and a lab there looped its ResizeObservers.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [b108984]
+- Updated dependencies [e379713]
+- Updated dependencies [dc6d8ec]
+- Updated dependencies [0c13006]
+- Updated dependencies [eb7b1f2]
+- Updated dependencies [956e980]
+- Updated dependencies [db3320e]
+- Updated dependencies [8b758f4]
+- Updated dependencies [d2215f3]
+- Updated dependencies [ccac61a]
+- Updated dependencies [e060cc9]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [34563f9]
+- Updated dependencies [9de8a22]
+- Updated dependencies [0c6c086]
+- Updated dependencies [99fc88d]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9912c13]
+- Updated dependencies [3d36f5e]
+- Updated dependencies [fe65ac0]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [78d1904]
+- Updated dependencies [59df8ac]
+- Updated dependencies [0dc2a78]
+- Updated dependencies [66beda1]
+- Updated dependencies [1127bb2]
+- Updated dependencies [8b14236]
+- Updated dependencies [418b51f]
+- Updated dependencies [8cf9a8f]
+- Updated dependencies [e06efe0]
+- Updated dependencies [61e07e5]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [c9caa50]
+- Updated dependencies [ab10a1d]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [2f3d924]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [1c046e3]
+- Updated dependencies [3c3a219]
+- Updated dependencies [767713e]
+- Updated dependencies [b59380e]
+- Updated dependencies [ba998f9]
+- Updated dependencies [9a963cd]
+- Updated dependencies [6a69c27]
+- Updated dependencies [3f8797e]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [5c8636b]
+- Updated dependencies [6cb0cf6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [a370edb]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [6e9dd04]
+- Updated dependencies [bb43cea]
+- Updated dependencies [4be6d8d]
+- Updated dependencies [fc87bab]
+- Updated dependencies [317759a]
+- Updated dependencies [6307eb2]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [8661e5c]
+- Updated dependencies [edccd1d]
+- Updated dependencies [e1c5f2a]
+- Updated dependencies [e45fc59]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [47abfc3]
+- Updated dependencies [0f80b76]
+- Updated dependencies [9cf8984]
+- Updated dependencies [b15704a]
+- Updated dependencies [4aa138a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [74456b1]
+- Updated dependencies [46e9fa7]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [fbe234c]
+- Updated dependencies [9a3626f]
+- Updated dependencies [533ffb4]
+- Updated dependencies [28f476b]
+- Updated dependencies [ffdbbcf]
+- Updated dependencies [ee97c81]
+- Updated dependencies [024b698]
+- Updated dependencies [af0ee83]
+- Updated dependencies [43454f5]
+- Updated dependencies [4b22185]
+- Updated dependencies [34a364e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [230a206]
+- Updated dependencies [089609a]
+- Updated dependencies [8a8faaa]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8ddaf05]
+- Updated dependencies [234cac7]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [0af338b]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [5b7f963]
+- Updated dependencies [a10f0f2]
+- Updated dependencies [b444374]
+- Updated dependencies [dacf535]
+- Updated dependencies [8a60d40]
+- Updated dependencies [3401898]
+- Updated dependencies [134ed96]
+- Updated dependencies [7e4c7c4]
+- Updated dependencies [5967c5c]
+- Updated dependencies [0dd5658]
+- Updated dependencies [2bdc135]
+- Updated dependencies [a4b6c5b]
+- Updated dependencies [16f7828]
+- Updated dependencies [0ac4e47]
+- Updated dependencies [8c7fb03]
+- Updated dependencies [3b25c35]
+- Updated dependencies [058fcdf]
+- Updated dependencies [1a64358]
+- Updated dependencies [99a8383]
+- Updated dependencies [96a8314]
+- Updated dependencies [412732d]
+- Updated dependencies [880f2b0]
+- Updated dependencies [4a8b5be]
+- Updated dependencies [871a56b]
+- Updated dependencies [1fb8193]
+- Updated dependencies [f645651]
+- Updated dependencies [eb43052]
+- Updated dependencies [348a400]
+- Updated dependencies [76bdca3]
+- Updated dependencies [dd03e4b]
+- Updated dependencies [1968706]
+- Updated dependencies [1e54d33]
+- Updated dependencies [bcb58bc]
+- Updated dependencies [d061f4d]
+- Updated dependencies [a533742]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [38c9f3c]
+- Updated dependencies [ca31c35]
+- Updated dependencies [4558f6f]
+- Updated dependencies [775b724]
+- Updated dependencies [c9cbbf0]
+- Updated dependencies [44f3536]
+- Updated dependencies [01a320d]
+- Updated dependencies [8cdd272]
+- Updated dependencies [670f22a]
+- Updated dependencies [69d6ede]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [ed23ccb]
+- Updated dependencies [461b6e1]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/ui@1.14.0
+  - @weasel-js/labkit@1.14.0
+  - @weasel-js/clock@1.14.0
+  - @weasel-js/svg@1.14.0
+  - @weasel-js/prefs@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/theme@1.14.0
+  - @weasel-js/icons@1.14.0
+  - @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

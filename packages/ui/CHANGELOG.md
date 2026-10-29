@@ -1,5 +1,371 @@
 # @weasel-js/ui
 
+## 1.14.0
+
+### Patch Changes
+
+- b108984: A `ToggleBar`, `ButtonBar`, or `OptionsBar` laid along a curved `Along` now rounds its lit end segment the same way under every alignment and length. Before, a lit first or last segment ended square wherever the row reached the end of its track: under `align: 'start'` or `'end'`, and whenever the row was long enough to scroll. The well also stopped short there, at the track's end rather than one rim past the end segment. The well now always runs one rim past the first and last segment on the track, carried straight on past the track's end if need be, and a lit segment at either end fills its round cap.
+- e379713: The asset editor has a Bundles asset, for rearranging how feature presets group their actions, tools, and atoms. `bundlesAsset(id, label, describePresets(…))` makes one: a section per package, a group per bundle, a leaf for each action, tool, and atom a bundle names, and a link for each bundle it includes. The asset list files it under a heading of its own, Bundles, after Menus.
+  
+  Actions, tools, and atoms are dragged in from a Parts list in the shelf, which says which bundles already hold each. An atom is one locked row: it moves, and its attributes only show what it holds. A bundle that includes itself is marked `cycle`, and an id two bundles name where one bundle loads both is marked `twice`; neither is refused. The preview lists what a canvas loading the selected bundle gets.
+  
+  The export tab shows a `weasel-bundles/1` JSON document in place of a TypeScript literal, and Submit sends it: a hash of the descriptions the editor opened on, every bundle of each package that changed, and the edits (`create`, `remove`, `rename`, `move`, `include`, `exclude`) for an agent to apply to the preset source. `SentAsset.literal` holds that document for a Bundles asset. This adds API.
+- dc6d8ec: The asset editor's asset list sorts each heading's assets by name, this editor's and another's alike, unless the host passes `order`. Each heading carries a glyph and folds its assets away; it unfolds again when the asset shown moves under it.
+- 0c13006: A `SchemaAsset` can name the scene node kind whose properties it holds, as `nodeKind`. The asset editor's list files such an asset under a heading of its own, Node properties, after Dialogs, instead of among the dialogs. This adds API.
+- eb7b1f2: The asset editor's asset list folds each heading by its glyph and brackets an open heading's assets as the structure tree does, and badges each asset with its kind, in a color of its own. `Tree`'s bracket is now a class of its own, so a list that is not a tree can draw it.
+- 956e980: The asset editor's live preview centers what it draws on both axes, over a hatched workspace ground built from `--wzl-workspace-surface` and `--wzl-workspace-line`. A toolbar's preview has a zoom range beside its Vertical switch that magnifies the bar up to 400%.
+- db3320e: The asset editor floats a node kind's properties panel on the live preview's hatched stage, as it does every other asset, and every preview now hangs from the stage's top with 24px around it instead of sitting in its middle.
+- 8b758f4: `PrefSchemaEditor`'s attribute tooltips are rewritten to say plainly what each attribute does on screen, with every one that has an unset or empty case saying what that does. Absent is default now says when it matters.
+- d2215f3: `BandEditor` no longer flickers while a seam, an edge, or a band is dragged. The pointer runs ahead of what it drags, and a band it passed over took its hover fill and cursor for a frame at a time. Mid-drag, nothing inside the editor takes the pointer now, and the editor holds the drag's cursor (`ew-resize` for a seam or an edge, `grabbing` for a band) until the pointer is released.
+- ccac61a: `Bar` and `MenuBar` now show a leaf whose path `values` lacks at its default, as `PrefsForm` and the other params surfaces do, and their `showIf`/`enableIf` conditions read that default too. Both used to treat the path as unset: a toggle defaulting on drew off, and a condition on it failed. This changes what an unset path looks like on these two components.
+- e060cc9: An `actions` leaf with an order now draws every copy of an action its run lists twice, side by side where the order places that key. It used to draw one.
+- 0c6c086: `ToolPalette` takes `carryGhost(tool)`: what follows the pointer, centered on it, while a tool `carryTool` carries is on the move. `DragGhost` takes `centered`, which makes `at` its center, and `bare`, which draws its children with no surface under them. `@weasel-js/diagram` exports `StencilGhost`, a stencil's outline as an SVG at the size a click places it, in a node style and at a zoom, for a palette to carry. This adds API.
+- 99fc88d: Diagram types and stencil groups. A `StencilGroup` is a named list of stencils, and a `DiagramType` names the groups a new diagram opens with, the router and end markers its new connectors take, and the layout auto layout runs. `STENCIL_GROUPS` ships the `flowchart` and `containers` groups (`FLOWCHART_STENCILS` and `CONTAINER_STENCILS` are unchanged), and `DIAGRAM_TYPES` ships the `flowchart` type. A scene saves its type and shown groups under `DIAGRAM_TYPE_DOC_KEY`: `diagramTypeDocOf` and `diagramTypeOf` read it, falling back to flowchart, and `setDiagramType`, `addStencilGroup`, and `removeStencilGroup` write it as one undo entry each. `groupStencils`, `groupStencilIds`, `isContainerStencil`, and `diagramTypeEdgeStroke` serve a host building its palette and connector tool from them. `layoutDiagram` runs a layout from a graph source and applies it as one undo entry; `createLayoutAction` now goes through it.
+  
+  `MenuButton` rows take `checked`, which draws them as check rows.
+- 3d36f5e: New package `@weasel-js/clock`: labkit's trial clock, moved out so it has no React and no DOM. `createClock`, `clockPosition`, `ClockSpec`, `Clock`, `ClockHandle`, `ClockPosition`, `ClockedMix`, `CLOCK_RATES`, and `createClockRegistry`, whose `lab` field is now `shared`; the frame loop `useClockLoop` is in `@weasel-js/clock/react`. labkit keeps `ClockCapability`, `TrialClock`, `ClockPosition` and `ClockedMix` as aliases, and `TRANSPORT_RATES` in ui is `CLOCK_RATES`.
+  
+  `ClockSpec` takes `origin`, the time `elapsed` 0 is shown as (display only), and `speed`, the unsigned speed a transport plays a paused clock at. `Clock` reads both back. `ClockHandle.declare(spec)` takes up a new `duration`, `origin` and `speed`, and `loop` only when the declared `loop` changed, keeping the pass and the time shown within it, clamped to the new run. Writing `Clock.loop` so the run ends before `elapsed` keeps the time within the pass. `shownInPass` reads a looping clock's time within its pass. This adds API.
+  
+  `holdAt(handle, shown)` returns a `PlayheadHold`: it pauses the clock at a time shown within a pass and keeps it there as the span moves, waiting at the pass's end for a time the span cannot reach yet. `createClockRegistry`'s `register(id, handle, target)` takes a `ClockTarget` resolving the element showing a clock, and `targets(handle)` lists them; the frame loop stops advancing a clock, other than the shared one, while every target of it is out of the viewport, and rebases it when one comes back.
+  
+  The ui `Transport` takes `start`, where its scrub bar begins, so it can show a playhead before zero. labkit exports `useTransportControl` and `TransportControl`; `TransportControl` gains `start`, `touched` and `touch`, its `playhead` and `seek` work in shown time, and the keyboard Home and End and `labkit:seek` follow.
+  
+  labkit exports `useTrialClockHandle`, the resolver behind `useTrialClock`. A snapshot records where the trial's clock stands when it is saved, playing or never moved included, and loading it holds the clock at that time.
+  
+  `ClockHandle.override(span)` replaces the declared `duration` and `origin` until called with `null`, and a later `declare` leaves it in place. `ClockPosition` records `origin` when it differs from the declared one, `createClock` reopens at it, and a reopened trial clock comes back at the time it showed. `holdAt`, `declare` and `override` place a time on a pass boundary at the end of the pass before.
+  
+  forge's story timelines run on the shared clock. A story's `timeline` declares its trial's labkit clock, so the trial's transport is labkit's `TrialTransport` (its scrub bar is named "Position"), it shows a lead-in below zero, and the paused playhead is kept in the trial's record rather than in a `$playhead` config key. A config saved with `$playhead` still opens, without the key reaching the story. `usePlayhead`, `useTimeline` and the `TimelineSpec`, `TimelineSpan` and `SpanOverride` types keep their shape. The URL's `t` and a capture's playhead are the time shown within the pass. Changes in behavior: a span set at runtime keeps the playhead's shown time rather than following the span's start, and a story left playing reopens playing, where it used to reopen paused. A timeline with a duration or rate that is not a positive number runs as 1 ms or at speed 1 instead of throwing.
+- fe65ac0: `CodeBlock` draws an uncolored token as text rather than a `<span class="token plain">` of its own, and wraps a line's tokens in a second span only when it numbers lines. A schema literal in the asset editor drops from about 3,300 elements to 1,800. Nothing it renders looks different, but a stylesheet that targeted `.token.plain` no longer matches anything.
+- 78d1904: A Cmd-drag (Ctrl off Apple platforms) now scrolls a curved `Bar` that has no `onReorder`, and every other run row. Only a bar that reorders leaves that press to the reorder; `useRunScroll` and `useRunRow` take a new `modReorders` option for it.
+- 59df8ac: `CurvedLabel` lays its text in the order the Unicode bidi algorithm shows it under the label's computed `direction`: a Hebrew or Arabic word reads right to left, a bracket in a right-to-left stretch takes its mirrored glyph, and in a right-to-left locale `align: 'start'` puts the text against the run's right end. `@weasel-js/ui` now depends on `@weasel-js/bidi`. Arabic letters still lose their joining forms, as each grapheme is its own span.
+- 0dc2a78: `CurvedLabel` draws Arabic and the other joining scripts joined. Letters that join one another now share one span,
+  shaped by the browser and laid along the curve by its measured width, where each used to stand in a span of its own
+  and show its isolated form. A word breaks into such stretches after each letter that joins only the one before it
+  (alef, dal, ra, waw and the like), so the stretches are short and still follow the curve.
+- 66beda1: Adds API: `CurvedLabel` lays a line of text along an arc or a track shape of the box it fills, one span per grapheme, with `align`, `offset` and `shift`. It takes the same `arc` and `shape` props as `Along`, and `BoxShape` names the type of `shape`.
+- 1127bb2: A slider laid along a curve draws a thinner track by default: half the length of its stop ticks, which are now 14px whatever the track's thickness and can be set with `--rp-tick-length`. The default track was 24px. An explicit `trackHeight` still wins. The band's press area, the thumbs, and the labels below the track are sized from the larger of the track and the ticks, so none of them shrink with the visible track.
+  
+  A thumb is dropped once a drag takes it 1.5 times the slider's reach off the curve, the band or its stop ticks, whichever is thicker, so the thinner track does not make dropping one easier.
+- 418b51f: A group or section its `enableIf` turns off now dims its tab's name, and a bar's lead label or icon, the way its heading already dimmed. `GroupTab` and `BarLayout` take a new `disabled` prop for this; `PrefsForm`, `SelectionPanel`, and `ControlPanel` fill it in.
+- 8cf9a8f: A `ToolbarDock` drag over a dock's row now drops into that row even where another dock's new-row zone reaches over it, so a bar dragged to the top of a left or right dock no longer lands in a new row of the top dock.
+- e06efe0: A `ToolbarDock` row too narrow for its bars no longer squeezes a short bar past its only item: each menu-overflow bar reports the least length that keeps its only item or its More button, its slot shrinks no shorter, and the longer bars give up their items first.
+- b142892: Add `attachMenuDismiss` to `@weasel-js/menu`: it closes a menu on a press or wheel outside it, on the window losing focus, and on a resize, attaching to any `Window`-like target and returning a detach. `press: false` leaves out the press listener, and `keepOnBlur` keeps the menu open through a blur. ui's `ContextMenuHost` and hud's `attachMenuHost` both dismiss through it.
+  
+  `normalizeHex` takes an optional form: `'rgb'` drops alpha, `'rgba'` always writes it (`ff` when none was named). `tryNormalizeHex` is the same, returning undefined where `normalizeHex` throws. hud's color row and ui's `ColorField` and `TokenPanel` read hex through them. hud's hex row now accepts `#rgba` shorthand, and `ColorField` shows a malformed `#` value as black rather than passing it to the color input.
+  
+  core's `toHex8`, `getAlpha01`, `withAlpha01` and `mergeAlphaFromPrev` read hex through `tryNormalizeHex` too. A malformed `#` value (`#xyz`, `#12345`) now comes back unchanged instead of expanded into an invalid 8-digit string, and `getAlpha01` reads 1 from one. `toHex8` now lowercases `#RRGGBB` as it already did every other hex form, and ignores surrounding whitespace.
+- c9caa50: `TreeNode` takes an `href`, which draws the row as a link: a plain or Shift click activates it as before, while a Cmd, Ctrl, Alt or middle click is left to the browser, so a row can open in a new tab. It also takes `current`, which sets `aria-current` and colors the row with `--wzl-tree-current`. A link row shows the pointer cursor, and `--wzl-tree-row-h` sets every row's height, falling back to `--wzl-control-h` as before.
+  
+  forge's story sidebar is now built on `Tree`, so it gains the tree's type-ahead and row styling. Its rows keep their links, Shift-click still opens another trial, and the fold marks and the Lab and package badges stay where they were. A component's row is now a link to its index page too.
+- 1c046e3: Keyboard focus is one contract across the DOM and the HUD. `@weasel-js/headless` adds `FocusScope<T>` (the focused target, whether its ring shows, `focus`, `moveFocus`, `tabOrder`, `subscribeFocus`) and the `tabSort` and `tabStep` rules behind it. `Hud` now extends `FocusScope<Widget>`, and `HudFocusOptions` is an alias of `FocusScopeOptions`; its behavior is unchanged, and `@weasel-js/hud` now depends on `@weasel-js/headless`. `@weasel-js/ui` adds `domFocusScope(root)`, the same contract over the elements under `root`, with the browser's Tab order.
+- 3c3a219: `@weasel-js/headless` holds the arithmetic of moving items within a list, which ui's reorderable lists, trees, bars, tabs and token fields and diagram's reorder drags and Alt+arrow step now share: `moveItems`, `movedIndex`, `isNoopDrop`, `nudgeGap`, `gapByMidpoint`, `nearestGap`, and the Alt+arrow chord `isNudgeChord`/`nudgeOf`. A destination is a gap counted before the moved items are taken out, and a selection of several items moves in one go.
+  
+  ui's internal `movedOrder` now takes that gap rather than the entry's final index. A page tab no longer moves on Alt+Ctrl or Alt+Cmd with an arrow, only on Alt and an arrow, as every other reorderable list already did.
+- 767713e: `@weasel-js/headless` holds the arrow-key step sizes and a slider's value math, so a DOM slider and a canvas-drawn one step alike. `arrowSteps`, `arrowMove` and `rangeKey` read a key string and Shift: one step, or `COARSE_STEPS` (ten) with Shift or a Page key, and Home and End for a range's ends. `sliderKey` is the value one key moves a thumb to, and `usableStops`, `attract` and `clampOrdered` are the stop and ordering rules `Slider` uses. core's node and anchor nudge and ui's `Slider`, curve, gradient, band and timeline editors all take their steps from it.
+  
+  `ResizeHandle` now moves ten steps with Shift held, not eight, matching every other arrow-key control in weasel.
+- b59380e: Holding a step chip on a `@weasel-js/hud` canvas menu's number row now repeats, as a `@weasel-js/ui` number field's steppers do: one step on the press, then after 400 ms one every 60 ms until release, until the pointer leaves the chip, or until the value reaches its bound. The step now comes on the press rather than the release. `attachMenuHost` and `createMenuWidget` take `repeat` to time it.
+  
+  `@weasel-js/headless` exports `createStepRepeat`, the hold-to-repeat both run, with `REPEAT_DELAY_MS`, `REPEAT_EVERY_MS`, and `Scheduler` / `timerScheduler` for the clock it runs on; `@weasel-js/menu`'s `MenuScheduler` is now that `Scheduler`. `@weasel-js/quantity` exports `canSpin(key, from, bounds)`, whether a spin key moves a value anywhere, which `menuNumberCanStep` and `UnitField`'s steppers both use. This adds API.
+- ba998f9: `@weasel-js/headless` adds `editEnd`, the one rule for how a text field's edit ends: Enter and blur commit, Escape cancels, with options for an Escape that commits and for a multiline field that leaves Shift+Enter alone. hud's menu text rows, ui's `MenuTextValue` and `RenameField`, and text-dom's `useTextEdit` now read it; none of them behaves differently. `@weasel-js/text-dom` now depends on `@weasel-js/headless`.
+- 9a963cd: `@weasel-js/headless` has a tree's Right and Left as `treeKey(items, at, key, shape)`: Right opens a closed branch or steps to its first child, Left closes an open branch or steps to the parent. A `TreeShape` says which items are branches, which are open, which is whose child, and optionally which can't toggle. `rowKey(items, at, press, shape, searching)` is the rest of a list of rows' keys — Cmd/Ctrl+A, the arrows, Home and End with Shift to extend, the tree keys, Enter and Space, typeahead — returned as a `RowKeyAction` for the caller to carry out. This adds API.
+  
+  ui's `useRowNavigation` now takes every key but the Alt+arrow nudge from `rowKey`. Its keys do what they did before.
+- 3f8797e: The asset editor's icon attribute shows the chosen icon with Select icon and No icon buttons. Select icon opens the searchable grid of every registered icon in a dialog, which closes on a choice; the grid no longer sits inline in the attributes pane.
+- b0a55a6: A fill or stroke can now tile a picture: `{ kind: 'image', src, width, height }`, a new pattern paint kind beside the built-in tiles. `src` is anything an `<img>` loads, and a `data:` URI makes the paint carry the picture itself, so it saves, copies and exports with nothing stored beside the document. `width` and `height` are the tile's size in paint units; left out, the picture's pixel size is used. The fill draws nothing until the picture has decoded, then repaints.
+  
+  This adds API. `@weasel-js/paint` exports `ImagePatternPaint`, `TileExtent`, `ResolvablePatternKind` and `isImagePatternPaint`, and `isPatternPaint` now answers true for an image paint. `TexturePaint` takes an optional `width` and `height`, which set its tile size in place of the texture's pixel size. `resolveFillPattern` resolves an image paint to a `texture` paint. Code that switches over every `Paint` kind meets a new member.
+  
+  `@weasel-js/svg` writes an image paint as a `<pattern>` holding one `<image>` that fills the tile, and reads that structure back from any editor's SVG, `xlink:href` included. An image paint with no `width` and `height` cannot be sized as an SVG pattern and is left out with a warning.
+  
+  `PatternPicker` gains an image swatch after the tiles that opens a file picker. The picked file is stored as a `data:` URI, re-encoded down to 1024 px on its longest side if larger (an SVG is kept as it is), and the size switch then sets the tile's longest side to 32, 64, 128 or 256 units. A new `readImage` prop replaces that step for an app that stores images elsewhere. `readImageFile`, `seedImagePattern` and `MAX_STORED_IMAGE_SIDE` are exported.
+- 5c8636b: More text fields leave a key to an input method mid-composition, so confirming a Japanese or Chinese candidate with Enter no longer commits, runs or adds what is half typed: `LayerList`'s rename field, `ListEditor`'s entries, `TokenField`, `CommandPalette`'s search, `UnitField`, a `PropertyField` text or number field, and the schema editor's key and number fields in `@weasel-js/ui`, and the effect editor's group title field in `@weasel-js/diagram`.
+- 6cb0cf6: `@weasel-js/headless` adds `imeKey(e)`, whether a keydown belongs to an input method mid-composition: `isComposing`, or `keyCode` 229, which Safari sends for the Enter that ends a composition, or a `Process` or `Dead` key. This adds API. The hud's hidden text input, text-dom's `useTextEdit` and ui's `ComboBox` now use it in place of their own checks; `ComboBox` no longer commits typed text on Safari's composition-ending Enter, and `useTextEdit` also leaves `Process` and `Dead` keys alone.
+  
+  A context menu's text row and `PageTabs`' rename field leave Enter and Escape to an input method. Before, confirming a Japanese or Chinese candidate with Enter committed the half-typed text.
+- bb43cea: `@weasel-js/ui` gains `Toolbar`, with `Toolbar.Group` and `Toolbar.Spacer`: a `role="toolbar"` run of controls whose groups rule themselves off from their neighbors, with arrow-key focus movement that `roving={false}` turns off and a `wrap` option. A ghost `Button` with a `grade` now shows that grade on hover, and `--wzl-button-pad-x` and `--wzl-button-font-weight` set a `Button`'s side padding and weight from outside it.
+  
+  labkit's `Toolbar` is now that component at the compact control height, and `Toolbar.Button` is a ghost `Button`: its `title` shows as a kit tooltip rather than a native one, its pressed state takes `Button`'s pressed look, and it takes an `icon` for a glyph ahead of a text label.
+  
+  The loupe lens strip draws its Source and View choices as single-choice `ToggleBar`s (radios, with arrow keys moving the choice) and its readouts as a multiple-choice one.
+  
+  `useDebouncedText` moves from labkit's controls into `@weasel-js/ui/components/Prefs`, beside `PARAMS_TEXT_WAIT_MS`, which sets the wait it is called with.
+- e1c5f2a: A `Slider` given a line `shape` now lies where the line's ends say, as it does along an arc or an ellipse; before,
+  a line kept the straight layout and its coordinates were ignored. `TrackCtx` gains `along`, set when the slider
+  lies along a shape, and `paintGradientTrack` strokes the band whenever it is, so a line shape is painted along
+  the line. A track painter that told a curve from a line by `shape.kind` should read `along` instead.
+  
+  A press on a lens's rim zoom now makes the lens canvas the one the keys reach, and gives its input element focus
+  when the press ends, so Cmd+Z undoes the zoom at once; before, it went to whatever had been pressed last.
+  The arrow keys on a thumb reached by Tab keep focus there. A square body's zoom is a line track across its bottom,
+  inset from the edges as a round body's arc is.
+- e45fc59: The schema editor's Export panel draws its literal as plain text on the first frame and colors it once React has time, so opening an asset no longer waits on highlighting the whole literal; while the literal changes, the last colored version stays up until the new one is ready. `CodeBlock` takes `language="text"` for a block drawn without highlighting.
+- 4aa138a: A color leaf drawn as a menu is now editable. `MenuColorEntry` gains `set` and `alpha`, and the controller holds a color row's value as it does a text row's (`colorValue`, `setColor`). `resolveSchemaMenu` passes `set` for a color leaf that is not a `readout` when `onChange` is given. In the DOM menu, pressing such a row, or Enter on it, opens the kit's `ColorField` in a popover beside the row; a press inside the popover does not dismiss the menu, and each committed color is written without closing it. A color row without `set` stays read-only. Adds API.
+- 74456b1: A `Popover`, `Callout` or `Tooltip` portaled into a positioned, unscaled container now flips and limits its height against the viewport when the page itself is scrolled. React Aria read the overlay frame's boundary as offset from the frame by the page's scroll, so a popover with room below its trigger flipped above it, off the top of the viewport.
+- 46e9fa7: A `Popover` or `Tooltip` opened inside a scrolling element no longer adds to its scroll range when a `transform`, `filter` or `contain` box inside the scroller holds it: there the overlay frame, though `position: fixed`, is contained like an absolute box. The frame is now cut to the part of the viewport no ancestor that clips it hides, so it lies inside every scrollport above it, and an overlay placed against it flips and shifts to stay inside the scroller that would otherwise cut it off. The same holds for a scaled box inside a scroller.
+- a29d2df: `PaintInput`'s Inherit segment is a glyph like its neighbors, `core:paintInherit` (a solid parent swatch handing its paint down to an empty child), where it was a text label. Its accessible name is still "Inherit".
+- 4aa9b8b: A node properties schema can name a field the node declares for its children as a leaf key: `clip`, or `units` and paths inside it. `SelectionPanel` reads the field off the node and writes it through `scene.setClip` or `scene.setUnits`, one undo step per edit, so a boolean leaf keyed `clip` with an encoding of `'outline'` switches a group's clip.
+- fbe234c: `Popover` and `Tooltip` inside a box drawn at another size (`transform: scale()` or `zoom`) now flip, shift and limit their height against the viewport as they would at 1×, and a top-placed one sits against its trigger instead of `(f − 1)` box heights above it. Portaled into any positioned container, scaled or not, they are no longer shifted sideways as though the viewport's corner sat at the container's. In such a container they portal into an overlay frame laid over the viewport, which React Aria places them in and against; in an unscaled container the frame is `position: fixed`, so it adds nothing to the scroll range of a container that scrolls, and a popover there is no longer clipped by that container's `overflow`. A caller's `boundaryElement` is still used as given.
+- 9a3626f: A `list` pref takes `control: 'list' | 'tokens'`. A list of plain text with `control: 'tokens'` is drawn as a `TokenField`, a chip per entry, in `PrefsForm`, `SelectionPanel` and labkit's `ControlPanel`; any other list is drawn as before. `PrefTextList` is the one control all three use for a text list.
+  
+  `TokenField` takes `minItems`, `maxItems` and `locked(index)`, the limits and per-entry lock `ListEditor` has.
+  
+  The asset editor offers `Control` on list prefs, and draws its own tag, short-name and field-kind lists as tokens.
+- 533ffb4: A `PrefRenderer`'s `group` may be a function of the leaf's render context, for a renderer whose control follows the leaf's own `control`: one drawing radios for one leaf and a select for another makes only the first row a group. A boolean still answers for every leaf. This adds API.
+- 28f476b: A `string` pref leaf takes an optional `placeholder`, the text an empty field shows in its place, and `PrefsForm` draws it. Adds API.
+- ee97c81: A pref leaf says whether and how it can be auto in one field, `auto`, in place of `manual`, `unpinned` and `autoValue`, which are gone. This changes the schema shape: a schema that sets any of the three must be rewritten.
+  
+  | Before | After |
+  |---|---|
+  | none of the three | `auto` left out: the leaf can be auto, and starts pinned at `default` |
+  | `manual: true` | `auto: false` |
+  | `unpinned: true` | `auto: { on: true }` |
+  | `autoValue: x` | `auto: { value: x }` |
+  | `unpinned: true, autoValue: x` | `auto: { on: true, value: x }` |
+  
+  `auto: false` with either of the others, which the old fields allowed, has no spelling now. The new `PrefAuto` type names the object form.
+  
+  `PrefsForm` gives a leaf with `auto: false` no auto toggle. `PrefSchemaEditor`'s Auto panel keeps its three rows, Never auto, Starts auto and Auto value, and writes them all to `auto`; changing a leaf's kind keeps its `auto` but for the value, which belongs to the old kind and is dropped. labkit's auto stays opt-in, and its resolved schema now says so: `.auto()` writes `auto: {}` onto the resolved leaf, `.initial(auto)` writes `auto: { on: true }`, and every other leaf, a legacy `configSchema()` field included, gets `auto: false`. A leaf `f.prefs` carries over keeps the `auto` object its schema gave it. Every reader of a resolved labkit schema, `PrefsForm` and the schema editor among them, now finds the same answer labkit acts on.
+- 024b698: A row's hint no longer runs into its control when it is wider than the label track: it moves to a line of its
+  own after the label, and wraps inside itself only where that line is still too narrow. In `PrefsForm`, the toggle
+  that opens a split row now sits after the row's control instead of on its label line, so a row that can be split
+  stays a `<label>`: an app renderer's control on such a leaf is named by the row again, as on any other leaf. The
+  mode marks stay on the label line, in the hint.
+- af0ee83: A rail `PrefsForm`'s pane and section rail clear a scrollbar once. Each pads its far side to keep an overlaid scrollbar off what it holds; where the scrollbar takes room of its own instead, as macOS draws it with a mouse connected, that padding now drops to the near side's, and the scrollbar's gutter does the clearing. Before, the gutter came on top of the padding, so a pane held 15px less with a mouse than with a trackpad; it now holds 11px less, the room the scrollbar itself takes.
+- 43454f5: `RangeSlider` follows its computed `direction`, as `Slider` does, rather than taking it from the locale: in a right-to-left page its values run from the right end and ArrowRight steps down whatever the locale, and in a left-to-right page with a right-to-left locale they run from the left. Its fill now runs from the start of its track in either direction. It keeps the locale's digits.
+- 4b22185: A vertical `RangeSlider`'s fill now runs up its track, from the bottom to the thumb (or between the thumbs), instead of across it.
+- 230a206: `rovingKey` takes `orientation: 'both'`, answering to all four arrows, and a `dir` that swaps Left and Right for a right-to-left layout (adds API). ui's `useRowNavigation` and `rovingTarget` now step through `rovingKey`; their behavior is unchanged.
+- 089609a: A `PropertyRow` hint follows the last word of its label. When a long label wrapped, the hint was pushed to the far edge of the label column, away from the name it describes. The help glyph still sits on the label's first line.
+- 8a8faaa: On a right-to-left horizontal `Bar`, Alt+Left and Alt+Right now move an item the way the arrow points, matching the pointer reorder. A vertical bar's Alt+Up and Down are unchanged.
+- 2e4943e: `trackRun` takes a `direction: 'ltr' | 'rtl'` option and reports it on the run. Under `'rtl'` the run starts at its right end on the side it stands on, `tangent` points the way it reads, and each item is still tipped upright as left-to-right reading would tip it. A curved `Bar`, segmented row, `RadioGroup`, `TabList` and `PageTabs` read their root's computed `direction`, so in a right-to-left locale item 1 sits at the right end as it does laid out straight, and the chevron past a scrolled run's end points out of the end it is at.
+- 8ddaf05: A schema group or section can name the motif its frame is drawn in: `motif: 'hero'` on a `PrefGroup` or `PrefSection`. `PrefsForm`, `PrefsPane` and `SelectionPanel` pass it to the group's `MotifFrame`, which looks the name up in the new `named` prop of a `<DefaultMotif>` above (`<DefaultMotif named={{ hero: stereo() }}>`). A name nothing defines draws the form's own look, as an unset one does. `MotifFrame`'s `motif` takes such a name as well as a motif.
+- 234cac7: A `framed="segmented"` bar, and so every `ActionBar`, is now as long as its buttons. In a block host it used to run the host's full width with its buttons at the start, and a vertical one was a full-width column with its buttons centered. A host that wants it wider sizes it with its own class, which wins over the strip's sizing.
+- 0af338b: The size glyphs (`ui:taller`, `ui:shorter`, `ui:wider`, `ui:narrower`, `ui:tallest`, `ui:shortest`) and `ui:orbit` are redrawn on the 16px pixel grid, so their arrowheads read as heads at 16px 1x instead of closing up into dots. Each head is now 45 degrees with barbs two pixels long. `ui:orbit` is a level ring that leaves its front on a straight run to the head, in place of a tilted ring with the head on its bend.
+- 5b7f963: A straight `Slider` works under a rotated ancestor. A press or drag is mapped back through every transform above the rail, so under `rotate(90deg)` a press at three quarters of the rail reads 75 rather than 50. The sizes a track painter and a custom thumb are handed are the untransformed ones, in the px they draw in, and readouts below the thumbs stagger by where they sit along the rail rather than by their on-screen boxes.
+- a10f0f2: `Slider`, straight or along a curve, now follows its computed `direction`: under `rtl` its values run from the right
+  end, a press or a drag reads them that way, ArrowRight steps down and ArrowLeft up as a native range input's do, and
+  its readouts and stop labels sit under the mirrored thumbs. `paintGradientTrack` lays its ramp and hatching from the
+  right end there too. A slider in a left-to-right page is unchanged.
+  
+  A straight slider's end stop labels now carry `data-edge="left"` / `"right"` (the side of the track they stand at) where they carried `"start"` / `"end"`.
+- 8a60d40: The straight arrows in `import`, `export`, `pan`, `arrowLeft`/`Right`/`Up`/`Down`, `enter`, `leave`, `loop`, `sort`, `dollyIn`, `dollyOut`, `rise` and `sink` are redrawn on the 16px pixel grid: each shaft runs down a pixel center, and each head's barbs end two whole pixels back from its tip and two either side, at 45 degrees. At 1x the shafts no longer smear across two gray columns and the heads no longer close up into dots. The glyphs sit half a pixel left of and above where they did, the same as the size glyphs.
+- 134ed96: In the asset editor's structure tree, an `object` leaf whose fields it draws, and a list or map of such objects, now carries a braces glyph. Its fields step in under it and its guide bracket hangs from the glyph; before, the bracket hung from nothing and the fields sat level with the object's own name. In the shelf's Settings tree, a setting now starts its name under its group's name, as in the structure tree.
+- 96a8314: `SwatchGrid` and `SwatchStrip` now honor `align` in their flat grid layout, not only on a curved shape: a last row
+  with fewer swatches than columns sits at the start, center, or end of its row. The flat default stays `'start'`, so a
+  grid that sets no `align` looks as before; inside an `Along` it follows the `Along`'s. ArrowUp and ArrowDown move to
+  the swatch over or under the focused one in a shifted row.
+- 412732d: Swatch rings laid along a curve read their root's computed `direction`: in a right-to-left locale every ring starts at its right end, as the straight grid does.
+- 76bdca3: `TokenField` keeps showing its placeholder after the first token, so the place to type a new one stays visible.
+- dd03e4b: New `TokenField`: a list edited as a wrapping row of chips with a text field after them. Enter or a comma adds what was typed, a click on a chip opens a popover that edits it, and with `reorder` chips drag into place across wrapped lines or move with Alt+Left / Alt+Right. Tokens are strings by default; `label`, `create` and `renderEditor` make them records, and `problem` flags one as invalid. This is additive.
+  
+  `Badge` takes `labelProps`, attributes for the label of a removable badge that has an action, so a caller can handle a press or a key on the label itself.
+  
+  The asset editor's enum options are now a `TokenField`: each option is a chip showing its label, its stored value on hover, and a popover edits both.
+- 1968706: `ToolPalette` takes `carryTool(tool)`, which makes each tool's button the source of an in-app carry: a press carries the `CarryPayload` it returns over the page, to any canvas whose bindings take its `type`, such as `@weasel-js/diagram`'s item drop under `DIAGRAM_ITEM_CARRY`. A press that moves 4 pixels or less still picks the tool; one that moves further carries, and its click picks nothing. A tool it returns `null` for keeps a plain button. A carrying button takes `touch-action: none`, so a touch drag carries rather than scrolls. `ToolButton` takes `onPointerDown`. This adds API.
+- 1e54d33: `ToolPalette` now lays its tools out in a natural order by default: the selection tools first, then the hand, then the tools that make things (shapes, pen and pencil, text), and the slice tool last. Core's new `TOOL_GROUP_ORDER` names the group order, and `BUILTIN_TOOL_IDS` (now listed group by group, so the lasso follows select) orders the tools within each group; a palette given `groupOrder`, or the new `toolOrder` prop, follows that instead. Groups and tools neither order names keep their registration order after the named ones. `BUILTIN_TOOL_GROUPS` lists the built-in tool sets in that order. The slice tool's presentation group is now `page`, matching `PAGE_TOOLS`, so it gets a group of its own rather than sitting among the shapes.
+- bcb58bc: A bar torn off a `ToolbarDock`, floated, or docked again keeps its state: a menu open in it stays open, and a draft
+  typed into one of its fields survives the move. Each bar is now rendered once, into an element the dock moves from
+  slot to slot, where it used to remount in the floating layer. A dock's slot holds that element, marked
+  `data-dock-host`, rather than the bar's own markup.
+- d061f4d: An open tooltip no longer swallows an Escape pressed somewhere else. React Aria takes the first Escape while a tooltip is open, wherever focus is, so with a tooltip showing over a hovered toolbar button, Escape in a text editor or on the canvas only closed the tooltip. Now an Escape pressed away from the tooltip's trigger closes the tooltip and also reaches where it was pressed; one pressed on the trigger still only closes the tooltip.
+  
+  TooltipTrigger takes `keepEscape` for help that describes the focused control from elsewhere, such as a property row's: every Escape while it is open only closes it.
+- a533742: A `Tooltip` inside a box drawn at another size, as a magnifier draws its copy, now opens against its trigger instead of the box's scale times its offset away. It places itself through React Aria's `useOverlayPosition` with the trigger read in the box's px, as `Popover` does, in place of React Aria's `Tooltip`; its props are unchanged.
+- 97d889f: A `TrackRun` has `toShape(g)`, the fraction along its underlying shape that reading fraction `g` falls at. This adds a required member to the `TrackRun` interface, so an object built by hand to satisfy it needs one too. `Jog` reads left to right in a right-to-left locale as well, curved or straight, as playback controls do; its caption takes its own text's direction.
+- 38c9f3c: `Transport` reads left to right in a right-to-left locale, as `Jog` does: its buttons, rate slider and scrub bar no
+  longer mirror there.
+- ca31c35: `core:flipX` and `core:flipY` are two trapezoids, short edges facing each other across the middle and long edges along the sides: one filled, its mirror outlined. Their straight edges sit on whole pixels at 16 px, so the glyphs no longer blur there. WeaselDraw's `symmetry` uses the same pair with both halves outlined, so the mode stops looking like the flip action.
+  
+  The transport glyphs (`play`, `pause`, `stop`, `stepBack`, `stepForward`, `rewind`, `fastForward`, `live`) are drawn 1.3 times larger, as tall as `close` or `search`, and `Transport` draws them at 16 px rather than 14.
+- 4558f6f: The asset editor's trees draw a glyph on every leaf: a leaf's own `icon`, or else one for its kind. Each asset in the assets list leads with its root's `icon`, or its heading's glyph. The glyph beside a node's name in the attributes pane loses its border.
+- 775b724: Folds several duplicated pieces of weasel-ui into one definition each. `SwatchGrid` and `CommandPalette` change behavior or look as noted below; the rest look and behave as before.
+  
+  - The transparency checker under swatches, wells, and gradient stops is one background layer, built in `components/checker.module.css`; the `--wzl-checker-a` token's description points there instead of spelling out the gradient to paste.
+  - `solidColorOf` decides "solid" with `@weasel-js/paint`'s `isSolidPaint`, and `PaintInput`, `PropertyReadout`, and `paintPreviewCss` read a solid paint's color through it.
+  - Adds `SegmentedSize`, `SegmentedVariant`, and `SEGMENTED_VARIANT_ICONS`, shared by `ToggleBar`, `ButtonBar`, and `OptionsBar`. Each bar's own size and variant types and its `*_VARIANT_ICONS` map are now aliases of these.
+  - `SwatchGrid` moves focus with the kit's grid roving rule: Left and Right now wrap and follow right-to-left layout, and Down from a full row lands on the last swatch of a shorter row below it.
+  - `CommandPalette` draws each shortcut with `ShortcutKeys`, so its keycaps are lettered in the UI font at normal weight, as every other list of actions shows them.
+  - `Slider` and `RangeSlider` share one stylesheet for the invisible hit area past the track and each thumb.
+  - `Button` passes `id` and any `data-*` attribute through to its `<button>`.
+- c9cbbf0: `Select`, `NumberField`, `UnitField`, and `Input` take a `mixed` prop for a control standing for several values that differ: it reads "Mixed" in place of the placeholder, and on `Select`, `NumberField`, and `UnitField` it also clears the selection or value. `FontFamilySelect`, `FontWeightSelect`, and the property and pref controls pass it rather than spelling the word themselves.
+  
+  The form controls share one set of slot props, exported as the `FieldSlotProps` type. `ComboBox` rows now have the same gap between their contents as `Select` rows.
+  
+  `Input` accepts a boolean `spellCheck`, as a native `<input>` does.
+- 44f3536: `useCollapse` now also answers `body` (the contents' id and hidden state) and `control` (the props a toggle button takes), and `Subpanel`, `PropertyGroup`, and `PropertyPanel` draw their twisty from it.
+  
+  `SidebarPanel` gains `trailing` (controls for the panel itself, such as undock, drawn after `actions`), `fill` (take the height the container leaves and hand it to the body), `headerRef`, `headerClassName`, `titleClassName`, `bodyClassName`, and the appearance props (`stance`, `grade`, `emphasis`, `tint`). Its collapse button now names its body with `aria-controls`. Its own styles sit in `:where()`, so a consumer's class on any part outranks them.
+  
+  labkit's sidebar sections, docked and undocked, are now drawn by `SidebarPanel`, so their headers carry the fold mark.
+- 01a320d: `ItemList`, `LayerList`, and `Tree` now share one keyboard model for their rows, so they agree where they used to differ:
+  
+  - Alt+Up/Down nudges a row only with neither Ctrl nor Cmd held.
+  - A plain arrow move re-anchors the next Shift range in `Tree`, as it already did in the other two, and the first row focused anchors when nothing has.
+  - Shift with Left or Right in `LayerList` moves focus without extending the selection, as in `Tree`.
+  - When the focused row of a `LayerList` is removed, focus goes to its next sibling, else the row above, rather than to whatever row slid into its place.
+  - A keyboard move that the consumer never renders no longer pulls focus back on a later render, in `ItemList` and `LayerList` as in `Tree`.
+  
+  The reorder handles of `DataGrid`, `ListEditor`, and `LayerList` cards are now one button. `DataGrid`'s handle draws the dot grip in place of `⋮⋮`, is named "Drag to reorder <label>" in place of "Reorder <label>", and names its Alt+Up/Down shortcuts; a `LayerList` card's handle keeps focus after Alt+Up/Down moves it. Alt+Up/Down moves in `DataGrid`, `ListEditor`, and `LayerList` cards now ignore the keys when Ctrl or Cmd is held too, as `Tree`, `Bar`, and `ToolbarDock` already did.
+- 8cdd272: `Tree`, `ItemList` and `LayerList` now type ahead through `@weasel-js/headless`, the same typeahead menus use, and `@weasel-js/ui` depends on it. A repeated letter now cycles through the rows it starts ("a", "a" goes to the next row starting with "a", where it used to search for "aa"); different letters still build a prefix, and `tree.typeaheadMs` still sets how long one lasts.
+- 670f22a: New `TextArea`: a multi-line text field in the same frame and label / description / error slots as `Input`, with `rows` setting its starting height.
+- ed23ccb: The asset editor's live preview stands on a lighter, untinted ground under its diagonal bands.
+- 461b6e1: New `--wzl-workspace` theme token: the whole workspace background as one layer, `--wzl-workspace-surface` struck with diagonal bands of `--wzl-workspace-line`. Use it as an element's `background`. The asset editor's preview stage now paints from it. `--wzl-workspace-surface` is now `--wzl-surface-raised` with its tint taken out (`#272727` dark, `#e7e7e7` light) rather than `--wzl-surface-sunken`, so every workspace drawn from it is lighter than before.
+  
+  A theme token whose value writes a `var(--wzl-…)` inside it is now redeclared in every mode block when that token varies by mode, the same as a `{token}` reference, so the value resolves against the mode of the element it is used on.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [cc0e73a]
+- Updated dependencies [79357fc]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9912c13]
+- Updated dependencies [3d36f5e]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [61e07e5]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [ec07e24]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [8ef803d]
+- Updated dependencies [2f3d924]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [1c046e3]
+- Updated dependencies [11e2b7d]
+- Updated dependencies [3c3a219]
+- Updated dependencies [767713e]
+- Updated dependencies [b59380e]
+- Updated dependencies [ba998f9]
+- Updated dependencies [9a963cd]
+- Updated dependencies [6a69c27]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [6cb0cf6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [a370edb]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [4aa138a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [5e24531]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9a3626f]
+- Updated dependencies [28f476b]
+- Updated dependencies [ffdbbcf]
+- Updated dependencies [ee97c81]
+- Updated dependencies [624cf38]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [d68c4f8]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [230a206]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8ddaf05]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [78213f7]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [7e4c7c4]
+- Updated dependencies [5967c5c]
+- Updated dependencies [0dd5658]
+- Updated dependencies [2bdc135]
+- Updated dependencies [a4b6c5b]
+- Updated dependencies [16f7828]
+- Updated dependencies [0ac4e47]
+- Updated dependencies [8c7fb03]
+- Updated dependencies [3b25c35]
+- Updated dependencies [058fcdf]
+- Updated dependencies [1a64358]
+- Updated dependencies [99a8383]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [4a8b5be]
+- Updated dependencies [871a56b]
+- Updated dependencies [1fb8193]
+- Updated dependencies [f645651]
+- Updated dependencies [7507e13]
+- Updated dependencies [eb43052]
+- Updated dependencies [348a400]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [d5c4ee6]
+- Updated dependencies [775b724]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [461b6e1]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/animator@1.14.0
+  - @weasel-js/font@1.14.0
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/clock@1.14.0
+  - @weasel-js/gestures@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/menu@1.14.0
+  - @weasel-js/svg@1.14.0
+  - @weasel-js/headless@1.14.0
+  - @weasel-js/quantity@1.14.0
+  - @weasel-js/prefs@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/theme@1.14.0
+  - @weasel-js/bidi@1.14.0
+  - @weasel-js/icons@1.14.0
+  - @weasel-js/modes@1.14.0
+  - @weasel-js/registry@1.14.0
+  - @weasel-js/select@1.14.0
+
 ## 1.13.0
 
 ### Minor Changes

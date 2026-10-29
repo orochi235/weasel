@@ -1,5 +1,117 @@
 # @weasel-js/guides
 
+## 1.14.0
+
+### Patch Changes
+
+- c01c5f0: A `FeaturePreset` can carry `layers`: pre-built layers by slot, as `<SceneCanvas layers>` takes them. A slot the canvas's own `layers` names, `null` included, keeps the consumer's entry. This adds API.
+  
+  `@weasel-js/guides` adds `createGridPreset({ spacing, … })`, which draws a grid in the grid slot and snaps gestures to it, so `features={['draw', createGridPreset({ spacing: 20 })]}` replaces building the grid layer and the grid snap source and passing each to its own prop. It takes every `createGridLayer` option, and `snap: false` or `snap: { origin }`.
+- 783756a: A scoped container's grid runs in the container's own frame: from its corner, along its axes, so
+  it turns when the container does. `sceneGridRegions` gives each region its `frame` and, without an
+  `outlineOf`, the outline the container draws; the grid layer draws a region's lattice in that
+  frame, and `pointToGridCell`, `useGridCellHover` and `createCellHighlightLayer` count and draw a
+  cell in it. `gridSnapSource` rounds in the same frame, read through the new
+  `SnapCollect.frameOf`, which a scene session fills from `sceneBoxFrames`. This changes behavior
+  for an unturned container too: its lattice now starts at its corner rather than at the grid's
+  origin. A subject spread over two containers still snaps on the world lattice.
+  `sceneGridRegions` now takes a `Scene`, and `GridRegionScene` is gone. geom adds `boxFrameOf` and
+  `pxExtentInFrame`.
+- 4dfd7ca: The drawn grid follows a container's unit scope. `createGridLayer` and `useGridCellHover` take
+  `scopes` and `regions`, and inside each container declaring a scope the grid draws and hit-tests
+  that scope's lattice, cut out of the one around it. `sceneGridRegions` builds the regions from a
+  scene, a hovered cell carries its lattice's `pitch` for `createCellHighlightLayer`, and
+  `gridPitch` is the one place every grid reader takes its pitch from.
+- 5b7d0ac: Breaking: an immediate action's params carry the event's point as `world`, a `WorldPoint`, in place of `worldX`/`worldY`, and a click's press point as `press` in place of `pressX`/`pressY`. Read `params.world.x` where you read `params.worldX`, and pass `{ world: { x, y } }` where you passed `{ worldX: x, worldY: y }`: to `trigger`, as a menu's params, and to an invoker called directly. The new exported `ImmediateParams` type names every field the dispatcher puts in the bag; cast `params` to it to read them. `trigger` asks `enabled` at `params.world`. A parallax plane now carries `press` into the plane as it already did the release point. The align and flip actions' `'pointer'` reference reads `world` too. The input events themselves are unchanged: a `ClickEvent` still has `x`/`y` and `pressX`/`pressY`, and `useClipboardOps`' `paste(at)` keeps its `{ worldX, worldY }` shape.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [61e07e5]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [767713e]
+- Updated dependencies [6a69c27]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [871a56b]
+- Updated dependencies [f645651]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/geom@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

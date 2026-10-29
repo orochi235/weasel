@@ -1,5 +1,49 @@
 # @weasel-js/prefs
 
+## 1.14.0
+
+### Patch Changes
+
+- a370edb: A list's or a map's item whose `enableIf` reads the entry (`{ from: 'item', path: 'on' }`) no longer disables the field it reads. `applyPrefEntryConditions` used to compare the condition's item-relative path with the field's full path (`phases.2.on`), so the switch that turns an entry back on was disabled with the rest of it. `PrefOwner` gains an optional `entry`, the entry's path, which `prefScopeIn` reads such a condition's paths under.
+- 9a3626f: A `list` pref takes `control: 'list' | 'tokens'`. A list of plain text with `control: 'tokens'` is drawn as a `TokenField`, a chip per entry, in `PrefsForm`, `SelectionPanel` and labkit's `ControlPanel`; any other list is drawn as before. `PrefTextList` is the one control all three use for a text list.
+  
+  `TokenField` takes `minItems`, `maxItems` and `locked(index)`, the limits and per-entry lock `ListEditor` has.
+  
+  The asset editor offers `Control` on list prefs, and draws its own tag, short-name and field-kind lists as tokens.
+- 28f476b: A `string` pref leaf takes an optional `placeholder`, the text an empty field shows in its place, and `PrefsForm` draws it. Adds API.
+- ffdbbcf: `prefWeightAxes(options)` lays a selector's weights out as numbers, the `axes` an `@weasel-js/animator` target
+  takes, so an animation can drive `store.get(path, { weights })` or `applyTheme`'s `weights` from one option to
+  another. Adds API.
+- ee97c81: A pref leaf says whether and how it can be auto in one field, `auto`, in place of `manual`, `unpinned` and `autoValue`, which are gone. This changes the schema shape: a schema that sets any of the three must be rewritten.
+  
+  | Before | After |
+  |---|---|
+  | none of the three | `auto` left out: the leaf can be auto, and starts pinned at `default` |
+  | `manual: true` | `auto: false` |
+  | `unpinned: true` | `auto: { on: true }` |
+  | `autoValue: x` | `auto: { value: x }` |
+  | `unpinned: true, autoValue: x` | `auto: { on: true, value: x }` |
+  
+  `auto: false` with either of the others, which the old fields allowed, has no spelling now. The new `PrefAuto` type names the object form.
+  
+  `PrefsForm` gives a leaf with `auto: false` no auto toggle. `PrefSchemaEditor`'s Auto panel keeps its three rows, Never auto, Starts auto and Auto value, and writes them all to `auto`; changing a leaf's kind keeps its `auto` but for the value, which belongs to the old kind and is dropped. labkit's auto stays opt-in, and its resolved schema now says so: `.auto()` writes `auto: {}` onto the resolved leaf, `.initial(auto)` writes `auto: { on: true }`, and every other leaf, a legacy `configSchema()` field included, gets `auto: false`. A leaf `f.prefs` carries over keeps the `auto` object its schema gave it. Every reader of a resolved labkit schema, `PrefsForm` and the schema editor among them, now finds the same answer labkit acts on.
+- 8ddaf05: A schema group or section can name the motif its frame is drawn in: `motif: 'hero'` on a `PrefGroup` or `PrefSection`. `PrefsForm`, `PrefsPane` and `SelectionPanel` pass it to the group's `MotifFrame`, which looks the name up in the new `named` prop of a `<DefaultMotif>` above (`<DefaultMotif named={{ hero: stereo() }}>`). A name nothing defines draws the form's own look, as an unset one does. `MotifFrame`'s `motif` takes such a name as well as a motif.
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [b142892]
+- Updated dependencies [b59380e]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [624cf38]
+- Updated dependencies [34a364e]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [78213f7]
+- Updated dependencies [d5c4ee6]
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/quantity@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/icons@1.14.0
+  - @weasel-js/registry@1.14.0
+  - @weasel-js/storage@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

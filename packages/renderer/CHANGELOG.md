@@ -1,5 +1,102 @@
 # @weasel-js/renderer
 
+## 1.14.0
+
+### Patch Changes
+
+- d6221a7: A convex clip that is not an axis-aligned rect (a rect turned off the axes, a convex polygon of up to eight edges) no longer breaks the batch on a single-sampled canvas: the batch shader tests each fragment against the clip's edges, snapped to a sixteenth of a device pixel, and keeps exactly the pixels the stencil would. On a multisampled canvas, which is the browser default, such a clip still goes on the stencil: WebGL2 gives a fragment shader no way to keep some of a pixel's samples and drop the rest.
+  
+  `DrawContext.batchFillMatrices` is replaced by `DrawContext.batchVariants`, which also carries the hull-clipping builds; code that builds its own `DrawContext` and set the old field needs to set the new one.
+- 7b048f4: A group's effects now run in a buffer covering what the group paints, grown by how far its effects reach, rather than one the size of the drawing buffer. Content just past the edge of the canvas is drawn into it, so a blur or shadow of a shape lying off the canvas now reaches in across the edge, where before it was missing. A small blurred group runs its passes over its own rect, not the whole canvas. Effects that do not set `reach`, and composites that change pixels outside their group (`destination-in`, `copy` and the like), still run over the whole canvas. A retained layer holding a group whose effects set `reach`, an isolated group or a composite group now follows a pan like any other retained layer. Effect buffers are pooled by size, and a size no group used in a frame is freed at the start of the next.
+- aba8563: Inside a group's effects buffer, a retained group's surface and the offscreen paint behind text filled with a registered paint kind now cover the buffer's whole window rather than stopping at the drawing buffer. Content of either lying just past the edge of the canvas now feeds a blur or shadow around it, as a direct draw already did.
+- 2f3d924: Text runs can turn their glyphs. A `StyledRun`'s new `rotate` turns each of its glyphs that many degrees, clockwise, each about its own pen on the baseline, as SVG's `rotate` does; the glyphs keep their places along the line. Layout carries it on each `PlacedGlyph` as `rotate`, and the renderer draws it on every tier: atlas and canvas quads, color glyphs and outline glyphs, with painted bounds grown to hold the turned glyph. `textToPath`, `textClusters` and PDF export turn the glyphs the same way.
+  
+  SVG import reads `rotate` on a `<text>` or `<tspan>` instead of warning: each value turns one glyph, a glyph past the end of a list takes its last value, and a `<tspan>`'s own list wins over the text's. A list naming different angles over white space SVG collapses is reported and not read. Export writes a run's turn as `rotate` on its `<tspan>`.
+  
+  This adds API: `StyledRun.rotate`, `ResolvedRun.rotate`, `PlacedGlyph.rotate`, `LaidOutOutlineGlyph.rotate`, `glyphTurn`, and `penX` and `rotate` on `LaidOutQuad`. `QUAD_STRIDE` is now 11: each packed quad in `LaidOutGroup.quadData` gains its pen and its turn after `baselineY`, so code reading `quadData` by a hard-coded stride of 9 breaks.
+- 8763fc3: An `{ kind: 'image' }` paint with no `width`/`height` tiles an SVG at the picture's natural size, so an image node with the same `src` re-rasterizing it larger no longer makes the tile jump. `TextureEntry` gains an optional `size`, the extent a texture stands for when its pixels are a resampling, which a texture paint with no extent tiles at.
+- b0a55a6: A fill or stroke can now tile a picture: `{ kind: 'image', src, width, height }`, a new pattern paint kind beside the built-in tiles. `src` is anything an `<img>` loads, and a `data:` URI makes the paint carry the picture itself, so it saves, copies and exports with nothing stored beside the document. `width` and `height` are the tile's size in paint units; left out, the picture's pixel size is used. The fill draws nothing until the picture has decoded, then repaints.
+  
+  This adds API. `@weasel-js/paint` exports `ImagePatternPaint`, `TileExtent`, `ResolvablePatternKind` and `isImagePatternPaint`, and `isPatternPaint` now answers true for an image paint. `TexturePaint` takes an optional `width` and `height`, which set its tile size in place of the texture's pixel size. `resolveFillPattern` resolves an image paint to a `texture` paint. Code that switches over every `Paint` kind meets a new member.
+  
+  `@weasel-js/svg` writes an image paint as a `<pattern>` holding one `<image>` that fills the tile, and reads that structure back from any editor's SVG, `xlink:href` included. An image paint with no `width` and `height` cannot be sized as an SVG pattern and is left out with a warning.
+  
+  `PatternPicker` gains an image swatch after the tiles that opens a file picker. The picked file is stored as a `data:` URI, re-encoded down to 1024 px on its longest side if larger (an SVG is kept as it is), and the size switch then sets the tile's longest side to 32, 64, 128 or 256 units. A new `readImage` prop replaces that step for an app that stores images elsewhere. `readImageFile`, `seedImagePattern` and `MAX_STORED_IMAGE_SIDE` are exported.
+- 8e6ed97: A `PolygonPath` can carry an `origin`, the point its `coords` are measured from, in doubles; a `Mesh` built from one carries it too. This adds API. Far from 0 a float32 coordinate loses its fraction (at x = 262,144 it sits on a 1/32 grid, 2 px at 64x); measured from an origin beside the shape it keeps it. `PathBuilder.setOrigin(x, y)` builds such a path from points given in the path's own space.
+  
+  The renderer draws one where its origin puts it, batched or by its own draw, filled, stroked, clipped, and culled. `tessellate`, `tessellateStroke`, `markerHeads`, `strokeToPath`, `transformPath` and `boundsOfPath` honor it, and so does a node's stroked bounds.
+- 941f382: A slanted item (a turned rect, a mesh, a slanted glyph) crossing an axis-aligned rect clip no longer breaks the batch on a single-sampled canvas: the rect clip goes to the batch shader as four half-planes for that item, while axis-aligned items inside it are still cut on the CPU. To make the two agree pixel for pixel, a rect clip on such a canvas now has its edges snapped to a sixteenth of a device pixel, the grid convex clips already use, so an edge that sat within a thirty-second of a pixel of a pixel center can now keep or drop that column. On a multisampled canvas nothing changes.
+  
+  `ClipEntry` gains a required `uncutHulls` field; code that builds clip entries itself needs to set it.
+- 561472d: Looking up a text command's layout and painting builds no options or result objects per command per frame: the renderer refills one of each. Every text command drawn pays this, unchanged ones included.
+- c66c536: Copying a retained surface out of its multisampled buffer now leaves whichever framebuffer was bound before it, rather than the default one. No drawn output changes: the one caller already rebound its target afterward.
+- cbb344e: `DEFAULT_RETAIN_BUDGET` is 384 MiB, up from 256. With the smaller scratch buffer a frame peaks lower than before, and 16 canvas-sized world layers at 1280x800 and dpr 2 now get the margins a pan needs: a pan frame costs 0.35 of submitting them, where it cost 0.98.
+- 4c0141f: A group carrying `retain` that also has `effects` or `isolate` is now retained: its surface keeps what the group's own buffer composites, effects run, so a still frame runs none of its passes. A retained group inside another group's effects buffer, such as a layer in a `LayerGroup` with effects, now composites into that buffer instead of drawing straight through; it is drawn single-sampled there, as drawing into that buffer is. `drawLayers` now marks a layer with `effects` for retaining under the same rules as any other layer. A retained group inside another retained group is still drawn straight through.
+- d3fdba8: A retained group holding a custom shader drawn through the kit's vertex shader now keeps a surface covering only the shader's `bounds`, not the whole drawing buffer. Adds a kit uniform: a fragment shader that declares `uniform vec2 u_fragOrigin;` is given the offset to subtract from `gl_FragCoord.xy` to get its device pixel in the renderer's own drawing buffer, which a tile of a shared canvas, a group's effects and a retained surface each move. A program reading `gl_FragCoord` without declaring it, or supplying its own vertex shader, still makes its retained layer keep a whole-buffer surface.
+- f9282f7: A retained world layer now keeps its surface through a pan. `drawLayers` marks an unchanged world layer for retaining while the view only translates, and stops only for a zoom. The renderer composites the kept surface moved when the pan is a whole number of device pixels and what it drew still covers the buffer; past that it draws the surface again with a margin of an eighth of the buffer past each edge, so following pans keep reusing it. A pan by a fraction of a device pixel draws the layer straight through, keeping the surface, until the view holds for a frame. A layer holding a custom shader, a gradient or pattern in screen units (the default), a world-unit paint with no view matrix, a texture paint on text, or a group with effects, isolation or a composite operator is drawn straight through while the view moves instead, since those do not move with it, and drawn again once it holds; so is a layer whose margin the budget has no room for. `RetainedSurfaces.lookup` now returns what to do (`kept`, `redraw` with the window to draw, or `through`) rather than pixels or `null`; `RetainedSurfaces` is internal.
+- 0509c29: A retained surface larger than 1024 device pixels on a side is drawn in tiles of that size, each resolved into its place in the surface, so the multisampled scratch buffer a frame that redraws holds is at most 1024x1024 rather than as large as the largest surface: 38 MB at 4x, with the single-sampled copy tiles resolve through, where a surface with pan margins on a 2560x1600 buffer took 205 MB. A child whose bounds miss a tile is not drawn for it. The pixels match drawing the surface whole, except that a sample an edge passes within float rounding of can flip. A frame that redraws costs more: redrawing four layers with pan margins at 1280x800 and dpr 2 took 9.7 to 15.5 ms tiled, against 9 ms whole.
+- 3803ba2: A retained layer holding text gets a surface the size of its text rather than the whole drawing buffer. Text is bounded by its laid-out glyphs, each grown by a margin for ink past its advance cell (half an em beside it, an em and a half above its baseline, an em below) and by its run's outline stroke. The same bound now also culls a group with `effects` that holds text, and sizes the raster a PDF export draws such a group into.
+- f645651: Text rewritten every frame stops allocating its layout and quad arrays. Adds API: `dropRuns(runs)` tells the text caches a runs array will not be laid out again, and `cachedLayoutRuns` and `cachedPaintRuns` take a last argument, `'keep'` (the default) or `'read'`, for a caller that is done with the result before its next call. A layout that no runs array files, that the structural list has let go, and that every caller only read gives its arrays to the next layout and painting of the same size. The renderer reads; a HUD text widget drops the runs it replaces. Results are unchanged.
+- 95eb9d3: Drawing a text command whose runs and options have not changed builds no strings and no style object. `cachedLayoutRuns` compares a runs array's last options field by field before building its variant key, `cachedPaintRuns` answers a runs array asked again at the same outline threshold without building its paint key, and `drawText` reads the four style fields it lays out with instead of resolving the whole style each frame.
+- 7507e13: Drawing a glyph group allocates less each frame. `textureCacheKey` and `glyphFieldScale` keep their last answer, which is nearly always the next one asked for, rather than building a new string and pair per group, and the renderer stages a group's text color through one reused array where no color matrix maps it. Every frame of a static label pays these, as well as text that changes.
+- Updated dependencies [79357fc]
+- Updated dependencies [38bb299]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [b142892]
+- Updated dependencies [ec07e24]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [2f3d924]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [e7fca17]
+- Updated dependencies [64d4e97]
+- Updated dependencies [d7d29f9]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [5af16a6]
+- Updated dependencies [966c37f]
+- Updated dependencies [9ef7751]
+- Updated dependencies [d68c4f8]
+- Updated dependencies [2e4943e]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [78213f7]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [4a8b5be]
+- Updated dependencies [32889fc]
+- Updated dependencies [1fb8193]
+- Updated dependencies [ab41dea]
+- Updated dependencies [f645651]
+- Updated dependencies [5399b45]
+- Updated dependencies [55375c0]
+- Updated dependencies [486ff61]
+- Updated dependencies [23dcddf]
+- Updated dependencies [f2acefd]
+- Updated dependencies [95eb9d3]
+- Updated dependencies [ff3c2ad]
+- Updated dependencies [b0d5f18]
+- Updated dependencies [7507e13]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+  - @weasel-js/font@1.14.0
+  - @weasel-js/text@1.14.0
+  - @weasel-js/stroke@1.14.0
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

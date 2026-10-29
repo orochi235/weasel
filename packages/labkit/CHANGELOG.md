@@ -1,5 +1,327 @@
 # @weasel-js/labkit
 
+## 1.14.0
+
+### Patch Changes
+
+- 34563f9: `<CanvasStack>` under a scaled ancestor sizes its canvas at its layout size from the first pass, rather than at the scaled client size for one pass until its size observer reports.
+- 9de8a22: A `<CanvasStack>` or `<Stage>` under a scaled ancestor now reads the pointer in its own layout px: a tap reports the world point under the pointer, a wheel zoom holds that point still, the camera's `hostSize` is the layout size, and `worldToClient` places a context menu where the point is drawn.
+- 9912c13: Loading a snapshot of a clock with a finite loop count (`loop: n`) brings it back in the pass it was saved in, with its `ended` and time left, where it used to land in the first pass at the saved time within the pass. A trial clock reopened at a position its first run cannot reach yet waits in that pass too. `holdElapsed(handle, position)` in `@weasel-js/clock` holds a clock at a recorded `HeldPosition` across the whole run the way `holdAt` holds a time within a pass, re-placing it as the span changes; a position recorded under another `duration` or `origin` keeps its pass and the time it showed within it. This adds API.
+  
+  A snapshot whose config turns a trial's clock back on opens the new clock at the snapshot's position. A lab lets go of a trial's snapshot hold when the trial closes.
+  
+  A trial's clock is made in a layout effect rather than during render, so under StrictMode a `ClockSpec.mix` factory runs once per clock. The clock is there by the first paint, but not in the trial's first render; in that render the trial's clock resolves to none, never to the focused trial's or the lab's.
+  
+  `useClockLoop` reads the registry's clocks and targets when the registry changes, not on every frame.
+  
+  `useTrialClock`, `useTrialClockHandle`, `useTrialMix`, `useClockFrame` and `useTransportControl` take a `trialId` of `null`, which resolves no clock and subscribes to none. forge's `useTimeline` uses it so a story with a clock of its own, such as one on an index page inside a lab, no longer re-renders on every frame of the focused trial.
+- 3d36f5e: New package `@weasel-js/clock`: labkit's trial clock, moved out so it has no React and no DOM. `createClock`, `clockPosition`, `ClockSpec`, `Clock`, `ClockHandle`, `ClockPosition`, `ClockedMix`, `CLOCK_RATES`, and `createClockRegistry`, whose `lab` field is now `shared`; the frame loop `useClockLoop` is in `@weasel-js/clock/react`. labkit keeps `ClockCapability`, `TrialClock`, `ClockPosition` and `ClockedMix` as aliases, and `TRANSPORT_RATES` in ui is `CLOCK_RATES`.
+  
+  `ClockSpec` takes `origin`, the time `elapsed` 0 is shown as (display only), and `speed`, the unsigned speed a transport plays a paused clock at. `Clock` reads both back. `ClockHandle.declare(spec)` takes up a new `duration`, `origin` and `speed`, and `loop` only when the declared `loop` changed, keeping the pass and the time shown within it, clamped to the new run. Writing `Clock.loop` so the run ends before `elapsed` keeps the time within the pass. `shownInPass` reads a looping clock's time within its pass. This adds API.
+  
+  `holdAt(handle, shown)` returns a `PlayheadHold`: it pauses the clock at a time shown within a pass and keeps it there as the span moves, waiting at the pass's end for a time the span cannot reach yet. `createClockRegistry`'s `register(id, handle, target)` takes a `ClockTarget` resolving the element showing a clock, and `targets(handle)` lists them; the frame loop stops advancing a clock, other than the shared one, while every target of it is out of the viewport, and rebases it when one comes back.
+  
+  The ui `Transport` takes `start`, where its scrub bar begins, so it can show a playhead before zero. labkit exports `useTransportControl` and `TransportControl`; `TransportControl` gains `start`, `touched` and `touch`, its `playhead` and `seek` work in shown time, and the keyboard Home and End and `labkit:seek` follow.
+  
+  labkit exports `useTrialClockHandle`, the resolver behind `useTrialClock`. A snapshot records where the trial's clock stands when it is saved, playing or never moved included, and loading it holds the clock at that time.
+  
+  `ClockHandle.override(span)` replaces the declared `duration` and `origin` until called with `null`, and a later `declare` leaves it in place. `ClockPosition` records `origin` when it differs from the declared one, `createClock` reopens at it, and a reopened trial clock comes back at the time it showed. `holdAt`, `declare` and `override` place a time on a pass boundary at the end of the pass before.
+  
+  forge's story timelines run on the shared clock. A story's `timeline` declares its trial's labkit clock, so the trial's transport is labkit's `TrialTransport` (its scrub bar is named "Position"), it shows a lead-in below zero, and the paused playhead is kept in the trial's record rather than in a `$playhead` config key. A config saved with `$playhead` still opens, without the key reaching the story. `usePlayhead`, `useTimeline` and the `TimelineSpec`, `TimelineSpan` and `SpanOverride` types keep their shape. The URL's `t` and a capture's playhead are the time shown within the pass. Changes in behavior: a span set at runtime keeps the playhead's shown time rather than following the span's start, and a story left playing reopens playing, where it used to reopen paused. A timeline with a duration or rate that is not a positive number runs as 1 ms or at speed 1 instead of throwing.
+- 418b51f: A group or section its `enableIf` turns off now dims its tab's name, and a bar's lead label or icon, the way its heading already dimmed. `GroupTab` and `BarLayout` take a new `disabled` prop for this; `PrefsForm`, `SelectionPanel`, and `ControlPanel` fill it in.
+- ab10a1d: A `<CanvasStack>` in a same-origin frame that the embedding page shows enlarged backs its canvases at the scale it is shown at, as it already did under a scaled ancestor in its own document, and measures again on its window's `resize`. A Live lens's copy of an isolated story is drawn sharp at its factor rather than enlarged, and forge sends the copy's frame a `resize` when the lens changes factor.
+- 5b7d0ac: Breaking: an immediate action's params carry the event's point as `world`, a `WorldPoint`, in place of `worldX`/`worldY`, and a click's press point as `press` in place of `pressX`/`pressY`. Read `params.world.x` where you read `params.worldX`, and pass `{ world: { x, y } }` where you passed `{ worldX: x, worldY: y }`: to `trigger`, as a menu's params, and to an invoker called directly. The new exported `ImmediateParams` type names every field the dispatcher puts in the bag; cast `params` to it to read them. `trigger` asks `enabled` at `params.world`. A parallax plane now carries `press` into the plane as it already did the release point. The align and flip actions' `'pointer'` reference reads `world` too. The input events themselves are unchanged: a `ClickEvent` still has `x`/`y` and `pressX`/`pressY`, and `useClipboardOps`' `paste(at)` keeps its `{ worldX, worldY }` shape.
+- 6e9dd04: A canvas stack in a frame no longer counts CSS zoom on the frame twice: zoom already reaches the frame's device pixel ratio, so only a transform on the embedding page goes into its backing density. A zoomed frame's canvases were backed at twice the density they needed.
+- bb43cea: `@weasel-js/ui` gains `Toolbar`, with `Toolbar.Group` and `Toolbar.Spacer`: a `role="toolbar"` run of controls whose groups rule themselves off from their neighbors, with arrow-key focus movement that `roving={false}` turns off and a `wrap` option. A ghost `Button` with a `grade` now shows that grade on hover, and `--wzl-button-pad-x` and `--wzl-button-font-weight` set a `Button`'s side padding and weight from outside it.
+  
+  labkit's `Toolbar` is now that component at the compact control height, and `Toolbar.Button` is a ghost `Button`: its `title` shows as a kit tooltip rather than a native one, its pressed state takes `Button`'s pressed look, and it takes an `icon` for a glyph ahead of a text label.
+  
+  The loupe lens strip draws its Source and View choices as single-choice `ToggleBar`s (radios, with arrow keys moving the choice) and its readouts as a multiple-choice one.
+  
+  `useDebouncedText` moves from labkit's controls into `@weasel-js/ui/components/Prefs`, beside `PARAMS_TEXT_WAIT_MS`, which sets the wait it is called with.
+- 4be6d8d: Marks are a lab feature with a switch. In a lab with an instrument declaring `annotations`, View → Marks shows
+  and hides them: the targets' overlays, each trial's Marks section, export and mark undo, the overview's marks,
+  and the drawing tools in the rail. `<Lab marks={false}>` starts with them hidden, and a stored lab keeps the
+  last choice. Hidden marks are kept, and `useAnnotations` still reaches them. This adds API: the `marks` prop, and
+  `marks` / `setMarks` on `LabContextValue`, which a hand-built context value now has to supply.
+  
+  An annotation target is asked for again when its element attaches or resizes, so a target sized by its own
+  element keeps up with it.
+- fc87bab: A presented lab whose trial has a clock no longer posts a `labkit:state` saying `clock: false` before that clock is in, and no longer drops a host's command in that gap. Its first state is now the clock's, and it listens from the moment it posts it.
+- 317759a: A lab whose config comes from a property schema (`f.prefs`) now honors a section's `showIf` and `enableIf`: each leaf in the section, nested sections included, is hidden or disabled with it. A leaf the section's `enableIf` reads stays live, so the section can be switched back on.
+- 6307eb2: A trial whose instrument leaves `orbit` undeclared now also warns and shows its "no camera" badge when a hand-written WebGL or WebGPU view in it turns on depth testing, which weasel's own 2D renderer never does: WebGL through `enable(DEPTH_TEST)`, WebGPU through a render pipeline with a depth test, built by the device its canvas is configured with.
+- 8661e5c: The lens actions gain `loupe.aim.glass` ("Aim: glass"), bound to `b` in the Loupe keymap: it sets the current lens to Glass, where the reticle sits under the lens body and moves with it. Leaving Follow for Glass lets go of the pointer.
+- edccd1d: A square lens body's straight zoom runs 16px from the body's sides instead of 24, so its stop labels stand at least 6px apart at the default 160px body, as a round body's do. `32×` and `64×` were 3.5px apart.
+- e1c5f2a: A `Slider` given a line `shape` now lies where the line's ends say, as it does along an arc or an ellipse; before,
+  a line kept the straight layout and its coordinates were ignored. `TrackCtx` gains `along`, set when the slider
+  lies along a shape, and `paintGradientTrack` strokes the band whenever it is, so a line shape is painted along
+  the line. A track painter that told a curve from a line by `shape.kind` should read `along` instead.
+  
+  A press on a lens's rim zoom now makes the lens canvas the one the keys reach, and gives its input element focus
+  when the press ends, so Cmd+Z undoes the zoom at once; before, it went to whatever had been pressed last.
+  The arrow keys on a thumb reached by Tab keep focus there. A square body's zoom is a line track across its bottom,
+  inset from the edges as a round body's arc is.
+- 47abfc3: Marks on a forge story now belong to its scrolled content: they move with it as the story scrolls, and an export
+  pictures the whole content rather than the top of it.
+  
+  Adds API to labkit: an annotation target can declare `shown`, the part of its content box its element shows (for a
+  scroller, its scroll offset and its own size), and `fitView` takes it as an optional third argument. A target is
+  asked for again whenever anything inside its element scrolls.
+  
+  Fixes `toWeaselView` and `fromWeaselView`, which copied labkit's pan (a screen translation) into weasel's `x`/`y`
+  (the world point at the corner) unchanged. A target whose camera pans, and a target cut off by a clipping ancestor,
+  drew and stored its marks in the wrong place.
+  
+  Marks a forge story already had were placed against the story's box; on a story taller than its trial they now land
+  against the content instead.
+- 0f80b76: A wheel over a mark target's input box now finds the scroller under the pointer even when the target is out of hit
+  testing with `pointer-events: none`, as a forge story is until its first paint. It used to find nothing there, and
+  the wheel did nothing.
+- 9cf8984: A wheel over a mark target's input box, while a drawing tool is active, now scrolls what is under it when the
+  trial has no camera to take it. Before, the box swallowed the wheel, so a scrolling target such as a forge story
+  could not scroll until the pointer tool was picked.
+- b06e2b9: Breaking: `PointerWorldPos`, the pointer store's value, is `{ world: WorldPoint; viewId }` in place of `{ worldX, worldY, viewId }`. Read `p.world.x` where you read `p.worldX`, and publish with `store.set({ world: { x, y }, viewId })`. `useClipboardOps`' own `getDropPoint` option keeps its `{ worldX, worldY }` shape. When that option is left out, the paste point read from the pointer store no longer carries the store's `viewId` along with it.
+- 9a3626f: A `list` pref takes `control: 'list' | 'tokens'`. A list of plain text with `control: 'tokens'` is drawn as a `TokenField`, a chip per entry, in `PrefsForm`, `SelectionPanel` and labkit's `ControlPanel`; any other list is drawn as before. `PrefTextList` is the one control all three use for a text list.
+  
+  `TokenField` takes `minItems`, `maxItems` and `locked(index)`, the limits and per-entry lock `ListEditor` has.
+  
+  The asset editor offers `Control` on list prefs, and draws its own tag, short-name and field-kind lists as tokens.
+- ee97c81: A pref leaf says whether and how it can be auto in one field, `auto`, in place of `manual`, `unpinned` and `autoValue`, which are gone. This changes the schema shape: a schema that sets any of the three must be rewritten.
+  
+  | Before | After |
+  |---|---|
+  | none of the three | `auto` left out: the leaf can be auto, and starts pinned at `default` |
+  | `manual: true` | `auto: false` |
+  | `unpinned: true` | `auto: { on: true }` |
+  | `autoValue: x` | `auto: { value: x }` |
+  | `unpinned: true, autoValue: x` | `auto: { on: true, value: x }` |
+  
+  `auto: false` with either of the others, which the old fields allowed, has no spelling now. The new `PrefAuto` type names the object form.
+  
+  `PrefsForm` gives a leaf with `auto: false` no auto toggle. `PrefSchemaEditor`'s Auto panel keeps its three rows, Never auto, Starts auto and Auto value, and writes them all to `auto`; changing a leaf's kind keeps its `auto` but for the value, which belongs to the old kind and is dropped. labkit's auto stays opt-in, and its resolved schema now says so: `.auto()` writes `auto: {}` onto the resolved leaf, `.initial(auto)` writes `auto: { on: true }`, and every other leaf, a legacy `configSchema()` field included, gets `auto: false`. A leaf `f.prefs` carries over keeps the `auto` object its schema gave it. Every reader of a resolved labkit schema, `PrefsForm` and the schema editor among them, now finds the same answer labkit acts on.
+- b444374: A `Split` with no `viewport` no longer makes Chrome report "ResizeObserver loop completed with undelivered notifications" when its content pane mounts. It now starts measuring its strip after the frame's resize notifications have gone out, rather than in the middle of them.
+- dacf535: A `<Stage>` under a scaled ancestor (a lens, another stage) now reports its viewport to `onResize` in its own layout px, and a trial places its opening view, and goes home, against that size rather than its scaled client size. `<Orbit>`'s `onResize` keeps reporting client px, the space its gestures read.
+- 44f3536: `useCollapse` now also answers `body` (the contents' id and hidden state) and `control` (the props a toggle button takes), and `Subpanel`, `PropertyGroup`, and `PropertyPanel` draw their twisty from it.
+  
+  `SidebarPanel` gains `trailing` (controls for the panel itself, such as undock, drawn after `actions`), `fill` (take the height the container leaves and hand it to the body), `headerRef`, `headerClassName`, `titleClassName`, `bodyClassName`, and the appearance props (`stance`, `grade`, `emphasis`, `tint`). Its collapse button now names its body with `aria-controls`. Its own styles sit in `:where()`, so a consumer's class on any part outranks them.
+  
+  labkit's sidebar sections, docked and undocked, are now drawn by `SidebarPanel`, so their headers carry the fold mark.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [b108984]
+- Updated dependencies [cc0e73a]
+- Updated dependencies [e379713]
+- Updated dependencies [dc6d8ec]
+- Updated dependencies [0c13006]
+- Updated dependencies [eb7b1f2]
+- Updated dependencies [956e980]
+- Updated dependencies [db3320e]
+- Updated dependencies [8b758f4]
+- Updated dependencies [d2215f3]
+- Updated dependencies [ccac61a]
+- Updated dependencies [e060cc9]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [0c6c086]
+- Updated dependencies [99fc88d]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9912c13]
+- Updated dependencies [3d36f5e]
+- Updated dependencies [fe65ac0]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [78d1904]
+- Updated dependencies [59df8ac]
+- Updated dependencies [0dc2a78]
+- Updated dependencies [66beda1]
+- Updated dependencies [1127bb2]
+- Updated dependencies [8b14236]
+- Updated dependencies [418b51f]
+- Updated dependencies [a40d519]
+- Updated dependencies [8cf9a8f]
+- Updated dependencies [e06efe0]
+- Updated dependencies [2993216]
+- Updated dependencies [61e07e5]
+- Updated dependencies [a64647a]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [c9caa50]
+- Updated dependencies [7f6a74c]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [8ef803d]
+- Updated dependencies [2f3d924]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [7cc9da9]
+- Updated dependencies [2692828]
+- Updated dependencies [1c046e3]
+- Updated dependencies [3c3a219]
+- Updated dependencies [767713e]
+- Updated dependencies [b59380e]
+- Updated dependencies [ba998f9]
+- Updated dependencies [9a963cd]
+- Updated dependencies [2232189]
+- Updated dependencies [6a69c27]
+- Updated dependencies [3f8797e]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [5c8636b]
+- Updated dependencies [6cb0cf6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [a370edb]
+- Updated dependencies [e7fca17]
+- Updated dependencies [f130e8f]
+- Updated dependencies [d6884c8]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [8f3562e]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [8bc23c2]
+- Updated dependencies [f7c49b7]
+- Updated dependencies [bb43cea]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [e1c5f2a]
+- Updated dependencies [e45fc59]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [4aa138a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [e7d70f5]
+- Updated dependencies [74456b1]
+- Updated dependencies [46e9fa7]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [fbe234c]
+- Updated dependencies [9a3626f]
+- Updated dependencies [533ffb4]
+- Updated dependencies [28f476b]
+- Updated dependencies [ffdbbcf]
+- Updated dependencies [ee97c81]
+- Updated dependencies [024b698]
+- Updated dependencies [af0ee83]
+- Updated dependencies [624cf38]
+- Updated dependencies [43454f5]
+- Updated dependencies [4b22185]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [9819d7a]
+- Updated dependencies [230a206]
+- Updated dependencies [089609a]
+- Updated dependencies [8a8faaa]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8ddaf05]
+- Updated dependencies [234cac7]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [0af338b]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [5b7f963]
+- Updated dependencies [a10f0f2]
+- Updated dependencies [8a60d40]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [134ed96]
+- Updated dependencies [7e4c7c4]
+- Updated dependencies [5967c5c]
+- Updated dependencies [0dd5658]
+- Updated dependencies [2bdc135]
+- Updated dependencies [a4b6c5b]
+- Updated dependencies [16f7828]
+- Updated dependencies [0ac4e47]
+- Updated dependencies [8c7fb03]
+- Updated dependencies [3b25c35]
+- Updated dependencies [058fcdf]
+- Updated dependencies [1a64358]
+- Updated dependencies [99a8383]
+- Updated dependencies [96a8314]
+- Updated dependencies [412732d]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [4a8b5be]
+- Updated dependencies [871a56b]
+- Updated dependencies [1fb8193]
+- Updated dependencies [f645651]
+- Updated dependencies [eb43052]
+- Updated dependencies [348a400]
+- Updated dependencies [76bdca3]
+- Updated dependencies [dd03e4b]
+- Updated dependencies [1968706]
+- Updated dependencies [1e54d33]
+- Updated dependencies [bcb58bc]
+- Updated dependencies [d061f4d]
+- Updated dependencies [a533742]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [38c9f3c]
+- Updated dependencies [ca31c35]
+- Updated dependencies [4558f6f]
+- Updated dependencies [d5c4ee6]
+- Updated dependencies [775b724]
+- Updated dependencies [c9cbbf0]
+- Updated dependencies [44f3536]
+- Updated dependencies [01a320d]
+- Updated dependencies [8cdd272]
+- Updated dependencies [670f22a]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [ed23ccb]
+- Updated dependencies [461b6e1]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/ui@1.14.0
+  - @weasel-js/animator@1.14.0
+  - @weasel-js/clock@1.14.0
+  - @weasel-js/routing@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/kernel3d@1.14.0
+  - @weasel-js/svg@1.14.0
+  - @weasel-js/quantity@1.14.0
+  - @weasel-js/minimap@1.14.0
+  - @weasel-js/prefs@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/theme@1.14.0
+  - @weasel-js/loupe@1.14.0
+  - @weasel-js/icons@1.14.0
+  - @weasel-js/registry@1.14.0
+  - @weasel-js/storage@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

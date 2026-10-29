@@ -1,5 +1,106 @@
 # @weasel-js/routing
 
+## 1.14.0
+
+### Patch Changes
+
+- 592b6e5: A container's wheel scroll hands the wheel on at the end of its range. Scrolled as far as it goes in the wheel's direction, `containerScrollAction` passes the wheel to the scrollable container holding it, and past the outermost one to the viewport's wheel pan. Before, a scrollable container kept every wheel over it, even with nowhere left to go.
+  
+  `scrollRange` now measures in the container's own frame, the axes its scroll offset runs along, so a turned container scrolls by its own length rather than its axis-aligned box's, and `scrollableAt` takes a point only over a turned container's own area. Under a composition without `scroll`, or for a container whose pose is not a frame, `scrollRange` answers `null`, since neither can scroll.
+  
+  An immediate invoker's `run` may now return `'pass'`: the dispatcher walks on to the next matching binding as though `enabled()` had declined, and `ActionsRegistry.trigger` answers `false`. This adds API; a `run` returning nothing behaves as before.
+- 41a013b: The wheel scrolls a layout container whose content runs past its bounds, such as `tileGrid({ overflow: 'scroll' })`. `<SceneCanvas>` registers `containerScrollAction` (`container.scroll`) ahead of the wheel pan: over a container whose strategy's `contentExtent` reaches past its bounds, the wheel moves `scene.scroll`'s offset for it, clamped to that extent, and Shift+wheel scrolls it across; anywhere else it declines and the wheel pans the view. `scrollRange` and `scrollableAt` answer how far a container can scroll and which one is under a point. Hiding the overflow is the container's own `clip`. This adds API.
+  
+  A wheel event now carries the world point under the pointer: `WheelEvent` gains optional `x`/`y`, `Action.enabled` is handed it, an immediate invoker's params carry it as `worldX`/`worldY`, and `InvocationCtx.world` holds it.
+- 8b14236: A "may this land here?" check can now refuse with a reason. `DropVerdict` is `true`, `false` (a
+  silent no), or `{ refuse: string }`; over a refusal the canvas outlines the target in the
+  `refused` overlay role and shows the reason beside the pointer, and a release there does nothing.
+  
+  - **Breaking:** `CanConnect` returns a `DropVerdict` rather than a `boolean`, and so does core's
+    `CanDropIntoDep`. A function returning a boolean still fits; code that calls one and treats the
+    answer as a boolean must test for `true`.
+  - `DiagramView` takes `canReparent(ids, container)`, asked before a drag moves nodes into a
+    container or lane they are not in.
+  - A `DataContainer` takes `reorder: 'x' | 'y'`: `onReorder` drags its members along that axis and
+    Alt with an arrow key steps the selected one, as a group's. **Breaking:** `ReorderChange` names
+    the group or container as `parent`, in place of `group`.
+  - `DiagramView` takes `onDropItem` and `canDropItem` for items carried in from a list outside the
+    canvas, made a source with `dragItemProps(item)`. The report gives the item, what it landed on,
+    the container that would hold it, and its index among that container's members.
+  - `DiagramViewApi.rectOf` and overlays place a container's members in the world rather than in
+    the container's frame, and a stencil drawn into a nested container finds it.
+  - Core: move behaviors can publish overlays, routing has a `reason` overlay that `SceneCanvas`
+    shows beside the pointer, and a `target` overlay role outlines what a drag would drop into.
+- a40d519: An ongoing action can hand a pointer drag off mid-gesture: return `'pass'` from its handle's `onMove`, and the dispatcher cancels that handle and offers the drag, as it was pressed, to every other candidate in rank order. The taker starts as if it had won the press and then sees the move it was passed on; with no taker the drag ends. A drag never goes back to an action that passed it. Adds API: `OngoingHandle.onMove` may now return `'pass'`.
+- 2993216: A drag's `screenDelta` is now measured in the surface's own pixels, through the host's `clientToLocal` when it supplies one. A drag pan on a canvas under a scaled ancestor used to move the view by the pointer's travel in client pixels, so under `scale(2)` the content ran twice as far as the pointer; it now moves with the pointer. A host with no `clientToLocal` sees no change. An action's `dragThresholdPx` is measured the same way.
+- 61e07e5: An ongoing action, or one binding of it, can declare `dragThresholdPx`: the dispatcher holds a pointer drag until it has traveled that far, then calls `start` with the press's context, and a release short of it never starts the action. `insert` declares 8px (`INSERT_DRAG_THRESHOLD_PX`), so a click that wobbles a few pixels with a shape or stencil tool no longer draws a shape a few pixels wide. `move`'s `dragThresholdPx` option now rides the move bindings' `dragThresholdPx` instead of a `params` entry the action read itself, so a move action invoked directly no longer holds a short drag.
+- a64647a: Adds API: while an OS drag hovers a canvas, the dispatcher asks the action its drop would run for its `Action.preview`, with the params the drop would bring (the drag's items, `via: 'drop'`, `worldX`/`worldY`), and takes the preview down when the drag moves, leaves, drops or the canvas unmounts. A drag that sits still is asked once.
+  
+  The items `itemTypesFromDataTransfer` returns now carry `pending: 'file' | 'string'` beside their MIME, read with the new `pendingKindOf`; the type `PendingIngestItem` names that shape.
+- 8ef803d: Breaking: `PressFacts` and `ReleaseFacts`, what the pointer recognizer keeps of a press and a release and hands a hold observer, carry the world point as `world: Point` in place of the flat `worldX` and `worldY`. The events they synthesize are unchanged: a click still has `x`, `y`, `pressX` and `pressY`.
+- 7cc9da9: A drag handed off with `'pass'` keeps its trail: the taker's `ctx.drag.points` starts at the press and holds every move before the hand-off, rather than restarting at the press. The action that passed keeps its own copy of the trail it had.
+- 2232189: `holdPreview` runs its action with the deps it had when the key went down. It used to run it with the release's, which a gesture's end never carries, so an action reading any dep (every Pathfinder operation reads `booleansAdapter`) did nothing on release.
+- 6a69c27: `holdPreview(action)` makes an action a hold, under `holdPreviewId(action.id)`: bound to a `held(…)` key, in a keymap or anywhere, the press shows the action's `preview`, the release runs it, and a cancel (Escape, through core's cancel-gesture action) takes the preview down and runs nothing. The binding's params reach both. Nothing binds one yet; a Pathfinder key is the next step.
+- 5b7d0ac: Breaking: an immediate action's params carry the event's point as `world`, a `WorldPoint`, in place of `worldX`/`worldY`, and a click's press point as `press` in place of `pressX`/`pressY`. Read `params.world.x` where you read `params.worldX`, and pass `{ world: { x, y } }` where you passed `{ worldX: x, worldY: y }`: to `trigger`, as a menu's params, and to an invoker called directly. The new exported `ImmediateParams` type names every field the dispatcher puts in the bag; cast `params` to it to read them. `trigger` asks `enabled` at `params.world`. A parallax plane now carries `press` into the plane as it already did the release point. The align and flip actions' `'pointer'` reference reads `world` too. The input events themselves are unchanged: a `ClickEvent` still has `x`/`y` and `pressX`/`pressY`, and `useClipboardOps`' `paste(at)` keeps its `{ worldX, worldY }` shape.
+- f7c49b7: Escape in an open keymap now cancels a gesture in flight before it closes the keymap. A `holdPreview` hold started from a keymap whose leader is still held used to keep running: Escape closed the keymap, and the key's release then ran the action. Now Escape reaches the canvas's cancel binding (core's `cancelGesture`) while anything is in flight, the hold's preview comes down, its release runs nothing, and the keymap stays open for a second Escape to close. With nothing in flight, or no binding that takes Escape, it closes the keymap as before.
+- 4aa138a: A color leaf drawn as a menu is now editable. `MenuColorEntry` gains `set` and `alpha`, and the controller holds a color row's value as it does a text row's (`colorValue`, `setColor`). `resolveSchemaMenu` passes `set` for a color leaf that is not a `readout` when `onChange` is given. In the DOM menu, pressing such a row, or Enter on it, opens the kit's `ColorField` in a popover beside the row; a press inside the popover does not dismiss the menu, and each committed color is written without closing it. A color row without `set` stays read-only. Adds API.
+- 81d08f7: `resolveSchemaMenu` now draws the leaves it used to leave out. An `object` is a submenu of its fields, each edit writing the object whole; a `list` is a submenu of its entries (`Cap 1`, `Cap 2`) with rows that add an entry and remove the last within `minItems`/`maxItems`; a `map` is a submenu of its entries named for their keys; a `union` is a submenu of its variants as radio rows, then the fields of the variant it holds; a `field` is a submenu of the schema's value-holding leaves it may name. A `paint` is a color row while it is solid or none, and reads as its kind otherwise. A section among an object's fields adds nothing to their paths. An app-defined leaf is drawn by the new `MenuSources.customRows`, given the row key, the path, and the `values`/`onChange` where the leaf sits (`MenuCustomAt`), and is left out without it. Adds API; a menu over a schema holding these leaves now shows rows it did not before.
+- e7d70f5: A `list` drawn as a menu removes any entry, not only the last: its `Remove <item>` row is now a submenu naming each entry (`Cap 1`, `Cap 2`). A `map` drawn as a menu gains an `Add <item>` text row, which adds an entry at the item's default under the key typed into it, and a `Remove <item>` submenu naming each key. A map key holding a `.` is no longer left out: its path segment escapes the `.` (and any `\`) with a `\`, so the row path of `{ 'a.b': 1 }` under `sizes` is `sizes.a\.b`. The list's remove row changes shape, from an item to a submenu.
+- b06e2b9: Breaking: `PointerWorldPos`, the pointer store's value, is `{ world: WorldPoint; viewId }` in place of `{ worldX, worldY, viewId }`. Read `p.world.x` where you read `p.worldX`, and publish with `store.set({ world: { x, y }, viewId })`. `useClipboardOps`' own `getDropPoint` option keeps its `{ worldX, worldY }` shape. When that option is left out, the paste point read from the pointer store no longer carries the store's `viewId` along with it.
+- 9819d7a: `@weasel-js/routing/testing/registerAction` ships `RegisterAction` and `RegisterActions`, test helpers that register actions with the enclosing `<ActionsProvider>` while mounted.
+- 1e54d33: `ToolPalette` now lays its tools out in a natural order by default: the selection tools first, then the hand, then the tools that make things (shapes, pen and pencil, text), and the slice tool last. Core's new `TOOL_GROUP_ORDER` names the group order, and `BUILTIN_TOOL_IDS` (now listed group by group, so the lasso follows select) orders the tools within each group; a palette given `groupOrder`, or the new `toolOrder` prop, follows that instead. Groups and tools neither order names keep their registration order after the named ones. `BUILTIN_TOOL_GROUPS` lists the built-in tool sets in that order. The slice tool's presentation group is now `page`, matching `PAGE_TOOLS`, so it gets a group of its own rather than sitting among the shapes.
+- fceb8c5: `WorldPoint` names the space the dispatcher's `clientToWorld` maps the pointer into: the world on a 2D canvas, the pane's screen point under the identity mapping a camera-bearing host passes. `InvocationCtx.world`, `drag.start`, `drag.current`, `DragSample`, the dispatcher's `onClick`, `onDoubleClick`, `affordanceAt`, `classifyTarget` and `clientToWorld`, and the point payloads of the `nodeAtPoint`, `lassoSelect`, `insert` and `snap` deps are typed with it. It is an alias of `Point2`, so nothing that type-checked before stops.
+- Updated dependencies [41a013b]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [b142892]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [8ef803d]
+- Updated dependencies [783756a]
+- Updated dependencies [11e2b7d]
+- Updated dependencies [b59380e]
+- Updated dependencies [a370edb]
+- Updated dependencies [e7fca17]
+- Updated dependencies [4aa138a]
+- Updated dependencies [5e24531]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [9a3626f]
+- Updated dependencies [28f476b]
+- Updated dependencies [ffdbbcf]
+- Updated dependencies [ee97c81]
+- Updated dependencies [624cf38]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [2e4943e]
+- Updated dependencies [8ddaf05]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [d5c4ee6]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+  - @weasel-js/gestures@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/menu@1.14.0
+  - @weasel-js/quantity@1.14.0
+  - @weasel-js/prefs@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/cursor@1.14.0
+  - @weasel-js/history@1.14.0
+  - @weasel-js/icons@1.14.0
+  - @weasel-js/modes@1.14.0
+  - @weasel-js/registry@1.14.0
+  - @weasel-js/select@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

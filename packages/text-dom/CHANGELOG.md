@@ -1,5 +1,64 @@
 # @weasel-js/text-dom
 
+## 1.14.0
+
+### Patch Changes
+
+- ba998f9: `@weasel-js/headless` adds `editEnd`, the one rule for how a text field's edit ends: Enter and blur commit, Escape cancels, with options for an Escape that commits and for a multiline field that leaves Shift+Enter alone. hud's menu text rows, ui's `MenuTextValue` and `RenameField`, and text-dom's `useTextEdit` now read it; none of them behaves differently. `@weasel-js/text-dom` now depends on `@weasel-js/headless`.
+- 6cb0cf6: `@weasel-js/headless` adds `imeKey(e)`, whether a keydown belongs to an input method mid-composition: `isComposing`, or `keyCode` 229, which Safari sends for the Enter that ends a composition, or a `Process` or `Dead` key. This adds API. The hud's hidden text input, text-dom's `useTextEdit` and ui's `ComboBox` now use it in place of their own checks; `ComboBox` no longer commits typed text on Safari's composition-ending Enter, and `useTextEdit` also leaves `Process` and `Dead` keys alone.
+  
+  A context menu's text row and `PageTabs`' rename field leave Enter and Escape to an input method. Before, confirming a Japanese or Chinese candidate with Enter committed the half-typed text.
+- 6c31588: The in-place text editor keeps a run's `stroke` and `rotate` through an edit. Before, its overlay had no place for either, so committing an edit dropped them from every run. The overlay does not draw them: a run's stroke and turn ride on its span as `data-stroke` and `data-rotate`. A `data-fill` or `data-stroke` that pasted markup carries and that is not JSON is now ignored rather than throwing.
+- 1fb8193: A text's `lang` now reaches more than the shaper. `textTransform` and synthesized small caps map case in the run's language, so `i` uppercases to `İ` under `tr`; `transformRunTexts` takes the languages as an optional third argument, `smallCapsText` as a third and `isSmallCapsLetter` as a second, and a tag `Intl` rejects maps as no language. The edit overlay sets the `lang` attribute from the node's style, and each run span from its run, and reads a pasted span's `lang` back as the run's. SVG export writes `xml:lang` on `<text>` and `<tspan>`; import reads `xml:lang` or `lang`, inherited from any ancestor onto the node and a `<tspan>`'s own onto its run. This adds API.
+- Updated dependencies [79357fc]
+- Updated dependencies [38bb299]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [b142892]
+- Updated dependencies [ec07e24]
+- Updated dependencies [2f3d924]
+- Updated dependencies [2692828]
+- Updated dependencies [1c046e3]
+- Updated dependencies [11e2b7d]
+- Updated dependencies [3c3a219]
+- Updated dependencies [767713e]
+- Updated dependencies [b59380e]
+- Updated dependencies [ba998f9]
+- Updated dependencies [9a963cd]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [6cb0cf6]
+- Updated dependencies [e7fca17]
+- Updated dependencies [64d4e97]
+- Updated dependencies [d7d29f9]
+- Updated dependencies [5af16a6]
+- Updated dependencies [966c37f]
+- Updated dependencies [34a364e]
+- Updated dependencies [d68c4f8]
+- Updated dependencies [230a206]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [78213f7]
+- Updated dependencies [058fcdf]
+- Updated dependencies [880f2b0]
+- Updated dependencies [4a8b5be]
+- Updated dependencies [32889fc]
+- Updated dependencies [1fb8193]
+- Updated dependencies [ab41dea]
+- Updated dependencies [f645651]
+- Updated dependencies [5399b45]
+- Updated dependencies [55375c0]
+- Updated dependencies [486ff61]
+- Updated dependencies [23dcddf]
+- Updated dependencies [f2acefd]
+- Updated dependencies [95eb9d3]
+- Updated dependencies [ff3c2ad]
+- Updated dependencies [b0d5f18]
+- Updated dependencies [7507e13]
+- Updated dependencies [d5c4ee6]
+  - @weasel-js/font@1.14.0
+  - @weasel-js/text@1.14.0
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/headless@1.14.0
+  - @weasel-js/react@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

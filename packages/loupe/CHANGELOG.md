@@ -1,5 +1,33 @@
 # @weasel-js/loupe
 
+## 1.14.0
+
+### Patch Changes
+
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [783756a]
+- Updated dependencies [e7fca17]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [9ef7751]
+- Updated dependencies [2e4943e]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

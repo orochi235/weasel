@@ -1,5 +1,13 @@
 # @weasel-js/react
 
+## 1.14.0
+
+### Patch Changes
+
+- 34a364e: Removes public API: `useFrameClock` and its `FrameClock` and `FrameClockOptions` types are gone from `@weasel-js/react`, and from their re-export in `@weasel-js/core`. Use a `@weasel-js/clock` clock in their place: `createClock({ rate: 1 })` for a clock that runs, `createClockRegistry` and `useClockLoop` from `@weasel-js/clock/react` to drive it, `handle.onFrame` as a render layer's `subscribe`, and `handle.clock.elapsed / 1000` for seconds. Rate 0 pauses it. The loop leaves out time with the tab hidden, as `useFrameClock` did, and skips a clock registered with a target while that element is out of the viewport; unlike `useFrameClock`, a running clock is synced whether or not anything subscribes to its frames.
+- 4f68c3a: `@weasel-js/react` exports `useNearViewport(ref, margin, initial?)`, which says whether an element lies within a CSS margin of the viewport, and keeps following it as it scrolls away and back. It goes by where the element is, so content an `overflow` ancestor clips away still counts as near. forge's story frames use it from here; forge now depends on `@weasel-js/react`.
+- @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

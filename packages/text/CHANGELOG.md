@@ -1,5 +1,82 @@
 # @weasel-js/text
 
+## 1.14.0
+
+### Patch Changes
+
+- 38bb299: `caretIndexAt` no longer stretches a letter and its zero-width combining mark one unit into a kerned glyph after them. The mark sits where the letter's glyph ends, before the kerning pulls the next glyph back, so the cluster spanned past its own cell and its midpoint moved right by half the kern.
+- ec07e24: Resolving a font variant, and resolving a text style's default selection color, no longer build a new string on each call. Results are unchanged.
+- 2f3d924: Text runs can turn their glyphs. A `StyledRun`'s new `rotate` turns each of its glyphs that many degrees, clockwise, each about its own pen on the baseline, as SVG's `rotate` does; the glyphs keep their places along the line. Layout carries it on each `PlacedGlyph` as `rotate`, and the renderer draws it on every tier: atlas and canvas quads, color glyphs and outline glyphs, with painted bounds grown to hold the turned glyph. `textToPath`, `textClusters` and PDF export turn the glyphs the same way.
+  
+  SVG import reads `rotate` on a `<text>` or `<tspan>` instead of warning: each value turns one glyph, a glyph past the end of a list takes its last value, and a `<tspan>`'s own list wins over the text's. A list naming different angles over white space SVG collapses is reported and not read. Export writes a run's turn as `rotate` on its `<tspan>`.
+  
+  This adds API: `StyledRun.rotate`, `ResolvedRun.rotate`, `PlacedGlyph.rotate`, `LaidOutOutlineGlyph.rotate`, `glyphTurn`, and `penX` and `rotate` on `LaidOutQuad`. `QUAD_STRIDE` is now 11: each packed quad in `LaidOutGroup.quadData` gains its pen and its turn after `baselineY`, so code reading `quadData` by a hard-coded stride of 9 breaks.
+- 2692828: New package `@weasel-js/text-shaping`: OpenType shaping through HarfBuzz. `await loadShaper()` loads its WebAssembly and resolves with a shaper; `registerShaper(shaper)` (from `@weasel-js/text`, re-exported by core) hands it to every text layout, and `layoutRuns` also takes one as `opts.shaper`. Text set in a face registered with `registerFontOutlines` from TrueType or OpenType bytes is then shaped: Arabic joins, Devanagari forms its conjuncts and places its vowel signs, marks sit where the face's `GPOS` puts them, and ligatures and the face's kerning come from the shaping. Text drawn from an atlas, or with no shaper registered, lays out as before.
+  
+  A shaped code point draws its whole cluster from its own pen, and the cluster's other code points take no width; `PlacedGlyph.shaped` carries what it draws. `fontVariantCaps: 'small-caps'` on a shaped face with an `smcp` feature now draws the face's own small capitals instead of synthesizing them, and `ResolvedRun` gains `fontFeatures` for it. This adds API: `registerShaper`, the `TextShaper`, `ShapedGlyph` and `ShapedCluster` types, `LayoutRunsOpts.shaper`, `ResolvedRun.fontFeatures` and `PlacedGlyph.shaped`.
+- e7fca17: `@weasel-js/geom` adds `joinPaths(parts)`, which joins polygon paths into one `'nonzero'` compound path measured from the first part's origin, re-measuring any part that has another. `textToPath`, `textToPathsByPaint` and `textClusters` join their glyphs through it, so text set far from 0 keeps an origin instead of dropping it, and a decoration rule there is measured from one too. A derived path made of several parts (a blend, a repeat) joins through it as well.
+- 64d4e97: Laying out text reuses the per-code-point entries it measures into, instead of allocating one object per code point each time. A HUD readout of 5,000 glyphs changing every frame allocated 5.20 MB a frame before and 4.70 after (teitou, headless Chromium, `tests/perf/hud-vs-dom.spec.ts` with `HVD_ALLOC=1`). Up to 4,096 entries are kept between layouts.
+- d7d29f9: On the outline tier, a color emoji cluster no longer paints outlines for the code points before its closing one. A keycap such as 1️⃣ set in an outline-only face drew its digit and its variation selector under the color glyph; `paintRuns` now skips any code point whose cell has `drawsInk: false`, as `textClusters` already did.
+- 5af16a6: `@weasel-js/text` exports `glyphOutlineAt(d, glyph, dx, dy)`, which sets a glyph's em-space outline data where the
+  renderer's outline tier draws it: wound positive, grown for synthetic bold, and sheared for synthetic italic.
+  `textToPath` and `textClusters` already placed glyphs this way. `@weasel-js/pdf` now does too, so a glyph it draws
+  as an outline is wound positive whichever way its face winds it, and glyphs from faces that disagree on winding fill
+  where they overlap under nonzero, as they do on the canvas.
+- 966c37f: `writePdf` exports shaped text as the glyphs its shaper chose. Before, a shaped run was written one code point at a time, so Arabic lost its joining forms and Devanagari its conjuncts, and every code point of a cluster drew its own glyph on top of the one the cluster drew. Now each cluster's glyphs are written by glyph index where the shaper set them, a mark lifted off the baseline with `Ts`. A cluster of one glyph reads back through `/ToUnicode` as all of its code points (क्ष copies as क्ष); a cluster `/ToUnicode` cannot give back, such as a letter drawn as a body and its dots, is wrapped in `/ActualText` with its text. A face that cannot be embedded draws the shaped cluster's outline rather than each code point's.
+  
+  This adds API: `ShapedCluster.text`, the text a cluster's glyphs stand for.
+- d68c4f8: `glyphIn` and `resolveGlyph` take an optional object to write their answer into, which they then return, so a caller that copies the fields out at once allocates nothing a code point. Text layout uses it: a HUD readout of 5,000 glyphs changing every frame allocated 4.70 MB a frame before and 4.48 after (teitou, headless Chromium, `tests/perf/hud-vs-dom.spec.ts` with `HVD_ALLOC=1`).
+- 058fcdf: `serializeSvg` without a `textLayout` now writes a text node's lines where weasel lays them out, for any face the font registry has measured. `dominant-baseline="text-before-edge"` sets the face's ascent on the box top, where weasel's layout first puts half the leading, so every line sat that far off (Inter at 24px: 2.3 up at line height 1.4, 2.5 down at 1.0); a `dy` on the `<text>` now moves them by it. A face nothing measured is written as before. New in `@weasel-js/text`, re-exported by core: `halfLeadingFor(family, weight, style, fontSize, lineHeight)`.
+- 880f2b0: Text Along Path draws underline, strikethrough and overline. `textClusters` gives each cluster the decoration rules crossing its slot (`TextCluster.rules`), and a path effect item can carry them as `bands` (`EffectBand`); `textAlongParts` joins alike bands on neighboring items into one ribbon that bends with the path, where the glyphs themselves stay rigid.
+- 4a8b5be: A laid-out cell's `advance`, and a placed glyph's `step`, now include the kerning before the glyph to its right, so a cell ends at its right neighbor's `x` and the cells tile the line, as `LaidOutCell`'s doc already said. They used to leave it out, so a kerned pair's cells overlapped or left a gap. A combining mark that takes no room keeps an advance of 0, and the glyph it sits on takes the kerning. Caret snapping, text along a path, and two decoration rules meeting at a run boundary now follow the painted glyphs. A consumer that added the kerning back itself will now count it twice.
+  
+  svg import's right-to-left glyph lists now read each glyph's right edge from the glyph's own advance, so they place glyphs where they did before.
+- 32889fc: `textClusters` remembers its result per data object: the same data, width and scale return the same array until a face or glyph changes, so text along a path no longer lays its source out again on every frame of a drag. Treat the returned array as read-only.
+- 1fb8193: A text's `lang` now reaches more than the shaper. `textTransform` and synthesized small caps map case in the run's language, so `i` uppercases to `İ` under `tr`; `transformRunTexts` takes the languages as an optional third argument, `smallCapsText` as a third and `isSmallCapsLetter` as a second, and a tag `Intl` rejects maps as no language. The edit overlay sets the `lang` attribute from the node's style, and each run span from its run, and reads a pasted span's `lang` back as the run's. SVG export writes `xml:lang` on `<text>` and `<tspan>`; import reads `xml:lang` or `lang`, inherited from any ancestor onto the node and a `<tspan>`'s own onto its run. This adds API.
+- ab41dea: A run and a node's `TextStyle` take `lang`, a BCP 47 tag (`'sr'`, `'ur-PK'`), and a shaped run is shaped in that language, so a face's forms for it are drawn: Serbian Cyrillic italics, Urdu digits, a Sindhi meem. A run's own `lang` overrides the node's. `TextShaper.shape` and `@weasel-js/text-shaping`'s `Shaper.shape` take it as an optional fourth argument, `language`, which `@weasel-js/text-shaping` sets on the HarfBuzz buffer. Two layouts differing only in language are cached apart. This adds API.
+- f645651: Text rewritten every frame stops allocating its layout and quad arrays. Adds API: `dropRuns(runs)` tells the text caches a runs array will not be laid out again, and `cachedLayoutRuns` and `cachedPaintRuns` take a last argument, `'keep'` (the default) or `'read'`, for a caller that is done with the result before its next call. A layout that no runs array files, that the structural list has let go, and that every caller only read gives its arrays to the next layout and painting of the same size. The renderer reads; a HUD text widget drops the runs it replaces. Results are unchanged.
+- 5399b45: Laying out, painting and resolving text allocates less per call: line breaking reuses its lines, sums and entry lists from one layout to the next instead of copying the entry that opens each line, painting reuses its group slots, and resolving a style or a run no longer builds an empty object for each optional field it leaves out. No result changes.
+- 55375c0: Re-laying out text allocates less each call: `measureRuns`, `breakLines` and the grapheme and line-break scans refill their reused lists in place instead of emptying and regrowing them, and `measureRuns` walks runs and code points without a closure or a string per code point. Layouts are unchanged.
+- 486ff61: A layout the caches recycle now hands its line boxes, and its paintings their groups and result objects, to the next layout and painting, so text rewritten every frame (a HUD readout) stops allocating them. A recycled layout's `lines` array and boxes belong to the next layout from then on; as before, only a layout no runs array files and no caller kept is recycled. The result of `cachedLayoutRuns` is still a new object for every layout. `paintRuns` and `layoutRuns` called directly return fresh objects as before.
+- 23dcddf: A shaped ligature spanning several letters (`fi`, Arabic lam-alef) splits its advance evenly across them, so a caret between two of its letters stops inside it rather than at its end. Each letter's first code point takes a share; right to left, where the opening letter is drawn rightmost, its glyphs shift left so the ligature lands where the shaper put it.
+- f2acefd: Painting text builds no key strings for text that is new every frame. `cachedPaintRuns` builds a painting's key only once a second runs array asks the same layout for one, and keeps a runs array's own painting without a `WeakMap` per array. `paintRuns` groups glyphs by comparing their face, tier, page and run, and builds a run's paint string only to compare glyphs of different runs. It also builds no glyph cursor per painting, and no rule painter for text with no decoration. What is painted, and how it is grouped and shared, is unchanged.
+- 95eb9d3: Drawing a text command whose runs and options have not changed builds no strings and no style object. `cachedLayoutRuns` compares a runs array's last options field by field before building its variant key, `cachedPaintRuns` answers a runs array asked again at the same outline threshold without building its paint key, and `drawText` reads the four style fields it lays out with instead of resolving the whole style each frame.
+- ff3c2ad: A line laid out without a bidi engine no longer builds two arrays for its order: every line of one length shares one frozen order. Nothing laid out changes.
+- b0d5f18: `cachedLayoutRuns` no longer builds a string of every run's text to look a fresh runs array up by its content. It hashes the runs and compares a matching entry field by field with the runs that filled it, so text whose content changes every frame, such as a HUD readout, leaves no key behind for the collector each frame. Layouts are shared exactly as before. The cache now holds the runs it compares against, so a run must not be mutated after it is laid out, as the identity key already required of its array.
+- Updated dependencies [79357fc]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [b142892]
+- Updated dependencies [ec07e24]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [783756a]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [e7fca17]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [9ef7751]
+- Updated dependencies [d68c4f8]
+- Updated dependencies [2e4943e]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [78213f7]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [7507e13]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+  - @weasel-js/font@1.14.0
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

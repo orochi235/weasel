@@ -1,5 +1,211 @@
 # @weasel-js/diagram
 
+## 1.14.0
+
+### Patch Changes
+
+- d8fbd3d: `Affordance` takes an optional `regionsAt(state, wx, wy, view)`: the regions a press at that world point can hit, in the order `regions` lists them. The affordance hit test reads it in place of `regions` when it is there, so an affordance with many regions can answer from an index. This adds API.
+  
+  The diagram port layer and edge-label layer use it. A `ParticipantSource` may carry a `generation()`, and `sceneParticipants` gives it one from the scene's version and its overrides' generation, so the port layer hit-tests through an index of the ports' points instead of laying out every participant's ports on each press. The label layer and `labelUnder` index each scene's draggable labels against its version. Both answer exactly what they answered before; a source without a generation is tested the old way.
+- 0c6c086: `ToolPalette` takes `carryGhost(tool)`: what follows the pointer, centered on it, while a tool `carryTool` carries is on the move. `DragGhost` takes `centered`, which makes `at` its center, and `bare`, which draws its children with no surface under them. `@weasel-js/diagram` exports `StencilGhost`, a stencil's outline as an SVG at the size a click places it, in a node style and at a zoom, for a palette to carry. This adds API.
+- 436f034: `central-topic` draws its outline as an oval of four circular arcs instead of an ellipse, flatter across the top, so it holds solid rows and columns at 16px 1x where the ellipse stepped through gray on every side. `blend` is redrawn on the pixel grid at a stroke one pixel wide, with a larger circle, so it no longer renders gray at 1x.
+- 99fc88d: Diagram types and stencil groups. A `StencilGroup` is a named list of stencils, and a `DiagramType` names the groups a new diagram opens with, the router and end markers its new connectors take, and the layout auto layout runs. `STENCIL_GROUPS` ships the `flowchart` and `containers` groups (`FLOWCHART_STENCILS` and `CONTAINER_STENCILS` are unchanged), and `DIAGRAM_TYPES` ships the `flowchart` type. A scene saves its type and shown groups under `DIAGRAM_TYPE_DOC_KEY`: `diagramTypeDocOf` and `diagramTypeOf` read it, falling back to flowchart, and `setDiagramType`, `addStencilGroup`, and `removeStencilGroup` write it as one undo entry each. `groupStencils`, `groupStencilIds`, `isContainerStencil`, and `diagramTypeEdgeStroke` serve a host building its palette and connector tool from them. `layoutDiagram` runs a layout from a graph source and applies it as one undo entry; `createLayoutAction` now goes through it.
+  
+  `MenuButton` rows take `checked`, which draws them as check rows.
+- 0145603: Two new stencil groups and diagram types. `NETWORK_GROUP` holds a server, database, cloud, router, switch, firewall, laptop, desktop, phone, printer, user, and internet globe; `BPMN_GROUP` holds start, intermediate, and end events, a task, a subprocess, the exclusive, parallel, inclusive, and event-based gateways, a data object, and a data store. `DIAGRAM_TYPES` gains `network` (straight links with no end marker) and `bpmn` (orthogonal flows ending in an arrow), each opening with its own group and the containers.
+  
+  The devices, events, and gateways are new built-in outlines (`server`, `router`, `switch`, `firewall`, `laptop`, `desktop`, `phone`, `printer`, `user`, `globe`, `event`, `intermediateEvent`, `exclusiveGateway`, `parallelGateway`, `inclusiveGateway`, `eventGateway`, and `subprocess`) seeded in the outline table, so a saved chart naming one paints without its group imported. Devices, events, and gateways keep their proportions and lay their label out in a strip under the drawing. The actor's figure now stands on its label strip when its box is too narrow for it, rather than leaving a gap above the label.
+  
+  `DiagramStencil` takes an optional `style`, a partial node style laid over the one the body is drawn in; the BPMN end event uses it for its heavier ring. Each new stencil has a palette glyph in the `diagram` icon namespace.
+- b2bd005: Org chart and mind map diagram types. `radial` is a new layout in `LAYOUTS`: the first root sits in the middle, its branches are dealt right and left in graph order to keep the two sides balanced by node count, and each side grows away from the root as a horizontal tree whose subtrees never interleave; further trees stack below, and a second run moves nothing. `subtreeBlocks`, the block packing `tree` and `radial` share, is exported for layouts of your own.
+  
+  `STENCIL_GROUPS` gains `org` (`ORG_STENCILS`: person, executive, assistant, and dashed vacancy cards, each a name over a title, and a department box) and `mindMap` (`MIND_MAP_STENCILS`: central topic, main topic, subtopic, and a floating note), each with palette glyphs. `DIAGRAM_TYPES` gains `orgChart` (org cards and containers, unmarked orthogonal connectors, laid out with `tree`) and `mindMap` (unmarked curved connectors, laid out with `radial`), also exported as `ORG_CHART_TYPE` and `MIND_MAP_TYPE`.
+- e1bbdcd: Diagram outlines are now a registrable table. `registerOutline(name, def)` adds a named outline (or shadows a built-in until disposed), `outlineFromD(d, opts)` builds one from unit-square SVG path data, and `outlineDetail` gives the strokes an outline draws over its fill. `Outline` widens to any registered name; an unregistered one paints as `rect` and warns once. Eleven built-ins join the flowchart seven: `roundRect`, `cylinder`, `document`, `note`, `cloud`, `triangle`, `octagon`, `folder`, `cube`, `actor`, and `doubleEllipse`. Each keeps its content box inside the visible shape, and `diagramShape` strokes a cylinder's rim, a note's fold, a folder's tab, a cube's front edges, and a double ellipse's inner ring.
+  
+  New stroke markers: the crow's-foot family `crow-one`, `crow-many`, `crow-zero-one`, `crow-one-many`, and `crow-zero-many`, and `triangle-hollow` for UML generalization. `KitMarkerKey` lists them.
+  
+  DOT, Mermaid, and draw-style XML read and write the new outlines and markers where the format has a counterpart. Mermaid's writer no longer throws on an outline it has no brackets for: it writes a rectangle and warns. draw-style XML reads `rounded=1` below the stadium arc as `roundRect`, a hollow `block` head as `triangle-hollow`, Mermaid reads `(text)` as `roundRect`, and DOT and Mermaid read a double circle as `doubleEllipse`. DOT reads `onormal` as `triangle-hollow`.
+- 726d80b: Add UML class and ERD stencils and diagram types to `@weasel-js/diagram`. The `uml` group holds class, interface, abstract class, package, note, actor, use case, and component; the `erd` group holds entity, weak entity, relationship, and attribute. The `umlClass` type routes new connectors orthogonally to an open arrowhead, and `erd` draws them from `crow-one` to `crow-many`.
+  
+  A body takes a new `divider` row, a rule across its content box that the outline painter draws in the body's own stroke, and a row's text style can now be `italic`. A built body records each row's height, so `bodyFollower`, a new transform follower, lays a resized body's rows out again inside its new box. `DiagramStencil` takes `padding`, `gap`, and `verticalAlign`. Two outlines are added: `component` and `doubleRect`.
+  
+  `@weasel-js/diagram-formats` reads divider rows back from a scene, leaves them out of DOT, Mermaid, and draw-style XML text without a warning, and writes and reads an italic row in draw-style XML.
+- b4a8e98: A decision drawn as its symbol in a `direction: 'down'` rack runs down the column: the signal enters at its top, its exits leave at its bottom, and its control inputs enter on the side the side stages hang on. `BranchOptions` takes `direction`, `'right'` or `'down'`, and `controlSide` takes `'left'` and `'right'` for a symbol running down; every symbol in `BRANCH_SYMBOLS` follows both. A symbol running down is its row form mirrored across its diagonal, so a hexagon, demux, comparator or fork draws with a path outline rather than its named one. This adds API.
+- 60c7c69: `DiagramView` takes `bounded`, which keeps the view on the diagram: panning and zooming stop where the view would show more than the diagram and `fitPadding` world units around it, and a view showing more than all of it centers it. It takes `refit: 'always'` too, which refits a view still on its last fit whenever the specs change, not only once they run past what it shows. `EffectEditor` passes `bounded` and `refit` through, with `maxScale`, so a small pipeline can zoom up to fill its box. This adds API.
+- fc0962a: The router commands (Straight, Orthogonal, Curved, Around shapes) and Line jumps carry glyphs, `diagram:routerStraight`, `diagram:routerOrthogonal`, `diagram:routerCurved`, `diagram:routerAvoid` and `diagram:lineJumps`, so an action bar or a menu drawing them shows an icon.
+- 8b14236: A "may this land here?" check can now refuse with a reason. `DropVerdict` is `true`, `false` (a
+  silent no), or `{ refuse: string }`; over a refusal the canvas outlines the target in the
+  `refused` overlay role and shows the reason beside the pointer, and a release there does nothing.
+  
+  - **Breaking:** `CanConnect` returns a `DropVerdict` rather than a `boolean`, and so does core's
+    `CanDropIntoDep`. A function returning a boolean still fits; code that calls one and treats the
+    answer as a boolean must test for `true`.
+  - `DiagramView` takes `canReparent(ids, container)`, asked before a drag moves nodes into a
+    container or lane they are not in.
+  - A `DataContainer` takes `reorder: 'x' | 'y'`: `onReorder` drags its members along that axis and
+    Alt with an arrow key steps the selected one, as a group's. **Breaking:** `ReorderChange` names
+    the group or container as `parent`, in place of `group`.
+  - `DiagramView` takes `onDropItem` and `canDropItem` for items carried in from a list outside the
+    canvas, made a source with `dragItemProps(item)`. The report gives the item, what it landed on,
+    the container that would hold it, and its index among that container's members.
+  - `DiagramViewApi.rectOf` and overlays place a container's members in the world rather than in
+    the container's frame, and a stencil drawn into a nested container finds it.
+  - Core: move behaviors can publish overlays, routing has a `reason` overlay that `SceneCanvas`
+    shows beside the pointer, and a `target` overlay role outlines what a drag would drop into.
+- 41ebe89: `DiagramView`'s fit now takes in each edge's waypoints and stored route as well as its node and group boxes, so a wire routed around the nodes, past all of them, is no longer cut off at the canvas edge. `fitDiagram` changes the same way.
+- 47330a3: The port affordance reads a `ParticipantSource` with a `generation()` once per generation: painting reuses those ports, and the regions built from them, instead of laying out every participant's ports each frame. The press index builds over the same list. A source without a generation is read every frame as before.
+- db4b0aa: A member of a `DataContainer` marked `reorder` can now be dragged out of it: the reorder drag hands off to the move once the pointer leaves the container's box, and `onMove` reports where it lands. A group's members still only reorder. Adds `ReorderOptions.region`, the box a reorder drag stays a reorder in.
+- 1298c24: `useEffectRunner` takes `clock`, a `ClockHandle` from `@weasel-js/clock`, to play on in place of its own frame loop: the play time is the clock's `elapsed`, so pausing, rate, seeking and the clock's visibility gate move the runner with the rest of a trial, and the host's `useClockLoop` syncs it. The runner plays while the clock does, and its `play` and `pause` set the clock's rate. `EffectRunner.seek(seconds)` moves the play time whether or not it plays and runs the pipeline there; a seek made while a run is still going runs once more after it, at the latest time. This adds API.
+- 76edfb1: `DiagramView` can pick several at once: `selectionMode="multiple"` lets Shift-click add a node, group or edge to the pick or take it out, `selected` takes an array as well as one id, and `onSelect` gets every id picked as a second argument beside the latest pick. Adds API; an `onSelect` taking one argument keeps working. `EffectEditor` picks this way, and its `onSelect` likewise gets every stage and group picked as a second argument, for `EffectEditorApi.group`.
+- 270bc4f: `EffectEditor` drags a selected wire's label under every look. Where it was put goes in the doc's new `labels`, by wire id, as a place along the wire and a distance off it, so it holds when the look changes; under `lanes` it wins over where the look would put the label. Resetting the label hands it back to the look, and removing a wire drops its placement. `setWireLabel` makes the same edit outside the editor.
+- 7242ab2: An `EffectPort` input can take several wires: `many: true` lets `EffectEditor` join a second output to it, and a third, where it used to join only a free input. The same output still cannot be wired to it twice. Every input of the audio stage types now sets it, since the audio runner already sums every wire into an input, so two sounds combine at any stage's input without a Mix. A pipeline saved before this keeps its stages' ports as they were.
+- 14f8583: `@weasel-js/geom/nd` exports `createSettledCache()`: a value built only once its source holds still. Each `read(key, build)` passes the source's key as a tuple; the first read at a new key answers null, and the second at the same key builds and keeps the value (`reads` moves which read builds it, and `reads: 1` makes it a plain memo). Keys match element by element under `Object.is`. This adds API.
+  
+  Core's pick index, the diagram port and label indexes, and kernel3d's snap box index now use it, in place of three copies of that rule. They build at the same reads as before.
+- 3c3a219: `@weasel-js/headless` holds the arithmetic of moving items within a list, which ui's reorderable lists, trees, bars, tabs and token fields and diagram's reorder drags and Alt+arrow step now share: `moveItems`, `movedIndex`, `isNoopDrop`, `nudgeGap`, `gapByMidpoint`, `nearestGap`, and the Alt+arrow chord `isNudgeChord`/`nudgeOf`. A destination is a gap counted before the moved items are taken out, and a selection of several items moves in one go.
+  
+  ui's internal `movedOrder` now takes that gap rather than the entry's final index. A page tab no longer moves on Alt+Ctrl or Alt+Cmd with an arrow, only on Alt and an arrow, as every other reorderable list already did.
+- 5c8636b: More text fields leave a key to an input method mid-composition, so confirming a Japanese or Chinese candidate with Enter no longer commits, runs or adds what is half typed: `LayerList`'s rename field, `ListEditor`'s entries, `TokenField`, `CommandPalette`'s search, `UnitField`, a `PropertyField` text or number field, and the schema editor's key and number fields in `@weasel-js/ui`, and the effect editor's group title field in `@weasel-js/diagram`.
+- 5b7d0ac: Breaking: an immediate action's params carry the event's point as `world`, a `WorldPoint`, in place of `worldX`/`worldY`, and a click's press point as `press` in place of `pressX`/`pressY`. Read `params.world.x` where you read `params.worldX`, and pass `{ world: { x, y } }` where you passed `{ worldX: x, worldY: y }`: to `trigger`, as a menu's params, and to an invoker called directly. The new exported `ImmediateParams` type names every field the dispatcher puts in the bag; cast `params` to it to read them. `trigger` asks `enabled` at `params.world`. A parallax plane now carries `press` into the plane as it already did the release point. The align and flip actions' `'pointer'` reference reads `world` too. The input events themselves are unchanged: a `ClickEvent` still has `x`/`y` and `pressX`/`pressY`, and `useClipboardOps`' `paste(at)` keeps its `{ worldX, worldY }` shape.
+- 1968706: `createItemDropAction` and `itemDropContribution` take `requires`, the deps their `report` reads beyond the scene, and `report` gets the canvas's deps as its second argument, so a host on a `SceneCanvas` of its own can add the dropped item through `insert` and snap it through `snap`. This adds API.
+- baf354e: The `diagram:mindMap` glyph's branches leave the central topic's corners at 45 degrees instead of curving off its sides, so at 16px they no longer merge into the topic's walls.
+- a58fb4f: Every reader of a `PolygonPath`'s coords now reads them where its `origin` puts them: hit-testing and marquee/lasso picking, distance, anchors (`pathToAnchors`, anchor editing, corner expansion and restore), the booleans, `pathToD` and SVG export, cubic contours, puppet meshes, pose interpolation, derived parts, path warps, diagram connectors, and skinning. `translatePath` and `rotatePathAround` move the origin rather than the coords, and `anchorsToPath` given `like` writes back from its origin. This adds API: `worldCoords`, `pathPoint`, `originOf`, `addOrigin` and `coordsFrom` read and write coords in a path's own space.
+  
+  Paths far from 0 now get an origin where they are made: past `ORIGIN_THRESHOLD` (16,384), `anchorsToPath` without `like` (the pen tool), `pathFromD`, the booleans, and SVG import measure the path from `originFor`, the rounded center of its points. `PathBuilder.autoOrigin()` and `transformPath`'s `{ autoOrigin: true }` opt a producer in. A path near 0 is built as before.
+- d9896bb: The `rack` look takes `direction: 'right' | 'down'`. `'right'` (the default) draws as before. `'down'` draws the main line as a column: each stage takes the main signal in at its top edge and sends it out at its bottom, side ports sit on its left or right edge facing out of it, a stage grows taller rather than wider to keep its side ports apart, and the look's reorder runs along `y`, so dragging a stage in `EffectEditor` moves it up or down the column. Under `'down'`, `side: 'below'` hangs the side stages on the column's right and `'above'` on its left; a collapsed skip's arc runs down the opposite edge. This adds API.
+- 03d30ee: The `rack` look no longer draws a wire through the stages it passes. A wire from a stage's main output into the side input of a stage further down the line, past at least one stage, now leaves from a tap on the source's side-stage edge, a port named `~tap:<output>` spread among that edge's side ports, so its curve runs beside the line. `EffectEditor` maps the drawn edge back to its wire, and a run reads it as the output it taps.
+- c8fcbc2: `radial` keeps a branch on the side of the root it was dragged to. On a mind map whose branches already stand on both sides of the central topic, a branch clear of the root stays on its side when the layout runs again, and the branches near the root are dealt to the lighter side after those. A map with every branch on one side, as `tree` or `layered` leaves one, is still dealt afresh and balanced.
+- a80f8be: A scene composes poses by default. A child's stored pose is now relative to the frame of the nearest container above it that defines one (`RIGID_POSE_COMPOSITION`), so moving a container writes one pose, rotating it rotates its contents, and resizing it leaves them where they draw. A container whose pose derives from its children (`dependsOn: 'children'` with a `derivePose`) is an envelope, not a frame: its children share the frame above it.
+  
+  **This breaks a consumer that stores absolute child poses.** To migrate:
+  
+  - A scene whose `TPose` is not a rect pose must name its composition: `useScene` and `createScene` require `composition` in the type unless `TPose` is a `RectPose`. `IDENTITY_POSE_COMPOSITION` keeps every pose world; under it a container groups its children and never carries them. kernel3d's scenes name it.
+  - Saves: `toJSON` writes version 3, whose child poses are local. `sceneFromJSON`, `Scene.loadState`, and `specsFromSerialized` read a version 1 or 2 save as world and make each pose local as it loads, under the scene's composition (`SpecsFromSerializedOptions.composition`). A recorded history from before is not restored: `SCENE_HISTORY_FORM` is 4.
+  - Specs or ops you build with world poses for children: put them through `localizeWorldPoses(specs, composition)`, or `localizeInScene(scene, specs)` when they land under a container already in the scene. `worldPosesOf(specs, composition)` reads them back as world, and `heldInFrame(scene, id)` names what a container's frame holds.
+  - `sceneToAdapter`'s `setPose` no longer moves a container's descendants by the same delta, and a container's pose target no longer shows them traveling beside it: the frame carries them. `PoseCascade` and the `cascade` argument of `scenePoseTarget` and `sceneClipTargets` are gone.
+  - The group action makes a frame group, whose pose is authored, under any composition; it no longer derives an envelope's pose from its members under the identity strategy.
+  - `resolvePreviews` answers each entry's pose in world, and a previewed frame brings the children it carries.
+  - `SnapTarget.slotPose` is world, as documented; `snapToContainer` stores it in the target's frame.
+  - `diagramScene` returns each spec's pose in its container's frame (`composition`, default `RIGID_POSE_COMPOSITION`; pass `IDENTITY_POSE_COMPOSITION` to read the layout in world). Body rows, container titles, lanes, and members are stored relative to what holds them; `DiagramView`'s reports, `diagramLayoutOf`, and `documentFromScene` stay in world.
+  - `svgNodesFromKit` folds a tree's `composition` when it has one, and `unpackSvgFiles` stores each imported node in its container's frame.
+- b668624: `hops` and `labels="dodge"` on `DiagramView` read each shape and edge end where it draws, as `router="avoid"` now does. Both read a container member's pose, which specs store in the container's frame, as a world box: an edge to a member found no crossing where it crossed, and a member covering a label did not move it.
+- e9ea01b: `createSpecRouter` reads each shape and port where it draws, folding its pose through the containers above it, so `router="avoid"` routes an edge to and around a container's members where they are. Since specs began storing a member's pose in its container's frame, it read that pose as a world box: an edge to a member started off its shape, and the members between two others were no obstacle. It takes a `composition` option, which must match the one `diagramScene` was given; the default is the same.
+- 928f014: A `step` branch symbol turned down a column (`direction: 'down'`) sets its title out past its widest cut label. Turned, the title and the cut labels both sit on the right edge, and a cut near the middle overlapped the title. Along a row, and turned with control from the right, where the title moves to the other side, nothing changes.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [cc0e73a]
+- Updated dependencies [79357fc]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9912c13]
+- Updated dependencies [3d36f5e]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [61e07e5]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [ec07e24]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [1c046e3]
+- Updated dependencies [11e2b7d]
+- Updated dependencies [3c3a219]
+- Updated dependencies [767713e]
+- Updated dependencies [b59380e]
+- Updated dependencies [ba998f9]
+- Updated dependencies [9a963cd]
+- Updated dependencies [6a69c27]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [6cb0cf6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [d68c4f8]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [230a206]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [cc0e73a]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [871a56b]
+- Updated dependencies [f645651]
+- Updated dependencies [7507e13]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [d5c4ee6]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/animator@1.14.0
+  - @weasel-js/font@1.14.0
+  - @weasel-js/clock@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/headless@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/simulation@1.14.0
+  - @weasel-js/audio@1.14.0
+  - @weasel-js/icons@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

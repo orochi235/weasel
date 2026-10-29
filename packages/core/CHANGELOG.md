@@ -1,5 +1,305 @@
 # Changelog
 
+## 1.14.0
+
+### Minor Changes
+
+- 8e2c8c8: <!-- bump-approved: minor: maintainer — 1.14.0 release requested 2026-10-29 -->
+  
+  Three live path effects of one shape: Roughen, Zigzag, and Pucker & Bloat. geom adds the math as `roughenPath`, `zigzagPath`, and `puckerBloatPath`, each with its options type. Core adds `RoughenEffect`, `ZigzagEffect`, and `PuckerBloatEffect` to `PathEffect`: a path-effect node of one of these kinds has one source, `[shape]`, and paints it changed in its own fill and stroke. path-tools adds `roughenAction` (Alt+Shift+G), `zigzagAction` (Alt+Shift+Z), and `puckerBloatAction` (Alt+Shift+K) to `pathEffectsPreset`, each with a `path-tools:` glyph. Each makes one effect of every selected shape, just over it, and hides the shape while the effect shows it; Edit Path Effect, Expand to Paths, and Release work on them as on the others. This adds API.
+
+### Patch Changes
+
+- d8fbd3d: `Affordance` takes an optional `regionsAt(state, wx, wy, view)`: the regions a press at that world point can hit, in the order `regions` lists them. The affordance hit test reads it in place of `regions` when it is there, so an affordance with many regions can answer from an index. This adds API.
+  
+  The diagram port layer and edge-label layer use it. A `ParticipantSource` may carry a `generation()`, and `sceneParticipants` gives it one from the scene's version and its overrides' generation, so the port layer hit-tests through an index of the ports' points instead of laying out every participant's ports on each press. The label layer and `labelUnder` index each scene's draggable labels against its version. Both answer exactly what they answered before; a source without a generation is tested the old way.
+- b4cc0d7: `AimSource` takes an optional `subscribe(listener)`. A view marker whose source is an aim handed in by value now repaints when that source notifies; before, it repainted only when something else asked for a redraw.
+- 575e470: A text node's Align bar has Start and End segments of their own, drawn as `core:textAlignStart` and `core:textAlignEnd`. A paragraph aligned to `start` or `end` lights that segment, where it used to light the edge it resolved to under a stated direction and nothing under `auto`, and clicking Start or End writes the reading-order value instead of an edge.
+- 47656e3: Boolean groups can be made, switched and released from the kit's commands. Make Boolean Group (`pathfinder.booleanGroup`, in the `paths` preset and the Pathfinder group) puts the selection under a new union in the frontmost node's place, wearing that node's fill and stroke, and nothing moves on screen; `makeBooleanGroup(scene, ids, op?)` does the same from code. Ungroup now releases a boolean group too, its children taking its place. A boolean group routes as `'boolean'` (`booleanGroupRouting`, now in `inferredNodeRouting`), and its properties carry an Operation control over `data.boolean`. A routing entry's `node` may now carry `consumesChildren`. This adds API.
+- ad58b32: While a boolean group, or a group inside one, is entered, the canvas outlines each of the children it draws only through its result, in the entered-group frame's color, so they can be found without selecting them. `useEnteredGroupFrameLayer` takes the scene for this, and `createEnteredGroupFrameLayer` takes `outlinesOf` and `outlinesChanged`. This adds API.
+- f045da7: A group inside a boolean group is now one operand, the union of everything it shows, where before it counted for nothing. A derivation can read through a group to its contents: `DerivedDep.children` lists a dependency's children as dependencies, in the frame its own pose is in, and a memoized derivation that read them recomputes when one of them changes. This adds API.
+- ac7aa31: Boolean groups: a mark whose shape is the union, intersection, subtraction or exclusion of its children's outlines, recomputed whenever a child moves, changes or is hidden, while the children stay nodes. Add one with `scene.add({ ...booleanGroupFields(), layer, pose, data: { boolean: 'subtract', fill } })` and add its children under it. It paints the result in its own `data.fill` and `data.stroke`, is picked by that ink, moves its children when moved, and saves and loads like any derived node (`BOOLEAN_OF_CHILDREN`, `booleanOfChildren`, `booleanOpOf`). This adds API.
+  
+  It is built on a new node field, `consumesChildren`: the render walk paints none of such a node's children, and a press, region select or select-all reaches one only while that node, or a group inside it, is entered. A node that consumes its children is entered as a group is. `createEnteredGroupScope` and `reachableInGroup` now read the scene's `get` as well as `ancestorsOf`.
+  
+  Hiding or showing a node now recomputes whatever derives from it.
+- a1b06d8: Breaking: the clipboard's paste point is a `WorldPoint` (`{ x, y }`), like the dispatcher's points, in place of `{ worldX, worldY }`. This covers `useClipboardOps`' `paste(at)` and its `getDropPoint` option, `ClipboardDep.paste`, and `PasteCtx.dropPoint`, which an adapter's `commitPaste` receives. Pass `{ x, y }` where you passed `{ worldX: x, worldY: y }`, and read `ctx.dropPoint.x` where you read `ctx.dropPoint.worldX`.
+- 9725598: `LayoutStrategy.commitDrop`'s documentation now says what it does not own: reparenting the dragged nodes, and choosing which container takes the drop, are the move action's.
+- 592b6e5: A container's wheel scroll hands the wheel on at the end of its range. Scrolled as far as it goes in the wheel's direction, `containerScrollAction` passes the wheel to the scrollable container holding it, and past the outermost one to the viewport's wheel pan. Before, a scrollable container kept every wheel over it, even with nowhere left to go.
+  
+  `scrollRange` now measures in the container's own frame, the axes its scroll offset runs along, so a turned container scrolls by its own length rather than its axis-aligned box's, and `scrollableAt` takes a point only over a turned container's own area. Under a composition without `scroll`, or for a container whose pose is not a frame, `scrollRange` answers `null`, since neither can scroll.
+  
+  An immediate invoker's `run` may now return `'pass'`: the dispatcher walks on to the next matching binding as though `enabled()` had declined, and `ActionsRegistry.trigger` answers `false`. This adds API; a `run` returning nothing behaves as before.
+- 41a013b: The wheel scrolls a layout container whose content runs past its bounds, such as `tileGrid({ overflow: 'scroll' })`. `<SceneCanvas>` registers `containerScrollAction` (`container.scroll`) ahead of the wheel pan: over a container whose strategy's `contentExtent` reaches past its bounds, the wheel moves `scene.scroll`'s offset for it, clamped to that extent, and Shift+wheel scrolls it across; anywhere else it declines and the wheel pans the view. `scrollRange` and `scrollableAt` answer how far a container can scroll and which one is under a point. Hiding the overflow is the container's own `clip`. This adds API.
+  
+  A wheel event now carries the world point under the pointer: `WheelEvent` gains optional `x`/`y`, `Action.enabled` is handed it, an immediate invoker's params carry it as `worldX`/`worldY`, and `InvocationCtx.world` holds it.
+- 965e698: Copying or cutting a node that derives from hidden nodes now takes those hidden nodes onto the clipboard with it, still hidden, so a paste is whole. A path effect with `hideSources` is the case that mattered: Cut deleted its hidden sources with it, and the paste then left the effect out as `dependency-not-copied`, so cut and paste lost it. A hidden node cannot be selected, so there was no way to copy one alongside.
+- fda48f1: `FEATURE_PRESETS`, each core preset by the name `<SceneCanvas features>` takes, and `BASELINE_ACTIONS`, the undo and redo actions every canvas registers, are exported, so a page or tool can list what each preset turns on from the presets themselves.
+- 070f3d0: Core's local `{ x: number; y: number }` point types are geom's `Point` now, or `WorldPoint` where the point is the dispatcher's. `DragRectPoint`, `DragRadialPoint`, `PolygonPoint`, `StarPoint` and `LinePoint` are aliases of `WorldPoint`, and `MeasurePoint` of `Point`, in place of interfaces of their own. They have the same shape, so nothing that type-checked before stops.
+- f2188ba: A text node's property panel offers its style's `lang`, as Language under Character.
+- 8b14236: A "may this land here?" check can now refuse with a reason. `DropVerdict` is `true`, `false` (a
+  silent no), or `{ refuse: string }`; over a refusal the canvas outlines the target in the
+  `refused` overlay role and shows the reason beside the pointer, and a release there does nothing.
+  
+  - **Breaking:** `CanConnect` returns a `DropVerdict` rather than a `boolean`, and so does core's
+    `CanDropIntoDep`. A function returning a boolean still fits; code that calls one and treats the
+    answer as a boolean must test for `true`.
+  - `DiagramView` takes `canReparent(ids, container)`, asked before a drag moves nodes into a
+    container or lane they are not in.
+  - A `DataContainer` takes `reorder: 'x' | 'y'`: `onReorder` drags its members along that axis and
+    Alt with an arrow key steps the selected one, as a group's. **Breaking:** `ReorderChange` names
+    the group or container as `parent`, in place of `group`.
+  - `DiagramView` takes `onDropItem` and `canDropItem` for items carried in from a list outside the
+    canvas, made a source with `dragItemProps(item)`. The report gives the item, what it landed on,
+    the container that would hold it, and its index among that container's members.
+  - `DiagramViewApi.rectOf` and overlays place a container's members in the world rather than in
+    the container's frame, and a stencil drawn into a nested container finds it.
+  - Core: move behaviors can publish overlays, routing has a `reason` overlay that `SceneCanvas`
+    shows beside the pointer, and a `target` overlay role outlines what a drag would drop into.
+- 61e07e5: An ongoing action, or one binding of it, can declare `dragThresholdPx`: the dispatcher holds a pointer drag until it has traveled that far, then calls `start` with the press's context, and a release short of it never starts the action. `insert` declares 8px (`INSERT_DRAG_THRESHOLD_PX`), so a click that wobbles a few pixels with a shape or stencil tool no longer draws a shape a few pixels wide. `move`'s `dragThresholdPx` option now rides the move bindings' `dragThresholdPx` instead of a `params` entry the action read itself, so a move action invoked directly no longer holds a short drag.
+- 88573be: Core's feature presets are split into small ones, and every name `<SceneCanvas features>` takes is now a preset of its own. `edit` includes `escape`, `contextMenu`, `selectAll`, `duplicate`, `delete`, `group`, `nudge`, `style`, and `clipboard`; `arrange` includes `flip`, `reorder`, `align`, and `distribute`; `paths` includes `anchorKeys`, `pathfinder`, `outlines`, `pathEdit`, and `pathCommands`. Each tool set has a preset (`tools:select`, `tools:view`, `tools:shape`, `tools:draw`, `tools:type`, `tools:page`), and `pick`, `transform`, and `draw` are presets that include others. Any of these names can be passed on its own, so `features={['nudge', 'tools:shape']}` turns on just the arrow keys and the shape tools.
+  
+  This breaks: `COMPOSITE_FEATURES`, `BaseFeature`, and `CompositeFeature` are removed, `NamedPresets` is a plain map of id to preset, and `FEATURE_ACTION_IDS` lists each preset's own actions without those of the presets it includes. `select` now mounts the lasso tool beside the select tool, through `tools:select`.
+  
+  `FeaturePreset` takes an optional `label`, and `describePresets` describes presets as data: each one's own action and tool ids, the presets it includes, the package that ships it, and whether it is an atom, one with a role beyond actions, tools, and includes. This adds API.
+- b142892: Add `attachMenuDismiss` to `@weasel-js/menu`: it closes a menu on a press or wheel outside it, on the window losing focus, and on a resize, attaching to any `Window`-like target and returning a detach. `press: false` leaves out the press listener, and `keepOnBlur` keeps the menu open through a blur. ui's `ContextMenuHost` and hud's `attachMenuHost` both dismiss through it.
+  
+  `normalizeHex` takes an optional form: `'rgb'` drops alpha, `'rgba'` always writes it (`ff` when none was named). `tryNormalizeHex` is the same, returning undefined where `normalizeHex` throws. hud's color row and ui's `ColorField` and `TokenPanel` read hex through them. hud's hex row now accepts `#rgba` shorthand, and `ColorField` shows a malformed `#` value as black rather than passing it to the color input.
+  
+  core's `toHex8`, `getAlpha01`, `withAlpha01` and `mergeAlphaFromPrev` read hex through `tryNormalizeHex` too. A malformed `#` value (`#xyz`, `#12345`) now comes back unchanged instead of expanded into an invalid 8-digit string, and `getAlpha01` reads 1 from one. `toHex8` now lowercases `#RRGGBB` as it already did every other hex form, and ignores surrounding whitespace.
+- 14f8583: `@weasel-js/geom/nd` exports `createSettledCache()`: a value built only once its source holds still. Each `read(key, build)` passes the source's key as a tuple; the first read at a new key answers null, and the second at the same key builds and keeps the value (`reads` moves which read builds it, and `reads: 1` makes it a plain memo). Keys match element by element under `Object.is`. This adds API.
+  
+  Core's pick index, the diagram port and label indexes, and kernel3d's snap box index now use it, in place of three copies of that rule. They build at the same reads as before.
+- e7f4305: `GeometryProjection.transform` takes a third argument, `change: PoseChange`, holding the node's stored pose before the action and the pose the action moved it to. Move, nudge, flip and resize commit pass it. A host whose poses are not planar, such as a `@weasel-js/kernel3d` scene, can now map its data-held geometry from `change`, where the plane affine `m` could not describe a 3D transform. `GeometryProjection` takes an optional pose type parameter, and `PoseChange` is exported. Existing two-argument implementations keep working.
+- c01c5f0: A `FeaturePreset` can carry `layers`: pre-built layers by slot, as `<SceneCanvas layers>` takes them. A slot the canvas's own `layers` names, `null` included, keeps the consumer's entry. This adds API.
+  
+  `@weasel-js/guides` adds `createGridPreset({ spacing, … })`, which draws a grid in the grid slot and snaps gestures to it, so `features={['draw', createGridPreset({ spacing: 20 })]}` replaces building the grid layer and the grid snap source and passing each to its own prop. It takes every `createGridLayer` option, and `snap: false` or `snap: { origin }`.
+- 23bb196: Adds `createGroupEntryContribution` and `useGroupEntryContribution` (with `GROUP_ENTRY_ID` and the `EnterGroupOptions`, `LeaveGroupOptions` and `PressTargetTree` types) to the public API: the double-click-to-enter and Escape-to-leave bindings `<SceneCanvas>` installs, for a host that mounts the dispatcher and tools itself. This adds API.
+- 783756a: A scoped container's grid runs in the container's own frame: from its corner, along its axes, so
+  it turns when the container does. `sceneGridRegions` gives each region its `frame` and, without an
+  `outlineOf`, the outline the container draws; the grid layer draws a region's lattice in that
+  frame, and `pointToGridCell`, `useGridCellHover` and `createCellHighlightLayer` count and draw a
+  cell in it. `gridSnapSource` rounds in the same frame, read through the new
+  `SnapCollect.frameOf`, which a scene session fills from `sceneBoxFrames`. This changes behavior
+  for an unturned container too: its lattice now starts at its corner rather than at the grid's
+  origin. A subject spread over two containers still snaps on the world lattice.
+  `sceneGridRegions` now takes a `Scene`, and `GridRegionScene` is gone. geom adds `boxFrameOf` and
+  `pxExtentInFrame`.
+- 2692828: New package `@weasel-js/text-shaping`: OpenType shaping through HarfBuzz. `await loadShaper()` loads its WebAssembly and resolves with a shaper; `registerShaper(shaper)` (from `@weasel-js/text`, re-exported by core) hands it to every text layout, and `layoutRuns` also takes one as `opts.shaper`. Text set in a face registered with `registerFontOutlines` from TrueType or OpenType bytes is then shaped: Arabic joins, Devanagari forms its conjuncts and places its vowel signs, marks sit where the face's `GPOS` puts them, and ligatures and the face's kerning come from the shaping. Text drawn from an atlas, or with no shaper registered, lays out as before.
+  
+  A shaped code point draws its whole cluster from its own pen, and the cluster's other code points take no width; `PlacedGlyph.shaped` carries what it draws. `fontVariantCaps: 'small-caps'` on a shaped face with an `smcp` feature now draws the face's own small capitals instead of synthesizing them, and `ResolvedRun` gains `fontFeatures` for it. This adds API: `registerShaper`, the `TextShaper`, `ShapedGlyph` and `ShapedCluster` types, `LayoutRunsOpts.shaper`, `ResolvedRun.fontFeatures` and `PlacedGlyph.shaped`.
+- 767713e: `@weasel-js/headless` holds the arrow-key step sizes and a slider's value math, so a DOM slider and a canvas-drawn one step alike. `arrowSteps`, `arrowMove` and `rangeKey` read a key string and Shift: one step, or `COARSE_STEPS` (ten) with Shift or a Page key, and Home and End for a range's ends. `sliderKey` is the value one key moves a thumb to, and `usableStops`, `attract` and `clampOrdered` are the stop and ordering rules `Slider` uses. core's node and anchor nudge and ui's `Slider`, curve, gradient, band and timeline editors all take their steps from it.
+  
+  `ResizeHandle` now moves ten steps with Shift held, not eight, matching every other arrow-key control in weasel.
+- 6a69c27: `holdPreview(action)` makes an action a hold, under `holdPreviewId(action.id)`: bound to a `held(…)` key, in a keymap or anywhere, the press shows the action's `preview`, the release runs it, and a cancel (Escape, through core's cancel-gesture action) takes the preview down and runs nothing. The binding's params reach both. Nothing binds one yet; a Pathfinder key is the next step.
+- b0a55a6: A fill or stroke can now tile a picture: `{ kind: 'image', src, width, height }`, a new pattern paint kind beside the built-in tiles. `src` is anything an `<img>` loads, and a `data:` URI makes the paint carry the picture itself, so it saves, copies and exports with nothing stored beside the document. `width` and `height` are the tile's size in paint units; left out, the picture's pixel size is used. The fill draws nothing until the picture has decoded, then repaints.
+  
+  This adds API. `@weasel-js/paint` exports `ImagePatternPaint`, `TileExtent`, `ResolvablePatternKind` and `isImagePatternPaint`, and `isPatternPaint` now answers true for an image paint. `TexturePaint` takes an optional `width` and `height`, which set its tile size in place of the texture's pixel size. `resolveFillPattern` resolves an image paint to a `texture` paint. Code that switches over every `Paint` kind meets a new member.
+  
+  `@weasel-js/svg` writes an image paint as a `<pattern>` holding one `<image>` that fills the tile, and reads that structure back from any editor's SVG, `xlink:href` included. An image paint with no `width` and `height` cannot be sized as an SVG pattern and is left out with a warning.
+  
+  `PatternPicker` gains an image swatch after the tiles that opens a file picker. The picked file is stored as a `data:` URI, re-encoded down to 1024 px on its longest side if larger (an SVG is kept as it is), and the size switch then sets the tile's longest side to 32, 64, 128 or 256 units. A new `readImage` prop replaces that step for an app that stores images elsewhere. `readImageFile`, `seedImagePattern` and `MAX_STORED_IMAGE_SIDE` are exported.
+- 5b7d0ac: Breaking: an immediate action's params carry the event's point as `world`, a `WorldPoint`, in place of `worldX`/`worldY`, and a click's press point as `press` in place of `pressX`/`pressY`. Read `params.world.x` where you read `params.worldX`, and pass `{ world: { x, y } }` where you passed `{ worldX: x, worldY: y }`: to `trigger`, as a menu's params, and to an invoker called directly. The new exported `ImmediateParams` type names every field the dispatcher puts in the bag; cast `params` to it to read them. `trigger` asks `enabled` at `params.world`. A parallax plane now carries `press` into the plane as it already did the release point. The align and flip actions' `'pointer'` reference reads `world` too. The input events themselves are unchanged: a `ClickEvent` still has `x`/`y` and `pressX`/`pressY`, and `useClipboardOps`' `paste(at)` keeps its `{ worldX, worldY }` shape.
+- 930f2fa: A canvas with the `ingest` feature now turns pasted or dropped plain text into a text node by default: `kitTextHandler` is registered with the other kit handlers, and passing it in `ingestion.handlers` is no longer needed. A string that arrives beside a file is passed over, since there it is the file's name or URL (a browser dragging an image, the OS copying a file); for this `IngestCtx` gains optional `items`, every item the arrival carried.
+  
+  While an OS drag hovers, `ingest` previews it: a placeholder box per file some handler could claim, or one line-shaped box for a drag of text, where the drop would put it, at a size fixed against the viewport. A browser withholds a hovering drag's contents and size, so the box shows where, not what.
+- edc7324: Content handlers passed in `<SceneCanvas ingestion={{ handlers }}>` now run only on that canvas. They used to go into the page-wide registry and run on every mounted canvas. A handler meant for every canvas goes through `registerContentHandler`, which is unchanged. This changes behavior for an app that relied on one canvas's handlers reaching another.
+  
+  The kit's handlers (`kit:image`, `kit:svg`, `kit:weasel-json`, `kit:text`) also belong to each canvas now, and a canvas can turn them off with the new `ingestion.kitHandlers`: `false` drops all of them, and `{ omit: ['kit:text'] }` drops the ones named. The default keeps all. Adds API: the `kitHandlers` option and its `KitHandlersOption` type.
+- e7fca17: `@weasel-js/geom` adds `joinPaths(parts)`, which joins polygon paths into one `'nonzero'` compound path measured from the first part's origin, re-measuring any part that has another. `textToPath`, `textToPathsByPaint` and `textClusters` join their glyphs through it, so text set far from 0 keeps an origin instead of dropping it, and a decoration rule there is measured from one too. A derived path made of several parts (a blend, a repeat) joins through it as well.
+- 1d39cf6: In a 3D move of several roots, a root stored under a container now moves by the same world distance as the first root, as roots stored in world space already did. It used to resolve the drag on its own plane, so it went a different distance and missed a snap target the first root found. A move now hands such a root the lead (`TranslateLead`) expressed in its container's frame, and kernel3d's descriptor applies the lead's change whole rather than flattening it onto the pose's own height.
+- e5ea7e8: A `@weasel-js/kernel3d` move or nudge of several roots moves them as one body. Each root used to turn the screen delta into a world delta on the plane at its own height and from its own place on screen, so roots moved by slightly different amounts and only the first landed on what the snap held it to. `PoseDescriptor.translate` takes an optional fourth argument, `lead: { from, to }`: how the move's first root went under the same delta. Core's move, nudge and `moveNodes` pass it for every root stored in world space, and kernel3d's descriptor moves each root by the lead's world change. `TranslateLead` is exported. A descriptor that ignores the argument behaves as before.
+- 22472a1: A drag into or out of a turned layout container now shows the container to its strategy upright, as the layout pass already did for `childPoses`, `arrive` and `depart`: `getDropTargets`, `reflowPoses`, `commitDrop`, `acceptsDrop` and `releaseDrop` get the container's box in its own frame, with its children and the dragged child taken into that frame, and what they return is taken back to world. A drop preview or commit into a rotated grid or stack now runs along the container's axes. An upright container's hooks see world, as before. A container's `bounds` handed to a drag hook now carry only `x`, `y`, `width` and `height`, where they used to carry the whole pose the descriptor measured.
+- ec6d7d3: The layout pass lays a turned container's children out along the container's own axes. `childPoses`, `arrive` and `depart` now see a turned container upright, in its own frame placed where its unturned box sits, with its children in that same frame; before, they got the container's unturned box beside children in their turned world poses, so a stack or tile grid in a rotated container placed its children off its axes and outside it. A size `arrive` or `depart` asks for grows the container along its own axes. Upright containers are seen in world exactly as before.
+- 80789ff: Scene edits no longer climb a node's ancestors to check for a lock while nothing in the scene is locked, and the climb they do make when something is allocates nothing. Since per-node locks landed, every edit built a fresh pair of gate maps and walked to the root: `setPose` on a node 16 deep took about 2.5 µs, and now takes about 0.5 µs. `isNodeLocked` and `isNodeHidden` take the same allocation-free path.
+- f695cff: `<SceneCanvas>` installs its long-press feedback beside a `tools` takeover too, as it does the view marker drag: the ring shows for a held press whether or not the consumer's own `useTools` lists it. A takeover whose ambient already holds an entry of the same id keeps its own and gets no second one.
+- b1b16ce: A view marker now drags under a `tools` takeover. The surface installs its marker-drag entry beside the takeover's tool set, as it already did its preset bindings, unless the takeover's ambient lists the entry itself. Before, a takeover turned marker dragging off until the consumer added `createViewMarkerContribution()` to its own ambient. `actions={null}` still turns it off.
+- b15704a: `measureAt`, `measureIds` and `currentMeasureId` read the measurement layer's own nodes (`scene.nodesOnLayer`) rather than walking every node in the scene, so a measure hover costs the number of measurements, not the size of the document. Their `scene` argument now needs `nodesOnLayer` in place of `renderOrderNodes`; every `Scene` has both.
+- 81d08f7: `resolveSchemaMenu` now draws the leaves it used to leave out. An `object` is a submenu of its fields, each edit writing the object whole; a `list` is a submenu of its entries (`Cap 1`, `Cap 2`) with rows that add an entry and remove the last within `minItems`/`maxItems`; a `map` is a submenu of its entries named for their keys; a `union` is a submenu of its variants as radio rows, then the fields of the variant it holds; a `field` is a submenu of the schema's value-holding leaves it may name. A `paint` is a color row while it is solid or none, and reads as its kind otherwise. A section among an object's fields adds nothing to their paths. An app-defined leaf is drawn by the new `MenuSources.customRows`, given the row key, the path, and the `values`/`onChange` where the leaf sits (`MenuCustomAt`), and is left out without it. Adds API; a menu over a schema holding these leaves now shows rows it did not before.
+- a29d2df: `PaintInput`'s Inherit segment is a glyph like its neighbors, `core:paintInherit` (a solid parent swatch handing its paint down to an empty child), where it was a text label. Its accessible name is still "Inherit".
+- 4aa9b8b: A node properties schema can name a field the node declares for its children as a leaf key: `clip`, or `units` and paths inside it. `SelectionPanel` reads the field off the node and writes it through `scene.setClip` or `scene.setUnits`, one undo step per edit, so a boolean leaf keyed `clip` with an encoding of `'outline'` switches a group's clip.
+- 39cb8ed: `core:symmetricHandles`, `core:simplifyBrush`, `core:harmonize`, `path-tools:spiro`, `path-tools:spiroSmooth`, `path-tools:spiroG4`, and the warp tools' `path-tools:distort`, `path-tools:envelope` and `path-tools:puppetWarp` are redrawn on the 16px pixel grid at a one-pixel stroke. The spiro S-curves now run level and along the pixel diagonal, so at 1x they no longer render as a gray diagonal. `simplifyBrush` is now a zigzag path that runs straight from inside the brush's ring, and `harmonize` is a circular arc under two equal curvature-comb teeth.
+- a58fb4f: Every reader of a `PolygonPath`'s coords now reads them where its `origin` puts them: hit-testing and marquee/lasso picking, distance, anchors (`pathToAnchors`, anchor editing, corner expansion and restore), the booleans, `pathToD` and SVG export, cubic contours, puppet meshes, pose interpolation, derived parts, path warps, diagram connectors, and skinning. `translatePath` and `rotatePathAround` move the origin rather than the coords, and `anchorsToPath` given `like` writes back from its origin. This adds API: `worldCoords`, `pathPoint`, `originOf`, `addOrigin` and `coordsFrom` read and write coords in a path's own space.
+  
+  Paths far from 0 now get an origin where they are made: past `ORIGIN_THRESHOLD` (16,384), `anchorsToPath` without `like` (the pen tool), `pathFromD`, the booleans, and SVG import measure the path from `originFor`, the rounded center of its points. `PathBuilder.autoOrigin()` and `transformPath`'s `{ autoOrigin: true }` opt a producer in. A path near 0 is built as before.
+- 8e6ed97: A `PolygonPath` can carry an `origin`, the point its `coords` are measured from, in doubles; a `Mesh` built from one carries it too. This adds API. Far from 0 a float32 coordinate loses its fraction (at x = 262,144 it sits on a 1/32 grid, 2 px at 64x); measured from an origin beside the shape it keeps it. `PathBuilder.setOrigin(x, y)` builds such a path from points given in the path's own space.
+  
+  The renderer draws one where its origin puts it, batched or by its own draw, filled, stroked, clipped, and culled. `tessellate`, `tessellateStroke`, `markerHeads`, `strokeToPath`, `transformPath` and `boundsOfPath` honor it, and so does a node's stroked bounds.
+- 18c96c3: `PATHFINDER_KEYMAP` puts the Pathfinder operations on held keys behind the leader Alt+P (`PATHFINDER_LEADER`): U Unite, I Intersect, M Minus Front, X Exclude, D Divide, C Crop, T Trim, R Merge. Holding a key previews the operation on the selection, releasing it runs the operation, and Escape before the release cancels it. The keys work with the leader tapped or held down. Each is a `holdPreview` of the operation, bound under its hold's id (`pathfinder.union.hold`), which is what a host rebinds it by. It carries only the holds, so the operations still come from the `paths` preset; install it with `<SceneCanvas ambient>`. New API.
+- f30c624: **Breaking:** the pick functions take the world point as one `WorldPoint` argument in place of two positional numbers. A picker written `(worldX, worldY) => …` is now `(world) => …`, or `({ x, y }) => …`:
+  
+  - `<SceneCanvas geometry={{ pickEvery }}>` and `<SceneCanvas selectTool={{ pickBest }}>`
+  - `useSelectTool`'s `pickEvery` and `pickBest` options
+  - `nestedHitTester`'s `pickOutermost` and `pickBest`
+  - `PickHud`'s `pickEvery` and `pickBest`
+  
+  `pickBest` keeps its `alt` and `selection` arguments after the point. A 3D host's picker can now hand the point straight to a `nodeAtPoint` dep, which already took one.
+- b06e2b9: Breaking: `PointerWorldPos`, the pointer store's value, is `{ world: WorldPoint; viewId }` in place of `{ worldX, worldY, viewId }`. Read `p.world.x` where you read `p.worldX`, and publish with `store.set({ world: { x, y }, viewId })`. `useClipboardOps`' own `getDropPoint` option keeps its `{ worldX, worldY }` shape. When that option is left out, the paste point read from the pointer store no longer carries the store's `viewId` along with it.
+- 34a364e: Removes public API: `useFrameClock` and its `FrameClock` and `FrameClockOptions` types are gone from `@weasel-js/react`, and from their re-export in `@weasel-js/core`. Use a `@weasel-js/clock` clock in their place: `createClock({ rate: 1 })` for a clock that runs, `createClockRegistry` and `useClockLoop` from `@weasel-js/clock/react` to drive it, `handle.onFrame` as a render layer's `subscribe`, and `handle.clock.elapsed / 1000` for seconds. Rate 0 pauses it. The loop leaves out time with the tab hidden, as `useFrameClock` did, and skips a clock registered with a target while that element is out of the viewport; unlike `useFrameClock`, a running clock is synced whether or not anything subscribes to its frames.
+- 4c0141f: A group carrying `retain` that also has `effects` or `isolate` is now retained: its surface keeps what the group's own buffer composites, effects run, so a still frame runs none of its passes. A retained group inside another group's effects buffer, such as a layer in a `LayerGroup` with effects, now composites into that buffer instead of drawing straight through; it is drawn single-sampled there, as drawing into that buffer is. `drawLayers` now marks a layer with `effects` for retaining under the same rules as any other layer. A retained group inside another retained group is still drawn straight through.
+- f9282f7: A retained world layer now keeps its surface through a pan. `drawLayers` marks an unchanged world layer for retaining while the view only translates, and stops only for a zoom. The renderer composites the kept surface moved when the pan is a whole number of device pixels and what it drew still covers the buffer; past that it draws the surface again with a margin of an eighth of the buffer past each edge, so following pans keep reusing it. A pan by a fraction of a device pixel draws the layer straight through, keeping the surface, until the view holds for a frame. A layer holding a custom shader, a gradient or pattern in screen units (the default), a world-unit paint with no view matrix, a texture paint on text, or a group with effects, isolation or a composite operator is drawn straight through while the view moves instead, since those do not move with it, and drawn again once it holds; so is a layer whose margin the budget has no room for. `RetainedSurfaces.lookup` now returns what to do (`kept`, `redraw` with the window to draw, or `through`) rather than pixels or `null`; `RetainedSurfaces` is internal.
+- 01b103e: `core:retractHandles` and `path-tools:resamplePath` are redrawn on the 16px pixel grid. `retractHandles`'s corner runs on the pixel diagonal and its arrows carry 45-degree heads; `resamplePath`'s anchors are two pixels square on pixel corners, so they no longer blur at 1x.
+- 19e4c11: `<SceneCanvas>` mounts a text editor of its own, so a node the text or sticky tool places can be typed into with no host wiring, and with the `edit` feature a double-click on a text node edits it. The new `textEditor` prop takes `useSceneTextEdit`'s options, or `false` for none. The editor mounts its overlay in the canvas's offset parent, and stands down for a host's own: a `useSceneTextEdit` whose container holds the canvas, or a `textEdit` dep a child registers. `drawOneEditing` takes the `drawOne` to wrap, and `useSceneTextEdit`'s `onDoubleClick` takes a DOM `MouseEvent` as well as React's.
+- a80f8be: A scene composes poses by default. A child's stored pose is now relative to the frame of the nearest container above it that defines one (`RIGID_POSE_COMPOSITION`), so moving a container writes one pose, rotating it rotates its contents, and resizing it leaves them where they draw. A container whose pose derives from its children (`dependsOn: 'children'` with a `derivePose`) is an envelope, not a frame: its children share the frame above it.
+  
+  **This breaks a consumer that stores absolute child poses.** To migrate:
+  
+  - A scene whose `TPose` is not a rect pose must name its composition: `useScene` and `createScene` require `composition` in the type unless `TPose` is a `RectPose`. `IDENTITY_POSE_COMPOSITION` keeps every pose world; under it a container groups its children and never carries them. kernel3d's scenes name it.
+  - Saves: `toJSON` writes version 3, whose child poses are local. `sceneFromJSON`, `Scene.loadState`, and `specsFromSerialized` read a version 1 or 2 save as world and make each pose local as it loads, under the scene's composition (`SpecsFromSerializedOptions.composition`). A recorded history from before is not restored: `SCENE_HISTORY_FORM` is 4.
+  - Specs or ops you build with world poses for children: put them through `localizeWorldPoses(specs, composition)`, or `localizeInScene(scene, specs)` when they land under a container already in the scene. `worldPosesOf(specs, composition)` reads them back as world, and `heldInFrame(scene, id)` names what a container's frame holds.
+  - `sceneToAdapter`'s `setPose` no longer moves a container's descendants by the same delta, and a container's pose target no longer shows them traveling beside it: the frame carries them. `PoseCascade` and the `cascade` argument of `scenePoseTarget` and `sceneClipTargets` are gone.
+  - The group action makes a frame group, whose pose is authored, under any composition; it no longer derives an envelope's pose from its members under the identity strategy.
+  - `resolvePreviews` answers each entry's pose in world, and a previewed frame brings the children it carries.
+  - `SnapTarget.slotPose` is world, as documented; `snapToContainer` stores it in the target's frame.
+  - `diagramScene` returns each spec's pose in its container's frame (`composition`, default `RIGID_POSE_COMPOSITION`; pass `IDENTITY_POSE_COMPOSITION` to read the layout in world). Body rows, container titles, lanes, and members are stored relative to what holds them; `DiagramView`'s reports, `diagramLayoutOf`, and `documentFromScene` stay in world.
+  - `svgNodesFromKit` folds a tree's `composition` when it has one, and `unpackSvgFiles` stores each imported node in its container's frame.
+- 6940f43: A container's content can be scrolled. `scene.scroll` holds one offset per container (`scene.scroll.set(id, { x, y })`); like the selection it is view state, never recorded, serialized or counted in the scene's version. The document never moves: painting, picking, selection chrome, the preview ghost, an insert's landing and every gesture show a scrolled container's children moved by minus its offset, and write back through the same fold, so a move inside a scrolled container stores the content position. The layout pass and other document writers fold through the unscrolled frame. This adds API.
+  
+  `PoseComposition` gains an optional `scroll(frame, offset)`; `RECT_POSE_COMPOSITION` and `RIGID_POSE_COMPOSITION` supply it (`scrollRectPose`, `scrollRigidPose`, along a turned container's own axes), and a composition without it cannot scroll. `PoseAdapter` gains an optional `childFrame(id, world)`, which `composeWorldPose` and `rebaseLocalPose` honor; `scrolledFrames`, `viewPoseAdapter` and `sceneViewPoseAdapter` build it from a scene, and `composeChildFrame` and `childFrameAt` read the frame a container gives its children. During a move, a layout strategy is handed its container's content frame as `LayoutContainer.bounds`, so its slots agree with the children as shown.
+- ebe1f55: The default `slice` dep now reads only the nodes the scene's pick index finds under the cut's bounds, instead of every node in the scene, whenever the index is built. A cut in a scene that just changed still walks every node.
+- 3401898: The stroke's Start, Mid and End marker selects draw a glyph beside each built-in marker and beside None, as the sibling cap, join, align and dash controls do: `core:markerArrow`, `core:markerCrowZeroMany` and the rest, in a new "Stroke markers" icon group, each a line with that marker on its end. A marker a consumer registers still reads as its id.
+- 058fcdf: `serializeSvg` without a `textLayout` now writes a text node's lines where weasel lays them out, for any face the font registry has measured. `dominant-baseline="text-before-edge"` sets the face's ascent on the box top, where weasel's layout first puts half the leading, so every line sat that far off (Inter at 24px: 2.3 up at line height 1.4, 2.5 down at 1.0); a `dy` on the `<text>` now moves them by it. A face nothing measured is written as before. New in `@weasel-js/text`, re-exported by core: `halfLeadingFor(family, weight, style, fontSize, lineHeight)`.
+- 880f2b0: Text Along Path draws underline, strikethrough and overline. `textClusters` gives each cluster the decoration rules crossing its slot (`TextCluster.rules`), and a path effect item can carry them as `bands` (`EffectBand`); `textAlongParts` joins alike bands on neighboring items into one ribbon that bends with the path, where the glyphs themselves stay rigid.
+- 871a56b: A double-click that opens a text edit finds its node through the scene's pick index once the index is current, rather than testing every node in the scene. It answers the same node and caret as before.
+- f645651: Text rewritten every frame stops allocating its layout and quad arrays. Adds API: `dropRuns(runs)` tells the text caches a runs array will not be laid out again, and `cachedLayoutRuns` and `cachedPaintRuns` take a last argument, `'keep'` (the default) or `'read'`, for a caller that is done with the result before its next call. A layout that no runs array files, that the structural list has let go, and that every caller only read gives its arrays to the next layout and painting of the same size. The renderer reads; a HUD text widget drops the runs it replaces. Results are unchanged.
+- 1e54d33: `ToolPalette` now lays its tools out in a natural order by default: the selection tools first, then the hand, then the tools that make things (shapes, pen and pencil, text), and the slice tool last. Core's new `TOOL_GROUP_ORDER` names the group order, and `BUILTIN_TOOL_IDS` (now listed group by group, so the lasso follows select) orders the tools within each group; a palette given `groupOrder`, or the new `toolOrder` prop, follows that instead. Groups and tools neither order names keep their registration order after the named ones. `BUILTIN_TOOL_GROUPS` lists the built-in tool sets in that order. The slice tool's presentation group is now `page`, matching `PAGE_TOOLS`, so it gets a group of its own rather than sitting among the shapes.
+- ca31c35: `core:flipX` and `core:flipY` are two trapezoids, short edges facing each other across the middle and long edges along the sides: one filled, its mirror outlined. Their straight edges sit on whole pixels at 16 px, so the glyphs no longer blur there. WeaselDraw's `symmetry` uses the same pair with both halves outlined, so the mode stops looking like the flip action.
+  
+  The transport glyphs (`play`, `pause`, `stop`, `stepBack`, `stepForward`, `rewind`, `fastForward`, `live`) are drawn 1.3 times larger, as tall as `close` or `search`, and `Transport` draws them at 16 px rather than 14.
+- 69d6ede: Every `<SceneCanvas>` and `<LeanSceneCanvas>` now has undo and redo (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z), whatever its `features`. They used to come only with the `edit` preset, so a canvas that moved shapes, edited anchors, or drew with the shape tools recorded history it could not step back through. `edit` no longer lists them; `BASELINE_ACTION_IDS` names the actions every canvas registers, and `<SceneCanvas actions>` still overrides or mutes them.
+- 7a6f462: `<CanvasView follows>` names a view whose layers this one paints and picks, read at every paint and pick, while it keeps its own rect and camera. Where that view owns a selection, this one acts on it and draws its chrome. A loupe that is a view follows whichever view is under its aim, so a lens over a `<CanvasView>` panel no longer shows or picks a layer the panel hides, and a press in it selects into the panel's own selection where the panel has one.
+- de97d4d: A view marker that covers more than three quarters of the frame it is drawn in now grabs only a band about its rim, `VIEW_MARKER_HIT_SLOP_PX` either side, instead of its whole interior. A zoomed-out view's aim drawn across its whole frame used to take every press there; the frame now keeps them. A marker smaller than that, such as a minimap's, still drags from anywhere inside it.
+- 9abd787: While the view moves, a canvas draws it with its translation rounded to whole device pixels, so a retained layer panned by a fraction of a pixel (kit inertia, trackpad momentum) is composited moved instead of drawn again every frame. Once the view holds, the canvas draws it exactly on the next frame. Hit-testing, `getView` and `clientToWorld` keep the exact view, so while moving the drawn and hit positions can differ by up to half a device pixel. `<Canvas retain={{ whole: false }}>` turns this off; `retain={false}` turns it off too.
+- 09442dc: The points the snap, paths, edit-anchors and `group.enter` code takes from the pointer are typed `WorldPoint`: the `geometryAt` that `sceneSession2d` and `sceneProbeReads` take, `ownGeometryAt`, `AngleCollect.pivot` and `press`, `PathEditDrag.handle`, `PathRepresentation.segmentPress` and the point `worldToScreen` takes. `WorldPoint` is an alias of `Point2`, so nothing that type-checked before stops.
+- fceb8c5: `WorldPoint` names the space the dispatcher's `clientToWorld` maps the pointer into: the world on a 2D canvas, the pane's screen point under the identity mapping a camera-bearing host passes. `InvocationCtx.world`, `drag.start`, `drag.current`, `DragSample`, the dispatcher's `onClick`, `onDoubleClick`, `affordanceAt`, `classifyTarget` and `clientToWorld`, and the point payloads of the `nodeAtPoint`, `lassoSelect`, `insert` and `snap` deps are typed with it. It is an alias of `Point2`, so nothing that type-checked before stops.
+- Updated dependencies [cc0e73a]
+- Updated dependencies [79357fc]
+- Updated dependencies [d6221a7]
+- Updated dependencies [38bb299]
+- Updated dependencies [e1bbdcd]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [a40d519]
+- Updated dependencies [2993216]
+- Updated dependencies [61e07e5]
+- Updated dependencies [a64647a]
+- Updated dependencies [7b048f4]
+- Updated dependencies [aba8563]
+- Updated dependencies [b142892]
+- Updated dependencies [ec07e24]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [8ef803d]
+- Updated dependencies [2f3d924]
+- Updated dependencies [783756a]
+- Updated dependencies [7cc9da9]
+- Updated dependencies [2692828]
+- Updated dependencies [1c046e3]
+- Updated dependencies [11e2b7d]
+- Updated dependencies [3c3a219]
+- Updated dependencies [767713e]
+- Updated dependencies [b59380e]
+- Updated dependencies [ba998f9]
+- Updated dependencies [9a963cd]
+- Updated dependencies [2232189]
+- Updated dependencies [6a69c27]
+- Updated dependencies [8763fc3]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [6cb0cf6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [a370edb]
+- Updated dependencies [e7fca17]
+- Updated dependencies [f7c49b7]
+- Updated dependencies [64d4e97]
+- Updated dependencies [4aa138a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [e7d70f5]
+- Updated dependencies [d7d29f9]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [5af16a6]
+- Updated dependencies [966c37f]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9a3626f]
+- Updated dependencies [28f476b]
+- Updated dependencies [ffdbbcf]
+- Updated dependencies [ee97c81]
+- Updated dependencies [624cf38]
+- Updated dependencies [941f382]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [561472d]
+- Updated dependencies [d68c4f8]
+- Updated dependencies [c66c536]
+- Updated dependencies [cbb344e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [d3fdba8]
+- Updated dependencies [f9282f7]
+- Updated dependencies [0509c29]
+- Updated dependencies [3803ba2]
+- Updated dependencies [9819d7a]
+- Updated dependencies [230a206]
+- Updated dependencies [2e4943e]
+- Updated dependencies [8ddaf05]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [cc0e73a]
+- Updated dependencies [4f68c3a]
+- Updated dependencies [78213f7]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [4a8b5be]
+- Updated dependencies [32889fc]
+- Updated dependencies [6c31588]
+- Updated dependencies [1fb8193]
+- Updated dependencies [ab41dea]
+- Updated dependencies [f645651]
+- Updated dependencies [5399b45]
+- Updated dependencies [55375c0]
+- Updated dependencies [486ff61]
+- Updated dependencies [23dcddf]
+- Updated dependencies [f2acefd]
+- Updated dependencies [95eb9d3]
+- Updated dependencies [ff3c2ad]
+- Updated dependencies [b0d5f18]
+- Updated dependencies [7507e13]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [d5c4ee6]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/animator@1.14.0
+  - @weasel-js/font@1.14.0
+  - @weasel-js/renderer@1.14.0
+  - @weasel-js/text@1.14.0
+  - @weasel-js/stroke@1.14.0
+  - @weasel-js/paint@1.14.0
+  - @weasel-js/routing@1.14.0
+  - @weasel-js/gestures@1.14.0
+  - @weasel-js/geom@1.14.0
+  - @weasel-js/headless@1.14.0
+  - @weasel-js/quantity@1.14.0
+  - @weasel-js/text-dom@1.14.0
+  - @weasel-js/prefs@1.14.0
+  - @weasel-js/react@1.14.0
+  - @weasel-js/simulation@1.14.0
+  - @weasel-js/cursor@1.14.0
+  - @weasel-js/history@1.14.0
+  - @weasel-js/icons@1.14.0
+  - @weasel-js/modes@1.14.0
+  - @weasel-js/registry@1.14.0
+  - @weasel-js/select@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

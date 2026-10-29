@@ -1,5 +1,147 @@
 # @weasel-js/svg
 
+## 1.14.0
+
+### Patch Changes
+
+- 2f3d924: Text runs can turn their glyphs. A `StyledRun`'s new `rotate` turns each of its glyphs that many degrees, clockwise, each about its own pen on the baseline, as SVG's `rotate` does; the glyphs keep their places along the line. Layout carries it on each `PlacedGlyph` as `rotate`, and the renderer draws it on every tier: atlas and canvas quads, color glyphs and outline glyphs, with painted bounds grown to hold the turned glyph. `textToPath`, `textClusters` and PDF export turn the glyphs the same way.
+  
+  SVG import reads `rotate` on a `<text>` or `<tspan>` instead of warning: each value turns one glyph, a glyph past the end of a list takes its last value, and a `<tspan>`'s own list wins over the text's. A list naming different angles over white space SVG collapses is reported and not read. Export writes a run's turn as `rotate` on its `<tspan>`.
+  
+  This adds API: `StyledRun.rotate`, `ResolvedRun.rotate`, `PlacedGlyph.rotate`, `LaidOutOutlineGlyph.rotate`, `glyphTurn`, and `penX` and `rotate` on `LaidOutQuad`. `QUAD_STRIDE` is now 11: each packed quad in `LaidOutGroup.quadData` gains its pen and its turn after `baselineY`, so code reading `quadData` by a hard-coded stride of 9 breaks.
+- b0a55a6: A fill or stroke can now tile a picture: `{ kind: 'image', src, width, height }`, a new pattern paint kind beside the built-in tiles. `src` is anything an `<img>` loads, and a `data:` URI makes the paint carry the picture itself, so it saves, copies and exports with nothing stored beside the document. `width` and `height` are the tile's size in paint units; left out, the picture's pixel size is used. The fill draws nothing until the picture has decoded, then repaints.
+  
+  This adds API. `@weasel-js/paint` exports `ImagePatternPaint`, `TileExtent`, `ResolvablePatternKind` and `isImagePatternPaint`, and `isPatternPaint` now answers true for an image paint. `TexturePaint` takes an optional `width` and `height`, which set its tile size in place of the texture's pixel size. `resolveFillPattern` resolves an image paint to a `texture` paint. Code that switches over every `Paint` kind meets a new member.
+  
+  `@weasel-js/svg` writes an image paint as a `<pattern>` holding one `<image>` that fills the tile, and reads that structure back from any editor's SVG, `xlink:href` included. An image paint with no `width` and `height` cannot be sized as an SVG pattern and is left out with a warning.
+  
+  `PatternPicker` gains an image swatch after the tiles that opens a file picker. The picked file is stored as a `data:` URI, re-encoded down to 1024 px on its longest side if larger (an SVG is kept as it is), and the size switch then sets the tile's longest side to 32, 64, 128 or 256 units. A new `readImage` prop replaces that step for an app that stores images elsewhere. `readImageFile`, `seedImagePattern` and `MAX_STORED_IMAGE_SIDE` are exported.
+- a58fb4f: Every reader of a `PolygonPath`'s coords now reads them where its `origin` puts them: hit-testing and marquee/lasso picking, distance, anchors (`pathToAnchors`, anchor editing, corner expansion and restore), the booleans, `pathToD` and SVG export, cubic contours, puppet meshes, pose interpolation, derived parts, path warps, diagram connectors, and skinning. `translatePath` and `rotatePathAround` move the origin rather than the coords, and `anchorsToPath` given `like` writes back from its origin. This adds API: `worldCoords`, `pathPoint`, `originOf`, `addOrigin` and `coordsFrom` read and write coords in a path's own space.
+  
+  Paths far from 0 now get an origin where they are made: past `ORIGIN_THRESHOLD` (16,384), `anchorsToPath` without `like` (the pen tool), `pathFromD`, the booleans, and SVG import measure the path from `originFor`, the rounded center of its points. `PathBuilder.autoOrigin()` and `transformPath`'s `{ autoOrigin: true }` opt a producer in. A path near 0 is built as before.
+- a80f8be: A scene composes poses by default. A child's stored pose is now relative to the frame of the nearest container above it that defines one (`RIGID_POSE_COMPOSITION`), so moving a container writes one pose, rotating it rotates its contents, and resizing it leaves them where they draw. A container whose pose derives from its children (`dependsOn: 'children'` with a `derivePose`) is an envelope, not a frame: its children share the frame above it.
+  
+  **This breaks a consumer that stores absolute child poses.** To migrate:
+  
+  - A scene whose `TPose` is not a rect pose must name its composition: `useScene` and `createScene` require `composition` in the type unless `TPose` is a `RectPose`. `IDENTITY_POSE_COMPOSITION` keeps every pose world; under it a container groups its children and never carries them. kernel3d's scenes name it.
+  - Saves: `toJSON` writes version 3, whose child poses are local. `sceneFromJSON`, `Scene.loadState`, and `specsFromSerialized` read a version 1 or 2 save as world and make each pose local as it loads, under the scene's composition (`SpecsFromSerializedOptions.composition`). A recorded history from before is not restored: `SCENE_HISTORY_FORM` is 4.
+  - Specs or ops you build with world poses for children: put them through `localizeWorldPoses(specs, composition)`, or `localizeInScene(scene, specs)` when they land under a container already in the scene. `worldPosesOf(specs, composition)` reads them back as world, and `heldInFrame(scene, id)` names what a container's frame holds.
+  - `sceneToAdapter`'s `setPose` no longer moves a container's descendants by the same delta, and a container's pose target no longer shows them traveling beside it: the frame carries them. `PoseCascade` and the `cascade` argument of `scenePoseTarget` and `sceneClipTargets` are gone.
+  - The group action makes a frame group, whose pose is authored, under any composition; it no longer derives an envelope's pose from its members under the identity strategy.
+  - `resolvePreviews` answers each entry's pose in world, and a previewed frame brings the children it carries.
+  - `SnapTarget.slotPose` is world, as documented; `snapToContainer` stores it in the target's frame.
+  - `diagramScene` returns each spec's pose in its container's frame (`composition`, default `RIGID_POSE_COMPOSITION`; pass `IDENTITY_POSE_COMPOSITION` to read the layout in world). Body rows, container titles, lanes, and members are stored relative to what holds them; `DiagramView`'s reports, `diagramLayoutOf`, and `documentFromScene` stay in world.
+  - `svgNodesFromKit` folds a tree's `composition` when it has one, and `unpackSvgFiles` stores each imported node in its container's frame.
+- 7e4c7c4: A boolean group now exports as what it draws. `svgNodesFromKit` writes the path the group derives, in its own paint, then a `<g data-weasel-boolean="<op>" display="none">` holding its children, where it used to write the children as separate visible shapes. Another reader draws the result alone; `parseSvg` keeps that `<g>`, hidden, even without `keepHidden`, and `svgNodesToKitDrafts` drafts it back as a mark with `boolean` set and its children under it, shown. `unpackSvgFiles` inserts such a draft as a boolean group.
+  
+  This adds API: `SvgGroupNode.boolean`, `SvgKitTreeNode.consumesChildren`, `SvgKitTree.derivedPathOf` (a kit `Scene` needs none) and the mark draft's `boolean`.
+- 5967c5c: A boolean group whose result is empty now survives an SVG round trip. `svgNodesFromKit` writes it as its hidden operands with no path before them, rather than a `<path d="">` that `parseSvg` warned about and dropped, and `svgNodesToKitDrafts` reads that back as a boolean group (`boolean` on the mark draft) in the group's own paint, posed over its operands, instead of a plain hidden group.
+- 0dd5658: SVG import reads a `dx`, `x`, `dy`, `y` or `rotate` list over white space that `xml:space="preserve"` keeps. Before, it reported such a list as moved by collapsing white space and left it unread, though under `preserve` nothing collapses and every character stays one glyph.
+- 2bdc135: SVG import reads glyphs moved up or down off their line: a `dy` or `y` list on a `<text>` or `<tspan>`, and a `<tspan>` moved by `dy` or `y` without an `x`. Each stretch of glyphs at one height becomes a run raised or lowered by `baselineShift`, on top of any `baseline-shift` it already had, and the move carries on to the text after it until a new line or another move, as SVG places it. These used to be reported and dropped. A new line's pitch is now measured from the last line's baseline rather than from wherever the last glyph sat, and a `<tspan>` with an `x` that lands back on its line's baseline stays on that line.
+- a4b6c5b: svg import reads an `x` list that places each glyph of a `<tspan>`, or of a `<text>` holding only text, as letter spacing, where a loaded face measures the glyphs: kerned text exported with an `x` per glyph no longer imports run together. A `dx` list on the same element adds on top. With no face to measure them, or in right-to-left text, the list is still reported and only its first value read.
+- 16f7828: `serializeSvg` writes a text node's `lineHeight` as `data-weasel-line-height` whenever the style sets one, and import reads it back. A single line used to lose it, since only the pitch between lines stated it. Where the lines' pitch disagrees with the attribute, as after another editor moved them, the pitch wins.
+- 0ac4e47: A marker drawn in several parts is joined with geom's `joinPaths`, the same join text and derived paths use.
+- 8c7fb03: SVG import reads a `dx` list on a `<text>` that holds `<tspan>`s as letter spacing, handing each value to the glyph it counts to through the text and every tspan; a tspan's own values replace the text's where it has them. A `dx` or `x` list in right-to-left text is read too, as spacing that narrows the gap a `dx` toward +x closes, where a registered bidi engine says every glyph of the run reads right to left; otherwise it is reported unread, as before. The warning for an unread `rotate` no longer mentions advance.
+- 3b25c35: SVG import places a `<text>`'s box by where its first glyph lands, not by the `<text>`'s own `y`. A `<tspan>` with its own `x` and `y` that opens a `<text>` with no `y` used to put the box top a line above `y="0"`: `<text><tspan x="10" y="20">A</tspan></text>` now gets its top at 4, not -16.
+  
+  Another writer's `dy` on `<text>` now moves the first glyph, as SVG says, where it used to be dropped without a warning. Text weasel wrote, which puts the half leading in that `dy`, is told apart by its `data-weasel-width`, and its `dy` stays unread.
+- 058fcdf: `serializeSvg` without a `textLayout` now writes a text node's lines where weasel lays them out, for any face the font registry has measured. `dominant-baseline="text-before-edge"` sets the face's ascent on the box top, where weasel's layout first puts half the leading, so every line sat that far off (Inter at 24px: 2.3 up at line height 1.4, 2.5 down at 1.0); a `dy` on the `<text>` now moves them by it. A face nothing measured is written as before. New in `@weasel-js/text`, re-exported by core: `halfLeadingFor(family, weight, style, fontSize, lineHeight)`.
+- 1a64358: SVG import reads a `<text>`'s `x` list past its first value when the `<text>` holds `<tspan>` children, where it used to warn and drop it. Each position becomes the letter spacing that puts the glyph there, measured across runs of different styles, as it already was for a list on a `<tspan>` or on a `<text>` holding only text. It is read only where a loaded face measures the glyphs it reaches and no `<tspan>` among them has its own `x` or `dx`; otherwise the warning now says which.
+- 99a8383: SVG import now reads a `<text>`'s per-glyph `x` list through a `<tspan>` that has its own `x` or `dx`. Each glyph takes its value from its own `<tspan>` where that list has one, and from the `<text>` otherwise, as SVG does. Before, such a list was reported and only its first value read. A `<tspan>` it reaches that opens a new line with an `x` and a `y` or `dy` starts a new measurement, so the list is read on every line it spans. Like every `x` list, it is read only where a loaded face measures the glyphs.
+- 4a8b5be: A laid-out cell's `advance`, and a placed glyph's `step`, now include the kerning before the glyph to its right, so a cell ends at its right neighbor's `x` and the cells tile the line, as `LaidOutCell`'s doc already said. They used to leave it out, so a kerned pair's cells overlapped or left a gap. A combining mark that takes no room keeps an advance of 0, and the glyph it sits on takes the kerning. Caret snapping, text along a path, and two decoration rules meeting at a run boundary now follow the painted glyphs. A consumer that added the kerning back itself will now count it twice.
+  
+  svg import's right-to-left glyph lists now read each glyph's right edge from the glyph's own advance, so they place glyphs where they did before.
+- 1fb8193: A text's `lang` now reaches more than the shaper. `textTransform` and synthesized small caps map case in the run's language, so `i` uppercases to `İ` under `tr`; `transformRunTexts` takes the languages as an optional third argument, `smallCapsText` as a third and `isSmallCapsLetter` as a second, and a tag `Intl` rejects maps as no language. The edit overlay sets the `lang` attribute from the node's style, and each run span from its run, and reads a pasted span's `lang` back as the run's. SVG export writes `xml:lang` on `<text>` and `<tspan>`; import reads `xml:lang` or `lang`, inherited from any ancestor onto the node and a `<tspan>`'s own onto its run. This adds API.
+- 9adc0cd: `transformPath` now gives a polygon that lands past `ORIGIN_THRESHOLD` (2^14) with no origin one of its own by default, so resizing a path, `pathInWorld`, and an SVG element's own skew or scale baked in on import keep their fractions far from 0. A rect it promotes to a polygon under rotation is measured from an origin too. Pass `{ autoOrigin: false }` for the old float32-only result. A caller that read a far-out result's `coords` without its `origin` now has to read through `worldCoords`.
+- Updated dependencies [d8fbd3d]
+- Updated dependencies [b4cc0d7]
+- Updated dependencies [575e470]
+- Updated dependencies [47656e3]
+- Updated dependencies [ad58b32]
+- Updated dependencies [f045da7]
+- Updated dependencies [ac7aa31]
+- Updated dependencies [a1b06d8]
+- Updated dependencies [9725598]
+- Updated dependencies [592b6e5]
+- Updated dependencies [41a013b]
+- Updated dependencies [965e698]
+- Updated dependencies [fda48f1]
+- Updated dependencies [070f3d0]
+- Updated dependencies [f2188ba]
+- Updated dependencies [e974dba]
+- Updated dependencies [30582cb]
+- Updated dependencies [2999820]
+- Updated dependencies [8b14236]
+- Updated dependencies [61e07e5]
+- Updated dependencies [88573be]
+- Updated dependencies [b142892]
+- Updated dependencies [6d5f7c2]
+- Updated dependencies [14f8583]
+- Updated dependencies [e7f4305]
+- Updated dependencies [c01c5f0]
+- Updated dependencies [23bb196]
+- Updated dependencies [783756a]
+- Updated dependencies [2692828]
+- Updated dependencies [767713e]
+- Updated dependencies [6a69c27]
+- Updated dependencies [b0a55a6]
+- Updated dependencies [5b7d0ac]
+- Updated dependencies [930f2fa]
+- Updated dependencies [edc7324]
+- Updated dependencies [e7fca17]
+- Updated dependencies [1d39cf6]
+- Updated dependencies [e5ea7e8]
+- Updated dependencies [22472a1]
+- Updated dependencies [ec6d7d3]
+- Updated dependencies [80789ff]
+- Updated dependencies [f695cff]
+- Updated dependencies [b1b16ce]
+- Updated dependencies [b15704a]
+- Updated dependencies [81d08f7]
+- Updated dependencies [a29d2df]
+- Updated dependencies [4aa9b8b]
+- Updated dependencies [39cb8ed]
+- Updated dependencies [a58fb4f]
+- Updated dependencies [8e6ed97]
+- Updated dependencies [6b1b532]
+- Updated dependencies [18c96c3]
+- Updated dependencies [f30c624]
+- Updated dependencies [b06e2b9]
+- Updated dependencies [9ef7751]
+- Updated dependencies [34a364e]
+- Updated dependencies [4c0141f]
+- Updated dependencies [f9282f7]
+- Updated dependencies [01b103e]
+- Updated dependencies [2e4943e]
+- Updated dependencies [19e4c11]
+- Updated dependencies [a80f8be]
+- Updated dependencies [6940f43]
+- Updated dependencies [8e2c8c8]
+- Updated dependencies [ebe1f55]
+- Updated dependencies [0fc0e50]
+- Updated dependencies [3401898]
+- Updated dependencies [058fcdf]
+- Updated dependencies [dc6f83a]
+- Updated dependencies [880f2b0]
+- Updated dependencies [871a56b]
+- Updated dependencies [f645651]
+- Updated dependencies [1e54d33]
+- Updated dependencies [97d889f]
+- Updated dependencies [9adc0cd]
+- Updated dependencies [ca31c35]
+- Updated dependencies [69d6ede]
+- Updated dependencies [24e03ff]
+- Updated dependencies [b43c94c]
+- Updated dependencies [dfdc8a6]
+- Updated dependencies [e23101b]
+- Updated dependencies [7a6f462]
+- Updated dependencies [de97d4d]
+- Updated dependencies [9abd787]
+- Updated dependencies [09442dc]
+- Updated dependencies [fceb8c5]
+  - @weasel-js/core@1.14.0
+  - @weasel-js/geom@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

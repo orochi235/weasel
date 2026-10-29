@@ -1,5 +1,11 @@
 # @weasel-js/history
 
+## 1.14.0
+
+### Patch Changes
+
+- @weasel-js/registry@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes
