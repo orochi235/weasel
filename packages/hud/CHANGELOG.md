@@ -1,5 +1,21 @@
 # @weasel-js/hud
 
+## 1.14.1
+
+### Patch Changes
+
+- @weasel-js/core@1.14.1
+  - @weasel-js/font@1.14.1
+  - @weasel-js/geom@1.14.1
+  - @weasel-js/gestures@1.14.1
+  - @weasel-js/headless@1.14.1
+  - @weasel-js/icons@1.14.1
+  - @weasel-js/loupe@1.14.1
+  - @weasel-js/menu@1.14.1
+  - @weasel-js/paint@1.14.1
+  - @weasel-js/registry@1.14.1
+  - @weasel-js/theme@1.14.1
+
 ## 1.14.0
 
 ### Patch Changes

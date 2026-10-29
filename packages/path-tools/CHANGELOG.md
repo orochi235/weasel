@@ -1,5 +1,21 @@
 # @weasel-js/path-tools
 
+## 1.14.1
+
+### Patch Changes
+
+- @weasel-js/core@1.14.1
+  - @weasel-js/cursor@1.14.1
+  - @weasel-js/geom@1.14.1
+  - @weasel-js/icons@1.14.1
+  - @weasel-js/paint@1.14.1
+  - @weasel-js/prefs@1.14.1
+  - @weasel-js/react@1.14.1
+  - @weasel-js/registry@1.14.1
+  - @weasel-js/renderer@1.14.1
+  - @weasel-js/routing@1.14.1
+  - @weasel-js/stroke@1.14.1
+
 ## 1.14.0
 
 ### Patch Changes

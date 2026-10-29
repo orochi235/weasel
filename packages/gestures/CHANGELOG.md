@@ -1,5 +1,11 @@
 # @weasel-js/gestures
 
+## 1.14.1
+
+### Patch Changes
+
+- @weasel-js/menu@1.14.1
+
 ## 1.14.0
 
 ### Patch Changes
