@@ -1,8 +1,9 @@
 /** The `insert` dep over a 3D world: a drag becomes a footprint on the ground. */
 
 import type { InsertDep, InsertEnds, InsertExtras, NodeId } from '@weasel-js/core';
-import { intersectRayPlane, pointOnRay, scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
-import { rayAt, type ViewportSource } from './project';
+import { scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
+import { groundAxes, groundHit } from './ground';
+import type { ViewportSource } from './project';
 import { DEFAULT_UP } from './world';
 
 /** The ground-plane rectangle a drag swept out, in world units. */
@@ -54,23 +55,14 @@ export function createInsert(opts: {
 }): InsertDep {
   const up = opts.up ?? DEFAULT_UP;
   const minExtent = opts.minExtent ?? 0.25;
-  // The two axes the up axis is not, so a footprint reads the same whichever
-  // way up the world is.
-  const axes: readonly ['x' | 'y' | 'z', 'x' | 'y' | 'z'] =
-    up.y !== 0 ? ['x', 'z'] : up.x !== 0 ? ['y', 'z'] : ['x', 'y'];
+  const { u, v } = groundAxes(up);
 
   return {
     commit(bounds, extras, ends) {
       const vp = opts.viewport();
-      const cast = (p: { x: number; y: number }): Vec3 | null => {
-        const ray = rayAt(vp, p);
-        const t = ray && intersectRayPlane(ray, up, 0);
-        return ray && t !== null ? pointOnRay(ray, t) : null;
-      };
-      const hits = footprintPoints(bounds, ends, cast);
+      const hits = footprintPoints(bounds, ends, (p) => groundHit(vp, p, up));
       if (hits.length === 0) return null;
 
-      const [u, v] = axes;
       let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
       for (const h of hits) {
         minU = Math.min(minU, h[u]); maxU = Math.max(maxU, h[u]);
