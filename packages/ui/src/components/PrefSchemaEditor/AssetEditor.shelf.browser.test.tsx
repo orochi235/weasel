@@ -26,8 +26,8 @@ test('stepping a shelf list\'s handle widens the list and takes the width from t
   expect(before.pane).toBe(240);
 
   fireEvent.keyDown(handle, { key: 'ArrowRight', shiftKey: true });
-  expect(width(pane)).toBe(248);
-  expect(width(exported)).toBe(before.exported - 8);
+  expect(width(pane)).toBe(250);
+  expect(width(exported)).toBe(before.exported - 10);
   // The handle stands between the two, the full height of the shelf.
   const seam = handle.getBoundingClientRect();
   expect(seam.left).toBeGreaterThanOrEqual(pane.getBoundingClientRect().right);

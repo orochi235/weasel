@@ -5,7 +5,7 @@ import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
 import { createTimeScale, spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { snapToNearest, useSnapRadiusPx } from '../../snap';
-import { arrowMove } from '../../arrowKeys';
+import { arrowMove } from '@weasel-js/headless';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
 
@@ -129,7 +129,7 @@ export function Lane(props: LaneProps): ReactElement {
   });
 
   const onKeyDown = (i: number, t: number) => (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    const dx = arrowMove(e)?.dx ?? 0;
+    const dx = arrowMove(e.key, e.shiftKey)?.dx ?? 0;
     if (dx !== 0) {
       e.preventDefault();
       refocus.current = true;

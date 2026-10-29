@@ -12,6 +12,9 @@ export {
 export type { TypeaheadBuffer, TypeaheadShape } from './typeahead';
 export { tabSort, tabStep } from './focus';
 export type { FocusScope, FocusScopeOptions } from './focus';
+export { COARSE_STEPS, arrowSteps, arrowMove, rangeKey } from './keySteps';
+export { usableStops, attract, clampOrdered, sliderKey } from './slider';
+export type { SliderStop, SliderKeyShape } from './slider';
 export { editEnd } from './textCommit';
 export type { EditCause, EditEnd, EditEndShape } from './textCommit';
 export {

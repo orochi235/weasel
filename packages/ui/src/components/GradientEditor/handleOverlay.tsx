@@ -1,6 +1,6 @@
 import { createContext, useContext, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import { useHandleDrag } from '@weasel-js/core';
-import { arrowMove } from '../../arrowKeys';
+import { arrowMove } from '@weasel-js/headless';
 import s from './handleOverlay.module.css';
 
 /** The pieces every paint-geometry overlay draws with — `GradientHandles`
@@ -90,7 +90,7 @@ export function DragPoint({
     },
   });
   const onKeyDown = (e: ReactKeyboardEvent<SVGCircleElement>): void => {
-    const move = arrowMove(e);
+    const move = arrowMove(e.key, e.shiftKey);
     if (move === null) return;
     e.preventDefault();
     const next = { x: at.x + move.dx * KEY_STEP, y: at.y + move.dy * KEY_STEP };

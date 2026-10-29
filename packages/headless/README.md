@@ -63,6 +63,13 @@ focused, whether its ring shows, `focus`, `moveFocus` through a `tabOrder`, and
 `domFocusScope(root)` is one over the elements under `root`, so code that moves focus is
 written once for both. `tabSort` and `tabStep` are the order and the step both use.
 
+## Steps and sliders
+
+`arrowSteps`, `arrowMove` and `rangeKey` are what an arrow key asks for: one step, or `COARSE_STEPS`
+(ten) with Shift or a Page key, and Home and End for a range's ends. `sliderKey` turns one key into
+a thumb's next value, by step or by whole stops, across an endless end and inside its neighbors;
+`@weasel-js/ui`'s `Slider` runs on it.
+
 ## Text fields
 
 `editEnd(cause, shape)` says how a text field's edit ends: Enter and blur commit, Escape cancels.

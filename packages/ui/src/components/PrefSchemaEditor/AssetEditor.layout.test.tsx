@@ -19,7 +19,7 @@ describe('AssetEditor on a layout', () => {
     expect(within(pane).getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     expect(pane.style.getPropertyValue('--shelf-pane-w')).toBe('240px');
     fireEvent.keyDown(handle, { key: 'ArrowRight', shiftKey: true });
-    expect(pane.style.getPropertyValue('--shelf-pane-w')).toBe('248px');
+    expect(pane.style.getPropertyValue('--shelf-pane-w')).toBe('250px');
   });
 
   it('previews a panel\'s pointers as the settings they name in its dialog', () => {

@@ -449,7 +449,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type (`rovingKey`,
   `stepStop`, `typeaheadStep`), a tree's Right/Left (`treeKey`) and a row list's whole key dispatch (`rowKey`),
   reordering a list (`moveItems`, `isNoopDrop`, `nudgeGap`, `gapByMidpoint`, `nearestGap`), how a text field's edit
-  ends (`editEnd`), and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
+  ends (`editEnd`), the arrow-key step sizes (`arrowSteps`, `rangeKey`), a slider's value and key math (`sliderKey`),
+  and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
   `@weasel-js/menu` runs each menu level on the list half, ui's `useRowNavigation` and `useRovingTabIndex` step and
   type ahead through it (`useRowNavigation` takes every key but the nudge from `rowKey`), `Hud` is a `FocusScope<Widget>`, and ui's `domFocusScope(root)` is the same contract over DOM
   elements. Held steppers repeat through `createStepRepeat`, in ui's `UnitField` and on the hud menu's number chips.
