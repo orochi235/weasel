@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Button } from '../Button';
 import { CodeBlock } from '../CodeBlock';
 import { Tab, TabList, TabPanel, Tabs } from '../Tabs';
@@ -40,6 +40,8 @@ function Submit({ changes, literal, onSubmit }: { changes: readonly SchemaChange
 export function ExportPanel({ schema, types, exported, changes, changesText, onSubmit }: { schema: SchemaRoot; types?: PrefTypes; exported?: AssetExport; changes: readonly SchemaChange[]; changesText?: string; onSubmit?: SubmitChanges }) {
   const literal = useMemo(() => exported?.text ?? printSchema(schema, types), [exported, schema, types]);
   const json = exported?.language === 'json';
+  // Coloring a long literal is most of what drawing this panel costs, so the first frame draws it plain.
+  const colored = useDeferredValue(literal, null);
   const list = useMemo(() => (changesText ?? formatChanges(changes)) || 'No changes.', [changes, changesText]);
   const [tab, setTab] = useState<'literal' | 'changes'>('literal');
   return (
@@ -58,7 +60,7 @@ export function ExportPanel({ schema, types, exported, changes, changesText, onS
       </div>
       {/* Both stay mounted, so a tab comes back scrolled to where it was left. */}
       <TabPanel id="literal" shouldForceMount className={s.exportPane}>
-        <CodeBlock code={literal} language={exported?.language ?? 'tsx'} className={s.code} data-testid="schema-literal" />
+        <CodeBlock code={colored ?? literal} language={colored === null ? 'text' : exported?.language ?? 'tsx'} className={s.code} data-testid="schema-literal" />
       </TabPanel>
       <TabPanel id="changes" shouldForceMount className={s.exportPane}>
         <pre className={`${s.code} ${s.changeList}`}>{list}</pre>

@@ -14,6 +14,7 @@ import {
   type Scene,
   type Vec2,
 } from '@weasel-js/core';
+import { moveItems, nudgeGap } from '@weasel-js/headless';
 import { diagramContainerOf } from './containers/trait';
 import { worldRectOf } from './overlays';
 import type { DiagramSceneData } from './fromData';
@@ -79,12 +80,9 @@ export function createStepReorderAction(report: (change: ReorderChange) => void)
         if (target === null || params?.axis !== target.axis) return;
         const { members, member } = target;
         const at = members.indexOf(member);
-        const to = at + (params.step === -1 ? -1 : 1);
-        if (to < 0 || to >= members.length) return;
-        const order = [...members];
-        order.splice(at, 1);
-        order.splice(to, 0, member);
-        report({ parent: target.parent, order });
+        const to = nudgeGap([at], params.step === -1 ? -1 : 1, members.length);
+        if (to === null) return;
+        report({ parent: target.parent, order: moveItems(members, [at], to) });
       },
     },
     enabled: (deps) => (selectedTarget(deps) !== null ? true : ActionDisabledReason.NotApplicable),

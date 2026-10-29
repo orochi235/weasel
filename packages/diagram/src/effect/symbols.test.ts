@@ -84,6 +84,20 @@ describe('branch symbols', () => {
     expect(typeof branchNode(yesNo, P, 'demux', { direction: 'down' }).outline).toBe('object');
   });
 
+  it('sets a turned step\'s title out past its cut labels, which share its side, and leaves the row form alone', () => {
+    const fine = { ...bands, split: { input: 'x', at: [0.125, 0.875] } };
+    const texts = (node: ReturnType<typeof branchNode>) => node.marks!.flatMap((m) => ('text' in m ? [m] : []));
+    const turned = texts(branchNode(fine, P, 'step', { direction: 'down' }));
+    const name = turned.find((m) => m.text === 'Band')!;
+    expect(name.self).toEqual({ u: 0, v: 0.5 });
+    for (const cut of turned.filter((m) => m !== name)) {
+      expect(cut.self).toEqual({ u: 0, v: 0.5 });
+      // Six pixels a character at the labels' 10px size: wider than a digit in any UI face.
+      expect(cut.offset!.x + 6 * cut.text.length).toBeLessThan(name.offset!.x);
+    }
+    expect(texts(branchNode(fine, P, 'step')).find((m) => m.text === 'Band')!.offset).toEqual({ x: 0, y: 18 });
+  });
+
   it('throws a switch turned down a column to its second exit, as it does along a row', () => {
     const marks = branchNode(yesNo, P, 'switch', { direction: 'down' }).marks!.flatMap((m) => ('d' in m ? [m.d] : []));
     expect(marks.filter((d) => thrownToSecond(d) !== undefined)).toHaveLength(3);

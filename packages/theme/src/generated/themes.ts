@@ -178,6 +178,7 @@ export type TokenName =
   | '--wzl-tracking-wider'
   | '--wzl-warning'
   | '--wzl-warning-base'
+  | '--wzl-workspace'
   | '--wzl-workspace-line'
   | '--wzl-workspace-surface'
   | '--wzl-z-drag'
@@ -350,8 +351,9 @@ export const THEMES = {
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
-        '--wzl-workspace-surface': "#0e0f12",
+        '--wzl-workspace-surface': "#272727",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
+        '--wzl-workspace': "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
         '--wzl-field-pad-x': "8px",
         '--wzl-gloss': "0",
         '--wzl-font-size': "13px",
@@ -532,8 +534,9 @@ export const THEMES = {
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
-        '--wzl-workspace-surface': "#0e0f12",
+        '--wzl-workspace-surface': "#272727",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
+        '--wzl-workspace': "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
         '--wzl-field-pad-x': "8px",
         '--wzl-gloss': "0",
         '--wzl-font-size': "15px",
@@ -714,8 +717,9 @@ export const THEMES = {
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
-        '--wzl-workspace-surface': "#0e0f12",
+        '--wzl-workspace-surface': "#272727",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
+        '--wzl-workspace': "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
         '--wzl-field-pad-x': "8px",
         '--wzl-gloss': "0",
         '--wzl-font-size': "18px",
@@ -896,8 +900,9 @@ export const THEMES = {
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
-        '--wzl-workspace-surface': "#c9cbcf",
+        '--wzl-workspace-surface': "#e7e7e7",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
+        '--wzl-workspace': "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
         '--wzl-field-pad-x': "8px",
         '--wzl-gloss': "0",
         '--wzl-font-size': "13px",
@@ -1078,8 +1083,9 @@ export const THEMES = {
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
-        '--wzl-workspace-surface': "#c9cbcf",
+        '--wzl-workspace-surface': "#e7e7e7",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
+        '--wzl-workspace': "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
         '--wzl-field-pad-x': "8px",
         '--wzl-gloss': "0",
         '--wzl-font-size': "15px",
@@ -1260,8 +1266,9 @@ export const THEMES = {
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
-        '--wzl-workspace-surface': "#c9cbcf",
+        '--wzl-workspace-surface': "#e7e7e7",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
+        '--wzl-workspace': "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
         '--wzl-field-pad-x': "8px",
         '--wzl-gloss': "0",
         '--wzl-font-size': "18px",
@@ -2293,14 +2300,26 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "description": "Edge of one repeat of the transparency checker: two squares by two."
       },
       "workspace-surface": {
-        "value": "{surface-sunken}",
-        "type": "color",
-        "description": "Ground of a canvas app's workspace — the area around the document page."
+        "by": "mode",
+        "dark": {
+          "value": "#272727",
+          "type": "color",
+          "description": "Ground of a canvas app's workspace — the area around the document page: surface-raised with its tint taken out (its OKLCH chroma set to 0)."
+        },
+        "light": {
+          "value": "#e7e7e7",
+          "type": "color"
+        }
       },
       "workspace-line": {
         "value": "{line-subtle}",
         "type": "color",
         "description": "Marks drawn over workspace-surface, such as its diagonal stripes, so the page reads as the thing on top."
+      },
+      "workspace": {
+        "value": "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
+        "type": "gradient",
+        "description": "The workspace as one background layer: workspace-surface struck with wide diagonal bands of workspace-line. Use it as an element's whole background."
       },
       "field-pad-x": {
         "value": "8px",
@@ -3541,14 +3560,26 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "description": "Edge of one repeat of the transparency checker: two squares by two."
       },
       "workspace-surface": {
-        "type": "color",
-        "value": "{surface-sunken}",
-        "description": "Ground of a canvas app's workspace — the area around the document page."
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "#272727",
+          "description": "Ground of a canvas app's workspace — the area around the document page: surface-raised with its tint taken out (its OKLCH chroma set to 0)."
+        },
+        "light": {
+          "type": "color",
+          "value": "#e7e7e7"
+        }
       },
       "workspace-line": {
         "type": "color",
         "value": "{line-subtle}",
         "description": "Marks drawn over workspace-surface, such as its diagonal stripes, so the page reads as the thing on top."
+      },
+      "workspace": {
+        "type": "gradient",
+        "value": "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
+        "description": "The workspace as one background layer: workspace-surface struck with wide diagonal bands of workspace-line. Use it as an element's whole background."
       },
       "field-pad-x": {
         "type": "dimension",

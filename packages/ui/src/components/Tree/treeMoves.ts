@@ -1,3 +1,4 @@
+import { isNoopDrop, nudgeGap } from '@weasel-js/headless';
 import type { TreeDropTarget } from '../../dropTarget';
 import type { TreeNode } from './Tree';
 
@@ -69,9 +70,7 @@ export function isNoopMove(nodes: readonly TreeNode[], ids: readonly string[], t
   const parents = parentsOf(nodes);
   if (!ids.every((id) => (parents.get(id) ?? null) === target.parentId)) return false;
   const sibs = siblingsOf(nodes, target.parentId).map((n) => n.id);
-  const at = ids.map((id) => sibs.indexOf(id)).sort((a, b) => a - b);
-  const contiguous = at.every((v, i) => i === 0 || v === at[i - 1]! + 1);
-  return contiguous && target.index >= at[0]! && target.index <= at[at.length - 1]! + 1;
+  return isNoopDrop(ids.map((id) => sibs.indexOf(id)), target.index);
 }
 
 export type KeyboardMove = 'up' | 'down' | 'out' | 'in';
@@ -85,12 +84,14 @@ export function keyboardTarget(
   const parents = parentsOf(nodes);
   const parentId = parents.get(ids[0]!) ?? null;
   const sibs = siblingsOf(nodes, parentId);
-  const at = ids.map((id) => sibs.findIndex((n) => n.id === id)).sort((a, b) => a - b);
-  const first = at[0]!;
-  const last = at[at.length - 1]!;
+  const at = ids.map((id) => sibs.findIndex((n) => n.id === id));
+  const first = Math.min(...at);
   switch (move) {
-    case 'up': return first > 0 ? { parentId, index: first - 1 } : null;
-    case 'down': return last < sibs.length - 1 ? { parentId, index: last + 2 } : null;
+    case 'up':
+    case 'down': {
+      const index = nudgeGap(at, move === 'up' ? -1 : 1, sibs.length);
+      return index === null ? null : { parentId, index };
+    }
     case 'out': {
       if (parentId === null) return null;
       const grand = parents.get(parentId) ?? null;

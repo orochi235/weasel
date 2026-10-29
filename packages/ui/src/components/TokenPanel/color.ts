@@ -1,4 +1,5 @@
 import { parseHexBytes } from '@weasel-js/core';
+import { tryNormalizeHex } from '@weasel-js/paint';
 
 const RGB = /^rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})\b/i;
 const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(.+\)$/i;
@@ -45,8 +46,8 @@ export function parsesAsColor(value: string, supports: Supports = browserSupport
 }
 
 function hexOf(v: string): string | null {
-  const bytes = parseHexBytes(v);
-  if (bytes) return `#${bytes.slice(0, 3).map((n) => n.toString(16).padStart(2, '0')).join('')}`;
+  const hex = v.startsWith('#') ? tryNormalizeHex(v, 'rgb') : undefined;
+  if (hex) return hex;
   const rgb = RGB.exec(v);
   return rgb
     ? `#${rgb

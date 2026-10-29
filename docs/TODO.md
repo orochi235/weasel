@@ -369,12 +369,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Symmetry follow-ups
 
-### Container layout strategies
-
-- **(P3) [agent] The `diagram-drop` demo's straight edge strikes through the boxes dropped across it.** Ruled
-  (2026-10-28): edges keep painting above every node (`mainSpecs` pushes them last), and the demo
-  (`apps/site/demos/DiagramDropDemo.tsx`) routes with `router="avoid"` so its edges go round what is dropped.
-
 ---
 
 ## Animation
@@ -394,16 +388,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
   call.
 
-### Engines still on their own frame loops
-
-- **(P3) [maintainer] Should `useFrameClock` move onto `@weasel-js/clock`?** It is the last second
-  elapsed-time clock (pause, rebase on resume), but `@weasel-js/clock` depends on `@weasel-js/react`,
-  so folding it means moving public API out of `@weasel-js/react` and core's re-export into
-  `@weasel-js/clock/react`, and its runs-only-while-subscribed behavior has no clock equivalent.
-  Its one user is the site's `CustomShaderDemo` (2026-10-28).
-- **(P3) [agent] A turned `step` symbol's title and its cut labels both sit on the right**, so in a
-  `direction: 'down'` rack they can overlap when a cut falls near the middle (2026-10-28).
-
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
@@ -421,6 +405,16 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Selection, actions & UI panels
+
+- **(P3) [agent] `quantity.spinKey` keeps its own ×10 for Page Up/Down** (2026-10-28). Every other coarse arrow step
+  reads `COARSE_STEPS` from `@weasel-js/headless`, but headless now depends on quantity, so quantity can't import it.
+  Move the constant down into quantity (headless re-exporting it), or move `spinKey` up.
+
+- **(P2) [agent] Enter commits mid-composition in two DOM text fields** (2026-10-28). `MenuTextValue`
+  (`packages/ui/src/components/ContextMenu/MenuValue.tsx`) and `RenameField` (`PageTabs/RenameField.tsx`) pass every
+  Enter to `editEnd`, so a Japanese or Chinese user confirming a candidate with Enter commits the half-typed text.
+  text-dom's `useTextEdit` skips keys while `isComposing`, and the hud filters them in `textInputHost.ts`; these two
+  need the same check ahead of `editEnd`.
 
 - **(P3) [agent] A tree's Left and Right don't swap in a right-to-left layout** (2026-10-28). `treeKey`
   (`packages/headless/src/tree.ts`) ignores `ListShape.dir`, so in RTL Right still opens a branch. The tree keys
@@ -442,16 +436,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
 
-- **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
-  `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
-  (median of 12) with a node property schema open: `IconAttrField`'s grid of every registered icon
-  (489 cells, about 2,200 elements) costs about 105 ms of it, and highlighting the Export panel's
-  two literals about 70 ms (`pre[data-testid=schema-literal]`, about 1,800 elements since
-  `CodeBlock` stopped wrapping plain tokens). The rest is spread over every pane. Virtualizing
-  either list, or mounting the literal only while its panel is open, changes the UI.
-  The Literal tab is open by default, so mounting the literal only while its panel is open saves nothing
-  (2026-10-26).
-
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
@@ -463,7 +447,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P4) [agent] A headless-component layer shared by DOM and WebGL chrome.** `@weasel-js/headless` (added
   2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type (`rovingKey`,
-  `stepStop`, `typeaheadStep`), a tree's Right/Left (`treeKey`) and a row list's whole key dispatch (`rowKey`), and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
+  `stepStop`, `typeaheadStep`), a tree's Right/Left (`treeKey`) and a row list's whole key dispatch (`rowKey`),
+  reordering a list (`moveItems`, `isNoopDrop`, `nudgeGap`, `gapByMidpoint`, `nearestGap`), how a text field's edit
+  ends (`editEnd`), and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
   `@weasel-js/menu` runs each menu level on the list half, ui's `useRowNavigation` and `useRovingTabIndex` step and
   type ahead through it (`useRowNavigation` takes every key but the nudge from `rowKey`), `Hud` is a `FocusScope<Widget>`, and ui's `domFocusScope(root)` is the same contract over DOM
   elements. Held steppers repeat through `createStepRepeat`, in ui's `UnitField` and on the hud menu's number chips.
@@ -610,17 +596,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   switches it from a menu button showing its surface, and a toolbar or menu button switches from its
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
-
-- **(P3) [agent] The workspace hatch is written twice.** `.wd-canvas-host` in `apps/draw/src/app.css` restates the
-  diagonal bands that `packages/ui/src/components/workspace.module.css` defines for the asset editor's preview, over a
-  different ground. Ruled (2026-10-28): one layer, as a theme token (`--wzl-workspace`) both use, and its ground is the
-  asset editor's lighter one (`--wzl-surface-raised` with its tint taken out), which `--wzl-workspace-surface` becomes;
-  the ground around draw's page gets lighter.
-
-- **(P3) Draw's `registry-enum` prefs offer a Control the control ignores.** The asset editor lists `select` and
-  `radio` for it (`KINDS` in `apps/draw/src/dev/AssetsPage.tsx`), but `RegistryEnumControl` in
-  `apps/draw/src/PreferencesModal.tsx` always draws a `RegistrySelect`. Either draw radios for `radio` or drop the
-  attribute. Filed 2026-10-28.
 
 ---
 
@@ -843,6 +818,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
+  label, keeps it on a reroute, and resets it" timed out on `expect.poll(() => savedLabel()?.dodge).toBe(false)`
+  (received `undefined`: the drag saved no label) in the fleet runs of `headless-slider-steps` (cacb14e98) and
+  `prefs-auto-field`, two branches that touch nothing in chart, on the same evening; every other run that day passed
+  it, including slider-steps' previous commit. Suspected (not shown): the drag lands before the label is placed.
+
 - **(P2) [agent] `npm ci` in a fresh worktree fails in forge's postinstall build** (2026-10-28, seen once, in a
   worktree cut from `main`): `TS7016: Could not find a declaration file for module '@weasel-js/labkit/config'`,
   apparently labkit's declarations not built before forge needs them. `node_modules` installed anyway and the
@@ -956,8 +937,11 @@ only story runner in the repo.
 
 - **(P3) [agent] The timeout warning prints once per vitest project.** A one-file run whose test timed out and
   passed on retry printed `⚠ 1 test(s) timed out and were retried once` about a dozen times (2026-10-27). The `seen` guard in
-  `timeoutRetries()` (`scripts/vitest-timeout-retries.ts`) is meant to add one reporter per run; why it adds more
-  is not yet known.
+  `timeoutRetries()` (`scripts/vitest-timeout-retries.ts`) is meant to add one reporter per run, but vitest 5 has every
+  inline project extend the declaring config file, so `vitest.config.ts` is evaluated again for each project and each
+  evaluation makes a fresh plugin with its own `seen` (a one-file run called `timeoutRetries()` 11 times, 2026-10-28).
+  The fix is to mark the shared `Vitest` object itself, e.g. under a `Symbol.for` key, rather than a closure set; it
+  edits a `triggers` path, so it goes through a full run rather than a batch.
 
 - **(P2) [agent] What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start

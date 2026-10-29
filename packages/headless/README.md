@@ -1,6 +1,9 @@
 # @weasel-js/headless
 
 Component behavior with no substrate: what a DOM component and a canvas-drawn widget both run,
+each drawing it its own way. Today that is a list's roving highlight and typeahead, keyboard
+focus as one contract, and how a text field's edit ends. No React, no DOM.
+
 each drawing it its own way. Today that is a list's roving highlight and typeahead, a tree's
 expand and collapse keys, and keyboard focus as one contract. No React, no DOM.
 
@@ -59,6 +62,21 @@ focused, whether its ring shows, `focus`, `moveFocus` through a `tabOrder`, and
 `subscribeFocus`. A `@weasel-js/hud` HUD is one over its widgets, and `@weasel-js/ui`'s
 `domFocusScope(root)` is one over the elements under `root`, so code that moves focus is
 written once for both. `tabSort` and `tabStep` are the order and the step both use.
+
+## Text fields
+
+`editEnd(cause, shape)` says how a text field's edit ends: Enter and blur commit, Escape cancels.
+A field's shape can make Escape commit too, and a `multiline` one leaves Shift+Enter to type a
+line break. Caret movement stays with each field: a DOM field gets it from the browser.
+
+## Reorder
+
+Moving items within a list, whether it is drawn in the DOM or on a canvas. A destination is a gap counted before
+anything is taken out: 0 before the first item, `length` after the last. `moveItems(items, at, to)` moves the items at
+indices `at` into gap `to`; `isNoopDrop` says whether that leaves them where they are; `nudgeGap` is the gap a
+one-place move takes them to, and `nudgeOf` reads the Alt+arrow chord that asks for one. A pointer finds its gap by
+`gapByMidpoint`, for items side by side, each split at its middle, or by `nearestGap`, for gaps drawn at places of
+their own.
 
 ## Hold-to-repeat
 
