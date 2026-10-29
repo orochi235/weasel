@@ -2,6 +2,7 @@
  *  a main-line stage dragged along the line, a lane dragged by its header,
  *  and a group dragged along the line by its title. */
 import type { Contribution } from '@weasel-js/core';
+import { moveItems } from '@weasel-js/headless';
 import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../reorder';
 import { moveInChain, moveRunInChain } from './chainEdit';
 import type { LookOrder } from './draw';
@@ -102,9 +103,7 @@ export function groupMove(doc: EffectDoc, order: LookOrder, units: readonly stri
 /** The doc with the lane order the drag leaves. */
 export function laneMove(doc: EffectDoc, order: LookOrder, move: ReorderMove): EffectDoc {
   const types = order.items.flatMap((i) => laneTypeOf(i.id) ?? []);
-  const moved = types.filter((_, k) => k !== move.from);
-  moved.splice(move.to > move.from ? move.to - 1 : move.to, 0, types[move.from]!);
-  return setLaneOrder(doc, moved);
+  return setLaneOrder(doc, moveItems(types, [move.from], move.to));
 }
 
 /** The drawn units a move was made among, as they stood before it. */

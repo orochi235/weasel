@@ -2,7 +2,7 @@ import type {} from '@weasel-js/react';
 import { pref, type PrefNumber } from '@weasel-js/prefs';
 import { ANCHOR_SNAP_PX, CURVE_HIT_PX as FUNCTION_CURVE_HIT_PX } from './components/CurveEditor/createFunctionLayer';
 import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEditor/createKeyframeLayer';
-import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './components/NumberField/useStepRepeat';
+import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/headless';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type ParamsSurface } from './components/Prefs/commitPolicy';
 import type { ParamsPolicy } from './components/Prefs/useParamsPolicy';
 import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';

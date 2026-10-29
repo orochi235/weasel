@@ -2,32 +2,20 @@ import { createNumberValues } from './numberValues';
 import { createHeldValues } from './heldValues';
 import { entriesAt, isRow, type MenuColorEntry, type MenuEntry, type MenuNumberEntry, type MenuTextEntry } from './entries';
 import { firstRow, type MenuStack } from './keys';
-import { EMPTY_TYPEAHEAD, type TypeaheadBuffer } from '@weasel-js/headless';
+import { EMPTY_TYPEAHEAD, timerScheduler, type Scheduler, type TypeaheadBuffer } from '@weasel-js/headless';
 import { planKey } from './keyPlan';
 import type { Point, Rect } from './placement';
 import { inTriangle } from './triangle';
 
 export { TYPEAHEAD_RESET_MS } from '@weasel-js/headless';
+export { timerScheduler };
 /** How long the pointer rests on a submenu row before its panel opens, in milliseconds. */
 export const SUBMENU_OPEN_MS = 200;
 /** How long a move toward an open submenu keeps it open while the pointer crosses other rows, in milliseconds. */
 export const DIAGONAL_GRACE_MS = 300;
 
 /** Clock and timer, injected so tests and headless hosts control time. */
-export interface MenuScheduler {
-  now(): number;
-  /** Run `fn` after `ms`; returns a cancel. */
-  set(fn: () => void, ms: number): () => void;
-}
-
-/** The real-time scheduler: `Date.now` and `setTimeout`. */
-export const timerScheduler: MenuScheduler = {
-  now: () => Date.now(),
-  set: (fn, ms) => {
-    const t = setTimeout(fn, ms);
-    return () => clearTimeout(t);
-  },
-};
+export type MenuScheduler = Scheduler;
 
 /** What {@link createMenuController} needs: the entries, how to close, and optionally a clock. */
 export interface MenuControllerOptions {

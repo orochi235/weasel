@@ -4,8 +4,8 @@
  *
  * @packageDocumentation
  */
-export { firstStop, stepStop, rovingKey } from './list';
-export type { ListShape, RovingResult } from './list';
+export { firstStop, stepStop, rovingKey, rowKey } from './list';
+export type { ListShape, RovingResult, KeyPress, RowKeysShape, RowKeyAction } from './list';
 export {
   typeaheadMatch, typeaheadStep, EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS,
 } from './typeahead';
@@ -14,3 +14,13 @@ export { tabSort, tabStep } from './focus';
 export type { FocusScope, FocusScopeOptions } from './focus';
 export { editEnd } from './textCommit';
 export type { EditCause, EditEnd, EditEndShape } from './textCommit';
+export {
+  moveItems, movedIndex, isNoopDrop, nudgeGap, gapByMidpoint, nearestGap, isNudgeChord, nudgeOf,
+} from './reorder';
+export type { NudgeKey } from './reorder';
+export { treeKey } from './tree';
+export type { TreeShape, TreeKeyResult } from './tree';
+export { timerScheduler } from './scheduler';
+export type { Scheduler } from './scheduler';
+export { createStepRepeat, REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './stepRepeat';
+export type { StepRepeat, StepRepeatOptions } from './stepRepeat';

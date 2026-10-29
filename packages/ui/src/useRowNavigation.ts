@@ -1,6 +1,5 @@
-import { rovingKey } from '@weasel-js/headless';
+import { nudgeOf, rowKey, treeKey, type RowKeyAction, type RowKeysShape, type TreeShape } from '@weasel-js/headless';
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { nudgeOf } from './nudgeKey';
 import { modsOf, type PressModifiers } from './useReorderDragList';
 import { useRemovedRowFocus, type FocusRow } from './useRemovedRowFocus';
 import { useTypeahead } from './useTypeahead';
@@ -158,52 +157,44 @@ function rowKeyHandler({ rows, opts, typeahead, focus, focusLater, go }: KeyCtx)
     return true;
   };
 
-  /** Right and Left in a tree; `false` for a key that does nothing here. */
-  const treeKey = (tree: RowTree, id: string, i: number, key: string): boolean => {
-    if (key === 'ArrowRight') {
-      if (!tree.isBranch(id)) return false;
-      if (!tree.isOpen(id)) tree.toggle(id);
-      else if (rows[i + 1]?.parentId === id) go(id, i + 1, false);
-      return true;
-    }
-    if (tree.isOpen(id) && tree.toggle(id)) return true;
-    const parent = rows.findIndex((r) => r.id === rows[i]!.parentId);
-    if (parent < 0) return false;
-    go(id, parent, false);
-    return true;
+  const tree = opts.tree;
+  const treeShape: TreeShape<FocusRow> | undefined = tree && {
+    isBranch: (r) => tree.isBranch(r.id),
+    isOpen: (r) => tree.isOpen(r.id),
+    isChildOf: (child, parent) => child.parentId === parent.id,
+  };
+  const shape: RowKeysShape<FocusRow> = {
+    ...ROWS,
+    ...(treeShape ? { tree: treeShape } : {}),
+    selectAll: !!opts.onSelectAll,
+    activate: !!opts.onActivate,
+    typeahead: !!opts.textOf,
   };
 
-  const handle = (id: string, e: KeyboardEvent): boolean => {
+  const apply = (id: string, i: number, e: KeyboardEvent, act: RowKeyAction | null): boolean => {
+    if (!act) return false;
+    switch (act.kind) {
+      case 'selectAll': opts.onSelectAll!(); return true;
+      case 'move': if (act.at !== null) go(id, act.at, act.extend); return true;
+      case 'activate': opts.onActivate!(id, modsOf(e)); return true;
+      case 'type': return typeAhead(e.key, i) || act.held;
+      case 'toggle': {
+        if (tree!.toggle(id) || e.key !== 'ArrowLeft') return true;
+        // A branch that would not close: Left steps to the parent instead.
+        const t = treeKey(rows, i, e.key, { ...treeShape!, canToggle: (r) => r.id !== id });
+        return apply(id, i, e, t.handled && !('toggle' in t) ? { kind: 'move', at: t.at, extend: false } : null);
+      }
+    }
+  };
+
+  return (id, e) => {
     const i = rows.findIndex((r) => r.id === id);
     if (i < 0) return false;
-    if (opts.onSelectAll && e.key.toLowerCase() === 'a' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
-      opts.onSelectAll();
-      return true;
-    }
     const delta = nudgeOf(e);
     if (delta !== null && opts.onNudge) {
       if (opts.onNudge(id, delta) !== false) focusLater(id);
       return true;
     }
-    const step = rovingKey(rows, i, e.key, ROWS);
-    if (step.handled) {
-      if (step.at !== null) go(id, step.at, e.shiftKey);
-      return true;
-    }
-    if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && opts.tree) return treeKey(opts.tree, id, i, e.key);
-    // Mid-search a space is a typed character: "new f" must not activate at the space.
-    if (e.key === ' ' && opts.textOf && typeahead.searching()) {
-      typeAhead(e.key, i);
-      return true;
-    }
-    if (e.key === 'Enter' || e.key === ' ') {
-      if (!opts.onActivate) return false;
-      opts.onActivate(id, modsOf(e));
-      return true;
-    }
-    if (opts.textOf && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) return typeAhead(e.key, i);
-    return false;
+    return apply(id, i, e, rowKey(rows, i, e, shape, opts.textOf ? typeahead.searching() : false));
   };
-
-  return handle;
 }

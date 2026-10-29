@@ -13,6 +13,12 @@ describe('<CodeBlock>', () => {
     expect(lines.join('\n')).toBe(SOURCE);
   });
 
+  it('draws `text` as its lines alone, with no token colored', () => {
+    const { container } = render(<CodeBlock code={SOURCE} language="text" />);
+    expect(container.querySelectorAll('.token')).toHaveLength(0);
+    expect([...container.querySelectorAll('pre code > span')].map((l) => l.textContent).join('\n')).toBe(SOURCE);
+  });
+
   it('marks each token with the class its color is keyed on', () => {
     const { container } = render(<CodeBlock code={SOURCE} />);
     const tokenOf = (text: string) => [...container.querySelectorAll('.token')].find((t) => t.textContent === text);

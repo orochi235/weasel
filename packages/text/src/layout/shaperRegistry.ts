@@ -9,7 +9,7 @@ let registered: TextShaper | null = null;
 
 /**
  * Give every text layout a shaping engine: `registerShaper(await
- * loadShaper())`, with `loadShaper` from `@weasel-js/shape`. `layoutRuns` uses
+ * loadShaper())`, with `loadShaper` from `@weasel-js/text-shaping`. `layoutRuns` uses
  * it whenever its options carry none. Pass `null`, or call the function
  * returned, to take it out again.
  *
