@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { RadioGroup, Radio } from '@weasel-js/ui/components/RadioGroup';
 
 const meta: Meta<typeof RadioGroup> = {
-  title: 'Primitives/RadioGroup',
+  title: 'ui/Foundations/RadioGroup',
   component: RadioGroup,
 };
 export default meta;

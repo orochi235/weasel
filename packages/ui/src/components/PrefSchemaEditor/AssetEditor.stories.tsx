@@ -5,7 +5,7 @@ import { DEMO_ACTIONS, DEMO_WORKSPACE } from './AssetEditor.demo';
 import s from './AssetEditor.stories.module.css';
 
 const meta: Meta<typeof AssetEditor> = {
-  title: 'Primitives/AssetEditor',
+  title: 'ui/Foundations/AssetEditor',
   parameters: { layout: 'fullscreen' },
   component: AssetEditor,
 };

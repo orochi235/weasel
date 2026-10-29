@@ -6,7 +6,7 @@ const tint = (swatch: string): Library['tint'] => ({ ref: `--forge-library-${swa
 
 /**
  * This repo's libraries, by the package a story file lives in rather than by its title's first segment: the title
- * prefix is authored per story and disagrees with itself, and `packages/ui` alone declares both `Primitives/` and `ui/`.
+ * prefix is authored per story and disagrees with itself.
  */
 export const LIBRARIES: readonly Library[] = [
   { path: '/packages/ui/', label: 'ui', tint: tint('amber') },

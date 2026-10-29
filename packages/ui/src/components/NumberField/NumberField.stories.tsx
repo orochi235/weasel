@@ -3,7 +3,7 @@ import { useState, type CSSProperties } from 'react';
 import { NumberField } from '@weasel-js/ui/components/NumberField';
 
 const meta: Meta<typeof NumberField> = {
-  title: 'Primitives/NumberField',
+  title: 'ui/Foundations/NumberField',
   component: NumberField,
 };
 export default meta;

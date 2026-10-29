@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Input } from '@weasel-js/ui/components/Input';
 
 const meta: Meta<typeof Input> = {
-  title: 'Primitives/Input',
+  title: 'ui/Foundations/Input',
   component: Input,
 };
 export default meta;

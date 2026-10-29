@@ -1,7 +1,7 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { RADIO_ARC_DEFAULTS as D, RadioArcView, type RadioArcConfig } from './RadioArcView';
 
-export default meta({ title: 'Primitives/RadioGroup', layout: 'fullscreen', tags: ['lab'] });
+export default meta({ title: 'ui/Foundations/RadioGroup', layout: 'fullscreen', tags: ['lab'] });
 
 /** Radio groups along an arc: one over the top of a circle and one under it, each with its label leading. */
 export const OnAnArc = story({

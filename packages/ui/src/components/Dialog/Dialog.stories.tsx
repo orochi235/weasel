@@ -4,7 +4,7 @@ import { Dialog } from '@weasel-js/ui/components/Dialog';
 import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof Dialog> = {
-  title: 'Primitives/Dialog',
+  title: 'ui/Foundations/Dialog',
   component: Dialog,
 };
 export default meta;

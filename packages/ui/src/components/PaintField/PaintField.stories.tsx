@@ -4,7 +4,7 @@ import type { Paint } from '@weasel-js/core';
 import { PaintField } from '@weasel-js/ui/components/PaintField';
 
 const meta: Meta<typeof PaintField> = {
-  title: 'Primitives/PaintField',
+  title: 'ui/Foundations/PaintField',
   component: PaintField,
 };
 export default meta;

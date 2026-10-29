@@ -3,7 +3,7 @@ import { PrefKindBadge } from '@weasel-js/ui/components/Prefs';
 import s from './PrefKindBadge.stories.module.css';
 
 const meta: Meta<typeof PrefKindBadge> = {
-  title: 'Primitives/Prefs/PrefKindBadge',
+  title: 'ui/Foundations/Prefs/PrefKindBadge',
   component: PrefKindBadge,
   args: { kind: 'number' },
 };

@@ -5,7 +5,7 @@ import { PrefsForm, PrefLabelLine, PrefRule } from '@weasel-js/ui/components/Pre
 const note: PrefLeaf = { kind: 'label', name: 'Sizes are in world units.', description: 'Zoom does not change them.', default: undefined };
 
 const meta: Meta<typeof PrefLabelLine> = {
-  title: 'Primitives/Prefs/PrefWords',
+  title: 'ui/Foundations/Prefs/PrefWords',
   component: PrefLabelLine,
   args: { pref: note },
 };

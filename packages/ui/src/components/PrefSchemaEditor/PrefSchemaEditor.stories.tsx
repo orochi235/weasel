@@ -8,7 +8,7 @@ import { icon } from '../../icons.gen';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta<typeof PrefSchemaEditor> = {
-  title: 'Primitives/PrefSchemaEditor',
+  title: 'ui/Foundations/PrefSchemaEditor',
   parameters: { layout: 'fullscreen' },
   component: PrefSchemaEditor,
 };

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Field, fieldClasses } from '@weasel-js/ui/components/Field';
 
 const meta: Meta<typeof Field> = {
-  title: 'Primitives/Field',
+  title: 'ui/Foundations/Field',
   component: Field,
 };
 export default meta;

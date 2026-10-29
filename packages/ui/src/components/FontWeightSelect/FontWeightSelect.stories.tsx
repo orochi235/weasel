@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { FontWeightSelect } from '@weasel-js/ui/components/FontWeightSelect';
 
 const meta: Meta<typeof FontWeightSelect> = {
-  title: 'Primitives/FontWeightSelect',
+  title: 'ui/Foundations/FontWeightSelect',
   component: FontWeightSelect,
 };
 export default meta;

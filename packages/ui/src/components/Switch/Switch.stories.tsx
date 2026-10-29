@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Switch } from '@weasel-js/ui/components/Switch';
 
 const meta: Meta<typeof Switch> = {
-  title: 'Primitives/Switch',
+  title: 'ui/Foundations/Switch',
   component: Switch,
 };
 export default meta;

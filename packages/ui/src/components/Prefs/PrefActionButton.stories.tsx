@@ -7,7 +7,7 @@ import { icon } from '../../icons.gen';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta<typeof PrefActionButton> = {
-  title: 'Primitives/Prefs',
+  title: 'ui/Foundations/Prefs',
   component: PrefActionButton,
 };
 export default meta;

@@ -6,7 +6,7 @@ import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Too
 // so Focusable's cloned props would be dropped and the tooltip never open.
 
 const meta: Meta<typeof Tooltip> = {
-  title: 'Primitives/Tooltip',
+  title: 'ui/Foundations/Tooltip',
   component: Tooltip,
 };
 export default meta;

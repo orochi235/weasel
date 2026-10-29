@@ -692,9 +692,6 @@ only story runner in the repo.
 - **(P3) [maintainer] Whether `ReactNode` props keep the text controls forge's prop reader gives them.** They
   put empty rows on many stories (2026-10-24).
 
-- **(P3) [maintainer] Whether `Primitives/*` story titles merge into `ui/Foundations`.** No rule separates
-  them (2026-10-24).
-
 - **(P3) [maintainer] Icons for the package pages.** Said to be specced (gray and blue React icons, an orange
   window, and three others), but no spec has been found in the repo or in either account's weasel transcripts.
   Ask where it lives before drawing anything (2026-10-21).

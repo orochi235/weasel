@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
 
 const meta: Meta<typeof RangeSlider> = {
-  title: 'Primitives/RangeSlider',
+  title: 'ui/Foundations/RangeSlider',
   component: RangeSlider,
 };
 export default meta;

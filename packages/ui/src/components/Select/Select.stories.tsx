@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Select, SelectItem, SelectSection, type SelectProps } from '@weasel-js/ui/components/Select';
 
 const meta: Meta<typeof Select> = {
-  title: 'Primitives/Select',
+  title: 'ui/Foundations/Select',
   component: Select,
 };
 export default meta;

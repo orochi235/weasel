@@ -3,7 +3,7 @@ import { ToastRegion, createToastQueue } from '@weasel-js/ui/components/Toast';
 import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof ToastRegion> = {
-  title: 'Primitives/Toast',
+  title: 'ui/Foundations/Toast',
   component: ToastRegion,
 };
 export default meta;

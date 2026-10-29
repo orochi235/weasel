@@ -5,7 +5,7 @@ import type { PaintSlot } from '@weasel-js/ui/components/GradientEditor';
 import { FillStrokeSwatch, type FillStrokeSwatchProps } from '@weasel-js/ui/components/FillStrokeSwatch';
 
 const meta: Meta<typeof FillStrokeSwatch> = {
-  title: 'Primitives/FillStrokeSwatch',
+  title: 'ui/Foundations/FillStrokeSwatch',
   component: FillStrokeSwatch,
 };
 export default meta;

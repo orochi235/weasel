@@ -2,7 +2,7 @@ import { f, meta, story } from '@weasel-js/forge';
 import { SWATCH_ARC_DEFAULTS as D, type SwatchArcConfig } from './swatchArcConfig';
 import { SwatchArcView } from './SwatchArcView';
 
-export default meta({ title: 'Primitives/SwatchStrip', layout: 'fullscreen', tags: ['lab'] });
+export default meta({ title: 'ui/Foundations/SwatchStrip', layout: 'fullscreen', tags: ['lab'] });
 
 /** A swatch strip along an arc, each row a ring of its own, its ring geometry read back off the page. */
 export const OnAnArc = story({

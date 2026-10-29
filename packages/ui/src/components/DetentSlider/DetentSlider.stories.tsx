@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { DetentSlider, type DetentSliderProps, type DetentValue } from '@weasel-js/ui/components/DetentSlider';
 
 const meta: Meta<typeof DetentSlider> = {
-  title: 'Primitives/DetentSlider',
+  title: 'ui/Foundations/DetentSlider',
   component: DetentSlider,
   args: {
     labels: 'all',

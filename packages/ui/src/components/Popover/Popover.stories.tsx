@@ -6,7 +6,7 @@ import { useOverlayPortal } from '@weasel-js/ui/portal-host';
 import s from './Popover.stories.module.css';
 
 const meta: Meta<typeof Popover> = {
-  title: 'Primitives/Popover',
+  title: 'ui/Foundations/Popover',
   component: Popover,
 };
 export default meta;

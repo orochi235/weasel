@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SwatchGrid, type SwatchGridOption } from '@weasel-js/ui/components/SwatchGrid';
 
 const meta: Meta<typeof SwatchGrid> = {
-  title: 'Primitives/SwatchGrid',
+  title: 'ui/Foundations/SwatchGrid',
   component: SwatchGrid,
 };
 export default meta;

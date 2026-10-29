@@ -7,7 +7,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Select } from '@weasel-js/ui/components/Select';
 
 const meta: Meta<typeof PrefsForm> = {
-  title: 'Primitives/Prefs',
+  title: 'ui/Foundations/Prefs',
   component: PrefsForm,
 };
 export default meta;

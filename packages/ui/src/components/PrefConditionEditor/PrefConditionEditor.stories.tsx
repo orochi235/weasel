@@ -5,7 +5,7 @@ import { PrefConditionEditor, type PrefConditionEditorProps } from '@weasel-js/u
 import s from './PrefConditionEditor.stories.module.css';
 
 const meta: Meta<typeof PrefConditionEditor> = {
-  title: 'Primitives/PrefConditionEditor',
+  title: 'ui/Foundations/PrefConditionEditor',
   component: PrefConditionEditor,
   args: { 'aria-label': 'Shown if' },
 };
