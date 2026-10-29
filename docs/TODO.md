@@ -653,9 +653,12 @@ only story runner in the repo.
   strip gives a `mounted` node its room and a seam, while `Container` renders
   only `visible` ones, so the pane is an empty gap with a live separator
   (`layout-node-adapter.js` skips `hidden` and `destroyed` only; windease
-  2.0.0). `Split` works around it by showing its sidebar node and hiding it
-  again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
-  fix belongs in windease; the workaround goes when it lands.
+  2.2.0). `Split` works around it by showing its sidebar node and hiding it
+  again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`).
+  Fixed on windease's `mounted-not-laid-out` branch (2026-10-29), unmerged and
+  unreleased: layout now places only `visible` children. Once a release carries
+  it, raise labkit's `windease` range to it, leave the sidebar unshown when
+  `hasSidebar` is false, and retire this entry.
 
 - **(P3) [agent] A forge dev server's RSS climbs about 200 MB a restart, outside the JS heap.** With the
   heap leak fixed (`restartLeavingNothing`, `scripts/vite-prebundle.ts`), heap after GC goes 89 to 113 MB
