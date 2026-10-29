@@ -1,8 +1,8 @@
 # @weasel-js/headless
 
 Component behavior with no substrate: what a DOM component and a canvas-drawn widget both run,
-each drawing it its own way. Today that is a list's roving highlight and typeahead, and keyboard
-focus as one contract. No React, no DOM.
+each drawing it its own way. Today that is a list's roving highlight and typeahead, a tree's
+expand and collapse keys, and keyboard focus as one contract. No React, no DOM.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -40,6 +40,17 @@ A list's shape says which items the highlight can land on (`canStop`), which arr
 (`orientation`, vertical by default, or `'both'` for all four), whether Left and Right swap for a
 right-to-left layout (`dir`), and whether it wraps at the ends (`wrap`, on by default).
 `@weasel-js/menu` runs every menu level on these.
+
+## Trees and rows
+
+`treeKey` is a tree's Right and Left, the WAI-ARIA way: Right opens a closed branch or steps to
+its first child, Left closes an open branch or steps to the parent. Its `TreeShape` says which
+items are branches, which are open, and which is whose child.
+
+`rowKey` is every key a list of rows answers, in one place: Cmd/Ctrl+A, the arrows with Home and
+End (Shift extends), a tree's Right and Left, Enter and Space, and typeahead. It returns what the
+key asks for (`selectAll`, `move`, `toggle`, `activate`, `type`) and the caller carries it out.
+`@weasel-js/ui`'s `useRowNavigation` runs on it.
 
 ## Focus
 
