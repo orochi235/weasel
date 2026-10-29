@@ -1046,11 +1046,16 @@ only story runner in the repo.
     the stencil (`tests/perf/recorded/hull-clip-2026-10-27/`). A rect clip there is snapped to the same grid
     and carries itself as a hull, so a slanted item across it stays in the run too: 512 such clips, 32 draws
     and 0.78 ms against 1536 draws and 6.01 ms on the stencil, 0 differing pixels
-    (`tests/perf/recorded/rect-clip-hull-2026-10-27/`). What still flushes: every such clip on a
-    multisampled target, which is the browser default (WebGL2 has no `gl_SampleMask`, and scaling alpha by
-    sample coverage leaves the color beneath showing at the clip edge where layers stack, inferred from the
-    blend math); a non-convex or curved clip; nesting past 8 planes, rect clips included (three nested
-    rect clips are 12); and a clip inside a retained or effect target.
+    (`tests/perf/recorded/rect-clip-hull-2026-10-27/`). Nested clips keep only the tighter of two planes
+    facing the same way (`meetHulls`), so nested rect clips stay at four planes however deep: 512 slanted
+    items each across three nested rect clips, 32 draws and 2.97–3.17 ms a frame, against 3584 draws and
+    13.32–13.81 ms before, 0 differing pixels (msb-uai, Apple M3 Max, solo, two alternating passes each,
+    2026-10-29; `tests/perf/recorded/nested-rect-hull-2026-10-29/`). What still flushes: every such clip
+    on a multisampled target, which is the browser default (WebGL2 has no `gl_SampleMask`, and scaling
+    alpha by sample coverage leaves the color beneath showing at the clip edge where layers stack, inferred
+    from the blend math); a non-convex or curved clip; nested clips facing more than 8 ways between them,
+    such as a rect clip and two clips turned to different angles (turned clips merge only where their
+    snapped edges come out exactly parallel); and a clip inside a retained or effect target.
   - **Caching `u_synthBold` (a uniform then), `u_samplers`, and `u_fieldScale` was tried and
     reverted**, measured through `finish`: it saved about 0.1 us a flush on color-matrix breaks and
     made a frame of 20,000 stroked rects 30% slower, with both renderers interleaved in one page.

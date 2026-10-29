@@ -484,6 +484,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   expect(draws['ss-rect-stencilclip'], 'with the shader clip off, each clip should close its run').toBeGreaterThanOrEqual(N);
   expect(agreement.rectShaderVsOwnDraw, 'a rect clip cut and shader-tested must keep the stencil\'s pixels').toBe(0);
   expect(agreement.nestShaderVsOwnDraw, 'nested rect clips, cut and shader-tested, must keep the stencil\'s pixels').toBe(0);
+  expect(draws['ss-slant-nest3'], 'nested rect clips should merge into one four-plane hull and stay in the run').toBeLessThan(N / 4);
   expect(draws['ss-slant-nest3stencil'], 'with the shader clip off, nested clips should take the stencil').toBeGreaterThanOrEqual(N);
   expect(draws['ss-slant-rectclip'], 'a slanted item across a rect clip should stay in the run').toBeLessThan(N / 4);
   expect(draws['ss-slant-rectstencil'], 'with the shader clip off, it should take the stencil').toBeGreaterThanOrEqual(N);
