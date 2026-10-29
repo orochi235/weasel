@@ -9,8 +9,6 @@ export { useNearViewport } from './useNearViewport';
 export { prefersReducedMotion, usePrefersReducedMotion } from './reducedMotion';
 export { useVisibleRaf } from './useVisibleRaf';
 export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from './useVisibleRaf';
-export { useFrameClock } from './useFrameClock';
-export type { FrameClock, FrameClockOptions } from './useFrameClock';
 export { useStableByContent, sameList } from './useStableByContent';
 export { createKitSettingsStore, NO_KIT_SETTINGS } from './kitSettings';
 export type { KitSettingAt, KitSettingLeaf, KitSettingPath, KitSettingsOverrides, KitSettingsStore, WritableKitSettingsStore } from './kitSettings';

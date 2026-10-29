@@ -394,16 +394,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
   call.
 
-### Engines still on their own frame loops
-
-- **(P3) [maintainer] Should `useFrameClock` move onto `@weasel-js/clock`?** It is the last second
-  elapsed-time clock (pause, rebase on resume), but `@weasel-js/clock` depends on `@weasel-js/react`,
-  so folding it means moving public API out of `@weasel-js/react` and core's re-export into
-  `@weasel-js/clock/react`, and its runs-only-while-subscribed behavior has no clock equivalent.
-  Its one user is the site's `CustomShaderDemo` (2026-10-28).
-- **(P3) [agent] A turned `step` symbol's title and its cut labels both sit on the right**, so in a
-  `direction: 'down'` rack they can overlap when a cut falls near the middle (2026-10-28).
-
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
@@ -441,16 +431,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved
   bars, so it is waiting on a decision (2026-10-22). Deferred (2026-10-22).
-
-- **(P3) [recheck] draw's asset editor renders two large lists whole.** Measured 2026-10-25 in
-  `apps/draw/src/dev/AssetsPage.test.tsx`'s first test, whose body takes about 470 ms of jsdom work
-  (median of 12) with a node property schema open: `IconAttrField`'s grid of every registered icon
-  (489 cells, about 2,200 elements) costs about 105 ms of it, and highlighting the Export panel's
-  two literals about 70 ms (`pre[data-testid=schema-literal]`, about 1,800 elements since
-  `CodeBlock` stopped wrapping plain tokens). The rest is spread over every pane. Virtualizing
-  either list, or mounting the literal only while its panel is open, changes the UI.
-  The Literal tab is open by default, so mounting the literal only while its panel is open saves nothing
-  (2026-10-26).
 
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -616,11 +596,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   different ground. Ruled (2026-10-28): one layer, as a theme token (`--wzl-workspace`) both use, and its ground is the
   asset editor's lighter one (`--wzl-surface-raised` with its tint taken out), which `--wzl-workspace-surface` becomes;
   the ground around draw's page gets lighter.
-
-- **(P3) Draw's `registry-enum` prefs offer a Control the control ignores.** The asset editor lists `select` and
-  `radio` for it (`KINDS` in `apps/draw/src/dev/AssetsPage.tsx`), but `RegistryEnumControl` in
-  `apps/draw/src/PreferencesModal.tsx` always draws a `RegistrySelect`. Either draw radios for `radio` or drop the
-  attribute. Filed 2026-10-28.
 
 ---
 
