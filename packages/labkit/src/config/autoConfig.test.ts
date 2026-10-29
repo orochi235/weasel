@@ -40,7 +40,8 @@ describe('resolveAutoConfig', () => {
   it('gives an auto path its declared auto value where no resolver computes it, and the resolver where one does', () => {
     const withValue = (key: string) => {
       const group = { ...resolved.group, children: { ...resolved.group.children } };
-      group.children[key] = { ...group.children[key], autoValue: 5 } as never;
+      const leaf = group.children[key] as { auto?: object };
+      group.children[key] = { ...leaf, auto: { ...leaf.auto, value: 5 } } as never;
       return { ...resolved, group };
     };
     expect(resolveAutoConfig(withValue('cols'), raw, new Set(['cols'])).cols).toBe(5);

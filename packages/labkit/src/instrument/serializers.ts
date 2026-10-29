@@ -6,7 +6,7 @@ import type { Instrument, InstrumentList } from './types';
 /**
  * One instrument's config schema, resolved without the lab's rules — which
  * neither the store nor a trial composed outside a lab has access to. No rule
- * can reach `autoResolve`, `unpinned` or `manual`, so for reading those the
+ * can reach `autoResolve` or `auto`, so for reading those the
  * two resolutions agree; anything reading the rendered leaves wants
  * `useConfigSchema` instead. `undefined` for a legacy `configSchema()`
  * instrument, which declares no auto annotations at all.

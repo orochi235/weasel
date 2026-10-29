@@ -600,10 +600,10 @@ describe('PrefsForm — inherited leaves', () => {
     expect(onAutoChange).toHaveBeenCalledWith('window.glow', false);
   });
 
-  it('gives a manual leaf no toggle', () => {
+  it('gives a leaf that is never auto no toggle', () => {
     const schema: PrefGroup = {
       name: 'Looks',
-      children: { glow: { kind: 'number', name: 'Glow', description: '', default: 2, manual: true } },
+      children: { glow: { kind: 'number', name: 'Glow', description: '', default: 2, auto: false } },
     };
     renderWithIcons(<PrefsForm schema={schema} values={{}} onChange={() => {}} onAutoChange={() => {}} />);
     expect(screen.queryByRole('button', { name: 'Pin Glow' })).toBeNull();

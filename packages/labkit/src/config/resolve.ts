@@ -155,14 +155,13 @@ function resolveEntry(
       `[labkit] "${path}" is an f.value whose kind cannot be inferred from its default (${String(entry.default)}) — declare it with a typed builder, or f.custom(kind, default) for a value with no row`,
     );
   }
-  const { autoResolve, unpinned, autoable } = entry.options;
+  const { autoResolve, auto } = entry.options;
   return {
     ...patch,
     default: entry.default,
     // Extra keys survive onto the leaf at runtime; `ControlPanel` reads them
     // back with its `extra<T>` helper, the same as `min`, `step` and the rest.
     ...(autoResolve === undefined ? {} : { autoResolve }),
-    ...(unpinned === undefined ? {} : { unpinned }),
-    ...(autoable || unpinned ? { autoable: true } : {}),
+    ...(auto === undefined ? {} : { auto }),
   } as PrefLeaf;
 }

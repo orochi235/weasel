@@ -422,15 +422,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P1) [agent] Rework how a pref leaf says it can be auto.** Three fields on a leaf say it today
-  (`packages/prefs/src/schema.ts`): `manual` (never auto), `unpinned` (starts auto), and `autoValue` (what it reads
-  while auto, where its owner computes nothing; unset, it reads no value), and a schema can set them against each
-  other. Ruled (2026-10-28): one field, `auto`. Left out, the leaf can be auto and starts pinned at `default`;
-  `auto: false` is never auto; `auto: { on: true }` starts auto; `auto: { value: x }` reads `x` while auto, and
-  without `value` an auto leaf has no value, as now. The three old fields go, with every reader moved
-  (`PrefsForm`'s `onAutoChange`, labkit's `rowAuto.ts`, `autoConfig.ts`, `baseNode.ts`, `MatrixCell.tsx`, the schema
-  editor's Auto panel and `kindSchemas.ts`), and a changeset saying the schema shape changed.
-
 - **(P2) [maintainer] Bar along an arc: clockwise and counterclockwise lay out identically.** `placeAlongRun` now takes
   `order: 'reading' | 'track'`, so the arc's direction could set which end item 1 sits at, with readability
   governing only each item's rotation, plus an `Along`-level `side`. That changes the default layout of curved

@@ -221,7 +221,7 @@ describe('resolveConfigSchema / nested groups', () => {
     expect(leafAt(resolveConfigSchema(schema, [rule]), 'when').kind).toBe('number');
   });
 
-  it('carries autoResolve, unpinned and autoable onto the resolved leaf', () => {
+  it('carries autoResolve and auto onto the resolved leaf', () => {
     const r = resolveConfigSchema(
       f.schema({
         gap: f.number(12).auto(() => 18),
@@ -231,13 +231,14 @@ describe('resolveConfigSchema / nested groups', () => {
       }),
       [],
     );
-    const autoable = (path: string) => (leafAt(r, path) as { autoable?: boolean }).autoable;
     expect(typeof leafAt(r, 'gap').autoResolve).toBe('function');
-    expect(leafAt(r, 'cols').unpinned).toBe(true);
-    expect([autoable('gap'), autoable('cols'), autoable('bare')]).toEqual([true, true, true]);
+    expect([leafAt(r, 'gap').auto, leafAt(r, 'cols').auto, leafAt(r, 'bare').auto]).toEqual([
+      {},
+      { on: true },
+      {},
+    ]);
     expect(leafAt(r, 'plain').autoResolve).toBeUndefined();
-    expect(leafAt(r, 'plain').unpinned).toBeUndefined();
-    expect(autoable('plain')).toBeUndefined();
+    expect(leafAt(r, 'plain').auto).toBeUndefined();
   });
 
   it('gives a list of strings a string item, and a typed list the item it was built with', () => {

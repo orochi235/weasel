@@ -96,11 +96,11 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    *  value's other fields. */
   mixed?: ReadonlySet<string>;
   /** Given, a leaf's label toggles whether it inherits: `next` true unpins it,
-   *  false pins it at the value it shows. Leaves `canInherit` refuses keep a
-   *  plain label. */
+   *  false pins it at the value it shows. Leaves `canInherit` refuses, and
+   *  leaves that say `auto: false`, keep a plain label. */
   onAutoChange?: (path: string, next: boolean) => void;
-  /** Which leaves can inherit, and so get a label toggle. Default: every leaf,
-   *  once `onAutoChange` is given. */
+  /** Which leaves can inherit, and so get a label toggle. Default: every leaf
+   *  but one that says `auto: false`, once `onAutoChange` is given. */
   canInherit?: (path: string) => boolean;
   /** The fields a `field` leaf may name. Default: this schema's own — a form
    *  that edits another schema passes that one's. */

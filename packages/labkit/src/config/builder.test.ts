@@ -165,20 +165,20 @@ describe('auto on a node', () => {
   });
 
   it('.initial(auto) marks the node as starting unpinned', () => {
-    expect(f.number(3).initial(auto).options.unpinned).toBe(true);
-    expect(f.number(3).options.unpinned).toBeUndefined();
+    expect(f.number(3).initial(auto).options.auto).toEqual({ on: true });
+    expect(f.number(3).options.auto).toBeUndefined();
   });
 
   it('.auto() with no resolver lets the node be auto, and nothing else does', () => {
-    expect(f.number(1).auto().options.autoable).toBe(true);
+    expect(f.number(1).auto().options.auto).toEqual({});
     expect(f.number(1).auto().options.autoResolve).toBeUndefined();
-    expect(f.number(1).options.autoable).toBeUndefined();
+    expect(f.number(1).options.auto).toBeUndefined();
   });
 
   it('clones rather than mutating, like every other chaining method', () => {
     const base = f.number(3);
     const unpinned = base.initial(auto);
-    expect(base.options.unpinned).toBeUndefined();
+    expect(base.options.auto).toBeUndefined();
     expect(unpinned).not.toBe(base);
   });
 
@@ -186,7 +186,7 @@ describe('auto on a node', () => {
     const n = f.number(3).initial(auto).range(0, 10).suffix('px');
     expect(n.annotations.min).toBe(0);
     expect(n.annotations.suffix).toBe('px');
-    expect(n.options.unpinned).toBe(true);
+    expect(n.options.auto).toEqual({ on: true });
   });
 
   it('rejects anything but the sentinel, for a caller TypeScript is not checking', () => {

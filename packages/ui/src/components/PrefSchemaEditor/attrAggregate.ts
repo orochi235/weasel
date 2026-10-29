@@ -1,5 +1,6 @@
 import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
+import { autoRowsOf, withAutoRow, type AutoRow } from './autoRows';
 import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
 import type { RegisteredAction } from './registeredActionAttrs';
 import { nodeAt, setAttribute, type SchemaNode, type SchemaRoot } from './schemaEdit';
@@ -62,6 +63,11 @@ export function setObjectField<R extends SchemaRoot>(root: R, paths: ReadonlyArr
   }, root);
 }
 
+/** One of the Auto panel's rows set on the node at each of `paths`, in that node's own `auto`, as one edit. */
+export function setAutoRow<R extends SchemaRoot>(root: R, paths: ReadonlyArray<string | null>, row: AutoRow, value: unknown): R {
+  return paths.reduce<R>((next, path) => setAttribute(next, path, 'auto', withAutoRow((nodeAt(next, path) as PrefLeaf).auto, row, value)), root);
+}
+
 /** Several nodes' attributes as one form. */
 export interface AttributeAggregate {
   /** The attributes every node has, each with one definition. */
@@ -70,6 +76,8 @@ export interface AttributeAggregate {
   values: Record<string, unknown>;
   /** The attributes in `schema` whose values disagree, and under an object attribute the path of each field that does. */
   mixed: ReadonlySet<string>;
+  /** {@link values} and {@link mixed} for the Auto panel's rows, which all come from a leaf's one `auto` field. */
+  auto: { values: Record<string, unknown>; mixed: ReadonlySet<string> };
   /** Attributes every node has whose values disagree and cannot be edited together. */
   apart: readonly string[];
   /** The leaf kind every node has; `null` when all are leaves of differing kinds; `undefined` when any is not a leaf. */
@@ -86,12 +94,15 @@ export function aggregateAttributes(
   actions?: readonly RegisteredAction[],
 ): AttributeAggregate {
   const [first, ...rest] = nodes.map((n) => attributeSchema(n, custom, actions));
-  const held = nodes.map((n) => n as unknown as Record<string, unknown>);
-  const values: Record<string, unknown> = {};
-  const mixed = new Set<string>();
+  const fields = nodes.map((n) => n as unknown as Record<string, unknown>);
+  const rows = nodes.map((n) => (isPrefLeaf(n) ? autoRowsOf(n) : {}) as Record<string, unknown>);
+  const shown = { values: {} as Record<string, unknown>, mixed: new Set<string>() };
+  const auto = { values: {} as Record<string, unknown>, mixed: new Set<string>() };
   const apart: string[] = [];
   const common = (part: 'shared' | 'own' | 'auto'): KindAttrs => {
     const out: KindAttrs = {};
+    const held = part === 'auto' ? rows : fields;
+    const { values, mixed } = part === 'auto' ? auto : shown;
     for (const [key, def] of Object.entries(first![part])) {
       if (!rest.every((s) => deepEqual(s[part][key], def))) continue;
       if (held.every((h) => deepEqual(h[key], held[0]![key]))) {
@@ -123,7 +134,7 @@ export function aggregateAttributes(
   };
   const kinds = nodes.map((n) => (isPrefLeaf(n) ? n.kind : undefined));
   const kind = kinds.includes(undefined) ? undefined : kinds.every((k) => k === kinds[0]) ? kinds[0]! : null;
-  return { schema, values, mixed, apart, kind };
+  return { schema, ...shown, auto, apart, kind };
 }
 
 /** What a node of the action catalog offers to edit: what a pref dragged out of it takes along. */

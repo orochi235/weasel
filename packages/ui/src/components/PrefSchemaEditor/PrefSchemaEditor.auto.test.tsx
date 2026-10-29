@@ -31,13 +31,16 @@ const select = (key: string) => fireEvent.click(within(structure()).getByText(ke
 const leaf = (key: string) => (latest.children.view as PrefGroup).children[key] as unknown as Record<string, unknown>;
 
 describe('PrefSchemaEditor auto attributes', () => {
-  it('sets whether a leaf can be auto and whether it starts so', () => {
+  it('sets whether a leaf can be auto and whether it starts so, in its one auto field', () => {
     renderWithIcons(<Live />);
     select('gap');
     fireEvent.click(attributes().getByRole('checkbox', { name: 'Never auto' }));
-    expect(leaf('gap').manual).toBe(true);
+    expect(leaf('gap').auto).toBe(false);
     fireEvent.click(attributes().getByRole('checkbox', { name: 'Starts auto' }));
-    expect(leaf('gap').unpinned).toBe(true);
+    expect(leaf('gap').auto).toEqual({ on: true });
+    expect(attributes().getByRole('checkbox', { name: 'Never auto' })).not.toBeChecked();
+    fireEvent.click(attributes().getByRole('checkbox', { name: 'Starts auto' }));
+    expect('auto' in leaf('gap')).toBe(false);
   });
 
   it('leaves the auto value unset, its control off, until the switch beside it is on', () => {
@@ -48,13 +51,13 @@ describe('PrefSchemaEditor auto attributes', () => {
     expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toBeDisabled();
     expect(attributes().queryByText('not set')).toBeNull();
     expect(attributes().queryByRole('button', { name: 'Pin Auto value' })).toBeNull();
-    expect('autoValue' in leaf('gap')).toBe(false);
+    expect('auto' in leaf('gap')).toBe(false);
     fireEvent.click(on());
-    expect(leaf('gap').autoValue).toBe(12);
+    expect(leaf('gap').auto).toEqual({ value: 12 });
     expect(on()).toBeChecked();
     expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toBeEnabled();
     fireEvent.click(on());
-    expect('autoValue' in leaf('gap')).toBe(false);
+    expect('auto' in leaf('gap')).toBe(false);
   });
 
   it('keeps an auto value of false, which an optional attribute would drop', () => {
@@ -62,9 +65,9 @@ describe('PrefSchemaEditor auto attributes', () => {
     select('grid');
     expect(attributes().getByRole('checkbox', { name: 'Auto value' })).toBeDisabled();
     fireEvent.click(attributes().getByRole('switch', { name: 'Set Auto value' }));
-    expect(leaf('grid').autoValue).toBe(true);
+    expect(leaf('grid').auto).toEqual({ value: true });
     fireEvent.click(attributes().getByRole('checkbox', { name: 'Auto value' }));
-    expect(leaf('grid').autoValue).toBe(false);
+    expect(leaf('grid').auto).toEqual({ value: false });
     expect(attributes().getByRole('switch', { name: 'Set Auto value' })).toBeChecked();
   });
 

@@ -85,15 +85,10 @@ export interface PrefBase<K extends string, Value> {
    *  shows the longest of them that fits. `name` stays the accessible name, so
    *  these abbreviate without costing anything. */
   short?: readonly string[];
-  /** Never auto. A surface that lets a leaf be left for its owner to decide
-   *  (weasel-ui `PrefsForm`'s `onAutoChange`, labkit's `ControlPanel`) gives
-   *  this one no way to. */
-  manual?: boolean;
-  /** Starts auto, where it would start pinned at `default`. */
-  unpinned?: boolean;
-  /** What the leaf reads while it is auto, where its owner computes nothing
-   *  for it. Unset, an auto leaf has no value. */
-  autoValue?: Value;
+  /** Whether the leaf can be auto, left for its owner to decide (weasel-ui
+   *  `PrefsForm`'s `onAutoChange`, labkit's `ControlPanel`). Unset, it can, and
+   *  starts pinned at `default`; `false`, never; an object, as it says. */
+  auto?: false | PrefAuto<Value>;
   /** The name of the type this leaf was made from, set by `prefType`. A
    *  schema editor shows such a leaf as one closed thing and prints the name
    *  in place of its literal. */
@@ -111,6 +106,14 @@ export interface PrefBase<K extends string, Value> {
    *  `splitBy`. `default` stays what a member it leaves out reads as, and
    *  what the leaf's value type is read from. */
   defaultLocus?: PrefLocus;
+}
+
+/** How a leaf that can be auto is auto. */
+export interface PrefAuto<Value = unknown> {
+  /** Starts auto, where it would start pinned at `default`. */
+  on?: boolean;
+  /** What it reads while auto, where its owner computes nothing. Unset, none. */
+  value?: Value;
 }
 
 /** The fields every leaf holding a value shares, besides {@link PrefBase}'s. */
