@@ -467,7 +467,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P4) [agent] A headless-component layer shared by DOM and WebGL chrome.** `@weasel-js/headless` (added
   2026-10-27, not yet published) holds a list's roving highlight and typeahead, generic over item type (`rovingKey`,
-  `stepStop`, `typeaheadStep`), and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`.
+  `stepStop`, `typeaheadStep`), and keyboard focus as one contract, `FocusScope<T>`, with `tabSort`/`tabStep`, and how a text field's edit ends (`editEnd`), which hud's menu
+  text rows, ui's `MenuTextValue` and `RenameField`, and text-dom's `useTextEdit` all read.
   `@weasel-js/menu` runs each menu level on the list half, ui's `useRowNavigation` and `useRovingTabIndex` step and
   type ahead through it, `Hud` is a `FocusScope<Widget>`, and ui's `domFocusScope(root)` is the same contract over DOM
   elements. Left, in order: a measure/draw contract a DOM component and a hud widget both implement; then porting a

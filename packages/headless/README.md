@@ -1,8 +1,8 @@
 # @weasel-js/headless
 
 Component behavior with no substrate: what a DOM component and a canvas-drawn widget both run,
-each drawing it its own way. Today that is a list's roving highlight and typeahead, and keyboard
-focus as one contract. No React, no DOM.
+each drawing it its own way. Today that is a list's roving highlight and typeahead, keyboard
+focus as one contract, and how a text field's edit ends. No React, no DOM.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -48,6 +48,12 @@ focused, whether its ring shows, `focus`, `moveFocus` through a `tabOrder`, and
 `subscribeFocus`. A `@weasel-js/hud` HUD is one over its widgets, and `@weasel-js/ui`'s
 `domFocusScope(root)` is one over the elements under `root`, so code that moves focus is
 written once for both. `tabSort` and `tabStep` are the order and the step both use.
+
+## Text fields
+
+`editEnd(cause, shape)` says how a text field's edit ends: Enter and blur commit, Escape cancels.
+A field's shape can make Escape commit too, and a `multiline` one leaves Shift+Enter to type a
+line break. Caret movement stays with each field: a DOM field gets it from the browser.
 
 ## License
 

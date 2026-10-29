@@ -12,3 +12,5 @@ export {
 export type { TypeaheadBuffer, TypeaheadShape } from './typeahead';
 export { tabSort, tabStep } from './focus';
 export type { FocusScope, FocusScopeOptions } from './focus';
+export { editEnd } from './textCommit';
+export type { EditCause, EditEnd, EditEndShape } from './textCommit';

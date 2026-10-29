@@ -1,5 +1,6 @@
 import type { MenuController, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
 import { isApplePlatform } from '@weasel-js/gestures';
+import { editEnd } from '@weasel-js/headless';
 
 /** A text row being typed into in a HUD menu: which row, what has been typed so far, and the caret and the other
  *  end of the selection, as code-point offsets into `draft`. `anchor` equals `caret` when nothing is selected.
@@ -108,8 +109,8 @@ function moveFor(edit: HudTextEdit, key: string, mods: EditMods): number | undef
  *  rest of the line) either side of the caret, and the arrows, Home and End move the caret; any other key is held
  *  and ignored. */
 export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { edit: HudTextEdit | null; commit?: string } {
-  if (key === 'Enter') return { edit: null, commit: edit.draft };
-  if (key === 'Escape') return { edit: null };
+  const ends = editEnd({ key, shift: mods.shift === true });
+  if (ends) return ends === 'commit' ? { edit: null, commit: edit.draft } : { edit: null };
   const to = moveFor(edit, key, mods);
   if (to !== undefined) return { edit: moveTo(edit, to, mods.shift === true) };
   const [from, end] = selectionOf(edit);
@@ -154,7 +155,7 @@ export function createTextEditor(c: Pick<MenuController, 'textValue' | 'setText'
       changed();
     },
     /** End the edit keeping what was typed, as a blur does, unless it is `e`'s. */
-    leave(e?: MenuEntry) { if (edit && edit.entry !== e) end(edit.draft); },
+    leave(e?: MenuEntry) { if (edit && edit.entry !== e) end(editEnd('blur') === 'commit' ? edit.draft : undefined); },
     /** Show `text` as an input method's composition in progress; '' clears it. */
     compose(text: string) {
       if (!edit || (edit.preedit ?? '') === text) return;
