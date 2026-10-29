@@ -620,11 +620,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   ground is `--wzl-surface-raised` with its tint taken out, lighter than draw's `--wzl-workspace-surface` (2026-10-28),
   so a shared layer means deciding which ground both take.
 
-- **(P3) Draw's `registry-enum` prefs offer a Control the control ignores.** The asset editor lists `select` and
-  `radio` for it (`KINDS` in `apps/draw/src/dev/AssetsPage.tsx`), but `RegistryEnumControl` in
-  `apps/draw/src/PreferencesModal.tsx` always draws a `RegistrySelect`. Either draw radios for `radio` or drop the
-  attribute. Filed 2026-10-28.
-
 ---
 
 ### Domain bundles
