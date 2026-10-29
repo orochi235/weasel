@@ -67,9 +67,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   let coalesceAnchorVersion = -1;
   const changed = createEmitter();
   const stepped = createEmitter<[HistoryStep]>();
-  function bump(step?: HistoryStep): void {
+  /** A step given as a function is built only when someone observes steps. */
+  function bump(step?: HistoryStep | (() => HistoryStep)): void {
     version++;
-    if (step) stepped.emit(step);
+    if (step && stepped.size > 0) stepped.emit(typeof step === 'function' ? step() : step);
     changed.emit();
   }
 
@@ -202,8 +203,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     const selectionBefore = readSelection();
     const idle = new Set<Op>();
     const anyMutated = applyAllOrNothing(applied, undefined, idle);
-    const ops = (idle.size === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.has(op))))
-      .flatMap((op) => op.caused?.() ?? [op]);
+    const kept = idle.size === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.has(op)));
+    const ops = kept.some((op) => op.caused) ? kept.flatMap((op) => op.caused?.() ?? [op]) : kept.slice();
     if (!anyMutated) {
       // Every op reported `false`/`'noop'`. Skip the push so undo stays
       // tied to real state changes. Surfaced through the kit's debug
@@ -235,7 +236,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // the anchor only survives until the stack is stepped, and every step
       // clears it, so a live anchor implies an empty redo stack.
       logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
-      bump({ kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] });
+      bump(() => ({ kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] }));
       coalesceAnchorVersion = version;
       return;
     }
@@ -248,13 +249,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
-    bump(stepOf('push', [entry]));
+    bump(() => stepOf('push', [entry]));
     coalesceAnchorVersion = version;
   }
 
   function fold(top: Entry, ops: Op[]): void {
     foldEntry(top, ops, now());
-    bump({ kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] });
+    bump(() => ({ kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] }));
     coalesceAnchorVersion = version;
   }
 
@@ -275,7 +276,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
-    bump(stepOf('push', [entry]));
+    bump(() => stepOf('push', [entry]));
     if (key !== undefined) coalesceAnchorVersion = version;
   }
 
