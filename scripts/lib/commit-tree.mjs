@@ -3,11 +3,24 @@
  * worktree of that commit, and the onto launch that retries while the node's tree is busy.
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { hostname } from 'node:os';
 import { join } from 'node:path';
 
 const BUSY_TRIES = 30;
 const BUSY_WAIT_S = 30;
+/** A tree with no owner file predates them or is mid-creation; give it this long. */
+const OWNERLESS_GRACE_MS = 24 * 3600_000;
+const OWNER = '.owner';
+
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+};
 
 const gitIn = (root) => (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 }).trim();
 
@@ -23,20 +36,58 @@ const branchOf = (git, ref) => {
 };
 
 /**
+ * Removes the trees under `dir` whose creating process is gone. SIGKILL, or a shell torn down under a
+ * run, skips `drop()` and the signal handlers, so each tree records its creator in `<tree>.owner`.
+ * A tree another host owns is left alone: its pid means nothing here. Returns the trees removed.
+ */
+export const sweepStaleTrees = (dir, git, { host = hostname(), isAlive = alive, now = Date.now() } = {}) => {
+  if (!existsSync(dir)) return [];
+  const removed = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (!entry.isDirectory()) {
+      if (entry.name.endsWith(OWNER) && !existsSync(path.slice(0, -OWNER.length))) rmSync(path, { force: true });
+      continue;
+    }
+    let owner = null;
+    try {
+      owner = JSON.parse(readFileSync(path + OWNER, 'utf8'));
+    } catch {}
+    const stale = owner
+      ? owner.host === host && !isAlive(owner.pid)
+      : now - (statSync(path, { throwIfNoEntry: false })?.mtimeMs ?? now) > OWNERLESS_GRACE_MS;
+    if (!stale) continue;
+    try {
+      git('worktree', 'remove', '--force', path);
+    } catch {}
+    rmSync(path, { recursive: true, force: true });
+    rmSync(path + OWNER, { force: true });
+    removed.push(path);
+  }
+  if (removed.length > 0) git('worktree', 'prune');
+  return removed;
+};
+
+/**
  * Checks `ref` out detached under the main checkout's `.worktrees/`, and removes it on `drop()` or
  * when a signal kills the process — `finally` never runs then, and a killed run would leave its tree.
+ * What neither catches, the next run's sweep does.
  */
 export const openCommitTree = (root, ref, prefix) => {
   const git = gitIn(root);
   const commit = git('rev-parse', '--verify', `${ref}^{commit}`);
   const branch = branchOf(git, ref);
   const main = git('worktree', 'list', '--porcelain').split('\n')[0].replace(/^worktree /, '');
-  mkdirSync(join(main, '.worktrees'), { recursive: true });
-  const tree = mkdtempSync(join(main, '.worktrees', prefix));
+  const dir = join(main, '.worktrees');
+  mkdirSync(dir, { recursive: true });
+  sweepStaleTrees(dir, git);
+  const tree = mkdtempSync(join(dir, prefix));
+  writeFileSync(tree + OWNER, JSON.stringify({ pid: process.pid, host: hostname() }));
   git('worktree', 'add', '--detach', '--force', tree, commit);
   const drop = () => {
     git('worktree', 'remove', '--force', tree);
     rmSync(tree, { recursive: true, force: true });
+    rmSync(tree + OWNER, { force: true });
   };
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
     process.once(signal, () => {
