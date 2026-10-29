@@ -412,6 +412,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] Enter commits mid-composition in two DOM text fields** (2026-10-28). `MenuTextValue`
+  (`packages/ui/src/components/ContextMenu/MenuValue.tsx`) and `RenameField` (`PageTabs/RenameField.tsx`) pass every
+  Enter to `editEnd`, so a Japanese or Chinese user confirming a candidate with Enter commits the half-typed text.
+  text-dom's `useTextEdit` skips keys while `isComposing`, and the hud filters them in `textInputHost.ts`; these two
+  need the same check ahead of `editEnd`.
+
 - **(P3) [agent] A tree's Left and Right don't swap in a right-to-left layout** (2026-10-28). `treeKey`
   (`packages/headless/src/tree.ts`) ignores `ListShape.dir`, so in RTL Right still opens a branch. The tree keys
   also differ from the WAI-ARIA treeview pattern in ways kept on purpose so far: no `*` to expand every sibling,
