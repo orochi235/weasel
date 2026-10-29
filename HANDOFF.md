@@ -15,7 +15,7 @@ found. The calls made without a ruling are in each commit body; the ones most li
 - Jog and Transport stay left to right in every locale; `Tree`/`ItemList`/`LayerList` typeahead now cycles on
   a repeated letter, as menus do.
 - The default retain budget is 384 MiB (was 256), with surfaces drawn in 1024-px tiles.
-- New packages `@weasel-js/headless` and `@weasel-js/shape` (HarfBuzz).
+- New packages `@weasel-js/headless` and `@weasel-js/text-shaping` (HarfBuzz).
 - `transformPath` gives a far-out result an origin by default (`autoOrigin: false` opts out); a multi-cluster
   ligature's advance is split evenly, not by the face's caret list; rect clips on a single-sampled target snap
   to 1/16 px (batch 9).

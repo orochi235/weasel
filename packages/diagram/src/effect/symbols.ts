@@ -115,7 +115,7 @@ export const BRANCH_SYMBOLS: Readonly<Record<Exclude<BranchChoice, 'auto'>, Bran
   demux: flowing(demux),
   switch: flowing(switchSymbol),
   hexagon: flowing(hexagon),
-  step: flowing(step),
+  step,
   comparator: flowing(comparator),
   crossover: flowing(crossover),
   fork: flowing(fork),

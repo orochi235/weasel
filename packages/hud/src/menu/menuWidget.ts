@@ -7,10 +7,12 @@ import { accessibleMenu } from './accessibleMenu';
 import { DEFAULT_MENU_METRICS, drawPanel, rowAt, rowLayout, type MenuIcons, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
-import { caretAt, caretX, chipAt } from './valueRows';
+import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
 import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
+import type { StepRepeatOptions } from '@weasel-js/headless';
+import { chipUnder, createChipHold, levelAt } from './chipRepeat';
 
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
 
@@ -30,6 +32,9 @@ export interface MenuWidgetOptions {
   icons?: MenuIcons;
   /** The swatches a color row's picker offers, as `#rrggbb`. Default {@link DEFAULT_MENU_PALETTE}. */
   palette?: readonly string[];
+  /** The timing of a held number chip. Defaults to `REPEAT_DELAY_MS` and `REPEAT_EVERY_MS` from `@weasel-js/headless`,
+   *  the defaults a `@weasel-js/ui` number field's steppers hold with. */
+  repeat?: StepRepeatOptions;
   onChange(): void;
 }
 
@@ -95,16 +100,8 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let armed = false;
   let hoverPanel: number | null = null;
   const typing = createTextEditor(c, rev.changed);
+  const chips = createChipHold(c, (x, y) => chipUnder(c, panels, m, x, y), opts.repeat);
   c.subscribe(() => { panels = place(c, family); rev.changed(); });
-
-  /** The topmost panel under (x, y), or -1. */
-  const levelAt = (x: number, y: number): number => {
-    for (let i = panels.length - 1; i >= 0; i--) {
-      const p = panels[i]!;
-      if (x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) return i;
-    }
-    return -1;
-  };
 
   /** The pointer is now over `level` (null: no panel). Leaving a panel clears
    *  its row, as the DOM menu's per-panel `pointerleave` does. */
@@ -115,10 +112,17 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
 
   const pointer = (evt: HudPointerEvent) => {
     if (evt.type === 'hoverleave') { enter(null); return; }
-    if (evt.type === 'cancel') { armed = false; return; }
-    if (evt.type === 'down') { armed = true; return; }
+    if (evt.type === 'cancel') { armed = false; chips.stop(); return; }
+    if (evt.type === 'down') {
+      armed = true;
+      // A number row's chips step it, since this menu has no field to type in: once on the press, then
+      // repeating while held, as a number field's steppers do.
+      chips.press(evt.x, evt.y);
+      return;
+    }
     if (evt.type !== 'hovermove' && evt.type !== 'move' && evt.type !== 'up') return;
-    const level = levelAt(evt.x, evt.y);
+    chips.follow(evt.type === 'up' ? null : evt);
+    const level = levelAt(panels, evt.x, evt.y);
     // Only a release that follows a press here chooses: the release of the
     // right-click or long-press that opened the menu must not.
     const choose = evt.type === 'up' && armed;
@@ -135,9 +139,6 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       const e = entries[index];
       const { w } = panels[level]!, x = evt.x - panels[level]!.x;
       typing.place(e, (draft) => caretAt(draft, w, m, x, (s) => measure(s, m.fontSize, family ?? '')));
-      // A number row's chips step it, since this menu has no field to type in.
-      const dir = e?.kind === 'number' ? chipAt(w, m, x) : null;
-      if (e?.kind === 'number' && dir !== null) c.spin(e, dir > 0 ? 'ArrowUp' : 'ArrowDown');
     }
   };
 
@@ -176,13 +177,14 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       };
       return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons, values));
     },
-    hitTest: (x, y) => levelAt(x, y) >= 0,
+    hitTest: (x, y) => levelAt(panels, x, y) >= 0,
     cursorAt: () => 'default',
     onPointer: pointer,
     onKey: key,
     dispose() {
       // Dismissed mid-edit, the menu keeps what was typed, as the DOM menu's field does on blur.
       typing.leave();
+      chips.stop();
       disposed = true;
       c.dispose();
     },

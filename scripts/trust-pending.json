@@ -1,5 +1,4 @@
 [
   "@weasel-js/clock",
-  "@weasel-js/headless",
-  "@weasel-js/shape"
+  "@weasel-js/headless"
 ]

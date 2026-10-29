@@ -205,10 +205,12 @@
   --wzl-checker-b: var(--wzl-surface);
   /* Edge of one repeat of the transparency checker: two squares by two. */
   --wzl-checker-size: 8px;
-  /* Ground of a canvas app's workspace — the area around the document page. */
-  --wzl-workspace-surface: var(--wzl-surface-sunken);
+  /* Ground of a canvas app's workspace — the area around the document page: surface-raised with its tint taken out (its OKLCH chroma set to 0). */
+  --wzl-workspace-surface: #272727;
   /* Marks drawn over workspace-surface, such as its diagonal stripes, so the page reads as the thing on top. */
   --wzl-workspace-line: var(--wzl-line-subtle);
+  /* The workspace as one background layer: workspace-surface struck with wide diagonal bands of workspace-line. Use it as an element's whole background. */
+  --wzl-workspace: repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface);
   /* Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default. */
   --wzl-field-pad-x: 8px;
   /* How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow. */
@@ -304,6 +306,7 @@
   --wzl-code-name: var(--wzl-swatch-rose);
   --wzl-slider-track-mix: 40%;
   --wzl-slider-thumb-mix: 100%;
+  --wzl-workspace-surface: #272727;
   --wzl-secondary-fg: var(--wzl-secondary-base);
   --wzl-panel-surface: var(--wzl-surface-raised);
   --wzl-panel-border-color: var(--wzl-border);
@@ -326,8 +329,8 @@
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
   --wzl-checker-a: var(--wzl-border);
   --wzl-checker-b: var(--wzl-surface);
-  --wzl-workspace-surface: var(--wzl-surface-sunken);
   --wzl-workspace-line: var(--wzl-line-subtle);
+  --wzl-workspace: repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface);
 }
 
 [data-wzl-theme='weasel'][data-wzl-mode='light'],
@@ -361,6 +364,7 @@
   --wzl-code-name: #be123c;
   --wzl-slider-track-mix: 18%;
   --wzl-slider-thumb-mix: 70%;
+  --wzl-workspace-surface: #e7e7e7;
   --wzl-secondary-fg: var(--wzl-secondary-soft);
   --wzl-panel-surface: var(--wzl-surface-raised);
   --wzl-panel-border-color: var(--wzl-border);
@@ -383,8 +387,8 @@
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
   --wzl-checker-a: var(--wzl-border);
   --wzl-checker-b: var(--wzl-surface);
-  --wzl-workspace-surface: var(--wzl-surface-sunken);
   --wzl-workspace-line: var(--wzl-line-subtle);
+  --wzl-workspace: repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface);
 }
 
 [data-wzl-theme='weasel'][data-wzl-density='compact'],

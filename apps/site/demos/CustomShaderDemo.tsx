@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { SceneCanvas, useFrameClock, useHandleDrag, useLatest, useScene } from '@weasel-js/core';
-import type { Action, Dims, FrameClock, ImmediateParams, RenderLayer } from '@weasel-js/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
+import { useClockLoop } from '@weasel-js/clock/react';
+import { SceneCanvas, useHandleDrag, useLatest, useScene } from '@weasel-js/core';
+import type { Action, Dims, ImmediateParams, RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
@@ -130,7 +132,7 @@ function Panel({
 }: {
   title: string;
   program: ShaderProgramHandle;
-  clock: FrameClock;
+  clock: ClockHandle;
   /** Read at each paint, so a uniform that follows the clock costs no render. */
   uniforms: (seconds: number) => ShaderUniforms;
   onPointerMove?: (x: number, y: number) => void;
@@ -146,12 +148,12 @@ function Panel({
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: `shader-${title.toLowerCase()}`,
     label: title,
-    subscribe: clock.subscribe,
+    subscribe: clock.onFrame,
     draw: (_data, _view, dims): DrawCommand[] => disabled ? [] : [{
       kind: 'shader',
       program,
       bounds: { x: 0, y: 0, w: dims.width, h: dims.height },
-      uniforms: uniformsRef.current(clock.seconds()),
+      uniforms: uniformsRef.current(secondsOf(clock)),
     }],
   }), [program, disabled, title, uniformsRef, clock]);
 
@@ -288,11 +290,17 @@ function readFrozenTime(): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+const secondsOf = (clock: ClockHandle): number => clock.clock.elapsed / 1000;
+
 export function CustomShaderDemo() {
   const frozen = useMemo(() => readFrozenTime(), []);
   // The shaders read the clock at paint; nothing here renders per frame.
   // `?frozenTime=N` holds it at N so a visual spec captures one known frame.
-  const clock = useFrameClock({ paused: frozen !== null, start: frozen ?? 0 });
+  const [clock] = useState(() => createClock({ rate: frozen === null ? 1 : 0, start: (frozen ?? 0) * 1000 }));
+  const [registry] = useState(() => createClockRegistry());
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => registry.register('shaders', clock, () => root.current), [registry, clock]);
+  useClockLoop(registry);
   const [mouse, setMouse] = useState<[number, number]>([0.5, 0.5]);
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [mutableSeeds, setMutableSeeds] = useState<{ x: number; y: number }[]>(() =>
@@ -303,7 +311,7 @@ export function CustomShaderDemo() {
   const tex = useWeaselMarkTexture();
 
   return (
-    <div className="ckd-stack">
+    <div className="ckd-stack" ref={root}>
       <div style={{ display: 'flex', gap: 8 }}>
         <Panel
           title="Plasma"
@@ -326,7 +334,7 @@ export function CustomShaderDemo() {
             };
           }}
           onPress={(x, y) => {
-            const t = clock.seconds();
+            const t = secondsOf(clock);
             setRipples((r) => [...liveRipples(r, t), { x, y, t }].slice(-8));
           }}
           disabled={!tex}

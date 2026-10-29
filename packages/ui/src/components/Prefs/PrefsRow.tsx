@@ -88,8 +88,9 @@ export interface PrefRenderContext {
  * collapses the row.
  */
 export type PrefRenderer = ((ctx: PrefRenderContext) => ReactNode) & {
-  /** The control is several, or one a `<label>` may not wrap: its row is a group, and each control carries its own name. */
-  group?: boolean;
+  /** The control is several, or one a `<label>` may not wrap: its row is a group, and each control carries its own name.
+   *  A function answers per leaf, for a renderer whose control follows the leaf's `control`. */
+  group?: boolean | ((ctx: PrefRenderContext) => boolean);
   /** The control wants the row's whole width, its label above it, as a `map`'s or a `union`'s gets: for one too
    *  wide for the control column. In a field of an object leaf as in a row of the form. */
   wide?: boolean;
@@ -371,7 +372,7 @@ function rowIsGroup(
 ): boolean {
   if (prefDrawsSeveral(ctx.pref)) return true;
   const custom = renderers?.[ctx.pref.kind];
-  if (custom) return custom.group === true;
+  if (custom) return typeof custom.group === 'function' ? custom.group(ctx) : custom.group === true;
   const field = leafField(ctx, siblings);
   return field !== null && controlIsGroup(field);
 }

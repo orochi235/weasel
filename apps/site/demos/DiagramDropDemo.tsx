@@ -88,7 +88,7 @@ export function DiagramDropDemo() {
       </ul>
       <DemoStage width={640} height={380}>
         <DiagramView
-          specs={specs} className="ckd-canvas" connectBodies
+          specs={specs} router="avoid" className="ckd-canvas" connectBodies
           onConnect={(edge) => setSt((was) => ({ ...was, edges: [...was.edges, edge] }))} canConnect={canConnect}
           onMove={onMove} canReparent={canReparent}
           onReorder={({ parent, order }) => parent === 'row' && setSt((was) => ({ ...was, row: order }))}

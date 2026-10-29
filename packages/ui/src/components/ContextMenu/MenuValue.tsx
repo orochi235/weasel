@@ -2,6 +2,7 @@ import { useRef, useState, useSyncExternalStore } from 'react';
 import {
   menuNumberDisplay, type MenuController, type MenuNumberEntry, type MenuTextEntry,
 } from '@weasel-js/menu';
+import { editEnd, type EditEnd } from '@weasel-js/headless';
 import { Input } from '../Input';
 import { UnitField } from '../NumberField/UnitField';
 import s from './ContextMenu.module.css';
@@ -48,9 +49,9 @@ export function MenuTextValue({ entry: e, rowId, controller: c }: {
   // they just made, not this render's.
   const latest = useRef<string | null>(null);
   const setDraft = (next: string | null) => { latest.current = next; setDraftState(next); };
-  const commit = () => {
-    if (latest.current !== null) c.setText(e, latest.current);
-    setDraft(null);
+  const end = (how: EditEnd | null) => {
+    if (how === 'commit' && latest.current !== null) c.setText(e, latest.current);
+    if (how) setDraft(null);
   };
   return (
     <span className={s.value}>
@@ -60,10 +61,9 @@ export function MenuTextValue({ entry: e, rowId, controller: c }: {
         className={s.text}
         value={draft ?? held}
         onChange={setDraft}
-        onBlur={commit}
+        onBlur={() => end(editEnd('blur'))}
         onKeyDown={(ev) => {
-          if (ev.key === 'Enter') commit();
-          else if (ev.key === 'Escape') setDraft(null);
+          end(editEnd({ key: ev.key, shift: ev.shiftKey }));
           ev.continuePropagation();
         }}
         isDisabled={e.disabled}

@@ -77,7 +77,7 @@
 .previewPane { display: flex; flex-direction: column; overflow: hidden; }
 /* What the asset draws, centered in the workspace around it. `safe` keeps an overflowing preview's start in view. */
 .previewStage {
-  composes: workspace from '../workspace.module.css';
+  background: var(--wzl-workspace);
   flex: 1;
   min-height: 0;
   display: flex;
