@@ -117,6 +117,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   gone, since nothing produced them and resize and rotate behaviors answer bounds and angles of
   their own, which a pivot scale cannot fully say.
 
+- 2026-10-26/27 (agent batches 2–10): Alt+P opens the Pathfinder keymap, with U/I/M/X/D/C/T/R inside it.
+
 ## Snapping
 
 - 2026-10-20 (overnight pass): `SnapBegin` and `SnapCollect` take `parent`, the container a subject
@@ -304,6 +306,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `annotations: true`, as the SVG export does; `renderDebugSnapshot` defaults it to `true`, since it
   reproduces the canvas.
 
+- 2026-10-26/27 (agent batches 2–10): The default retain budget is 384 MiB (was 256), with surfaces drawn
+  in 1024-px tiles. Rect clips on a single-sampled target snap to 1/16 px.
+
 ## Text
 
 - 2026-10-11: `BidiResolver.baseLevel` is required; an omitted `direction` is `'auto'`.
@@ -321,6 +326,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   the distance the renderer's field shift moves its edge (0.01 em a side on Inter's atlas), corners
   mitered, curves kept. The `'synthetic-bold'` failure reason is gone. The grown contours overlap
   where they meet and fill once under `'nonzero'`; they are not merged.
+
+- 2026-10-26/27 (agent batches 2–10): A run's `lang` reaches SVG (`xml:lang`), the edit overlay, and
+  `textTransform`. A multi-cluster ligature's advance is split evenly, not by the face's caret list.
 
 ## SVG and paths
 
@@ -395,6 +403,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   groups and read back as further children of the mark. Draw tags that outer `<g>`
   `wd:role="mark"`. A mark whose own element is itself a group (text with a background or a
   clip) is not tagged and still reopens as a group.
+
+- 2026-10-26/27 (agent batches 2–10): `transformPath` gives a far-out result an origin by default
+  (`autoOrigin: false` opts out).
 
 ## Animation
 
@@ -532,6 +543,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-13 (pass 6): New: `draftChangedAssets`, `entriesDisabled`, `entryDisabledAt`, and
   `PARAMS_TEXT_WAIT_MS`.
 
+- 2026-10-25 (overnight batch): When a `Bar`'s ordered `actions` run lists one action twice, both copies
+  sit at that key's place in the order.
+- 2026-10-25 (overnight batch): `Bar` and `MenuBar` conditions read a leaf's default where `values` lacks
+  its path, as `PrefsForm` does.
+- 2026-10-26/27 (agent batches 2–10): `Tree`, `ItemList` and `LayerList` typeahead cycles on a repeated
+  letter, as menus do. Jog and Transport stay left to right in every locale.
+
 ## Diagram, audio, and labkit
 
 - 2026-10-20 (overnight pass): In a forge story test, a story's viewport sizes the story's box, as
@@ -571,6 +589,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   diagonal; `controlSide` takes `'left' | 'right'`, and a side on the axis the signal runs through
   counts as the default. Hexagon, demux, fork and comparator turn into path outlines with no content
   box; a turned diamond's second exit leaves by its side vertex.
+
+- 2026-10-25 (overnight batch): The Loupe's "Aim: glass" action is bound to `b`.
+- 2026-10-26/27 (agent batches 2–10): Plain text is taken by every ingest canvas by default; image paints
+  store the picture inline as a data URI.
 
 ## draw
 

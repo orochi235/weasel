@@ -691,6 +691,19 @@ only story runner in the repo.
 
 ---
 
+- **(P3) [maintainer] Which default `layout` forge's two story formats share.** Native stories default to
+  `centered` and CSF stories to `padded` (2026-10-24).
+
+- **(P3) [maintainer] Whether `ReactNode` props keep the text controls forge's prop reader gives them.** They
+  put empty rows on many stories (2026-10-24).
+
+- **(P3) [maintainer] Whether `Primitives/*` story titles merge into `ui/Foundations`.** No rule separates
+  them (2026-10-24).
+
+- **(P3) [maintainer] Icons for the package pages.** Said to be specced (gray and blue React icons, an orange
+  window, and three others), but no spec has been found in the repo or in either account's weasel transcripts.
+  Ask where it lives before drawing anything (2026-10-21).
+
 ## Demos & visual regression
 
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
@@ -1177,6 +1190,14 @@ only story runner in the repo.
   `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a
   120-minute limit. Also unmeasured: whether the base, measured first, reads differently from the head
   for that reason alone.
+
+- **(P3) [agent] Merge-gate worktrees outlive their runs.** `scripts/lib/commit-tree.mjs` checks each gated commit
+  out under `.worktrees/` (`fleet-*`, `postbuild-*`) and removes it on `drop()` or SIGINT/SIGTERM/SIGHUP, yet ten
+  were left behind between 2026-10-22 and 2026-10-28, each holding only onto's `.onto/` files. A run killed by
+  SIGKILL, or a session's shell torn down under it, skips both. Sweep stale ones at the next run's start (a tree
+  whose creating process is gone), or create them where something already prunes. Filed 2026-10-28.
+
+---
 
 ## weaselchart
 
