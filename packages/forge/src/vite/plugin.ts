@@ -12,6 +12,7 @@ import { ownEntries } from './ownEntries.ts';
 import { propControls } from './propControls.ts';
 import type { PropControlsOptions } from './propTypes.ts';
 import type { CaptureEndpoint } from './capture/endpoint.ts';
+import { serveIssues } from './issues/endpoint.ts';
 import { servePages } from './servePages.ts';
 import { readShellFields } from './shellTitle.ts';
 import { storybookShims } from './storybookShims.ts';
@@ -293,6 +294,7 @@ export function forge(options: ForgeOptions): Plugin[] {
           });
         }
         capture = servePages(server, base, () => shellUnder(root));
+        serveIssues(server, base, () => root);
       },
       closeServer: () => capture?.close(),
     },

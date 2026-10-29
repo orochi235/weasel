@@ -6,7 +6,7 @@ import type { ComponentHistory } from '../story/types.ts';
 /** Runs git in `cwd` and answers its stdout. */
 export type Git = (args: readonly string[], cwd: string) => Promise<string>;
 
-const runGit: Git = (args, cwd) =>
+export const runGit: Git = (args, cwd) =>
   new Promise((done, fail) => {
     execFile('git', ['-c', 'core.quotepath=off', ...args], { cwd, maxBuffer: 1 << 30 }, (error, stdout) =>
       error ? fail(error) : done(stdout),

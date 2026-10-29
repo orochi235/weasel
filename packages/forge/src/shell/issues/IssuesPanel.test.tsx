@@ -17,11 +17,13 @@ describe('IssuesPanel', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
-  it('says when the component has no open issues, and when there is no tracker', () => {
+  it('says when the component has no open issues, when there is no tracker, and what its host says instead', () => {
     const { rerender } = renderWithIcons(<IssuesPanel component="Slider" storyId="slider--basic" issues={[]} />);
     expect(screen.getByText('No open issues for Slider.')).toBeTruthy();
     rerender(<IssuesPanel component="Slider" storyId="slider--basic" />);
     expect(screen.getByText('Not connected to an issue tracker.')).toBeTruthy();
+    rerender(<IssuesPanel component="Slider" storyId="slider--basic" listNote="The GitHub CLI (gh) is not logged in." />);
+    expect(screen.getByText('The GitHub CLI (gh) is not logged in.')).toBeTruthy();
   });
 
   it('hands a report to its host and clears the form', () => {

@@ -20,7 +20,7 @@ import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CssVarsChrome } from './cssVars/cssVarsChrome';
 import { KeysChrome } from './keys/keysChrome';
 import { infoItem } from './info/infoItem';
-import { issuesSection } from './issues/IssuesPanel';
+import { issuesSection } from './issues/issuesSection';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { ForgeLoupe } from './loupe/ForgeLoupe';
@@ -60,6 +60,8 @@ export interface WorkshopProps {
   dependencies?: DepGraph;
   /** The dev server's base, where it takes captures of a story; absent, lenses offer no Pixels source. */
   captureBase?: string;
+  /** The dev server's base, where it lists a component's issues; absent, the Issues panel says it is not connected. */
+  issuesBase?: string;
   /** Bumped on every story edit, so no lens shows a capture of a story as it was. */
   revision?: Revision;
 }
@@ -182,7 +184,7 @@ export function Workshop(props: WorkshopProps) {
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
       ...(showsCssVars ? cssVarsChrome : []),
       A11Y_SECTION,
-      issuesSection(index),
+      issuesSection(index, props.issuesBase),
       ...keysChrome,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
@@ -191,7 +193,7 @@ export function Workshop(props: WorkshopProps) {
       { id: 'fg-loupe', region: 'overlay', render: () => <ForgeLoupe declarations={declarations} modeGlobal={modeGlobal} /> },
       ...(config?.labChrome ?? []),
     ],
-    [index, infoCommand, declarations, showsCssVars, cssVarsChrome, keysChrome, config?.labChrome, modeGlobal],
+    [index, props.issuesBase, infoCommand, declarations, showsCssVars, cssVarsChrome, keysChrome, config?.labChrome, modeGlobal],
   );
   const [menus, setMenus] = useState<LabMenus>();
   const first = index[0];
