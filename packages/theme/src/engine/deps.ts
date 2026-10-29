@@ -19,10 +19,11 @@ interface Node {
 
 const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
 const TOKEN_REF = /^\{([^}.]+)\}$/;
+const VAR_REF = /var\(\s*--wzl-([\w-]+)/g;
 
 const node = (): Node => ({ axes: new Set(), seeds: new Set(), edges: new Set() });
 
-/** Collect `by` axes, seed references and `{token}` references anywhere in a value. */
+/** Collect `by` axes, seed references, and `{token}` and `var(--wzl-token)` references anywhere in a value. */
 function scan(v: unknown, into: Node): void {
   if (typeof v === 'string') {
     const s = v.trim();
@@ -31,6 +32,7 @@ function scan(v: unknown, into: Node): void {
     else {
       const ref = TOKEN_REF.exec(s);
       if (ref) into.edges.add(ref[1]);
+      for (const m of s.matchAll(VAR_REF)) into.edges.add(m[1]);
     }
     return;
   }

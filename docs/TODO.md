@@ -598,12 +598,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   context menu and, for a menu, from the menu's last rows. Preferences lists every asset with its
   surface and flags.
 
-- **(P3) [agent] The workspace hatch is written twice.** `.wd-canvas-host` in `apps/draw/src/app.css` restates the
-  diagonal bands that `packages/ui/src/components/workspace.module.css` defines for the asset editor's preview, over a
-  different ground. Ruled (2026-10-28): one layer, as a theme token (`--wzl-workspace`) both use, and its ground is the
-  asset editor's lighter one (`--wzl-surface-raised` with its tint taken out), which `--wzl-workspace-surface` becomes;
-  the ground around draw's page gets lighter.
-
 - **(P3) Draw's `registry-enum` prefs offer a Control the control ignores.** The asset editor lists `select` and
   `radio` for it (`KINDS` in `apps/draw/src/dev/AssetsPage.tsx`), but `RegistryEnumControl` in
   `apps/draw/src/PreferencesModal.tsx` always draws a `RegistrySelect`. Either draw radios for `radio` or drop the

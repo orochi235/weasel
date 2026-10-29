@@ -989,14 +989,26 @@
       "description": "Edge of one repeat of the transparency checker: two squares by two."
     },
     "workspace-surface": {
-      "value": "{surface-sunken}",
-      "type": "color",
-      "description": "Ground of a canvas app's workspace — the area around the document page."
+      "by": "mode",
+      "dark": {
+        "value": "#272727",
+        "type": "color",
+        "description": "Ground of a canvas app's workspace — the area around the document page: surface-raised with its tint taken out (its OKLCH chroma set to 0)."
+      },
+      "light": {
+        "value": "#e7e7e7",
+        "type": "color"
+      }
     },
     "workspace-line": {
       "value": "{line-subtle}",
       "type": "color",
       "description": "Marks drawn over workspace-surface, such as its diagonal stripes, so the page reads as the thing on top."
+    },
+    "workspace": {
+      "value": "repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface)",
+      "type": "gradient",
+      "description": "The workspace as one background layer: workspace-surface struck with wide diagonal bands of workspace-line. Use it as an element's whole background."
     },
     "field-pad-x": {
       "value": "8px",
