@@ -816,12 +816,6 @@ only story runner in the repo.
   Splitting the project across 2 or 3 Chromium processes (vitest `--shard` per process) is untested:
   run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
   every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
-- **(P3) [agent] One failed workspace build makes `npm run build` report a later one.** The `build:*` tiers
-  run `npm run build -w …` across many workspaces, and npm carries on past a failure, so every dependent
-  then fails too and the last error printed is a downstream `TS7016` (no declaration file), not the cause.
-  Seen 2026-10-28 when an agent edited `headless` and `ui` while its background `npm ci` was building: ui
-  failed on TS2305, and the log ended on forge's TS7016 for `@weasel-js/labkit/config`. A build that
-  stops at the first failed workspace would print the cause last.
 - **(P3) [waiting] `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.

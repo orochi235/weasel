@@ -1,23 +1,18 @@
 /**
- * `npm run build` builds packages one at a time, in the order the `build:*`
- * scripts name them, and a package's type build needs its siblings' `.d.ts`
- * already on disk. A package listed before a dependency builds against no
- * types at all, which a working checkout never shows: its stale `dist` is
- * still there. Only a clean install fails, so this reads the order instead.
+ * `npm run build` builds packages one at a time, in BUILD_ORDER, and a
+ * package's type build needs its siblings' `.d.ts` already on disk. A package
+ * listed before a dependency builds against no types at all, which a working
+ * checkout never shows: its stale `dist` is still there. Only a clean install
+ * fails, so this reads the order instead.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
+import { BUILD_ORDER as order } from './build-workspaces.mjs';
+import { publishableWorkspaces } from './lib/workspaces.mjs';
 
-const TIERS = ['build:leaves', 'build:core', 'build:downstream'];
-
-const { scripts } = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8'));
-const order = TIERS.flatMap((tier) => [...scripts[tier].matchAll(/-w (@weasel-js\/[\w-]+)/g)].map((m) => m[1]));
 const manifests = new Map(publishableWorkspaces().map(({ manifest }) => [manifest.name, manifest]));
 
 const problems = [];
 for (const name of manifests.keys()) {
-  if (!order.includes(name)) problems.push(`${name} is in no ${TIERS.join(' / ')} script, so npm run build never builds it`);
+  if (!order.includes(name)) problems.push(`${name} is not in scripts/build-workspaces.mjs's BUILD_ORDER, so npm run build never builds it`);
 }
 order.forEach((name, i) => {
   const m = manifests.get(name);
