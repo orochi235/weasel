@@ -11,7 +11,7 @@ export interface ProbeReads {
   pose(id: string): unknown;
   /** The axis-aligned box `id` is drawn with at `pose`, stroke included. */
   drawnBox(id: string, pose: unknown): Bounds;
-  /** The point of `pose` a grid rounds: its `OriginProjection` origin. */
+  /** The point of `pose` the `origin` probe sits at: its `OriginProjection` origin. */
   origin(pose: unknown): Point;
   /** The point of the subject's own geometry nearest `press`, or null. */
   geometryAt?(press: Point, ids: readonly string[]): Point | null;

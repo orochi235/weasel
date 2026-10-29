@@ -203,7 +203,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'path-pose',
     title: 'Path as pose',
     category: 'Geometry',
-    description: 'A scene where the object\'s pose IS a Path — no rect→shape adapter step. The demo wires no `poseDescriptor`, so the canvas\'s default reads the Path pose: resize takes bounds via boundsOfPath and remaps every coord through an affine scale against the dragged AABB, and move translates the path through the same descriptor. A `gridSnapSource` snaps the path origin on a move rather than every vertex. Body-drag to move; corner handles to resize.',
+    description: 'A scene where the object\'s pose IS a Path — no rect→shape adapter step. The demo wires no `poseDescriptor`, so the canvas\'s default reads the Path pose: resize takes bounds via boundsOfPath and remaps every coord through an affine scale against the dragged AABB, and move translates the path through the same descriptor. A `gridSnapSource` snaps the path\'s drawn box on a move rather than every vertex. Body-drag to move; corner handles to resize.',
     hint: 'Drag the polygon body to move it; drag a corner to resize.',
     load: () => import('./demos/PathPoseDemo').then((m) => m.PathPoseDemo),
     path: 'apps/site/demos/PathPoseDemo.tsx',

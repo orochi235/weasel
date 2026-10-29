@@ -34,7 +34,8 @@ describe('gridSnapSource — unit scopes', () => {
   it('snaps a node outside it on the root spacing', () => {
     const { scene, outside } = assembly();
     const grid = gridSnapSource({ spacing: 10, scopes: { root: INCHES } });
-    expectNear(moveBy({ sources: [grid], scene, ids: [outside] }).by(6, 0.5).point, { x: 10, y: 0 });
+    // The box's right edge, at 6.1, is the nearest a line.
+    expectNear(moveBy({ sources: [grid], scene, ids: [outside] }).by(6, 0.5).point, { x: 9.9, y: 0 });
   });
 
   it('takes a pitch per scope, written in its units', () => {
@@ -45,7 +46,7 @@ describe('gridSnapSource — unit scopes', () => {
     });
     // 1cm is 10 / 25.4 in.
     expectNear(moveBy({ sources: [grid], scene, ids: [inside] }).by(0.5, 0.5).point, { x: 10 / 25.4, y: 10 / 25.4 });
-    expectNear(moveBy({ sources: [grid], scene, ids: [outside] }).by(7, 0).point, { x: 12, y: 0 });
+    expectNear(moveBy({ sources: [grid], scene, ids: [outside] }).by(7, 0).point, { x: 11.9, y: 0 });
   });
 
   it('snaps a rect drawn into a millimeter sub-assembly on millimeter spacing', () => {
@@ -137,6 +138,8 @@ describe('gridSnapSource — a container\'s own frame', () => {
       return scene.add({ kind: 'mark', layer: 'default', parent: g, pose: { x: 10 - at, y: 10 - at, width: 1, height: 1 }, data: {} }) as string;
     });
     const s = scene as unknown as Scene<unknown, string, unknown>;
-    expectNear(moveBy({ sources: [grid], scene: s, ids }).by(1.8, -1.9).point, { x: 0, y: 0 });
+    // On the containers' 5-unit lattice, the union box's left edge at 11.8
+    // rounds to 10 and its bottom at 9.1 to 10.
+    expectNear(moveBy({ sources: [grid], scene: s, ids }).by(1.8, -1.9).point, { x: 0, y: -1 });
   });
 });

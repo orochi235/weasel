@@ -18,7 +18,7 @@ function pose(id: string) {
 }
 
 describe('TransformDemo', () => {
-  it('drags a rect by its body and lands it on the 20px grid', () => {
+  it('drags a rect by its body and lands its box on the 20px grid', () => {
     const { container } = render(<TransformDemo />);
     const canvas = container.querySelector('canvas')!;
     const fire = (type: string, x: number, y: number) => act(() => {
@@ -30,6 +30,7 @@ describe('TransformDemo', () => {
     fire('pointermove', 120, 130);
     fire('pointermove', 142, 143);
     fire('pointerup', 142, 143);
-    expect(pose('a')).toMatchObject({ x: 100, y: 120 });
+    // The box's center, at (142, 143), is the nearest a line on both axes.
+    expect(pose('a')).toMatchObject({ x: 95, y: 110 });
   });
 });

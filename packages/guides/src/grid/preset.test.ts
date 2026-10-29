@@ -24,7 +24,8 @@ describe('createGridPreset', () => {
   });
 
   it('snaps from the origin it is given', () => {
-    expectNear(moved(createGridPreset({ spacing: 20, snap: { origin: { x: 5, y: 5 } } }), 23, 38).point, { x: 2, y: 7 });
+    // Lines run through 5, 25, 45: the box's left edge, 23, is nearest on x and its center, 43, on y.
+    expectNear(moved(createGridPreset({ spacing: 20, snap: { origin: { x: 5, y: 5 } } }), 23, 38).point, { x: 2, y: 2 });
   });
 
   it('draws without snapping when snap is off', () => {

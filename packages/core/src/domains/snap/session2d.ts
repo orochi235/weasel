@@ -11,7 +11,7 @@ import { gatherSnapCandidates, resolvedSnapMarks, snapSourcesFor, type SnapCandi
 import { recordSnapCandidates } from './debugCandidates';
 import { markFromPlane } from './marks';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
-import { resizedBox, resizeEdges, resizeSubject, type ResizeSubject } from './resizeBox';
+import { resizedBox, resizeSides, resizeSubject, type ResizeSubject } from './resizeBox';
 import { screenOf } from './screen';
 import type { SnapCollect, SnapFrame, SnapMark, SnapProbeAt, SnapSource } from './types';
 
@@ -118,7 +118,7 @@ function collectAtPress(inputs: Session2dInputs): FixedCollect {
 
 function collectAll(
   sources: readonly SnapSource[], probesAtPress: readonly SnapProbeAt[],
-  fixed: FixedCollect & Pick<SnapCollect, 'box' | 'edges'>, { delta0, view, plane }: Frame, reachPx: number,
+  fixed: FixedCollect & Pick<SnapCollect, 'box' | 'sides' | 'boxAt'>, { delta0, view, plane }: Frame, reachPx: number,
 ): SnapCandidate<SnapCandidateMark<Point>>[] {
   const camera = view ? Math.min(Math.abs(view.scale.x), Math.abs(view.scale.y)) : 1;
   // A camera unit is `plane.scale` plane units.
@@ -132,12 +132,17 @@ function collectAll(
   }), { toVec: (p) => [p.x, p.y], reachPx, ...(fixed.origin ? { origin: fixed.origin } : {}) });
 }
 
-/** The subject's box where `delta0` puts it, and the sides that moved. */
+/** The subject's box where `delta0` puts it, the sides that move, and where
+ *  any other move would put it. */
 function subjectAt(
   { box, resize }: Pick<Session2dInputs, 'box' | 'resize'>, delta0: Point,
-): Pick<SnapCollect, 'box' | 'edges'> {
-  if (resize) return { box: resizedBox(resize, delta0), edges: resizeEdges(resize, delta0) };
-  return box ? { box: { ...box, x: box.x + delta0.x, y: box.y + delta0.y } } : {};
+): Pick<SnapCollect, 'box' | 'sides' | 'boxAt'> {
+  if (resize) {
+    return { box: resizedBox(resize, delta0), sides: resizeSides(resize, delta0), boxAt: (d) => resizedBox(resize, d) };
+  }
+  if (!box) return {};
+  const boxAt = (d: Point): Bounds => ({ ...box, x: box.x + d.x, y: box.y + d.y });
+  return { box: boxAt(delta0), boxAt };
 }
 
 /** A session no source answers: it only holds the point to the gesture's

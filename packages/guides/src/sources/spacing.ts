@@ -1,12 +1,26 @@
-import type { Bounds, SnapEdges, SnapMark, SnapSource } from '@weasel-js/core';
+import type { Bounds, SnapCollect, SnapMark, SnapSource } from '@weasel-js/core';
 import {
-  applyEdges, equalGaps, measureGapSpans, referenceGaps, spacingOffers, type MeasuredGap,
+  equalGaps, measureGapSpans, referenceGaps, spacingOffers, type MeasuredGap,
 } from '../guides/alignment/spacing';
+import type { SpacingEdge } from '../guides/alignment/types';
 import type { SpacingGap } from '../guides/types';
-import { axisLine, landedShift } from './lines';
+import { landedBox, sideLine } from './lines';
 import { cachedPerScene, type TargetFilter } from './targets';
 
 type Point = { x: number; y: number };
+
+/** A side of the box the gesture moves on `axis`, at `rate` per unit of the move. */
+interface Moving { axis: 'x' | 'y'; edge: SpacingEdge; rate: Point }
+
+const TRANSLATE: readonly Moving[] = [
+  { axis: 'x', edge: 'both', rate: { x: 1, y: 0 } },
+  { axis: 'y', edge: 'both', rate: { x: 0, y: 1 } },
+];
+
+/** A move's whole box on each axis, else the sides a resize moves. */
+function movingSides(q: SnapCollect): readonly Moving[] {
+  return q.sides ? q.sides.map((s) => ({ axis: s.axis, edge: s.side, rate: s.rate })) : TRANSLATE;
+}
 
 /** Options for `spacingSnapSource`. */
 export interface SpacingSnapSourceOptions {
@@ -36,8 +50,9 @@ function gapMark(g: SpacingGap, color: string | undefined): SnapMark {
  * Equal spacing as snap targets, Figma's: on each axis, the positions of the
  * subject's box that make its gap to a neighbor equal one already between
  * two siblings, or center it between its two neighbors. A resize moves only
- * the edges it drags. When the result meets one, it marks every gap of that
- * size, the box's own included.
+ * the sides it drags; on a turned or skewed box, the sides of its
+ * axis-aligned extent the drag moves. When the result meets one, it marks
+ * every gap of that size, the box's own included, where the box lands.
  */
 export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSource {
   const fromScene = cachedPerScene(measureAll, opts.filter);
@@ -52,23 +67,20 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
       const measured = opts.getTargets ? measureAll(opts.getTargets()) : fromScene(q);
       if (!box || !probe || !measured) return;
       const reach = q.reachWorld(q.reachPx);
-      const edges: SnapEdges = q.edges ?? { x: 'both', y: 'both' };
-      for (const axis of ['x', 'y'] as const) {
-        const edge = edges[axis];
-        if (edge === null) continue;
-        const refs = referenceGaps(box, measured[axis]);
-        const seen = new Set<string>();
-        for (const o of spacingOffers(box, axis, edge, measured.boxes, refs)) {
-          const key = `${o.delta.toFixed(6)}:${o.size.toFixed(6)}`;
-          if (Math.abs(o.delta) > reach || seen.has(key)) continue;
+      const refs = { x: referenceGaps(box, measured.x), y: referenceGaps(box, measured.y) };
+      const seen = new Set<string>();
+      for (const { axis, edge, rate } of movingSides(q)) {
+        const speed = Math.hypot(rate.x, rate.y);
+        for (const o of spacingOffers(box, axis, edge, measured.boxes, refs[axis])) {
+          const key = `${axis}:${edge}:${o.delta.toFixed(6)}:${o.size.toFixed(6)}`;
+          if (Math.abs(o.delta) / speed > reach || seen.has(key)) continue;
           seen.add(key);
           yield {
             probe: probe.id,
-            locus: axisLine(axis, probe.at[axis] + o.delta, probe.at),
+            locus: sideLine(probe.at, rate, o.delta),
             mark: (delta: Point) => {
-              const shift = landedShift(q, delta);
-              const landed = applyEdges(box, shift.x, shift.y, edges);
-              return equalGaps(landed, axis, o.size, measured.boxes, refs).map((g) => gapMark(g, opts.color));
+              const landed = landedBox(q, delta) ?? box;
+              return equalGaps(landed, axis, o.size, measured.boxes, refs[axis]).map((g) => gapMark(g, opts.color));
             },
           };
         }

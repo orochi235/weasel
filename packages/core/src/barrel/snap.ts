@@ -3,8 +3,8 @@ export type {
   SnapBegin, SnapConstrain, SnapMods, SnapOutcome, SnapResizeBox, SnapSession,
 } from '../interactions/actions/snapDep';
 export type {
-  AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapCollect, SnapEdge, SnapEdges, SnapFrame, SnapGesture, SnapMark,
-  SnapMarks, SnapProbeAt, SnapReadoutStyle, SnapSource, SourceCandidate,
+  AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapCollect, SnapFrame, SnapGesture, SnapMark,
+  SnapMarks, SnapProbeAt, SnapReadoutStyle, SnapSide, SnapSource, SourceCandidate,
 } from '../domains/snap/types';
 export { SNAP_ANGLE_STEP, SNAP_AXIS_STEP, SNAP_ROLES, snapMods } from '../domains/snap/roles';
 export { createSnapOutcomeStore, type SnapOutcomeStore } from '../domains/snap/outcomeStore';
