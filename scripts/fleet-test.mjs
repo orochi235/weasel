@@ -11,9 +11,11 @@
  *   npm run test:fleet -- <commit>     # any commit
  *   npm run test:fleet -- HEAD --node studio    # the rest goes to `onto test`
  *   npm run test:fleet -- --full       # every test, on a branch too
+ *   npm run test:fleet -- --since <ref>   # select from what the branch changes past <ref>, not main
  *
  * On a branch other than main, the test projects run only the files whose imports reach what the
- * branch changes; the gate project always runs whole. main runs everything.
+ * branch changes, and the gate skips the slow checks whose inputs it leaves alone
+ * (`scripts/lib/gate-inputs.mjs`). main runs everything.
  */
 import { fileURLToPath } from 'node:url';
 import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
@@ -21,8 +23,11 @@ import { armTree, changedFiles } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-const argv = process.argv.slice(2).filter((arg) => arg !== '--full');
-const full = argv.length < process.argv.length - 2;
+const args = process.argv.slice(2);
+const sinceAt = args.indexOf('--since');
+const since = sinceAt < 0 ? undefined : args.splice(sinceAt, 2)[1];
+const argv = args.filter((arg) => arg !== '--full');
+const full = argv.length < args.length;
 const [first, ...rest] = argv;
 const named = first && !first.startsWith('-');
 const ontoArgs = named ? rest : argv;
@@ -49,9 +54,13 @@ try {
   // The node builds the tree on `base`, which must be pushed, but the branch changes only what it
   // adds to local main: unpushed main commits would otherwise count as the branch's own changes.
   const local = git('merge-base', commit, 'main');
-  const newer = isAncestor(base, local) ? local : base;
-  const select = Boolean(branch) && branch !== 'main' && !full ? Object.keys(diff(newer)) : undefined;
-  armTree(tree, { commit, files, select }, { plan: true });
+  const newer = since ? git('merge-base', commit, since) : isAncestor(base, local) ? local : base;
+  const branchRun = Boolean(branch) && branch !== 'main' && !full;
+  const select = branchRun ? Object.keys(diff(newer)) : undefined;
+  const reshaped = branchRun
+    ? git('diff', '--name-only', '--no-renames', '--diff-filter=AD', '-z', newer, commit).split('\0').filter(Boolean)
+    : undefined;
+  armTree(tree, { commit, branch: branch || undefined, files, select, reshaped }, { plan: true });
   console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
   if (select) console.log(`fleet-test: selecting from the ${select.length} path(s) the branch changes against ${newer.slice(0, 9)}`);
   console.log(

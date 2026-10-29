@@ -8,8 +8,10 @@ import {
   ONTO_STAMP,
   armTree,
   blobHash,
+  branchChanges,
   changedFiles,
   checkTree,
+  fleetBranch,
   selection,
   stampReport,
   stepEnv,
@@ -239,6 +241,48 @@ describe('selection', () => {
     marked();
     expect(selection(root, { [COMMIT_ENV]: OTHER }, none)).toBeUndefined();
     expect(selection(root, {}, none)).toBeUndefined();
+  });
+});
+
+describe('branchChanges', () => {
+  const marked = (extra: object) => put(MARKER, JSON.stringify({ commit: COMMIT, files: {}, select: ['src/a.ts', 'src/new.ts'], ...extra }));
+  const none = { triggers: [] };
+
+  it('is the changed paths and the ones the branch adds or deletes, relative', () => {
+    marked({ reshaped: ['src/new.ts'] });
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, none)).toEqual({ changed: ['src/a.ts', 'src/new.ts'], reshaped: ['src/new.ts'] });
+  });
+
+  it('counts every changed path as reshaped for a marker that does not say', () => {
+    marked({});
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, none)?.reshaped).toEqual(['src/a.ts', 'src/new.ts']);
+  });
+
+  it('is undefined when the run tests everything, as selection is', () => {
+    marked({ reshaped: [] });
+    expect(branchChanges(root, { [COMMIT_ENV]: COMMIT }, { triggers: ['src/a.ts'] })).toBeUndefined();
+    expect(branchChanges(root, { [COMMIT_ENV]: OTHER }, none)).toBeUndefined();
+    expect(branchChanges(root, stepEnv({ [COMMIT_ENV]: COMMIT }), none)).toBeUndefined();
+  });
+});
+
+describe('fleetBranch', () => {
+  const marked = (branch?: string) => put(MARKER, JSON.stringify({ commit: COMMIT, branch, files: {} }));
+
+  it("is the marker's branch for the run that asked for it, a step it spawns included", () => {
+    marked('feature/x');
+    expect(fleetBranch(root, { [COMMIT_ENV]: COMMIT })).toBe('feature/x');
+    expect(fleetBranch(root, stepEnv({ [COMMIT_ENV]: COMMIT }))).toBe('feature/x');
+  });
+
+  it('is undefined for main, for no branch, and for a marker another run wrote', () => {
+    marked('main');
+    expect(fleetBranch(root, { [COMMIT_ENV]: COMMIT })).toBeUndefined();
+    marked();
+    expect(fleetBranch(root, { [COMMIT_ENV]: COMMIT })).toBeUndefined();
+    marked('feature/x');
+    expect(fleetBranch(root, { [COMMIT_ENV]: OTHER })).toBeUndefined();
+    expect(fleetBranch(root, {})).toBeUndefined();
   });
 });
 

@@ -72,18 +72,33 @@ export const checkTree = (root, env) => {
 };
 
 /**
- * The paths a branch run limits the suite to, absolute, for vitest's `related`: the marker's `select`
- * list plus `always`. Undefined, so everything runs, unless the marker carries that list and is this
- * run's, and when a listed path matches one of `triggers`.
+ * What a branch run changes, as repo paths: `changed`, the marker's `select` list, and `reshaped`, the
+ * ones in it the branch adds or deletes. Undefined, so everything runs, unless the marker carries that
+ * list and is this run's, and when a listed path matches one of `triggers`.
  */
-export const selection = (root, env, { always, triggers }) => {
+export const branchChanges = (root, env, { triggers }) => {
   const at = join(root, MARKER);
   if (!existsSync(at)) return undefined;
   const marker = JSON.parse(readFileSync(at, 'utf8'));
   if (!Array.isArray(marker.select) || env[STEP_ENV] || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
   const changed = marker.select;
   if (changed.some((path) => triggers.some((glob) => matchesGlob(path, glob)))) return undefined;
-  return [...changed, ...always].map((path) => join(root, path));
+  return { changed, reshaped: Array.isArray(marker.reshaped) ? marker.reshaped : changed };
+};
+
+/** The branch a fleet run tests, when the marker is this run's and names one other than main. */
+export const fleetBranch = (root, env) => {
+  const at = join(root, MARKER);
+  if (!existsSync(at) || !env[COMMIT_ENV]) return undefined;
+  const marker = JSON.parse(readFileSync(at, 'utf8'));
+  if (marker.commit !== env[COMMIT_ENV] || typeof marker.branch !== 'string' || !marker.branch || marker.branch === 'main') return undefined;
+  return marker.branch;
+};
+
+/** The paths a branch run limits the suite to, absolute, for vitest's `related`: `branchChanges` plus `always`. */
+export const selection = (root, env, { always, triggers }) => {
+  const changes = branchChanges(root, env, { triggers });
+  return changes && [...changes.changed, ...always].map((path) => join(root, path));
 };
 
 /**

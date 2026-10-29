@@ -17,7 +17,7 @@ import { packageDocs } from './scripts/vite-package-docs.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
-import { selection } from './scripts/lib/fleet-tree.mjs';
+import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 
 // One vitest config; named projects per surface. Each project owns its
@@ -58,28 +58,31 @@ const VITE_SERVER_TESTS = [
   'scripts/vitest-browser-deps.vite.test.ts',
 ];
 
+// Changes that reach tests with no import edge to follow, this config and what it loads among them:
+// any of these runs everything.
+const TRIGGERS = [
+  '**/package.json',
+  'package-lock.json',
+  '**/tsconfig*.json',
+  '.onto/tests',
+  '**/{vitest,vite}.config.*',
+  'vitest.*setup.ts',
+  'packages/labkit/src/test-setup.ts',
+  'scripts/{vite,vitest}-*.ts',
+  'scripts/lib/**',
+  'apps/draw/vite-plugin-*.ts',
+  'apps/forge/viteShared.ts',
+  'packages/forge/src/vite/**',
+  'packages/icons-plugin/**',
+];
 // A branch's fleet run seeds vitest's `related` with what the branch changes, so only the test files
-// importing it run. Every path seeded counts as affected, which is how the gate project always runs.
+// importing it run. Every path seeded counts as affected, which is how the gate project always runs;
+// the gate itself skips the slow checks whose inputs the branch leaves alone (`scripts/lib/gate-inputs.mjs`).
 const related = selection(import.meta.dirname, process.env, {
   always: readdirSync(join(import.meta.dirname, 'scripts')).filter((f) => f.endsWith('.gate.ts')).map((f) => `scripts/${f}`),
-  // Changes that reach tests with no import edge to follow, this config and what it loads among them:
-  // any of these runs everything.
-  triggers: [
-    '**/package.json',
-    'package-lock.json',
-    '**/tsconfig*.json',
-    '.onto/tests',
-    '**/{vitest,vite}.config.*',
-    'vitest.*setup.ts',
-    'packages/labkit/src/test-setup.ts',
-    'scripts/{vite,vitest}-*.ts',
-    'scripts/lib/**',
-    'apps/draw/vite-plugin-*.ts',
-    'apps/forge/viteShared.ts',
-    'packages/forge/src/vite/**',
-    'packages/icons-plugin/**',
-  ],
+  triggers: TRIGGERS,
 });
+const changes = branchChanges(import.meta.dirname, process.env, { triggers: TRIGGERS });
 
 export default defineConfig({
   plugins: [timeoutRetries()],
@@ -272,6 +275,7 @@ export default defineConfig({
           // past its timeout; cached, typecheck is the only heavy check left.
           maxConcurrency: 3,
           include: ['scripts/**/*.gate.ts'],
+          provide: { gateChanges: changes ?? null },
         },
       },
       // Tests that need a real browser — layout, real IndexedDB, CSS that jsdom
