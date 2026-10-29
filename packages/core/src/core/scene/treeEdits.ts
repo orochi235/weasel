@@ -86,13 +86,16 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
       assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
       refuse(parent, 'add under');
     }
-    return {
+    const payload: {
+      id: NodeId; kind: 'mark' | 'group'; layer: TLayer; pose: TPose; data: TData;
+      parent: NodeId | null; index: number; dependsOn?: AddNodeSpec<TData, TLayer, TPose>['dependsOn'];
+    } = {
       id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
       parent, index: spec.index ?? siblingsOf(parent).length,
-      ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-      ...statedFields(spec),
-      ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
     };
+    if (spec.dependsOn !== undefined) payload.dependsOn = spec.dependsOn;
+    // Assigned rather than spread into the literal: a spread after named fields is V8's slow clone.
+    return Object.assign(payload, statedFields(spec), fnKeysOf(fnFields, spec as unknown as FnBearingNode, 'opKey'));
   }
 
   function removeMany(rootIds: readonly NodeId[]): void {

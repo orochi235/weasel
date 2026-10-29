@@ -15,11 +15,13 @@ export interface StatedNodeFields {
  *  each present only when stated, so an unstated one keeps the scene's
  *  default, and a flag states only `true`. What a copy of a node carries over
  *  besides its kind, layer, pose, data and functions. */
-export const statedFields = (n: StatedNodeFields & { kind?: string }): StatedNodeFields => ({
-  ...(n.pickable !== undefined ? { pickable: n.pickable } : {}),
-  ...(n.hidden === true ? { hidden: true } : {}),
-  ...(n.locked === true ? { locked: true } : {}),
-  ...(n.units !== undefined ? { units: n.units } : {}),
-  ...(n.clip !== undefined ? { clip: n.clip } : {}),
-  ...(n.consumesChildren === true ? { consumesChildren: true } : {}),
-});
+export function statedFields(n: StatedNodeFields & { kind?: string }): StatedNodeFields {
+  const out: StatedNodeFields = {};
+  if (n.pickable !== undefined) out.pickable = n.pickable;
+  if (n.hidden === true) out.hidden = true;
+  if (n.locked === true) out.locked = true;
+  if (n.units !== undefined) out.units = n.units;
+  if (n.clip !== undefined) out.clip = n.clip;
+  if (n.consumesChildren === true) out.consumesChildren = true;
+  return out;
+}

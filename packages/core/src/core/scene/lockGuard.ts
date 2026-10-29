@@ -58,6 +58,7 @@ export function createLockGuard<TData, TLayer extends string, TPose>(
       throw new Error(`Scene: cannot ${verb} layer "${layer}" — it is locked`);
     },
     reachable(ids) {
+      if (ids.length === 0) return ids;
       const gates = nodeGates(source);
       return ids.some((id) => gates.locked(id) || gates.hidden(id))
         ? ids.filter((id) => !gates.locked(id) && !gates.hidden(id))
