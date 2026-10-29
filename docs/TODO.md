@@ -800,6 +800,11 @@ only story runner in the repo.
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
 
+- **(P3) [waiting] `Bar.along.browser.test.tsx`'s wheel-and-drag test failed once in Linux CI.** "the wheel and a drag
+  along the band scroll; a still press on an action fires it" missed by 13° (`expected 13.05 to be less than or equal
+  to 1`, line 247) in CI run 40818081756 on 76adffe24 (2026-10-29), and passed when that job was rerun. The fleet,
+  which runs no Linux, has never seen it fail. Waiting on a second sighting.
+
 - **(P2) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
   `ubuntu-latest`, while every fleet node is a Mac. CI run 39349499006 (2026-10-20, at
   `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
