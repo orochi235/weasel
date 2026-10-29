@@ -1,6 +1,9 @@
 export { Timeline } from './Timeline';
 export type { KeyEditorCtx, KeySelection, TimelineProps, TimeWindow } from './Timeline';
 export { samePath } from './keys';
+export { Ruler } from './Ruler';
+export type { RulerProps } from './Ruler';
+export { spanFraction, spanPercent, toFraction, toPercent } from './timeScale';
 export { AnimatedTimeline } from './AnimatedTimeline';
 export type { AnimatedTimelineProps } from './AnimatedTimeline';
 export { Transport, TRANSPORT_RATES } from './Transport';

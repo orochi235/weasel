@@ -7,12 +7,17 @@ import { createTimeScale, panWindow, TICK_SPACING_PX, tickTimes, toPercent, zoom
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
 
+/** Props for {@link Ruler}. */
 export interface RulerProps {
+  /** The span of time the ruler shows. */
   window: TimeWindow;
   /** The full extent the window may cover — normally `{ from: 0, to: duration }`. */
   bounds: TimeWindow;
+  /** Where the playhead line sits, in ms. */
   playhead: number;
+  /** Called with the time under the pointer while the ruler is pressed or dragged. */
   onScrub: (t: number) => void;
+  /** Called with the new window when the wheel pans, or Ctrl+wheel zooms, within `bounds`. */
   onWindowChange: (w: TimeWindow) => void;
 }
 
@@ -25,6 +30,7 @@ function formatMs(ms: number, { step, decimals }: TickSet): string {
   return `${ms.toFixed(decimals)}ms`;
 }
 
+/** A time ruler: tick labels across `window`, a playhead line, scrubbing by pointer, and wheel pan and zoom. */
 export function Ruler(props: RulerProps): ReactElement {
   const { window: win, bounds, playhead, onScrub, onWindowChange } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
