@@ -1,5 +1,6 @@
 /** The main line as a sequence that can be reordered: which ports carry the
  *  signal between neighbors, and the rewiring that moves a stage along it. */
+import { isNoopDrop, moveItems } from '@weasel-js/headless';
 import { drawableWires, isControl } from './draw';
 import { canWire, nextWireId, pruneRoutes } from './edit';
 import { mainChain } from './mainChain';
@@ -38,14 +39,6 @@ type Ref = { stage: string; port: string };
 const portsOf = (p: EffectPipeline, stage: string, side: 'inputs' | 'outputs'): readonly EffectPort[] =>
   p.stages.find((s) => s.id === stage)?.[side] ?? [];
 
-/** The chain with `chain[i..j]` taken out and put back before what was `chain[to]`. */
-function movedChain(chain: readonly string[], i: number, j: number, to: number): string[] {
-  const run = chain.slice(i, j + 1);
-  const out = [...chain.slice(0, i), ...chain.slice(j + 1)];
-  out.splice(to > j ? to - run.length : to, 0, ...run);
-  return out;
-}
-
 /**
  * The doc with `stage`, which must be on `mainChain`, moved to gap `to` of
  * that chain: 0 before its first stage, `chain.length` after its last. Its
@@ -70,7 +63,8 @@ export function moveRunInChain(doc: EffectDoc, first: string, last: string, to: 
   const chain = mainChain(p);
   const i = chain.indexOf(first);
   const j = chain.indexOf(last);
-  if (i < 0 || j < i || !Number.isInteger(to) || to < 0 || to > chain.length || (to >= i && to <= j + 1)) return null;
+  const run = Array.from({ length: j - i + 1 }, (_, k) => i + k);
+  if (i < 0 || j < i || !Number.isInteger(to) || to < 0 || to > chain.length || isNoopDrop(run, to)) return null;
   const { mainIn, mainOut, between } = chainLinks(p, chain);
   const wIn = i > 0 ? between[i - 1] : undefined;
   const wOut = j < chain.length - 1 ? between[j] : undefined;
@@ -113,7 +107,7 @@ export function moveRunInChain(doc: EffectDoc, first: string, last: string, to: 
     wires.push({ id: nextWireId({ ...p, wires }), from: m.from, to: m.to });
   }
   const pipeline = { ...p, wires };
-  const want = movedChain(chain, i, j, to);
+  const want = moveItems(chain, run, to);
   const got = mainChain(pipeline);
   if (got.length !== want.length || got.some((id, k) => id !== want[k])) return null;
   // A freed id may be minted again for a new wire, which must not inherit the old one's route.

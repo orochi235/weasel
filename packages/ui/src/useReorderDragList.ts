@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
+import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/headless';
 import { useKitSetting } from '@weasel-js/react';
 import type { SelectModifiers } from '@weasel-js/select';
-import { resolveDrop, type DropRow } from './dropTarget';
 
 /** One row in a reorderable list. */
 export interface ReorderItem {
@@ -172,26 +172,9 @@ function draggedIdsFor(
   });
 }
 
-/** Would dropping `draggedIds` at `targetIndex` leave a contiguous block where it already is? */
-function isNoopDrop(items: readonly ReorderItem[], draggedIds: readonly string[], targetIndex: number): boolean {
-  const indices = draggedIds
-    .map((id) => items.findIndex((it) => it.id === id))
-    .filter((i) => i >= 0)
-    .sort((a, b) => a - b);
-  const contiguous =
-    indices.length > 0 &&
-    indices.every((v, i) => {
-      if (i === 0) return true;
-      const prev = indices[i - 1];
-      return prev !== undefined && v === prev + 1;
-    });
-  const first = indices[0];
-  const last = indices[indices.length - 1];
-  return contiguous
-    && first !== undefined
-    && last !== undefined
-    && targetIndex >= first
-    && targetIndex <= last + 1;
+/** Where `ids` stand in `items`; an id not there is left out. */
+function indicesOf(items: readonly ReorderItem[], ids: readonly string[]): number[] {
+  return ids.map((id) => items.findIndex((it) => it.id === id)).filter((i) => i >= 0);
 }
 
 /**
@@ -224,12 +207,11 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
     const c = containerRef.current;
     if (!c) return lo;
-    const rows = rowElements(c, optsRef.current);
-    const flat: DropRow[] = rows.map((row, i) => {
-      const { start: top, length: height } = line.row(row);
-      return { id: String(i), parentId: null, level: 1, index: i, branch: false, expanded: false, childCount: 0, top, height };
+    const mids = rowElements(c, optsRef.current).map((row) => {
+      const { start, length } = line.row(row);
+      return start + length / 2;
     });
-    const raw = resolveDrop(flat, { x: 0, y: line.pointer(client) }).target.index;
+    const raw = gapByMidpoint(mids, line.pointer(client));
     return Math.max(lo, Math.min(raw, hi));
   }, [optsRef]);
 
@@ -283,7 +265,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       },
       onCommit: (ev) => {
         const drop = computeTargetIndex(ev, index);
-        if (!isNoopDrop(optsRef.current.items, draggedIds, drop)) {
+        if (!isNoopDrop(indicesOf(optsRef.current.items, draggedIds), drop)) {
           optsRef.current.onReorder(draggedIds, drop);
         }
         reset();
@@ -307,13 +289,10 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const { items, selectedIds, onReorder } = optsRef.current;
     if (items[index]?.locked) return false;
     const ids = draggedIdsFor(items, selectedIds, id, index);
-    const at = ids.map((x) => items.findIndex((it) => it.id === x)).sort((a, b) => a - b);
-    const first = at[0];
-    const last = at[at.length - 1];
-    if (first === undefined || last === undefined) return false;
+    const at = indicesOf(items, ids);
+    const target = nudgeGap(at, delta, items.length);
     const [lo, hi] = unlockedSegment(items, index);
-    const target = delta < 0 ? first - 1 : last + 2;
-    if (target < lo || target > hi || isNoopDrop(items, ids, target)) return false;
+    if (target === null || target < lo || target > hi || isNoopDrop(at, target)) return false;
     onReorder(ids, target);
     return true;
   }, [optsRef]);

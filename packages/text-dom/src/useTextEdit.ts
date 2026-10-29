@@ -12,6 +12,7 @@ import {
   numericWeight, resolveTextStyle, scriptMetricsFor,
 } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
+import { editEnd } from '@weasel-js/headless';
 import { layoutTextPose } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { domToRuns, type OverlayRunBase } from './domRuns';
@@ -370,14 +371,10 @@ export function useTextEdit(
       // The key belongs to the IME: Enter confirms a candidate, Escape dismisses
       // them. Safari reports it after `compositionend`, as keyCode 229.
       if (e.isComposing || e.keyCode === 229) return;
-      if (e.key === 'Enter' && !e.shiftKey) {
+      const ends = editEnd({ key: e.key, shift: e.shiftKey }, { escape: optsRef.current.escape, multiline: true });
+      if (ends) {
         e.preventDefault();
-        commit();
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        if (optsRef.current.escape === 'commit') commit();
+        if (ends === 'commit') commit();
         else cancelEdit();
         return;
       }

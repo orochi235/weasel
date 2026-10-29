@@ -1,12 +1,12 @@
 // @vitest-environment node
 /**
  * Text a shaper shaped, exported as the glyphs it shaped: Arabic and Devanagari in subsets of
- * Noto Sans (`packages/shape/src/__fixtures__`), read back by pdf.js.
+ * Noto Sans (`packages/text-shaping/src/__fixtures__`), read back by pdf.js.
  */
 import { loadFontOutlines, registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
 import { bidi } from '@weasel-js/bidi';
 import type { TextDrawCommand } from '@weasel-js/renderer';
-import { loadShaper, type Shaper } from '@weasel-js/shape';
+import { loadShaper, type Shaper } from '@weasel-js/text-shaping';
 import { registerBidi, registerShaper, type ResolvedRun } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
@@ -17,7 +17,7 @@ import { type PdfFontSource, registryFontSource } from './fonts/fontSource';
 import { latin1 } from './latin1';
 import { writePdf } from './writePdf';
 
-const FIXTURES = resolve(import.meta.dirname, '../../shape/src/__fixtures__');
+const FIXTURES = resolve(import.meta.dirname, '../../text-shaping/src/__fixtures__');
 const SIZE = 40;
 
 function fixture(file: string): ArrayBuffer {

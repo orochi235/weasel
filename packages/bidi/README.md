@@ -39,7 +39,7 @@ places a caret in, and what `measureTextBounds` and `textToPath` report.
 ## What this does not do
 
 Ordering only. Arabic joining forms are OpenType `GSUB` substitutions, not a reordering, and
-come from a shaping engine: register `@weasel-js/shape` beside this. Hebrew, Divehi and the
+come from a shaping engine: register `@weasel-js/text-shaping` beside this. Hebrew, Divehi and the
 other non-joining right-to-left scripts are complete with bidi alone.
 
 ## Conformance

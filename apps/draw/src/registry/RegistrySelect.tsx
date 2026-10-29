@@ -1,5 +1,5 @@
 /**
- * Dropdown for registry-enum values: pick a string from a live registry
+ * Dropdown, or radio group, for registry-enum values: pick a string from a live registry
  * (tools, fonts, history entries, …), resolved through
  * `RegistryEnumSourcesContext`.
  *
@@ -11,6 +11,7 @@
  */
 import { createContext, useContext } from 'react';
 import { Input } from '@weasel-js/ui/components/Input';
+import { PropertyControl } from '@weasel-js/ui/components/Properties';
 import { Select, type SelectOption } from '@weasel-js/ui/components/Select';
 import type {
   RegistryEnumFilter,
@@ -34,6 +35,8 @@ export interface RegistrySelectProps {
    *  case-insensitive alphabetical by label. `'value'` sorts by id, and
    *  `'source'` preserves whatever order the resolver returned. */
   sortBy?: 'label' | 'value' | 'source';
+  /** `radio` lists every option at once, as an ordinary enum pref's `radio` does. Default `select`. */
+  control?: 'select' | 'radio';
 }
 
 export function RegistrySelect({
@@ -43,6 +46,7 @@ export function RegistrySelect({
   filter,
   'aria-label': ariaLabel,
   sortBy = 'label',
+  control = 'select',
 }: RegistrySelectProps) {
   const sources = useContext(RegistryEnumSourcesContext);
   const resolver = sources[source];
@@ -60,6 +64,18 @@ export function RegistrySelect({
   const options: SelectOption[] = sorted.map((o) => ({ value: o.value, label: o.label }));
   if (!sorted.some((o) => o.value === value)) {
     options.unshift({ value, label: `${value} (not in registry)`, isDisabled: true });
+  }
+  if (control === 'radio') {
+    return (
+      <PropertyControl
+        kind="enum"
+        control="radio"
+        name={ariaLabel}
+        value={value}
+        options={options.map((o) => ({ value: o.value, label: o.label, ...(o.isDisabled ? { disabled: true } : {}) }))}
+        onChange={onChange}
+      />
+    );
   }
   return (
     <Select<string>
