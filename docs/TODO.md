@@ -316,7 +316,7 @@ Owner tags, after the priority (2026-10-26):
   ±0.45, which is unexplained. The `super`/`sub` 12px rows of
   `npx vitest run -c scripts/measure-overlay-alignment.config.ts` show both.
 
-- **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/shape`.** Shaping (`registerShaper(await
+- **(P3) [agent] Complex-script shaping, what is left after `@weasel-js/text-shaping`.** Shaping (`registerShaper(await
   loadShaper())`, 2026-10-27) reaches only text whose face is registered with `registerFontOutlines` from TrueType
   or OpenType bytes, and PDF export writes shaped glyphs by index since 966c37fdc. Text drawn from an atlas (baked or
   canvas) is still laid out one code point at a time, because atlases look glyphs up by code point and cannot draw
@@ -327,7 +327,7 @@ Owner tags, after the priority (2026-10-26):
     screen reader or text extraction guesses the language.
   - harfbuzzjs awaits at its module's top level, so a consumer bundling for a target below ES2022 fails (esbuild
     0.27 errors; Vite 8 warns), even though `loadShaper` reaches it only through a dynamic `import()`.
-    `@weasel-js/shape` cannot avoid it: harfbuzzjs 1.6.4, the latest, exports only that module and not its
+    `@weasel-js/text-shaping` cannot avoid it: harfbuzzjs 1.6.4, the latest, exports only that module and not its
     `init`. Fixing it needs an upstream entry without the `await`, or a vendored copy of harfbuzzjs's helpers.
     The `.wasm` itself survives Vite 8 with no config, in both `vite build` and the dev pre-bundle (measured in a
     throwaway consumer, 2026-10-27).
@@ -845,6 +845,12 @@ only story runner in the repo.
   better; that is a call on the mark, not made (2026-10-19).
 
 ## Release-gate & build hygiene
+
+- **(P1) [mike] Publish `@weasel-js/text-shaping` by hand, then retire `@weasel-js/shape` (2026-10-28).** The
+  package was renamed after 1.13.0 went out as `@weasel-js/shape`. The release job's `check:first-publish`
+  fails until the new name exists on npm with a trusted publisher: publish it once by hand
+  (`docs/releasing.md`, "Publishing by hand"), run `node scripts/setup-trusted-publishing.mjs`, and add it to
+  `scripts/trust-pending.json`. Then `npm deprecate @weasel-js/shape "renamed to @weasel-js/text-shaping"`.
 
 - **(P3) [agent] The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
   Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
