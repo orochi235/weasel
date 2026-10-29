@@ -811,16 +811,22 @@ only story runner in the repo.
 ## Release-gate & build hygiene
 
 - **(P2) [waiting] `labelDrag.browser.test.tsx` fails now and then on the fleet** (2026-10-28). "drags a connector
-  label, keeps it on a reroute, and resets it" timed out on `expect.poll(() => savedLabel()?.dodge).toBe(false)`
-  (received `undefined`: the drag saved no label) in the fleet runs of `headless-slider-steps` (cacb14e98) and
-  `prefs-auto-field`, two branches that touch nothing in chart, on the same evening; every other run that day passed
-  it, including slider-steps' previous commit. Suspected (not shown): the drag lands before the label is placed. Not
-  reproduced (2026-10-28): 30 runs of the file alone on studio, and 15 runs of the chart and diagram browser tests
-  beside 8 busy loops on keiei, all passed; probes of the drag under jank and stress showed no failure either. The
-  next step was a probe of whether layout is still settling when `mountChartApp` returns. Waiting on a third
-  sighting before spending more fleet time on it; none in the fleet runs through 2026-10-29 16:00, and
-  neither sighting overlapped a network change on its node (measured from configd's log; see the entry on
-  files failing to load).
+  label, keeps it on a reroute, and resets it" times out on its first `expect.poll(() => savedLabel()?.dodge)`:
+  the first drag saves no placement. The onto archive has it failing in 5 of about 45 fleet runs from 2026-10-28
+  20:42 to 2026-10-29 17:00, on keiei, studio, teitou and msb-uai, on branches that touch nothing in chart and on
+  `main` (15e83dc60); none of the roughly 470 archived runs from 2026-10-21 to 2026-10-28 morning failed it. (The
+  `chart-toolbar` branch failed it on 2026-10-28 too, from a page fit that 99ceb63dc fixed.) Both failure
+  screenshots still on the nodes show the chart exactly as mounted with the canvas focused, so the press arrived and
+  the drag left nothing. The two failing logs still on disk started on nodes with 2.2 and 2.4 cores free.
+  Ruled out on 2026-10-29, each measured on the fleet: the host resizing after mount (it never did, and a drag with
+  no wait after the canvas appears passes), slow frames (CPU throttled 16x, or five GPU-loading tabs stretching the
+  drag to 5 s), the drag starting anywhere from 0 to 1.5 s after mount, a window blur from tabs taking focus, the
+  real mouse parked over the canvas or held down elsewhere, local storage shared between files running at once (it
+  is not), and two browser projects on one node at once. 17 instrumented runs (5 full, 6 of the browser project,
+  6 paired on one node) and about 250 probe drags all passed. The test now names, when it fails, the cursor its
+  press point hovered with ("move" means the label was hit), whether the canvas view matched the fit `at()`
+  assumes, and any blur, pointer cancel or real-mouse event during the drag. Waiting on the next sighting to read
+  that line (2026-10-29).
 
 - **(P3) [agent] The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
   Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
