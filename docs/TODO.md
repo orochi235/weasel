@@ -1171,10 +1171,15 @@ only story runner in the repo.
   - **The threshold** was left at 250 after measurement (`tests/perf/layer-dispatch.spec.ts`; result files in
     `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`).
 
-- **(P3) [agent] The pull request benchmark job's new run time is unmeasured.** Since 2026-10-26 it runs
-  `hud-vs-dom` with the HUD alone (`HVD_APPROACHES=hud`), estimated at about 80 minutes against a
-  120-minute limit. Also unmeasured: whether the base, measured first, reads differently from the head
-  for that reason alone.
+- **(P3) The pull request benchmark job has never run on GitHub.** All 46 `perf-pr.yml` runs from 2026-10-11
+  to 2026-10-29 were on changesets' release pull request (`changeset-release/main`, opened by
+  `github-actions[bot]`), the only pull requests this repo gets. Each waited for a maintainer's approval
+  and none got it: 36 sit at "action required", and 10 failed with no jobs once the approval expired
+  ("This workflow run required approval but was not approved before it expired"). So its run time with
+  `HVD_APPROACHES=hud` (estimated at 80 minutes against a 120-minute limit, since 2026-10-26) is still
+  unmeasured, as is whether the base, measured first, reads differently from the head for that alone.
+  Approve one run of the release pull request, or open a pull request from a branch, to get a first
+  reading. Checked 2026-10-29.
 
 ---
 
